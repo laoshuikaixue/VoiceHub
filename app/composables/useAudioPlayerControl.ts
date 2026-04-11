@@ -186,7 +186,12 @@ export const useAudioPlayerControl = () => {
         clearTimeout(timeout)
         audio.removeEventListener('canplay', onCanPlay)
         audio.removeEventListener('error', onError)
-        reject(error)
+        
+        if (!audio.src || audio.src === window.location.href || audio.src === window.location.origin + '/') {
+          reject(new Error('AbortError'))
+        } else {
+          reject(error)
+        }
       }
 
       audio.addEventListener('canplay', onCanPlay)
@@ -300,7 +305,12 @@ export const useAudioPlayerControl = () => {
       }
 
       return true
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === 'AbortError') {
+        console.log('音频加载被主动中止')
+        return false
+      }
+
       // 重试逻辑（针对网络抖动等临时错误）
       if (
         retryCount < 2 &&
@@ -610,6 +620,12 @@ export const useAudioPlayerControl = () => {
   }
 
   const onError = (error: any) => {
+    // 忽略主动清空 src 或关闭播放器导致的错误
+    const audioEl = audioPlayer.value
+    if (!audioEl || !audioEl.src || audioEl.src === window.location.href || audioEl.src === window.location.origin + '/') {
+      return
+    }
+
     console.error('音频播放错误:', error)
 
     // 获取更详细的错误信息
