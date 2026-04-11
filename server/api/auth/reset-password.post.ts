@@ -48,9 +48,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: '用户不存在' })
     }
 
-    // 验证 hash 是否匹配当前密码
+    // 验证 hash 是否匹配当前密码的前10位
     // 如果用户已经修改过密码，则 user.password 发生变化，旧 token 失效
-    if (user.password !== decoded.hash) {
+    if (user.password.substring(0, 10) !== decoded.hash) {
       throw createError({ statusCode: 400, message: '该重置链接已失效（密码已被修改）' })
     }
 

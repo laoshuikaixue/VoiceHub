@@ -66,7 +66,8 @@ export default defineEventHandler(async (event) => {
       const payload = {
         type: 'password_reset',
         userId: user.id,
-        hash: user.password
+        // 仅截取密码哈希的前10位，防止完整哈希泄露被离线破解
+        hash: user.password.substring(0, 10)
       }
       const token = JWTEnhanced.sign(payload, { expiresIn: '15m' })
 
@@ -88,16 +89,10 @@ export default defineEventHandler(async (event) => {
         clientIP
       )
 
-      // 必须等待邮件发送结果，否则前端无法知道发送失败的原因
-      try {
-        await smtp.sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
-      } catch (err: any) {
-        console.error('发送重置密码邮件失败:', err)
-        throw createError({
-          statusCode: 500,
-          message: '邮件发送失败，请稍后重试或联系管理员。详细信息: ' + (err.message || '未知错误')
-        })
-      }
+      event.waitUntil(
+        smtp.sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
+          .catch(err => console.error('发送重置密码邮件失败:', err))
+      )
     }
 
     return { 
@@ -107,12 +102,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('重置密码请求失败:', error)
-    
-    // 如果是我们自己抛出的 H3Error，直接抛出以便保留具体状态码和消息
-    if (error.statusCode) {
-      throw error
-    }
-    
     throw createError({
       statusCode: 500,
       message: '系统错误，请稍后重试'
