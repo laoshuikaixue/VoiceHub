@@ -109,8 +109,7 @@ export default defineEventHandler(async (event) => {
       createSongRejectedNotification(
         songForNotification.requesterId,
         { title: songForNotification.title, artist: songForNotification.artist },
-        body.reason.trim(),
-        getClientIP(event)
+        body.reason.trim()
       )
         .then(() => {
           console.log(`已发送驳回通知给用户: ${songForNotification.requesterId}`)

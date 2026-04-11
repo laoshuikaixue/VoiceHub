@@ -216,8 +216,7 @@ export default defineEventHandler(async (event) => {
       createSubmissionNoteClearedNotification(
         notifyUserIds,
         { title: updatedSongResult[0].title, artist: updatedSongResult[0].artist },
-        submissionNoteClearReason,
-        ipAddress
+        submissionNoteClearReason
       ).catch((error) => {
         console.error('发送歌曲备注清空通知失败:', error)
       })

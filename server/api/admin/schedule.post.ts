@@ -3,7 +3,6 @@ import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~
 import { and, asc, count, desc, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
-import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -123,9 +122,6 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 获取客户端IP地址
-      const clientIP = getClientIP(event)
-
       // 只有在非草稿模式下才创建通知
       if (!isDraft) {
         await createSongSelectedNotification(
@@ -135,8 +131,7 @@ export default defineEventHandler(async (event) => {
             title: schedule.song.title,
             artist: schedule.song.artist,
             playDate: schedule.playDate
-          },
-          clientIP
+          }
         )
 
         // 标记该歌曲的所有待处理重播申请为已完成

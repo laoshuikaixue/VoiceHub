@@ -26,9 +26,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 获取客户端IP地址
-    const clientIP = getClientIP(event)
-
     // 获取请求数据
     const body = await readBody(event)
     const { title, message, content, scope, filter, userId, type } = body
@@ -36,7 +33,7 @@ export default defineEventHandler(async (event) => {
     // 处理单个用户通知（用于权限变更等系统通知）
     if (userId && title && (message || content)) {
       const notificationContent = message || content
-      const result = await createSystemNotification(userId, title, notificationContent, clientIP)
+      const result = await createSystemNotification(userId, title, notificationContent)
 
       if (result) {
         return {
@@ -144,7 +141,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 使用通知服务批量发送通知
-    const result = await createBatchSystemNotifications(userIds, title, content, clientIP)
+    const result = await createBatchSystemNotifications(userIds, title, content)
 
     if (!result) {
       throw new Error('发送通知失败')

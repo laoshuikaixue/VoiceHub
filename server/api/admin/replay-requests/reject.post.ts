@@ -40,15 +40,13 @@ export default defineEventHandler(async (event) => {
     .where(and(eq(songReplayRequests.songId, songId), eq(songReplayRequests.status, 'PENDING')))
 
   // 发送通知
-  const ipAddress = getRequestIP(event, { xForwardedFor: true })
   for (const req of pendingRequests) {
     await createReplayRequestRejectedNotification(
       req.userId,
       {
         title: song.title,
         artist: song.artist
-      },
-      ipAddress
+      }
     )
   }
 

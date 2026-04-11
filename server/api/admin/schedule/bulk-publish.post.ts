@@ -146,7 +146,7 @@ export default defineEventHandler(async (event) => {
     // 异步发送通知（不阻塞响应）
     Promise.allSettled(
       notificationsToSend.map((n) =>
-        createSongSelectedNotification(n.requesterId, n.songId, n.songInfo, clientIP)
+        createSongSelectedNotification(n.requesterId, n.songId, n.songInfo)
       )
     )
       .then((results) => {
