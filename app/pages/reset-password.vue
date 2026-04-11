@@ -1,6 +1,7 @@
 <template>
   <div class="auth-layout">
-    <div class="auth-container">
+    <div class="auth-main">
+      <div class="auth-container">
       <div class="form-section">
         <div class="form-header">
           <h1 class="form-title">重置密码</h1>
@@ -130,6 +131,7 @@
           </div>
         </form>
       </div>
+      </div>
     </div>
     <SiteFooter />
   </div>
@@ -212,7 +214,16 @@ const handleSubmit = async () => {
   align-items: center;
   justify-content: flex-start;
   padding: 20px;
-  --content-footer-gap: clamp(16px, 4vh, 40px);
+}
+
+.auth-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding-bottom: clamp(16px, 4vh, 40px);
 }
 
 .auth-container {
@@ -223,8 +234,6 @@ const handleSubmit = async () => {
   border: 1px solid var(--border-primary);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  margin: auto 0;
-  margin-bottom: var(--content-footer-gap);
 }
 
 .form-section {
