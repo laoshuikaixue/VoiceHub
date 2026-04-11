@@ -65,22 +65,22 @@ export class SmtpService {
       {{#if playTimeName}}
       <p>播出时段：<strong>{{playTimeName}}</strong>{{#if playTimeRange}}（{{playTimeRange}}）{{/if}}</p>
       {{/if}}
-      {{#if message}}
-      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-      {{/if}}
     `,
     songPlayed: `
       <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
-      {{#if message}}
-      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
-      {{/if}}
     `,
     songVoted: `
       <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
       <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
-      {{#if message}}
-      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+    `,
+    songRejected: `
+      <p>您投稿的歌曲《{{songTitle}}》已被管理员驳回。</p>
+      {{#if reason}}
+      <p>驳回原因：<strong>{{reason}}</strong></p>
       {{/if}}
+    `,
+    collaborationInvite: `
+      <p>用户 <strong>{{inviterName}}</strong> 邀请您共同投稿歌曲《{{songTitle}}》。</p>
     `
   }
 
@@ -124,6 +124,18 @@ export class SmtpService {
       name: '收到新投票',
       subject: '收到新投票 | {{siteTitle}}通知推送',
       contentType: 'songVoted',
+      headerSubtitle: '通知推送'
+    },
+    'notification.songRejected': {
+      name: '歌曲被驳回',
+      subject: '歌曲被驳回 | {{siteTitle}}通知推送',
+      contentType: 'songRejected',
+      headerSubtitle: '通知推送'
+    },
+    'notification.collaborationInvite': {
+      name: '收到联合投稿邀请',
+      subject: '收到联合投稿邀请 | {{siteTitle}}通知推送',
+      contentType: 'collaborationInvite',
       headerSubtitle: '通知推送'
     }
   }
@@ -610,6 +622,7 @@ export async function sendEmailNotificationToUser(
         {
           fallbackTitle: notificationTitle,
           fallbackMessage: notificationMessage,
+          message: notificationMessage,
           actionUrl: url,
           ...(templateData || {})
         },

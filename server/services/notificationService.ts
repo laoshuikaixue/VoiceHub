@@ -51,6 +51,7 @@ export async function createCollaborationInvitationNotification(
       console.error('发送 MeoW 通知失败:', error)
     }
 
+    // 同步发送邮件通知
     try {
       await sendEmailNotificationToUser(
         inviteeId,
@@ -60,7 +61,7 @@ export async function createCollaborationInvitationNotification(
         'notification.collaborationInvite',
         {
           inviterName: inviter?.name || '未知用户',
-          songTitle: songTitle
+          songTitle,
         }
       )
     } catch (error) {
@@ -205,7 +206,7 @@ export async function createSongSelectedNotification(
       console.error('发送 MeoW 通知失败:', error)
     }
 
-    // 同步发送 邮件通知
+    // 同步发送邮件通知
     try {
       await sendEmailNotificationToUser(
         userId,
@@ -325,7 +326,7 @@ export async function createSongPlayedNotification(songId: number, ipAddress?: s
           console.error(`发送 MeoW 通知失败 (User: ${targetUserId}):`, error)
         }
 
-        // 同步发送 邮件通知
+        // 同步发送邮件通知
         try {
           await sendEmailNotificationToUser(
             targetUserId,
@@ -333,7 +334,9 @@ export async function createSongPlayedNotification(songId: number, ipAddress?: s
             userMessage,
             undefined,
             'notification.songPlayed',
-            { songTitle: song.title },
+            {
+              songTitle: song.title,
+            },
             ipAddress
           )
         } catch (error) {
@@ -455,7 +458,7 @@ export async function createSongVotedNotification(
       console.error('发送 MeoW 通知失败:', error)
     }
 
-    // 同步发送 邮件通知
+    // 同步发送邮件通知
     try {
       await sendEmailNotificationToUser(
         song.requesterId,
@@ -463,7 +466,10 @@ export async function createSongVotedNotification(
         message,
         undefined,
         'notification.songVoted',
-        { songTitle: song.title, votesCount: songVotes.length },
+        {
+          songTitle: song.title,
+          votesCount: songVotes.length,
+        },
         ipAddress
       )
     } catch (error) {
@@ -534,9 +540,8 @@ export async function createSongRejectedNotification(
         undefined,
         'notification.songRejected',
         {
-          songTitle: songInfo.title,
-          songArtist: songInfo.artist,
-          reason: reason
+          songTitle: `${songInfo.title} - ${songInfo.artist}`,
+          reason
         },
         ipAddress
       )
