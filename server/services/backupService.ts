@@ -55,20 +55,37 @@ export class BackupService {
   async createBackup(
     options: {
       scheduleId?: number
-      tables?: 'all' | 'users'
+      includeSongs?: boolean
+      includeUsers?: boolean
       includeSystemData?: boolean
     } = {}
   ): Promise<BackupResult> {
-    const { scheduleId, tables = 'all', includeSystemData = true } = options
+    const { scheduleId, includeSongs = true, includeUsers = true, includeSystemData = true } = options
 
     try {
       await this.initBackupDir()
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-      const filename = `backup-${tables}-${timestamp}.json`
+      let backupType: string
+      if (includeSongs && includeUsers && includeSystemData) {
+        backupType = 'full'
+      } else if (includeSongs && !includeUsers && !includeSystemData) {
+        backupType = 'songs'
+      } else if (!includeSongs && includeUsers && !includeSystemData) {
+        backupType = 'users'
+      } else if (!includeSongs && !includeUsers && includeSystemData) {
+        backupType = 'config'
+      } else {
+        const parts: string[] = []
+        if (includeSongs) parts.push('songs')
+        if (includeUsers) parts.push('users')
+        if (includeSystemData) parts.push('config')
+        backupType = parts.join('+')
+      }
+      const filename = `backup-${backupType}-${timestamp}.json`
       const filepath = path.join(this.backupDir, filename)
 
-      const backupData = await this.gatherBackupData(tables, includeSystemData)
+      const backupData = await this.gatherBackupData({ includeSongs, includeUsers, includeSystemData })
       const content = JSON.stringify(backupData, null, 2)
 
       await fs.writeFile(filepath, content, 'utf8')
@@ -84,6 +101,9 @@ export class BackupService {
         status: 'success',
         checksum,
         localPath: filepath,
+        includeSongs,
+        includeUsers,
+        includeSystemData,
         executedAt: new Date()
       }).returning({ id: backupHistory.id }).then(([result]) => {
         historyId = result?.id
@@ -128,7 +148,8 @@ export class BackupService {
   /**
    * 收集备份数据
    */
-  private async gatherBackupData(tables: 'all' | 'users', includeSystemData: boolean): Promise<Record<string, unknown>> {
+  private async gatherBackupData(options: { includeSongs: boolean; includeUsers: boolean; includeSystemData: boolean }): Promise<Record<string, unknown>> {
+    const { includeSongs, includeUsers, includeSystemData } = options
     const { 
       apiKeys,
       apiKeyPermissions,
@@ -155,14 +176,15 @@ export class BackupService {
     const metadata = {
       version: '1.1',
       timestamp: new Date().toISOString(),
-      backupType: tables,
+      includeSongs,
+      includeUsers,
       includeSystemData,
       tables: [] as string[]
     }
 
     const data: Record<string, unknown[]> = {}
 
-    if (tables === 'all' || tables === 'users') {
+    if (includeUsers) {
       const usersData = await db.select().from(users)
       const settingsData = await db.select().from(notificationSettings)
       
@@ -173,7 +195,7 @@ export class BackupService {
       metadata.tables.push('users')
     }
 
-    if (tables === 'all') {
+    if (includeSongs) {
       const songsData = await db.select().from(songs)
       const votesData = await db.select().from(votes)
       const schedulesData = await db.select().from(schedules)
@@ -242,7 +264,7 @@ export class BackupService {
       metadata.tables.push('emailTemplates')
     }
 
-    if (tables === 'all') {
+    if (includeSongs) {
       const apiKeysData = await db.select().from(apiKeys)
       const apiKeyPermissionsData = await db.select().from(apiKeyPermissions)
       const apiLogsData = await db.select().from(apiLogs)
@@ -303,14 +325,23 @@ export class BackupService {
 
         console.log(`[BackupService] Schedule ${schedule.id}: Found ${historyRecords.length} history records`)
 
+        const matchingRecords = historyRecords.filter((record) => {
+          if (record.includeSongs !== (schedule.includeSongs ?? true)) return false
+          if (record.includeUsers !== (schedule.includeUsers ?? true)) return false
+          if (record.includeSystemData !== (schedule.includeSystemData ?? true)) return false
+          return true
+        })
+
+        console.log(`[BackupService] Schedule ${schedule.id}: ${matchingRecords.length} records match current backup content settings`)
+
         let recordsToDelete: typeof historyRecords = []
 
         if (schedule.retentionType === 'days') {
           const cutoffDate = new Date()
           cutoffDate.setDate(cutoffDate.getDate() - retentionValue)
-          recordsToDelete = historyRecords.filter((record) => new Date(record.executedAt) < cutoffDate)
+          recordsToDelete = matchingRecords.filter((record) => new Date(record.executedAt) < cutoffDate)
         } else if (schedule.retentionType === 'count') {
-          recordsToDelete = historyRecords.slice(retentionValue)
+          recordsToDelete = matchingRecords.slice(retentionValue)
         }
 
         console.log(`[BackupService] Schedule ${schedule.id}: Will delete ${recordsToDelete.length} records`)

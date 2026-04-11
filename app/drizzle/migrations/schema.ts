@@ -318,7 +318,6 @@ export const backupSchedules = pgTable("backup_schedules", {
 	scheduleTime: text("schedule_time"),
 	scheduleDay: integer("schedule_day"),
 	cronExpression: varchar("cron_expression", { length: 100 }),
-	backupType: varchar("backup_type", { length: 50 }).default('all').notNull(),
 	includeSystemData: boolean("include_system_data").default(true).notNull(),
 	uploadEnabled: boolean("upload_enabled").default(false).notNull(),
 	uploadType: varchar("upload_type", { length: 50 }),
@@ -334,6 +333,9 @@ export const backupSchedules = pgTable("backup_schedules", {
 	retentionValue: integer("retention_value").default(7),
 	createdBy: integer("created_by"),
 	webdavPath: varchar("webdav_path", { length: 1000 }).default('/backups'),
+	s3Path: varchar("s3_path", { length: 1000 }).default('/backups'),
+	includeSongs: boolean("include_songs").default(true).notNull(),
+	includeUsers: boolean("include_users").default(true).notNull(),
 });
 
 export const backupHistory = pgTable("backup_history", {

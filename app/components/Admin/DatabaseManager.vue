@@ -94,7 +94,7 @@
             </div>
             <div class="flex items-center gap-2 text-zinc-500">
               <CheckCircle class="w-3.5 h-3.5 text-zinc-600" />
-              <span>{{ schedule.backupType === 'all' ? '完整备份' : '仅用户数据' }}</span>
+              <span>{{ getBackupTypeText(schedule) }}</span>
               <span v-if="schedule.uploadEnabled" class="text-blue-400">
                 | {{ schedule.uploadType === 's3' ? '→ S3' : '→ WebDAV' }}
               </span>
@@ -673,40 +673,29 @@
 
           <div class="space-y-2">
             <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">备份内容</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                :class="[
-                  'py-2.5 px-3 rounded-xl text-xs font-bold transition-all border',
-                  scheduledBackupForm.backupType === 'all'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                ]"
-                @click="scheduledBackupForm.backupType = 'all'"
+            <div class="space-y-2">
+              <label
+                v-for="(item, i) in backupOptions"
+                :key="i"
+                class="flex items-start gap-4 p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
               >
-                完整备份
-              </button>
-              <button
-                :class="[
-                  'py-2.5 px-3 rounded-xl text-xs font-bold transition-all border',
-                  scheduledBackupForm.backupType === 'users'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                ]"
-                @click="scheduledBackupForm.backupType = 'users'"
-              >
-                仅用户数据
-              </button>
+                <div class="shrink-0 mt-0.5">
+                  <input
+                    v-model="scheduledBackupForm[item.key]"
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600"
+                  >
+                </div>
+                <div>
+                  <p
+                    class="text-xs font-bold text-zinc-200 group-hover:text-blue-400 transition-colors"
+                  >
+                    {{ item.label }}
+                  </p>
+                  <p class="text-[10px] text-zinc-600 font-medium mt-0.5">{{ item.desc }}</p>
+                </div>
+              </label>
             </div>
-          </div>
-
-          <div class="flex items-center gap-3 p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl">
-            <input
-              v-model="scheduledBackupForm.includeSystemData"
-              type="checkbox"
-              id="includeSystemData"
-              class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 accent-blue-600"
-            >
-            <label for="includeSystemData" class="text-xs text-zinc-300">包含系统设置</label>
           </div>
 
           <div class="space-y-3">
@@ -1105,7 +1094,8 @@ const scheduledBackupDefaultForm = () => ({
   scheduleTime: '02:00',
   scheduleDay: 1,
   cronExpression: '',
-  backupType: 'all',
+  includeSongs: true,
+  includeUsers: true,
   includeSystemData: true,
   uploadEnabled: false,
   uploadType: 's3',
@@ -1163,7 +1153,8 @@ const openScheduledBackupModal = (schedule = null) => {
       scheduleTime: schedule.scheduleTime || '02:00',
       scheduleDay: schedule.scheduleDay || 1,
       cronExpression: schedule.cronExpression || '',
-      backupType: schedule.backupType,
+      includeSongs: schedule.includeSongs ?? true,
+      includeUsers: schedule.includeUsers ?? true,
       includeSystemData: schedule.includeSystemData,
       uploadEnabled: schedule.uploadEnabled,
       uploadType: schedule.uploadType || 's3',
@@ -1426,6 +1417,14 @@ const getParentPath = (path) => {
   const parts = path.split('/').filter(Boolean)
   parts.pop()
   return '/' + parts.join('/')
+}
+
+const getBackupTypeText = (schedule) => {
+  const types = []
+  if (schedule.includeSongs) types.push('歌曲数据')
+  if (schedule.includeUsers) types.push('用户数据')
+  if (schedule.includeSystemData) types.push('系统配置')
+  return types.length > 0 ? types.join(' + ') : '未选择'
 }
 
 const getScheduleTimeText = (schedule) => {
