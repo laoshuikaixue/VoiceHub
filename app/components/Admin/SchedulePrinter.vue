@@ -1177,8 +1177,6 @@ const exportPDFForPrint = async (action = 'print') => {
       iframe.style.height = '1px'
       iframe.style.opacity = '0.01'
       iframe.style.border = 'none'
-      iframe.src = blobUrl
-      document.body.appendChild(iframe)
 
       iframe.onload = () => {
         setTimeout(() => {
@@ -1190,6 +1188,9 @@ const exportPDFForPrint = async (action = 'print') => {
           }
         }, 500)
       }
+
+      iframe.src = blobUrl
+      document.body.appendChild(iframe)
 
       // 清理资源
       setTimeout(() => {
