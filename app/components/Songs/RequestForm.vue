@@ -1221,7 +1221,6 @@ const formatPlayTimeRange = (playTime) => {
   return '不限时间'
 }
 
-// 监听歌曲服务中的相似歌曲
 // 监听用户状态变化，当用户登录后重新获取投稿状态
 watch(
   () => user.value,
@@ -1247,69 +1246,6 @@ watch(enableSubmissionRemarks, (enabled) => {
     submissionNotePublic.value = true
   }
 })
-
-// 打开相似剧集详情弹窗
-const openSimilarEpisodesModal = (group) => {
-  if (!group || !group.episodes || group.episodes.length === 0) {
-    if (window.$showNotification) {
-      window.$showNotification('无法打开剧集列表', 'error')
-    }
-    return
-  }
-
-  // 构造一个类似搜索结果的对象
-  const videoData = {
-    id: group.bvid,
-    title: group.title,
-    artist: group.artist,
-    cover: group.cover,
-    pages: [...group.episodes]
-      // 先按照 musicId 中的分P号排序，确保顺序正确
-      .sort((a, b) => {
-        // 提取页码的辅助函数，处理各种边界情况
-        const getPageNumber = (musicId) => {
-          if (!musicId) return 1
-          const parts = musicId.split(':')
-          if (parts.length > 2) {
-            const page = parseInt(parts[2], 10)
-            if (!isNaN(page)) return page
-          }
-          return 1 // 如果没有分页信息，默认为P1
-        }
-        return getPageNumber(a.musicId) - getPageNumber(b.musicId)
-      })
-      .map((episode, index) => {
-        // 从 musicId 中提取 cid 和 page
-        const parts = episode.musicId ? episode.musicId.split(':') : []
-        const cid = parts[1] || ''
-        const page = parts[2] ? parseInt(parts[2]) : index + 1
-
-        // 从标题中提取剧集名称
-        const episodeTitle =
-          episode.title && episode.title.includes(' - ')
-            ? episode.title.split(' - ').slice(1).join(' - ')
-            : episode.title || `第${index + 1}集`
-
-        return {
-          cid,
-          page,
-          part: episodeTitle,
-          duration: episode.duration || 0,
-          // 直接使用 episode 的完整信息
-          songId: episode.id,
-          played: episode.played || false,
-          scheduled: episode.scheduled || false,
-          voted: episode.voted || false,
-          voteCount: episode.voteCount || 0,
-          requesterId: episode.requesterId
-        }
-      })
-  }
-
-  selectedBilibiliVideo.value = videoData
-  bilibiliEpisodes.value = videoData.pages
-  showBilibiliEpisodesModal.value = true
-}
 
 // 处理剧集投票
 const handleEpisodeVote = async (episode) => {
