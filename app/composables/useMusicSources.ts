@@ -106,56 +106,76 @@ export const useMusicSources = () => {
     duration?: number
     error?: string
   }> => {
+    if (!import.meta.client) {
+      return {
+        valid: true
+      }
+    }
+
     try {
-      // 修复HTTP/HTTPS协议问题
       let validatedUrl = url
       if (url.startsWith('http://')) {
         validatedUrl = url.replace('http://', 'https://')
       }
 
-      // 使用HEAD请求检查链接可用性，避免下载整个文件
-      const response = await fetch(validatedUrl, {
-        method: 'HEAD',
-        signal: AbortSignal.timeout(5000) // 5秒超时
+      const exactDuration = await new Promise<number>((resolve, reject) => {
+        const audio = new Audio()
+        let settled = false
+        const timeout = window.setTimeout(() => {
+          finalize(new Error('获取音频元数据超时'))
+        }, 8000)
+
+        const cleanup = () => {
+          window.clearTimeout(timeout)
+          audio.onloadedmetadata = null
+          audio.onerror = null
+          audio.pause()
+          audio.src = ''
+          audio.load()
+        }
+
+        const finalize = (result: number | Error) => {
+          if (settled) {
+            return
+          }
+          settled = true
+          cleanup()
+
+          if (result instanceof Error) {
+            reject(result)
+            return
+          }
+
+          resolve(result)
+        }
+
+        audio.preload = 'metadata'
+        audio.onloadedmetadata = () => {
+          const duration = audio.duration
+          if (!Number.isFinite(duration) || duration <= 0) {
+            finalize(new Error('无效的音频时长'))
+            return
+          }
+          finalize(duration)
+        }
+        audio.onerror = () => {
+          finalize(new Error('无法加载音频文件'))
+        }
+        audio.src = validatedUrl
+        audio.load()
       })
 
-      if (!response.ok) {
+      if (exactDuration < 40) {
         return {
           valid: false,
-          error: `HTTP ${response.status}: ${response.statusText}`
-        }
-      }
-
-      // 检查Content-Type是否为音频文件
-      const contentType = response.headers.get('content-type')
-      if (contentType && !contentType.includes('audio') && !contentType.includes('video')) {
-        return {
-          valid: false,
-          error: `不是音频文件: ${contentType}`
-        }
-      }
-
-      // 尝试获取文件大小来估算时长
-      const contentLength = response.headers.get('content-length')
-      let estimatedDuration = 0
-
-      if (contentLength) {
-        const fileSizeBytes = parseInt(contentLength)
-        // 粗略估算：假设128kbps的音质，1MB约为64秒
-        estimatedDuration = (fileSizeBytes / 1024 / 1024) * 64
-
-        if (estimatedDuration < 5) {
-          return {
-            valid: false,
-            duration: estimatedDuration,
-            error: `歌曲时长过短: ${estimatedDuration.toFixed(1)}秒`
-          }
+          duration: exactDuration,
+          error: `歌曲实际时长过短: ${exactDuration.toFixed(1)}秒`
         }
       }
 
       return {
         valid: true,
-        duration: estimatedDuration
+        duration: exactDuration
       }
     } catch (error: any) {
       return {
