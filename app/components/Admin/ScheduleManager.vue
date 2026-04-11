@@ -2281,7 +2281,7 @@ const clearScheduleList = () => {
   confirmDialogType.value = 'danger'
   confirmDialogConfirmText.value = '确认清空'
 
-  confirmAction.value = async () => {
+  confirmAction.value = () => {
     localScheduledSongs.value.forEach(schedule => {
       if (schedule.song) {
         scheduledSongIds.value.delete(schedule.song.id)
