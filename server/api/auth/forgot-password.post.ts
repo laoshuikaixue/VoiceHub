@@ -88,10 +88,16 @@ export default defineEventHandler(async (event) => {
         clientIP
       )
 
-      event.waitUntil(
-        smtp.sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
-          .catch(err => console.error('发送重置密码邮件失败:', err))
-      )
+      // 必须等待邮件发送结果，否则前端无法知道发送失败的原因
+      try {
+        await smtp.sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
+      } catch (err: any) {
+        console.error('发送重置密码邮件失败:', err)
+        throw createError({
+          statusCode: 500,
+          message: '邮件发送失败，请稍后重试或联系管理员。详细信息: ' + (err.message || '未知错误')
+        })
+      }
     }
 
     return { 
@@ -101,6 +107,12 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('重置密码请求失败:', error)
+    
+    // 如果是我们自己抛出的 H3Error，直接抛出以便保留具体状态码和消息
+    if (error.statusCode) {
+      throw error
+    }
+    
     throw createError({
       statusCode: 500,
       message: '系统错误，请稍后重试'
