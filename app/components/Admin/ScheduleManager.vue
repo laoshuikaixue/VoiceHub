@@ -1443,6 +1443,10 @@ const updateScrollButtonState = () => {
   const { scrollLeft, scrollWidth, clientWidth } = dateSelector.value
 
   if (scrollLeft >= 50 && scrollWidth - scrollLeft - clientWidth >= 50) {
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+      scrollTimeout = null
+    }
     return
   }
 
@@ -1465,7 +1469,13 @@ const updateScrollButtonState = () => {
       
       const newScrollWidth = dateSelector.value.scrollWidth
       
-      dateSelector.value.scrollLeft = currentScrollLeft + (newScrollWidth - oldScrollWidth)
+      const delta = newScrollWidth - oldScrollWidth
+      dateSelector.value.scrollLeft = currentScrollLeft + delta
+      
+      // 补偿正在进行的平滑滚动动画目标，避免跳跃或回弹
+      if (targetScrollLeft !== null) {
+        targetScrollLeft += delta
+      }
     }
     else if (currentScrollWidth - currentScrollLeft - currentClientWidth < 50) {
       dateRange.value.end += 14
@@ -1626,6 +1636,16 @@ onUnmounted(() => {
     dateSelector.value.removeEventListener('scroll', updateScrollButtonState)
   }
   window.removeEventListener('resize', checkWindowSize)
+
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+    scrollTimeout = null
+  }
 })
 
 // 打开手动日期选择器
