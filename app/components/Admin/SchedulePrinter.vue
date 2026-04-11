@@ -503,7 +503,8 @@ const contentOptions = [
   { key: 'showArtist', label: '歌手' },
   { key: 'showRequester', label: '投稿人' },
   { key: 'showVotes', label: '热度' },
-  { key: 'showSequence', label: '播放顺序' }
+  { key: 'showSequence', label: '播放顺序' },
+  { key: 'showPlayTime', label: '播出时段' }
 ]
 
 const paperWidths = {
@@ -758,6 +759,7 @@ const groupedSchedules = computed(() => {
 
 // 判断是否需要显示时段分组
 const hasMultiplePlayTimes = (dateGroup) => {
+  if (!settings.value.showPlayTime) return false
   const playTimeKeys = Object.keys(dateGroup.playTimes)
   // 如果有多个时段，显示分组
   if (playTimeKeys.length > 1) return true
@@ -1526,19 +1528,6 @@ const SETTINGS_STORAGE_KEY = 'voicehub_print_settings'
 // 排除不保存的字段
 const EXCLUDED_FIELDS = ['startDate', 'endDate', 'remark', 'currentSemester']
 
-// 防抖函数
-function debounce(func, wait) {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
 // 防抖保存设置（500ms 延迟，避免频繁写入）
 const debouncedSaveSettings = debounce(() => {
   saveSettings()
@@ -1594,7 +1583,14 @@ onMounted(async () => {
 // 监听设置变化，自动保存到 localStorage
 watch(
   settings,
-  () => {
+  (newVal) => {
+    // 如果日期与当前预设不匹配，则清除预设状态
+    if (newVal.dateRangePreset) {
+      const { startDate, endDate } = calculateDateRange(newVal.dateRangePreset)
+      if (newVal.startDate !== startDate || newVal.endDate !== endDate) {
+        newVal.dateRangePreset = ''
+      }
+    }
     debouncedSaveSettings()
   },
   { deep: true }

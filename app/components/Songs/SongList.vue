@@ -284,17 +284,6 @@
                       </span>
                     </template>
                   </span>
-                  <span
-                    v-if="song.musicPlatform"
-                    :title="`音乐来源: ${getMusicPlatformDisplay(song.musicPlatform)?.name || song.musicPlatform}`"
-                    class="music-platform-tag"
-                    :style="{
-                      '--platform-color': getMusicPlatformDisplay(song.musicPlatform)?.color || '#666'
-                    }"
-                  >
-                    {{ getMusicPlatformDisplay(song.musicPlatform)?.icon }}
-                    {{ getMusicPlatformDisplay(song.musicPlatform)?.name }}
-                  </span>
                 </div>
               </div>
 
@@ -1072,20 +1061,6 @@ const getFirstChar = (title) => {
   return title.trim().charAt(0)
 }
 
-// 获取音乐平台的显示名称和图标
-const getMusicPlatformDisplay = (platform) => {
-  if (!platform) return null
-
-  const platformMap = {
-    'netease': { name: '网易云', icon: '🎵', color: '#C20C0C' },
-    'netease-podcast': { name: '网易云播客', icon: '🎙️', color: '#C20C0C' },
-    'tencent': { name: 'QQ音乐', icon: '🎵', color: '#00B42A' },
-    'bilibili': { name: '哔哩哔哩', icon: '📺', color: '#FB7299' }
-  }
-
-  return platformMap[platform] || { name: platform, icon: '🎵', color: null }
-}
-
 // 播放歌曲的辅助函数，处理 URL 获取和播放列表构建
 const playSongWithUrlFetching = async (song) => {
   let url = null
@@ -1558,19 +1533,6 @@ const retrySemesterFetch = () => {
 
   semesterError.value = ''
   fetchAvailableSemesters()
-}
-
-// 防抖函数实现
-function debounce(func, wait) {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
 }
 
 // 当组件销毁时不需要特殊处理，音频播放由全局管理
@@ -2162,28 +2124,6 @@ const vRipple = {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-}
-
-.music-platform-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-family: 'MiSans', sans-serif;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--platform-color);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--platform-color);
-  border-radius: 4px;
-  padding: 2px 6px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.music-platform-tag:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.02);
 }
 
 /* 修改热度和点赞按钮区域的CSS样式 */

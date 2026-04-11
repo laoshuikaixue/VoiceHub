@@ -257,24 +257,10 @@
                 </span>
               </h4>
               <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
-              <div class="flex items-center gap-2 mt-1">
-                <span
-                  v-if="song.musicPlatform"
-                  :title="`音乐来源: ${getMusicPlatformDisplay(song.musicPlatform)?.name || song.musicPlatform}`"
-                  class="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded border"
-                  :style="{
-                    color: getMusicPlatformDisplay(song.musicPlatform)?.color || '#666',
-                    borderColor: getMusicPlatformDisplay(song.musicPlatform)?.color ? getMusicPlatformDisplay(song.musicPlatform)?.color + '40' : '#666',
-                    backgroundColor: getMusicPlatformDisplay(song.musicPlatform)?.color ? getMusicPlatformDisplay(song.musicPlatform)?.color + '15' : 'transparent'
-                  }"
-                >
-                  {{ getMusicPlatformDisplay(song.musicPlatform)?.icon }}
-                  {{ getMusicPlatformDisplay(song.musicPlatform)?.name }}
-                </span>
-                <span
-                  class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider inline-block"
-                >{{ formatDate(song.createdAt) }}</span>
-              </div>
+              <span
+                class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider mt-1 inline-block"
+                >{{ formatDate(song.createdAt) }}</span
+              >
             </div>
           </div>
 
@@ -1338,7 +1324,7 @@ const getPlayTimeName = (playTimeId) => {
   if (!playTimeId || !availablePlayTimes.value) return ''
   const playTime = availablePlayTimes.value.find((pt) => pt.id === playTimeId)
   if (!playTime) return ''
-  
+
   return formatPlayTimeDisplay(playTime)
 }
 
@@ -1346,19 +1332,6 @@ const getStatusText = (song) => {
   if (song.played) return '已播放'
   if (song.scheduled) return '待播放'
   return '未排期'
-}
-
-const getMusicPlatformDisplay = (platform) => {
-  if (!platform) return null
-
-  const platformMap = {
-    'netease': { name: '网易云', icon: '🎵', color: '#C20C0C' },
-    'netease-podcast': { name: '网易云播客', icon: '🎙️', color: '#C20C0C' },
-    'tencent': { name: 'QQ音乐', icon: '🎵', color: '#00B42A' },
-    'bilibili': { name: '哔哩哔哩', icon: '📺', color: '#FB7299' }
-  }
-
-  return platformMap[platform] || { name: platform, icon: '🎵', color: null }
 }
 
 const getCollaboratorDisplayName = (user) => {

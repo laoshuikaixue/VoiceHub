@@ -371,19 +371,6 @@
                       >
                         期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
                       </span>
-                      <span
-                        v-if="song.musicPlatform"
-                        :title="`音乐来源: ${getMusicPlatformDisplay(song.musicPlatform)?.name || song.musicPlatform}`"
-                        class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold border whitespace-nowrap"
-                        :style="{
-                          color: getMusicPlatformDisplay(song.musicPlatform)?.color || '#666',
-                          borderColor: getMusicPlatformDisplay(song.musicPlatform)?.color ? getMusicPlatformDisplay(song.musicPlatform)?.color + '40' : '#666',
-                          backgroundColor: getMusicPlatformDisplay(song.musicPlatform)?.color ? getMusicPlatformDisplay(song.musicPlatform)?.color + '15' : 'transparent'
-                        }"
-                      >
-                        {{ getMusicPlatformDisplay(song.musicPlatform)?.icon }}
-                        {{ getMusicPlatformDisplay(song.musicPlatform)?.name }}
-                      </span>
                     </div>
                   </div>
 
@@ -686,19 +673,6 @@
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
                         期望: {{ getPlayTimeName(schedule.song.preferredPlayTimeId) }}
-                      </span>
-                      <span
-                        v-if="schedule.song.musicPlatform"
-                        :title="`音乐来源: ${getMusicPlatformDisplay(schedule.song.musicPlatform)?.name || schedule.song.musicPlatform}`"
-                        class="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold border whitespace-nowrap"
-                        :style="{
-                          color: getMusicPlatformDisplay(schedule.song.musicPlatform)?.color || '#666',
-                          borderColor: getMusicPlatformDisplay(schedule.song.musicPlatform)?.color ? getMusicPlatformDisplay(schedule.song.musicPlatform)?.color + '40' : '#666',
-                          backgroundColor: getMusicPlatformDisplay(schedule.song.musicPlatform)?.color ? getMusicPlatformDisplay(schedule.song.musicPlatform)?.color + '15' : 'transparent'
-                        }"
-                      >
-                        {{ getMusicPlatformDisplay(schedule.song.musicPlatform)?.icon }}
-                        {{ getMusicPlatformDisplay(schedule.song.musicPlatform)?.name }}
                       </span>
                     </div>
                   </div>
@@ -1778,26 +1752,12 @@ const getPlayTimeName = (playTimeId) => {
   if (!playTimeId || !playTimes.value) return ''
   const playTime = playTimes.value.find((pt) => pt.id === playTimeId)
   if (!playTime) return ''
-  
+
   let label = playTime.name
   if (playTime.startTime || playTime.endTime) {
     label += ` (${formatPlayTimeRange(playTime)})`
   }
   return label
-}
-
-// 获取音乐平台的显示名称和图标
-const getMusicPlatformDisplay = (platform) => {
-  if (!platform) return null
-
-  const platformMap = {
-    'netease': { name: '网易云', icon: '🎵', color: '#C20C0C' },
-    'netease-podcast': { name: '网易云播客', icon: '🎙️', color: '#C20C0C' },
-    'tencent': { name: 'QQ音乐', icon: '🎵', color: '#00B42A' },
-    'bilibili': { name: '哔哩哔哩', icon: '📺', color: '#FB7299' }
-  }
-
-  return platformMap[platform] || { name: platform, icon: '🎵', color: null }
 }
 
 // 加载学期列表
