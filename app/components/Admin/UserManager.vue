@@ -1077,12 +1077,12 @@
                   <div
                     class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
                   >
-                    <div class="space-y-1">
+                    <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                         密码状态
                       </div>
                       <div
-                        class="text-sm font-bold"
+                        class="text-sm font-bold truncate"
                         :class="
                           !selectedUserDetail.forcePasswordChange &&
                           selectedUserDetail.passwordChangedAt
@@ -1100,7 +1100,7 @@
                     </div>
                     <div
                       :class="[
-                        'w-8 h-8 rounded-xl flex items-center justify-center',
+                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
                         !selectedUserDetail.forcePasswordChange &&
                         selectedUserDetail.passwordChangedAt
                           ? 'bg-emerald-500/10 text-emerald-500'
@@ -1120,15 +1120,16 @@
                   <div
                     class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
                   >
-                    <div class="space-y-1">
+                    <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                         MeoW 账号绑定
                       </div>
                       <div
-                        class="text-sm font-bold"
+                        class="text-sm font-bold truncate"
                         :class="
                           selectedUserDetail.meowNickname ? 'text-emerald-500' : 'text-zinc-500'
                         "
+                        :title="selectedUserDetail.meowNickname ? `已绑定: ${selectedUserDetail.meowNickname}` : '未绑定'"
                       >
                         {{
                           selectedUserDetail.meowNickname
@@ -1139,13 +1140,81 @@
                     </div>
                     <div
                       :class="[
-                        'w-8 h-8 rounded-xl flex items-center justify-center',
+                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
                         selectedUserDetail.meowNickname
                           ? 'bg-emerald-500/10 text-emerald-500'
                           : 'bg-zinc-800 text-zinc-600'
                       ]"
                     >
                       <AtSign :size="16" />
+                    </div>
+                  </div>
+
+                  <!-- 邮箱绑定 -->
+                  <div
+                    class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
+                  >
+                    <div class="space-y-1 overflow-hidden pr-2">
+                      <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
+                        邮箱绑定
+                      </div>
+                      <div
+                        class="text-sm font-bold truncate"
+                        :class="
+                          selectedUserDetail.email ? (selectedUserDetail.emailVerified ? 'text-emerald-500' : 'text-amber-500') : 'text-zinc-500'
+                        "
+                        :title="selectedUserDetail.email ? `${selectedUserDetail.email} ${selectedUserDetail.emailVerified ? '(已验证)' : '(未验证)'}` : '未绑定'"
+                      >
+                        {{
+                          selectedUserDetail.email
+                            ? `${selectedUserDetail.email} ${selectedUserDetail.emailVerified ? '(已验证)' : '(未验证)'}`
+                            : '未绑定'
+                        }}
+                      </div>
+                    </div>
+                    <div
+                      :class="[
+                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
+                        selectedUserDetail.email
+                          ? (selectedUserDetail.emailVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500')
+                          : 'bg-zinc-800 text-zinc-600'
+                      ]"
+                    >
+                      <Mail :size="16" />
+                    </div>
+                  </div>
+
+                  <!-- OAuth 账号绑定 -->
+                  <div
+                    class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
+                  >
+                    <div class="space-y-1 overflow-hidden pr-2">
+                      <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
+                        OAuth 账号绑定
+                      </div>
+                      <div
+                        class="text-sm font-bold truncate capitalize"
+                        :class="
+                          selectedUserDetail.identities?.length > 0 ? 'text-emerald-500' : 'text-zinc-500'
+                        "
+                        :title="selectedUserDetail.identities?.length > 0 ? `已绑定: ${selectedUserDetail.identities.map(id => id.provider).join(', ')}` : '未绑定'"
+                      >
+                        {{
+                          selectedUserDetail.identities?.length > 0
+                            ? `已绑定: ${selectedUserDetail.identities.map(id => id.provider).join(', ')}`
+                            : '未绑定'
+                        }}
+                      </div>
+                    </div>
+                    <div
+                      :class="[
+                        'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
+                        selectedUserDetail.identities?.length > 0
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : 'bg-zinc-800 text-zinc-600'
+                      ]"
+                    >
+                      <Link :size="16" />
                     </div>
                   </div>
                 </div>
@@ -1368,7 +1437,8 @@ import {
   Clock3,
   Hash,
   AtSign,
-  Briefcase
+  Briefcase,
+  Link
 } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'

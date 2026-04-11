@@ -131,6 +131,14 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       }
     },
     {
+      id: 'nextmusic',
+      name: 'NextMusic (未登录优先)',
+      baseUrl: 'https://nextmusic.toubiec.cn/api',
+      priority: 1.5,
+      enabled: true,
+      timeout: 8000
+    },
+    {
       id: 'vkeys-v3',
       name: 'Vkeys音源 (v3)',
       baseUrl: 'https://api.vkeys.cn/music',

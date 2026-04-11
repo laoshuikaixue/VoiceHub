@@ -108,7 +108,7 @@ export const useAudioPlayerControl = () => {
 
     try {
       audioPlayer.value.pause()
-      audioPlayer.value.removeAttribute('src')
+      audioPlayer.value.src = ''
       audioPlayer.value.load()
 
       // 清理歌词状态
