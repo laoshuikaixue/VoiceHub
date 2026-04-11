@@ -1771,6 +1771,7 @@ Thanks goes to these wonderful people:
 - [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源参考)
 - [SPlayer](https://github.com/imsyy/SPlayer)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
+- [Netease_url](https://github.com/Suxiaoqinx/Netease_url)
 
 ## 许可证
 
