@@ -96,7 +96,7 @@
       <div class="form-group">
         <div class="flex justify-between items-center w-full mb-2">
           <label for="password" style="margin-bottom: 0;">{{ showCreateMode ? '设置密码' : '密码' }}</label>
-          <NuxtLink v-if="!showCreateMode && !isBindMode" to="/forgot-password" class="text-xs text-[var(--primary)] hover:underline" style="line-height: 1;">
+          <NuxtLink v-if="!showCreateMode && !isBindMode" to="/forgot-password" class="text-xs text-[var(--primary)] hover:opacity-80 transition-opacity" style="line-height: 1;">
             忘记密码？
           </NuxtLink>
         </div>
