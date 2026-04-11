@@ -94,8 +94,11 @@
 
       <!-- 密码字段 -->
       <div class="form-group">
-        <label for="password">
-          {{ showCreateMode ? '设置密码' : '密码' }}
+        <label for="password" class="flex justify-between items-center w-full">
+          <span>{{ showCreateMode ? '设置密码' : '密码' }}</span>
+          <NuxtLink v-if="!showCreateMode && !isBindMode" to="/forgot-password" class="text-xs text-[var(--primary)] hover:underline">
+            忘记密码？
+          </NuxtLink>
         </label>
         <div class="input-wrapper">
           <svg
