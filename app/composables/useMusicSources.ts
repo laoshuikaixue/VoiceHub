@@ -130,7 +130,7 @@ export const useMusicSources = () => {
           audio.onloadedmetadata = null
           audio.onerror = null
           audio.pause()
-          audio.removeAttribute('src')
+          audio.src = ''
           audio.load()
         }
 
