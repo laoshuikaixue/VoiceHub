@@ -1752,7 +1752,7 @@ const getPlayTimeName = (playTimeId) => {
   if (!playTimeId || !playTimes.value) return ''
   const playTime = playTimes.value.find((pt) => pt.id === playTimeId)
   if (!playTime) return ''
-  
+
   let label = playTime.name
   if (playTime.startTime || playTime.endTime) {
     label += ` (${formatPlayTimeRange(playTime)})`

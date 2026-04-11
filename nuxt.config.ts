@@ -21,6 +21,7 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxtjs/tailwindcss',
+    '@vite-pwa/nuxt',
     ...(process.env.NODE_ENV === 'development' || process.env.npm_lifecycle_event?.includes('lint')
       ? ['@nuxt/eslint']
       : [])
@@ -280,5 +281,43 @@ export default defineNuxtConfig({
           ? []
           : ['drizzle-orm', 'postgres']
     }
+  },
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'VoiceHub',
+      short_name: 'VoiceHub',
+      description: '校园广播站点歌系统 - 让你的声音被听见',
+      theme_color: '#111111',
+      background_color: '#111111',
+      display: 'standalone',
+      orientation: 'portrait',
+      scope: '/',
+      start_url: '/',
+      icons: [
+        {
+          src: '/images/logo.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any maskable'
+        },
+        {
+          src: '/images/logo.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable'
+        }
+      ]
+    },
+    workbox: {
+      navigateFallback: null,
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}']
+    },
+    devOptions: {
+      enabled: false,
+      type: 'module'
+    },
+    injectRegister: 'auto'
   }
 })
