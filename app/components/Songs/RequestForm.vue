@@ -69,7 +69,6 @@
                 placeholder="请输入歌曲名称"
                 required
                 type="text"
-                @input="checkSimilarSongs"
               >
               <button
                 :disabled="loading || searching || !title.trim()"
@@ -583,135 +582,6 @@
           </div>
         </div>
       </form>
-
-      <div v-if="groupedSimilarSongs.length > 0" class="similar-song-alert">
-        <div class="alert-header">
-          <div class="alert-header-left">
-            <Icon :size="16" class="alert-icon" name="warning" />
-            <span class="alert-title">发现可能相似的歌曲</span>
-          </div>
-          <!-- 宽屏时显示在右上角的继续投稿按钮 -->
-          <button
-            :disabled="submitting"
-            class="ignore-btn desktop-continue-btn"
-            type="button"
-            @click="ignoreSimilar"
-          >
-            继续投稿
-          </button>
-        </div>
-        <div class="similar-songs-list">
-          <!-- 遍历分组后的相似歌曲 -->
-          <div
-            v-for="group in groupedSimilarSongs"
-            :key="group.isSingle ? group.song.id : group.bvid"
-            class="similar-song-item"
-          >
-            <!-- 单个歌曲（非哔哩哔哩多P） -->
-            <template v-if="group.isSingle">
-              <div class="song-info">
-                <p class="song-title">
-                  《{{ group.song.title }} - {{ group.song.artist }}》
-                  <span v-if="group.song.played" class="song-status status-played">已播放</span>
-                  <span v-else-if="group.song.scheduled" class="song-status status-scheduled"
-                    >已排期</span
-                  >
-                </p>
-                <!-- 根据歌曲状态显示不同的提示 -->
-                <p v-if="group.song.played" class="alert-hint">
-                  {{
-                    isSuperAdmin
-                      ? '该歌曲已播放，您可以继续投稿'
-                      : enableReplayRequests
-                        ? '该歌曲已播放'
-                        : '该歌曲已播放，无法进行投票操作'
-                  }}
-                </p>
-                <p v-else-if="group.song.scheduled" class="alert-hint">
-                  该歌曲已排期，无法进行投票操作
-                </p>
-                <p v-else-if="!group.song.voted" class="alert-hint">
-                  该歌曲已在列表中，是否要投票支持？
-                </p>
-                <p v-else-if="group.song.voted" class="voted-status">
-                  <Icon :size="14" name="success" style="margin-right: 4px" />
-                  您已为此歌曲投票
-                </p>
-              </div>
-              <!-- 只有在歌曲未排期、未播放且未投票时才显示投票按钮 -->
-              <div
-                v-if="!group.song.voted && !group.song.played && !group.song.scheduled"
-                class="song-actions"
-              >
-                <button
-                  :disabled="voting || submitting"
-                  class="vote-btn small"
-                  type="button"
-                  @click="voteForSimilar(group.song)"
-                >
-                  {{ voting ? '投票中...' : '投票支持' }}
-                </button>
-              </div>
-              <!-- 如果歌曲已播放且开启了重播申请（超级管理员不显示） -->
-              <div
-                v-if="
-                  group.song.played &&
-                  enableReplayRequests &&
-                  !isSuperAdmin &&
-                  group.song.semester === currentSemester?.name
-                "
-                class="song-actions"
-              >
-                <button
-                  :disabled="isReplayButtonDisabled(group.song)"
-                  :title="getReplayButtonTitle(group.song)"
-                  class="replay-btn small"
-                  type="button"
-                  @click="handleRequestReplay(group.song)"
-                >
-                  {{ getReplayButtonText(group.song) }}
-                </button>
-              </div>
-            </template>
-
-            <!-- 哔哩哔哩多P合集 -->
-            <template v-else>
-              <div class="song-info">
-                <p class="song-title">
-                  《{{ group.title }} - {{ group.artist }}》
-                  <span v-if="group.allPlayed" class="song-status status-played">全部已播放</span>
-                  <span v-else-if="group.allScheduled" class="song-status status-scheduled"
-                    >全部已排期</span
-                  >
-                  <span v-else class="song-status">{{ group.episodes.length }} 个剧集</span>
-                </p>
-                <p class="alert-hint">该合集有 {{ group.episodes.length }} 个剧集在列表中</p>
-              </div>
-              <div class="song-actions">
-                <button
-                  :disabled="submitting"
-                  class="vote-btn small"
-                  type="button"
-                  @click.stop="openSimilarEpisodesModal(group)"
-                >
-                  查看详情
-                </button>
-              </div>
-            </template>
-          </div>
-        </div>
-        <!-- 移动端时显示在底部的继续投稿按钮 -->
-        <div class="alert-actions mobile-continue-actions">
-          <button
-            :disabled="submitting"
-            class="ignore-btn mobile-continue-btn"
-            type="button"
-            @click="ignoreSimilar"
-          >
-            继续投稿
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- 历史学期导入弹窗 -->
@@ -1033,52 +903,7 @@ const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
 const requestingReplay = ref(false)
-const similarSongs = ref([])
 
-// 按 BV 号分组相似歌曲（每个合集只显示一次）
-const groupedSimilarSongs = computed(() => {
-  const groups = new Map()
-
-  for (const song of similarSongs.value) {
-    // 检查是否是哔哩哔哩视频
-    if (isBilibiliSong(song) && song.musicId) {
-      const bvid = song.musicId.includes(':') ? song.musicId.split(':')[0] : song.musicId
-
-      if (!groups.has(bvid)) {
-        // 创建新的分组
-        groups.set(bvid, {
-          bvid,
-          title: song.title.split(' - ')[0] || song.title, // 提取合集标题
-          artist: song.artist,
-          cover: song.cover,
-          episodes: [],
-          allPlayed: true,
-          allScheduled: true,
-          hasVoted: false
-        })
-      }
-
-      const group = groups.get(bvid)
-      group.episodes.push(song)
-
-      // 更新状态
-      if (!song.played) group.allPlayed = false
-      if (!song.scheduled) group.allScheduled = false
-      if (song.voted) group.hasVoted = true
-    } else {
-      // 非哔哩哔哩视频，直接作为单独项
-      const key = `${song.id}`
-      if (!groups.has(key)) {
-        groups.set(key, {
-          isSingle: true,
-          song
-        })
-      }
-    }
-  }
-
-  return Array.from(groups.values())
-})
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
@@ -1397,18 +1222,6 @@ const formatPlayTimeRange = (playTime) => {
 }
 
 // 监听歌曲服务中的相似歌曲
-watch(
-  () => songService.similarSongFound.value,
-  (newVal) => {
-    // 保持兼容性，如果有相似歌曲，将其放入数组
-    if (newVal) {
-      similarSongs.value = [newVal]
-    } else {
-      similarSongs.value = []
-    }
-  }
-)
-
 // 监听用户状态变化，当用户登录后重新获取投稿状态
 watch(
   () => user.value,
@@ -1434,55 +1247,6 @@ watch(enableSubmissionRemarks, (enabled) => {
     submissionNotePublic.value = true
   }
 })
-
-// 检查相似歌曲
-const checkSimilarSongs = async () => {
-  if (title.value.trim().length > 2) {
-    console.log('检查相似歌曲:', title.value, artist.value)
-    const similar = await songService.checkSimilarSongs(title.value.trim(), artist.value.trim())
-    console.log('相似歌曲结果:', similar, songService.similarSongFound.value)
-    similarSongs.value = similar
-  } else {
-    similarSongs.value = []
-  }
-}
-
-// 投票支持相似歌曲
-const voteForSimilar = async (song) => {
-  if (!song || song.voted) return
-
-  voting.value = true
-  try {
-    // 直接调用songService的投票方法，避免重复处理
-    await songService.voteSong(song.id)
-
-    // 更新本地状态
-    song.voted = true
-    song.voteCount = (song.voteCount || 0) + 1
-
-    // 投票成功后刷新歌曲列表
-    await songService.refreshSongsSilent().catch((err) => {
-      console.error('刷新歌曲列表失败', err)
-    })
-
-    // 清除表单并隐藏提示
-    title.value = ''
-    artist.value = ''
-    similarSongs.value = []
-  } catch (err) {
-    error.value = err.message || '投票失败，请稍后重试'
-    if (window.$showNotification) {
-      window.$showNotification(error.value, 'error')
-    }
-  } finally {
-    voting.value = false
-  }
-}
-
-// 忽略相似歌曲，继续投稿
-const ignoreSimilar = () => {
-  similarSongs.value = []
-}
 
 // 打开相似剧集详情弹窗
 const openSimilarEpisodesModal = (group) => {
@@ -2680,7 +2444,6 @@ const resetForm = () => {
   title.value = ''
   artist.value = ''
   preferredPlayTimeId.value = ''
-  similarSongs.value = []
   searchResults.value = []
   selectedCover.value = ''
   selectedUrl.value = ''
@@ -3937,15 +3700,6 @@ defineExpose({
   cursor: not-allowed;
   transform: none;
 }
-.similar-song-alert {
-  background: #21242d;
-  border-radius: 10px;
-  padding: 0.5rem 0.75rem;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
-  margin-top: 0.5rem;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
 
 .alert-header {
   display: flex;
@@ -5148,14 +4902,6 @@ defineExpose({
   .form-select {
     position: relative;
     z-index: 10;
-  }
-
-  /* 确保相似歌曲提示在移动端可见 */
-  .similar-song-alert {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
-    z-index: 20;
-    position: relative;
   }
 }
 
