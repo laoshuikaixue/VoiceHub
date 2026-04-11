@@ -435,6 +435,17 @@ const originalData = ref({})
 // 当前限额类型和值的快捷访问
 const activeLimitTab = ref('daily')
 
+// 根据数据中的限额值同步当前激活的标签页
+const syncActiveLimitTab = (data) => {
+  if (data.monthlySubmissionLimit != null) {
+    activeLimitTab.value = 'monthly'
+  } else if (data.weeklySubmissionLimit != null) {
+    activeLimitTab.value = 'weekly'
+  } else {
+    activeLimitTab.value = 'daily'
+  }
+}
+
 const currentLimitValue = computed({
   get: () => {
     if (activeLimitTab.value === 'monthly') return formData.value.monthlySubmissionLimit
@@ -465,13 +476,7 @@ const loadConfig = async () => {
 
     const data = await response.json()
 
-    if (data.monthlySubmissionLimit !== null) {
-      activeLimitTab.value = 'monthly'
-    } else if (data.weeklySubmissionLimit !== null) {
-      activeLimitTab.value = 'weekly'
-    } else {
-      activeLimitTab.value = 'daily'
-    }
+    syncActiveLimitTab(data)
 
     formData.value = {
       siteTitle: data.siteTitle || '',
@@ -617,13 +622,7 @@ const handleLimitTypeChange = (type) => {
 // 重置表单
 const resetForm = () => {
   formData.value = JSON.parse(JSON.stringify(originalData.value))
-  if (formData.value.monthlySubmissionLimit !== null) {
-    activeLimitTab.value = 'monthly'
-  } else if (formData.value.weeklySubmissionLimit !== null) {
-    activeLimitTab.value = 'weekly'
-  } else {
-    activeLimitTab.value = 'daily'
-  }
+  syncActiveLimitTab(formData.value)
 }
 
 onMounted(loadConfig)
