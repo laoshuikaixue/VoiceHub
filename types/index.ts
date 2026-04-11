@@ -11,6 +11,13 @@ export interface User {
   passwordChangedAt?: Date | null
   avatar?: string | null
   has2FA?: boolean
+  email?: string | null
+  emailVerified?: boolean
+  identities?: Array<{
+    provider: string
+    providerUsername?: string | null
+    providerUserId?: string | null
+  }>
 }
 
 export interface Song {
