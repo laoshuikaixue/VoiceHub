@@ -95,6 +95,8 @@ export default defineEventHandler(async (event) => {
         forcePasswordChange: true,
         meowNickname: true,
         meowBoundAt: true,
+        email: true,
+        emailVerified: true,
         createdAt: true,
         updatedAt: true
       },
@@ -102,20 +104,23 @@ export default defineEventHandler(async (event) => {
         identities: {
           columns: {
             provider: true,
-            providerUsername: true
-          },
-          where: (identities, { eq }) => eq(identities.provider, 'github')
+            providerUsername: true,
+            providerUserId: true
+          }
         }
       }
     })
 
     // 处理用户列表，添加头像字段
-    const formattedUsers = usersList.map((user) => ({
-      ...user,
-      avatar: user.identities?.[0]?.providerUsername
-        ? `https://github.com/${user.identities[0].providerUsername}.png`
-        : null
-    }))
+    const formattedUsers = usersList.map((user) => {
+      const githubIdentity = user.identities?.find((id) => id.provider === 'github')
+      return {
+        ...user,
+        avatar: githubIdentity?.providerUsername
+          ? `https://github.com/${githubIdentity.providerUsername}.png`
+          : null
+      }
+    })
 
     // 计算分页信息
     const totalPages = Math.ceil(total / limitNum)
