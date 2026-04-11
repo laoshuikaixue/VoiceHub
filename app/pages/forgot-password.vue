@@ -164,8 +164,9 @@ const handleSubmit = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 20px;
+  --content-footer-gap: clamp(16px, 4vh, 40px);
 }
 
 .auth-container {
@@ -176,7 +177,8 @@ const handleSubmit = async () => {
   border: 1px solid var(--border-primary);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  margin-bottom: clamp(16px, 4vh, 40px);
+  margin: auto 0;
+  margin-bottom: var(--content-footer-gap);
 }
 
 .form-section {
