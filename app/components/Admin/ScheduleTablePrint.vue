@@ -25,7 +25,11 @@ v-if="settings.showCover && getSchedule(date, pt.key, rowIndex - 1).song.cover"
                    class="song-cover" @error="handleImageError" >
               <div class="song-details">
                 <div v-if="settings.showTitle" class="song-title">
-                  {{ getSchedule(date, pt.key, rowIndex - 1).song.title }}
+                  <span class="title-text">{{ getSchedule(date, pt.key, rowIndex - 1).song.title }}</span>
+                  <!-- 重播标识 -->
+                  <span v-if="getSchedule(date, pt.key, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
+                  <!-- 跨学期标识 -->
+                  <span v-if="settings.currentSemester && getSchedule(date, pt.key, rowIndex - 1).song.semester && getSchedule(date, pt.key, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> 跨学期 </span>
                 </div>
                 <div v-if="settings.showArtist" class="song-artist">
                   {{ getSchedule(date, pt.key, rowIndex - 1).song.artist }}
@@ -57,7 +61,11 @@ v-if="settings.showCover && getScheduleAll(date, rowIndex - 1).song.cover"
                    class="song-cover" @error="handleImageError" >
               <div class="song-details">
                 <div v-if="settings.showTitle" class="song-title">
-                  {{ getScheduleAll(date, rowIndex - 1).song.title }}
+                  <span class="title-text">{{ getScheduleAll(date, rowIndex - 1).song.title }}</span>
+                  <!-- 重播标识 -->
+                  <span v-if="getScheduleAll(date, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
+                  <!-- 跨学期标识 -->
+                  <span v-if="settings.currentSemester && getScheduleAll(date, rowIndex - 1).song.semester && getScheduleAll(date, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> 跨学期 </span>
                 </div>
                 <div v-if="settings.showArtist" class="song-artist">
                   {{ getScheduleAll(date, rowIndex - 1).song.artist }}
@@ -263,6 +271,42 @@ const handleImageError = (event) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+
+.title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 打印用重播标识 */
+.replay-badge-print {
+  display: inline-block;
+  padding: 1px 4px;
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 3px;
+  color: #1976d2;
+  font-size: 10px;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* 跨学期标识 */
+.cross-semester-badge-print {
+  display: inline-block;
+  padding: 1px 4px;
+  background: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  color: #666;
+  font-size: 10px;
+  border-radius: 2px;
+  font-weight: normal;
+  margin-left: 4px;
+  flex-shrink: 0;
 }
 
 .song-artist {
