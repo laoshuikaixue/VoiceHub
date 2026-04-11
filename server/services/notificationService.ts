@@ -211,7 +211,7 @@ export async function createSongSelectedNotification(
         userId,
         '歌曲被选中',
         message,
-        ipAddress,
+        undefined,
         'notification.songSelected',
         {
           songTitle: songInfo.title,
@@ -223,7 +223,8 @@ export async function createSongSelectedNotification(
             (schedule.playTime.startTime || schedule.playTime.endTime)
               ? `${schedule.playTime.startTime || ''}${schedule.playTime.startTime && schedule.playTime.endTime ? '-' : ''}${schedule.playTime.endTime || ''}`
               : ''
-        }
+        },
+        ipAddress
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)
@@ -330,9 +331,10 @@ export async function createSongPlayedNotification(songId: number, ipAddress?: s
             targetUserId,
             '歌曲已播放',
             userMessage,
-            ipAddress,
+            undefined,
             'notification.songPlayed',
-            { songTitle: song.title }
+            { songTitle: song.title },
+            ipAddress
           )
         } catch (error) {
           console.error(`发送邮件通知失败 (User: ${targetUserId}):`, error)
@@ -459,9 +461,10 @@ export async function createSongVotedNotification(
         song.requesterId,
         '收到新投票',
         message,
-        ipAddress,
+        undefined,
         'notification.songVoted',
-        { songTitle: song.title, votesCount: songVotes.length }
+        { songTitle: song.title, votesCount: songVotes.length },
+        ipAddress
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)
@@ -528,13 +531,14 @@ export async function createSongRejectedNotification(
         userId,
         '歌曲被驳回',
         message,
-        ipAddress,
+        undefined,
         'notification.songRejected',
         {
           songTitle: songInfo.title,
           songArtist: songInfo.artist,
           reason: reason
-        }
+        },
+        ipAddress
       )
     } catch (error) {
       console.error('发送邮件通知失败:', error)
@@ -706,7 +710,6 @@ export async function createBatchSystemNotifications(
         title,
         content,
         undefined,
-        undefined,
         ipAddress
       )
     } catch (error) {
@@ -774,7 +777,7 @@ export async function createReplayRequestRejectedNotification(
 
     // 同步发送邮件通知
     try {
-      await sendEmailNotificationToUser(userId, '重播申请已拒绝', message, ipAddress)
+      await sendEmailNotificationToUser(userId, '重播申请已拒绝', message, undefined, undefined, undefined, ipAddress)
     } catch (error) {
       console.error('发送邮件通知失败:', error)
     }

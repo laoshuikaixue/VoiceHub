@@ -604,7 +604,17 @@ export async function sendEmailNotificationToUser(
 
     // 使用指定模板，否则回退通用模板
     if (templateKey) {
-      return await smtpService.renderAndSend(user.email, templateKey, templateData || {}, ipAddress)
+      return await smtpService.renderAndSend(
+        user.email,
+        templateKey,
+        {
+          title: notificationTitle,
+          message: notificationMessage,
+          actionUrl: url,
+          ...(templateData || {})
+        },
+        ipAddress
+      )
     }
     return await smtpService.renderAndSend(
       user.email,
