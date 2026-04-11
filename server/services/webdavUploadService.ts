@@ -50,7 +50,9 @@ export class WebDAVUploadService {
       throw new Error('WebDAV client not initialized')
     }
 
-    const url = new URL(targetPath, this.config.url).toString()
+    const baseUrl = this.config.url.replace(/\/$/, '')
+    const fullPath = targetPath.startsWith('/') ? targetPath : `/${targetPath}`
+    const url = `${baseUrl}${fullPath}`
     const auth = Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')
 
     const response = await fetch(url, {
@@ -243,15 +245,14 @@ export class WebDAVUploadService {
     try {
       const propfindBody = '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:resourcetype/></d:prop></d:propfind>'
       const result = await this.request('PROPFIND', remotePath, Buffer.from(propfindBody), {
-        Depth: '1',
-        'Content-Type': 'text/xml'
+        Depth: '1'
       })
 
       if (result.status >= 200 && result.status < 300 && result.body) {
-        const filePaths = this.parsePropfindResponse(result.body)
+        const { files, directories } = this.parsePropfindResponse(result.body)
         return {
           success: true,
-          files: filePaths
+          files: [...directories, ...files]
         }
       } else {
         return {
@@ -273,21 +274,29 @@ export class WebDAVUploadService {
   }
 
   /**
-   * 解析 PROPFIND 响应
+   * 解析 PROPFIND 响应，移除 WebDAV 基础路径
    */
-  private parsePropfindResponse(xml: string): string[] {
-    const paths: string[] = []
+  private parsePropfindResponse(xml: string): { files: string[]; directories: string[] } {
+    const files: string[] = []
+    const directories: string[] = []
     const hrefRegex = /<D:href>([^<]+)<\/D:href>/gi
     let match
 
+    const basePath = new URL(this.config!.url).pathname.replace(/\/$/, '')
+
     while ((match = hrefRegex.exec(xml)) !== null) {
       const href = decodeURIComponent(match[1])
-      if (href !== '/' && !href.endsWith('/')) {
-        paths.push(href)
+      const fullPath = href.startsWith(basePath) ? href.slice(basePath.length) || '/' : href
+      if (fullPath === '/' || fullPath === basePath) continue
+
+      if (fullPath.endsWith('/')) {
+        directories.push(fullPath.slice(0, -1) + '/')
+      } else {
+        files.push(fullPath)
       }
     }
 
-    return paths
+    return { files, directories }
   }
 
   /**

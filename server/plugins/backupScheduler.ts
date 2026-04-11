@@ -27,7 +27,8 @@ export default defineNitroPlugin(async () => {
           try {
             const result = await backupService.createBackup({
               scheduleId: schedule.id,
-              tables: schedule.backupType as 'all' | 'users',
+              includeSongs: schedule.includeSongs,
+              includeUsers: schedule.includeUsers,
               includeSystemData: schedule.includeSystemData
             })
 
