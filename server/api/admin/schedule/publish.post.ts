@@ -4,7 +4,6 @@ import { and, asc, count, eq } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
-import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -91,9 +90,6 @@ export default defineEventHandler(async (event) => {
         message: '发布排期失败'
       })
     }
-
-    // 获取客户端IP地址
-    const clientIP = getClientIP(event)
 
     // 发布后发送通知（这是与草稿保存的主要区别）
     await createSongSelectedNotification(
