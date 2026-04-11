@@ -165,8 +165,13 @@ export class SmtpService {
 
   /**
    * 初始化SMTP配置
+   * 仅当配置为空或显式要求强制刷新时才执行
    */
-  async initializeSmtpConfig(): Promise<boolean> {
+  async initializeSmtpConfig(forceRefresh: boolean = false): Promise<boolean> {
+    if (!forceRefresh && this.transporter) {
+      return true
+    }
+
     try {
       const settingsResult = await db.select().from(systemSettings).limit(1)
       const settings = settingsResult[0]

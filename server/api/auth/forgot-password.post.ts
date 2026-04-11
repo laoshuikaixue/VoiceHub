@@ -4,8 +4,23 @@ import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { checkRateLimit } from '~~/server/utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {
+  const clientIP = getClientIP(event)
+  
+  // IP 级别限流：每小时最多 5 次请求
+  const rateLimitKey = `forgot_password_ip:${clientIP}`
+  const limitResult = checkRateLimit(rateLimitKey, 5, 60 * 60 * 1000)
+  
+  if (!limitResult.isAllowed) {
+    const waitMinutes = Math.ceil((limitResult.resetTime - Date.now()) / 60000)
+    throw createError({ 
+      statusCode: 429, 
+      message: `操作过于频繁，请等待 ${waitMinutes} 分钟后再试` 
+    })
+  }
+
   const body = await readBody(event)
   const { username, email } = body
 
@@ -17,24 +32,21 @@ export default defineEventHandler(async (event) => {
     const userResult = await db.select().from(users).where(eq(users.username, username)).limit(1)
     const user = userResult[0]
 
-    // 为了防止恶意枚举账号，无论是否匹配，都返回相同的成功提示
+    // 无论是否匹配，都返回相同的成功提示
     if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
       const payload = {
         type: 'password_reset',
         userId: user.id,
-        hash: user.password // 密码哈希，一旦密码被修改，旧链接立即失效
+        hash: user.password
       }
-      // 令牌15分钟有效
       const token = JWTEnhanced.sign(payload, { expiresIn: '15m' })
 
-      const host = getRequestHeader(event, 'host')
-      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
-      const forwardedProto = getRequestHeader(event, 'x-forwarded-proto')
-      const finalProtocol = forwardedProto || protocol
+      // 修复 Host Header Injection 风险，使用安全的获取方式
+      const host = getRequestHost(event)
+      const finalProtocol = getRequestProtocol(event)
       
       const resetLink = `${finalProtocol}://${host}/reset-password?token=${token}`
 
-      const clientIP = getClientIP(event)
       const smtp = SmtpService.getInstance()
       
       // 确保SMTP配置已初始化
@@ -47,7 +59,6 @@ export default defineEventHandler(async (event) => {
         clientIP
       )
 
-      // 异步发送邮件，不阻塞响应
       event.waitUntil(
         smtp.sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
           .catch(err => console.error('发送重置密码邮件失败:', err))
