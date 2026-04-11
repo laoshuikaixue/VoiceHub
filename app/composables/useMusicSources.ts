@@ -28,6 +28,17 @@ const getNextMusicToken = () => {
 }
 
 /**
+ * NextMusic 通用请求头
+ */
+const NEXTMUSIC_HEADERS = {
+  'Content-Type': 'application/json',
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  Origin: 'https://nextmusic.toubiec.cn',
+  Referer: 'https://nextmusic.toubiec.cn/'
+}
+
+/**
  * 音源管理器 Composable
  */
 export const useMusicSources = () => {
@@ -633,9 +644,7 @@ export const useMusicSources = () => {
       fetchOptions.method = 'POST'
       fetchOptions.headers = {
         ...fetchOptions.headers,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Origin: 'https://nextmusic.toubiec.cn',
-        Referer: 'https://nextmusic.toubiec.cn/'
+        ...NEXTMUSIC_HEADERS
       }
       fetchOptions.body = {
         id: ids,
@@ -648,10 +657,8 @@ export const useMusicSources = () => {
         const data = response.data
         let durationMs = 0
         if (data.duration) {
-          const parts = data.duration.split(':')
-          if (parts.length === 2) {
-            durationMs = (parseInt(parts[0]) * 60 + parseInt(parts[1])) * 1000
-          }
+          const parts = data.duration.split(':').reverse()
+          durationMs = parts.reduce((acc: number, val: string, idx: number) => acc + parseInt(val, 10) * Math.pow(60, idx), 0) * 1000
         }
         return [{
           id: data.id,
@@ -908,7 +915,8 @@ export const useMusicSources = () => {
               neteaseQuality = Number(quality)
             } else {
               try {
-                const { getQuality } = await import('./useAudioQuality')
+                const { useAudioQuality } = await import('./useAudioQuality')
+                const { getQuality } = useAudioQuality()
                 neteaseQuality = Number(getQuality('netease'))
               } catch (error) {
                 // 忽略错误
@@ -923,12 +931,7 @@ export const useMusicSources = () => {
 
             const nextmusicResp = await $fetch(`${source.baseUrl}/getSongUrl`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                Origin: 'https://nextmusic.toubiec.cn',
-                Referer: 'https://nextmusic.toubiec.cn/'
-              },
+              headers: NEXTMUSIC_HEADERS,
               body: {
                 id: idParam,
                 level: level,
@@ -996,9 +999,9 @@ export const useMusicSources = () => {
                 targetQuality = numQuality
               } else {
                 try {
-                  const { getQuality } = await import('./useAudioQuality')
-                  const setting = getQuality('tencent')
-                  targetQuality = Number(setting)
+                  const { useAudioQuality } = await import('./useAudioQuality')
+                  const { getQuality } = useAudioQuality()
+                  targetQuality = Number(getQuality('tencent'))
                   if (isNaN(targetQuality)) targetQuality = 8
                 } catch {
                   targetQuality = 8 // 默认 HQ 高音质
@@ -1093,7 +1096,8 @@ export const useMusicSources = () => {
             } else {
               // 否则回退到全局设置
               try {
-                const { getQuality } = await import('./useAudioQuality')
+                const { useAudioQuality } = await import('./useAudioQuality')
+                const { getQuality } = useAudioQuality()
                 neteaseQuality = Number(getQuality('netease'))
               } catch (error) {
                 // 无法获取音质设置，使用默认音质
@@ -1246,12 +1250,7 @@ export const useMusicSources = () => {
         try {
           const resp = await $fetch(`${nextmusicSource.baseUrl}/getSongLyric`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              Origin: 'https://nextmusic.toubiec.cn',
-              Referer: 'https://nextmusic.toubiec.cn/'
-            },
+            headers: NEXTMUSIC_HEADERS,
             body: {
               id: id.toString(),
               token: getNextMusicToken()
@@ -1262,7 +1261,6 @@ export const useMusicSources = () => {
             const d = resp.data
             if (d.lrc) resultData.lrc = d.lrc
             if (d.tlyric) resultData.trans = d.tlyric
-            if (d.romalrc) resultData.yrc = d.romalrc // 暂存
             if (d.lrc) hasResult = true
           }
         } catch (e) {
