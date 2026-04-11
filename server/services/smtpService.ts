@@ -389,12 +389,12 @@ export class SmtpService {
         // 若模板缺失，退回到简单包装（传入已格式化的IP）
         const mergedData = await this.prepareTemplateData(templateData)
         const fallbackHtml = this.generateEmailTemplate(
-          data.title || '通知',
-          data.message || '',
+          data.title || data.fallbackTitle || '通知',
+          data.message || data.fallbackMessage || '',
           data.actionUrl,
           formattedIP
         )
-        const fallbackSubject = `${data.title || '通知'} | ${mergedData.siteTitle}通知推送`
+        const fallbackSubject = `${data.title || data.fallbackTitle || '通知'} | ${mergedData.siteTitle}通知推送`
         return await this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
       }
       return await this.sendMail(to, subject, html, undefined, ipAddress)
@@ -608,8 +608,8 @@ export async function sendEmailNotificationToUser(
         user.email,
         templateKey,
         {
-          title: notificationTitle,
-          message: notificationMessage,
+          fallbackTitle: notificationTitle,
+          fallbackMessage: notificationMessage,
           actionUrl: url,
           ...(templateData || {})
         },
