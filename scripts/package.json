@@ -12,7 +12,7 @@
     "db:migrate": "cd .. && pnpm exec drizzle-kit migrate --config=drizzle.config.ts"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "chalk": "^5.3.0",
     "dotenv": "^16.4.5",
     "prompts": "^2.4.2",

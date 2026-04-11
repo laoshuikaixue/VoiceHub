@@ -21,7 +21,7 @@ import {
   userStatusLogs,
   votes
 } from '../app/drizzle/db.ts'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 
 function getFirstRow(result) {
   return result?.rows?.[0] ?? result?.[0]

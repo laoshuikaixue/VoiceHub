@@ -1,5 +1,5 @@
 import { db, userIdentities, eq, and, users } from '~/drizzle/db'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
