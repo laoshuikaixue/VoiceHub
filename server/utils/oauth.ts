@@ -9,6 +9,42 @@ export interface OAuthState {
   provider?: string
 }
 
+const toUrlSafeBase64 = (value: string): string => {
+  return value.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+}
+
+const fromUrlSafeBase64 = (value: string): string => {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
+  const padLength = normalized.length % 4
+  if (padLength === 0) return normalized
+  return normalized + '='.repeat(4 - padLength)
+}
+
+const buildStateCandidates = (stateStr: string): string[] => {
+  const trimmed = stateStr.trim()
+  const candidates = [
+    trimmed,
+    // 某些 OAuth 回调会把 `+` 误解码为空格，这里做兼容恢复
+    trimmed.replace(/ /g, '+')
+  ]
+
+  // 支持 URL-safe Base64（新格式）以及带填充/不带填充的输入
+  const withBase64 = candidates.flatMap(item => [item, fromUrlSafeBase64(item)])
+
+  return Array.from(new Set(withBase64.filter(Boolean)))
+}
+
+const tryParseStatePayload = (stateCandidate: string, secretKey: string): OAuthState | null => {
+  try {
+    const bytes = CryptoJS.AES.decrypt(stateCandidate, secretKey)
+    const json = bytes.toString(CryptoJS.enc.Utf8)
+    if (!json) return null
+    return JSON.parse(json) as OAuthState
+  } catch {
+    return null
+  }
+}
+
 const normalizePort = (url: URL): string => {
   if (url.port) return url.port
   if (url.protocol === 'https:') return '443'
@@ -37,7 +73,9 @@ export const generateState = (
     provider
   }
   const json = JSON.stringify(payload)
-  const state = CryptoJS.AES.encrypt(json, secretKey).toString()
+  const rawState = CryptoJS.AES.encrypt(json, secretKey).toString()
+  // 统一输出 URL-safe，避免在中间代理/回调中出现 `+` 被替换为空格
+  const state = toUrlSafeBase64(rawState)
   return { state, csrf }
 }
 
@@ -56,11 +94,13 @@ export const parseState = (
   }
 
   try {
-    const bytes = CryptoJS.AES.decrypt(stateStr, secretKey)
-    const json = bytes.toString(CryptoJS.enc.Utf8)
-    if (!json) return null
+    let payload: OAuthState | null = null
+    for (const candidate of buildStateCandidates(stateStr)) {
+      payload = tryParseStatePayload(candidate, secretKey)
+      if (payload) break
+    }
 
-    const payload = JSON.parse(json)
+    if (!payload) return null
 
     // 检查时间戳是否过期（例如：10分钟）
     if (Date.now() - payload.timestamp > 10 * 60 * 1000) {

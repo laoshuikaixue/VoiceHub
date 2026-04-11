@@ -337,7 +337,9 @@ const customOAuth2Strategy: OAuthStrategy = {
       const id = firstStringValue([
         getObjectByPath(userInfo, config?.userIdField),
         getObjectByPath(userInfo, 'id'),
-        getObjectByPath(userInfo, 'sub')
+        getObjectByPath(userInfo, 'sub'),
+        getObjectByPath(userInfo, 'uin'),
+        getObjectByPath(userInfo, 'openid')
       ])
 
       if (!id) {
