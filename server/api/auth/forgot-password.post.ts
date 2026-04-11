@@ -24,13 +24,42 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { username, email } = body
 
-  if (!username || !email) {
-    throw createError({ statusCode: 400, message: '请提供账号名和邮箱地址' })
+  if (!username) {
+    throw createError({ statusCode: 400, message: '请提供账号名' })
   }
 
   try {
     const userResult = await db.select().from(users).where(eq(users.username, username)).limit(1)
     const user = userResult[0]
+
+    // 如果未提供邮箱，则进入第一步：检查账号并返回掩码邮箱
+    if (!email) {
+      if (!user) {
+        throw createError({ statusCode: 404, message: '账号不存在' })
+      }
+      if (!user.email) {
+        throw createError({ statusCode: 400, message: '该账号未绑定邮箱，无法通过此方式找回密码' })
+      }
+      
+      // 生成掩码邮箱 (例如: a***b@gmail.com)
+      const emailParts = user.email.split('@')
+      const name = emailParts[0]
+      const domain = emailParts[1]
+      let maskedName = name
+      if (name && name.length > 2) {
+        maskedName = name.substring(0, 1) + '***' + name.substring(name.length - 1)
+      } else if (name && name.length === 2) {
+        maskedName = name.substring(0, 1) + '*'
+      }
+      const maskedEmail = `${maskedName}@${domain}`
+      
+      return { 
+        success: true, 
+        step: 2,
+        maskedEmail,
+        message: '请输入完整的邮箱地址以验证身份' 
+      }
+    }
 
     // 无论是否匹配，都返回相同的成功提示
     if (user && user.email && user.email.toLowerCase() === email.toLowerCase()) {
@@ -67,6 +96,7 @@ export default defineEventHandler(async (event) => {
 
     return { 
       success: true, 
+      step: 3,
       message: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。' 
     }
   } catch (error: any) {

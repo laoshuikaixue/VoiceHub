@@ -17,7 +17,7 @@
         </div>
 
         <form v-else :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleSubmit">
-          <div class="form-group">
+          <div class="form-group" v-if="step === 1">
             <label for="username">账号名</label>
             <div class="input-wrapper">
               <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -36,8 +36,11 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="email">绑定的邮箱</label>
+          <div class="form-group" v-if="step === 2">
+            <label for="email">验证邮箱</label>
+            <p class="text-sm text-[var(--text-secondary)] mb-2">
+              系统检测到该账号绑定了邮箱：<strong class="text-[var(--primary)]">{{ maskedEmail }}</strong>
+            </p>
             <div class="input-wrapper">
               <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
@@ -46,7 +49,7 @@
                 id="email"
                 v-model="email"
                 :class="{ 'input-error': error }"
-                placeholder="请输入预留的邮箱地址"
+                placeholder="请补全完整的邮箱地址"
                 required
                 type="email"
                 @input="error = ''"
@@ -70,11 +73,14 @@
                 <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
               </circle>
             </svg>
-            <span v-if="loading">发送中...</span>
-            <span v-else>发送重置邮件</span>
+            <span v-if="loading">{{ step === 1 ? '验证中...' : '发送中...' }}</span>
+            <span v-else>{{ step === 1 ? '下一步' : '发送重置邮件' }}</span>
           </button>
           
           <div class="form-footer">
+            <button v-if="step === 2" type="button" @click="step = 1; error = '';" class="back-link mr-4" style="background: none; border: none; cursor: pointer;">
+              上一步
+            </button>
             <NuxtLink to="/login" class="back-link">返回登录</NuxtLink>
           </div>
         </form>
@@ -95,6 +101,8 @@ const loading = ref(false)
 const error = ref('')
 const success = ref(false)
 const successMessage = ref('')
+const step = ref(1)
+const maskedEmail = ref('')
 
 useHead({
   title: () => siteTitle.value ? `找回密码 | ${siteTitle.value}` : '找回密码'
@@ -105,26 +113,41 @@ onMounted(async () => {
 })
 
 const handleSubmit = async () => {
-  if (!username.value || !email.value) {
-    error.value = '请填写完整的账号名和邮箱'
-    return
+  if (step.value === 1) {
+    if (!username.value) {
+      error.value = '请输入账号名'
+      return
+    }
+  } else if (step.value === 2) {
+    if (!email.value) {
+      error.value = '请补全邮箱地址'
+      return
+    }
   }
 
   loading.value = true
   error.value = ''
 
   try {
+    const body = step.value === 1 
+      ? { username: username.value }
+      : { username: username.value, email: email.value }
+
     const response = await $fetch('/api/auth/forgot-password', {
       method: 'POST',
-      body: {
-        username: username.value,
-        email: email.value
-      }
+      body
     })
 
     if (response.success) {
-      success.value = true
-      successMessage.value = response.message || '重置邮件已发送'
+      if (response.step === 2) {
+        // 进入补全邮箱步骤
+        step.value = 2
+        maskedEmail.value = response.maskedEmail || ''
+      } else if (response.step === 3) {
+        // 成功发送邮件
+        success.value = true
+        successMessage.value = response.message || '重置邮件已发送'
+      }
     }
   } catch (err) {
     error.value = err.data?.message || err.message || '请求失败，请稍后重试'
