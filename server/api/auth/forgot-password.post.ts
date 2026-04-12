@@ -110,6 +110,9 @@ export default defineEventHandler(async (event) => {
       message: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。' 
     }
   } catch (error: any) {
+    if (error.statusCode) {
+      throw error
+    }
     console.error('重置密码请求失败:', error)
     throw createError({
       statusCode: 500,
