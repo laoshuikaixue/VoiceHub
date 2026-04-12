@@ -938,9 +938,10 @@ VoiceHub/
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
-│   ├── utils/              # 服务端工具函数
-│   │   ├── auth.ts         # 认证工具函数
-│   │   ├── cache-helpers.ts # 缓存辅助工具
+│   │   ├── utils/              # 服务端工具函数
+│   │   │   ├── auth.ts         # 认证工具函数
+│   │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
+│   │   │   ├── cache-helpers.ts # 缓存辅助工具
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
@@ -1772,7 +1773,8 @@ Thanks goes to these wonderful people:
 - [meting-api](https://github.com/injahow/meting-api)
 - [lx-music-desktop](https://github.com/lyswhut/lx-music-desktop) (搜索功能参考)
 - [the1068fm - 深中风华子衿广播站点歌系统](https://github.com/SMS-COSMO/the1068fm)
-- [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源参考)
+- [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源搜索功能参考)
+- [Bilibili-audio-extraction](https://github.com/rio4raki/Bilibili-audio-extraction) (哔哩哔哩音频流获取参考)
 - [SPlayer](https://github.com/imsyy/SPlayer)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
 - [Netease_url](https://github.com/Suxiaoqinx/Netease_url)

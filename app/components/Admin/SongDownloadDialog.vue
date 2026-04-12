@@ -1060,6 +1060,7 @@ const startDownload = async () => {
         let extension = 'mp3'
         const contentType = blob.type
         if (contentType.includes('m4a') || audioUrl.includes('.m4a')) extension = 'm4a'
+        else if (contentType.includes('mp4') || audioUrl.includes('.m4s')) extension = 'm4a'
         else if (contentType.includes('flac') || audioUrl.includes('.flac')) extension = 'flac'
         else if (contentType.includes('wav') || audioUrl.includes('.wav')) extension = 'wav'
         else if (contentType.includes('ogg') || audioUrl.includes('.ogg')) extension = 'ogg'
