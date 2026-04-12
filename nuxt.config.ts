@@ -298,15 +298,15 @@ export default defineNuxtConfig({
       icons: [
         {
           src: '/images/logo.png',
-          sizes: '192x192',
+          sizes: '128x128',
           type: 'image/png',
-          purpose: 'any maskable'
+          purpose: 'any'
         },
         {
-          src: '/images/logo.png',
-          sizes: '512x512',
+          src: '/images/logo-144.png',
+          sizes: '144x144',
           type: 'image/png',
-          purpose: 'any maskable'
+          purpose: 'any'
         }
       ]
     },
@@ -315,7 +315,7 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}']
     },
     devOptions: {
-      enabled: false,
+      enabled: true,
       type: 'module'
     },
     injectRegister: 'auto'
