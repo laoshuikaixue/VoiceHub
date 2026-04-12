@@ -44,7 +44,8 @@ export default defineEventHandler(async (event) => {
 
   // 提取客户端真实 IP，用于转发给 Bilibili 接口，以便分配最快 CDN 节点
   const forwardedFor = getRequestHeader(event, 'x-forwarded-for')
-  const clientIp = (forwardedFor ? forwardedFor.split(',')[0].trim() : '') ||
+  const forwardedForStr = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor
+  const clientIp = (forwardedForStr ? forwardedForStr.split(',')[0].trim() : '') ||
                    getRequestHeader(event, 'x-real-ip') || 
                    event.node.req.socket?.remoteAddress || ''
 

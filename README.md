@@ -938,10 +938,10 @@ VoiceHub/
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
-│   │   ├── utils/              # 服务端工具函数
-│   │   │   ├── auth.ts         # 认证工具函数
-│   │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
-│   │   │   ├── cache-helpers.ts # 缓存辅助工具
+│   ├── utils/              # 服务端工具函数
+│   │   ├── auth.ts         # 认证工具函数
+│   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
+│   │   ├── cache-helpers.ts # 缓存辅助工具
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具

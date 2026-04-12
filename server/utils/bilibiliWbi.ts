@@ -40,10 +40,14 @@ export async function getBilibiliWbiKeys() {
  * 使用 WBI 密钥对请求参数进行签名
  */
 export function signBilibiliWbiRequest(params: Record<string, string | number>, wbiKey: string) {
-  params['wts'] = Math.round(Date.now() / 1000)
-  const query = Object.keys(params)
+  const signedParams = { ...params, wts: Math.round(Date.now() / 1000) }
+  const query = Object.keys(signedParams)
     .sort()
-    .map((key) => `${key}=${encodeURIComponent(params[key])}`)
+    .map((key) => {
+      const value = signedParams[key].toString()
+      const encodedValue = encodeURIComponent(value).replace(/[!'()*]/g, '')
+      return `${key}=${encodedValue}`
+    })
     .join('&')
   const w_rid = crypto.createHash('md5').update(query + wbiKey).digest('hex')
   return `${query}&w_rid=${w_rid}`
