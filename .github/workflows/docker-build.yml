@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ lower(github.repository_owner) }}/${{ lower(github.event.repository.name) }}
 
 jobs:
   # 提取版本号的准备 job
