@@ -2,19 +2,6 @@ const neteaseEnhancedApiPromise = import('@neteasecloudmusicapienhanced/api').th
   return (mod.default || {}) as Record<string, (params: Record<string, any>) => Promise<any>>
 })
 
-const allowedEndpoints = new Map<string, Set<string>>([
-  ['login/qr/key', new Set(['GET'])],
-  ['login/qr/create', new Set(['GET'])],
-  ['login/qr/check', new Set(['GET'])],
-  ['login/status', new Set(['GET', 'POST'])],
-  ['user/playlist', new Set(['GET'])],
-  ['playlist/create', new Set(['GET'])],
-  ['playlist/delete', new Set(['GET'])],
-  ['playlist/tracks', new Set(['GET'])],
-  ['playlist/track/all', new Set(['GET'])],
-  ['record/recent/song', new Set(['GET'])]
-])
-
 const normalizeParams = (input: Record<string, any>) => {
   const output: Record<string, any> = {}
   for (const [key, value] of Object.entries(input || {})) {
@@ -42,14 +29,6 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       message: '网易云接口路径不合法'
-    })
-  }
-
-  const allowedMethods = allowedEndpoints.get(endpointPath)
-  if (!allowedMethods || !allowedMethods.has(method)) {
-    throw createError({
-      statusCode: 403,
-      message: `禁止访问接口: ${endpointPath}`
     })
   }
 
