@@ -1,5 +1,6 @@
 export default defineEventHandler((event) => {
-  const pathname = getRequestURL(event).pathname
+  const requestUrl = getRequestURL(event)
+  const pathname = requestUrl.pathname
   
   // 只处理特定的内部API路由，防止站外调用
   const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
@@ -7,6 +8,33 @@ export default defineEventHandler((event) => {
                          
   if (!isProtectedApi) {
     return
+  }
+
+  // 检查是否配置了 NUXT_PUBLIC_HOST，若未配置，则尝试从请求头中获取可信的 Host。
+  // 在反代环境下，为了保证即使没有 NUXT_PUBLIC_HOST 也能工作，
+  // 优先取 x-forwarded-host，其次取 host，作为我们回退校验的信任基准。
+  const config = useRuntimeConfig(event)
+  let configuredHost = config.public?.host
+
+  if (!configuredHost) {
+    const forwardedHost = getHeader(event, 'x-forwarded-host')
+    const hostHeader = getHeader(event, 'host')
+    const fallbackHost = forwardedHost || hostHeader
+    
+    if (fallbackHost) {
+      // 兼容多代理环境，取第一个 host
+      configuredHost = fallbackHost.split(',')[0].trim()
+      
+      // 如果 x-forwarded-proto 存在，可以带上协议，使校验更精准
+      const forwardedProto = getHeader(event, 'x-forwarded-proto')
+      if (forwardedProto && !configuredHost.includes('://')) {
+        const proto = forwardedProto.split(',')[0].trim()
+        configuredHost = `${proto}://${configuredHost}`
+      }
+    } else {
+      // 如果什么 host 都拿不到，拒绝请求以保证安全
+      throw createError({ statusCode: 400, message: 'Bad Request: 缺少Host请求头' })
+    }
   }
 
   // CORS 限制：禁止站外网站调用
@@ -17,37 +45,28 @@ export default defineEventHandler((event) => {
 
   if (sourceUrl) {
     try {
-      const url = new URL(sourceUrl)
-
-      const extractHostname = (value: string) => {
-        const normalizedValue = value.includes('://') ? value : `http://${value}`
-        return new URL(normalizedValue).hostname
-      }
-
-      // 获取当前请求的 hostname，优先使用配置中可信的主机名，防止 x-forwarded-host 伪造攻击
-      const config = useRuntimeConfig(event)
-      const configuredHost = config.public?.host
-
-      let requestHostname: string
-      if (configuredHost) {
-        requestHostname = extractHostname(configuredHost)
-      } else {
-        // 只有在未配置公网主机名时，才回退到 host 请求头
-        const hostHeader = getHeader(event, 'host')
-        if (hostHeader) {
-          requestHostname = extractHostname(hostHeader)
-        } else {
-          // 缺少 Host 请求头，这是一个异常情况，应该拒绝请求
-          throw createError({ statusCode: 400, message: 'Bad Request: 缺少Host请求头' })
+      const normalizeOrigin = (value: string, fallbackProtocol: string) => {
+        const normalizedValue = value.includes('://') ? value : `${fallbackProtocol}//${value}`
+        const url = new URL(normalizedValue)
+        return {
+          origin: url.origin,
+          protocol: url.protocol,
+          hostname: url.hostname,
+          port: url.port || (url.protocol === 'https:' ? '443' : '80')
         }
       }
 
+      const sourceOrigin = normalizeOrigin(sourceUrl, requestUrl.protocol)
+      const trustedOrigin = normalizeOrigin(configuredHost, requestUrl.protocol)
       const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
-      
-      // 如果来源域与当前域不一致，则拒绝请求
-      // 注意：允许 localhost 和 127.0.0.1 之间的互访
-      if (url.hostname !== requestHostname && !(isLocalhost(url.hostname) && isLocalhost(requestHostname))) {
-        console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${url.hostname}, 期望 ${requestHostname}, 路径 ${pathname}`)
+      const isSameLoopbackOrigin =
+        isLocalhost(sourceOrigin.hostname) &&
+        isLocalhost(trustedOrigin.hostname) &&
+        sourceOrigin.protocol === trustedOrigin.protocol &&
+        sourceOrigin.port === trustedOrigin.port
+
+      if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin) {
+        console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${sourceOrigin.origin}, 期望 ${trustedOrigin.origin}, 路径 ${pathname}`)
         throw createError({
           statusCode: 403,
           message: 'Forbidden: 内部API不允许跨域请求'

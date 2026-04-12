@@ -3,13 +3,17 @@ import { databaseManager } from '~~/server/utils/database-manager'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 验证管理员权限
-    await verifyAdminAuth(event)
+    const authResult = await verifyAdminAuth(event)
 
-    // 清理过期会话
+    if (!authResult.success) {
+      throw createError({
+        statusCode: 401,
+        message: authResult.message
+      })
+    }
+
     const cleanedCount = await databaseManager.cleanupExpiredSessions()
 
-    // 清除健康检查缓存以确保下次检查获取最新状态
     databaseManager.clearHealthCheckCache()
 
     return {
@@ -18,12 +22,9 @@ export default defineEventHandler(async (event) => {
       cleanedCount,
       timestamp: new Date().toISOString()
     }
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('认证')) {
-      throw createError({
-        statusCode: 401,
-        message: 'Unauthorized'
-      })
+  } catch (error: any) {
+    if (error.statusCode === 401) {
+      throw error
     }
 
     throw createError({
