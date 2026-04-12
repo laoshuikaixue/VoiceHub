@@ -16,7 +16,7 @@ export const QUALITY_OPTIONS = {
     { value: 11, label: 'Hi-Res', description: '高解析度音质' },
     { value: 14, label: '臻品母带2.0', description: '最高音质' }
   ],
-  bilibili: [{ value: 1, label: '普通', description: '默认音质' }]
+  bilibili: [{ value: 1, label: '默认', description: '默认音质' }]
 }
 
 // 默认音质设置
