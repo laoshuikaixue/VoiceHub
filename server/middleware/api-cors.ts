@@ -10,13 +10,31 @@ export default defineEventHandler((event) => {
     return
   }
 
-  // 检查是否配置了 NUXT_PUBLIC_HOST，未配置则不启用跨域验证
-  // 防止反代环境下用户未配置 NUXT_PUBLIC_HOST 导致 Origin/Host 不匹配而无法使用
+  // 检查是否配置了 NUXT_PUBLIC_HOST，若未配置，则尝试从请求头中获取可信的 Host。
+  // 在反代环境下，为了保证即使没有 NUXT_PUBLIC_HOST 也能工作，
+  // 优先取 x-forwarded-host，其次取 host，作为我们回退校验的信任基准。
   const config = useRuntimeConfig(event)
-  const configuredHost = config.public?.host
+  let configuredHost = config.public?.host
 
   if (!configuredHost) {
-    return
+    const forwardedHost = getHeader(event, 'x-forwarded-host')
+    const hostHeader = getHeader(event, 'host')
+    const fallbackHost = forwardedHost || hostHeader
+    
+    if (fallbackHost) {
+      // 兼容多代理环境，取第一个 host
+      configuredHost = fallbackHost.split(',')[0].trim()
+      
+      // 如果 x-forwarded-proto 存在，可以带上协议，使校验更精准
+      const forwardedProto = getHeader(event, 'x-forwarded-proto')
+      if (forwardedProto && !configuredHost.includes('://')) {
+        const proto = forwardedProto.split(',')[0].trim()
+        configuredHost = `${proto}://${configuredHost}`
+      }
+    } else {
+      // 如果什么 host 都拿不到，拒绝请求以保证安全
+      throw createError({ statusCode: 400, message: 'Bad Request: 缺少Host请求头' })
+    }
   }
 
   // CORS 限制：禁止站外网站调用
