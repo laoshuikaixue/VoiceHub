@@ -1,8 +1,5 @@
 <template>
   <div class="app" data-theme="dark" data-color-scheme="custom">
-    <!-- 注入 PWA Manifest -->
-    <VitePwaManifest />
-
     <!-- 全局通知容器组件 -->
     <LazyUINotificationContainer ref="notificationContainer" />
 

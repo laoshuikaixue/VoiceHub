@@ -87,6 +87,7 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'manifest', href: '/manifest.webmanifest' },
         // 优先加载常规字体，确保页面快速显示
         {
           rel: 'preload',
