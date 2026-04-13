@@ -286,7 +286,7 @@ jobs:
 
   # 创建并推送多架构 manifest
   create-manifest:
-    if: github.repository == 'laoshuikaixue/VoiceHub' && github.event_name != 'pull_request'
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
     needs: [extract-version, build-amd64, build-arm64, build-arm-v7, build-arm-v6, build-ppc64le, build-s390x]
     runs-on: ubuntu-latest
     permissions:
