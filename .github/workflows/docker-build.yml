@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ lower(github.repository_owner) }}/${{ lower(github.event.repository.name) }}
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   # 提取版本号的准备 job
@@ -23,11 +23,16 @@ jobs:
     outputs:
       full-version: ${{ steps.extract-version.outputs.full-version }}
       major-minor-version: ${{ steps.extract-version.outputs.major-minor-version }}
+      image-name: ${{ steps.set-image-name.outputs.image-name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: '0'
+
+      - name: Set lowercase image name
+        id: set-image-name
+        run: echo "image-name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Extract version from package.json
         id: extract-version
@@ -73,9 +78,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/amd64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-amd64
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-amd64
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-amd64
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-amd64
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -113,9 +118,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/arm64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-arm64
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-arm64
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-arm64
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-arm64
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -153,9 +158,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/arm/v7
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-armv7
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-armv7
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-armv7
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-armv7
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-armv7
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-armv7
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -193,9 +198,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/arm/v6
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-armv6
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-armv6
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-armv6
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-armv6
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-armv6
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-armv6
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -233,9 +238,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/ppc64le
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-ppc64le
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-ppc64le
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-ppc64le
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-ppc64le
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-ppc64le
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-ppc64le
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -273,9 +278,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           platforms: linux/s390x
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-s390x
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-s390x
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-s390x
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-s390x
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-s390x
+            ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-s390x
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -297,33 +302,33 @@ jobs:
 
       - name: Create and push multi-arch manifest (full version)
         run: |
-          docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }} \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-amd64 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-arm64 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-armv7 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-armv6 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-ppc64le \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}-s390x
-          docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.full-version }}
+          docker manifest create ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }} \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-amd64 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-arm64 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-armv7 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-armv6 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-ppc64le \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}-s390x
+          docker manifest push ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.full-version }}
 
       - name: Create and push multi-arch manifest (major.minor version)
         run: |
-          docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }} \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-amd64 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-arm64 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-armv7 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-armv6 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-ppc64le \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}-s390x
-          docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.extract-version.outputs.major-minor-version }}
+          docker manifest create ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }} \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-amd64 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-arm64 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-armv7 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-armv6 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-ppc64le \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}-s390x
+          docker manifest push ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:${{ needs.extract-version.outputs.major-minor-version }}
 
       - name: Create and push multi-arch manifest (latest)
         run: |
-          docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-amd64 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-arm64 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-armv7 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-armv6 \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-ppc64le \
-            --amend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-s390x
-          docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker manifest create ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-amd64 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-arm64 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-armv7 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-armv6 \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-ppc64le \
+            --amend ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest-s390x
+          docker manifest push ${{ env.REGISTRY }}/${{ needs.extract-version.outputs.image-name }}:latest
