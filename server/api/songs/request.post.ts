@@ -14,6 +14,8 @@ import { createCollaborationInvitationNotification } from '~~/server/services/no
 import { isLimitReached } from '~~/server/utils/submissionLimit'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 
+const AUTO_VOUCHER_RESTRICTION_REASON = '超时未兑换点歌券'
+
 export default defineEventHandler(async (event) => {
   // 检查用户认证
   const user = event.context.user
@@ -29,7 +31,12 @@ export default defineEventHandler(async (event) => {
     const restriction = await db
       .select({ id: userSongRestrictions.id })
       .from(userSongRestrictions)
-      .where(eq(userSongRestrictions.userId, user.id))
+      .where(
+        and(
+          eq(userSongRestrictions.userId, user.id),
+          eq(userSongRestrictions.reason, AUTO_VOUCHER_RESTRICTION_REASON)
+        )
+      )
       .limit(1)
 
     if (restriction.length > 0) {

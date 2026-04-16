@@ -200,14 +200,14 @@ export const systemSettings = pgTable('SystemSettings', {
 
 export const voucherRedeemTasks = pgTable('voucher_redeem_tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: integer('user_id').notNull(),
-  songId: integer('song_id').notNull(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  songId: integer('song_id').notNull().references(() => songs.id, { onDelete: 'cascade' }),
   status: voucherRedeemTaskStatusEnum('status').default('PENDING').notNull(),
   redeemDeadlineAt: timestamp('redeem_deadline_at', { withTimezone: true }).notNull(),
   tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
   remindSentAt: timestamp('remind_sent_at', { withTimezone: true }),
   redeemedAt: timestamp('redeemed_at', { withTimezone: true }),
-  voucherCodeId: uuid('voucher_code_id'),
+  voucherCodeId: uuid('voucher_code_id').references(() => voucherCodes.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({
@@ -217,9 +217,9 @@ export const voucherRedeemTasks = pgTable('voucher_redeem_tasks', {
 
 export const userSongRestrictions = pgTable('user_song_restrictions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: integer('user_id').notNull().unique(),
+  userId: integer('user_id').notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
   reason: text('reason'),
-  createdByUserId: integer('created_by_user_id'),
+  createdByUserId: integer('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -229,9 +229,9 @@ export const voucherCodes = pgTable('voucher_codes', {
   codeHash: varchar('code_hash', { length: 255 }).notNull().unique(),
   codeTail: varchar('code_tail', { length: 16 }).notNull(),
   status: voucherCodeStatusEnum('status').default('ACTIVE').notNull(),
-  usedByUserId: integer('used_by_user_id'),
+  usedByUserId: integer('used_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   usedAt: timestamp('used_at', { withTimezone: true }),
-  usedTaskId: uuid('used_task_id'),
+  usedTaskId: uuid('used_task_id').references(() => voucherRedeemTasks.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

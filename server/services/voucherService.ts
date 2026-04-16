@@ -18,8 +18,6 @@ import {
 } from '~~/server/utils/voucher'
 import { sendEmailNotificationToUser } from '~~/server/services/smtpService'
 
-const EXEMPT_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'])
-
 type PublishedSongInfo = {
   songId: number
   requesterId: number
@@ -39,7 +37,7 @@ type CreateVoucherTaskOptions = {
 }
 
 function isNormalUserRole(role: string | null | undefined) {
-  return !!role && role === 'USER' && !EXEMPT_ROLES.has(role)
+  return role === 'USER'
 }
 
 function buildRequiredMessage(songTitle: string, deadline: Date, token: string) {

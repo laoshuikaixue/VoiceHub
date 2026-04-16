@@ -4,6 +4,8 @@ import {
 } from '~~/server/services/voucherService'
 
 export default defineNitroPlugin((nitroApp) => {
+  const explicitlyEnabled = process.env.ENABLE_VOUCHER_JOBS === 'true'
+
   const isServerless = Boolean(
     process.env.VERCEL
     || process.env.NETLIFY
@@ -11,11 +13,7 @@ export default defineNitroPlugin((nitroApp) => {
     || process.env.K_SERVICE
   )
 
-  const shouldEnable =
-    process.env.ENABLE_VOUCHER_JOBS === 'true'
-    || (process.env.ENABLE_VOUCHER_JOBS !== 'false' && process.env.NODE_ENV === 'production')
-
-  if (!shouldEnable) {
+  if (!explicitlyEnabled) {
     console.log('[VoucherJobs] 自动任务未启用（可通过 ENABLE_VOUCHER_JOBS=true 开启）')
     return
   }

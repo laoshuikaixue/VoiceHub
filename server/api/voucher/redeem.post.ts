@@ -16,9 +16,27 @@ const REDEEM_WINDOW_MS = 60 * 1000
 const REDEEM_WINDOW_SECONDS = Math.ceil(REDEEM_WINDOW_MS / 1000)
 const REDEEM_MAX_ATTEMPTS = 8
 const localRedeemAttempts = new Map<number, { count: number; windowStart: number }>()
+const LOCAL_REDEEM_SWEEP_INTERVAL_MS = 5 * 60 * 1000
+let lastLocalSweepAt = 0
+
+function sweepLocalRedeemAttempts(now: number) {
+  if (now - lastLocalSweepAt < LOCAL_REDEEM_SWEEP_INTERVAL_MS) {
+    return
+  }
+
+  for (const [userId, entry] of localRedeemAttempts.entries()) {
+    if (now - entry.windowStart > REDEEM_WINDOW_MS) {
+      localRedeemAttempts.delete(userId)
+    }
+  }
+
+  lastLocalSweepAt = now
+}
 
 function assertLocalRedeemRateLimit(userId: number) {
   const now = Date.now()
+  sweepLocalRedeemAttempts(now)
+
   const current = localRedeemAttempts.get(userId)
 
   if (!current || now - current.windowStart > REDEEM_WINDOW_MS) {
