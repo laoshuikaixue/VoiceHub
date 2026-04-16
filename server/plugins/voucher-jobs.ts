@@ -4,12 +4,26 @@ import {
 } from '~~/server/services/voucherService'
 
 export default defineNitroPlugin((nitroApp) => {
+  const isServerless = Boolean(
+    process.env.VERCEL
+    || process.env.NETLIFY
+    || process.env.AWS_LAMBDA_FUNCTION_NAME
+    || process.env.K_SERVICE
+  )
+
   const shouldEnable =
     process.env.ENABLE_VOUCHER_JOBS === 'true'
     || (process.env.ENABLE_VOUCHER_JOBS !== 'false' && process.env.NODE_ENV === 'production')
 
   if (!shouldEnable) {
     console.log('[VoucherJobs] 自动任务未启用（可通过 ENABLE_VOUCHER_JOBS=true 开启）')
+    return
+  }
+
+  if (isServerless) {
+    console.warn(
+      '[VoucherJobs] 检测到 Serverless 运行环境，setInterval 任务可能不会持续执行；请使用外部 Cron 定时调用 /api/admin/voucher/process-jobs'
+    )
     return
   }
 

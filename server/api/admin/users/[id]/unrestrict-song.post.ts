@@ -1,7 +1,9 @@
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { userSongRestrictions } from '~/drizzle/schema'
+
+const AUTO_VOUCHER_RESTRICTION_REASON = '超时未兑换点歌券'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -15,19 +17,35 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '用户ID不合法' })
   }
 
-  const deleted = await db
+  const existing = await db
+    .select({ id: userSongRestrictions.id, reason: userSongRestrictions.reason })
+    .from(userSongRestrictions)
+    .where(eq(userSongRestrictions.userId, id))
+    .limit(1)
+
+  if (existing.length === 0) {
+    return {
+      success: true,
+      removed: false,
+      message: '该用户当前没有点歌限制'
+    }
+  }
+
+  if (existing[0].reason !== AUTO_VOUCHER_RESTRICTION_REASON) {
+    return {
+      success: true,
+      removed: false,
+      message: `无法通过此接口解除限制（原因：${existing[0].reason}）`
+    }
+  }
+
+  await db
     .delete(userSongRestrictions)
-    .where(
-      and(
-        eq(userSongRestrictions.userId, id),
-        eq(userSongRestrictions.reason, '超时未兑换点歌券')
-      )
-    )
-    .returning({ id: userSongRestrictions.id })
+    .where(eq(userSongRestrictions.id, existing[0].id))
 
   return {
     success: true,
-    removed: deleted.length > 0,
-    message: deleted.length > 0 ? '已解除点歌限制' : '该用户当前没有点歌限制'
+    removed: true,
+    message: '已解除点歌限制'
   }
 })

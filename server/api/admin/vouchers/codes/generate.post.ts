@@ -27,34 +27,41 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const generatedCodes: string[] = []
-  const maxAttempts = Math.max(20, requestedCount * 8)
+  const codesToInsert: typeof voucherCodes.$inferInsert[] = []
+  const rawCodesMap = new Map<string, string>()
+  const maxAttempts = Math.max(1000, requestedCount * 2)
   let attempts = 0
+  const now = new Date()
 
-  while (generatedCodes.length < requestedCount && attempts < maxAttempts) {
+  while (rawCodesMap.size < requestedCount && attempts < maxAttempts) {
     attempts += 1
 
-    const now = new Date()
     const rawCode = createRawVoucherCode()
     const codeHash = hashVoucherCode(rawCode)
-    const codeTail = getVoucherCodeTail(rawCode)
 
-    const inserted = await db
-      .insert(voucherCodes)
-      .values({
+    if (!rawCodesMap.has(codeHash)) {
+      rawCodesMap.set(codeHash, rawCode)
+      codesToInsert.push({
         codeHash,
-        codeTail,
+        codeTail: getVoucherCodeTail(rawCode),
         status: 'ACTIVE',
         createdAt: now,
         updatedAt: now
       })
-      .onConflictDoNothing({ target: voucherCodes.codeHash })
-      .returning({ id: voucherCodes.id })
-
-    if (inserted.length > 0) {
-      generatedCodes.push(rawCode)
     }
   }
+
+  const inserted = codesToInsert.length > 0
+    ? await db
+      .insert(voucherCodes)
+      .values(codesToInsert)
+      .onConflictDoNothing({ target: voucherCodes.codeHash })
+      .returning({ codeHash: voucherCodes.codeHash })
+    : []
+
+  const generatedCodes = inserted
+    .map(row => rawCodesMap.get(row.codeHash))
+    .filter((code): code is string => Boolean(code))
 
   return {
     success: true,
