@@ -1,4 +1,4 @@
-import {bigint, boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar, unique, index} from 'drizzle-orm/pg-core';
 import {relations} from 'drizzle-orm';
 
 // 枚举定义
@@ -6,6 +6,8 @@ export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn', 'graduate']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
+export const voucherRedeemTaskStatusEnum = pgEnum('voucher_redeem_task_status', ['PENDING', 'REDEEMED', 'EXPIRED', 'CANCELLED']);
+export const voucherCodeStatusEnum = pgEnum('voucher_code_status', ['ACTIVE', 'USED', 'DISABLED', 'EXPIRED']);
 
 // 用户表
 export const users = pgTable('User', {
@@ -191,6 +193,47 @@ export const systemSettings = pgTable('SystemSettings', {
   customOAuthNameField: text('customOAuthNameField'),
   customOAuthEmailField: text('customOAuthEmailField'),
   customOAuthAvatarField: text('customOAuthAvatarField'),
+  enableVoucherPayment: boolean('enableVoucherPayment').default(false).notNull(),
+  voucherRedeemDeadlineMinutes: integer('voucherRedeemDeadlineMinutes').default(30).notNull(),
+  voucherRemindWindowMinutes: integer('voucherRemindWindowMinutes').default(5).notNull(),
+});
+
+export const voucherRedeemTasks = pgTable('voucher_redeem_tasks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: integer('user_id').notNull(),
+  songId: integer('song_id').notNull(),
+  status: voucherRedeemTaskStatusEnum('status').default('PENDING').notNull(),
+  redeemDeadlineAt: timestamp('redeem_deadline_at', { withTimezone: true }).notNull(),
+  tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
+  remindSentAt: timestamp('remind_sent_at', { withTimezone: true }),
+  redeemedAt: timestamp('redeemed_at', { withTimezone: true }),
+  voucherCodeId: uuid('voucher_code_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  uniqueSongId: unique().on(t.songId),
+  statusDeadlineIdx: index('voucher_redeem_tasks_status_deadline_idx').on(t.status, t.redeemDeadlineAt),
+}));
+
+export const userSongRestrictions = pgTable('user_song_restrictions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: integer('user_id').notNull().unique(),
+  reason: text('reason'),
+  createdByUserId: integer('created_by_user_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const voucherCodes = pgTable('voucher_codes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  codeHash: varchar('code_hash', { length: 255 }).notNull().unique(),
+  codeTail: varchar('code_tail', { length: 16 }).notNull(),
+  status: voucherCodeStatusEnum('status').default('ACTIVE').notNull(),
+  usedByUserId: integer('used_by_user_id'),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  usedTaskId: uuid('used_task_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // 歌曲黑名单表
@@ -329,8 +372,11 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
   apiKeys: many(apiKeys),
   statusLogs: many(userStatusLogs),
-    collaborations: many(songCollaborators),
+  collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),
+  voucherRedeemTasks: many(voucherRedeemTasks),
+  songRestrictions: many(userSongRestrictions),
+  usedVoucherCodes: many(voucherCodes),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
     references: [users.id],
@@ -356,8 +402,9 @@ export const songsRelations = relations(songs, ({ one, many }) => ({
   votes: many(votes),
   schedules: many(schedules),
   notifications: many(notifications),
-    collaborators: many(songCollaborators),
-    replayRequests: many(songReplayRequests),
+  collaborators: many(songCollaborators),
+  replayRequests: many(songReplayRequests),
+  voucherRedeemTasks: many(voucherRedeemTasks),
 }));
 
 export const votesRelations = relations(votes, ({ one }) => ({
@@ -474,6 +521,43 @@ export const songReplayRequestsRelations = relations(songReplayRequests, ({one})
     }),
 }));
 
+export const voucherRedeemTasksRelations = relations(voucherRedeemTasks, ({ one }) => ({
+  user: one(users, {
+    fields: [voucherRedeemTasks.userId],
+    references: [users.id],
+  }),
+  song: one(songs, {
+    fields: [voucherRedeemTasks.songId],
+    references: [songs.id],
+  }),
+  voucherCode: one(voucherCodes, {
+    fields: [voucherRedeemTasks.voucherCodeId],
+    references: [voucherCodes.id],
+  }),
+}));
+
+export const userSongRestrictionsRelations = relations(userSongRestrictions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSongRestrictions.userId],
+    references: [users.id],
+  }),
+  createdByUser: one(users, {
+    fields: [userSongRestrictions.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const voucherCodesRelations = relations(voucherCodes, ({ one }) => ({
+  usedByUser: one(users, {
+    fields: [voucherCodes.usedByUserId],
+    references: [users.id],
+  }),
+  usedTask: one(voucherRedeemTasks, {
+    fields: [voucherCodes.usedTaskId],
+    references: [voucherRedeemTasks.id],
+  }),
+}));
+
 // 邮件模板表（仅存储自定义覆盖，内置模板在代码中定义）
 export const emailTemplates = pgTable('EmailTemplate', {
   id: serial('id').primaryKey(),
@@ -522,7 +606,14 @@ export type NewCollaborationLog = typeof collaborationLogs.$inferInsert;
 export type SongReplayRequest = typeof songReplayRequests.$inferSelect;
 export type NewSongReplayRequest = typeof songReplayRequests.$inferInsert;
 export type EmailTemplate = typeof emailTemplates.$inferSelect;
-export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type RequestTime = typeof requestTimes.$inferSelect;
+export type NewEmailTemplate = typeof emailTemplates.$inferInsert;
+export type RequestTime = typeof requestTimes.$inferSelect;
 export type NewRequestTime = typeof requestTimes.$inferInsert;
 export type UserIdentity = typeof userIdentities.$inferSelect;
 export type NewUserIdentity = typeof userIdentities.$inferInsert;
+export type VoucherRedeemTask = typeof voucherRedeemTasks.$inferSelect;
+export type NewVoucherRedeemTask = typeof voucherRedeemTasks.$inferInsert;
+export type UserSongRestriction = typeof userSongRestrictions.$inferSelect;
+export type NewUserSongRestriction = typeof userSongRestrictions.$inferInsert;
+export type VoucherCode = typeof voucherCodes.$inferSelect;
+export type NewVoucherCode = typeof voucherCodes.$inferInsert;

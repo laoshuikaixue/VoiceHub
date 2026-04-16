@@ -55,7 +55,10 @@ export default defineEventHandler(async (event) => {
           monthlySubmissionLimit: null,
           showBlacklistKeywords: false,
           enableCollaborativeSubmission: true,
-          enableSubmissionRemarks: false
+          enableSubmissionRemarks: false,
+          enableVoucherPayment: false,
+          voucherRedeemDeadlineMinutes: 30,
+          voucherRemindWindowMinutes: 5
         })
         .returning()
       settings = newSettingsResult[0]

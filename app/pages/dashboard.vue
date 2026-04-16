@@ -151,6 +151,14 @@
               <LazyAdminBlacklistManager />
             </div>
 
+            <!-- 点歌券管理 -->
+            <div
+              v-if="activeTab === 'vouchers' && permissions.canAccessPage('vouchers')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminVoucherManager />
+            </div>
+
             <!-- 站点配置 -->
             <div
               v-if="activeTab === 'site-config' && permissions.canAccessPage('site-config')"
@@ -236,6 +244,7 @@ const getPageTitle = () => {
     'request-times': '投稿管理',
     semesters: '学期管理',
     blacklist: '黑名单管理',
+    vouchers: '点歌券管理',
     'site-config': '站点配置',
     database: '数据库操作'
   }

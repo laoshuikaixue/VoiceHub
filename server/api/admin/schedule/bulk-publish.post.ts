@@ -2,6 +2,11 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, eq, gte, lte, inArray } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
+import {
+  createVoucherTasksForPublishedSongs,
+  sendVoucherRequiredEmails,
+  type VoucherRequiredEmailJob
+} from '~~/server/services/voucherService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
@@ -57,12 +62,20 @@ export default defineEventHandler(async (event) => {
 
     const songMap = new Map(songDetails.map((s: any) => [s.id, s]))
 
+    const publishedSongsForVoucher: Array<{
+      songId: number
+      requesterId: number
+      title: string
+      artist: string
+    }> = []
+
     // 需要发送通知的列表
     const notificationsToSend: Array<{
       requesterId: number
       songId: number
       songInfo: { title: string; artist: string; playDate: Date }
     }> = []
+    const requiredEmailJobs: VoucherRequiredEmailJob[] = []
 
     // 开始事务
     await db.transaction(async (tx) => {
@@ -99,6 +112,13 @@ export default defineEventHandler(async (event) => {
           continue
         }
 
+        publishedSongsForVoucher.push({
+          songId: song.id,
+          requesterId: song.requesterId,
+          title: song.title,
+          artist: song.artist
+        })
+
         // 插入排期
         await tx.insert(schedules).values({
           songId: item.songId,
@@ -132,7 +152,25 @@ export default defineEventHandler(async (event) => {
             )
         }
       }
+
+      const voucherTaskResult = await createVoucherTasksForPublishedSongs(
+        publishedSongsForVoucher,
+        tx,
+        { sendRequiredEmails: false }
+      )
+
+      requiredEmailJobs.push(...voucherTaskResult.requiredEmailJobs)
+
+      if (voucherTaskResult.skippedCount > 0) {
+        console.warn(
+          `[Voucher] 批量发布卡密任务生成完成，跳过 ${voucherTaskResult.skippedCount} 首歌曲`
+        )
+      }
     })
+
+    if (requiredEmailJobs.length > 0) {
+      await sendVoucherRequiredEmails(requiredEmailJobs)
+    }
 
     // 事务成功提交后，清除缓存
     try {

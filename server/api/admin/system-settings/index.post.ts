@@ -179,6 +179,36 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionRemarks = body.enableSubmissionRemarks
     }
 
+    if (body.enableVoucherPayment !== undefined) {
+      if (typeof body.enableVoucherPayment !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableVoucherPayment 必须是布尔值'
+        })
+      }
+      updateData.enableVoucherPayment = body.enableVoucherPayment
+    }
+
+    if (body.voucherRedeemDeadlineMinutes !== undefined) {
+      if (!Number.isInteger(body.voucherRedeemDeadlineMinutes) || body.voucherRedeemDeadlineMinutes <= 0) {
+        throw createError({
+          statusCode: 400,
+          message: 'voucherRedeemDeadlineMinutes 必须是正整数'
+        })
+      }
+      updateData.voucherRedeemDeadlineMinutes = body.voucherRedeemDeadlineMinutes
+    }
+
+    if (body.voucherRemindWindowMinutes !== undefined) {
+      if (!Number.isInteger(body.voucherRemindWindowMinutes) || body.voucherRemindWindowMinutes <= 0) {
+        throw createError({
+          statusCode: 400,
+          message: 'voucherRemindWindowMinutes 必须是正整数'
+        })
+      }
+      updateData.voucherRemindWindowMinutes = body.voucherRemindWindowMinutes
+    }
+
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({
@@ -527,6 +557,26 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空'
+      })
+    }
+
+    const nextVoucherDeadline =
+      body.voucherRedeemDeadlineMinutes !== undefined
+        ? body.voucherRedeemDeadlineMinutes
+        : settings?.voucherRedeemDeadlineMinutes
+    const nextVoucherRemindWindow =
+      body.voucherRemindWindowMinutes !== undefined
+        ? body.voucherRemindWindowMinutes
+        : settings?.voucherRemindWindowMinutes
+
+    if (
+      Number.isInteger(nextVoucherDeadline)
+      && Number.isInteger(nextVoucherRemindWindow)
+      && nextVoucherRemindWindow > nextVoucherDeadline
+    ) {
+      throw createError({
+        statusCode: 400,
+        message: 'voucherRemindWindowMinutes 不能大于 voucherRedeemDeadlineMinutes'
       })
     }
 

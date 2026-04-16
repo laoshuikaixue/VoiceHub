@@ -2,8 +2,13 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
 import { and, asc, count, eq } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
+import {
+  createVoucherTasksForPublishedSongs,
+  sendVoucherRequiredEmails
+} from '~~/server/services/voucherService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
+import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -69,26 +74,73 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 更新草稿为已发布状态
     const publishedAt = new Date(getBeijingTimestamp())
+    // 获取客户端IP地址
+    const clientIP = getClientIP(event)
 
-    const publishResult = await db
-      .update(schedules)
-      .set({
-        isDraft: false,
-        publishedAt: publishedAt,
-        updatedAt: publishedAt
-      })
-      .where(eq(schedules.id, body.scheduleId))
-      .returning()
+    // 将排期发布、重播状态更新和卡密任务创建放在同一事务中
+    const publishResult = await db.transaction(async (tx) => {
+      const publishedScheduleResult = await tx
+        .update(schedules)
+        .set({
+          isDraft: false,
+          publishedAt: publishedAt,
+          updatedAt: publishedAt
+        })
+        .where(eq(schedules.id, body.scheduleId))
+        .returning()
 
-    const publishedSchedule = publishResult[0]
+      const publishedSchedule = publishedScheduleResult[0]
 
-    if (!publishedSchedule) {
-      throw createError({
-        statusCode: 500,
-        message: '发布排期失败'
-      })
+      if (!publishedSchedule) {
+        throw createError({
+          statusCode: 500,
+          message: '发布排期失败'
+        })
+      }
+
+      const voucherTaskResult = await createVoucherTasksForPublishedSongs(
+        [
+          {
+            songId: draft.song.id,
+            requesterId: draft.song.requesterId,
+            title: draft.song.title,
+            artist: draft.song.artist
+          }
+        ],
+        tx,
+        { sendRequiredEmails: false }
+      )
+
+      const updatedRequests = await tx
+        .update(songReplayRequests)
+        .set({
+          status: 'FULFILLED',
+          updatedAt: new Date()
+        })
+        .where(
+          and(eq(songReplayRequests.songId, draft.song.id), eq(songReplayRequests.status, 'PENDING'))
+        )
+        .returning()
+
+      return {
+        voucherTaskResult,
+        updatedRequests
+      }
+    })
+
+    if (publishResult.voucherTaskResult.requiredEmailJobs.length > 0) {
+      await sendVoucherRequiredEmails(publishResult.voucherTaskResult.requiredEmailJobs)
+    }
+
+    if (publishResult.voucherTaskResult.skippedCount > 0) {
+      console.warn(
+        `[Voucher] 单条发布卡密任务生成完成，跳过 ${publishResult.voucherTaskResult.skippedCount} 首歌曲`
+      )
+    }
+
+    if (publishResult.updatedRequests.length > 0) {
+      console.log(`发布排期：将 ${publishResult.updatedRequests.length} 个重播申请标记为 FULFILLED`)
     }
 
     // 发布后发送通知（这是与草稿保存的主要区别）
@@ -101,22 +153,6 @@ export default defineEventHandler(async (event) => {
         playDate: draft.playDate
       }
     )
-
-    // 将该歌曲的所有待处理重播申请标记为已完成
-    const updatedRequests = await db
-      .update(songReplayRequests)
-      .set({
-        status: 'FULFILLED',
-        updatedAt: new Date()
-      })
-      .where(
-        and(eq(songReplayRequests.songId, draft.song.id), eq(songReplayRequests.status, 'PENDING'))
-      )
-      .returning()
-
-    if (updatedRequests.length > 0) {
-      console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
-    }
 
     // 清除相关缓存
     try {
@@ -192,7 +228,7 @@ export default defineEventHandler(async (event) => {
             .select({ count: count() })
             .from(votes)
             .where(eq(votes.songId, songId))
-          return { songId, count: voteCountResult[0].count }
+            return { songId, count: voteCountResult[0]?.count ?? 0 }
         })
       )
 

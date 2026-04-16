@@ -474,6 +474,19 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 | NUXT_PUBLIC_HOST | 否  | 用于 CORS 和反向代理的主机名验证 | `your-app.com`                                                            |
+| NUXT_PUBLIC_SITE_URL | 否  | 对外站点地址，用于邮件内绝对链接（如点歌券兑换链接） | `https://your-app.com` |
+| VOUCHER_TOKEN_SALT | 否  | 点歌券兑换 token 哈希盐，建议生产环境单独配置 | `your-voucher-token-salt` |
+| VOUCHER_CODE_SALT | 否  | 点歌券卡密哈希盐，建议生产环境单独配置 | `your-voucher-code-salt` |
+| ENABLE_VOUCHER_JOBS | 否  | 点歌券任务开关：true 强制开，false 强制关，留空仅生产环境开 | `true` |
+| VOUCHER_JOBS_INTERVAL_MS | 否  | 点歌券任务轮询间隔（毫秒，最小 10000，默认 60000） | `60000` |
+| VOUCHER_CRON_SECRET | 否  | 手动触发点歌券任务接口密钥（/api/admin/voucher/process-jobs） | `your-voucher-cron-secret` |
+
+### 点歌券功能相关变量说明
+
+- 如果启用了点歌券补交邮件，建议配置 `NUXT_PUBLIC_SITE_URL`，否则邮件中的兑换入口可能无法生成绝对链接。
+- `VOUCHER_TOKEN_SALT` 和 `VOUCHER_CODE_SALT` 不配置时会回退使用 `JWT_SECRET` 派生值；生产环境建议显式配置，降低密钥复用风险。
+- 自动任务默认在生产环境启用。可通过 `ENABLE_VOUCHER_JOBS` 强制开关，并用 `VOUCHER_JOBS_INTERVAL_MS` 调整执行频率。
+- 若需外部系统安全调用任务处理接口，请配置 `VOUCHER_CRON_SECRET` 并通过请求头 `x-voucher-cron-secret` 传递。
 
 ## OAuth 配置
 

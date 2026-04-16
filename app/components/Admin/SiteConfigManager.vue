@@ -196,6 +196,45 @@
               class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
             >
               <div>
+                <p class="text-xs font-bold text-zinc-200">启用点歌券点歌</p>
+                <p class="text-[10px] text-zinc-500 mt-0.5">
+                  歌曲发布排期后要求普通用户补交卡密，超时则限制未提交用户点歌
+                </p>
+              </div>
+              <input
+                v-model="formData.enableVoucherPayment"
+                type="checkbox"
+                class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              >
+            </div>
+
+            <div v-if="formData.enableVoucherPayment" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label :class="labelClass">补交截止时间（分钟）</label>
+                <input
+                  v-model.number="formData.voucherRedeemDeadlineMinutes"
+                  type="number"
+                  min="1"
+                  :class="inputClass"
+                >
+              </div>
+              <div>
+                <label :class="labelClass">提醒窗口（分钟）</label>
+                <input
+                  v-model.number="formData.voucherRemindWindowMinutes"
+                  type="number"
+                  min="1"
+                  :class="inputClass"
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div
+              class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            >
+              <div>
                 <p class="text-xs font-bold text-zinc-200">启用投稿限额</p>
                 <p class="text-[10px] text-zinc-500 mt-0.5">限制单个用户的点歌频率</p>
               </div>
@@ -427,7 +466,10 @@ const formData = ref({
   customOAuthUsernameField: '',
   customOAuthNameField: '',
   customOAuthEmailField: '',
-  customOAuthAvatarField: ''
+  customOAuthAvatarField: '',
+  enableVoucherPayment: false,
+  voucherRedeemDeadlineMinutes: 30,
+  voucherRemindWindowMinutes: 5
 })
 
 const originalData = ref({})
@@ -523,7 +565,10 @@ const loadConfig = async () => {
       customOAuthUsernameField: data.customOAuthUsernameField || '',
       customOAuthNameField: data.customOAuthNameField || '',
       customOAuthEmailField: data.customOAuthEmailField || '',
-      customOAuthAvatarField: data.customOAuthAvatarField || ''
+      customOAuthAvatarField: data.customOAuthAvatarField || '',
+      enableVoucherPayment: !!data.enableVoucherPayment,
+      voucherRedeemDeadlineMinutes: data.voucherRedeemDeadlineMinutes ?? 30,
+      voucherRemindWindowMinutes: data.voucherRemindWindowMinutes ?? 5
     }
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))

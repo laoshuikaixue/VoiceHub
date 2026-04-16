@@ -69,7 +69,15 @@ export interface Schedule {
   }
 }
 
-export type NotificationType = 'SONG_SELECTED' | 'SONG_PLAYED' | 'SONG_VOTED' | 'SYSTEM_NOTICE'
+export type NotificationType =
+  | 'SONG_SELECTED'
+  | 'SONG_PLAYED'
+  | 'SONG_VOTED'
+  | 'SYSTEM_NOTICE'
+  | 'VOUCHER_REDEEM_REQUIRED'
+  | 'VOUCHER_REDEEM_REMINDER'
+  | 'VOUCHER_REDEEM_EXPIRED'
+  | 'VOUCHER_REDEEM_SUCCESS'
 
 export interface Notification {
   id: number
@@ -135,6 +143,9 @@ export interface SystemSettings {
   enableReplayRequests?: boolean
   enableCollaborativeSubmission?: boolean
   enableSubmissionRemarks?: boolean
+  enableVoucherPayment?: boolean
+  voucherRedeemDeadlineMinutes?: number
+  voucherRemindWindowMinutes?: number
 }
 
 export interface RequestTime {

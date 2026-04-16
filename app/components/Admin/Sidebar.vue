@@ -132,7 +132,8 @@ import {
   Ban,
   Globe,
   Database,
-  Lock
+  Lock,
+  Ticket
 } from 'lucide-vue-next'
 import logo from '~~/public/images/logo.png'
 
@@ -192,6 +193,7 @@ const menuGroups = [
       { icon: FileEdit, label: '投稿管理', id: 'request-times' },
       { icon: BookOpen, label: '学期管理', id: 'semesters' },
       { icon: Ban, label: '黑名单管理', id: 'blacklist' },
+      { icon: Ticket, label: '点歌券管理', id: 'vouchers' },
       { icon: Globe, label: '站点配置', id: 'site-config' },
       { icon: Database, label: '数据库操作', id: 'database' }
     ]

@@ -279,6 +279,30 @@
                               color="#8b5cf6"
                               name="message-circle"
                             />
+                            <Icon
+                              v-else-if="notification.type === 'VOUCHER_REDEEM_REQUIRED'"
+                              :size="20"
+                              color="#2563eb"
+                              name="alert-circle"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'VOUCHER_REDEEM_REMINDER'"
+                              :size="20"
+                              color="#f59e0b"
+                              name="clock"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'VOUCHER_REDEEM_EXPIRED'"
+                              :size="20"
+                              color="#ef4444"
+                              name="x-circle"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'VOUCHER_REDEEM_SUCCESS'"
+                              :size="20"
+                              color="#10b981"
+                              name="check"
+                            />
                             <Icon v-else :size="20" color="#6b7280" name="bell" />
                           </div>
                           <div class="notification-title-row">
@@ -316,6 +340,18 @@
                               <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
                                 >联合投稿回复</span
                               >
+                              <span v-else-if="notification.type === 'VOUCHER_REDEEM_REQUIRED'
+                                ">点歌券待补交</span
+                              >
+                              <span v-else-if="notification.type === 'VOUCHER_REDEEM_REMINDER'
+                                ">点歌券即将超时</span
+                              >
+                              <span v-else-if="notification.type === 'VOUCHER_REDEEM_EXPIRED'
+                                ">点歌功能已限制</span
+                              >
+                              <span v-else-if="notification.type === 'VOUCHER_REDEEM_SUCCESS'
+                                ">点歌券兑换成功</span
+                              >
                               <span v-else>系统通知</span>
                               <span v-if="!notification.read" class="unread-indicator" />
                             </div>
@@ -325,7 +361,16 @@
                           </div>
                         </div>
                         <div class="notification-card-body">
-                          <div class="notification-text">{{ notification.message }}</div>
+                          <div class="notification-text">
+                            {{ formatNotificationMessage(notification.message) }}
+                          </div>
+                          <button
+                            v-if="extractVoucherLinkFromMessage(notification.message)"
+                            class="action-button accept-btn mt-2"
+                            @click.stop="openNotificationLink(notification)"
+                          >
+                            去兑换点歌券
+                          </button>
 
                           <!-- 联合投稿邀请操作按钮 -->
                           <div
@@ -1376,6 +1421,32 @@ const viewNotification = async (notification) => {
   if (!notification.read) {
     await notificationsService.markAsRead(notification.id)
   }
+}
+
+const extractVoucherLinkFromMessage = (message) => {
+  if (!message) return ''
+  const match = message.match(/\/voucher\/redeem\?token=[^\s]+/)
+  return match ? match[0] : ''
+}
+
+const formatNotificationMessage = (message) => {
+  if (!message) return ''
+
+  return message
+    .replace(/兑换入口：\/?voucher\/redeem\?token=[^\s]+/, '兑换入口：请点击下方按钮')
+    .replace(/请尽快兑换：\/?voucher\/redeem\?token=[^\s]+/, '请尽快点击下方按钮完成兑换')
+    .replace(/自动解除限制：\/?voucher\/redeem\?token=[^\s]+/, '可点击下方按钮补交后自动解除限制')
+}
+
+const openNotificationLink = async (notification) => {
+  const link = extractVoucherLinkFromMessage(notification.message)
+  if (!link) return
+
+  if (!notification.read) {
+    await notificationsService.markAsRead(notification.id)
+  }
+
+  await navigateTo(link)
 }
 
 // 处理联合投稿回复

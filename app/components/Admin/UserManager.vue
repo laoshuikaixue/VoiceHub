@@ -246,6 +246,14 @@
                     </button>
                     <button
                       :disabled="isSelf(user)"
+                      class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-emerald-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
+                      title="解除点歌限制"
+                      @click="unrestrictSong(user)"
+                    >
+                      <LockOpen :size="13" />
+                    </button>
+                    <button
+                      :disabled="isSelf(user)"
                       class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-amber-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
                       title="重置密码"
                       @click="resetPassword(user)"
@@ -392,6 +400,13 @@
                 @click="viewUserSongs(user)"
               >
                 <Music :size="12" /> 记录
+              </button>
+              <button
+                :disabled="isSelf(user)"
+                class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-emerald-600 active:text-white transition-colors disabled:opacity-20 action-btn"
+                @click="unrestrictSong(user)"
+              >
+                <LockOpen :size="12" /> 解封
               </button>
               <button
                 :disabled="isSelf(user)"
@@ -1403,6 +1418,7 @@ import {
   MapPin,
   Edit2,
   Music,
+  LockOpen,
   Lock,
   Trash2,
   ChevronLeft,
@@ -1724,6 +1740,28 @@ const confirmDeleteUser = (user) => {
 const viewUserSongs = (user) => {
   selectedUserId.value = user.id
   showUserSongsModal.value = true
+}
+
+const unrestrictSong = async (user) => {
+  if (isSelf(user)) {
+    return
+  }
+
+  try {
+    const response = await $fetch(`/api/admin/users/${user.id}/unrestrict-song`, {
+      method: 'POST',
+      ...auth.getAuthConfig()
+    })
+
+    if (window.$showNotification) {
+      window.$showNotification(response?.message || '操作成功', 'success')
+    }
+  } catch (error) {
+    console.error('解除点歌限制失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(error.message || '解除点歌限制失败', 'error')
+    }
+  }
 }
 
 const closeUserSongsModal = () => {

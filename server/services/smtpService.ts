@@ -81,6 +81,15 @@ export class SmtpService {
     `,
     collaborationInvite: `
       <p>用户 <strong>{{inviterName}}</strong> 邀请您共同投稿歌曲《{{songTitle}}》。</p>
+    `,
+    voucherRedeem: `
+      <p>歌曲《{{songTitle}}》需要补交点歌券。</p>
+      {{#if deadlineText}}
+      <p>截止时间：<strong>{{deadlineText}}</strong></p>
+      {{/if}}
+      {{#if message}}
+      <p style="color: #555; white-space: pre-wrap;">{{message}}</p>
+      {{/if}}
     `
   }
 
@@ -137,6 +146,34 @@ export class SmtpService {
       subject: '收到联合投稿邀请 | {{siteTitle}}通知推送',
       contentType: 'collaborationInvite',
       headerSubtitle: '通知推送'
+    },
+    'notification.voucherRedeemRequired': {
+      name: '点歌券待补交通知',
+      subject: '点歌券待补交 | {{siteTitle}}通知推送',
+      contentType: 'voucherRedeem',
+      headerSubtitle: '点歌券通知',
+      actionText: '立即兑换点歌券'
+    },
+    'notification.voucherRedeemReminder': {
+      name: '点歌券补交提醒',
+      subject: '点歌券即将超时 | {{siteTitle}}通知推送',
+      contentType: 'voucherRedeem',
+      headerSubtitle: '点歌券通知',
+      actionText: '马上去兑换'
+    },
+    'notification.voucherRedeemExpired': {
+      name: '点歌券补交超时',
+      subject: '点歌限制提醒 | {{siteTitle}}通知推送',
+      contentType: 'voucherRedeem',
+      headerSubtitle: '点歌券通知',
+      actionText: '补交并解除限制'
+    },
+    'notification.voucherRedeemSuccess': {
+      name: '点歌券兑换成功',
+      subject: '点歌券兑换成功 | {{siteTitle}}通知推送',
+      contentType: 'voucherRedeem',
+      headerSubtitle: '点歌券通知',
+      actionText: '查看点歌页'
     }
   }
 

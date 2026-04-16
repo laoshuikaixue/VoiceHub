@@ -35,7 +35,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpPassword: null,
   smtpFromEmail: null,
   smtpFromName: '校园广播站',
-  allowOAuthRegistration: false
+  allowOAuthRegistration: false,
+  enableVoucherPayment: false,
+  voucherRedeemDeadlineMinutes: 30,
+  voucherRemindWindowMinutes: 5
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -66,7 +69,10 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',
   'customOAuthEnabled',
-  'customOAuthDisplayName'
+  'customOAuthDisplayName',
+  'enableVoucherPayment',
+  'voucherRedeemDeadlineMinutes',
+  'voucherRemindWindowMinutes'
 ]
 
 export const filterPublicSettings = (data: any) => {

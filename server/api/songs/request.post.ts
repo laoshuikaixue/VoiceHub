@@ -6,7 +6,8 @@ import {
   semesters,
   songCollaborators,
   songs,
-  systemSettings
+  systemSettings,
+  userSongRestrictions
 } from '~/drizzle/db'
 import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
@@ -22,6 +23,21 @@ export default defineEventHandler(async (event) => {
       statusCode: 401,
       message: '需要登录才能点歌'
     })
+  }
+
+  if (user.role === 'USER') {
+    const restriction = await db
+      .select({ id: userSongRestrictions.id })
+      .from(userSongRestrictions)
+      .where(eq(userSongRestrictions.userId, user.id))
+      .limit(1)
+
+    if (restriction.length > 0) {
+      throw createError({
+        statusCode: 403,
+        message: '当前账号因未补交点歌券已被限制点歌，请先完成卡密兑换'
+      })
+    }
   }
 
   const body = await readBody(event)
