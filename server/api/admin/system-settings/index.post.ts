@@ -563,11 +563,11 @@ export default defineEventHandler(async (event) => {
     const nextVoucherDeadline =
       body.voucherRedeemDeadlineMinutes !== undefined
         ? body.voucherRedeemDeadlineMinutes
-        : settings?.voucherRedeemDeadlineMinutes
+        : (settings?.voucherRedeemDeadlineMinutes ?? SYSTEM_SETTINGS_DEFAULTS.voucherRedeemDeadlineMinutes)
     const nextVoucherRemindWindow =
       body.voucherRemindWindowMinutes !== undefined
         ? body.voucherRemindWindowMinutes
-        : settings?.voucherRemindWindowMinutes
+        : (settings?.voucherRemindWindowMinutes ?? SYSTEM_SETTINGS_DEFAULTS.voucherRemindWindowMinutes)
 
     if (
       Number.isInteger(nextVoucherDeadline)

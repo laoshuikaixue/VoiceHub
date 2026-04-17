@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { and, eq, gt, inArray, isNull, lt, lte } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import {
   notifications,
