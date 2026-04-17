@@ -285,7 +285,7 @@ export async function processVoucherExpiryJob() {
     })
     .from(voucherRedeemTasks)
     .innerJoin(songs, eq(voucherRedeemTasks.songId, songs.id))
-    .where(and(eq(voucherRedeemTasks.status, 'PENDING'), lt(voucherRedeemTasks.redeemDeadlineAt, now)))
+    .where(and(eq(voucherRedeemTasks.status, 'PENDING'), lte(voucherRedeemTasks.redeemDeadlineAt, now)))
 
   let expiredCount = 0
 

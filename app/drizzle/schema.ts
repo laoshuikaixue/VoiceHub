@@ -375,7 +375,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),
   voucherRedeemTasks: many(voucherRedeemTasks),
-  songRestrictions: many(userSongRestrictions),
+  songRestriction: one(userSongRestrictions, {
+    fields: [users.id],
+    references: [userSongRestrictions.userId],
+  }),
   usedVoucherCodes: many(voucherCodes),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
@@ -404,7 +407,10 @@ export const songsRelations = relations(songs, ({ one, many }) => ({
   notifications: many(notifications),
   collaborators: many(songCollaborators),
   replayRequests: many(songReplayRequests),
-  voucherRedeemTasks: many(voucherRedeemTasks),
+  voucherRedeemTask: one(voucherRedeemTasks, {
+    fields: [songs.id],
+    references: [voucherRedeemTasks.songId],
+  }),
 }));
 
 export const votesRelations = relations(votes, ({ one }) => ({

@@ -1425,21 +1425,29 @@ const viewNotification = async (notification) => {
 
 const extractVoucherLinkFromMessage = (message) => {
   if (!message) return ''
-  const match = message.match(/\/voucher\/redeem\?token=[^\s]+/)
+  const match = message.match(/\/?voucher\/redeem\?token=[^\s]+/)
   return match ? match[0] : ''
+}
+
+const getNotificationActionLink = (notification) => {
+  if (!notification) return ''
+
+  const structuredActionLink = notification.actionUrl || notification.actionPath
+  if (structuredActionLink) {
+    return structuredActionLink
+  }
+
+  return extractVoucherLinkFromMessage(notification.message)
 }
 
 const formatNotificationMessage = (message) => {
   if (!message) return ''
 
-  return message
-    .replace(/兑换入口：\/?voucher\/redeem\?token=[^\s]+/, '兑换入口：请点击下方按钮')
-    .replace(/请尽快兑换：\/?voucher\/redeem\?token=[^\s]+/, '请尽快点击下方按钮完成兑换')
-    .replace(/自动解除限制：\/?voucher\/redeem\?token=[^\s]+/, '可点击下方按钮补交后自动解除限制')
+  return message.replace(/\/?voucher\/redeem\?token=[^\s]+/g, '请点击下方按钮')
 }
 
 const openNotificationLink = async (notification) => {
-  const link = extractVoucherLinkFromMessage(notification.message)
+  const link = getNotificationActionLink(notification)
   if (!link) return
 
   if (!notification.read) {

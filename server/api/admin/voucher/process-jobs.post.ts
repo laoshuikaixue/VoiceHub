@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const isValidCron = !!cronSecret && requestSecret === cronSecret
 
   if (!isAdmin && !isValidCron) {
-    throw createError({ statusCode: 403, message: '没有权限执行卡密任务' })
+    throw createError({ statusCode: 403, message: '没有权限执行点歌券任务' })
   }
 
   const [reminderResult, expiryResult] = await Promise.all([
