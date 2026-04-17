@@ -247,9 +247,11 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { Ban, Copy, RefreshCw } from 'lucide-vue-next'
+import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 
 const toast = useToast()
+const auth = useAuth()
 
 const generating = ref(false)
 const loadingCodes = ref(false)
@@ -287,6 +289,14 @@ const taskPagination = reactive({
 
 let codeSearchTimer = null
 let taskSearchTimer = null
+
+const getFetchAuthConfig = () => {
+  if (typeof auth !== 'undefined' && typeof auth.getAuthConfig === 'function') {
+    return auth.getAuthConfig()
+  }
+
+  return {}
+}
 
 const formatDate = (value) => {
   if (!value) return '-'
@@ -335,6 +345,7 @@ const loadCodes = async () => {
   try {
     const result = await $fetch('/api/admin/vouchers/codes', {
       method: 'GET',
+      ...getFetchAuthConfig(),
       query: {
         page: codesPagination.page,
         limit: codesPagination.limit,
@@ -360,6 +371,7 @@ const loadTasks = async () => {
   try {
     const result = await $fetch('/api/admin/vouchers/tasks', {
       method: 'GET',
+      ...getFetchAuthConfig(),
       query: {
         page: taskPagination.page,
         limit: taskPagination.limit,
@@ -391,7 +403,8 @@ const generateCodes = async () => {
   try {
     const result = await $fetch('/api/admin/vouchers/codes/generate', {
       method: 'POST',
-      body: { count }
+      body: { count },
+      ...getFetchAuthConfig()
     })
 
     generatedCodes.value = result?.data?.codes || []
@@ -423,7 +436,8 @@ const disableCode = async (item) => {
 
   try {
     await $fetch(`/api/admin/vouchers/codes/${item.id}/disable`, {
-      method: 'POST'
+      method: 'POST',
+      ...getFetchAuthConfig()
     })
     toast.success('点歌券已禁用')
     await loadCodes()
@@ -439,7 +453,8 @@ const cancelTask = async (item) => {
 
   try {
     const result = await $fetch(`/api/admin/vouchers/tasks/${item.id}/cancel`, {
-      method: 'POST'
+      method: 'POST',
+      ...getFetchAuthConfig()
     })
     toast.success(result?.message || '任务已取消')
     await loadTasks()

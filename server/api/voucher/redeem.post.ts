@@ -171,6 +171,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const now = new Date()
+  let restrictionReleased = false
 
   await db.transaction(async (tx) => {
     const expiredTransition = await tx
@@ -261,11 +262,16 @@ export default defineEventHandler(async (event) => {
         )
     }
 
+    restrictionReleased = remainingExpiredTasks.length === 0
+    const successMessage = restrictionReleased
+      ? '点歌券兑换成功，点歌限制已自动解除。'
+      : '点歌券兑换成功，但您仍有未完成的补交任务，点歌限制暂未解除。'
+
     await tx.insert(notifications).values({
       userId: user.id,
       songId: task.songId,
       type: 'VOUCHER_REDEEM_SUCCESS',
-      message: '点歌券兑换成功，点歌限制已自动解除。'
+      message: successMessage
     })
   })
 
@@ -278,16 +284,22 @@ export default defineEventHandler(async (event) => {
 
     const songTitle = songResult[0]?.title || '您的歌曲'
     const siteOrigin = getPublicSiteOrigin()
+    const emailSubject = '点歌券兑换成功'
+    const emailMessage = restrictionReleased
+      ? '点歌券兑换成功，点歌限制已自动解除。'
+      : '点歌券兑换成功，但您仍有未完成的补交任务，点歌限制暂未解除。'
 
     await sendEmailNotificationToUser(
       user.id,
-      '点歌券兑换成功',
-      '点歌券兑换成功，点歌限制已自动解除。',
+      emailSubject,
+      emailMessage,
       undefined,
       'notification.voucherRedeemSuccess',
       {
         songTitle,
-        message: '点歌券兑换成功，点歌限制已自动解除，您可以继续正常点歌。',
+        message: restrictionReleased
+          ? '点歌券兑换成功，点歌限制已自动解除，您可以继续正常点歌。'
+          : '点歌券兑换成功，但您仍有未完成的补交任务，当前点歌限制暂未解除。',
         actionUrl: siteOrigin || undefined
       }
     )
@@ -297,6 +309,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    message: '兑换成功，点歌限制已解除'
+    message: '兑换成功，已同步更新点歌限制状态'
   }
 })

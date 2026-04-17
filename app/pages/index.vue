@@ -1426,7 +1426,10 @@ const viewNotification = async (notification) => {
 const extractVoucherLinkFromMessage = (message) => {
   if (!message) return ''
   const match = message.match(/\/?voucher\/redeem\?token=[^\s]+/)
-  return match ? match[0] : ''
+  if (!match) return ''
+
+  const link = match[0]
+  return link.startsWith('/') ? link : `/${link}`
 }
 
 const getNotificationActionLink = (notification) => {
