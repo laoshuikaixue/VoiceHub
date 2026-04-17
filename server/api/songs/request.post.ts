@@ -11,10 +11,9 @@ import {
 } from '~/drizzle/db'
 import { and, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
+import { AUTO_VOUCHER_RESTRICTION_REASON } from '~~/server/constants/voucher'
 import { isLimitReached } from '~~/server/utils/submissionLimit'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
-
-const AUTO_VOUCHER_RESTRICTION_REASON = '超时未兑换点歌券'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证

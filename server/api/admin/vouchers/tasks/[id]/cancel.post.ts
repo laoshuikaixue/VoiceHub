@@ -1,5 +1,6 @@
-import { and, eq, inArray, ne } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { db, userSongRestrictions, voucherRedeemTasks } from '~/drizzle/db'
+import { AUTO_VOUCHER_RESTRICTION_REASON } from '~~/server/constants/voucher'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -75,32 +76,29 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const remainingExpired = await tx
+      .select({ id: voucherRedeemTasks.id })
+      .from(voucherRedeemTasks)
+      .where(
+        and(
+          eq(voucherRedeemTasks.userId, task.userId),
+          eq(voucherRedeemTasks.status, 'EXPIRED')
+        )
+      )
+      .limit(1)
+
     let restrictionReleased = false
 
-    if (task.status === 'EXPIRED') {
-      const remainingExpired = await tx
-        .select({ id: voucherRedeemTasks.id })
-        .from(voucherRedeemTasks)
+    if (remainingExpired.length === 0) {
+      await tx
+        .delete(userSongRestrictions)
         .where(
           and(
-            eq(voucherRedeemTasks.userId, task.userId),
-            eq(voucherRedeemTasks.status, 'EXPIRED'),
-            ne(voucherRedeemTasks.id, id)
+            eq(userSongRestrictions.userId, task.userId),
+            eq(userSongRestrictions.reason, AUTO_VOUCHER_RESTRICTION_REASON)
           )
         )
-        .limit(1)
-
-      if (remainingExpired.length === 0) {
-        await tx
-          .delete(userSongRestrictions)
-          .where(
-            and(
-              eq(userSongRestrictions.userId, task.userId),
-              eq(userSongRestrictions.reason, '超时未兑换点歌券')
-            )
-          )
-        restrictionReleased = true
-      }
+      restrictionReleased = true
     }
 
     return { restrictionReleased }

@@ -11,8 +11,9 @@
       </div>
 
       <div class="space-y-3">
-        <label class="text-xs font-bold text-zinc-400">卡密</label>
+        <label for="voucher-code" class="text-xs font-bold text-zinc-400">卡密</label>
         <input
+          id="voucher-code"
           v-model="code"
           type="text"
           placeholder="请输入点歌券卡密"

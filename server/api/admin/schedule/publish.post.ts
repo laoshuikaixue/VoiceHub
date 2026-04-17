@@ -8,7 +8,6 @@ import {
 } from '~~/server/services/voucherService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
-import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -75,9 +74,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const publishedAt = new Date(getBeijingTimestamp())
-    // 获取客户端IP地址
-    const clientIP = getClientIP(event)
-
     // 将排期发布、重播状态更新和卡密任务创建放在同一事务中
     const publishResult = await db.transaction(async (tx) => {
       const publishedScheduleResult = await tx

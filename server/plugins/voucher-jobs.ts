@@ -4,7 +4,11 @@ import {
 } from '~~/server/services/voucherService'
 
 export default defineNitroPlugin((nitroApp) => {
-  const explicitlyEnabled = process.env.ENABLE_VOUCHER_JOBS === 'true'
+  const enableFlag = process.env.ENABLE_VOUCHER_JOBS?.trim().toLowerCase()
+  const isProduction = process.env.NODE_ENV === 'production'
+  const explicitlyEnabled = enableFlag === 'true'
+  const explicitlyDisabled = enableFlag === 'false'
+  const jobsEnabled = explicitlyEnabled || (!enableFlag && isProduction)
 
   const isServerless = Boolean(
     process.env.VERCEL
@@ -13,8 +17,10 @@ export default defineNitroPlugin((nitroApp) => {
     || process.env.K_SERVICE
   )
 
-  if (!explicitlyEnabled) {
-    console.log('[VoucherJobs] 自动任务未启用（可通过 ENABLE_VOUCHER_JOBS=true 开启）')
+  if (!jobsEnabled || explicitlyDisabled) {
+    console.log(
+      '[VoucherJobs] 自动任务未启用（ENABLE_VOUCHER_JOBS=true 强制开启，留空仅生产环境启用）'
+    )
     return
   }
 

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, lte } from 'drizzle-orm'
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import {
@@ -8,6 +8,7 @@ import {
   voucherCodes,
   voucherRedeemTasks
 } from '~/drizzle/schema'
+import { AUTO_VOUCHER_RESTRICTION_REASON } from '~~/server/constants/voucher'
 import { sendEmailNotificationToUser } from '~~/server/services/smtpService'
 import { getPublicSiteOrigin, hashVoucherCode, hashVoucherRedeemToken } from '~~/server/utils/voucher'
 import { getRedisClient, isRedisReady } from '~~/server/utils/redis'
@@ -57,6 +58,16 @@ function assertLocalRedeemRateLimit(userId: number) {
 }
 
 async function assertRedeemRateLimit(userId: number) {
+  const isProduction = process.env.NODE_ENV === 'production'
+  const redisConfigured = Boolean(process.env.REDIS_URL && process.env.REDIS_URL.trim())
+
+  if (redisConfigured && !isRedisReady() && isProduction) {
+    throw createError({
+      statusCode: 503,
+      message: '兑换服务暂时不可用，请稍后重试'
+    })
+  }
+
   if (isRedisReady()) {
     const client = getRedisClient()
 
@@ -83,6 +94,13 @@ async function assertRedeemRateLimit(userId: number) {
       } catch (error: any) {
         if (error?.statusCode === 429) {
           throw error
+        }
+
+        if (isProduction) {
+          throw createError({
+            statusCode: 503,
+            message: '兑换服务暂时不可用，请稍后重试'
+          })
         }
 
         console.error('[Voucher] Redis 兑换限流失败，回退到本地限流:', error)
@@ -155,6 +173,41 @@ export default defineEventHandler(async (event) => {
   const now = new Date()
 
   await db.transaction(async (tx) => {
+    const expiredTransition = await tx
+      .update(voucherRedeemTasks)
+      .set({
+        status: 'EXPIRED',
+        updatedAt: now
+      })
+      .where(
+        and(
+          eq(voucherRedeemTasks.id, task.id),
+          eq(voucherRedeemTasks.status, 'PENDING'),
+          lte(voucherRedeemTasks.redeemDeadlineAt, now)
+        )
+      )
+      .returning({ id: voucherRedeemTasks.id })
+
+    if (expiredTransition.length > 0) {
+      await tx
+        .insert(userSongRestrictions)
+        .values({
+          userId: user.id,
+          reason: AUTO_VOUCHER_RESTRICTION_REASON,
+          createdByUserId: null,
+          createdAt: now,
+          updatedAt: now
+        })
+        .onConflictDoUpdate({
+          target: userSongRestrictions.userId,
+          set: {
+            reason: AUTO_VOUCHER_RESTRICTION_REASON,
+            createdByUserId: null,
+            updatedAt: now
+          }
+        })
+    }
+
     const usedVoucher = await tx
       .update(voucherCodes)
       .set({
@@ -203,7 +256,7 @@ export default defineEventHandler(async (event) => {
         .where(
           and(
             eq(userSongRestrictions.userId, user.id),
-            eq(userSongRestrictions.reason, '超时未兑换点歌券')
+            eq(userSongRestrictions.reason, AUTO_VOUCHER_RESTRICTION_REASON)
           )
         )
     }

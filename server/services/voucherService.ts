@@ -16,6 +16,7 @@ import {
   formatShanghaiDateTime,
   hashVoucherRedeemToken
 } from '~~/server/utils/voucher'
+import { AUTO_VOUCHER_RESTRICTION_REASON } from '~~/server/constants/voucher'
 import { sendEmailNotificationToUser } from '~~/server/services/smtpService'
 
 type PublishedSongInfo = {
@@ -307,7 +308,7 @@ export async function processVoucherExpiryJob() {
         .insert(userSongRestrictions)
         .values({
           userId: task.userId,
-          reason: '超时未兑换点歌券',
+          reason: AUTO_VOUCHER_RESTRICTION_REASON,
           createdByUserId: null,
           createdAt: now,
           updatedAt: now
@@ -315,7 +316,7 @@ export async function processVoucherExpiryJob() {
         .onConflictDoUpdate({
           target: userSongRestrictions.userId,
           set: {
-            reason: '超时未兑换点歌券',
+            reason: AUTO_VOUCHER_RESTRICTION_REASON,
             createdByUserId: null,
             updatedAt: now
           }

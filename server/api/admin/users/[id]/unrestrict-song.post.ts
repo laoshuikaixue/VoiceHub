@@ -2,8 +2,7 @@ import { eq } from 'drizzle-orm'
 import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { userSongRestrictions } from '~/drizzle/schema'
-
-const AUTO_VOUCHER_RESTRICTION_REASON = '超时未兑换点歌券'
+import { AUTO_VOUCHER_RESTRICTION_REASON } from '~~/server/constants/voucher'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
