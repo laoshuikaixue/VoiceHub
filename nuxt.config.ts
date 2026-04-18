@@ -22,12 +22,12 @@ const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/
 const host = process.env.NUXT_PUBLIC_HOST
 if (!host && !siteLogo.startsWith('http') && process.env.NODE_ENV === 'production') {
   console.warn(
-    '警告: 在生产环境中未配置 NUXT_PUBLIC_HOST，且 siteLogo 使用了相对路径。这可能会导致社交媒体无法正确抓取和显示预览图。'
+    '警告: 在生产环境中未配置 NUXT_PUBLIC_HOST，且 siteLogo 使用了相对路径。这可能会导致网站无法正确抓取和显示预览图。'
   )
 }
-const absoluteLogo = (siteLogo.startsWith('http') || !host)
+const absoluteLogo = (siteLogo.startsWith('http') || siteLogo.startsWith('//') || !host)
   ? siteLogo
-  : `https://${host}${siteLogo.startsWith('/') ? '' : '/'}${siteLogo}`
+  : (host.startsWith('http') ? '' : 'https://') + host.replace(/\/$/, '') + '/' + siteLogo.replace(/^\//, '')
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
