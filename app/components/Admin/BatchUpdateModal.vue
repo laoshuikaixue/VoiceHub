@@ -681,8 +681,8 @@ const filteredUsers = computed(() => {
 
 const isAllSelected = computed(() => {
   if (filteredUsers.value.length === 0) return false
-  const filteredIds = filteredUsers.value.map(u => u.id)
-  return filteredIds.every(id => selectedUserIds.value.includes(id))
+  const selectedSet = new Set(selectedUserIds.value)
+  return filteredUsers.value.every(u => selectedSet.has(u.id))
 })
 
 const canUpdate = computed(() => {
@@ -699,8 +699,9 @@ const canUpdate = computed(() => {
 // 方法
 const toggleSelectAll = () => {
   const filteredIds = filteredUsers.value.map((s) => s.id)
+  const filteredSet = new Set(filteredIds)
   if (isAllSelected.value) {
-    selectedUserIds.value = selectedUserIds.value.filter((id) => !filteredIds.includes(id))
+    selectedUserIds.value = selectedUserIds.value.filter((id) => !filteredSet.has(id))
   } else {
     const newSelections = new Set([...selectedUserIds.value, ...filteredIds])
     selectedUserIds.value = Array.from(newSelections)
