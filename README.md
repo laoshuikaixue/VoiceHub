@@ -543,6 +543,7 @@ VoiceHub/
 │   │   │   ├── ScheduleForm.vue       # 排期表单
 │   │   │   ├── ScheduleItemPrint.vue  # 排期项目打印
 │   │   │   ├── ScheduleManager.vue    # 排期管理
+│   │   │   ├── SchedulePlaylistFilterModal.vue # 排期歌单过滤器
 │   │   │   ├── SchedulePrinter.vue    # 排期打印功能
 │   │   │   ├── ScheduleTablePrint.vue # 排期表格打印功能
 │   │   │   ├── SemesterManager.vue    # 学期管理
