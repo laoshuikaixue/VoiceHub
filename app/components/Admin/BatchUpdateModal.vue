@@ -632,6 +632,8 @@ const auth = useAuth()
 
 // 计算属性
 const computedUsers = computed(() => {
+  // 必须优先使用全量数据 allUsers，如果正在加载则等待加载完成。
+  // 只有在尚未触发加载且需要临时展示时才 fallback 到 props.users。
   return allUsers.value.length > 0
     ? allUsers.value
     : props.users || []
@@ -678,10 +680,9 @@ const filteredUsers = computed(() => {
 })
 
 const isAllSelected = computed(() => {
-  return (
-    filteredUsers.value.length > 0 &&
-    selectedUserIds.value.length === filteredUsers.value.length
-  )
+  if (filteredUsers.value.length === 0) return false
+  const filteredIds = filteredUsers.value.map(u => u.id)
+  return filteredIds.every(id => selectedUserIds.value.includes(id))
 })
 
 const canUpdate = computed(() => {
@@ -697,10 +698,12 @@ const canUpdate = computed(() => {
 
 // 方法
 const toggleSelectAll = () => {
+  const filteredIds = filteredUsers.value.map((s) => s.id)
   if (isAllSelected.value) {
-    selectedUserIds.value = []
+    selectedUserIds.value = selectedUserIds.value.filter((id) => !filteredIds.includes(id))
   } else {
-    selectedUserIds.value = filteredUsers.value.map((s) => s.id)
+    const newSelections = new Set([...selectedUserIds.value, ...filteredIds])
+    selectedUserIds.value = Array.from(newSelections)
   }
 }
 
@@ -725,9 +728,9 @@ const processExcelFile = async (file) => {
     loading.value = true
     error.value = ''
 
-    // 确保用户数据已加载
-    if (computedUsers.value.length === 0) {
-      console.log('用户数据为空，重新获取数据...')
+    // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
+    if (allUsers.value.length === 0) {
+      console.log('正在获取全量用户数据以解析Excel...')
       await fetchAllUsers()
       await nextTick()
     }
@@ -923,6 +926,20 @@ const performGradeUpdate = async () => {
   if (!response.success) {
     throw new Error(response.message || '批量更新失败')
   }
+
+  if (response.errors && response.errors.length > 0) {
+    if (response.updated === 0) {
+      throw new Error(`更新失败: ${response.errors[0].error} 等`)
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(`部分更新成功，${response.failed} 个用户因权限或状态等原因跳过`, 'warning')
+      }
+    }
+  } else {
+    if (window.$showNotification) {
+      window.$showNotification(`成功更新 ${response.updated} 个用户的年级`, 'success')
+    }
+  }
 }
 
 const performExcelUpdate = async () => {
@@ -987,7 +1004,20 @@ const performStatusUpdate = async () => {
   })
 
   if (!response.success) {
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(`更新失败: ${response.errors[0].error} 等`)
+    }
     throw new Error(response.message || '批量更新状态失败')
+  }
+
+  if (response.errors && response.errors.length > 0) {
+    if (window.$showNotification) {
+      window.$showNotification(`部分更新成功，${response.errors.length} 个用户因权限或状态等原因跳过`, 'warning')
+    }
+  } else {
+    if (window.$showNotification) {
+      window.$showNotification(response.message || '批量更新状态成功', 'success')
+    }
   }
 }
 

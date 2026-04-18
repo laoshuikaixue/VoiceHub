@@ -42,12 +42,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户ID格式
-    const validUserIds = userIds
+    const validUserIds = [...new Set(userIds
       .filter((id) => {
         const numId = parseInt(id)
         return !isNaN(numId) && numId > 0
       })
-      .map((id) => parseInt(id))
+      .map((id) => parseInt(id)))]
 
     if (validUserIds.length === 0) {
       throw createError({
@@ -68,16 +68,18 @@ export default defineEventHandler(async (event) => {
       .from(users)
       .where(inArray(users.id, validUserIds))
 
-    if (existingUsers.length === 0) {
-      throw createError({
-        statusCode: 404,
-        message: '没有找到可更新的用户'
-      })
-    }
+    const existingUserIds = existingUsers.map(u => u.id)
+    const nonExistentUserIds = validUserIds.filter(id => !existingUserIds.includes(id))
 
     // 筛选出状态需要变更的用户，并加入越权保护，同时记录失败原因
     const usersToUpdate = []
     const errors: Array<{ userId: number | string; error: string }> = []
+
+    if (nonExistentUserIds.length > 0) {
+      nonExistentUserIds.forEach(id => {
+        errors.push({ userId: id, error: '用户不存在' })
+      })
+    }
 
     for (const u of existingUsers) {
       if (u.id === 1) {

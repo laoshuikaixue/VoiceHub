@@ -1755,9 +1755,6 @@ const closeBatchUpdateModal = () => {
 
 const handleBatchUpdateSuccess = async () => {
   await loadUsers()
-  if (window.$showNotification) {
-    window.$showNotification('批量更新成功', 'success')
-  }
 }
 
 const closeDeleteModal = () => {
