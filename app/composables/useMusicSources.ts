@@ -1210,7 +1210,7 @@ export const useMusicSources = () => {
       const fetchOfficial = async () => {
         if (platform !== 'netease' || !neteaseSource) return
         try {
-          const [lrcResp, yrcResp, ttmlResp] = await Promise.allSettled([
+          const [lrcResp, yrcResp] = await Promise.allSettled([
             $fetch(`${neteaseSource.baseUrl}/lyric`, {
               params: { id: id.toString() },
               timeout: neteaseSource.timeout || 8000
@@ -1218,12 +1218,7 @@ export const useMusicSources = () => {
             $fetch(`${neteaseSource.baseUrl}/lyric/new`, {
               params: { id: id.toString() },
               timeout: neteaseSource.timeout || 8000
-            }),
-            // 尝试获取 TTML 歌词
-            $fetch(`${neteaseSource.baseUrl}/lyric/ttml`, {
-              params: { id: id.toString() },
-              timeout: neteaseSource.timeout || 8000
-            }).catch(() => null)
+            })
           ])
 
           if (lrcResp.status === 'fulfilled' && lrcResp.value?.code === 200) {
@@ -1235,12 +1230,8 @@ export const useMusicSources = () => {
             const yr = yrcResp.value
             if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
           }
-          if (ttmlResp.status === 'fulfilled' && ttmlResp.value?.code === 200) {
-            const tr = ttmlResp.value
-            if (tr?.ttml && !resultData.ttml) resultData.ttml = tr.ttml
-          }
 
-          if (resultData.lrc || resultData.yrc || resultData.ttml) hasResult = true
+          if (resultData.lrc || resultData.yrc) hasResult = true
         } catch (e: any) {
           console.warn('[getLyrics] NeteaseCloudMusicApi 获取失败:', e?.message || e)
         }
