@@ -278,6 +278,14 @@
                   <CustomSelect v-model="selectedGrade" label="年级" :options="availableGrades" />
                   <CustomSelect v-model="songSortOption" label="排序" :options="sortOptions" />
                 </div>
+                <button
+                  class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
+                  :class="{ 'border-blue-500/50 text-blue-400 bg-blue-500/10': isPlaylistFilterActive }"
+                  @click="showPlaylistFilterModal = true"
+                >
+                  <ListMusic class="w-3.5 h-3.5" />
+                  <span>{{ isPlaylistFilterActive ? '已应用歌单过滤' : '歌单查重过滤' }}</span>
+                </button>
               </div>
             </div>
           </div>
@@ -327,14 +335,29 @@
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div class="flex items-center gap-2">
-                      <h4 class="font-bold text-zinc-100 text-sm truncate">
+                      <h4 class="font-bold text-zinc-100 text-sm truncate flex items-center gap-2">
                         <span
                           v-if="isBilibiliSong(song)"
-                          class="text-zinc-100 flex items-center gap-1 w-full text-left"
+                          class="text-zinc-100 flex items-center gap-1 text-left truncate"
                         >
                           <span class="truncate">{{ song.title }}</span>
                         </span>
-                        <span v-else>{{ song.title }}</span>
+                        <span v-else class="truncate">{{ song.title }}</span>
+                        
+                        <!-- 歌单来源标签 -->
+                        <span 
+                          v-if="isPlaylistFilterActive && playlistNamesMap[song.musicId]" 
+                          class="flex items-center gap-1 flex-shrink-0"
+                        >
+                          <span
+                            v-for="(playlistName, idx) in playlistNamesMap[song.musicId]"
+                            :key="idx"
+                            class="px-1.5 py-[2px] bg-blue-500/10 text-blue-400 rounded text-[9px] border border-blue-500/20 truncate max-w-[100px] font-normal leading-none"
+                            :title="playlistName"
+                          >
+                            {{ playlistName }}
+                          </span>
+                        </span>
                       </h4>
                       <button
                         v-if="song.hasSubmissionNote && song.submissionNote"
@@ -346,7 +369,7 @@
                       </button>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="text-xs text-blue-400/80 truncate max-w-[200px] cursor-pointer hover:text-blue-400 transition-colors"
+                        class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
                         title="查看备注留言"
                         @click.stop="openSubmissionRemark(song)"
                       >
@@ -917,6 +940,12 @@
     @close="submissionRemarkDialog.show = false"
     @update:is-public="updateSubmissionNotePublic"
   />
+
+  <SchedulePlaylistFilterModal
+    :show="showPlaylistFilterModal"
+    @update:show="showPlaylistFilterModal = $event"
+    @apply="handlePlaylistFilterApply"
+  />
 </template>
 
 <script setup>
@@ -961,6 +990,10 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps } from '~/utils/url'
 
+import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
+import { getPlaylistDetail } from '~/utils/neteaseApi'
+import { getNeteaseCookie } from '~/utils/url'
+
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const loading = ref(false)
@@ -971,6 +1004,62 @@ const selectedGrade = ref('全部')
 const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
+
+// 歌单过滤状态
+const showPlaylistFilterModal = ref(false)
+const isPlaylistFilterActive = ref(false)
+const playlistFilterTrackIds = ref(new Set())
+const playlistNamesMap = ref({})
+
+const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playlistNames = {}) => {
+  if (!playlistIds || playlistIds.length === 0) {
+    isPlaylistFilterActive.value = false
+    playlistFilterTrackIds.value = new Set()
+    playlistNamesMap.value = {}
+    return
+  }
+
+  isPlaylistFilterActive.value = true
+  const newTrackIds = new Set()
+  const newNamesMap = {}
+  const cookie = getNeteaseCookie()
+  
+  const fetchPromises = playlistIds.map(async (id) => {
+    const playlistName = playlistNames[id] || `歌单 ${id}`
+    let trackIds = []
+
+    // 优先使用从组件中传来的已经缓存的 trackIds
+    if (playlistTracks && playlistTracks[id]) {
+      trackIds = playlistTracks[id]
+    } else {
+      // 缓存中没有则重新请求
+      try {
+        const res = await getPlaylistDetail(id, cookie)
+        if (res && res.code === 200 && res.body && res.body.playlist && res.body.playlist.trackIds) {
+          trackIds = res.body.playlist.trackIds.map((t) => t.id.toString())
+        }
+      } catch (err) {
+        console.error(`获取歌单 ${id} 失败:`, err)
+      }
+    }
+
+    // 存入集合并建立映射关系
+    trackIds.forEach(t => {
+      newTrackIds.add(t)
+      if (!newNamesMap[t]) {
+        newNamesMap[t] = []
+      }
+      if (!newNamesMap[t].includes(playlistName)) {
+        newNamesMap[t].push(playlistName)
+      }
+    })
+  })
+  
+  await Promise.all(fetchPromises)
+  
+  playlistFilterTrackIds.value = newTrackIds
+  playlistNamesMap.value = newNamesMap
+}
 
 // 音频播放器
 const { playSong } = useSongPlayer()
@@ -1273,8 +1362,8 @@ const allUnscheduledSongs = computed(() => {
       return true
     } else {
       // 普通投稿需未播放，且未在任何日期的排期中
-      // 现在允许多排期，不再检查 scheduled 和 scheduledSongIds
-      return !song.played
+      const isAlreadyScheduled = song.scheduled || scheduledSongIds.value.has(song.id)
+      return !song.played && !isAlreadyScheduled
     }
   })
 
@@ -1307,6 +1396,18 @@ const allUnscheduledSongs = computed(() => {
         return !song.preferredPlayTimeId
       }
       return song.preferredPlayTimeId === selectedFilterPlayTime.value
+    })
+  }
+
+  // 歌单查重过滤
+  if (isPlaylistFilterActive.value && playlistFilterTrackIds.value.size > 0) {
+    unscheduledSongs = unscheduledSongs.filter((song) => {
+      // 仅在歌曲为网易云平台且其 ID 存在于过滤列表中时才保留
+      if (song.musicId && (song.musicPlatform === 'netease' || !song.musicPlatform)) {
+        return playlistFilterTrackIds.value.has(song.musicId.toString())
+      }
+      // 如果不是网易云歌曲，则在启用了网易云歌单过滤时直接排除（因为查重只查网易云）
+      return false
     })
   }
 
