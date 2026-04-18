@@ -10,7 +10,7 @@
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
                 >总计</span
               >
-              <span class="text-sm font-bold text-zinc-300">{{ filteredSongs.length }}</span>
+              <span class="text-sm font-bold text-zinc-300">{{ baseFilteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
@@ -27,8 +27,8 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <!-- 批量操作 -->
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- 桌面端批量操作 -->
           <Transition
             enter-active-class="transition duration-200 ease-out"
             enter-from-class="opacity-0 scale-95 translate-x-10"
@@ -39,10 +39,10 @@
           >
             <div
               v-if="selectedSongs.length > 0"
-              class="flex items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-xl shadow-2xl"
+              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="openDownloadDialog"
               >
                 <Download :size="14" class="text-emerald-500/70" /> 下载 ({{
@@ -50,7 +50,7 @@
                 }})
               </button>
               <button
-                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchDelete"
               >
                 <Trash2 :size="14" class="text-red-500/70" /> 删除 ({{ selectedSongs.length }})
@@ -179,6 +179,23 @@
         </div>
       </div>
 
+      <!-- 移动端批量操作栏 -->
+      <div
+        v-if="filteredSongs.length > 0"
+        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-zinc-800/60 bg-zinc-900/40"
+      >
+        <label class="flex items-center gap-2 text-xs font-bold text-zinc-300 cursor-pointer py-1">
+          <input
+            type="checkbox"
+            :checked="isAllSelected"
+            class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+            @change="toggleSelectAll"
+          >
+          全选本页
+        </label>
+        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">已选择 {{ selectedSongs.length }} 项</span>
+      </div>
+
       <!-- 空状态 -->
       <div
         v-if="filteredSongs.length === 0 && !loading"
@@ -194,7 +211,7 @@
           v-for="song in paginatedSongs"
           :key="song.id"
           :class="[
-            'grid grid-cols-1 lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all items-center group relative',
+            'flex flex-col lg:grid lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all lg:items-center group relative',
             selectedSongs.includes(song.id) ? 'bg-blue-600/5' : 'hover:bg-zinc-800/20'
           ]"
         >
@@ -207,7 +224,15 @@
             >
           </div>
 
-          <div class="col-span-12 lg:col-span-4 flex items-center gap-4">
+          <div class="col-span-12 lg:col-span-4 flex items-center gap-3 lg:gap-4 w-full">
+            <label class="lg:hidden flex items-center justify-center p-2 -ml-2 shrink-0 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="selectedSongs.includes(song.id)"
+                class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+                @change="toggleSelectSong(song.id)"
+              >
+            </label>
             <div
               :class="[
                 'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600 cursor-pointer hover:opacity-80',
@@ -264,93 +289,100 @@
             </div>
           </div>
 
-          <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start">
-            <span class="text-xs font-bold text-zinc-400">{{ song.requester || '未知' }}</span>
-            <span v-if="song.user" class="text-[10px] font-bold text-zinc-600"
-              >@{{ song.user.username }}</span
-            >
-            <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-blue-500 mt-1">
-              期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
-            </span>
-            <span
-              class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
-              >{{ formatDate(song.createdAt) }}</span
-            >
-          </div>
+          <!-- Mobile Bottom Section -->
+          <div class="flex flex-wrap items-center justify-between gap-3 w-full lg:contents mt-1 lg:mt-0">
+            <!-- Left side: Requester, Votes, Status -->
+            <div class="flex items-center gap-3 lg:contents">
+              <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
+                <span class="text-xs font-bold text-zinc-400 truncate max-w-[100px]">{{ song.requester || '未知' }}</span>
+                <span v-if="song.user" class="text-[10px] font-bold text-zinc-600 truncate max-w-[100px]"
+                  >@{{ song.user.username }}</span
+                >
+                <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-blue-500 mt-1">
+                  期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                </span>
+                <span
+                  class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
+                  >{{ formatDate(song.createdAt) }}</span
+                >
+              </div>
 
-          <div class="col-span-3 lg:col-span-1 text-center">
-            <button
-              :disabled="!(song.voteCount > 0)"
-              :class="[
-                'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
-                song.voteCount > 0
-                  ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer'
-                  : 'bg-zinc-950/30 text-zinc-700 cursor-default'
-              ]"
-              @click="showVoters(song.id)"
-            >
-              <Heart :size="12" :class="song.voteCount > 0 ? 'fill-pink-500/20' : ''" />
-              {{ song.voteCount || 0 }}
-            </button>
-          </div>
+              <div class="col-span-3 lg:col-span-1 text-center shrink-0">
+                <button
+                  :disabled="!(song.voteCount > 0)"
+                  :class="[
+                    'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
+                    song.voteCount > 0
+                      ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer'
+                      : 'bg-zinc-950/30 text-zinc-700 cursor-default'
+                  ]"
+                  @click="showVoters(song.id)"
+                >
+                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-pink-500/20' : ''" />
+                  {{ song.voteCount || 0 }}
+                </button>
+              </div>
 
-          <div class="col-span-3 lg:col-span-2 text-center">
-            <span
-              :class="[
-                'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
-                song.played
-                  ? 'bg-emerald-500/10 text-emerald-500'
-                  : song.scheduled
-                    ? 'bg-blue-500/10 text-blue-500'
-                    : 'bg-zinc-800 text-zinc-500'
-              ]"
-            >
-              {{ getStatusText(song) }}
-            </span>
-          </div>
+              <div class="col-span-3 lg:col-span-2 text-center shrink-0">
+                <span
+                  :class="[
+                    'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
+                    song.played
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : song.scheduled
+                        ? 'bg-blue-500/10 text-blue-500'
+                        : 'bg-zinc-800 text-zinc-500'
+                  ]"
+                >
+                  {{ getStatusText(song) }}
+                </span>
+              </div>
+            </div>
 
-          <div
-            class="col-span-12 lg:col-span-2 flex items-center justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all"
-          >
-            <button
-              class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-              title="编辑歌曲"
-              @click="editSong(song)"
+            <!-- Right side: Actions -->
+            <div
+              class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
             >
-              <Edit2 :size="14" />
-            </button>
+              <button
+                class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                title="编辑歌曲"
+                @click="editSong(song)"
+              >
+                <Edit2 :size="14" />
+              </button>
 
-            <button
-              v-if="!song.played"
-              class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-              title="标记为已播放"
-              @click="markAsPlayed(song.id)"
-            >
-              <Check :size="14" />
-            </button>
-            <button
-              v-else
-              class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-              title="标记为未播放"
-              @click="markAsUnplayed(song.id)"
-            >
-              <RotateCcw :size="14" />
-            </button>
+              <button
+                v-if="!song.played"
+                class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                title="标记为已播放"
+                @click="markAsPlayed(song.id)"
+              >
+                <Check :size="14" />
+              </button>
+              <button
+                v-else
+                class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                title="标记为未播放"
+                @click="markAsUnplayed(song.id)"
+              >
+                <RotateCcw :size="14" />
+              </button>
 
-            <button
-              class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-              title="驳回歌曲"
-              @click="rejectSong(song.id)"
-            >
-              <X :size="14" />
-            </button>
-            <button
-              class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-              title="删除歌曲"
-              @click="deleteSong(song.id)"
-            >
-              <Trash2 :size="14" />
-            </button>
+              <button
+                class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                title="驳回歌曲"
+                @click="rejectSong(song.id)"
+              >
+                <X :size="14" />
+              </button>
+              <button
+                class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                title="删除歌曲"
+                @click="deleteSong(song.id)"
+              >
+                <Trash2 :size="14" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -363,6 +395,42 @@
       :total-items="filteredSongs.length"
       item-name="首歌曲"
     />
+
+    <!-- 移动端悬浮批量操作栏 -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 translate-y-full"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-full"
+    >
+      <div
+        v-if="selectedSongs.length > 0"
+        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-zinc-900/95 border border-zinc-800 rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
+      >
+        <div class="px-3 flex flex-col">
+          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">已选择</span>
+          <span class="text-sm font-bold text-blue-400">{{ selectedSongs.length }} 首歌曲</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="flex flex-col items-center justify-center w-14 h-12 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 rounded-xl border border-zinc-700/50 transition-all active:scale-95"
+            @click="openDownloadDialog"
+          >
+            <Download :size="16" class="mb-1" />
+            <span class="text-[9px] font-bold">下载</span>
+          </button>
+          <button
+            class="flex flex-col items-center justify-center w-14 h-12 bg-zinc-800 hover:bg-zinc-700 text-red-400 rounded-xl border border-zinc-700/50 transition-all active:scale-95"
+            @click="batchDelete"
+          >
+            <Trash2 :size="16" class="mb-1" />
+            <span class="text-[9px] font-bold">删除</span>
+          </button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- Modals (模态框) -->
     <!-- 确认删除对话框 -->
@@ -1173,7 +1241,7 @@ let auth = null
 let formatPlayTimeDisplay = (pt) => pt?.name || ''
 
 // 计算属性
-const filteredSongs = computed(() => {
+const baseFilteredSongs = computed(() => {
   if (!songs.value) return []
 
   let filtered = [...songs.value]
@@ -1203,6 +1271,12 @@ const filteredSongs = computed(() => {
       return song.preferredPlayTimeId === selectedPlayTime.value
     })
   }
+
+  return filtered
+})
+
+const filteredSongs = computed(() => {
+  let filtered = [...baseFilteredSongs.value]
 
   // 状态过滤
   if (statusFilter.value !== 'all') {
@@ -1260,11 +1334,11 @@ const totalPages = computed(() => {
 
 // 显示的分页按钮
 const playedCount = computed(() => {
-  return songs.value.filter((song) => song.played).length
+  return baseFilteredSongs.value.filter((song) => song.played).length
 })
 
 const pendingCount = computed(() => {
-  return songs.value.filter((song) => !song.played).length
+  return baseFilteredSongs.value.filter((song) => !song.played).length
 })
 
 const isAllSelected = computed(() => {
