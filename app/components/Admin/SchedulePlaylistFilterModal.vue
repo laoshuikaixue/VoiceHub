@@ -87,7 +87,7 @@
               <div class="space-y-2">
                 <div 
                   v-for="(item, index) in customPlaylists" 
-                  :key="index"
+                  :key="item._key"
                   class="flex items-center gap-2"
                 >
                   <div class="flex-1 relative">
@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from 'lucide-vue-next'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { convertToHttps } from '~/utils/url'
@@ -176,6 +176,7 @@ const emit = defineEmits<{
 }>()
 
 interface CustomPlaylist {
+  _key: number
   inputValue: string
   id: string
   name: string
@@ -195,6 +196,7 @@ const selectedIds = ref<string[]>([])
 const customPlaylists = ref<CustomPlaylist[]>([])
 const isApplying = ref(false)
 const isRefreshingCustom = ref(false)
+let nextCustomKey = 0
 
 // 防抖定时器
 const debounceTimers = ref<Record<number, ReturnType<typeof setTimeout>>>({})
@@ -218,19 +220,13 @@ const extractPlaylistId = (input: string): string => {
 }
 
 // 获取特定歌单的详细信息
-const fetchPlaylistInfo = async (id: string, index?: number) => {
+const fetchPlaylistInfo = async (id: string) => {
   const cookie = localStorage.getItem('netease_cookie') || undefined
   try {
     const res = await getPlaylistDetail(id, cookie)
     if (res && res.code === 200 && res.body?.playlist) {
       const playlistData = res.body.playlist
       const trackIds = playlistData.trackIds ? playlistData.trackIds.map((t: any) => t.id.toString()) : []
-      
-      if (index !== undefined && customPlaylists.value[index]) {
-        customPlaylists.value[index].name = playlistData.name
-        customPlaylists.value[index].coverImgUrl = playlistData.coverImgUrl
-        customPlaylists.value[index].trackIds = trackIds
-      }
       
       return {
         name: playlistData.name,
@@ -261,8 +257,10 @@ const handleCustomInputChange = (index: number) => {
   item.id = extractedId
   item.trackIds = []
   
-  if (debounceTimers.value[index]) {
-    clearTimeout(debounceTimers.value[index])
+  const currentKey = item._key
+  
+  if (debounceTimers.value[currentKey]) {
+    clearTimeout(debounceTimers.value[currentKey])
   }
   
   if (!extractedId) {
@@ -273,10 +271,24 @@ const handleCustomInputChange = (index: number) => {
   item.loading = true
   
   // 500ms 防抖
-  debounceTimers.value[index] = setTimeout(async () => {
-    await fetchPlaylistInfo(extractedId, index)
-    if (customPlaylists.value[index]) {
-      customPlaylists.value[index].loading = false
+  debounceTimers.value[currentKey] = setTimeout(async () => {
+    // 使用提取时的 ID 进行校验，防止竞态条件 (stale fetch)
+    const result = await fetchPlaylistInfo(extractedId)
+    
+    // 找到当前 key 对应的 item（可能位置已经改变）
+    const currentIndex = customPlaylists.value.findIndex(p => p._key === currentKey)
+    if (currentIndex !== -1) {
+      const currentItem = customPlaylists.value[currentIndex]
+      
+      // 只有当当前的输入 ID 仍然匹配时才更新
+      if (currentItem.id === extractedId) {
+        currentItem.loading = false
+        if (result) {
+          currentItem.name = result.name
+          currentItem.coverImgUrl = result.coverImgUrl
+          currentItem.trackIds = result.trackIds
+        }
+      }
     }
   }, 500)
 }
@@ -286,11 +298,21 @@ const refreshCustomPlaylists = async () => {
   isRefreshingCustom.value = true
   
   try {
-    const promises = customPlaylists.value.map(async (item, index) => {
+    const promises = customPlaylists.value.map(async (item) => {
       if (item.id) {
         item.loading = true
-        await fetchPlaylistInfo(item.id, index)
-        item.loading = false
+        const result = await fetchPlaylistInfo(item.id)
+        
+        // 由于是异步的，确保元素还在并且 ID 没变
+        const currentItem = customPlaylists.value.find(p => p._key === item._key)
+        if (currentItem && currentItem.id === item.id) {
+          currentItem.loading = false
+          if (result) {
+            currentItem.name = result.name
+            currentItem.coverImgUrl = result.coverImgUrl
+            currentItem.trackIds = result.trackIds
+          }
+        }
       }
     })
     await Promise.all(promises)
@@ -308,6 +330,7 @@ onMounted(async () => {
       if (Array.isArray(parsed.customPlaylists)) {
         // 只恢复值，状态重置
         customPlaylists.value = parsed.customPlaylists.map((p: any) => ({
+          _key: nextCustomKey++,
           inputValue: p.inputValue || '',
           id: p.id || extractPlaylistId(p.inputValue || ''),
           name: p.name || '',
@@ -323,7 +346,7 @@ onMounted(async () => {
 
   const cookie = localStorage.getItem('netease_cookie') || undefined
 
-  for (const playlist of defaultPlaylists.value) {
+  await Promise.all(defaultPlaylists.value.map(async (playlist) => {
     try {
       const res = await getPlaylistDetail(playlist.id, cookie)
       if (res && res.code === 200 && res.body?.playlist) {
@@ -337,7 +360,13 @@ onMounted(async () => {
     } catch (err) {
       console.error(`获取榜单 ${playlist.name} 详情失败:`, err)
     }
-  }
+  }))
+})
+
+onUnmounted(() => {
+  // 组件卸载时清除所有防抖定时器
+  Object.values(debounceTimers.value).forEach(timer => clearTimeout(timer))
+  debounceTimers.value = {}
 })
 
 watch([selectedIds, customPlaylists], ([newSelected, newCustom]) => {
@@ -367,6 +396,7 @@ const togglePlaylist = (id: string) => {
 
 const addCustomPlaylist = () => {
   customPlaylists.value.push({
+    _key: nextCustomKey++,
     inputValue: '',
     id: '',
     name: '',
@@ -376,9 +406,13 @@ const addCustomPlaylist = () => {
 }
 
 const removeCustomPlaylist = (index: number) => {
-  if (debounceTimers.value[index]) {
-    clearTimeout(debounceTimers.value[index])
-    delete debounceTimers.value[index]
+  const item = customPlaylists.value[index]
+  if (!item) return
+  
+  const key = item._key
+  if (debounceTimers.value[key]) {
+    clearTimeout(debounceTimers.value[key])
+    delete debounceTimers.value[key]
   }
   customPlaylists.value.splice(index, 1)
 }

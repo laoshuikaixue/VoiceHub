@@ -1023,7 +1023,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
   const newNamesMap = {}
   const cookie = localStorage.getItem('netease_cookie') || undefined
   
-  for (const id of playlistIds) {
+  const fetchPromises = playlistIds.map(async (id) => {
     const playlistName = playlistNames[id] || `歌单 ${id}`
     let trackIds = []
 
@@ -1052,7 +1052,9 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
         newNamesMap[t].push(playlistName)
       }
     })
-  }
+  })
+  
+  await Promise.all(fetchPromises)
   
   playlistFilterTrackIds.value = newTrackIds
   playlistNamesMap.value = newNamesMap
@@ -1359,8 +1361,8 @@ const allUnscheduledSongs = computed(() => {
       return true
     } else {
       // 普通投稿需未播放，且未在任何日期的排期中
-      // 现在允许多排期，不再检查 scheduled 和 scheduledSongIds
-      return !song.played
+      const isAlreadyScheduled = song.scheduled || scheduledSongIds.value.has(song.id)
+      return !song.played && !isAlreadyScheduled
     }
   })
 
