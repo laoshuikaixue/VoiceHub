@@ -163,7 +163,7 @@ export default defineEventHandler(async (event) => {
 
     // 重新缓存完整的排期列表
     try {
-      // 获取所有排期数据
+      // 获取所有已发布排期数据
       const schedulesData = await db
         .select({
           id: schedules.id,
@@ -193,6 +193,7 @@ export default defineEventHandler(async (event) => {
         .innerJoin(songs, eq(schedules.songId, songs.id))
         .innerJoin(users, eq(songs.requesterId, users.id))
         .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+        .where(eq(schedules.isDraft, false))
         .orderBy(asc(schedules.playDate))
 
       // 获取所有用户的姓名列表，用于检测同名用户
