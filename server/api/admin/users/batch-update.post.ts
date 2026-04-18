@@ -83,10 +83,11 @@ export default defineEventHandler(async (event) => {
     // 执行批量更新
     const updateResults = []
     const errors = []
+    const userMap = new Map(existingUsers.map(u => [u.id, u]))
 
     for (const update of updates) {
       try {
-        const targetUser = existingUsers.find(u => u.id === update.userId)
+        const targetUser = userMap.get(update.userId)
         if (!targetUser) continue
 
         // 保护系统初始超级管理员

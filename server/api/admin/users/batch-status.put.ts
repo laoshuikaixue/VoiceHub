@@ -75,20 +75,41 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 筛选出状态需要变更的用户，并加入越权保护
-    const usersToUpdate = existingUsers.filter((u) => {
-      if (u.status === status) return false
-      if (u.id === 1) return false // 保护系统初始超级管理员
-      if (u.id === user.id) return false // 保护自己
-      if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') return false // 越级保护
-      return true
-    })
+    // 筛选出状态需要变更的用户，并加入越权保护，同时记录失败原因
+    const usersToUpdate = []
+    const errors: Array<{ userId: number | string; error: string }> = []
+
+    for (const u of existingUsers) {
+      if (u.id === 1) {
+        errors.push({ userId: u.id, error: '无法修改系统初始超级管理员' })
+        continue
+      }
+      if (u.id === user.id) {
+        errors.push({ userId: u.id, error: '禁止在用户管理中批量更新自己的账户' })
+        continue
+      }
+      if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+        errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
+        continue
+      }
+      if (u.status === status) {
+        errors.push({ userId: u.id, error: '用户状态无需变更' })
+        continue
+      }
+      usersToUpdate.push(u)
+    }
 
     if (usersToUpdate.length === 0) {
-      throw createError({
-        statusCode: 400,
-        message: '没有可更新的合法用户（状态无需变更或因权限限制无法修改）'
-      })
+      return {
+        success: false,
+        message: '没有可更新的合法用户',
+        errors,
+        data: {
+          totalRequested: validUserIds.length,
+          totalUpdated: 0,
+          updatedUsers: [],
+        }
+      }
     }
 
     const currentTime = getBeijingTime()
@@ -141,6 +162,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: `成功更新 ${results.length} 个用户的状态为${getStatusText(status)}`,
+      errors,
       data: {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,

@@ -193,7 +193,7 @@
               <div class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-                    >选择学生 ({{ selectedUserIds.length }}/{{ filteredStudents.length }})</label
+                    >选择用户 ({{ selectedUserIds?.length || 0 }}/{{ filteredUsers?.length || 0 }})</label
                   >
                   <button
                     class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
@@ -206,30 +206,30 @@
                   class="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-2 custom-scrollbar"
                 >
                   <div
-                    v-if="filteredStudents.length === 0"
+                    v-if="filteredUsers?.length === 0"
                     class="py-10 text-center text-xs text-zinc-600 font-medium"
                   >
-                    没有匹配条件的学生
+                    没有匹配条件的用户
                   </div>
                   <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
                     <label
-                      v-for="student in filteredStudents"
-                      :key="student.id"
+                      v-for="user in filteredUsers"
+                      :key="user.id"
                       class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900/50 cursor-pointer transition-colors group"
                     >
                       <input
                         v-model="selectedUserIds"
-                        :value="student.id"
+                        :value="user.id"
                         type="checkbox"
                         class="w-4 h-4 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
                       >
                       <div class="flex flex-col">
                         <span
                           class="text-xs font-bold text-zinc-200 group-hover:text-purple-400 transition-colors"
-                          >{{ student.name }}</span
+                          >{{ user.name }}</span
                         >
                         <span class="text-[10px] text-zinc-600 font-mono">{{
-                          student.username
+                          user.username
                         }}</span>
                       </div>
                     </label>
@@ -634,7 +634,7 @@ const auth = useAuth()
 const computedUsers = computed(() => {
   return allUsers.value.length > 0
     ? allUsers.value
-    : props.users
+    : props.users || []
 })
 
 const availableGrades = computed(() => {
