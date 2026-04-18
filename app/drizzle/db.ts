@@ -1,5 +1,5 @@
 import {drizzle} from 'drizzle-orm/postgres-js';
-import {and, asc, count, desc, eq, exists, gt, gte, lt, lte, or, sql} from 'drizzle-orm';
+import {and, asc, count, desc, eq, exists, gt, gte, lt, lte, ne, or, sql} from 'drizzle-orm';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 import {config} from 'dotenv';
@@ -73,7 +73,7 @@ export { client };
 export * from './schema.ts';
 
 // 导出drizzle-orm函数
-export {eq, and, gt, gte, lt, lte, count, exists, desc, asc, or, sql};
+export {eq, ne, and, gt, gte, lt, lte, count, exists, desc, asc, or, sql};
 
 // 数据库连接测试函数
 export async function testConnection() {
