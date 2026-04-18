@@ -117,7 +117,7 @@ export default defineEventHandler(async (event) => {
           .from(schedules)
           .where(
             and(
-              eq(schedules.songId, song.id),
+              eq(schedules.songId, schedule.song.id),
               eq(schedules.isDraft, false),
               ne(schedules.id, scheduleResult[0].id)
             )
@@ -147,7 +147,7 @@ export default defineEventHandler(async (event) => {
               )
             )
         } else {
-          console.log(`歌曲 ${song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+          console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
         }
       }
     })
