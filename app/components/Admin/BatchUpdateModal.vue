@@ -193,7 +193,7 @@
               <div class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-                    >选择学生 ({{ selectedUserIds.length }}/{{ filteredStudents.length }})</label
+                    >选择用户 ({{ selectedUserIds?.length || 0 }}/{{ filteredUsers?.length || 0 }})</label
                   >
                   <button
                     class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
@@ -206,30 +206,30 @@
                   class="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-2 custom-scrollbar"
                 >
                   <div
-                    v-if="filteredStudents.length === 0"
+                    v-if="filteredUsers?.length === 0"
                     class="py-10 text-center text-xs text-zinc-600 font-medium"
                   >
-                    没有匹配条件的学生
+                    没有匹配条件的用户
                   </div>
                   <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
                     <label
-                      v-for="student in filteredStudents"
-                      :key="student.id"
+                      v-for="user in filteredUsers"
+                      :key="user.id"
                       class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900/50 cursor-pointer transition-colors group"
                     >
                       <input
                         v-model="selectedUserIds"
-                        :value="student.id"
+                        :value="user.id"
                         type="checkbox"
                         class="w-4 h-4 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
                       >
                       <div class="flex flex-col">
                         <span
                           class="text-xs font-bold text-zinc-200 group-hover:text-purple-400 transition-colors"
-                          >{{ student.name }}</span
+                          >{{ user.name }}</span
                         >
                         <span class="text-[10px] text-zinc-600 font-mono">{{
-                          student.username
+                          user.username
                         }}</span>
                       </div>
                     </label>
@@ -558,7 +558,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import {
   Layers,
@@ -624,29 +624,31 @@ const updateCurrentBatch = ref(0)
 // 所有用户的年级班级信息
 const allGrades = ref([])
 const allClasses = ref([])
-// 所有学生用户数据
-const allStudents = ref([])
+// 所有用户数据
+const allUsers = ref([])
 
 // 服务
 const auth = useAuth()
 
 // 计算属性
-const students = computed(() => {
-  return allStudents.value.length > 0
-    ? allStudents.value
-    : props.users.filter((user) => user.role === 'USER')
+const computedUsers = computed(() => {
+  // 必须优先使用全量数据 allUsers，如果正在加载则等待加载完成。
+  // 只有在尚未触发加载且需要临时展示时才 fallback 到 props.users。
+  return allUsers.value.length > 0
+    ? allUsers.value
+    : props.users || []
 })
 
 const availableGrades = computed(() => {
   return allGrades.value.length > 0
     ? allGrades.value
-    : [...new Set(students.value.map((s) => s.grade).filter(Boolean))].sort()
+    : [...new Set(computedUsers.value.map((s) => s.grade).filter(Boolean))].sort()
 })
 
 const availableClasses = computed(() => {
   return allClasses.value.length > 0
     ? allClasses.value
-    : [...new Set(students.value.map((s) => s.class).filter(Boolean))].sort()
+    : [...new Set(computedUsers.value.map((s) => s.class).filter(Boolean))].sort()
 })
 
 const gradeOptions = computed(() => {
@@ -663,8 +665,8 @@ const classOptions = computed(() => {
   ]
 })
 
-const filteredStudents = computed(() => {
-  let filtered = students.value
+const filteredUsers = computed(() => {
+  let filtered = computedUsers.value
 
   if (gradeFilter.value) {
     filtered = filtered.filter((s) => s.grade === gradeFilter.value)
@@ -678,10 +680,9 @@ const filteredStudents = computed(() => {
 })
 
 const isAllSelected = computed(() => {
-  return (
-    filteredStudents.value.length > 0 &&
-    selectedUserIds.value.length === filteredStudents.value.length
-  )
+  if (filteredUsers.value.length === 0) return false
+  const selectedSet = new Set(selectedUserIds.value)
+  return filteredUsers.value.every(u => selectedSet.has(u.id))
 })
 
 const canUpdate = computed(() => {
@@ -697,10 +698,13 @@ const canUpdate = computed(() => {
 
 // 方法
 const toggleSelectAll = () => {
+  const filteredIds = filteredUsers.value.map((s) => s.id)
+  const filteredSet = new Set(filteredIds)
   if (isAllSelected.value) {
-    selectedUserIds.value = []
+    selectedUserIds.value = selectedUserIds.value.filter((id) => !filteredSet.has(id))
   } else {
-    selectedUserIds.value = filteredStudents.value.map((s) => s.id)
+    const newSelections = new Set([...selectedUserIds.value, ...filteredIds])
+    selectedUserIds.value = Array.from(newSelections)
   }
 }
 
@@ -725,12 +729,11 @@ const processExcelFile = async (file) => {
     loading.value = true
     error.value = ''
 
-    // 确保学生数据已加载
-    if (students.value.length === 0) {
-      console.log('学生数据为空，重新获取数据...')
-      await fetchAllStudents()
-      // 等待一小段时间确保数据更新
-      await new Promise((resolve) => setTimeout(resolve, 100))
+    // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
+    if (allUsers.value.length === 0) {
+      console.log('正在获取全量用户数据以解析Excel...')
+      await fetchAllUsers()
+      await nextTick()
     }
 
     // 动态加载XLSX库
@@ -775,7 +778,7 @@ const parseExcelData = (jsonData) => {
   const userMap = new Map()
 
   // 创建用户映射，同时处理用户名标准化
-  students.value.forEach((user) => {
+  computedUsers.value.forEach((user) => {
     if (user.username) {
       const normalizedUsername = user.username.trim().toLowerCase()
       userMap.set(normalizedUsername, user)
@@ -924,6 +927,20 @@ const performGradeUpdate = async () => {
   if (!response.success) {
     throw new Error(response.message || '批量更新失败')
   }
+
+  if (response.errors && response.errors.length > 0) {
+    if (response.updated === 0) {
+      throw new Error(`更新失败: ${response.errors[0].error} 等`)
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(`部分更新成功，${response.failed} 个用户因权限或状态等原因跳过`, 'warning')
+      }
+    }
+  } else {
+    if (window.$showNotification) {
+      window.$showNotification(`成功更新 ${response.updated} 个用户的年级`, 'success')
+    }
+  }
 }
 
 const performExcelUpdate = async () => {
@@ -988,26 +1005,38 @@ const performStatusUpdate = async () => {
   })
 
   if (!response.success) {
+    if (response.errors && response.errors.length > 0) {
+      throw new Error(`更新失败: ${response.errors[0].error} 等`)
+    }
     throw new Error(response.message || '批量更新状态失败')
+  }
+
+  if (response.errors && response.errors.length > 0) {
+    if (window.$showNotification) {
+      window.$showNotification(`部分更新成功，${response.errors.length} 个用户因权限或状态等原因跳过`, 'warning')
+    }
+  } else {
+    if (window.$showNotification) {
+      window.$showNotification(response.message || '批量更新状态成功', 'success')
+    }
   }
 }
 
-// 获取所有学生用户数据
-const fetchAllStudents = async () => {
+// 获取所有用户数据
+const fetchAllUsers = async () => {
   try {
     const response = await $fetch('/api/admin/users', {
       method: 'GET',
       query: {
         page: 1,
-        limit: 10000,
-        role: 'USER'
+        limit: 10000
       },
       ...auth.getAuthConfig()
     })
 
     if (response.success && response.users) {
       const users = response.users
-      allStudents.value = users
+      allUsers.value = users
 
       const grades = [...new Set(users.map((u) => u.grade).filter(Boolean))].sort()
       const classes = [...new Set(users.map((u) => u.class).filter(Boolean))].sort()
@@ -1016,7 +1045,7 @@ const fetchAllStudents = async () => {
       allClasses.value = classes
     }
   } catch (err) {
-    console.error('获取所有学生数据失败:', err)
+    console.error('获取所有用户数据失败:', err)
   }
 }
 
@@ -1025,7 +1054,7 @@ watch(
   () => props.show,
   (newVal) => {
     if (newVal) {
-      fetchAllStudents()
+      fetchAllUsers()
       // 重置状态
       selectedUserIds.value = []
       excelPreviewData.value = []

@@ -25,6 +25,16 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 对输入的 userIds 进行去重和类型转换
+    const uniqueUserIds = [...new Set(userIds.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0))]
+
+    if (uniqueUserIds.length === 0) {
+      throw createError({
+        statusCode: 400,
+        message: '没有有效的用户ID'
+      })
+    }
+
     if (!targetGrade || typeof targetGrade !== 'string') {
       throw createError({
         statusCode: 400,
@@ -64,26 +74,50 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         username: users.username,
         grade: users.grade,
-        class: users.class
+        class: users.class,
+        role: users.role
       })
       .from(users)
-      .where(inArray(users.id, userIds))
+      .where(inArray(users.id, uniqueUserIds))
 
     const existingUserIds = existingUsers.map((user) => user.id)
-    const nonExistentUserIds = userIds.filter((id) => !existingUserIds.includes(id))
+    const nonExistentUserIds = uniqueUserIds.filter((id) => !existingUserIds.includes(id))
 
     let updated = 0
     let failed = 0
-    const errors: string[] = []
+    const errors: Array<{ userId: number | string; error: string }> = []
 
     // 记录不存在的用户ID
     if (nonExistentUserIds.length > 0) {
       failed += nonExistentUserIds.length
-      errors.push(`用户ID ${nonExistentUserIds.join(', ')} 不存在`)
+      nonExistentUserIds.forEach(id => {
+        errors.push({ userId: id, error: '用户不存在' })
+      })
+    }
+
+    // 过滤出有权限修改的用户
+    const validExistingUserIds: number[] = []
+    for (const user of existingUsers) {
+      if (user.id === 1) {
+        failed++
+        errors.push({ userId: user.id, error: '无法修改系统初始超级管理员' })
+        continue
+      }
+      if (user.id === currentUser.id) {
+        failed++
+        errors.push({ userId: user.id, error: '禁止在用户管理中批量更新自己的账户' })
+        continue
+      }
+      if (user.role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+        failed++
+        errors.push({ userId: user.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
+        continue
+      }
+      validExistingUserIds.push(user.id)
     }
 
     // 批量更新存在的用户
-    if (existingUserIds.length > 0) {
+    if (validExistingUserIds.length > 0) {
       try {
         const updateData: any = {
           grade: targetGrade,
@@ -96,14 +130,16 @@ export default defineEventHandler(async (event) => {
         const updateResult = await db
           .update(users)
           .set(updateData)
-          .where(inArray(users.id, existingUserIds))
+          .where(inArray(users.id, validExistingUserIds))
           .returning({ id: users.id })
 
         updated = updateResult.length
       } catch (error) {
         console.error('批量更新失败:', error)
-        failed += existingUserIds.length
-        errors.push('批量更新操作失败')
+        failed += validExistingUserIds.length
+        validExistingUserIds.forEach(id => {
+          errors.push({ userId: id, error: '批量更新操作失败' })
+        })
       }
     }
 
@@ -133,7 +169,7 @@ export default defineEventHandler(async (event) => {
       failed,
       errors,
       details: {
-        totalRequested: userIds.length,
+        totalRequested: uniqueUserIds.length,
         existingUsers: existingUsers.length,
         nonExistentUsers: nonExistentUserIds.length,
         targetGrade,

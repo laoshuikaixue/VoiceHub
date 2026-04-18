@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     // 获取所有要更新的用户ID
     const userIds = updates.map((update) => update.userId)
 
-    // 验证用户是否存在且为学生角色
+    // 验证用户是否存在
     const existingUsers = await db
       .select({
         id: users.id,
@@ -67,30 +67,52 @@ export default defineEventHandler(async (event) => {
         status: users.status
       })
       .from(users)
-      .where(and(inArray(users.id, userIds), eq(users.role, 'USER')))
+      .where(inArray(users.id, userIds))
 
-    // 检查是否所有用户都存在且为学生
+    // 检查是否所有用户都存在
     const existingUserIds = new Set(existingUsers.map((user) => user.id))
     const missingUserIds = userIds.filter((id) => !existingUserIds.has(id))
 
     if (missingUserIds.length > 0) {
       throw createError({
         statusCode: 400,
-        message: `以下用户ID不存在或不是学生: ${missingUserIds.join(', ')}`
+        message: `以下用户ID不存在: ${missingUserIds.join(', ')}`
       })
     }
 
     // 执行批量更新
     const updateResults = []
     const errors = []
+    const userMap = new Map(existingUsers.map(u => [u.id, u]))
 
     for (const update of updates) {
       try {
+        const targetUser = userMap.get(update.userId)
+        if (!targetUser) continue
+
+        // 保护系统初始超级管理员
+        if (targetUser.id === 1) {
+          errors.push({
+            userId: update.userId,
+            error: '无法修改系统初始超级管理员'
+          })
+          continue
+        }
+
         // 禁止批量更新包含当前操作者自身
         if (update.userId === currentUser.id) {
           errors.push({
             userId: update.userId,
             error: '禁止在用户管理中批量更新自己的账户'
+          })
+          continue
+        }
+
+        // 越级修改保护
+        if (targetUser.role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+          errors.push({
+            userId: update.userId,
+            error: '权限不足：普通管理员无法修改超级管理员信息'
           })
           continue
         }

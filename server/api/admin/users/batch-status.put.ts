@@ -42,12 +42,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户ID格式
-    const validUserIds = userIds
+    const validUserIds = [...new Set(userIds
       .filter((id) => {
         const numId = parseInt(id)
         return !isNaN(numId) && numId > 0
       })
-      .map((id) => parseInt(id))
+      .map((id) => parseInt(id)))]
 
     if (validUserIds.length === 0) {
       throw createError({
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查用户是否存在且为学生角色
+    // 检查用户是否存在
     const existingUsers = await db
       .select({
         id: users.id,
@@ -66,23 +66,52 @@ export default defineEventHandler(async (event) => {
         role: users.role
       })
       .from(users)
-      .where(and(inArray(users.id, validUserIds), eq(users.role, 'USER')))
+      .where(inArray(users.id, validUserIds))
 
-    if (existingUsers.length === 0) {
-      throw createError({
-        statusCode: 404,
-        message: '没有找到可更新的学生用户'
+    const existingUserIds = existingUsers.map(u => u.id)
+    const nonExistentUserIds = validUserIds.filter(id => !existingUserIds.includes(id))
+
+    // 筛选出状态需要变更的用户，并加入越权保护，同时记录失败原因
+    const usersToUpdate = []
+    const errors: Array<{ userId: number | string; error: string }> = []
+
+    if (nonExistentUserIds.length > 0) {
+      nonExistentUserIds.forEach(id => {
+        errors.push({ userId: id, error: '用户不存在' })
       })
     }
 
-    // 筛选出状态需要变更的用户
-    const usersToUpdate = existingUsers.filter((u) => u.status !== status)
+    for (const u of existingUsers) {
+      if (u.id === 1) {
+        errors.push({ userId: u.id, error: '无法修改系统初始超级管理员' })
+        continue
+      }
+      if (u.id === user.id) {
+        errors.push({ userId: u.id, error: '禁止在用户管理中批量更新自己的账户' })
+        continue
+      }
+      if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
+        errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
+        continue
+      }
+      if (u.status === status) {
+        errors.push({ userId: u.id, error: '用户状态无需变更' })
+        continue
+      }
+      usersToUpdate.push(u)
+    }
 
     if (usersToUpdate.length === 0) {
-      throw createError({
-        statusCode: 400,
-        message: '所选用户的状态均无需变更'
-      })
+      return {
+        success: false,
+        message: '没有可更新的合法用户',
+        errors,
+        data: {
+          totalRequested: validUserIds.length,
+          totalUpdated: 0,
+          updatedUsers: [],
+        }
+      }
     }
 
     const currentTime = getBeijingTime()
@@ -135,6 +164,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: `成功更新 ${results.length} 个用户的状态为${getStatusText(status)}`,
+      errors,
       data: {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,
