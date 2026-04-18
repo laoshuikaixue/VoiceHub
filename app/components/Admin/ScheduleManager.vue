@@ -1269,12 +1269,13 @@ const allUnscheduledSongs = computed(() => {
     if (isScheduledInCurrentView) return false
 
     if (activeTab.value === 'replay' || activeTab.value === 'all') {
-            // 重播申请和所有歌曲模式不需要检查 played 状态，只要当前视图没排上就行
-            return true
-          } else {
-            // 普通投稿需未播放，且未在任何日期的排期中
-            return !song.played && !song.scheduled && !scheduledSongIds.value.has(song.id)
-          }
+      // 重播申请和所有歌曲模式不需要检查 played 状态，只要当前视图没排上就行
+      return true
+    } else {
+      // 普通投稿需未播放，且未在任何日期的排期中
+      // 现在允许多排期，不再检查 scheduled 和 scheduledSongIds
+      return !song.played
+    }
   })
 
   // 搜索过滤

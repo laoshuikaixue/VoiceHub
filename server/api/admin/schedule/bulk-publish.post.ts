@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
-import { and, eq, gte, lte, inArray } from 'drizzle-orm'
+import { inArray, and, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
@@ -76,18 +76,57 @@ export default defineEventHandler(async (event) => {
         whereConditions.push(eq(schedules.playTimeId, playTimeId))
       }
 
-      // 2. 查找该时间段内已发布的排期（用于避免重复发送通知）
-      const existingPublished = await tx
-        .select({
-          songId: schedules.songId
-        })
-        .from(schedules)
-        .where(and(...whereConditions, eq(schedules.isDraft, false)))
+      // 2. 查找全库内已发布的排期（用于避免重复发送通知）
+      const newSongIds = new Set(body.songs.map((s: any) => s.songId))
+      const newSongIdsArray = Array.from(newSongIds)
+      
+      const globalExistingPublished = newSongIdsArray.length > 0 
+        ? await tx
+            .select({ songId: schedules.songId })
+            .from(schedules)
+            .where(
+              and(
+                eq(schedules.isDraft, false),
+                inArray(schedules.songId, newSongIdsArray)
+              )
+            )
+        : []
 
-      const existingPublishedSongIds = new Set(existingPublished.map((s) => s.songId))
+      const existingPublishedSongIds = new Set(globalExistingPublished.map((s) => s.songId))
 
       // 3. 删除该时间段内的所有排期（包括草稿和已发布）
-      await tx.delete(schedules).where(and(...whereConditions))
+      const deletedSchedules = await tx.delete(schedules).where(and(...whereConditions)).returning({ songId: schedules.songId })
+      
+      // 记录本次删除了哪些歌的排期，如果新排期里没有它们，并且全局也没别的正式排期了，需要恢复 PENDING
+      const deletedSongIds = new Set(deletedSchedules.map(s => s.songId))
+      const songsToRestore = Array.from(deletedSongIds).filter(id => !newSongIds.has(id))
+
+      if (songsToRestore.length > 0) {
+        const otherPublished = await tx
+          .select({ songId: schedules.songId })
+          .from(schedules)
+          .where(
+            and(
+              eq(schedules.isDraft, false),
+              inArray(schedules.songId, songsToRestore)
+            )
+          )
+
+        const songsWithOtherSchedules = new Set(otherPublished.map(s => s.songId))
+        const finalRestoreIds = songsToRestore.filter(id => !songsWithOtherSchedules.has(id))
+
+        if (finalRestoreIds.length > 0) {
+          await tx
+            .update(songReplayRequests)
+            .set({ status: 'PENDING', updatedAt: new Date() })
+            .where(
+              and(
+                inArray(songReplayRequests.songId, finalRestoreIds),
+                eq(songReplayRequests.status, 'FULFILLED')
+              )
+            )
+        }
+      }
 
       // 4. 插入新的排期并处理通知
       const publishedAt = new Date()

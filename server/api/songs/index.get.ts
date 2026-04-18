@@ -499,7 +499,7 @@ export default defineEventHandler(async (event) => {
         createdAt: song.createdAt,
         updatedAt: song.updatedAt,
         requestedAt: formatDateTime(song.createdAt), // 添加请求时间的格式化字符串
-        scheduled: scheduledSongs.has(song.id), // 添加是否已排期的标志
+        scheduled: scheduledSongs.has(song.id), // 是否存在已发布排期
         cover: song.cover || null, // 添加封面字段
         musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
         musicId: song.musicId || null, // 添加音乐ID字段

@@ -111,41 +111,6 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 检查是否已经为该歌曲创建过排期或草稿，如果有则删除旧的
-      const existingScheduleResult = await tx
-        .select()
-        .from(schedules)
-        .where(eq(schedules.songId, body.songId))
-        .limit(1)
-
-      const existingSchedule = existingScheduleResult[0]
-      if (existingSchedule) {
-        // 删除现有排期或草稿
-        await tx.delete(schedules).where(eq(schedules.id, existingSchedule.id))
-
-        // 恢复该歌曲的重播申请状态为 PENDING
-        // 只恢复状态为 FULFILLED 的申请
-        const updatedRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'PENDING',
-            updatedAt: new Date()
-          })
-          .where(
-            and(
-              eq(songReplayRequests.songId, body.songId),
-              eq(songReplayRequests.status, 'FULFILLED')
-            )
-          )
-          .returning()
-
-        if (updatedRequests.length > 0) {
-          console.log(
-            `恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING（草稿保存时删除旧排期）`
-          )
-        }
-      }
-
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1
 

@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
-import { and, asc, count, desc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 
@@ -48,19 +48,6 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.transaction(async (tx) => {
-      // 检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
-      const existingScheduleResult = await tx
-        .select()
-        .from(schedules)
-        .where(eq(schedules.songId, body.songId))
-        .limit(1)
-
-      const existingSchedule = existingScheduleResult[0]
-      if (existingSchedule) {
-        // 删除现有排期
-        await tx.delete(schedules).where(eq(schedules.id, existingSchedule.id))
-      }
-
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1
 
@@ -122,28 +109,46 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 只有在非草稿模式下才创建通知
+      // 只有在非草稿模式下才创建通知和更新重播状态
       if (!isDraft) {
-        await createSongSelectedNotification(
-          schedule.song.requesterId,
-          schedule.song.id,
-          {
-            title: schedule.song.title,
-            artist: schedule.song.artist,
-            playDate: schedule.playDate
-          }
-        )
-
-        // 标记该歌曲的所有待处理重播申请为已完成
-        await tx
-          .update(songReplayRequests)
-          .set({ status: 'FULFILLED' })
+        // 检查该歌曲是否已经有其他已发布的排期
+        const existingPublished = await tx
+          .select({ id: schedules.id })
+          .from(schedules)
           .where(
             and(
-              eq(songReplayRequests.songId, schedule.song.id),
-              eq(songReplayRequests.status, 'PENDING')
+              eq(schedules.songId, schedule.song.id),
+              eq(schedules.isDraft, false),
+              ne(schedules.id, scheduleResult[0].id)
             )
           )
+          .limit(1)
+
+        // 如果之前没有正式发布过，才发送通知和更新重播状态
+        if (existingPublished.length === 0) {
+          await createSongSelectedNotification(
+            schedule.song.requesterId,
+            schedule.song.id,
+            {
+              title: schedule.song.title,
+              artist: schedule.song.artist,
+              playDate: schedule.playDate
+            }
+          )
+
+          // 标记该歌曲的所有待处理重播申请为已完成
+          await tx
+            .update(songReplayRequests)
+            .set({ status: 'FULFILLED', updatedAt: scheduleResult[0].publishedAt || new Date() })
+            .where(
+              and(
+                eq(songReplayRequests.songId, schedule.song.id),
+                eq(songReplayRequests.status, 'PENDING')
+              )
+            )
+        } else {
+          console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+        }
       }
     })
 
@@ -158,7 +163,7 @@ export default defineEventHandler(async (event) => {
 
     // 重新缓存完整的排期列表
     try {
-      // 获取所有排期数据
+      // 获取所有已发布排期数据
       const schedulesData = await db
         .select({
           id: schedules.id,
@@ -188,6 +193,7 @@ export default defineEventHandler(async (event) => {
         .innerJoin(songs, eq(schedules.songId, songs.id))
         .innerJoin(users, eq(songs.requesterId, users.id))
         .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+        .where(eq(schedules.isDraft, false))
         .orderBy(asc(schedules.playDate))
 
       // 获取所有用户的姓名列表，用于检测同名用户
