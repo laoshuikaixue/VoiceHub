@@ -25,8 +25,15 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 对输入的 userIds 进行去重
-    const uniqueUserIds = [...new Set(userIds)]
+    // 对输入的 userIds 进行去重和类型转换
+    const uniqueUserIds = [...new Set(userIds.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0))]
+
+    if (uniqueUserIds.length === 0) {
+      throw createError({
+        statusCode: 400,
+        message: '没有有效的用户ID'
+      })
+    }
 
     if (!targetGrade || typeof targetGrade !== 'string') {
       throw createError({

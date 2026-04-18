@@ -558,7 +558,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import {
   Layers,
@@ -729,8 +729,7 @@ const processExcelFile = async (file) => {
     if (computedUsers.value.length === 0) {
       console.log('用户数据为空，重新获取数据...')
       await fetchAllUsers()
-      // 等待一小段时间确保数据更新
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await nextTick()
     }
 
     // 动态加载XLSX库
