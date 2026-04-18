@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
-import { and, asc, count, eq } from 'drizzle-orm'
+import { and, asc, count, eq, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
@@ -91,31 +91,49 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 发布后发送通知（这是与草稿保存的主要区别）
-    await createSongSelectedNotification(
-      draft.song.requesterId,
-      draft.song.id,
-      {
-        title: draft.song.title,
-        artist: draft.song.artist,
-        playDate: draft.playDate
-      }
-    )
-
-    // 将该歌曲的所有待处理重播申请标记为已完成
-    const updatedRequests = await db
-      .update(songReplayRequests)
-      .set({
-        status: 'FULFILLED',
-        updatedAt: new Date()
-      })
+    // 检查该歌曲是否已经有其他已发布的排期
+    const existingPublished = await db
+      .select({ id: schedules.id })
+      .from(schedules)
       .where(
-        and(eq(songReplayRequests.songId, draft.song.id), eq(songReplayRequests.status, 'PENDING'))
+        and(
+          eq(schedules.songId, draft.song.id),
+          eq(schedules.isDraft, false),
+          ne(schedules.id, body.scheduleId)
+        )
       )
-      .returning()
+      .limit(1)
 
-    if (updatedRequests.length > 0) {
-      console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
+    // 如果之前没有正式发布过，才发送通知和更新重播状态
+    if (existingPublished.length === 0) {
+      // 发布后发送通知
+      await createSongSelectedNotification(
+        draft.song.requesterId,
+        draft.song.id,
+        {
+          title: draft.song.title,
+          artist: draft.song.artist,
+          playDate: draft.playDate
+        }
+      )
+
+      // 将该歌曲的所有待处理重播申请标记为已完成
+      const updatedRequests = await db
+        .update(songReplayRequests)
+        .set({
+          status: 'FULFILLED',
+          updatedAt: new Date()
+        })
+        .where(
+          and(eq(songReplayRequests.songId, draft.song.id), eq(songReplayRequests.status, 'PENDING'))
+        )
+        .returning({ id: songReplayRequests.id })
+
+      if (updatedRequests.length > 0) {
+        console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
+      }
+    } else {
+      console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
     }
 
     // 清除相关缓存

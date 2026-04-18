@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
-import { and, asc, count, desc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 
@@ -109,28 +109,46 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 只有在非草稿模式下才创建通知
+      // 只有在非草稿模式下才创建通知和更新重播状态
       if (!isDraft) {
-        await createSongSelectedNotification(
-          schedule.song.requesterId,
-          schedule.song.id,
-          {
-            title: schedule.song.title,
-            artist: schedule.song.artist,
-            playDate: schedule.playDate
-          }
-        )
-
-        // 标记该歌曲的所有待处理重播申请为已完成
-        await tx
-          .update(songReplayRequests)
-          .set({ status: 'FULFILLED' })
+        // 检查该歌曲是否已经有其他已发布的排期
+        const existingPublished = await tx
+          .select({ id: schedules.id })
+          .from(schedules)
           .where(
             and(
-              eq(songReplayRequests.songId, schedule.song.id),
-              eq(songReplayRequests.status, 'PENDING')
+              eq(schedules.songId, song.id),
+              eq(schedules.isDraft, false),
+              ne(schedules.id, scheduleResult[0].id)
             )
           )
+          .limit(1)
+
+        // 如果之前没有正式发布过，才发送通知和更新重播状态
+        if (existingPublished.length === 0) {
+          await createSongSelectedNotification(
+            schedule.song.requesterId,
+            schedule.song.id,
+            {
+              title: schedule.song.title,
+              artist: schedule.song.artist,
+              playDate: schedule.playDate
+            }
+          )
+
+          // 标记该歌曲的所有待处理重播申请为已完成
+          await tx
+            .update(songReplayRequests)
+            .set({ status: 'FULFILLED' })
+            .where(
+              and(
+                eq(songReplayRequests.songId, schedule.song.id),
+                eq(songReplayRequests.status, 'PENDING')
+              )
+            )
+        } else {
+          console.log(`歌曲 ${song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+        }
       }
     })
 

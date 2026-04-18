@@ -76,18 +76,54 @@ export default defineEventHandler(async (event) => {
         whereConditions.push(eq(schedules.playTimeId, playTimeId))
       }
 
-      // 2. 查找该时间段内已发布的排期（用于避免重复发送通知）
-      const existingPublished = await tx
+      // 2. 查找全库内已发布的排期（用于避免重复发送通知）
+      // 不要带上当前日期/时段条件，我们要看的是这首歌在全局是否已经发过通知
+      const globalExistingPublished = await tx
         .select({
           songId: schedules.songId
         })
         .from(schedules)
-        .where(and(...whereConditions, eq(schedules.isDraft, false)))
+        .where(eq(schedules.isDraft, false))
 
-      const existingPublishedSongIds = new Set(existingPublished.map((s) => s.songId))
+      const existingPublishedSongIds = new Set(globalExistingPublished.map((s) => s.songId))
 
       // 3. 删除该时间段内的所有排期（包括草稿和已发布）
-      await tx.delete(schedules).where(and(...whereConditions))
+      const deletedSchedules = await tx.delete(schedules).where(and(...whereConditions)).returning({ songId: schedules.songId })
+      
+      // 记录本次删除了哪些歌的排期，如果新排期里没有它们，并且全局也没别的正式排期了，需要恢复 PENDING
+      const deletedSongIds = new Set(deletedSchedules.map(s => s.songId))
+      const newSongIds = new Set(body.songs.map((s: any) => s.songId))
+      
+      for (const oldSongId of deletedSongIds) {
+        if (!newSongIds.has(oldSongId)) {
+          // 这首歌被从当前时段移除了
+          const otherSchedules = await tx
+            .select({ id: schedules.id })
+            .from(schedules)
+            .where(
+              and(
+                eq(schedules.songId, oldSongId),
+                eq(schedules.isDraft, false)
+              )
+            )
+            .limit(1)
+
+          if (otherSchedules.length === 0) {
+            await tx
+              .update(songReplayRequests)
+              .set({
+                status: 'PENDING',
+                updatedAt: new Date()
+              })
+              .where(
+                and(
+                  eq(songReplayRequests.songId, oldSongId),
+                  eq(songReplayRequests.status, 'FULFILLED')
+                )
+              )
+          }
+        }
+      }
 
       // 4. 插入新的排期并处理通知
       const publishedAt = new Date()
