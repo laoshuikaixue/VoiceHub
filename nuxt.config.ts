@@ -18,6 +18,12 @@ const siteShortName = customSeoConfig.shortName || '校园广播'
 const siteDescription = customSeoConfig.description || process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
 const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
 
+// 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
+const host = process.env.NUXT_PUBLIC_HOST
+const absoluteLogo = (siteLogo.startsWith('http') || !host)
+  ? siteLogo
+  : `https://${host}${siteLogo.startsWith('/') ? '' : '/'}${siteLogo}`
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-30',
@@ -97,12 +103,12 @@ export default defineNuxtConfig({
         { property: 'og:title', content: siteTitle },
         { property: 'og:description', content: siteDescription },
         { property: 'og:site_name', content: siteTitle },
-        { property: 'og:image', content: siteLogo },
+        { property: 'og:image', content: absoluteLogo },
         // Twitter 标签
         { name: 'twitter:card', content: 'summary' },
         { name: 'twitter:title', content: siteTitle },
         { name: 'twitter:description', content: siteDescription },
-        { name: 'twitter:image', content: siteLogo },
+        { name: 'twitter:image', content: absoluteLogo },
         // 移动端优化
         { name: 'theme-color', content: '#111111' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
