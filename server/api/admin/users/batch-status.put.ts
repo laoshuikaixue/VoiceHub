@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查用户是否存在且为学生角色
+    // 检查用户是否存在
     const existingUsers = await db
       .select({
         id: users.id,
@@ -66,22 +66,28 @@ export default defineEventHandler(async (event) => {
         role: users.role
       })
       .from(users)
-      .where(and(inArray(users.id, validUserIds), eq(users.role, 'USER')))
+      .where(inArray(users.id, validUserIds))
 
     if (existingUsers.length === 0) {
       throw createError({
         statusCode: 404,
-        message: '没有找到可更新的学生用户'
+        message: '没有找到可更新的用户'
       })
     }
 
-    // 筛选出状态需要变更的用户
-    const usersToUpdate = existingUsers.filter((u) => u.status !== status)
+    // 筛选出状态需要变更的用户，并加入越权保护
+    const usersToUpdate = existingUsers.filter((u) => {
+      if (u.status === status) return false
+      if (u.id === 1) return false // 保护系统初始超级管理员
+      if (u.id === user.id) return false // 保护自己
+      if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') return false // 越级保护
+      return true
+    })
 
     if (usersToUpdate.length === 0) {
       throw createError({
         statusCode: 400,
-        message: '所选用户的状态均无需变更'
+        message: '没有可更新的合法用户（状态无需变更或因权限限制无法修改）'
       })
     }
 

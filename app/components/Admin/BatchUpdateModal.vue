@@ -634,7 +634,7 @@ const auth = useAuth()
 const students = computed(() => {
   return allStudents.value.length > 0
     ? allStudents.value
-    : props.users.filter((user) => user.role === 'USER')
+    : props.users
 })
 
 const availableGrades = computed(() => {
@@ -999,8 +999,7 @@ const fetchAllStudents = async () => {
       method: 'GET',
       query: {
         page: 1,
-        limit: 10000,
-        role: 'USER'
+        limit: 10000
       },
       ...auth.getAuthConfig()
     })

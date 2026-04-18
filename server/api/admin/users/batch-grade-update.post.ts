@@ -64,7 +64,8 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         username: users.username,
         grade: users.grade,
-        class: users.class
+        class: users.class,
+        role: users.role
       })
       .from(users)
       .where(inArray(users.id, userIds))
@@ -82,8 +83,29 @@ export default defineEventHandler(async (event) => {
       errors.push(`用户ID ${nonExistentUserIds.join(', ')} 不存在`)
     }
 
+    // 过滤出有权限修改的用户
+    const validExistingUserIds: number[] = []
+    for (const user of existingUsers) {
+      if (user.id === 1) {
+        failed++
+        errors.push(`无法修改系统初始超级管理员 (ID: ${user.id})`)
+        continue
+      }
+      if (user.id === currentUser.id) {
+        failed++
+        errors.push(`禁止在用户管理中批量更新自己的账户 (ID: ${user.id})`)
+        continue
+      }
+      if (user.role === 'SUPER_ADMIN' && currentUser.role !== 'SUPER_ADMIN') {
+        failed++
+        errors.push(`权限不足：普通管理员无法修改超级管理员信息 (ID: ${user.id})`)
+        continue
+      }
+      validExistingUserIds.push(user.id)
+    }
+
     // 批量更新存在的用户
-    if (existingUserIds.length > 0) {
+    if (validExistingUserIds.length > 0) {
       try {
         const updateData: any = {
           grade: targetGrade,
@@ -96,7 +118,7 @@ export default defineEventHandler(async (event) => {
         const updateResult = await db
           .update(users)
           .set(updateData)
-          .where(inArray(users.id, existingUserIds))
+          .where(inArray(users.id, validExistingUserIds))
           .returning({ id: users.id })
 
         updated = updateResult.length
