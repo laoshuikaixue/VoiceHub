@@ -624,29 +624,29 @@ const updateCurrentBatch = ref(0)
 // 所有用户的年级班级信息
 const allGrades = ref([])
 const allClasses = ref([])
-// 所有学生用户数据
-const allStudents = ref([])
+// 所有用户数据
+const allUsers = ref([])
 
 // 服务
 const auth = useAuth()
 
 // 计算属性
-const students = computed(() => {
-  return allStudents.value.length > 0
-    ? allStudents.value
+const computedUsers = computed(() => {
+  return allUsers.value.length > 0
+    ? allUsers.value
     : props.users
 })
 
 const availableGrades = computed(() => {
   return allGrades.value.length > 0
     ? allGrades.value
-    : [...new Set(students.value.map((s) => s.grade).filter(Boolean))].sort()
+    : [...new Set(computedUsers.value.map((s) => s.grade).filter(Boolean))].sort()
 })
 
 const availableClasses = computed(() => {
   return allClasses.value.length > 0
     ? allClasses.value
-    : [...new Set(students.value.map((s) => s.class).filter(Boolean))].sort()
+    : [...new Set(computedUsers.value.map((s) => s.class).filter(Boolean))].sort()
 })
 
 const gradeOptions = computed(() => {
@@ -663,8 +663,8 @@ const classOptions = computed(() => {
   ]
 })
 
-const filteredStudents = computed(() => {
-  let filtered = students.value
+const filteredUsers = computed(() => {
+  let filtered = computedUsers.value
 
   if (gradeFilter.value) {
     filtered = filtered.filter((s) => s.grade === gradeFilter.value)
@@ -679,8 +679,8 @@ const filteredStudents = computed(() => {
 
 const isAllSelected = computed(() => {
   return (
-    filteredStudents.value.length > 0 &&
-    selectedUserIds.value.length === filteredStudents.value.length
+    filteredUsers.value.length > 0 &&
+    selectedUserIds.value.length === filteredUsers.value.length
   )
 })
 
@@ -700,7 +700,7 @@ const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedUserIds.value = []
   } else {
-    selectedUserIds.value = filteredStudents.value.map((s) => s.id)
+    selectedUserIds.value = filteredUsers.value.map((s) => s.id)
   }
 }
 
@@ -725,10 +725,10 @@ const processExcelFile = async (file) => {
     loading.value = true
     error.value = ''
 
-    // 确保学生数据已加载
-    if (students.value.length === 0) {
-      console.log('学生数据为空，重新获取数据...')
-      await fetchAllStudents()
+    // 确保用户数据已加载
+    if (computedUsers.value.length === 0) {
+      console.log('用户数据为空，重新获取数据...')
+      await fetchAllUsers()
       // 等待一小段时间确保数据更新
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
@@ -775,7 +775,7 @@ const parseExcelData = (jsonData) => {
   const userMap = new Map()
 
   // 创建用户映射，同时处理用户名标准化
-  students.value.forEach((user) => {
+  computedUsers.value.forEach((user) => {
     if (user.username) {
       const normalizedUsername = user.username.trim().toLowerCase()
       userMap.set(normalizedUsername, user)
@@ -992,8 +992,8 @@ const performStatusUpdate = async () => {
   }
 }
 
-// 获取所有学生用户数据
-const fetchAllStudents = async () => {
+// 获取所有用户数据
+const fetchAllUsers = async () => {
   try {
     const response = await $fetch('/api/admin/users', {
       method: 'GET',
@@ -1006,7 +1006,7 @@ const fetchAllStudents = async () => {
 
     if (response.success && response.users) {
       const users = response.users
-      allStudents.value = users
+      allUsers.value = users
 
       const grades = [...new Set(users.map((u) => u.grade).filter(Boolean))].sort()
       const classes = [...new Set(users.map((u) => u.class).filter(Boolean))].sort()
@@ -1015,7 +1015,7 @@ const fetchAllStudents = async () => {
       allClasses.value = classes
     }
   } catch (err) {
-    console.error('获取所有学生数据失败:', err)
+    console.error('获取所有用户数据失败:', err)
   }
 }
 
@@ -1024,7 +1024,7 @@ watch(
   () => props.show,
   (newVal) => {
     if (newVal) {
-      fetchAllStudents()
+      fetchAllUsers()
       // 重置状态
       selectedUserIds.value = []
       excelPreviewData.value = []
