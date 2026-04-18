@@ -124,7 +124,7 @@ export default defineEventHandler(async (event) => {
           .update(songReplayRequests)
           .set({
             status: 'FULFILLED',
-            updatedAt: new Date()
+            updatedAt: publishedAt
           })
           .where(
             and(eq(songReplayRequests.songId, draft.song.id), eq(songReplayRequests.status, 'PENDING'))
