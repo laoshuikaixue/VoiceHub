@@ -144,7 +144,7 @@
             </button>
             <button
               class="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="isApplying"
+              :disabled="isApplying || isAnyCustomLoading"
               @click="applyFilter"
             >
               <span v-if="isApplying" class="flex items-center justify-center gap-2">
@@ -161,10 +161,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from 'lucide-vue-next'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
-import { convertToHttps } from '~/utils/url'
+import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 
 const props = defineProps<{
   show: boolean
@@ -198,6 +198,10 @@ const isApplying = ref(false)
 const isRefreshingCustom = ref(false)
 let nextCustomKey = 0
 
+const isAnyCustomLoading = computed(() => {
+  return customPlaylists.value.some(p => p.loading)
+})
+
 // 防抖定时器
 const debounceTimers = ref<Record<number, ReturnType<typeof setTimeout>>>({})
 
@@ -221,7 +225,7 @@ const extractPlaylistId = (input: string): string => {
 
 // 获取特定歌单的详细信息
 const fetchPlaylistInfo = async (id: string) => {
-  const cookie = localStorage.getItem('netease_cookie') || undefined
+  const cookie = getNeteaseCookie()
   try {
     const res = await getPlaylistDetail(id, cookie)
     if (res && res.code === 200 && res.body?.playlist) {
@@ -344,7 +348,7 @@ onMounted(async () => {
     console.error('无法解析本地保存的过滤设置', e)
   }
 
-  const cookie = localStorage.getItem('netease_cookie') || undefined
+  const cookie = getNeteaseCookie()
 
   await Promise.all(defaultPlaylists.value.map(async (playlist) => {
     try {
@@ -370,13 +374,12 @@ onUnmounted(() => {
 })
 
 watch([selectedIds, customPlaylists], ([newSelected, newCustom]) => {
-  // 保存时剔除 loading 状态
+  // 保存时剔除 loading 状态和体积过大的 trackIds 数据
   const customToSave = newCustom.map(c => ({
     inputValue: c.inputValue,
     id: c.id,
     name: c.name,
-    coverImgUrl: c.coverImgUrl,
-    trackIds: c.trackIds
+    coverImgUrl: c.coverImgUrl
   }))
   
   localStorage.setItem(STORAGE_KEY, JSON.stringify({

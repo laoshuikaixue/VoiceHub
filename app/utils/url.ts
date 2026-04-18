@@ -153,3 +153,14 @@ export const isVoiceHubApi = (input: RequestInfo | URL): boolean => {
   }
 }
 
+/**
+ * 从 localStorage 中获取网易云音乐 Cookie
+ * @returns {string | undefined} 返回 Cookie 字符串或 undefined
+ */
+export const getNeteaseCookie = (): string | undefined => {
+  if (import.meta.client) {
+    return localStorage.getItem('netease_cookie') || undefined
+  }
+  return undefined
+}
+

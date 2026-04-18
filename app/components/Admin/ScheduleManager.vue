@@ -992,6 +992,7 @@ import { convertToHttps } from '~/utils/url'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
+import { getNeteaseCookie } from '~/utils/url'
 
 // 响应式数据
 const selectedDate = ref(new Date().toISOString().split('T')[0])
@@ -1021,7 +1022,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
   isPlaylistFilterActive.value = true
   const newTrackIds = new Set()
   const newNamesMap = {}
-  const cookie = localStorage.getItem('netease_cookie') || undefined
+  const cookie = getNeteaseCookie()
   
   const fetchPromises = playlistIds.map(async (id) => {
     const playlistName = playlistNames[id] || `歌单 ${id}`
