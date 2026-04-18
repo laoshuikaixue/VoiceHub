@@ -9,7 +9,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // 拦截window.fetch
   window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    // 处理所有API请求 - cookie会自动发送，无需手动添加Authorization头
+    // 处理所有API请求
     if (typeof input === 'string' && input.startsWith('/api')) {
       init = init || {}
       init.headers = init.headers || {}
@@ -20,8 +20,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     const response = await originalFetch(input, init)
 
-    // 检查是否为401错误
-    if (response.status === 401) {
+    // 检查是否为401错误，并且该请求属于VoiceHub API
+    if (response.status === 401 && isVoiceHubApi(input)) {
       const currentPath = window.location.pathname
 
       // 如果在登录页面，解析错误响应体并抛出具体错误信息
@@ -62,8 +62,8 @@ export default defineNuxtPlugin((nuxtApp) => {
         try {
           return await originalUseFetch(request, options)
         } catch (error: any) {
-          // 检查是否为401错误
-          if (error?.status === 401 || error?.statusCode === 401) {
+          // 检查是否为401错误，并且该请求属于VoiceHub API
+          if ((error?.status === 401 || error?.statusCode === 401) && isVoiceHubApi(request)) {
             const currentPath = window.location.pathname
 
             // 如果在登录页面，解析错误信息并抛出具体错误

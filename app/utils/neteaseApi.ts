@@ -1,3 +1,5 @@
+import { getSyncedTimestamp } from '~/composables/useSyncedTime'
+
 const BASE_URL = '/api/api-enhanced/netease'
 
 export function normalizeNeteaseResponse(data) {
@@ -41,7 +43,7 @@ export async function fetchNetease(endpoint, params = {}, cookie) {
   if (cookie) {
     query.append('cookie', cookie)
   }
-  query.append('timestamp', Date.now().toString())
+  query.append('timestamp', getSyncedTimestamp().toString())
 
   const url = `${BASE_URL}${endpoint}?${query.toString()}`
   const response = await fetch(url)
