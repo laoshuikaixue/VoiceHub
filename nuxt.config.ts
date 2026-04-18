@@ -20,6 +20,11 @@ const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/
 
 // 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
 const host = process.env.NUXT_PUBLIC_HOST
+if (!host && !siteLogo.startsWith('http') && process.env.NODE_ENV === 'production') {
+  console.warn(
+    '警告: 在生产环境中未配置 NUXT_PUBLIC_HOST，且 siteLogo 使用了相对路径。这可能会导致社交媒体无法正确抓取和显示预览图。'
+  )
+}
 const absoluteLogo = (siteLogo.startsWith('http') || !host)
   ? siteLogo
   : `https://${host}${siteLogo.startsWith('/') ? '' : '/'}${siteLogo}`
@@ -74,10 +79,9 @@ export default defineNuxtConfig({
         casdoor: !!process.env.CASDOOR_CLIENT_ID,
         google: !!process.env.GOOGLE_CLIENT_ID
       },
-      siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
-      siteLogo: process.env.NUXT_PUBLIC_SITE_LOGO || '',
-      siteDescription:
-        process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
+      siteTitle,
+      siteLogo,
+      siteDescription,
       isNetlify: process.env.NETLIFY === 'true'
     }
   },
