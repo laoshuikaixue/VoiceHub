@@ -549,36 +549,50 @@ const formData = reactive({
 })
 
 // 统计数据
-const stats = computed(() => [
-  {
-    label: '活跃时段',
-    value: requestTimes.value.filter((s) => s.enabled && !s.past).length.toString(),
-    icon: Clock,
-    color: 'blue'
-  },
-  {
-    label: '累计已接收',
-    value: requestTimes.value.reduce((acc, s) => acc + s.accepted, 0).toString(),
-    icon: BarChart3,
-    color: 'emerald'
-  },
-  {
-    label: '计划总容量',
-    value: requestTimes.value.reduce((acc, s) => acc + (s.expected || 0), 0) || '不限',
-    icon: Hash,
-    color: 'purple'
-  },
-  {
-    label: '剩余总名额',
-    value: (() => {
-      const totalExpected = requestTimes.value.reduce((acc, s) => acc + (s.expected || 0), 0)
-      const totalAccepted = requestTimes.value.reduce((acc, s) => acc + s.accepted, 0)
-      return totalExpected > 0 ? Math.max(0, totalExpected - totalAccepted).toString() : '不限'
-    })(),
-    icon: Filter,
-    color: 'amber'
-  }
-])
+const stats = computed(() => {
+  const activeSlots = requestTimes.value.filter((s) => s.enabled && !s.past)
+  
+  // 检查是否有不限容量的活跃时段
+  const hasUnlimitedActiveSlot = activeSlots.some((s) => !s.expected || s.expected === 0)
+  
+  const totalExpectedActive = activeSlots.reduce((acc, s) => acc + (s.expected || 0), 0)
+  const totalAcceptedActive = activeSlots.reduce((acc, s) => acc + s.accepted, 0)
+  
+  // 累计已接收可以统计所有的（包括过去的），也可以只统计活跃的。通常累计是历史总计，但也可以分历史和当前。
+  // 原逻辑是统计所有 requestTimes 的 accepted。保持原逻辑。
+  const totalAcceptedAll = requestTimes.value.reduce((acc, s) => acc + s.accepted, 0)
+
+  return [
+    {
+      label: '活跃时段',
+      value: activeSlots.length.toString(),
+      icon: Clock,
+      color: 'blue'
+    },
+    {
+      label: '累计已接收',
+      value: totalAcceptedAll.toString(),
+      icon: BarChart3,
+      color: 'emerald'
+    },
+    {
+      label: '计划总容量',
+      value: activeSlots.length === 0 ? '暂无' : (hasUnlimitedActiveSlot ? '不限' : totalExpectedActive.toString()),
+      icon: Hash,
+      color: 'purple'
+    },
+    {
+      label: '剩余总名额',
+      value: activeSlots.length === 0 
+        ? '暂无' 
+        : (hasUnlimitedActiveSlot 
+            ? '不限' 
+            : Math.max(0, totalExpectedActive - totalAcceptedActive).toString()),
+      icon: Filter,
+      color: 'amber'
+    }
+  ]
+})
 
 onMounted(async () => {
   await fetchRequestTimes()
