@@ -647,6 +647,7 @@ VoiceHub/
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
+│   │   ├── useSyncedTime.ts    # 时间同步hooks
 │   │   ├── useToast.ts         # Toast提示hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
@@ -671,7 +672,8 @@ VoiceHub/
 │   │   └── year-review.vue     # 年度回顾页面
 │   ├── plugins/               # Nuxt插件
 │   │   ├── auth.client.ts      # 客户端认证插件
-│   │   └── auth.server.ts      # 服务端认证插件
+│   │   ├── auth.server.ts      # 服务端认证插件
+│   │   └── time-sync.client.ts # 客户端时间同步插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
 │   │   │   ├── logo.png       # PNG格式Logo
@@ -899,6 +901,8 @@ VoiceHub/
 │   │   │   ├── submission-status.get.ts # 投稿状态
 │   │   │   ├── vote.post.ts         # 投票
 │   │   │   └── withdraw.post.ts     # 撤回歌曲
+│   │   ├── sys/            # 系统辅助API
+│   │   │   └── time.get.ts          # 获取校准后的服务器时间
 │   │   ├── system/         # 系统API
 │   │   │   ├── location.get.ts      # 获取系统位置信息
 │   │   │   ├── reconnect.post.ts    # 重连数据库

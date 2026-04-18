@@ -4,7 +4,7 @@ import glsl from 'vite-plugin-glsl'
 import { fileURLToPath } from 'url'
 
 // 解析自定义 SEO 和 PWA 配置
-let customSeoConfig: any = {}
+let customSeoConfig: { title?: string; shortName?: string; description?: string; logo?: string } = {}
 try {
   if (process.env.NUXT_PUBLIC_SEO_CONFIG) {
     customSeoConfig = JSON.parse(process.env.NUXT_PUBLIC_SEO_CONFIG)
@@ -14,7 +14,7 @@ try {
 }
 
 const siteTitle = customSeoConfig.title || process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统'
-const siteShortName = customSeoConfig.shortName || process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播'
+const siteShortName = customSeoConfig.shortName || '校园广播'
 const siteDescription = customSeoConfig.description || process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
 const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
 
