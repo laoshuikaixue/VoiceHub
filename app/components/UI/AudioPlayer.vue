@@ -479,9 +479,10 @@ const handleTimeUpdate = () => {
 }
 
 const handlePlay = () => {
+  control.onPlay()
+
   if (isSyncingFromGlobal.value) return
 
-  control.onPlay()
   sync.syncPlayStateToGlobal(true, props.song)
 
   // 更新 Media Session 播放状态
@@ -512,9 +513,10 @@ const handlePlay = () => {
 }
 
 const handlePause = () => {
+  control.onPause()
+
   if (isSyncingFromGlobal.value) return
 
-  control.onPause()
   sync.syncPlayStateToGlobal(false, props.song)
 
   // 更新 Media Session 播放状态
