@@ -474,6 +474,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_URL    | 否  | Redis缓存服务连接字符串，填写后自动启用Redis缓存功能 | `redis://default:password@host:port`                                |
 | NITRO_PRESET | 否  | Nitro预设                         | `vercel`                                                            |
 | NUXT_PUBLIC_HOST | 否  | 用于 CORS 和反向代理的主机名验证 | `your-app.com`                                                            |
+| NUXT_PUBLIC_SEO_CONFIG | 否  | 用于自定义 PWA/SEO 配置的 JSON 字符串 | `{"title":"校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
 ## OAuth 配置
 
