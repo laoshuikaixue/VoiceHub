@@ -67,6 +67,7 @@ export default defineNuxtConfig({
       title: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
       meta: [
         { charset: 'utf-8' },
+        { name: 'referrer', content: 'no-referrer' },
         {
           name: 'viewport',
           content:
