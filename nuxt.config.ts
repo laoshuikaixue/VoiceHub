@@ -13,7 +13,7 @@ try {
   console.warn('解析 NUXT_PUBLIC_SEO_CONFIG 失败，请检查 JSON 格式:', e)
 }
 
-const siteTitle = customSeoConfig.title || process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统'
+const siteTitle = customSeoConfig.title || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub校园广播站点歌系统'
 const siteShortName = customSeoConfig.shortName || '校园广播'
 const siteDescription = customSeoConfig.description || process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
 const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
