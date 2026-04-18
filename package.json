@@ -69,7 +69,7 @@
     "gl-matrix": "4.0.0-beta.2",
     "html-to-image": "^1.11.13",
     "jsonwebtoken": "^9.0.3",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lodash-es": "^4.18.1",
     "lucide-vue-next": "^0.577.0",
