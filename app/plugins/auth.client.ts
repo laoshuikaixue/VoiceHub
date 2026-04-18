@@ -1,3 +1,5 @@
+import { isVoiceHubApi } from '~/utils/url'
+
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client) {
     return
@@ -10,7 +12,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   // 拦截window.fetch
   window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     // 处理所有API请求
-    if (typeof input === 'string' && input.startsWith('/api')) {
+    if (isVoiceHubApi(input)) {
       init = init || {}
       init.headers = init.headers || {}
 
@@ -53,7 +55,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     if (originalUseFetch) {
       nuxtApp.$fetch = async function (request: any, options: any = {}) {
         // 为所有API请求确保cookie会被发送
-        if (typeof request === 'string' && request.startsWith('/api')) {
+        if (isVoiceHubApi(request)) {
           options.headers = options.headers || {}
           // 确保cookie会被发送
           options.credentials = 'include'
