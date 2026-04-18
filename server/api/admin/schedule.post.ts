@@ -48,18 +48,19 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.transaction(async (tx) => {
-      // 检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
-      const existingScheduleResult = await tx
-        .select()
-        .from(schedules)
-        .where(eq(schedules.songId, body.songId))
-        .limit(1)
+      // 注释掉：检查是否已经为该歌曲创建过排期，如果有则删除旧的排期
+      // 允许多个排期绑定同一首歌
+      // const existingScheduleResult = await tx
+      //   .select()
+      //   .from(schedules)
+      //   .where(eq(schedules.songId, body.songId))
+      //   .limit(1)
 
-      const existingSchedule = existingScheduleResult[0]
-      if (existingSchedule) {
-        // 删除现有排期
-        await tx.delete(schedules).where(eq(schedules.id, existingSchedule.id))
-      }
+      // const existingSchedule = existingScheduleResult[0]
+      // if (existingSchedule) {
+      //   // 删除现有排期
+      //   await tx.delete(schedules).where(eq(schedules.id, existingSchedule.id))
+      // }
 
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1

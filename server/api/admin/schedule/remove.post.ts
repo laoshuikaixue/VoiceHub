@@ -59,25 +59,35 @@ export default defineEventHandler(async (event) => {
     console.log(`成功删除排期 ID=${scheduleIdNumber}`)
 
     // 恢复该歌曲的重播申请状态为 PENDING
-    // 只恢复状态不是 PENDING 的申请（可能是 FULFILLED 或其他状态）
+    // 只有当该歌曲没有其他排期时，才恢复重播申请状态
     if (existingSchedule.songId) {
-      const updatedRequests = await db
-        .update(songReplayRequests)
-        .set({
-          status: 'PENDING',
-          updatedAt: new Date()
-        })
-        .where(
-          and(
-            eq(songReplayRequests.songId, existingSchedule.songId),
-            // 不恢复已拒绝的申请
-            eq(songReplayRequests.status, 'FULFILLED')
-          )
-        )
-        .returning()
+      const otherSchedules = await db
+        .select()
+        .from(schedules)
+        .where(eq(schedules.songId, existingSchedule.songId))
+        .limit(1)
 
-      if (updatedRequests.length > 0) {
-        console.log(`恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING`)
+      if (otherSchedules.length === 0) {
+        const updatedRequests = await db
+          .update(songReplayRequests)
+          .set({
+            status: 'PENDING',
+            updatedAt: new Date()
+          })
+          .where(
+            and(
+              eq(songReplayRequests.songId, existingSchedule.songId),
+              // 不恢复已拒绝的申请
+              eq(songReplayRequests.status, 'FULFILLED')
+            )
+          )
+          .returning()
+
+        if (updatedRequests.length > 0) {
+          console.log(`恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING`)
+        }
+      } else {
+        console.log(`该歌曲仍有其他排期，不恢复重播申请状态`)
       }
     }
 
