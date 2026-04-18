@@ -139,7 +139,7 @@ export default defineEventHandler(async (event) => {
           // 标记该歌曲的所有待处理重播申请为已完成
           await tx
             .update(songReplayRequests)
-            .set({ status: 'FULFILLED' })
+            .set({ status: 'FULFILLED', updatedAt: new Date() })
             .where(
               and(
                 eq(songReplayRequests.songId, schedule.song.id),
