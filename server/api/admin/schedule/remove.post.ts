@@ -1,4 +1,4 @@
-import { db, eq, schedules, songs, songReplayRequests, and } from '~/drizzle/db'
+import { db, eq, ne, schedules, songs, songReplayRequests, and } from '~/drizzle/db'
 import { cacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
@@ -64,12 +64,13 @@ export default defineEventHandler(async (event) => {
       // 只有当该歌曲没有其他正式排期（非草稿）时，才恢复重播申请状态
       if (existingSchedule.songId) {
         const otherSchedules = await tx
-          .select()
+          .select({ id: schedules.id })
           .from(schedules)
           .where(
             and(
               eq(schedules.songId, existingSchedule.songId),
-              eq(schedules.isDraft, false)
+              eq(schedules.isDraft, false),
+              ne(schedules.id, scheduleIdNumber)
             )
           )
           .limit(1)
@@ -88,7 +89,7 @@ export default defineEventHandler(async (event) => {
                 eq(songReplayRequests.status, 'FULFILLED')
               )
             )
-            .returning()
+            .returning({ id: songReplayRequests.id })
 
           if (updatedRequests.length > 0) {
             console.log(`恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING`)
