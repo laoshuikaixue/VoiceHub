@@ -3,6 +3,32 @@ import topLevelAwait from 'vite-plugin-top-level-await'
 import glsl from 'vite-plugin-glsl'
 import { fileURLToPath } from 'url'
 
+// 解析自定义 SEO 和 PWA 配置
+let customSeoConfig: { title?: string; shortName?: string; description?: string; logo?: string } = {}
+try {
+  if (process.env.NUXT_PUBLIC_SEO_CONFIG) {
+    customSeoConfig = JSON.parse(process.env.NUXT_PUBLIC_SEO_CONFIG)
+  }
+} catch (e) {
+  console.warn('解析 NUXT_PUBLIC_SEO_CONFIG 失败，请检查 JSON 格式:', e)
+}
+
+const siteTitle = customSeoConfig.title || process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统'
+const siteShortName = customSeoConfig.shortName || '校园广播'
+const siteDescription = customSeoConfig.description || process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
+const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
+
+// 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
+const host = process.env.NUXT_PUBLIC_HOST
+if (!host && !siteLogo.startsWith('http') && process.env.NODE_ENV === 'production') {
+  console.warn(
+    '警告: 在生产环境中未配置 NUXT_PUBLIC_HOST，且 siteLogo 使用了相对路径。这可能会导致网站无法正确抓取和显示预览图。'
+  )
+}
+const absoluteLogo = (siteLogo.startsWith('http') || siteLogo.startsWith('//') || !host)
+  ? siteLogo
+  : (host.startsWith('http') ? '' : 'https://') + host.replace(/\/$/, '') + '/' + siteLogo.replace(/^\//, '')
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-30',
@@ -53,10 +79,9 @@ export default defineNuxtConfig({
         casdoor: !!process.env.CASDOOR_CLIENT_ID,
         google: !!process.env.GOOGLE_CLIENT_ID
       },
-      siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
-      siteLogo: process.env.NUXT_PUBLIC_SITE_LOGO || '',
-      siteDescription:
-        process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
+      siteTitle,
+      siteLogo,
+      siteDescription,
       isNetlify: process.env.NETLIFY === 'true'
     }
   },
@@ -64,7 +89,7 @@ export default defineNuxtConfig({
   // 配置环境变量
   app: {
     head: {
-      title: process.env.NUXT_PUBLIC_SITE_TITLE || '校园广播站点歌系统',
+      title: siteTitle,
       meta: [
         { charset: 'utf-8' },
         { name: 'referrer', content: 'no-referrer' },
@@ -75,14 +100,24 @@ export default defineNuxtConfig({
         },
         {
           name: 'description',
-          content:
-            process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
+          content: siteDescription
         },
+        // Open Graph 标签
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: siteTitle },
+        { property: 'og:description', content: siteDescription },
+        { property: 'og:site_name', content: siteTitle },
+        { property: 'og:image', content: absoluteLogo },
+        // Twitter 标签
+        { name: 'twitter:card', content: 'summary' },
+        { name: 'twitter:title', content: siteTitle },
+        { name: 'twitter:description', content: siteDescription },
+        { name: 'twitter:image', content: absoluteLogo },
         // 移动端优化
         { name: 'theme-color', content: '#111111' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-        { name: 'apple-mobile-web-app-title', content: 'VoiceHub管理' },
+        { name: 'apple-mobile-web-app-title', content: siteShortName },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'format-detection', content: 'telephone=no' }
       ],
@@ -287,9 +322,9 @@ export default defineNuxtConfig({
   pwa: {
     registerType: 'autoUpdate',
     manifest: {
-      name: 'VoiceHub',
-      short_name: 'VoiceHub',
-      description: '校园广播站点歌系统 - 让你的声音被听见',
+      name: siteTitle,
+      short_name: siteShortName,
+      description: siteDescription,
       theme_color: '#111111',
       background_color: '#111111',
       display: 'standalone',
