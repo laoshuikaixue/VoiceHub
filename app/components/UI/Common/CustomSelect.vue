@@ -168,12 +168,12 @@ const toggleDropdown = async () => {
     isOpen.value = false
   } else {
     isOpen.value = true
-    // Wait for the dropdown to be rendered to get its actual height
+    // 等待下拉框渲染以便获取其实际高度
     await nextTick()
-    // The element is in DOM but might not be fully painted, we trigger updatePosition
-    // and trigger it again after a tiny delay to ensure height is calculated correctly
+    // 此时元素已存在于 DOM 中，但可能尚未完全重绘，因此先触发一次计算
+    // 并通过 requestAnimationFrame 再次触发，确保计算出正确的高度
     updatePosition()
-    setTimeout(updatePosition, 10)
+    requestAnimationFrame(updatePosition)
   }
 }
 

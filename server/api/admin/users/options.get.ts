@@ -67,9 +67,9 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('获取用户筛选选项失败:', error)
-    return {
-      success: false,
+    throw createError({
+      statusCode: 500,
       message: '获取选项失败'
-    }
+    })
   }
 })
