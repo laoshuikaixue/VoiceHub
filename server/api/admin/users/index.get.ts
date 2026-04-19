@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
 
     // 分页参数
     const pageNum = Math.max(1, parseInt(page as string) || 1)
-    const limitNum = Math.max(1, parseInt(limit as string) || 50)
+    const limitNum = Math.min(Math.max(1, parseInt(limit as string) || 50), 1000)
     const skip = (pageNum - 1) * limitNum
 
     // 获取总数

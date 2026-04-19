@@ -631,7 +631,7 @@ const userFilters = useUserFilters()
 const computedUsers = computed(() => {
   // 必须优先使用全量数据 allUsers，如果正在加载则等待加载完成。
   // 只有在尚未触发加载且需要临时展示时才 fallback 到 props.users。
-  return userFilters.allUsers.value.length > 0
+  return userFilters.isLoaded.value
     ? userFilters.allUsers.value
     : props.users || []
 })

@@ -38,7 +38,7 @@
           v-if="isOpen"
           ref="dropdownRef"
           :style="dropdownStyle"
-          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-lg shadow-2xl backdrop-blur-xl origin-top"
+          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-lg shadow-2xl backdrop-blur-xl"
         >
           <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
             <button
@@ -135,27 +135,30 @@ const isSelected = (option) => {
 }
 
 const updatePosition = () => {
-  if (!isOpen.value || !containerRef.value) return
+  if (!isOpen.value || !containerRef.value || !dropdownRef.value) return
 
   const rect = containerRef.value.getBoundingClientRect()
-
-  // 简单的位置计算，默认向下弹出
-  // 检查底部空间
+  const dropdownHeight = dropdownRef.value.offsetHeight || 200 // 预估高度
+  
   const windowHeight = window.innerHeight
   const spaceBelow = windowHeight - rect.bottom
+  const spaceAbove = rect.top
 
-  const top = rect.bottom + 4
+  let top = rect.bottom + 4
+  let transformOrigin = 'origin-top'
 
-  // 如果底部空间不足且顶部空间充足，则向上弹出
-  if (spaceBelow < 220 && rect.top > 220) {
-    // 暂时保持向下，或者使用 fixed 定位让它尽量可见
+  // 如果底部空间不足，并且顶部空间更充足或者能完全放下弹层，则向上展开
+  if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+    top = rect.top - dropdownHeight - 4
+    transformOrigin = 'origin-bottom'
   }
 
   dropdownStyle.value = {
     top: `${top}px`,
     left: `${rect.left}px`,
     width: `${rect.width}px`,
-    minWidth: '120px' // 最小宽度
+    minWidth: '120px',
+    transformOrigin
   }
 }
 
@@ -165,8 +168,12 @@ const toggleDropdown = async () => {
     isOpen.value = false
   } else {
     isOpen.value = true
+    // Wait for the dropdown to be rendered to get its actual height
     await nextTick()
+    // The element is in DOM but might not be fully painted, we trigger updatePosition
+    // and trigger it again after a tiny delay to ensure height is calculated correctly
     updatePosition()
+    setTimeout(updatePosition, 10)
   }
 }
 

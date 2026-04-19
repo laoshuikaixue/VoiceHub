@@ -64,7 +64,7 @@ export const useUserFilters = () => {
           throw new Error('获取用户列表失败')
         }
 
-        allFetchedUsers = [...allFetchedUsers, ...(response.users || [])]
+        allFetchedUsers.push(...(response.users || []))
 
         if (response.pagination && response.pagination.page < response.pagination.totalPages) {
           page++
@@ -77,7 +77,7 @@ export const useUserFilters = () => {
       isLoaded.value = true
       return allUsers.value
     } catch (err: any) {
-      lastError.value = err?.message || '获取所有用户数据失败'
+      lastError.value = err?.data?.message || err?.message || '获取所有用户数据失败'
       console.error('获取所有用户数据失败:', err)
       throw err
     } finally {
