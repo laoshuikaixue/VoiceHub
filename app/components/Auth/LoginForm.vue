@@ -419,8 +419,9 @@ const handleLogin = async () => {
       }
     }
   } catch (err) {
+    const apiError = err as { data?: { message?: string }, message?: string }
     error.value =
-      err.message || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
+      apiError.data?.message || apiError.message || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
     // 密码错误时清空密码字段
     if (error.value.includes('密码') || error.value.includes('错误')) {
       password.value = ''
