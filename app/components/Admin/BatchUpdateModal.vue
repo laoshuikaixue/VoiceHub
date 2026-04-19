@@ -1011,15 +1011,27 @@ const performExcelUpdate = async () => {
       emit('update-success')
     }
     
-    // 直接抛出错误以终止外部的成功提示流程，交由外层 catch 块处理
-    throw new Error(partialMessage)
+    // 返回结果给外层统一处理提示，而不是抛出异常打断外层流程
+    return {
+      success: false,
+      totalUpdated,
+      totalFailed,
+      message: partialMessage
+    }
   }
 
   updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
   updateProgress.value = 100
+  
+  if (totalUpdated > 0) {
+    emit('update-success')
+  }
+  
   return {
+    success: true,
     totalUpdated,
-    totalFailed
+    totalFailed,
+    message: ''
   }
 }
 

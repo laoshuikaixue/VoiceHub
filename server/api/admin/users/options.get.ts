@@ -1,4 +1,4 @@
-import { defineEventHandler } from 'h3'
+import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { isNotNull } from 'drizzle-orm'
@@ -24,6 +24,15 @@ const smartSort = (a: string, b: string) => {
 
 export default defineEventHandler(async (event) => {
   try {
+    // 检查用户是否为管理员
+    const user = event.context.user
+
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      throw createError({
+        statusCode: 403,
+        message: '只有系统管理员可以访问此选项'
+      })
+    }
     // 获取有年级的用户（用 distinct 去重）
     const gradesData = await db
       .selectDistinct({ grade: users.grade })
