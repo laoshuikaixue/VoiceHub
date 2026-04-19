@@ -141,6 +141,13 @@
       "when": 1775393214709,
       "tag": "20260405124654_add_allow_oauth_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1776579808535,
+      "tag": "20260419062328_auto-migration",
+      "breakpoints": true
     }
   ]
 }

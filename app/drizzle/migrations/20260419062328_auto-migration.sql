@@ -1,0 +1,1 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "instance_id" text;

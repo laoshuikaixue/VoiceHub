@@ -18,6 +18,17 @@ const siteShortName = customSeoConfig.shortName || '校园广播'
 const siteDescription = customSeoConfig.description || process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
 const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
 
+const readNumberEnv = (value: string | undefined, fallback: number): number => {
+  if (!value) return fallback
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const backendSentryDsnDefault =
+  'https://2fca0c8a939c8909e02c082ec847e8e8@o4508946125619200.ingest.de.sentry.io/4511244961448016'
+const frontendSentryDsnDefault =
+  'https://3c4fe5353816bcdce36e7cc28703c8fa@o4508946125619200.ingest.de.sentry.io/4511244934774864'
+
 // 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
 const host = process.env.NUXT_PUBLIC_HOST
 if (!host && !siteLogo.startsWith('http') && process.env.NODE_ENV === 'production') {
@@ -70,6 +81,13 @@ export default defineNuxtConfig({
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
     // Redis配置（可选）
     redisUrl: process.env.REDIS_URL || '',
+    sentry: {
+      dsn: process.env.SENTRY_DSN || backendSentryDsnDefault,
+      environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
+      release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_REF || '',
+      tracesSampleRate: readNumberEnv(process.env.SENTRY_TRACES_SAMPLE_RATE, 1),
+      enabled: process.env.NODE_ENV === 'production'
+    },
     // 公共键（会暴露到客户端）
     public: {
       host: process.env.NUXT_PUBLIC_HOST || '', // 用于 CORS 和反向代理的主机名验证
@@ -82,7 +100,35 @@ export default defineNuxtConfig({
       siteTitle,
       siteLogo,
       siteDescription,
-      isNetlify: process.env.NETLIFY === 'true'
+      isNetlify: process.env.NETLIFY === 'true',
+      sentry: {
+        dsn: process.env.NUXT_PUBLIC_SENTRY_DSN || frontendSentryDsnDefault,
+        environment:
+          process.env.NUXT_PUBLIC_SENTRY_ENVIRONMENT ||
+          process.env.SENTRY_ENVIRONMENT ||
+          process.env.NODE_ENV ||
+          'development',
+        release:
+          process.env.NUXT_PUBLIC_SENTRY_RELEASE ||
+          process.env.SENTRY_RELEASE ||
+          process.env.VERCEL_GIT_COMMIT_SHA ||
+          process.env.COMMIT_REF ||
+          '',
+        tracesSampleRate: readNumberEnv(
+          process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE ||
+            process.env.SENTRY_TRACES_SAMPLE_RATE,
+          1
+        ),
+        replaysSessionSampleRate: readNumberEnv(
+          process.env.NUXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE,
+          1
+        ),
+        replaysOnErrorSampleRate: readNumberEnv(
+          process.env.NUXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE,
+          1
+        ),
+        enabled: process.env.NODE_ENV === 'production'
+      }
     }
   },
 

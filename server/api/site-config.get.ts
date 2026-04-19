@@ -3,9 +3,12 @@ import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
 import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
+import { getInstanceId } from '../utils/instance-id'
 
 export default defineEventHandler(async (event) => {
   try {
+    await getInstanceId()
+
     // 优先从Redis缓存获取系统设置
     if (isRedisReady()) {
       const cachedSettings = await cacheService.getSystemSettings()
