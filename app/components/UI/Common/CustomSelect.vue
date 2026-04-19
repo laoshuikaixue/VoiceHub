@@ -1,8 +1,9 @@
 <template>
   <div ref="containerRef" class="relative" :class="className">
     <div
-      class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-lg transition-all cursor-pointer select-none"
+      class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-lg transition-all select-none"
       :class="[
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         isOpen
           ? 'border-blue-500/50 bg-blue-600/5 shadow-lg'
           : 'border-zinc-800 hover:border-zinc-700'
@@ -85,6 +86,10 @@ const props = defineProps({
   placeholder: {
     type: String,
     default: '请选择'
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -155,6 +160,7 @@ const updatePosition = () => {
 }
 
 const toggleDropdown = async () => {
+  if (props.disabled) return
   if (isOpen.value) {
     isOpen.value = false
   } else {

@@ -560,6 +560,7 @@
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useUserFilters } from '~/composables/useUserFilters'
 import {
   Layers,
   X,
@@ -622,33 +623,29 @@ const updateTotalBatches = ref(0)
 const updateCurrentBatch = ref(0)
 
 // 所有用户的年级班级信息
-const allGrades = ref([])
-const allClasses = ref([])
-// 所有用户数据
-const allUsers = ref([])
-
 // 服务
 const auth = useAuth()
+const userFilters = useUserFilters()
 
 // 计算属性
 const computedUsers = computed(() => {
   // 必须优先使用全量数据 allUsers，如果正在加载则等待加载完成。
   // 只有在尚未触发加载且需要临时展示时才 fallback 到 props.users。
-  return allUsers.value.length > 0
-    ? allUsers.value
+  return userFilters.allUsers.value.length > 0
+    ? userFilters.allUsers.value
     : props.users || []
 })
 
 const availableGrades = computed(() => {
-  return allGrades.value.length > 0
-    ? allGrades.value
-    : [...new Set(computedUsers.value.map((s) => s.grade).filter(Boolean))].sort()
+  return userFilters.getAvailableGrades(computedUsers.value)
 })
 
 const availableClasses = computed(() => {
-  return allClasses.value.length > 0
-    ? allClasses.value
-    : [...new Set(computedUsers.value.map((s) => s.class).filter(Boolean))].sort()
+  return userFilters.getAvailableClasses(computedUsers.value, gradeFilter.value)
+})
+
+watch(() => gradeFilter.value, () => {
+  classFilter.value = ''
 })
 
 const gradeOptions = computed(() => {
@@ -730,7 +727,7 @@ const processExcelFile = async (file) => {
     error.value = ''
 
     // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
-    if (allUsers.value.length === 0) {
+    if (userFilters.allUsers.value.length === 0) {
       console.log('正在获取全量用户数据以解析Excel...')
       await fetchAllUsers()
       await nextTick()
@@ -1024,29 +1021,7 @@ const performStatusUpdate = async () => {
 
 // 获取所有用户数据
 const fetchAllUsers = async () => {
-  try {
-    const response = await $fetch('/api/admin/users', {
-      method: 'GET',
-      query: {
-        page: 1,
-        limit: 10000
-      },
-      ...auth.getAuthConfig()
-    })
-
-    if (response.success && response.users) {
-      const users = response.users
-      allUsers.value = users
-
-      const grades = [...new Set(users.map((u) => u.grade).filter(Boolean))].sort()
-      const classes = [...new Set(users.map((u) => u.class).filter(Boolean))].sort()
-
-      allGrades.value = grades
-      allClasses.value = classes
-    }
-  } catch (err) {
-    console.error('获取所有用户数据失败:', err)
-  }
+  await userFilters.fetchAllUsers()
 }
 
 // 监听显示状态
