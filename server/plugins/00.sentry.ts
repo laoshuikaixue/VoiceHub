@@ -13,9 +13,23 @@ const getDeploymentTarget = (): string => {
   return 'self-hosted-node'
 }
 
+const shouldCaptureServerError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return true
+  const maybeStatusCode = (error as { statusCode?: unknown }).statusCode
+  const statusCode = typeof maybeStatusCode === 'number' ? maybeStatusCode : undefined
+
+  // Drop expected business/auth errors (4xx) to avoid Sentry noise.
+  if (statusCode && statusCode >= 400 && statusCode < 500) {
+    return false
+  }
+
+  return true
+}
+
 const buildRequestContext = (event: H3Event) => ({
   method: event.node.req.method || 'UNKNOWN',
   url: event.node.req.url || '',
+  requestId: event.context.requestId || '',
   headers: {
     host: event.node.req.headers.host || '',
     userAgent: event.node.req.headers['user-agent'] || ''
@@ -49,7 +63,7 @@ export default defineNitroPlugin(async (nitroApp) => {
     enabled: sentryConfig.enabled,
     integrations: [
       Sentry.consoleLoggingIntegration({
-        levels: ['log', 'warn', 'error']
+        levels: process.env.NODE_ENV === 'development' ? ['log', 'warn', 'error'] : ['error']
       })
     ],
     enableLogs: true,
@@ -60,7 +74,8 @@ export default defineNitroPlugin(async (nitroApp) => {
   globalThis.__voicehubSentryServerInitialized = true
 
   Sentry.setTag('runtime', 'nuxt')
-  Sentry.setTag('deployment_target', getDeploymentTarget())
+  Sentry.setTag('deployment_platform', getDeploymentTarget())
+  Sentry.setTag('nitro_preset', process.env.NITRO_PRESET || 'node-server')
   if (instanceId) {
     Sentry.setTag('instance_id', instanceId)
     Sentry.setContext('instance', {
@@ -69,11 +84,20 @@ export default defineNitroPlugin(async (nitroApp) => {
   }
 
   nitroApp.hooks.hook('error', (error, context) => {
+    if (!shouldCaptureServerError(error)) {
+      return
+    }
+
     Sentry.withScope((scope) => {
       const event = context?.event
       if (event) {
         scope.setContext('request', buildRequestContext(event))
+        if (event.context.requestId) {
+          scope.setTag('request_id', event.context.requestId)
+        }
       }
+
+      scope.setLevel('error')
       Sentry.captureException(error)
     })
   })
@@ -81,11 +105,17 @@ export default defineNitroPlugin(async (nitroApp) => {
   if (typeof process !== 'undefined' && typeof process.on === 'function') {
     process.on('unhandledRejection', (reason) => {
       const error = reason instanceof Error ? reason : new Error(String(reason))
-      Sentry.captureException(error)
+      Sentry.withScope((scope) => {
+        scope.setLevel('error')
+        Sentry.captureException(error)
+      })
     })
 
     process.on('uncaughtException', (error) => {
-      Sentry.captureException(error)
+      Sentry.withScope((scope) => {
+        scope.setLevel('fatal')
+        Sentry.captureException(error)
+      })
     })
   }
 

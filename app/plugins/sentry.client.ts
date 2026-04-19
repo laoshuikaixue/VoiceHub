@@ -3,6 +3,32 @@ import * as Sentry from '@sentry/vue'
 let sentryClientInitialized = false
 let instanceId = ''
 
+const shouldDropClientEvent = (event: Sentry.ErrorEvent, hint?: Sentry.EventHint): boolean => {
+  const originalException = hint?.originalException
+  if (originalException instanceof DOMException && originalException.name === 'AbortError') {
+    return true
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return true
+  }
+
+  const message = (event.message || '').toLowerCase()
+  if (message.includes('aborterror') || message.includes('networkerror')) {
+    return true
+  }
+
+  const frames = event.exception?.values?.flatMap(value => value.stacktrace?.frames || []) || []
+  if (frames.some(frame => {
+    const filename = frame.filename || ''
+    return filename.startsWith('chrome-extension://') || filename.startsWith('moz-extension://')
+  })) {
+    return true
+  }
+
+  return false
+}
+
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client || sentryClientInitialized) {
     return
@@ -24,7 +50,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   const integrations = [Sentry.browserTracingIntegration({ router: nuxtApp.$router })]
   integrations.push(
     Sentry.consoleLoggingIntegration({
-      levels: ['log', 'warn', 'error']
+      levels: import.meta.dev ? ['log', 'warn', 'error'] : ['error']
     })
   )
   if (
@@ -45,7 +71,15 @@ export default defineNuxtPlugin((nuxtApp) => {
     enableLogs: true,
     tracesSampleRate: sentryConfig.tracesSampleRate,
     replaysSessionSampleRate: sentryConfig.replaysSessionSampleRate,
-    replaysOnErrorSampleRate: sentryConfig.replaysOnErrorSampleRate
+    replaysOnErrorSampleRate: sentryConfig.replaysOnErrorSampleRate,
+    beforeSend(event, hint) {
+      if (shouldDropClientEvent(event, hint)) {
+        return null
+      }
+
+      event.level = 'error'
+      return event
+    }
   })
 
   sentryClientInitialized = true
@@ -83,14 +117,18 @@ export default defineNuxtPlugin((nuxtApp) => {
         scope.setTag('vue_component', componentName)
       }
 
+      scope.setLevel('error')
       Sentry.captureException(error)
     })
   })
 
   nuxtApp.hook('app:error', (error) => {
-    if (instanceId) {
-      Sentry.setTag('instance_id', instanceId)
-    }
-    Sentry.captureException(error)
+    Sentry.withScope((scope) => {
+      if (instanceId) {
+        scope.setTag('instance_id', instanceId)
+      }
+      scope.setLevel('error')
+      Sentry.captureException(error)
+    })
   })
 })

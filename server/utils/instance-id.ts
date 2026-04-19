@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { eq, sql } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
@@ -11,6 +11,7 @@ const loadOrCreateInstanceId = async (): Promise<string> => {
   const settingsResult = await db
     .select({ id: systemSettings.id, instanceId: systemSettings.instanceId })
     .from(systemSettings)
+    .orderBy(asc(systemSettings.id))
     .limit(1)
 
   const settings = settingsResult[0]
@@ -22,13 +23,12 @@ const loadOrCreateInstanceId = async (): Promise<string> => {
   const instanceId = randomUUID()
 
   if (!settings) {
-    // Use UPSERT to prevent race conditions in multi-instance deployments
-    // Apply SYSTEM_SETTINGS_DEFAULTS when creating initial row
+    // Enforce singleton row (id=1) to avoid concurrent cold-start inserts creating duplicates.
     await db
       .insert(systemSettings)
-      .values({ ...SYSTEM_SETTINGS_DEFAULTS, instanceId })
+      .values({ id: 1, ...SYSTEM_SETTINGS_DEFAULTS, instanceId })
       .onConflictDoUpdate({
-        target: [systemSettings.id],
+        target: systemSettings.id,
         set: { instanceId, updatedAt: new Date() }
       })
   } else {
