@@ -1,10 +1,11 @@
 import { computed } from 'vue'
+import type { User } from '~/types'
 import { useAuth } from '~/composables/useAuth'
 
 export const useUserFilters = () => {
   const auth = useAuth()
   
-  const allUsers = useState<any[]>('admin-all-users', () => [])
+  const allUsers = useState<User[]>('admin-all-users', () => [])
   const loading = useState<boolean>('admin-all-users-loading', () => false)
   const isLoaded = useState<boolean>('admin-all-users-loaded', () => false)
 
@@ -14,19 +15,33 @@ export const useUserFilters = () => {
 
     loading.value = true
     try {
-      const response = await $fetch<any>('/api/admin/users', {
-        method: 'GET',
-        query: {
-          page: 1,
-          limit: 10000
-        },
-        ...auth.getAuthConfig()
-      })
+      let page = 1
+      let hasMore = true
+      let allFetchedUsers: User[] = []
 
-      if (response.success && response.users) {
-        allUsers.value = response.users
-        isLoaded.value = true
+      while (hasMore) {
+        const response = await $fetch<{ success: boolean; users: User[]; pagination: any }>('/api/admin/users', {
+          method: 'GET',
+          query: {
+            page,
+            limit: 500
+          },
+          ...auth.getAuthConfig()
+        })
+
+        if (response.success && response.users) {
+          allFetchedUsers = [...allFetchedUsers, ...response.users]
+          if (response.pagination && response.pagination.page < response.pagination.totalPages) {
+            page++
+          } else {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
       }
+      allUsers.value = allFetchedUsers
+      isLoaded.value = true
     } catch (err) {
       console.error('获取所有用户数据失败:', err)
     } finally {
@@ -34,18 +49,18 @@ export const useUserFilters = () => {
     }
   }
 
-  const getAvailableGrades = (users: any[]) => {
+  const getAvailableGrades = (users: User[]) => {
     if (!users || !Array.isArray(users)) return []
-    return [...new Set(users.map((u) => u.grade).filter(Boolean))].sort()
+    return [...new Set(users.map((u) => u.grade).filter((g): g is string => Boolean(g)))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   }
 
-  const getAvailableClasses = (users: any[], gradeFilter?: string) => {
+  const getAvailableClasses = (users: User[], gradeFilter?: string) => {
     if (!users || !Array.isArray(users)) return []
     let filtered = users
     if (gradeFilter) {
       filtered = filtered.filter((u) => u.grade === gradeFilter)
     }
-    return [...new Set(filtered.map((u) => u.class).filter(Boolean))].sort()
+    return [...new Set(filtered.map((u) => u.class).filter((c): c is string => Boolean(c)))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   }
 
   const availableGrades = computed(() => {

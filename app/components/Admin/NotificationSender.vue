@@ -453,24 +453,6 @@ const gradeOptions = computed(() => {
   return userFilters.availableGrades.value.map(g => ({ label: g, value: g }))
 })
 
-const classOptionsForClassScope = computed(() => {
-  const classes = userFilters.getAvailableClasses(userFilters.allUsers.value, form.value.classGrade)
-  return classes.map(c => ({ label: c, value: c }))
-})
-
-const classOptionsForMultiClassScope = computed(() => {
-  const classes = userFilters.getAvailableClasses(userFilters.allUsers.value, multiClassForm.value.grade)
-  return classes.map(c => ({ label: c, value: c }))
-})
-
-watch(() => form.value.classGrade, () => {
-  form.value.className = ''
-})
-
-watch(() => multiClassForm.value.grade, () => {
-  multiClassForm.value.class = ''
-})
-
 // 表单数据
 const form = ref({
   title: '',
@@ -487,6 +469,24 @@ const form = ref({
 const multiClassForm = ref({
   grade: '',
   class: ''
+})
+
+const classOptionsForClassScope = computed(() => {
+  const classes = userFilters.getAvailableClasses(userFilters.allUsers.value, form.value.classGrade)
+  return classes.map(c => ({ label: c, value: c }))
+})
+
+const classOptionsForMultiClassScope = computed(() => {
+  const classes = userFilters.getAvailableClasses(userFilters.allUsers.value, multiClassForm.value.grade)
+  return classes.map(c => ({ label: c, value: c }))
+})
+
+watch(() => form.value.classGrade, () => {
+  form.value.className = ''
+})
+
+watch(() => multiClassForm.value.grade, () => {
+  multiClassForm.value.class = ''
 })
 
 const loading = ref(false)
