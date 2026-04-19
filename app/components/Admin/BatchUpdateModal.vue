@@ -560,6 +560,7 @@
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useUserFilters } from '~/composables/useUserFilters'
 import {
   Layers,
   X,
@@ -622,33 +623,29 @@ const updateTotalBatches = ref(0)
 const updateCurrentBatch = ref(0)
 
 // 所有用户的年级班级信息
-const allGrades = ref([])
-const allClasses = ref([])
-// 所有用户数据
-const allUsers = ref([])
-
 // 服务
 const auth = useAuth()
+const userFilters = useUserFilters()
 
 // 计算属性
 const computedUsers = computed(() => {
   // 必须优先使用全量数据 allUsers，如果正在加载则等待加载完成。
   // 只有在尚未触发加载且需要临时展示时才 fallback 到 props.users。
-  return allUsers.value.length > 0
-    ? allUsers.value
+  return userFilters.isLoaded.value
+    ? userFilters.allUsers.value
     : props.users || []
 })
 
 const availableGrades = computed(() => {
-  return allGrades.value.length > 0
-    ? allGrades.value
-    : [...new Set(computedUsers.value.map((s) => s.grade).filter(Boolean))].sort()
+  return userFilters.getAvailableGrades(computedUsers.value)
 })
 
 const availableClasses = computed(() => {
-  return allClasses.value.length > 0
-    ? allClasses.value
-    : [...new Set(computedUsers.value.map((s) => s.class).filter(Boolean))].sort()
+  return userFilters.getAvailableClasses(computedUsers.value, gradeFilter.value)
+})
+
+watch(() => gradeFilter.value, () => {
+  classFilter.value = ''
 })
 
 const gradeOptions = computed(() => {
@@ -730,7 +727,7 @@ const processExcelFile = async (file) => {
     error.value = ''
 
     // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
-    if (allUsers.value.length === 0) {
+    if (!userFilters.isLoaded.value) {
       console.log('正在获取全量用户数据以解析Excel...')
       await fetchAllUsers()
       await nextTick()
@@ -891,9 +888,15 @@ const performUpdate = async () => {
       emit('update-success')
       emit('close')
     } else if (updateType.value === 'excel-batch') {
-      await performExcelUpdate()
+      const result = await performExcelUpdate()
+      if (result.totalFailed > 0) {
+        error.value = result.message
+        if (window.$showNotification) {
+          window.$showNotification(result.message, 'warning')
+        }
+        return
+      }
       excelPreviewData.value = []
-      emit('update-success')
       // 等待 3 秒让用户看到进度条完成状态
       setTimeout(() => {
         if (updateProgressText.value) {
@@ -977,11 +980,16 @@ const performExcelUpdate = async () => {
         body: { updates },
         ...auth.getAuthConfig()
       })
-      if (result && result.data && result.data.summary) {
+
+      if (!result?.success) {
+        throw new Error(result?.message || '批量更新请求失败')
+      }
+
+      if (result.data?.summary) {
         totalUpdated += result.data.summary.success || 0
         totalFailed += result.data.summary.failed || 0
       } else {
-        totalUpdated += batch.length
+        throw new Error('批量更新接口返回格式异常')
       }
     } catch (err) {
       console.error(`第 ${updateCurrentBatch.value} 批更新失败:`, err)
@@ -989,8 +997,38 @@ const performExcelUpdate = async () => {
     }
   }
 
+  if (totalFailed > 0) {
+    const partialMessage = totalUpdated > 0
+      ? `部分更新成功：成功 ${totalUpdated} 个，失败 ${totalFailed} 个，请检查后重试`
+      : `批量更新失败：${totalFailed} 个用户未能更新，请检查后重试`
+    
+    // 如果存在更新成功的数据，仍然需要通知父组件刷新列表
+    if (totalUpdated > 0) {
+      emit('update-success')
+    }
+    
+    // 返回结果给外层统一处理提示，而不是抛出异常打断外层流程
+    return {
+      success: false,
+      totalUpdated,
+      totalFailed,
+      message: partialMessage
+    }
+  }
+
   updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
   updateProgress.value = 100
+  
+  if (totalUpdated > 0) {
+    emit('update-success')
+  }
+  
+  return {
+    success: true,
+    totalUpdated,
+    totalFailed,
+    message: ''
+  }
 }
 
 const performStatusUpdate = async () => {
@@ -1024,29 +1062,7 @@ const performStatusUpdate = async () => {
 
 // 获取所有用户数据
 const fetchAllUsers = async () => {
-  try {
-    const response = await $fetch('/api/admin/users', {
-      method: 'GET',
-      query: {
-        page: 1,
-        limit: 10000
-      },
-      ...auth.getAuthConfig()
-    })
-
-    if (response.success && response.users) {
-      const users = response.users
-      allUsers.value = users
-
-      const grades = [...new Set(users.map((u) => u.grade).filter(Boolean))].sort()
-      const classes = [...new Set(users.map((u) => u.class).filter(Boolean))].sort()
-
-      allGrades.value = grades
-      allClasses.value = classes
-    }
-  } catch (err) {
-    console.error('获取所有用户数据失败:', err)
-  }
+  await userFilters.fetchAllUsers()
 }
 
 // 监听显示状态

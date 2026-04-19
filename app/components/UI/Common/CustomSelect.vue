@@ -1,8 +1,9 @@
 <template>
   <div ref="containerRef" class="relative" :class="className">
     <div
-      class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-lg transition-all cursor-pointer select-none"
+      class="flex items-center gap-2 px-3 py-2 bg-zinc-950 border rounded-lg transition-all select-none"
       :class="[
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         isOpen
           ? 'border-blue-500/50 bg-blue-600/5 shadow-lg'
           : 'border-zinc-800 hover:border-zinc-700'
@@ -37,7 +38,7 @@
           v-if="isOpen"
           ref="dropdownRef"
           :style="dropdownStyle"
-          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-lg shadow-2xl backdrop-blur-xl origin-top"
+          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-zinc-800 rounded-lg shadow-2xl backdrop-blur-xl"
         >
           <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
             <button
@@ -85,6 +86,10 @@ const props = defineProps({
   placeholder: {
     type: String,
     default: '请选择'
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -130,37 +135,45 @@ const isSelected = (option) => {
 }
 
 const updatePosition = () => {
-  if (!isOpen.value || !containerRef.value) return
+  if (!isOpen.value || !containerRef.value || !dropdownRef.value) return
 
   const rect = containerRef.value.getBoundingClientRect()
-
-  // 简单的位置计算，默认向下弹出
-  // 检查底部空间
+  const dropdownHeight = dropdownRef.value.offsetHeight || 200 // 预估高度
+  
   const windowHeight = window.innerHeight
   const spaceBelow = windowHeight - rect.bottom
+  const spaceAbove = rect.top
 
-  const top = rect.bottom + 4
+  let top = rect.bottom + 4
+  let transformOrigin = 'origin-top'
 
-  // 如果底部空间不足且顶部空间充足，则向上弹出
-  if (spaceBelow < 220 && rect.top > 220) {
-    // 暂时保持向下，或者使用 fixed 定位让它尽量可见
+  // 如果底部空间不足，并且顶部空间更充足或者能完全放下弹层，则向上展开
+  if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+    top = rect.top - dropdownHeight - 4
+    transformOrigin = 'origin-bottom'
   }
 
   dropdownStyle.value = {
     top: `${top}px`,
     left: `${rect.left}px`,
     width: `${rect.width}px`,
-    minWidth: '120px' // 最小宽度
+    minWidth: '120px',
+    transformOrigin
   }
 }
 
 const toggleDropdown = async () => {
+  if (props.disabled) return
   if (isOpen.value) {
     isOpen.value = false
   } else {
     isOpen.value = true
+    // 等待下拉框渲染以便获取其实际高度
     await nextTick()
+    // 此时元素已存在于 DOM 中，但可能尚未完全重绘，因此先触发一次计算
+    // 并通过 requestAnimationFrame 再次触发，确保计算出正确的高度
     updatePosition()
+    requestAnimationFrame(updatePosition)
   }
 }
 

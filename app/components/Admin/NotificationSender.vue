@@ -81,9 +81,11 @@
                     >
                     <CustomSelect
                       v-model="form.grade"
-                      :options="['高一', '高二', '高三', '教师']"
+                      :options="gradeOptions"
+                      label-key="label"
+                      value-key="value"
                       placeholder="请选择年级"
-                      class="w-full md:w-64"
+                      class-name="w-full md:w-64"
                     />
                   </div>
                 </div>
@@ -99,21 +101,26 @@
                     >
                     <CustomSelect
                       v-model="form.classGrade"
-                      :options="['高一', '高二', '高三', '教师']"
+                      :options="gradeOptions"
+                      label-key="label"
+                      value-key="value"
                       placeholder="请选择年级"
-                      class="w-full"
+                      class-name="w-full"
                     />
                   </div>
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
                       >班级</span
                     >
-                    <input
+                    <CustomSelect
                       v-model="form.className"
-                      type="text"
-                      placeholder="如: 1班、2班"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200"
-                    >
+                      :options="classOptionsForClassScope"
+                      label-key="label"
+                      value-key="value"
+                      placeholder="请选择班级"
+                      class-name="w-full"
+                      :disabled="!form.classGrade"
+                    />
                   </div>
                 </div>
 
@@ -122,17 +129,22 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                       <CustomSelect
                         v-model="multiClassForm.grade"
-                        :options="['高一', '高二', '高三', '教师']"
+                        :options="gradeOptions"
+                        label-key="label"
+                        value-key="value"
                         placeholder="请选择年级"
-                        class="w-full"
+                        class-name="w-full"
                       />
                       <div class="flex gap-2">
-                        <input
+                        <CustomSelect
                           v-model="multiClassForm.class"
-                          type="text"
-                          placeholder="输入班级名称"
-                          class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs focus:outline-none text-zinc-200"
-                        >
+                          :options="classOptionsForMultiClassScope"
+                          label-key="label"
+                          value-key="value"
+                          placeholder="请选择班级"
+                          class-name="flex-1"
+                          :disabled="!multiClassForm.grade"
+                        />
                         <button
                           :disabled="!canAddClass"
                           class="px-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 font-bold rounded-xl text-xs transition-all"
@@ -406,7 +418,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onUnmounted } from 'vue'
+import { computed, ref, onUnmounted, onMounted, watch } from 'vue'
 import {
   Send,
   Users,
@@ -427,9 +439,19 @@ import {
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
+import { useUserFilters } from '~/composables/useUserFilters'
 
-const { isAdmin } = useAuth()
+const { isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
+const userFilters = useUserFilters()
+
+onMounted(() => {
+  userFilters.fetchOptions()
+})
+
+const gradeOptions = computed(() => {
+  return userFilters.getAvailableGrades().map(g => ({ label: g, value: g }))
+})
 
 // 表单数据
 const form = ref({
@@ -447,6 +469,24 @@ const form = ref({
 const multiClassForm = ref({
   grade: '',
   class: ''
+})
+
+const classOptionsForClassScope = computed(() => {
+  const classes = userFilters.getAvailableClasses(undefined, form.value.classGrade)
+  return classes.map(c => ({ label: c, value: c }))
+})
+
+const classOptionsForMultiClassScope = computed(() => {
+  const classes = userFilters.getAvailableClasses(undefined, multiClassForm.value.grade)
+  return classes.map(c => ({ label: c, value: c }))
+})
+
+watch(() => form.value.classGrade, () => {
+  form.value.className = ''
+})
+
+watch(() => multiClassForm.value.grade, () => {
+  multiClassForm.value.class = ''
 })
 
 const loading = ref(false)
@@ -524,7 +564,8 @@ const searchUsers = async (query) => {
       query: {
         search: query,
         limit: 20
-      }
+      },
+      ...getAuthConfig()
     })
 
     if (response.success) {

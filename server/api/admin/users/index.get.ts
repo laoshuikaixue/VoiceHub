@@ -5,7 +5,16 @@ import { and, asc, desc, count, eq, ilike, or, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
-    // 获取查询参数
+    // 检查用户是否为管理员
+    const user = event.context.user
+
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      throw createError({
+        statusCode: 403,
+        message: '只有系统管理员可以访问用户列表'
+      })
+    }
+
     const query = getQuery(event)
     const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
 
@@ -48,7 +57,7 @@ export default defineEventHandler(async (event) => {
 
     // 分页参数
     const pageNum = Math.max(1, parseInt(page as string) || 1)
-    const limitNum = Math.max(1, parseInt(limit as string) || 50)
+    const limitNum = Math.min(Math.max(1, parseInt(limit as string) || 50), 1000)
     const skip = (pageNum - 1) * limitNum
 
     // 获取总数

@@ -650,6 +650,7 @@ VoiceHub/
 │   │   ├── useSongs.ts         # 歌曲管理hooks
 │   │   ├── useSyncedTime.ts    # 时间同步hooks
 │   │   ├── useToast.ts         # Toast提示hooks
+│   │   └── useUserFilters.ts  # 用户过滤器hooks
 │   ├── drizzle/               # 数据库相关
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
@@ -810,6 +811,7 @@ VoiceHub/
 │   │   │       ├── index.get.ts     # 获取用户列表
 │   │   │       ├── index.post.ts    # 创建用户
 │   │   │       ├── index.ts         # 用户管理
+│   │   │       ├── options.ts       # 用户管理选项
 │   │   │       └── status-logs.get.ts # 用户状态日志
 │   │   ├── api-enhanced/          # 网易云音乐API
 │   │   │   └── netease/           # 网易云增强接口代理
