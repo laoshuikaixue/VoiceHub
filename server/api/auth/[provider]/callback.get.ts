@@ -1,6 +1,6 @@
 import { parseState, getRedirectUri } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, users } from '~/drizzle/db'
+import { db, eq, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
