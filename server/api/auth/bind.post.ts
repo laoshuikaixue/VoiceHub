@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (user.status === 'withdrawn') {
-    throw createError({ statusCode: 403, message: '该账号已注销' })
+    throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
   }
 
   if (user.status === 'graduate') {

@@ -141,7 +141,7 @@ export default defineEventHandler(async (event) => {
       const errorMessage = !user 
         ? '用户不存在，请重新登录' 
         : user.status === 'withdrawn' 
-          ? '该账号已注销' 
+          ? '该账号已退学，限制访问' 
           : user.status === 'graduate' 
             ? '该账号已毕业，限制访问' 
             : '该账号已被禁用'

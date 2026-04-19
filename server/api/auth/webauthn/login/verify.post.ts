@@ -28,9 +28,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '未找到该 Passkey 关联的账号' })
   }
 
+  const user = identity.user
+
   // 检查用户账号状态
-  if (identity.user.status !== 'active') {
-    throw createError({ statusCode: 403, message: '账号已被禁用或注销' })
+  if (!user || user.status !== 'active') {
+    throw createError({ statusCode: 403, message: '该账号不可用或已限制访问' })
   }
 
   // 解析存储的凭证数据

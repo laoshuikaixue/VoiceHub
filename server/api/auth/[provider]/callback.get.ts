@@ -165,7 +165,7 @@ async function handleUserLoginOrBind(
     if (user.status === 'withdrawn') {
       return sendRedirect(
         event,
-        `/auth/error?code=ACCOUNT_WITHDRAWN&message=${encodeURIComponent('账号已注销')}`
+        `/auth/error?code=ACCOUNT_WITHDRAWN&message=${encodeURIComponent('该账号已退学，限制访问')}`
       )
     }
     if (user.status === 'graduate') {
