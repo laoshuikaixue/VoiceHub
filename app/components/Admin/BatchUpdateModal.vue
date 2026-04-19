@@ -888,7 +888,17 @@ const performUpdate = async () => {
       emit('update-success')
       emit('close')
     } else if (updateType.value === 'excel-batch') {
-      await performExcelUpdate()
+      const result = await performExcelUpdate()
+      if (result.totalFailed > 0) {
+        const partialMessage = result.totalUpdated > 0
+          ? `部分更新成功：成功 ${result.totalUpdated} 个，失败 ${result.totalFailed} 个，请检查后重试`
+          : `批量更新失败：${result.totalFailed} 个用户未能更新，请检查后重试`
+        error.value = partialMessage
+        if (window.$showNotification) {
+          window.$showNotification(partialMessage, 'warning')
+        }
+        return
+      }
       excelPreviewData.value = []
       emit('update-success')
       // 等待 3 秒让用户看到进度条完成状态
@@ -974,11 +984,16 @@ const performExcelUpdate = async () => {
         body: { updates },
         ...auth.getAuthConfig()
       })
-      if (result && result.data && result.data.summary) {
+
+      if (!result?.success) {
+        throw new Error(result?.message || '批量更新请求失败')
+      }
+
+      if (result.data?.summary) {
         totalUpdated += result.data.summary.success || 0
         totalFailed += result.data.summary.failed || 0
       } else {
-        totalUpdated += batch.length
+        throw new Error('批量更新接口返回格式异常')
       }
     } catch (err) {
       console.error(`第 ${updateCurrentBatch.value} 批更新失败:`, err)
@@ -988,6 +1003,10 @@ const performExcelUpdate = async () => {
 
   updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
   updateProgress.value = 100
+  return {
+    totalUpdated,
+    totalFailed
+  }
 }
 
 const performStatusUpdate = async () => {

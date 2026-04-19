@@ -441,7 +441,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
 
-const { isAdmin } = useAuth()
+const { isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 
@@ -564,7 +564,8 @@ const searchUsers = async (query) => {
       query: {
         search: query,
         limit: 20
-      }
+      },
+      ...getAuthConfig()
     })
 
     if (response.success) {

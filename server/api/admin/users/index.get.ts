@@ -5,6 +5,21 @@ import { and, asc, desc, count, eq, ilike, or, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   try {
+    const user = event.context.user
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        message: '未授权访问'
+      })
+    }
+
+    if (!['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      throw createError({
+        statusCode: 403,
+        message: '没有权限访问'
+      })
+    }
+
     // 获取查询参数
     const query = getQuery(event)
     const { grade, class: className, search, page = '1', limit = '50', role, status, sortBy = 'id', sortOrder = 'asc' } = query
