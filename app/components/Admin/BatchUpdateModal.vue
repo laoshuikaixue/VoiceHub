@@ -910,8 +910,7 @@ const performUpdate = async () => {
     }
   } catch (err) {
     console.error('批量更新失败:', err)
-    const apiError = err as { data?: { message?: string }, message?: string }
-    error.value = '批量更新失败: ' + (apiError.data?.message || apiError.message)
+    error.value = '批量更新失败: ' + (err?.data?.message || err?.message || err?.statusMessage || '未知错误')
   } finally {
     loading.value = false
   }

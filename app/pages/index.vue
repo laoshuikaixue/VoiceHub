@@ -1218,8 +1218,7 @@ const handleRequest = async (songData) => {
     return false
   } catch (err) {
     if (window.$showNotification) {
-      const apiError = err as { data?: { message?: string }, message?: string }
-      window.$showNotification(apiError.data?.message || apiError.message || '点歌失败', 'error')
+      window.$showNotification(err?.data?.message || err?.message || err?.statusMessage || '点歌失败', 'error')
     }
     return false
   }
@@ -1414,8 +1413,7 @@ const handleCollaborationReply = async (notification, accept) => {
   } catch (error) {
     console.error('处理联合投稿邀请失败:', error)
     if (window.$showNotification) {
-      const apiError = error as { data?: { message?: string }, message?: string, statusMessage?: string }
-      window.$showNotification(apiError.data?.message || apiError.message || apiError.statusMessage || '操作失败', 'error')
+      window.$showNotification(error?.data?.message || error?.message || error?.statusMessage || '操作失败', 'error')
     }
   } finally {
     notification.processing = false

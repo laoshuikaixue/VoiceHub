@@ -1781,12 +1781,11 @@ const confirmDelete = async () => {
       window.$showNotification('用户删除成功', 'success')
     }
   } catch (error) {
-    console.error('删除用户失败:', error)
-    if (window.$showNotification) {
-      const apiError = error as { data?: { message?: string }, message?: string }
-      window.$showNotification('删除用户失败: ' + (apiError.data?.message || apiError.message), 'error')
-    }
-  } finally {
+      console.error('删除用户失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('删除用户失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      }
+    } finally {
     deleting.value = false
   }
 }
@@ -1902,10 +1901,9 @@ const saveUser = async () => {
       window.$showNotification(editingUser.value ? '用户更新成功' : '用户创建成功', 'success')
     }
   } catch (error) {
-    console.error('保存用户失败:', error)
-    const apiError = error as { data?: { message?: string }, message?: string }
-    formError.value = apiError.data?.message || apiError.message || '保存失败'
-  } finally {
+      console.error('保存用户失败:', error)
+      formError.value = error?.data?.message || error?.message || error?.statusMessage || '保存失败'
+    } finally {
     saving.value = false
   }
 }
@@ -1944,10 +1942,9 @@ const confirmResetPassword = async () => {
       window.$showNotification('密码重置成功', 'success')
     }
   } catch (error) {
-    console.error('重置密码失败:', error)
-    const apiError = error as { data?: { message?: string }, message?: string }
-    passwordError.value = apiError.data?.message || apiError.message || '重置失败'
-  } finally {
+      console.error('重置密码失败:', error)
+      passwordError.value = error?.data?.message || error?.message || error?.statusMessage || '重置失败'
+    } finally {
     resetting.value = false
   }
 }
@@ -1983,12 +1980,11 @@ const loadUsers = async (page = 1, limit = 100) => {
       console.warn('响应中没有用户数据')
     }
   } catch (error) {
-    console.error('加载用户失败:', error)
-    if (window.$showNotification) {
-      const apiError = error as { data?: { message?: string }, message?: string }
-      window.$showNotification('加载用户失败: ' + (apiError.data?.message || apiError.message), 'error')
-    }
-  } finally {
+      console.error('加载用户失败:', error)
+      if (window.$showNotification) {
+        window.$showNotification('加载用户失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      }
+    } finally {
     loading.value = false
   }
 }
@@ -2317,10 +2313,9 @@ const loadStatusLogsPage = async (page) => {
       hasPrevPage: false
     }
   } catch (error) {
-    console.error('加载状态日志失败:', error)
-    const apiError = error as { data?: { message?: string }, message?: string }
-    statusLogsError.value = apiError.data?.message || apiError.message || '加载状态日志失败'
-  } finally {
+      console.error('加载状态日志失败:', error)
+      statusLogsError.value = error?.data?.message || error?.message || error?.statusMessage || '加载状态日志失败'
+    } finally {
     statusLogsLoading.value = false
   }
 }
