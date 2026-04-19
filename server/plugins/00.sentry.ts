@@ -74,7 +74,7 @@ export default defineNitroPlugin(async (nitroApp) => {
   globalThis.__voicehubSentryServerInitialized = true
 
   Sentry.setTag('runtime', 'nuxt')
-  Sentry.setTag('deployment_platform', getDeploymentTarget())
+  Sentry.setTag('deployment_target', getDeploymentTarget())
   Sentry.setTag('nitro_preset', process.env.NITRO_PRESET || 'node-server')
   if (instanceId) {
     Sentry.setTag('instance_id', instanceId)

@@ -1,9 +1,10 @@
 import * as Sentry from '@sentry/vue'
+import type { Event, EventHint } from '@sentry/types'
 
 let sentryClientInitialized = false
 let instanceId = ''
 
-const shouldDropClientEvent = (event: Sentry.ErrorEvent, hint?: Sentry.EventHint): boolean => {
+const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
   const originalException = hint?.originalException
   if (originalException instanceof DOMException && originalException.name === 'AbortError') {
     return true
