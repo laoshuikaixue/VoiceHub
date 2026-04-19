@@ -419,8 +419,9 @@ const handleLogin = async () => {
       }
     }
   } catch (err) {
+    const apiError = err as { data?: { message?: string }, message?: string, statusMessage?: string }
     error.value =
-      err.message || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
+      apiError.data?.message || apiError.message || apiError.statusMessage || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
     // 密码错误时清空密码字段
     if (error.value.includes('密码') || error.value.includes('错误')) {
       password.value = ''
@@ -462,8 +463,8 @@ const handleRegisterOAuth = async () => {
       await navigateTo('/')
     }
   } catch (err) {
-    const apiError = err as { data?: { message?: string }, message?: string, statusCode?: number }
-    error.value = apiError.data?.message || apiError.message || '注册失败，请稍后重试'
+    const apiError = err as { data?: { message?: string }, message?: string, statusCode?: number, statusMessage?: string }
+    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
     if (apiError.statusCode === 409) {
       username.value = ''
@@ -499,8 +500,8 @@ const handleWebAuthnLogin = async () => {
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)
-    const apiError = e as { data?: { message?: string }, message?: string }
-    error.value = apiError.data?.message || apiError.message || 'Passkey 登录失败'
+    const apiError = e as { data?: { message?: string }, message?: string, statusMessage?: string }
+    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || 'Passkey 登录失败'
   } finally {
     loading.value = false
   }

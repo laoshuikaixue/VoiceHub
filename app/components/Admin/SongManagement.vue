@@ -1498,9 +1498,9 @@ const markAsPlayed = async (songId) => {
     await songsService.markPlayed(songId)
     await refreshSongs()
   } catch (error) {
-    console.error('标记已播放失败:', error)
-    showNotification('标记失败: ' + error.message, 'error')
-  }
+      console.error('标记已播放失败:', error)
+      showNotification('标记失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+    }
 }
 
 const markAsUnplayed = async (songId) => {
@@ -1508,9 +1508,9 @@ const markAsUnplayed = async (songId) => {
     await songsService.unmarkPlayed(songId)
     await refreshSongs()
   } catch (error) {
-    console.error('标记未播放失败:', error)
-    showNotification('标记失败: ' + error.message, 'error')
-  }
+      console.error('标记未播放失败:', error)
+      showNotification('标记失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+    }
 }
 
 const deleteSong = async (songId) => {
@@ -1531,9 +1531,9 @@ const deleteSong = async (songId) => {
 
       showNotification('歌曲删除成功', 'success')
     } catch (error) {
-      console.error('删除歌曲失败:', error)
-      showNotification('删除失败: ' + error.message, 'error')
-    }
+        console.error('删除歌曲失败:', error)
+        showNotification('删除失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      }
   }
   showDeleteDialog.value = true
 }
@@ -1556,9 +1556,9 @@ const batchDelete = async () => {
 
       showNotification('批量删除成功', 'success')
     } catch (error) {
-      console.error('批量删除失败:', error)
-      showNotification('批量删除失败: ' + error.message, 'error')
-    } finally {
+        console.error('批量删除失败:', error)
+        showNotification('批量删除失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      } finally {
       loading.value = false
     }
   }

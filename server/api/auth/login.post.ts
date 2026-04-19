@@ -109,11 +109,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查用户状态 (移到2FA之前，防止已注销用户进行2FA验证)
+    // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
       throw createError({
         statusCode: 403,
-        message: '该账号已注销'
+        message: '该账号已退学，限制访问'
       })
     } else if (user.status === 'graduate') {
       throw createError({
