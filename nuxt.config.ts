@@ -21,7 +21,15 @@ const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/
 const readNumberEnv = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
   const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : fallback
+  if (!Number.isFinite(parsed)) return fallback
+
+  // For unit-interval settings (for example, Sentry sample rates), reject
+  // out-of-range environment values and fall back to the safe default.
+  if (fallback >= 0 && fallback <= 1) {
+    return parsed >= 0 && parsed <= 1 ? parsed : fallback
+  }
+
+  return parsed
 }
 
 const backendSentryDsnDefault =

@@ -1,8 +1,9 @@
 import * as Sentry from '@sentry/vue'
 
 let sentryClientInitialized = false
+let instanceId = ''
 
-export default defineNuxtPlugin(async (nuxtApp) => {
+export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client || sentryClientInitialized) {
     return
   }
@@ -12,17 +13,6 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
   if (!sentryConfig?.enabled || !sentryConfig.dsn) {
     return
-  }
-
-  let instanceId = ''
-
-  try {
-    const response = await $fetch<{ success?: boolean; data?: { instanceId?: string } }>(
-      '/api/system/instance'
-    )
-    instanceId = response?.data?.instanceId || ''
-  } catch (error) {
-    console.warn('[Sentry] Failed to resolve instance ID for client tagging:', error)
   }
 
   const deploymentTarget = config.public?.isNetlify
@@ -44,6 +34,7 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     integrations.push(Sentry.replayIntegration())
   }
 
+  // Initialize Sentry immediately without blocking - don't wait for instance ID
   Sentry.init({
     app: nuxtApp.vueApp,
     dsn: sentryConfig.dsn,
@@ -60,12 +51,25 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   sentryClientInitialized = true
   Sentry.setTag('runtime', 'vue')
   Sentry.setTag('deployment_target', deploymentTarget)
-  if (instanceId) {
-    Sentry.setTag('instance_id', instanceId)
-    Sentry.setContext('instance', {
-      instanceId
-    })
-  }
+
+  // Fetch instance ID in the background after app has mounted
+  nuxtApp.hook('app:mounted', async () => {
+    try {
+      const response = await $fetch<{ success?: boolean; data?: { instanceId?: string } }>(
+        '/api/system/instance'
+      )
+      const fetchedInstanceId = response?.data?.instanceId
+      if (fetchedInstanceId) {
+        instanceId = fetchedInstanceId
+        Sentry.setTag('instance_id', instanceId)
+        Sentry.setContext('instance', {
+          instanceId
+        })
+      }
+    } catch (error) {
+      console.warn('[Sentry] Failed to resolve instance ID for client tagging:', error)
+    }
+  })
 
   nuxtApp.hook('vue:error', (error, instance, info) => {
     Sentry.withScope((scope) => {

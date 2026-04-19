@@ -332,7 +332,7 @@ const loadSystemStatus = async () => {
     const response = await $fetch('/api/system/status')
     systemStatus.value.online = response?.status === 'ok'
     systemStatus.value.database = !!response?.database?.connected
-    systemStatus.value.api = !!response?.database?.connected
+    systemStatus.value.api = response?.status === 'ok'
     instanceId.value = response?.instance?.instanceId || ''
   } catch (error) {
     console.error('加载系统状态失败:', error)

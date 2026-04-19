@@ -7,8 +7,6 @@ import { getInstanceId } from '../utils/instance-id'
 
 export default defineEventHandler(async (event) => {
   try {
-    await getInstanceId()
-
     // 优先从Redis缓存获取系统设置
     if (isRedisReady()) {
       const cachedSettings = await cacheService.getSystemSettings()
@@ -30,6 +28,9 @@ export default defineEventHandler(async (event) => {
 
       settings = newSettings[0]
     }
+
+    // Ensure instance ID is set after defaults are applied
+    await getInstanceId()
 
     const publicSettings = filterPublicSettings(settings)
 

@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
+import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
 
 let cachedInstanceId: string | null = null
 let pendingInstanceIdPromise: Promise<string> | null = null
@@ -21,7 +22,15 @@ const loadOrCreateInstanceId = async (): Promise<string> => {
   const instanceId = randomUUID()
 
   if (!settings) {
-    await db.insert(systemSettings).values({ instanceId }).returning({ instanceId: systemSettings.instanceId })
+    // Use UPSERT to prevent race conditions in multi-instance deployments
+    // Apply SYSTEM_SETTINGS_DEFAULTS when creating initial row
+    await db
+      .insert(systemSettings)
+      .values({ ...SYSTEM_SETTINGS_DEFAULTS, instanceId })
+      .onConflictDoUpdate({
+        target: [systemSettings.id],
+        set: { instanceId, updatedAt: new Date() }
+      })
   } else {
     await db
       .update(systemSettings)
@@ -44,9 +53,9 @@ export const getInstanceId = async (): Promise<string> => {
         return instanceId
       })
       .catch((error) => {
-        const fallbackInstanceId = cachedInstanceId || randomUUID()
-        cachedInstanceId = fallbackInstanceId
-        console.warn('[Instance ID] Failed to persist instance ID, using fallback value:', error)
+        // Use fallback UUID but don't cache as final - allow retry on next call
+        const fallbackInstanceId = randomUUID()
+        console.warn('[Instance ID] Failed to persist instance ID, using temporary fallback value:', error)
         return fallbackInstanceId
       })
       .finally(() => {
