@@ -890,17 +890,13 @@ const performUpdate = async () => {
     } else if (updateType.value === 'excel-batch') {
       const result = await performExcelUpdate()
       if (result.totalFailed > 0) {
-        const partialMessage = result.totalUpdated > 0
-          ? `部分更新成功：成功 ${result.totalUpdated} 个，失败 ${result.totalFailed} 个，请检查后重试`
-          : `批量更新失败：${result.totalFailed} 个用户未能更新，请检查后重试`
-        error.value = partialMessage
+        error.value = result.message
         if (window.$showNotification) {
-          window.$showNotification(partialMessage, 'warning')
+          window.$showNotification(result.message, 'warning')
         }
         return
       }
       excelPreviewData.value = []
-      emit('update-success')
       // 等待 3 秒让用户看到进度条完成状态
       setTimeout(() => {
         if (updateProgressText.value) {
@@ -1066,7 +1062,7 @@ const performStatusUpdate = async () => {
 
 // 获取所有用户数据
 const fetchAllUsers = async () => {
-  await userFilters.fetchAllUsers(true)
+  await userFilters.fetchAllUsers()
 }
 
 // 监听显示状态
