@@ -55,7 +55,7 @@ export const useUserFilters = () => {
           method: 'GET',
           query: {
             page,
-            limit: 500
+            limit: 1000
           },
           ...auth.getAuthConfig()
         })
@@ -103,6 +103,12 @@ export const useUserFilters = () => {
     return getAvailableGrades(allUsers.value)
   })
 
+  const resetUserFilters = () => {
+    allUsers.value = []
+    isLoaded.value = false
+    lastError.value = ''
+  }
+
   return {
     allUsers,
     loading,
@@ -110,6 +116,7 @@ export const useUserFilters = () => {
     fetchAllUsers,
     getAvailableGrades,
     getAvailableClasses,
-    availableGrades
+    availableGrades,
+    resetUserFilters
   }
 }

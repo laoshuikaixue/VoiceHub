@@ -1040,7 +1040,7 @@ const performStatusUpdate = async () => {
 
 // 获取所有用户数据
 const fetchAllUsers = async () => {
-  await userFilters.fetchAllUsers()
+  await userFilters.fetchAllUsers(true)
 }
 
 // 监听显示状态
