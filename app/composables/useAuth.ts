@@ -1,5 +1,6 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
+import { useUserFilters } from '~/composables/useUserFilters'
 
 interface LoginResponse {
   success: boolean
@@ -165,6 +166,14 @@ export const useAuth = () => {
     }
 
     clearAuthState()
+    
+    // 清理 admin 相关全局状态
+    try {
+      const { resetUserFilters } = useUserFilters()
+      resetUserFilters()
+    } catch (e) {
+      // ignore
+    }
 
     if (import.meta.client && redirect) {
       await navigateTo('/')

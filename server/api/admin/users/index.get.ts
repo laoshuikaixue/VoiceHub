@@ -8,10 +8,10 @@ export default defineEventHandler(async (event) => {
     // 检查用户是否为管理员
     const user = event.context.user
 
-    if (!user || !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)) {
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
       throw createError({
         statusCode: 403,
-        message: '只有管理员可以访问用户列表'
+        message: '只有系统管理员可以访问用户列表'
       })
     }
 
