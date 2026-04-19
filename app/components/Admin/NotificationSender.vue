@@ -446,11 +446,11 @@ const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 
 onMounted(() => {
-  userFilters.fetchAllUsers()
+  userFilters.fetchOptions()
 })
 
 const gradeOptions = computed(() => {
-  return userFilters.availableGrades.value.map(g => ({ label: g, value: g }))
+  return userFilters.getAvailableGrades().map(g => ({ label: g, value: g }))
 })
 
 // 表单数据
@@ -472,12 +472,12 @@ const multiClassForm = ref({
 })
 
 const classOptionsForClassScope = computed(() => {
-  const classes = userFilters.getAvailableClasses(userFilters.allUsers.value, form.value.classGrade)
+  const classes = userFilters.getAvailableClasses(undefined, form.value.classGrade)
   return classes.map(c => ({ label: c, value: c }))
 })
 
 const classOptionsForMultiClassScope = computed(() => {
-  const classes = userFilters.getAvailableClasses(userFilters.allUsers.value, multiClassForm.value.grade)
+  const classes = userFilters.getAvailableClasses(undefined, multiClassForm.value.grade)
   return classes.map(c => ({ label: c, value: c }))
 })
 

@@ -727,7 +727,7 @@ const processExcelFile = async (file) => {
     error.value = ''
 
     // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
-    if (userFilters.allUsers.value.length === 0) {
+    if (!userFilters.isLoaded.value) {
       console.log('正在获取全量用户数据以解析Excel...')
       await fetchAllUsers()
       await nextTick()
@@ -999,6 +999,20 @@ const performExcelUpdate = async () => {
       console.error(`第 ${updateCurrentBatch.value} 批更新失败:`, err)
       totalFailed += batch.length
     }
+  }
+
+  if (totalFailed > 0) {
+    const partialMessage = totalUpdated > 0
+      ? `部分更新成功：成功 ${totalUpdated} 个，失败 ${totalFailed} 个，请检查后重试`
+      : `批量更新失败：${totalFailed} 个用户未能更新，请检查后重试`
+    
+    // 如果存在更新成功的数据，仍然需要通知父组件刷新列表
+    if (totalUpdated > 0) {
+      emit('update-success')
+    }
+    
+    // 直接抛出错误以终止外部的成功提示流程，交由外层 catch 块处理
+    throw new Error(partialMessage)
   }
 
   updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
