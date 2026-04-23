@@ -1,6 +1,5 @@
 services:
   voicehub:
-    container_name: voicehub
     image: ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest
     ports:
       - '3000:3000'
@@ -8,15 +7,14 @@ services:
       - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production
+      - SKIP_BUILD=true
     depends_on:
-      - postgres
-    volumes:
-      - .:/app
-      - /app/node_modules
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   postgres:
-    image: postgres:15-alpine
+    image: ghcr.nju.edu.cn/laoshuikaixue/voicehub-postgres:latest
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
@@ -25,6 +23,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U user -d voicehub']
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:
