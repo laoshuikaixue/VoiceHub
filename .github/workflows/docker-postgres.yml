@@ -51,7 +51,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=18-alpine,enable={{is_default_branch}}
+            type=raw,value=17-alpine,enable={{is_default_branch}}
 
       - name: Build and push PostgreSQL Docker image
         id: build-and-push

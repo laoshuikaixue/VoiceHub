@@ -17,7 +17,7 @@ VoiceHub 提供三类主要部署方案，请根据实际环境选择：
 建议优先选用 `docker-compose-prebuild-nju.yml`。该配置使用南京大学镜像站加速拉取，可有效改善国内网络环境下的镜像下载体验。
 
 **2. 企业/云服务器部署**  
-若您使用具备良好国际出口带宽的国内云服务商（如阿里云、腾讯云等），建议选用 `docker-compose-prebuild-github.yml`，直接拉取 GitHub 官方预构建镜像。
+若您使用国外云服务商，建议选用 `docker-compose-prebuild-github.yml`，直接拉取 GitHub 官方预构建镜像。
 
 **3. 自定义构建需求**  
 如需修改源码、调整依赖或适配私有网络环境，请选用 `docker-compose.yml` 并在本地执行镜像构建。您可根据需要修改 `Dockerfile` 以适配国内软件源等特定环境。

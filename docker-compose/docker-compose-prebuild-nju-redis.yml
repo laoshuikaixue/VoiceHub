@@ -22,8 +22,6 @@ services:
       - POSTGRES_DB=voicehub
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - '5432:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U user -d voicehub']
       interval: 5s
@@ -39,8 +37,6 @@ services:
       --appendonly yes
     volumes:
       - redis_data:/data
-    ports:
-      - '6379:6379'
     restart: unless-stopped
 
 volumes:
