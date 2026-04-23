@@ -1,6 +1,8 @@
 services:
   voicehub:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - '3000:3000'
     environment:
@@ -14,7 +16,9 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:15-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile-postgres
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
