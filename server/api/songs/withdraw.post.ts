@@ -9,14 +9,7 @@ import {
   collaborationLogs
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
-import {
-  getBeijingStartOfDay,
-  getBeijingEndOfDay,
-  getBeijingStartOfWeek,
-  getBeijingEndOfWeek,
-  getBeijingStartOfMonth,
-  getBeijingEndOfMonth
-} from '~/utils/timeUtils'
+import { getTimeRange, type LimitType } from '~~/server/utils/submissionLimit'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -131,30 +124,19 @@ export default defineEventHandler(async (event) => {
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false
 
-  if (dailyLimit > 0) {
-    const startOfDay = getBeijingStartOfDay()
-    const endOfDay = getBeijingEndOfDay()
+  const limitConfigs: { type: LimitType; value: number }[] = [
+    { type: 'daily', value: dailyLimit },
+    { type: 'weekly', value: weeklyLimit },
+    { type: 'monthly', value: monthlyLimit }
+  ]
 
-    if (song.createdAt >= startOfDay && song.createdAt <= endOfDay) {
-      canReturnQuota = true
-    }
-  }
-
-  if (!canReturnQuota && weeklyLimit > 0) {
-    const startOfWeek = getBeijingStartOfWeek()
-    const endOfWeek = getBeijingEndOfWeek()
-
-    if (song.createdAt >= startOfWeek && song.createdAt <= endOfWeek) {
-      canReturnQuota = true
-    }
-  }
-
-  if (!canReturnQuota && monthlyLimit > 0) {
-    const startOfMonth = getBeijingStartOfMonth()
-    const endOfMonth = getBeijingEndOfMonth()
-
-    if (song.createdAt >= startOfMonth && song.createdAt <= endOfMonth) {
-      canReturnQuota = true
+  for (const { type, value } of limitConfigs) {
+    if (value > 0) {
+      const { start, end } = getTimeRange(type)
+      if (song.createdAt >= start && song.createdAt <= end) {
+        canReturnQuota = true
+        break
+      }
     }
   }
 
