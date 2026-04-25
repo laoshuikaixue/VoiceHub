@@ -9,6 +9,12 @@ import {
   collaborationLogs
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
+import {
+  getBeijingStartOfDay,
+  getBeijingEndOfDay,
+  getBeijingStartOfWeek,
+  getBeijingEndOfWeek
+} from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -122,27 +128,19 @@ export default defineEventHandler(async (event) => {
 
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false
-  const now = new Date()
 
   if (dailyLimit > 0) {
-    // 检查是否在同一天
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+    const startOfDay = getBeijingStartOfDay()
+    const endOfDay = getBeijingEndOfDay()
 
-    if (song.createdAt >= startOfDay && song.createdAt < endOfDay) {
+    if (song.createdAt >= startOfDay && song.createdAt <= endOfDay) {
       canReturnQuota = true
     }
   } else if (weeklyLimit > 0) {
-    // 检查是否在同一周（周一开始）
-    const startOfWeek = new Date(now)
-    const dayOfWeek = now.getDay()
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
-    startOfWeek.setDate(now.getDate() - daysToSubtract)
-    startOfWeek.setHours(0, 0, 0, 0)
+    const startOfWeek = getBeijingStartOfWeek()
+    const endOfWeek = getBeijingEndOfWeek()
 
-    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-
-    if (song.createdAt >= startOfWeek && song.createdAt < endOfWeek) {
+    if (song.createdAt >= startOfWeek && song.createdAt <= endOfWeek) {
       canReturnQuota = true
     }
   }
