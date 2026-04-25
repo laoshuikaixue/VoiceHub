@@ -138,14 +138,18 @@ export default defineEventHandler(async (event) => {
     if (song.createdAt >= startOfDay && song.createdAt <= endOfDay) {
       canReturnQuota = true
     }
-  } else if (weeklyLimit > 0) {
+  }
+
+  if (!canReturnQuota && weeklyLimit > 0) {
     const startOfWeek = getBeijingStartOfWeek()
     const endOfWeek = getBeijingEndOfWeek()
 
     if (song.createdAt >= startOfWeek && song.createdAt <= endOfWeek) {
       canReturnQuota = true
     }
-  } else if (monthlyLimit > 0) {
+  }
+
+  if (!canReturnQuota && monthlyLimit > 0) {
     const startOfMonth = getBeijingStartOfMonth()
     const endOfMonth = getBeijingEndOfMonth()
 
