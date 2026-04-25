@@ -13,7 +13,9 @@ import {
   getBeijingStartOfDay,
   getBeijingEndOfDay,
   getBeijingStartOfWeek,
-  getBeijingEndOfWeek
+  getBeijingEndOfWeek,
+  getBeijingStartOfMonth,
+  getBeijingEndOfMonth
 } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
@@ -119,12 +121,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // 如果是主投稿人撤回（删除歌曲）
-
   // 获取系统设置以检查限制类型
   const settingsResult = await db.select().from(systemSettings).limit(1)
   const settings = settingsResult[0]
   const dailyLimit = settings?.dailySubmissionLimit || 0
   const weeklyLimit = settings?.weeklySubmissionLimit || 0
+  const monthlyLimit = settings?.monthlySubmissionLimit || 0
 
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false
@@ -141,6 +143,13 @@ export default defineEventHandler(async (event) => {
     const endOfWeek = getBeijingEndOfWeek()
 
     if (song.createdAt >= startOfWeek && song.createdAt <= endOfWeek) {
+      canReturnQuota = true
+    }
+  } else if (monthlyLimit > 0) {
+    const startOfMonth = getBeijingStartOfMonth()
+    const endOfMonth = getBeijingEndOfMonth()
+
+    if (song.createdAt >= startOfMonth && song.createdAt <= endOfMonth) {
       canReturnQuota = true
     }
   }
