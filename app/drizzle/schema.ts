@@ -127,6 +127,7 @@ export const systemSettings = pgTable('SystemSettings', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  instanceId: text('instance_id'),
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),

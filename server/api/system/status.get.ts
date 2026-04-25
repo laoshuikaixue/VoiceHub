@@ -1,8 +1,11 @@
 import { defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
+import { getInstanceId } from '~~/server/utils/instance-id'
 
 export default defineEventHandler(async (event) => {
   try {
+    const instanceId = await getInstanceId()
+
     // 获取数据库连接状态
     const dbStatus = await databaseManager.getConnectionStatus()
     const poolStatus = await databaseManager.getConnectionPoolStatus()
@@ -28,6 +31,9 @@ export default defineEventHandler(async (event) => {
     // 返回完整的系统状态
     return {
       status: 'ok',
+      instance: {
+        instanceId
+      },
       database: {
         connected: dbTestResult,
         poolStatus: poolStatus,

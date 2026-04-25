@@ -3,6 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
 import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
+import { getInstanceId } from '../utils/instance-id'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,6 +28,9 @@ export default defineEventHandler(async (event) => {
 
       settings = newSettings[0]
     }
+
+    // Ensure instance ID is set after defaults are applied
+    await getInstanceId()
 
     const publicSettings = filterPublicSettings(settings)
 
