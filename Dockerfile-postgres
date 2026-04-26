@@ -3,6 +3,8 @@ FROM postgres:17-alpine AS runtime-arm64
 FROM postgres:17-alpine AS runtime-arm
 FROM postgres:17-alpine AS runtime-s390x
 FROM postgres:17-alpine AS runtime-ppc64le
+FROM postgres:17-alpine AS runtime-riscv64
+FROM postgres:17-alpine AS runtime-386
 
 # 根据 TARGETARCH 选择对应的运行时镜像
 FROM runtime-${TARGETARCH} AS runtime

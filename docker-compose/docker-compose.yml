@@ -1,7 +1,7 @@
 services:
   voicehub:
     build:
-      context: ../
+      context: .
       dockerfile: Dockerfile
     ports:
       - '3000:3000'
@@ -17,7 +17,7 @@ services:
 
   postgres:
     build:
-      context: ../
+      context: .
       dockerfile: Dockerfile-postgres
     environment:
       - POSTGRES_USER=user
