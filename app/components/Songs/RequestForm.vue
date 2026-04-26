@@ -1404,18 +1404,15 @@ const closeAudioMatchModal = async () => {
 
 const playAudioMatchResult = async (match) => {
   try {
-    const song = {
-      id: match.id || Date.now(),
-      title: match.name,
-      artist: match.artist,
-      cover: match.cover || null,
-      musicPlatform: 'netease',
+    const result = {
       musicId: match.id,
-      startTime: match.startTime
+      song: match.name,
+      singer: match.artist,
+      cover: match.cover || null,
+      musicPlatform: 'netease'
     }
 
-    const playResult = audioPlayer.playSong(song)
-    if (!playResult) return
+    await playSong(result)
 
     if (match.startTime > 0) {
       const audioPlayerControl = useAudioPlayerControl()
