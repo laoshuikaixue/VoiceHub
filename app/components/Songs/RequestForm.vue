@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <!-- Mobile Rules Section (Original RequestForm.vue style) -->
+    <!-- 移动端投稿须知 -->
     <div class="rules-section mobile-only-rules">
       <h3 class="rules-title">
         <Icon :size="16" class="rules-icon" name="bell" />
@@ -686,123 +686,104 @@
         <div
           v-if="showAudioMatchModal"
           class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/85 backdrop-blur-sm"
-          @click.self="closeAudioMatchModal"
         >
           <div
-            class="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            class="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             @click.stop
           >
-            <div class="px-6 py-5 border-b border-zinc-800/60 flex items-center justify-between shrink-0">
-              <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-400">
-                  <Icon :size="20" name="mic" />
+            <div class="px-8 py-7 flex flex-col items-center text-center">
+              <div class="relative">
+                <div
+                  class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
+                  :class="audioMatchRecording
+                    ? 'bg-red-500/20 text-red-400 scale-110'
+                    : audioMatchError
+                      ? 'bg-zinc-800/50 text-zinc-500'
+                      : 'bg-blue-500/10 text-blue-400'"
+                >
+                  <Icon :size="32" name="mic" />
                 </div>
-                <div>
-                  <h3 class="text-lg font-black text-zinc-100 tracking-tight">听歌识曲</h3>
-                  <p class="text-xs text-zinc-500 mt-1">录制 {{ AUDIO_MATCH_DURATION }} 秒音频后自动识别网易云候选结果</p>
-                </div>
+                <div
+                  v-if="audioMatchRecording"
+                  class="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-30"
+                />
               </div>
-              <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
-                type="button"
-                @click="closeAudioMatchModal"
-              >
-                <X class="w-5 h-5" />
-              </button>
+
+              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">听歌识曲</h3>
+
+              <p class="mt-2 text-sm text-zinc-400 max-w-[260px]">
+                {{
+                  audioMatchStatus ||
+                  (audioMatchError
+                    ? audioMatchError
+                    : '靠近音源播放，录制 10 秒识别歌曲')
+                }}
+              </p>
+
+              <div class="mt-8 flex items-center gap-4">
+                <button
+                  v-if="!audioMatchRecording"
+                  :disabled="audioMatchPreparing || audioMatchProcessing"
+                  class="audio-match-primary-btn"
+                  type="button"
+                  @click="startAudioMatchRecording"
+                >
+                  {{
+                    audioMatchPreparing
+                      ? '准备中...'
+                      : audioMatchProcessing
+                        ? '识别中...'
+                        : '开始识曲'
+                  }}
+                </button>
+                <button
+                  v-else
+                  :disabled="!audioMatchRecording"
+                  class="audio-match-record-btn"
+                  type="button"
+                  @click="stopAudioMatchRecording"
+                >
+                  <span class="recording-dot" />
+                  录制中...
+                </button>
+                <button
+                  class="audio-match-cancel-btn"
+                  type="button"
+                  @click="closeAudioMatchModal"
+                >
+                  取消
+                </button>
+              </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
-              <div class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5">
-                <div class="flex items-start gap-3">
-                  <div class="audio-match-pulse" :class="{ active: audioMatchRecording }">
-                    <Icon :size="18" name="mic" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-zinc-100">
-                      {{
-                        audioMatchStatus ||
-                        (audioMatchError
-                          ? '听歌识曲暂时不可用'
-                          : '准备通过麦克风捕获音频')
-                      }}
-                    </p>
-                    <p class="mt-2 text-xs leading-5 text-zinc-500">
-                      建议将手机外放靠近设备麦克风，尽量选择人声较少、节奏清晰的片段。
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  v-if="audioMatchError"
-                  class="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-                >
-                  {{ audioMatchError }}
-                </div>
-
-                <div class="mt-5 flex flex-wrap gap-3">
-                  <button
-                    :disabled="audioMatchPreparing || audioMatchRecording || audioMatchProcessing"
-                    class="audio-match-primary-btn"
-                    type="button"
-                    @click="startAudioMatchRecording"
-                  >
-                    {{
-                      audioMatchPreparing
-                        ? '准备中...'
-                        : audioMatchRecording
-                          ? '录音中...'
-                          : audioMatchProcessing
-                            ? '识别中...'
-                            : '开始识曲'
-                    }}
-                  </button>
-                  <button
-                    :disabled="audioMatchPreparing || audioMatchRecording || audioMatchProcessing"
-                    class="audio-match-secondary-btn"
-                    type="button"
-                    @click="closeAudioMatchModal"
-                  >
-                    取消
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="audioMatchResults.length" class="mt-5">
-                <div class="mb-3 flex items-center justify-between">
-                  <h4 class="text-sm font-bold text-zinc-100">候选结果</h4>
-                  <span class="text-xs text-zinc-500">点击后自动回填并搜索</span>
-                </div>
-                <div class="space-y-3">
+            <div v-if="audioMatchResults.length" class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
+              <div class="border-t border-zinc-800/60 pt-5">
+                <h4 class="text-sm font-semibold text-zinc-300 mb-4">识别结果</h4>
+                <div class="space-y-2">
                   <button
                     v-for="match in audioMatchResults"
                     :key="match.key"
-                    class="audio-match-result-item group/item"
+                    class="audio-match-result-item group/item w-full"
                     type="button"
                     @click="useAudioMatchResult(match)"
                   >
                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                      <div class="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden group/cover cursor-pointer" @click.stop="playAudioMatchResult(match)">
-                        <img v-if="match.cover" :src="match.cover" class="w-full h-full object-cover transition-transform duration-300 group-hover/cover:scale-105" />
-                        <div v-else class="w-full h-full bg-zinc-800/50 flex items-center justify-center">
-                          <Music class="w-5 h-5 text-zinc-500" />
-                        </div>
-                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-[2px]">
-                          <Play class="w-5 h-5 text-white fill-white ml-0.5" />
+                      <div class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800/50 flex items-center justify-center" @click.stop="playAudioMatchResult(match)">
+                        <img v-if="match.cover" :src="match.cover" class="w-full h-full object-cover" />
+                        <Music v-else class="w-5 h-5 text-zinc-500" />
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all">
+                          <Play class="w-4 h-4 text-white fill-white" />
                         </div>
                       </div>
-                      <div class="min-w-0 text-left">
-                        <p class="truncate text-sm font-semibold text-zinc-100">{{ match.name }}</p>
-                        <p class="mt-1 truncate text-xs text-zinc-400">{{ match.artist }}</p>
-                        <p v-if="match.album" class="mt-1 truncate text-[11px] text-zinc-500">
-                          {{ match.album }}
-                        </p>
+                      <div class="min-w-0 text-left flex-1">
+                        <p class="truncate text-sm font-medium text-zinc-100">{{ match.name }}</p>
+                        <p class="truncate text-xs text-zinc-400 mt-0.5">{{ match.artist }}</p>
                       </div>
-                    </div>
-                    <div class="shrink-0 text-right">
-                      <p class="text-[11px] font-medium text-blue-300">
-                        {{ (match.startTime / 1000).toFixed(1) }}s
-                      </p>
-                      <p class="mt-1 text-[11px] text-zinc-500">匹配片段</p>
+                      <div class="shrink-0 text-right">
+                        <span class="text-[11px] font-mono text-blue-400">
+                          {{ (match.startTime / 1000).toFixed(1) }}s
+                        </span>
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -1004,6 +985,7 @@ import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
+import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
@@ -1418,21 +1400,7 @@ const playAudioMatchResult = async (match) => {
 
     if (match.startTime > 0) {
       const audioPlayerControl = useAudioPlayerControl()
-      const unwatch = watch(
-        () => audioPlayerControl.isPlaying.value,
-        (playing) => {
-          if (playing && audioPlayerControl.currentTime.value < match.startTime / 1000) {
-            audioPlayerControl.seekAndPlay(match.startTime / 1000)
-            unwatch()
-          }
-        },
-        { immediate: true }
-      )
-
-      // 如果长时间未播放，清理监听器
-      setTimeout(() => {
-        unwatch()
-      }, 10000)
+      audioPlayerControl.seekAndPlay(match.startTime / 1000)
     }
   } catch (err) {
     console.error('播放听歌识曲片段失败:', err)
@@ -1461,6 +1429,12 @@ const startAudioMatchRecording = async () => {
     message: 'start',
     duration: AUDIO_MATCH_DURATION
   })
+}
+
+const stopAudioMatchRecording = () => {
+  if (audioMatchRecorderNode?.port) {
+    audioMatchRecorderNode.port.postMessage({ message: 'stop' })
+  }
 }
 
 const useAudioMatchResult = async (match) => {
@@ -2194,6 +2168,24 @@ const getAudioUrl = async (result) => {
         }
       } catch (backupError) {
         console.error('备用源获取失败:', backupError)
+      }
+    }
+
+    // 最终回退：使用统一的 resolveMusicUrl（包含 vkeys API 回退）
+    // 对于未登录用户或音源获取失败时使用第三方 API 获取播放链接
+    if (!result.url && result.musicPlatform && result.musicId) {
+      try {
+        const fallbackUrl = await resolveMusicUrl(
+          result.musicPlatform,
+          result.musicId,
+          result.playUrl
+        )
+        if (fallbackUrl) {
+          result.url = fallbackUrl
+          result.hasUrl = true
+        }
+      } catch (fallbackError) {
+        console.error('resolveMusicUrl 回退获取失败:', fallbackError)
       }
     }
 
@@ -3801,70 +3793,112 @@ defineExpose({
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-.audio-match-pulse {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+.audio-waveform {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
+  gap: 3px;
+  height: 24px;
 }
 
-.audio-match-pulse.active {
-  background: rgba(59, 130, 246, 0.18);
-  color: #93c5fd;
-  border-color: rgba(96, 165, 250, 0.35);
-  box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.08);
+.audio-waveform .wave-bar {
+  display: block;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 2px;
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+.audio-waveform .wave-bar:nth-child(1) { animation-delay: 0s; height: 45%; }
+.audio-waveform .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 70%; }
+.audio-waveform .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 100%; }
+.audio-waveform .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 60%; }
+.audio-waveform .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 40%; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+  50% { transform: scaleY(1); opacity: 1; }
 }
 
 .audio-match-primary-btn,
-.audio-match-secondary-btn,
+.audio-match-cancel-btn,
+.audio-match-record-btn,
 .audio-match-result-item {
   transition: all 0.2s ease;
 }
 
 .audio-match-primary-btn {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 10px;
-  padding: 0.75rem 1.1rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 0.875rem 2rem;
   color: #ffffff;
-  font-family: 'MiSans', sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
   cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .audio-match-primary-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0, 117, 248, 0.25);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
 }
 
-.audio-match-secondary-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  padding: 0.75rem 1.1rem;
-  color: rgba(255, 255, 255, 0.75);
-  font-family: 'MiSans', sans-serif;
+.audio-match-primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.audio-match-record-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 0.875rem 2rem;
+  color: #ffffff;
   font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audio-match-record-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.audio-match-cancel-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.875rem 1.5rem;
+  color: #a1a1aa;
+  font-weight: 500;
   font-size: 14px;
   cursor: pointer;
 }
 
-.audio-match-secondary-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-}
-
-.audio-match-primary-btn:disabled,
-.audio-match-secondary-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.audio-match-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e4e4e7;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .audio-match-result-item {
