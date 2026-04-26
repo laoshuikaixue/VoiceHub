@@ -1360,7 +1360,7 @@ const initializeAudioMatch = async () => {
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('麦克风授权超时，请在系统设置中确认已允许麦克风权限')), GET_USER_MEDIA_TIMEOUT_MS)
       )
-    ]) as MediaStream
+    ]) as MediaStream;
 
     audioMatchMicSourceNode = audioMatchContext.createMediaStreamSource(audioMatchMicStream)
     audioMatchMicSourceNode.connect(audioMatchRecorderNode)
