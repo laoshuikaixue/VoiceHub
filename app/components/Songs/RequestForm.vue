@@ -776,16 +776,27 @@
                   <button
                     v-for="match in audioMatchResults"
                     :key="match.key"
-                    class="audio-match-result-item"
+                    class="audio-match-result-item group/item"
                     type="button"
                     @click="useAudioMatchResult(match)"
                   >
-                    <div class="min-w-0 text-left">
-                      <p class="truncate text-sm font-semibold text-zinc-100">{{ match.name }}</p>
-                      <p class="mt-1 truncate text-xs text-zinc-400">{{ match.artist }}</p>
-                      <p v-if="match.album" class="mt-1 truncate text-[11px] text-zinc-500">
-                        {{ match.album }}
-                      </p>
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                      <div class="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden group/cover cursor-pointer" @click.stop="playAudioMatchResult(match)">
+                        <img v-if="match.cover" :src="match.cover" class="w-full h-full object-cover transition-transform duration-300 group-hover/cover:scale-105" />
+                        <div v-else class="w-full h-full bg-zinc-800/50 flex items-center justify-center">
+                          <Music class="w-5 h-5 text-zinc-500" />
+                        </div>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all duration-200 backdrop-blur-[2px]">
+                          <Play class="w-5 h-5 text-white fill-white ml-0.5" />
+                        </div>
+                      </div>
+                      <div class="min-w-0 text-left">
+                        <p class="truncate text-sm font-semibold text-zinc-100">{{ match.name }}</p>
+                        <p class="mt-1 truncate text-xs text-zinc-400">{{ match.artist }}</p>
+                        <p v-if="match.album" class="mt-1 truncate text-[11px] text-zinc-500">
+                          {{ match.album }}
+                        </p>
+                      </div>
                     </div>
                     <div class="shrink-0 text-right">
                       <p class="text-[11px] font-medium text-blue-300">
@@ -979,9 +990,10 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import searchIcon from '~~/public/images/search.svg'
-import { X, Lock, Loader2, Check, Edit3 } from 'lucide-vue-next'
+import { X, Lock, Loader2, Check, Edit3, Music, Play } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
@@ -1218,6 +1230,7 @@ const parseAudioMatchResults = (response) => {
       name: song.name || '未知歌曲',
       artist: artists.join(' / ') || '未知歌手',
       album: song.album?.name || '',
+      cover: song.album?.picUrl || song.al?.picUrl || '',
       startTime: typeof item?.startTime === 'number' ? item.startTime : 0
     }
   })
@@ -1387,6 +1400,44 @@ const closeAudioMatchModal = async () => {
   showAudioMatchModal.value = false
   resetAudioMatchState()
   await stopAudioMatchSession()
+}
+
+const playAudioMatchResult = async (match) => {
+  try {
+    const song = {
+      id: match.id || Date.now(),
+      title: match.name,
+      artist: match.artist,
+      cover: match.cover || null,
+      musicPlatform: 'netease',
+      musicId: match.id,
+      startTime: match.startTime
+    }
+
+    const playResult = audioPlayer.playSong(song)
+    if (!playResult) return
+
+    if (match.startTime > 0) {
+      const audioPlayerControl = useAudioPlayerControl()
+      const unwatch = watch(
+        () => audioPlayerControl.isPlaying.value,
+        (playing) => {
+          if (playing && audioPlayerControl.currentTime.value < match.startTime / 1000) {
+            audioPlayerControl.seekAndPlay(match.startTime / 1000)
+            unwatch()
+          }
+        },
+        { immediate: true }
+      )
+
+      // 如果长时间未播放，清理监听器
+      setTimeout(() => {
+        unwatch()
+      }, 10000)
+    }
+  } catch (err) {
+    console.error('播放听歌识曲片段失败:', err)
+  }
 }
 
 const startAudioMatchRecording = async () => {
