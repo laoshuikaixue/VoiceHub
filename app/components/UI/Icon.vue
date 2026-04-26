@@ -365,6 +365,14 @@
       <line x1="21" x2="16.65" y1="21" y2="16.65" />
     </g>
 
+    <!-- 麦克风图标 -->
+    <g v-else-if="name === 'mic' || name === 'microphone'">
+      <rect width="8" height="12" x="8" y="3" rx="4" ry="4" />
+      <path d="M19 11a7 7 0 0 1-14 0" />
+      <line x1="12" x2="12" y1="18" y2="22" />
+      <line x1="8" x2="16" y1="22" y2="22" />
+    </g>
+
     <!-- 上传图标 -->
     <g v-else-if="name === 'upload'">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

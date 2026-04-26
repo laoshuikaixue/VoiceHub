@@ -77,6 +77,17 @@
               >
                 {{ loading || searching ? '处理中...' : '搜索' }}
               </button>
+              <button
+                :disabled="loading || searching"
+                aria-label="听歌识曲"
+                class="audio-match-btn"
+                title="听歌识曲"
+                type="button"
+                @click="openAudioMatchModal"
+              >
+                <Icon :size="16" name="mic" />
+                <span class="btn-text">识曲</span>
+              </button>
             </div>
             <button
               v-if="showImportSemesterBtn"
@@ -663,6 +674,134 @@
       @select="handleUserSelect"
     />
 
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="showAudioMatchModal"
+          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/85 backdrop-blur-sm"
+          @click.self="closeAudioMatchModal"
+        >
+          <div
+            class="relative w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            @click.stop
+          >
+            <div class="px-6 py-5 border-b border-zinc-800/60 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-400">
+                  <Icon :size="20" name="mic" />
+                </div>
+                <div>
+                  <h3 class="text-lg font-black text-zinc-100 tracking-tight">听歌识曲</h3>
+                  <p class="text-xs text-zinc-500 mt-1">录制 {{ AUDIO_MATCH_DURATION }} 秒音频后自动识别网易云候选结果</p>
+                </div>
+              </div>
+              <button
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                type="button"
+                @click="closeAudioMatchModal"
+              >
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
+              <div class="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5">
+                <div class="flex items-start gap-3">
+                  <div class="audio-match-pulse" :class="{ active: audioMatchRecording }">
+                    <Icon :size="18" name="mic" />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-zinc-100">
+                      {{
+                        audioMatchStatus ||
+                        (audioMatchError
+                          ? '听歌识曲暂时不可用'
+                          : '准备通过麦克风捕获音频')
+                      }}
+                    </p>
+                    <p class="mt-2 text-xs leading-5 text-zinc-500">
+                      建议将手机外放靠近设备麦克风，尽量选择人声较少、节奏清晰的片段。
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  v-if="audioMatchError"
+                  class="mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+                >
+                  {{ audioMatchError }}
+                </div>
+
+                <div class="mt-5 flex flex-wrap gap-3">
+                  <button
+                    :disabled="audioMatchPreparing || audioMatchRecording || audioMatchProcessing"
+                    class="audio-match-primary-btn"
+                    type="button"
+                    @click="startAudioMatchRecording"
+                  >
+                    {{
+                      audioMatchPreparing
+                        ? '准备中...'
+                        : audioMatchRecording
+                          ? '录音中...'
+                          : audioMatchProcessing
+                            ? '识别中...'
+                            : '开始识曲'
+                    }}
+                  </button>
+                  <button
+                    :disabled="audioMatchPreparing || audioMatchRecording || audioMatchProcessing"
+                    class="audio-match-secondary-btn"
+                    type="button"
+                    @click="closeAudioMatchModal"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="audioMatchResults.length" class="mt-5">
+                <div class="mb-3 flex items-center justify-between">
+                  <h4 class="text-sm font-bold text-zinc-100">候选结果</h4>
+                  <span class="text-xs text-zinc-500">点击后自动回填并搜索</span>
+                </div>
+                <div class="space-y-3">
+                  <button
+                    v-for="match in audioMatchResults"
+                    :key="match.key"
+                    class="audio-match-result-item"
+                    type="button"
+                    @click="useAudioMatchResult(match)"
+                  >
+                    <div class="min-w-0 text-left">
+                      <p class="truncate text-sm font-semibold text-zinc-100">{{ match.name }}</p>
+                      <p class="mt-1 truncate text-xs text-zinc-400">{{ match.artist }}</p>
+                      <p v-if="match.album" class="mt-1 truncate text-[11px] text-zinc-500">
+                        {{ match.album }}
+                      </p>
+                    </div>
+                    <div class="shrink-0 text-right">
+                      <p class="text-[11px] font-medium text-blue-300">
+                        {{ (match.startTime / 1000).toFixed(1) }}s
+                      </p>
+                      <p class="mt-1 text-[11px] text-zinc-500">匹配片段</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- 手动输入弹窗 -->
     <Teleport to="body">
       <Transition
@@ -838,7 +977,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import searchIcon from '~~/public/images/search.svg'
 import { X, Lock, Loader2, Check, Edit3 } from 'lucide-vue-next'
 import { useSongs } from '~/composables/useSongs'
@@ -891,6 +1030,7 @@ const { fetchCurrentSemester, currentSemester, fetchSemesterOptions, semesters }
 
 // 是否显示“从往期导入”按钮：只有在有多个学期的情况下才显示
 const showImportSemesterBtn = computed(() => semesters.value && semesters.value.length > 1)
+const AUDIO_MATCH_DURATION = 3
 
 const title = ref('')
 const artist = ref('')
@@ -940,6 +1080,19 @@ const audioPlayer = useAudioPlayer() // 使用全局音频播放器
 
 // 搜索请求控制器
 const searchAbortController = ref(null)
+const showAudioMatchModal = ref(false)
+const audioMatchPreparing = ref(false)
+const audioMatchRecording = ref(false)
+const audioMatchProcessing = ref(false)
+const audioMatchStatus = ref('')
+const audioMatchError = ref('')
+const audioMatchResults = ref([])
+let audioMatchScriptsPromise = null
+let audioMatchContext = null
+let audioMatchRecorderNode = null
+let audioMatchMicStream = null
+let audioMatchMicSourceNode = null
+let audioMatchSilentNode = null
 
 // 音源管理器
 const musicSources = useMusicSources()
@@ -968,6 +1121,313 @@ const playUrlValidation = ref({ valid: true, error: '', validating: false })
 
 // 网易云音乐登录检查状态
 const checkingNeteaseLogin = ref(false)
+
+const resetAudioMatchState = () => {
+  audioMatchPreparing.value = false
+  audioMatchRecording.value = false
+  audioMatchProcessing.value = false
+  audioMatchStatus.value = ''
+  audioMatchError.value = ''
+  audioMatchResults.value = []
+}
+
+const stopAudioMatchSession = async () => {
+  audioMatchRecording.value = false
+  audioMatchProcessing.value = false
+
+  if (audioMatchMicStream) {
+    audioMatchMicStream.getTracks().forEach((track) => track.stop())
+    audioMatchMicStream = null
+  }
+
+  audioMatchMicSourceNode?.disconnect()
+  audioMatchRecorderNode?.disconnect()
+  audioMatchSilentNode?.disconnect()
+
+  audioMatchMicSourceNode = null
+  audioMatchRecorderNode = null
+  audioMatchSilentNode = null
+
+  if (audioMatchContext) {
+    try {
+      await audioMatchContext.close()
+    } catch {
+      // ignore close failures
+    }
+    audioMatchContext = null
+  }
+}
+
+const loadAudioMatchScript = (src) =>
+  new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-audio-match="${src}"]`)) {
+      resolve()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = src
+    script.async = true
+    script.dataset.audioMatch = src
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error(`加载识曲资源失败: ${src}`))
+    document.head.appendChild(script)
+  })
+
+const ensureAudioMatchScripts = async () => {
+  if (!import.meta.client) return
+
+  if (typeof window.GenerateFP === 'function') {
+    return
+  }
+
+  if (!audioMatchScriptsPromise) {
+    audioMatchScriptsPromise = loadAudioMatchScript('/audio-match/afp.wasm.js')
+      .then(() => loadAudioMatchScript('/audio-match/afp.js'))
+      .then(() => {
+        if (typeof window.GenerateFP !== 'function') {
+          throw new Error('识曲引擎初始化失败')
+        }
+      })
+      .catch((err) => {
+        audioMatchScriptsPromise = null
+        throw err
+      })
+  }
+
+  await audioMatchScriptsPromise
+}
+
+const parseAudioMatchResults = (response) => {
+  const resultList =
+    response?.data?.result ||
+    response?.result ||
+    response?.body?.data?.result ||
+    response?.body?.result ||
+    []
+
+  return resultList.map((item, index) => {
+    const song = item?.song || {}
+    const artists = Array.isArray(song.artists)
+      ? song.artists.map((artistItem) => artistItem?.name).filter(Boolean)
+      : []
+
+    return {
+      key: `${song.id || 'unknown'}-${index}`,
+      id: song.id,
+      name: song.name || '未知歌曲',
+      artist: artists.join(' / ') || '未知歌手',
+      album: song.album?.name || '',
+      startTime: typeof item?.startTime === 'number' ? item.startTime : 0
+    }
+  })
+}
+
+const handleAudioMatchFingerprint = async (recording) => {
+  try {
+    audioMatchProcessing.value = true
+    audioMatchStatus.value = '正在生成指纹并识别...'
+
+    const fingerprint = await window.GenerateFP(recording)
+    const response = await $fetch('/api/api-enhanced/netease/audio/match', {
+      method: 'POST',
+      query: {
+        duration: AUDIO_MATCH_DURATION,
+        audioFP: fingerprint
+      }
+    })
+
+    const matches = parseAudioMatchResults(response)
+    if (!matches.length) {
+      throw new Error('未识别到匹配歌曲，请换一段更清晰的副歌重试')
+    }
+
+    audioMatchResults.value = matches
+    audioMatchStatus.value = `识别完成，找到 ${matches.length} 个候选结果`
+  } catch (err) {
+    console.error('听歌识曲失败:', err)
+    audioMatchError.value = err?.message || '听歌识曲失败，请稍后重试'
+    audioMatchStatus.value = ''
+    audioMatchResults.value = []
+  } finally {
+    audioMatchProcessing.value = false
+  }
+}
+
+const initializeAudioMatch = async () => {
+  await ensureAudioMatchScripts()
+  await stopAudioMatchSession()
+
+  audioMatchPreparing.value = true
+  audioMatchStatus.value = '正在请求麦克风权限...'
+
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    audioMatchContext = new AudioContextClass({ sampleRate: 8000 })
+    if (audioMatchContext.state === 'suspended') {
+      await audioMatchContext.resume()
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('当前环境不支持麦克风访问，请确保使用 HTTPS 访问或 localhost 调试')
+    }
+
+    if (audioMatchContext.audioWorklet) {
+      await audioMatchContext.audioWorklet.addModule('/audio-match/rec.js')
+      audioMatchRecorderNode = new AudioWorkletNode(audioMatchContext, 'timed-recorder')
+
+      audioMatchRecorderNode.port.onmessage = async (event) => {
+        switch (event.data.message) {
+          case 'bufferhealth': {
+            const progress = Math.min(1, Number(event.data.health) || 0)
+            const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
+            audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
+            break
+          }
+          case 'finished':
+            audioMatchRecording.value = false
+            await handleAudioMatchFingerprint(event.data.recording)
+            break
+          default:
+            break
+        }
+      }
+    } else {
+      // 兼容不支持 AudioWorklet 的浏览器 (如旧版 Safari)
+      const bufferSize = 4096
+      const scriptNode = audioMatchContext.createScriptProcessor(bufferSize, 1, 1)
+      
+      let maxLength = 0
+      let recbuffer = new Float32Array()
+      let recording = false
+      let bufIndex = 0
+
+      scriptNode.onaudioprocess = (e) => {
+        if (!recording) return
+        
+        const channelL = e.inputBuffer.getChannelData(0)
+        const progress = bufIndex / maxLength
+        const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
+        
+        // 降低更新频率以防卡顿
+        if (bufIndex % (bufferSize * 4) === 0) {
+          audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
+        }
+
+        if (bufIndex + channelL.length > maxLength) {
+          recording = false
+          audioMatchRecording.value = false
+          
+          // 确保包含最后一块数据
+          const remaining = maxLength - bufIndex
+          if (remaining > 0) {
+            recbuffer.set(channelL.subarray(0, remaining), bufIndex)
+          }
+          
+          bufIndex = 0
+          handleAudioMatchFingerprint(recbuffer)
+        } else {
+          recbuffer.set(channelL, bufIndex)
+          bufIndex += channelL.length
+        }
+      }
+
+      // 模拟 AudioWorkletNode 接口
+      audioMatchRecorderNode = scriptNode
+      audioMatchRecorderNode.port = {
+        postMessage: (msg) => {
+          if (msg.message === 'start') {
+            maxLength = msg.duration * 8000
+            recbuffer = new Float32Array(maxLength)
+            bufIndex = 0
+            recording = true
+          }
+        }
+      }
+    }
+
+    audioMatchSilentNode = audioMatchContext.createGain()
+    audioMatchSilentNode.gain.value = 0
+    audioMatchRecorderNode.connect(audioMatchSilentNode)
+    audioMatchSilentNode.connect(audioMatchContext.destination)
+
+    audioMatchMicStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        autoGainControl: false,
+        noiseSuppression: false,
+        latency: 0
+      }
+    })
+
+    audioMatchMicSourceNode = audioMatchContext.createMediaStreamSource(audioMatchMicStream)
+    audioMatchMicSourceNode.connect(audioMatchRecorderNode)
+    audioMatchStatus.value = '麦克风已连接，点击开始识曲'
+  } catch (err) {
+    await stopAudioMatchSession()
+    throw err
+  } finally {
+    audioMatchPreparing.value = false
+  }
+}
+
+const openAudioMatchModal = async () => {
+  showAudioMatchModal.value = true
+  resetAudioMatchState()
+
+  try {
+    await initializeAudioMatch()
+  } catch (err) {
+    console.error('初始化听歌识曲失败:', err)
+    audioMatchError.value = err?.message || '无法初始化听歌识曲，请检查麦克风权限'
+  }
+}
+
+const closeAudioMatchModal = async () => {
+  showAudioMatchModal.value = false
+  resetAudioMatchState()
+  await stopAudioMatchSession()
+}
+
+const startAudioMatchRecording = async () => {
+  if (audioMatchPreparing.value || audioMatchRecording.value || audioMatchProcessing.value) return
+
+  audioMatchError.value = ''
+  audioMatchResults.value = []
+
+  if (!audioMatchRecorderNode) {
+    try {
+      await initializeAudioMatch()
+    } catch (err) {
+      console.error('重新初始化听歌识曲失败:', err)
+      audioMatchError.value = err?.message || '无法访问麦克风，请稍后重试'
+      return
+    }
+  }
+
+  audioMatchStatus.value = `录音中 0.0s / ${AUDIO_MATCH_DURATION}s`
+  audioMatchRecording.value = true
+  audioMatchRecorderNode.port.postMessage({
+    message: 'start',
+    duration: AUDIO_MATCH_DURATION
+  })
+}
+
+const useAudioMatchResult = async (match) => {
+  platform.value = 'netease'
+  searchType.value = 1
+  title.value = `${match.name} ${match.artist}`.trim()
+  error.value = ''
+  success.value = ''
+
+  await closeAudioMatchModal()
+  await nextTick()
+  await handleSearch()
+}
+
+onBeforeUnmount(() => {
+  stopAudioMatchSession()
+})
 
 const handleImportSuccess = async () => {
   // 不自动关闭弹窗，等待用户在结果页点击完成
@@ -2749,6 +3209,36 @@ defineExpose({
   transform: none;
 }
 
+.audio-match-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.audio-match-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #ffffff;
+}
+
+.audio-match-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 联合投稿人区域 */
 .collaborators-section {
   display: flex;
@@ -3220,6 +3710,91 @@ defineExpose({
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.12);
+}
+
+.audio-match-pulse {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.audio-match-pulse.active {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.08);
+}
+
+.audio-match-primary-btn,
+.audio-match-secondary-btn,
+.audio-match-result-item {
+  transition: all 0.2s ease;
+}
+
+.audio-match-primary-btn {
+  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 0.75rem 1.1rem;
+  color: #ffffff;
+  font-family: 'MiSans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.audio-match-primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 117, 248, 0.25);
+}
+
+.audio-match-secondary-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.75rem 1.1rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.audio-match-secondary-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.audio-match-primary-btn:disabled,
+.audio-match-secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.audio-match-result-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.95rem 1rem;
+  cursor: pointer;
+}
+
+.audio-match-result-item:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(96, 165, 250, 0.22);
+  transform: translateY(-1px);
 }
 
 .search-type-switch {
@@ -4597,6 +5172,15 @@ defineExpose({
     flex-shrink: 0; /* 防止按钮被压缩 */
     white-space: nowrap; /* 防止按钮文字换行 */
     font-size: 14px; /* 稍微减小字体 */
+  }
+
+  .audio-match-btn {
+    padding: 0.75rem;
+    min-width: 48px;
+  }
+
+  .audio-match-btn .btn-text {
+    display: none;
   }
 
   /* 移动端平台选择按钮 */
