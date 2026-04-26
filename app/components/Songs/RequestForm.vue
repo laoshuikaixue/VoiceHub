@@ -716,7 +716,7 @@
                   audioMatchStatus ||
                   (audioMatchError
                     ? audioMatchError
-                    : '靠近音源播放，录制 10 秒识别歌曲')
+                    : '靠近音源播放，录制 3 秒识别歌曲')
                 }}
               </p>
 
@@ -1304,8 +1304,8 @@ const initializeAudioMatch = async () => {
         const progress = bufIndex / maxLength
         const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
         
-        // 降低更新频率以防卡顿
-        if (bufIndex % (bufferSize * 4) === 0) {
+        // 提高更新频率以改善用户体验
+        if (bufIndex % bufferSize === 0) {
           audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
         }
 

@@ -8,14 +8,14 @@ if (typeof globalThis.setInterval != 'function'){
         {
             if (timerHnd.cancel)
             return;
-            setTimeout(fnWrapper, timeout);
+            timerHnd.id = setTimeout(fnWrapper, timeout);
             fn();
         }
         timerHnd.id = setTimeout(fnWrapper, timeout);
         return timerHnd;
     }
     globalThis.clearInterval = function pm$$clearInterval(timerHnd) {
-    timerHnd.clear = true;
+    timerHnd.cancel = true;
     clearTimeout(timerHnd.id);
     }
 }
@@ -1223,7 +1223,7 @@ let AudioFingerprintRuntime = (() => {
                 })
             },
             l: function(t, e, r, n, o, i) {
-                // Registering functions from constructor (;204;)
+                // 从构造函数注册函数 (;204;)
                 var a = ce(e, r);
                 t = ct(t),
                     o = ie(n, o),
@@ -1594,11 +1594,10 @@ let AudioFingerprintRuntime = (() => {
     return o;
 })
 
-// XXX: With PythonMonkey, the required module
-// is destructed(?) once the function is called
-// This is probably not what actaully happened, but
-// for now, everytime an FP is generated, the entire
-// WASM module is reloaded as a workaround
+// 注意：在 PythonMonkey 环境中，所需的模块
+// 在函数调用后会被销毁（？）
+// 这可能不是实际发生的情况，但
+// 目前每次生成指纹时都会重新加载整个 WASM 模块作为临时解决方案
 let cachedRuntimePromise = null;
 function instantiateRuntime(){
     if (cachedRuntimePromise) return cachedRuntimePromise;
@@ -1607,7 +1606,7 @@ function instantiateRuntime(){
         var monitor = setInterval(() => {
             if (typeof fpRuntime.ExtractQueryFP == "function") 
                 clearInterval(monitor) || resolve(fpRuntime)
-        }) 
+        }, 100) 
     })
 }
 
