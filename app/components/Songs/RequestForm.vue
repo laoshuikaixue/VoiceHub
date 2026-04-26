@@ -1405,11 +1405,13 @@ const closeAudioMatchModal = async () => {
 const playAudioMatchResult = async (match) => {
   try {
     const result = {
+      id: match.id,
       musicId: match.id,
       song: match.name,
       singer: match.artist,
       cover: match.cover || null,
-      musicPlatform: 'netease'
+      musicPlatform: 'netease',
+      hasUrl: false
     }
 
     await playSong(result)
