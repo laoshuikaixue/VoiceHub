@@ -27,7 +27,6 @@ class TimedRecorder extends AudioWorkletProcessor {
       this.port.postMessage({
         message: 'bufferhealth',
         health: this.buf_index / this.max_length,
-        recording: this.recbuffer,
       })
       if (this.buf_index + channelL.length > this.max_length) {
         this.port.postMessage({ message: '[rec.js] Recording finished' })

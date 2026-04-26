@@ -1244,7 +1244,7 @@ const handleAudioMatchFingerprint = async (recording) => {
     const fingerprint = await window.GenerateFP(recording)
     const response = await $fetch('/api/api-enhanced/netease/audio/match', {
       method: 'POST',
-      query: {
+      body: {
         duration: AUDIO_MATCH_DURATION,
         audioFP: fingerprint
       }

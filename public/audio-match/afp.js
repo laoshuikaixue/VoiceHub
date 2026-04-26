@@ -1599,8 +1599,10 @@ let AudioFingerprintRuntime = (() => {
 // This is probably not what actaully happened, but
 // for now, everytime an FP is generated, the entire
 // WASM module is reloaded as a workaround
+let cachedRuntimePromise = null;
 function instantiateRuntime(){
-    return new Promise((resolve, reject) => {
+    if (cachedRuntimePromise) return cachedRuntimePromise;
+    return cachedRuntimePromise = new Promise((resolve, reject) => {
         var fpRuntime = AudioFingerprintRuntime()
         var monitor = setInterval(() => {
             if (typeof fpRuntime.ExtractQueryFP == "function") 
@@ -1610,7 +1612,7 @@ function instantiateRuntime(){
 }
 
 function GenerateFP(floatArray) {
-    let PCMBuffer = Float32Array.from(floatArray)
+    let PCMBuffer = floatArray
     console.info('[afp] input samples n=', PCMBuffer.length)    
     return instantiateRuntime().then((fpRuntime) => {
         console.info('[afp] begin fingerprinting')
