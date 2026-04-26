@@ -1346,14 +1346,21 @@ const initializeAudioMatch = async () => {
     audioMatchRecorderNode.connect(audioMatchSilentNode)
     audioMatchSilentNode.connect(audioMatchContext.destination)
 
-    audioMatchMicStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        autoGainControl: false,
-        noiseSuppression: false,
-        latency: 0
-      }
-    })
+    const GET_USER_MEDIA_TIMEOUT_MS = 15000
+
+    audioMatchMicStream = await Promise.race([
+      navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          autoGainControl: false,
+          noiseSuppression: false,
+          latency: 0
+        }
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('麦克风授权超时，请在系统设置中确认已允许麦克风权限')), GET_USER_MEDIA_TIMEOUT_MS)
+      )
+    ]) as MediaStream
 
     audioMatchMicSourceNode = audioMatchContext.createMediaStreamSource(audioMatchMicStream)
     audioMatchMicSourceNode.connect(audioMatchRecorderNode)
