@@ -2158,6 +2158,45 @@ const getAudioUrl = async (result) => {
       }
     }
 
+    // 如果是网易云音乐且没有被前面特殊的 sourceType 处理（比如听歌识曲的普通结果）
+    if (result.musicPlatform === 'netease' && !result.url) {
+      try {
+        const { getQuality } = useAudioQuality()
+        const quality = getQuality('netease')
+        const songDetail = await musicSources.getSongDetail({
+          ids: [result.musicId || result.id],
+          quality: quality
+        })
+
+        if (songDetail && songDetail.url) {
+          result.url = songDetail.url
+          result.hasUrl = true
+          if (songDetail.cover) result.cover = songDetail.cover
+          if (songDetail.duration) result.duration = songDetail.duration
+          return result
+        }
+      } catch (error) {
+        console.error('获取网易云音乐详情失败:', error)
+      }
+
+      // 如果getSongDetail失败，尝试网易云备用源
+      try {
+        const { getQuality } = useAudioQuality()
+        const quality = getQuality('netease')
+        const songId = result.musicId || result.id
+
+        const urlResult = await musicSources.getSongUrl(songId, quality, 'netease')
+
+        if (urlResult && urlResult.success && urlResult.url) {
+          result.url = urlResult.url
+          result.hasUrl = true
+          return result
+        }
+      } catch (backupError) {
+        console.error('备用源获取失败:', backupError)
+      }
+    }
+
     return result
   } catch (err) {
     error.value = '获取音乐URL失败，请稍后重试'
