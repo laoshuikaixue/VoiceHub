@@ -547,7 +547,6 @@ export default defineEventHandler(async (event) => {
     }
 
   // 合并现有设置后保存
-  const current = // ... 获取当前记录
   const newSettings = { ...current, captchaEnabled, ...otherSettings }
   await db.update(systemSettings).set({ settings: newSettings }).where(eq(systemSettings.id, 1))
   return { success: true }
