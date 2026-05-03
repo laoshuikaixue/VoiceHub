@@ -35,7 +35,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpPassword: null,
   smtpFromEmail: null,
   smtpFromName: '校园广播站',
-  allowOAuthRegistration: false
+  allowOAuthRegistration: false,
+  captchaEnabled: false, // 默认关闭图形验证码
+  captchaMaxFailures: 3 //触发阈值
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
