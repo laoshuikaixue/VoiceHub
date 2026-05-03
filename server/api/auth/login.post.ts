@@ -19,8 +19,8 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 //导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 
-//触发验证码的失败阈值，可从 constants 导入
-const CAPTCHA_MAX_FAILURES = 3
+//触发验证码的失败阈值，从 constants 导入
+import { CAPTCHA_MAX_FAILURES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
