@@ -1098,7 +1098,26 @@ const playSongWithUrlFetching = async (song) => {
 }
 
 // 切换歌曲播放/暂停
+const unlockMobileAudioPlayback = async () => {
+  if (typeof document === 'undefined') return
+
+  const audio = document.querySelector('audio')
+  if (!audio) return
+
+  try {
+    const wasMuted = audio.muted
+    audio.muted = true
+    await audio.play()
+    audio.pause()
+    audio.muted = wasMuted
+  } catch (error) {
+    console.debug('[SongList] 移动端音频解锁未完成:', error)
+  }
+}
+
 const togglePlaySong = async (song) => {
+  await unlockMobileAudioPlayback()
+
   // 检查是否为当前歌曲且正在播放
   if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
     // 如果正在播放，则暂停
