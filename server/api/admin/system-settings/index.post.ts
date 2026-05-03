@@ -546,6 +546,18 @@ export default defineEventHandler(async (event) => {
       settings = updatedSettingsResult[0]
     }
 
+  const body = await readBody(event)
+  const { captchaEnabled, ...otherSettings } = body
+
+  const body = await readBody(event)
+  const { captchaEnabled, ...otherSettings } = body
+
+  // 合并现有设置后保存
+  const current = // ... 获取当前记录
+  const newSettings = { ...current, captchaEnabled, ...otherSettings }
+  await db.update(systemSettings).set({ settings: newSettings }).where(eq(systemSettings.id, 1))
+  return { success: true }
+})
     // 清除系统设置缓存
     try {
       const { CacheService } = await import('~~/server/services/cacheService')
