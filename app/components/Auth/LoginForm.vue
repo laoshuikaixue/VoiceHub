@@ -209,6 +209,13 @@
         </div>
       </div>
 
+      <div v-if="showCaptcha" class="form-group">
+  <CaptchaInput 
+    v-model="captchaInput" 
+    @update:captchaId="captchaId = $event" 
+  />
+</div>
+      
       <div v-if="error" class="error-container">
         <svg
           class="error-icon"
@@ -298,6 +305,7 @@ import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
+import CaptchaInput from './CaptchaInput.vue'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled } = useSiteConfig()
 
@@ -308,6 +316,10 @@ const providerName = computed(() => {
   const provider = (route.query.provider as string) || '第三方'
   return getProviderDisplayName(provider)
 })
+// 图形验证码相关
+const showCaptcha = ref(false)
+const captchaId = ref('')
+const captchaInput = ref('')  
 
 const getFormTitle = computed(() => {
   if (!isBindMode.value) return '欢迎回来'
@@ -365,65 +377,69 @@ const handleLogin = async () => {
     return
   }
 
-  // 创建账户模式的验证
   if (isBindMode.value && showCreateMode.value) {
-    if (!name.value || !confirmPassword.value) {
-      error.value = '请填写完整的注册信息'
-      return
-    }
+    // ... 原有的创建账户模式验证 ...
     return handleRegisterOAuth()
   }
 
   error.value = ''
   loading.value = true
 
+  // 构建请求体，包含验证码信息
+  const requestBody: any = {
+    username: username.value,
+    password: password.value,
+  }
+  if (showCaptcha.value) {
+    requestBody.captchaId = captchaId.value
+    requestBody.captchaInput = captchaInput.value
+  }
+
   try {
-    if (isBindMode.value && !showCreateMode.value) {
-      const response = await $fetch('/api/auth/bind', {
-        method: 'POST',
-        body: {
-          username: username.value,
-          password: password.value
-        }
-      })
+    // 根据模式选择接口
+    const url = isBindMode.value && !showCreateMode.value
+      ? '/api/auth/bind'
+      : '/api/auth/login'
+    
+    const response = await $fetch(url, {
+      method: 'POST',
+      body: requestBody
+    })
 
-      if (response.requires2FA) {
-        userId2FA.value = response.userId
-        methods2FA.value = response.methods
-        tempToken2FA.value = response.tempToken || ''
-        maskedEmail2FA.value = response.maskedEmail || ''
-        show2FA.value = true
-        return
-      }
+    // 处理 2FA
+    if (response.requires2FA) {
+      userId2FA.value = response.userId
+      methods2FA.value = response.methods
+      tempToken2FA.value = response.tempToken || ''
+      maskedEmail2FA.value = response.maskedEmail || ''
+      show2FA.value = true
+      return
+    }
 
-      await auth.initAuth()
-      await navigateTo('/')
+    // 登录成功，刷新认证状态
+    await auth.initAuth()
+    if (auth.isAdmin.value) {
+      navigateTo('/dashboard')
     } else {
-      // 普通登录
-      const response = await auth.login(username.value, password.value)
-
-      if (response.requires2FA) {
-        userId2FA.value = response.userId
-        methods2FA.value = response.methods
-        tempToken2FA.value = response.tempToken
-        maskedEmail2FA.value = response.maskedEmail || ''
-        show2FA.value = true
-        return
-      }
-
-      // 登录成功后跳转
-      if (auth.isAdmin.value) {
-        await navigateTo('/dashboard')
-      } else {
-        await navigateTo('/')
-      }
+      navigateTo('/')
     }
   } catch (err) {
-    const apiError = err as { data?: { message?: string }, message?: string, statusMessage?: string }
-    error.value =
-      apiError.data?.message || apiError.message || apiError.statusMessage || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
-    // 密码错误时清空密码字段
-    if (error.value.includes('密码') || error.value.includes('错误')) {
+    const apiError = err as { 
+      data?: { message?: string; captchaRequired?: boolean }, 
+      message?: string, 
+      statusMessage?: string 
+    }
+    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || 
+      (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
+
+    // 如果后端要求验证码，则显示验证码区域
+    if (apiError.data?.captchaRequired) {
+      showCaptcha.value = true
+    }
+
+    // 仅密码错误时清空密码字段（避免验证码错误时误清）
+    const errMsg = error.value
+    if (!errMsg.includes('验证码') && (errMsg.includes('密码') || errMsg.includes('不存在'))) {
       password.value = ''
     }
   } finally {
