@@ -179,6 +179,29 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionRemarks = body.enableSubmissionRemarks
     }
 
+    if (body.captchaEnabled !== undefined) {
+      if (typeof body.captchaEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'captchaEnabled 必须是布尔值'
+        })
+      }
+      updateData.captchaEnabled = body.captchaEnabled
+    }
+
+    if (body.captchaMaxFailures !== undefined) {
+      if (
+        body.captchaMaxFailures !== null &&
+        (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 1)
+      ) {
+        throw createError({
+          statusCode: 400,
+          message: 'captchaMaxFailures 必须是正整数'
+        })
+      }
+      updateData.captchaMaxFailures = body.captchaMaxFailures
+    }
+    
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({
@@ -546,11 +569,6 @@ export default defineEventHandler(async (event) => {
       settings = updatedSettingsResult[0]
     }
 
-  // 合并现有设置后保存
-  const newSettings = { ...current, captchaEnabled, ...otherSettings }
-  await db.update(systemSettings).set({ settings: newSettings }).where(eq(systemSettings.id, 1))
-  return { success: true }
-})
     // 清除系统设置缓存
     try {
       const { CacheService } = await import('~~/server/services/cacheService')
