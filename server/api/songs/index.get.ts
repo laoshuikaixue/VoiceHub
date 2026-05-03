@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { db } from '~/drizzle/db'
+import { db, systemSettings  } from '~/drizzle/db'
 import {
   playTimes,
   schedules,
@@ -15,6 +15,7 @@ import { cacheService } from '~~/server/services/cacheService'
 import { formatDateTime } from '~/utils/timeUtils'
 import { maskSongsInfo, MaskableSong, MaskableUser } from '~~/server/utils/studentMask'
 import crypto from 'crypto'
+import { defaultSystemSettings } from '~~/server/utils/system-settings-defaults'
 
 interface SongResponse {
   id: number
@@ -649,4 +650,9 @@ export default defineEventHandler(async (event) => {
       })
     }
   }
+  
+  const record = await db.select().from(systemSettings).limit(1).then(r => r[0])
+  const stored = record?.settings || {}
+  const merged = { ...defaultSystemSettings, ...stored }
+  return { success: true, settings: merged }
 })
