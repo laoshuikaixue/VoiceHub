@@ -704,5 +704,13 @@ export function getSecurityStats() {
   }
 }
 
+/**
+ * 获取账户当前的登录失败次数（用于判断是否需要图形验证码）
+ */
+export function getLoginFailureCount(username: string): number {
+  const lockInfo = accountLocks.get(username)
+  return lockInfo ? lockInfo.failedAttempts : 0
+}
+
 // 定期清理过期记录（每5分钟执行一次）
 setInterval(cleanupExpiredLocks, 5 * 60 * 1000)
