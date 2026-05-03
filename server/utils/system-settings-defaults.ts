@@ -68,7 +68,9 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',
   'customOAuthEnabled',
-  'customOAuthDisplayName'
+  'customOAuthDisplayName',
+  'captchaEnabled',
+  'captchaMaxFailures'
 ]
 
 export const filterPublicSettings = (data: any) => {
