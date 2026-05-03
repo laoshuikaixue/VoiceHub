@@ -10,10 +10,17 @@ import {
   recordLoginSuccess,
   recordAccountIpLogin,
   blockUser,
-  getUserBlockRemainingTime
+  getUserBlockRemainingTime,
+  //导入失败计数查询函数
+  getLoginFailureCount
 } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
+//导入验证码校验函数
+import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
+
+//触发验证码的失败阈值，可从 constants 导入
+const CAPTCHA_MAX_FAILURES = 3
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -66,6 +73,29 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    //图形验证码检查
+    const failCount = await getLoginFailureCount(body.username)
+    const needCaptcha = failCount >= CAPTCHA_MAX_FAILURES
+
+    if (needCaptcha) {
+      const { captchaId, captchaInput } = body
+      if (!captchaId || !captchaInput) {
+        throw createError({
+          statusCode: 400,
+          message: '请完成图形验证码',
+          data: { captchaRequired: true }
+        })
+      }
+      const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
+      if (!isValid) {
+        throw createError({
+          statusCode: 400,
+          message: '验证码错误或已过期，请重新输入',
+          data: { captchaRequired: true }
+        })
+      }
+    }
+
     // 查找用户
     const userResult = await db
       .select({
@@ -111,20 +141,11 @@ export default defineEventHandler(async (event) => {
 
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
-      throw createError({
-        statusCode: 403,
-        message: '该账号已退学，限制访问'
-      })
+      throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
     } else if (user.status === 'graduate') {
-      throw createError({
-        statusCode: 403,
-        message: '该账号已毕业，限制访问'
-      })
+      throw createError({ statusCode: 403, message: '该账号已毕业，限制访问' })
     } else if (user.status === 'banned') {
-      throw createError({
-        statusCode: 403,
-        message: '该账号已被封禁'
-      })
+      throw createError({ statusCode: 403, message: '该账号已被封禁' })
     }
 
     // 检查是否开启2FA
@@ -141,18 +162,16 @@ export default defineEventHandler(async (event) => {
       }, { expiresIn: '5m' }) // 动态构建验证方式列表
       const methods = ['totp']
       let maskedEmail = ''
-      
       if (user.email && user.emailVerified) {
         methods.push('email')
         // 生成脱敏邮箱提示
         const [local, domain] = user.email.split('@')
         if (local && domain) {
-          maskedEmail = local.length <= 2 
-            ? `***@${domain}` 
+          maskedEmail = local.length <= 2
+            ? `***@${domain}`
             : `${local.slice(0, 2)}****@${domain}`
         }
       }
-
       return {
         success: true,
         requires2FA: true,
