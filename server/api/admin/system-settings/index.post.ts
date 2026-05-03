@@ -549,9 +549,6 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { captchaEnabled, ...otherSettings } = body
 
-  const body = await readBody(event)
-  const { captchaEnabled, ...otherSettings } = body
-
   // 合并现有设置后保存
   const current = // ... 获取当前记录
   const newSettings = { ...current, captchaEnabled, ...otherSettings }
