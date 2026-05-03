@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
     }
 
     //图形验证码检查
-    const failCount = await getLoginFailureCount(body.username)
+    const failCount = getLoginFailureCount(body.username)
     const needCaptcha = failCount >= CAPTCHA_MAX_FAILURES
 
     if (needCaptcha) {
