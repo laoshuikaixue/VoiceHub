@@ -4,7 +4,7 @@
     <div class="flex gap-2 items-start">
       <!-- SVG 图片（可点击刷新） -->
       <div
-        class="w-28 h-10 rounded border border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer bg-gray-50 dark:bg-gray-800"
+        class="captcha-svg-container border border-gray-300 dark:border-gray-600 cursor-pointer"
         @click="refreshCaptcha"
         title="点击刷新验证码"
         v-html="svgContent"
@@ -64,3 +64,23 @@ onMounted(() => {
   refreshCaptcha()
 })
 </script>
+
+<style scoped>
+/* 保证 SVG 自适应容器，不被裁剪 */
+:deep(svg) {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 可选：优化容器的最小宽度和边框间距 */
+.captcha-svg-container {
+  min-width: 130px;
+  padding: 4px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb; /* 浅灰背景，与你的设计一致 */
+}
+</style>
