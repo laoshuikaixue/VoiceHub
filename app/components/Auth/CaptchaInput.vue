@@ -59,7 +59,9 @@ async function refreshCaptcha() {
     console.error('获取验证码失败', e)
   }
 }
-
+  
+defineExpose({ refreshCaptcha })
+  
 onMounted(() => {
   refreshCaptcha()
 })
