@@ -82,6 +82,7 @@
     "qrcode": "^1.5.4",
     "redis": "^5.12.1",
     "sass": "^1.99.0",
+    "svg-captcha": "^1.4.0",
     "tsx": "^4.21.0",
     "vite-plugin-glsl": "^1.6.0",
     "vite-plugin-top-level-await": "^1.6.0",
