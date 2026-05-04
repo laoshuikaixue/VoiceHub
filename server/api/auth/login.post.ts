@@ -29,13 +29,14 @@ export async function consumeCaptcha(captchaId: string): Promise<void> {
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-  let captchaId = ''
-  let captchaInput = ''
   
   try {
     const body = await readBody(event)
     const clientIp = getClientIP(event)
-
+    
+    let captchaId = ''
+    let captchaInput = ''
+    
     if (!body.username || !body.password) {
       throw createError({
         statusCode: 400,
@@ -118,7 +119,6 @@ export default defineEventHandler(async (event) => {
       data: { captchaRequired: true }
     })
   }
-  // 验证码正确，暂不删除，继续验证用户名密码...
 }
 
     // 查找用户
