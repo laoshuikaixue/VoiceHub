@@ -397,7 +397,7 @@ const handleLogin = async () => {
   }
   if (showCaptcha.value) {
     requestBody.captchaId = captchaId.value
-    requestBody.captchaInput = captchaInput.value
+    requestBody.captchaInput = captchaInput.value.trim()
   }
 
   try {
