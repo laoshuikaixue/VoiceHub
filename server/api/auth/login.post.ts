@@ -84,13 +84,13 @@ export default defineEventHandler(async (event) => {
       captchaEnabled = true
    }
     } catch (e) {
-      // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
-      console.warn('读取图形验证码配置失败，已暂时禁用:', e)
+    // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
+    console.warn('读取图形验证码配置失败，已暂时禁用:', e)
     }
     
     //图形验证码检查（仅当 captchaEnabled 为 true 且失败次数达到阈值时触发）
     const failCount = getLoginFailureCount(body.username)
-    const needCaptcha = true   // 强制每次登录都要求验证码
+    const needCaptcha = captchaEnabled && failCount >= CAPTCHA_MAX_FAILURES
 
     if (needCaptcha) {
       const { captchaId, captchaInput } = body
