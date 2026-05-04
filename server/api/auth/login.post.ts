@@ -18,9 +18,14 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 //导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
+import { verifyCaptcha, consumeCaptcha } from '~~/server/utils/captcha'
 
 //触发验证码的失败阈值，从 constants 导入
 import { CAPTCHA_MAX_FAILURES } from '~~/server/config/constants'
+
+export async function consumeCaptcha(captchaId: string): Promise<void> {
+  captchaStore.delete(captchaId)
+}
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -92,24 +97,26 @@ export default defineEventHandler(async (event) => {
     const failCount = getLoginFailureCount(body.username)
     const needCaptcha = captchaEnabled && failCount >= CAPTCHA_MAX_FAILURES
 
+    // 验证码校验（仅校验，不删除）
     if (needCaptcha) {
       const { captchaId, captchaInput } = body
       if (!captchaId || !captchaInput) {
         throw createError({
-          statusCode: 400,
-          message: '请完成图形验证码',
-          data: { captchaRequired: true }
-        })
-      }
-      const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
-      if (!isValid) {
-        throw createError({
-          statusCode: 400,
-          message: '验证码错误或已过期，请重新输入',
-          data: { captchaRequired: true }
-        })
-      }
+        statusCode: 400,
+        message: '请完成图形验证码',
+        data: { captchaRequired: true }
+      })
     }
+  const isValid = await verifyCaptcha(captchaId, captchaInput)
+  if (!isValid) {
+    throw createError({
+      statusCode: 400,
+      message: '验证码错误或已过期，请重新输入',
+      data: { captchaRequired: true }
+    })
+  }
+  // 验证码正确，暂不删除，继续验证用户名密码...
+}
 
     // 查找用户
     const userResult = await db
@@ -154,6 +161,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // 在用户名密码验证成功后（且需要验证码时），消费验证码
+    if (needCaptcha) {
+      await consumeCaptcha(captchaId)  // 仅消费，不校验
+    }
+    
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
       throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
