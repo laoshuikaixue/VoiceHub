@@ -210,10 +210,11 @@
       </div>
 
       <div v-if="showCaptcha" class="form-group">
-  <CaptchaInput 
-    v-model="captchaInput" 
-    @update:captchaId="captchaId = $event" 
-  />
+  <CaptchaInput
+  ref="captchaRef"
+  v-model="captchaInput"
+  @update:captchaId="captchaId = $event"
+/>
 </div>
       
       <div v-if="error" class="error-container">
@@ -319,7 +320,8 @@ const providerName = computed(() => {
 // 图形验证码相关
 const showCaptcha = ref(false)
 const captchaId = ref('')
-const captchaInput = ref('')  
+const captchaInput = ref('')
+const captchaRef = ref<{ refreshCaptcha: () => void } | null>(null)  
 
 const getFormTitle = computed(() => {
   if (!isBindMode.value) return '欢迎回来'
@@ -341,7 +343,7 @@ const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
-const showCreateMode = ref(false)
+const showCreateMode = ref(false)  
 
 const passwordStrength = usePasswordStrength(password)
 
@@ -436,7 +438,11 @@ const handleLogin = async () => {
     if (innerData?.captchaRequired) {
       showCaptcha.value = true
     }
-
+    // 只要当前显示了验证码，且没有成功登录，就强制刷新验证码
+    if (showCaptcha.value) {
+      captchaRef.value?.refreshCaptcha()
+    }
+    
     // 仅密码错误时清空密码字段（避免验证码错误时误清）
     const errMsg = error.value
     if (!errMsg.includes('验证码') && (errMsg.includes('密码') || errMsg.includes('不存在'))) {
