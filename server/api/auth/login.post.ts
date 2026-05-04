@@ -29,7 +29,9 @@ export async function consumeCaptcha(captchaId: string): Promise<void> {
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-
+  let captchaId = ''
+  let captchaInput = ''
+  
   try {
     const body = await readBody(event)
     const clientIp = getClientIP(event)
@@ -99,7 +101,8 @@ export default defineEventHandler(async (event) => {
 
     // 验证码校验（仅校验，不删除）
     if (needCaptcha) {
-      const { captchaId, captchaInput } = body
+      captchaId = body.captchaId
+      captchaInput = body.captchaInput
       if (!captchaId || !captchaInput) {
         throw createError({
         statusCode: 400,
