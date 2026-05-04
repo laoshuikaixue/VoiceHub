@@ -58,6 +58,4 @@ export async function verifyAndConsumeCaptcha(captchaId: string, userInput: stri
 
   // 检查是否过期
   if (Date.now() > record.expiresAt) return false
-
   return record.text === String(userInput).toLowerCase()
-}
