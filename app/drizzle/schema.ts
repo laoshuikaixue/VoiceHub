@@ -157,7 +157,7 @@ export const systemSettings = pgTable('SystemSettings', {
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
   enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
-
+  
   // OAuth 配置
   allowOAuthRegistration: boolean('allowOAuthRegistration').default(false).notNull(),
   oauthRedirectUri: text('oauthRedirectUri'),
@@ -191,6 +191,9 @@ export const systemSettings = pgTable('SystemSettings', {
   customOAuthNameField: text('customOAuthNameField'),
   customOAuthEmailField: text('customOAuthEmailField'),
   customOAuthAvatarField: text('customOAuthAvatarField'),
+  // 图形验证码
+  captchaEnabled: boolean('captchaEnabled').default(false).notNull(),
+  captchaMaxFailures: integer('captchaMaxFailures').default(3).notNull(),
 });
 
 // 歌曲黑名单表
