@@ -209,13 +209,13 @@
         </div>
       </div>
 
-      <div v-if="showCaptcha" class="form-group">
-  <CaptchaInput
-  ref="captchaRef"
-  v-model="captchaInput"
-  @update:captchaId="captchaId = $event"
-/>
-</div>
+      <div v-show="showCaptcha" class="form-group">
+        <CaptchaInput 
+           v-if="showCaptcha"
+           v-model="captchaInput" 
+         @update:captchaId="captchaId = $event" 
+       />
+   </div>
       
       <div v-if="error" class="error-container">
         <svg
