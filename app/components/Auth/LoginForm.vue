@@ -480,18 +480,23 @@ const handleRegisterOAuth = async () => {
       await auth.initAuth()
       await navigateTo('/')
     }
-  } catch (err) {
-    const apiError = err as { data?: { message?: string }, message?: string, statusCode?: number, statusMessage?: string }
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
-    // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
-    if (apiError.statusCode === 409) {
-      username.value = ''
-    }
-  } finally {
-    loading.value = false
-  }
-}
+  } catch (err: any) {
+    // 🔧 FetchError 的真实结构：err.data = { statusCode, message, data: { captchaRequired } }
+    const innerData = err.data?.data;  // 这才是后端返回的 data 对象
+    error.value = err.data?.message || err.message || '登录失败'
 
+    // 如果后端要求验证码，则显示验证码区域
+    if (innerData?.captchaRequired) {
+      showCaptcha.value = true
+    }
+
+    // 仅密码错误时清空密码字段（避免验证码错误时误清）
+    const errMsg = error.value
+    if (!errMsg.includes('验证码') && (errMsg.includes('密码') || errMsg.includes('不存在'))) {
+      password.value = ''
+    }
+}
+  
 const handleWebAuthnLogin = async () => {
   loading.value = true
   error.value = ''
