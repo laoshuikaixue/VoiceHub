@@ -77,6 +77,10 @@ export const filterPublicSettings = (data: any) => {
   if (!data) {
     return {}
   }
+  
+//为兼容旧代码，导出别名
+export { SYSTEM_SETTINGS_DEFAULTS as defaultSystemSettings };
+  
   const result: Record<string, any> = {}
   for (const key of PUBLIC_SETTINGS_FIELDS) {
     if (Object.prototype.hasOwnProperty.call(data, key)) {
