@@ -366,7 +366,7 @@ onMounted(async () => {
       console.warn('WebAuthn 平台认证器检查失败:', e)
     }
   }
-
+  
   // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
   isWebAuthnSupported.value = isApiSupported
 })
@@ -378,7 +378,10 @@ const handleLogin = async () => {
   }
 
   if (isBindMode.value && showCreateMode.value) {
-    // ... 原有的创建账户模式验证 ...
+    if (!name.value || !confirmPassword.value) {
+      error.value = '请填写完整的注册信息'
+      return
+    }
     return handleRegisterOAuth()
   }
 
@@ -423,17 +426,14 @@ const handleLogin = async () => {
     } else {
       navigateTo('/')
     }
-  } catch (err) {
-    const apiError = err as { 
-      data?: { message?: string; captchaRequired?: boolean }, 
-      message?: string, 
-      statusMessage?: string 
-    }
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || 
+  } catch (err: any) {
+    // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
+    const innerData = err.data?.data
+    error.value = err.data?.message || err.message || 
       (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
 
     // 如果后端要求验证码，则显示验证码区域
-    if (apiError.data?.captchaRequired) {
+    if (innerData?.captchaRequired) {
       showCaptcha.value = true
     }
 
@@ -479,35 +479,25 @@ const handleRegisterOAuth = async () => {
       await navigateTo('/')
     }
   } catch (err: any) {
-    // 🔧 FetchError 的真实结构：err.data = { statusCode, message, data: { captchaRequired } }
-    const innerData = err.data?.data;  // 这才是后端返回的 data 对象
-    error.value = err.data?.message || err.message || '登录失败'
-
-    // 如果后端要求验证码，则显示验证码区域
-    if (innerData?.captchaRequired) {
-      showCaptcha.value = true
+    const apiError = err
+    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
+    if (apiError.statusCode === 409) {
+      username.value = ''
     }
-
-    // 仅密码错误时清空密码字段（避免验证码错误时误清）
-    const errMsg = error.value
-    if (!errMsg.includes('验证码') && (errMsg.includes('密码') || errMsg.includes('不存在'))) {
-      password.value = ''
-    }
+  } finally {
+    loading.value = false
+  }
 }
-  
+
 const handleWebAuthnLogin = async () => {
   loading.value = true
   error.value = ''
   
   try {
     // 1. 获取登录选项
-    const options = await $fetch('/api/auth/webauthn/login/options', {
-      method: 'POST'
-    })
-
+    const options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
     // 2. 调用浏览器 WebAuthn API
     const credential = await startAuthentication(options)
-
     // 3. 验证登录
     const verification = await $fetch('/api/auth/webauthn/login/verify', {
       method: 'POST',
