@@ -16,29 +16,16 @@ import {
 } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
-//导入验证码校验函数
-import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
-import { verifyCaptcha, consumeCaptcha } from '~~/server/utils/captcha'
 
+//导入验证码校验函数
+import { verifyCaptcha, consumeCaptcha } from '~~/server/utils/captcha'
 //触发验证码的失败阈值，从 constants 导入
 import { CAPTCHA_MAX_FAILURES } from '~~/server/config/constants'
-
-export async function consumeCaptcha(captchaId: string): Promise<void> {
-  captchaStore.delete(captchaId)
-}
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   
   try {
-    // 直接添加在 login.post.ts 内 try 块的开始处
-console.log('>>> LOGIN START <<<')
-console.log('needCaptcha:', needCaptcha)
-console.log('typeof captchaId:', typeof captchaId, 'value:', captchaId)
-if (typeof captchaId === 'undefined') {
-  throw createError({ statusCode: 500, message: 'DEBUG: captchaId is undefined' })
-}
-    
     const body = await readBody(event)
     const clientIp = getClientIP(event)
     
