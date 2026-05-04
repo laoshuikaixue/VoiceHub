@@ -17,7 +17,7 @@
         autocomplete="off"
         placeholder="请输入验证码"
         class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-        @input="$emit('update:modelValue', inputValue)"
+        @input="inputValue = ($event.target as HTMLInputElement).value.trim(); $emit('update:modelValue', inputValue)"
       />
       <!-- 刷新按钮（也可直接点图片，这里提供文字按钮辅助） -->
       <button
