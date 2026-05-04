@@ -31,6 +31,14 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   
   try {
+    // 直接添加在 login.post.ts 内 try 块的开始处
+console.log('>>> LOGIN START <<<')
+console.log('needCaptcha:', needCaptcha)
+console.log('typeof captchaId:', typeof captchaId, 'value:', captchaId)
+if (typeof captchaId === 'undefined') {
+  throw createError({ statusCode: 500, message: 'DEBUG: captchaId is undefined' })
+}
+    
     const body = await readBody(event)
     const clientIp = getClientIP(event)
     
