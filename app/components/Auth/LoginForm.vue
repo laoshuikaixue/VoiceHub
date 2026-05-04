@@ -358,7 +358,6 @@ const handle2FASuccess = async () => {
 onMounted(async () => {
   await fetchSiteConfig()
 
-  showCaptcha.value = true
   const isApiSupported = browserSupportsWebAuthn()
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
     try {
@@ -443,6 +442,8 @@ const handleLogin = async () => {
     if (!errMsg.includes('验证码') && (errMsg.includes('密码') || errMsg.includes('不存在'))) {
       password.value = ''
     }
+    console.log('登录错误对象:', err)
+    console.log('错误 data:', err.data)
   } finally {
     loading.value = false
   }
