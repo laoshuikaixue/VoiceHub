@@ -19,7 +19,7 @@ setInterval(() => {
   }
 }, 2 * 60 * 1000)
 
-/** 保存验证码，有效期由常量控制 */
+/** 保存验证码 */
 export function saveCaptcha(id: string, text: string) {
   captchaStore.set(id, {
     text,
@@ -27,14 +27,11 @@ export function saveCaptcha(id: string, text: string) {
   })
 }
 
-/**
- * 只校验验证码是否正确，但不删除（供登录流程中先验码后验密码使用）
- */
+/** 只校验验证码是否正确，不删除 */
 export async function verifyCaptcha(captchaId: string, userInput: string): Promise<boolean> {
   if (!captchaId || !userInput) return false
   const record = captchaStore.get(captchaId)
   if (!record) return false
-  // 检查是否过期
   if (Date.now() > record.expiresAt) {
     captchaStore.delete(captchaId)
     return false
@@ -42,16 +39,16 @@ export async function verifyCaptcha(captchaId: string, userInput: string): Promi
   return record.text === String(userInput).toLowerCase()
 }
 
-/**
- * 验证并销毁验证码（用于登录成功后最终消费）
- */
+/** 仅删除验证码，不校验 */
+export async function consumeCaptcha(captchaId: string): Promise<void> {
+  captchaStore.delete(captchaId)
+}
+
+/** 校验并立即销毁验证码（兼容旧逻辑，本需求中不再使用） */
 export async function verifyAndConsumeCaptcha(captchaId: string, userInput: string): Promise<boolean> {
   const isValid = await verifyCaptcha(captchaId, userInput)
   if (isValid) {
-    captchaStore.delete(captchaId)
+    await consumeCaptcha(captchaId)
   }
   return isValid
 }
-
-  // 立即删除，防止重放攻击
-  captchaStore.delete(captchaId)
