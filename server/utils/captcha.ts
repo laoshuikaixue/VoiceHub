@@ -27,13 +27,31 @@ export function saveCaptcha(id: string, text: string) {
   })
 }
 
-/** 验证并销毁验证码（一次性使用） */
-export async function verifyAndConsumeCaptcha(
-  captchaId: string,
-  userInput: string
-): Promise<boolean> {
+/**
+ * 只校验验证码是否正确，但不删除（供登录流程中先验码后验密码使用）
+ */
+export async function verifyCaptcha(captchaId: string, userInput: string): Promise<boolean> {
+  if (!captchaId || !userInput) return false
   const record = captchaStore.get(captchaId)
   if (!record) return false
+  // 检查是否过期
+  if (Date.now() > record.expiresAt) {
+    captchaStore.delete(captchaId)
+    return false
+  }
+  return record.text === String(userInput).toLowerCase()
+}
+
+/**
+ * 验证并销毁验证码（用于登录成功后最终消费）
+ */
+export async function verifyAndConsumeCaptcha(captchaId: string, userInput: string): Promise<boolean> {
+  const isValid = await verifyCaptcha(captchaId, userInput)
+  if (isValid) {
+    captchaStore.delete(captchaId)
+  }
+  return isValid
+}
 
   // 立即删除，防止重放攻击
   captchaStore.delete(captchaId)
