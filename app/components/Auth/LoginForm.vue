@@ -358,6 +358,7 @@ const handle2FASuccess = async () => {
 onMounted(async () => {
   await fetchSiteConfig()
 
+  showCaptcha.value = true
   const isApiSupported = browserSupportsWebAuthn()
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
     try {
