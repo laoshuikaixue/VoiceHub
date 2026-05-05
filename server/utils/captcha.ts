@@ -1,50 +1,36 @@
 /**
  * 图形验证码校验与销毁
- * 纯内存实现，无需 Redis
+ * 统一使用 captchaStore（Redis 或内存 Map），与 /api/auth/captcha 生成接口共享存储。
+ *
+ * 注意：生成端写入的 key 形如 `captcha:<id>`，本文件必须使用相同前缀，
+ * 否则会出现"验证码输对了仍不通过"的问题。
  */
-import { CAPTCHA_CODE_EXPIRE } from '~~/server/config/constants'
+import { getStore, delStore, setStore } from './captchaStore'
 
-interface CaptchaRecord {
-  text: string
-  expiresAt: number
-}
+const keyOf = (id: string) => `captcha:${id}`
+// 与生成端保持一致：5 分钟有效
+const CAPTCHA_TTL_SECONDS = 300
 
-const captchaStore = new Map<string, CaptchaRecord>()
-
-// 每 2 分钟清理过期验证码
-setInterval(() => {
-  const now = Date.now()
-  for (const [id, record] of captchaStore.entries()) {
-    if (record.expiresAt <= now) captchaStore.delete(id)
-  }
-}, 2 * 60 * 1000)
-
-/** 保存验证码 */
-export function saveCaptcha(id: string, text: string) {
-  captchaStore.set(id, {
-    text,
-    expiresAt: Date.now() + CAPTCHA_CODE_EXPIRE * 1000
-  })
+/** 保存验证码（保留以兼容直接调用此函数的旧代码） */
+export async function saveCaptcha(id: string, text: string) {
+  await setStore(keyOf(id), String(text).toLowerCase(), CAPTCHA_TTL_SECONDS)
 }
 
 /** 只校验验证码是否正确，不删除 */
 export async function verifyCaptcha(captchaId: string, userInput: string): Promise<boolean> {
   if (!captchaId || !userInput) return false
-  const record = captchaStore.get(captchaId)
-  if (!record) return false
-  if (Date.now() > record.expiresAt) {
-    captchaStore.delete(captchaId)
-    return false
-  }
-  return record.text === String(userInput).toLowerCase()
+  const stored = await getStore(keyOf(captchaId))
+  if (!stored) return false
+  return stored === String(userInput).toLowerCase()
 }
 
 /** 仅删除验证码，不校验 */
 export async function consumeCaptcha(captchaId: string): Promise<void> {
-  captchaStore.delete(captchaId)
+  if (!captchaId) return
+  await delStore(keyOf(captchaId))
 }
 
-/** 校验并立即销毁验证码（兼容旧逻辑，本需求中不再使用） */
+/** 校验并立即销毁验证码（兼容旧逻辑） */
 export async function verifyAndConsumeCaptcha(captchaId: string, userInput: string): Promise<boolean> {
   const isValid = await verifyCaptcha(captchaId, userInput)
   if (isValid) {
