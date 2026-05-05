@@ -650,9 +650,4 @@ export default defineEventHandler(async (event) => {
       })
     }
   }
-  
-  const record = await db.select().from(systemSettings).limit(1).then(r => r[0])
-  const stored = record?.settings || {}
-  const merged = { ...defaultSystemSettings, ...stored }
-  return { success: true, settings: merged }
 })
