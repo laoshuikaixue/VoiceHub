@@ -277,6 +277,25 @@
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
+                  id="force-password-change"
+                  v-model="formData.forcePasswordChangeOnFirstLogin"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
+              </div>
+              <label for="force-password-change" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">首次登录强制改密</p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                  开启后，未修改过密码的用户在登录时将被强制跳转至改密页面，完成修改后方可使用系统。
+                </p>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
                   id="show-keywords"
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
@@ -286,7 +305,7 @@
               <label for="show-keywords" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">显示黑名单具体关键词</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示“包含关键词”。
+                  开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。
                 </p>
               </label>
             </div>
@@ -401,6 +420,7 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  forcePasswordChangeOnFirstLogin: true,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -497,6 +517,7 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin !== false,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
