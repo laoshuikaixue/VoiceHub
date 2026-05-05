@@ -25,4 +25,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     const redirect = to.fullPath
     return navigateTo(`/login?redirect=${encodeURIComponent(redirect)}`)
   }
+
+  // 强制改密：已认证但需要修改密码的用户，只允许访问改密页面和登出
+  const { user } = useAuth()
+  if (
+    isAuthenticated.value &&
+    user.value?.requirePasswordChange &&
+    to.path !== '/change-password'
+  ) {
+    return navigateTo('/change-password')
+  }
 })
