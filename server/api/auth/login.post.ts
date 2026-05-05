@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { db, eq, users, userIdentities, and } from '~/drizzle/db'
+import { db, eq, users, userIdentities, and, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
   getAccountLockRemainingTime,
@@ -207,6 +207,17 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login for ${user.username} processed in ${processingTime}ms`)
 
+    // 查询系统设置判断是否启用首次登录强制改密
+    let forcePasswordChangeOnFirstLogin = true
+    try {
+      const settings = await db.select({ forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin }).from(systemSettings).limit(1)
+      if (settings[0]) {
+        forcePasswordChangeOnFirstLogin = settings[0].forcePasswordChangeOnFirstLogin
+      }
+    } catch {}
+
+    const requirePasswordChange = user.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
+
     return {
       success: true,
       user: {
@@ -216,7 +227,7 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        requirePasswordChange: user.forcePasswordChange || !user.passwordChangedAt
+        requirePasswordChange
       }
     }
   } catch (error: any) {
