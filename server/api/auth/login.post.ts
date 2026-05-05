@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
     
     //图形验证码检查（仅当 captchaEnabled 为 true 且失败次数达到阈值时触发）
     const failCount = getLoginFailureCount(body.username)
-    const needCaptcha = captchaEnabled && failCount >= (configRow?.captchaMaxFailures ?? CAPTCHA_MAX_FAILURES)
+    const needCaptcha = captchaEnabled && failCount >= CAPTCHA_MAX_FAILURES
 
     // 验证码校验（仅校验，不删除）
     if (needCaptcha) {
