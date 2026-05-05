@@ -9,6 +9,7 @@ export interface User {
   lastLoginIp?: string | null
   forcePasswordChange?: boolean
   passwordChangedAt?: Date | null
+  requirePasswordChange?: boolean
   avatar?: string | null
   has2FA?: boolean
   email?: string | null
