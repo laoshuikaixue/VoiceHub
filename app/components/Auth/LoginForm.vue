@@ -336,7 +336,10 @@ const passwordStrength = usePasswordStrength(password)
 const auth = useAuth()
 
 const handle2FASuccess = async () => {
-  if (auth.isAdmin.value) {
+  await auth.refreshUser()
+  if (auth.user.value?.requirePasswordChange) {
+    await navigateTo('/change-password')
+  } else if (auth.isAdmin.value) {
     await navigateTo('/dashboard')
   } else {
     await navigateTo('/')
@@ -412,7 +415,9 @@ const handleLogin = async () => {
       }
 
       // 登录成功后跳转
-      if (auth.isAdmin.value) {
+      if (auth.user.value?.requirePasswordChange) {
+        await navigateTo('/change-password')
+      } else if (auth.isAdmin.value) {
         await navigateTo('/dashboard')
       } else {
         await navigateTo('/')
