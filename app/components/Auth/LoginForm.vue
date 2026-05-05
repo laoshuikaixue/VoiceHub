@@ -343,7 +343,7 @@ const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
-const showCreateMode = ref(false)  
+const showCreateMode = ref(false)
 
 const passwordStrength = usePasswordStrength(password)
 
@@ -368,7 +368,6 @@ onMounted(async () => {
       console.warn('WebAuthn 平台认证器检查失败:', e)
     }
   }
-  
   // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
   isWebAuthnSupported.value = isApiSupported
 })
@@ -379,6 +378,7 @@ const handleLogin = async () => {
     return
   }
 
+  // 创建账户模式的验证
   if (isBindMode.value && showCreateMode.value) {
     if (!name.value || !confirmPassword.value) {
       error.value = '请填写完整的注册信息'
@@ -487,6 +487,7 @@ const handleRegisterOAuth = async () => {
   } catch (err: any) {
     const apiError = err
     error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
+    // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
     if (apiError.statusCode === 409) {
       username.value = ''
     }
