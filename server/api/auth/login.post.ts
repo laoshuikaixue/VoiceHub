@@ -65,8 +65,7 @@ export default defineEventHandler(async (event) => {
         statusCode: 423,
         message: `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`
       })
-    }
-
+      
     // 检查账户是否被锁定
     if (isAccountLocked(body.username)) {
       const remainingTime = getAccountLockRemainingTime(body.username)
