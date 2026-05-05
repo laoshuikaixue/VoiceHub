@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
         message: `账户已被锁定，请在 ${remainingTime} 分钟后重试`
       })
     }
-
+  }
     // 读取全局配置：是否启用图形验证码
     let captchaEnabled = false
     try {
@@ -83,7 +83,6 @@ export default defineEventHandler(async (event) => {
         captchaEnabled: systemSettings.captchaEnabled,
         captchaMaxFailures: systemSettings.captchaMaxFailures
       })
-    }
         .from(systemSettings)
         .limit(1)
         .then(r => r[0])
