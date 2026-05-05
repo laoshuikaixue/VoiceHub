@@ -74,7 +74,7 @@
             <ChangePasswordForm :is-first-login="isFirstLogin" />
           </ClientOnly>
 
-          <div class="form-footer">
+          <div v-if="!isFirstLogin" class="form-footer">
             <NuxtLink class="back-link" to="/">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6" />
@@ -110,13 +110,9 @@ onMounted(async () => {
     return
   }
 
-  // 检查是否需要修改密码（用于显示不同的UI提示）
-  if (import.meta.client) {
-    const userJson = localStorage.getItem('user')
-    if (userJson) {
-      const user = JSON.parse(userJson)
-      isFirstLogin.value = user.forcePasswordChange === true || !user.passwordChangedAt
-    }
+  // 检查是否需要修改密码（从 auth 状态获取）
+  if (auth.user.value?.requirePasswordChange) {
+    isFirstLogin.value = true
   }
 })
 </script>
