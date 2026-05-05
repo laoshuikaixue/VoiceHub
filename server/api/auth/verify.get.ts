@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
+import { users, systemSettings } from '~/drizzle/schema'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
 import { eq } from 'drizzle-orm'
 
@@ -16,6 +16,15 @@ export default defineEventHandler(async (event) => {
     }
 
     const userId = authUser.id
+
+    // 查询系统设置判断是否启用首次登录强制改密
+    let forcePasswordChangeOnFirstLogin = true
+    try {
+      const settingsResult = await db.select({ forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin }).from(systemSettings).limit(1)
+      if (settingsResult[0]) {
+        forcePasswordChangeOnFirstLogin = settingsResult[0].forcePasswordChangeOnFirstLogin
+      }
+    } catch {}
 
     // 优先从Redis缓存获取用户认证状态
     if (isRedisReady()) {
@@ -43,7 +52,7 @@ export default defineEventHandler(async (event) => {
           grade: cachedUser.grade,
           class: cachedUser.class,
           role: cachedUser.role,
-          requirePasswordChange: cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt,
+          requirePasswordChange: cachedUser.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !cachedUser.passwordChangedAt),
           has2FA: cachedUser.identities?.some((id: any) => id.provider === 'totp') || false,
           avatar: cachedUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
             ? `https://github.com/${cachedUser.identities.find((id: any) => id.provider === 'github').providerUsername}.png`
@@ -98,7 +107,7 @@ export default defineEventHandler(async (event) => {
       grade: dbUser.grade,
       class: dbUser.class,
       role: dbUser.role,
-      requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt,
+      requirePasswordChange: dbUser.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !dbUser.passwordChangedAt),
       has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
       // 动态生成 GitHub 头像 URL
       avatar: githubIdentity?.providerUsername
