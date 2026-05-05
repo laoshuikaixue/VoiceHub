@@ -79,6 +79,7 @@ export default defineEventHandler(async (event) => {
         lastLogin: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
+        forcePasswordChange: users.forcePasswordChange,
         status: users.status,
         email: users.email,
         emailVerified: users.emailVerified
@@ -215,7 +216,7 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        needsPasswordChange: !user.passwordChangedAt
+        requirePasswordChange: user.forcePasswordChange || !user.passwordChangedAt
       }
     }
   } catch (error: any) {
