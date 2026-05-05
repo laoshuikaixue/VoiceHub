@@ -52,7 +52,9 @@ export default defineEventHandler(async (event) => {
           grade: cachedUser.grade,
           class: cachedUser.class,
           role: cachedUser.role,
-          requirePasswordChange: cachedUser.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !cachedUser.passwordChangedAt),
+          requirePasswordChange: forcePasswordChangeOnFirstLogin
+            ? (cachedUser.forcePasswordChange || !cachedUser.passwordChangedAt)
+            : (cachedUser.forcePasswordChange && !!cachedUser.passwordChangedAt),
           has2FA: cachedUser.identities?.some((id: any) => id.provider === 'totp') || false,
           avatar: cachedUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
             ? `https://github.com/${cachedUser.identities.find((id: any) => id.provider === 'github').providerUsername}.png`
@@ -107,7 +109,9 @@ export default defineEventHandler(async (event) => {
       grade: dbUser.grade,
       class: dbUser.class,
       role: dbUser.role,
-      requirePasswordChange: dbUser.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !dbUser.passwordChangedAt),
+      requirePasswordChange: forcePasswordChangeOnFirstLogin
+        ? (dbUser.forcePasswordChange || !dbUser.passwordChangedAt)
+        : (dbUser.forcePasswordChange && !!dbUser.passwordChangedAt),
       has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
       // 动态生成 GitHub 头像 URL
       avatar: githubIdentity?.providerUsername
