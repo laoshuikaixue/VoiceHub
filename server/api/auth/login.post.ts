@@ -65,7 +65,8 @@ export default defineEventHandler(async (event) => {
         statusCode: 423,
         message: `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`
       })
-      
+    }
+
     // 检查账户是否被锁定
     if (isAccountLocked(body.username)) {
       const remainingTime = getAccountLockRemainingTime(body.username)
@@ -74,11 +75,11 @@ export default defineEventHandler(async (event) => {
         message: `账户已被锁定，请在 ${remainingTime} 分钟后重试`
       })
     }
-  }
+
     // 读取全局配置：是否启用图形验证码
     let captchaEnabled = false
     try {
-        const configRow = await db.select({
+      const configRow = await db.select({
         captchaEnabled: systemSettings.captchaEnabled,
         captchaMaxFailures: systemSettings.captchaMaxFailures
       })
@@ -87,15 +88,15 @@ export default defineEventHandler(async (event) => {
         .then(r => r[0])
     if (configRow?.captchaEnabled) {
       captchaEnabled = true
-     }
+   }
     } catch (e) {
     // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
     console.warn('读取图形验证码配置失败，已暂时禁用:', e)
-   }
+    }
     
     //图形验证码检查（仅当 captchaEnabled 为 true 且失败次数达到阈值时触发）
     const failCount = getLoginFailureCount(body.username)
-    const needCaptcha = captchaEnabled && failCount >= (configRow?.captchaMaxFailures ?? CAPTCHA_MAX_FAILURES)
+    const needCaptcha = captchaEnabled && failCount >= CAPTCHA_MAX_FAILURES
 
     // 验证码校验（仅校验，不删除）
     if (needCaptcha) {
@@ -103,23 +104,23 @@ export default defineEventHandler(async (event) => {
       captchaInput = body.captchaInput
       if (!captchaId || !captchaInput) {
         throw createError({
-          statusCode: 400,
-          message: '请完成图形验证码',
-          data: { captchaRequired: true }
-        })
-      }
-      const isValid = await verifyCaptcha(captchaId, captchaInput)
-      if (!isValid) {
-        throw createError({
-          statusCode: 400,
-          message: '验证码错误或已过期，请重新输入',
-          data: { captchaRequired: true }
-        })
-      }
+        statusCode: 400,
+        message: '请完成图形验证码',
+        data: { captchaRequired: true }
+      })
+    }
+  const isValid = await verifyCaptcha(captchaId, captchaInput)
+  if (!isValid) {
+    throw createError({
+      statusCode: 400,
+      message: '验证码错误或已过期，请重新输入',
+      data: { captchaRequired: true }
+    })
+  }
       // 校验成功后立即销毁，防止重用
       await consumeCaptcha(captchaId)
-    }   
-
+}
+    
     // 查找用户
     const userResult = await db
       .select({
@@ -162,7 +163,7 @@ export default defineEventHandler(async (event) => {
         message: '密码不正确'
       })
     }
-
+    
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
       throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
