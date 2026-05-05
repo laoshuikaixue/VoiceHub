@@ -101,20 +101,22 @@ export default defineEventHandler(async (event) => {
       captchaInput = body.captchaInput
       if (!captchaId || !captchaInput) {
         throw createError({
-        statusCode: 400,
-        message: '请完成图形验证码',
-        data: { captchaRequired: true }
-      })
-    }
-  const isValid = await verifyCaptcha(captchaId, captchaInput)
-  if (!isValid) {
-    throw createError({
-      statusCode: 400,
-      message: '验证码错误或已过期，请重新输入',
-      data: { captchaRequired: true }
-    })
-  }
-}
+          statusCode: 400,
+          message: '请完成图形验证码',
+          data: { captchaRequired: true }
+        })
+      }
+      const isValid = await verifyCaptcha(captchaId, captchaInput)
+      if (!isValid) {
+        throw createError({
+          statusCode: 400,
+          message: '验证码错误或已过期，请重新输入',
+          data: { captchaRequired: true }
+        })
+      }
+      // 校验成功后立即销毁，防止重用
+      await consumeCaptcha(captchaId)
+    }   
 
     // 查找用户
     const userResult = await db
@@ -159,11 +161,6 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 在用户名密码验证成功后（且需要验证码时），消费验证码
-    if (needCaptcha) {
-      await consumeCaptcha(captchaId)  // 仅消费，不校验
-    }
-    
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
       throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
