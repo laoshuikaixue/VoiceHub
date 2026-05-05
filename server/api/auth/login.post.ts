@@ -79,20 +79,18 @@ export default defineEventHandler(async (event) => {
     // 读取全局配置：是否启用图形验证码
     let captchaEnabled = false
     try {
-        const configRow = await db.select({
-        captchaEnabled: systemSettings.captchaEnabled,
-        captchaMaxFailures: systemSettings.captchaMaxFailures
+        const configRow = await db.select({ captchaEnabled: systemSettings.captchaEnabled })
       })
         .from(systemSettings)
         .limit(1)
         .then(r => r[0])
     if (configRow?.captchaEnabled) {
       captchaEnabled = true
-  }
+      }
     } catch (e) {
     // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
     console.warn('读取图形验证码配置失败，已暂时禁用:', e)
-    }
+   }
     
     //图形验证码检查（仅当 captchaEnabled 为 true 且失败次数达到阈值时触发）
     const failCount = getLoginFailureCount(body.username)
