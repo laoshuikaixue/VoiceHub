@@ -33,8 +33,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查是否需要设置初始密码
-    if (currentUser.passwordChangedAt) {
+    // 检查是否需要设置初始密码（forcePasswordChange 或从未改过密码）
+    if (currentUser.passwordChangedAt && !currentUser.forcePasswordChange) {
       throw createError({
         statusCode: 400,
         message: '您已经设置过密码，请使用修改密码功能'
