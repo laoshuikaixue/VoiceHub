@@ -147,6 +147,7 @@ export const useAuth = () => {
       })
       if (user.value) {
         user.value.requirePasswordChange = false
+        user.value.hasSetPassword = true
       }
     } finally {
       loading.value = false
