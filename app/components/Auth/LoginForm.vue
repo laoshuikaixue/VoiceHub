@@ -304,7 +304,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -461,10 +461,11 @@ const handleLogin = async () => {
     }
     // 只要当前显示了验证码，且没有成功登录，就强制刷新验证码
     if (showCaptcha.value) {
+      await nextTick()
       if (captchaProvider.value === 'turnstile') {
-        turnstileRef.value?.reset()
+        turnstileRef.value?.reset?.()
       } else {
-        captchaRef.value?.refreshCaptcha()
+        captchaRef.value?.refreshCaptcha?.()
       }
     }
     

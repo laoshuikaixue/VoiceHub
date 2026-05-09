@@ -35,7 +35,7 @@ watch(() => siteConfig.value.turnstileSiteKey, (newKey) => {
   }
 }, { immediate: true })
 
-const renderWidget = () => {
+function renderWidget() {
   if (!containerRef.value || !siteConfig.value.turnstileSiteKey || widgetId !== null) return
 
   // 确保全局存在 turnstile 对象
