@@ -27,7 +27,7 @@ const containerRef = ref<HTMLElement | null>(null)
 let widgetId: string | null = null
 let retryCount = 0
 const MAX_RETRIES = 50 // 最大重试 50 次，每次 100ms，共 5 秒
-let retryTimer: NodeJS.Timeout | null = null
+let retryTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(() => siteConfig.value.turnstileSiteKey, (newKey) => {
   if (newKey && !widgetId) {

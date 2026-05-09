@@ -28,6 +28,10 @@ export default defineEventHandler(async (event) => {
     // 验证请求体
     const updateData: any = {}
 
+    // 获取当前设置，用于验证依赖配置的完整性
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    let settings = settingsResult[0]
+
     if (body.hideStudentInfo !== undefined) {
       if (typeof body.hideStudentInfo !== 'boolean') {
         throw createError({
@@ -301,10 +305,6 @@ export default defineEventHandler(async (event) => {
     if (body.smtpFromName !== undefined) {
       updateData.smtpFromName = body.smtpFromName
     }
-
-    // 获取当前设置，用于验证更新后的 OAuth 组合配置
-    const settingsResult = await db.select().from(systemSettings).limit(1)
-    let settings = settingsResult[0]
 
     // OAuth 配置字段
     if (body.allowOAuthRegistration !== undefined) {
