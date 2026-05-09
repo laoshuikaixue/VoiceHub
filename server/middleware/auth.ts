@@ -9,13 +9,15 @@ import {
   computeRequirePasswordChange
 } from '../utils/system-settings-helper'
 
-// 强制改密期间允许访问的 API 白名单（仅与登录态/改密/登出相关）
+// 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
+// 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
+// 不会到达此处的强制改密拦截逻辑，因此无需在此白名单中重复。
+// 不应使用宽泛的前缀匹配（如 /api/auth/2fa/），以防未来新增的 2FA 管理接口被意外放行。
 const PASSWORD_CHANGE_ALLOWED_PATHS = [
   '/api/auth/verify',
   '/api/auth/logout',
   '/api/auth/change-password',
-  '/api/auth/set-initial-password',
-  '/api/auth/2fa/' // 2FA 校验相关
+  '/api/auth/set-initial-password'
 ]
 
 export default defineEventHandler(async (event) => {
