@@ -116,6 +116,10 @@ export const useAuth = () => {
         method: 'POST',
         body: { currentPassword, newPassword }
       })
+      // 改密成功后立即清除强制改密标志，避免前端中间件继续拦截
+      if (user.value) {
+        user.value.requirePasswordChange = false
+      }
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
       if (error.data && error.data.message) {
