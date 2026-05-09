@@ -517,7 +517,7 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
-      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin !== false,
+      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin ?? true,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
