@@ -210,7 +210,13 @@
       </div>
 
       <div v-show="showCaptcha" class="form-group">
+        <TurnstileWidget
+          v-if="captchaProvider === 'turnstile'"
+          ref="turnstileRef"
+          v-model="turnstileToken"
+        />
         <CaptchaInput 
+          v-else
           ref="captchaRef"
           v-model="captchaInput" 
           @update:captchaId="captchaId = $event" 
@@ -307,8 +313,9 @@ import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/br
 import { Fingerprint } from 'lucide-vue-next'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CaptchaInput from './CaptchaInput.vue'
+import TurnstileWidget from './TurnstileWidget.vue'
 
-const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled } = useSiteConfig()
+const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -317,11 +324,21 @@ const providerName = computed(() => {
   const provider = (route.query.provider as string) || '第三方'
   return getProviderDisplayName(provider)
 })
-// 图形验证码相关
-const showCaptcha = ref(false)
+// 图形验证码与Turnstile相关
+const isGraphicCaptchaRequired = ref(false)
 const captchaId = ref('')
 const captchaInput = ref('')
-const captchaRef = ref<{ refreshCaptcha: () => void } | null>(null)  
+const captchaRef = ref<{ refreshCaptcha: () => void } | null>(null)
+const turnstileToken = ref('')
+const turnstileRef = ref<{ reset: () => void } | null>(null)
+
+const showCaptcha = computed(() => {
+  // 如果后端明确要求显示验证码，则优先显示
+  if (isGraphicCaptchaRequired.value) return true
+  // 否则根据配置显示
+  if (!captchaEnabled.value) return false
+  return captchaProvider.value === 'turnstile'
+})
 
 const getFormTitle = computed(() => {
   if (!isBindMode.value) return '欢迎回来'
@@ -396,8 +413,12 @@ const handleLogin = async () => {
     password: password.value,
   }
   if (showCaptcha.value) {
-    requestBody.captchaId = captchaId.value
-    requestBody.captchaInput = captchaInput.value.trim()
+    if (captchaProvider.value === 'turnstile') {
+      requestBody.turnstileToken = turnstileToken.value
+    } else {
+      requestBody.captchaId = captchaId.value
+      requestBody.captchaInput = captchaInput.value.trim()
+    }
   }
 
   try {
@@ -434,13 +455,17 @@ const handleLogin = async () => {
     error.value = err.data?.message || err.message || 
       (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
 
-    // 如果后端要求验证码，则显示验证码区域
+    // 如果后端要求验证码，则显示验证码区域（针对图形验证码）
     if (innerData?.captchaRequired) {
-      showCaptcha.value = true
+      isGraphicCaptchaRequired.value = true
     }
     // 只要当前显示了验证码，且没有成功登录，就强制刷新验证码
     if (showCaptcha.value) {
-      captchaRef.value?.refreshCaptcha()
+      if (captchaProvider.value === 'turnstile') {
+        turnstileRef.value?.reset()
+      } else {
+        captchaRef.value?.refreshCaptcha()
+      }
     }
     
     // 仅凭据错误（401）时清空密码字段（避免验证码错误时误清）

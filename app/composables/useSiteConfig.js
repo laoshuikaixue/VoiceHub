@@ -19,6 +19,9 @@ const siteConfig = ref({
   submissionGuidelines: '',
   icpNumber: '',
   gonganNumber: '',
+  captchaEnabled: false,
+  captchaProvider: 'graphic',
+  turnstileSiteKey: '',
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
@@ -62,6 +65,9 @@ export const useSiteConfig = () => {
         enableCollaborativeSubmission: true,
         enableSubmissionRemarks: false,
         allowOAuthRegistration: false,
+        captchaEnabled: false,
+        captchaProvider: 'graphic',
+        turnstileSiteKey: '',
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
@@ -94,6 +100,9 @@ export const useSiteConfig = () => {
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
+  const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
+  const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
+  const turnstileSiteKey = computed(() => siteConfig.value.turnstileSiteKey || '')
   const smtpEnabled = computed(() => !!siteConfig.value.smtpEnabled)
   const oauth = computed(() => ({
     github: !!siteConfig.value.githubOAuthEnabled,
@@ -152,6 +161,9 @@ export const useSiteConfig = () => {
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
     allowOAuthRegistration,
+    captchaEnabled,
+    captchaProvider,
+    turnstileSiteKey,
     smtpEnabled,
     oauth,
     oauthProviders,

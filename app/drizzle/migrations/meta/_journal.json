@@ -148,6 +148,13 @@
       "when": 1778311885032,
       "tag": "20260509073125_add_captcha_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778318043510,
+      "tag": "20260509091403_add_turnstile_support",
+      "breakpoints": true
     }
   ]
 }

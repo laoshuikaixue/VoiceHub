@@ -37,7 +37,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpFromName: '校园广播站',
   allowOAuthRegistration: false,
   captchaEnabled: false, // 默认关闭图形验证码
-  captchaMaxFailures: 3 //触发阈值
+  captchaMaxFailures: 3, //触发阈值
+  captchaProvider: 'graphic', // 默认使用图形验证码
+  turnstileSiteKey: null,
+  turnstileSecretKey: null
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -70,7 +73,9 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'customOAuthEnabled',
   'customOAuthDisplayName',
   'captchaEnabled',
-  'captchaMaxFailures'
+  'captchaMaxFailures',
+  'captchaProvider',
+  'turnstileSiteKey'
 ]
 
 export const filterPublicSettings = (data: any) => {

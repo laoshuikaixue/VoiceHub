@@ -28,6 +28,10 @@ export default defineEventHandler(async (event) => {
     // 验证请求体
     const updateData: any = {}
 
+    // 获取当前设置，用于验证依赖配置的完整性
+    const settingsResult = await db.select().from(systemSettings).limit(1)
+    let settings = settingsResult[0]
+
     if (body.hideStudentInfo !== undefined) {
       if (typeof body.hideStudentInfo !== 'boolean') {
         throw createError({
@@ -199,6 +203,35 @@ export default defineEventHandler(async (event) => {
       updateData.captchaMaxFailures = body.captchaMaxFailures
     }
     
+    if (body.captchaProvider !== undefined) {
+      if (body.captchaProvider !== 'graphic' && body.captchaProvider !== 'turnstile') {
+        throw createError({
+          statusCode: 400,
+          message: 'captchaProvider 必须是 graphic 或 turnstile'
+        })
+      }
+      
+      const nextTurnstileSiteKey = body.turnstileSiteKey !== undefined ? body.turnstileSiteKey : settings?.turnstileSiteKey
+      const nextTurnstileSecretKey = body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK ? body.turnstileSecretKey : settings?.turnstileSecretKey
+      
+      if (body.captchaProvider === 'turnstile' && (!nextTurnstileSiteKey || !nextTurnstileSecretKey)) {
+        throw createError({
+          statusCode: 400,
+          message: '启用 Turnstile 验证前，请先配置 Site Key 和 Secret Key'
+        })
+      }
+      
+      updateData.captchaProvider = body.captchaProvider
+    }
+
+    if (body.turnstileSiteKey !== undefined) {
+      updateData.turnstileSiteKey = body.turnstileSiteKey
+    }
+
+    if (body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK) {
+      updateData.turnstileSecretKey = body.turnstileSecretKey
+    }
+    
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({
@@ -272,10 +305,6 @@ export default defineEventHandler(async (event) => {
     if (body.smtpFromName !== undefined) {
       updateData.smtpFromName = body.smtpFromName
     }
-
-    // 获取当前设置，用于验证更新后的 OAuth 组合配置
-    const settingsResult = await db.select().from(systemSettings).limit(1)
-    let settings = settingsResult[0]
 
     // OAuth 配置字段
     if (body.allowOAuthRegistration !== undefined) {

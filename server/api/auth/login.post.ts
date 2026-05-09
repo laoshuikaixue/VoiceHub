@@ -20,6 +20,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
+import { type SystemSettings } from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -77,6 +78,8 @@ export default defineEventHandler(async (event) => {
 
     // 读取全局配置：是否启用图形验证码
     let captchaEnabled = false
+    let captchaProvider = 'graphic'
+    let turnstileSecretKey = ''
     let captchaMaxFailures = 3
     try {
       // 尝试从缓存获取，如果失败再从数据库获取
@@ -84,58 +87,111 @@ export default defineEventHandler(async (event) => {
       let settings = await cacheService.getSystemSettings()
       
       if (!settings) {
-        const configRow = await db.select({
-          captchaEnabled: systemSettings.captchaEnabled,
-          captchaMaxFailures: systemSettings.captchaMaxFailures
-        })
+        const configRow = await db.select()
           .from(systemSettings)
           .limit(1)
           .then(r => r[0])
           
         if (configRow) {
-          settings = configRow
+          settings = configRow as SystemSettings
           // 异步更新缓存，不阻塞登录
-          cacheService.setSystemSettings(configRow).catch(e => console.warn('缓存系统配置失败:', e))
+          cacheService.setSystemSettings(settings).catch(e => console.warn('缓存系统配置失败:', e))
         }
       }
 
       if (settings?.captchaEnabled) {
         captchaEnabled = true
+        captchaProvider = settings.captchaProvider || 'graphic'
+        turnstileSecretKey = settings.turnstileSecretKey || ''
         if (settings.captchaMaxFailures) {
           captchaMaxFailures = settings.captchaMaxFailures
         }
       }
     } catch (e) {
       // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
-      console.warn('读取图形验证码配置失败，已暂时禁用:', e)
+      console.warn('读取验证码配置失败，已暂时禁用:', e)
     }
     
     // 图形验证码检查
     let needCaptcha = false
     if (captchaEnabled) {
-      const failCount = await getLoginFailureCount(body.username)
-      needCaptcha = failCount >= captchaMaxFailures
+      if (captchaProvider === 'turnstile') {
+        needCaptcha = true // Turnstile 每次都验证
+      } else {
+        const failCount = await getLoginFailureCount(body.username)
+        needCaptcha = failCount >= captchaMaxFailures
+      }
     }
 
     // 验证码校验
     if (needCaptcha) {
-      captchaId = body.captchaId
-      captchaInput = body.captchaInput
-      if (!captchaId || !captchaInput) {
-        throw createError({
-          statusCode: 400,
-          message: '请完成图形验证码',
-          data: { captchaRequired: true }
-        })
-      }
-      
-      const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
-      if (!isValid) {
-        throw createError({
-          statusCode: 400,
-          message: '验证码错误或已过期，请重新输入',
-          data: { captchaRequired: true }
-        })
+      if (captchaProvider === 'turnstile') {
+        const turnstileToken = body.turnstileToken
+        
+        if (!turnstileSecretKey) {
+          console.error('Turnstile is enabled but secret key is missing!')
+          throw createError({
+            statusCode: 500,
+            message: '验证码服务配置错误，请联系管理员'
+          })
+        }
+
+        if (!turnstileToken) {
+          throw createError({
+            statusCode: 400,
+            message: '请完成人机验证',
+            data: { captchaRequired: true, captchaProvider: 'turnstile' }
+          })
+        }
+        
+        const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+        const formData = new URLSearchParams()
+        formData.append('secret', turnstileSecretKey)
+        formData.append('response', turnstileToken)
+        formData.append('remoteip', clientIp)
+
+        try {
+          const result: any = await $fetch(verifyUrl, {
+            method: 'POST',
+            body: formData,
+            timeout: 5000
+          })
+
+          if (!result.success) {
+            console.error('Turnstile verification failed:', result['error-codes'])
+            throw createError({
+              statusCode: 400,
+              message: '人机验证失败或已过期，请重试',
+              data: { captchaRequired: true, captchaProvider: 'turnstile' }
+            })
+          }
+        } catch (err: any) {
+          if (err.statusCode === 400) throw err
+          console.error('Turnstile verification error:', err)
+          throw createError({
+            statusCode: 500,
+            message: '人机验证服务暂时不可用'
+          })
+        }
+      } else {
+        captchaId = body.captchaId
+        captchaInput = body.captchaInput
+        if (!captchaId || !captchaInput) {
+          throw createError({
+            statusCode: 400,
+            message: '请完成图形验证码',
+            data: { captchaRequired: true, captchaProvider: 'graphic' }
+          })
+        }
+        
+        const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
+        if (!isValid) {
+          throw createError({
+            statusCode: 400,
+            message: '验证码错误或已过期，请重新输入',
+            data: { captchaRequired: true, captchaProvider: 'graphic' }
+          })
+        }
       }
     }
     
