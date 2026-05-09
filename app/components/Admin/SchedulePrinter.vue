@@ -930,12 +930,14 @@ const exportPDFForPrint = async (action = 'print') => {
         tableWrappers.forEach(wrapper => {
           const table = wrapper.querySelector('.schedule-timetable')
           if (table) {
-            let hasRows = false
-            const tbodies = table.querySelectorAll('tbody')
-            tbodies.forEach(tbody => {
-              if (tbody.querySelectorAll('tr').length > 0) hasRows = true
+            // 移除没有歌曲项的 tbody (播放时间组)
+            table.querySelectorAll('tbody').forEach(tbody => {
+              if (tbody.querySelectorAll('.song-item').length === 0) {
+                tbody.remove()
+              }
             })
-            if (!hasRows) {
+            // 如果整个表格都没有歌曲项了，移除整个包装器
+            if (table.querySelectorAll('.song-item').length === 0) {
               wrapper.remove()
             }
           }
