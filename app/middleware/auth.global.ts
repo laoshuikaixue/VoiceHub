@@ -15,7 +15,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     import.meta.client &&
     isAuthenticated.value &&
     user.value?.requirePasswordChange &&
-    to.path !== '/change-password'
+    to.path.replace(/\/$/, '') !== '/change-password'
   ) {
     return navigateTo('/change-password')
   }
