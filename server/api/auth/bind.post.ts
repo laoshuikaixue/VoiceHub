@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   const clientIp = getClientIP(event)
 
   // 验证用户凭据
-  if (isAccountLocked(username)) {
+  if (await isAccountLocked(username)) {
     throw createError({ statusCode: 423, message: '账户已被锁定，请稍后重试' })
   }
 
@@ -43,13 +43,13 @@ export default defineEventHandler(async (event) => {
   })
 
   if (!user) {
-    recordLoginFailure(username, clientIp)
+    await recordLoginFailure(username, clientIp)
     throw createError({ statusCode: 401, message: '用户名或密码错误' })
   }
 
   const valid = await bcrypt.compare(password, user.password)
   if (!valid) {
-    recordLoginFailure(username, clientIp)
+    await recordLoginFailure(username, clientIp)
     throw createError({ statusCode: 401, message: '用户名或密码错误' })
   }
 

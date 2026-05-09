@@ -6,6 +6,19 @@
 let redisClient: any = undefined
 const memoryStore = new Map<string, { value: string; expiresAt: number }>()
 
+// 定期清理过期的内存数据，防止无 Redis 环境下的内存泄漏
+const timer = setInterval(() => {
+  const now = Date.now()
+  for (const [key, item] of memoryStore.entries()) {
+    if (now > item.expiresAt) {
+      memoryStore.delete(key)
+    }
+  }
+}, 60 * 1000) // 每分钟清理一次
+if (timer.unref) {
+  timer.unref()
+}
+
 async function getRedis() {
   if (redisClient !== undefined) return redisClient
   try {
@@ -56,9 +69,13 @@ export async function delStore(key: string) {
 export async function incrStore(key: string, ttlSeconds: number): Promise<number> {
   const redis = await getRedis()
   if (redis) {
-    const val = await redis.incr(key)
-    await redis.expire(key, ttlSeconds)
-    return val
+    // 使用 MULTI 事务确保 incr 和 expire 的原子性，避免内存泄漏
+    const results = await redis.multi().incr(key).expire(key, ttlSeconds).exec()
+    if (results && results[0]) {
+      const [, val] = results[0] as [Error | null, any]
+      return Number(val)
+    }
+    return 1
   }
   const item = memoryStore.get(key)
   const newVal = (item ? parseInt(item.value) + 1 : 1).toString()
@@ -75,8 +92,13 @@ export async function getAndDelStore(key: string): Promise<string | null> {
       return await redis.getdel(key)
     } catch (e) {
       // 如果使用的 Redis 版本较旧不支持 GETDEL，回退为使用 MULTI 事务
-      const [val] = await redis.multi().get(key).del(key).exec()
-      return val as string | null
+      const results = await redis.multi().get(key).del(key).exec()
+      // ioredis 的 exec 返回结构通常是 [[error, result], [error, result]]
+      if (results && results[0]) {
+        const [, val] = results[0] as [Error | null, any]
+        return val as string | null
+      }
+      return null
     }
   }
   
