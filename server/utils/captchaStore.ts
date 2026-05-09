@@ -9,8 +9,8 @@ const memoryStore = new Map<string, { value: string; expiresAt: number }>()
 async function getRedis() {
   if (redisClient !== undefined) return redisClient
   try {
-    const { useRedis } = await import('~~/server/utils/redis')
-    redisClient = useRedis()
+    const redisModule = await import('~~/server/utils/redis')
+    redisClient = redisModule.useRedis()
     if (redisClient) {
       await redisClient.ping()
     }

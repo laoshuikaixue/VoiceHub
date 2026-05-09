@@ -76,8 +76,6 @@ const RISK_CONTROL = {
 function cleanupExpiredLocks() {
   const now = new Date()
 
-  // 账户锁定由于使用 captchaStore 管理过期，这里不再需要清理内存 map
-
   // 清理过期的IP监控记录
   for (const [ip, monitorInfo] of ipMonitor.entries()) {
     const windowStart = new Date(
@@ -676,11 +674,25 @@ async function triggerVoteAnomalyAlert(
 /**
  * 获取安全统计信息
  */
-export function getSecurityStats() {
+export async function getSecurityStats() {
   cleanupExpiredLocks()
 
+  // 尝试从 Redis 统计锁定的账号数量，如果失败则返回 0
+  let lockedCount = 0
+  try {
+    const redisModule = await import('~~/server/utils/redis')
+    const redis = redisModule.useRedis()
+    if (redis) {
+      // 在 Redis 中查找带有前缀的 key 数量
+      const keys = await redis.keys('account_lock:*')
+      lockedCount = keys.length
+    }
+  } catch (error) {
+    console.warn('获取锁定账户统计失败:', error)
+  }
+
   return {
-    lockedAccounts: 0, // 不再使用内存维护
+    lockedAccounts: lockedCount,
     monitoredIPs: ipMonitor.size,
     blockedIPs: ipBlacklist.size,
     config: SECURITY_CONFIG

@@ -283,12 +283,28 @@
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
                 >
               </div>
-              <label for="captcha-enabled" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">启用图形验证码</p>
-                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  开启后，同一账号连续登录失败 3 次将要求输入图形验证码，增强防暴力破解能力。
-                </p>
-              </label>
+              <div class="flex-1 space-y-4">
+                <label for="captcha-enabled" class="cursor-pointer block">
+                  <p class="text-xs font-bold text-zinc-200">启用图形验证码</p>
+                  <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                    开启后，同一账号连续登录失败指定次数后将要求输入图形验证码，增强防暴力破解能力。
+                  </p>
+                </label>
+                
+                <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800">
+                  <label class="block text-xs font-bold text-zinc-400 mb-2">触发阈值（失败次数）</label>
+                  <input
+                    v-model.number="formData.captchaMaxFailures"
+                    type="number"
+                    min="1"
+                    placeholder="例如: 3"
+                    class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  >
+                  <p class="text-[10px] text-zinc-500 mt-1">
+                    连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
               

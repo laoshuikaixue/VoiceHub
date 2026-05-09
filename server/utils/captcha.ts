@@ -5,7 +5,7 @@
  * 注意：生成端写入的 key 形如 `captcha:<id>`，本文件必须使用相同前缀，
  * 否则会出现"验证码输对了仍不通过"的问题。
  */
-import { getStore, delStore, setStore } from './captchaStore'
+import { getStore, delStore, setStore, getAndDelStore } from './captchaStore'
 
 const keyOf = (id: string) => `captcha:${id}`
 // 与生成端保持一致：5 分钟有效
@@ -30,11 +30,10 @@ export async function consumeCaptcha(captchaId: string): Promise<void> {
   await delStore(keyOf(captchaId))
 }
 
-/** 校验并立即销毁验证码（兼容旧逻辑） */
+/** 校验并立即销毁验证码（无论成功与否均销毁） */
 export async function verifyAndConsumeCaptcha(captchaId: string, userInput: string): Promise<boolean> {
-  const isValid = await verifyCaptcha(captchaId, userInput)
-  if (isValid) {
-    await consumeCaptcha(captchaId)
-  }
-  return isValid
+  if (!captchaId || !userInput) return false
+  const stored = await getAndDelStore(keyOf(captchaId))
+  if (!stored) return false
+  return stored === String(userInput).toLowerCase()
 }

@@ -17,10 +17,8 @@ import {
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
-//导入验证码校验函数
-import { verifyCaptcha, consumeCaptcha } from '~~/server/utils/captcha'
-//触发验证码的失败阈值，从 constants 导入
-import { CAPTCHA_MAX_FAILURES } from '~~/server/config/constants'
+// 导入验证码校验函数
+import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -112,32 +110,34 @@ export default defineEventHandler(async (event) => {
       console.warn('读取图形验证码配置失败，已暂时禁用:', e)
     }
     
-    //图形验证码检查（仅当 captchaEnabled 为 true 且失败次数达到阈值时触发）
-    const failCount = await getLoginFailureCount(body.username)
-    const needCaptcha = captchaEnabled && failCount >= captchaMaxFailures
+    // 图形验证码检查
+    let needCaptcha = false
+    if (captchaEnabled) {
+      const failCount = await getLoginFailureCount(body.username)
+      needCaptcha = failCount >= captchaMaxFailures
+    }
 
-    // 验证码校验（仅校验，不删除）
+    // 验证码校验
     if (needCaptcha) {
       captchaId = body.captchaId
       captchaInput = body.captchaInput
       if (!captchaId || !captchaInput) {
         throw createError({
-        statusCode: 400,
-        message: '请完成图形验证码',
-        data: { captchaRequired: true }
-      })
+          statusCode: 400,
+          message: '请完成图形验证码',
+          data: { captchaRequired: true }
+        })
+      }
+      
+      const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
+      if (!isValid) {
+        throw createError({
+          statusCode: 400,
+          message: '验证码错误或已过期，请重新输入',
+          data: { captchaRequired: true }
+        })
+      }
     }
-  const isValid = await verifyCaptcha(captchaId, captchaInput)
-  if (!isValid) {
-    throw createError({
-      statusCode: 400,
-      message: '验证码错误或已过期，请重新输入',
-      data: { captchaRequired: true }
-    })
-  }
-      // 校验成功后立即销毁，防止重用
-      await consumeCaptcha(captchaId)
-}
     
     // 查找用户
     const userResult = await db
