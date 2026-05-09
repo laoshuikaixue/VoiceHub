@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { getForcePasswordChangeOnFirstLogin } from '../../utils/system-settings-helper'
+import { getForcePasswordChangeOnFirstLogin, computeRequirePasswordChange } from '../../utils/system-settings-helper'
 import {
   getAccountLockRemainingTime,
   getIPBlockRemainingTime,
@@ -217,7 +217,8 @@ export default defineEventHandler(async (event) => {
     if (user.forcePasswordChange) {
       requirePasswordChange = true
     } else if (!user.passwordChangedAt) {
-      requirePasswordChange = await getForcePasswordChangeOnFirstLogin()
+      const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
+      requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
     }
 
     return {
