@@ -296,6 +296,94 @@
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
+                  id="captcha-enabled"
+                  v-model="formData.captchaEnabled"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
+              </div>
+              <div class="flex-1 space-y-4">
+                <label for="captcha-enabled" class="cursor-pointer block">
+                  <p class="text-xs font-bold text-zinc-200">启用登录人机验证</p>
+                  <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                    开启后，可以有效防范暴力破解和机器人注册。
+                  </p>
+                </label>
+                
+                <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800 space-y-4">
+                  <!-- 验证码类型选择 -->
+                  <div>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">验证类型</label>
+                    <div class="flex gap-4">
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          v-model="formData.captchaProvider"
+                          type="radio"
+                          value="graphic"
+                          class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                        >
+                        <span class="text-sm text-zinc-300">图形验证码</span>
+                      </label>
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          v-model="formData.captchaProvider"
+                          type="radio"
+                          value="turnstile"
+                          class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                        >
+                        <span class="text-sm text-zinc-300">Cloudflare Turnstile</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- 图形验证码配置 -->
+                  <div v-if="formData.captchaProvider === 'graphic'">
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">触发阈值（失败次数）</label>
+                    <input
+                      v-model.number="formData.captchaMaxFailures"
+                      type="number"
+                      min="1"
+                      placeholder="例如: 3"
+                      class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                    >
+                    <p class="text-[10px] text-zinc-500 mt-1">
+                      连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。
+                    </p>
+                  </div>
+
+                  <!-- Turnstile 配置 -->
+                  <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-4">
+                    <div>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2">Site Key (Sitekey)</label>
+                      <input
+                        v-model="formData.turnstileSiteKey"
+                        type="text"
+                        placeholder="在此输入 Turnstile 的 Site Key"
+                        class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                      >
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2">Secret Key (Secret)</label>
+                      <input
+                        v-model="formData.turnstileSecretKey"
+                        type="password"
+                        placeholder="在此输入 Turnstile 的 Secret Key (留空表示不修改)"
+                        class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                      >
+                      <p class="text-[10px] text-zinc-500 mt-1">
+                        开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+              
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
                   id="show-keywords"
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
@@ -305,7 +393,7 @@
               <label for="show-keywords" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">显示黑名单具体关键词</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。
+                  开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示“包含关键词”。
                 </p>
               </label>
             </div>
@@ -421,6 +509,11 @@ const formData = ref({
   showBlacklistKeywords: false,
   hideStudentInfo: true,
   forcePasswordChangeOnFirstLogin: true,
+  captchaEnabled: false,
+  captchaProvider: 'graphic',
+  turnstileSiteKey: '',
+  turnstileSecretKey: '',
+  captchaMaxFailures: 3,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -517,7 +610,12 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
-      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin ?? true,
+      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin !== false,
+      captchaEnabled: !!data.captchaEnabled,
+      captchaProvider: data.captchaProvider || 'graphic',
+      turnstileSiteKey: data.turnstileSiteKey || '',
+      turnstileSecretKey: undefined,
+      captchaMaxFailures: data.captchaMaxFailures ?? 3,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
