@@ -53,3 +53,23 @@ export function computeRequirePasswordChange(
 ): boolean {
   return !!user.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
 }
+
+/**
+ * 高效计算是否需要强制改密：通过短路逻辑避免不必要的全局设置查询。
+ *
+ * 1. 管理员显式 forcePasswordChange=true → 直接返回 true，无需查询全局设置
+ * 2. 用户已设置过密码且未被显式强制 → 直接返回 false，无需查询全局设置
+ * 3. 仅当用户从未设置过密码时，才异步查询全局开关，并委托 computeRequirePasswordChange 计算最终结果
+ *
+ * 此函数是全站统一的强制改密判断入口，login.post.ts、verify.get.ts、middleware/auth.ts
+ * 均应调用此函数，避免重复编写短路逻辑。
+ */
+export async function resolveRequirePasswordChange(user: {
+  forcePasswordChange?: boolean | null
+  passwordChangedAt?: Date | string | null
+}): Promise<boolean> {
+  if (user.forcePasswordChange) return true
+  if (user.passwordChangedAt) return false
+  const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
+  return computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
+}
