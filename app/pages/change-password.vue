@@ -74,7 +74,7 @@
             <ChangePasswordForm :is-first-login="isFirstLogin" />
           </ClientOnly>
 
-          <div v-if="!isFirstLogin" class="form-footer">
+          <div v-if="!auth.user.value?.requirePasswordChange" class="form-footer">
             <NuxtLink class="back-link" to="/">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6" />
