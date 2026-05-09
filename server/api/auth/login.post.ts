@@ -216,15 +216,9 @@ export default defineEventHandler(async (event) => {
       }
     } catch {}
 
-    // 当系统设置关闭首次登录强制改密时，仅在管理员显式强制（有过改密记录后又被要求改密）时才强制
-    // 当系统设置开启时，未改过密码的用户都需要强制改密
-    let requirePasswordChange = false
-    if (forcePasswordChangeOnFirstLogin) {
-      requirePasswordChange = user.forcePasswordChange || !user.passwordChangedAt
-    } else {
-      // 设置关闭时，只有管理员对已改过密码的用户手动设置 forcePasswordChange 才生效
-      requirePasswordChange = user.forcePasswordChange && !!user.passwordChangedAt
-    }
+    // 管理员显式设置的 forcePasswordChange 始终具有最高优先级，不受全局策略影响
+    // 全局首次登录策略仅在用户从未改过密码时生效
+    const requirePasswordChange = !!user.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
 
     return {
       success: true,
