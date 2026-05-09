@@ -197,7 +197,8 @@ export default defineEventHandler(async (event) => {
 
     // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
     // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口
-    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
+    const normalizedPathname = pathname.replace(/\/$/, '')
+    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(normalizedPathname)
 
     if (!isAllowedDuringPasswordChange) {
       // 统一调用 resolveRequirePasswordChange，内部已包含短路优化逻辑
