@@ -1,10 +1,13 @@
 import { JWTEnhanced } from '../utils/jwt-enhanced'
-import { db, users, systemSettings } from '~/drizzle/db'
+import { db, users } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
-import { CacheService } from '../services/cacheService'
+import {
+  getForcePasswordChangeOnFirstLogin,
+  computeRequirePasswordChange
+} from '../utils/system-settings-helper'
 
 // 强制改密期间允许访问的 API 白名单（仅与登录态/改密/登出相关）
 const PASSWORD_CHANGE_ALLOWED_PATHS = [
@@ -199,26 +202,8 @@ export default defineEventHandler(async (event) => {
     )
 
     if (!isAllowedDuringPasswordChange) {
-      // 读取全局设置（带缓存）
-      let forcePasswordChangeOnFirstLogin = true
-      try {
-        const cacheService = CacheService.getInstance()
-        let cachedSettings = await cacheService.getSystemSettings()
-        if (!cachedSettings) {
-          const settingsResult = await db.select().from(systemSettings).limit(1)
-          if (settingsResult[0]) {
-            cachedSettings = settingsResult[0]
-            await cacheService.setSystemSettings(cachedSettings).catch(() => {})
-          }
-        }
-        if (cachedSettings && typeof cachedSettings.forcePasswordChangeOnFirstLogin === 'boolean') {
-          forcePasswordChangeOnFirstLogin = cachedSettings.forcePasswordChangeOnFirstLogin
-        }
-      } catch {}
-
-      const requirePasswordChange =
-        !!user.forcePasswordChange ||
-        (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
+      const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
+      const requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
 
       if (requirePasswordChange) {
         return sendError(
