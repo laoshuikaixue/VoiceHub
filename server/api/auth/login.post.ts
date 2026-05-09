@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { getForcePasswordChangeOnFirstLogin, computeRequirePasswordChange } from '../../utils/system-settings-helper'
+import { resolveRequirePasswordChange } from '../../utils/system-settings-helper'
 import {
   getAccountLockRemainingTime,
   getIPBlockRemainingTime,
@@ -208,18 +208,8 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login for ${user.username} processed in ${processingTime}ms`)
 
-    // 计算是否需要强制改密
-    // 性能优化：通过短路逻辑避免不必要的全局设置查询（与 server/middleware/auth.ts 保持一致）
-    // 1. 管理员显式设置 forcePasswordChange=true → 直接判定需要改密，无需查询全局设置
-    // 2. 用户已设置过密码且未被显式强制 → 无需改密，跳过
-    // 3. 仅当用户从未设置过密码时，才异步查询全局"首次登录强制改密"开关
-    let requirePasswordChange = false
-    if (user.forcePasswordChange) {
-      requirePasswordChange = true
-    } else if (!user.passwordChangedAt) {
-      const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
-      requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
-    }
+    // 统一调用 resolveRequirePasswordChange，内部已包含短路优化逻辑
+    const requirePasswordChange = await resolveRequirePasswordChange(user)
 
     return {
       success: true,
