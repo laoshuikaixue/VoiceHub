@@ -905,6 +905,43 @@ const exportPDFForPrint = async (action = 'print') => {
 
     // 辅助：渲染当前页并添加到PDF
     const renderPage = async (isFirst) => {
+      // 在渲染前，清理页面中因为分页产生的空容器（如：没有子项的日期组、没有子项的表格），避免出现只有表头没有内容的孤立节点
+      const contentWrapper = pageContainer.querySelector('.schedule-content')
+      if (contentWrapper) {
+        const dGroups = contentWrapper.querySelectorAll('.date-group')
+        dGroups.forEach(dg => {
+          if (dg.querySelectorAll('.schedule-item').length === 0) {
+            dg.remove()
+          } else {
+            const ptGroups = dg.querySelectorAll('.playtime-group')
+            ptGroups.forEach(ptg => {
+              if (ptg.querySelectorAll('.schedule-item').length === 0) {
+                ptg.remove()
+              }
+            })
+            const ptWrappers = dg.querySelectorAll('.playtime-groups')
+            ptWrappers.forEach(ptw => {
+              if (ptw.children.length === 0) ptw.remove()
+            })
+          }
+        })
+
+        const tableWrappers = contentWrapper.querySelectorAll('.schedule-table-wrapper')
+        tableWrappers.forEach(wrapper => {
+          const table = wrapper.querySelector('.schedule-timetable')
+          if (table) {
+            let hasRows = false
+            const tbodies = table.querySelectorAll('tbody')
+            tbodies.forEach(tbody => {
+              if (tbody.querySelectorAll('tr').length > 0) hasRows = true
+            })
+            if (!hasRows) {
+              wrapper.remove()
+            }
+          }
+        })
+      }
+
       applyForceStyles(pageContainer)
 
       // 预处理当前页面的图片
