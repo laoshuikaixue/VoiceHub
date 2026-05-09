@@ -1,7 +1,10 @@
 import bcrypt from 'bcryptjs'
-import { db, eq, users, userIdentities, and, systemSettings } from '~/drizzle/db'
+import { db, eq, users, userIdentities, and } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { CacheService } from '../../services/cacheService'
+import {
+  getForcePasswordChangeOnFirstLogin,
+  computeRequirePasswordChange
+} from '../../utils/system-settings-helper'
 import {
   getAccountLockRemainingTime,
   getIPBlockRemainingTime,
@@ -208,30 +211,9 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login for ${user.username} processed in ${processingTime}ms`)
 
-    // 查询系统设置判断是否启用首次登录强制改密（优先使用缓存，避免频繁查库）
-    let forcePasswordChangeOnFirstLogin = true
-    try {
-      const cacheService = CacheService.getInstance()
-      let cachedSettings = await cacheService.getSystemSettings()
-
-      if (!cachedSettings) {
-        const settingsResult = await db.select().from(systemSettings).limit(1)
-        if (settingsResult[0]) {
-          cachedSettings = settingsResult[0]
-          await cacheService.setSystemSettings(cachedSettings).catch(() => {})
-        }
-      }
-
-      if (cachedSettings && typeof cachedSettings.forcePasswordChangeOnFirstLogin === 'boolean') {
-        forcePasswordChangeOnFirstLogin = cachedSettings.forcePasswordChangeOnFirstLogin
-      }
-    } catch (e) {
-      console.warn('[Auth] 读取系统设置失败，使用默认值 true:', e)
-    }
-
-    // 管理员显式设置的 forcePasswordChange 始终具有最高优先级，不受全局策略影响
-    // 全局首次登录策略仅在用户从未改过密码时生效
-    const requirePasswordChange = !!user.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
+    // 计算是否需要强制改密（统一逻辑：管理员显式标志最高优先级 + 全局首次登录策略）
+    const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
+    const requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
 
     return {
       success: true,
