@@ -110,8 +110,10 @@ onMounted(async () => {
     return
   }
 
-  // 检查是否需要修改密码（从 auth 状态获取）
-  if (auth.user.value?.requirePasswordChange) {
+  // "首次登录"特指用户从未设置过密码（hasSetPassword=false）。
+  // 管理员对已有密码的用户强制改密时，仍需走常规改密流程（验证旧密码），
+  // 否则会出现"他人借助会话直接重置密码"的安全隐患。
+  if (auth.user.value?.requirePasswordChange && !auth.user.value?.hasSetPassword) {
     isFirstLogin.value = true
   }
 })
