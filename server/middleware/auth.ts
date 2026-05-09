@@ -4,10 +4,7 @@ import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
-import {
-  getForcePasswordChangeOnFirstLogin,
-  computeRequirePasswordChange
-} from '../utils/system-settings-helper'
+import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
 
 // 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
 // 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
@@ -202,18 +199,8 @@ export default defineEventHandler(async (event) => {
     const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
 
     if (!isAllowedDuringPasswordChange) {
-      // 性能优化：先检查本地字段，避免大部分正常请求触发异步查询
-      // 1. 管理员显式设置 forcePasswordChange=true → 直接拦截
-      // 2. 用户已设置过密码且未被显式强制 → 无需改密，跳过
-      // 3. 仅当用户从未设置过密码时，才查询全局开关
-      let requirePasswordChange = false
-
-      if (user.forcePasswordChange) {
-        requirePasswordChange = true
-      } else if (!user.passwordChangedAt) {
-        const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
-        requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
-      }
+      // 统一调用 resolveRequirePasswordChange，内部已包含短路优化逻辑
+      const requirePasswordChange = await resolveRequirePasswordChange(user)
 
       if (requirePasswordChange) {
         return sendError(
