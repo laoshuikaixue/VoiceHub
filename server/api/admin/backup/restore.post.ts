@@ -1041,7 +1041,9 @@ export default defineEventHandler(async (event) => {
                           'customOAuthUsernameField',
                           'customOAuthNameField',
                           'customOAuthEmailField',
-                          'customOAuthAvatarField'
+                          'customOAuthAvatarField',
+                          'captchaEnabled',
+                          'captchaMaxFailures'
                         ]
 
                         // 只添加备份数据中存在的字段

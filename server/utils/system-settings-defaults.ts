@@ -36,7 +36,12 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   smtpPassword: null,
   smtpFromEmail: null,
   smtpFromName: '校园广播站',
-  allowOAuthRegistration: false
+  allowOAuthRegistration: false,
+  captchaEnabled: false, // 默认关闭图形验证码
+  captchaMaxFailures: 3, //触发阈值
+  captchaProvider: 'graphic', // 默认使用图形验证码
+  turnstileSiteKey: null,
+  turnstileSecretKey: null
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -68,7 +73,11 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',
   'customOAuthEnabled',
-  'customOAuthDisplayName'
+  'customOAuthDisplayName',
+  'captchaEnabled',
+  'captchaMaxFailures',
+  'captchaProvider',
+  'turnstileSiteKey'
 ]
 
 export const filterPublicSettings = (data: any) => {
@@ -83,3 +92,6 @@ export const filterPublicSettings = (data: any) => {
   }
   return result
 }
+
+//为兼容旧代码，导出别名
+export { SYSTEM_SETTINGS_DEFAULTS as defaultSystemSettings }
