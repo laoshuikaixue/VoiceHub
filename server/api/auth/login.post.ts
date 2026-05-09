@@ -152,10 +152,12 @@ export default defineEventHandler(async (event) => {
         try {
           const result: any = await $fetch(verifyUrl, {
             method: 'POST',
-            body: formData
+            body: formData,
+            timeout: 5000
           })
 
           if (!result.success) {
+            console.error('Turnstile verification failed:', result['error-codes'])
             throw createError({
               statusCode: 400,
               message: '人机验证失败或已过期，请重试',

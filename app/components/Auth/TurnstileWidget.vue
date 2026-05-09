@@ -1,6 +1,6 @@
 <template>
   <div class="turnstile-widget">
-    <div id="turnstile-container" ref="containerRef"></div>
+    <div ref="containerRef"></div>
   </div>
 </template>
 
