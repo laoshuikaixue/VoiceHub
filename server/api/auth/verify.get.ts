@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users, systemSettings } from '~/drizzle/schema'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
+import { CacheService } from '../../services/cacheService'
 import { eq } from 'drizzle-orm'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
@@ -17,14 +18,27 @@ export default defineEventHandler(async (event) => {
 
     const userId = authUser.id
 
-    // 查询系统设置判断是否启用首次登录强制改密
+    // 查询系统设置判断是否启用首次登录强制改密（优先使用缓存，避免频繁查库）
     let forcePasswordChangeOnFirstLogin = true
     try {
-      const settingsResult = await db.select({ forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin }).from(systemSettings).limit(1)
-      if (settingsResult[0]) {
-        forcePasswordChangeOnFirstLogin = settingsResult[0].forcePasswordChangeOnFirstLogin
+      const cacheService = CacheService.getInstance()
+      let cachedSettings = await cacheService.getSystemSettings()
+
+      if (!cachedSettings) {
+        // 缓存未命中，从数据库加载并写入缓存
+        const settingsResult = await db.select().from(systemSettings).limit(1)
+        if (settingsResult[0]) {
+          cachedSettings = settingsResult[0]
+          await cacheService.setSystemSettings(cachedSettings).catch(() => {})
+        }
       }
-    } catch {}
+
+      if (cachedSettings && typeof cachedSettings.forcePasswordChangeOnFirstLogin === 'boolean') {
+        forcePasswordChangeOnFirstLogin = cachedSettings.forcePasswordChangeOnFirstLogin
+      }
+    } catch (e) {
+      console.warn('[Auth] 读取系统设置失败，使用默认值 true:', e)
+    }
 
     // 优先从Redis缓存获取用户认证状态
     if (isRedisReady()) {
