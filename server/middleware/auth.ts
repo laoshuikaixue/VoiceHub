@@ -1,9 +1,19 @@
 import { JWTEnhanced } from '../utils/jwt-enhanced'
-import { db, users } from '~/drizzle/db'
+import { db, users, systemSettings } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
+import { CacheService } from '../services/cacheService'
+
+// 强制改密期间允许访问的 API 白名单（仅与登录态/改密/登出相关）
+const PASSWORD_CHANGE_ALLOWED_PATHS = [
+  '/api/auth/verify',
+  '/api/auth/logout',
+  '/api/auth/change-password',
+  '/api/auth/set-initial-password',
+  '/api/auth/2fa/' // 2FA 校验相关
+]
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -119,7 +129,8 @@ export default defineEventHandler(async (event) => {
         class: users.class,
         role: users.role,
         status: users.status,
-        passwordChangedAt: users.passwordChangedAt
+        passwordChangedAt: users.passwordChangedAt,
+        forcePasswordChange: users.forcePasswordChange
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -180,6 +191,46 @@ export default defineEventHandler(async (event) => {
     }
 
     event.context.user = user
+
+    // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
+    // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口
+    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.some((p) =>
+      pathname.startsWith(p)
+    )
+
+    if (!isAllowedDuringPasswordChange) {
+      // 读取全局设置（带缓存）
+      let forcePasswordChangeOnFirstLogin = true
+      try {
+        const cacheService = CacheService.getInstance()
+        let cachedSettings = await cacheService.getSystemSettings()
+        if (!cachedSettings) {
+          const settingsResult = await db.select().from(systemSettings).limit(1)
+          if (settingsResult[0]) {
+            cachedSettings = settingsResult[0]
+            await cacheService.setSystemSettings(cachedSettings).catch(() => {})
+          }
+        }
+        if (cachedSettings && typeof cachedSettings.forcePasswordChangeOnFirstLogin === 'boolean') {
+          forcePasswordChangeOnFirstLogin = cachedSettings.forcePasswordChangeOnFirstLogin
+        }
+      } catch {}
+
+      const requirePasswordChange =
+        !!user.forcePasswordChange ||
+        (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
+
+      if (requirePasswordChange) {
+        return sendError(
+          event,
+          createError({
+            statusCode: 403,
+            message: '请先完成密码修改后再访问其他功能',
+            data: { requirePasswordChange: true }
+          })
+        )
+      }
+    }
 
     if (isUserBlocked(user.id)) {
       delete event.context.user
