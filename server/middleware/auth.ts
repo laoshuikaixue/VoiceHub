@@ -212,7 +212,7 @@ export default defineEventHandler(async (event) => {
         requirePasswordChange = true
       } else if (!user.passwordChangedAt) {
         const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
-        requirePasswordChange = forcePasswordChangeOnFirstLogin
+        requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
       }
 
       if (requirePasswordChange) {
