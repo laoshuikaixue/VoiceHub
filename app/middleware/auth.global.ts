@@ -1,32 +1,52 @@
 import { useAuth } from '~/composables/useAuth'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { isAuthenticated, initAuth, user } = useAuth()
+  const { isAuthenticated, isAdmin, initAuth, user } = useAuth()
   const publicRoutes = ['/login', '/', '/auth/error', '/forgot-password', '/reset-password']
 
-  // 客户端初始化认证状态
-  if (import.meta.client && !isAuthenticated.value) {
-    await initAuth()
+  // 初始化认证状态（客户端 + 服务端均执行）
+  if (!isAuthenticated.value) {
+    if (import.meta.client) {
+      await initAuth()
+    } else if (import.meta.server) {
+      // 服务端：通过 cookie 中的 token 调用内部 API 获取用户状态
+      // Nitro 内部路由会直接调用 handler，无需真正的 HTTP 请求，性能可靠
+      try {
+        const cookie = useCookie('auth-token')
+        if (cookie.value) {
+          const data = await $fetch<{ user: any; valid: boolean }>('/api/auth/verify', {
+            headers: {
+              cookie: `auth-token=${cookie.value}`
+            }
+          })
+          if (data?.user) {
+            user.value = data.user
+            isAuthenticated.value = true
+            isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+          }
+        }
+      } catch (e) {
+        // 服务端验证失败（token 无效/过期等），清理状态确保一致性
+        // 客户端 hydration 后会再次尝试认证
+        user.value = null
+        isAuthenticated.value = false
+        isAdmin.value = false
+      }
+    }
   }
 
   // 强制改密优先级最高：已认证但需要修改密码的用户，必须先去改密页面
-  // 注意：此检查必须在公共路由检查之前，避免用户停留在首页等公共页面绕过强制改密
+  // 注意：此检查在服务端和客户端均执行，服务端会发送 302 重定向避免页面闪烁
   if (
-    import.meta.client &&
     isAuthenticated.value &&
     user.value?.requirePasswordChange &&
-    to.path.replace(/\/$/, '') !== '/change-password'
+    to.path !== '/change-password'
   ) {
-    return navigateTo('/change-password')
+    return navigateTo('/change-password', { redirectCode: 302 })
   }
 
   // 公共页面跳过认证
   if (publicRoutes.includes(to.path) || to.path.startsWith('/api/auth')) {
-    return
-  }
-
-  // 服务端跳过认证检查
-  if (import.meta.server) {
     return
   }
 
