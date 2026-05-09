@@ -224,7 +224,8 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        requirePasswordChange
+        requirePasswordChange,
+        hasSetPassword: !!user.passwordChangedAt
       }
     }
   } catch (error: any) {
