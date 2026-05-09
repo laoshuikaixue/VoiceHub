@@ -443,9 +443,8 @@ const handleLogin = async () => {
       captchaRef.value?.refreshCaptcha()
     }
     
-    // 仅密码错误时清空密码字段（避免验证码错误时误清）
-    const errMsg = error.value
-    if (!errMsg.includes('验证码') && (errMsg.includes('密码') || errMsg.includes('不存在'))) {
+    // 仅凭据错误（401）时清空密码字段（避免验证码错误时误清）
+    if (err.statusCode === 401) {
       password.value = ''
     }
   } finally {

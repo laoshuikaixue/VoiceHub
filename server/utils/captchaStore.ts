@@ -70,10 +70,17 @@ export async function incrStore(key: string, ttlSeconds: number): Promise<number
 export async function getAndDelStore(key: string): Promise<string | null> {
   const redis = await getRedis()
   if (redis) {
-    const val = await redis.get(key)
-    if (val) await redis.del(key)
-    return val
+    try {
+      // 优先尝试使用 Redis 6.2+ 引入的 GETDEL 命令实现原子操作
+      return await redis.getdel(key)
+    } catch (e) {
+      // 如果使用的 Redis 版本较旧不支持 GETDEL，回退为使用 MULTI 事务
+      const [val] = await redis.multi().get(key).del(key).exec()
+      return val as string | null
+    }
   }
+  
+  // 无 Redis 环境，回退到内存 Map
   const item = memoryStore.get(key)
   memoryStore.delete(key)
   if (item && Date.now() < item.expiresAt) return item.value
