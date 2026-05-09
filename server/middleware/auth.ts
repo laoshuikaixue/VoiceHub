@@ -199,13 +199,21 @@ export default defineEventHandler(async (event) => {
 
     // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
     // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口
-    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.some((p) =>
-      pathname.startsWith(p)
-    )
+    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
 
     if (!isAllowedDuringPasswordChange) {
-      const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
-      const requirePasswordChange = computeRequirePasswordChange(user, forcePasswordChangeOnFirstLogin)
+      // 性能优化：先检查本地字段，避免大部分正常请求触发异步查询
+      // 1. 管理员显式设置 forcePasswordChange=true → 直接拦截
+      // 2. 用户已设置过密码且未被显式强制 → 无需改密，跳过
+      // 3. 仅当用户从未设置过密码时，才查询全局开关
+      let requirePasswordChange = false
+
+      if (user.forcePasswordChange) {
+        requirePasswordChange = true
+      } else if (!user.passwordChangedAt) {
+        const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
+        requirePasswordChange = forcePasswordChangeOnFirstLogin
+      }
 
       if (requirePasswordChange) {
         return sendError(
