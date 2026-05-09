@@ -10,6 +10,7 @@ export interface User {
   forcePasswordChange?: boolean
   passwordChangedAt?: Date | null
   requirePasswordChange?: boolean
+  hasSetPassword?: boolean
   avatar?: string | null
   has2FA?: boolean
   email?: string | null
