@@ -86,12 +86,7 @@ export default defineEventHandler(async (event) => {
       let settings = await cacheService.getSystemSettings()
       
       if (!settings) {
-        const configRow = await db.select({
-          captchaEnabled: systemSettings.captchaEnabled,
-          captchaProvider: systemSettings.captchaProvider,
-          turnstileSecretKey: systemSettings.turnstileSecretKey,
-          captchaMaxFailures: systemSettings.captchaMaxFailures
-        })
+        const configRow = await db.select()
           .from(systemSettings)
           .limit(1)
           .then(r => r[0])
@@ -131,6 +126,15 @@ export default defineEventHandler(async (event) => {
     if (needCaptcha) {
       if (captchaProvider === 'turnstile') {
         const turnstileToken = body.turnstileToken
+        
+        if (!turnstileSecretKey) {
+          console.error('Turnstile is enabled but secret key is missing!')
+          throw createError({
+            statusCode: 500,
+            message: '验证码服务配置错误，请联系管理员'
+          })
+        }
+
         if (!turnstileToken) {
           throw createError({
             statusCode: 400,
@@ -139,36 +143,32 @@ export default defineEventHandler(async (event) => {
           })
         }
         
-        if (turnstileSecretKey) {
-          const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
-          const formData = new URLSearchParams()
-          formData.append('secret', turnstileSecretKey)
-          formData.append('response', turnstileToken)
-          formData.append('remoteip', clientIp)
+        const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+        const formData = new URLSearchParams()
+        formData.append('secret', turnstileSecretKey)
+        formData.append('response', turnstileToken)
+        formData.append('remoteip', clientIp)
 
-          try {
-            const result: any = await $fetch(verifyUrl, {
-              method: 'POST',
-              body: formData
-            })
+        try {
+          const result: any = await $fetch(verifyUrl, {
+            method: 'POST',
+            body: formData
+          })
 
-            if (!result.success) {
-              throw createError({
-                statusCode: 400,
-                message: '人机验证失败或已过期，请重试',
-                data: { captchaRequired: true, captchaProvider: 'turnstile' }
-              })
-            }
-          } catch (err: any) {
-            if (err.statusCode === 400) throw err
-            console.error('Turnstile verification error:', err)
+          if (!result.success) {
             throw createError({
-              statusCode: 500,
-              message: '人机验证服务不可用'
+              statusCode: 400,
+              message: '人机验证失败或已过期，请重试',
+              data: { captchaRequired: true, captchaProvider: 'turnstile' }
             })
           }
-        } else {
-          console.warn('Turnstile is enabled but secret key is missing!')
+        } catch (err: any) {
+          if (err.statusCode === 400) throw err
+          console.error('Turnstile verification error:', err)
+          throw createError({
+            statusCode: 500,
+            message: '人机验证服务暂时不可用'
+          })
         }
       } else {
         captchaId = body.captchaId

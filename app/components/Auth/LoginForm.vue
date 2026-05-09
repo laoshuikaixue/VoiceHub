@@ -333,9 +333,11 @@ const turnstileToken = ref('')
 const turnstileRef = ref<{ reset: () => void } | null>(null)
 
 const showCaptcha = computed(() => {
+  // 如果后端明确要求显示验证码，则优先显示
+  if (isGraphicCaptchaRequired.value) return true
+  // 否则根据配置显示
   if (!captchaEnabled.value) return false
-  if (captchaProvider.value === 'turnstile') return true
-  return isGraphicCaptchaRequired.value
+  return captchaProvider.value === 'turnstile'
 })
 
 const getFormTitle = computed(() => {

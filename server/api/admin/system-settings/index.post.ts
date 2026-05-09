@@ -213,7 +213,7 @@ export default defineEventHandler(async (event) => {
       updateData.turnstileSiteKey = body.turnstileSiteKey
     }
 
-    if (body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK) {
+    if (body.turnstileSecretKey && body.turnstileSecretKey !== SECRET_FIELD_MASK) {
       updateData.turnstileSecretKey = body.turnstileSecretKey
     }
     

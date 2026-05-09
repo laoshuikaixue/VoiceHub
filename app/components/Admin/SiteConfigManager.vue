@@ -593,7 +593,7 @@ const loadConfig = async () => {
       captchaEnabled: !!data.captchaEnabled,
       captchaProvider: data.captchaProvider || 'graphic',
       turnstileSiteKey: data.turnstileSiteKey || '',
-      turnstileSecretKey: '',
+      turnstileSecretKey: undefined,
       captchaMaxFailures: data.captchaMaxFailures ?? 3,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       oauthRedirectUri: data.oauthRedirectUri || '',

@@ -25,6 +25,8 @@ const emit = defineEmits<{
 const { siteConfig } = useSiteConfig()
 const containerRef = ref<HTMLElement | null>(null)
 let widgetId: string | null = null
+let retryCount = 0
+const MAX_RETRIES = 50 // 最大重试 50 次，每次 100ms，共 5 秒
 
 const renderWidget = () => {
   if (!containerRef.value || !siteConfig.value.turnstileSiteKey) return
@@ -43,9 +45,12 @@ const renderWidget = () => {
         emit('update:modelValue', '')
       }
     })
-  } else {
-    // 如果还没加载好，稍微等一下
+  } else if (retryCount < MAX_RETRIES) {
+    // 如果还没加载好，且未超过最大重试次数，稍微等一下
+    retryCount++
     setTimeout(renderWidget, 100)
+  } else {
+    console.error('Failed to load Turnstile script: timeout exceeded.')
   }
 }
 
