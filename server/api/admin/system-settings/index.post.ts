@@ -190,10 +190,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.captchaMaxFailures !== undefined) {
-      if (
-        body.captchaMaxFailures !== null &&
-        (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 1)
-      ) {
+      if (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 1) {
         throw createError({
           statusCode: 400,
           message: 'captchaMaxFailures 必须是正整数'

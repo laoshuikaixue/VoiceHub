@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     if (!isPasswordValid) {
       // 记录安全事件
       const clientIp = getClientIP(event)
-      recordLoginFailure(userDetails.username, clientIp)
+      await recordLoginFailure(userDetails.username, clientIp)
 
       throw createError({
         statusCode: 400,
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
 
     // 记录成功的密码修改
     const clientIp = getClientIP(event)
-    recordLoginSuccess(userDetails.username, clientIp)
+    await recordLoginSuccess(userDetails.username, clientIp)
 
     return {
       success: true,

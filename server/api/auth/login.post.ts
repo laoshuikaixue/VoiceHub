@@ -68,8 +68,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查账户是否被锁定
-    if (isAccountLocked(body.username)) {
-      const remainingTime = getAccountLockRemainingTime(body.username)
+    if (await isAccountLocked(body.username)) {
+      const remainingTime = await getAccountLockRemainingTime(body.username)
       throw createError({
         statusCode: 423,
         message: `账户已被锁定，请在 ${remainingTime} 分钟后重试`
@@ -78,25 +78,43 @@ export default defineEventHandler(async (event) => {
 
     // 读取全局配置：是否启用图形验证码
     let captchaEnabled = false
+    let captchaMaxFailures = 3
     try {
-      const configRow = await db.select({
-        captchaEnabled: systemSettings.captchaEnabled,
-        captchaMaxFailures: systemSettings.captchaMaxFailures
-      })
-        .from(systemSettings)
-        .limit(1)
-        .then(r => r[0])
-    if (configRow?.captchaEnabled) {
-      captchaEnabled = true
-   }
+      // 尝试从缓存获取，如果失败再从数据库获取
+      const { CacheService } = await import('~~/server/services/cacheService')
+      const cacheService = CacheService.getInstance()
+      let settings = await cacheService.getSystemSettings()
+      
+      if (!settings) {
+        const configRow = await db.select({
+          captchaEnabled: systemSettings.captchaEnabled,
+          captchaMaxFailures: systemSettings.captchaMaxFailures
+        })
+          .from(systemSettings)
+          .limit(1)
+          .then(r => r[0])
+          
+        if (configRow) {
+          settings = configRow
+          // 异步更新缓存，不阻塞登录
+          cacheService.setSystemSettings(configRow).catch(e => console.warn('缓存系统配置失败:', e))
+        }
+      }
+
+      if (settings?.captchaEnabled) {
+        captchaEnabled = true
+        if (settings.captchaMaxFailures) {
+          captchaMaxFailures = settings.captchaMaxFailures
+        }
+      }
     } catch (e) {
-    // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
-    console.warn('读取图形验证码配置失败，已暂时禁用:', e)
+      // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
+      console.warn('读取图形验证码配置失败，已暂时禁用:', e)
     }
     
     //图形验证码检查（仅当 captchaEnabled 为 true 且失败次数达到阈值时触发）
-    const failCount = getLoginFailureCount(body.username)
-    const needCaptcha = captchaEnabled && failCount >= CAPTCHA_MAX_FAILURES
+    const failCount = await getLoginFailureCount(body.username)
+    const needCaptcha = captchaEnabled && failCount >= captchaMaxFailures
 
     // 验证码校验（仅校验，不删除）
     if (needCaptcha) {
@@ -146,10 +164,10 @@ export default defineEventHandler(async (event) => {
 
     if (!user) {
       // 记录登录失败（用户不存在）
-      recordLoginFailure(body.username, clientIp)
+      await recordLoginFailure(body.username, clientIp)
       throw createError({
         statusCode: 401,
-        message: '用户不存在'
+        message: '用户名或密码错误'
       })
     }
 
@@ -157,10 +175,10 @@ export default defineEventHandler(async (event) => {
     const isPasswordValid = await bcrypt.compare(body.password, user.password)
     if (!isPasswordValid) {
       // 记录登录失败（密码错误）
-      recordLoginFailure(body.username, clientIp)
+      await recordLoginFailure(body.username, clientIp)
       throw createError({
         statusCode: 401,
-        message: '密码不正确'
+        message: '用户名或密码错误'
       })
     }
     
@@ -207,7 +225,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    recordLoginSuccess(body.username, clientIp)
+    await recordLoginSuccess(body.username, clientIp)
 
     const ipSwitchExceeded = recordAccountIpLogin(body.username, clientIp)
     if (ipSwitchExceeded) {

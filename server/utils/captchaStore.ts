@@ -3,7 +3,7 @@
  * - 优先 Redis
  * - Redis 不可用时回退到内存 Map（适合 Docker 单进程，Serverless 冷启动也可接受）
  */
-let redisClient: any = null
+let redisClient: any = undefined
 const memoryStore = new Map<string, { value: string; expiresAt: number }>()
 
 async function getRedis() {

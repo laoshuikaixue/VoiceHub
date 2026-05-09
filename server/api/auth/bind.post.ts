@@ -150,7 +150,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  recordLoginSuccess(username, clientIp)
+  await recordLoginSuccess(username, clientIp)
 
   await db
     .update(users)
