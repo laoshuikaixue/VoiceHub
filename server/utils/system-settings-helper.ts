@@ -1,5 +1,6 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
+import type { SystemSettings as DBSystemSettings } from '~/drizzle/schema'
 import { CacheService } from '../services/cacheService'
 
 /**
@@ -9,7 +10,7 @@ import { CacheService } from '../services/cacheService'
  *
  * @returns 系统设置对象，若读取失败则返回 null
  */
-export async function getSystemSettingsCached(): Promise<any | null> {
+export async function getSystemSettingsCached(): Promise<DBSystemSettings | null> {
   try {
     const cacheService = CacheService.getInstance()
     let cached = await cacheService.getSystemSettings()
@@ -36,7 +37,7 @@ export async function getSystemSettingsCached(): Promise<any | null> {
  */
 export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
   const settings = await getSystemSettingsCached()
-  if (settings && typeof settings.forcePasswordChangeOnFirstLogin === 'boolean') {
+  if (settings) {
     return settings.forcePasswordChangeOnFirstLogin
   }
   return true
