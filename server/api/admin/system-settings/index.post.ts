@@ -179,6 +179,26 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionRemarks = body.enableSubmissionRemarks
     }
 
+    if (body.captchaEnabled !== undefined) {
+      if (typeof body.captchaEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'captchaEnabled 必须是布尔值'
+        })
+      }
+      updateData.captchaEnabled = body.captchaEnabled
+    }
+
+    if (body.captchaMaxFailures !== undefined) {
+      if (!Number.isInteger(body.captchaMaxFailures) || body.captchaMaxFailures < 1) {
+        throw createError({
+          statusCode: 400,
+          message: 'captchaMaxFailures 必须是正整数'
+        })
+      }
+      updateData.captchaMaxFailures = body.captchaMaxFailures
+    }
+    
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { db, eq, users, userIdentities, and } from '~/drizzle/db'
+import { db, eq, users, userIdentities, and, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import {
   getAccountLockRemainingTime,
@@ -10,18 +10,26 @@ import {
   recordLoginSuccess,
   recordAccountIpLogin,
   blockUser,
-  getUserBlockRemainingTime
+  getUserBlockRemainingTime,
+  //导入失败计数查询函数
+  getLoginFailureCount
 } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
+// 导入验证码校验函数
+import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
+
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-
+  
   try {
     const body = await readBody(event)
     const clientIp = getClientIP(event)
-
+    
+    let captchaId = ''
+    let captchaInput = ''
+    
     if (!body.username || !body.password) {
       throw createError({
         statusCode: 400,
@@ -58,14 +66,79 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查账户是否被锁定
-    if (isAccountLocked(body.username)) {
-      const remainingTime = getAccountLockRemainingTime(body.username)
+    if (await isAccountLocked(body.username)) {
+      const remainingTime = await getAccountLockRemainingTime(body.username)
       throw createError({
         statusCode: 423,
         message: `账户已被锁定，请在 ${remainingTime} 分钟后重试`
       })
     }
 
+    // 读取全局配置：是否启用图形验证码
+    let captchaEnabled = false
+    let captchaMaxFailures = 3
+    try {
+      // 尝试从缓存获取，如果失败再从数据库获取
+      const { CacheService } = await import('~~/server/services/cacheService')
+      const cacheService = CacheService.getInstance()
+      let settings = await cacheService.getSystemSettings()
+      
+      if (!settings) {
+        const configRow = await db.select({
+          captchaEnabled: systemSettings.captchaEnabled,
+          captchaMaxFailures: systemSettings.captchaMaxFailures
+        })
+          .from(systemSettings)
+          .limit(1)
+          .then(r => r[0])
+          
+        if (configRow) {
+          settings = configRow
+          // 异步更新缓存，不阻塞登录
+          cacheService.setSystemSettings(configRow).catch(e => console.warn('缓存系统配置失败:', e))
+        }
+      }
+
+      if (settings?.captchaEnabled) {
+        captchaEnabled = true
+        if (settings.captchaMaxFailures) {
+          captchaMaxFailures = settings.captchaMaxFailures
+        }
+      }
+    } catch (e) {
+      // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
+      console.warn('读取图形验证码配置失败，已暂时禁用:', e)
+    }
+    
+    // 图形验证码检查
+    let needCaptcha = false
+    if (captchaEnabled) {
+      const failCount = await getLoginFailureCount(body.username)
+      needCaptcha = failCount >= captchaMaxFailures
+    }
+
+    // 验证码校验
+    if (needCaptcha) {
+      captchaId = body.captchaId
+      captchaInput = body.captchaInput
+      if (!captchaId || !captchaInput) {
+        throw createError({
+          statusCode: 400,
+          message: '请完成图形验证码',
+          data: { captchaRequired: true }
+        })
+      }
+      
+      const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
+      if (!isValid) {
+        throw createError({
+          statusCode: 400,
+          message: '验证码错误或已过期，请重新输入',
+          data: { captchaRequired: true }
+        })
+      }
+    }
+    
     // 查找用户
     const userResult = await db
       .select({
@@ -91,10 +164,10 @@ export default defineEventHandler(async (event) => {
 
     if (!user) {
       // 记录登录失败（用户不存在）
-      recordLoginFailure(body.username, clientIp)
+      await recordLoginFailure(body.username, clientIp)
       throw createError({
         statusCode: 401,
-        message: '用户不存在'
+        message: '用户名或密码错误'
       })
     }
 
@@ -102,29 +175,20 @@ export default defineEventHandler(async (event) => {
     const isPasswordValid = await bcrypt.compare(body.password, user.password)
     if (!isPasswordValid) {
       // 记录登录失败（密码错误）
-      recordLoginFailure(body.username, clientIp)
+      await recordLoginFailure(body.username, clientIp)
       throw createError({
         statusCode: 401,
-        message: '密码不正确'
+        message: '用户名或密码错误'
       })
     }
-
+    
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
-      throw createError({
-        statusCode: 403,
-        message: '该账号已退学，限制访问'
-      })
+      throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
     } else if (user.status === 'graduate') {
-      throw createError({
-        statusCode: 403,
-        message: '该账号已毕业，限制访问'
-      })
+      throw createError({ statusCode: 403, message: '该账号已毕业，限制访问' })
     } else if (user.status === 'banned') {
-      throw createError({
-        statusCode: 403,
-        message: '该账号已被封禁'
-      })
+      throw createError({ statusCode: 403, message: '该账号已被封禁' })
     }
 
     // 检查是否开启2FA
@@ -141,18 +205,16 @@ export default defineEventHandler(async (event) => {
       }, { expiresIn: '5m' }) // 动态构建验证方式列表
       const methods = ['totp']
       let maskedEmail = ''
-      
       if (user.email && user.emailVerified) {
         methods.push('email')
         // 生成脱敏邮箱提示
         const [local, domain] = user.email.split('@')
         if (local && domain) {
-          maskedEmail = local.length <= 2 
-            ? `***@${domain}` 
+          maskedEmail = local.length <= 2
+            ? `***@${domain}`
             : `${local.slice(0, 2)}****@${domain}`
         }
       }
-
       return {
         success: true,
         requires2FA: true,
@@ -163,7 +225,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    recordLoginSuccess(body.username, clientIp)
+    await recordLoginSuccess(body.username, clientIp)
 
     const ipSwitchExceeded = recordAccountIpLogin(body.username, clientIp)
     if (ipSwitchExceeded) {

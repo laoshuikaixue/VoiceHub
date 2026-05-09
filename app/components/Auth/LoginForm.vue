@@ -209,6 +209,14 @@
         </div>
       </div>
 
+      <div v-show="showCaptcha" class="form-group">
+        <CaptchaInput 
+          ref="captchaRef"
+          v-model="captchaInput" 
+          @update:captchaId="captchaId = $event" 
+        />
+      </div>
+      
       <div v-if="error" class="error-container">
         <svg
           class="error-icon"
@@ -298,6 +306,7 @@ import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
+import CaptchaInput from './CaptchaInput.vue'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled } = useSiteConfig()
 
@@ -308,6 +317,11 @@ const providerName = computed(() => {
   const provider = (route.query.provider as string) || '第三方'
   return getProviderDisplayName(provider)
 })
+// 图形验证码相关
+const showCaptcha = ref(false)
+const captchaId = ref('')
+const captchaInput = ref('')
+const captchaRef = ref<{ refreshCaptcha: () => void } | null>(null)  
 
 const getFormTitle = computed(() => {
   if (!isBindMode.value) return '欢迎回来'
@@ -354,7 +368,6 @@ onMounted(async () => {
       console.warn('WebAuthn 平台认证器检查失败:', e)
     }
   }
-
   // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
   isWebAuthnSupported.value = isApiSupported
 })
@@ -377,53 +390,61 @@ const handleLogin = async () => {
   error.value = ''
   loading.value = true
 
+  // 构建请求体，包含验证码信息
+  const requestBody: any = {
+    username: username.value,
+    password: password.value,
+  }
+  if (showCaptcha.value) {
+    requestBody.captchaId = captchaId.value
+    requestBody.captchaInput = captchaInput.value.trim()
+  }
+
   try {
-    if (isBindMode.value && !showCreateMode.value) {
-      const response = await $fetch('/api/auth/bind', {
-        method: 'POST',
-        body: {
-          username: username.value,
-          password: password.value
-        }
-      })
+    // 根据模式选择接口
+    const url = isBindMode.value && !showCreateMode.value
+      ? '/api/auth/bind'
+      : '/api/auth/login'
+    
+    const response = await $fetch(url, {
+      method: 'POST',
+      body: requestBody
+    })
 
-      if (response.requires2FA) {
-        userId2FA.value = response.userId
-        methods2FA.value = response.methods
-        tempToken2FA.value = response.tempToken || ''
-        maskedEmail2FA.value = response.maskedEmail || ''
-        show2FA.value = true
-        return
-      }
-
-      await auth.initAuth()
-      await navigateTo('/')
-    } else {
-      // 普通登录
-      const response = await auth.login(username.value, password.value)
-
-      if (response.requires2FA) {
-        userId2FA.value = response.userId
-        methods2FA.value = response.methods
-        tempToken2FA.value = response.tempToken
-        maskedEmail2FA.value = response.maskedEmail || ''
-        show2FA.value = true
-        return
-      }
-
-      // 登录成功后跳转
-      if (auth.isAdmin.value) {
-        await navigateTo('/dashboard')
-      } else {
-        await navigateTo('/')
-      }
+    // 处理 2FA
+    if (response.requires2FA) {
+      userId2FA.value = response.userId
+      methods2FA.value = response.methods
+      tempToken2FA.value = response.tempToken || ''
+      maskedEmail2FA.value = response.maskedEmail || ''
+      show2FA.value = true
+      return
     }
-  } catch (err) {
-    const apiError = err as { data?: { message?: string }, message?: string, statusMessage?: string }
-    error.value =
-      apiError.data?.message || apiError.message || apiError.statusMessage || (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
-    // 密码错误时清空密码字段
-    if (error.value.includes('密码') || error.value.includes('错误')) {
+
+    // 登录成功，刷新认证状态
+    await auth.initAuth()
+    if (auth.isAdmin.value) {
+      navigateTo('/dashboard')
+    } else {
+      navigateTo('/')
+    }
+  } catch (err: any) {
+    // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
+    const innerData = err.data?.data
+    error.value = err.data?.message || err.message || 
+      (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
+
+    // 如果后端要求验证码，则显示验证码区域
+    if (innerData?.captchaRequired) {
+      showCaptcha.value = true
+    }
+    // 只要当前显示了验证码，且没有成功登录，就强制刷新验证码
+    if (showCaptcha.value) {
+      captchaRef.value?.refreshCaptcha()
+    }
+    
+    // 仅凭据错误（401）时清空密码字段（避免验证码错误时误清）
+    if (err.statusCode === 401) {
       password.value = ''
     }
   } finally {
@@ -462,8 +483,8 @@ const handleRegisterOAuth = async () => {
       await auth.initAuth()
       await navigateTo('/')
     }
-  } catch (err) {
-    const apiError = err as { data?: { message?: string }, message?: string, statusCode?: number, statusMessage?: string }
+  } catch (err: any) {
+    const apiError = err
     error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
     if (apiError.statusCode === 409) {
@@ -480,13 +501,9 @@ const handleWebAuthnLogin = async () => {
   
   try {
     // 1. 获取登录选项
-    const options = await $fetch('/api/auth/webauthn/login/options', {
-      method: 'POST'
-    })
-
+    const options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
     // 2. 调用浏览器 WebAuthn API
     const credential = await startAuthentication(options)
-
     // 3. 验证登录
     const verification = await $fetch('/api/auth/webauthn/login/verify', {
       method: 'POST',
