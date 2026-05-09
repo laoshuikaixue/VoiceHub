@@ -148,8 +148,8 @@ export const useAuth = () => {
         body: { newPassword }
       })
       if (user.value) {
-        user.value.requirePasswordChange = false
-        user.value.hasSetPassword = true
+          // 设置初始密码成功后刷新用户状态
+          await refreshUser()
       }
     } finally {
       loading.value = false
