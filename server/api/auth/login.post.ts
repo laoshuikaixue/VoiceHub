@@ -14,6 +14,7 @@ import {
   //导入失败计数查询函数
   getLoginFailureCount
 } from '../../services/securityService'
+import { CacheService } from '~~/server/services/cacheService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
@@ -79,7 +80,6 @@ export default defineEventHandler(async (event) => {
     let captchaMaxFailures = 3
     try {
       // 尝试从缓存获取，如果失败再从数据库获取
-      const { CacheService } = await import('~~/server/services/cacheService')
       const cacheService = CacheService.getInstance()
       let settings = await cacheService.getSystemSettings()
       
