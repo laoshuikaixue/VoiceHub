@@ -199,6 +199,24 @@ export default defineEventHandler(async (event) => {
       updateData.captchaMaxFailures = body.captchaMaxFailures
     }
     
+    if (body.captchaProvider !== undefined) {
+      if (body.captchaProvider !== 'graphic' && body.captchaProvider !== 'turnstile') {
+        throw createError({
+          statusCode: 400,
+          message: 'captchaProvider 必须是 graphic 或 turnstile'
+        })
+      }
+      updateData.captchaProvider = body.captchaProvider
+    }
+
+    if (body.turnstileSiteKey !== undefined) {
+      updateData.turnstileSiteKey = body.turnstileSiteKey
+    }
+
+    if (body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK) {
+      updateData.turnstileSecretKey = body.turnstileSecretKey
+    }
+    
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({

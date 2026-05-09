@@ -1,0 +1,96 @@
+<template>
+  <div class="turnstile-widget">
+    <div id="turnstile-container" ref="containerRef"></div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useSiteConfig } from '~/composables/useSiteConfig'
+
+declare global {
+  interface Window {
+    turnstile: any
+  }
+}
+
+const props = defineProps<{
+  modelValue: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+const { siteConfig } = useSiteConfig()
+const containerRef = ref<HTMLElement | null>(null)
+let widgetId: string | null = null
+
+const renderWidget = () => {
+  if (!containerRef.value || !siteConfig.value.turnstileSiteKey) return
+
+  // 确保全局存在 turnstile 对象
+  if (window.turnstile) {
+    widgetId = window.turnstile.render(containerRef.value, {
+      sitekey: siteConfig.value.turnstileSiteKey,
+      callback: (token: string) => {
+        emit('update:modelValue', token)
+      },
+      'error-callback': () => {
+        emit('update:modelValue', '')
+      },
+      'expired-callback': () => {
+        emit('update:modelValue', '')
+      }
+    })
+  } else {
+    // 如果还没加载好，稍微等一下
+    setTimeout(renderWidget, 100)
+  }
+}
+
+const reset = () => {
+  if (widgetId !== null && window.turnstile) {
+    window.turnstile.reset(widgetId)
+    emit('update:modelValue', '')
+  }
+}
+
+defineExpose({
+  reset
+})
+
+onMounted(() => {
+  // 如果之前没有加载过 Turnstile 脚本，则动态加载
+  if (!document.getElementById('turnstile-script')) {
+    const script = document.createElement('script')
+    script.id = 'turnstile-script'
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+    script.async = true
+    script.defer = true
+    document.head.appendChild(script)
+    
+    // 监听加载成功
+    script.onload = () => {
+      renderWidget()
+    }
+  } else {
+    renderWidget()
+  }
+})
+
+onUnmounted(() => {
+  if (widgetId !== null && window.turnstile) {
+    window.turnstile.remove(widgetId)
+  }
+})
+</script>
+
+<style scoped>
+.turnstile-widget {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+</style>
