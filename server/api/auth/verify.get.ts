@@ -1,7 +1,10 @@
 import { db } from '~/drizzle/db'
-import { users, systemSettings } from '~/drizzle/schema'
+import { users } from '~/drizzle/schema'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
-import { CacheService } from '../../services/cacheService'
+import {
+  getForcePasswordChangeOnFirstLogin,
+  computeRequirePasswordChange
+} from '../../utils/system-settings-helper'
 import { eq } from 'drizzle-orm'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
@@ -18,27 +21,8 @@ export default defineEventHandler(async (event) => {
 
     const userId = authUser.id
 
-    // 查询系统设置判断是否启用首次登录强制改密（优先使用缓存，避免频繁查库）
-    let forcePasswordChangeOnFirstLogin = true
-    try {
-      const cacheService = CacheService.getInstance()
-      let cachedSettings = await cacheService.getSystemSettings()
-
-      if (!cachedSettings) {
-        // 缓存未命中，从数据库加载并写入缓存
-        const settingsResult = await db.select().from(systemSettings).limit(1)
-        if (settingsResult[0]) {
-          cachedSettings = settingsResult[0]
-          await cacheService.setSystemSettings(cachedSettings).catch(() => {})
-        }
-      }
-
-      if (cachedSettings && typeof cachedSettings.forcePasswordChangeOnFirstLogin === 'boolean') {
-        forcePasswordChangeOnFirstLogin = cachedSettings.forcePasswordChangeOnFirstLogin
-      }
-    } catch (e) {
-      console.warn('[Auth] 读取系统设置失败，使用默认值 true:', e)
-    }
+    // 获取全局首次登录强制改密开关（带缓存与降级）
+    const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
 
     // 优先从Redis缓存获取用户认证状态
     if (isRedisReady()) {
@@ -66,7 +50,7 @@ export default defineEventHandler(async (event) => {
           grade: cachedUser.grade,
           class: cachedUser.class,
           role: cachedUser.role,
-          requirePasswordChange: !!cachedUser.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !cachedUser.passwordChangedAt),
+          requirePasswordChange: computeRequirePasswordChange(cachedUser, forcePasswordChangeOnFirstLogin),
           has2FA: cachedUser.identities?.some((id: any) => id.provider === 'totp') || false,
           avatar: cachedUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
             ? `https://github.com/${cachedUser.identities.find((id: any) => id.provider === 'github').providerUsername}.png`
@@ -121,7 +105,7 @@ export default defineEventHandler(async (event) => {
       grade: dbUser.grade,
       class: dbUser.class,
       role: dbUser.role,
-      requirePasswordChange: !!dbUser.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !dbUser.passwordChangedAt),
+      requirePasswordChange: computeRequirePasswordChange(dbUser, forcePasswordChangeOnFirstLogin),
       has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
       // 动态生成 GitHub 头像 URL
       avatar: githubIdentity?.providerUsername
