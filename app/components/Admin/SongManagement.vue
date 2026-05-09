@@ -1089,6 +1089,12 @@ import { useSemesters } from '~/composables/useSemesters'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { validateUrl, convertToHttps } from '~/utils/url'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
@@ -1404,7 +1410,21 @@ const getPlayTimeName = (playTimeId) => {
 
 const getStatusText = (song) => {
   if (song.played) return '已播放'
-  if (song.scheduled) return '待播放'
+  if (song.scheduled) {
+    // 如果有排期日期，在待播放后显示排期日期（月/日）
+    if (song.scheduleDate) {
+      try {
+        // API返回的日期格式为 "YYYY/M/D H:mm:ss"（如 "2024/1/15 14:30:00"）
+        const date = dayjs(song.scheduleDate, 'YYYY/M/D H:mm:ss')
+        if (date.isValid()) {
+          return `待播放 (${date.format('M/D')})`
+        }
+      } catch (e) {
+        console.warn('解析排期日期失败:', song.scheduleDate, e)
+      }
+    }
+    return '待播放'
+  }
   return '未排期'
 }
 
