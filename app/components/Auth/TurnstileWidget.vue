@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 
 declare global {
@@ -27,9 +27,16 @@ const containerRef = ref<HTMLElement | null>(null)
 let widgetId: string | null = null
 let retryCount = 0
 const MAX_RETRIES = 50 // 最大重试 50 次，每次 100ms，共 5 秒
+let retryTimer: NodeJS.Timeout | null = null
+
+watch(() => siteConfig.value.turnstileSiteKey, (newKey) => {
+  if (newKey && !widgetId) {
+    renderWidget()
+  }
+}, { immediate: true })
 
 const renderWidget = () => {
-  if (!containerRef.value || !siteConfig.value.turnstileSiteKey) return
+  if (!containerRef.value || !siteConfig.value.turnstileSiteKey || widgetId !== null) return
 
   // 确保全局存在 turnstile 对象
   if (window.turnstile) {
@@ -48,7 +55,7 @@ const renderWidget = () => {
   } else if (retryCount < MAX_RETRIES) {
     // 如果还没加载好，且未超过最大重试次数，稍微等一下
     retryCount++
-    setTimeout(renderWidget, 100)
+    retryTimer = setTimeout(renderWidget, 100)
   } else {
     console.error('Failed to load Turnstile script: timeout exceeded.')
   }
@@ -85,6 +92,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (retryTimer) clearTimeout(retryTimer)
   if (widgetId !== null && window.turnstile) {
     window.turnstile.remove(widgetId)
   }

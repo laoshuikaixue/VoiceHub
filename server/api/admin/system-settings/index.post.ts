@@ -206,6 +206,17 @@ export default defineEventHandler(async (event) => {
           message: 'captchaProvider 必须是 graphic 或 turnstile'
         })
       }
+      
+      const nextTurnstileSiteKey = body.turnstileSiteKey !== undefined ? body.turnstileSiteKey : settings?.turnstileSiteKey
+      const nextTurnstileSecretKey = body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK ? body.turnstileSecretKey : settings?.turnstileSecretKey
+      
+      if (body.captchaProvider === 'turnstile' && (!nextTurnstileSiteKey || !nextTurnstileSecretKey)) {
+        throw createError({
+          statusCode: 400,
+          message: '启用 Turnstile 验证前，请先配置 Site Key 和 Secret Key'
+        })
+      }
+      
       updateData.captchaProvider = body.captchaProvider
     }
 

@@ -20,6 +20,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
+import { type SystemSettings } from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -92,9 +93,9 @@ export default defineEventHandler(async (event) => {
           .then(r => r[0])
           
         if (configRow) {
-          settings = configRow as any
+          settings = configRow as SystemSettings
           // 异步更新缓存，不阻塞登录
-          cacheService.setSystemSettings(configRow as any).catch(e => console.warn('缓存系统配置失败:', e))
+          cacheService.setSystemSettings(settings).catch(e => console.warn('缓存系统配置失败:', e))
         }
       }
 
