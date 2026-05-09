@@ -383,7 +383,7 @@
               <div
                 class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
               >
-                <span class="text-zinc-400">{{ mergeSongs ? '处理进度' : '下载进度' }}</span>
+                <span class="text-zinc-400">{{ currentTaskType === 'merge' ? '处理进度' : '下载进度' }}</span>
                 <span class="text-blue-400">{{ downloadedCount }} / {{ totalCount }}</span>
               </div>
               <div
@@ -471,7 +471,7 @@
                 />
                 {{
                   downloading
-                    ? mergeSongs
+                    ? currentTaskType === 'merge'
                       ? '处理中...'
                       : '下载中...'
                     : mergeSongs
@@ -569,6 +569,9 @@ const activeDownloads = reactive(new Map())
 const activeEncoderWorker = ref(null)
 const DOWNLOAD_CONCURRENCY = 3
 const MERGE_DECODE_CONCURRENCY = 3
+
+// 当前正在执行的任务类型 ('merge' | 'download' | '')
+const currentTaskType = ref('')
 
 const getPlatformShortName = (platform) => {
   switch (platform) {
@@ -811,10 +814,10 @@ const terminateActiveEncoderWorker = () => {
   }
 }
 
-const buildMergedFilename = (selectedSongsList, ext) => {
+const buildMergedFilename = (selectedSongsList, ext, customFilenameValue) => {
   let filename
-  if (customFilename.value && customFilename.value.trim()) {
-    filename = customFilename.value.trim()
+  if (customFilenameValue && customFilenameValue.trim()) {
+    filename = customFilenameValue.trim()
     const dateStr = new Date().toLocaleDateString('sv-SE')
     const allSongsStr = selectedSongsList.map((item) => item.song.title).join(' ')
     filename = filename.replace(/{date}/g, dateStr)
@@ -836,7 +839,7 @@ const buildMergedFilename = (selectedSongsList, ext) => {
   return filename
 }
 
-const formatWorkerProgress = (stage, value) => {
+const formatWorkerProgress = (stage, value, format) => {
   if (stage === 'prepare') {
     processingStatus.value = `正在预处理音频: ${value}%`
     return
@@ -845,10 +848,10 @@ const formatWorkerProgress = (stage, value) => {
     processingStatus.value = `正在合并音频: ${value}%`
     return
   }
-  processingStatus.value = `正在编码 ${exportFormat.value.toUpperCase()}: ${value}%`
+  processingStatus.value = `正在编码 ${format.toUpperCase()}: ${value}%`
 }
 
-const encodeWithWorker = async (tracks, format) => {
+const encodeWithWorker = async (tracks, format, config) => {
   terminateActiveEncoderWorker()
   const worker = new Worker(new URL('../../workers/audioEncoderWorker.js', import.meta.url), {
     type: 'module'
@@ -858,7 +861,7 @@ const encodeWithWorker = async (tracks, format) => {
     worker.onmessage = (event) => {
       const { type, stage, value, blob, message } = event.data || {}
       if (type === 'progress') {
-        formatWorkerProgress(stage, value)
+        formatWorkerProgress(stage, value, format)
         return
       }
       if (type === 'error') {
@@ -891,22 +894,22 @@ const encodeWithWorker = async (tracks, format) => {
         cmd: 'encode',
         tracks: payloadTracks,
         format,
-        normalize: normalizeAudio.value,
-        targetDb: targetDb.value
+        normalize: config.normalizeAudio,
+        targetDb: config.targetDb
       },
       transferables
     )
   })
 }
 
-const decodeSongTrack = async (song, audioContext) => {
+const decodeSongTrack = async (song, audioContext, quality) => {
   let arrayBuffer
   if (preloadedSongs.has(song.id) && !preloadedSongs.get(song.id).loading) {
     const cached = preloadedSongs.get(song.id)
     arrayBuffer = await cached.blob.arrayBuffer()
     activeDownloads.set(song.id, 100)
   } else {
-    const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
+    const audioUrl = await getMusicUrlForDownload(song, quality)
     const blob = await fetchAudioWithProgress(audioUrl, song.id, song.title)
     arrayBuffer = await blob.arrayBuffer()
     activeDownloads.set(song.id, 100)
@@ -927,7 +930,7 @@ const decodeSongTrack = async (song, audioContext) => {
   }
 }
 
-const processAndMergeAudio = async (selectedSongsList) => {
+const processAndMergeAudio = async (selectedSongsList, config) => {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext
   let audioContext
   try {
@@ -951,7 +954,7 @@ const processAndMergeAudio = async (selectedSongsList) => {
         processingStatus.value = `正在准备: ${song.title}`
 
         try {
-          results[index] = await decodeSongTrack(song, audioContext)
+          results[index] = await decodeSongTrack(song, audioContext, config.quality)
         } catch (error) {
           console.error(`处理失败: ${song.title}`, error)
           downloadErrors.value.push({
@@ -979,10 +982,10 @@ const processAndMergeAudio = async (selectedSongsList) => {
     processingStatus.value = '正在准备编码...'
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    const extension = exportFormat.value === 'wav' ? 'wav' : 'mp3'
-    const resultBlob = await encodeWithWorker(tracks, extension)
+    const extension = config.exportFormat === 'wav' ? 'wav' : 'mp3'
+    const resultBlob = await encodeWithWorker(tracks, extension, config)
     downloadedCount.value = totalCount.value
-    const filename = buildMergedFilename(selectedSongsList, extension)
+    const filename = buildMergedFilename(selectedSongsList, extension, config.customFilename)
 
     saveFile(resultBlob, filename)
     processingStatus.value = `处理完成: ${filename}`
@@ -1010,12 +1013,22 @@ const startDownload = async () => {
   downloadedCount.value = 0
   downloadErrors.value = []
   processingStatus.value = ''
+  currentTaskType.value = mergeSongs.value ? 'merge' : 'download'
+
+  // 快照当前配置，防止下载过程中用户修改配置影响当前任务
+  const taskConfig = {
+    quality: selectedQuality.value,
+    exportFormat: exportFormat.value,
+    customFilename: customFilename.value,
+    normalizeAudio: normalizeAudio.value,
+    targetDb: targetDb.value
+  }
 
   const selectedSongsList = props.songs.filter((song) => selectedSongs.value.has(song.song.id))
   // 合并模式分支
-  if (mergeSongs.value) {
+  if (currentTaskType.value === 'merge') {
     totalCount.value = selectedSongsList.length + 1
-    await processAndMergeAudio(selectedSongsList)
+    await processAndMergeAudio(selectedSongsList, taskConfig)
 
     // 合并完成处理
     if (downloadErrors.value.length === 0) {
@@ -1024,10 +1037,12 @@ const startDownload = async () => {
 
       setTimeout(() => {
         downloading.value = false
+        currentTaskType.value = ''
         closeDialog()
       }, 2000)
     } else {
       downloading.value = false
+      currentTaskType.value = ''
     }
     return
   }
@@ -1050,7 +1065,7 @@ const startDownload = async () => {
 
       try {
         // 1. 获取音频 URL
-        const audioUrl = await getMusicUrlForDownload(song, selectedQuality.value)
+        const audioUrl = await getMusicUrlForDownload(song, taskConfig.quality)
 
         // 2. 下载音频（使用公共函数）
         processingStatus.value = `下载中: ${song.title}`
@@ -1116,10 +1131,12 @@ const startDownload = async () => {
   if (downloadErrors.value.length === 0) {
     setTimeout(() => {
       downloading.value = false
+      currentTaskType.value = ''
       closeDialog()
     }, 2000)
   } else {
     downloading.value = false
+    currentTaskType.value = ''
   }
 }
 
