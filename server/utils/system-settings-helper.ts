@@ -20,7 +20,7 @@ export async function getSystemSettingsCached(): Promise<DBSystemSettings | null
       if (result[0]) {
         cached = result[0]
         // 静默回填缓存，失败不影响主流程
-        await cacheService.setSystemSettings(cached).catch(err => console.warn('[SystemSettings] 回填系统设置缓存失败:', err))
+        cacheService.setSystemSettings(cached).catch(err => console.warn('[SystemSettings] 回填系统设置缓存失败:', err))
       }
     }
 
