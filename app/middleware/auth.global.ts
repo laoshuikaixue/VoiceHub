@@ -33,6 +33,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         user.value = null
         isAuthenticated.value = false
         isAdmin.value = false
+        token.value = null
       }
     }
   }
