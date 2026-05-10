@@ -1,4 +1,5 @@
 import { useAuth } from '~/composables/useAuth'
+import { isAdminRole } from '~/utils/auth-constants'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const { isAuthenticated, isAdmin, initAuth, user } = useAuth()
@@ -11,18 +12,17 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     } else if (import.meta.server) {
       // 服务端：通过 cookie 中的 token 调用内部 API 获取用户状态
       // Nitro 内部路由会直接调用 handler，无需真正的 HTTP 请求，性能可靠
+      // 使用 useRequestHeaders 自动转发请求中的所有 Cookie，避免手动拼接字符串遗漏其它 cookie
       try {
-        const cookie = useCookie('auth-token')
-        if (cookie.value) {
+        const headers = useRequestHeaders(['cookie'])
+        if (headers.cookie) {
           const data = await $fetch<{ user: any; valid: boolean }>('/api/auth/verify', {
-            headers: {
-              cookie: `auth-token=${cookie.value}`
-            }
+            headers
           })
           if (data?.user) {
             user.value = data.user
             isAuthenticated.value = true
-            isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+            isAdmin.value = isAdminRole(data.user.role)
           }
         }
       } catch (e) {
