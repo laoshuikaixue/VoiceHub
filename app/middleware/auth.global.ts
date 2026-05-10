@@ -1,9 +1,8 @@
 import { useAuth } from '~/composables/useAuth'
-import { isAdminRole } from '~/utils/auth-constants'
 import type { User } from '~/types'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { isAuthenticated, isAdmin, initAuth, user, token } = useAuth()
+  const { isAuthenticated, initAuth, user, setAuthState, clearAuthState } = useAuth()
   const publicRoutes = ['/login', '/', '/auth/error', '/forgot-password', '/reset-password']
 
   // 初始化认证状态（客户端 + 服务端均执行）
@@ -21,19 +20,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             headers
           })
           if (data?.user) {
-            user.value = data.user
-            isAuthenticated.value = true
-            isAdmin.value = isAdminRole(data.user.role)
-            token.value = 'cookie-based'
+            // 复用 useAuth 提供的 setAuthState，统一 isAdmin 等派生状态的计算逻辑
+            setAuthState(data.user)
           }
         }
       } catch (e) {
         // 服务端验证失败（token 无效/过期等），清理状态确保一致性
         // 客户端 hydration 后会再次尝试认证
-        user.value = null
-        isAuthenticated.value = false
-        isAdmin.value = false
-        token.value = null
+        clearAuthState()
       }
     }
   }
