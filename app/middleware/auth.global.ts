@@ -15,7 +15,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // Nitro 内部路由会直接调用 handler，无需真正的 HTTP 请求，性能可靠
       // 使用 useRequestHeaders 自动转发请求中的所有 Cookie，避免手动拼接字符串遗漏其它 cookie
       try {
-        const headers = useRequestHeaders(['cookie'])
+        const headers = useRequestHeaders(['cookie', 'authorization'])
         if (headers.cookie) {
           const data = await $fetch<{ user: User; valid: boolean }>('/api/auth/verify', {
             headers
