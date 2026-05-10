@@ -17,7 +17,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       try {
         const headers = useRequestHeaders(['cookie'])
         if (headers.cookie) {
-          const data = await $fetch<{ user: any; valid: boolean }>('/api/auth/verify', {
+          const data = await $fetch<{ user: User; valid: boolean }>('/api/auth/verify', {
             headers
           })
           if (data?.user) {
