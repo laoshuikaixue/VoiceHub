@@ -1744,6 +1744,22 @@ const transformMusicApiResponse = (response: any): any[] => {
 }
 ```
 
+## 贡献说明
+
+如果您希望为 VoiceHub 贡献代码，请注意以下几点，特别是涉及数据库变更时：
+
+1. **数据库迁移文件**：
+   - 任何对 `schema.ts` 的更改都**必须**伴随相应的迁移文件。
+   - 迁移文件需要使用有意义的命名。请通过命令 `pnpm exec drizzle-kit generate --name=your_meaningful_name` 生成。
+2. **备份与恢复支持**：
+   - 当向系统设置（`systemSettings`）或其它关键表添加新字段时，**必须**同步更新数据备份和恢复的相关端点。
+   - 需要检查并更新的文件：
+     - `server/api/admin/backup/restore.post.ts`（`systemSettingsFields` 数组等）
+     - `server/api/admin/backup/restore-chunk.post.ts`（`fields` 数组等）
+3. **提交规范**：
+   - 请确保在提交 PR 前至少在本地测试过相关功能。
+   - 请使用标准的 Git 提交规范。
+
 ## 音乐服务免责声明
 
 VoiceHub 是一款开源的校园广播站点歌管理系统。本软件遵循 GPLv3 协议开源，但请注意在使用过程中涉及的第三方服务和内容可能受相关法律法规限制。

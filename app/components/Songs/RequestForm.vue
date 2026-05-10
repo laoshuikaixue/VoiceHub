@@ -3123,8 +3123,7 @@ defineExpose({
   display: flex;
   gap: 2rem;
   height: calc(100vh - 160px);
-  max-height: calc(100vh - 160px);
-  overflow: hidden;
+  min-height: 650px;
 }
 
 /* 桌面端样式 */

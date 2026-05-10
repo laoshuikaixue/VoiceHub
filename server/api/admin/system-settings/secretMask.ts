@@ -13,6 +13,7 @@ export const maskSystemSettingsSecrets = <T extends Record<string, any>>(setting
     googleClientSecret: settings.googleClientSecret ? SECRET_FIELD_MASK : settings.googleClientSecret,
     customOAuthClientSecret: settings.customOAuthClientSecret
       ? SECRET_FIELD_MASK
-      : settings.customOAuthClientSecret
+      : settings.customOAuthClientSecret,
+    turnstileSecretKey: settings.turnstileSecretKey ? SECRET_FIELD_MASK : settings.turnstileSecretKey
   }
 }
