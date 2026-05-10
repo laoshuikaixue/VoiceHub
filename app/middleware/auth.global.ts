@@ -16,7 +16,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // 使用 useRequestHeaders 自动转发请求中的所有 Cookie，避免手动拼接字符串遗漏其它 cookie
       try {
         const headers = useRequestHeaders(['cookie', 'authorization'])
-        if (headers.cookie) {
+        if (headers.cookie || headers.authorization) {
           const data = await $fetch<{ user: User; valid: boolean }>('/api/auth/verify', {
             headers
           })
