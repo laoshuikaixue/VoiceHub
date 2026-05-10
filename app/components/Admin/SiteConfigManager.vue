@@ -3,9 +3,9 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">站点配置</h2>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.pageTitle }}</h2>
         <p class="text-xs text-zinc-500 mt-1 font-medium">
-          管理站点全局属性、视觉识别、点歌逻辑及系统安全策略
+          {{ locale.pageDescription }}
         </p>
       </div>
       <div class="flex gap-3">
@@ -14,7 +14,7 @@
           class="flex items-center gap-2 px-5 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           @click="resetForm"
         >
-          <RotateCcw :size="14" /> 重置
+          <RotateCcw :size="14" /> {{ locale.reset }}
         </button>
         <button
           :disabled="loading || saving"
@@ -25,10 +25,10 @@
             <div
               class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"
             />
-            保存中...
+            {{ locale.saving }}
           </template>
-          <template v-else-if="saveSuccess"> <CheckCircle2 :size="14" /> 已保存 </template>
-          <template v-else> <Save :size="14" /> 保存配置 </template>
+          <template v-else-if="saveSuccess"> <CheckCircle2 :size="14" /> {{ locale.saved }} </template>
+          <template v-else> <Save :size="14" /> {{ locale.saveConfig }} </template>
         </button>
       </div>
     </div>
@@ -37,7 +37,7 @@
       <div
         class="w-8 h-8 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin mb-4"
       />
-      <p class="text-zinc-500 text-sm">加载配置中...</p>
+      <p class="text-zinc-500 text-sm">{{ locale.loading }}</p>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -46,33 +46,33 @@
         <h3
           class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
         >
-          <Globe :size="16" class="text-blue-500" /> 基础信息
+          <Globe :size="16" class="text-blue-500" /> {{ locale.basicInfo }}
         </h3>
         <div class="space-y-4">
           <div>
-            <label :class="labelClass">站点标题</label>
+            <label :class="labelClass">{{ locale.siteTitle }}</label>
             <input
               v-model="formData.siteTitle"
               type="text"
-              placeholder="请输入站点标题"
+              :placeholder="locale.siteTitlePlaceholder"
               :class="inputClass"
             >
           </div>
           <div>
-            <label :class="labelClass">备案号 (ICP)</label>
+            <label :class="labelClass">{{ locale.icpNumber }}</label>
             <input
               v-model="formData.icpNumber"
               type="text"
-              placeholder="请输入备案号"
+              :placeholder="locale.icpPlaceholder"
               :class="inputClass"
             >
           </div>
           <div>
-            <label :class="labelClass">公安联网备案号</label>
+            <label :class="labelClass">{{ locale.gonganNumber }}</label>
             <input
               v-model="formData.gonganNumber"
               type="text"
-              placeholder="请输入公安备案号 (如：陕公网安备 61011302001964 号)"
+              :placeholder="locale.gonganPlaceholder"
               :class="inputClass"
             >
           </div>
@@ -81,8 +81,8 @@
               class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
             >
               <div>
-                <p class="text-xs font-bold text-zinc-200">显示备案图标</p>
-                <p class="text-[10px] text-zinc-500 mt-0.5">在公安联网备案号前显示备案图标</p>
+                <p class="text-xs font-bold text-zinc-200">{{ locale.showBeianIcon }}</p>
+                <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.showBeianIconDesc }}</p>
               </div>
               <input
                 v-model="formData.showBeianIcon"
@@ -92,11 +92,11 @@
             </div>
           </div>
           <div>
-            <label :class="labelClass">站点描述</label>
+            <label :class="labelClass">{{ locale.siteDescription }}</label>
             <textarea
               v-model="formData.siteDescription"
               :rows="3"
-              placeholder="请输入站点描述"
+              :placeholder="locale.siteDescriptionPlaceholder"
               :class="[inputClass, 'resize-none']"
             />
           </div>
@@ -108,33 +108,33 @@
         <h3
           class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
         >
-          <ImageIcon :size="16" class="text-purple-500" /> 视觉识别
+          <ImageIcon :size="16" class="text-purple-500" /> {{ locale.visualIdentity }}
         </h3>
         <div class="space-y-4">
           <div>
-            <label :class="labelClass">站点 Logo URL</label>
+            <label :class="labelClass">{{ locale.siteLogoUrl }}</label>
             <input
               v-model="formData.siteLogoUrl"
               type="text"
-              placeholder="请输入Logo图片URL"
+              :placeholder="locale.siteLogoPlaceholder"
               :class="inputClass"
             >
           </div>
           <div>
-            <label :class="labelClass">首页学校 Logo URL (大尺寸)</label>
+            <label :class="labelClass">{{ locale.schoolLogoHome }}</label>
             <input
               v-model="formData.schoolLogoHomeUrl"
               type="text"
-              placeholder="请输入首页学校Logo URL"
+              :placeholder="locale.schoolLogoHomePlaceholder"
               :class="inputClass"
             >
           </div>
           <div>
-            <label :class="labelClass">打印排期 Logo URL (小尺寸)</label>
+            <label :class="labelClass">{{ locale.schoolLogoPrint }}</label>
             <input
               v-model="formData.schoolLogoPrintUrl"
               type="text"
-              placeholder="请输入打印页学校Logo URL"
+              :placeholder="locale.schoolLogoPrintPlaceholder"
               :class="inputClass"
             >
           </div>
@@ -146,15 +146,15 @@
         <h3
           class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
         >
-          <Settings2 :size="16" class="text-amber-500" /> 投稿逻辑设置
+          <Settings2 :size="16" class="text-amber-500" /> {{ locale.submissionLogic }}
         </h3>
         <div class="space-y-6">
           <div
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">启用联合投稿</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户添加联合投稿人并发起协作投稿</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.enableCollaborative }}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableCollaborativeDesc }}</p>
             </div>
             <input
               v-model="formData.enableCollaborativeSubmission"
@@ -167,8 +167,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">启用投稿备注留言</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户在投稿时附加公开或仅管理员可见的备注</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.enableRemarks }}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableRemarksDesc }}</p>
             </div>
             <input
               v-model="formData.enableSubmissionRemarks"
@@ -181,8 +181,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">启用重播申请</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户对本学期已播放过的歌曲再次申请</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.enableReplay }}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableReplayDesc }}</p>
             </div>
             <input
               v-model="formData.enableReplayRequests"
@@ -196,8 +196,8 @@
               class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
             >
               <div>
-                <p class="text-xs font-bold text-zinc-200">启用投稿限额</p>
-                <p class="text-[10px] text-zinc-500 mt-0.5">限制单个用户的点歌频率</p>
+                <p class="text-xs font-bold text-zinc-200">{{ locale.enableLimit }}</p>
+                <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableLimitDesc }}</p>
               </div>
               <input
                 v-model="formData.enableSubmissionLimit"
@@ -217,7 +217,7 @@
                   ]"
                   @click="handleLimitTypeChange('daily')"
                 >
-                  每日限额
+                  {{ locale.dailyLimit }}
                 </button>
                 <button
                   :class="[
@@ -228,7 +228,7 @@
                   ]"
                   @click="handleLimitTypeChange('weekly')"
                 >
-                  每周限额
+                  {{ locale.weeklyLimit }}
                 </button>
                 <button
                   :class="[
@@ -239,7 +239,7 @@
                   ]"
                   @click="handleLimitTypeChange('monthly')"
                 >
-                  每月限额
+                  {{ locale.monthlyLimit }}
                 </button>
               </div>
 
@@ -256,7 +256,7 @@
                   >
                   <span
                     class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-700 uppercase"
-                    >首 / 人</span
+                    >{{ locale.limitUnit }}</span
                   >
                 </div>
               </div>
@@ -270,7 +270,7 @@
         <h3
           class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
         >
-          <Shield :size="16" class="text-rose-500" /> 安全与隐私设置
+          <Shield :size="16" class="text-rose-500" /> {{ locale.securityPrivacy }}
         </h3>
         <div class="space-y-4">   
           <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
@@ -285,16 +285,16 @@
               </div>
               <div class="flex-1 space-y-4">
                 <label for="captcha-enabled" class="cursor-pointer block">
-                  <p class="text-xs font-bold text-zinc-200">启用登录人机验证</p>
+                  <p class="text-xs font-bold text-zinc-200">{{ locale.captchaEnabled }}</p>
                   <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                    开启后，可以有效防范暴力破解和机器人注册。
+                    {{ locale.captchaEnabledDesc }}
                   </p>
                 </label>
                 
                 <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800 space-y-4">
                   <!-- 验证码类型选择 -->
                   <div>
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">验证类型</label>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaType }}</label>
                     <div class="flex gap-4">
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
@@ -303,7 +303,7 @@
                           value="graphic"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
                         >
-                        <span class="text-sm text-zinc-300">图形验证码</span>
+                        <span class="text-sm text-zinc-300">{{ locale.captchaGraphic }}</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
@@ -312,14 +312,14 @@
                           value="turnstile"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
                         >
-                        <span class="text-sm text-zinc-300">Cloudflare Turnstile</span>
+                        <span class="text-sm text-zinc-300">{{ locale.captchaTurnstile }}</span>
                       </label>
                     </div>
                   </div>
 
                   <!-- 图形验证码配置 -->
                   <div v-if="formData.captchaProvider === 'graphic'">
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">触发阈值（失败次数）</label>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaMaxFailures }}</label>
                     <input
                       v-model.number="formData.captchaMaxFailures"
                       type="number"
@@ -328,36 +328,55 @@
                       class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                     >
                     <p class="text-[10px] text-zinc-500 mt-1">
-                      连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。
+                      {{ locale.captchaMaxFailuresDesc }}
                     </p>
                   </div>
 
                   <!-- Turnstile 配置 -->
                   <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-4">
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">Site Key (Sitekey)</label>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSiteKey }}</label>
                       <input
                         v-model="formData.turnstileSiteKey"
                         type="text"
-                        placeholder="在此输入 Turnstile 的 Site Key"
+                        :placeholder="locale.turnstileSiteKeyPlaceholder"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                       >
                     </div>
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">Secret Key (Secret)</label>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSecretKey }}</label>
                       <input
                         v-model="formData.turnstileSecretKey"
                         type="password"
-                        placeholder="在此输入 Turnstile 的 Secret Key (留空表示不修改)"
+                        :placeholder="locale.turnstileSecretKeyPlaceholder"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                       >
                       <p class="text-[10px] text-zinc-500 mt-1">
-                        开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。
+                        {{ locale.turnstileSecretKeyDesc }}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+              
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="force-password-change"
+                  v-model="formData.forcePasswordChangeOnFirstLogin"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
+              </div>
+              <label for="force-password-change" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">{{ locale.forcePasswordChange }}</p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                  {{ locale.forcePasswordChangeDesc }}
+                </p>
+              </label>
             </div>
           </div>
               
@@ -372,9 +391,9 @@
                 >
               </div>
               <label for="show-keywords" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">显示黑名单具体关键词</p>
+                <p class="text-xs font-bold text-zinc-200">{{ locale.showBlacklistKeywords }}</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示“包含关键词”。
+                  {{ locale.showBlacklistKeywordsDesc }}
                 </p>
               </label>
             </div>
@@ -391,9 +410,9 @@
                 >
               </div>
               <label for="hide-students" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">隐藏学生详细信息</p>
+                <p class="text-xs font-bold text-zinc-200">{{ locale.hideStudentInfo }}</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。
+                  {{ locale.hideStudentInfoDesc }}
                 </p>
               </label>
             </div>
@@ -404,7 +423,7 @@
           >
             <AlertCircle class="text-blue-500 shrink-0 mt-0.5" :size="14" />
             <p class="text-[10px] text-zinc-500 leading-normal">
-              站点基础配置在保存后将立即对所有终端生效。请在修改关键业务逻辑（如投稿限额）前确保已知晓对现有用户的影响。
+              {{ locale.configWarning }}
             </p>
           </div>
         </div>
@@ -417,12 +436,12 @@
         <h3
           class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
         >
-          <FileText :size="16" class="text-emerald-500" /> 投稿须知
+          <FileText :size="16" class="text-emerald-500" /> {{ locale.submissionGuidelines }}
         </h3>
         <textarea
           v-model="formData.submissionGuidelines"
           :rows="6"
-          placeholder="请输入投稿须知内容"
+          :placeholder="locale.guidelinesPlaceholder"
           :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
         />
       </section>
@@ -447,6 +466,7 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { siteConfig as locale } from '~/utils/locale/zh-CN'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -489,6 +509,7 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  forcePasswordChangeOnFirstLogin: true,
   captchaEnabled: false,
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
@@ -590,6 +611,7 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin !== false,
       captchaEnabled: !!data.captchaEnabled,
       captchaProvider: data.captchaProvider || 'graphic',
       turnstileSiteKey: data.turnstileSiteKey || '',
