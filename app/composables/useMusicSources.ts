@@ -989,7 +989,7 @@ export const useMusicSources = () => {
             const level = mapQualityToLevel(neteaseQuality)
             const timestamp = Math.floor(Date.now() / 1000).toString()
             const API_SECRET_KEY = 'kxz_163music_secret_key_2024'
-            const signature = CryptoJS.MD5(timestamp + API_SECRET_KEY).toString()
+            const signature = CryptoJS.MD5(timestamp + API_SECRET_KEY).toString().toLowerCase()
 
             const rrvennResp = await $fetch(source.baseUrl, {
               method: 'POST',
