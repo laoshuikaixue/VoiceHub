@@ -24,6 +24,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             user.value = data.user
             isAuthenticated.value = true
             isAdmin.value = isAdminRole(data.user.role)
+            token.value = 'cookie-based'
           }
         }
       } catch (e) {
