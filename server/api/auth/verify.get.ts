@@ -1,10 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
-import {
-  getForcePasswordChangeOnFirstLogin,
-  computeRequirePasswordChange
-} from '../../utils/system-settings-helper'
+import { resolveRequirePasswordChange } from '../../utils/system-settings-helper'
 import { eq } from 'drizzle-orm'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
@@ -20,9 +17,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const userId = authUser.id
-
-    // 获取全局首次登录强制改密开关（带缓存与降级）
-    const forcePasswordChangeOnFirstLogin = await getForcePasswordChangeOnFirstLogin()
 
     // 优先从Redis缓存获取用户认证状态
     if (isRedisReady()) {
@@ -50,7 +44,8 @@ export default defineEventHandler(async (event) => {
           grade: cachedUser.grade,
           class: cachedUser.class,
           role: cachedUser.role,
-          requirePasswordChange: computeRequirePasswordChange(cachedUser, forcePasswordChangeOnFirstLogin),
+          // resolveRequirePasswordChange 内部已包含短路优化：仅在用户从未改过密码时才查询全局设置
+          requirePasswordChange: await resolveRequirePasswordChange(cachedUser),
           hasSetPassword: !!cachedUser.passwordChangedAt,
           has2FA: cachedUser.identities?.some((id: any) => id.provider === 'totp') || false,
           avatar: cachedUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
@@ -106,7 +101,8 @@ export default defineEventHandler(async (event) => {
       grade: dbUser.grade,
       class: dbUser.class,
       role: dbUser.role,
-      requirePasswordChange: computeRequirePasswordChange(dbUser, forcePasswordChangeOnFirstLogin),
+      // resolveRequirePasswordChange 内部已包含短路优化：仅在用户从未改过密码时才查询全局设置
+      requirePasswordChange: await resolveRequirePasswordChange(dbUser),
       hasSetPassword: !!dbUser.passwordChangedAt,
       has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
       // 动态生成 GitHub 头像 URL
