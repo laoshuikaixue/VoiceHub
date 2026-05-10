@@ -1,5 +1,6 @@
 import { useAuth } from '~/composables/useAuth'
 import { isAdminRole } from '~/utils/auth-constants'
+import type { User } from '~/types'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const { isAuthenticated, isAdmin, initAuth, user, token } = useAuth()
