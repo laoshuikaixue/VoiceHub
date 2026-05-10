@@ -1,6 +1,7 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
+import { isAdminRole } from '~/utils/auth-constants'
 
 interface LoginResponse {
   success: boolean
@@ -29,7 +30,7 @@ export const useAuth = () => {
     token.value = 'cookie-based'
     user.value = loggedInUser
     isAuthenticated.value = true
-    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
+    isAdmin.value = isAdminRole(loggedInUser.role)
   }
 
   const initAuth = async () => {
@@ -53,7 +54,7 @@ export const useAuth = () => {
       if (data && data.user) {
         user.value = data.user
         isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+        isAdmin.value = isAdminRole(data.user.role)
         token.value = 'cookie-based'
         return data.user
       } else {
@@ -119,8 +120,6 @@ export const useAuth = () => {
       // 改密成功后立即清除强制改密标志，避免前端中间件继续拦截
       if (user.value) {
         user.value.requirePasswordChange = false
-        // 改密成功后刷新用户状态，以获取最新的认证信息
-        await refreshUser()
       }
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
@@ -148,8 +147,8 @@ export const useAuth = () => {
         body: { newPassword }
       })
       if (user.value) {
-          // 设置初始密码成功后刷新用户状态
-          await refreshUser()
+        user.value.requirePasswordChange = false
+        user.value.hasSetPassword = true
       }
     } finally {
       loading.value = false
@@ -161,7 +160,7 @@ export const useAuth = () => {
     if (data && data.user) {
       user.value = data.user
       isAuthenticated.value = true
-      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+      isAdmin.value = isAdminRole(data.user.role)
     }
   }
 
