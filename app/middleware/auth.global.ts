@@ -2,7 +2,7 @@ import { useAuth } from '~/composables/useAuth'
 import { isAdminRole } from '~/utils/auth-constants'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { isAuthenticated, isAdmin, initAuth, user } = useAuth()
+  const { isAuthenticated, isAdmin, initAuth, user, token } = useAuth()
   const publicRoutes = ['/login', '/', '/auth/error', '/forgot-password', '/reset-password']
 
   // 初始化认证状态（客户端 + 服务端均执行）
