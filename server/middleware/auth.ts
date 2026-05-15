@@ -5,6 +5,7 @@ import { isUserBlocked, getUserBlockRemainingTime } from '../services/securitySe
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
 import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
+import { isAdminRole } from '../../shared/auth-constants'
 
 // 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
 // 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
@@ -254,10 +255,7 @@ export default defineEventHandler(async (event) => {
 
       // 2. 管理员路由校验：非管理员访问 /admin* 时，不附加 event.context.user，
       //    前端中间件将视为未认证并重定向到 /dashboard（auth.global.ts 中有二次角色判断）。
-      if (
-        pathname.startsWith('/admin') &&
-        !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
-      ) {
+      if (pathname.startsWith('/admin') && !isAdminRole(user.role)) {
         return
       }
 
@@ -306,10 +304,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查管理员专用路由
-    if (
-      pathname.startsWith('/api/admin') &&
-      !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
-    ) {
+    if (pathname.startsWith('/api/admin') && !isAdminRole(user.role)) {
       return sendError(
         event,
         createError({
