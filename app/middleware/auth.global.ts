@@ -15,13 +15,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // （含 requirePasswordChange / hasSetPassword 等关键字段），从而避免一次额外的
       // 内部 $fetch('/api/auth/verify') 调用，缩短 SSR 路径。
       const event = useRequestEvent()
-      const ctxUser = event?.context?.user as
-        | (User & { status?: string; requirePasswordChange?: boolean; hasSetPassword?: boolean })
-        | undefined
+      // server/middleware/auth.ts 附加的 context.user 在 User 字段之上还带了
+      // 仅服务端关心的 status（用于禁用判定），这里通过交叉类型兼容。
+      const ctxUser = event?.context?.user as (User & { status?: string }) | undefined
 
       if (ctxUser?.id) {
         // 仅同步 SSR 渲染需要的字段；has2FA / avatar 等需要 identities 关联查询的字段
         // 在 server 中间件中未附加，留待客户端 hydration 时通过 initAuth() 补全（见 useAuth.ts）。
+        // ctxUser 已是 User 兼容类型，无需再做不安全的 `as User` 断言。
         setAuthState({
           id: ctxUser.id,
           username: ctxUser.username,
@@ -33,7 +34,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           hasSetPassword: ctxUser.hasSetPassword,
           forcePasswordChange: ctxUser.forcePasswordChange,
           passwordChangedAt: ctxUser.passwordChangedAt
-        } as User)
+        })
       } else {
         // 未登录访客或 token 无效，明确清理状态确保 SSR / 客户端一致
         clearAuthState()
