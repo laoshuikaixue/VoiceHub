@@ -39,8 +39,10 @@ export const useAuth = () => {
       return null
     }
 
-    // 如果已认证，直接返回缓存的用户信息
-    if (isAuthenticated.value && user.value) {
+    // 若 SSR 中间件仅写入了"部分用户视图"（缺 has2FA / avatar 等需要 identities 关联查询的字段），
+    // 客户端 hydration 后需主动请求 verify 接口补全完整字段；否则直接复用已有状态避免重复请求。
+    // 判定依据：完整 verify 返回的 user 一定包含 has2FA（布尔值），SSR 部分填充时该字段为 undefined。
+    if (isAuthenticated.value && user.value && user.value.has2FA !== undefined) {
       return user.value
     }
 
@@ -120,7 +122,6 @@ export const useAuth = () => {
       // 改密成功后立即清除强制改密标志，避免前端中间件继续拦截
       if (user.value) {
         user.value.requirePasswordChange = false
-        user.value.hasSetPassword = true
       }
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
@@ -208,6 +209,7 @@ export const useAuth = () => {
     refreshUser,
     initAuth,
     getAuthConfig,
+    // 暴露内部状态更新方法，供中间件等外部场景复用，避免重复实现 isAdmin 判断逻辑
     setAuthState,
     clearAuthState
   }
