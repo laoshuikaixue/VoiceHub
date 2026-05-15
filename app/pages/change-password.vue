@@ -74,13 +74,36 @@
             <ChangePasswordForm :is-first-login="isFirstLogin" />
           </ClientOnly>
 
-          <div v-if="!auth.user.value?.requirePasswordChange" class="form-footer">
-            <NuxtLink class="back-link" to="/">
+          <div class="form-footer">
+            <!-- 普通修改密码场景：返回主页 -->
+            <NuxtLink v-if="!requirePasswordChange" class="back-link" to="/">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
               返回主页
             </NuxtLink>
+
+            <!-- 强制改密场景：提供"忘记密码"与"退出登录"入口，避免用户被困住 -->
+            <template v-else>
+              <p class="footer-hint">无法完成密码修改？</p>
+              <div class="footer-actions">
+                <NuxtLink class="text-link" to="/forgot-password">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 11V7a3 3 0 016 0v4" />
+                    <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
+                  </svg>
+                  忘记密码
+                </NuxtLink>
+                <button class="logout-btn" type="button" @click="handleLogout">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" x2="9" y1="12" y2="12" />
+                  </svg>
+                  退出登录
+                </button>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -90,7 +113,7 @@
 
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import logo from '~~/public/images/logo.svg'
 
 // 使用站点配置
@@ -99,6 +122,17 @@ const { siteTitle, initSiteConfig } = useSiteConfig()
 const auth = useAuth()
 const router = useRouter()
 const isFirstLogin = ref(false)
+
+// 是否处于强制改密状态（首次登录 或 管理员触发强制改密）。
+// 用于在 UX 上为用户提供"退出登录 / 忘记密码"出口，避免在忘记旧密码时被困在页面上。
+const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
+
+const handleLogout = async () => {
+  if (!import.meta.client) return
+  const confirmed = window.confirm('确定要退出登录吗？退出后需要重新登录才能继续操作。')
+  if (!confirmed) return
+  await auth.logout()
+}
 
 // 未登录用户重定向到登录页
 onMounted(async () => {
@@ -314,6 +348,74 @@ onMounted(async () => {
 .back-link svg {
   width: 16px;
   height: 16px;
+}
+
+.footer-hint {
+  font-size: 13px;
+  color: #888888;
+  margin: 0 0 12px 0;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #cccccc;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  background: #1a1a1a;
+  color: #ffffff;
+  border-color: #3a3a3a;
+}
+
+.text-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.logout-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* 响应式设计 */
