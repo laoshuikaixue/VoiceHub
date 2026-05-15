@@ -34,10 +34,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // 强制改密优先级最高：已认证但需要修改密码的用户，必须先去改密页面
   // 注意：此检查在服务端和客户端均执行，服务端会发送 302 重定向避免页面闪烁
+  const allowedRoutes = ['/change-password', '/forgot-password', '/reset-password']
   if (
     isAuthenticated.value &&
     user.value?.requirePasswordChange &&
-    to.path !== '/change-password'
+    !allowedRoutes.includes(to.path)
   ) {
     return navigateTo('/change-password', { redirectCode: 302 })
   }
