@@ -33,6 +33,11 @@ export const useAuth = () => {
     isAdmin.value = isAdminRole(loggedInUser.role)
   }
 
+  /** 设置完整 profile（login / verify2FA 返回的完整用户数据） */
+  const setFullAuthState = (loggedInUser: User) => {
+    setAuthState({ ...loggedInUser, _isFullProfile: true })
+  }
+
   const initAuth = async () => {
     // 客户端执行
     if (typeof window === 'undefined' || import.meta.server) {
@@ -41,8 +46,7 @@ export const useAuth = () => {
 
     // 若 SSR 中间件仅写入了"部分用户视图"（缺 has2FA / avatar 等需要 identities 关联查询的字段），
     // 客户端 hydration 后需主动请求 verify 接口补全完整字段；否则直接复用已有状态避免重复请求。
-    // 判定依据：完整 verify 返回的 user 一定包含 has2FA（布尔值），SSR 部分填充时该字段为 undefined。
-    if (isAuthenticated.value && user.value && user.value.has2FA !== undefined) {
+    if (isAuthenticated.value && user.value && user.value._isFullProfile) {
       return user.value
     }
 
@@ -54,11 +58,11 @@ export const useAuth = () => {
       })
 
       if (data && data.user) {
-        user.value = data.user
+        user.value = { ...data.user, _isFullProfile: true }
         isAuthenticated.value = true
         isAdmin.value = isAdminRole(data.user.role)
         token.value = 'cookie-based'
-        return data.user
+        return user.value
       } else {
         clearAuthState()
         return null
@@ -91,7 +95,7 @@ export const useAuth = () => {
       }
 
       if (response.user) {
-        setAuthState(response.user)
+        setFullAuthState(response.user)
         return response
       }
     }
@@ -106,7 +110,7 @@ export const useAuth = () => {
     })
 
     if (response.success && response.user) {
-      setAuthState(response.user)
+      setFullAuthState(response.user)
       return response
     }
     throw new Error('验证失败')
@@ -160,9 +164,7 @@ export const useAuth = () => {
   const refreshUser = async () => {
     const data = await $fetch<{ user: User }>('/api/auth/verify')
     if (data && data.user) {
-      user.value = data.user
-      isAuthenticated.value = true
-      isAdmin.value = isAdminRole(data.user.role)
+      setFullAuthState(data.user)
     }
   }
 
