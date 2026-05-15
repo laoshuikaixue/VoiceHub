@@ -1,6 +1,6 @@
 /**
  * 用户角色联合类型。
- * 与 `app/utils/auth-constants.ts` 中的 `ADMIN_ROLES` 保持同步：
+ * 与 `shared/auth-constants.ts` 中的 `ADMIN_ROLES` 保持同步：
  * - 'USER' 普通用户
  * - 'ADMIN' 普通管理员
  * - 'SUPER_ADMIN' 超级管理员
@@ -31,6 +31,12 @@ export interface User {
     providerUsername?: string | null
     providerUserId?: string | null
   }>
+  /**
+   * 标记该 User 对象是否包含完整的 profile 数据（has2FA、avatar、identities 等）。
+   * SSR 中间件仅填充核心字段时不设置此标志（默认 undefined/false），
+   * 客户端 initAuth 通过 /api/auth/verify 获取完整数据后设为 true。
+   */
+  _isFullProfile?: boolean
 }
 
 export interface Song {
