@@ -285,16 +285,16 @@
               </div>
               <div class="flex-1 space-y-4">
                 <label for="captcha-enabled" class="cursor-pointer block">
-                  <p class="text-xs font-bold text-zinc-200">启用登录人机验证</p>
+                  <p class="text-xs font-bold text-zinc-200">{{ locale.captchaEnabled }}</p>
                   <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                    开启后，可以有效防范暴力破解和机器人注册。
+                    {{ locale.captchaEnabledDesc }}
                   </p>
                 </label>
                 
                 <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800 space-y-4">
                   <!-- 验证码类型选择 -->
                   <div>
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">验证类型</label>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaType }}</label>
                     <div class="flex gap-4">
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
@@ -303,7 +303,7 @@
                           value="graphic"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
                         >
-                        <span class="text-sm text-zinc-300">图形验证码</span>
+                        <span class="text-sm text-zinc-300">{{ locale.captchaGraphic }}</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
@@ -312,14 +312,14 @@
                           value="turnstile"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
                         >
-                        <span class="text-sm text-zinc-300">Cloudflare Turnstile</span>
+                        <span class="text-sm text-zinc-300">{{ locale.captchaTurnstile }}</span>
                       </label>
                     </div>
                   </div>
 
                   <!-- 图形验证码配置 -->
                   <div v-if="formData.captchaProvider === 'graphic'">
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">触发阈值（失败次数）</label>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaMaxFailures }}</label>
                     <input
                       v-model.number="formData.captchaMaxFailures"
                       type="number"
@@ -328,31 +328,31 @@
                       class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                     >
                     <p class="text-[10px] text-zinc-500 mt-1">
-                      连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。
+                      {{ locale.captchaMaxFailuresDesc }}
                     </p>
                   </div>
 
                   <!-- Turnstile 配置 -->
                   <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-4">
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">Site Key (Sitekey)</label>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSiteKey }}</label>
                       <input
                         v-model="formData.turnstileSiteKey"
                         type="text"
-                        placeholder="在此输入 Turnstile 的 Site Key"
+                        :placeholder="locale.turnstileSiteKeyPlaceholder"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                       >
                     </div>
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">Secret Key (Secret)</label>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSecretKey }}</label>
                       <input
                         v-model="formData.turnstileSecretKey"
                         type="password"
-                        placeholder="在此输入 Turnstile 的 Secret Key (留空表示不修改)"
+                        :placeholder="locale.turnstileSecretKeyPlaceholder"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                       >
                       <p class="text-[10px] text-zinc-500 mt-1">
-                        开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。
+                        {{ locale.turnstileSecretKeyDesc }}
                       </p>
                     </div>
                   </div>
@@ -466,6 +466,7 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { siteConfig as locale } from '~/utils/locale/zh-CN'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
