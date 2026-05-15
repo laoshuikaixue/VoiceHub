@@ -58,6 +58,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return
   }
 
+  // 管理员路由权限校验：非管理员访问 /admin* 时，重定向到 /dashboard
+  // 这一检查在 server/middleware/auth.ts 中已提前清除了 ctxUser，但为双保险仍在此处执行。
+  if (to.path.startsWith('/admin') && isAuthenticated.value) {
+    const adminRoles = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'] as const
+    if (!adminRoles.includes(user.value?.role as any)) {
+      return navigateTo('/dashboard', { redirectCode: 403 })
+    }
+  }
+
   // 未认证用户重定向到登录页
   if (!isAuthenticated.value && to.path !== '/login') {
     // 保存目标路径用于登录后重定向
