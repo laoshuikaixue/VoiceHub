@@ -115,6 +115,7 @@
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import { computed, ref } from 'vue'
 import logo from '~~/public/images/logo.svg'
+import { changePassword as locale } from '~/utils/locale/zh-CN'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
@@ -129,7 +130,7 @@ const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordC
 
 const handleLogout = async () => {
   if (!import.meta.client) return
-  const confirmed = window.confirm('确定要退出登录吗？退出后需要重新登录才能继续操作。')
+  const confirmed = window.confirm(locale.logoutConfirm)
   if (!confirmed) return
   await auth.logout()
 }
