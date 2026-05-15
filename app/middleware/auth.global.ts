@@ -10,23 +10,32 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (import.meta.client) {
       await initAuth()
     } else if (import.meta.server) {
-      // 服务端：通过 cookie 中的 token 调用内部 API 获取用户状态
-      // Nitro 内部路由会直接调用 handler，无需真正的 HTTP 请求，性能可靠
-      // 使用 useRequestHeaders 自动转发请求中的所有 Cookie，避免手动拼接字符串遗漏其它 cookie
-      try {
-        const headers = useRequestHeaders(['cookie', 'authorization'])
-        if (headers.cookie || headers.authorization) {
-          const data = await $fetch<{ user: User; valid: boolean }>('/api/auth/verify', {
-            headers
-          })
-          if (data?.user) {
-            // 复用 useAuth 提供的 setAuthState，统一 isAdmin 等派生状态的计算逻辑
-            setAuthState(data.user)
-          }
-        }
-      } catch (e) {
-        // 服务端验证失败（token 无效/过期等），清理状态确保一致性
-        // 客户端 hydration 后会再次尝试认证
+      // 服务端：直接从 H3 请求上下文读取 server/middleware/auth.ts 已经验证好的用户。
+      // 该中间件对所有页面 SSR 请求做"软认证"，若 token 有效会附加 event.context.user
+      // （含 requirePasswordChange / hasSetPassword 等关键字段），从而避免一次额外的
+      // 内部 $fetch('/api/auth/verify') 调用，缩短 SSR 路径。
+      const event = useRequestEvent()
+      const ctxUser = event?.context?.user as
+        | (User & { status?: string; requirePasswordChange?: boolean; hasSetPassword?: boolean })
+        | undefined
+
+      if (ctxUser?.id) {
+        // 仅同步 SSR 渲染需要的字段；has2FA / avatar 等需要 identities 关联查询的字段
+        // 在 server 中间件中未附加，留待客户端 hydration 时通过 initAuth() 补全（见 useAuth.ts）。
+        setAuthState({
+          id: ctxUser.id,
+          username: ctxUser.username,
+          name: ctxUser.name,
+          grade: ctxUser.grade,
+          class: ctxUser.class,
+          role: ctxUser.role,
+          requirePasswordChange: ctxUser.requirePasswordChange,
+          hasSetPassword: ctxUser.hasSetPassword,
+          forcePasswordChange: ctxUser.forcePasswordChange,
+          passwordChangedAt: ctxUser.passwordChangedAt
+        } as User)
+      } else {
+        // 未登录访客或 token 无效，明确清理状态确保 SSR / 客户端一致
         clearAuthState()
       }
     }
