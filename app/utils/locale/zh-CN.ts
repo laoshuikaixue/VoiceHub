@@ -51,6 +51,18 @@ export const siteConfig = {
 
   // 安全与隐私
   securityPrivacy: '安全与隐私设置',
+  captchaEnabled: '启用登录人机验证',
+  captchaEnabledDesc: '开启后，可以有效防范暴力破解和机器人注册。',
+  captchaType: '验证类型',
+  captchaGraphic: '图形验证码',
+  captchaTurnstile: 'Cloudflare Turnstile',
+  captchaMaxFailures: '触发阈值（失败次数）',
+  captchaMaxFailuresDesc: '连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。',
+  turnstileSiteKey: 'Site Key (Sitekey)',
+  turnstileSiteKeyPlaceholder: '在此输入 Turnstile 的 Site Key',
+  turnstileSecretKey: 'Secret Key (Secret)',
+  turnstileSecretKeyPlaceholder: '在此输入 Turnstile 的 Secret Key (留空表示不修改)',
+  turnstileSecretKeyDesc: '开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。',
   forcePasswordChange: '首次登录强制改密',
   forcePasswordChangeDesc: '开启后，未修改过密码的用户在登录时将被强制跳转至改密页面，完成修改后方可使用系统。',
   showBlacklistKeywords: '显示黑名单具体关键词',
