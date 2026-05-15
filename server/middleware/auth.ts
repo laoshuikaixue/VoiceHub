@@ -5,7 +5,7 @@ import { isUserBlocked, getUserBlockRemainingTime } from '../services/securitySe
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
 import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
-import { isAdminRole } from '../../shared/auth-constants'
+import { isAdminRole } from '#shared/auth-constants'
 
 // 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
 // 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
