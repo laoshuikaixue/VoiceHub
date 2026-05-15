@@ -34,8 +34,8 @@ const NON_PAGE_PREFIXES = [
 const isPageRenderRequest = (pathname: string): boolean => {
   if (pathname.startsWith('/api/')) return false
   if (NON_PAGE_PREFIXES.some((p) => pathname.startsWith(p))) return false
-  // 带文件扩展名的视为静态资源（页面路径形如 /, /login, /change-password 不会命中）
-  if (/\.[a-zA-Z0-9]+$/.test(pathname)) return false
+  // 仅匹配已知静态资源后缀，避免含点号的路由（如 /user/name.surname）被误判
+  if (/\.(js|css|map|json|ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|wasm|mp3|mp4|webm)$/.test(pathname)) return false
   return true
 }
 
