@@ -253,10 +253,10 @@ export default defineEventHandler(async (event) => {
         return
       }
 
-      // 2. 管理员路由校验：非管理员访问 /admin* 时，不附加 event.context.user，
-      //    前端中间件将视为未认证并重定向到 /dashboard（auth.global.ts 中有二次角色判断）。
+      // 2. 管理员路由校验：非管理员访问 /admin* 时，前端中间件 auth.global.ts 
+      //    会处理重定向到 /dashboard。此处无需提前 return，否则会导致 SSR 丢失登录态并跳转至登录页。
       if (pathname.startsWith('/admin') && !isAdminRole(user.role)) {
-        return
+        // 仅记录日志或执行其他非中断逻辑（可选）
       }
 
       // 通过上述校验后，附加上下文以供前端 SSR 中间件直接读取。
