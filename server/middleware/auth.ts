@@ -236,15 +236,47 @@ export default defineEventHandler(async (event) => {
     const requirePasswordChange = await resolveRequirePasswordChange(user)
     const hasSetPassword = !!user.passwordChangedAt
 
+    // 页面 SSR 请求：在附加上下文之前补全两层安全校验，确保受限用户无法通过 SSR 渲染敏感内容。
+    if (isPageRequest) {
+      // 1. 风控锁定校验：被锁定的用户 token 虽有效但不应渲染任何页面，清除 cookie 后
+      //    前端中间件将视为未认证并重定向到 /login，与 API 层的 401 策略一致。
+      if (isUserBlocked(user.id)) {
+        const isSecure = isSecureRequest(event)
+        setCookie(event, 'auth-token', '', {
+          httpOnly: true,
+          secure: isSecure,
+          sameSite: 'lax',
+          maxAge: 0,
+          path: '/'
+        })
+        return
+      }
+
+      // 2. 管理员路由校验：非管理员访问 /admin* 时，不附加 event.context.user，
+      //    前端中间件将视为未认证并重定向到 /dashboard（auth.global.ts 中有二次角色判断）。
+      if (
+        pathname.startsWith('/admin') &&
+        !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
+      ) {
+        return
+      }
+
+      // 通过上述校验后，附加上下文以供前端 SSR 中间件直接读取。
+      event.context.user = {
+        ...user,
+        requirePasswordChange,
+        hasSetPassword
+      }
+      return
+    }
+
+    // API 请求：将完整上下文附加到 event.context.user 以便 verify.get.ts
+    // 等下游 handler 复用已解析的用户状态。
     event.context.user = {
       ...user,
       requirePasswordChange,
       hasSetPassword
     }
-
-    // 页面 SSR 请求：附加上下文即完成，剩余的拦截逻辑（强制改密 403、管理员路由、风控）
-    // 仅对 API 请求生效。页面级别的强制改密重定向由 app/middleware/auth.global.ts 处理。
-    if (isPageRequest) return
 
     // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
     // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口
