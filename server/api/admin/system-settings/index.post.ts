@@ -605,13 +605,13 @@ export default defineEventHandler(async (event) => {
       settings = updatedSettingsResult[0]
     }
 
-    // 清除系统设置缓存
+    // 更新系统设置缓存（直接写入新值，避免缓存空窗期）
     try {
       const { CacheService } = await import('~~/server/services/cacheService')
-      await CacheService.getInstance().clearSystemSettingsCache()
-      console.log('[Cache] 系统设置缓存已清除（更新系统设置）')
+      await CacheService.getInstance().setSystemSettings(settings)
+      console.log('[Cache] 系统设置缓存已更新（更新系统设置）')
     } catch (cacheError) {
-      console.warn('清除系统设置缓存失败:', cacheError)
+      console.warn('更新系统设置缓存失败:', cacheError)
     }
 
     try {
