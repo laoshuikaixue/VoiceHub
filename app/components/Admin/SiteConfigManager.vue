@@ -286,7 +286,9 @@
               <div class="flex-1 space-y-4">
                 <label for="captcha-enabled" class="cursor-pointer block">
                   <p class="text-xs font-bold text-zinc-200">{{ locale.captchaEnabled }}</p>
+                  <p class="text-xs font-bold text-zinc-200">{{ locale.captchaEnabled }}</p>
                   <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                    {{ locale.captchaEnabledDesc }}
                     {{ locale.captchaEnabledDesc }}
                   </p>
                 </label>
@@ -294,6 +296,7 @@
                 <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800 space-y-4">
                   <!-- 验证码类型选择 -->
                   <div>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaType }}</label>
                     <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaType }}</label>
                     <div class="flex gap-4">
                       <label class="flex items-center gap-2 cursor-pointer">
@@ -303,6 +306,7 @@
                           value="graphic"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
                         >
+                        <span class="text-sm text-zinc-300">{{ locale.captchaGraphic }}</span>
                         <span class="text-sm text-zinc-300">{{ locale.captchaGraphic }}</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
@@ -372,9 +376,9 @@
                 >
               </div>
               <label for="force-password-change" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">{{ locale.forcePasswordChange }}</p>
+                <p class="text-xs font-bold text-zinc-200">首次登录强制改密</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  {{ locale.forcePasswordChangeDesc }}
+                  开启后，未修改过密码的用户在登录时将被强制跳转至改密页面，完成修改后方可使用系统。
                 </p>
               </label>
             </div>

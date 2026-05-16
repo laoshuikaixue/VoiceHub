@@ -1,6 +1,7 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
+import { isAdminRole } from '~/utils/auth-constants'
 
 interface LoginResponse {
   success: boolean
@@ -29,7 +30,12 @@ export const useAuth = () => {
     token.value = 'cookie-based'
     user.value = loggedInUser
     isAuthenticated.value = true
-    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
+    isAdmin.value = isAdminRole(loggedInUser.role)
+  }
+
+  /** 设置完整 profile（login / verify2FA 返回的完整用户数据） */
+  const setFullAuthState = (loggedInUser: User) => {
+    setAuthState({ ...loggedInUser, _isFullProfile: true })
   }
 
   const initAuth = async () => {
@@ -38,8 +44,9 @@ export const useAuth = () => {
       return null
     }
 
-    // 如果已认证，直接返回缓存的用户信息
-    if (isAuthenticated.value && user.value) {
+    // 若 SSR 中间件仅写入了"部分用户视图"（缺 has2FA / avatar 等需要 identities 关联查询的字段），
+    // 客户端 hydration 后需主动请求 verify 接口补全完整字段；否则直接复用已有状态避免重复请求。
+    if (isAuthenticated.value && user.value && user.value._isFullProfile) {
       return user.value
     }
 
@@ -51,11 +58,11 @@ export const useAuth = () => {
       })
 
       if (data && data.user) {
-        user.value = data.user
+        user.value = { ...data.user, _isFullProfile: true }
         isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+        isAdmin.value = isAdminRole(data.user.role)
         token.value = 'cookie-based'
-        return data.user
+        return user.value
       } else {
         clearAuthState()
         return null
@@ -88,7 +95,7 @@ export const useAuth = () => {
       }
 
       if (response.user) {
-        setAuthState(response.user)
+        setFullAuthState(response.user)
         return response
       }
     }
@@ -103,7 +110,7 @@ export const useAuth = () => {
     })
 
     if (response.success && response.user) {
-      setAuthState(response.user)
+      setFullAuthState(response.user)
       return response
     }
     throw new Error('验证失败')
@@ -116,6 +123,10 @@ export const useAuth = () => {
         method: 'POST',
         body: { currentPassword, newPassword }
       })
+      // 改密成功后立即清除强制改密标志，避免前端中间件继续拦截
+      if (user.value) {
+        user.value.requirePasswordChange = false
+      }
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
       if (error.data && error.data.message) {
@@ -142,7 +153,8 @@ export const useAuth = () => {
         body: { newPassword }
       })
       if (user.value) {
-        user.value.needsPasswordChange = false
+        user.value.requirePasswordChange = false
+        user.value.hasSetPassword = true
       }
     } finally {
       loading.value = false
@@ -152,9 +164,7 @@ export const useAuth = () => {
   const refreshUser = async () => {
     const data = await $fetch<{ user: User }>('/api/auth/verify')
     if (data && data.user) {
-      user.value = data.user
-      isAuthenticated.value = true
-      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+      setFullAuthState(data.user)
     }
   }
 
@@ -200,6 +210,9 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
-    getAuthConfig
+    getAuthConfig,
+    // 暴露内部状态更新方法，供中间件等外部场景复用，避免重复实现 isAdmin 判断逻辑
+    setAuthState,
+    clearAuthState
   }
 }

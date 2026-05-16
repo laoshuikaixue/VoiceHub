@@ -153,6 +153,16 @@ export default defineEventHandler(async (event) => {
       updateData.showBlacklistKeywords = body.showBlacklistKeywords
     }
 
+    if (body.forcePasswordChangeOnFirstLogin !== undefined) {
+      if (typeof body.forcePasswordChangeOnFirstLogin !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'forcePasswordChangeOnFirstLogin 必须是布尔值'
+        })
+      }
+      updateData.forcePasswordChangeOnFirstLogin = body.forcePasswordChangeOnFirstLogin
+    }
+
     if (body.enableReplayRequests !== undefined) {
       if (typeof body.enableReplayRequests !== 'boolean') {
         throw createError({
@@ -626,4 +636,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-

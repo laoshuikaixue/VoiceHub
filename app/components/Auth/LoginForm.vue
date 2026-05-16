@@ -366,12 +366,25 @@ const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
 
-const handle2FASuccess = async () => {
-  if (auth.isAdmin.value) {
+/**
+ * 登录成功后的统一跳转逻辑。
+ * 注意：app/middleware/auth.global.ts 已实现 requirePasswordChange 的强制拦截，
+ * 此处显式判断仅为避免一次额外的中间件重定向跳转，保持用户体验流畅。
+ */
+const redirectAfterLogin = async () => {
+  if (auth.user.value?.requirePasswordChange) {
+    await navigateTo('/change-password')
+  } else if (auth.isAdmin.value) {
     await navigateTo('/dashboard')
   } else {
     await navigateTo('/')
   }
+}
+
+const handle2FASuccess = async () => {
+  // verify2FA 内部已通过 setAuthState 更新了全局 user 状态（含 requirePasswordChange），
+  // 无需再发起 /api/auth/verify 请求，直接根据现有状态跳转即可
+  await redirectAfterLogin()
 }
 
 onMounted(async () => {
@@ -442,13 +455,9 @@ const handleLogin = async () => {
       return
     }
 
-    // 登录成功，刷新认证状态
+    // 登录成功，刷新认证状态并跳转
     await auth.initAuth()
-    if (auth.isAdmin.value) {
-      navigateTo('/dashboard')
-    } else {
-      navigateTo('/')
-    }
+    await redirectAfterLogin()
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data

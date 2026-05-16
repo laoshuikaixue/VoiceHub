@@ -33,7 +33,9 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查是否需要设置初始密码
+    // 此接口仅用于"真正的首次登录"——即用户从未设置过密码（passwordChangedAt 为空）。
+    // 已设置过密码的用户即使被管理员强制改密，也必须通过 /api/auth/change-password 验证旧密码后修改，
+    // 以确保操作者是本人，而非他人借助会话直接重置密码。
     if (currentUser.passwordChangedAt) {
       throw createError({
         statusCode: 400,
