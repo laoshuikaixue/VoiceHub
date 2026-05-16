@@ -1,13 +1,13 @@
 import { db } from '~/drizzle/db'
-import { users } from '~/drizzle/schema'
+import { userIdentities } from '~/drizzle/schema'
 import { executeRedisCommand, isRedisReady } from '../../utils/redis'
-import { resolveRequirePasswordChange } from '../../utils/system-settings-helper'
 import { eq } from 'drizzle-orm'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
 
 export default defineEventHandler(async (event) => {
   try {
+    // event.context.user 已由 server/middleware/auth.ts 填充基础字段 + requirePasswordChange + hasSetPassword
     const authUser = event.context.user
     if (!authUser) {
       throw createError({
@@ -18,9 +18,12 @@ export default defineEventHandler(async (event) => {
 
     const userId = authUser.id
 
-    // 优先从Redis缓存获取用户认证状态
+    // 优先从Redis缓存获取 identities 信息
+    let identities: { provider: string; providerUsername: string | null }[] = []
+    let identitiesCached = false
+
     if (isRedisReady()) {
-      const cachedUser = await executeRedisCommand(async () => {
+      const cached = await executeRedisCommand(async () => {
         const client = (await import('../../utils/redis')).getRedisClient()
         if (!client) return null
 
@@ -35,93 +38,53 @@ export default defineEventHandler(async (event) => {
         return null
       })
 
-      if (cachedUser) {
-        // 为缓存的用户数据添加字段
-        const userWithDetails = {
-          id: cachedUser.id,
-          username: cachedUser.username,
-          name: cachedUser.name,
-          grade: cachedUser.grade,
-          class: cachedUser.class,
-          role: cachedUser.role,
-          // resolveRequirePasswordChange 内部已包含短路优化：仅在用户从未改过密码时才查询全局设置
-          requirePasswordChange: await resolveRequirePasswordChange(cachedUser),
-          hasSetPassword: !!cachedUser.passwordChangedAt,
-          has2FA: cachedUser.identities?.some((id: any) => id.provider === 'totp') || false,
-          avatar: cachedUser.identities?.find((id: any) => id.provider === 'github')?.providerUsername
-            ? `https://github.com/${cachedUser.identities.find((id: any) => id.provider === 'github').providerUsername}.png`
-            : null
-        }
-        return {
-          user: userWithDetails,
-          valid: true
-        }
+      if (cached?.identities) {
+        identities = cached.identities
+        identitiesCached = true
       }
     }
 
-    // 缓存未命中或Redis不可用，从数据库获取用户信息
-    // 同时查询所有身份绑定信息
-    const userResult = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      columns: {
-        id: true,
-        username: true,
-        name: true,
-        grade: true,
-        class: true,
-        role: true,
-        forcePasswordChange: true,
-        passwordChangedAt: true
-      },
-      with: {
-        identities: {
-          columns: {
-            provider: true,
-            providerUsername: true
-          }
-        }
+    // 缓存未命中时仅查询 identities 关联表（基础用户信息已由中间件提供）
+    if (!identitiesCached) {
+      const identitiesResult = await db
+        .select({
+          provider: userIdentities.provider,
+          providerUsername: userIdentities.providerUsername
+        })
+        .from(userIdentities)
+        .where(eq(userIdentities.userId, userId))
+
+      identities = identitiesResult
+
+      // 将 identities 缓存到 Redis
+      if (isRedisReady()) {
+        await executeRedisCommand(async () => {
+          const client = (await import('../../utils/redis')).getRedisClient()
+          if (!client) return
+
+          const cacheKey = `auth:user:${userId}`
+          await client.set(cacheKey, JSON.stringify({ ...authUser, identities }))
+          console.log(`[API] 用户认证状态已缓存: ${userId}`)
+        })
       }
-    })
-
-    const dbUser = userResult || null
-
-    if (!dbUser) {
-      throw createError({
-        statusCode: 401,
-        message: '用户不存在'
-      })
     }
 
-    // 构建返回的用户对象，只包含需要的字段
-    const githubIdentity = dbUser.identities?.find((id: any) => id.provider === 'github')
+    const githubIdentity = identities.find((id) => id.provider === 'github')
     const user = {
-      id: dbUser.id,
-      username: dbUser.username,
-      name: dbUser.name,
-      grade: dbUser.grade,
-      class: dbUser.class,
-      role: dbUser.role,
-      // resolveRequirePasswordChange 内部已包含短路优化：仅在用户从未改过密码时才查询全局设置
-      requirePasswordChange: await resolveRequirePasswordChange(dbUser),
-      hasSetPassword: !!dbUser.passwordChangedAt,
-      has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
-      // 动态生成 GitHub 头像 URL
+      id: authUser.id,
+      username: authUser.username,
+      name: authUser.name,
+      grade: authUser.grade,
+      class: authUser.class,
+      role: authUser.role,
+      requirePasswordChange: authUser.requirePasswordChange,
+      hasSetPassword: authUser.hasSetPassword,
+      forcePasswordChange: authUser.forcePasswordChange,
+      passwordChangedAt: authUser.passwordChangedAt,
+      has2FA: identities.some((id) => id.provider === 'totp'),
       avatar: githubIdentity?.providerUsername
         ? `https://github.com/${githubIdentity.providerUsername}.png`
         : null
-    }
-
-    // 将用户认证状态缓存到Redis（如果可用）- 永久缓存
-    if (isRedisReady()) {
-      await executeRedisCommand(async () => {
-        const client = (await import('../../utils/redis')).getRedisClient()
-        if (!client) return
-
-        const cacheKey = `auth:user:${userId}`
-        // 缓存完整的数据库用户信息，用于后续验证
-        await client.set(cacheKey, JSON.stringify(dbUser))
-        console.log(`[API] 用户认证状态已缓存: ${userId}`)
-      })
     }
 
     return {
