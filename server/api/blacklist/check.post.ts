@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   // 管理员不受黑名单限制
   const user = event.context.user
-  if (user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')) {
+  if (user && ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)) {
     return {
       isBlocked: false,
       reasons: [],

@@ -2442,8 +2442,7 @@ const submitSong = async (result, options = {}) => {
   selectedUrl.value = result.url || result.file || ''
 
   // 管理员不受黑名单限制
-  const isAdmin = user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')
-  if (!isAdmin) {
+  if (!auth.isAdmin.value) {
     try {
       // 检查黑名单
       const blacklistCheck = await $fetch('/api/blacklist/check', {
@@ -2756,8 +2755,7 @@ const handleManualSubmit = async () => {
   error.value = ''
 
   // 管理员不受黑名单限制
-  const isAdmin = user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')
-  if (!isAdmin) {
+  if (!auth.isAdmin.value) {
     try {
       // 检查黑名单
       const blacklistCheck = await $fetch('/api/blacklist/check', {
