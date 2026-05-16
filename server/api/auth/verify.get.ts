@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     let identities: { provider: string; providerUsername: string | null }[] = []
     let identitiesCached = false
 
-    const cached = await userCache.getAuth(String(userId)) as any
+    const cached = await userCache.getAuth(String(userId)) as (User & { identities: any[] }) | null
     if (cached?.identities) {
       identities = cached.identities
       identitiesCached = true
