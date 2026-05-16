@@ -38,40 +38,6 @@ const isPageRenderRequest = (pathname: string): boolean => {
   if (/\.(js|css|map|json|ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|wasm|mp3|mp4|webm)$/.test(pathname)) return false
   return true
 }
-import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
-import { isAdminRole } from '#shared/auth-constants'
-
-// 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
-// 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
-// 不会到达此处的强制改密拦截逻辑，因此无需在此白名单中重复。
-// 不应使用宽泛的前缀匹配（如 /api/auth/2fa/），以防未来新增的 2FA 管理接口被意外放行。
-const PASSWORD_CHANGE_ALLOWED_PATHS = [
-  '/api/auth/verify',
-  '/api/auth/logout',
-  '/api/auth/change-password',
-  '/api/auth/set-initial-password'
-]
-
-// 仅对"页面 HTML 渲染请求"做软认证：排除 Nuxt 内部路径、构建产物、静态资源等
-const NON_PAGE_PREFIXES = [
-  '/_nuxt',
-  '/__nuxt',
-  '/_payload',
-  '/_ipx',
-  '/_loading',
-  '/favicon',
-  '/images/',
-  '/audio-match/',
-  '/robots.txt'
-]
-
-const isPageRenderRequest = (pathname: string): boolean => {
-  if (pathname.startsWith('/api/')) return false
-  if (NON_PAGE_PREFIXES.some((p) => pathname.startsWith(p))) return false
-  // 仅匹配已知静态资源后缀，避免含点号的路由（如 /user/name.surname）被误判
-  if (/\.(js|css|map|json|ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|wasm|mp3|mp4|webm)$/.test(pathname)) return false
-  return true
-}
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -94,6 +60,7 @@ export default defineEventHandler(async (event) => {
   if (isApiRequest) {
     const publicApiPaths = [
       '/api/auth/login',
+      '/api/auth/captcha', // 验证码图片
       '/api/auth/bind', // 账号绑定
       '/api/auth/oauth-register',
       '/api/auth/2fa/verify',
