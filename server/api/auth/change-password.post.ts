@@ -73,6 +73,12 @@ export default defineEventHandler(async (event) => {
     // 更新密码
     await updateUserPassword(user.id, body.newPassword)
 
+    // 重置 forcePasswordChange 标志，避免改密后仍被拦截
+    await db
+      .update(users)
+      .set({ forcePasswordChange: false })
+      .where(eq(users.id, user.id))
+
     // 清除用户认证缓存，防止 verify 接口返回过期数据
     try {
       const { userCache } = await import('~~/server/utils/cache-helpers')

@@ -614,6 +614,17 @@ export default defineEventHandler(async (event) => {
       console.warn('更新系统设置缓存失败:', cacheError)
     }
 
+    // 当修改强制改密设置时，清除所有用户认证缓存以立即生效
+    if (body.forcePasswordChangeOnFirstLogin !== undefined) {
+      try {
+        const { userCache } = await import('~~/server/utils/cache-helpers')
+        await userCache.clearAllAuth()
+        console.log('[Cache] 已清除所有用户认证缓存（强制改密设置变更）')
+      } catch (e) {
+        console.warn('清除用户认证缓存失败:', e)
+      }
+    }
+
     try {
       const { SmtpService } = await import('~~/server/services/smtpService')
       await SmtpService.getInstance().initializeSmtpConfig()
