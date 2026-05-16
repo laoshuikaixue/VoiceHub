@@ -77,6 +77,8 @@ export default defineEventHandler(async (event) => {
       grade: authUser.grade,
       class: authUser.class,
       role: authUser.role,
+      email: authUser.email,
+      emailVerified: authUser.emailVerified,
       requirePasswordChange: authUser.requirePasswordChange,
       hasSetPassword: authUser.hasSetPassword,
       forcePasswordChange: authUser.forcePasswordChange,

@@ -149,14 +149,14 @@ export const useAuth = () => {
   const setInitialPassword = async (newPassword: string) => {
     loading.value = true
     try {
-      await $fetch('/api/auth/set-initial-password', {
+      const res = await $fetch<{ passwordChangedAt?: string }>('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword }
       })
       if (user.value) {
         user.value.requirePasswordChange = false
         user.value.hasSetPassword = true
-        user.value.passwordChangedAt = new Date().toISOString()
+        user.value.passwordChangedAt = res.passwordChangedAt || new Date().toISOString()
       }
     } finally {
       loading.value = false

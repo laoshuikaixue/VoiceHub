@@ -49,11 +49,12 @@ export default defineEventHandler(async (event) => {
     const hashedPassword = await bcrypt.hash(body.newPassword, 10)
 
     // 更新密码
+    const passwordChangedAt = getBeijingTime()
     await db
       .update(users)
       .set({
         password: hashedPassword,
-        passwordChangedAt: getBeijingTime(),
+        passwordChangedAt,
         forcePasswordChange: false
       })
       .where(eq(users.id, user.id))
@@ -80,7 +81,8 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: '初始密码设置成功',
-      token: newToken
+      token: newToken,
+      passwordChangedAt
     }
   } catch (error: any) {
     throw createError({
