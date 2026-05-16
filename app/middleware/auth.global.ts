@@ -31,6 +31,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           grade: ctxUser.grade,
           class: ctxUser.class,
           role: ctxUser.role,
+          email: ctxUser.email,
+          emailVerified: ctxUser.emailVerified,
           requirePasswordChange: ctxUser.requirePasswordChange,
           hasSetPassword: ctxUser.hasSetPassword,
           forcePasswordChange: ctxUser.forcePasswordChange,
