@@ -35,7 +35,7 @@ const isPageRenderRequest = (pathname: string): boolean => {
   if (pathname.startsWith('/api/')) return false
   if (NON_PAGE_PREFIXES.some((p) => pathname.startsWith(p))) return false
   // 仅匹配已知静态资源后缀，避免含点号的路由（如 /user/name.surname）被误判
-  if (/\.(js|css|map|json|ico|png|jpe?g|gif|svg|webp|woff2?|ttf|eot|wasm|mp3|mp4|webm)$/.test(pathname)) return false
+  if (/\.(js|mjs|cjs|css|map|json|ico|png|jpe?g|gif|svg|webp|avif|woff2?|ttf|otf|eot|wasm|mp3|mp4|webm)$/.test(pathname)) return false
   return true
 }
 
