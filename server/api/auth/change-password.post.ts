@@ -7,6 +7,7 @@ import { updateUserPassword } from '../../services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
@@ -70,22 +71,10 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 更新密码
+    // 更新密码（同时重置 forcePasswordChange、更新 passwordChangedAt、清除缓存）
     await updateUserPassword(user.id, body.newPassword)
 
-    // 重置 forcePasswordChange 标志，避免改密后仍被拦截
-    await db
-      .update(users)
-      .set({ forcePasswordChange: false })
-      .where(eq(users.id, user.id))
-
-    // 清除用户认证缓存，防止 verify 接口返回过期数据
-    try {
-      const { userCache } = await import('~~/server/utils/cache-helpers')
-      await userCache.clearAuth(String(user.id))
-    } catch (e) {
-      console.warn('清除用户认证缓存失败:', e)
-    }
+    const passwordChangedAt = getBeijingTime()
 
     // 签发新 token（密码修改后 passwordChangedAt 更新，旧 token 会被中间件拒绝）
     const newToken = JWTEnhanced.generateToken(user.id, user.role)
@@ -105,7 +94,8 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: '密码修改成功',
-      token: newToken
+      token: newToken,
+      passwordChangedAt
     }
   } catch (error: any) {
     // 已格式化的错误直接抛出
