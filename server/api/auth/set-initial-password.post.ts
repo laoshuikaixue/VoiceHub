@@ -3,6 +3,8 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -56,9 +58,21 @@ export default defineEventHandler(async (event) => {
       })
       .where(eq(users.id, user.id))
 
+    // 签发新 token（passwordChangedAt 更新后旧 token 会被中间件拒绝）
+    const newToken = JWTEnhanced.generateToken(user.id, user.role)
+    const isSecure = isSecureRequest(event)
+    setCookie(event, 'auth-token', newToken, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/'
+    })
+
     return {
       success: true,
-      message: '初始密码设置成功'
+      message: '初始密码设置成功',
+      token: newToken
     }
   } catch (error: any) {
     throw createError({

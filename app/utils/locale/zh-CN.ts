@@ -48,6 +48,9 @@ export const siteConfig = {
   weeklyLimit: '每周限额',
   monthlyLimit: '每月限额',
   limitUnit: '首 / 人',
+  dailyLimitLabel: '单日',
+  weeklyLimitLabel: '单周',
+  monthlyLimitLabel: '单月',
 
   // 安全与隐私
   securityPrivacy: '安全与隐私设置',
