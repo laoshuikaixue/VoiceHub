@@ -19,7 +19,7 @@ export interface User {
   lastLoginAt?: Date | null
   lastLoginIp?: string | null
   forcePasswordChange?: boolean
-  passwordChangedAt?: Date | null
+  passwordChangedAt?: string | null
   requirePasswordChange?: boolean
   hasSetPassword?: boolean
   avatar?: string | null

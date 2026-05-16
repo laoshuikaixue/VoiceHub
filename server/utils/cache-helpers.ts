@@ -309,11 +309,10 @@ export const systemCache = {
 }
 
 export const userCache = {
-  getAuth: (userId: string) => cache.get(cache.buildKey(CACHE_PREFIXES.AUTH, userId)),
-  setAuth: (userId: string, authData: any) =>
-    cache.set(cache.buildKey(CACHE_PREFIXES.AUTH, userId), authData),
-  clearAuth: (userId: string) => cache.delete(cache.buildKey(CACHE_PREFIXES.AUTH, userId)),
-  clearAllAuth: () => cache.deletePattern(cache.buildKey(CACHE_PREFIXES.AUTH, '*'))
+  getAuth: (userId: string) => cache.get(`auth:user:${userId}`),
+  setAuth: (userId: string, authData: any) => cache.set(`auth:user:${userId}`, authData),
+  clearAuth: (userId: string) => cache.delete(`auth:user:${userId}`),
+  clearAllAuth: () => cache.deletePattern('auth:user:*')
 }
 
 export const scheduleCache = {

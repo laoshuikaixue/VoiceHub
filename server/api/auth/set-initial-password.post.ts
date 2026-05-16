@@ -60,13 +60,8 @@ export default defineEventHandler(async (event) => {
 
     // 清除用户认证缓存，防止 verify 接口返回过期数据
     try {
-      const { executeRedisCommand, isRedisReady } = await import('../../utils/redis')
-      if (isRedisReady()) {
-        await executeRedisCommand(async () => {
-          const client = (await import('../../utils/redis')).getRedisClient()
-          if (client) await client.del(`auth:user:${user.id}`)
-        })
-      }
+      const { userCache } = await import('~~/server/utils/cache-helpers')
+      await userCache.clearAuth(String(user.id))
     } catch (e) {
       console.warn('清除用户认证缓存失败:', e)
     }
