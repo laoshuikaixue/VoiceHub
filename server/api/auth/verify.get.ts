@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
           if (!client) return
 
           const cacheKey = `auth:user:${userId}`
-          await client.set(cacheKey, JSON.stringify({ ...authUser, identities }))
+          await client.set(cacheKey, JSON.stringify({ ...authUser, identities }), 'EX', 86400)
           console.log(`[API] 用户认证状态已缓存: ${userId}`)
         })
       }
