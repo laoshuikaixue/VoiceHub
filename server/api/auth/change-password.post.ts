@@ -73,6 +73,19 @@ export default defineEventHandler(async (event) => {
     // 更新密码
     await updateUserPassword(user.id, body.newPassword)
 
+    // 清除用户认证缓存，防止 verify 接口返回过期数据
+    try {
+      const { executeRedisCommand, isRedisReady } = await import('../../utils/redis')
+      if (isRedisReady()) {
+        await executeRedisCommand(async () => {
+          const client = (await import('../../utils/redis')).getRedisClient()
+          if (client) await client.del(`auth:user:${user.id}`)
+        })
+      }
+    } catch (e) {
+      console.warn('清除用户认证缓存失败:', e)
+    }
+
     // 签发新 token（密码修改后 passwordChangedAt 更新，旧 token 会被中间件拒绝）
     const newToken = JWTEnhanced.generateToken(user.id, user.role)
     const isSecure = isSecureRequest(event)
