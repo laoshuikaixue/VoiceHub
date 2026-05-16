@@ -1,8 +1,7 @@
-import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { updateUserPassword } from '../../services/userService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户信息
-    const currentUserResult = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
+    const currentUserResult = await db.select({ passwordChangedAt: users.passwordChangedAt }).from(users).where(eq(users.id, user.id)).limit(1)
     const currentUser = currentUserResult[0]
     if (!currentUser) {
       throw createError({
@@ -45,27 +44,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 加密新密码
-    const hashedPassword = await bcrypt.hash(body.newPassword, 10)
-
-    // 更新密码
-    const passwordChangedAt = getBeijingTime()
-    await db
-      .update(users)
-      .set({
-        password: hashedPassword,
-        passwordChangedAt,
-        forcePasswordChange: false
-      })
-      .where(eq(users.id, user.id))
-
-    // 清除用户认证缓存，防止 verify 接口返回过期数据
-    try {
-      const { userCache } = await import('~~/server/utils/cache-helpers')
-      await userCache.clearAuth(String(user.id))
-    } catch (e) {
-      console.warn('清除用户认证缓存失败:', e)
-    }
+    // 更新密码（同时设置 passwordChangedAt、重置 forcePasswordChange、清除缓存）
+    const { passwordChangedAt } = await updateUserPassword(user.id, body.newPassword)
 
     // 签发新 token（passwordChangedAt 更新后旧 token 会被中间件拒绝）
     const newToken = JWTEnhanced.generateToken(user.id, user.role)

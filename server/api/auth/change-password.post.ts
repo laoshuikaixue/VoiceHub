@@ -7,7 +7,6 @@ import { updateUserPassword } from '../../services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
-import { getBeijingTime } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
@@ -72,9 +71,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新密码（同时重置 forcePasswordChange、更新 passwordChangedAt、清除缓存）
-    await updateUserPassword(user.id, body.newPassword)
-
-    const passwordChangedAt = getBeijingTime()
+    const { passwordChangedAt } = await updateUserPassword(user.id, body.newPassword)
 
     // 签发新 token（密码修改后 passwordChangedAt 更新，旧 token 会被中间件拒绝）
     const newToken = JWTEnhanced.generateToken(user.id, user.role)

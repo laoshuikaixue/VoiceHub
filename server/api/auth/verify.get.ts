@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { userIdentities } from '~/drizzle/schema'
-import { executeRedisCommand, isRedisReady } from '../../utils/redis'
 import { eq } from 'drizzle-orm'
+import { userCache } from '~~/server/utils/cache-helpers'
 
 // 用户认证缓存（永久缓存，登出或权限变更时主动失效）
 
@@ -18,33 +18,17 @@ export default defineEventHandler(async (event) => {
 
     const userId = authUser.id
 
-    // 优先从Redis缓存获取 identities 信息
+    // 优先从缓存获取 identities 信息
     let identities: { provider: string; providerUsername: string | null }[] = []
     let identitiesCached = false
 
-    if (isRedisReady()) {
-      const cached = await executeRedisCommand(async () => {
-        const client = (await import('../../utils/redis')).getRedisClient()
-        if (!client) return null
-
-        const cacheKey = `auth:user:${userId}`
-        const userData = await client.get(cacheKey)
-
-        if (userData) {
-          console.log(`[API] 用户认证缓存命中: ${userId}`)
-          return JSON.parse(userData)
-        }
-
-        return null
-      })
-
-      if (cached?.identities) {
-        identities = cached.identities
-        identitiesCached = true
-      }
+    const cached = await userCache.getAuth(String(userId)) as any
+    if (cached?.identities) {
+      identities = cached.identities
+      identitiesCached = true
     }
 
-    // 缓存未命中时仅查询 identities 关联表（基础用户信息已由中间件提供）
+    // 缓存未命中时查询 identities 关联表（基础用户信息已由中间件提供）
     if (!identitiesCached) {
       const identitiesResult = await db
         .select({
@@ -56,17 +40,8 @@ export default defineEventHandler(async (event) => {
 
       identities = identitiesResult
 
-      // 将 identities 缓存到 Redis
-      if (isRedisReady()) {
-        await executeRedisCommand(async () => {
-          const client = (await import('../../utils/redis')).getRedisClient()
-          if (!client) return
-
-          const cacheKey = `auth:user:${userId}`
-          await client.set(cacheKey, JSON.stringify({ ...authUser, identities }), 'EX', 86400)
-          console.log(`[API] 用户认证状态已缓存: ${userId}`)
-        })
-      }
+      // 将完整用户数据写入缓存
+      await userCache.setAuth(String(userId), { ...authUser, identities })
     }
 
     const githubIdentity = identities.find((id) => id.provider === 'github')
