@@ -21,23 +21,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       const ctxUser = event?.context?.user as (User & { status?: string }) | undefined
 
       if (ctxUser?.id) {
-        // 仅同步 SSR 渲染需要的字段；has2FA / avatar 等需要 identities 关联查询的字段
-        // 在 server 中间件中未附加，留待客户端 hydration 时通过 initAuth() 补全（见 useAuth.ts）。
-        // ctxUser 已是 User 兼容类型，无需再做不安全的 `as User` 断言。
-        setAuthState({
-          id: ctxUser.id,
-          username: ctxUser.username,
-          name: ctxUser.name,
-          grade: ctxUser.grade,
-          class: ctxUser.class,
-          role: ctxUser.role,
-          email: ctxUser.email,
-          emailVerified: ctxUser.emailVerified,
-          requirePasswordChange: ctxUser.requirePasswordChange,
-          hasSetPassword: ctxUser.hasSetPassword,
-          forcePasswordChange: ctxUser.forcePasswordChange,
-          passwordChangedAt: ctxUser.passwordChangedAt
-        })
+        // server/middleware/auth.ts 已对 ctxUser 做了字段过滤（仅含安全字段），
+        // 直接传递整个对象，避免手动映射遗漏新增字段。
+        // has2FA / avatar 等需要 identities 关联查询的字段留待客户端 initAuth() 补全。
+        setAuthState(ctxUser as User)
       } else {
         // 未登录访客或 token 无效，明确清理状态确保 SSR / 客户端一致
         clearAuthState()

@@ -338,6 +338,10 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        forcePasswordChange: user.forcePasswordChange,
+        passwordChangedAt: user.passwordChangedAt,
         requirePasswordChange,
         hasSetPassword: !!user.passwordChangedAt
       }
