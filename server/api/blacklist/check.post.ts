@@ -14,6 +14,19 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 管理员不受黑名单限制
+  const user = event.context.user
+  if (user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')) {
+    return {
+      isBlocked: false,
+      reasons: [],
+      song: {
+        title,
+        artist
+      }
+    }
+  }
+
   try {
     // 获取系统设置
     const systemSettingsResult = await db.select().from(systemSettings).limit(1)
