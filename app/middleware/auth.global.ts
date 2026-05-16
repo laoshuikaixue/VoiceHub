@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const publicRoutes = ['/login', '/', '/auth/error', '/forgot-password', '/reset-password']
 
   // 初始化认证状态（客户端 + 服务端均执行）
-  if (!isAuthenticated.value) {
+  if (!isAuthenticated.value || (import.meta.client && !user.value?._isFullProfile)) {
     if (import.meta.client) {
       await initAuth()
     } else if (import.meta.server) {
