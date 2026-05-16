@@ -277,6 +277,19 @@ export default defineEventHandler(async (event) => {
       hasSetPassword
     }
 
+    // 风控锁定校验优先于强制改密拦截，确保被锁定用户无法访问任何功能（与页面渲染策略一致）
+    if (isUserBlocked(user.id)) {
+      delete event.context.user
+      const remaining = getUserBlockRemainingTime(user.id)
+      return sendError(
+        event,
+        createError({
+          statusCode: 401,
+          message: `账户处于风险控制期，请在 ${remaining} 分钟后重试`
+        })
+      )
+    }
+
     // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
     // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口
     const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
@@ -288,18 +301,6 @@ export default defineEventHandler(async (event) => {
           statusCode: 403,
           message: '请先完成密码修改后再访问其他功能',
           data: { requirePasswordChange: true }
-        })
-      )
-    }
-
-    if (isUserBlocked(user.id)) {
-      delete event.context.user
-      const remaining = getUserBlockRemainingTime(user.id)
-      return sendError(
-        event,
-        createError({
-          statusCode: 401,
-          message: `账户处于风险控制期，请在 ${remaining} 分钟后重试`
         })
       )
     }
