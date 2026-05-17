@@ -153,6 +153,16 @@ export default defineEventHandler(async (event) => {
       updateData.showBlacklistKeywords = body.showBlacklistKeywords
     }
 
+    if (body.forcePasswordChangeOnFirstLogin !== undefined) {
+      if (typeof body.forcePasswordChangeOnFirstLogin !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'forcePasswordChangeOnFirstLogin 必须是布尔值'
+        })
+      }
+      updateData.forcePasswordChangeOnFirstLogin = body.forcePasswordChangeOnFirstLogin
+    }
+
     if (body.enableReplayRequests !== undefined) {
       if (typeof body.enableReplayRequests !== 'boolean') {
         throw createError({
@@ -595,13 +605,24 @@ export default defineEventHandler(async (event) => {
       settings = updatedSettingsResult[0]
     }
 
-    // 清除系统设置缓存
+    // 更新系统设置缓存（直接写入新值，避免缓存空窗期）
     try {
       const { CacheService } = await import('~~/server/services/cacheService')
-      await CacheService.getInstance().clearSystemSettingsCache()
-      console.log('[Cache] 系统设置缓存已清除（更新系统设置）')
+      await CacheService.getInstance().setSystemSettings(settings)
+      console.log('[Cache] 系统设置缓存已更新（更新系统设置）')
     } catch (cacheError) {
-      console.warn('清除系统设置缓存失败:', cacheError)
+      console.warn('更新系统设置缓存失败:', cacheError)
+    }
+
+    // 当修改强制改密设置时，清除所有用户认证缓存以立即生效
+    if (body.forcePasswordChangeOnFirstLogin !== undefined) {
+      try {
+        const { userCache } = await import('~~/server/utils/cache-helpers')
+        await userCache.clearAllAuth()
+        console.log('[Cache] 已清除所有用户认证缓存（强制改密设置变更）')
+      } catch (e) {
+        console.warn('清除用户认证缓存失败:', e)
+      }
     }
 
     try {
@@ -626,4 +647,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-
