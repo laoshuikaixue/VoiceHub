@@ -2441,28 +2441,31 @@ const submitSong = async (result, options = {}) => {
   selectedCover.value = result.cover || ''
   selectedUrl.value = result.url || result.file || ''
 
-  try {
-    // 检查黑名单
-    const blacklistCheck = await $fetch('/api/blacklist/check', {
-      method: 'POST',
-      body: {
-        title: title.value,
-        artist: artist.value
-      }
-    })
+  // 管理员不受黑名单限制
+  if (!auth.isAdmin.value) {
+    try {
+      // 检查黑名单
+      const blacklistCheck = await $fetch('/api/blacklist/check', {
+        method: 'POST',
+        body: {
+          title: title.value,
+          artist: artist.value
+        }
+      })
 
-    if (blacklistCheck.isBlocked) {
-      const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-      error.value = `该歌曲无法点歌: ${reasons}`
-      if (window.$showNotification) {
-        window.$showNotification(error.value, 'error')
+      if (blacklistCheck.isBlocked) {
+        const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
+        error.value = `该歌曲无法点歌: ${reasons}`
+        if (window.$showNotification) {
+          window.$showNotification(error.value, 'error')
+        }
+        submitting.value = false
+        return
       }
-      submitting.value = false
-      return
+    } catch (err) {
+      console.error('黑名单检查失败:', err)
+      // 黑名单检查失败不阻止提交，只记录错误
     }
-  } catch (err) {
-    console.error('黑名单检查失败:', err)
-    // 黑名单检查失败不阻止提交，只记录错误
   }
 
   // 确保获取完整的URL
@@ -2751,25 +2754,34 @@ const handleManualSubmit = async () => {
   submitting.value = true
   error.value = ''
 
-  try {
-    // 检查黑名单
-    const blacklistCheck = await $fetch('/api/blacklist/check', {
-      method: 'POST',
-      body: {
-        title: title.value,
-        artist: manualArtist.value
-      }
-    })
+  // 管理员不受黑名单限制
+  if (!auth.isAdmin.value) {
+    try {
+      // 检查黑名单
+      const blacklistCheck = await $fetch('/api/blacklist/check', {
+        method: 'POST',
+        body: {
+          title: title.value,
+          artist: manualArtist.value
+        }
+      })
 
-    if (blacklistCheck.isBlocked) {
-      const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-      error.value = `该歌曲无法点歌: ${reasons}`
-      if (window.$showNotification) {
-        window.$showNotification(error.value, 'error')
+      if (blacklistCheck.isBlocked) {
+        const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
+        error.value = `该歌曲无法点歌: ${reasons}`
+        if (window.$showNotification) {
+          window.$showNotification(error.value, 'error')
+        }
+        submitting.value = false
+        return
       }
-      submitting.value = false
-      return
+    } catch (err) {
+      console.error('黑名单检查失败:', err)
+      // 黑名单检查失败不阻止提交，只记录错误
     }
+  }
+
+  try {
     // 构建歌曲数据对象
     // 如果手动填入了 playUrl，则不保留平台标识符
     const trimmedPlayUrl = manualPlayUrl.value?.trim() || ''
