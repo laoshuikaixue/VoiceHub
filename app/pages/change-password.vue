@@ -87,13 +87,6 @@
             <template v-else>
               <p class="footer-hint">{{ locale.cannotComplete }}</p>
               <div class="footer-actions">
-                <NuxtLink class="text-link" to="/forgot-password">
-                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M9 11V7a3 3 0 016 0v4" />
-                    <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
-                  </svg>
-                  {{ locale.forgotPassword }}
-                </NuxtLink>
                 <button class="logout-btn" type="button" @click="handleLogout">
                   <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
