@@ -456,28 +456,28 @@
             <!-- 预览表格 -->
             <div v-if="excelPreviewData.length > 0" class="space-y-4">
 
-            <!-- 外部阻断用户提示 -->
-            <div
-              v-if="blockerList.length > 0"
-              class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
-            >
-              <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
-                <AlertCircle :size="16" />
-                需要处理的用户 ({{ blockerList.length }})
+              <!-- 外部阻断用户提示 -->
+              <div
+                v-if="blockerList.length > 0"
+                class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
+              >
+                <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+                  <AlertCircle :size="16" />
+                  需要处理的用户 ({{ blockerList.length }})
+                </div>
+                <p class="text-[10px] text-amber-300/80 leading-relaxed">
+                  以下用户不在当前更新列表中，但占用了目标用户名。请先将其标记为退学或禁用后再更新。
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="(blocker, i) in blockerList"
+                    :key="i"
+                    class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs font-bold text-amber-400"
+                  >
+                    {{ blocker.name }}({{ blocker.username }})
+                  </span>
+                </div>
               </div>
-              <p class="text-[10px] text-amber-300/80 leading-relaxed">
-                以下用户不在当前更新列表中，但占用了目标用户名。请先将其标记为退学或禁用后再更新。
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="(blocker, i) in blockerList"
-                  :key="i"
-                  class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs font-bold text-amber-400"
-                >
-                  {{ blocker.name }}({{ blocker.username }})
-                </span>
-              </div>
-            </div>
               <div class="flex items-center justify-between ml-1">
                 <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
                   >数据预览 ({{ excelPreviewData.length }}条)</label
@@ -531,19 +531,28 @@
                           </div>
                         </td>
                         <td class="px-5 py-4">
-                          <div class="text-[10px] text-zinc-500 font-medium">
-                            {{ row.currentGrade || '-' }}年级 {{ row.currentClass || '-' }}
+                          <div class="flex flex-col">
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs font-bold text-zinc-200">{{ row.currentGrade || '-' }}</span>
+                              <span class="text-[10px] text-zinc-700">/</span>
+                              <span class="text-xs font-bold text-zinc-200">{{ row.currentClass || '-' }}</span>
+                            </div>
+                            <span class="text-[10px] text-zinc-500 font-medium mt-0.5">{{ row.username }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4">
-                          <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-emerald-400">{{
-                              row.newGrade || row.currentGrade || '-'
-                            }}</span>
-                            <span class="text-[10px] text-zinc-700">/</span>
-                            <span class="text-xs font-bold text-emerald-400">{{
-                              row.newClass || row.currentClass || '-'
-                            }}</span>
+                          <div class="flex flex-col">
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
+                              <span class="text-[10px] text-zinc-700">/</span>
+                              <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
+                            </div>
+                            <span
+                              :class="[
+                                'text-[10px] font-medium mt-0.5',
+                                row.newUsername ? 'text-emerald-400' : 'text-zinc-500'
+                              ]"
+                            >{{ row.newUsername || row.username }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4 text-right">
@@ -860,7 +869,7 @@ const parseExcelData = (jsonData) => {
       userMapByUsername.set(user.username.trim().toLowerCase(), user)
     }
     if (user.name) {
-      const normalizedName = user.name.trim()
+      const normalizedName = user.name.trim().toLowerCase()
       if (userMapByName.has(normalizedName)) {
         userMapByName.set(normalizedName, 'AMBIGUOUS')
       } else {
@@ -871,7 +880,7 @@ const parseExcelData = (jsonData) => {
 
   jsonData.forEach((row, index) => {
     const username = (row['用户名'] || row['username'] || '').toString().trim()
-    const name = (row['姓名'] || row['name'] || '').toString().trim()
+    const name = (row['姓名'] || row['name'] || '').toString().trim().toLowerCase()
     const newGrade = row['年级'] || row['grade'] ? String(row['年级'] || row['grade']).trim() : ''
     const newClass = row['班级'] || row['class'] ? String(row['班级'] || row['class']).trim() : ''
     const explicitNewUsername = (row['新用户名'] || row['new_username'] || '').toString().trim()
@@ -963,13 +972,23 @@ const parseExcelData = (jsonData) => {
   })
 
   const externalBlockers = new Map()
+  const requestedUsernames = new Map()
+  const previewMap = new Map(previewData.filter((r) => !r.error).map((r) => [r.userId, r]))
 
   for (const row of previewData) {
     if (row.error) continue
+    if (row.newUsername) {
+      const previous = requestedUsernames.get(row.newUsername)
+      if (previous) {
+        previous.error = `重复的更新目标：多行数据尝试更新为同一个用户名 ${row.newUsername}`
+        row.error = `重复的更新目标：多行数据尝试更新为同一个用户名 ${row.newUsername}`
+        continue
+      }
+      requestedUsernames.set(row.newUsername, row)
+    }
+
     if (row.usernameConflict) {
-      const conflictRow = previewData.find(
-        (r) => !r.error && r.userId === row.usernameConflict.userId
-      )
+      const conflictRow = previewMap.get(row.usernameConflict.userId)
       const conflictIsChanging =
         conflictRow && conflictRow.newUsername && conflictRow.newUsername !== conflictRow.username
       if (conflictIsChanging) {
