@@ -1,3 +1,4 @@
+import type { User } from '~~/types/index'
 import { db } from '~/drizzle/db'
 import { userIdentities } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
