@@ -901,15 +901,27 @@ const parseExcelData = (jsonData) => {
       return
     }
 
+    const finalNewGrade = newGrade || undefined
+    const finalNewClass = newClass || undefined
+    const finalNewUsername = newUsername || undefined
+
+    const hasGradeChange = finalNewGrade !== undefined && finalNewGrade !== (existingUser.grade || '')
+    const hasClassChange = finalNewClass !== undefined && finalNewClass !== (existingUser.class || '')
+    const hasUsernameChange = finalNewUsername !== undefined && finalNewUsername !== existingUser.username
+
+    if (!hasGradeChange && !hasClassChange && !hasUsernameChange) {
+      return
+    }
+
     previewData.push({
       userId: existingUser.id,
       username: existingUser.username,
       name: existingUser.name,
       currentGrade: existingUser.grade,
       currentClass: existingUser.class,
-      newGrade: newGrade || undefined,
-      newClass: newClass || undefined,
-      newUsername: newUsername || undefined
+      newGrade: finalNewGrade,
+      newClass: finalNewClass,
+      newUsername: finalNewUsername
     })
   })
 
