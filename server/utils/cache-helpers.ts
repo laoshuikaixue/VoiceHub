@@ -363,7 +363,7 @@ export const userCache = {
    * 注意：旧版本缓存数据不会立即被清理，而是在下次 getAuth 读取时
    * 因 _v 不匹配而被淘汰。无需担心内存占用，旧数据在下次 setAuth 时覆盖。
    */
-  clearAllAuth: async () => {
+    clearAllAuth: async () => {
     // Version Tag: INCR 全局版本号使所有缓存失效，避免 KEYS 阻塞
     if (isRedisReady()) {
       await executeRedisCommand(
@@ -375,6 +375,9 @@ export const userCache = {
         },
         async () => {}
       )
+    } else {
+      // Redis 不可用时，回退到清理内存缓存中的认证数据
+      await cache.deletePattern('auth:user:*')
     }
     return true
   }
