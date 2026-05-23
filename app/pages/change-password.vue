@@ -83,7 +83,7 @@
               {{ locale.backToHome }}
             </NuxtLink>
 
-            <!-- 强制改密场景：提供"忘记密码"与"退出登录"入口，避免用户被困住 -->
+            <!-- 强制改密场景：提供"退出登录"入口，避免用户被困住 -->
             <template v-else>
               <p class="footer-hint">{{ locale.cannotComplete }}</p>
               <div class="footer-actions">

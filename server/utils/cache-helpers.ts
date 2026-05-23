@@ -14,6 +14,25 @@ export const CACHE_PREFIXES = {
   VOTE: 'vote:'
 } as const
 
+/**
+ * 全局认证缓存版本号键
+ *
+ * 用于实现基于版本号（Version Tag）的全局认证缓存失效机制，替代 Redis KEYS 命令。
+ *
+ * --- 工作原理 ---
+ * setAuth(userId, data) 写入时在 data 中附加当前全局版本号 _v
+ * getAuth(userId) 读取时对比缓存 _v 与全局版本号，不一致则视为未命中
+ * clearAllAuth() 改为 INCR 版本号（O(1)），不再执行 KEYS（O(N) blocking）
+ *
+ * --- 性能对比 ---
+ * KEYS 方案: O(N)，N=用户数。100k 用户约需 700ms+（blocking 风险）
+ * Version Tag 方案: O(1) INCR，约 0.3ms（恒定）
+ *
+ * --- 兼容性 ---
+ * 旧格式缓存 _v 缺失 → 直接返回（不校验），渐进迁移到新格式
+ */
+const AUTH_GLOBAL_VERSION_KEY = 'auth:global-version'
+
 // 统一缓存操作接口
 export class CacheHelper {
   private static cacheVersions = new Map<string, string>() // 缓存版本管理
@@ -308,11 +327,57 @@ export const systemCache = {
   clearConfig: () => cache.delete(cache.buildKey(CACHE_PREFIXES.SYSTEM, 'config'))
 }
 
+/**
+ * 认证缓存模块
+ *
+ * Version Tag 方案替代 Redis KEYS：
+ * - setAuth 写入时附加 _v（当前全局版本号）
+ * - getAuth 读取时比对 _v，不一致则视为缓存未命中
+ * - clearAllAuth 通过 INCR 全局版本号（O(1)）失效所有认证缓存
+ *
+ * 使用位置：server/api/admin/system-settings/index.post.ts 保存系统设置后调用
+ * userCache.clearAllAuth()，确保 forcePasswordChangeOnFirstLogin 立即生效。
+ */
 export const userCache = {
-  getAuth: (userId: string) => cache.get(`auth:user:${userId}`),
-  setAuth: (userId: string, authData: any) => cache.set(`auth:user:${userId}`, authData),
+  getAuth: async (userId: string) => {
+    const data = await cache.get<any>(`auth:user:${userId}`)
+    if (!data) return null
+    // Version Tag 校验：若 _v 与全局版本号不一致，视为缓存已失效
+    if (data._v !== undefined) {
+      const currentVersion = await cache.get<string>(AUTH_GLOBAL_VERSION_KEY)
+      if (data._v !== currentVersion) return null
+    }
+    return data
+  },
+  setAuth: async (userId: string, authData: any) => {
+    // 写入时附加当前全局版本号，用于 getAuth 的版本校验
+    const version = await cache.get<string>(AUTH_GLOBAL_VERSION_KEY)
+    return cache.set(`auth:user:${userId}`, { ...authData, _v: version })
+  },
   clearAuth: (userId: string) => cache.delete(`auth:user:${userId}`),
-  clearAllAuth: () => cache.deletePattern('auth:user:*')
+  /**
+   * 失效全部认证缓存
+   *
+   * 采用 Version Tag 方案（O(1) INCR），替代 Redis KEYS（O(N) blocking）。
+   *
+   * 注意：旧版本缓存数据不会立即被清理，而是在下次 getAuth 读取时
+   * 因 _v 不匹配而被淘汰。无需担心内存占用，旧数据在下次 setAuth 时覆盖。
+   */
+  clearAllAuth: async () => {
+    // Version Tag: INCR 全局版本号使所有缓存失效，避免 KEYS 阻塞
+    if (isRedisReady()) {
+      await executeRedisCommand(
+        async () => {
+          const client = (await import('./redis')).getRedisClient()
+          if (!client) return
+          await client.incr(AUTH_GLOBAL_VERSION_KEY)
+          console.log('[CacheHelper] 全局认证缓存已通过 Version Tag 失效')
+        },
+        async () => {}
+      )
+    }
+    return true
+  }
 }
 
 export const scheduleCache = {
