@@ -455,6 +455,29 @@
 
             <!-- 预览表格 -->
             <div v-if="excelPreviewData.length > 0" class="space-y-4">
+
+            <!-- 外部阻断用户提示 -->
+            <div
+              v-if="blockerList.length > 0"
+              class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
+            >
+              <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+                <AlertCircle :size="16" />
+                需要处理的用户 ({{ blockerList.length }})
+              </div>
+              <p class="text-[10px] text-amber-300/80 leading-relaxed">
+                以下用户不在当前更新列表中，但占用了目标用户名。请先将其标记为退学或禁用后再更新。
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="(blocker, i) in blockerList"
+                  :key="i"
+                  class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs font-bold text-amber-400"
+                >
+                  {{ blocker.name }}({{ blocker.username }})
+                </span>
+              </div>
+            </div>
               <div class="flex items-center justify-between ml-1">
                 <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
                   >数据预览 ({{ excelPreviewData.length }}条)</label
@@ -668,6 +691,7 @@ const excelPreviewData = ref([])
 const fileInput = ref(null)
 const matchType = ref('username')
 const rawExcelData = ref(null)
+const blockerList = ref([])
 
 // 批量更新进度
 const updateProgress = ref(0)
@@ -939,7 +963,6 @@ const parseExcelData = (jsonData) => {
   })
 
   const externalBlockers = new Map()
-  const blockedUsernames = new Set()
 
   for (const row of previewData) {
     if (row.error) continue
@@ -952,27 +975,20 @@ const parseExcelData = (jsonData) => {
       if (conflictIsChanging) {
         row.usernameConflict = null
       } else {
-        row.error = `请先处理 ${row.usernameConflict.name} 的账户`
-        blockedUsernames.add(row.newUsername)
-        blockedUsernames.add(row.username)
         externalBlockers.set(row.usernameConflict.userId, {
-          username: row.username,
+          username: row.newUsername,
           name: row.usernameConflict.name
         })
       }
     }
   }
 
-  let hasNewBlockage = true
-  while (hasNewBlockage) {
-    hasNewBlockage = false
-    for (const row of previewData) {
-      if (row.error) continue
-      if (row.newUsername && blockedUsernames.has(row.newUsername)) {
-        row.error = `上游用户被阻断，此更新无法执行`
-        blockedUsernames.add(row.username)
-        hasNewBlockage = true
-      }
+  blockerList.value = Array.from(externalBlockers.values())
+
+  for (const row of previewData) {
+    if (row.error) continue
+    if (row.usernameConflict) {
+      row.error = `用户名 ${row.newUsername} 被占用，请先处理 ${row.usernameConflict.name} 的账户`
     }
   }
 
@@ -1228,6 +1244,7 @@ watch(
       excelPreviewData.value = []
       matchType.value = 'username'
       rawExcelData.value = null
+      blockerList.value = []
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''
