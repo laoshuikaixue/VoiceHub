@@ -480,17 +480,45 @@
               </div>
               <div class="flex items-center justify-between ml-1">
                 <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
-                  >数据预览 ({{ excelPreviewData.length }}条)</label
+                  >数据预览 ({{ previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length }}/{{ excelPreviewData.length }}条)</label
                 >
                 <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-1.5">
+                  <button
+                    :class="[
+                      'flex items-center gap-1.5 transition-all',
+                      previewFilter === 'all' || previewFilter === 'pending'
+                        ? 'opacity-100'
+                        : 'opacity-40 hover:opacity-70'
+                    ]"
+                    @click="previewFilter = previewFilter === 'pending' ? 'all' : 'pending'"
+                  >
                     <div class="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">待更新</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] text-zinc-500 font-bold">待更新 ({{ previewCounts.pending }})</span>
+                  </button>
+                  <button
+                    :class="[
+                      'flex items-center gap-1.5 transition-all',
+                      previewFilter === 'all' || previewFilter === 'noChange'
+                        ? 'opacity-100'
+                        : 'opacity-40 hover:opacity-70'
+                    ]"
+                    @click="previewFilter = previewFilter === 'noChange' ? 'all' : 'noChange'"
+                  >
+                    <div class="w-2 h-2 rounded-full bg-zinc-500" />
+                    <span class="text-[10px] text-zinc-500 font-bold">无变更 ({{ previewCounts.noChange }})</span>
+                  </button>
+                  <button
+                    :class="[
+                      'flex items-center gap-1.5 transition-all',
+                      previewFilter === 'all' || previewFilter === 'error'
+                        ? 'opacity-100'
+                        : 'opacity-40 hover:opacity-70'
+                    ]"
+                    @click="previewFilter = previewFilter === 'error' ? 'all' : 'error'"
+                  >
                     <div class="w-2 h-2 rounded-full bg-red-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">错误</span>
-                  </div>
+                    <span class="text-[10px] text-zinc-500 font-bold">错误 ({{ previewCounts.error }})</span>
+                  </button>
                 </div>
               </div>
               <div class="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-xl">
@@ -510,7 +538,7 @@
                     </thead>
                     <tbody class="divide-y divide-zinc-900">
                       <tr
-                        v-for="(row, index) in excelPreviewData.slice(0, 10)"
+                        v-for="(row, index) in filteredPreviewData.slice(0, 10)"
                         :key="index"
                         :class="[
                           row.error ? 'bg-red-500/5' : 'hover:bg-zinc-900/30 transition-colors'
@@ -542,17 +570,22 @@
                         </td>
                         <td class="px-5 py-4">
                           <div class="flex flex-col">
-                            <div class="flex items-center gap-1.5">
-                              <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
-                              <span class="text-[10px] text-zinc-700">/</span>
-                              <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
-                            </div>
-                            <span
-                              :class="[
-                                'text-[10px] font-medium mt-0.5',
-                                row.newUsername ? 'text-emerald-400' : 'text-zinc-500'
-                              ]"
-                            >{{ row.newUsername || row.username }}</span>
+                            <template v-if="row.noChange">
+                              <span class="text-xs font-bold text-zinc-600">-</span>
+                            </template>
+                            <template v-else>
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
+                                <span class="text-[10px] text-zinc-700">/</span>
+                                <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
+                              </div>
+                              <span
+                                :class="[
+                                  'text-[10px] font-medium mt-0.5',
+                                  row.newUsername ? 'text-emerald-400' : 'text-zinc-500'
+                                ]"
+                              >{{ row.newUsername || row.username }}</span>
+                            </template>
                           </div>
                         </td>
                         <td class="px-5 py-4 text-right">
@@ -561,6 +594,12 @@
                             class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase tracking-tighter border border-red-500/20"
                           >
                             {{ row.error }}
+                          </span>
+                          <span
+                            v-else-if="row.noChange"
+                            class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase tracking-tighter border border-zinc-700/50"
+                          >
+                            无变更
                           </span>
                           <span
                             v-else
@@ -574,10 +613,10 @@
                   </table>
                 </div>
                 <div
-                  v-if="excelPreviewData.length > 10"
+                  v-if="filteredPreviewData.length > 10"
                   class="p-4 text-center border-t border-zinc-900 bg-zinc-900/20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
                 >
-                  以及另外 {{ excelPreviewData.length - 10 }} 条记录已在队列中
+                  以及另外 {{ filteredPreviewData.length - 10 }} 条记录已在队列中
                 </div>
               </div>
             </div>
@@ -701,6 +740,7 @@ const fileInput = ref(null)
 const matchType = ref('username')
 const rawExcelData = ref(null)
 const blockerList = ref([])
+const previewFilter = ref('all')
 
 // 批量更新进度
 const updateProgress = ref(0)
@@ -772,11 +812,28 @@ const canUpdate = computed(() => {
   if (updateType.value === 'grade-only') {
     return selectedUserIds.value.length > 0 && targetGrade.value.trim()
   } else if (updateType.value === 'excel-batch') {
-    return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error)
+    return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error && !row.noChange)
   } else if (updateType.value === 'status-batch') {
     return selectedUserIds.value.length > 0 && targetStatus.value && statusReason.value.trim()
   }
   return false
+})
+
+const filteredPreviewData = computed(() => {
+  if (previewFilter.value === 'all') return excelPreviewData.value
+  if (previewFilter.value === 'pending') return excelPreviewData.value.filter((r) => !r.error && !r.noChange)
+  if (previewFilter.value === 'noChange') return excelPreviewData.value.filter((r) => r.noChange)
+  if (previewFilter.value === 'error') return excelPreviewData.value.filter((r) => r.error)
+  return excelPreviewData.value
+})
+
+const previewCounts = computed(() => {
+  const data = excelPreviewData.value
+  return {
+    pending: data.filter((r) => !r.error && !r.noChange).length,
+    noChange: data.filter((r) => r.noChange).length,
+    error: data.filter((r) => r.error).length
+  }
 })
 
 // 方法
@@ -944,6 +1001,17 @@ const parseExcelData = (jsonData) => {
     const hasUsernameChange = finalNewUsername !== undefined && finalNewUsername !== existingUser.username
 
     if (!hasGradeChange && !hasClassChange && !hasUsernameChange) {
+      previewData.push({
+        userId: existingUser.id,
+        username: existingUser.username,
+        name: existingUser.name,
+        currentGrade: existingUser.grade,
+        currentClass: existingUser.class,
+        newGrade: undefined,
+        newClass: undefined,
+        newUsername: undefined,
+        noChange: true
+      })
       return
     }
 
@@ -976,7 +1044,7 @@ const parseExcelData = (jsonData) => {
   const previewMap = new Map(previewData.filter((r) => !r.error).map((r) => [r.userId, r]))
 
   for (const row of previewData) {
-    if (row.error) continue
+    if (row.error || row.noChange) continue
     if (row.newUsername) {
       const previous = requestedUsernames.get(row.newUsername)
       if (previous) {
@@ -1005,7 +1073,7 @@ const parseExcelData = (jsonData) => {
   blockerList.value = Array.from(externalBlockers.values())
 
   for (const row of previewData) {
-    if (row.error) continue
+    if (row.error || row.noChange) continue
     if (row.usernameConflict) {
       row.error = `用户名 ${row.newUsername} 被占用，请先处理 ${row.usernameConflict.name} 的账户`
     }
@@ -1134,11 +1202,20 @@ const performGradeUpdate = async () => {
 }
 
 const performExcelUpdate = async () => {
-  const validUpdates = excelPreviewData.value.filter((row) => !row.error && row.userId)
+  const validUpdates = excelPreviewData.value.filter((row) => !row.error && !row.noChange && row.userId)
 
   if (validUpdates.length === 0) {
     throw new Error('没有有效的更新数据')
   }
+
+  const targetSet = new Set(validUpdates.filter((r) => r.newUsername).map((r) => r.newUsername))
+  validUpdates.sort((a, b) => {
+    const aFreesSlot = targetSet.has(a.username)
+    const bFreesSlot = targetSet.has(b.username)
+    if (aFreesSlot && !bFreesSlot) return -1
+    if (!aFreesSlot && bFreesSlot) return 1
+    return 0
+  })
 
   updateProgress.value = 0
   updateTotalBatches.value = Math.ceil(validUpdates.length / 50)
@@ -1264,6 +1341,7 @@ watch(
       matchType.value = 'username'
       rawExcelData.value = null
       blockerList.value = []
+      previewFilter.value = 'all'
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''
