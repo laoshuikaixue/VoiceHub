@@ -117,7 +117,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('创建用户失败:', error)
-    if (error.statusCode) {
+    if (error?.statusCode) {
       throw error
     }
     throw createError({
