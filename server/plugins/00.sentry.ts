@@ -26,15 +26,21 @@ const shouldCaptureServerError = (error: unknown): boolean => {
   return true
 }
 
-const buildRequestContext = (event: H3Event) => ({
-  method: event.node.req.method || 'UNKNOWN',
-  url: event.node.req.url || '',
-  requestId: event.context.requestId || '',
-  headers: {
-    host: event.node.req.headers.host || '',
-    userAgent: event.node.req.headers['user-agent'] || ''
+const buildRequestContext = (event: H3Event) => {
+  const rawUrl = event.node.req.url || ''
+  // 移除 querystring，避免把敏感信息（如 token）泄露到 Sentry
+  const pathname = rawUrl.split('?')[0] || rawUrl
+
+  return {
+    method: event.node.req.method || 'UNKNOWN',
+    url: pathname,
+    requestId: event.context.requestId || '',
+    headers: {
+      host: event.node.req.headers.host || '',
+      userAgent: event.node.req.headers['user-agent'] || ''
+    }
   }
-})
+}
 
 export default defineNitroPlugin(async (nitroApp) => {
   if (globalThis.__voicehubSentryServerInitialized) {

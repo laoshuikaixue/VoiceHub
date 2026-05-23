@@ -36,7 +36,7 @@ const backendSentryDsnDefault =
   'https://2fca0c8a939c8909e02c082ec847e8e8@o4508946125619200.ingest.de.sentry.io/4511244961448016'
 const frontendSentryDsnDefault =
   'https://3c4fe5353816bcdce36e7cc28703c8fa@o4508946125619200.ingest.de.sentry.io/4511244934774864'
-const telemetryEnabled = process.env.NUXT_DISABLE_TELEMETRY !== 'True'
+const telemetryEnabled = (process.env.NUXT_DISABLE_TELEMETRY || '').toLowerCase() !== 'true'
 
 // 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
 const host = process.env.NUXT_PUBLIC_HOST
