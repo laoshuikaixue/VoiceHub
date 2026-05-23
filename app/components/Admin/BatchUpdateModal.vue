@@ -363,6 +363,50 @@
               </div>
             </div>
 
+            <!-- 匹配方式选择 -->
+            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-xl space-y-4">
+              <div
+                class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest"
+              >
+                <Filter :size="12" />
+                匹配方式
+              </div>
+              <div class="flex gap-3">
+                <label
+                  :class="[
+                    'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
+                    matchType === 'username'
+                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 ring-4 ring-blue-500/10'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
+                  ]"
+                >
+                  <input v-model="matchType" type="radio" value="username" class="sr-only" />
+                  <span v-if="matchType === 'username'" class="w-2 h-2 rounded-full bg-blue-500" />
+                  按用户名匹配
+                </label>
+                <label
+                  :class="[
+                    'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
+                    matchType === 'name'
+                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 ring-4 ring-emerald-500/10'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
+                  ]"
+                >
+                  <input v-model="matchType" type="radio" value="name" class="sr-only" />
+                  <span v-if="matchType === 'name'" class="w-2 h-2 rounded-full bg-emerald-500" />
+                  按姓名匹配
+                </label>
+              </div>
+              <p class="text-[10px] text-zinc-600 leading-relaxed">
+                <template v-if="matchType === 'username'">
+                  通过<span class="text-blue-400 font-bold">用户名</span>精确定位账户，适用于学号不变的常规更新
+                </template>
+                <template v-else>
+                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，适用于学号变动、人员流动后的信息更新
+                </template>
+              </p>
+            </div>
+
             <!-- 模板与说明 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
@@ -381,7 +425,12 @@
                   </li>
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
-                    <span class="text-zinc-400 font-bold">用户名</span> 列用于精确匹配现有账户
+                    <template v-if="matchType === 'username'">
+                      <span class="text-blue-400 font-bold">用户名</span> 列用于精确匹配现有账户
+                    </template>
+                    <template v-else>
+                      <span class="text-emerald-400 font-bold">姓名</span> 列用于精确匹配现有账户
+                    </template>
                   </li>
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
@@ -428,7 +477,9 @@
                       class="bg-zinc-900/80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800"
                     >
                       <tr>
-                        <th class="px-5 py-4 whitespace-nowrap">匹配用户</th>
+                        <th class="px-5 py-4 whitespace-nowrap">
+                          {{ matchType === 'username' ? '匹配用户' : '匹配姓名' }}
+                        </th>
                         <th class="px-5 py-4 whitespace-nowrap">当前信息</th>
                         <th class="px-5 py-4 whitespace-nowrap">更新后</th>
                         <th class="px-5 py-4 whitespace-nowrap text-right">匹配状态</th>
@@ -449,10 +500,10 @@
                                 'text-xs font-bold',
                                 row.error ? 'text-red-400' : 'text-zinc-200'
                               ]"
-                              >{{ row.username }}</span
+                              >{{ matchType === 'username' ? row.username : row.name }}</span
                             >
                             <span class="text-[10px] text-zinc-600 font-medium">{{
-                              row.name || '-'
+                              matchType === 'username' ? (row.name || '-') : (row.username || '-')
                             }}</span>
                           </div>
                         </td>
@@ -615,6 +666,8 @@ const statusOptions = [
 const isDragOver = ref(false)
 const excelPreviewData = ref([])
 const fileInput = ref(null)
+const matchType = ref('username')
+const rawExcelData = ref(null)
 
 // 批量更新进度
 const updateProgress = ref(0)
@@ -747,6 +800,7 @@ const processExcelFile = async (file) => {
         const worksheet = workbook.Sheets[sheetName]
         const jsonData = window.XLSX.utils.sheet_to_json(worksheet)
 
+        rawExcelData.value = jsonData
         parseExcelData(jsonData)
       } catch (parseError) {
         console.error('解析Excel文件失败:', parseError)
@@ -772,40 +826,53 @@ const processExcelFile = async (file) => {
 
 const parseExcelData = (jsonData) => {
   const previewData = []
-  const userMap = new Map()
+  const userMapByUsername = new Map()
+  const userMapByName = new Map()
 
-  // 创建用户映射，同时处理用户名标准化
+  // 创建双向用户映射
   computedUsers.value.forEach((user) => {
     if (user.username) {
-      const normalizedUsername = user.username.trim().toLowerCase()
-      userMap.set(normalizedUsername, user)
-      userMap.set(user.username, user)
+      userMapByUsername.set(user.username, user)
+      userMapByUsername.set(user.username.trim().toLowerCase(), user)
+    }
+    if (user.name) {
+      const normalizedName = user.name.trim()
+      userMapByName.set(normalizedName, user)
     }
   })
 
   jsonData.forEach((row, index) => {
     const username = (row['用户名'] || row['username'] || '').toString().trim()
-    const name = row['姓名'] || row['name'] || ''
+    const name = (row['姓名'] || row['name'] || '').toString().trim()
     const newGrade = row['年级'] || row['grade'] ? String(row['年级'] || row['grade']).trim() : ''
     const newClass = row['班级'] || row['class'] ? String(row['班级'] || row['class']).trim() : ''
     const newUsername = row['新用户名'] || row['new_username'] || ''
 
-    if (!username) {
+    const keyValue = matchType.value === 'username' ? username : name
+    const keyLabel = matchType.value === 'username' ? '用户名' : '姓名'
+
+    if (!keyValue) {
       previewData.push({
-        username: '',
+        username: username,
         name: name,
         newGrade: newGrade,
         newClass: newClass,
         newUsername: newUsername,
-        error: '用户名不能为空'
+        error: `${keyLabel}不能为空`
       })
       return
     }
 
-    const existingUser =
-      userMap.get(username) ||
-      userMap.get(username.toLowerCase()) ||
-      userMap.get(username.toUpperCase())
+    let existingUser = null
+
+    if (matchType.value === 'username') {
+      existingUser =
+        userMapByUsername.get(username) ||
+        userMapByUsername.get(username.toLowerCase()) ||
+        userMapByUsername.get(username.toUpperCase())
+    } else {
+      existingUser = userMapByName.get(name)
+    }
 
     if (!existingUser) {
       previewData.push({
@@ -821,13 +888,13 @@ const parseExcelData = (jsonData) => {
 
     previewData.push({
       userId: existingUser.id,
-      username: username,
+      username: existingUser.username,
       name: existingUser.name,
       currentGrade: existingUser.grade,
       currentClass: existingUser.class,
-      newGrade: newGrade,
-      newClass: newClass,
-      newUsername: newUsername
+      newGrade: newGrade || undefined,
+      newClass: newClass || undefined,
+      newUsername: newUsername || undefined
     })
   })
 
@@ -877,6 +944,13 @@ const downloadTemplate = async () => {
   window.XLSX.utils.book_append_sheet(wb, ws, '学生信息')
   window.XLSX.writeFile(wb, '学生信息批量更新模板.xlsx')
 }
+
+// 当匹配方式切换时，重新解析已上传的 Excel 数据
+watch(matchType, () => {
+  if (rawExcelData.value) {
+    parseExcelData(rawExcelData.value)
+  }
+})
 
 const performUpdate = async () => {
   try {
@@ -1074,6 +1148,8 @@ watch(
       // 重置状态
       selectedUserIds.value = []
       excelPreviewData.value = []
+      matchType.value = 'username'
+      rawExcelData.value = null
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''
