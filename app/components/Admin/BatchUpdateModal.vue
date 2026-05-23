@@ -850,7 +850,8 @@ const parseExcelData = (jsonData) => {
     const name = (row['姓名'] || row['name'] || '').toString().trim()
     const newGrade = row['年级'] || row['grade'] ? String(row['年级'] || row['grade']).trim() : ''
     const newClass = row['班级'] || row['class'] ? String(row['班级'] || row['class']).trim() : ''
-    const newUsername = row['新用户名'] || row['new_username'] || ''
+    const explicitNewUsername = (row['新用户名'] || row['new_username'] || '').toString().trim()
+    const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name
     const keyLabel = matchType.value === 'username' ? '用户名' : '姓名'
@@ -913,6 +914,17 @@ const parseExcelData = (jsonData) => {
       return
     }
 
+    let usernameConflict = null
+
+    if (hasUsernameChange && finalNewUsername) {
+      const conflictUser =
+        userMapByUsername.get(finalNewUsername) ||
+        userMapByUsername.get(finalNewUsername.toLowerCase())
+      if (conflictUser && conflictUser.id !== existingUser.id) {
+        usernameConflict = { userId: conflictUser.id, name: conflictUser.name }
+      }
+    }
+
     previewData.push({
       userId: existingUser.id,
       username: existingUser.username,
@@ -921,9 +933,46 @@ const parseExcelData = (jsonData) => {
       currentClass: existingUser.class,
       newGrade: finalNewGrade,
       newClass: finalNewClass,
-      newUsername: finalNewUsername
+      newUsername: finalNewUsername,
+      usernameConflict: usernameConflict
     })
   })
+
+  const batchUserIds = new Set(previewData.filter((r) => !r.error).map((r) => r.userId))
+
+  const externalBlockers = new Map()
+  const blockedUsernames = new Set()
+
+  for (const row of previewData) {
+    if (row.error) continue
+    if (row.usernameConflict) {
+      const conflictInBatch = batchUserIds.has(row.usernameConflict.userId)
+      if (conflictInBatch) {
+        row.usernameConflict = null
+      } else {
+        row.error = `请先处理 ${row.usernameConflict.name} 的账户`
+        blockedUsernames.add(row.newUsername)
+        blockedUsernames.add(row.username)
+        externalBlockers.set(row.usernameConflict.userId, {
+          username: row.username,
+          name: row.usernameConflict.name
+        })
+      }
+    }
+  }
+
+  let hasNewBlockage = true
+  while (hasNewBlockage) {
+    hasNewBlockage = false
+    for (const row of previewData) {
+      if (row.error) continue
+      if (row.newUsername && blockedUsernames.has(row.newUsername)) {
+        row.error = `上游用户被阻断，此更新无法执行`
+        blockedUsernames.add(row.username)
+        hasNewBlockage = true
+      }
+    }
+  }
 
   excelPreviewData.value = previewData
   loading.value = false
