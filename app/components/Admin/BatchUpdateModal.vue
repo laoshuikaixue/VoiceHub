@@ -402,7 +402,7 @@
                   通过<span class="text-blue-400 font-bold">用户名</span>精确定位账户，适用于学号不变的常规更新
                 </template>
                 <template v-else>
-                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，适用于学号变动、人员流动后的信息更新
+                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，<span class="text-emerald-400 font-bold">用户名</span>列将作为新学号，适用于人员流动后学号前移的场景
                 </template>
               </p>
             </div>
@@ -938,16 +938,18 @@ const parseExcelData = (jsonData) => {
     })
   })
 
-  const batchUserIds = new Set(previewData.filter((r) => !r.error).map((r) => r.userId))
-
   const externalBlockers = new Map()
   const blockedUsernames = new Set()
 
   for (const row of previewData) {
     if (row.error) continue
     if (row.usernameConflict) {
-      const conflictInBatch = batchUserIds.has(row.usernameConflict.userId)
-      if (conflictInBatch) {
+      const conflictRow = previewData.find(
+        (r) => !r.error && r.userId === row.usernameConflict.userId
+      )
+      const conflictIsChanging =
+        conflictRow && conflictRow.newUsername && conflictRow.newUsername !== conflictRow.username
+      if (conflictIsChanging) {
         row.usernameConflict = null
       } else {
         row.error = `请先处理 ${row.usernameConflict.name} 的账户`
