@@ -837,7 +837,11 @@ const parseExcelData = (jsonData) => {
     }
     if (user.name) {
       const normalizedName = user.name.trim()
-      userMapByName.set(normalizedName, user)
+      if (userMapByName.has(normalizedName)) {
+        userMapByName.set(normalizedName, 'AMBIGUOUS')
+      } else {
+        userMapByName.set(normalizedName, user)
+      }
     }
   })
 
@@ -868,10 +872,21 @@ const parseExcelData = (jsonData) => {
     if (matchType.value === 'username') {
       existingUser =
         userMapByUsername.get(username) ||
-        userMapByUsername.get(username.toLowerCase()) ||
-        userMapByUsername.get(username.toUpperCase())
+        userMapByUsername.get(username.toLowerCase())
     } else {
-      existingUser = userMapByName.get(name)
+      const match = userMapByName.get(name)
+      if (match === 'AMBIGUOUS') {
+        previewData.push({
+          username: username,
+          name: name,
+          newGrade: newGrade,
+          newClass: newClass,
+          newUsername: newUsername,
+          error: '存在多个同名用户，请切换至按用户名匹配'
+        })
+        return
+      }
+      existingUser = match
     }
 
     if (!existingUser) {
