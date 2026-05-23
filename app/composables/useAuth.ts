@@ -156,7 +156,7 @@ export const useAuth = () => {
       if (user.value) {
         user.value.requirePasswordChange = false
         user.value.hasSetPassword = true
-        user.value.passwordChangedAt = res.passwordChangedAt || new Date().toISOString()
+        user.value.passwordChangedAt = res.passwordChangedAt
       }
     } finally {
       loading.value = false
