@@ -8,7 +8,7 @@ let telemetryEnabledCache: boolean | null = null
 let telemetryEnabledCacheExpiresAt = 0
 let pendingTelemetryEnabledPromise: Promise<boolean> | null = null
 
-const TELEMETRY_CACHE_TTL_MS = 30_000
+const TELEMETRY_CACHE_TTL_MS = 5 * 60 * 1000
 
 const readTelemetryEnabled = async (): Promise<boolean> => {
   try {
