@@ -427,11 +427,9 @@ const gradeOptions = computed(() => {
 const availableClassOptions = computed(() => {
   if (!grade.value) return []
 
-  return [...new Set(
-    classOptions.value
-      .filter(item => item.grade === grade.value)
-      .map(item => item.class)
-  )]
+  return classOptions.value
+    .filter(item => item.grade === grade.value)
+    .map(item => item.class)
 })
 
 const fetchClassOptions = async () => {
