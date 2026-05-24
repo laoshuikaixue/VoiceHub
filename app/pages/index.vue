@@ -1,5 +1,14 @@
 <template>
   <div class="home">
+    <Transition name="home-boot-loader">
+      <AppLoadingScreen
+        v-if="showBootLoading"
+        :message="bootMessage"
+        :progress="bootProgress"
+        title="Loading..."
+      />
+    </Transition>
+
     <div class="ellipse-effect" />
     <div class="main-content">
       <div class="top-bar">
@@ -639,6 +648,7 @@ import { useRouter } from 'vue-router'
 import logo from '~~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -697,6 +707,43 @@ const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
 const avatarError = ref(false)
+
+const showBootLoading = ref(true)
+const bootProgress = ref(8)
+const bootMessage = ref('正在准备音乐播放环境')
+let bootSlowTimer = null
+
+const setBootState = ({ progress, message }) => {
+  if (typeof progress === 'number') {
+    bootProgress.value = progress
+  }
+
+  if (message) {
+    bootMessage.value = message
+  }
+}
+
+const waitForFirstPaint = async () => {
+  await nextTick()
+
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  await new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve())
+  })
+}
+
+const finishBootLoading = async (startedAt) => {
+  setBootState({ progress: 100, message: '加载完成，正在打开点歌台' })
+
+  const elapsed = Date.now() - startedAt
+  const restTime = Math.max(0, 720 - elapsed)
+  await new Promise((resolve) => setTimeout(resolve, restTime + 180))
+
+  showBootLoading.value = false
+}
 
 const toggleUserActions = (event) => {
   event.stopPropagation()
@@ -1063,15 +1110,32 @@ watch(
 
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
+  const bootStartedAt = Date.now()
+
   try {
+    showBootLoading.value = true
+    setBootState({ progress: 14, message: '正在准备音乐播放环境' })
+
+    bootSlowTimer = setTimeout(() => {
+      setBootState({
+        progress: Math.max(bootProgress.value, 58),
+        message: '网络有点慢，仍在同步数据'
+      })
+    }, 8000)
+
+    await waitForFirstPaint()
+
+    setBootState({ progress: 28, message: '正在加载站点配置' })
     await initSiteConfig()
 
+    setBootState({ progress: 46, message: '正在校验登录状态' })
     const currentUser = await auth.initAuth()
 
     if (typeof document !== 'undefined' && siteTitle.value) {
       document.title = `首页 | ${siteTitle.value}`
     }
 
+    setBootState({ progress: 68, message: '正在同步排期与歌曲列表' })
     if (isClientAuthenticated.value) {
       hasInitializedAuthData.value = true
       await Promise.allSettled([
@@ -1086,6 +1150,7 @@ onMounted(async () => {
       await Promise.allSettled([songs.fetchSongCount(), songs.fetchPublicSchedules()])
     }
 
+    setBootState({ progress: 88, message: '正在整理播放数据' })
     await updateSongCounts()
 
     const setupRefreshInterval = () => {
@@ -1128,13 +1193,26 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('首页初始化失败:', error)
+    setBootState({ progress: 82, message: '正在使用可用数据继续打开首页' })
     await Promise.allSettled([songs.fetchPublicSchedules(), songs.fetchSongCount()])
     await updateSongCounts()
+  } finally {
+    if (bootSlowTimer) {
+      clearTimeout(bootSlowTimer)
+      bootSlowTimer = null
+    }
+
+    await finishBootLoading(bootStartedAt)
   }
 })
 
 // 组件卸载时清除定时器
 onUnmounted(() => {
+  if (bootSlowTimer) {
+    clearTimeout(bootSlowTimer)
+    bootSlowTimer = null
+  }
+
   if (refreshInterval) {
     clearInterval(refreshInterval)
   }
@@ -1509,6 +1587,17 @@ if (
 </script>
 
 <style scoped>
+.home-boot-loader-leave-active {
+  transition:
+    opacity 420ms ease,
+    filter 420ms ease;
+}
+
+.home-boot-loader-leave-to {
+  opacity: 0;
+  filter: blur(12px);
+}
+
 .home {
   width: 100%;
   flex: 1;
