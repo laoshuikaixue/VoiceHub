@@ -412,7 +412,7 @@
               <label for="telemetry-enabled" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">启用错误追踪与遥测</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  开启后，系统会向 Sentry 发送前后端错误事件，并附带实例 ID 以便定位部署问题。
+                  默认开启。开启后，系统会向 Sentry 发送前后端错误事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），附带实例 ID 以便定位部署问题。<strong class="text-zinc-400">不会收集任何个人身份信息、用户数据或业务内容</strong>。
                 </p>
               </label>
             </div>

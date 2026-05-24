@@ -128,7 +128,7 @@ export const systemSettings = pgTable('SystemSettings', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   instanceId: text('instance_id'),
-  telemetryEnabled: boolean('telemetryEnabled').default(false).notNull(),
+  telemetryEnabled: boolean('telemetryEnabled').default(true).notNull(),
   enablePlayTimeSelection: boolean('enablePlayTimeSelection').default(false).notNull(),
   siteTitle: text('siteTitle'),
   siteLogoUrl: text('siteLogoUrl'),
