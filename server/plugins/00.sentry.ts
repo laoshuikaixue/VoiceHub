@@ -48,7 +48,7 @@ export default defineNitroPlugin((nitroApp) => {
   const config = useRuntimeConfig()
   const sentryConfig = config.sentry
 
-  if (!sentryConfig?.dsn) {
+  if (!sentryConfig?.enabled || !sentryConfig.dsn) {
     return
   }
 

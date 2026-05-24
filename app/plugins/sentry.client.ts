@@ -43,7 +43,7 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   const config = useRuntimeConfig()
   const sentryConfig = config.public?.sentry
 
-  if (!sentryConfig?.dsn) {
+  if (!sentryConfig?.enabled || !sentryConfig.dsn) {
     return
   }
 
