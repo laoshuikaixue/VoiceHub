@@ -363,6 +363,50 @@
               </div>
             </div>
 
+            <!-- 匹配方式选择 -->
+            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-xl space-y-4">
+              <div
+                class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest"
+              >
+                <Filter :size="12" />
+                匹配方式
+              </div>
+              <div class="flex gap-3">
+                <label
+                  :class="[
+                    'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
+                    matchType === 'username'
+                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 ring-4 ring-blue-500/10'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
+                  ]"
+                >
+                  <input v-model="matchType" type="radio" value="username" class="sr-only" />
+                  <span v-if="matchType === 'username'" class="w-2 h-2 rounded-full bg-blue-500" />
+                  按用户名匹配
+                </label>
+                <label
+                  :class="[
+                    'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
+                    matchType === 'name'
+                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 ring-4 ring-emerald-500/10'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
+                  ]"
+                >
+                  <input v-model="matchType" type="radio" value="name" class="sr-only" />
+                  <span v-if="matchType === 'name'" class="w-2 h-2 rounded-full bg-emerald-500" />
+                  按姓名匹配
+                </label>
+              </div>
+              <p class="text-[10px] text-zinc-600 leading-relaxed">
+                <template v-if="matchType === 'username'">
+                  通过<span class="text-blue-400 font-bold">用户名</span>精确定位账户，适用于学号不变的常规更新
+                </template>
+                <template v-else>
+                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，<span class="text-emerald-400 font-bold">用户名</span>列将作为新学号，适用于人员流动后学号前移的场景
+                </template>
+              </p>
+            </div>
+
             <!-- 模板与说明 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
@@ -381,7 +425,12 @@
                   </li>
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
-                    <span class="text-zinc-400 font-bold">用户名</span> 列用于精确匹配现有账户
+                    <template v-if="matchType === 'username'">
+                      <span class="text-blue-400 font-bold">用户名</span> 列用于精确匹配现有账户
+                    </template>
+                    <template v-else>
+                      <span class="text-emerald-400 font-bold">姓名</span> 列用于精确匹配现有账户
+                    </template>
                   </li>
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
@@ -406,19 +455,70 @@
 
             <!-- 预览表格 -->
             <div v-if="excelPreviewData.length > 0" class="space-y-4">
+
+              <!-- 外部阻断用户提示 -->
+              <div
+                v-if="blockerList.length > 0"
+                class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
+              >
+                <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+                  <AlertCircle :size="16" />
+                  需要处理的用户 ({{ blockerList.length }})
+                </div>
+                <p class="text-[10px] text-amber-300/80 leading-relaxed">
+                  以下用户不在当前更新列表中，但占用了目标用户名。请先将其标记为退学或禁用后再更新。
+                </p>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    v-for="(blocker, i) in blockerList"
+                    :key="i"
+                    class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs font-bold text-amber-400"
+                  >
+                    {{ blocker.name }}({{ blocker.username }})
+                  </span>
+                </div>
+              </div>
               <div class="flex items-center justify-between ml-1">
                 <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
-                  >数据预览 ({{ excelPreviewData.length }}条)</label
+                  >数据预览 ({{ previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length }}/{{ excelPreviewData.length }}条)</label
                 >
                 <div class="flex items-center gap-4">
-                  <div class="flex items-center gap-1.5">
+                  <button
+                    :class="[
+                      'flex items-center gap-1.5 transition-all',
+                      previewFilter === 'all' || previewFilter === 'pending'
+                        ? 'opacity-100'
+                        : 'opacity-40 hover:opacity-70'
+                    ]"
+                    @click="previewFilter = previewFilter === 'pending' ? 'all' : 'pending'"
+                  >
                     <div class="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">待更新</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] text-zinc-500 font-bold">待更新 ({{ previewCounts.pending }})</span>
+                  </button>
+                  <button
+                    :class="[
+                      'flex items-center gap-1.5 transition-all',
+                      previewFilter === 'all' || previewFilter === 'noChange'
+                        ? 'opacity-100'
+                        : 'opacity-40 hover:opacity-70'
+                    ]"
+                    @click="previewFilter = previewFilter === 'noChange' ? 'all' : 'noChange'"
+                  >
+                    <div class="w-2 h-2 rounded-full bg-zinc-500" />
+                    <span class="text-[10px] text-zinc-500 font-bold">无变更 ({{ previewCounts.noChange }})</span>
+                  </button>
+                  <button
+                    :class="[
+                      'flex items-center gap-1.5 transition-all',
+                      previewFilter === 'all' || previewFilter === 'error'
+                        ? 'opacity-100'
+                        : 'opacity-40 hover:opacity-70'
+                    ]"
+                    @click="previewFilter = previewFilter === 'error' ? 'all' : 'error'"
+                  >
                     <div class="w-2 h-2 rounded-full bg-red-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">错误</span>
-                  </div>
+                    <span class="text-[10px] text-zinc-500 font-bold">错误 ({{ previewCounts.error }})</span>
+                  </button>
                 </div>
               </div>
               <div class="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-xl">
@@ -428,7 +528,9 @@
                       class="bg-zinc-900/80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800"
                     >
                       <tr>
-                        <th class="px-5 py-4 whitespace-nowrap">匹配用户</th>
+                        <th class="px-5 py-4 whitespace-nowrap">
+                          {{ matchType === 'username' ? '匹配用户' : '匹配姓名' }}
+                        </th>
                         <th class="px-5 py-4 whitespace-nowrap">当前信息</th>
                         <th class="px-5 py-4 whitespace-nowrap">更新后</th>
                         <th class="px-5 py-4 whitespace-nowrap text-right">匹配状态</th>
@@ -436,7 +538,7 @@
                     </thead>
                     <tbody class="divide-y divide-zinc-900">
                       <tr
-                        v-for="(row, index) in excelPreviewData.slice(0, 10)"
+                        v-for="(row, index) in filteredPreviewData.slice(0, 10)"
                         :key="index"
                         :class="[
                           row.error ? 'bg-red-500/5' : 'hover:bg-zinc-900/30 transition-colors'
@@ -449,27 +551,41 @@
                                 'text-xs font-bold',
                                 row.error ? 'text-red-400' : 'text-zinc-200'
                               ]"
-                              >{{ row.username }}</span
+                              >{{ matchType === 'username' ? row.username : row.name }}</span
                             >
                             <span class="text-[10px] text-zinc-600 font-medium">{{
-                              row.name || '-'
+                              matchType === 'username' ? (row.name || '-') : (row.username || '-')
                             }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4">
-                          <div class="text-[10px] text-zinc-500 font-medium">
-                            {{ row.currentGrade || '-' }}年级 {{ row.currentClass || '-' }}
+                          <div class="flex flex-col">
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs font-bold text-zinc-200">{{ row.currentGrade || '-' }}</span>
+                              <span class="text-[10px] text-zinc-700">/</span>
+                              <span class="text-xs font-bold text-zinc-200">{{ row.currentClass || '-' }}</span>
+                            </div>
+                            <span class="text-[10px] text-zinc-500 font-medium mt-0.5">{{ row.username }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4">
-                          <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-emerald-400">{{
-                              row.newGrade || row.currentGrade || '-'
-                            }}</span>
-                            <span class="text-[10px] text-zinc-700">/</span>
-                            <span class="text-xs font-bold text-emerald-400">{{
-                              row.newClass || row.currentClass || '-'
-                            }}</span>
+                          <div class="flex flex-col">
+                            <template v-if="row.noChange">
+                              <span class="text-xs font-bold text-zinc-600">-</span>
+                            </template>
+                            <template v-else>
+                              <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
+                                <span class="text-[10px] text-zinc-700">/</span>
+                                <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
+                              </div>
+                              <span
+                                :class="[
+                                  'text-[10px] font-medium mt-0.5',
+                                  row.newUsername ? 'text-emerald-400' : 'text-zinc-500'
+                                ]"
+                              >{{ row.newUsername || row.username }}</span>
+                            </template>
                           </div>
                         </td>
                         <td class="px-5 py-4 text-right">
@@ -478,6 +594,12 @@
                             class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase tracking-tighter border border-red-500/20"
                           >
                             {{ row.error }}
+                          </span>
+                          <span
+                            v-else-if="row.noChange"
+                            class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase tracking-tighter border border-zinc-700/50"
+                          >
+                            无变更
                           </span>
                           <span
                             v-else
@@ -491,10 +613,10 @@
                   </table>
                 </div>
                 <div
-                  v-if="excelPreviewData.length > 10"
+                  v-if="filteredPreviewData.length > 10"
                   class="p-4 text-center border-t border-zinc-900 bg-zinc-900/20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
                 >
-                  以及另外 {{ excelPreviewData.length - 10 }} 条记录已在队列中
+                  以及另外 {{ filteredPreviewData.length - 10 }} 条记录已在队列中
                 </div>
               </div>
             </div>
@@ -615,6 +737,10 @@ const statusOptions = [
 const isDragOver = ref(false)
 const excelPreviewData = ref([])
 const fileInput = ref(null)
+const matchType = ref('username')
+const rawExcelData = ref(null)
+const blockerList = ref([])
+const previewFilter = ref('all')
 
 // 批量更新进度
 const updateProgress = ref(0)
@@ -686,11 +812,28 @@ const canUpdate = computed(() => {
   if (updateType.value === 'grade-only') {
     return selectedUserIds.value.length > 0 && targetGrade.value.trim()
   } else if (updateType.value === 'excel-batch') {
-    return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error)
+    return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error && !row.noChange)
   } else if (updateType.value === 'status-batch') {
     return selectedUserIds.value.length > 0 && targetStatus.value && statusReason.value.trim()
   }
   return false
+})
+
+const filteredPreviewData = computed(() => {
+  if (previewFilter.value === 'all') return excelPreviewData.value
+  if (previewFilter.value === 'pending') return excelPreviewData.value.filter((r) => !r.error && !r.noChange)
+  if (previewFilter.value === 'noChange') return excelPreviewData.value.filter((r) => r.noChange)
+  if (previewFilter.value === 'error') return excelPreviewData.value.filter((r) => r.error)
+  return excelPreviewData.value
+})
+
+const previewCounts = computed(() => {
+  const data = excelPreviewData.value
+  return {
+    pending: data.filter((r) => !r.error && !r.noChange).length,
+    noChange: data.filter((r) => r.noChange).length,
+    error: data.filter((r) => r.error).length
+  }
 })
 
 // 方法
@@ -747,6 +890,7 @@ const processExcelFile = async (file) => {
         const worksheet = workbook.Sheets[sheetName]
         const jsonData = window.XLSX.utils.sheet_to_json(worksheet)
 
+        rawExcelData.value = jsonData
         parseExcelData(jsonData)
       } catch (parseError) {
         console.error('解析Excel文件失败:', parseError)
@@ -772,40 +916,69 @@ const processExcelFile = async (file) => {
 
 const parseExcelData = (jsonData) => {
   const previewData = []
-  const userMap = new Map()
+  const userMapByUsername = new Map()
+  const userMapByName = new Map()
 
-  // 创建用户映射，同时处理用户名标准化
+  // 创建双向用户映射
   computedUsers.value.forEach((user) => {
     if (user.username) {
-      const normalizedUsername = user.username.trim().toLowerCase()
-      userMap.set(normalizedUsername, user)
-      userMap.set(user.username, user)
+      userMapByUsername.set(user.username, user)
+      userMapByUsername.set(user.username.trim().toLowerCase(), user)
+    }
+    if (user.name) {
+      const normalizedName = user.name.trim().toLowerCase()
+      if (userMapByName.has(normalizedName)) {
+        userMapByName.set(normalizedName, 'AMBIGUOUS')
+      } else {
+        userMapByName.set(normalizedName, user)
+      }
     }
   })
 
   jsonData.forEach((row, index) => {
     const username = (row['用户名'] || row['username'] || '').toString().trim()
-    const name = row['姓名'] || row['name'] || ''
+    const name = (row['姓名'] || row['name'] || '').toString().trim().toLowerCase()
     const newGrade = row['年级'] || row['grade'] ? String(row['年级'] || row['grade']).trim() : ''
     const newClass = row['班级'] || row['class'] ? String(row['班级'] || row['class']).trim() : ''
-    const newUsername = row['新用户名'] || row['new_username'] || ''
+    const explicitNewUsername = (row['新用户名'] || row['new_username'] || '').toString().trim()
+    const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
-    if (!username) {
+    const keyValue = matchType.value === 'username' ? username : name
+    const keyLabel = matchType.value === 'username' ? '用户名' : '姓名'
+
+    if (!keyValue) {
       previewData.push({
-        username: '',
+        username: username,
         name: name,
         newGrade: newGrade,
         newClass: newClass,
         newUsername: newUsername,
-        error: '用户名不能为空'
+        error: `${keyLabel}不能为空`
       })
       return
     }
 
-    const existingUser =
-      userMap.get(username) ||
-      userMap.get(username.toLowerCase()) ||
-      userMap.get(username.toUpperCase())
+    let existingUser = null
+
+    if (matchType.value === 'username') {
+      existingUser =
+        userMapByUsername.get(username) ||
+        userMapByUsername.get(username.toLowerCase())
+    } else {
+      const match = userMapByName.get(name)
+      if (match === 'AMBIGUOUS') {
+        previewData.push({
+          username: username,
+          name: name,
+          newGrade: newGrade,
+          newClass: newClass,
+          newUsername: newUsername,
+          error: '存在多个同名用户，请切换至按用户名匹配'
+        })
+        return
+      }
+      existingUser = match
+    }
 
     if (!existingUser) {
       previewData.push({
@@ -819,17 +992,92 @@ const parseExcelData = (jsonData) => {
       return
     }
 
+    const finalNewGrade = newGrade || undefined
+    const finalNewClass = newClass || undefined
+    const finalNewUsername = newUsername || undefined
+
+    const hasGradeChange = finalNewGrade !== undefined && finalNewGrade !== (existingUser.grade || '')
+    const hasClassChange = finalNewClass !== undefined && finalNewClass !== (existingUser.class || '')
+    const hasUsernameChange = finalNewUsername !== undefined && finalNewUsername !== existingUser.username
+
+    if (!hasGradeChange && !hasClassChange && !hasUsernameChange) {
+      previewData.push({
+        userId: existingUser.id,
+        username: existingUser.username,
+        name: existingUser.name,
+        currentGrade: existingUser.grade,
+        currentClass: existingUser.class,
+        newGrade: undefined,
+        newClass: undefined,
+        newUsername: undefined,
+        noChange: true
+      })
+      return
+    }
+
+    let usernameConflict = null
+
+    if (hasUsernameChange && finalNewUsername) {
+      const conflictUser =
+        userMapByUsername.get(finalNewUsername) ||
+        userMapByUsername.get(finalNewUsername.toLowerCase())
+      if (conflictUser && conflictUser.id !== existingUser.id) {
+        usernameConflict = { userId: conflictUser.id, name: conflictUser.name }
+      }
+    }
+
     previewData.push({
       userId: existingUser.id,
-      username: username,
+      username: existingUser.username,
       name: existingUser.name,
       currentGrade: existingUser.grade,
       currentClass: existingUser.class,
-      newGrade: newGrade,
-      newClass: newClass,
-      newUsername: newUsername
+      newGrade: finalNewGrade,
+      newClass: finalNewClass,
+      newUsername: finalNewUsername,
+      usernameConflict: usernameConflict
     })
   })
+
+  const externalBlockers = new Map()
+  const requestedUsernames = new Map()
+  const previewMap = new Map(previewData.filter((r) => !r.error).map((r) => [r.userId, r]))
+
+  for (const row of previewData) {
+    if (row.error || row.noChange) continue
+    if (row.newUsername) {
+      const previous = requestedUsernames.get(row.newUsername)
+      if (previous) {
+        previous.error = `重复的更新目标：多行数据尝试更新为同一个用户名 ${row.newUsername}`
+        row.error = `重复的更新目标：多行数据尝试更新为同一个用户名 ${row.newUsername}`
+        continue
+      }
+      requestedUsernames.set(row.newUsername, row)
+    }
+
+    if (row.usernameConflict) {
+      const conflictRow = previewMap.get(row.usernameConflict.userId)
+      const conflictIsChanging =
+        conflictRow && conflictRow.newUsername && conflictRow.newUsername !== conflictRow.username
+      if (conflictIsChanging) {
+        row.usernameConflict = null
+      } else {
+        externalBlockers.set(row.usernameConflict.userId, {
+          username: row.newUsername,
+          name: row.usernameConflict.name
+        })
+      }
+    }
+  }
+
+  blockerList.value = Array.from(externalBlockers.values())
+
+  for (const row of previewData) {
+    if (row.error || row.noChange) continue
+    if (row.usernameConflict) {
+      row.error = `用户名 ${row.newUsername} 被占用，请先处理 ${row.usernameConflict.name} 的账户`
+    }
+  }
 
   excelPreviewData.value = previewData
   loading.value = false
@@ -877,6 +1125,13 @@ const downloadTemplate = async () => {
   window.XLSX.utils.book_append_sheet(wb, ws, '学生信息')
   window.XLSX.writeFile(wb, '学生信息批量更新模板.xlsx')
 }
+
+// 当匹配方式切换时，重新解析已上传的 Excel 数据
+watch(matchType, () => {
+  if (rawExcelData.value) {
+    parseExcelData(rawExcelData.value)
+  }
+})
 
 const performUpdate = async () => {
   try {
@@ -947,11 +1202,20 @@ const performGradeUpdate = async () => {
 }
 
 const performExcelUpdate = async () => {
-  const validUpdates = excelPreviewData.value.filter((row) => !row.error && row.userId)
+  const validUpdates = excelPreviewData.value.filter((row) => !row.error && !row.noChange && row.userId)
 
   if (validUpdates.length === 0) {
     throw new Error('没有有效的更新数据')
   }
+
+  const targetSet = new Set(validUpdates.filter((r) => r.newUsername).map((r) => r.newUsername))
+  validUpdates.sort((a, b) => {
+    const aFreesSlot = targetSet.has(a.username)
+    const bFreesSlot = targetSet.has(b.username)
+    if (aFreesSlot && !bFreesSlot) return -1
+    if (!aFreesSlot && bFreesSlot) return 1
+    return 0
+  })
 
   updateProgress.value = 0
   updateTotalBatches.value = Math.ceil(validUpdates.length / 50)
@@ -1074,6 +1338,10 @@ watch(
       // 重置状态
       selectedUserIds.value = []
       excelPreviewData.value = []
+      matchType.value = 'username'
+      rawExcelData.value = null
+      blockerList.value = []
+      previewFilter.value = 'all'
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''
