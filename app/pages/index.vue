@@ -738,7 +738,7 @@ const bootProgress = ref(BOOT_PROGRESS.INITIAL)
 const bootMessage = ref(BOOT_MESSAGES.START)
 let bootSlowTimer = null
 
-let hasShownBootLoading = false
+const hasShownBootLoading = useState('hasShownBootLoading', () => false)
 
 const setBootState = ({ progress, message } = {}) => {
   if (typeof progress === 'number') {
@@ -1135,16 +1135,18 @@ watch(
   { immediate: true }
 )
 
-// 在组件挂载后初始化认证和歌曲（只会在客户端执行）
-onMounted(async () => {
-  const bootStartedAt = Date.now()
+const isFirstVisit = !hasShownBootLoading.value
 
-  const isFirstVisit = !hasShownBootLoading
-  hasShownBootLoading = true
-
+if (import.meta.client) {
   if (!isFirstVisit) {
     showBootLoading.value = false
   }
+  hasShownBootLoading.value = true
+}
+
+// 在组件挂载后初始化认证和歌曲（只会在客户端执行）
+onMounted(async () => {
+  const bootStartedAt = Date.now()
 
   try {
     if (isFirstVisit) {
