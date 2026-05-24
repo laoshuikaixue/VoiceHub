@@ -104,6 +104,13 @@ export default defineNitroPlugin((nitroApp) => {
         })
       }
 
+      Sentry.withScope((scope) => {
+        scope.setLevel('info')
+        scope.setFingerprint(['instance_heartbeat', instanceId])
+        scope.setTag('event_type', 'heartbeat')
+        Sentry.captureMessage('instance_online')
+      })
+
       return true
     })().finally(() => {
       globalThis.__voicehubSentryServerInitializing = undefined
