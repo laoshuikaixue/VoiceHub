@@ -1,5 +1,5 @@
 {
-  "id": "83e3f314-d8ee-4d4d-b77b-3ab6e4d628c3",
+  "id": "a807234c-cc23-45ea-ab3b-dcb604e1b7d9",
   "prevId": "4c493514-5e9d-4365-be9c-edcf2b85cb59",
   "version": "7",
   "dialect": "postgresql",
@@ -1090,6 +1090,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "telemetryEnabled": {
+          "name": "telemetryEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "enablePlayTimeSelection": {
           "name": "enablePlayTimeSelection",

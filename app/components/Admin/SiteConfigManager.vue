@@ -311,6 +311,25 @@
             </div>
           </div>
 
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="telemetry-enabled"
+                  v-model="formData.telemetryEnabled"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
+              </div>
+              <label for="telemetry-enabled" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">启用错误追踪与遥测</p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                  开启后，系统会向 Sentry 发送前后端错误事件，并附带实例 ID 以便定位部署问题。
+                </p>
+              </label>
+            </div>
+          </div>
+
           <div
             class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
           >
@@ -401,6 +420,7 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  telemetryEnabled: false,
   allowOAuthRegistration: false,
   oauthRedirectUri: '',
   oauthStateSecret: '',
@@ -497,6 +517,7 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      telemetryEnabled: !!data.telemetryEnabled,
       allowOAuthRegistration: !!data.allowOAuthRegistration,
       oauthRedirectUri: data.oauthRedirectUri || '',
       oauthStateSecret: data.oauthStateSecret || '',
@@ -586,6 +607,7 @@ const saveConfig = async () => {
     saveSuccess.value = true
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
+    localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
     showNotification('配置保存成功！', 'success')
 
     setTimeout(() => {

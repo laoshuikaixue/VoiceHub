@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
       const newSettingsResult = await db
         .insert(systemSettings)
         .values({
+          telemetryEnabled: false,
           enablePlayTimeSelection: false,
           siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
           siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',

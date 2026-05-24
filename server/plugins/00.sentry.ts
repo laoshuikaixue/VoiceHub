@@ -1,9 +1,11 @@
 import * as Sentry from '@sentry/node'
 import type { H3Event } from 'h3'
 import { getInstanceId } from '../utils/instance-id'
+import { isTelemetryEnabled, isTelemetryEnabledCached } from '../utils/telemetry'
 
 declare global {
   var __voicehubSentryServerInitialized: boolean | undefined
+  var __voicehubSentryServerInitializing: Promise<boolean> | undefined
 }
 
 const getDeploymentTarget = (): string => {
@@ -42,55 +44,81 @@ const buildRequestContext = (event: H3Event) => {
   }
 }
 
-export default defineNitroPlugin(async (nitroApp) => {
-  if (globalThis.__voicehubSentryServerInitialized) {
-    return
-  }
-
+export default defineNitroPlugin((nitroApp) => {
   const config = useRuntimeConfig()
   const sentryConfig = config.sentry
 
-  if (!sentryConfig?.enabled || !sentryConfig.dsn) {
+  if (!sentryConfig?.dsn) {
     return
   }
 
-  let instanceId = ''
+  const ensureSentryInitialized = async (): Promise<boolean> => {
+    if (globalThis.__voicehubSentryServerInitialized) {
+      return true
+    }
 
-  try {
-    instanceId = await getInstanceId()
-  } catch (error) {
-    console.warn('[Sentry] Failed to resolve instance ID for server tagging:', error)
-  }
+    if (globalThis.__voicehubSentryServerInitializing) {
+      return globalThis.__voicehubSentryServerInitializing
+    }
 
-  Sentry.init({
-    dsn: sentryConfig.dsn,
-    environment: sentryConfig.environment,
-    release: sentryConfig.release || undefined,
-    enabled: sentryConfig.enabled,
-    integrations: [
-      Sentry.consoleLoggingIntegration({
-        levels: process.env.NODE_ENV === 'development' ? ['log', 'warn', 'error'] : ['error']
+    globalThis.__voicehubSentryServerInitializing = (async () => {
+      const telemetryEnabled = await isTelemetryEnabled()
+      if (!telemetryEnabled) {
+        return false
+      }
+
+      let instanceId = ''
+
+      try {
+        instanceId = await getInstanceId()
+      } catch (error) {
+        console.warn('[Sentry] Failed to resolve instance ID for server tagging:', error)
+      }
+
+      Sentry.init({
+        dsn: sentryConfig.dsn,
+        environment: sentryConfig.environment,
+        release: sentryConfig.release || undefined,
+        integrations: [
+          Sentry.consoleLoggingIntegration({
+            levels: process.env.NODE_ENV === 'development' ? ['log', 'warn', 'error'] : ['error']
+          })
+        ],
+        enableLogs: true,
+        tracesSampleRate: sentryConfig.tracesSampleRate,
+        sendDefaultPii: false,
+        beforeSend(event) {
+          return isTelemetryEnabledCached() ? event : null
+        }
       })
-    ],
-    enableLogs: true,
-    tracesSampleRate: sentryConfig.tracesSampleRate,
-    sendDefaultPii: false
-  })
 
-  globalThis.__voicehubSentryServerInitialized = true
+      globalThis.__voicehubSentryServerInitialized = true
 
-  Sentry.setTag('runtime', 'nuxt')
-  Sentry.setTag('deployment_target', getDeploymentTarget())
-  Sentry.setTag('nitro_preset', process.env.NITRO_PRESET || 'node-server')
-  if (instanceId) {
-    Sentry.setTag('instance_id', instanceId)
-    Sentry.setContext('instance', {
-      instanceId
+      Sentry.setTag('runtime', 'nuxt')
+      Sentry.setTag('deployment_target', getDeploymentTarget())
+      Sentry.setTag('nitro_preset', process.env.NITRO_PRESET || 'node-server')
+      if (instanceId) {
+        Sentry.setTag('instance_id', instanceId)
+        Sentry.setContext('instance', {
+          instanceId
+        })
+      }
+
+      return true
+    })().finally(() => {
+      globalThis.__voicehubSentryServerInitializing = undefined
     })
+
+    return globalThis.__voicehubSentryServerInitializing
   }
 
-  nitroApp.hooks.hook('error', (error, context) => {
+  nitroApp.hooks.hook('error', async (error, context) => {
     if (!shouldCaptureServerError(error)) {
+      return
+    }
+
+    const initialized = await ensureSentryInitialized()
+    if (!initialized) {
       return
     }
 
@@ -110,22 +138,34 @@ export default defineNitroPlugin(async (nitroApp) => {
 
   if (typeof process !== 'undefined' && typeof process.on === 'function') {
     process.on('unhandledRejection', (reason) => {
-      const error = reason instanceof Error ? reason : new Error(String(reason))
-      Sentry.withScope((scope) => {
-        scope.setLevel('error')
-        Sentry.captureException(error)
-      })
+      void (async () => {
+        const initialized = await ensureSentryInitialized()
+        if (!initialized) return
+
+        const error = reason instanceof Error ? reason : new Error(String(reason))
+        Sentry.withScope((scope) => {
+          scope.setLevel('error')
+          Sentry.captureException(error)
+        })
+      })()
     })
 
     process.on('uncaughtException', (error) => {
-      Sentry.withScope((scope) => {
-        scope.setLevel('fatal')
-        Sentry.captureException(error)
-      })
+      void (async () => {
+        const initialized = await ensureSentryInitialized()
+        if (!initialized) return
+
+        Sentry.withScope((scope) => {
+          scope.setLevel('fatal')
+          Sentry.captureException(error)
+        })
+      })()
     })
   }
 
   nitroApp.hooks.hook('close', async () => {
-    await Sentry.close(2000)
+    if (globalThis.__voicehubSentryServerInitialized) {
+      await Sentry.close(2000)
+    }
   })
 })

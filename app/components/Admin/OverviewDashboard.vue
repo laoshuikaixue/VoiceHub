@@ -144,7 +144,7 @@
             <span class="text-xs font-bold text-zinc-200">{{ status.value }}</span>
           </div>
         </div>
-        <div class="border-t border-zinc-800 px-6 py-4 flex flex-col items-center justify-center gap-1 text-center">
+        <div class="mt-auto border-t border-zinc-800 px-6 py-4 flex flex-col items-center justify-center gap-1 text-center">
           <span class="text-[10px] font-medium uppercase tracking-[0.3em] text-zinc-600">
             实例 ID
           </span>

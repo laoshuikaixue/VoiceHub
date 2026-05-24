@@ -1,10 +1,15 @@
 import * as Sentry from '@sentry/vue'
-import type { Event, EventHint } from '@sentry/types'
+import type { Event, EventHint } from '@sentry/vue'
 
 let sentryClientInitialized = false
 let instanceId = ''
+const TELEMETRY_STORAGE_KEY = 'voicehub.telemetryEnabled'
 
 const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem(TELEMETRY_STORAGE_KEY) === 'false') {
+    return true
+  }
+
   const originalException = hint?.originalException
   if (originalException instanceof DOMException && originalException.name === 'AbortError') {
     return true
@@ -30,7 +35,7 @@ const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
   return false
 }
 
-export default defineNuxtPlugin((nuxtApp) => {
+export default defineNuxtPlugin(async (nuxtApp) => {
   if (!import.meta.client || sentryClientInitialized) {
     return
   }
@@ -38,7 +43,25 @@ export default defineNuxtPlugin((nuxtApp) => {
   const config = useRuntimeConfig()
   const sentryConfig = config.public?.sentry
 
-  if (!sentryConfig?.enabled || !sentryConfig.dsn) {
+  if (!sentryConfig?.dsn) {
+    return
+  }
+
+  try {
+    const response = await $fetch<{
+      success?: boolean
+      data?: { instanceId?: string; telemetryEnabled?: boolean }
+    }>('/api/system/instance')
+
+    if (!response?.data?.telemetryEnabled) {
+      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+      return
+    }
+
+    localStorage.setItem(TELEMETRY_STORAGE_KEY, 'true')
+    instanceId = response.data.instanceId || ''
+  } catch (error) {
+    console.warn('[Sentry] Failed to resolve telemetry setting for client initialization:', error)
     return
   }
 
@@ -61,13 +84,12 @@ export default defineNuxtPlugin((nuxtApp) => {
     integrations.push(Sentry.replayIntegration())
   }
 
-  // Initialize Sentry immediately without blocking - don't wait for instance ID
+  // Initialize Sentry only after the persisted telemetry switch is enabled.
   Sentry.init({
     app: nuxtApp.vueApp,
     dsn: sentryConfig.dsn,
     environment: sentryConfig.environment,
     release: sentryConfig.release || undefined,
-    enabled: sentryConfig.enabled,
     integrations,
     enableLogs: true,
     tracesSampleRate: sentryConfig.tracesSampleRate,
@@ -86,25 +108,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   sentryClientInitialized = true
   Sentry.setTag('runtime', 'vue')
   Sentry.setTag('deployment_target', deploymentTarget)
-
-  // Fetch instance ID in the background after app has mounted
-  nuxtApp.hook('app:mounted', async () => {
-    try {
-      const response = await $fetch<{ success?: boolean; data?: { instanceId?: string } }>(
-        '/api/system/instance'
-      )
-      const fetchedInstanceId = response?.data?.instanceId
-      if (fetchedInstanceId) {
-        instanceId = fetchedInstanceId
-        Sentry.setTag('instance_id', instanceId)
-        Sentry.setContext('instance', {
-          instanceId
-        })
-      }
-    } catch (error) {
-      console.warn('[Sentry] Failed to resolve instance ID for client tagging:', error)
-    }
-  })
+  if (instanceId) {
+    Sentry.setTag('instance_id', instanceId)
+    Sentry.setContext('instance', {
+      instanceId
+    })
+  }
 
   nuxtApp.hook('vue:error', (error, instance, info) => {
     Sentry.withScope((scope) => {

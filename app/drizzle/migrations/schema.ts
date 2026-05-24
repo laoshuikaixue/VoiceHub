@@ -230,6 +230,7 @@ export const systemSettings = pgTable("SystemSettings", {
 	showBeianIcon: boolean().default(false).notNull(),
 	allowOauthRegistration: boolean().default(false).notNull(),
 	instanceId: text("instance_id"),
+	telemetryEnabled: boolean().default(false).notNull(),
 });
 
 export const apiKeys = pgTable("api_keys", {

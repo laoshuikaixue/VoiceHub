@@ -28,6 +28,16 @@ export default defineEventHandler(async (event) => {
     // 验证请求体
     const updateData: any = {}
 
+    if (body.telemetryEnabled !== undefined) {
+      if (typeof body.telemetryEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'telemetryEnabled 必须是布尔值'
+        })
+      }
+      updateData.telemetryEnabled = body.telemetryEnabled
+    }
+
     if (body.hideStudentInfo !== undefined) {
       if (typeof body.hideStudentInfo !== 'boolean') {
         throw createError({
@@ -553,6 +563,15 @@ export default defineEventHandler(async (event) => {
       console.log('[Cache] 系统设置缓存已清除（更新系统设置）')
     } catch (cacheError) {
       console.warn('清除系统设置缓存失败:', cacheError)
+    }
+
+    if (updateData.telemetryEnabled !== undefined) {
+      try {
+        const { setTelemetryEnabledCache } = await import('~~/server/utils/telemetry')
+        setTelemetryEnabledCache(updateData.telemetryEnabled)
+      } catch (telemetryError) {
+        console.warn('[Telemetry] 遥测开关缓存更新失败:', telemetryError)
+      }
     }
 
     try {

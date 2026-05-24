@@ -145,8 +145,8 @@
     {
       "idx": 20,
       "version": "7",
-      "when": 1776579808535,
-      "tag": "20260419062328_auto-migration",
+      "when": 1779603809404,
+      "tag": "20260524062329_add_instance_id_and_telemetry_toggle",
       "breakpoints": true
     }
   ]

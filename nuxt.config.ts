@@ -36,7 +36,6 @@ const backendSentryDsnDefault =
   'https://2fca0c8a939c8909e02c082ec847e8e8@o4508946125619200.ingest.de.sentry.io/4511244961448016'
 const frontendSentryDsnDefault =
   'https://3c4fe5353816bcdce36e7cc28703c8fa@o4508946125619200.ingest.de.sentry.io/4511244934774864'
-const telemetryEnabled = (process.env.NUXT_DISABLE_TELEMETRY || '').toLowerCase() !== 'true'
 
 // 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
 const host = process.env.NUXT_PUBLIC_HOST
@@ -94,8 +93,7 @@ export default defineNuxtConfig({
       dsn: process.env.SENTRY_DSN || backendSentryDsnDefault,
       environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
       release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_REF || '',
-      tracesSampleRate: readNumberEnv(process.env.SENTRY_TRACES_SAMPLE_RATE, 1),
-      enabled: telemetryEnabled
+      tracesSampleRate: readNumberEnv(process.env.SENTRY_TRACES_SAMPLE_RATE, 0.1)
     },
     // 公共键（会暴露到客户端）
     public: {
@@ -126,17 +124,16 @@ export default defineNuxtConfig({
         tracesSampleRate: readNumberEnv(
           process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE ||
             process.env.SENTRY_TRACES_SAMPLE_RATE,
-          1
+          0.1
         ),
         replaysSessionSampleRate: readNumberEnv(
           process.env.NUXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE,
-          1
+          0
         ),
         replaysOnErrorSampleRate: readNumberEnv(
           process.env.NUXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE,
-          1
-        ),
-        enabled: telemetryEnabled
+          0
+        )
       }
     }
   },

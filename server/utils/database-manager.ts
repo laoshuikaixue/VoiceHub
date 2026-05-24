@@ -1,5 +1,9 @@
 import { db, getConnectionStatus } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import {
+  getConnectionPoolStatus,
+  getDatabaseMetrics
+} from './database-health'
 
 /**
  * 数据库管理器
@@ -126,13 +130,16 @@ export class DatabaseManager {
    * 获取连接状态 - 适配 Neon Database 无服务器架构
    */
   async getConnectionStatus(): Promise<{
+    connected: boolean
     status: string
     activeConnections: number
     serverlessMode: boolean
     autoSuspend: boolean
+    error: string | null
   }> {
     try {
       const connectionStatus = await getConnectionStatus()
+      const connected = connectionStatus.status === 'connected'
 
       // 获取当前活跃连接数
       const connectionStats = await db.execute(sql`
@@ -144,15 +151,38 @@ export class DatabaseManager {
       const connRow = connectionStats[0] as any
 
       return {
+        connected,
         status: connectionStatus.status,
         activeConnections: parseInt(connRow?.active_connections) || 0,
         serverlessMode: true, // Neon Database 是无服务器架构
-        autoSuspend: true // 支持自动暂停
+        autoSuspend: true, // 支持自动暂停
+        error: null
       }
     } catch (error) {
       console.error('Failed to get connection status:', error)
-      throw new Error('Failed to retrieve connection status')
+      return {
+        connected: false,
+        status: 'error',
+        activeConnections: 0,
+        serverlessMode: true,
+        autoSuspend: true,
+        error: error instanceof Error ? error.message : 'Failed to retrieve connection status'
+      }
     }
+  }
+
+  /**
+   * 获取连接池状态
+   */
+  async getConnectionPoolStatus() {
+    return await getConnectionPoolStatus()
+  }
+
+  /**
+   * 获取数据库性能指标
+   */
+  async getPerformanceMetrics() {
+    return await getDatabaseMetrics()
   }
 
   /**

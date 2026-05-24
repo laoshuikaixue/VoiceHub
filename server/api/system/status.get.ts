@@ -1,10 +1,12 @@
 import { defineEventHandler } from 'h3'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getInstanceId } from '~~/server/utils/instance-id'
+import { isTelemetryEnabled } from '~~/server/utils/telemetry'
 
 export default defineEventHandler(async (event) => {
   try {
     const instanceId = await getInstanceId()
+    const telemetryEnabled = await isTelemetryEnabled()
 
     // 获取数据库连接状态
     const dbStatus = await databaseManager.getConnectionStatus()
@@ -32,7 +34,8 @@ export default defineEventHandler(async (event) => {
     return {
       status: 'ok',
       instance: {
-        instanceId
+        instanceId,
+        telemetryEnabled
       },
       database: {
         connected: dbTestResult,
