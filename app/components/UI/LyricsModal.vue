@@ -44,17 +44,31 @@
             height="800"
           />
 
+          <Transition name="comment-lyric-fade" mode="out-in">
+            <div
+              v-if="activePanel === 'comments' && currentLyricLine"
+              :key="currentLyricLine"
+              class="comment-current-lyric"
+            >
+              {{ currentLyricLine }}
+            </div>
+          </Transition>
+
           <!-- 移动端浮动封面 (跨页动画) -->
           <div
-            v-if="isMobile && currentSong?.cover"
+            v-if="isMobile && currentSong"
             ref="mobileFloatingCoverRef"
             class="mobile-floating-cover"
           >
             <img
+              v-if="currentSong.cover"
               :src="convertToHttps(currentSong.cover)"
               class="cover-image"
               referrerpolicy="no-referrer"
             >
+            <div v-else class="default-cover">
+              <Icon name="music" size="64" />
+            </div>
           </div>
 
           <!-- 主内容区域 -->
@@ -121,8 +135,8 @@
               </div>
             </div>
 
-            <!-- 右侧区域：歌词显示 -->
-            <div class="right-column">
+            <!-- 右侧区域：歌词和评论显示 -->
+            <div class="right-column" :class="{ 'comments-mode': activePanel === 'comments' }">
               <!-- 移动端顶部迷你信息栏 -->
               <div v-if="isMobile" class="mobile-lyric-header">
                 <div class="header-spacer" />
@@ -135,7 +149,26 @@
                 </div>
               </div>
 
-              <div class="lyrics-display-area">
+              <div v-if="canShowComments" class="content-switcher" @click.stop>
+                <button
+                  class="switcher-button"
+                  :class="{ active: activePanel === 'lyrics' }"
+                  @click="activePanel = 'lyrics'"
+                >
+                  <Icon name="lyrics" size="16" />
+                  <span>歌词</span>
+                </button>
+                <button
+                  class="switcher-button"
+                  :class="{ active: activePanel === 'comments' }"
+                  @click="activePanel = 'comments'"
+                >
+                  <Icon name="message-circle" size="16" />
+                  <span>评论</span>
+                </button>
+              </div>
+
+              <div v-if="activePanel === 'lyrics'" class="lyrics-display-area">
                 <div class="lyrics-container">
                   <!-- 集成 AMLyric 组件 (传入毫秒) -->
                   <AMLyric v-if="lyricSettings.useAMLyrics.value" :current-time="currentTime" />
@@ -144,8 +177,15 @@
                 </div>
               </div>
 
+              <SongComments
+                v-else
+                class="comments-display-area"
+                :song="currentSong"
+                :visible="isVisible && activePanel === 'comments'"
+              />
+
               <!-- 歌词设置工具栏 -->
-              <div class="lyric-toolbar">
+              <div v-if="activePanel === 'lyrics'" class="lyric-toolbar">
                 <Popover placement="top-end" :offset="12">
                   <template #trigger>
                     <div class="toolbar-btn" title="歌词设置">
@@ -281,6 +321,7 @@ import AMLyric from '~/components/Player/PlayerLyric/AMLyric.vue'
 import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'
 import VolumeControl from '~/components/UI/AudioPlayer/VolumeControl.vue'
+import SongComments from '~/components/UI/SongComments.vue'
 
 const props = defineProps({
   isVisible: {
@@ -316,6 +357,7 @@ const isMobile = ref(false)
 const hasPushedHistory = ref(false)
 const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 375)
 const windowHeight = ref(typeof window !== 'undefined' ? window.innerHeight : 812)
+const activePanel = ref('lyrics')
 
 // 拖拽状态管理
 const isDragging = ref(false)
@@ -334,6 +376,18 @@ const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
 const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
+
+const currentLyricLine = computed(() => {
+  const index = audioPlayerControl.lyrics.currentLyricIndex.value
+  const lyric = audioPlayerControl.lyrics.currentLyrics.value?.[index]
+  return lyric?.content?.trim() || ''
+})
+
+const canShowComments = computed(() => {
+  const song = currentSong.value
+  if (!song || song.musicPlatform !== 'netease') return false
+  return /^\d+$/.test(String(song.musicId || '').trim())
+})
 
 const currentQualityText = computed(() => {
   const platform = currentSong.value?.musicPlatform
@@ -460,17 +514,63 @@ const updateLayoutCache = () => {
   }
 }
 
-const updateMobileState = () => {
-  if (typeof window !== 'undefined') {
-    const newIsMobile = window.innerWidth <= 1024
-    if (newIsMobile !== isMobile.value) {
-      isMobile.value = newIsMobile
-      // 调整字体大小
-      lyricSettings.adjustFontSizeForDevice()
-      if (newIsMobile) {
-        nextTick(updateLayoutCache)
-      }
-    } else if (newIsMobile) {
+const clearResponsiveInlineStyles = () => {
+  const elements = [pageOneInfoRef.value, pageTwoInfoRef.value, mobileFloatingCoverRef.value]
+
+  for (const el of elements) {
+    if (!el) continue
+    el.style.removeProperty('opacity')
+    el.style.removeProperty('transform')
+    el.style.removeProperty('pointer-events')
+  }
+
+  if (mainContent.value) {
+    mainContent.value.scrollLeft = 0
+  }
+}
+
+const resetMobileLayoutState = async () => {
+  currentMobilePage.value = 0
+  scrollProgress.value = 0
+  currentScrollProgress = 0
+
+  await nextTick()
+
+  if (mainContent.value) {
+    mainContent.value.scrollLeft = 0
+  }
+
+  updateLayoutCache()
+  requestAnimationFrame(() => {
+    updateMobileAnimations(0, cachedLayout.contentWidth || window.innerWidth)
+  })
+}
+
+const updateMobileState = async () => {
+  if (typeof window === 'undefined') return
+
+  const newIsMobile = window.innerWidth <= 1024
+  const modeChanged = newIsMobile !== isMobile.value
+
+  if (modeChanged) {
+    isMobile.value = newIsMobile
+    lyricSettings.adjustFontSizeForDevice()
+
+    if (newIsMobile) {
+      await resetMobileLayoutState()
+    } else {
+      clearResponsiveInlineStyles()
+      currentMobilePage.value = 0
+      scrollProgress.value = 0
+      currentScrollProgress = 0
+    }
+    return
+  }
+
+  if (newIsMobile) {
+    if (!cachedLayout.contentWidth) {
+      await resetMobileLayoutState()
+    } else {
       updateLayoutCache()
     }
   }
@@ -891,36 +991,18 @@ watch(
       }
 
       document.addEventListener('keydown', handleKeydown)
-      window.addEventListener('resize', handleResize)
-      window.addEventListener('resize', updateMobileState)
-
-      updateMobileState()
+      await updateMobileState()
 
       if (isMobile.value) {
-        // 重置移动端状态
-        currentMobilePage.value = 0
-        scrollProgress.value = 0
-        currentScrollProgress = 0
-
-        // 等待DOM更新后滚动到第一页并重置动画状态
-        await nextTick()
-        if (mainContent.value) {
-          mainContent.value.scrollLeft = 0
-        }
-
-        // 更新布局缓存并重置动画状态
-        updateLayoutCache()
-
-        // 强制更新动画到初始状态
-        updateMobileAnimations(0, cachedLayout.contentWidth || window.innerWidth)
+        await resetMobileLayoutState()
+      } else {
+        clearResponsiveInlineStyles()
       }
     } else {
       restorePageScroll()
       stopProgressTimer()
       backgroundRenderer.dispose()
       document.removeEventListener('keydown', handleKeydown)
-      window.removeEventListener('resize', handleResize)
-      window.removeEventListener('resize', updateMobileState)
 
       // 清理动画帧
       if (animationFrameId) {
@@ -957,6 +1039,12 @@ watch(isPlaying, (playing) => {
     startProgressTimer()
   } else {
     stopProgressTimer()
+  }
+})
+
+watch(canShowComments, (available) => {
+  if (!available && activePanel.value === 'comments') {
+    activePanel.value = 'lyrics'
   }
 })
 
@@ -1189,7 +1277,7 @@ onUnmounted(() => {
 .main-content {
   position: relative;
   z-index: 50;
-  flex: 1;
+  flex: 0 0 calc(100% - 120px);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1197,6 +1285,7 @@ onUnmounted(() => {
   padding: 4rem 6rem;
   gap: 6rem;
   height: calc(100% - 120px);
+  min-height: 0;
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -1205,6 +1294,8 @@ onUnmounted(() => {
 .left-column {
   flex: 0 0 45%;
   max-width: 500px;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1299,11 +1390,26 @@ onUnmounted(() => {
 .right-column {
   flex: 1;
   height: 100%;
+  min-height: 0;
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
+  padding-top: 48px;
+  box-sizing: border-box;
+}
+
+.right-column:not(.comments-mode) {
+  padding-top: 0;
+}
+
+.lyrics-display-area {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -1314,22 +1420,108 @@ onUnmounted(() => {
   );
 }
 
-.lyrics-display-area {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 .lyrics-container {
   width: 100%;
   height: 100%;
 }
 
+.content-switcher {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 110;
+  align-self: flex-end;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.switcher-button {
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.62);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.switcher-button:hover {
+  color: #ffffff;
+}
+
+.switcher-button.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.comments-display-area {
+  flex: 1;
+  min-height: 0;
+}
+
+.comment-current-lyric {
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  z-index: 120;
+  max-width: min(760px, calc(100vw - 220px));
+  transform: translateX(-50%);
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.comment-lyric-fade-enter-active,
+.comment-lyric-fade-leave-active {
+  transition:
+    opacity 0.35s ease,
+    filter 0.35s ease;
+}
+
+.comment-lyric-fade-enter-from,
+.comment-lyric-fade-leave-to {
+  opacity: 0;
+  filter: blur(6px);
+}
+
+.comment-lyric-fade-enter-to,
+.comment-lyric-fade-leave-from {
+  opacity: 1;
+  filter: blur(0);
+}
+
 .playback-controls {
   position: relative;
   z-index: 20;
+  flex: 0 0 120px;
   width: 100%;
+  min-height: 120px;
   padding: 1rem 4rem 2.5rem;
   display: flex;
   flex-direction: column;
@@ -1778,6 +1970,18 @@ onUnmounted(() => {
     pointer-events: auto;
   }
 
+  .right-column.comments-mode {
+    padding-top: 116px;
+  }
+
+  .content-switcher {
+    top: calc(94px + env(safe-area-inset-top));
+    right: 1.5rem;
+    left: auto;
+    transform: none;
+    max-width: calc(100vw - 24px);
+  }
+
   .lyrics-display-area {
     width: 100%;
     height: 100%;
@@ -1851,6 +2055,8 @@ onUnmounted(() => {
     position: fixed;
     bottom: 0;
     left: 0;
+    flex: initial;
+    min-height: 0;
     width: 100%;
     padding: 2rem 1.5rem calc(2.5rem + env(safe-area-inset-bottom));
     gap: 2rem;
@@ -1978,6 +2184,13 @@ onUnmounted(() => {
     width: 36px;
     height: 36px;
     background: rgba(255, 255, 255, 0.1);
+  }
+
+  .comment-current-lyric {
+    top: 54px;
+    max-width: calc(100vw - 96px);
+    padding: 0.45rem 0.8rem;
+    font-size: 0.95rem;
   }
 
   .mobile-lyric-header {
