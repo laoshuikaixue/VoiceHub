@@ -137,6 +137,7 @@ const isLoading = ref(false)
 const error = ref('')
 const likeUpdatingKey = ref('')
 const requestId = ref(0)
+const hasLoaded = ref(false)
 
 const neteaseSongId = computed(() => {
   const song = props.song
@@ -167,9 +168,23 @@ const commentItems = computed(() => {
 
   return [...taggedHotComments, ...regularComments].map((item, index) => ({
     ...item,
-    key: `${item.isHot ? 'hot' : 'comment'}-${item.commentId ?? index}`
+    key: getCommentKey(item, index)
   }))
 })
+
+function getCommentKey(item: NeteaseComment, index: number) {
+  const prefix = item.isHot ? 'hot' : 'comment'
+  if (item.commentId !== undefined && item.commentId !== null) {
+    return `${prefix}-${item.commentId}`
+  }
+
+  const fallback = [item.user?.nickname, item.time, item.content]
+    .filter(Boolean)
+    .join('-')
+    .slice(0, 96)
+
+  return `${prefix}-${fallback || `fallback-${index}`}`
+}
 
 const formatCount = (count: number) => {
   if (count >= 10000) {
@@ -305,6 +320,7 @@ const fetchComments = async (append = false) => {
     const body = response.body || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
 
+    hasLoaded.value = true
     comments.value = append ? [...comments.value, ...nextComments] : nextComments
     hotComments.value = append
       ? hotComments.value
@@ -327,15 +343,23 @@ const fetchComments = async (append = false) => {
   }
 }
 
-const refreshComments = () => {
+const resetComments = () => {
   requestId.value += 1
   isLoading.value = false
+  hasLoaded.value = false
   comments.value = []
   hotComments.value = []
   totalCount.value = 0
   hasMore.value = false
   offset.value = 0
-  fetchComments(false)
+  error.value = ''
+}
+
+const refreshComments = () => {
+  resetComments()
+  if (neteaseSongId.value) {
+    fetchComments(false)
+  }
 }
 
 const loadMoreComments = () => {
@@ -343,18 +367,15 @@ const loadMoreComments = () => {
 }
 
 watch(
-  () => [neteaseSongId.value, props.visible],
-  ([songId, visible]) => {
-    requestId.value += 1
-    isLoading.value = false
-    comments.value = []
-    hotComments.value = []
-    totalCount.value = 0
-    hasMore.value = false
-    offset.value = 0
-    error.value = ''
+  () => [neteaseSongId.value, props.visible] as const,
+  ([songId, visible], oldValue) => {
+    const oldSongId = oldValue?.[0]
 
-    if (songId && visible) {
+    if (songId !== oldSongId) {
+      resetComments()
+    }
+
+    if (songId && visible && !hasLoaded.value && !isLoading.value) {
       fetchComments(false)
     }
   },

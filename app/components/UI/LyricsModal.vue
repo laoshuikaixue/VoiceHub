@@ -168,7 +168,7 @@
                 </button>
               </div>
 
-              <div v-if="activePanel === 'lyrics'" class="lyrics-display-area">
+              <div v-show="activePanel === 'lyrics'" class="lyrics-display-area">
                 <div class="lyrics-container">
                   <!-- 集成 AMLyric 组件 (传入毫秒) -->
                   <AMLyric v-if="lyricSettings.useAMLyrics.value" :current-time="currentTime" />
@@ -178,7 +178,7 @@
               </div>
 
               <SongComments
-                v-else
+                v-show="activePanel === 'comments'"
                 class="comments-display-area"
                 :song="currentSong"
                 :visible="isVisible && activePanel === 'comments'"
