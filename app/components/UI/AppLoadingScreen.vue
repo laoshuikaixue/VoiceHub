@@ -1,5 +1,10 @@
 <template>
-  <section class="app-loading-screen" role="status" aria-live="polite" aria-label="VoiceHub 正在加载">
+  <section
+    class="app-loading-screen"
+    role="status"
+    aria-live="polite"
+    :aria-label="LOADING_SCREEN_TEXT.ARIA_LABEL"
+  >
     <div class="loading-content">
       <div class="loader-mark" aria-hidden="true">
         <div class="loader-orbit" />
@@ -8,8 +13,8 @@
 
       <div class="copy">
         <p class="eyebrow">VoiceHub</p>
-        <h1>{{ title }}</h1>
-        <p class="message">{{ message }}</p>
+        <h1>{{ displayTitle }}</h1>
+        <p class="message">{{ displayMessage }}</p>
       </div>
 
       <div class="progress-wrap" aria-hidden="true">
@@ -25,21 +30,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = withDefaults(
-  defineProps<{
-    title?: string
-    message?: string
-    progress?: number
-  }>(),
-  {
-    title: 'Loading',
-    message: '正在同步排期、歌曲和用户状态',
-    progress: 8
-  }
-)
+const LOADING_SCREEN_TEXT = {
+  ARIA_LABEL: 'VoiceHub 正在加载',
+  TITLE: 'Loading',
+  MESSAGE: '正在同步排期、歌曲和用户状态',
+  DEFAULT_PROGRESS: 8
+}
+
+const props = defineProps<{
+  title?: string
+  message?: string
+  progress?: number
+}>()
+
+const displayTitle = computed(() => props.title || LOADING_SCREEN_TEXT.TITLE)
+const displayMessage = computed(() => props.message || LOADING_SCREEN_TEXT.MESSAGE)
 
 const safeProgress = computed(() => {
-  const normalized = Math.round(Number(props.progress) || 0)
+  const normalized = Math.round(Number(props.progress ?? LOADING_SCREEN_TEXT.DEFAULT_PROGRESS) || 0)
   return Math.min(100, Math.max(0, normalized))
 })
 </script>
@@ -48,7 +56,7 @@ const safeProgress = computed(() => {
 .app-loading-screen {
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: var(--z-app-loader, 9000);
   display: flex;
   align-items: center;
   justify-content: center;
