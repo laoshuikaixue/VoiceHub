@@ -95,46 +95,24 @@
       <!-- 年级班级字段 - 仅创建模式，可选 -->
       <div v-if="showCreateMode" class="form-group">
         <div class="class-row">
-          <div class="class-field">
-            <label for="grade">年级</label>
-            <div class="select-wrapper">
-              <select
-                id="grade"
-                v-model="grade"
-                :disabled="classOptionsLoading || gradeOptions.length === 0"
-                @change="handleGradeChange"
-              >
-                <option value="">不填写</option>
-                <option
-                  v-for="option in gradeOptions"
-                  :key="option"
-                  :value="option"
-                >
-                  {{ option }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <div class="class-field">
-            <label for="studentClass">班级</label>
-            <div class="select-wrapper">
-              <select
-                id="studentClass"
-                v-model="studentClass"
-                :disabled="classOptionsLoading || !grade || availableClassOptions.length === 0"
-                @change="error = ''"
-              >
-                <option value="">{{ grade ? '请选择班级' : '先选择年级' }}</option>
-                <option
-                  v-for="option in availableClassOptions"
-                  :key="option"
-                  :value="option"
-                >
-                  {{ option }}
-                </option>
-              </select>
-            </div>
-          </div>
+          <CustomSelect
+            v-model="grade"
+            :options="gradeSelectOptions"
+            :disabled="classOptionsLoading || gradeOptions.length === 0"
+            label="年级"
+            placeholder="不填写"
+            class-name="class-select"
+            @change="handleGradeChange"
+          />
+          <CustomSelect
+            v-model="studentClass"
+            :options="classSelectOptions"
+            :disabled="classOptionsLoading || !grade || availableClassOptions.length === 0"
+            label="班级"
+            :placeholder="grade ? '请选择班级' : '先选择年级'"
+            class-name="class-select"
+            @change="error = ''"
+          />
         </div>
         <p class="hint-text">
           {{ gradeOptions.length > 0 ? '可选，只能选择系统内已有用户的年级和班级' : '暂无可选年级班级，可直接跳过' }}
@@ -361,6 +339,7 @@ import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
 
@@ -424,12 +403,23 @@ const gradeOptions = computed(() => {
   return [...new Set(classOptions.value.map(item => item.grade))]
 })
 
+const gradeSelectOptions = computed(() => {
+  return [
+    { label: '不填写', value: '' },
+    ...gradeOptions.value.map(option => ({ label: option, value: option }))
+  ]
+})
+
 const availableClassOptions = computed(() => {
   if (!grade.value) return []
 
   return classOptions.value
     .filter(item => item.grade === grade.value)
     .map(item => item.class)
+})
+
+const classSelectOptions = computed(() => {
+  return availableClassOptions.value.map(option => ({ label: option, value: option }))
 })
 
 const fetchClassOptions = async () => {
@@ -789,53 +779,8 @@ const handleWebAuthnLogin = async () => {
   gap: 12px;
 }
 
-.class-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.class-select {
   min-width: 0;
-}
-
-.select-wrapper {
-  position: relative;
-}
-
-.select-wrapper::after {
-  content: '';
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid var(--text-quaternary);
-  border-bottom: 2px solid var(--text-quaternary);
-  transform: translateY(-65%) rotate(45deg);
-  pointer-events: none;
-}
-
-.select-wrapper select {
-  width: 100%;
-  appearance: none;
-  padding: 16px 40px 16px 16px;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-lg);
-  color: var(--input-text);
-  font-size: 16px;
-  transition:
-    border-color var(--transition-normal),
-    box-shadow var(--transition-normal);
-}
-
-.select-wrapper select:focus {
-  outline: none;
-  border-color: var(--input-border-focus);
-  box-shadow: var(--input-shadow-focus);
-}
-
-.select-wrapper select:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
 }
 
 .input-wrapper input.input-error {
@@ -1084,11 +1029,6 @@ const handleWebAuthnLogin = async () => {
 
   .class-row {
     grid-template-columns: 1fr;
-  }
-
-  .select-wrapper select {
-    padding: 14px 40px 14px 14px;
-    font-size: 16px;
   }
 }
 
