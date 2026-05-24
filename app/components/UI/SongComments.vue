@@ -136,6 +136,7 @@ const offset = ref(0)
 const isLoading = ref(false)
 const error = ref('')
 const likeUpdatingKey = ref('')
+const requestId = ref(0)
 
 const neteaseSongId = computed(() => {
   const song = props.song
@@ -150,9 +151,15 @@ const canFetchComments = computed(() => !!neteaseSongId.value)
 
 const commentItems = computed(() => {
   const taggedHotComments = hotComments.value.map((item) => ({ ...item, isHot: true }))
-  const seenIds = new Set(taggedHotComments.map((item) => String(item.commentId || item.content)))
+  const seenIds = new Set(
+    taggedHotComments
+      .map((item) => item.commentId)
+      .filter((commentId) => commentId !== undefined && commentId !== null)
+      .map((commentId) => String(commentId))
+  )
   const regularComments = comments.value.filter((item) => {
-    const key = String(item.commentId || item.content)
+    if (item.commentId === undefined || item.commentId === null) return true
+    const key = String(item.commentId)
     if (seenIds.has(key)) return false
     seenIds.add(key)
     return true
@@ -160,7 +167,7 @@ const commentItems = computed(() => {
 
   return [...taggedHotComments, ...regularComments].map((item, index) => ({
     ...item,
-    key: `${item.isHot ? 'hot' : 'comment'}-${item.commentId || index}`
+    key: `${item.isHot ? 'hot' : 'comment'}-${item.commentId ?? index}`
   }))
 })
 
@@ -176,13 +183,25 @@ const formatCommentTime = (time?: number) => {
 
   const date = new Date(time)
   const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMinutes = Math.floor(diffMs / 60000)
+
+  if (diffMinutes < 1) return '刚刚'
+  if (diffMinutes < 60) return `${diffMinutes} 分钟前`
+  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} 小时前`
+
   const isSameYear = date.getFullYear() === now.getFullYear()
 
-  return date.toLocaleDateString('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-    ...(isSameYear ? {} : { year: 'numeric' })
+  const formatted = date.toLocaleString('zh-CN', {
+    ...(isSameYear ? {} : { year: 'numeric' }),
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
   })
+
+  return formatted.replace(/\//g, '-')
 }
 
 const updateCommentLikeState = (commentId: string | number, liked: boolean, likedCount: number) => {
@@ -200,7 +219,15 @@ const updateCommentLikeState = (commentId: string | number, liked: boolean, like
 }
 
 const toggleCommentLike = async (comment: NeteaseComment) => {
-  if (!neteaseSongId.value || !comment.commentId || likeUpdatingKey.value) return
+  const songId = neteaseSongId.value
+  if (
+    !songId ||
+    comment.commentId === undefined ||
+    comment.commentId === null ||
+    likeUpdatingKey.value
+  ) {
+    return
+  }
 
   const cookie = getNeteaseCookie()
   if (!cookie) {
@@ -219,16 +246,20 @@ const toggleCommentLike = async (comment: NeteaseComment) => {
   updateCommentLikeState(commentId, nextLiked, nextLikedCount)
 
   try {
-    await fetchNetease(
+    const response = await fetchNetease(
       '/comment/like',
       {
-        id: neteaseSongId.value,
+        id: songId,
         cid: commentId,
         t: nextLiked ? 1 : 0,
         type: 0
       },
       cookie
     )
+
+    if (response.code !== 200) {
+      throw new Error(response.message || '评论点赞失败')
+    }
   } catch (err: any) {
     updateCommentLikeState(commentId, !!comment.liked, currentLikedCount)
     if (window.$showNotification) {
@@ -240,18 +271,36 @@ const toggleCommentLike = async (comment: NeteaseComment) => {
 }
 
 const fetchComments = async (append = false) => {
-  if (!neteaseSongId.value || isLoading.value) return
+  const songId = neteaseSongId.value
+  if (!songId || isLoading.value) return
 
+  const currentRequestId = append ? requestId.value : requestId.value + 1
+  requestId.value = currentRequestId
   isLoading.value = true
   error.value = ''
 
   try {
     const nextOffset = append ? offset.value : 0
-    const response = await fetchNetease('/comment/music', {
-      id: neteaseSongId.value,
-      limit: PAGE_SIZE,
-      offset: nextOffset
-    })
+    const lastCommentTime = append ? comments.value[comments.value.length - 1]?.time : undefined
+    const params: Record<string, string | number> = {
+      id: songId,
+      limit: PAGE_SIZE
+    }
+
+    if (append && nextOffset >= 5000 && lastCommentTime) {
+      params.before = lastCommentTime
+    } else {
+      params.offset = nextOffset
+    }
+
+    const response = await fetchNetease('/comment/music', params)
+
+    if (currentRequestId !== requestId.value) return
+
+    if (response.code !== 200) {
+      error.value = response.message || '评论加载失败'
+      return
+    }
 
     const body = response.body || {}
     const nextComments = Array.isArray(body.comments) ? body.comments : []
@@ -269,13 +318,18 @@ const fetchComments = async (append = false) => {
         : comments.value.length + hotComments.value.length < totalCount.value
     offset.value = nextOffset + PAGE_SIZE
   } catch (err: any) {
+    if (currentRequestId !== requestId.value) return
     error.value = err?.data?.message || err?.message || '评论加载失败'
   } finally {
-    isLoading.value = false
+    if (currentRequestId === requestId.value) {
+      isLoading.value = false
+    }
   }
 }
 
 const refreshComments = () => {
+  requestId.value += 1
+  isLoading.value = false
   comments.value = []
   hotComments.value = []
   totalCount.value = 0
@@ -291,6 +345,8 @@ const loadMoreComments = () => {
 watch(
   () => [neteaseSongId.value, props.visible],
   ([songId, visible]) => {
+    requestId.value += 1
+    isLoading.value = false
     comments.value = []
     hotComments.value = []
     totalCount.value = 0
