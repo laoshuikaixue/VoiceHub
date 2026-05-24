@@ -92,6 +92,55 @@
         </div>
       </div>
 
+      <!-- 年级班级字段 - 仅创建模式，可选 -->
+      <div v-if="showCreateMode" class="form-group">
+        <div class="class-row">
+          <div class="class-field">
+            <label for="grade">年级</label>
+            <div class="select-wrapper">
+              <select
+                id="grade"
+                v-model="grade"
+                :disabled="classOptionsLoading || gradeOptions.length === 0"
+                @change="handleGradeChange"
+              >
+                <option value="">不填写</option>
+                <option
+                  v-for="option in gradeOptions"
+                  :key="option"
+                  :value="option"
+                >
+                  {{ option }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="class-field">
+            <label for="studentClass">班级</label>
+            <div class="select-wrapper">
+              <select
+                id="studentClass"
+                v-model="studentClass"
+                :disabled="classOptionsLoading || !grade || availableClassOptions.length === 0"
+                @change="error = ''"
+              >
+                <option value="">{{ grade ? '请选择班级' : '先选择年级' }}</option>
+                <option
+                  v-for="option in availableClassOptions"
+                  :key="option"
+                  :value="option"
+                >
+                  {{ option }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <p class="hint-text">
+          {{ gradeOptions.length > 0 ? '可选，只能选择系统内已有用户的年级和班级' : '暂无可选年级班级，可直接跳过' }}
+        </p>
+      </div>
+
       <!-- 密码字段 -->
       <div class="form-group">
         <div class="flex justify-between items-center w-full mb-2">
@@ -304,7 +353,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -348,6 +397,8 @@ const getFormTitle = computed(() => {
 
 const username = ref('')
 const name = ref('')
+const grade = ref('')
+const studentClass = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const error = ref('')
@@ -355,6 +406,9 @@ const loading = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isWebAuthnSupported = ref(false)
+const classOptionsLoading = ref(false)
+const classOptionsLoaded = ref(false)
+const classOptions = ref<{ grade: string, class: string }[]>([])
 const show2FA = ref(false)
 const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
@@ -366,6 +420,64 @@ const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
 
+const smartSort = (a: string, b: string) => {
+  const gradeOrder: Record<string, number> = {
+    '初一': 1, '初二': 2, '初三': 3,
+    '高一': 4, '高二': 5, '高三': 6,
+    '大一': 7, '大二': 8, '大三': 9, '大四': 10,
+    '教师': 99, '教职工': 99
+  }
+
+  const weightA = gradeOrder[a]
+  const weightB = gradeOrder[b]
+
+  if (weightA !== undefined && weightB !== undefined) return weightA - weightB
+  if (weightA !== undefined) return -1
+  if (weightB !== undefined) return 1
+
+  return a.localeCompare(b, 'zh-CN', { numeric: true })
+}
+
+const gradeOptions = computed(() => {
+  return [...new Set(classOptions.value.map(item => item.grade))].sort(smartSort)
+})
+
+const availableClassOptions = computed(() => {
+  if (!grade.value) return []
+
+  return [...new Set(
+    classOptions.value
+      .filter(item => item.grade === grade.value)
+      .map(item => item.class)
+  )].sort(smartSort)
+})
+
+const fetchClassOptions = async () => {
+  if (classOptionsLoaded.value || classOptionsLoading.value) return
+
+  classOptionsLoading.value = true
+  try {
+    const response = await $fetch<{
+      success: boolean
+      classes: { grade: string, class: string }[]
+    }>('/api/auth/oauth-register-options')
+
+    if (response.success) {
+      classOptions.value = response.classes || []
+      classOptionsLoaded.value = true
+    }
+  } catch (e) {
+    console.error('获取年级班级选项失败:', e)
+  } finally {
+    classOptionsLoading.value = false
+  }
+}
+
+const handleGradeChange = () => {
+  error.value = ''
+  studentClass.value = ''
+}
+
 const handle2FASuccess = async () => {
   if (auth.isAdmin.value) {
     await navigateTo('/dashboard')
@@ -376,6 +488,9 @@ const handle2FASuccess = async () => {
 
 onMounted(async () => {
   await fetchSiteConfig()
+  if (isBindMode.value) {
+    await fetchClassOptions()
+  }
 
   const isApiSupported = browserSupportsWebAuthn()
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
@@ -389,6 +504,15 @@ onMounted(async () => {
   isWebAuthnSupported.value = isApiSupported
 })
 
+watch(showCreateMode, async (enabled) => {
+  if (enabled) {
+    await fetchClassOptions()
+  } else {
+    grade.value = ''
+    studentClass.value = ''
+  }
+})
+
 const handleLogin = async () => {
   if (!username.value || !password.value) {
     error.value = '请填写完整的登录信息'
@@ -399,6 +523,10 @@ const handleLogin = async () => {
   if (isBindMode.value && showCreateMode.value) {
     if (!name.value || !confirmPassword.value) {
       error.value = '请填写完整的注册信息'
+      return
+    }
+    if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
+      error.value = '年级和班级需要同时选择，或全部留空'
       return
     }
     return handleRegisterOAuth()
@@ -499,6 +627,8 @@ const handleRegisterOAuth = async () => {
       body: {
         username: username.value,
         name: name.value,
+        grade: grade.value,
+        class: studentClass.value,
         password: password.value,
         confirmPassword: confirmPassword.value
       }
@@ -671,6 +801,61 @@ const handleWebAuthnLogin = async () => {
 
 .input-wrapper input:hover {
   filter: brightness(1.03);
+}
+
+.class-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.class-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-quaternary);
+  border-bottom: 2px solid var(--text-quaternary);
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.select-wrapper select {
+  width: 100%;
+  appearance: none;
+  padding: 16px 40px 16px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-lg);
+  color: var(--input-text);
+  font-size: 16px;
+  transition:
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal);
+}
+
+.select-wrapper select:focus {
+  outline: none;
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.select-wrapper select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .input-wrapper input.input-error {
@@ -915,6 +1100,15 @@ const handleWebAuthnLogin = async () => {
   .mode-btn svg {
     width: 16px;
     height: 16px;
+  }
+
+  .class-row {
+    grid-template-columns: 1fr;
+  }
+
+  .select-wrapper select {
+    padding: 14px 40px 14px 14px;
+    font-size: 16px;
   }
 }
 
