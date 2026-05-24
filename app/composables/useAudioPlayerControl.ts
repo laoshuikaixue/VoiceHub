@@ -78,6 +78,9 @@ export const useAudioPlayerControl = () => {
       // 检查是否是自动播放被阻止的错误
       if (error.name === 'NotAllowedError') {
         console.warn('[AudioPlayerControl] ⚠️ 自动播放被浏览器阻止，需要用户交互')
+        if (typeof window !== 'undefined' && window.$showNotification) {
+          window.$showNotification('浏览器限制了自动播放，请点击播放器中的播放按钮继续播放', 'info')
+        }
         // 不设置 hasError，因为这不是真正的错误
         return false
       } else {

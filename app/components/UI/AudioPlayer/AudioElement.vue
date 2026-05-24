@@ -1,12 +1,12 @@
 <template>
   <audio
-    v-if="song?.musicUrl"
     ref="audioPlayer"
-    :src="song.musicUrl"
+    :src="song?.musicUrl || undefined"
     crossorigin="anonymous"
-    autoplay
+    playsinline
     preload="auto"
     referrerpolicy="no-referrer"
+    webkit-playsinline
     @canplay="$emit('canplay', $event)"
     @ended="$emit('ended', $event)"
     @error="$emit('error', $event)"
@@ -16,8 +16,6 @@
     @play="$emit('play', $event)"
     @timeupdate="$emit('timeupdate', $event)"
   />
-  <!-- 如果没有 musicUrl（如哔哩哔哩视频），创建一个虚拟的 audio 元素 -->
-  <audio v-else-if="song" ref="audioPlayer" style="display: none" />
 </template>
 
 <script setup>

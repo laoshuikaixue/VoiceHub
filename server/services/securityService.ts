@@ -1,3 +1,4 @@
+import { setStore, getStore, delStore, incrStore } from '~~/server/utils/captchaStore'
 import { createSystemNotification } from './notificationService'
 import { sendMeowNotificationToUser } from './meowNotificationService'
 import { db } from '~/drizzle/db'
@@ -26,7 +27,6 @@ interface IPBlockInfo {
 }
 
 // 内存存储
-const accountLocks = new Map<string, AccountLockInfo>()
 const ipMonitor = new Map<string, IPMonitorInfo>()
 const ipBlacklist = new Map<string, IPBlockInfo>()
 const accountIpSwitchMonitor = new Map<
@@ -75,13 +75,6 @@ const RISK_CONTROL = {
  */
 function cleanupExpiredLocks() {
   const now = new Date()
-
-  // 清理过期的账户锁定
-  for (const [username, lockInfo] of accountLocks.entries()) {
-    if (lockInfo.lockedUntil && lockInfo.lockedUntil <= now) {
-      accountLocks.delete(username)
-    }
-  }
 
   // 清理过期的IP监控记录
   for (const [ip, monitorInfo] of ipMonitor.entries()) {
@@ -135,32 +128,28 @@ function cleanupExpiredLocks() {
 /**
  * 检查账户是否被锁定
  */
-export function isAccountLocked(username: string): boolean {
-  cleanupExpiredLocks()
-
-  const lockInfo = accountLocks.get(username)
-  if (!lockInfo || !lockInfo.lockedUntil) {
-    return false
-  }
-
-  return lockInfo.lockedUntil > new Date()
+export async function isAccountLocked(username: string): Promise<boolean> {
+  const lockKey = `account_lock:${username}`
+  const lockInfoStr = await getStore(lockKey)
+  if (!lockInfoStr) return false
+  
+  const lockedUntil = parseInt(lockInfoStr, 10)
+  return lockedUntil > Date.now()
 }
 
 /**
  * 获取账户锁定剩余时间（分钟）
  */
-export function getAccountLockRemainingTime(username: string): number {
-  const lockInfo = accountLocks.get(username)
-  if (!lockInfo || !lockInfo.lockedUntil) {
-    return 0
-  }
-
-  const now = new Date()
-  if (lockInfo.lockedUntil <= now) {
-    return 0
-  }
-
-  return Math.ceil((lockInfo.lockedUntil.getTime() - now.getTime()) / (1000 * 60))
+export async function getAccountLockRemainingTime(username: string): Promise<number> {
+  const lockKey = `account_lock:${username}`
+  const lockInfoStr = await getStore(lockKey)
+  if (!lockInfoStr) return 0
+  
+  const lockedUntil = parseInt(lockInfoStr, 10)
+  const now = Date.now()
+  if (lockedUntil <= now) return 0
+  
+  return Math.ceil((lockedUntil - now) / (1000 * 60))
 }
 
 /**
@@ -236,28 +225,17 @@ export function getUserBlockRemainingTime(userId: number): number {
 /**
  * 记录登录失败
  */
-export function recordLoginFailure(username: string, ip: string): void {
-  const now = new Date()
-
-  // 记录账户失败尝试
-  let lockInfo = accountLocks.get(username)
-  if (!lockInfo) {
-    lockInfo = {
-      failedAttempts: 0,
-      lockedUntil: null,
-      lastAttemptTime: now
-    }
-    accountLocks.set(username, lockInfo)
-  }
-
-  lockInfo.failedAttempts++
-  lockInfo.lastAttemptTime = now
+export async function recordLoginFailure(username: string, ip: string): Promise<void> {
+  const failKey = `login_fail:${username}`
+  const lockKey = `account_lock:${username}`
+  
+  // 增加失败计数，有效期为 30 分钟
+  const failedAttempts = await incrStore(failKey, 30 * 60)
 
   // 检查是否需要锁定账户
-  if (lockInfo.failedAttempts >= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) {
-    lockInfo.lockedUntil = new Date(
-      now.getTime() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
-    )
+  if (failedAttempts >= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) {
+    const lockedUntil = Date.now() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
+    await setStore(lockKey, lockedUntil.toString(), SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60)
     console.log(
       `账户 ${username} 因连续 ${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} 次登录失败被锁定 ${SECURITY_CONFIG.LOCK_DURATION_MINUTES} 分钟`
     )
@@ -270,8 +248,11 @@ export function recordLoginFailure(username: string, ip: string): void {
 /**
  * 记录成功登录（清除失败记录）
  */
-export function recordLoginSuccess(username: string, ip: string): void {
-  accountLocks.delete(username)
+export async function recordLoginSuccess(username: string, ip: string): Promise<void> {
+  const failKey = `login_fail:${username}`
+  const lockKey = `account_lock:${username}`
+  await delStore(failKey)
+  await delStore(lockKey)
 
   // 记录IP监控信息（成功登录也需要监控）
   recordIPAttempt(ip, username)
@@ -693,15 +674,54 @@ async function triggerVoteAnomalyAlert(
 /**
  * 获取安全统计信息
  */
-export function getSecurityStats() {
+export async function getSecurityStats() {
   cleanupExpiredLocks()
 
+  // 尝试从 Redis 统计锁定的账号数量，如果失败则返回 0
+  let lockedCount = 0
+  try {
+    const redisModule = await import('~~/server/utils/redis')
+    const redis = redisModule.useRedis()
+    if (redis) {
+      // 在 Redis 中使用 SCAN 迭代查找带有前缀的 key，避免阻塞
+      let cursor = 0
+      do {
+        const result = await redis.scan(cursor, 'MATCH', 'account_lock:*', 'COUNT', 100)
+        // 根据 redis client 版本不同，返回值结构可能不同，需兼容处理
+        if (Array.isArray(result)) {
+          cursor = Number(result[0])
+          lockedCount += result[1].length
+        } else if (result && typeof result === 'object' && 'cursor' in result) {
+          cursor = Number(result.cursor)
+          lockedCount += (result.keys || []).length
+        } else {
+          break // 无法解析返回值时安全退出
+        }
+      } while (cursor !== 0)
+    } else {
+      // 无 Redis 配置时，由于 account_lock 没有持久化在内存（以统一依赖 captchaStore），
+      // 目前难以直接在内存遍历，所以安全返回 0 或未来在内存存储中实现相应的统计
+      lockedCount = 0
+    }
+  } catch (error) {
+    console.warn('获取锁定账户统计失败:', error)
+  }
+
   return {
-    lockedAccounts: accountLocks.size,
+    lockedAccounts: lockedCount,
     monitoredIPs: ipMonitor.size,
     blockedIPs: ipBlacklist.size,
     config: SECURITY_CONFIG
   }
+}
+
+/**
+ * 获取账户当前的登录失败次数（用于判断是否需要图形验证码）
+ */
+export async function getLoginFailureCount(username: string): Promise<number> {
+  const failKey = `login_fail:${username}`
+  const val = await getStore(failKey)
+  return val ? parseInt(val, 10) : 0
 }
 
 // 定期清理过期记录（每5分钟执行一次）

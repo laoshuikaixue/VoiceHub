@@ -1,0 +1,2 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "captchaEnabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "SystemSettings" ADD COLUMN "captchaMaxFailures" integer DEFAULT 3 NOT NULL;

@@ -180,3 +180,7 @@ export const RISK_CONTROL_CONSTANTS = {
   SONG_IP_DOMINANCE_PERCENT: 0.6,
   SONG_IP_MIN_SAMPLE: 8
 } as const
+
+// 图形验证码策略
+export const CAPTCHA_MAX_FAILURES = 3
+export const CAPTCHA_CODE_EXPIRE = 300 // 5分钟

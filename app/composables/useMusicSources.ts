@@ -883,10 +883,11 @@ export const useMusicSources = () => {
         const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
         const vkeysSource = enabledSources.find((source) => source.id === 'vkeys')
         const nextmusicSource = enabledSources.find((source) => source.id === 'nextmusic')
+        const rrvennSource = enabledSources.find((source) => source.id === 'netease-rrvenn')
 
         const orderedSources = hasNeteaseLogin
-          ? [neteaseSource, nextmusicSource, vkeysSource]
-          : [nextmusicSource, neteaseSource]
+          ? [neteaseSource, nextmusicSource, rrvennSource, vkeysSource]
+          : [nextmusicSource, rrvennSource, neteaseSource]
 
         for (const source of orderedSources) {
           if (source) {
@@ -905,6 +906,7 @@ export const useMusicSources = () => {
           (source) =>
             source.id !== 'vkeys' &&
             source.id !== 'nextmusic' &&
+            source.id !== 'netease-rrvenn' &&
             !source.id.includes('netease-backup') &&
             !source.id.startsWith('meting-')
         )
@@ -962,6 +964,52 @@ export const useMusicSources = () => {
 
             if (nextmusicResp?.code === 200 && nextmusicResp?.data?.url) {
               url = String(nextmusicResp.data.url)
+            }
+          } else if (source.id === 'netease-rrvenn') {
+            // rrvenn API (只支持网易云)
+            let neteaseQuality: number | null = null
+
+            // 优先使用传入的 quality 参数
+            if (quality !== undefined && quality !== null) {
+              neteaseQuality = Number(quality)
+            } else {
+              try {
+                const { useAudioQuality } = await import('./useAudioQuality')
+                const { getQuality } = useAudioQuality()
+                neteaseQuality = Number(getQuality('netease'))
+              } catch (error) {
+                // 忽略错误
+              }
+            }
+
+            if (neteaseQuality === null || Number.isNaN(neteaseQuality)) {
+              neteaseQuality = 4
+            }
+
+            const level = mapQualityToLevel(neteaseQuality)
+            const timestamp = Math.floor(Date.now() / 1000).toString()
+            const API_SECRET_KEY = 'kxz_163music_secret_key_2024'
+            const signature = CryptoJS.MD5(timestamp + API_SECRET_KEY).toString().toLowerCase()
+
+            const rrvennResp = await $fetch(source.baseUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: new URLSearchParams({
+                action: 'music',
+                url: idParam,
+                level: level,
+                type: 'json',
+                timestamp: timestamp,
+                signature: signature
+              }).toString(),
+              timeout: source.timeout || 8000
+            }) as any
+
+            if (rrvennResp?.code === 200 && rrvennResp?.url) {
+              // 移除可能存在的 markdown 格式的反引号
+              url = String(rrvennResp.url).replace(/`/g, '').trim()
             }
           } else if (source.id === 'vkeys') {
             // Vkeys API

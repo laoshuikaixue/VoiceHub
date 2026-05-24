@@ -9,6 +9,7 @@ import {
   collaborationLogs
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
+import { getTimeRange, type LimitType } from '~~/server/utils/submissionLimit'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -113,37 +114,29 @@ export default defineEventHandler(async (event) => {
   }
 
   // 如果是主投稿人撤回（删除歌曲）
-
   // 获取系统设置以检查限制类型
   const settingsResult = await db.select().from(systemSettings).limit(1)
   const settings = settingsResult[0]
   const dailyLimit = settings?.dailySubmissionLimit || 0
   const weeklyLimit = settings?.weeklySubmissionLimit || 0
+  const monthlyLimit = settings?.monthlySubmissionLimit || 0
 
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false
-  const now = new Date()
 
-  if (dailyLimit > 0) {
-    // 检查是否在同一天
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
+  const limitConfigs: { type: LimitType; value: number }[] = [
+    { type: 'daily', value: dailyLimit },
+    { type: 'weekly', value: weeklyLimit },
+    { type: 'monthly', value: monthlyLimit }
+  ]
 
-    if (song.createdAt >= startOfDay && song.createdAt < endOfDay) {
-      canReturnQuota = true
-    }
-  } else if (weeklyLimit > 0) {
-    // 检查是否在同一周（周一开始）
-    const startOfWeek = new Date(now)
-    const dayOfWeek = now.getDay()
-    const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 周一为一周开始
-    startOfWeek.setDate(now.getDate() - daysToSubtract)
-    startOfWeek.setHours(0, 0, 0, 0)
-
-    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-
-    if (song.createdAt >= startOfWeek && song.createdAt < endOfWeek) {
-      canReturnQuota = true
+  for (const { type, value } of limitConfigs) {
+    if (value > 0) {
+      const { start, end } = getTimeRange(type)
+      if (song.createdAt >= start && song.createdAt <= end) {
+        canReturnQuota = true
+        break
+      }
     }
   }
 
