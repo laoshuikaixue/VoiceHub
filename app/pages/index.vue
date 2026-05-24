@@ -738,6 +738,8 @@ const bootProgress = ref(BOOT_PROGRESS.INITIAL)
 const bootMessage = ref(BOOT_MESSAGES.START)
 let bootSlowTimer = null
 
+const hasShownBootLoading = useState('hasShownBootLoading', () => false)
+
 const setBootState = ({ progress, message } = {}) => {
   if (typeof progress === 'number') {
     bootProgress.value = progress
@@ -1133,22 +1135,33 @@ watch(
   { immediate: true }
 )
 
+const isFirstVisit = !hasShownBootLoading.value
+
+if (import.meta.client) {
+  if (!isFirstVisit) {
+    showBootLoading.value = false
+  }
+  hasShownBootLoading.value = true
+}
+
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   const bootStartedAt = Date.now()
 
   try {
-    showBootLoading.value = true
-    setBootState({ progress: BOOT_PROGRESS.START })
+    if (isFirstVisit) {
+      showBootLoading.value = true
+      setBootState({ progress: BOOT_PROGRESS.START })
 
-    bootSlowTimer = setTimeout(() => {
-      setBootState({
-        progress: Math.max(bootProgress.value, BOOT_PROGRESS.SLOW_NETWORK),
-        message: BOOT_MESSAGES.SLOW_NETWORK
-      })
-    }, BOOT_SLOW_THRESHOLD_MS)
+      bootSlowTimer = setTimeout(() => {
+        setBootState({
+          progress: Math.max(bootProgress.value, BOOT_PROGRESS.SLOW_NETWORK),
+          message: BOOT_MESSAGES.SLOW_NETWORK
+        })
+      }, BOOT_SLOW_THRESHOLD_MS)
 
-    await waitForFirstPaint()
+      await waitForFirstPaint()
+    }
 
     setBootState({ progress: BOOT_PROGRESS.CONFIG, message: BOOT_MESSAGES.CONFIG })
     await initSiteConfig()
@@ -1218,16 +1231,20 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('首页初始化失败:', error)
-    setBootState({ progress: BOOT_PROGRESS.FALLBACK, message: BOOT_MESSAGES.FALLBACK })
+    if (isFirstVisit) {
+      setBootState({ progress: BOOT_PROGRESS.FALLBACK, message: BOOT_MESSAGES.FALLBACK })
+    }
     await Promise.allSettled([songs.fetchPublicSchedules(), songs.fetchSongCount()])
     await updateSongCounts()
   } finally {
-    if (bootSlowTimer) {
-      clearTimeout(bootSlowTimer)
-      bootSlowTimer = null
-    }
+    if (isFirstVisit) {
+      if (bootSlowTimer) {
+        clearTimeout(bootSlowTimer)
+        bootSlowTimer = null
+      }
 
-    await finishBootLoading(bootStartedAt)
+      await finishBootLoading(bootStartedAt)
+    }
   }
 })
 
