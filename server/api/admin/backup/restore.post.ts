@@ -986,6 +986,8 @@ export default defineEventHandler(async (event) => {
                         const systemSettingsData = {}
                         const systemSettingsFields = [
                           'enablePlayTimeSelection',
+                          'instanceId',
+                          'telemetryEnabled',
                           'siteTitle',
                           'siteLogoUrl',
                           'schoolLogoHomeUrl',

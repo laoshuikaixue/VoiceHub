@@ -155,6 +155,13 @@
       "when": 1778318043510,
       "tag": "20260509091403_add_turnstile_support",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1779603809404,
+      "tag": "20260524062329_add_instance_id_and_telemetry_toggle",
+      "breakpoints": true
     }
   ]
 }

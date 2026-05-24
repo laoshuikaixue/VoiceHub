@@ -272,7 +272,7 @@
         >
           <Shield :size="16" class="text-rose-500" /> 安全与隐私设置
         </h3>
-        <div class="space-y-4">   
+        <div class="space-y-4">
           <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
@@ -290,7 +290,7 @@
                     开启后，可以有效防范暴力破解和机器人注册。
                   </p>
                 </label>
-                
+
                 <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800 space-y-4">
                   <!-- 验证码类型选择 -->
                   <div>
@@ -360,7 +360,7 @@
               </div>
             </div>
           </div>
-              
+
           <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
@@ -394,6 +394,25 @@
                 <p class="text-xs font-bold text-zinc-200">隐藏学生详细信息</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
                   开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。
+                </p>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
+                  id="telemetry-enabled"
+                  v-model="formData.telemetryEnabled"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                >
+              </div>
+              <label for="telemetry-enabled" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">启用错误追踪与遥测</p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                  默认开启。开启后，系统会向 Sentry 发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。<strong class="text-zinc-400">不会收集任何个人身份信息、用户数据或业务内容</strong>。
                 </p>
               </label>
             </div>
@@ -489,6 +508,7 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  telemetryEnabled: true,
   captchaEnabled: false,
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
@@ -590,6 +610,7 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,
       captchaProvider: data.captchaProvider || 'graphic',
       turnstileSiteKey: data.turnstileSiteKey || '',
@@ -684,6 +705,7 @@ const saveConfig = async () => {
     saveSuccess.value = true
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
+    localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
     showNotification('配置保存成功！', 'success')
 
     setTimeout(() => {

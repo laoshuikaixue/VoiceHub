@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm"
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
 export const collaboratorStatus = pgEnum("collaborator_status", ['PENDING', 'ACCEPTED', 'REJECTED'])
 export const replayRequestStatus = pgEnum("replay_request_status", ['PENDING', 'FULFILLED', 'REJECTED'])
-export const userStatus = pgEnum("user_status", ['active', 'withdrawn'])
+export const userStatus = pgEnum("user_status", ['active', 'withdrawn', 'graduate'])
 
 
 export const emailTemplate = pgTable("EmailTemplate", {
@@ -106,6 +106,8 @@ export const song = pgTable("Song", {
 	musicPlatform: text(),
 	musicId: text(),
 	hitRequestId: integer(),
+	submissionNote: text(),
+	submissionNotePublic: boolean().default(false).notNull(),
 });
 
 export const songBlacklist = pgTable("SongBlacklist", {
@@ -117,39 +119,6 @@ export const songBlacklist = pgTable("SongBlacklist", {
 	reason: text(),
 	isActive: boolean().default(true).notNull(),
 	createdBy: integer(),
-});
-
-export const systemSettings = pgTable("SystemSettings", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	enablePlayTimeSelection: boolean().default(false).notNull(),
-	siteTitle: text(),
-	siteLogoUrl: text(),
-	schoolLogoHomeUrl: text(),
-	schoolLogoPrintUrl: text(),
-	siteDescription: text(),
-	submissionGuidelines: text(),
-	icpNumber: text(),
-	enableSubmissionLimit: boolean().default(false).notNull(),
-	dailySubmissionLimit: integer(),
-	weeklySubmissionLimit: integer(),
-	showBlacklistKeywords: boolean().default(false).notNull(),
-	hideStudentInfo: boolean().default(true).notNull(),
-	smtpEnabled: boolean().default(false).notNull(),
-	smtpHost: text(),
-	smtpPort: integer().default(587),
-	smtpSecure: boolean().default(false),
-	smtpUsername: text(),
-	smtpPassword: text(),
-	smtpFromEmail: text(),
-	smtpFromName: text().default('校园广播站'),
-	enableRequestTimeLimitation: boolean().default(false).notNull(),
-	forceBlockAllRequests: boolean().default(false).notNull(),
-	enableReplayRequests: boolean().default(false).notNull(),
-	monthlySubmissionLimit: integer(),
-	gonganNumber: text(),
-	enableCollaborativeSubmission: boolean().default(true).notNull(),
 });
 
 export const vote = pgTable("Vote", {
@@ -237,6 +206,83 @@ export const userStatusLogs = pgTable("user_status_logs", {
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
 
+export const drizzleMigrations = pgTable("__drizzle_migrations__", {
+	id: serial().primaryKey().notNull(),
+	hash: text().notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	createdAt: bigint("created_at", { mode: "number" }),
+});
+
+export const systemSettings = pgTable("SystemSettings", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	enablePlayTimeSelection: boolean().default(false).notNull(),
+	siteTitle: text(),
+	siteLogoUrl: text(),
+	schoolLogoHomeUrl: text(),
+	schoolLogoPrintUrl: text(),
+	siteDescription: text(),
+	submissionGuidelines: text(),
+	icpNumber: text(),
+	enableSubmissionLimit: boolean().default(false).notNull(),
+	dailySubmissionLimit: integer(),
+	weeklySubmissionLimit: integer(),
+	showBlacklistKeywords: boolean().default(false).notNull(),
+	hideStudentInfo: boolean().default(true).notNull(),
+	smtpEnabled: boolean().default(false).notNull(),
+	smtpHost: text(),
+	smtpPort: integer().default(587),
+	smtpSecure: boolean().default(false),
+	smtpUsername: text(),
+	smtpPassword: text(),
+	smtpFromEmail: text(),
+	smtpFromName: text().default('校园广播站'),
+	enableRequestTimeLimitation: boolean().default(false).notNull(),
+	forceBlockAllRequests: boolean().default(false).notNull(),
+	enableReplayRequests: boolean().default(false).notNull(),
+	gonganNumber: text(),
+	showBeianIcon: boolean().default(false).notNull(),
+	monthlySubmissionLimit: integer(),
+	enableCollaborativeSubmission: boolean().default(true).notNull(),
+	enableSubmissionRemarks: boolean().default(false).notNull(),
+	allowOauthRegistration: boolean().default(false).notNull(),
+	oauthRedirectUri: text(),
+	oauthStateSecret: text(),
+	oauthProviders: text().default('[]'),
+	githubOauthEnabled: boolean().default(false).notNull(),
+	githubClientId: text(),
+	githubClientSecret: text(),
+	casdoorOauthEnabled: boolean().default(false).notNull(),
+	casdoorServerUrl: text(),
+	casdoorClientId: text(),
+	casdoorClientSecret: text(),
+	casdoorOrganizationName: text(),
+	googleOauthEnabled: boolean().default(false).notNull(),
+	googleClientId: text(),
+	googleClientSecret: text(),
+	customOauthEnabled: boolean().default(false).notNull(),
+	customOauthDisplayName: text(),
+	customOauthAuthorizeUrl: text(),
+	customOauthTokenUrl: text(),
+	customOauthUserInfoUrl: text(),
+	customOauthScope: text(),
+	customOauthClientId: text(),
+	customOauthClientSecret: text(),
+	customOauthUserIdField: text(),
+	customOauthUsernameField: text(),
+	customOauthNameField: text(),
+	customOauthEmailField: text(),
+	customOauthAvatarField: text(),
+	captchaEnabled: boolean().default(false).notNull(),
+	captchaMaxFailures: integer().default(3).notNull(),
+	captchaProvider: text().default('graphic').notNull(),
+	turnstileSiteKey: text(),
+	turnstileSecretKey: text(),
+	instanceId: text("instance_id"),
+	telemetryEnabled: boolean().default(true).notNull(),
+});
+
 export const user = pgTable("User", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -275,10 +321,3 @@ export const userIdentity = pgTable("UserIdentity", {
 		}).onDelete("cascade"),
 	unique("UserIdentity_provider_providerUserId_unique").on(table.provider, table.providerUserId),
 ]);
-
-export const drizzleMigrations = pgTable("__drizzle_migrations__", {
-	id: serial().primaryKey().notNull(),
-	hash: text().notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	createdAt: bigint("created_at", { mode: "number" }),
-});
