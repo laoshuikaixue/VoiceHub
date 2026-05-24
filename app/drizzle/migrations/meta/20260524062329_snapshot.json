@@ -1,6 +1,6 @@
 {
   "id": "a807234c-cc23-45ea-ab3b-dcb604e1b7d9",
-  "prevId": "4c493514-5e9d-4365-be9c-edcf2b85cb59",
+  "prevId": "e6899e1e-1b1a-41c5-a46d-a5e87e7769d3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1459,6 +1459,39 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "captchaProvider": {
+          "name": "captchaProvider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'graphic'"
+        },
+        "turnstileSiteKey": {
+          "name": "turnstileSiteKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "turnstileSecretKey": {
+          "name": "turnstileSecretKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "captchaEnabled": {
+          "name": "captchaEnabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "captchaMaxFailures": {
+          "name": "captchaMaxFailures",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 3
         }
       },
       "indexes": {},
