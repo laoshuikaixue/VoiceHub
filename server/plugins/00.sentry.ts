@@ -175,4 +175,6 @@ export default defineNitroPlugin((nitroApp) => {
       await Sentry.close(2000)
     }
   })
+
+  ensureSentryInitialized()
 })
