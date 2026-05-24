@@ -420,26 +420,8 @@ const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
 
-const smartSort = (a: string, b: string) => {
-  const gradeOrder: Record<string, number> = {
-    '初一': 1, '初二': 2, '初三': 3,
-    '高一': 4, '高二': 5, '高三': 6,
-    '大一': 7, '大二': 8, '大三': 9, '大四': 10,
-    '教师': 99, '教职工': 99
-  }
-
-  const weightA = gradeOrder[a]
-  const weightB = gradeOrder[b]
-
-  if (weightA !== undefined && weightB !== undefined) return weightA - weightB
-  if (weightA !== undefined) return -1
-  if (weightB !== undefined) return 1
-
-  return a.localeCompare(b, 'zh-CN', { numeric: true })
-}
-
 const gradeOptions = computed(() => {
-  return [...new Set(classOptions.value.map(item => item.grade))].sort(smartSort)
+  return [...new Set(classOptions.value.map(item => item.grade))]
 })
 
 const availableClassOptions = computed(() => {
@@ -449,7 +431,7 @@ const availableClassOptions = computed(() => {
     classOptions.value
       .filter(item => item.grade === grade.value)
       .map(item => item.class)
-  )].sort(smartSort)
+  )]
 })
 
 const fetchClassOptions = async () => {

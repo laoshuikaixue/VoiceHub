@@ -54,11 +54,8 @@ export default defineEventHandler(async (event) => {
       return gradeResult || smartSort(a.class, b.class)
     })
 
-  const grades = [...new Set(classes.map(item => item.grade))].sort(smartSort)
-
   return {
     success: true,
-    grades,
     classes
   }
 })
