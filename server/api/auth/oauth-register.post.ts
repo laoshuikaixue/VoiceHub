@@ -14,7 +14,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { username, name, password, confirmPassword } = body
+  const { password, confirmPassword } = body
+  const username = typeof body.username === 'string' ? body.username.trim() : ''
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  const selectedGrade = typeof body.grade === 'string' ? body.grade.trim() : ''
+  const selectedClass = typeof body.class === 'string' ? body.class.trim() : ''
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
@@ -37,6 +41,22 @@ export default defineEventHandler(async (event) => {
   const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
   if (validationError) {
     throw createError({ statusCode: 400, message: validationError })
+  }
+
+  if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
+    throw createError({ statusCode: 400, message: '年级和班级需要同时选择，或全部留空' })
+  }
+
+  if (selectedGrade && selectedClass) {
+    const existingClass = await db.query.users.findFirst({
+      where: (t, { eq, and }) =>
+        and(eq(t.status, 'active'), eq(t.grade, selectedGrade), eq(t.class, selectedClass)),
+      columns: { id: true }
+    })
+
+    if (!existingClass) {
+      throw createError({ statusCode: 400, message: '请选择系统内已存在的年级和班级' })
+    }
   }
 
   // 检查用户名是否已存在
@@ -71,6 +91,8 @@ export default defineEventHandler(async (event) => {
         .values({
           username,
           name,
+          grade: selectedGrade || null,
+          class: selectedClass || null,
           password: hashedPassword,
           role: 'USER',
           status: 'active',
