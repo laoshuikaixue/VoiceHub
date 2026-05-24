@@ -101,6 +101,7 @@
   --z-popover: 600;
   --z-tooltip: 700;
   --z-toast: 800;
+  --z-app-loader: 9000;
 
   /* 特殊状态颜色 */
   --status-pending: #fbbf24;
