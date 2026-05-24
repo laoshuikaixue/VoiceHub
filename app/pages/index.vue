@@ -708,12 +708,27 @@ const showRules = ref(false)
 const showUserActions = ref(false)
 const avatarError = ref(false)
 
+const BOOT_PROGRESS = {
+  INITIAL: 8,
+  START: 14,
+  CONFIG: 28,
+  AUTH: 46,
+  SLOW_NETWORK: 58,
+  CONTENT: 68,
+  FALLBACK: 82,
+  FINALIZING: 88,
+  COMPLETE: 100
+}
+const MIN_BOOT_TIME_MS = 720
+const BOOT_EXIT_DELAY_MS = 180
+const BOOT_SLOW_THRESHOLD_MS = 8000
+
 const showBootLoading = ref(true)
-const bootProgress = ref(8)
+const bootProgress = ref(BOOT_PROGRESS.INITIAL)
 const bootMessage = ref('正在准备音乐播放环境')
 let bootSlowTimer = null
 
-const setBootState = ({ progress, message }) => {
+const setBootState = ({ progress, message } = {}) => {
   if (typeof progress === 'number') {
     bootProgress.value = progress
   }
@@ -736,11 +751,11 @@ const waitForFirstPaint = async () => {
 }
 
 const finishBootLoading = async (startedAt) => {
-  setBootState({ progress: 100, message: '加载完成，正在打开点歌台' })
+  setBootState({ progress: BOOT_PROGRESS.COMPLETE, message: '加载完成，正在打开点歌台' })
 
   const elapsed = Date.now() - startedAt
-  const restTime = Math.max(0, 720 - elapsed)
-  await new Promise((resolve) => setTimeout(resolve, restTime + 180))
+  const restTime = Math.max(0, MIN_BOOT_TIME_MS - elapsed)
+  await new Promise((resolve) => setTimeout(resolve, restTime + BOOT_EXIT_DELAY_MS))
 
   showBootLoading.value = false
 }
@@ -1114,28 +1129,28 @@ onMounted(async () => {
 
   try {
     showBootLoading.value = true
-    setBootState({ progress: 14, message: '正在准备音乐播放环境' })
+    setBootState({ progress: BOOT_PROGRESS.START, message: '正在准备音乐播放环境' })
 
     bootSlowTimer = setTimeout(() => {
       setBootState({
-        progress: Math.max(bootProgress.value, 58),
+        progress: Math.max(bootProgress.value, BOOT_PROGRESS.SLOW_NETWORK),
         message: '网络有点慢，仍在同步数据'
       })
-    }, 8000)
+    }, BOOT_SLOW_THRESHOLD_MS)
 
     await waitForFirstPaint()
 
-    setBootState({ progress: 28, message: '正在加载站点配置' })
+    setBootState({ progress: BOOT_PROGRESS.CONFIG, message: '正在加载站点配置' })
     await initSiteConfig()
 
-    setBootState({ progress: 46, message: '正在校验登录状态' })
+    setBootState({ progress: BOOT_PROGRESS.AUTH, message: '正在校验登录状态' })
     const currentUser = await auth.initAuth()
 
     if (typeof document !== 'undefined' && siteTitle.value) {
       document.title = `首页 | ${siteTitle.value}`
     }
 
-    setBootState({ progress: 68, message: '正在同步排期与歌曲列表' })
+    setBootState({ progress: BOOT_PROGRESS.CONTENT, message: '正在同步排期与歌曲列表' })
     if (isClientAuthenticated.value) {
       hasInitializedAuthData.value = true
       await Promise.allSettled([
@@ -1150,7 +1165,7 @@ onMounted(async () => {
       await Promise.allSettled([songs.fetchSongCount(), songs.fetchPublicSchedules()])
     }
 
-    setBootState({ progress: 88, message: '正在整理播放数据' })
+    setBootState({ progress: BOOT_PROGRESS.FINALIZING, message: '正在整理播放数据' })
     await updateSongCounts()
 
     const setupRefreshInterval = () => {
@@ -1193,7 +1208,7 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('首页初始化失败:', error)
-    setBootState({ progress: 82, message: '正在使用可用数据继续打开首页' })
+    setBootState({ progress: BOOT_PROGRESS.FALLBACK, message: '正在使用可用数据继续打开首页' })
     await Promise.allSettled([songs.fetchPublicSchedules(), songs.fetchSongCount()])
     await updateSongCounts()
   } finally {
