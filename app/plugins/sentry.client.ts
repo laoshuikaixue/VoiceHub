@@ -106,6 +106,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
       localStorage.setItem(TELEMETRY_STORAGE_KEY, 'true')
       instanceId = response.data.instanceId || ''
+      console.log(`[VoiceHub] 遥测已开启，实例 ID: ${instanceId}（提交 Bug 时可提供此 ID 以便开发者定位）`)
       Sentry.setTag('instance_id', instanceId)
       Sentry.setContext('instance', { instanceId })
     } catch (error) {

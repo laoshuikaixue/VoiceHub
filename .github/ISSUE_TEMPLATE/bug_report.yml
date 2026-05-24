@@ -110,6 +110,15 @@ body:
     validations:
       required: false
 
+  - type: input
+    id: instance-id
+    attributes:
+      label: 实例 ID（可选）
+      description: 如果方便，可以提供系统实例 ID（可在管理员后台「系统状态」或浏览器控制台中查看），这能帮助开发者关联到具体的部署环境
+      placeholder: 例如：a807234c-cc23-45ea-ab3b-dcb604e1b7d9
+    validations:
+      required: false
+
   - type: checkboxes
     id: terms
     attributes:
