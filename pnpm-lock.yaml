@@ -48,10 +48,10 @@ importers:
         specifier: ^7.4.3
         version: 7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))
       '@sentry/node':
-        specifier: ^10.49.0
+        specifier: ^10.53.1
         version: 10.53.1
       '@sentry/vue':
-        specifier: ^10.49.0
+        specifier: ^10.53.1
         version: 10.53.1(vue@3.5.34(typescript@6.0.3))
       '@simplewebauthn/browser':
         specifier: ^13.3.0

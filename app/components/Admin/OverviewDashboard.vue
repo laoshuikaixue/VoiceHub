@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <!-- 统计卡片网格 -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
       <div
         v-for="(stat, i) in statCards"
@@ -41,6 +42,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- 最近活动 -->
       <div
         class="lg:col-span-5 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
@@ -106,6 +108,7 @@
         </div>
       </div>
 
+      <!-- 系统状态 -->
       <div
         class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
@@ -160,6 +163,7 @@
         </div>
       </div>
 
+      <!-- 快速操作 -->
       <div
         class="lg:col-span-3 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
@@ -239,6 +243,7 @@ const systemStatus = ref({
   api: true
 })
 
+// 统计卡片数据
 const statCards = computed(() => [
   {
     label: '总歌曲数',
@@ -270,6 +275,7 @@ const statCards = computed(() => [
   }
 ])
 
+// 系统状态项
 const statusItems = computed(() => [
   {
     label: '数据库连接',
@@ -294,6 +300,7 @@ const statusItems = computed(() => [
   { label: '系统版本', value: `v${systemVersion.value}`, active: true }
 ])
 
+// 快速操作
 const quickActions = [
   { label: '管理排期', icon: Calendar, id: 'schedule', primary: true },
   { label: '用户管理', icon: Users, id: 'users' },
