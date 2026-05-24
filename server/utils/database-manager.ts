@@ -110,12 +110,13 @@ export class DatabaseManager {
         WHERE datname = current_database() AND state = 'active'
       `)
 
-      const sizeRow = sizeResult[0] as any
-      const connectionRow = connectionStats[0] as any
+      const sizeRow = sizeResult[0] as { database_size?: string } | undefined
+      const connectionRow = connectionStats[0] as { active_connections?: number | string } | undefined
 
       return {
         databaseSize: sizeRow?.database_size || 'Unknown',
-        activeConnections: parseInt(connectionRow?.active_connections) || 0,
+        activeConnections:
+          Number.parseInt(String(connectionRow?.active_connections ?? '0'), 10) || 0,
         serverless: true // Neon Database 是无服务器架构
       }
     } catch (error) {
@@ -139,21 +140,29 @@ export class DatabaseManager {
   }> {
     try {
       const connectionStatus = await getConnectionStatus()
-      const connected = connectionStatus.status === 'connected'
+
+      // 用最小查询判断真实连通性，避免底层连接对象状态或统计查询误判。
+      await db.execute(sql`SELECT 1 as connection_check`)
 
       // 获取当前活跃连接数
-      const connectionStats = await db.execute(sql`
-        SELECT count(*) as active_connections
-        FROM pg_stat_activity
-        WHERE datname = current_database() AND state = 'active'
-      `)
+      let activeConnections = 0
+      try {
+        const connectionStats = await db.execute(sql`
+          SELECT count(*) as active_connections
+          FROM pg_stat_activity
+          WHERE datname = current_database() AND state = 'active'
+        `)
 
-      const connRow = connectionStats[0] as any
+        const connRow = connectionStats[0] as { active_connections?: number | string } | undefined
+        activeConnections = Number.parseInt(String(connRow?.active_connections ?? '0'), 10) || 0
+      } catch (metricsError) {
+        console.warn('Failed to get active connection count:', metricsError)
+      }
 
       return {
-        connected,
-        status: connectionStatus.status,
-        activeConnections: parseInt(connRow?.active_connections) || 0,
+        connected: true,
+        status: connectionStatus.status || 'connected',
+        activeConnections,
         serverlessMode: true, // Neon Database 是无服务器架构
         autoSuspend: true, // 支持自动暂停
         error: null
@@ -196,7 +205,8 @@ export class DatabaseManager {
       `)
 
       // postgres-js returns count in the result array object properties
-      return (result as any).count || 0
+      const deleteResult = result as { count?: number | string }
+      return Number.parseInt(String(deleteResult.count ?? '0'), 10) || 0
     } catch (error) {
       console.error('Failed to cleanup expired sessions:', error)
       throw new Error('Failed to cleanup expired sessions')
