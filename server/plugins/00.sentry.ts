@@ -146,33 +146,6 @@ export default defineNitroPlugin((nitroApp) => {
     })
   })
 
-  if (typeof process !== 'undefined' && typeof process.on === 'function') {
-    process.on('unhandledRejection', (reason) => {
-      void (async () => {
-        const initialized = await ensureSentryInitialized()
-        if (!initialized) return
-
-        const error = reason instanceof Error ? reason : new Error(String(reason))
-        Sentry.withScope((scope) => {
-          scope.setLevel('error')
-          Sentry.captureException(error)
-        })
-      })()
-    })
-
-    process.on('uncaughtException', (error) => {
-      void (async () => {
-        const initialized = await ensureSentryInitialized()
-        if (!initialized) return
-
-        Sentry.withScope((scope) => {
-          scope.setLevel('fatal')
-          Sentry.captureException(error)
-        })
-      })()
-    })
-  }
-
   nitroApp.hooks.hook('close', async () => {
     if (globalThis.__voicehubSentryServerInitialized) {
       await Sentry.close(2000)
