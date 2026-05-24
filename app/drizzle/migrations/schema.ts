@@ -280,7 +280,7 @@ export const systemSettings = pgTable("SystemSettings", {
 	turnstileSiteKey: text(),
 	turnstileSecretKey: text(),
 	instanceId: text("instance_id"),
-	telemetryEnabled: boolean().default(false).notNull(),
+	telemetryEnabled: boolean().default(true).notNull(),
 });
 
 export const user = pgTable("User", {

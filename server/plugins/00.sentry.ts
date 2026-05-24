@@ -106,8 +106,11 @@ export default defineNitroPlugin((nitroApp) => {
 
       Sentry.withScope((scope) => {
         scope.setLevel('info')
-        scope.setFingerprint(['instance_heartbeat', instanceId])
-        scope.setTag('event_type', 'heartbeat')
+        scope.setFingerprint(['instance_online', instanceId || 'unknown'])
+        scope.setTag('event_type', 'instance_online')
+        if (instanceId) {
+          scope.setTag('instance_id', instanceId)
+        }
         Sentry.captureMessage('instance_online')
       })
 
@@ -176,5 +179,5 @@ export default defineNitroPlugin((nitroApp) => {
     }
   })
 
-  ensureSentryInitialized()
+  void ensureSentryInitialized()
 })

@@ -35,7 +35,7 @@ const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
   return false
 }
 
-export default defineNuxtPlugin((nuxtApp) => {
+export default defineNuxtPlugin(async (nuxtApp) => {
   if (!import.meta.client || sentryClientInitialized) {
     return
   }
@@ -44,6 +44,26 @@ export default defineNuxtPlugin((nuxtApp) => {
   const sentryConfig = config.public?.sentry
 
   if (!sentryConfig?.dsn) {
+    return
+  }
+
+  try {
+    const response = await $fetch<{
+      success?: boolean
+      data?: { instanceId?: string; telemetryEnabled?: boolean }
+    }>('/api/system/instance')
+
+    if (!response?.data?.telemetryEnabled) {
+      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+      return
+    }
+
+    localStorage.setItem(TELEMETRY_STORAGE_KEY, 'true')
+    instanceId = response.data.instanceId || ''
+    console.log(`[VoiceHub] 遥测已开启，实例 ID: ${instanceId}（提交 Bug 时可提供此 ID 以便开发者定位）`)
+  } catch (error) {
+    localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+    console.warn('[Sentry] Failed to resolve telemetry setting:', error)
     return
   }
 
@@ -89,32 +109,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   Sentry.setTag('runtime', 'vue')
   Sentry.setTag('deployment_target', deploymentTarget)
-
-  // 异步获取遥测设置和实例 ID，不阻塞应用初始化
-  const initTelemetry = async () => {
-    try {
-      const response = await $fetch<{
-        success?: boolean
-        data?: { instanceId?: string; telemetryEnabled?: boolean }
-      }>('/api/system/instance')
-
-      if (!response?.data?.telemetryEnabled) {
-        localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
-        Sentry.close()
-        return
-      }
-
-      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'true')
-      instanceId = response.data.instanceId || ''
-      console.log(`[VoiceHub] 遥测已开启，实例 ID: ${instanceId}（提交 Bug 时可提供此 ID 以便开发者定位）`)
-      Sentry.setTag('instance_id', instanceId)
-      Sentry.setContext('instance', { instanceId })
-    } catch (error) {
-      console.warn('[Sentry] Failed to resolve telemetry setting:', error)
-    }
+  if (instanceId) {
+    Sentry.setTag('instance_id', instanceId)
+    Sentry.setContext('instance', { instanceId })
   }
-
-  initTelemetry()
 
   nuxtApp.hook('vue:error', (error, instance, info) => {
     Sentry.withScope((scope) => {
