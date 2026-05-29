@@ -174,6 +174,13 @@
             >
               <LazyAdminApiKeyManager />
             </div>
+            <!-- 卡密管理 -->
+            <div
+              v-if="activeTab === 'card-codes' && permissions.canAccessPage('card-codes')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminCardCodesManager />
+            </div>
           </div>
         </main>
       </div>
@@ -229,6 +236,7 @@ const getPageTitle = () => {
     songs: '歌曲管理',
     schedule: '排期管理',
     print: '打印排期',
+    'card-codes': '卡密管理',
     users: '用户管理',
     notifications: '通知管理',
     'smtp-config': '邮件配置',

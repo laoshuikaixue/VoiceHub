@@ -114,6 +114,27 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
     }
 
+    // 卡密点歌相关设置
+    if (body.enableCardCodeRequests !== undefined) {
+      if (typeof body.enableCardCodeRequests !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableCardCodeRequests 必须是布尔值'
+        })
+      }
+      updateData.enableCardCodeRequests = body.enableCardCodeRequests
+    }
+
+    if (body.requireCardCodeForRequests !== undefined) {
+      if (typeof body.requireCardCodeForRequests !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'requireCardCodeForRequests 必须是布尔值'
+        })
+      }
+      updateData.requireCardCodeForRequests = body.requireCardCodeForRequests
+    }
+
     if (body.dailySubmissionLimit !== undefined) {
       if (
         body.dailySubmissionLimit !== null &&

@@ -22,6 +22,8 @@ const siteConfig = ref({
   captchaEnabled: false,
   captchaProvider: 'graphic',
   turnstileSiteKey: '',
+  enableCardCodeRequests: false,
+  requireCardCodeForRequests: false,
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
@@ -68,6 +70,8 @@ export const useSiteConfig = () => {
         captchaEnabled: false,
         captchaProvider: 'graphic',
         turnstileSiteKey: '',
+        enableCardCodeRequests: false,
+        requireCardCodeForRequests: false,
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
@@ -99,6 +103,8 @@ export const useSiteConfig = () => {
     () => siteConfig.value.enableCollaborativeSubmission !== false
   )
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
+  const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
+  const requireCardCodeForRequests = computed(() => siteConfig.value.requireCardCodeForRequests === true)
   const allowOAuthRegistration = computed(() => siteConfig.value.allowOAuthRegistration === true)
   const captchaEnabled = computed(() => siteConfig.value.captchaEnabled === true)
   const captchaProvider = computed(() => siteConfig.value.captchaProvider || 'graphic')
@@ -160,6 +166,8 @@ export const useSiteConfig = () => {
     enableReplayRequests,
     enableCollaborativeSubmission,
     enableSubmissionRemarks,
+    enableCardCodeRequests,
+    requireCardCodeForRequests,
     allowOAuthRegistration,
     captchaEnabled,
     captchaProvider,

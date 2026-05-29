@@ -192,6 +192,7 @@ const menuGroups = [
       { icon: FileEdit, label: '投稿管理', id: 'request-times' },
       { icon: BookOpen, label: '学期管理', id: 'semesters' },
       { icon: Ban, label: '黑名单管理', id: 'blacklist' },
+          { icon: Key, label: '卡密管理', id: 'card-codes' },
       { icon: Globe, label: '站点配置', id: 'site-config' },
       { icon: Database, label: '数据库操作', id: 'database' }
     ]

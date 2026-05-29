@@ -377,6 +377,21 @@
               </div>
             </div>
 
+            <div v-if="enableCardCodeRequests || requireCardCodeForRequests" class="form-row mt-4">
+              <div class="form-group">
+                <div class="input-wrapper">
+                  <label for="card-code" class="text-[12px] font-bold text-zinc-300">卡密（若有）</label>
+                  <input
+                    id="card-code"
+                    v-model="cardCode"
+                    placeholder="输入卡密用于付费点歌（选填）"
+                    class="w-full mt-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-yellow-400/50 focus:ring-1 focus:ring-yellow-400/30"
+                    type="text"
+                  />
+                </div>
+              </div>
+            </div>
+
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <div class="loading-spinner" />
@@ -1011,7 +1026,9 @@ const {
   initSiteConfig,
   enableReplayRequests,
   enableCollaborativeSubmission,
-  enableSubmissionRemarks
+  enableSubmissionRemarks,
+  enableCardCodeRequests,
+  requireCardCodeForRequests
 } = useSiteConfig()
 
 // 用户认证
@@ -1032,6 +1049,7 @@ const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
+const cardCode = ref('')
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
@@ -2502,6 +2520,10 @@ const submitSong = async (result, options = {}) => {
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
+      // 如果用户填写了卡密，传递给后端
+      if (cardCode.value && cardCode.value.trim()) {
+        songData.cardCode = cardCode.value.trim()
+      }
 
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
@@ -2549,6 +2571,9 @@ const handleSubmit = async () => {
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id)
+    }
+    if (cardCode.value && cardCode.value.trim()) {
+      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -2796,6 +2821,10 @@ const handleManualSubmit = async () => {
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value
+    }
+
+    if (cardCode.value && cardCode.value.trim()) {
+      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用

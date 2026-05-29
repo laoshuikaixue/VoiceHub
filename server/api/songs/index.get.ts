@@ -223,6 +223,7 @@ export default defineEventHandler(async (event) => {
         semester: songs.semester,
         createdAt: songs.createdAt,
         updatedAt: songs.updatedAt,
+          cardCodeId: songs.cardCodeId,
         cover: songs.cover,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,

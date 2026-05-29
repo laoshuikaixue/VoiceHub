@@ -181,6 +181,34 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
+              <p class="text-xs font-bold text-zinc-200">启用卡密点歌</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户使用卡密（卡券）在投稿时抵扣或提交点歌</p>
+            </div>
+            <input
+              v-model="formData.enableCardCodeRequests"
+              type="checkbox"
+              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+            >
+          </div>
+
+          <div
+            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+          >
+            <div>
+              <p class="text-xs font-bold text-zinc-200">强制使用卡密投稿</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">开启后，所有用户提交点歌时必须填写有效卡密</p>
+            </div>
+            <input
+              v-model="formData.requireCardCodeForRequests"
+              type="checkbox"
+              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+            >
+          </div>
+
+          <div
+            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+          >
+            <div>
               <p class="text-xs font-bold text-zinc-200">启用重播申请</p>
               <p class="text-[10px] text-zinc-500 mt-0.5">允许用户对本学期已播放过的歌曲再次申请</p>
             </div>
@@ -503,6 +531,9 @@ const formData = ref({
   enableSubmissionRemarks: false,
   enableReplayRequests: false,
   enableSubmissionLimit: false,
+  // 卡密点歌设置
+  enableCardCodeRequests: false,
+  requireCardCodeForRequests: false,
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
@@ -605,6 +636,9 @@ const loadConfig = async () => {
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
+      // 卡密点歌设置
+      enableCardCodeRequests: !!data.enableCardCodeRequests,
+      requireCardCodeForRequests: !!data.requireCardCodeForRequests,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,

@@ -250,6 +250,7 @@ export const useSongs = () => {
     musicId?: string | null
     submissionNote?: string | null
     submissionNotePublic?: boolean
+    cardCode?: string | null
   }) => {
     if (!isAuthenticated.value) {
       showNotification('需要登录才能点歌', 'error')

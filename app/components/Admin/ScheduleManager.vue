@@ -310,6 +310,9 @@
                 @touchmove="handleTouchMove"
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
+                <div v-if="song.cardCodeId" class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold bg-amber-500 text-zinc-900">
+                  卡密待核销
+                </div>
                 <!-- 歌曲卡片内容 -->
                 <div class="flex items-center gap-3">
                   <!-- 封面图片 -->

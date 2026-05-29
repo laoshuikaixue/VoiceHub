@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
+import { playTimes, schedules, songs, users, votes, songReplayRequests, cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
@@ -136,7 +136,6 @@ export default defineEventHandler(async (event) => {
             }
           )
 
-          // 标记该歌曲的所有待处理重播申请为已完成
           await tx
             .update(songReplayRequests)
             .set({ status: 'FULFILLED', updatedAt: scheduleResult[0].publishedAt || new Date() })
@@ -148,6 +147,32 @@ export default defineEventHandler(async (event) => {
             )
         } else {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+        }
+        // 如果歌曲关联了卡密且已排期，则自动完成卡密核销
+        try {
+          const songRow = await tx.select().from(songs).where(eq(songs.id, schedule.song.id)).limit(1)
+          const s = songRow[0]
+          if (s && s.cardCodeId) {
+            const redeemResult = await tx
+              .update(cardCodes)
+              .set({ status: 'REDEEMED', redeemedBy: user.id, redeemedAt: new Date() })
+              .where(and(eq(cardCodes.id, s.cardCodeId), ne(cardCodes.status, 'REDEEMED')))
+              .returning({ id: cardCodes.id, code: cardCodes.code, redeemedAt: cardCodes.redeemedAt })
+
+            if (redeemResult.length > 0) {
+              const redeemedCardCode = redeemResult[0]
+              await tx.insert(cardCodeRedeemLogs).values({
+                cardCodeId: redeemedCardCode.id,
+                codeSnapshot: redeemedCardCode.code,
+                redeemedBy: user.id,
+                redeemedAt: redeemedCardCode.redeemedAt || new Date(),
+                source: 'SCHEDULE_AUTO',
+                songId: s.id
+              })
+            }
+          }
+        } catch (err) {
+          console.error('尝试核销卡密失败:', err)
         }
       }
     })
