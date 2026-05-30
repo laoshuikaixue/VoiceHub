@@ -181,8 +181,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">启用卡密点歌</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户使用卡密（卡券）在投稿时抵扣或提交点歌</p>
+              <p class="text-xs font-bold text-zinc-200">启用点歌券点歌</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户使用点歌券在投稿时抵扣或提交点歌</p>
             </div>
             <input
               v-model="formData.enableCardCodeRequests"
@@ -195,8 +195,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">强制使用卡密投稿</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">开启后，所有用户提交点歌时必须填写有效卡密</p>
+              <p class="text-xs font-bold text-zinc-200">强制使用点歌券投稿</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">开启后，所有用户提交点歌时必须填写有效点歌券</p>
             </div>
             <input
               v-model="formData.requireCardCodeForRequests"
@@ -531,7 +531,7 @@ const formData = ref({
   enableSubmissionRemarks: false,
   enableReplayRequests: false,
   enableSubmissionLimit: false,
-  // 卡密点歌设置
+  // 点歌券点歌设置
   enableCardCodeRequests: false,
   requireCardCodeForRequests: false,
   dailySubmissionLimit: 5,
@@ -636,7 +636,7 @@ const loadConfig = async () => {
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
       enableReplayRequests: !!data.enableReplayRequests,
       enableSubmissionLimit: !!data.enableSubmissionLimit,
-      // 卡密点歌设置
+      // 点歌券点歌设置
       enableCardCodeRequests: !!data.enableCardCodeRequests,
       requireCardCodeForRequests: !!data.requireCardCodeForRequests,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,

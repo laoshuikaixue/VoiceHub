@@ -384,6 +384,7 @@ export default defineEventHandler(async (event) => {
           voteCount: voteCounts.get(schedule.song.id) || 0,
           played: schedule.song.played || false,
           cover: schedule.song.cover || null,
+          cardCodeId: schedule.song.cardCodeId || null,
           musicPlatform: schedule.song.musicPlatform || null,
           musicId: schedule.song.musicId || null,
           playUrl: schedule.song.playUrl || null,

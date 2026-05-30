@@ -2,9 +2,9 @@
   <div class="space-y-6">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
-        <h2 class="text-lg font-black">卡密管理</h2>
+        <h2 class="text-lg font-black">点歌券管理</h2>
         <p class="text-xs text-zinc-500 mt-1 font-medium">
-          管理卡密的创建、筛选、批量核销、导入导出和备注信息
+          管理点歌券的创建、筛选、批量核销、导入导出和备注信息
         </p>
       </div>
 
@@ -43,7 +43,7 @@
               <input
                 v-model="filters.q"
                 type="text"
-                placeholder="搜索卡密、备注"
+                placeholder="搜索点歌券、备注"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40 transition-all"
                 @keyup.enter="fetchCodes"
               >
@@ -94,7 +94,7 @@
         </div>
 
         <div v-if="loading" class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
-          加载卡密中...
+          加载点歌券中...
         </div>
 
         <div v-else class="overflow-hidden rounded-2xl border border-zinc-800">
@@ -111,7 +111,7 @@
                   >
                 </th>
                 <th class="px-3 py-3 w-16">ID</th>
-                <th class="px-3 py-3">卡密</th>
+                <th class="px-3 py-3">点歌券</th>
                 <th class="px-3 py-3 w-28">状态</th>
                 <th class="px-3 py-3 w-60">备注</th>
                 <th class="px-3 py-3 w-40">时间</th>
@@ -132,7 +132,7 @@
                 <td class="px-3 py-3 align-top font-mono text-zinc-100">
                   <div class="flex items-center gap-2">
                     <span class="break-all">{{ item.code }}</span>
-                    <button class="text-zinc-500 hover:text-zinc-200 transition-colors" title="复制卡密" @click="copyCode(item.code)">
+                    <button class="text-zinc-500 hover:text-zinc-200 transition-colors" title="复制点歌券" @click="copyCode(item.code)">
                       <Copy :size="14" />
                     </button>
                   </div>
@@ -173,7 +173,7 @@
                 </td>
               </tr>
               <tr v-if="!codes.length">
-                <td colspan="7" class="px-3 py-10 text-center text-sm text-zinc-500">没有找到符合条件的卡密</td>
+                <td colspan="7" class="px-3 py-10 text-center text-sm text-zinc-500">没有找到符合条件的点歌券</td>
               </tr>
             </tbody>
           </table>
@@ -185,7 +185,7 @@
           <div class="flex items-center justify-between gap-3">
             <div>
               <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">批量创建 / 导入</h3>
-              <p class="mt-1 text-[11px] text-zinc-500">支持手动粘贴、分隔导入，也支持自动生成卡密</p>
+              <p class="mt-1 text-[11px] text-zinc-500">支持手动粘贴、分隔导入，也支持自动生成点歌券</p>
             </div>
             <div class="inline-flex rounded-xl border border-zinc-800 bg-zinc-950 p-1">
               <button
@@ -207,7 +207,7 @@
             <textarea
               v-model="manualCodes"
               rows="6"
-              placeholder="输入单个卡密，或使用逗号/换行/空格分隔多个卡密"
+              placeholder="输入单个点歌券，或使用逗号/换行/空格分隔多个点歌券"
               class="w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
             />
           </div>
@@ -242,7 +242,7 @@
               :disabled="saving"
               @click="createCodes"
             >
-              <Plus :size="14" /> 创建卡密
+              <Plus :size="14" /> 创建点歌券
             </button>
             <button class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm font-bold text-zinc-300" @click="fillDemoCodes">
               填充示例
@@ -253,7 +253,7 @@
         <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-4">
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">快速说明</h3>
           <ul class="space-y-2 text-[12px] leading-relaxed text-zinc-500">
-            <li>· 支持按状态和关键词筛选，搜索范围包含卡密和备注。</li>
+            <li>· 支持按状态和关键词筛选，搜索范围包含点歌券和备注。</li>
             <li>· 支持单条和批量状态切换，方便锁定、核销或作废。</li>
             <li>· 备注可直接就地编辑，适合记录发放对象、批次来源等信息。</li>
             <li>· 导出当前列表会生成 CSV，便于备份或线下核对。</li>
@@ -266,7 +266,7 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">兑换日志</h3>
-          <p class="mt-1 text-[11px] text-zinc-500">记录卡密被哪个账号兑换、兑换时间、来源与关联歌曲</p>
+          <p class="mt-1 text-[11px] text-zinc-500">记录点歌券被哪个账号兑换、兑换时间、来源与关联歌曲</p>
         </div>
         <button
           class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300"
@@ -282,7 +282,7 @@
           <input
             v-model="logFilters.q"
             type="text"
-            placeholder="卡密 / 账号 / 歌曲 / 来源"
+            placeholder="点歌券 / 账号 / 歌曲 / 来源"
             class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
             @keyup.enter="fetchRedeemLogs"
           >
@@ -349,7 +349,7 @@
           <thead class="bg-zinc-950/80 text-zinc-500">
             <tr>
               <th class="px-3 py-3 w-20">日志ID</th>
-              <th class="px-3 py-3">卡密</th>
+              <th class="px-3 py-3">点歌券</th>
               <th class="px-3 py-3 w-28">来源</th>
               <th class="px-3 py-3 w-56">兑换账号</th>
               <th class="px-3 py-3 w-40">兑换时间</th>
@@ -467,8 +467,8 @@ const fetchCodes = async () => {
       selectedIds.value = selectedIds.value.filter((id) => codes.value.some((item) => item.id === id))
     }
   } catch (error) {
-    console.error('获取卡密失败', error)
-    showToast('获取卡密失败', 'error')
+    console.error('获取点歌券失败', error)
+    showToast('获取点歌券失败', 'error')
   } finally {
     loading.value = false
   }
@@ -490,8 +490,8 @@ const fetchRedeemLogs = async () => {
       redeemLogs.value = Array.isArray(res.data) ? res.data : []
     }
   } catch (error) {
-    console.error('获取兑换日志失败', error)
-    showToast('获取兑换日志失败', 'error')
+    console.error('获取点歌券兑换日志失败', error)
+    showToast('获取点歌券兑换日志失败', 'error')
   } finally {
     logsLoading.value = false
   }
@@ -551,7 +551,7 @@ const formatDate = (value) => {
 const copyCode = async (code) => {
   try {
     await navigator.clipboard.writeText(code)
-    showToast('卡密已复制', 'success')
+    showToast('点歌券已复制', 'success')
   } catch (error) {
     console.error('复制失败', error)
     showToast('复制失败，请手动复制', 'error')
@@ -591,15 +591,25 @@ const exportVisibleCodes = () => {
 const updateStatus = async (ids, status) => {
   saving.value = true
   try {
-    await $fetch('/api/admin/card-codes/update', {
-      method: 'POST',
-      body: { ids, status }
-    })
+    if (Array.isArray(ids) && ids.length === 1) {
+      // 单条更新走新的 PUT 接口，便于更精细的审计
+      const id = ids[0]
+      await $fetch(`/api/admin/card-codes/${id}`, {
+        method: 'PUT',
+        body: { status }
+      })
+    } else {
+      await $fetch('/api/admin/card-codes/update', {
+        method: 'POST',
+        body: { ids, status }
+      })
+    }
+
     showToast('状态已更新', 'success')
     await Promise.all([fetchCodes(), fetchRedeemLogs()])
   } catch (error) {
-    console.error('更新卡密状态失败', error)
-    showToast('更新卡密状态失败', 'error')
+    console.error('更新点歌券状态失败', error)
+    showToast('更新点歌券状态失败', 'error')
   } finally {
     saving.value = false
   }
@@ -639,7 +649,7 @@ const createCodes = async () => {
         .map((value) => value.trim())
         .filter(Boolean)
       if (!list.length) {
-        showToast('请先输入卡密', 'warning')
+        showToast('请先输入点歌券', 'warning')
         return
       }
       body = { ...body, codes: [...new Set(list)] }
@@ -665,8 +675,8 @@ const createCodes = async () => {
     createNote.value = ''
     await fetchCodes()
   } catch (error) {
-    console.error('创建卡密失败', error)
-    showToast(error?.data?.message || error?.message || '创建卡密失败', 'error')
+    console.error('创建点歌券失败', error)
+    showToast(error?.data?.message || error?.message || '创建点歌券失败', 'error')
   } finally {
     saving.value = false
   }
@@ -677,7 +687,7 @@ const createFormCount = computed(() => generateForm.value.count)
 const fillDemoCodes = () => {
   createMode.value = 'manual'
   manualCodes.value = ['DEMO-2026-A001', 'DEMO-2026-A002', 'DEMO-2026-A003'].join('\n')
-  createNote.value = '示例卡密'
+  createNote.value = '示例点歌券'
 }
 
 onMounted(refreshAll)

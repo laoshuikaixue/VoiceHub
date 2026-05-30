@@ -165,8 +165,48 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 删除歌曲
-  await db.delete(songs).where(eq(songs.id, body.songId))
+  // 如果使用了点歌券，先尝试在事务内恢复点歌券状态，然后删除歌曲
+  try {
+    await db.transaction(async (tx) => {
+      if (song.cardCodeId) {
+        try {
+          // 读取点歌券信息用于日志
+          const schema = await import('~/drizzle/schema')
+          const codeRow = await tx.select().from(schema.cardCodes).where(eq(schema.cardCodes.id, song.cardCodeId)).limit(1)
+          const card = codeRow[0]
+          if (card) {
+            // 仅当点歌券处于 LOCKED 时才恢复为 AVAILABLE，避免误改已被核销的点歌券
+            const updateRes = await tx
+              .update(schema.cardCodes)
+              .set({ status: 'AVAILABLE', lockedBy: null, lockedAt: null })
+              .where(and(eq(schema.cardCodes.id, song.cardCodeId), eq(schema.cardCodes.status, 'LOCKED')))
+              .returning()
+
+            if (updateRes.length > 0) {
+              // 写入兑换/恢复日志，source 标注为 WITHDRAW
+              await tx.insert(schema.cardCodeRedeemLogs).values({
+                cardCodeId: song.cardCodeId,
+                codeSnapshot: card.code,
+                redeemedBy: user.id,
+                redeemedAt: new Date(),
+                source: 'WITHDRAW',
+                songId: song.id
+              })
+              console.log(`点歌券 ${song.cardCodeId} 在撤回时已恢复为 AVAILABLE (songId=${song.id})`)
+            }
+          }
+        } catch (err) {
+          console.error('撤回时恢复点歌券失败:', err)
+        }
+      }
+
+      // 删除歌曲（在事务内）
+      await tx.delete(songs).where(eq(songs.id, body.songId))
+    })
+  } catch (txErr) {
+    console.error('撤回事务失败:', txErr)
+    throw createError({ statusCode: 500, message: '撤回歌曲失败，请稍后重试' })
+  }
 
   // 清除歌曲列表缓存
   await cacheService.clearSongsCache()

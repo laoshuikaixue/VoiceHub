@@ -114,7 +114,7 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionLimit = body.enableSubmissionLimit
     }
 
-    // 卡密点歌相关设置
+    // 点歌券点歌相关设置
     if (body.enableCardCodeRequests !== undefined) {
       if (typeof body.enableCardCodeRequests !== 'boolean') {
         throw createError({

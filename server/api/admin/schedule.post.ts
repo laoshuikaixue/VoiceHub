@@ -148,7 +148,7 @@ export default defineEventHandler(async (event) => {
         } else {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
         }
-        // 如果歌曲关联了卡密且已排期，则自动完成卡密核销
+        // 如果歌曲关联了点歌券且已排期，则自动完成点歌券核销
         try {
           const songRow = await tx.select().from(songs).where(eq(songs.id, schedule.song.id)).limit(1)
           const s = songRow[0]
@@ -172,7 +172,7 @@ export default defineEventHandler(async (event) => {
             }
           }
         } catch (err) {
-          console.error('尝试核销卡密失败:', err)
+          console.error('尝试核销点歌券失败:', err)
         }
       }
     })

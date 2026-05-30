@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
 
   const finalCodes = [...codes, ...generatedCodes]
   if (!finalCodes.length) {
-    throw createError({ statusCode: 400, message: '请提供要创建的卡密或生成数量' })
+    throw createError({ statusCode: 400, message: '请提供要创建的点歌券或生成数量' })
   }
 
   try {
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
     const insertCodes = uniqueCodes.filter((code) => !existingCodes.has(code))
 
     if (!insertCodes.length) {
-      throw createError({ statusCode: 400, message: '这些卡密已经存在，无需重复创建' })
+      throw createError({ statusCode: 400, message: '这些点歌券已经存在，无需重复创建' })
     }
 
     const inserts = insertCodes.map((c: string) => ({
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
       skipped: uniqueCodes.length - insertCodes.length
     }
   } catch (err) {
-    console.error('创建卡密失败', err)
-    throw createError({ statusCode: 500, message: '创建卡密失败' })
+    console.error('创建点歌券失败', err)
+    throw createError({ statusCode: 500, message: '创建点歌券失败' })
   }
 })

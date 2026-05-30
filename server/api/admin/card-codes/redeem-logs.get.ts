@@ -120,7 +120,7 @@ export default defineEventHandler(async (event) => {
       }))
     }
   } catch (err) {
-    console.error('获取卡密兑换日志失败', err)
-    throw createError({ statusCode: 500, message: '获取卡密兑换日志失败' })
+    console.error('获取点歌券兑换日志失败', err)
+    throw createError({ statusCode: 500, message: '获取点歌券兑换日志失败' })
   }
 })

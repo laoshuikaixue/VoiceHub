@@ -302,7 +302,10 @@
               <div
                 v-for="song in filteredUnscheduledSongs"
                 :key="song.id"
-                class="draggable-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none"
+                :class="[
+                  'draggable-song relative group rounded-xl p-3 transition-all select-none',
+                  song.cardCodeId ? 'bg-amber-500/5 border border-amber-500/30' : 'bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700'
+                ]"
                 draggable="true"
                 @dragend="dragEnd"
                 @dragstart="dragStart($event, song)"
@@ -311,7 +314,7 @@
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
                 <div v-if="song.cardCodeId" class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold bg-amber-500 text-zinc-900">
-                  卡密待核销
+                  点歌券待核销
                 </div>
                 <!-- 歌曲卡片内容 -->
                 <div class="flex items-center gap-3">
@@ -590,7 +593,8 @@
                 :class="[
                   'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
-                  schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : ''
+                  schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '',
+                  schedule.song && schedule.song.cardCodeId ? 'border-amber-500/30 bg-amber-500/5' : ''
                 ]"
                 :data-schedule-id="schedule.id"
                 draggable="true"
@@ -670,6 +674,10 @@
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider"
                         >草稿</span
                       >
+                      <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
+                      <div v-if="schedule.song.cardCodeId" class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold bg-amber-500 text-zinc-900">
+                        点歌券
+                      </div>
                     </div>
                     <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
                     <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
@@ -1922,6 +1930,7 @@ const loadData = async () => {
 
     songs.value = songsService.songs.value
     publicSchedules.value = songsService.publicSchedules.value
+    console.log('[ScheduleManager] songs 总数:', songs.value.length, '含 cardCodeId 的数量:', songs.value.filter(s=>s.cardCodeId).length)
 
     // 在草稿加载完成后再更新本地排期数据
     updateLocalScheduledSongs()

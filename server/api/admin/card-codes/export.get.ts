@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
     res.setHeader('Content-Disposition', 'attachment; filename="card-codes.csv"')
     return csv
   } catch (err) {
-    console.error('导出卡密失败', err)
-    throw createError({ statusCode: 500, message: '导出卡密失败' })
+    console.error('导出点歌券失败', err)
+    throw createError({ statusCode: 500, message: '导出点歌券失败' })
   }
 })

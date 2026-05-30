@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
     const result = await queryBuilder.orderBy(desc(cardCodes.createdAt))
     return { success: true, data: result }
   } catch (err) {
-    console.error('获取卡密列表失败', err)
-    throw createError({ statusCode: 500, message: '获取卡密列表失败' })
+    console.error('获取点歌券列表失败', err)
+    throw createError({ statusCode: 500, message: '获取点歌券列表失败' })
   }
 })

@@ -208,16 +208,16 @@ export default defineEventHandler(async (event) => {
       // 注意：这里仅作初步检查，严格检查在事务内进行
     }
 
-    // 卡密相关站点设置
+    // 点歌券相关站点设置
     if (systemSettingsData?.requireCardCodeForRequests) {
       const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim() : ''
       if (!providedCardCode) {
-        throw createError({ statusCode: 403, message: '本站点已启用仅卡密投稿，请提供有效卡密' })
+        throw createError({ statusCode: 403, message: '本站点已启用仅点歌券投稿，请提供有效点歌券' })
       }
     }
 
     if (typeof body.cardCode === 'string' && body.cardCode.trim() && !systemSettingsData?.enableCardCodeRequests && !isAdmin) {
-      throw createError({ statusCode: 400, message: '卡密投稿功能未启用' })
+      throw createError({ statusCode: 400, message: '点歌券投稿功能未启用' })
     }
 
     // 检查期望的播出时段是否存在
@@ -263,14 +263,14 @@ export default defineEventHandler(async (event) => {
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     // 创建歌曲和更新状态（使用事务）
-    // 如果提交了卡密，需要在事务内锁定卡密以保证原子性
+    // 如果提交了点歌券，需要在事务内锁定点歌券以保证原子性
     const song = await db.transaction(async (tx) => {
-      // 如果提交了卡密，先尝试锁定
+      // 如果提交了点歌券，先尝试锁定
       let providedCardCodeId: number | null = null
       const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim() : ''
 
       if (providedCardCode) {
-        // 查询卡密是否存在且可用
+        // 查询点歌券是否存在且可用
         const codeRows = await tx
           .select()
           .from(cardCodes)
@@ -279,10 +279,10 @@ export default defineEventHandler(async (event) => {
 
         const found = codeRows[0]
         if (!found || found.status !== 'AVAILABLE') {
-          throw createError({ statusCode: 400, message: '卡密无效或已被使用' })
+          throw createError({ statusCode: 400, message: '点歌券无效或已被使用' })
         }
 
-        // 使用原子更新将卡密置为 LOCKED
+        // 使用原子更新将点歌券置为 LOCKED
         const lockResult = await tx
           .update(cardCodes)
           .set({ status: 'LOCKED', lockedBy: user.id, lockedAt: new Date() })
@@ -290,7 +290,7 @@ export default defineEventHandler(async (event) => {
           .returning()
 
         if (lockResult.length === 0) {
-          throw createError({ statusCode: 400, message: '卡密已被锁定或不可用' })
+          throw createError({ statusCode: 400, message: '点歌券已被锁定或不可用' })
         }
 
         providedCardCodeId = found.id
