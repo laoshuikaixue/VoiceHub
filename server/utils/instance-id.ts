@@ -64,8 +64,6 @@ const getCachedInstanceIdInfo = (): InstanceIdInfo | null => {
     return cachedInstanceIdInfo
   }
 
-  cachedInstanceIdInfo = null
-  cachedInstanceIdExpiresAt = 0
   return null
 }
 

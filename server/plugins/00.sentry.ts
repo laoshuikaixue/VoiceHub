@@ -59,9 +59,7 @@ const captureInstanceOnlineTransaction = (instanceId: string, deploymentTarget: 
       'runtime.name': 'nuxt',
       'nitro.preset': process.env.NITRO_PRESET || 'node-server'
     }
-  }, (span) => {
-    span.setAttribute('voicehub.instance_id', instanceId)
-  })
+  }, () => {})
 }
 
 export default defineNitroPlugin((nitroApp) => {
@@ -113,7 +111,7 @@ export default defineNitroPlugin((nitroApp) => {
         tracesSampler(samplingContext) {
           return samplingContext.name === INSTANCE_ONLINE_TRANSACTION
             ? 1
-            : sentryConfig.tracesSampleRate
+            : samplingContext.inheritOrSampleWith(sentryConfig.tracesSampleRate)
         },
         sendDefaultPii: false,
         beforeSend(event) {
