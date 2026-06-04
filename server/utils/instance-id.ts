@@ -4,8 +4,17 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
 
-let cachedInstanceId: string | null = null
+export interface InstanceIdInfo {
+  instanceId: string
+  persisted: boolean
+}
+
+let cachedInstanceIdInfo: InstanceIdInfo | null = null
+let cachedInstanceIdExpiresAt = 0
 let pendingInstanceIdPromise: Promise<string> | null = null
+let pendingInstanceIdInfoPromise: Promise<InstanceIdInfo> | null = null
+
+const TEMPORARY_INSTANCE_ID_CACHE_TTL_MS = 5 * 60 * 1000
 
 const loadOrCreateInstanceId = async (): Promise<string> => {
   const settingsResult = await db
@@ -46,23 +55,55 @@ const loadOrCreateInstanceId = async (): Promise<string> => {
   return instanceId
 }
 
-export const getInstanceId = async (): Promise<string> => {
-  if (cachedInstanceId) {
-    return cachedInstanceId
+const getCachedInstanceIdInfo = (): InstanceIdInfo | null => {
+  if (!cachedInstanceIdInfo) {
+    return null
   }
 
-  if (!pendingInstanceIdPromise) {
-    pendingInstanceIdPromise = loadOrCreateInstanceId()
+  if (cachedInstanceIdInfo.persisted || cachedInstanceIdExpiresAt > Date.now()) {
+    return cachedInstanceIdInfo
+  }
+
+  return null
+}
+
+export const getInstanceIdInfo = async (): Promise<InstanceIdInfo> => {
+  const cached = getCachedInstanceIdInfo()
+  if (cached) {
+    return cached
+  }
+
+  if (!pendingInstanceIdInfoPromise) {
+    pendingInstanceIdInfoPromise = loadOrCreateInstanceId()
       .then((instanceId) => {
-        cachedInstanceId = instanceId
-        return instanceId
+        const info = { instanceId, persisted: true }
+        cachedInstanceIdInfo = info
+        cachedInstanceIdExpiresAt = Number.POSITIVE_INFINITY
+        return info
       })
       .catch((error) => {
-        // 使用备用 UUID 但不缓存为最终结果，允许下次调用时重试
-        const fallbackInstanceId = randomUUID()
+        const fallbackInstanceId = cachedInstanceIdInfo?.persisted === false
+          ? cachedInstanceIdInfo.instanceId
+          : randomUUID()
+
+        const info = { instanceId: fallbackInstanceId, persisted: false }
+        cachedInstanceIdInfo = info
+        cachedInstanceIdExpiresAt = Date.now() + TEMPORARY_INSTANCE_ID_CACHE_TTL_MS
         console.warn('[Instance ID] Failed to persist instance ID, using temporary fallback value:', error)
-        return fallbackInstanceId
+        return info
       })
+      .finally(() => {
+        pendingInstanceIdInfoPromise = null
+      })
+  }
+
+  return pendingInstanceIdInfoPromise
+}
+
+export const getInstanceId = async (): Promise<string> => {
+  if (!pendingInstanceIdPromise) {
+    pendingInstanceIdPromise = getInstanceIdInfo()
+      .then(({ instanceId }) => instanceId)
       .finally(() => {
         pendingInstanceIdPromise = null
       })
