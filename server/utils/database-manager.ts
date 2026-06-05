@@ -4,6 +4,7 @@ import {
   getConnectionPoolStatus,
   getDatabaseMetrics
 } from './database-health'
+import { getServerTimestamp } from './serverTime'
 
 /**
  * 数据库管理器
@@ -32,7 +33,7 @@ export class DatabaseManager {
     connectionStatus: string
     error?: string
   }> {
-    const now = Date.now()
+    const now = getServerTimestamp()
 
     // 检查缓存
     if (this.healthCheckCache && now - this.healthCheckCache.timestamp < this.CACHE_TTL) {

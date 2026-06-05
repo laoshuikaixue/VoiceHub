@@ -3,6 +3,7 @@ import { asc, eq, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
+import { getServerTimestamp } from './serverTime'
 
 export interface InstanceIdInfo {
   instanceId: string
@@ -60,7 +61,7 @@ const getCachedInstanceIdInfo = (): InstanceIdInfo | null => {
     return null
   }
 
-  if (cachedInstanceIdInfo.persisted || cachedInstanceIdExpiresAt > Date.now()) {
+  if (cachedInstanceIdInfo.persisted || cachedInstanceIdExpiresAt > getServerTimestamp()) {
     return cachedInstanceIdInfo
   }
 
@@ -88,7 +89,7 @@ export const getInstanceIdInfo = async (): Promise<InstanceIdInfo> => {
 
         const info = { instanceId: fallbackInstanceId, persisted: false }
         cachedInstanceIdInfo = info
-        cachedInstanceIdExpiresAt = Date.now() + TEMPORARY_INSTANCE_ID_CACHE_TTL_MS
+        cachedInstanceIdExpiresAt = getServerTimestamp() + TEMPORARY_INSTANCE_ID_CACHE_TTL_MS
         console.warn('[Instance ID] Failed to persist instance ID, using temporary fallback value:', error)
         return info
       })

@@ -598,7 +598,7 @@ const formatDateRange = () => {
 
 // 根据预设类型计算日期范围
 const calculateDateRange = (type) => {
-  const today = new Date()
+  const today = getSyncedDate()
   const start = new Date(today)
   const end = new Date(today)
 

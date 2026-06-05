@@ -197,7 +197,7 @@ const formatCommentTime = (time?: number) => {
   if (!time) return ''
 
   const date = new Date(time)
-  const now = new Date()
+  const now = getSyncedDate()
   const diffMs = now.getTime() - date.getTime()
   const diffMinutes = Math.floor(diffMs / 60000)
 

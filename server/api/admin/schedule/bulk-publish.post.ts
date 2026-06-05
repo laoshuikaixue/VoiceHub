@@ -4,6 +4,7 @@ import { inArray, and, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -118,7 +119,7 @@ export default defineEventHandler(async (event) => {
         if (finalRestoreIds.length > 0) {
           await tx
             .update(songReplayRequests)
-            .set({ status: 'PENDING', updatedAt: new Date() })
+            .set({ status: 'PENDING', updatedAt: getServerDate() })
             .where(
               and(
                 inArray(songReplayRequests.songId, finalRestoreIds),
@@ -129,7 +130,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 4. 插入新的排期并处理通知
-      const publishedAt = new Date()
+      const publishedAt = getServerDate()
 
       for (const item of body.songs) {
         const song = songMap.get(item.songId)

@@ -291,7 +291,7 @@ const getSimilarSong = (songData) => {
 const formatTime = (timestamp) => {
   if (!timestamp) return ''
   const date = new Date(timestamp)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now - date
 
   if (diff < 60000) return '刚刚'

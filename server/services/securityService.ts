@@ -4,6 +4,7 @@ import { sendMeowNotificationToUser } from './meowNotificationService'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { getServerTimestamp, getServerDate } from '~~/server/utils/serverTime'
 
 // 账户锁定信息接口
 interface AccountLockInfo {
@@ -74,7 +75,7 @@ const RISK_CONTROL = {
  * 清理过期的锁定记录
  */
 function cleanupExpiredLocks() {
-  const now = new Date()
+  const now = getServerDate()
 
   // 清理过期的IP监控记录
   for (const [ip, monitorInfo] of ipMonitor.entries()) {
@@ -95,7 +96,7 @@ function cleanupExpiredLocks() {
   }
 
   for (const [username, monitor] of accountIpSwitchMonitor.entries()) {
-    const cutoff = Date.now() - RISK_CONTROL.IP_SWITCH_WINDOW_MS
+    const cutoff = getServerTimestamp() - RISK_CONTROL.IP_SWITCH_WINDOW_MS
     for (const [ip, ts] of monitor.ipMap.entries()) {
       if (ts < cutoff) {
         monitor.ipMap.delete(ip)
@@ -107,7 +108,7 @@ function cleanupExpiredLocks() {
   }
 
   for (const [songId, timestamps] of songVoteWindow.entries()) {
-    const cutoff = Date.now() - RISK_CONTROL.SONG_VOTE_PROTECT_WINDOW_MS
+    const cutoff = getServerTimestamp() - RISK_CONTROL.SONG_VOTE_PROTECT_WINDOW_MS
     const filtered = timestamps.filter((t) => t >= cutoff)
     if (filtered.length) {
       songVoteWindow.set(songId, filtered)
@@ -117,9 +118,9 @@ function cleanupExpiredLocks() {
   }
 
   for (const [userId, stats] of userVoteStats.entries()) {
-    const cutoff = Date.now() - 10 * 60 * 1000
+    const cutoff = getServerTimestamp() - 10 * 60 * 1000
     stats.windowTimestamps = stats.windowTimestamps.filter((t) => t >= cutoff)
-    if (stats.windowTimestamps.length === 0 && Date.now() - stats.lastUpdate > 60 * 60 * 1000) {
+    if (stats.windowTimestamps.length === 0 && getServerTimestamp() - stats.lastUpdate > 60 * 60 * 1000) {
       userVoteStats.delete(userId)
     }
   }
@@ -134,7 +135,7 @@ export async function isAccountLocked(username: string): Promise<boolean> {
   if (!lockInfoStr) return false
   
   const lockedUntil = parseInt(lockInfoStr, 10)
-  return lockedUntil > Date.now()
+  return lockedUntil > getServerTimestamp()
 }
 
 /**
@@ -146,7 +147,7 @@ export async function getAccountLockRemainingTime(username: string): Promise<num
   if (!lockInfoStr) return 0
   
   const lockedUntil = parseInt(lockInfoStr, 10)
-  const now = Date.now()
+  const now = getServerTimestamp()
   if (lockedUntil <= now) return 0
   
   return Math.ceil((lockedUntil - now) / (1000 * 60))
@@ -163,7 +164,7 @@ export function isIPBlocked(ip: string): boolean {
     return false
   }
 
-  return blockInfo.blockedUntil > new Date()
+  return blockInfo.blockedUntil > getServerDate()
 }
 
 /**
@@ -175,7 +176,7 @@ export function getIPBlockRemainingTime(ip: string): number {
     return 0
   }
 
-  const now = new Date()
+  const now = getServerDate()
   if (blockInfo.blockedUntil <= now) {
     return 0
   }
@@ -187,7 +188,7 @@ export function getIPBlockRemainingTime(ip: string): number {
  * 将IP加入黑名单
  */
 function blockIP(ip: string, reason: string): void {
-  const now = new Date()
+  const now = getServerDate()
   const blockedUntil = new Date(
     now.getTime() + SECURITY_CONFIG.IP_BLOCK_DURATION_MINUTES * 60 * 1000
   )
@@ -204,20 +205,20 @@ function blockIP(ip: string, reason: string): void {
 }
 
 export function blockUser(userId: number, minutes: number = RISK_CONTROL.USER_BLOCK_MINUTES): void {
-  const until = new Date(Date.now() + minutes * 60 * 1000)
+  const until = new Date(getServerTimestamp() + minutes * 60 * 1000)
   userBlockUntil.set(userId, until)
 }
 
 export function isUserBlocked(userId: number): boolean {
   const until = userBlockUntil.get(userId)
   if (!until) return false
-  return until > new Date()
+  return until > getServerDate()
 }
 
 export function getUserBlockRemainingTime(userId: number): number {
   const until = userBlockUntil.get(userId)
   if (!until) return 0
-  const now = Date.now()
+  const now = getServerTimestamp()
   if (until.getTime() <= now) return 0
   return Math.ceil((until.getTime() - now) / (1000 * 60))
 }
@@ -234,7 +235,7 @@ export async function recordLoginFailure(username: string, ip: string): Promise<
 
   // 检查是否需要锁定账户
   if (failedAttempts >= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) {
-    const lockedUntil = Date.now() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
+    const lockedUntil = getServerTimestamp() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
     await setStore(lockKey, lockedUntil.toString(), SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60)
     console.log(
       `账户 ${username} 因连续 ${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} 次登录失败被锁定 ${SECURITY_CONFIG.LOCK_DURATION_MINUTES} 分钟`
@@ -259,7 +260,7 @@ export async function recordLoginSuccess(username: string, ip: string): Promise<
 }
 
 export function recordAccountIpLogin(username: string, ip: string): boolean {
-  const now = Date.now()
+  const now = getServerTimestamp()
   let monitor = accountIpSwitchMonitor.get(username)
   if (!monitor) {
     monitor = { ipMap: new Map<string, number>(), windowStart: now }
@@ -282,7 +283,7 @@ export function recordAccountIpLogin(username: string, ip: string): boolean {
  * 记录IP登录尝试
  */
 function recordIPAttempt(ip: string, username: string): void {
-  const now = new Date()
+  const now = getServerDate()
   const windowStart = new Date(
     now.getTime() - SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES * 60 * 1000
   )
@@ -317,10 +318,10 @@ function recordIPAttempt(ip: string, username: string): void {
  */
 async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Promise<void> {
   try {
-    const now = new Date()
+    const now = getServerDate()
     const alertTitle = '安全警报：检测到异常登录行为'
     const alertContent = `
-检测时间：${now.toLocaleString('zh-CN')}
+检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 异常IP：${ip}
 时间窗口：${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES}分钟内
 尝试登录账户数：${attemptedAccounts.length}
@@ -331,7 +332,7 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
 
     // Meow通知内容，包含完整的涉及账户信息
     const meowAlertContent = `
-检测时间：${now.toLocaleString('zh-CN')}
+检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 异常IP：${ip}
 时间窗口：${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES}分钟内
 尝试登录账户数：${attemptedAccounts.length}
@@ -390,9 +391,9 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
 
 async function triggerAccountIpSwitchAlert(username: string, ips: string[]): Promise<void> {
   try {
-    const now = new Date()
+    const now = getServerDate()
     const alertTitle = '安全警报：账号短期内多IP登录'
-    const alertContent = `检测时间：${now.toLocaleString('zh-CN')}
+    const alertContent = `检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 账号：${username}
 时间窗口：${Math.floor(RISK_CONTROL.IP_SWITCH_WINDOW_MS / 60000)}分钟内
 涉及IP数：${ips.length}
@@ -429,19 +430,19 @@ function ipBucketOf(ip: string): string {
 export function isSongProtected(songId: number): boolean {
   const until = songProtectUntil.get(songId)
   if (!until) return false
-  return until > new Date()
+  return until > getServerDate()
 }
 
 export function getSongProtectRemainingSeconds(songId: number): number {
   const until = songProtectUntil.get(songId)
   if (!until) return 0
-  const now = Date.now()
+  const now = getServerTimestamp()
   if (until.getTime() <= now) return 0
   return Math.ceil((until.getTime() - now) / 1000)
 }
 
 export function recordSongVote(songId: number, ip: string, userId: number): boolean {
-  const now = Date.now()
+  const now = getServerTimestamp()
   const arr = songVoteWindow.get(songId) || []
   const cutoff = now - RISK_CONTROL.SONG_VOTE_PROTECT_WINDOW_MS
   const filtered = arr.filter((t) => t >= cutoff)
@@ -460,7 +461,7 @@ export function recordSongVote(songId: number, ip: string, userId: number): bool
 }
 
 export function recordUserVoteActivity(userId: number, songTitle?: string): { anomaly: boolean } {
-  const now = Date.now()
+  const now = getServerTimestamp()
   let stats = userVoteStats.get(userId)
   if (!stats) {
     stats = { emaPerMin: 0, lastUpdate: now, windowTimestamps: [] }
@@ -503,10 +504,10 @@ async function triggerSongVoteBurstAlert(
   buckets: Map<string, number>
 ): Promise<void> {
   try {
-    const now = new Date()
+    const now = getServerDate()
     const top = Array.from(buckets.entries()).sort((a, b) => b[1] - a[1])[0]
     const alertTitle = '风险告警：歌曲投票短时激增'
-    const alertContent = `检测时间：${now.toLocaleString('zh-CN')}
+    const alertContent = `检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 歌曲ID：${songId}
 窗口内票数：${count}
 主导IP段：${top ? `${top[0]}.* (${top[1]})` : '无'}
@@ -536,7 +537,7 @@ async function triggerSongVoteBurstAlert(
 
 // 检查通知是否可以发送（限流控制）
 function canSendNotification(key: string): boolean {
-  const now = new Date()
+  const now = getServerDate()
   const lastSent = notificationRateLimit.get(key)
   if (
     lastSent &&
@@ -637,15 +638,15 @@ async function triggerVoteAnomalyAlert(
         ema,
         rate,
         songTitle,
-        time: new Date()
+        time: getServerDate()
       })
       return
     }
 
     // 否则，立即发送第一条，并开启聚合窗口
-    const now = new Date()
+    const now = getServerDate()
     const alertTitle = '风险告警：检测到异常投票速率'
-    const alertContent = `检测时间：${now.toLocaleString('zh-CN')}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n${songTitle ? `涉及歌曲：${songTitle}\n` : ''}\n提示：该用户的投票行为异常，已触发限流机制。`
+    const alertContent = `检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n${songTitle ? `涉及歌曲：${songTitle}\n` : ''}\n提示：该用户的投票行为异常，已触发限流机制。`
     const meowAlertContent = alertContent
     const superAdmins = await db
       .select({
