@@ -644,21 +644,25 @@ const handleError = async (error) => {
   // 如果正在处理 fallback，直接返回，不走重试逻辑
   if (isFallbackHandling.value) return
 
+  // 连续失败保护：对任意平台的歌曲在列表播放模式下都计入连续失败计数
+  if (props.isPlaylistMode && control.playMode.value !== 'off') {
+    consecutiveSkipCount.value++
+    if (consecutiveSkipCount.value >= MAX_CONSECUTIVE_SKIP) {
+      console.log('[AudioPlayer] 连续多次跳过，停止自动跳过')
+      consecutiveSkipCount.value = 0
+      control.stop()
+      sync.syncStopToGlobal()
+      if (window.$showNotification) {
+        window.$showNotification('连续多首歌曲播放失败，已停止自动播放', 'warning')
+      }
+      return
+    }
+  }
+
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
     if (props.isPlaylistMode && control.playMode.value !== 'off') {
-      consecutiveSkipCount.value++
-      if (consecutiveSkipCount.value >= MAX_CONSECUTIVE_SKIP) {
-        console.log('[AudioPlayer] 连续多次跳过，停止自动跳过')
-        consecutiveSkipCount.value = 0
-        control.stop()
-        sync.syncStopToGlobal()
-        if (window.$showNotification) {
-          window.$showNotification('连续多首歌曲播放失败，已停止自动播放', 'warning')
-        }
-        return
-      }
       console.log('[AudioPlayer] 哔哩哔哩视频播放失败，处于列表播放模式，自动跳过')
       if (window.$showNotification) {
         window.$showNotification('哔哩哔哩视频播放失败，自动跳过', 'warning')

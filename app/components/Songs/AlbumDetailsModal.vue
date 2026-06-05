@@ -334,6 +334,7 @@ const submitting = ref(false)
 const selectedSongId = ref(null)
 const searchQuery = ref('')
 const showDescModal = ref(false)
+let albumAbortController = null
 
 const filteredSongs = computed(() => {
   if (!searchQuery.value.trim()) return songs.value
@@ -351,6 +352,11 @@ watch(
     if (show && albumId) {
       searchQuery.value = ''
       await loadAlbumDetails()
+    } else {
+      if (albumAbortController) {
+        albumAbortController.abort()
+        albumAbortController = null
+      }
     }
   },
   { immediate: true }
@@ -358,6 +364,12 @@ watch(
 
 const loadAlbumDetails = async () => {
   if (!props.albumId) return
+
+  if (albumAbortController) {
+    albumAbortController.abort()
+  }
+  albumAbortController = new AbortController()
+  const signal = albumAbortController.signal
 
   loading.value = true
   error.value = null
@@ -370,7 +382,8 @@ const loadAlbumDetails = async () => {
       const response = await $fetch('/api/api-enhanced/netease/album', {
         params: {
           id: props.albumId
-        }
+        },
+        signal
       })
 
       if (response && response.album && Array.isArray(response.songs)) {
@@ -415,10 +428,13 @@ const loadAlbumDetails = async () => {
       error.value = '不支持的平台'
     }
   } catch (err) {
+    if (err.name === 'AbortError') return
     console.error('加载专辑详情失败:', err)
     error.value = '加载失败，请稍后重试'
   } finally {
-    loading.value = false
+    if (!signal.aborted) {
+      loading.value = false
+    }
   }
 }
 

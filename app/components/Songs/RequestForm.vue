@@ -423,9 +423,9 @@
                       </p>
                     </div>
                     <div class="result-actions">
-                      <!-- QQ音乐上传到网易云按钮 -->
+                      <!-- QQ音乐上传到网易云按钮（仅当结果确实来自QQ音乐时显示） -->
                       <button
-                        v-if="platform === 'tencent'"
+                        v-if="(result.actualMusicPlatform || result.musicPlatform) === 'tencent'"
                         class="cloud-disk-btn"
                         title="上传到网易云音乐云盘"
                         @click.stop.prevent="openUploadDialog(result)"
