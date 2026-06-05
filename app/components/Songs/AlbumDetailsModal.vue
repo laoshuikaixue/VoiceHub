@@ -542,10 +542,7 @@ const playSong = (song) => {
       source: props.platform === 'tencent' ? 'vkeys' : 'netease-backup',
       originalId: s.songmid,
       fetchedAt: new Date(),
-      mid: s.songmid,
-      strMediaMid: s.strMediaMid,
-      quality: s._types,
-      types: s.types
+      mid: s.songmid
     }
   }))
   const currentIndex = playlist.findIndex(p => p.id === song.songmid)
@@ -576,10 +573,7 @@ const selectSong = (song) => {
       source: props.platform === 'tencent' ? 'vkeys' : 'netease-backup',
       originalId: song.songmid,
       fetchedAt: new Date(),
-      mid: song.songmid,
-      strMediaMid: song.strMediaMid,
-      quality: song._types,
-      types: song.types
+      mid: song.songmid
     }
   }
   
