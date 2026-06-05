@@ -1974,6 +1974,14 @@ const handleSearch = async () => {
           item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
       }))
 
+      // 如果QQ音乐搜索降级到网易云，自动切换选项卡
+      if (platform.value === 'tencent' && searchResults.value.length > 0) {
+        const firstPlatform = searchResults.value[0].actualMusicPlatform || searchResults.value[0].musicPlatform || ''
+        if (firstPlatform.includes('netease')) {
+          platform.value = 'netease'
+        }
+      }
+
       console.log('搜索成功，找到', results.data.length, '首歌曲')
     } else {
       searchResults.value = []
