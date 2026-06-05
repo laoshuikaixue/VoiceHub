@@ -3002,7 +3002,7 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: 24px;
   height: 22px;
   margin-left: 6px;
   border: 1px solid rgba(59, 130, 246, 0.3);
@@ -3012,6 +3012,7 @@ button:disabled {
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  flex-shrink: 0;
 }
 
 .submission-note-trigger:hover {
@@ -3037,13 +3038,14 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .submission-note-header h4 {
-  font-size: 16px;
-  font-weight: 800;
-  color: #f4f4f5;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0;
 }
 
 .submission-note-header button {
@@ -3070,21 +3072,21 @@ button:disabled {
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .song-title-tag {
-  font-size: 12px;
-  color: #a1a1aa;
-  font-weight: 500;
+  font-size: 13px;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
 .visibility-tag {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 .visibility-public {
@@ -3104,12 +3106,16 @@ button:disabled {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .submission-note-content {
-  white-space: pre-wrap;
-  line-height: 1.6;
   font-size: 14px;
+  line-height: 1.7;
   color: #e4e4e7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
 }
 </style>
