@@ -479,7 +479,11 @@ export const useMusicSources = () => {
         return data.data.map((item: any) => ({
           id: item.id,
           title: item.name,
-          artist: item.artists || item.artist_string || '未知艺术家',
+          artist: typeof item.artists === 'string'
+            ? item.artists
+            : (Array.isArray(item.artists)
+              ? item.artists.map((a: any) => a.name || a).join('/')
+              : (item.artist_string || '未知艺术家')),
           cover: item.picUrl,
           album: item.album,
           duration: 0,
@@ -667,7 +671,7 @@ export const useMusicSources = () => {
           throw new Error(`API响应错误: ${response.message || '未知错误'}`)
         }
         const data = response.data
-        const lastLine = data.lyric?.split('\n').filter((l: string) => l.trim()).pop() || ''
+        const lastLine = (data.lyric || '').split('\n').filter((l: string) => l.trim()).pop() || ''
         const match = lastLine.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/)
         let durationMs = 0
         if (match) {
