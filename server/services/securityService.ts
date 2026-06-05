@@ -321,7 +321,7 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
     const now = getServerDate()
     const alertTitle = '安全警报：检测到异常登录行为'
     const alertContent = `
-检测时间：${now.toLocaleString('zh-CN')}
+检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 异常IP：${ip}
 时间窗口：${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES}分钟内
 尝试登录账户数：${attemptedAccounts.length}
@@ -332,7 +332,7 @@ async function triggerSecurityAlert(ip: string, attemptedAccounts: string[]): Pr
 
     // Meow通知内容，包含完整的涉及账户信息
     const meowAlertContent = `
-检测时间：${now.toLocaleString('zh-CN')}
+检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 异常IP：${ip}
 时间窗口：${SECURITY_CONFIG.IP_MONITOR_WINDOW_MINUTES}分钟内
 尝试登录账户数：${attemptedAccounts.length}
@@ -393,7 +393,7 @@ async function triggerAccountIpSwitchAlert(username: string, ips: string[]): Pro
   try {
     const now = getServerDate()
     const alertTitle = '安全警报：账号短期内多IP登录'
-    const alertContent = `检测时间：${now.toLocaleString('zh-CN')}
+    const alertContent = `检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 账号：${username}
 时间窗口：${Math.floor(RISK_CONTROL.IP_SWITCH_WINDOW_MS / 60000)}分钟内
 涉及IP数：${ips.length}
@@ -507,7 +507,7 @@ async function triggerSongVoteBurstAlert(
     const now = getServerDate()
     const top = Array.from(buckets.entries()).sort((a, b) => b[1] - a[1])[0]
     const alertTitle = '风险告警：歌曲投票短时激增'
-    const alertContent = `检测时间：${now.toLocaleString('zh-CN')}
+    const alertContent = `检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
 歌曲ID：${songId}
 窗口内票数：${count}
 主导IP段：${top ? `${top[0]}.* (${top[1]})` : '无'}
@@ -646,7 +646,7 @@ async function triggerVoteAnomalyAlert(
     // 否则，立即发送第一条，并开启聚合窗口
     const now = getServerDate()
     const alertTitle = '风险告警：检测到异常投票速率'
-    const alertContent = `检测时间：${now.toLocaleString('zh-CN')}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n${songTitle ? `涉及歌曲：${songTitle}\n` : ''}\n提示：该用户的投票行为异常，已触发限流机制。`
+    const alertContent = `检测时间：${now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n用户ID：${userId}\nEMA基线：${ema.toFixed(2)} 次/分钟\n当前速率：${rate.toFixed(2)} 次/分钟\n${songTitle ? `涉及歌曲：${songTitle}\n` : ''}\n提示：该用户的投票行为异常，已触发限流机制。`
     const meowAlertContent = alertContent
     const superAdmins = await db
       .select({
