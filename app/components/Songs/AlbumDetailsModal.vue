@@ -299,7 +299,7 @@ import { convertToHttps } from '~/utils/url'
 const props = defineProps({
   show: Boolean,
   albumId: {
-    type: String,
+    type: [String, Number],
     default: null
   },
   albumName: {
@@ -374,17 +374,7 @@ const loadAlbumDetails = async () => {
       if (response && response.album && response.songs) {
         // 转换为统一格式
         const album = response.album
-        let artistName = '未知艺术家'
-        
-        if (album.artist && album.artist.name) {
-          artistName = album.artist.name
-        } else if (album.artists && album.artists.length > 0) {
-          const artistNames = []
-          for (let i = 0; i < album.artists.length; i++) {
-            artistNames.push(album.artists[i].name)
-          }
-          artistName = artistNames.join('/')
-        }
+        const artistName = album.artist?.name || album.artists?.map(a => a.name).join('/') || '未知艺术家'
         
         albumInfo.value = {
           id: album.id,
@@ -397,35 +387,21 @@ const loadAlbumDetails = async () => {
           size: album.size
         }
 
-        const songList = []
-        for (let i = 0; i < response.songs.length; i++) {
-          const item = response.songs[i]
-          
-          let singerName = '未知艺术家'
-          if (item.ar && item.ar.length > 0) {
-            const singerNames = []
-            for (let j = 0; j < item.ar.length; j++) {
-              singerNames.push(item.ar[j].name)
-            }
-            singerName = singerNames.join('/')
-          }
-          
-          let coverImg = item.al?.picUrl || album.picUrl
-
-          songList.push({
+        songs.value = response.songs.map((item, i) => {
+          const singerName = item.ar?.map(a => a.name).join('/') || '未知艺术家'
+          return {
             songmid: item.id,
             name: item.name,
             singer: singerName,
             albumName: album.name,
             albumId: album.id,
-            img: coverImg,
+            img: item.al?.picUrl || album.picUrl,
             interval: formatTime(Math.floor(item.dt / 1000)),
             duration: item.dt / 1000,
             trackNumber: item.no || i + 1,
             source: 'netease'
-          })
-        }
-        songs.value = songList
+          }
+        })
       } else {
         throw new Error('获取专辑详情失败')
       }
@@ -452,7 +428,8 @@ const formatTime = (seconds) => {
 const formatDate = (timestamp) => {
   if (!timestamp) return null
   const date = new Date(timestamp)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  if (isNaN(date.getTime())) return null
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
 }
 
 const isCurrentSong = (song) => {
@@ -463,17 +440,18 @@ const isCurrentSong = (song) => {
          String(currentSong.value.id) === String(song.songmid)
 }
 
+const normalizeStr = (str) => str ? str.toLowerCase().replace(/[\s\-_]/g, '') : ''
+
 const getSongStatus = (song) => {
+  const songNameNormalized = normalizeStr(song.name)
+  const songSingerNormalized = normalizeStr(song.singer)
+
   const submittedSong = props.submittedSongs.find((s) => {
-    // 匹配逻辑：使用 musicId 或 title+artist 组合
     if (s.musicId && (String(s.musicId) === String(song.songmid))) {
       return true
     }
-    
-    // 备用匹配：标题和艺术家
-    const normalizeStr = (str) => str.toLowerCase().replace(/[\s\-_]/g, '')
-    return normalizeStr(s.title) === normalizeStr(song.name) && 
-           normalizeStr(s.artist) === normalizeStr(song.singer)
+    return normalizeStr(s.title) === songNameNormalized &&
+           normalizeStr(s.artist) === songSingerNormalized
   })
 
   if (submittedSong) {

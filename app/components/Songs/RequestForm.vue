@@ -2286,10 +2286,12 @@ const playSong = async (result, playlist, playlistIndex) => {
   if (playlist && playlist.length > 0) {
     finalPlaylist = playlist.map(s => ({
       ...s,
+      id: String(s.id),
+      musicId: String(s.musicId || s.id),
       musicUrl: s.musicUrl || null
     }))
     // 如果提供了playlistIndex则使用，否则自动查找
-    finalIndex = typeof playlistIndex === 'number' ? playlistIndex : playlist.findIndex(s => s.id === song.id)
+    finalIndex = typeof playlistIndex === 'number' ? playlistIndex : finalPlaylist.findIndex(s => s.id === song.id)
     if (finalIndex < 0) finalIndex = 0
   }
 
@@ -2750,13 +2752,10 @@ const handleAlbumSongSubmit = async (songData) => {
   
   if (success) {
     showAlbumDetailsModal.value = false
-    if (albumModalRef.value && albumModalRef.value.resetSubmissionState) {
-      albumModalRef.value.resetSubmissionState()
-    }
-  } else {
-    if (albumModalRef.value && albumModalRef.value.resetSubmissionState) {
-      albumModalRef.value.resetSubmissionState()
-    }
+  }
+  
+  if (albumModalRef.value && albumModalRef.value.resetSubmissionState) {
+    albumModalRef.value.resetSubmissionState()
   }
 }
 
