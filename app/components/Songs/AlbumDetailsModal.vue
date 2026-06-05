@@ -346,7 +346,7 @@ const filteredSongs = computed(() => {
 
 // 监听显示状态和专辑ID变化，加载专辑详情
 watch(
-  () => [props.show, props.albumId],
+  [() => props.show, () => props.albumId],
   async ([show, albumId]) => {
     if (show && albumId) {
       searchQuery.value = ''
@@ -371,7 +371,7 @@ const loadAlbumDetails = async () => {
         }
       })
 
-      if (response && response.album && response.songs) {
+      if (response && response.album && Array.isArray(response.songs)) {
         // 转换为统一格式
         const album = response.album
         const artistName = album.artist?.name || album.artists?.map(a => a.name).join('/') || '未知艺术家'
@@ -447,9 +447,9 @@ const normalizeStr = (str) => {
   if (!str) return ''
   return str
     .toLowerCase()
+    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
     .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
     .trim()
 }
 
@@ -566,10 +566,10 @@ const voteSong = (song) => {
   if (submitting.value) return
   
   const { songId, voted } = getSongStatus(song)
-  
+
   if (!songId || voted) return
-  
-  emit('vote', { ...song, songId })
+
+  emit('vote', { ...song, songId, voted })
 }
 
 const close = () => {

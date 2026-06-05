@@ -1810,9 +1810,9 @@ const handleEpisodeVote = async (episode) => {
 const normalizeString = (str) => {
   return str
     .toLowerCase()
+    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
     .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
     .trim()
 }
 
