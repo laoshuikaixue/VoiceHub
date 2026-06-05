@@ -2706,17 +2706,28 @@ const handleBilibiliEpisodePlay = async ({ song: episodeData, playlist, playlist
   let biliPlaylist
   let biliIndex
   if (playlist && playlist.length > 0) {
-    biliPlaylist = playlist.map(e => ({
-      id: e.bvid || e.id,
-      title: `${e.title} - ${e.part}`,
-      artist: e.artist,
-      cover: e.cover || '',
-      musicId: e.bvid || e.id,
-      musicPlatform: 'bilibili',
-      bilibiliCid: e.cid,
-      duration: e.duration,
-      sourceInfo: { source: 'bilibili' }
-    }))
+    biliPlaylist = playlist.map(e => {
+      const bvid = e.bvid || e.id
+      let finalId = bvid
+      if (e.cid) {
+        finalId = bvid + ':' + e.cid
+        const page = e.bilibiliPage || e.page
+        if (page && Number(page) > 1) {
+          finalId += ':' + page
+        }
+      }
+      return {
+        id: finalId,
+        title: `${e.title} - ${e.part}`,
+        artist: e.artist,
+        cover: e.cover || '',
+        musicId: finalId,
+        musicPlatform: 'bilibili',
+        bilibiliCid: e.cid,
+        duration: e.duration,
+        sourceInfo: { source: 'bilibili' }
+      }
+    })
     biliIndex = typeof playlistIndex === 'number' ? playlistIndex : playlist.findIndex(e => e.cid === episodeData.cid)
     if (biliIndex < 0) biliIndex = 0
   }
@@ -2780,7 +2791,7 @@ const handleAlbumSongVote = async (song) => {
     }
     
     // 刷新歌曲列表
-    await songService.fetchSongs()
+    await songService.fetchSongs(false, currentSemester.value?.name)
   } catch (error) {
     console.error('点赞失败:', error)
     if (window.$showNotification) {

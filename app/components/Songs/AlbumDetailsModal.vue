@@ -389,6 +389,7 @@ const loadAlbumDetails = async () => {
 
         songs.value = response.songs.map((item, i) => {
           const singerName = item.ar?.map(a => a.name).join('/') || '未知艺术家'
+          const durationMs = item.dt || 0
           return {
             songmid: item.id,
             name: item.name,
@@ -396,8 +397,8 @@ const loadAlbumDetails = async () => {
             albumName: album.name,
             albumId: album.id,
             img: item.al?.picUrl || album.picUrl,
-            interval: formatTime(Math.floor(item.dt / 1000)),
-            duration: item.dt / 1000,
+            interval: formatTime(Math.floor(durationMs / 1000)),
+            duration: durationMs / 1000,
             trackNumber: item.no || i + 1,
             source: 'netease'
           }
@@ -420,14 +421,16 @@ const loadAlbumDetails = async () => {
 }
 
 const formatTime = (seconds) => {
+  if (isNaN(seconds) || seconds < 0) return '0:00'
   const minutes = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${minutes}:${secs.toString().padStart(2, '0')}`
+  const secs = Math.floor(seconds % 60)
+  return minutes + ':' + secs.toString().padStart(2, '0')
 }
 
 const formatDate = (timestamp) => {
   if (!timestamp) return null
-  const date = new Date(timestamp)
+  const parsedTimestamp = typeof timestamp === 'string' && /^\d+$/.test(timestamp) ? parseInt(timestamp, 10) : timestamp
+  const date = new Date(parsedTimestamp)
   if (isNaN(date.getTime())) return null
   return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
 }
@@ -440,7 +443,15 @@ const isCurrentSong = (song) => {
          String(currentSong.value.id) === String(song.songmid)
 }
 
-const normalizeStr = (str) => str ? str.toLowerCase().replace(/[\s\-_]/g, '') : ''
+const normalizeStr = (str) => {
+  if (!str) return ''
+  return str
+    .toLowerCase()
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/[&＆]/g, 'and')
+    .replace(/[feat\.?|ft\.?]/gi, '')
+    .trim()
+}
 
 const getSongStatus = (song) => {
   const songNameNormalized = normalizeStr(song.name)
