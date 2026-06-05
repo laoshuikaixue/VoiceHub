@@ -2698,13 +2698,23 @@ const handleBilibiliEpisodeSelect = async (episode) => {
 }
 
 const handleBilibiliEpisodePlay = async ({ song: episodeData, playlist, playlistIndex }) => {
+  // 与 biliPlaylist 使用相同的 ID 构建逻辑，确保匹配
   const bvid = episodeData.bvid || episodeData.id
+  let finalId = bvid
+  if (episodeData.cid) {
+    finalId = bvid + ':' + episodeData.cid
+    const page = episodeData.bilibiliPage || episodeData.page
+    if (page && Number(page) > 1) {
+      finalId += ':' + page
+    }
+  }
+
   const episodeResult = {
-    id: bvid,
+    id: finalId,
     title: `${episodeData.title} - ${episodeData.part}`,
     artist: episodeData.artist,
     cover: episodeData.cover || '',
-    musicId: bvid,
+    musicId: finalId,
     musicPlatform: 'bilibili',
     bilibiliCid: episodeData.cid,
     duration: episodeData.duration,

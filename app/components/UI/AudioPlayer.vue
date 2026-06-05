@@ -649,12 +649,10 @@ const handleError = async (error) => {
     consecutiveSkipCount.value++
     if (consecutiveSkipCount.value >= MAX_CONSECUTIVE_SKIP) {
       console.log('[AudioPlayer] 连续多次跳过，停止自动跳过')
-      consecutiveSkipCount.value = 0
-      control.stop()
-      sync.syncStopToGlobal()
       if (window.$showNotification) {
         window.$showNotification('连续多首歌曲播放失败，已停止自动播放', 'warning')
       }
+      stopPlaying()
       return
     }
   }

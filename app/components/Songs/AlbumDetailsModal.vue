@@ -184,7 +184,7 @@
                     />
                   </button>
 
-                  <template v-if="getSongStatus(song).played">
+                  <template v-if="song.status.played">
                     <!-- 已播放标签 -->
                     <div
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
@@ -193,7 +193,7 @@
                     </div>
                   </template>
 
-                  <template v-else-if="getSongStatus(song).scheduled">
+                  <template v-else-if="song.status.scheduled">
                     <!-- 已排期标签 -->
                     <div
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
@@ -202,7 +202,7 @@
                     </div>
                   </template>
 
-                  <template v-else-if="getSongStatus(song).submitted">
+                  <template v-else-if="song.status.submitted">
                     <div class="flex flex-col sm:flex-row gap-2 items-center">
                       <!-- 已投稿标签 -->
                       <div
@@ -214,10 +214,10 @@
                       <!-- 点赞按钮（非自己投稿） -->
                       <button
                         v-if="!isMySong(song)"
-                        :disabled="getSongStatus(song).voted || submitting"
+                        :disabled="song.status.voted || submitting"
                         :class="[
                           'w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
-                          getSongStatus(song).voted
+                          song.status.voted
                             ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-500'
                         ]"
@@ -227,9 +227,9 @@
                           <Icon
                             name="heart"
                             :size="12"
-                            :class="getSongStatus(song).voted ? 'fill-current' : ''"
+                            :class="song.status.voted ? 'fill-current' : ''"
                           />
-                          <span>{{ getSongStatus(song).voted ? '已点赞' : '点赞' }}</span>
+                          <span>{{ song.status.voted ? '已点赞' : '点赞' }}</span>
                         </span>
                       </button>
                     </div>
@@ -336,10 +336,12 @@ const searchQuery = ref('')
 const showDescModal = ref(false)
 let albumAbortController = null
 
+const songsWithStatus = computed(() => songs.value.map(s => ({ ...s, status: getSongStatus(s) })))
+
 const filteredSongs = computed(() => {
-  if (!searchQuery.value.trim()) return songs.value
+  if (!searchQuery.value.trim()) return songsWithStatus.value
   const q = searchQuery.value.trim().toLowerCase()
-  return songs.value.filter(s => 
+  return songsWithStatus.value.filter(s => 
     (s.name?.toLowerCase() || '').includes(q) || 
     (s.singer?.toLowerCase() || '').includes(q)
   )
@@ -428,7 +430,7 @@ const loadAlbumDetails = async () => {
       error.value = '不支持的平台'
     }
   } catch (err) {
-    if (err.name === 'AbortError') return
+    if (err?.name === 'AbortError') return
     console.error('加载专辑详情失败:', err)
     error.value = '加载失败，请稍后重试'
   } finally {
@@ -511,8 +513,7 @@ const getSongStatus = (song) => {
 
 const isMySong = (song) => {
   if (!props.currentUserId) return false
-  const status = getSongStatus(song)
-  return status.requesterId === props.currentUserId
+  return (song.status || getSongStatus(song)).requesterId === props.currentUserId
 }
 
 const togglePlay = (song) => {
