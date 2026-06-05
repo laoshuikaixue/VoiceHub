@@ -60,7 +60,7 @@ const getCachedInstanceIdInfo = (): InstanceIdInfo | null => {
     return null
   }
 
-  if (cachedInstanceIdInfo.persisted || cachedInstanceIdExpiresAt > Date.now()) {
+  if (cachedInstanceIdInfo.persisted || cachedInstanceIdExpiresAt > getServerTimestamp()) {
     return cachedInstanceIdInfo
   }
 
@@ -88,7 +88,7 @@ export const getInstanceIdInfo = async (): Promise<InstanceIdInfo> => {
 
         const info = { instanceId: fallbackInstanceId, persisted: false }
         cachedInstanceIdInfo = info
-        cachedInstanceIdExpiresAt = Date.now() + TEMPORARY_INSTANCE_ID_CACHE_TTL_MS
+        cachedInstanceIdExpiresAt = getServerTimestamp() + TEMPORARY_INSTANCE_ID_CACHE_TTL_MS
         console.warn('[Instance ID] Failed to persist instance ID, using temporary fallback value:', error)
         return info
       })

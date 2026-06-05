@@ -1624,7 +1624,7 @@ watch(currentPage, (newPage) => {
 const formatDate = (dateString) => {
   if (!dateString) return '从未登录'
   const date = new Date(dateString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now - date
 
   if (diff < 60000) return '刚刚'

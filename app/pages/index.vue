@@ -1026,7 +1026,7 @@ const getVisiblePages = () => {
 // 格式化通知时间
 const formatNotificationTime = (timeString) => {
   const date = new Date(timeString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now.getTime() - date.getTime()
 
   // 小于1分钟
@@ -1089,7 +1089,7 @@ onMounted(() => {
 
 // 获取当前日期和星期
 const getCurrentDate = () => {
-  const now = new Date()
+  const now = getSyncedDate()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const date = now.getDate()

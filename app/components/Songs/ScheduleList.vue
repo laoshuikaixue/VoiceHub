@@ -799,7 +799,7 @@ const toLocalMidnightTimestamp = (dateStr) => {
 const findAndSelectTodayOrClosestDate = async () => {
   if (availableDates.value.length === 0) return
 
-  const today = new Date()
+  const today = getSyncedDate()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   let selectedIndex = 0

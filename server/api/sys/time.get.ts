@@ -1,7 +1,12 @@
 import { defineEventHandler } from 'h3'
+import {
+  setTimeOffset,
+  getTimeOffset,
+  markSynced,
+  isTimeSynced,
+  getServerTimestamp
+} from '~~/server/utils/serverTime'
 
-let timeOffset = 0
-let hasSynced = false
 let syncPromise: Promise<void> | null = null
 
 /**
@@ -25,9 +30,8 @@ async function doSyncServerTime() {
       const endTime = Date.now()
       const latency = Math.round((endTime - startTime) / 2)
       const realTime = parseInt(data.data.t) + latency
-      timeOffset = realTime - endTime
-      hasSynced = true
-      console.log(`[Server TimeSync] 服务器时间同步成功，偏移量: ${timeOffset}ms`)
+      setTimeOffset(realTime - endTime)
+      console.log(`[Server TimeSync] 服务器时间同步成功，偏移量: ${getTimeOffset()}ms`)
       return
     }
   } catch (error) {
@@ -49,20 +53,19 @@ async function doSyncServerTime() {
         const endTime = Date.now()
         const latency = Math.round((endTime - startTime) / 2)
         const realTime = parseInt(data.data) + latency
-        timeOffset = realTime - endTime
-        hasSynced = true
-        console.log(`[Server TimeSync] 服务器时间同步成功 (备用)，偏移量: ${timeOffset}ms`)
+        setTimeOffset(realTime - endTime)
+        console.log(`[Server TimeSync] 服务器时间同步成功 (备用)，偏移量: ${getTimeOffset()}ms`)
         return
       }
     } catch (error2) {
       console.error('[Server TimeSync] 服务器时间同步完全失败，将使用系统本地时间:', error2)
-      hasSynced = true // 标记为已同步以防止重复请求，使用默认偏移 0
+      markSynced() // 标记为已同步以防止重复请求，使用默认偏移 0
     }
   }
 }
 
 async function syncServerTime() {
-  if (hasSynced) return
+  if (isTimeSynced()) return
   
   if (!syncPromise) {
     syncPromise = doSyncServerTime().finally(() => {
@@ -75,7 +78,7 @@ async function syncServerTime() {
 
 export default defineEventHandler(async () => {
   // 如果服务器自身还没同步过时间，则先进行同步
-  if (!hasSynced) {
+  if (!isTimeSynced()) {
     // 设置 2 秒超时，防止因为同步时间导致接口阻塞太久
     await Promise.race([
       syncServerTime(),
@@ -85,6 +88,6 @@ export default defineEventHandler(async () => {
 
   // 返回修正后的标准时间戳
   return {
-    timestamp: Date.now() + timeOffset
+    timestamp: getServerTimestamp()
   }
 })

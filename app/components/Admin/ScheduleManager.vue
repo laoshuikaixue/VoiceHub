@@ -995,7 +995,7 @@ import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { getNeteaseCookie } from '~/utils/url'
 
 // 响应式数据
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const selectedDate = ref(getSyncedDate().toISOString().split('T')[0])
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
@@ -1304,7 +1304,7 @@ let semesterService = null
 // 生成日期列表（无限滚动模式）
 const availableDates = computed(() => {
   const dates = []
-  const today = new Date()
+  const today = getSyncedDate()
 
   // 根据当前范围生成日期
   for (let i = dateRange.value.start; i <= dateRange.value.end; i++) {
@@ -1452,7 +1452,7 @@ const isDesktop = ref(true)
 // 方法
 const formatDate = (dateString) => {
   const date = new Date(dateString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now - date
 
   if (diff < 60000) return '刚刚'
@@ -1801,7 +1801,7 @@ const confirmManualDate = () => {
 
 // 定位到今天
 const scrollToToday = () => {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getSyncedDate().toISOString().split('T')[0]
   const isAlreadyToday = selectedDate.value === todayStr
 
   if (!isAlreadyToday) {

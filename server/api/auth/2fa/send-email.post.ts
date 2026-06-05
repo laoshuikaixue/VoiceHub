@@ -56,10 +56,10 @@ export default defineEventHandler(async (event) => {
 
   // 检查是否在冷却时间内
   const existingCode = twoFactorCodes.get(userId)
-  if (existingCode && existingCode.expiresAt > Date.now()) {
+  if (existingCode && existingCode.expiresAt > getServerTimestamp()) {
     // 5 * 60 * 1000 = 300000ms
     const totalDuration = 5 * 60 * 1000
-    const timePassed = totalDuration - (existingCode.expiresAt - Date.now())
+    const timePassed = totalDuration - (existingCode.expiresAt - getServerTimestamp())
     
     if (timePassed < 60 * 1000) { // 60秒冷却
       const remainingSeconds = Math.ceil((60000 - timePassed) / 1000)
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
   const code = randomInt(100000, 999999).toString()
   twoFactorCodes.set(userId, { 
     code, 
-    expiresAt: Date.now() + 5 * 60 * 1000,
+    expiresAt: getServerTimestamp() + 5 * 60 * 1000,
     attempts: 0 
   })
 

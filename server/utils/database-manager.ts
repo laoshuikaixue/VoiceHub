@@ -32,7 +32,7 @@ export class DatabaseManager {
     connectionStatus: string
     error?: string
   }> {
-    const now = Date.now()
+    const now = getServerTimestamp()
 
     // 检查缓存
     if (this.healthCheckCache && now - this.healthCheckCache.timestamp < this.CACHE_TTL) {

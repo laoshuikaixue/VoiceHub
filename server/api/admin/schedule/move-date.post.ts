@@ -4,6 +4,7 @@ import { schedules, songs } from '~/drizzle/schema'
 import { cacheService } from '~~/server/services/cacheService'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
       }
 
       const scheduleIds = sourceSchedules.map((item) => item.id)
-      const updateTime = new Date()
+      const updateTime = getServerDate()
       const movedSchedules = await tx
         .update(schedules)
         .set({

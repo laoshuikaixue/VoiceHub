@@ -17,7 +17,7 @@ const store = new Map<string, RateLimitRecord>()
  * @returns { isAllowed: boolean, remaining: number, resetTime: number }
  */
 export function checkRateLimit(key: string, limit: number, windowMs: number): { isAllowed: boolean, remaining: number, resetTime: number } {
-  const now = Date.now()
+  const now = getServerTimestamp()
   let record = store.get(key)
 
   if (!record || now > record.resetTime) {
@@ -48,7 +48,7 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): { 
  * @param force 如果为 true，在没有过期数据时也会强制删除最旧的记录
  */
 export function cleanupRateLimits(force = false) {
-  const now = Date.now()
+  const now = getServerTimestamp()
   let deletedCount = 0
 
   for (const [key, record] of store.entries()) {

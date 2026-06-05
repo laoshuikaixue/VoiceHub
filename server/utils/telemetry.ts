@@ -31,13 +31,13 @@ const readTelemetryEnabled = async (): Promise<boolean> => {
 
 export const setTelemetryEnabledCache = (enabled: boolean) => {
   telemetryEnabledCache = enabled
-  telemetryEnabledCacheExpiresAt = Date.now() + TELEMETRY_CACHE_TTL_MS
+  telemetryEnabledCacheExpiresAt = getServerTimestamp() + TELEMETRY_CACHE_TTL_MS
 }
 
 export const isTelemetryEnabledCached = () => telemetryEnabledCache === true
 
 export const isTelemetryEnabled = async (): Promise<boolean> => {
-  if (telemetryEnabledCache !== null && telemetryEnabledCacheExpiresAt > Date.now()) {
+  if (telemetryEnabledCache !== null && telemetryEnabledCacheExpiresAt > getServerTimestamp()) {
     return telemetryEnabledCache
   }
 

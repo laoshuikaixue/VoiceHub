@@ -1,5 +1,6 @@
 import { db, eq, ne, schedules, songs, songReplayRequests, and } from '~/drizzle/db'
 import { cacheService } from '~~/server/services/cacheService'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
             .update(songReplayRequests)
             .set({
               status: 'PENDING',
-              updatedAt: new Date()
+              updatedAt: getServerDate()
             })
             .where(
               and(
