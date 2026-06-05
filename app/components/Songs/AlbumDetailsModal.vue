@@ -339,8 +339,8 @@ const filteredSongs = computed(() => {
   if (!searchQuery.value.trim()) return songs.value
   const q = searchQuery.value.trim().toLowerCase()
   return songs.value.filter(s => 
-    s.name.toLowerCase().includes(q) || 
-    s.singer.toLowerCase().includes(q)
+    (s.name?.toLowerCase() || '').includes(q) || 
+    (s.singer?.toLowerCase() || '').includes(q)
   )
 })
 
@@ -448,7 +448,7 @@ const normalizeStr = (str) => {
   return str
     .toLowerCase()
     .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/[\s\-_()\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
     .trim()
 }

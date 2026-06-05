@@ -413,13 +413,13 @@
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
                       <p 
                         v-if="result.album" 
-                        class="result-album clickable-album" 
-                        :title="result.albumId ? '点击查看专辑详情' : result.album"
-                        @click.stop="result.albumId ? openAlbumDetails(result) : null"
+                        :class="['result-album', { 'clickable-album': result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' }]"
+                        :title="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' ? '点击查看专辑详情' : result.album"
+                        @click.stop="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' ? openAlbumDetails(result) : null"
                       >
                         <span class="album-label">专辑：</span>
                         <span class="album-name">{{ result.album }}</span>
-                        <Icon v-if="result.albumId" name="external-link" :size="12" class="album-link-icon" />
+                        <Icon v-if="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease'" name="external-link" :size="12" class="album-link-icon" />
                       </p>
                     </div>
                     <div class="result-actions">
@@ -1811,7 +1811,7 @@ const normalizeString = (str) => {
   return str
     .toLowerCase()
     .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/[\s\-_()\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
     .trim()
 }
@@ -2772,6 +2772,7 @@ const handleAlbumSongSubmit = async (songData) => {
 
 // 处理专辑歌曲点赞
 const handleAlbumSongVote = async (song) => {
+  if (voting.value) return
   if (!song.songId) {
     if (window.$showNotification) {
       window.$showNotification('无法投票：缺少歌曲ID', 'error')
@@ -2783,6 +2784,7 @@ const handleAlbumSongVote = async (song) => {
     return
   }
 
+  voting.value = true
   try {
     await songService.voteSong(song.songId)
     
@@ -2797,6 +2799,8 @@ const handleAlbumSongVote = async (song) => {
     if (window.$showNotification) {
       window.$showNotification(error.message || '点赞失败，请稍后重试', 'error')
     }
+  } finally {
+    voting.value = false
   }
 }
 

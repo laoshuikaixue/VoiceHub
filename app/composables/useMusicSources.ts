@@ -1618,7 +1618,7 @@ export const useMusicSources = () => {
           let cover: string | null = null
           let artist: string = '未知艺术家'
           let album: string | undefined
-          let albumId: string | undefined
+          let albumId: string | number | undefined
           let duration: number = 0
           let musicId = item.id?.toString()
 
