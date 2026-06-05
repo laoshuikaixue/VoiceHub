@@ -1,3 +1,5 @@
+import { getServerTimestamp } from './serverTime'
+
 /**
  * 验证码与风控计数器统一存储适配器
  * - 优先 Redis

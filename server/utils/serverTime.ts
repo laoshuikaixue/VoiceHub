@@ -38,3 +38,8 @@ export function getServerTimestamp(): number {
 export function getServerDate(): Date {
   return new Date(getServerTimestamp())
 }
+
+// 绑定到 globalThis，供 isomorphic 代码（如 app/utils/timeUtils.ts）安全调用
+if (typeof globalThis !== 'undefined') {
+  ;(globalThis as any).getServerTimestamp = getServerTimestamp
+}

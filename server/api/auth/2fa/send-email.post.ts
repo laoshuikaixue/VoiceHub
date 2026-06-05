@@ -5,6 +5,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const { userId: reqUserId, token: rawToken, email } = await readBody(event)

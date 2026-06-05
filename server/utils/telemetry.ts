@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { CacheService } from '../services/cacheService'
 import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
+import { getServerTimestamp } from './serverTime'
 
 let telemetryEnabledCache: boolean | null = null
 let telemetryEnabledCacheExpiresAt = 0
