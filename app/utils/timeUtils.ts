@@ -21,9 +21,14 @@ const BEIJING_TIMEZONE = 'Asia/Shanghai'
 /** 获取同步后的当前时间戳 (毫秒) */
 function getSyncedNow(): number {
   if (import.meta.server) {
-    return getServerTimestamp()
+    return (globalThis as any).getServerTimestamp?.() ?? Date.now()
   }
-  return getSyncedTimestamp()
+  return (globalThis as any).getSyncedTimestamp?.() ?? Date.now()
+}
+
+/** 获取同步后的当前 Date 对象 */
+export function getSyncedDate(): Date {
+  return new Date(getSyncedNow())
 }
 
 /**

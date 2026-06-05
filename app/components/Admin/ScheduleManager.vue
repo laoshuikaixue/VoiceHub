@@ -995,7 +995,7 @@ import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { getNeteaseCookie } from '~/utils/url'
 
 // 响应式数据
-const selectedDate = ref(getSyncedDate().toISOString().split('T')[0])
+const selectedDate = ref(getBeijingTimeISOString().split('T')[0])
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
@@ -1801,7 +1801,7 @@ const confirmManualDate = () => {
 
 // 定位到今天
 const scrollToToday = () => {
-  const todayStr = getSyncedDate().toISOString().split('T')[0]
+  const todayStr = getBeijingTimeISOString().split('T')[0]
   const isAlreadyToday = selectedDate.value === todayStr
 
   if (!isAlreadyToday) {
