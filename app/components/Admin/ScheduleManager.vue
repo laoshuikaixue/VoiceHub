@@ -995,7 +995,7 @@ import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { getNeteaseCookie } from '~/utils/url'
 
 // 响应式数据
-const selectedDate = ref(getBeijingTimeISOString().split('T')[0])
+const selectedDate = useState('adminSelectedDate', () => getBeijingTimeISOString().split('T')[0])
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
