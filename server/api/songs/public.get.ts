@@ -30,6 +30,23 @@ export default defineEventHandler(async (event) => {
     const authResult = await verifyUserAuth(event)
     const isLoggedIn = authResult.success
     const isAdmin = isLoggedIn && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(authResult.user?.role)
+    const user = authResult.success ? authResult.user : null
+
+    // 根据用户权限动态过滤投稿备注字段
+    const filterSubmissionNotes = (schedules: any[]) => {
+      if (!schedules) return
+      schedules.forEach((schedule) => {
+        if (!schedule.song) return
+        const isRequester = Boolean(user && schedule.song.requesterId === user.id)
+        const canView = !!schedule.song.submissionNotePublic || (user && (isAdmin || isRequester))
+        if (!canView) {
+          schedule.song.submissionNote = null
+          schedule.song.hasSubmissionNote = false
+        } else {
+          schedule.song.hasSubmissionNote = !!schedule.song.submissionNote
+        }
+      })
+    }
 
     // 获取系统设置
     const systemSettingsData = await db
@@ -73,6 +90,7 @@ export default defineEventHandler(async (event) => {
       })
 
       if (cachedData) {
+        filterSubmissionNotes(cachedData)
         return cachedData
       }
     }
@@ -107,6 +125,8 @@ export default defineEventHandler(async (event) => {
 
       // 深拷贝数据以避免修改缓存的原始数据
       const resultData = JSON.parse(JSON.stringify(filteredSchedules)) as PublicScheduleItem[]
+      // 过滤投稿备注权限
+      filterSubmissionNotes(resultData)
       // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
       if (shouldHideStudentInfo && !isAdmin) {
         maskPublicScheduleData(resultData)
@@ -391,9 +411,10 @@ export default defineEventHandler(async (event) => {
           playUrl: schedule.song.playUrl || null,
           semester: schedule.song.semester || null,
           requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null,
-          hasSubmissionNote: schedule.song?.submissionNotePublic === true && !!schedule.song?.submissionNote,
-          submissionNote: schedule.song?.submissionNotePublic === true ? schedule.song?.submissionNote : null,
+          hasSubmissionNote: !!schedule.song?.submissionNote,
+          submissionNote: schedule.song?.submissionNote || null,
           submissionNotePublic: schedule.song?.submissionNotePublic === true,
+          requesterId: schedule.song.requesterId,
           // 重播申请信息
           replayRequestCount: isReplaySong ? replayRequestCount : 0,
           replayRequesters: isReplaySong ? formattedReplayRequesters : [],
@@ -431,6 +452,9 @@ export default defineEventHandler(async (event) => {
 
     // 深拷贝数据以避免修改缓存的原始数据
     const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult)) as PublicScheduleItem[]
+
+    // 过滤投稿备注权限
+    filterSubmissionNotes(resultToReturn)
 
     // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
     if (shouldHideStudentInfo && !isAdmin && resultToReturn) {

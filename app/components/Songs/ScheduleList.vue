@@ -203,7 +203,7 @@
                             <Icon name="repeat" :size="14" />
                           </span>
                           <button
-                            v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
+                            v-if="schedule.song?.hasSubmissionNote && schedule.song?.submissionNote"
                             class="submission-note-trigger"
                             title="查看备注留言"
                             @click.stop="openSubmissionNote(schedule.song)"
