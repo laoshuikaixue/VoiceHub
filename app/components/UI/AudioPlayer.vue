@@ -1069,6 +1069,7 @@ const stopPlaying = () => {
 
   lastOpenedFallbackSongId.value = null
   isFallbackHandling.value = false
+  consecutiveSkipCount.value = 0
   enhanced.resetRetryState()
 
   control.stop()
