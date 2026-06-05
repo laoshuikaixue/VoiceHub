@@ -411,12 +411,21 @@
                     <div class="result-info">
                       <h4 class="result-title">{{ result.song || result.title }}</h4>
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
-                      <p v-if="result.album" class="result-album">专辑：{{ result.album }}</p>
+                      <p 
+                        v-if="result.album" 
+                        :class="['result-album', { 'clickable-album': isNeteaseAlbum(result) }]" 
+                        :title="isNeteaseAlbum(result) ? '点击查看专辑详情' : result.album"
+                        @click.stop="isNeteaseAlbum(result) ? openAlbumDetails(result) : null"
+                      >
+                        <span class="album-label">专辑：</span>
+                        <span class="album-name">{{ result.album }}</span>
+                        <Icon v-if="isNeteaseAlbum(result)" name="external-link" :size="12" class="album-link-icon" />
+                      </p>
                     </div>
                     <div class="result-actions">
-                      <!-- QQ音乐上传到网易云按钮 -->
+                      <!-- QQ音乐上传到网易云按钮（仅当结果确实来自QQ音乐时显示） -->
                       <button
-                        v-if="platform === 'tencent'"
+                        v-if="isTencentSource(result)"
                         class="cloud-disk-btn"
                         title="上传到网易云音乐云盘"
                         @click.stop.prevent="openUploadDialog(result)"
@@ -633,6 +642,21 @@
       @play="handleBilibiliEpisodePlay"
       @submit="handleBilibiliEpisodeSelect"
       @vote="handleEpisodeVote"
+    />
+
+    <!-- 专辑详情弹窗 -->
+    <AlbumDetailsModal
+      ref="albumModalRef"
+      :show="showAlbumDetailsModal"
+      :album-id="selectedAlbumId"
+      :album-name="selectedAlbumName"
+      :platform="selectedAlbumPlatform"
+      :submitted-songs="songService.songs.value || []"
+      :current-user-id="user?.id"
+      @close="showAlbumDetailsModal = false"
+      @play="handleAlbumSongPlay"
+      @submit="handleAlbumSongSubmit"
+      @vote="handleAlbumSongVote"
     />
 
     <!-- 上传到网易云音乐弹窗 -->
@@ -991,6 +1015,7 @@ import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
+import AlbumDetailsModal from './AlbumDetailsModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
 import UserSearchModal from '../Common/UserSearchModal.vue'
@@ -1100,6 +1125,13 @@ const showManualModal = ref(false)
 const showBilibiliEpisodesModal = ref(false)
 const selectedBilibiliVideo = ref(null)
 const bilibiliEpisodes = ref([])
+
+// 专辑详情相关
+const showAlbumDetailsModal = ref(false)
+const selectedAlbumId = ref(null)
+const selectedAlbumName = ref(null)
+const selectedAlbumPlatform = ref('netease')
+
 const manualArtist = ref('')
 const manualCover = ref('')
 const manualPlayUrl = ref('')
@@ -1776,11 +1808,12 @@ const handleEpisodeVote = async (episode) => {
 // 检查搜索结果是否已存在完全匹配的歌曲
 // 标准化字符串（与useSongs中的逻辑保持一致）
 const normalizeString = (str) => {
+  if (!str) return ''
   return str
     .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
     .trim()
 }
 
@@ -1940,6 +1973,14 @@ const handleSearch = async () => {
         actualMusicPlatform:
           item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
       }))
+
+      // 如果QQ音乐搜索降级到网易云，自动切换选项卡
+      if (platform.value === 'tencent' && searchResults.value.length > 0) {
+        const firstPlatform = searchResults.value[0].actualMusicPlatform || searchResults.value[0].musicPlatform || ''
+        if (firstPlatform.includes('netease')) {
+          platform.value = 'netease'
+        }
+      }
 
       console.log('搜索成功，找到', results.data.length, '首歌曲')
     } else {
@@ -2207,7 +2248,7 @@ const getAudioUrl = async (result) => {
 }
 
 // 播放歌曲
-const playSong = async (result) => {
+const playSong = async (result, playlist, playlistIndex) => {
   // 如果还没有获取URL，先获取
   if (!result.hasUrl && !result.url) {
     result = await getAudioUrl(result)
@@ -2248,8 +2289,27 @@ const playSong = async (result) => {
 
   console.log('[RequestForm] 准备播放歌曲:', song)
 
+  // 处理播放列表：如果提供了playlist，将其转换为audioPlayer需要的格式
+  let finalPlaylist
+  let finalIndex
+  if (playlist && playlist.length > 0) {
+    finalPlaylist = playlist.map(s => ({
+      ...s,
+      id: String(s.id),
+      musicId: String(s.musicId || s.id),
+      musicUrl: s.musicUrl || s.url || null
+    }))
+    // 如果提供了playlistIndex则使用，否则自动查找
+    finalIndex = typeof playlistIndex === 'number' ? playlistIndex : finalPlaylist.findIndex(s => s.id === String(song.id))
+    if (finalIndex < 0) finalIndex = 0
+  }
+
   // 使用全局播放器播放歌曲
-  const playResult = audioPlayer.playSong(song)
+  const playResult = audioPlayer.playSong(
+    song,
+    finalPlaylist,
+    finalIndex
+  )
 
   if (!playResult) {
     console.error('[RequestForm] 播放器返回 false，播放失败')
@@ -2637,20 +2697,61 @@ const handleBilibiliEpisodeSelect = async (episode) => {
   }
 }
 
-const handleBilibiliEpisodePlay = async (episodeData) => {
+const handleBilibiliEpisodePlay = async ({ song: episodeData, playlist, playlistIndex }) => {
+  // 与 biliPlaylist 使用相同的 ID 构建逻辑，确保匹配
   const bvid = episodeData.bvid || episodeData.id
+  let finalId = bvid
+  if (episodeData.cid) {
+    finalId = bvid + ':' + episodeData.cid
+    const page = episodeData.bilibiliPage || episodeData.page
+    if (page && Number(page) > 1) {
+      finalId += ':' + page
+    }
+  }
+
   const episodeResult = {
-    id: bvid,
+    id: finalId,
     title: `${episodeData.title} - ${episodeData.part}`,
     artist: episodeData.artist,
     cover: episodeData.cover || '',
-    musicId: bvid,
+    musicId: finalId,
     musicPlatform: 'bilibili',
     bilibiliCid: episodeData.cid,
     duration: episodeData.duration,
     sourceInfo: { source: 'bilibili' }
   }
-  await playSong(episodeResult)
+
+  // 转换播放列表为统一格式
+  let biliPlaylist
+  let biliIndex
+  if (playlist && playlist.length > 0) {
+    biliPlaylist = playlist.map(e => {
+      const bvid = e.bvid || e.id
+      let finalId = bvid
+      if (e.cid) {
+        finalId = bvid + ':' + e.cid
+        const page = e.bilibiliPage || e.page
+        if (page && Number(page) > 1) {
+          finalId += ':' + page
+        }
+      }
+      return {
+        id: finalId,
+        title: `${e.title} - ${e.part}`,
+        artist: e.artist,
+        cover: e.cover || '',
+        musicId: finalId,
+        musicPlatform: 'bilibili',
+        bilibiliCid: e.cid,
+        duration: e.duration,
+        sourceInfo: { source: 'bilibili' }
+      }
+    })
+    biliIndex = typeof playlistIndex === 'number' ? playlistIndex : playlist.findIndex(e => e.cid === episodeData.cid)
+    if (biliIndex < 0) biliIndex = 0
+  }
+
+  await playSong(episodeResult, biliPlaylist, biliIndex)
 }
 
 // 引用模态框组件
@@ -2658,6 +2759,84 @@ const bilibiliModalRef = ref(null)
 const podcastModalRef = ref(null)
 const recentSongsModalRef = ref(null)
 const playlistModalRef = ref(null)
+const albumModalRef = ref(null)
+
+// 判断搜索结果是否为网易云专辑（仅网易云支持专辑详情弹窗）
+const isNeteaseAlbum = (result) => {
+  const p = result.actualMusicPlatform || result.musicPlatform || platform.value
+  return !!(result.albumId && p && p.includes('netease'))
+}
+
+// 判断结果是否来自QQ音乐（用于显示上传按钮）
+const isTencentSource = (result) => {
+  const p = result.actualMusicPlatform || result.musicPlatform || ''
+  return p.includes('vkeys') || p === 'tencent'
+}
+
+// 打开专辑详情（标准化平台名称，AlbumDetailsModal 只识别 netease/tencent）
+const openAlbumDetails = (result) => {
+  if (!result.albumId) return
+  
+  selectedAlbumId.value = result.albumId
+  selectedAlbumName.value = result.album || result.albumName
+  const rawPlatform = result.actualMusicPlatform || result.musicPlatform || platform.value
+  selectedAlbumPlatform.value = rawPlatform.includes('netease') ? 'netease' : 'tencent'
+  showAlbumDetailsModal.value = true
+}
+
+// 处理专辑歌曲播放
+const handleAlbumSongPlay = async ({ song, playlist, playlistIndex }) => {
+  await playSong(song, playlist, playlistIndex)
+}
+
+// 处理专辑歌曲投稿
+const handleAlbumSongSubmit = async (songData) => {
+  const success = await submitSong(songData, { isDirectSubmit: true })
+  
+  if (success) {
+    showAlbumDetailsModal.value = false
+  }
+  
+  if (albumModalRef.value && albumModalRef.value.resetSubmissionState) {
+    albumModalRef.value.resetSubmissionState()
+  }
+}
+
+// 处理专辑歌曲点赞
+const handleAlbumSongVote = async (song) => {
+  if (voting.value) return
+  if (!song.songId) {
+    if (window.$showNotification) {
+      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+    }
+    return
+  }
+
+  if (song.voted) {
+    return
+  }
+
+  voting.value = true
+  try {
+    await songService.voteSong(song.songId)
+    
+    if (window.$showNotification) {
+      window.$showNotification('点赞成功！', 'success')
+    }
+    
+    // 静默刷新歌曲列表
+    songService.refreshSongsSilent().catch((err) => {
+      console.error('刷新歌曲列表失败', err)
+    })
+  } catch (error) {
+    console.error('点赞失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(error.message || '点赞失败，请稍后重试', 'error')
+    }
+  } finally {
+    voting.value = false
+  }
+}
 
 // 处理播客单集提交
 const handlePodcastSubmit = async (song) => {
@@ -5740,5 +5919,33 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* 专辑详情样式 */
+.clickable-album {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.clickable-album:hover .album-name {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.album-label {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.album-link-icon {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-album:hover .album-link-icon {
+  opacity: 1;
 }
 </style>

@@ -590,6 +590,7 @@ VoiceHub/
 │   │   │       ├── AMLyric.vue        # Apple Music风格歌词
 │   │   │       └── DefaultLyric.vue   # 默认风格歌词
 │   │   ├── Songs/             # 歌曲相关组件
+│   │   │   ├── AlbumDetailsModal.vue   # 网易云音乐专辑详情弹窗
 │   │   │   ├── BilibiliEpisodesModal.vue # Bilibili剧集选择弹窗
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗

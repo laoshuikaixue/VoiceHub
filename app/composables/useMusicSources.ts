@@ -210,6 +210,7 @@ export const useMusicSources = () => {
           artist: item.singer?.replace(/、/g, '/') || '未知艺术家',
           cover: item.img,
           album: item.albumName,
+          albumId: item.albumId,
           duration: isNetease ? item.duration * 1000 : item.duration, // Netease uses ms, Tencent uses s
           musicPlatform: platform,
           musicId: id?.toString(),
@@ -486,6 +487,7 @@ export const useMusicSources = () => {
               : (item.artist_string || '未知艺术家')),
           cover: item.picUrl,
           album: item.album,
+          albumId: item.albumId,
           duration: 0,
           musicPlatform: 'netease',
           musicId: item.id?.toString(),
@@ -1394,17 +1396,18 @@ export const useMusicSources = () => {
           artist: song.singer || song.artist || '未知艺术家',
           cover: song.cover,
           album: song.album,
+          albumId: song.albumId,
           duration: song.duration || song.dt,
           musicPlatform: 'tencent',
           musicId: (song.id || song.musicId)?.toString(),
-          url: song.url, // 添加vkeys API返回的播放链接
-          hasUrl: !!song.url, // 标记是否有播放链接
+          url: song.url,
+          hasUrl: !!song.url,
           sourceInfo: {
             source: 'vkeys',
             originalId: (song.id || song.musicId)?.toString(),
             fetchedAt: new Date(),
-            mid: song.mid, // QQ音乐特有的mid字段
-            vid: song.vid, // QQ音乐特有的vid字段
+            mid: song.mid,
+            vid: song.vid,
             quality: song.quality,
             pay: song.pay,
             subtitle: song.subtitle,
@@ -1429,6 +1432,7 @@ export const useMusicSources = () => {
           artist: song.singer || '未知艺术家',
           cover: song.cover?.trim(), // 去除可能的空格
           album: song.album,
+          albumId: song.albumId,
           duration: song.interval || song.time, // 网易云使用interval字段表示时长，备用time字段
           musicPlatform: 'netease',
           musicId: song.id?.toString(),
@@ -1482,6 +1486,7 @@ export const useMusicSources = () => {
           : item.singer || '',
         cover: item.albumImage || item.cover || '',
         album: item.album || '',
+        albumId: item.albumID ?? item.albumId,
         duration,
         musicPlatform: 'tencent',
         musicId: id?.toString(),
@@ -1613,6 +1618,7 @@ export const useMusicSources = () => {
           let cover: string | null = null
           let artist: string = '未知艺术家'
           let album: string | undefined
+          let albumId: string | number | undefined
           let duration: number = 0
           let musicId = item.id?.toString()
 
@@ -1624,6 +1630,7 @@ export const useMusicSources = () => {
               cover = item.al?.picUrl || null
               artist = item.ar?.map((a: any) => a.name).join('/') || '未知艺术家'
               album = item.al?.name
+              albumId = item.al?.id
               duration = item.dt || 0
             } else {
               // search接口响应，需要从详情中获取信息
@@ -1635,6 +1642,7 @@ export const useMusicSources = () => {
                   : null)
               artist = item.artists?.map((a: any) => a.name).join('/') || '未知艺术家'
               album = item.album?.name
+              albumId = item.album?.id || detail?.al?.id
               duration = item.duration || 0
             }
           } else {
@@ -1678,6 +1686,7 @@ export const useMusicSources = () => {
             artist,
             cover,
             album,
+            albumId,
             duration,
             musicPlatform: isSongType ? 'netease' : 'netease-podcast',
             musicId: musicId,

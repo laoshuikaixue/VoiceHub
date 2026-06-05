@@ -318,6 +318,8 @@ const showFallbackOpenDialog = ref(false)
 const fallbackOpenDialogUrl = ref('')
 const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否在新标签页打开原始链接？')
 const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重试逻辑
+const consecutiveSkipCount = ref(0) // 连续跳过失败的歌曲数
+const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -480,6 +482,7 @@ const handleTimeUpdate = () => {
 
 const handlePlay = () => {
   control.onPlay()
+  consecutiveSkipCount.value = 0 // 播放成功，重置连续跳过计数
 
   if (isSyncingFromGlobal.value) return
 
@@ -640,6 +643,19 @@ const handleError = async (error) => {
 
   // 如果正在处理 fallback，直接返回，不走重试逻辑
   if (isFallbackHandling.value) return
+
+  // 连续失败保护：对任意平台的歌曲在列表播放模式下都计入连续失败计数
+  if (props.isPlaylistMode && control.playMode.value !== 'off') {
+    consecutiveSkipCount.value++
+    if (consecutiveSkipCount.value >= MAX_CONSECUTIVE_SKIP) {
+      console.log('[AudioPlayer] 连续多次跳过，停止自动跳过')
+      if (window.$showNotification) {
+        window.$showNotification('连续多首歌曲播放失败，已停止自动播放', 'warning')
+      }
+      stopPlaying()
+      return
+    }
+  }
 
   // 如果是哔哩哔哩视频播放失败，提供 iframe 预览选项
   if (isBilibiliSong(activeSong.value)) {
@@ -1051,6 +1067,7 @@ const stopPlaying = () => {
 
   lastOpenedFallbackSongId.value = null
   isFallbackHandling.value = false
+  consecutiveSkipCount.value = 0
   enhanced.resetRetryState()
 
   control.stop()
@@ -1081,8 +1098,8 @@ watch(
     // 重置封面错误状态
     coverError.value = false
 
-    // 避免双向触发
-    if (isSyncingFromGlobal.value) return
+    // 避免双向触发 - 仅当是同一首歌时才跳过（防止playNext时block加载新歌）
+    if (isSyncingFromGlobal.value && oldSong && String(newSong.id) === String(oldSong.id)) return
 
     // 确保组件已经挂载
     if (!isMounted.value) return
