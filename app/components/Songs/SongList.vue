@@ -1034,7 +1034,7 @@ const openSubmissionNote = (song) => {
   if (!song?.submissionNote) return
   submissionNoteDialog.value = {
     show: true,
-    songTitle: `${song.title} - ${song.artist}`,
+    songTitle: (song.title || '未知歌曲') + ' - ' + (song.artist || '未知歌手'),
     note: song.submissionNote,
     isPublic: song.submissionNotePublic === true
   }

@@ -391,9 +391,9 @@ export default defineEventHandler(async (event) => {
           playUrl: schedule.song.playUrl || null,
           semester: schedule.song.semester || null,
           requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null,
-          hasSubmissionNote: Boolean(schedule.song.submissionNote) && schedule.song.submissionNotePublic === true,
-          submissionNote: schedule.song.submissionNotePublic === true ? schedule.song.submissionNote : null,
-          submissionNotePublic: schedule.song.submissionNotePublic === true,
+          hasSubmissionNote: schedule.song?.submissionNotePublic === true && !!schedule.song?.submissionNote,
+          submissionNote: schedule.song?.submissionNotePublic === true ? schedule.song?.submissionNote : null,
+          submissionNotePublic: schedule.song?.submissionNotePublic === true,
           // 重播申请信息
           replayRequestCount: isReplaySong ? replayRequestCount : 0,
           replayRequesters: isReplaySong ? formattedReplayRequesters : [],
