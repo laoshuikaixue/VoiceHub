@@ -49,14 +49,10 @@ if (typeof globalThis !== 'undefined') {
  */
 async function doSyncServerTime() {
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 1500)
-
     const startTime = Date.now()
     const response = await fetch('https://acs.m.taobao.com/gw/mtop.common.getTimestamp/', {
-      signal: controller.signal
+      signal: AbortSignal.timeout(1500)
     })
-    clearTimeout(timeoutId)
     const data = await response.json()
 
     if (data?.data?.t) {
@@ -67,18 +63,15 @@ async function doSyncServerTime() {
       console.log(`[Server TimeSync] 服务器时间同步成功，偏移量: ${getTimeOffset()}ms`)
       return
     }
+    throw new Error('淘宝时间接口返回数据格式不正确')
   } catch (error) {
     console.warn('[Server TimeSync] 淘宝时间同步失败，尝试备用接口', error)
 
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 1500)
-
       const startTime = Date.now()
       const response = await fetch('https://cube.meituan.com/ipromotion/cube/toc/component/base/getServerCurrentTime', {
-        signal: controller.signal
+        signal: AbortSignal.timeout(1500)
       })
-      clearTimeout(timeoutId)
       const data = await response.json()
 
       if (data?.data) {
@@ -89,6 +82,7 @@ async function doSyncServerTime() {
         console.log(`[Server TimeSync] 服务器时间同步成功 (备用)，偏移量: ${getTimeOffset()}ms`)
         return
       }
+      throw new Error('美团时间接口返回数据格式不正确')
     } catch (error2) {
       console.error('[Server TimeSync] 服务器时间同步完全失败，将使用系统本地时间:', error2)
       markSynced()
