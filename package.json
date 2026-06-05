@@ -44,7 +44,7 @@
     "@pixi/filter-bulge-pinch": "^5.1.1",
     "@pixi/filter-color-matrix": "^7.4.3",
     "@pixi/sprite": "^7.4.3",
-    "@sentry/node": "^10.55.0",
+    "@sentry/node": "^10.56.0",
     "@sentry/vue": "^10.56.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.1",
