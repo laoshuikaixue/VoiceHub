@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     const filterSubmissionNotes = (schedules: any[]) => {
       if (!schedules) return
       schedules.forEach((schedule) => {
-        if (!schedule.song) return
+        if (!schedule?.song) return
         const isRequester = Boolean(user && schedule.song.requesterId === user.id)
         const canView = !!schedule.song.submissionNotePublic || (user && (isAdmin || isRequester))
         if (!canView) {
@@ -414,7 +414,7 @@ export default defineEventHandler(async (event) => {
           hasSubmissionNote: !!schedule.song?.submissionNote,
           submissionNote: schedule.song?.submissionNote || null,
           submissionNotePublic: schedule.song?.submissionNotePublic === true,
-          requesterId: schedule.song.requesterId,
+          requesterId: schedule.song?.requesterId || null,
           // 重播申请信息
           replayRequestCount: isReplaySong ? replayRequestCount : 0,
           replayRequesters: isReplaySong ? formattedReplayRequesters : [],
