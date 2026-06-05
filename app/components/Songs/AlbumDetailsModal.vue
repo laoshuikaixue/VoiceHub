@@ -291,7 +291,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'
@@ -391,7 +391,7 @@ const loadAlbumDetails = async () => {
       if (response && response.album && Array.isArray(response.songs)) {
         // 转换为统一格式
         const album = response.album
-        const artistName = album.artist?.name || album.artists?.map(a => a.name).join('/') || '未知艺术家'
+        const artistName = album.artist?.name || album.artists?.map(a => a?.name).filter(Boolean).join('/') || '未知艺术家'
         
         albumInfo.value = {
           id: album.id,
@@ -405,7 +405,7 @@ const loadAlbumDetails = async () => {
         }
 
         songs.value = response.songs.map((item, i) => {
-          const singerName = item.ar?.map(a => a.name).join('/') || '未知艺术家'
+          const singerName = item.ar?.map(a => a?.name).filter(Boolean).join('/') || '未知艺术家'
           const durationMs = item.dt || 0
           return {
             songmid: item.id,
@@ -602,6 +602,13 @@ const close = () => {
   submitting.value = false
   selectedSongId.value = null
 }
+
+onBeforeUnmount(() => {
+  if (albumAbortController) {
+    albumAbortController.abort()
+    albumAbortController = null
+  }
+})
 
 // 暴露方法给父组件，用于在提交失败时重置状态
 const resetSubmissionState = () => {
