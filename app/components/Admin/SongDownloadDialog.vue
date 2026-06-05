@@ -713,10 +713,11 @@ const preloadSelectedSongs = async () => {
 
   const songsToLoad = props.songs.filter(
     (s) => {
-      if (!selectedSongs.value.has(s.song.id)) return false
-      const cached = preloadedSongs.get(s.song.id)
+      const songId = s.song?.id
+      if (!songId || !selectedSongs.value.has(songId)) return false
+      const cached = preloadedSongs.get(songId)
       if (cached && cached.loading) return false
-      return !getUsablePreload(s.song.id, selectedQuality.value)
+      return !getUsablePreload(songId, selectedQuality.value)
     }
   )
 
