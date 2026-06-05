@@ -1808,6 +1808,7 @@ const handleEpisodeVote = async (episode) => {
 // 检查搜索结果是否已存在完全匹配的歌曲
 // 标准化字符串（与useSongs中的逻辑保持一致）
 const normalizeString = (str) => {
+  if (!str) return ''
   return str
     .toLowerCase()
     .replace(/\b(feat\.?|ft\.?)\b/gi, '')
@@ -2291,7 +2292,7 @@ const playSong = async (result, playlist, playlistIndex) => {
       musicUrl: s.musicUrl || null
     }))
     // 如果提供了playlistIndex则使用，否则自动查找
-    finalIndex = typeof playlistIndex === 'number' ? playlistIndex : finalPlaylist.findIndex(s => s.id === song.id)
+    finalIndex = typeof playlistIndex === 'number' ? playlistIndex : finalPlaylist.findIndex(s => s.id === String(song.id))
     if (finalIndex < 0) finalIndex = 0
   }
 

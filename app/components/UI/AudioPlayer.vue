@@ -770,7 +770,6 @@ const handleTogglePlay = async () => {
 }
 
 const handlePrevious = async () => {
-  consecutiveSkipCount.value = 0
   const result = await sync.playPrevious(props.song)
   if (result.success && result.newSong) {
     emit('songChange', result.newSong)
@@ -778,7 +777,6 @@ const handlePrevious = async () => {
 }
 
 const handleNext = async () => {
-  consecutiveSkipCount.value = 0
   const result = await sync.playNext(props.song)
   if (result.success && result.newSong) {
     emit('songChange', result.newSong)

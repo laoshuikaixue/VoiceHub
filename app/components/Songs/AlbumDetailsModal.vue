@@ -453,17 +453,22 @@ const normalizeStr = (str) => {
     .trim()
 }
 
-const getSongStatus = (song) => {
-  const songNameNormalized = normalizeStr(song.name)
-  const songSingerNormalized = normalizeStr(song.singer)
-
-  const submittedSong = props.submittedSongs.find((s) => {
-    if (s.musicId && (String(s.musicId) === String(song.songmid))) {
-      return true
+const submittedSongsMap = computed(() => {
+  const map = new Map()
+  props.submittedSongs.forEach((s) => {
+    if (s.musicId) {
+      map.set(String(s.musicId), s)
     }
-    return normalizeStr(s.title) === songNameNormalized &&
-           normalizeStr(s.artist) === songSingerNormalized
+    const key = normalizeStr(s.title) + '|' + normalizeStr(s.artist)
+    map.set(key, s)
   })
+  return map
+})
+
+const getSongStatus = (song) => {
+  const songmidStr = String(song.songmid)
+  const key = normalizeStr(song.name) + '|' + normalizeStr(song.singer)
+  const submittedSong = submittedSongsMap.value.get(songmidStr) || submittedSongsMap.value.get(key)
 
   if (submittedSong) {
     return {
