@@ -318,6 +318,8 @@ const showFallbackOpenDialog = ref(false)
 const fallbackOpenDialogUrl = ref('')
 const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否在新标签页打开原始链接？')
 const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重试逻辑
+const consecutiveSkipCount = ref(0) // 连续跳过失败的歌曲数
+const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -480,6 +482,7 @@ const handleTimeUpdate = () => {
 
 const handlePlay = () => {
   control.onPlay()
+  consecutiveSkipCount.value = 0 // 播放成功，重置连续跳过计数
 
   if (isSyncingFromGlobal.value) return
 
@@ -645,6 +648,17 @@ const handleError = async (error) => {
   if (isBilibiliSong(activeSong.value)) {
     // 如果是播放列表模式，且不是手动单曲播放模式，则自动跳过
     if (props.isPlaylistMode && control.playMode.value !== 'off') {
+      consecutiveSkipCount.value++
+      if (consecutiveSkipCount.value >= MAX_CONSECUTIVE_SKIP) {
+        console.log('[AudioPlayer] 连续多次跳过，停止自动跳过')
+        consecutiveSkipCount.value = 0
+        control.stop()
+        sync.syncStopToGlobal()
+        if (window.$showNotification) {
+          window.$showNotification('连续多首歌曲播放失败，已停止自动播放', 'warning')
+        }
+        return
+      }
       console.log('[AudioPlayer] 哔哩哔哩视频播放失败，处于列表播放模式，自动跳过')
       if (window.$showNotification) {
         window.$showNotification('哔哩哔哩视频播放失败，自动跳过', 'warning')
@@ -756,6 +770,7 @@ const handleTogglePlay = async () => {
 }
 
 const handlePrevious = async () => {
+  consecutiveSkipCount.value = 0
   const result = await sync.playPrevious(props.song)
   if (result.success && result.newSong) {
     emit('songChange', result.newSong)
@@ -763,6 +778,7 @@ const handlePrevious = async () => {
 }
 
 const handleNext = async () => {
+  consecutiveSkipCount.value = 0
   const result = await sync.playNext(props.song)
   if (result.success && result.newSong) {
     emit('songChange', result.newSong)
