@@ -2297,7 +2297,7 @@ const playSong = async (result, playlist, playlistIndex) => {
       ...s,
       id: String(s.id),
       musicId: String(s.musicId || s.id),
-      musicUrl: s.musicUrl || null
+      musicUrl: s.musicUrl || s.url || null
     }))
     // 如果提供了playlistIndex则使用，否则自动查找
     finalIndex = typeof playlistIndex === 'number' ? playlistIndex : finalPlaylist.findIndex(s => s.id === String(song.id))

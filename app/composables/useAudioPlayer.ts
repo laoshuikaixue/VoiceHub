@@ -30,8 +30,8 @@ const duration = ref(0) // 歌曲总时长（秒）
 export function useAudioPlayer() {
   // 播放歌曲
   const playSong = (song: PlayableSong, playlist?: PlayableSong[], playlistIndex?: number) => {
-    // 对于哔哩哔哩视频，允许没有 musicUrl（会显示 iframe 预览）
-    if (!song.musicUrl && !isBilibiliSong(song)) {
+    // 允许没有 musicUrl 但有 musicPlatform+musicId 的歌曲通过（由 loadSong 动态解析）
+    if (!song.musicUrl && !isBilibiliSong(song) && !(song.musicPlatform && song.musicId)) {
       console.error('歌曲没有可播放的URL')
       return false
     }
