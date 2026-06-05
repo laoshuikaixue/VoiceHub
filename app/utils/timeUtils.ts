@@ -26,11 +26,6 @@ function getSyncedNow(): number {
   return (globalThis as any).getSyncedTimestamp?.() ?? Date.now()
 }
 
-/** 获取同步后的当前 Date 对象 */
-export function getSyncedDate(): Date {
-  return new Date(getSyncedNow())
-}
-
 /**
  * 获取当前时间 (真实 UTC)
  * 使用同步后的时间
