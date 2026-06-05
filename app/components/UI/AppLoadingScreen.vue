@@ -185,11 +185,10 @@ const warpSettings = computed(() => ({
 }
 
 .ring-percent {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: normal;
   color: #fff;
-  font-family: ui-monospace, monospace;
 }
 
 .text-container {
@@ -278,7 +277,7 @@ const warpSettings = computed(() => ({
   }
 
   .ring-percent {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .loading-message {
