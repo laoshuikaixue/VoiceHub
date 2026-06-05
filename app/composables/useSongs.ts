@@ -151,7 +151,10 @@ export const useSongs = () => {
             requestedAt: schedule.song.requestedAt || new Date().toISOString(),
             cover: schedule.song.cover || null,
             musicPlatform: schedule.song.musicPlatform || null,
-            musicId: schedule.song.musicId || null
+            musicId: schedule.song.musicId || null,
+            hasSubmissionNote: schedule.song.hasSubmissionNote === true,
+            submissionNote: schedule.song.submissionNote || null,
+            submissionNotePublic: schedule.song.submissionNotePublic === true
           }
           songsMap.set(songId, completeSong)
         }

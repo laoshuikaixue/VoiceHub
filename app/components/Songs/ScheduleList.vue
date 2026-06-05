@@ -202,6 +202,14 @@
                           >
                             <Icon name="repeat" :size="14" />
                           </span>
+                          <button
+                            v-if="schedule.song?.hasSubmissionNote && schedule.song?.submissionNote"
+                            class="submission-note-trigger"
+                            title="查看备注留言"
+                            @click.stop="openSubmissionNote(schedule.song)"
+                          >
+                            <Icon :size="14" name="message-circle" />
+                          </button>
                         </h3>
                         <div class="song-meta">
                           <span
@@ -587,6 +595,41 @@
       @login-success="handleLoginSuccess"
     />
   </Teleport>
+
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="submissionNoteDialog.show"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        @click="closeSubmissionNote"
+      >
+        <div class="submission-note-modal" @click.stop>
+          <div class="submission-note-header">
+            <h4>投稿备注留言</h4>
+            <button @click="closeSubmissionNote">
+              <Icon :size="14" name="close" />
+            </button>
+          </div>
+          <div class="submission-note-meta">
+            <span class="song-title-tag">{{ submissionNoteDialog.songTitle }}</span>
+            <span :class="['visibility-tag', submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private']">
+              {{ submissionNoteDialog.isPublic ? '公开备注' : '仅管理员可见' }}
+            </span>
+          </div>
+          <div class="submission-note-content-box">
+            <p class="submission-note-content">{{ submissionNoteDialog.note }}</p>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -662,6 +705,13 @@ const confirmDialog = ref({
   message: '',
   type: 'warning',
   onConfirm: null
+})
+
+const submissionNoteDialog = ref({
+  show: false,
+  songTitle: '',
+  note: '',
+  isPublic: false
 })
 
 const isInitialized = ref(false)
@@ -799,8 +849,7 @@ const toLocalMidnightTimestamp = (dateStr) => {
 const findAndSelectTodayOrClosestDate = async () => {
   if (availableDates.value.length === 0) return
 
-  const today = getSyncedDate()
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const todayStr = getBeijingTimeISOString().split('T')[0]
 
   let selectedIndex = 0
 
@@ -1250,6 +1299,20 @@ const closeConfirmDialog = () => {
   setTimeout(() => {
     confirmDialog.value.onConfirm = null
   }, 300)
+}
+
+const openSubmissionNote = (song) => {
+  if (!song?.submissionNote) return
+  submissionNoteDialog.value = {
+    show: true,
+    songTitle: `${song.title || '未知歌曲'} - ${song.artist || '未知歌手'}`,
+    note: song.submissionNote,
+    isPublic: song.submissionNotePublic === true
+  }
+}
+
+const closeSubmissionNote = () => {
+  submissionNoteDialog.value.show = false
 }
 
 const handleConfirmAction = () => {
@@ -3564,5 +3627,126 @@ const vRipple = {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.submission-note-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  margin-left: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.08);
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  flex-shrink: 0;
+}
+
+.submission-note-trigger:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 6px 12px rgba(96, 165, 250, 0.15);
+}
+
+.submission-note-modal {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  color: #f3f4f6;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.submission-note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.submission-note-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f3f4f6;
+  margin: 0;
+}
+
+.submission-note-header button {
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submission-note-header button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f4f5;
+}
+
+.submission-note-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.song-title-tag {
+  font-size: 13px;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.visibility-tag {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.visibility-public {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.visibility-private {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.submission-note-content-box {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.submission-note-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #e4e4e7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
 }
 </style>
