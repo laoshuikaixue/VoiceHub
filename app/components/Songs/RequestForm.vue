@@ -413,13 +413,13 @@
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
                       <p 
                         v-if="result.album" 
-                        :class="['result-album', { 'clickable-album': result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' }]" 
-                        :title="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' ? '点击查看专辑详情' : result.album"
-                        @click.stop="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' ? openAlbumDetails(result) : null"
+                        :class="['result-album', { 'clickable-album': isNeteaseAlbum(result) }]" 
+                        :title="isNeteaseAlbum(result) ? '点击查看专辑详情' : result.album"
+                        @click.stop="isNeteaseAlbum(result) ? openAlbumDetails(result) : null"
                       >
                         <span class="album-label">专辑：</span>
                         <span class="album-name">{{ result.album }}</span>
-                        <Icon v-if="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease'" name="external-link" :size="12" class="album-link-icon" />
+                        <Icon v-if="isNeteaseAlbum(result)" name="external-link" :size="12" class="album-link-icon" />
                       </p>
                     </div>
                     <div class="result-actions">
@@ -2743,6 +2743,11 @@ const recentSongsModalRef = ref(null)
 const playlistModalRef = ref(null)
 const albumModalRef = ref(null)
 
+// 判断搜索结果是否为网易云专辑（仅网易云支持专辑详情弹窗）
+const isNeteaseAlbum = (result) => {
+  return result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform.value) === 'netease'
+}
+
 // 打开专辑详情
 const openAlbumDetails = (result) => {
   if (!result.albumId) return
@@ -2793,8 +2798,10 @@ const handleAlbumSongVote = async (song) => {
       window.$showNotification('点赞成功！', 'success')
     }
     
-    // 刷新歌曲列表
-    await songService.fetchSongs(false, currentSemester.value?.name)
+    // 静默刷新歌曲列表
+    songService.refreshSongsSilent().catch((err) => {
+      console.error('刷新歌曲列表失败', err)
+    })
   } catch (error) {
     console.error('点赞失败:', error)
     if (window.$showNotification) {

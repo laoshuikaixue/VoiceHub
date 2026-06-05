@@ -1096,7 +1096,7 @@ watch(
     coverError.value = false
 
     // 避免双向触发 - 仅当是同一首歌时才跳过（防止playNext时block加载新歌）
-    if (isSyncingFromGlobal.value && oldSong && newSong.id === oldSong.id) return
+    if (isSyncingFromGlobal.value && oldSong && String(newSong.id) === String(oldSong.id)) return
 
     // 确保组件已经挂载
     if (!isMounted.value) return

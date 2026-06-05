@@ -361,6 +361,8 @@ const loadAlbumDetails = async () => {
 
   loading.value = true
   error.value = null
+  albumInfo.value = null
+  songs.value = []
 
   try {
     if (props.platform === 'netease') {
