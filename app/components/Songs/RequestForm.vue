@@ -425,7 +425,7 @@
                     <div class="result-actions">
                       <!-- QQ音乐上传到网易云按钮（仅当结果确实来自QQ音乐时显示） -->
                       <button
-                        v-if="(result.actualMusicPlatform || result.musicPlatform) === 'tencent'"
+                        v-if="isTencentSource(result)"
                         class="cloud-disk-btn"
                         title="上传到网易云音乐云盘"
                         @click.stop.prevent="openUploadDialog(result)"
@@ -2753,16 +2753,24 @@ const albumModalRef = ref(null)
 
 // 判断搜索结果是否为网易云专辑（仅网易云支持专辑详情弹窗）
 const isNeteaseAlbum = (result) => {
-  return result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform.value) === 'netease'
+  const p = result.actualMusicPlatform || result.musicPlatform || platform.value
+  return !!(result.albumId && p && p.includes('netease'))
 }
 
-// 打开专辑详情
+// 判断结果是否来自QQ音乐（用于显示上传按钮）
+const isTencentSource = (result) => {
+  const p = result.actualMusicPlatform || result.musicPlatform || ''
+  return p.includes('vkeys') || p === 'tencent'
+}
+
+// 打开专辑详情（标准化平台名称，AlbumDetailsModal 只识别 netease/tencent）
 const openAlbumDetails = (result) => {
   if (!result.albumId) return
   
   selectedAlbumId.value = result.albumId
   selectedAlbumName.value = result.album || result.albumName
-  selectedAlbumPlatform.value = result.actualMusicPlatform || result.musicPlatform || platform.value
+  const rawPlatform = result.actualMusicPlatform || result.musicPlatform || platform.value
+  selectedAlbumPlatform.value = rawPlatform.includes('netease') ? 'netease' : 'tencent'
   showAlbumDetailsModal.value = true
 }
 
