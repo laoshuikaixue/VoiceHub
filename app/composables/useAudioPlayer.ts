@@ -2,7 +2,7 @@ import { computed, readonly, ref } from 'vue'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 
 export interface PlayableSong {
-  id: number
+  id: number | string
   title: string
   artist: string
   musicUrl?: string | null
@@ -13,7 +13,7 @@ export interface PlayableSong {
 }
 
 interface PlaylistItem {
-  id: number
+  id: number | string
   song: PlayableSong
   playDate?: string
   playTimeId?: number
@@ -48,17 +48,17 @@ export function useAudioPlayer() {
       ) {
         currentPlaylistIndex.value = playlistIndex
       } else {
-        const index = playlist.findIndex((item) => item.id === song.id)
+        const index = playlist.findIndex((item) => String(item.id) === String(song.id))
         currentPlaylistIndex.value = index >= 0 ? index : -1
       }
-    } else if (currentSong.value && currentSong.value.id !== song.id) {
+    } else if (currentSong.value && String(currentSong.value.id) !== String(song.id)) {
       // 如果没有提供播放列表且是新歌曲，清空播放列表
       currentPlaylist.value = []
       currentPlaylistIndex.value = -1
     }
 
     // 如果是同一首歌，则开始播放（不切换状态，由调用方决定）
-    if (currentSong.value && currentSong.value.id === song.id) {
+    if (currentSong.value && String(currentSong.value.id) === String(song.id)) {
       // 保持当前歌曲的引用更新，以便获取可能更新的 URL 等信息
       currentSong.value = song
       isPlaying.value = true
@@ -256,13 +256,13 @@ export function useAudioPlayer() {
   }
 
   // 检查指定ID的歌曲是否正在播放
-  const isCurrentPlaying = (songId: number) => {
-    return isPlaying.value && currentSong.value && currentSong.value.id === songId
+  const isCurrentPlaying = (songId: number | string) => {
+    return isPlaying.value && currentSong.value && String(currentSong.value.id) === String(songId)
   }
 
   // 检查指定ID的歌曲是否为当前歌曲（不管是否在播放）
-  const isCurrentSong = (songId: number) => {
-    return currentSong.value && currentSong.value.id === songId
+  const isCurrentSong = (songId: number | string) => {
+    return currentSong.value && String(currentSong.value.id) === String(songId)
   }
 
   // 检查是否有下一首歌曲
@@ -360,7 +360,7 @@ export function useAudioPlayer() {
 
   // 更新当前歌曲信息（用于音质切换等场景）
   const updateCurrentSong = (updatedSong: PlayableSong) => {
-    if (currentSong.value && currentSong.value.id === updatedSong.id) {
+    if (currentSong.value && String(currentSong.value.id) === String(updatedSong.id)) {
       currentSong.value = updatedSong
       // 同时更新播放列表中的对应项
       if (currentPlaylistIndex.value !== -1 && currentPlaylist.value[currentPlaylistIndex.value]) {
