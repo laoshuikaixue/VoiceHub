@@ -94,6 +94,12 @@
       <circle cx="18" cy="16" r="3" />
     </g>
 
+    <!-- 唱片图标 -->
+    <g v-else-if="name === 'disc'">
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="3" />
+    </g>
+
     <!-- 视频图标 -->
     <g v-else-if="name === 'video'">
       <path d="m22 8-6 4 6 4V8Z" />
@@ -378,6 +384,13 @@
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
       <polyline points="17 8 12 3 7 8" />
       <line x1="12" x2="12" y1="3" y2="15" />
+    </g>
+
+    <!-- 外部链接图标 -->
+    <g v-else-if="name === 'external-link'">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
     </g>
 
     <!-- 云上传图标 -->
