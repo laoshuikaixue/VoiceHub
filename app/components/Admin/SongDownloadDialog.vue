@@ -712,7 +712,12 @@ const preloadSelectedSongs = async () => {
   if (selectedSongs.value.size === 0) return
 
   const songsToLoad = props.songs.filter(
-    (s) => selectedSongs.value.has(s.song.id) && !getUsablePreload(s.song.id, selectedQuality.value)
+    (s) => {
+      if (!selectedSongs.value.has(s.song.id)) return false
+      const cached = preloadedSongs.get(s.song.id)
+      if (cached && cached.loading) return false
+      return !getUsablePreload(s.song.id, selectedQuality.value)
+    }
   )
 
   // 并发限制: 3
