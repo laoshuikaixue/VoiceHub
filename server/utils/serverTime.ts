@@ -58,10 +58,12 @@ async function doSyncServerTime() {
     if (data?.data?.t) {
       const endTime = Date.now()
       const latency = Math.round((endTime - startTime) / 2)
-      const realTime = parseInt(data.data.t) + latency
-      setTimeOffset(realTime - endTime)
-      console.log(`[Server TimeSync] 服务器时间同步成功，偏移量: ${getTimeOffset()}ms`)
-      return
+      const realTime = parseInt(data.data.t, 10) + latency
+      if (!isNaN(realTime)) {
+        setTimeOffset(realTime - endTime)
+        console.log(`[Server TimeSync] 服务器时间同步成功，偏移量: ${getTimeOffset()}ms`)
+        return
+      }
     }
     throw new Error('淘宝时间接口返回数据格式不正确')
   } catch (error) {
@@ -77,10 +79,12 @@ async function doSyncServerTime() {
       if (data?.data) {
         const endTime = Date.now()
         const latency = Math.round((endTime - startTime) / 2)
-        const realTime = parseInt(data.data) + latency
-        setTimeOffset(realTime - endTime)
-        console.log(`[Server TimeSync] 服务器时间同步成功 (备用)，偏移量: ${getTimeOffset()}ms`)
-        return
+        const realTime = parseInt(data.data, 10) + latency
+        if (!isNaN(realTime)) {
+          setTimeOffset(realTime - endTime)
+          console.log(`[Server TimeSync] 服务器时间同步成功 (备用)，偏移量: ${getTimeOffset()}ms`)
+          return
+        }
       }
       throw new Error('美团时间接口返回数据格式不正确')
     } catch (error2) {
