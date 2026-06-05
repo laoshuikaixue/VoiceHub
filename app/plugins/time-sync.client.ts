@@ -8,7 +8,11 @@ export default defineNuxtPlugin(async (nuxtApp) => {
       ;(globalThis as any).getSyncedDate = getSyncedDate
     }
 
-    // 异步执行时间同步，不阻塞应用初始化
-    syncTime().catch(console.error)
+    // 同步阻塞时间同步，确保 Hydration 时客户端与服务端时间一致
+    try {
+      await syncTime()
+    } catch (err) {
+      console.error('[TimeSync] 客户端时间同步失败:', err)
+    }
   }
 })
