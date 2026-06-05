@@ -413,7 +413,7 @@
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
                       <p 
                         v-if="result.album" 
-                        :class="['result-album', { 'clickable-album': result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' }]"
+                        :class="['result-album', { 'clickable-album': result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' }]" 
                         :title="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' ? '点击查看专辑详情' : result.album"
                         @click.stop="result.albumId && (result.actualMusicPlatform || result.musicPlatform || platform) === 'netease' ? openAlbumDetails(result) : null"
                       >
@@ -1811,7 +1811,7 @@ const normalizeString = (str) => {
   return str
     .toLowerCase()
     .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_()\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
     .trim()
 }

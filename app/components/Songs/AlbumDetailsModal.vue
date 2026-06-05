@@ -448,7 +448,7 @@ const normalizeStr = (str) => {
   return str
     .toLowerCase()
     .replace(/\b(feat\.?|ft\.?)\b/gi, '')
-    .replace(/[\s\-_()\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
     .trim()
 }
