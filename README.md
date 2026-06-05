@@ -1833,7 +1833,7 @@ Thanks goes to these wonderful people:
 - [Bilibili-audio-extraction](https://github.com/rio4raki/Bilibili-audio-extraction) (哔哩哔哩音频流获取参考)
 - [SPlayer](https://github.com/imsyy/SPlayer)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
-- [Netease_url](https://github.com/Suxiaoqinx/Netease_url)
+- [MusicAPI-rrvenn](https://music.rrvenn.cn)
 
 ## 许可证
 
