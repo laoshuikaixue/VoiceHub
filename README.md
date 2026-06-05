@@ -4,7 +4,7 @@
 
 <div align="center">
 
-[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e) | [项目宣传片](https://www.bilibili.com/video/BV1B9ArzMEkA)
+[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e) | [项目宣传片](https://www.bilibili.com/video/BV1B9ArzMEkA) | [赞助支持](/#sponsor)
 
 </div>
 
@@ -576,6 +576,8 @@ VoiceHub/
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
+│   │   │   ├── CaptchaInput.vue      # 图形验证码输入组件
+│   │   │   ├── TurnstileWidget.vue   # Cloudflare Turnstile验证组件
 │   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
 │   │   │   ├── TwoFactorSetup.vue    # 双重认证设置组件
 │   │   │   └── TwoFactorVerify.vue   # 双重认证验证组件
@@ -624,7 +626,10 @@ VoiceHub/
 │   │   │   ├── Notification.vue       # 单个通知组件
 │   │   │   ├── NotificationContainer.vue # 通知容器组件
 │   │   │   ├── PageTransition.vue     # 页面过渡动画
-│   │   │   └── ProgressBar.vue        # 进度条组件
+│   │   │   ├── ProgressBar.vue        # 进度条组件
+│   │   │   ├── AppLoadingScreen.vue   # 启动加载屏幕组件
+│   │   │   ├── SongComments.vue       # 网易云音乐评论组件
+│   │   │   └── WarpCanvas.vue         # 动态画布背景组件
 │   │   ├── year-review/       # 年度回顾组件
 │   │   └── SiteFooter.vue         # 站点页脚
 │   ├── composables/           # Vue 3 组合式API
@@ -824,6 +829,8 @@ VoiceHub/
 │   │   │   └── netease/           # 网易云增强接口代理
 │   │   │       └── [...path].ts   # 转发网易云API请求
 │   │   ├── auth/           # 认证API
+│   │   │   ├── captcha.get.ts         # 图形验证码
+│   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
 │   │   │   │   └── verify.post.ts     # 验证2FA代码
@@ -914,6 +921,7 @@ VoiceHub/
 │   │   ├── sys/            # 系统辅助API
 │   │   │   └── time.get.ts          # 获取校准后的服务器时间
 │   │   ├── system/         # 系统API
+│   │   │   ├── instance.get.ts      # 实例信息
 │   │   │   ├── location.get.ts      # 获取系统位置信息
 │   │   │   ├── reconnect.post.ts    # 重连数据库
 │   │   │   └── status.get.ts        # 系统状态
@@ -1852,6 +1860,16 @@ Thanks goes to these wonderful people:
 本项目有对应的原生鸿蒙版本：https://github.com/laoshuikaixue/VoiceHub-hmos
 
 该项目通过创新的混合架构设计，实现了Web端Vue音频播放器与鸿蒙原生端的跨平台音频控制同步
+
+<h2 id="sponsor">赞助支持</h2>
+
+如果这个项目对你有帮助，欢迎赞助支持，让我有更多动力持续维护和更新。
+
+<div align="center">
+
+<img width="200" alt="wechat" src="https://github.com/user-attachments/assets/0cd13f75-bd9c-4486-8bba-a8895e2e55fd" />
+
+</div>
 
 ---
 
