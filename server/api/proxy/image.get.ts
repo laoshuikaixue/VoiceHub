@@ -143,6 +143,15 @@ const retryFetchImage = async (imageUrl, maxRetries = 2) => {
       return await fetchImage(imageUrl)
     } catch (err) {
       lastError = err
+      // 校验层面错误（400/403）重试无意义，直接中断
+      if (
+        err &&
+        typeof err === 'object' &&
+        'statusCode' in err &&
+        (err.statusCode === 400 || err.statusCode === 403)
+      ) {
+        throw err
+      }
       if (i < maxRetries) {
         await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
       }

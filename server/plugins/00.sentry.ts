@@ -69,7 +69,9 @@ export default defineNitroPlugin((nitroApp) => {
   const config = useRuntimeConfig()
   if (!config.jwtSecret) {
     // 配置错误不进入遥测链路，避免在认证未初始化时泄露启动上下文
-    throw new Error('JWT_SECRET is required')
+    throw new Error(
+      'JWT_SECRET is required. Set it to a random string for local development.'
+    )
   }
 
   const sentryConfig = config.sentry
