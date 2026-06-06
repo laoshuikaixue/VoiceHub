@@ -11,7 +11,7 @@
               <Icon :size="18" name="chevron-left" />
             </button>
             <div class="current-date-display" @click="toggleDatePicker">
-              <span class="date-text">{{ currentDateFormatted.main }}</span>
+              <span class="date-text" v-html="currentDateFormatted" />
               <Icon :size="12" class="dropdown-icon" name="chevron-down" />
             </div>
             <button
@@ -49,10 +49,8 @@
                   v-ripple
                   :class="['date-picker-item', { active: currentDateIndex === index }]"
                   @click="selectDateAndClose(index)"
-                >
-                  <span class="date-main">{{ formatDate(date, false).main }}</span>
-                  <span class="weekday">{{ formatDate(date, false).weekday }}</span>
-                </div>
+                  v-html="formatDate(date, false)"
+                />
 
                 <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
               </div>
@@ -68,10 +66,8 @@
             v-ripple
             :class="['date-item', { active: currentDateIndex === index }]"
             @click="selectDate(index)"
-          >
-            <span class="date-main">{{ formatDate(date).main }}</span>
-            <span class="weekday">{{ formatDate(date).weekday }}</span>
-          </div>
+            v-html="formatDate(date)"
+          />
 
           <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
         </div>
@@ -87,10 +83,7 @@
       <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
-          <h2 class="current-date">
-            <span class="date-main">{{ currentDateFormatted.main }}</span>
-            <span v-if="currentDateFormatted.weekday" class="weekday">{{ currentDateFormatted.weekday }}</span>
-          </h2>
+          <h2 class="current-date" v-html="currentDateFormatted" />
           <button
             v-if="isNeteaseLoggedIn"
             class="add-playlist-btn"
@@ -925,7 +918,7 @@ const findAndSelectTodayOrClosestDate = async () => {
 
 // 格式化当前日期
 const currentDateFormatted = computed(() => {
-  if (!currentDate.value) return { main: '无日期', weekday: '' }
+  if (!currentDate.value) return '无日期'
   return formatDate(currentDate.value, isMobile.value)
 })
 
@@ -1061,12 +1054,12 @@ const formatDate = (dateStr, isMobile = false) => {
 
     // 移动端显示更紧凑的格式
     if (isMobile) {
-      return { main: `${month}月${day}日 ${weekday}`, weekday: '' }
+      return `${month}月${day}日 ${weekday}`
     }
 
-    return { main: `${year}年${month}月${day}日`, weekday }
+    return `${year}年${month}月${day}日\n<span class="weekday">${weekday}</span>`
   } catch (e) {
-    return { main: dateStr || '未知日期', weekday: '' }
+    return dateStr || '未知日期'
   }
 }
 
@@ -1834,10 +1827,6 @@ const vRipple = {
   font-size: 12px;
   opacity: 0.7;
   margin-top: 2px;
-}
-
-.date-main {
-  display: block;
 }
 
 /* 垂直分隔线 */

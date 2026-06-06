@@ -53,11 +53,14 @@ export default defineEventHandler(async (event) => {
 
   let verified = false
   const clientIp = getClientIP(event)
-  const totpFailureKey = `2fa_totp_ip:${clientIp}`
+  const totpUserFailureKey = `2fa_totp_user:${targetUserId}`
+  const totpIpFailureKey = `2fa_totp_ip:${clientIp}`
 
   if (type === 'totp') {
-    const failureCount = Number((await getStore(totpFailureKey)) || 0)
-    if (failureCount >= TOTP_FAILURE_LIMIT) {
+    const userFailureCount = Number((await getStore(totpUserFailureKey)) || 0)
+    const ipFailureCount = Number((await getStore(totpIpFailureKey)) || 0)
+
+    if (userFailureCount >= TOTP_FAILURE_LIMIT || ipFailureCount >= TOTP_FAILURE_LIMIT) {
       throw createError({
         statusCode: 429,
         message: '动态验证码错误次数过多，请在 5 分钟后重试'
@@ -73,11 +76,13 @@ export default defineEventHandler(async (event) => {
     verified = authenticator.check(code, identity.providerUserId)
     
     if (!verified) {
-      await incrStore(totpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
+      await incrStore(totpUserFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
+      await incrStore(totpIpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
       throw createError({ statusCode: 400, message: '动态验证码错误' })
     }
 
-    await delStore(totpFailureKey)
+    await delStore(totpUserFailureKey)
+    await delStore(totpIpFailureKey)
   } else if (type === 'email') {
     const stored = twoFactorCodes.get(targetUserId)
     
