@@ -1,4 +1,4 @@
-import { createTxSearchBody, txRequest } from '../../../utils/native_tx'
+import { createTxSearchBody, txRequest, txSignedRequest } from '../../../utils/native_tx'
 import { decodeName, formatPlayTime, sizeFormate } from '../../../utils/native_common'
 
 export default defineEventHandler(async (event) => {
@@ -13,9 +13,16 @@ export default defineEventHandler(async (event) => {
 
   const body = createTxSearchBody(str, page, limit)
 
+  let result: any
   try {
-    const result: any = await txRequest('https://u.y.qq.com/cgi-bin/musicu.fcg', body)
+    result = await txSignedRequest(body)
+  } catch (signedErr) {
+    console.warn('[tx.get] 签名请求失败，回退到普通请求:', signedErr)
+    // fallback 到普通 musicu.fcg 请求
+    result = await txRequest('https://u.y.qq.com/cgi-bin/musicu.fcg', body)
+  }
 
+  try {
     if (result.code !== 0 || result.req?.code !== 0) {
       throw createError({ statusCode: 502, message: 'Tencent API Error' })
     }

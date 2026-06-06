@@ -270,10 +270,11 @@ export const useMusicSources = () => {
 
     try {
       // 优先尝试 Native Music 本地集成搜索 (仅支持网易云和QQ音乐)
-      // 只有当不是播客搜索时才使用
-      // 策略调整：如果服务器在中国，优先使用 Native Music；如果在海外，跳过 Native Music 直接使用第三方 API (除非第三方都失败)
+      // 策略调整：
+      // - QQ音乐平台：无论国内外均优先 Native Music
+      // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
-      const shouldUseNativeFirst = isServerInChina.value === true
+      const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
 
       if (
         shouldUseNativeFirst &&
@@ -281,7 +282,10 @@ export const useMusicSources = () => {
         params.type !== 1009
       ) {
         try {
-          console.log(`[searchSongs] 服务器位于国内，优先尝试 Native Music 搜索...`)
+          const reason = platform === 'tencent'
+            ? '[searchSongs] QQ音乐平台，优先尝试 Native Music 搜索...'
+            : '[searchSongs] 服务器位于国内，优先尝试 Native Music 搜索...'
+          console.log(reason)
           const result = await searchNativeMusic(params)
           if (result && result.length > 0) {
             currentSource.value = 'native-music'

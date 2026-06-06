@@ -1,3 +1,5 @@
+import crypto from 'node:crypto'
+
 export const txHeaders = {
   'User-Agent': 'QQMusic 14090508(android 12)'
 }
@@ -6,6 +8,54 @@ const TX_MUSICU_URL = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
 const QQ_MID_PREFIX_RE = /^qqmid:/i
 const QQ_LEGACY_ID_RE = /^\d+$/
 const TX_DETAIL_CACHE_TTL = 6 * 60 * 60 * 1000
+
+// 签名算法常量
+const PART_1_INDEXES = [23, 14, 6, 36, 16, 40, 7, 19]
+const PART_2_INDEXES = [16, 1, 32, 12, 19, 27, 8, 5]
+const SCRAMBLE_VALUES = [89, 39, 179, 150, 218, 82, 58, 252, 177, 52, 186, 123, 120, 64, 242, 133, 143, 161, 121, 179]
+
+function pickHashByIdx(hash: string, indexes: number[]) {
+  return indexes.map((idx) => hash[idx]).join('')
+}
+
+function base64Encode(data: Buffer | string) {
+  return Buffer.from(data)
+    .toString('base64')
+    .replace(/[\\/+=]/g, '')
+}
+
+/**
+ * zzcSign 签名算法
+ * 模拟官方客户端签名，抗封锁能力更强
+ */
+export async function zzcSign(text: string) {
+  const hash = crypto.createHash('sha1').update(text).digest('hex')
+  const part1 = pickHashByIdx(hash, PART_1_INDEXES)
+  const part2 = pickHashByIdx(hash, PART_2_INDEXES)
+  const part3 = SCRAMBLE_VALUES.map((value, i) => value ^ parseInt(hash.slice(i * 2, i * 2 + 2), 16))
+  const b64Part = base64Encode(Buffer.from(part3)).replace(/[\\/+=]/g, '')
+  return `zzc${part1}${b64Part}${part2}`.toLowerCase()
+}
+
+/**
+ * 使用签名请求 QQ 音乐 API
+ * 相比普通 musicu.fcg，musics.fcg?sign=... 的签名请求更稳定
+ */
+export const txSignedRequest = async (body: any) => {
+  const sign = await zzcSign(JSON.stringify(body))
+  try {
+    const response = await $fetch(`https://u.y.qq.com/cgi-bin/musics.fcg?sign=${sign}`, {
+      method: 'POST',
+      headers: txHeaders,
+      body,
+      responseType: 'json'
+    })
+    return response
+  } catch (error) {
+    console.error('TX Signed Request Error:', error)
+    throw error
+  }
+}
 
 type TxIdType = 'legacy-id' | 'mid'
 
