@@ -4,6 +4,7 @@ import https from 'node:https'
 import { isIP } from 'node:net'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_REDIRECTS = 5
 
 interface ValidatedImageTarget {
   address: string
@@ -132,6 +133,12 @@ const validatePublicImageTarget = async (url: URL): Promise<ValidatedImageTarget
     })
   }
 
+  // 优先使用 IPv4 地址，避免 IPv6 连接因网络环境不支持而失败
+  addresses.sort((a, b) => {
+    if (a.family === 4 && b.family !== 4) return -1
+    if (a.family !== 4 && b.family === 4) return 1
+    return 0
+  })
   return addresses[0]
 }
 
@@ -154,8 +161,7 @@ const getRefererForHost = (hostname: string) => {
   return ''
 }
 
-// 重试函数
-const fetchImageWithPinnedAddress = (
+const makeSingleRequest = (
   url: URL,
   target: ValidatedImageTarget,
   headers: Record<string, string>
@@ -207,6 +213,44 @@ const fetchImageWithPinnedAddress = (
     request.on('error', reject)
     request.end()
   })
+}
+
+// 发送带 DNS 固定的请求，并自动跟随 HTTP 重定向
+const fetchImageWithPinnedAddress = async (
+  url: URL,
+  target: ValidatedImageTarget,
+  headers: Record<string, string>,
+  redirectCount = 0
+): Promise<ImageFetchResult> => {
+  const result = await makeSingleRequest(url, target, headers)
+
+  // 处理 HTTP 重定向（301/302/307/308）
+  if (result.statusCode >= 300 && result.statusCode < 400 && result.headers.location) {
+    if (redirectCount >= MAX_REDIRECTS) {
+      throw new Error('图片请求重定向次数过多')
+    }
+
+    const rawLocation = result.headers.location
+    const location = Array.isArray(rawLocation) ? rawLocation[0] : rawLocation
+    const newUrl = new URL(location, url)
+
+    // 只允许 http/https 协议
+    if (newUrl.protocol !== 'http:' && newUrl.protocol !== 'https:') {
+      throw createError({
+        statusCode: 400,
+        message: '重定向目标协议无效'
+      })
+    }
+
+    // 重新验证新目标地址
+    const newTarget = await validatePublicImageTarget(newUrl)
+    const newReferer = getRefererForHost(newUrl.hostname) || newUrl.origin
+    const newHeaders = { ...headers, Referer: newReferer }
+
+    return fetchImageWithPinnedAddress(newUrl, newTarget, newHeaders, redirectCount + 1)
+  }
+
+  return result
 }
 
 const fetchWithRetry = async (
@@ -273,7 +317,7 @@ export default defineEventHandler(async (event) => {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       Accept: 'image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-      'Accept-Encoding': 'gzip, deflate, br',
+      
       'Cache-Control': 'no-cache',
       Pragma: 'no-cache',
       'Sec-Fetch-Dest': 'image',
