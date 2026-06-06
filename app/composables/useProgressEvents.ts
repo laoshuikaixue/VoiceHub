@@ -38,7 +38,9 @@ export const useProgressEvents = () => {
       if (token) {
         params.set('token', token)
       }
-      eventSource = new EventSource(`/api/progress/events?${params.toString()}`)
+      eventSource = new EventSource('/api/progress/events?' + params.toString(), {
+        withCredentials: true
+      })
 
       // 连接打开
       eventSource.onopen = () => {
