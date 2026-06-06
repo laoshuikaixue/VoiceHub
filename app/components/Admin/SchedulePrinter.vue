@@ -296,7 +296,7 @@
                 <!-- 页面头部 -->
                 <div class="page-header">
                   <div class="logo-section">
-                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" crossorigin="anonymous" />
+                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
                     <!-- 竖线分割 -->
                     <div class="logo-divider" />
                     <!-- 学校logo -->

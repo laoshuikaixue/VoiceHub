@@ -19,14 +19,23 @@ const isBlockedIPv4 = (address) => {
   )
 }
 
+const isBlockedIPv6 = (address) => {
+  const n = address.toLowerCase()
+  // IPv4-mapped IPv6
+  if (n.startsWith('::ffff:')) return isBlockedIPv4(n.replace('::ffff:', ''))
+  // ::1 (loopback)
+  if (n === '::1') return true
+  // fe80::/10 (link-local)
+  if (n.startsWith('fe8') || n.startsWith('fe9') || n.startsWith('fea') || n.startsWith('feb')) return true
+  // fc00::/7 (unique local)
+  if (n.startsWith('fc') || n.startsWith('fd')) return true
+  return false
+}
+
 const isBlockedAddress = (address) => {
   const ver = isIP(address)
   if (ver === 4) return isBlockedIPv4(address)
-  if (ver === 6) {
-    const n = address.toLowerCase()
-    if (n.startsWith('::ffff:')) return isBlockedIPv4(n.replace('::ffff:', ''))
-    return !n.startsWith('2') && !n.startsWith('3')
-  }
+  if (ver === 6) return isBlockedIPv6(address)
   return true
 }
 
