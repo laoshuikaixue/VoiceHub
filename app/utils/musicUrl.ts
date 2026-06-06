@@ -1,5 +1,6 @@
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useMusicSources } from '~/composables/useMusicSources'
+import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 
 /**
@@ -34,11 +35,61 @@ export async function getMusicUrl(
   }
 
   const { getQuality } = useAudioQuality()
-  const { getSongUrl } = useMusicSources()
 
   // 优先使用 options 中的 quality，否则使用全局设置
   const quality =
     options?.quality !== undefined ? options.quality : getQuality(platform)
+
+  if (platform === 'tencent') {
+    const normalizedQuality = Number(quality)
+    const qualityCandidates = [Number.isNaN(normalizedQuality) ? 8 : normalizedQuality]
+
+    for (const candidateQuality of qualityCandidates) {
+      const idParam = getVkeysIdParam('tencent', musicId)
+      const vkeysUrl = `https://api.vkeys.cn/v2/music/tencent?${idParam.key}=${encodeURIComponent(idParam.value)}&quality=${candidateQuality}`
+
+      try {
+        const vkeysResp = await fetch(vkeysUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          },
+          signal: AbortSignal.timeout(5000)
+        })
+
+        if (vkeysResp.ok) {
+          const data = await vkeysResp.json()
+          if (data.code === 200 && data.data && data.data.url) {
+            let url = data.data.url
+            if (url.startsWith('http://')) {
+              url = url.replace('http://', 'https://')
+            }
+            return url
+          }
+        }
+      } catch {
+        // vkeys 前端请求失败，继续走后端代理
+      }
+    }
+
+    // vkeys 前端失败，回退到后端 resolve-url
+    const response: any = await $fetch('/api/music/resolve-url', {
+      method: 'POST',
+      body: {
+        platform,
+        musicId: String(musicId),
+        quality,
+        playUrl
+      }
+    })
+
+    if (response?.success && response?.url) {
+      return response.url
+    }
+
+    throw new Error(response?.message || 'QQ音乐播放链接解析失败')
+  }
+
+  const { getSongUrl } = useMusicSources()
   const isNeteasePlatform = platform === 'netease' || platform === 'netease-podcast'
   const hasNeteaseLogin =
     isNeteasePlatform &&
@@ -97,12 +148,14 @@ export async function getMusicUrl(
   }
 
   for (const candidateQuality of qualityCandidates) {
-    const apiUrl = `https://api.vkeys.cn/v2/music/${endpoint}?id=${musicId}&quality=${candidateQuality}`
+    const idParam = getVkeysIdParam(endpoint as 'netease' | 'tencent', musicId)
+    const apiUrl = `https://api.vkeys.cn/v2/music/${endpoint}?${idParam.key}=${encodeURIComponent(idParam.value)}&quality=${candidateQuality}`
     const response = await fetch(apiUrl, {
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+      },
+      signal: AbortSignal.timeout(5000)
     })
 
     if (!response.ok) {
