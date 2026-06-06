@@ -86,8 +86,13 @@ const fetchImage = async (imageUrl) => {
   try {
     const response = await fetch(imageUrl, {
       headers,
-      signal: controller.signal
+      signal: controller.signal,
+      redirect: 'follow'
     })
+
+    // 二次校验：防止重定向到内网或非法地址
+    const finalUrl = new URL(response.url)
+    await validateUrl(finalUrl)
 
     const contentType = response.headers.get('content-type') || ''
     if (!contentType.startsWith('image/')) {
@@ -101,10 +106,20 @@ const fetchImage = async (imageUrl) => {
       throw createError({ statusCode: 413, message: '图片文件过大' })
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer())
-    if (buffer.length > MAX_IMAGE_BYTES) {
-      throw createError({ statusCode: 413, message: '图片文件过大' })
+    // 流式读取，防止恶意服务器通过缺失或伪造 content-length 导致内存耗尽
+    if (!response.body) {
+      throw new Error('响应体为空')
     }
+    let loaded = 0
+    const chunks = []
+    for await (const chunk of response.body as any) {
+      loaded += chunk.length
+      if (loaded > MAX_IMAGE_BYTES) {
+        throw createError({ statusCode: 413, message: '图片文件过大' })
+      }
+      chunks.push(chunk)
+    }
+    const buffer = Buffer.concat(chunks)
 
     return { contentType, buffer }
   } finally {

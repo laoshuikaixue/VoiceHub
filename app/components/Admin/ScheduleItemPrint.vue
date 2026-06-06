@@ -15,7 +15,6 @@
           :src="schedule.song.cover"
           class="song-cover"
           referrerpolicy="no-referrer"
-          crossorigin="anonymous"
           @error="handleImageError"
         >
         <div class="cover-placeholder" :class="{ show: !schedule.song.cover }">

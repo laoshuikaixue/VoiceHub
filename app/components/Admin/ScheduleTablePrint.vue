@@ -24,7 +24,6 @@
                 :src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
                 :data-original-src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
                 class="song-cover"
-                crossorigin="anonymous"
                 @error="handleImageError"
               >
               <div class="song-details">
@@ -64,7 +63,6 @@
                 :src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
                 :data-original-src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
                 class="song-cover"
-                crossorigin="anonymous"
                 @error="handleImageError"
               >
               <div class="song-details">
