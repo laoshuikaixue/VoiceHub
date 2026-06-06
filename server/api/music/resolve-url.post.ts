@@ -77,7 +77,8 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
 }
 
 const resolveTxWithVkeys = async (musicId: string, quality: number) => {
-  const url = `https://api.vkeys.cn/v2/music/tencent?id=${encodeURIComponent(musicId)}&quality=${quality}`
+  const idParam = /^\d+$/.test(musicId) ? `id=${encodeURIComponent(musicId)}` : `mid=${encodeURIComponent(musicId)}`
+  const url = `https://api.vkeys.cn/v2/music/tencent?${idParam}&quality=${quality}`
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'

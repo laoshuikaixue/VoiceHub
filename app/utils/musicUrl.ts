@@ -1,5 +1,6 @@
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useMusicSources } from '~/composables/useMusicSources'
+import { getVkeysIdParam } from '~/utils/musicSources'
 import { parseBilibiliId } from '~/utils/bilibiliSource'
 
 /**
@@ -116,7 +117,8 @@ export async function getMusicUrl(
   }
 
   for (const candidateQuality of qualityCandidates) {
-    const apiUrl = `https://api.vkeys.cn/v2/music/${endpoint}?id=${musicId}&quality=${candidateQuality}`
+    const idParam = getVkeysIdParam(endpoint as 'netease' | 'tencent', musicId)
+    const apiUrl = `https://api.vkeys.cn/v2/music/${endpoint}?${idParam.key}=${encodeURIComponent(idParam.value)}&quality=${candidateQuality}`
     const response = await fetch(apiUrl, {
       headers: {
         'User-Agent':

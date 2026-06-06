@@ -6,6 +6,7 @@
 import {
   getEnabledSources,
   getSourceById,
+  getVkeysIdParam,
   MUSIC_SOURCE_CONFIG,
   type MusicSearchParams,
   type MusicSearchResult,
@@ -965,7 +966,8 @@ export const useMusicSources = () => {
                   ]
 
             for (const candidateQuality of qualityCandidates) {
-              const vkeysUrl = `${source.baseUrl}/${endpoint}?id=${idParam}&quality=${candidateQuality}`
+              const vkeysIdParam = getVkeysIdParam(endpoint as 'netease' | 'tencent', idParam)
+              const vkeysUrl = `${source.baseUrl}/${endpoint}?${vkeysIdParam.key}=${encodeURIComponent(vkeysIdParam.value)}&quality=${candidateQuality}`
               const vkeysResp = await $fetch(vkeysUrl, { timeout: source.timeout || 8000 })
 
               if (vkeysResp?.code === 200 && vkeysResp?.data?.url) {
@@ -976,7 +978,8 @@ export const useMusicSources = () => {
           } else if (source.id === 'vkeys-v3') {
             // Vkeys v3：先获取歌曲信息与音质列表，再按可用音质选择并调用 v2 获取可播放URL
             try {
-              const infoUrl = `${source.baseUrl}/tencent/song/info?id=${encodeURIComponent(idParam)}`
+              const v3IdParam = getVkeysIdParam('tencent', idParam)
+              const infoUrl = `${source.baseUrl}/tencent/song/info?${v3IdParam.key}=${encodeURIComponent(v3IdParam.value)}`
               const infoResp = await $fetch(infoUrl, { timeout: source.timeout || 8000 })
 
               // v3 成功码为 0
@@ -1039,7 +1042,8 @@ export const useMusicSources = () => {
                 throw new Error('未配置 vkeys v2 音源以获取播放链接')
               }
 
-              const v2Url = `${v2Source.baseUrl}/tencent?id=${idParam}&quality=${selectedQuality}`
+              const v2IdParam = getVkeysIdParam('tencent', idParam)
+              const v2Url = `${v2Source.baseUrl}/tencent?${v2IdParam.key}=${encodeURIComponent(v2IdParam.value)}&quality=${selectedQuality}`
               const v2Resp = await $fetch(v2Url, { timeout: v2Source.timeout || 8000 })
               if (v2Resp?.code === 200 && v2Resp?.data?.url) {
                 url = String(v2Resp.data.url)
@@ -1049,7 +1053,7 @@ export const useMusicSources = () => {
                   const hasQuality = qualityInfo.some((qi) => qi.type === q && Number(qi.size) > 0)
                   if (!hasQuality) continue
 
-                  const altUrl = `${v2Source.baseUrl}/tencent?id=${idParam}&quality=${q}`
+                  const altUrl = `${v2Source.baseUrl}/tencent?${v2IdParam.key}=${encodeURIComponent(v2IdParam.value)}&quality=${q}`
                   const altResp = await $fetch(altUrl, { timeout: v2Source.timeout || 8000 })
                   if (altResp?.code === 200 && altResp?.data?.url) {
                     url = String(altResp.data.url)
@@ -1249,10 +1253,11 @@ export const useMusicSources = () => {
 
         try {
           let url: string
+          const lyricIdParam = getVkeysIdParam(platform as 'netease' | 'tencent', id)
           if (platform === 'netease') {
-            url = `${vkeysSource.baseUrl}/netease/lyric?id=${id}`
+            url = `${vkeysSource.baseUrl}/netease/lyric?${lyricIdParam.key}=${encodeURIComponent(lyricIdParam.value)}`
           } else if (platform === 'tencent') {
-            url = `${vkeysSource.baseUrl}/tencent/lyric?id=${id}`
+            url = `${vkeysSource.baseUrl}/tencent/lyric?${lyricIdParam.key}=${encodeURIComponent(lyricIdParam.value)}`
           } else {
             return
           }

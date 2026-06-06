@@ -227,3 +227,28 @@ export function getPrimarySource(): MusicSource | undefined {
 export function getBackupSources(): MusicSource[] {
   return getEnabledSources().filter((source) => source.id !== MUSIC_SOURCE_CONFIG.primarySource)
 }
+
+/**
+ * 判断是否为纯数字（旧版 QQ 音乐数字 id）
+ */
+function isNumericId(id: string | number): boolean {
+  return /^\d+$/.test(String(id))
+}
+
+/**
+ * 构造 vkeys 请求的身份参数
+ * 网易云始终用 id；QQ 音乐旧版数字 id 用 id，新版 mid 用 mid
+ */
+export function getVkeysIdParam(
+  platform: 'netease' | 'tencent',
+  musicId: string | number
+): { key: string; value: string } {
+  if (platform === 'netease') {
+    return { key: 'id', value: String(musicId) }
+  }
+  // tencent
+  if (isNumericId(musicId)) {
+    return { key: 'id', value: String(musicId) }
+  }
+  return { key: 'mid', value: String(musicId) }
+}

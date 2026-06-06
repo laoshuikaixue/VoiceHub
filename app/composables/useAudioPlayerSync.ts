@@ -319,7 +319,8 @@ export const useAudioPlayerSync = () => {
       if (platform === 'netease') {
         apiUrl = `https://api.vkeys.cn/v2/music/netease?id=${musicId}&quality=${quality}`
       } else if (platform === 'tencent') {
-        apiUrl = `https://api.vkeys.cn/v2/music/tencent?id=${musicId}&quality=${quality}`
+        const idParam = /^\d+$/.test(String(musicId)) ? `id=${musicId}` : `mid=${musicId}`
+        apiUrl = `https://api.vkeys.cn/v2/music/tencent?${idParam}&quality=${quality}`
       } else {
         return { success: false, error: '不支持的音乐平台' }
       }
