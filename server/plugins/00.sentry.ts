@@ -66,12 +66,12 @@ const captureInstanceOnlineTransaction = (instanceId: string, deploymentTarget: 
 }
 
 export default defineNitroPlugin((nitroApp) => {
-  if (!process.env.JWT_SECRET) {
+  const config = useRuntimeConfig()
+  if (!config.jwtSecret) {
     // 配置错误不进入遥测链路，避免在认证未初始化时泄露启动上下文
-    throw new Error('JWT_SECRET environment variable is required')
+    throw new Error('JWT_SECRET is required')
   }
 
-  const config = useRuntimeConfig()
   const sentryConfig = config.sentry
 
   if (!sentryConfig?.enabled || !sentryConfig.dsn) {

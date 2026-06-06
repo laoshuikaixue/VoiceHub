@@ -1,7 +1,21 @@
 import { lookup } from 'node:dns/promises'
+import http from 'node:http'
+import https from 'node:https'
 import { isIP } from 'node:net'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+
+interface ValidatedImageTarget {
+  address: string
+  family: 4 | 6
+}
+
+interface ImageFetchResult {
+  headers: http.IncomingHttpHeaders
+  statusCode: number
+  statusMessage: string
+  body: Buffer
+}
 
 const isBlockedIPv4 = (address: string) => {
   const parts = address.split('.').map(Number)
@@ -84,7 +98,7 @@ const isHttpError = (error: unknown): error is { statusCode: number } => {
   )
 }
 
-const validatePublicImageTarget = async (url: URL) => {
+const validatePublicImageTarget = async (url: URL): Promise<ValidatedImageTarget> => {
   if (url.username || url.password) {
     throw createError({
       statusCode: 400,
@@ -108,8 +122,8 @@ const validatePublicImageTarget = async (url: URL) => {
     })
   }
 
-  const addresses = hostAddressType
-    ? [{ address: hostname }]
+  const addresses: ValidatedImageTarget[] = hostAddressType
+    ? [{ address: hostname, family: hostAddressType }]
     : await lookup(hostname, { all: true, verbatim: true })
   if (addresses.length === 0 || addresses.some(({ address }) => isBlockedAddress(address))) {
     throw createError({
@@ -117,6 +131,8 @@ const validatePublicImageTarget = async (url: URL) => {
       message: '不允许代理内网地址'
     })
   }
+
+  return addresses[0]
 }
 
 const getRefererForHost = (hostname: string) => {
@@ -139,34 +155,78 @@ const getRefererForHost = (hostname: string) => {
 }
 
 // 重试函数
+const fetchImageWithPinnedAddress = (
+  url: URL,
+  target: ValidatedImageTarget,
+  headers: Record<string, string>
+): Promise<ImageFetchResult> => {
+  const client = url.protocol === 'https:' ? https : http
+
+  return new Promise((resolve, reject) => {
+    const request = client.request(
+      url,
+      {
+        method: 'GET',
+        headers,
+        lookup: (_hostname, _options, callback) => {
+          callback(null, target.address, target.family)
+        }
+      },
+      (response) => {
+        const chunks: Buffer[] = []
+        let totalBytes = 0
+
+        response.on('data', (chunk: Buffer) => {
+          totalBytes += chunk.length
+          if (totalBytes > MAX_IMAGE_BYTES) {
+            request.destroy(
+              createError({
+                statusCode: 413,
+                message: '图片文件过大'
+              })
+            )
+            return
+          }
+          chunks.push(chunk)
+        })
+
+        response.on('end', () => {
+          resolve({
+            headers: response.headers,
+            statusCode: response.statusCode || 0,
+            statusMessage: response.statusMessage || '',
+            body: Buffer.concat(chunks)
+          })
+        })
+      }
+    )
+
+    request.setTimeout(10000, () => {
+      request.destroy(Object.assign(new Error('Request timeout'), { code: 'ETIMEDOUT' }))
+    })
+    request.on('error', reject)
+    request.end()
+  })
+}
+
 const fetchWithRetry = async (
-  url: string,
-  options: RequestInit,
+  url: URL,
+  target: ValidatedImageTarget,
+  headers: Record<string, string>,
   maxRetries = 3
-): Promise<Response> => {
+): Promise<ImageFetchResult> => {
   let lastError: unknown
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`尝试获取图片 (${attempt}/${maxRetries}): ${url}`)
+      console.log(`尝试获取图片 (${attempt}/${maxRetries}): ${url.href}`)
+      const response = await fetchImageWithPinnedAddress(url, target, headers)
 
-      // 创建AbortController用于超时控制
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
-
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        redirect: 'manual'
-      })
-
-      clearTimeout(timeoutId)
-
-      if (response.ok) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
         console.log(`图片获取成功 (尝试 ${attempt})`)
         return response
       } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        throw new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`)
       }
     } catch (error: unknown) {
       lastError = error
@@ -202,7 +262,7 @@ export default defineEventHandler(async (event) => {
       throw new Error('Invalid protocol')
     }
 
-    await validatePublicImageTarget(url)
+    const validatedTarget = await validatePublicImageTarget(url)
 
     // 第三方音乐封面通常需要来源站点 Referer 才能稳定访问
     const referer = getRefererForHost(url.hostname) || url.origin
@@ -223,21 +283,25 @@ export default defineEventHandler(async (event) => {
     }
 
     // 使用重试机制获取图片
-    const response = await fetchWithRetry(imageUrl, { headers })
+    const response = await fetchWithRetry(url, validatedTarget, headers)
 
     // 检查内容类型
-    const contentType = response.headers.get('content-type')
+    const rawContentType = response.headers['content-type']
+    const contentType = Array.isArray(rawContentType) ? rawContentType[0] : rawContentType
     if (!contentType || !contentType.startsWith('image/')) {
       throw new Error('Response is not an image')
     }
-    if (contentType.includes('svg')) {
+    if (contentType.toLowerCase().includes('svg')) {
       throw createError({
         statusCode: 415,
         message: '不支持代理 SVG 图片'
       })
     }
 
-    const contentLength = Number(response.headers.get('content-length') || 0)
+    const rawContentLength = response.headers['content-length']
+    const contentLength = Number(
+      Array.isArray(rawContentLength) ? rawContentLength[0] : rawContentLength || 0
+    )
     if (contentLength > MAX_IMAGE_BYTES) {
       throw createError({
         statusCode: 413,
@@ -246,8 +310,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取图片数据
-    const imageBuffer = await response.arrayBuffer()
-    if (imageBuffer.byteLength > MAX_IMAGE_BYTES) {
+    const imageBuffer = response.body
+    if (imageBuffer.length > MAX_IMAGE_BYTES) {
       throw createError({
         statusCode: 413,
         message: '图片文件过大'
@@ -261,7 +325,7 @@ export default defineEventHandler(async (event) => {
     setHeader(event, 'Access-Control-Allow-Methods', 'GET, OPTIONS')
     setHeader(event, 'Access-Control-Allow-Headers', 'Content-Type')
 
-    console.log(`图片代理成功: ${imageUrl}, 大小: ${imageBuffer.byteLength} bytes`)
+    console.log(`图片代理成功: ${imageUrl}, 大小: ${imageBuffer.length} bytes`)
     return new Uint8Array(imageBuffer)
   } catch (error: unknown) {
     if (isHttpError(error)) {

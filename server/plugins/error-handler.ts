@@ -2,9 +2,10 @@ import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 
 export default defineNitroPlugin(async (nitroApp) => {
-  if (!process.env.JWT_SECRET) {
+  const config = useRuntimeConfig()
+  if (!config.jwtSecret) {
     // 缺失签名密钥时继续启动会让认证边界处于不可预测状态
-    throw new Error('JWT_SECRET environment variable is required')
+    throw new Error('JWT_SECRET is required')
   }
 
   // 全局未处理的Promise拒绝处理器
