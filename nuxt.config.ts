@@ -196,28 +196,33 @@ export default defineNuxtConfig({
         {
           rel: 'preload',
           as: 'style',
+          crossorigin: 'anonymous',
           href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css'
         },
         {
           rel: 'stylesheet',
+          crossorigin: 'anonymous',
           href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css'
         },
         // 延迟加载其他字重，避免阻塞页面渲染
         {
           rel: 'preload',
           as: 'style',
+          crossorigin: 'anonymous',
           href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Medium.min.css',
           onload: "this.onload=null;this.rel='stylesheet'"
         },
         {
           rel: 'preload',
           as: 'style',
+          crossorigin: 'anonymous',
           href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Semibold.min.css',
           onload: "this.onload=null;this.rel='stylesheet'"
         },
         {
           rel: 'preload',
           as: 'style',
+          crossorigin: 'anonymous',
           href: 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Bold.min.css',
           onload: "this.onload=null;this.rel='stylesheet'"
         }
