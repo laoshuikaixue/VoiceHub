@@ -31,10 +31,14 @@ export const useProgressEvents = () => {
     startIndeterminate('正在连接...')
 
     try {
-      // 创建新的事件源，通过URL参数传递认证token
+      // cookie 认证下不能把真实 JWT 暴露到 URL，保留旧 token 参数仅作兼容。
       const auth = useAuth()
       const token = auth.getToken()
-      eventSource = new EventSource(`/api/progress/events?id=${id}&token=${token}`)
+      const params = new URLSearchParams({ id })
+      if (token) {
+        params.set('token', token)
+      }
+      eventSource = new EventSource(`/api/progress/events?${params.toString()}`)
 
       // 连接打开
       eventSource.onopen = () => {

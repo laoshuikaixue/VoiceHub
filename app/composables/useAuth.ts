@@ -187,6 +187,15 @@ export const useAuth = () => {
     }
   }
 
+  const getToken = () => {
+    // httpOnly cookie 模式下客户端不能读取真实 JWT，调用方应依赖同源 cookie。
+    if (token.value === 'cookie-based') {
+      return null
+    }
+
+    return token.value
+  }
+
   return {
     user,
     token,
@@ -200,6 +209,7 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
+    getToken,
     getAuthConfig
   }
 }
