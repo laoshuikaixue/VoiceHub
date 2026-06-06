@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 角色权限控制
-    let validRole = 'USER'
+    let validRole = targetUser.role
     if (role) {
       if (!['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(role)) {
         throw createError({

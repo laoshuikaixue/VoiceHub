@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
     try {
       const { cache, userCache } = await import('~~/server/utils/cache-helpers')
       await cache.deletePattern('song:*')
-      await cache.deletePattern('schedules:*')
+      await cache.deletePattern('schedule:*')
       await cache.deletePattern('stats:*')
       await userCache.clearAuth(String(existingUser.id))
       console.log('[Cache] 歌曲、排期、统计和用户认证缓存已清除（用户删除）')

@@ -40,8 +40,8 @@ export default defineEventHandler(async (event) => {
       const jsonStr = text.replace(/^\w+\(/, '').replace(/\)\s*$/, '')
       data = JSON.parse(jsonStr)
     }
-    if (data.code !== 0) {
-      throw createError({ statusCode: 502, message: `QQ 歌词接口异常: ${data.code}` })
+    if (!data || data.code !== 0) {
+      throw createError({ statusCode: 502, message: `QQ 歌词接口异常: ${data?.code ?? '未知'}` })
     }
 
     const decodeField = (value: unknown): string => {
