@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     const { name, username, password, role, grade, class: userClass, status } = body
 
     // 验证必填字段
-    if (!name || !username) {
+    if (!body || !name || !username) {
       throw createError({
         statusCode: 400,
         message: '姓名和用户名为必填项'
@@ -87,7 +87,14 @@ export default defineEventHandler(async (event) => {
 
     // 角色权限控制
     let validRole = 'USER'
-    if (role && ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(role)) {
+    if (role) {
+      if (!['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(role)) {
+        throw createError({
+          statusCode: 400,
+          message: '无效的用户角色'
+        })
+      }
+
       // 超级管理员可以设置任何角色
       if (user.role === 'SUPER_ADMIN') {
         validRole = role
@@ -126,19 +133,27 @@ export default defineEventHandler(async (event) => {
       username,
       role: validRole,
       grade,
-      class: userClass
-    }
-
-    // 如果提供了status，则更新状态相关字段
-    if (status && status !== existingUser[0].status) {
-      updateData.status = status
-      updateData.statusChangedAt = new Date()
-      updateData.statusChangedBy = user.id
+      class: userClass,
+      ...(status && status !== existingUser[0].status
+        ? {
+            status,
+            statusChangedAt: new Date(),
+            statusChangedBy: user.id
+          }
+        : {})
     }
 
     // 如果提供了密码，则使用统一服务更新密码
     if (password) {
-      await updateUserPassword(parseInt(userId), password, true)
+      const trimmedPassword = String(password).trim()
+      if (trimmedPassword.length < 6) {
+        throw createError({
+          statusCode: 400,
+          message: '密码长度不能少于 6 位'
+        })
+      }
+
+      await updateUserPassword(parseInt(userId), trimmedPassword, true)
     }
 
     // 更新用户其他信息
@@ -176,10 +191,9 @@ export default defineEventHandler(async (event) => {
 
     // 清除相关缓存
     try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('songs:*')
-      // 清除该用户的认证缓存（角色或权限可能已变更）
-      await cache.delete(`auth:user:${parseInt(userId)}`)
+      const { cache, userCache } = await import('~~/server/utils/cache-helpers')
+      await cache.deletePattern('song:*')
+      await userCache.clearAuth(String(userId))
       console.log('[Cache] 歌曲和用户认证缓存已清除（用户更新）')
     } catch (cacheError) {
       console.warn('[Cache] 清除缓存失败:', cacheError)
