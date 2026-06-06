@@ -197,12 +197,8 @@ export const useMusicSources = () => {
 
       return response.list.map((item: any) => {
         const isNetease = platform === 'netease'
-        // 统一使用 songmid 作为 ID
-        // 网易云: songmid 为数字 ID (e.g. 123456)
-        // QQ音乐: songmid 为字符串 MID (e.g. 004MmF3024567)，这对 vkeys 接口更友好
         const mid = item.songmid
-        // VoiceHub 内部 ID: 网易云使用数字ID，QQ音乐优先使用数字ID(songId)以便vkeys使用
-        const id = isNetease ? item.songmid : item.songId || item.songmid
+        const id = isNetease ? item.songmid : mid || item.songId
 
         return {
           id: id?.toString(),
@@ -217,10 +213,9 @@ export const useMusicSources = () => {
           url: undefined,
           hasUrl: false,
           sourceInfo: {
-            // 伪装源名称，以便兼容后续的播放逻辑
-            // 网易云使用 netease-backup，QQ音乐使用 vkeys
-            source: isNetease ? 'netease-backup' : 'vkeys',
+            source: isNetease ? 'netease-backup' : 'native-tx',
             originalId: id?.toString(),
+            originalSongId: !isNetease && item.songId ? item.songId.toString() : undefined,
             fetchedAt: new Date(),
             mid: mid,
             strMediaMid: item.strMediaMid, // Add strMediaMid
@@ -290,10 +285,7 @@ export const useMusicSources = () => {
           const result = await searchNativeMusic(params)
           if (result && result.length > 0) {
             currentSource.value = 'native-music'
-            // 这里不再将 lastUsedSource 设置为 'native-music'，
-            // 而是根据平台回退到能提供播放链接的音源ID（如 netease-backup 或 vkeys）。
-            // 这样 getSongUrl 等后续方法就会使用该音源进行播放链接获取。
-            lastUsedSource.value = platform === 'netease' ? 'netease-backup' : 'vkeys'
+            lastUsedSource.value = platform === 'netease' ? 'netease-backup' : 'qq-resolver'
             return {
               success: true,
               source: 'native-music',
@@ -1390,8 +1382,11 @@ export const useMusicSources = () => {
       console.log(`[transformVkeysResponse] QQ音乐处理 ${songs.length} 首歌曲`)
 
       return songs.map((song: any, index: number) => {
+        const mid = song.mid || song.songmid || song.songMID || song.musicId || song.id
+        const originalSongId =
+          song.id && song.id.toString() !== mid?.toString() ? song.id.toString() : undefined
         const transformedSong = {
-          id: song.id || song.musicId,
+          id: mid?.toString(),
           title: song.song || song.name || song.title,
           artist: song.singer || song.artist || '未知艺术家',
           cover: song.cover,
@@ -1399,14 +1394,15 @@ export const useMusicSources = () => {
           albumId: song.albumId,
           duration: song.duration || song.dt,
           musicPlatform: 'tencent',
-          musicId: (song.id || song.musicId)?.toString(),
+          musicId: mid?.toString(),
           url: song.url,
           hasUrl: !!song.url,
           sourceInfo: {
             source: 'vkeys',
-            originalId: (song.id || song.musicId)?.toString(),
+            originalId: mid?.toString(),
+            originalSongId,
             fetchedAt: new Date(),
-            mid: song.mid,
+            mid,
             vid: song.vid,
             quality: song.quality,
             pay: song.pay,
@@ -1476,10 +1472,12 @@ export const useMusicSources = () => {
     }
 
     return data.list.map((item: any) => {
-      const id = item.songID ?? item.songId ?? item.id
+      const mid = item.songMID ?? item.mid
+      const originalSongId = item.songID ?? item.songId ?? item.id
+      const id = mid ?? originalSongId
       const duration = item.interval ?? item.duration
       return {
-        id,
+        id: id?.toString(),
         title: item.title,
         artist: Array.isArray(item.singerList)
           ? item.singerList.map((s: any) => s.name).join('/')
@@ -1495,8 +1493,9 @@ export const useMusicSources = () => {
         sourceInfo: {
           source: 'vkeys-v3',
           originalId: id?.toString(),
+          originalSongId: originalSongId?.toString(),
           fetchedAt: new Date(),
-          mid: item.songMID || item.mid,
+          mid,
           vid: item.vid,
           quality: item.quality,
           pay: item.pay,

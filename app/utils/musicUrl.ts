@@ -34,11 +34,30 @@ export async function getMusicUrl(
   }
 
   const { getQuality } = useAudioQuality()
-  const { getSongUrl } = useMusicSources()
 
   // 优先使用 options 中的 quality，否则使用全局设置
   const quality =
     options?.quality !== undefined ? options.quality : getQuality(platform)
+
+  if (platform === 'tencent') {
+    const response: any = await $fetch('/api/music/resolve-url', {
+      method: 'POST',
+      body: {
+        platform,
+        musicId: musicId.toString(),
+        quality,
+        playUrl
+      }
+    })
+
+    if (response?.success && response?.url) {
+      return response.url
+    }
+
+    throw new Error(response?.message || 'QQ音乐播放链接解析失败')
+  }
+
+  const { getSongUrl } = useMusicSources()
   const isNeteasePlatform = platform === 'netease' || platform === 'netease-podcast'
   const hasNeteaseLogin =
     isNeteasePlatform &&

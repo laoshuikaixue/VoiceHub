@@ -363,7 +363,12 @@ export default defineNuxtConfig({
     plugins: [wasm(), topLevelAwait(), glsl()],
     optimizeDeps: {
       include: ['drizzle-orm'],
-      exclude: ['@applemusic-like-lyrics/vue', '@applemusic-like-lyrics/lyric']
+      exclude: [
+        '@applemusic-like-lyrics/vue',
+        '@applemusic-like-lyrics/lyric',
+        '#app-manifest',
+        'nuxt'
+      ]
     },
     build: {
       target: 'esnext',
