@@ -75,7 +75,7 @@ export async function getMusicUrl(
       method: 'POST',
       body: {
         platform,
-        musicId: musicId.toString(),
+        musicId: String(musicId),
         quality,
         playUrl
       }

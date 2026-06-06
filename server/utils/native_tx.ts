@@ -182,6 +182,12 @@ const getCachedTxSongDetail = (key: string) => {
 }
 
 const setCachedTxSongDetail = (key: string, value: TxSongPlayableInfo) => {
+  if (txSongDetailCache.size >= 1000) {
+    const firstKey = txSongDetailCache.keys().next().value
+    if (firstKey !== undefined) {
+      txSongDetailCache.delete(firstKey)
+    }
+  }
   txSongDetailCache.set(key, {
     expiresAt: Date.now() + TX_DETAIL_CACHE_TTL,
     value
@@ -208,7 +214,7 @@ export const getTxSongPlayableInfo = async (
   // 旧 QQ 数字 ID 只在播放时转 MID，避免批量改历史数据。
   const result: any = await txRequest(TX_MUSICU_URL, createTxSongDetailBody(normalized))
 
-  if (result.code !== 0 || result.req?.code !== 0) {
+  if (!result || result.code !== 0 || result.req?.code !== 0) {
     throw createError({ statusCode: 502, message: 'QQ 音乐详情接口异常' })
   }
 

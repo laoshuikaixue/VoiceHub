@@ -35,16 +35,13 @@ const resolveTxWithDreamMeting = async (songmid: string) => {
     redirect: 'manual',
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
+    },
+    signal: AbortSignal.timeout(5000)
   })
 
   const location = response.headers.get('location')
   if (location) {
     return upgradeTxAudioUrl(location)
-  }
-
-  if (response.redirected && response.url) {
-    return upgradeTxAudioUrl(response.url)
   }
 
   throw new Error(`music.3e0.cn 未返回播放重定向(${response.status})`)
@@ -56,7 +53,8 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
     headers: {
       'X-Request-Key': 'share-v3',
       'User-Agent': 'lx-music-desktop/2.11.0'
-    }
+    },
+    signal: AbortSignal.timeout(5000)
   })
 
   if (!response.ok) {
