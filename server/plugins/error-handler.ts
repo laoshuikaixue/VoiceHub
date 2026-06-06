@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 
 export default defineNitroPlugin(async (nitroApp) => {
+
   // 全局未处理的Promise拒绝处理器
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason)
