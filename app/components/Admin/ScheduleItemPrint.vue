@@ -11,8 +11,8 @@
         <img
           v-if="schedule.song.cover"
           :alt="schedule.song.title"
-          :data-original-src="schedule.song.cover"
-          :src="schedule.song.cover"
+          :data-original-src="convertToHttps(schedule.song.cover)"
+          :src="convertToHttps(schedule.song.cover)"
           class="song-cover"
           referrerpolicy="no-referrer"
           @error="handleImageError"
@@ -76,6 +76,7 @@
 
 <script setup>
 import { defineProps } from 'vue'
+import { convertToHttps } from '~/utils/url'
 
 // 定义props
 defineProps({

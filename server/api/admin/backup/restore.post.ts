@@ -466,12 +466,12 @@ export default defineEventHandler(async (event) => {
                                 .limit(1)
                               if (existingProtectedUser.length > 0) {
                                 userIdMapping.set(record.id, existingProtectedUser[0].id)
+                                restoreResults.details.warnings.push(
+                                  `已保留超级管理员账户 ${record.username || `#${record.id}`}`
+                                )
+                                break
                               }
                             }
-                            restoreResults.details.warnings.push(
-                              `已保留超级管理员账户 ${record.username || `#${record.id}`}`
-                            )
-                            break
                           }
 
                           // 完全恢复模式，检查ID是否已存在

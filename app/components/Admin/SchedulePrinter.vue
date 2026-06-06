@@ -305,7 +305,6 @@
                       :src="schoolLogoPrintUrl"
                       alt="学校Logo"
                       class="school-logo-print"
-                      crossorigin="anonymous"
                     />
                     <div class="title-section">
                       <h1>{{ siteTitle }}</h1>
