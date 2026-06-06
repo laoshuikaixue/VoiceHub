@@ -1405,10 +1405,17 @@ export const useMusicSources = () => {
       console.error('[getLyrics] 获取歌词失败:', error)
       return { success: false, error: error?.message || '未知错误' }
     }
-    })().finally(() => {
-      // 请求完成后延迟清除缓存，给并行请求复用窗口
-      setTimeout(() => {
+    })().then((res) => {
+      if (!res.success) {
+        // 失败立即清缓存，允许重试
         lyricCache.delete(cacheKey)
+      }
+      return res
+    }).finally(() => {
+      setTimeout(() => {
+        if (lyricCache.get(cacheKey) === promise) {
+          lyricCache.delete(cacheKey)
+        }
       }, LYRIC_CACHE_TTL)
     })
 
