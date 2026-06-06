@@ -4,7 +4,8 @@ import glsl from 'vite-plugin-glsl'
 import { fileURLToPath } from 'url'
 
 // 解析自定义 SEO 和 PWA 配置
-let customSeoConfig: { title?: string; shortName?: string; description?: string; logo?: string } = {}
+let customSeoConfig: { title?: string; shortName?: string; description?: string; logo?: string } =
+  {}
 try {
   if (process.env.NUXT_PUBLIC_SEO_CONFIG) {
     customSeoConfig = JSON.parse(process.env.NUXT_PUBLIC_SEO_CONFIG)
@@ -13,9 +14,13 @@ try {
   console.warn('解析 NUXT_PUBLIC_SEO_CONFIG 失败，请检查 JSON 格式:', e)
 }
 
-const siteTitle = customSeoConfig.title || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub校园广播站点歌系统'
+const siteTitle =
+  customSeoConfig.title || process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub校园广播站点歌系统'
 const siteShortName = customSeoConfig.shortName || '校园广播'
-const siteDescription = customSeoConfig.description || process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见'
+const siteDescription =
+  customSeoConfig.description ||
+  process.env.NUXT_PUBLIC_SITE_DESCRIPTION ||
+  '校园广播站点歌系统 - 让你的声音被听见'
 const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
 
 const readNumberEnv = (value: string | undefined, fallback: number): number => {
@@ -37,6 +42,7 @@ const backendSentryDsnDefault =
 const frontendSentryDsnDefault =
   'https://3c4fe5353816bcdce36e7cc28703c8fa@o4508946125619200.ingest.de.sentry.io/4511244934774864'
 const sentryRuntimeEnabled = process.env.NODE_ENV === 'production'
+const jwtSecret = process.env.JWT_SECRET || ''
 
 // 构造绝对路径 Logo URL 用于 SEO 标签，如果没有 host，则回退为相对路径
 const host = process.env.NUXT_PUBLIC_HOST
@@ -45,9 +51,13 @@ if (!host && !siteLogo.startsWith('http') && process.env.NODE_ENV === 'productio
     '警告: 在生产环境中未配置 NUXT_PUBLIC_HOST，且 siteLogo 使用了相对路径。这可能会导致网站无法正确抓取和显示预览图。'
   )
 }
-const absoluteLogo = (siteLogo.startsWith('http') || siteLogo.startsWith('//') || !host)
-  ? siteLogo
-  : (host.startsWith('http') ? '' : 'https://') + host.replace(/\/$/, '') + '/' + siteLogo.replace(/^\//, '')
+const absoluteLogo =
+  siteLogo.startsWith('http') || siteLogo.startsWith('//') || !host
+    ? siteLogo
+    : (host.startsWith('http') ? '' : 'https://') +
+      host.replace(/\/$/, '') +
+      '/' +
+      siteLogo.replace(/^\//, '')
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -87,13 +97,17 @@ export default defineNuxtConfig({
   // 配置运行时配置
   runtimeConfig: {
     // 服务器私有键（不会暴露到客户端）
-    jwtSecret: process.env.JWT_SECRET || 'your-secret-key',
+    jwtSecret,
     // Redis配置（可选）
     redisUrl: process.env.REDIS_URL || '',
     sentry: {
       dsn: process.env.SENTRY_DSN || backendSentryDsnDefault,
       environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
-      release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_REF || '',
+      release:
+        process.env.SENTRY_RELEASE ||
+        process.env.VERCEL_GIT_COMMIT_SHA ||
+        process.env.COMMIT_REF ||
+        '',
       tracesSampleRate: readNumberEnv(process.env.SENTRY_TRACES_SAMPLE_RATE, 0.1),
       enabled: sentryRuntimeEnabled
     },

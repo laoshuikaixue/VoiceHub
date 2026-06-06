@@ -2,6 +2,11 @@ import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 
 export default defineNitroPlugin(async (nitroApp) => {
+  if (!process.env.JWT_SECRET) {
+    // 缺失签名密钥时继续启动会让认证边界处于不可预测状态
+    throw new Error('JWT_SECRET environment variable is required')
+  }
+
   // 全局未处理的Promise拒绝处理器
   process.on('unhandledRejection', async (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason)

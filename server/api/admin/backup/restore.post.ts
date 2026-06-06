@@ -32,10 +32,10 @@ export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
     const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       throw createError({
         statusCode: 403,
-        message: '权限不足'
+        message: '只有超级管理员可以恢复备份'
       })
     }
 
@@ -228,12 +228,18 @@ export default defineEventHandler(async (event) => {
 
           if (preservedUserIdList.length > 0) {
             await db.delete(apiKeys).where(notInArray(apiKeys.createdByUserId, preservedUserIdList))
-            await db.delete(notifications).where(notInArray(notifications.userId, preservedUserIdList))
+            await db
+              .delete(notifications)
+              .where(notInArray(notifications.userId, preservedUserIdList))
             await db
               .delete(notificationSettings)
               .where(notInArray(notificationSettings.userId, preservedUserIdList))
-            await db.delete(userStatusLogs).where(notInArray(userStatusLogs.userId, preservedUserIdList))
-            await db.delete(userIdentities).where(notInArray(userIdentities.userId, preservedUserIdList))
+            await db
+              .delete(userStatusLogs)
+              .where(notInArray(userStatusLogs.userId, preservedUserIdList))
+            await db
+              .delete(userIdentities)
+              .where(notInArray(userIdentities.userId, preservedUserIdList))
             await db.delete(users).where(notInArray(users.id, preservedUserIdList))
           } else {
             await db.delete(apiKeys)
@@ -449,7 +455,8 @@ export default defineEventHandler(async (event) => {
                           }
                         } else {
                           const isBackupSuperAdminRecord =
-                            record.role === 'SUPER_ADMIN' || preservedSuperAdminIds.has(Number(record.id))
+                            record.role === 'SUPER_ADMIN' ||
+                            preservedSuperAdminIds.has(Number(record.id))
                           if (!shouldOverwriteSuperAdmin && isBackupSuperAdminRecord) {
                             if (record.id) {
                               const existingProtectedUser = await tx

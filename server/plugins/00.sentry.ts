@@ -47,22 +47,30 @@ const buildRequestContext = (event: H3Event) => {
 }
 
 const captureInstanceOnlineTransaction = (instanceId: string, deploymentTarget: string) => {
-  Sentry.startSpan({
-    name: INSTANCE_ONLINE_TRANSACTION,
-    op: 'app.startup',
-    forceTransaction: true,
-    parentSpan: null,
-    attributes: {
-      'voicehub.event_type': 'instance_online',
-      'voicehub.instance_id': instanceId,
-      'deployment.target': deploymentTarget,
-      'runtime.name': 'nuxt',
-      'nitro.preset': process.env.NITRO_PRESET || 'node-server'
-    }
-  }, () => {})
+  Sentry.startSpan(
+    {
+      name: INSTANCE_ONLINE_TRANSACTION,
+      op: 'app.startup',
+      forceTransaction: true,
+      parentSpan: null,
+      attributes: {
+        'voicehub.event_type': 'instance_online',
+        'voicehub.instance_id': instanceId,
+        'deployment.target': deploymentTarget,
+        'runtime.name': 'nuxt',
+        'nitro.preset': process.env.NITRO_PRESET || 'node-server'
+      }
+    },
+    () => {}
+  )
 }
 
 export default defineNitroPlugin((nitroApp) => {
+  if (!process.env.JWT_SECRET) {
+    // 配置错误不进入遥测链路，避免在认证未初始化时泄露启动上下文
+    throw new Error('JWT_SECRET environment variable is required')
+  }
+
   const config = useRuntimeConfig()
   const sentryConfig = config.sentry
 
@@ -139,7 +147,9 @@ export default defineNitroPlugin((nitroApp) => {
       if (instanceIdPersisted && instanceId) {
         captureInstanceOnlineTransaction(instanceId, deploymentTarget)
       } else {
-        console.warn('[Sentry] Skipped instance startup transaction because instance ID was not persisted.')
+        console.warn(
+          '[Sentry] Skipped instance startup transaction because instance ID was not persisted.'
+        )
       }
 
       return true
