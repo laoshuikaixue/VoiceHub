@@ -28,11 +28,6 @@ const normalizeTxQuality = (quality: unknown) => {
   return txQualityMap[key] || '320k'
 }
 
-const normalizeVkeysQuality = (quality: unknown) => {
-  const numericQuality = Number(quality)
-  return Number.isNaN(numericQuality) ? TX_MUSICU_FALLBACK_QUALITY : numericQuality
-}
-
 const resolveTxWithDreamMeting = async (songmid: string) => {
   const url = `https://music.3e0.cn/?server=tencent&type=url&id=${encodeURIComponent(songmid)}`
   const response = await fetch(url, {
@@ -76,27 +71,6 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
   return upgradeTxAudioUrl(data.url)
 }
 
-const resolveTxWithVkeys = async (musicId: string, quality: number) => {
-  const idParam = /^\d+$/.test(musicId) ? `id=${encodeURIComponent(musicId)}` : `mid=${encodeURIComponent(musicId)}`
-  const url = `https://api.vkeys.cn/v2/music/tencent?${idParam}&quality=${quality}`
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
-  })
-
-  if (!response.ok) {
-    throw new Error(`vkeys 返回 ${response.status}`)
-  }
-
-  const data: any = await response.json()
-  if (data?.code !== 200 || !data?.data?.url) {
-    throw new Error(data?.message || data?.msg || 'vkeys 未返回播放链接')
-  }
-
-  return upgradeTxAudioUrl(data.data.url)
-}
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const platform = String(body?.platform || '').trim()
@@ -120,22 +94,9 @@ export default defineEventHandler(async (event) => {
   const normalized = normalizeTxMusicId(musicId)
   const playableInfo = await getTxSongPlayableInfo(musicId)
   const huibqQuality = normalizeTxQuality(body?.quality)
-  const vkeysQuality = normalizeVkeysQuality(body?.quality)
   const errors: string[] = []
 
-  try {
-    const url = await resolveTxWithDreamMeting(playableInfo.songmid)
-    return {
-      success: true,
-      url,
-      source: 'music.3e0.cn',
-      normalizedMusicId: playableInfo.songmid,
-      idType: normalized.idType
-    }
-  } catch (error: any) {
-    errors.push(`music.3e0.cn: ${error?.message || error}`)
-  }
-
+  // 优先尝试支持音质参数的源，确保用户选择的音质生效
   try {
     const url = await resolveTxWithHuibq(playableInfo.songmid, huibqQuality)
     return {
@@ -149,17 +110,18 @@ export default defineEventHandler(async (event) => {
     errors.push(`huibq: ${error?.message || error}`)
   }
 
+  // DreamMeting 不支持音质参数，作为最后的兜底
   try {
-    const url = await resolveTxWithVkeys(playableInfo.songId || playableInfo.songmid, vkeysQuality)
+    const url = await resolveTxWithDreamMeting(playableInfo.songmid)
     return {
       success: true,
       url,
-      source: 'vkeys',
+      source: 'music.3e0.cn',
       normalizedMusicId: playableInfo.songmid,
       idType: normalized.idType
     }
   } catch (error: any) {
-    errors.push(`vkeys: ${error?.message || error}`)
+    errors.push(`music.3e0.cn: ${error?.message || error}`)
   }
 
   throw createError({
