@@ -59,7 +59,7 @@ function safeExec(command, options = {}) {
   try {
     execSync(command, { stdio: 'inherit', ...options })
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }
@@ -68,7 +68,7 @@ function safeExec(command, options = {}) {
 function checkEnvironment() {
   logStep('🔍', '检查环境配置...')
 
-  const requiredEnvVars = ['DATABASE_URL']
+  const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET']
   const missingVars = []
 
   requiredEnvVars.forEach((varName) => {
@@ -80,8 +80,8 @@ function checkEnvironment() {
   if (missingVars.length > 0) {
     logError(`缺少必需的环境变量: ${missingVars.join(', ')}`)
     logError('请通过以下方式之一设置环境变量：')
-    logError('1. 创建 .env 文件并配置 DATABASE_URL')
-    logError('2. 使用 docker run -e DATABASE_URL=xxx 传递环境变量')
+    logError('1. 创建 .env 文件并配置 DATABASE_URL、JWT_SECRET')
+    logError('2. 使用 docker run -e DATABASE_URL=xxx -e JWT_SECRET=xxx 传递环境变量')
     logError('3. 在 docker-compose.yml 中配置 environment')
     throw new Error('环境变量配置不完整')
   } else {

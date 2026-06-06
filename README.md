@@ -816,7 +816,7 @@ VoiceHub/
 │   │   │       │   └── status.put.ts    # 更新用户状态
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
-│   │   │       ├── [id].ts          # 用户详情
+│   │   │       ├── [id].get.ts      # 用户详情
 │   │   │       ├── batch-grade-update.post.ts # 批量年级更新
 │   │   │       ├── batch-status.put.ts # 批量状态更新
 │   │   │       ├── batch-update.post.ts # 批量更新用户
