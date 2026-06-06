@@ -17,10 +17,10 @@ export default defineEventHandler(async (event) => {
 
     const userId = getRouterParam(event, 'id')
     const body = await readBody(event)
-    const { name, username, password, role, grade, class: userClass, status } = body
+    const { name, username, password, role, grade, class: userClass, status } = body || {}
 
     // 验证必填字段
-    if (!body || !name || !username) {
+    if (!name || !username) {
       throw createError({
         statusCode: 400,
         message: '姓名和用户名为必填项'
@@ -94,7 +94,9 @@ export default defineEventHandler(async (event) => {
           message: '无效的用户角色'
         })
       }
+    }
 
+    if (role && role !== targetUser.role) {
       // 超级管理员可以设置任何角色
       if (user.role === 'SUPER_ADMIN') {
         validRole = role
@@ -153,7 +155,7 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      await updateUserPassword(parseInt(userId), trimmedPassword, true)
+      await updateUserPassword(targetUser.id, trimmedPassword, true)
     }
 
     // 更新用户其他信息
@@ -181,7 +183,7 @@ export default defineEventHandler(async (event) => {
     // 如果状态发生变更，记录到状态变更日志
     if (status && status !== existingUser[0].status) {
       await db.insert(userStatusLogs).values({
-        userId: parseInt(userId),
+        userId: targetUser.id,
         oldStatus: existingUser[0].status,
         newStatus: status,
         reason: `管理员${user.name || user.username}修改用户状态`,

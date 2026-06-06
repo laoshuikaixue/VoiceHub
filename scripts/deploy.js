@@ -59,7 +59,7 @@ function safeExec(command, options = {}) {
   try {
     execSync(command, { stdio: 'inherit', ...options })
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }
