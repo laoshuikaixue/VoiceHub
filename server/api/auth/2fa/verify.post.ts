@@ -5,29 +5,12 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { delStore, getStore, incrStore } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
-const TOTP_FAILURE_WINDOW_MS = 5 * 60 * 1000
-const totpFailureRecords = new Map<string, { count: number; resetAt: number }>()
-
-function getTotpFailureRecord(key: string) {
-  const record = totpFailureRecords.get(key)
-  if (!record || record.resetAt <= Date.now()) {
-    totpFailureRecords.delete(key)
-    return null
-  }
-  return record
-}
-
-function recordTotpFailure(key: string) {
-  const existing = getTotpFailureRecord(key)
-  const record = existing || { count: 0, resetAt: Date.now() + TOTP_FAILURE_WINDOW_MS }
-  record.count++
-  totpFailureRecords.set(key, record)
-  return record
-}
+const TOTP_FAILURE_WINDOW_SECONDS = 5 * 60
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -73,12 +56,11 @@ export default defineEventHandler(async (event) => {
   const totpFailureKey = `2fa_totp_ip:${clientIp}`
 
   if (type === 'totp') {
-    const failureRecord = getTotpFailureRecord(totpFailureKey)
-    if (failureRecord && failureRecord.count >= TOTP_FAILURE_LIMIT) {
-      const waitSeconds = Math.ceil((failureRecord.resetAt - Date.now()) / 1000)
+    const failureCount = Number((await getStore(totpFailureKey)) || 0)
+    if (failureCount >= TOTP_FAILURE_LIMIT) {
       throw createError({
         statusCode: 429,
-        message: `动态验证码错误次数过多，请在 ${waitSeconds} 秒后重试`
+        message: '动态验证码错误次数过多，请在 5 分钟后重试'
       })
     }
 
@@ -91,11 +73,11 @@ export default defineEventHandler(async (event) => {
     verified = authenticator.check(code, identity.providerUserId)
     
     if (!verified) {
-      recordTotpFailure(totpFailureKey)
+      await incrStore(totpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
       throw createError({ statusCode: 400, message: '动态验证码错误' })
     }
 
-    totpFailureRecords.delete(totpFailureKey)
+    await delStore(totpFailureKey)
   } else if (type === 'email') {
     const stored = twoFactorCodes.get(targetUserId)
     

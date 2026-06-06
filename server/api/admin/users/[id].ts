@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
   if (method === 'PUT') {
     const body = await readBody(event)
 
-    if (!body.name) {
+    if (!body || !body.name) {
       throw createError({
         statusCode: 400,
         message: '姓名不能为空'
@@ -126,7 +126,14 @@ export default defineEventHandler(async (event) => {
     }
 
     let validRole = targetUser.role
-    if (body.role && ['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
+    if (body.role) {
+      if (!['USER', 'ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(body.role)) {
+        throw createError({
+          statusCode: 400,
+          message: '无效的用户角色'
+        })
+      }
+
       if (currentUser.role === 'SUPER_ADMIN') {
         validRole = body.role
       } else if (currentUser.role === 'ADMIN' && ['USER', 'SONG_ADMIN'].includes(body.role)) {
@@ -151,17 +158,26 @@ export default defineEventHandler(async (event) => {
       username,
       role: validRole,
       grade: body.grade,
-      class: body.class
-    }
-
-    if (body.status && body.status !== targetUser.status) {
-      updateData.status = body.status
-      updateData.statusChangedAt = new Date()
-      updateData.statusChangedBy = currentUser.id
+      class: body.class,
+      ...(body.status && body.status !== targetUser.status
+        ? {
+            status: body.status,
+            statusChangedAt: new Date(),
+            statusChangedBy: currentUser.id
+          }
+        : {})
     }
 
     if (body.password) {
-      await updateUserPassword(userId, body.password, true)
+      const trimmedPassword = String(body.password).trim()
+      if (trimmedPassword.length < 6) {
+        throw createError({
+          statusCode: 400,
+          message: '密码长度不能少于 6 位'
+        })
+      }
+
+      await updateUserPassword(userId, trimmedPassword, true)
     }
 
     const updatedUserResult = await db
@@ -196,9 +212,9 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('songs:*')
-      await cache.delete(`auth:user:${userId}`)
+      const { cache, userCache } = await import('~~/server/utils/cache-helpers')
+      await cache.deletePattern('song:*')
+      await userCache.clearAuth(String(userId))
     } catch (cacheError) {
       console.warn('[Cache] 清除缓存失败:', cacheError)
     }
@@ -245,11 +261,11 @@ export default defineEventHandler(async (event) => {
     await db.delete(users).where(eq(users.id, userId))
 
     try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('songs:*')
+      const { cache, userCache } = await import('~~/server/utils/cache-helpers')
+      await cache.deletePattern('song:*')
       await cache.deletePattern('schedules:*')
       await cache.deletePattern('stats:*')
-      await cache.delete(`auth:user:${targetUser.id}`)
+      await userCache.clearAuth(String(targetUser.id))
     } catch (cacheError) {
       console.warn('[Cache] 清除缓存失败:', cacheError)
     }

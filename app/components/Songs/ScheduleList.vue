@@ -50,7 +50,7 @@
                   :class="['date-picker-item', { active: currentDateIndex === index }]"
                   @click="selectDateAndClose(index)"
                 >
-                  {{ formatDate(date, false).main }}
+                  <span class="date-main">{{ formatDate(date, false).main }}</span>
                   <span class="weekday">{{ formatDate(date, false).weekday }}</span>
                 </div>
 
@@ -69,7 +69,7 @@
             :class="['date-item', { active: currentDateIndex === index }]"
             @click="selectDate(index)"
           >
-            {{ formatDate(date).main }}
+            <span class="date-main">{{ formatDate(date).main }}</span>
             <span class="weekday">{{ formatDate(date).weekday }}</span>
           </div>
 
@@ -88,7 +88,7 @@
       <div class="schedule-content">
         <div class="schedule-header">
           <h2 class="current-date">
-            {{ currentDateFormatted.main }}
+            <span class="date-main">{{ currentDateFormatted.main }}</span>
             <span v-if="currentDateFormatted.weekday" class="weekday">{{ currentDateFormatted.weekday }}</span>
           </h2>
           <button
@@ -1834,6 +1834,10 @@ const vRipple = {
   font-size: 12px;
   opacity: 0.7;
   margin-top: 2px;
+}
+
+.date-main {
+  display: block;
 }
 
 /* 垂直分隔线 */
