@@ -41,17 +41,8 @@ export async function zzcSign(text: string) {
  * 使用签名请求 QQ 音乐 API
  * 相比普通 musicu.fcg，musics.fcg?sign=... 的签名请求更稳定
  */
-const canonicalize = (obj: any): any => {
-  if (obj === null || typeof obj !== 'object') return obj
-  if (Array.isArray(obj)) return obj.map(canonicalize)
-  return Object.keys(obj).sort().reduce((acc: any, key) => {
-    acc[key] = canonicalize(obj[key])
-    return acc
-  }, {})
-}
-
 export const txSignedRequest = async (body: any) => {
-  const sign = await zzcSign(JSON.stringify(canonicalize(body)))
+  const sign = await zzcSign(JSON.stringify(body))
   try {
     const response = await $fetch(`https://u.y.qq.com/cgi-bin/musics.fcg?sign=${sign}`, {
       method: 'POST',
