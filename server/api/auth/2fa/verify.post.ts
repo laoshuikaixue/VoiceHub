@@ -8,6 +8,26 @@ import { isSecureRequest } from '~~/server/utils/request-utils'
 import otplib from 'otplib'
 
 const { authenticator } = otplib
+const TOTP_FAILURE_LIMIT = 5
+const TOTP_FAILURE_WINDOW_MS = 5 * 60 * 1000
+const totpFailureRecords = new Map<string, { count: number; resetAt: number }>()
+
+function getTotpFailureRecord(key: string) {
+  const record = totpFailureRecords.get(key)
+  if (!record || record.resetAt <= Date.now()) {
+    totpFailureRecords.delete(key)
+    return null
+  }
+  return record
+}
+
+function recordTotpFailure(key: string) {
+  const existing = getTotpFailureRecord(key)
+  const record = existing || { count: 0, resetAt: Date.now() + TOTP_FAILURE_WINDOW_MS }
+  record.count++
+  totpFailureRecords.set(key, record)
+  return record
+}
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -49,8 +69,19 @@ export default defineEventHandler(async (event) => {
   }
 
   let verified = false
+  const clientIp = getClientIP(event)
+  const totpFailureKey = `2fa_totp_ip:${clientIp}`
 
   if (type === 'totp') {
+    const failureRecord = getTotpFailureRecord(totpFailureKey)
+    if (failureRecord && failureRecord.count >= TOTP_FAILURE_LIMIT) {
+      const waitSeconds = Math.ceil((failureRecord.resetAt - Date.now()) / 1000)
+      throw createError({
+        statusCode: 429,
+        message: `动态验证码错误次数过多，请在 ${waitSeconds} 秒后重试`
+      })
+    }
+
     const identity = await db.query.userIdentities.findFirst({
       where: and(eq(userIdentities.userId, targetUserId), eq(userIdentities.provider, 'totp'))
     })
@@ -60,8 +91,11 @@ export default defineEventHandler(async (event) => {
     verified = authenticator.check(code, identity.providerUserId)
     
     if (!verified) {
+      recordTotpFailure(totpFailureKey)
       throw createError({ statusCode: 400, message: '动态验证码错误' })
     }
+
+    totpFailureRecords.delete(totpFailureKey)
   } else if (type === 'email') {
     const stored = twoFactorCodes.get(targetUserId)
     
@@ -94,8 +128,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // 验证通过，更新登录信息
-  const clientIp = getClientIP(event)
-
   const bindingToken = getCookie(event, 'binding-token')
   if (bindingToken) {
     let bindingPayload

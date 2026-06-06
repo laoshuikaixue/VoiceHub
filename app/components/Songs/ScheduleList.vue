@@ -11,7 +11,7 @@
               <Icon :size="18" name="chevron-left" />
             </button>
             <div class="current-date-display" @click="toggleDatePicker">
-              <span class="date-text" v-html="currentDateFormatted" />
+              <span class="date-text">{{ currentDateFormatted.main }}</span>
               <Icon :size="12" class="dropdown-icon" name="chevron-down" />
             </div>
             <button
@@ -49,8 +49,10 @@
                   v-ripple
                   :class="['date-picker-item', { active: currentDateIndex === index }]"
                   @click="selectDateAndClose(index)"
-                  v-html="formatDate(date, false)"
-                />
+                >
+                  {{ formatDate(date, false).main }}
+                  <span class="weekday">{{ formatDate(date, false).weekday }}</span>
+                </div>
 
                 <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
               </div>
@@ -66,8 +68,10 @@
             v-ripple
             :class="['date-item', { active: currentDateIndex === index }]"
             @click="selectDate(index)"
-            v-html="formatDate(date)"
-          />
+          >
+            {{ formatDate(date).main }}
+            <span class="weekday">{{ formatDate(date).weekday }}</span>
+          </div>
 
           <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
         </div>
@@ -83,7 +87,10 @@
       <!-- 右侧排期内容 -->
       <div class="schedule-content">
         <div class="schedule-header">
-          <h2 class="current-date" v-html="currentDateFormatted" />
+          <h2 class="current-date">
+            {{ currentDateFormatted.main }}
+            <span v-if="currentDateFormatted.weekday" class="weekday">{{ currentDateFormatted.weekday }}</span>
+          </h2>
           <button
             v-if="isNeteaseLoggedIn"
             class="add-playlist-btn"
@@ -918,7 +925,7 @@ const findAndSelectTodayOrClosestDate = async () => {
 
 // 格式化当前日期
 const currentDateFormatted = computed(() => {
-  if (!currentDate.value) return '无日期'
+  if (!currentDate.value) return { main: '无日期', weekday: '' }
   return formatDate(currentDate.value, isMobile.value)
 })
 
@@ -1054,12 +1061,12 @@ const formatDate = (dateStr, isMobile = false) => {
 
     // 移动端显示更紧凑的格式
     if (isMobile) {
-      return `${month}月${day}日 ${weekday}`
+      return { main: `${month}月${day}日 ${weekday}`, weekday: '' }
     }
 
-    return `${year}年${month}月${day}日\n<span class="weekday">${weekday}</span>`
+    return { main: `${year}年${month}月${day}日`, weekday }
   } catch (e) {
-    return dateStr || '未知日期'
+    return { main: dateStr || '未知日期', weekday: '' }
   }
 }
 

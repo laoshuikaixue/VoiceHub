@@ -2,6 +2,8 @@ import { isIP } from 'node:net'
 import { lookup } from 'node:dns/promises'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_CONCURRENT_IMAGE_FETCHES = 30
+let activeImageFetches = 0
 
 const isBlockedIPv4 = (address) => {
   const parts = address.split('.').map(Number)
@@ -165,6 +167,12 @@ export default defineEventHandler(async (event) => {
 
   if (!imageUrl) throw createError({ statusCode: 400, message: '缺少图片URL参数' })
 
+  if (activeImageFetches >= MAX_CONCURRENT_IMAGE_FETCHES) {
+    throw createError({ statusCode: 429, message: '图片代理请求过多，请稍后重试' })
+  }
+
+  activeImageFetches++
+
   try {
     const { contentType, buffer } = await retryFetchImage(imageUrl)
 
@@ -182,5 +190,7 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       message: `图片获取失败: ${error?.message || '未知错误'}`
     })
+  } finally {
+    activeImageFetches = Math.max(0, activeImageFetches - 1)
   }
 })
