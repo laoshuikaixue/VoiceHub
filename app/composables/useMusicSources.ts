@@ -17,6 +17,10 @@ import {
   type SourceStatus
 } from '~/utils/musicSources'
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
+
+// 歌词请求缓存，避免同一首歌重复请求
+const lyricCache = new Map<string, Promise<any>>()
+const LYRIC_CACHE_TTL = 60 * 1000
 /**
  * 音源管理器 Composable
  */
@@ -1186,7 +1190,16 @@ export const useMusicSources = () => {
     data?: { lrc: string; trans?: string; yrc?: string; ttml?: string }
     error?: string
   }> => {
-    try {
+    const cacheKey = `${platform}:${id}`
+
+    // 复用已缓存的请求结果
+    const cached = lyricCache.get(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const promise = (async () => {
+      try {
       const settings = useLyricSettings()
       const enabledSources = getEnabledSources()
       const neteaseSource = enabledSources.find((source) => source.id.includes('netease-backup'))
@@ -1229,12 +1242,20 @@ export const useMusicSources = () => {
 
       // 辅助函数：获取 AMLL DB Server TTML
       const fetchAMLL = async () => {
-        if (platform !== 'netease' || !settings.enableOnlineTTMLLyric.value) return
-        const serverUrl = settings.amllDbServer.value
-        if (!serverUrl) return
+        if (!settings.enableOnlineTTMLLyric.value) return
 
         try {
-          const url = serverUrl.replace('%s', id.toString())
+          let url: string
+          if (platform === 'tencent') {
+            url = `https://amlldb.bikonoo.com/lyrics/qq-lyrics/${id}`
+          } else if (platform === 'netease') {
+            const serverUrl = settings.amllDbServer.value
+            if (!serverUrl) return
+            url = serverUrl.replace('%s', id.toString())
+          } else {
+            return
+          }
+
           const ttml = await $fetch(url, { responseType: 'text' })
           if (ttml && typeof ttml === 'string' && ttml.includes('<tt')) {
             resultData.ttml = ttml
@@ -1245,11 +1266,32 @@ export const useMusicSources = () => {
         }
       }
 
-      // 辅助函数：获取 QQ 音乐 (vkeys)
+      // 辅助函数：获取 QQ 音乐歌词（原生接口 + vkeys 兜底）
       const fetchQM = async () => {
-        if (!vkeysSource) return
         // 如果禁用了 QM 歌词且不是强制 QM 模式，则跳过
         if (!settings.enableQQMusicLyric.value && settings.lyricPriority.value !== 'qm') return
+
+        if (platform === 'tencent') {
+          try {
+            const nativeResp = await $fetch('/api/native-api/lyric/tx', {
+              params: { songmid: String(id) },
+              timeout: 8000
+            })
+            if (nativeResp?.success && nativeResp?.data) {
+              const d = nativeResp.data
+              if (d.lrc) resultData.lrc = d.lrc
+              if (d.trans) resultData.trans = d.trans
+              if (d.lrc) {
+                hasResult = true
+                return
+              }
+            }
+          } catch (e) {
+            console.warn('[getLyrics] 原生歌词接口失败:', e)
+          }
+        }
+
+        if (!vkeysSource) return
 
         try {
           let url: string
@@ -1285,9 +1327,11 @@ export const useMusicSources = () => {
       console.log(`[getLyrics] 使用策略: ${priority}, 平台: ${platform}, ID: ${id}`)
 
       if (priority === 'qm') {
+        // QQ 音乐优先：AMLL TTML → native 歌词 → vkeys 兜底
+        await fetchAMLL()
         await fetchQM()
         if (!hasResult) {
-          await Promise.all([fetchAMLL(), fetchOfficial()])
+          await Promise.all([fetchOfficial()])
         }
       } else if (priority === 'ttml') {
         await fetchAMLL()
@@ -1310,11 +1354,12 @@ export const useMusicSources = () => {
       } else if (priority === 'official') {
         await fetchOfficial()
       } else {
-        // auto / default
+        // auto / default：AMLL TTML 优先获取最高质量逐词歌词
+        await fetchAMLL()
         if (settings.enableQQMusicLyric.value) {
           await fetchQM()
         }
-        await Promise.all([fetchAMLL(), fetchOfficial()])
+        await fetchOfficial()
       }
 
       // 检查是否有结果
@@ -1360,6 +1405,15 @@ export const useMusicSources = () => {
       console.error('[getLyrics] 获取歌词失败:', error)
       return { success: false, error: error?.message || '未知错误' }
     }
+    })().finally(() => {
+      // 请求完成后延迟清除缓存，给并行请求复用窗口
+      setTimeout(() => {
+        lyricCache.delete(cacheKey)
+      }, LYRIC_CACHE_TTL)
+    })
+
+    lyricCache.set(cacheKey, promise)
+    return promise
   }
 
   /**
