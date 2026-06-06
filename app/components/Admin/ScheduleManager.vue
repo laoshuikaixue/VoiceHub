@@ -1048,7 +1048,7 @@ const getScheduleDateValue = (playDate) => {
 }
 
 // 响应式数据
-const selectedDate = ref(getTodayDateValue())
+const selectedDate = useState('adminSelectedDate', getTodayDateValue)
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
