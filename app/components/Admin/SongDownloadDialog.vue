@@ -606,6 +606,9 @@ const activeDownloads = reactive(new Map())
 const activeEncoderWorker = ref(null)
 const DOWNLOAD_CONCURRENCY = 3
 const MERGE_DECODE_CONCURRENCY = 3
+const PCM_BYTES_PER_SECOND = 44100 * 2 * 4
+const FAST_MERGE_MIN_BUDGET_BYTES = 96 * 1024 * 1024
+const FAST_MERGE_MEMORY_RATIO = 0.04
 
 // 当前正在执行的任务类型 ('merge' | 'download' | '')
 const currentTaskType = ref('')
@@ -757,6 +760,122 @@ const estimatedTotalDuration = computed(() => {
   })
   return { total, count }
 })
+
+const parsePositiveDuration = (value) => {
+  const duration = Number(value)
+  if (!Number.isFinite(duration) || duration <= 0) return 0
+  return duration
+}
+
+const getKnownSongDuration = (songItem) => {
+  const song = songItem.song
+  const cached = getUsablePreload(song.id, selectedQuality.value)
+  if (cached?.duration) return cached.duration
+
+  const millisecondCandidates = [
+    song.durationMs,
+    song.duration_ms,
+    song.dt,
+    song.sourceInfo?.durationMs,
+    song.sourceInfo?.duration_ms
+  ]
+
+  for (const candidate of millisecondCandidates) {
+    const duration = parsePositiveDuration(candidate)
+    if (duration > 0) return duration / 1000
+  }
+
+  const secondCandidates = [
+    song.durationSeconds,
+    song.durationSecond,
+    song.sourceInfo?.durationSeconds,
+    song.sourceInfo?.durationSecond
+  ]
+
+  for (const candidate of secondCandidates) {
+    const duration = parsePositiveDuration(candidate)
+    if (duration > 0) return duration
+  }
+
+  const ambiguousCandidates = [song.duration, song.sourceInfo?.duration]
+  const isLikelyMillisecondPlatform = song.musicPlatform?.startsWith('netease')
+
+  for (const candidate of ambiguousCandidates) {
+    const duration = parsePositiveDuration(candidate)
+    if (duration <= 0) continue
+
+    // 模糊字段按保守策略处理，避免长音频秒数被误除导致低估内存。
+    if (isLikelyMillisecondPlatform || duration > 15000) {
+      return duration / 1000
+    }
+    return duration
+  }
+
+  return 0
+}
+
+const getBrowserMergeMemoryBudget = () => {
+  const deviceMemoryGb = Number(navigator.deviceMemory)
+  if (Number.isFinite(deviceMemoryGb) && deviceMemoryGb > 0) {
+    return Math.max(
+      FAST_MERGE_MIN_BUDGET_BYTES,
+      deviceMemoryGb * 1024 * 1024 * 1024 * FAST_MERGE_MEMORY_RATIO
+    )
+  }
+
+  const heapLimit = performance?.memory?.jsHeapSizeLimit
+  if (Number.isFinite(heapLimit) && heapLimit > 0) {
+    return Math.max(FAST_MERGE_MIN_BUDGET_BYTES, heapLimit * 0.12)
+  }
+
+  return null
+}
+
+const shouldUseFastMergeMode = (selectedSongsList) => {
+  const deviceMemoryGb = Number(navigator.deviceMemory)
+  let knownDurationCount = 0
+  let totalDuration = 0
+
+  for (const songItem of selectedSongsList) {
+    const duration = getKnownSongDuration(songItem)
+    if (duration > 0) {
+      knownDurationCount++
+      totalDuration += duration
+    }
+  }
+
+  const estimatedPcmBytes = totalDuration * PCM_BYTES_PER_SECOND
+  const memoryBudget = getBrowserMergeMemoryBudget()
+
+  if (memoryBudget && estimatedPcmBytes > memoryBudget) {
+    return false
+  }
+
+  if (knownDurationCount === selectedSongsList.length && memoryBudget) {
+    return estimatedPcmBytes <= memoryBudget
+  }
+
+  if (Number.isFinite(deviceMemoryGb)) {
+    if (deviceMemoryGb <= 4) return selectedSongsList.length <= 2 && estimatedPcmBytes <= 64 * 1024 * 1024
+    if (deviceMemoryGb >= 8) return selectedSongsList.length <= 10
+  }
+
+  return selectedSongsList.length <= 3 && estimatedPcmBytes <= FAST_MERGE_MIN_BUDGET_BYTES
+}
+
+const isLikelyMemoryError = (error) => {
+  const message = String(error?.message || error || '')
+  return /memory|allocation|array buffer|out of memory|内存/i.test(message)
+}
+
+const pushMergeError = (error) => {
+  downloadErrors.value.push({
+    id: 'merge_error',
+    title: '音频合并',
+    artist: '',
+    error: error?.message || String(error || '合并失败')
+  })
+}
 
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
@@ -926,6 +1045,12 @@ const formatWorkerProgress = (stage, value, format) => {
   processingStatus.value = `正在编码 ${format.toUpperCase()}: ${value}%`
 }
 
+const getTrackTransferables = (track) => {
+  return track.left.buffer === track.right.buffer
+    ? [track.left.buffer]
+    : [track.left.buffer, track.right.buffer]
+}
+
 const encodeWithWorker = async (tracks, format, config) => {
   terminateActiveEncoderWorker()
   const worker = new Worker(new URL('../../workers/audioEncoderWorker.js', import.meta.url), {
@@ -955,7 +1080,7 @@ const encodeWithWorker = async (tracks, format, config) => {
     }
     const transferables = []
     const payloadTracks = tracks.map((track) => {
-      transferables.push(track.left.buffer, track.right.buffer)
+      transferables.push(...getTrackTransferables(track))
       return {
         id: track.id,
         title: track.title,
@@ -977,6 +1102,130 @@ const encodeWithWorker = async (tracks, format, config) => {
   })
 }
 
+const createStreamingEncoderSession = async (format, config, sampleRate) => {
+  terminateActiveEncoderWorker()
+  const worker = new Worker(new URL('../../workers/audioEncoderWorker.js', import.meta.url), {
+    type: 'module'
+  })
+  activeEncoderWorker.value = worker
+  let requestId = 0
+  const pendingRequests = new Map()
+  let isAborted = false
+
+  const terminateSessionWorker = () => {
+    worker.terminate()
+    if (activeEncoderWorker.value === worker) {
+      activeEncoderWorker.value = null
+    }
+  }
+
+  const rejectPendingRequests = (error) => {
+    pendingRequests.forEach(({ reject }) => reject(error))
+    pendingRequests.clear()
+  }
+
+  const abortSession = (error) => {
+    if (isAborted) return
+    isAborted = true
+    rejectPendingRequests(error)
+    terminateSessionWorker()
+  }
+
+  worker.onmessage = (event) => {
+    const { type, stage, value, blob, message, requestId: responseRequestId } = event.data || {}
+    if (type === 'progress') {
+      formatWorkerProgress(stage, value, format)
+      return
+    }
+
+    if (type === 'error') {
+      const error = new Error(message || '编码失败')
+      const pending = pendingRequests.get(responseRequestId)
+      if (pending) {
+        pendingRequests.delete(responseRequestId)
+        pending.reject(error)
+      }
+      abortSession(error)
+      return
+    }
+
+    const pending = pendingRequests.get(responseRequestId)
+    if (!pending) return
+
+    if (pending.expectedTypes.includes(type)) {
+      pendingRequests.delete(responseRequestId)
+      pending.resolve({ type, blob })
+    }
+  }
+
+  worker.onerror = (event) => {
+    const error = new Error(event.message || '编码 Worker 运行失败')
+    abortSession(error)
+  }
+
+  const sendCommand = (payload, transferables = [], expectedTypes = []) => {
+    if (isAborted) {
+      return Promise.reject(new Error('编码 Worker 已终止'))
+    }
+
+    const nextRequestId = ++requestId
+    return new Promise((resolve, reject) => {
+      pendingRequests.set(nextRequestId, { resolve, reject, expectedTypes })
+      try {
+        worker.postMessage({ ...payload, requestId: nextRequestId }, transferables)
+      } catch (error) {
+        pendingRequests.delete(nextRequestId)
+        isAborted = true
+        reject(error)
+        rejectPendingRequests(error)
+        terminateSessionWorker()
+      }
+    })
+  }
+
+  await sendCommand(
+    {
+      cmd: 'startStream',
+      format,
+      normalize: config.normalizeAudio,
+      targetDb: config.targetDb,
+      sampleRate
+    },
+    [],
+    ['ready']
+  )
+
+  return {
+    appendTrack: async (track) => {
+      await sendCommand(
+        {
+          cmd: 'appendTrack',
+          track: {
+            id: track.id,
+            title: track.title,
+            sampleRate: track.sampleRate,
+            left: track.left.buffer,
+            right: track.right.buffer
+          }
+        },
+        getTrackTransferables(track),
+        ['trackDone']
+      )
+    },
+    finish: async () => {
+      const result = await sendCommand({ cmd: 'finishStream' }, [], ['done'])
+      terminateSessionWorker()
+      return result.blob
+    },
+    cancel: () => {
+      if (isAborted) return
+      isAborted = true
+      rejectPendingRequests(new Error('编码任务已取消'))
+      terminateSessionWorker()
+    }
+  }
+}
+
 const decodeAudioBlobToTrack = async (song, blob, audioContext) => {
   const arrayBuffer = await blob.arrayBuffer()
   processingStatus.value = `正在解码: ${song.title}`
@@ -985,7 +1234,7 @@ const decodeAudioBlobToTrack = async (song, blob, audioContext) => {
   const right =
     decoded.numberOfChannels > 1
       ? new Float32Array(decoded.getChannelData(1))
-      : new Float32Array(decoded.getChannelData(0))
+      : left
   return {
     id: song.id,
     title: song.title,
@@ -995,9 +1244,12 @@ const decodeAudioBlobToTrack = async (song, blob, audioContext) => {
   }
 }
 
-const decodeSongTrack = async (song, audioContext, quality) => {
-  const { blob } = await getAudioBlobForSong(song, quality)
+const decodeSongTrack = async (song, audioContext, quality, options = {}) => {
+  const { blob, fromCache } = await getAudioBlobForSong(song, quality)
   const track = await decodeAudioBlobToTrack(song, blob, audioContext)
+  if (fromCache && options.releasePreload) {
+    preloadedSongs.delete(song.id)
+  }
   activeDownloads.set(song.id, 100)
   return track
 }
@@ -1027,7 +1279,7 @@ const encodeSingleSong = async (song, audioContext, config) => {
   return { blob, extension }
 }
 
-const processAndMergeAudio = async (selectedSongsList, config) => {
+const processAndMergeAudioFast = async (selectedSongsList, config) => {
   const audioContext = createDownloadAudioContext()
 
   try {
@@ -1042,7 +1294,7 @@ const processAndMergeAudio = async (selectedSongsList, config) => {
         const song = songItem.song
 
         currentDownloadSong.value = `${song.artist} - ${song.title}`
-        processingStatus.value = `正在准备: ${song.title}`
+        processingStatus.value = `正在快速准备: ${song.title}`
 
         try {
           results[index] = await decodeSongTrack(song, audioContext, config.quality)
@@ -1070,7 +1322,7 @@ const processAndMergeAudio = async (selectedSongsList, config) => {
 
     if (tracks.length === 0) throw new Error('没有成功处理的音频')
 
-    processingStatus.value = '正在准备编码...'
+    processingStatus.value = '正在快速合并编码...'
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     const extension = config.exportFormat === 'wav' ? 'wav' : 'mp3'
@@ -1081,15 +1333,120 @@ const processAndMergeAudio = async (selectedSongsList, config) => {
     saveFile(resultBlob, filename)
     processingStatus.value = `处理完成: ${filename}`
     currentDownloadSong.value = ''
-  } catch (error) {
-    console.error('合并过程出错:', error)
-    if (window.$showNotification) {
-      window.$showNotification('合并失败: ' + error.message, 'error')
-    }
   } finally {
     terminateActiveEncoderWorker()
     audioContext.close()
     processingStatus.value = ''
+  }
+}
+
+const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
+  const audioContext = createDownloadAudioContext()
+  const extension = config.exportFormat === 'wav' ? 'wav' : 'mp3'
+  let streamSession = null
+
+  try {
+    streamSession = await createStreamingEncoderSession(
+      extension,
+      config,
+      audioContext.sampleRate || 44100
+    )
+    let successCount = 0
+
+    for (let i = 0; i < selectedSongsList.length; i++) {
+      const song = selectedSongsList[i].song
+      currentDownloadSong.value = `${song.artist} - ${song.title}`
+      processingStatus.value = `正在准备: ${song.title}`
+
+      let track = null
+      try {
+        // 老设备内存更容易被多首 PCM 同时占满，因此合并时始终逐首解码和编码。
+        track = await decodeSongTrack(song, audioContext, config.quality, {
+          releasePreload: true
+        })
+      } catch (error) {
+        console.error(`解码失败: ${song.title}`, error)
+        downloadErrors.value.push({
+          id: song.id,
+          title: song.title,
+          artist: song.artist,
+          error: `解码失败: ${error.message}`
+        })
+        activeDownloads.delete(song.id)
+        downloadedCount.value++
+        continue
+      }
+
+      try {
+        processingStatus.value = `正在写入合并文件: ${song.title}`
+        await streamSession.appendTrack(track)
+        successCount++
+      } catch (error) {
+        console.error(`写入合并文件失败: ${song.title}`, error)
+        throw new Error(`写入合并文件失败: ${error.message}`)
+      } finally {
+        activeDownloads.delete(song.id)
+        downloadedCount.value++
+      }
+    }
+
+    if (successCount === 0) throw new Error('没有成功处理的音频')
+
+    processingStatus.value = '正在完成合并文件...'
+    const resultBlob = await streamSession.finish()
+    streamSession = null
+    downloadedCount.value = totalCount.value
+    const filename = buildMergedFilename(selectedSongsList, extension, config.customFilename)
+
+    saveFile(resultBlob, filename)
+    processingStatus.value = `处理完成: ${filename}`
+    currentDownloadSong.value = ''
+  } catch (error) {
+    console.error('合并过程出错:', error)
+    pushMergeError(error)
+    if (window.$showNotification) {
+      window.$showNotification('合并失败: ' + error.message, 'error')
+    }
+  } finally {
+    if (streamSession) {
+      streamSession.cancel()
+    }
+    terminateActiveEncoderWorker()
+    audioContext.close()
+    processingStatus.value = ''
+  }
+}
+
+const processAndMergeAudio = async (selectedSongsList, config) => {
+  const useFastMergeMode = shouldUseFastMergeMode(selectedSongsList)
+
+  if (!useFastMergeMode) {
+    processingStatus.value = '正在使用兼容模式合并...'
+    await processAndMergeAudioStreaming(selectedSongsList, config)
+    return
+  }
+
+  try {
+    processingStatus.value = '正在使用快速模式合并...'
+    await processAndMergeAudioFast(selectedSongsList, config)
+  } catch (error) {
+    if (isLikelyMemoryError(error)) {
+      console.warn('快速合并内存不足，切换到兼容模式:', error)
+      downloadedCount.value = 0
+      downloadErrors.value = []
+      activeDownloads.clear()
+      if (window.$showNotification) {
+        window.$showNotification('快速合并内存不足，已切换兼容模式重试', 'warning')
+      }
+      await processAndMergeAudioStreaming(selectedSongsList, config)
+      return
+    }
+
+    console.error('合并过程出错:', error)
+    pushMergeError(error)
+    if (window.$showNotification) {
+      window.$showNotification('合并失败: ' + error.message, 'error')
+    }
   }
 }
 
