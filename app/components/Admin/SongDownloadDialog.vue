@@ -868,6 +868,15 @@ const isLikelyMemoryError = (error) => {
   return /memory|allocation|array buffer|out of memory|内存/i.test(message)
 }
 
+const pushMergeError = (error) => {
+  downloadErrors.value.push({
+    id: 'merge_error',
+    title: '音频合并',
+    artist: '',
+    error: error?.message || String(error || '合并失败')
+  })
+}
+
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedSongs.value = new Set()
@@ -1394,6 +1403,7 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
     currentDownloadSong.value = ''
   } catch (error) {
     console.error('合并过程出错:', error)
+    pushMergeError(error)
     if (window.$showNotification) {
       window.$showNotification('合并失败: ' + error.message, 'error')
     }
@@ -1433,6 +1443,7 @@ const processAndMergeAudio = async (selectedSongsList, config) => {
     }
 
     console.error('合并过程出错:', error)
+    pushMergeError(error)
     if (window.$showNotification) {
       window.$showNotification('合并失败: ' + error.message, 'error')
     }
