@@ -47,6 +47,9 @@ importers:
       '@pixi/sprite':
         specifier: ^7.4.3
         version: 7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))
+      '@sansenjian/qq-music-api':
+        specifier: file:./qq-music-api-main
+        version: file:qq-music-api-main
       '@sentry/node':
         specifier: ^10.56.0
         version: 10.56.0
@@ -1601,6 +1604,12 @@ packages:
     engines: {node: '>= 12'}
     deprecated: Please upgrade to v15 or higher. All reported bugs in this version are fixed in newer releases, dependencies have been updated, and security has been improved.
 
+  '@koa/router@15.6.0':
+    resolution: {integrity: sha512-iEOXlvGIBqSNkGXrg0XtMARAOm5zA24oedXxiTGEkrD4JgwVjfRDddCQvW1s4WEcwDYvyecRbf8BikXsuEEj8w==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      koa: ^2.0.0 || ^3.0.0
+
   '@kwsites/file-exists@1.1.1':
     resolution: {integrity: sha512-m9/5YGR18lIwxSFDwfE3oA7bWuq9kdau6ugN4H2rJeyhFQZcG9AgSHkQtSD15a8WvTgfz9aikZMrKPHvbpqFiw==}
 
@@ -2727,6 +2736,11 @@ packages:
     resolution: {integrity: sha512-X+zaP2x+j4RXGfbp/seSoRHWnPxzApilDszisZxbYH5C/jTxFhCtDNdPGZb9lJyYPs24wGxruPF7Y+sIXt9Gzw==}
     cpu: [x64]
     os: [win32]
+
+  '@sansenjian/qq-music-api@file:qq-music-api-main':
+    resolution: {directory: qq-music-api-main, type: directory}
+    engines: {node: ^20.17.0 || >=22.9.0, npm: ^11.0.0}
+    hasBin: true
 
   '@sentry-internal/browser-utils@10.56.0':
     resolution: {integrity: sha512-I8tZWAFg8SZpD8BFUpglEtSTzhZjacmcThB5/Mlq/iFiiT8mBPG4ZWDWssSfmIBKvZywJZJ83uDA0+uiJU73Tw==}
@@ -9090,6 +9104,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@koa/router@15.6.0(koa@2.16.4)':
+    dependencies:
+      debug: 4.4.3
+      http-errors: 2.0.1
+      koa: 2.16.4
+      koa-compose: 4.1.0
+      path-to-regexp: 8.4.2
+    transitivePeerDependencies:
+      - supports-color
+
   '@kwsites/file-exists@1.1.1':
     dependencies:
       debug: 4.4.3
@@ -10291,6 +10315,15 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.61.1':
     optional: true
+
+  '@sansenjian/qq-music-api@file:qq-music-api-main':
+    dependencies:
+      '@koa/router': 15.6.0(koa@2.16.4)
+      axios: 1.17.0
+      koa: 2.16.4
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   '@sentry-internal/browser-utils@10.56.0':
     dependencies:

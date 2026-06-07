@@ -3,6 +3,7 @@ import {
   normalizeTxMusicId,
   upgradeTxAudioUrl
 } from '~~/server/utils/native_tx'
+import { resolveQqSdkPlayUrl } from '~~/server/utils/qq_music_sdk'
 
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
@@ -106,6 +107,19 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     errors.push(`huibq: ${error?.message || error}`)
+  }
+
+  try {
+    const url = await resolveQqSdkPlayUrl(playableInfo.songmid, body?.quality, body?.cookie)
+    return {
+      success: true,
+      url,
+      source: 'qq-music-api',
+      normalizedMusicId: playableInfo.songmid,
+      idType: normalized.idType
+    }
+  } catch (error: any) {
+    errors.push(`qq-music-api: ${error?.message || error}`)
   }
 
   // DreamMeting 不支持音质参数，作为最后的兜底

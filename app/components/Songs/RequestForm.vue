@@ -323,6 +323,47 @@
                 </div>
               </div>
             </div>
+
+            <!-- QQ音乐登录状态和选项 -->
+            <div v-if="platform === 'tencent'" class="netease-options">
+              <div v-if="!isQQMusicLoggedIn" class="login-entry">
+                <div class="login-desc">
+                  <p class="login-title">登录 QQ 音乐提升播放稳定性</p>
+                </div>
+                <div class="login-actions">
+                  <button
+                    class="login-btn qq-login-btn"
+                    type="button"
+                    @click="showQQLoginModal = true"
+                  >
+                    立即登录
+                  </button>
+                </div>
+              </div>
+
+              <div v-else class="user-status">
+                <div class="user-compact-row">
+                  <div class="user-profile">
+                    <div class="qq-user-avatar">
+                      <Icon :size="14" name="music" />
+                    </div>
+                    <span class="user-name">{{ qqMusicUser?.nickname || 'QQ音乐已登录' }}</span>
+                  </div>
+
+                  <div class="user-actions-row">
+                    <button
+                      class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
+                      aria-label="退出 QQ 音乐登录"
+                      title="退出 QQ 音乐登录"
+                      type="button"
+                      @click="handleLogoutQQMusic"
+                    >
+                      <Icon :size="14" name="logout" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="results-content">
@@ -630,6 +671,13 @@
       :show="showLoginModal"
       @close="showLoginModal = false"
       @login-success="handleLoginSuccess"
+    />
+
+    <!-- QQ音乐登录弹窗 -->
+    <QQMusicLoginModal
+      :show="showQQLoginModal"
+      @close="showQQLoginModal = false"
+      @login-success="handleQQLoginSuccess"
     />
 
     <!-- 播客节目列表弹窗 -->
@@ -1073,6 +1121,7 @@ import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
+import QQMusicLoginModal from './QQMusicLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
 import AlbumDetailsModal from './AlbumDetailsModal.vue'
@@ -1125,9 +1174,13 @@ const requestingReplay = ref(false)
 
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
+const showQQLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
 const neteaseUser = ref(null)
 const neteaseCookie = ref('')
+const isQQMusicLoggedIn = ref(false)
+const qqMusicUser = ref(null)
+const qqMusicCookie = ref('')
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -1731,6 +1784,49 @@ const handleLogoutNetease = () => {
   }
 }
 
+const checkQQMusicLoginStatus = () => {
+  if (!import.meta.client) return
+
+  const cookie = localStorage.getItem('qq_music_cookie')
+  const userStr = localStorage.getItem('qq_music_user')
+
+  if (!cookie) {
+    handleLogoutQQMusic()
+    return
+  }
+
+  qqMusicCookie.value = cookie
+  isQQMusicLoggedIn.value = true
+
+  try {
+    qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: 'QQ音乐已登录' }
+  } catch {
+    qqMusicUser.value = { nickname: 'QQ音乐已登录' }
+  }
+}
+
+const handleQQLoginSuccess = (data) => {
+  qqMusicCookie.value = data.cookie
+  qqMusicUser.value = data.user || { nickname: 'QQ音乐已登录' }
+  isQQMusicLoggedIn.value = true
+
+  if (import.meta.client) {
+    localStorage.setItem('qq_music_cookie', data.cookie)
+    localStorage.setItem('qq_music_user', JSON.stringify(qqMusicUser.value))
+  }
+}
+
+const handleLogoutQQMusic = () => {
+  qqMusicCookie.value = ''
+  qqMusicUser.value = null
+  isQQMusicLoggedIn.value = false
+
+  if (import.meta.client) {
+    localStorage.removeItem('qq_music_cookie')
+    localStorage.removeItem('qq_music_user')
+  }
+}
+
 watch(
   () => searchType.value,
   () => {
@@ -1759,6 +1855,7 @@ watch(
 
 onMounted(async () => {
   checkNeteaseLoginStatus()
+  checkQQMusicLoginStatus()
   fetchPlayTimes()
   initSiteConfig()
   fetchSubmissionStatus()
@@ -1998,7 +2095,11 @@ const handleSearch = async () => {
       limit: 20,
       signal: signal, // 传递AbortSignal
       type: requestPlatform === 'netease' ? requestSearchType : 1,
-      cookie: requestPlatform === 'netease' ? neteaseCookie.value : undefined
+      cookie: requestPlatform === 'netease'
+        ? neteaseCookie.value
+        : requestPlatform === 'tencent'
+          ? qqMusicCookie.value
+          : undefined
     }
 
     console.log('开始多音源搜索:', searchParams)
@@ -3942,6 +4043,15 @@ defineExpose({
   filter: brightness(1.1);
 }
 
+.qq-login-btn {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  box-shadow: 0 4px 10px rgba(6, 182, 212, 0.15);
+}
+
+.qq-login-btn:hover {
+  box-shadow: 0 5px 14px rgba(6, 182, 212, 0.25);
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -4020,6 +4130,19 @@ defineExpose({
   height: 24px;
   border-radius: 50%;
   border: 1.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.qq-user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #22d3ee;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1.5px solid rgba(6, 182, 212, 0.22);
 }
 
 .user-name {

@@ -1273,8 +1273,16 @@ export const useMusicSources = () => {
 
         if (platform === 'tencent') {
           try {
+            let qqMusicCookie = ''
+            if (import.meta.client) {
+              qqMusicCookie = localStorage.getItem('qq_music_cookie') || ''
+            }
+
             const nativeResp = await $fetch('/api/native-api/lyric/tx', {
-              params: { songmid: String(id) },
+              params: {
+                songmid: String(id),
+                ...(qqMusicCookie ? { cookie: qqMusicCookie } : {})
+              },
               timeout: 8000
             })
             if (nativeResp?.success && nativeResp?.data) {

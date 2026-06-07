@@ -44,6 +44,7 @@
     "@pixi/filter-bulge-pinch": "^5.1.1",
     "@pixi/filter-color-matrix": "^7.4.3",
     "@pixi/sprite": "^7.4.3",
+    "@sansenjian/qq-music-api": "file:./qq-music-api-main",
     "@sentry/node": "^10.56.0",
     "@sentry/vue": "^10.56.0",
     "@simplewebauthn/browser": "^13.3.0",

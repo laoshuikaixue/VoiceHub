@@ -43,6 +43,10 @@ export async function getMusicUrl(
   if (platform === 'tencent') {
     const normalizedQuality = Number(quality)
     const qualityCandidates = [Number.isNaN(normalizedQuality) ? 8 : normalizedQuality]
+    const qqMusicCookie =
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem('qq_music_cookie') || undefined
+        : undefined
 
     for (const candidateQuality of qualityCandidates) {
       const idParam = getVkeysIdParam('tencent', musicId)
@@ -78,7 +82,8 @@ export async function getMusicUrl(
         platform,
         musicId: String(musicId),
         quality,
-        playUrl
+        playUrl,
+        cookie: qqMusicCookie
       }
     })
 
