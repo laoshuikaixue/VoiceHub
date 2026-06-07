@@ -761,10 +761,10 @@ const estimatedTotalDuration = computed(() => {
   return { total, count }
 })
 
-const normalizeDurationSeconds = (value) => {
+const parsePositiveDuration = (value) => {
   const duration = Number(value)
   if (!Number.isFinite(duration) || duration <= 0) return 0
-  return duration > 1000 ? duration / 1000 : duration
+  return duration
 }
 
 const getKnownSongDuration = (songItem) => {
@@ -772,22 +772,43 @@ const getKnownSongDuration = (songItem) => {
   const cached = getUsablePreload(song.id, selectedQuality.value)
   if (cached?.duration) return cached.duration
 
-  const candidates = [
-    song.duration,
-    song.durationSeconds,
-    song.durationSecond,
+  const millisecondCandidates = [
     song.durationMs,
     song.duration_ms,
     song.dt,
-    song.sourceInfo?.duration,
-    song.sourceInfo?.durationSeconds,
     song.sourceInfo?.durationMs,
     song.sourceInfo?.duration_ms
   ]
 
-  for (const candidate of candidates) {
-    const duration = normalizeDurationSeconds(candidate)
+  for (const candidate of millisecondCandidates) {
+    const duration = parsePositiveDuration(candidate)
+    if (duration > 0) return duration / 1000
+  }
+
+  const secondCandidates = [
+    song.durationSeconds,
+    song.durationSecond,
+    song.sourceInfo?.durationSeconds,
+    song.sourceInfo?.durationSecond
+  ]
+
+  for (const candidate of secondCandidates) {
+    const duration = parsePositiveDuration(candidate)
     if (duration > 0) return duration
+  }
+
+  const ambiguousCandidates = [song.duration, song.sourceInfo?.duration]
+  const isLikelyMillisecondPlatform = song.musicPlatform?.startsWith('netease')
+
+  for (const candidate of ambiguousCandidates) {
+    const duration = parsePositiveDuration(candidate)
+    if (duration <= 0) continue
+
+    // 模糊字段按保守策略处理，避免长音频秒数被误除导致低估内存。
+    if (isLikelyMillisecondPlatform || duration > 15000) {
+      return duration / 1000
+    }
+    return duration
   }
 
   return 0
@@ -1070,10 +1091,18 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
   activeEncoderWorker.value = worker
   let requestId = 0
   const pendingRequests = new Map()
+  let isAborted = false
 
   const rejectPendingRequests = (error) => {
     pendingRequests.forEach(({ reject }) => reject(error))
     pendingRequests.clear()
+  }
+
+  const abortSession = (error) => {
+    if (isAborted) return
+    isAborted = true
+    rejectPendingRequests(error)
+    terminateActiveEncoderWorker()
   }
 
   worker.onmessage = (event) => {
@@ -1087,8 +1116,10 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
     if (!pending) return
 
     if (type === 'error') {
+      const error = new Error(message || '编码失败')
       pendingRequests.delete(responseRequestId)
-      pending.reject(new Error(message || '编码失败'))
+      pending.reject(error)
+      abortSession(error)
       return
     }
 
@@ -1100,15 +1131,26 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
 
   worker.onerror = (event) => {
     const error = new Error(event.message || '编码 Worker 运行失败')
-    rejectPendingRequests(error)
-    terminateActiveEncoderWorker()
+    abortSession(error)
   }
 
   const sendCommand = (payload, transferables = [], expectedTypes = []) => {
+    if (isAborted) {
+      return Promise.reject(new Error('编码 Worker 已终止'))
+    }
+
     const nextRequestId = ++requestId
     return new Promise((resolve, reject) => {
       pendingRequests.set(nextRequestId, { resolve, reject, expectedTypes })
-      worker.postMessage({ ...payload, requestId: nextRequestId }, transferables)
+      try {
+        worker.postMessage({ ...payload, requestId: nextRequestId }, transferables)
+      } catch (error) {
+        pendingRequests.delete(nextRequestId)
+        isAborted = true
+        reject(error)
+        rejectPendingRequests(error)
+        terminateActiveEncoderWorker()
+      }
     })
   }
 
@@ -1147,9 +1189,12 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
       return result.blob
     },
     cancel: () => {
+      if (isAborted) return
+      isAborted = true
       try {
         worker.postMessage({ cmd: 'cancelStream' })
       } finally {
+        rejectPendingRequests(new Error('编码任务已取消'))
         terminateActiveEncoderWorker()
       }
     }
@@ -1288,22 +1333,32 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
       currentDownloadSong.value = `${song.artist} - ${song.title}`
       processingStatus.value = `正在准备: ${song.title}`
 
+      let track = null
       try {
         // 老设备内存更容易被多首 PCM 同时占满，因此合并时始终逐首解码和编码。
-        const track = await decodeSongTrack(song, audioContext, config.quality, {
+        track = await decodeSongTrack(song, audioContext, config.quality, {
           releasePreload: true
         })
-        processingStatus.value = `正在写入合并文件: ${song.title}`
-        await streamSession.appendTrack(track)
-        successCount++
       } catch (error) {
-        console.error(`处理失败: ${song.title}`, error)
+        console.error(`解码失败: ${song.title}`, error)
         downloadErrors.value.push({
           id: song.id,
           title: song.title,
           artist: song.artist,
-          error: error.message
+          error: `解码失败: ${error.message}`
         })
+        activeDownloads.delete(song.id)
+        downloadedCount.value++
+        continue
+      }
+
+      try {
+        processingStatus.value = `正在写入合并文件: ${song.title}`
+        await streamSession.appendTrack(track)
+        successCount++
+      } catch (error) {
+        console.error(`写入合并文件失败: ${song.title}`, error)
+        throw new Error(`写入合并文件失败: ${error.message}`)
       } finally {
         activeDownloads.delete(song.id)
         downloadedCount.value++
