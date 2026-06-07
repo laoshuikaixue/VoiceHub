@@ -177,12 +177,22 @@ const appendEncodedChunk = (chunk) => {
 const encodeStreamTrack = async (track, requestId) => {
   let left = new Float32Array(track.left)
   let right = new Float32Array(track.right)
+  const sharedChannels = left.buffer === right.buffer
   if (streamState.normalize) {
-    normalizeStereo(left, right, streamState.targetDb)
+    if (sharedChannels) {
+      normalizeStereo(left, new Float32Array(left.length), streamState.targetDb)
+    } else {
+      normalizeStereo(left, right, streamState.targetDb)
+    }
   }
   if (track.sampleRate !== streamState.sampleRate) {
-    left = resampleLinear(left, track.sampleRate, streamState.sampleRate)
-    right = resampleLinear(right, track.sampleRate, streamState.sampleRate)
+    if (sharedChannels) {
+      left = resampleLinear(left, track.sampleRate, streamState.sampleRate)
+      right = left
+    } else {
+      left = resampleLinear(left, track.sampleRate, streamState.sampleRate)
+      right = resampleLinear(right, track.sampleRate, streamState.sampleRate)
+    }
   }
 
   const chunkSize = streamState.sampleRate * 2

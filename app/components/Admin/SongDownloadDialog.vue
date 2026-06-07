@@ -1103,6 +1103,13 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
   const pendingRequests = new Map()
   let isAborted = false
 
+  const terminateSessionWorker = () => {
+    worker.terminate()
+    if (activeEncoderWorker.value === worker) {
+      activeEncoderWorker.value = null
+    }
+  }
+
   const rejectPendingRequests = (error) => {
     pendingRequests.forEach(({ reject }) => reject(error))
     pendingRequests.clear()
@@ -1112,7 +1119,7 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
     if (isAborted) return
     isAborted = true
     rejectPendingRequests(error)
-    terminateActiveEncoderWorker()
+    terminateSessionWorker()
   }
 
   worker.onmessage = (event) => {
@@ -1162,7 +1169,7 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
         isAborted = true
         reject(error)
         rejectPendingRequests(error)
-        terminateActiveEncoderWorker()
+        terminateSessionWorker()
       }
     })
   }
@@ -1198,18 +1205,14 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
     },
     finish: async () => {
       const result = await sendCommand({ cmd: 'finishStream' }, [], ['done'])
-      terminateActiveEncoderWorker()
+      terminateSessionWorker()
       return result.blob
     },
     cancel: () => {
       if (isAborted) return
       isAborted = true
-      try {
-        worker.postMessage({ cmd: 'cancelStream' })
-      } finally {
-        rejectPendingRequests(new Error('编码任务已取消'))
-        terminateActiveEncoderWorker()
-      }
+      rejectPendingRequests(new Error('编码任务已取消'))
+      terminateSessionWorker()
     }
   }
 }
@@ -1222,7 +1225,7 @@ const decodeAudioBlobToTrack = async (song, blob, audioContext) => {
   const right =
     decoded.numberOfChannels > 1
       ? new Float32Array(decoded.getChannelData(1))
-      : new Float32Array(decoded.getChannelData(0))
+      : left
   return {
     id: song.id,
     title: song.title,
