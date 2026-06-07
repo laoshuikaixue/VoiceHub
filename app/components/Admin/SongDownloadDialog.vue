@@ -847,6 +847,10 @@ const shouldUseFastMergeMode = (selectedSongsList) => {
   const estimatedPcmBytes = totalDuration * PCM_BYTES_PER_SECOND
   const memoryBudget = getBrowserMergeMemoryBudget()
 
+  if (memoryBudget && estimatedPcmBytes > memoryBudget) {
+    return false
+  }
+
   if (knownDurationCount === selectedSongsList.length && memoryBudget) {
     return estimatedPcmBytes <= memoryBudget
   }
@@ -1032,6 +1036,12 @@ const formatWorkerProgress = (stage, value, format) => {
   processingStatus.value = `正在编码 ${format.toUpperCase()}: ${value}%`
 }
 
+const getTrackTransferables = (track) => {
+  return track.left.buffer === track.right.buffer
+    ? [track.left.buffer]
+    : [track.left.buffer, track.right.buffer]
+}
+
 const encodeWithWorker = async (tracks, format, config) => {
   terminateActiveEncoderWorker()
   const worker = new Worker(new URL('../../workers/audioEncoderWorker.js', import.meta.url), {
@@ -1061,7 +1071,7 @@ const encodeWithWorker = async (tracks, format, config) => {
     }
     const transferables = []
     const payloadTracks = tracks.map((track) => {
-      transferables.push(track.left.buffer, track.right.buffer)
+      transferables.push(...getTrackTransferables(track))
       return {
         id: track.id,
         title: track.title,
@@ -1112,16 +1122,19 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
       return
     }
 
-    const pending = pendingRequests.get(responseRequestId)
-    if (!pending) return
-
     if (type === 'error') {
       const error = new Error(message || '编码失败')
-      pendingRequests.delete(responseRequestId)
-      pending.reject(error)
+      const pending = pendingRequests.get(responseRequestId)
+      if (pending) {
+        pendingRequests.delete(responseRequestId)
+        pending.reject(error)
+      }
       abortSession(error)
       return
     }
+
+    const pending = pendingRequests.get(responseRequestId)
+    if (!pending) return
 
     if (pending.expectedTypes.includes(type)) {
       pendingRequests.delete(responseRequestId)
@@ -1179,7 +1192,7 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
             right: track.right.buffer
           }
         },
-        [track.left.buffer, track.right.buffer],
+        getTrackTransferables(track),
         ['trackDone']
       )
     },
