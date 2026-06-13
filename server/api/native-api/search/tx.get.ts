@@ -1,11 +1,68 @@
 import { createTxSearchBody, txRequest, txSignedRequest } from '../../../utils/native_tx'
 import { decodeName, formatPlayTime, sizeFormate } from '../../../utils/native_common'
+import { searchQqMusic } from '~~/server/utils/qq_music_sdk'
+
+const stripHtml = (value: unknown) => String(value ?? '').replace(/[<>]/g, '')
+
+const formatSdkSearchList = (items: any[]) => {
+  return items.map((item: any) => {
+    const songmid = item.songmid || item.mid
+    const strMediaMid = item.strMediaMid || item.media_mid || item.file?.media_mid || songmid
+    const albumMid = item.albummid || item.albumMid || item.album?.mid || ''
+    const singers = Array.isArray(item.singer)
+      ? item.singer.map((s: any) => s.name).filter(Boolean).join('、')
+      : item.singer || ''
+    const interval = Number(item.interval || item.duration || 0)
+    const types = []
+    const _types: any = {}
+
+    if (Number(item.size128 || item.file?.size_128mp3 || 0) !== 0) {
+      const size = sizeFormate(Number(item.size128 || item.file?.size_128mp3))
+      types.push({ type: '128k', size })
+      _types['128k'] = { size }
+    }
+    if (Number(item.size320 || item.file?.size_320mp3 || 0) !== 0) {
+      const size = sizeFormate(Number(item.size320 || item.file?.size_320mp3))
+      types.push({ type: '320k', size })
+      _types['320k'] = { size }
+    }
+    if (Number(item.sizeflac || item.file?.size_flac || 0) !== 0) {
+      const size = sizeFormate(Number(item.sizeflac || item.file?.size_flac))
+      types.push({ type: 'flac', size })
+      _types.flac = { size }
+    }
+
+    return {
+      singer: decodeName(stripHtml(singers)),
+      name: decodeName(stripHtml(item.songname || item.name || item.title)),
+      albumName: decodeName(stripHtml(item.albumname || item.albumName || item.album?.name || '')),
+      albumId: albumMid,
+      source: 'tx',
+      interval: formatPlayTime(interval),
+      duration: interval,
+      songId: item.songid || item.songId || item.id,
+      albumMid,
+      strMediaMid,
+      songmid,
+      img:
+        albumMid === '' || albumMid === '空'
+          ? Array.isArray(item.singer) && item.singer.length > 0 && item.singer[0]?.mid
+            ? `https://y.gtimg.cn/music/photo_new/T001R500x500M000${item.singer[0].mid}.jpg`
+            : ''
+          : `https://y.gtimg.cn/music/photo_new/T002R500x500M000${albumMid}.jpg`,
+      types,
+      _types,
+      typeUrl: {}
+    }
+  }).filter((item) => item.songmid)
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const str = query.str as string
   const page = parseInt((query.page as string) || '1')
   const limit = parseInt((query.limit as string) || '50') // 腾讯接口默认每页 50 条
+  const cookie = String(query.cookie || '').trim()
 
   if (!str) {
     throw createError({ statusCode: 400, message: 'Missing search query' })
@@ -15,6 +72,24 @@ export default defineEventHandler(async (event) => {
 
   let result: any
   try {
+    try {
+      const sdkResult: any = await searchQqMusic({ key: str, page, limit, cookie })
+      const sdkList = sdkResult?.song?.list || sdkResult?.data?.song?.list || []
+      const list = formatSdkSearchList(sdkList)
+
+      if (list.length > 0) {
+        return {
+          list,
+          total: sdkResult?.song?.totalnum || sdkResult?.data?.song?.totalnum || list.length,
+          page,
+          limit,
+          source: 'qq-music-api'
+        }
+      }
+    } catch (sdkErr) {
+      console.warn('[tx.get] qq-music-api 搜索失败，回退到原生搜索:', sdkErr)
+    }
+
     try {
       result = await txSignedRequest(body)
     } catch (signedErr) {
@@ -80,7 +155,7 @@ export default defineEventHandler(async (event) => {
         songmid: item.mid,
         img:
           albumId === '' || albumId === '空'
-            ? item.singer?.length
+            ? Array.isArray(item.singer) && item.singer.length > 0 && item.singer[0]?.mid
               ? `https://y.gtimg.cn/music/photo_new/T001R500x500M000${item.singer[0].mid}.jpg`
               : ''
             : `https://y.gtimg.cn/music/photo_new/T002R500x500M000${albumId}.jpg`,

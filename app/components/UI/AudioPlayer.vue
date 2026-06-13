@@ -265,6 +265,11 @@ import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useMediaSession } from '~/composables/useMediaSession'
 import { getBilibiliUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import {
+  getCachedMusicUrlSource,
+  getMusicUrlResult,
+  isKnownInvalidQqAudioUrl
+} from '~/utils/musicUrl'
 
 // 添加 router 导入
 const router = useRouter()
@@ -320,6 +325,8 @@ const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否�
 const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重试逻辑
 const consecutiveSkipCount = ref(0) // 连续跳过失败的歌曲数
 const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
+const MIN_VALID_QQ_AUDIO_DURATION = 10
+const failedPlaybackSources = ref<string[]>([])
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -454,10 +461,139 @@ watch(
     if (newId !== oldId) {
       lastOpenedFallbackSongId.value = null
       isFallbackHandling.value = false
+      failedPlaybackSources.value = []
       enhanced.resetRetryState()
     }
   }
 )
+
+const getCurrentFailedSource = () => {
+  const song = activeSong.value
+  const audioSrc = audioPlayer.value?.currentSrc || audioPlayer.value?.src || song?.musicUrl
+  return (
+    song?.sourceInfo?.playSource ||
+    getCachedMusicUrlSource(audioSrc) ||
+    null
+  )
+}
+
+const buildFallbackResolveOptions = (song, excludeSources) => {
+  const isPodcast =
+    song.musicPlatform === 'netease-podcast' ||
+    song.sourceInfo?.type === 'voice' ||
+    (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
+
+  return {
+    unblock: isPodcast ? false : undefined,
+    quality: getQuality(song.musicPlatform),
+    mediaId: song.sourceInfo?.strMediaMid || song.sourceInfo?.mediaId || song.sourceInfo?.mediaMid,
+    excludeSources,
+    ignoreProvidedUrl: true
+  }
+}
+
+const trySwitchPlaybackSource = async () => {
+  const song = activeSong.value
+  if (!song?.musicPlatform || !song?.musicId || isBilibiliSong(song)) {
+    return false
+  }
+
+  const failedSource = getCurrentFailedSource()
+  const excludeSources = [...failedPlaybackSources.value]
+
+  if (failedSource && failedSource !== 'play-url' && !excludeSources.includes(failedSource)) {
+    excludeSources.push(failedSource)
+  }
+
+  // 旧的播放对象可能没有记录来源；QQ 音乐最常见的坏链接来自 DreamMeting 重定向。
+  if (
+    song.musicPlatform === 'tencent' &&
+    !failedSource &&
+    !excludeSources.includes('music.3e0.cn')
+  ) {
+    excludeSources.push('music.3e0.cn')
+  }
+
+  if (!excludeSources.length) {
+    return false
+  }
+
+  isFallbackHandling.value = true
+  control.isLoadingTrack.value = true
+
+  try {
+    const result = await getMusicUrlResult(
+      song.musicPlatform,
+      song.musicId,
+      song.playUrl,
+      buildFallbackResolveOptions(song, excludeSources)
+    )
+
+    if (!result.url) {
+      return false
+    }
+
+    const currentSrc = audioPlayer.value?.currentSrc || audioPlayer.value?.src || ''
+    if (currentSrc && result.url === currentSrc) {
+      return false
+    }
+
+    failedPlaybackSources.value = excludeSources
+    const updatedSong = {
+      ...song,
+      musicUrl: result.url,
+      sourceInfo: {
+        ...(song.sourceInfo || {}),
+        playSource: result.source
+      }
+    }
+
+    sync.globalAudioPlayer.playSong(updatedSong)
+    emit('songChange', updatedSong)
+
+    if (window.$showNotification) {
+      window.$showNotification('当前播放链接无效，已切换备用音源', 'warning')
+    }
+
+    await nextTick()
+    if (audioPlayer.value) {
+      audioPlayer.value.load()
+      await control.play()
+    }
+
+    return true
+  } catch (sourceError) {
+    console.warn('[AudioPlayer] 切换备用音源失败:', sourceError)
+    failedPlaybackSources.value = excludeSources
+    return false
+  } finally {
+    isFallbackHandling.value = false
+    control.isLoadingTrack.value = false
+  }
+}
+
+const normalizeSongDurationSeconds = (value) => {
+  const duration = Number(value || 0)
+  if (!Number.isFinite(duration) || duration <= 0) return 0
+  return duration > 10000 ? duration / 1000 : duration
+}
+
+const isInvalidTencentAudio = (duration, url) => {
+  if (activeSong.value?.musicPlatform !== 'tencent') return false
+
+  const numericDuration = Number(duration)
+  const expectedDuration = normalizeSongDurationSeconds(activeSong.value?.duration)
+  if (
+    expectedDuration >= MIN_VALID_QQ_AUDIO_DURATION &&
+    Number.isFinite(numericDuration) &&
+    numericDuration > 0 &&
+    numericDuration < MIN_VALID_QQ_AUDIO_DURATION
+  ) {
+    return true
+  }
+
+  return isKnownInvalidQqAudioUrl(url)
+}
 
 // 音频事件处理器
 const handleTimeUpdate = () => {
@@ -552,6 +688,16 @@ const handlePause = () => {
 const handleLoaded = async () => {
   if (!audioPlayer.value) return
 
+  if (
+    !isFallbackHandling.value &&
+    isInvalidTencentAudio(audioPlayer.value.duration, audioPlayer.value.currentSrc || audioPlayer.value.src)
+  ) {
+    const switchedSource = await trySwitchPlaybackSource()
+    if (switchedSource) {
+      return
+    }
+  }
+
   control.onLoaded(audioPlayer.value.duration)
 
   // 更新 Media Session 元数据
@@ -643,6 +789,11 @@ const handleError = async (error) => {
 
   // 如果正在处理 fallback，直接返回，不走重试逻辑
   if (isFallbackHandling.value) return
+
+  const switchedSource = await trySwitchPlaybackSource()
+  if (switchedSource) {
+    return
+  }
 
   // 连续失败保护：对任意平台的歌曲在列表播放模式下都计入连续失败计数
   if (props.isPlaylistMode && control.playMode.value !== 'off') {

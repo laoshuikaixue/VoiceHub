@@ -1535,7 +1535,10 @@ const getMusicUrl = async (song) => {
     sourceInfo?.type === 'voice' ||
     (sourceInfo?.source === 'netease-backup' && sourceInfo?.type === 'voice')
 
-  const options = isPodcast ? { unblock: false } : {}
+  const options = {
+    unblock: isPodcast ? false : undefined,
+    mediaId: sourceInfo?.strMediaMid || sourceInfo?.mediaId || sourceInfo?.mediaMid
+  }
   return resolveMusicUrl(platform, musicId, undefined, options)
 }
 
