@@ -26,8 +26,14 @@ export default defineEventHandler(async (event) => {
     const totalUsers = totalUsersResult[0].count
 
     // 2. 获取有请求歌曲的用户数
-    const allUsers = await db.select().from(users)
-    const allSongs = await db.select().from(songs)
+    const allUsers = await db.select({ id: users.id }).from(users)
+    const allSongs = await db
+      .select({
+        requesterId: songs.requesterId,
+        semester: songs.semester,
+        createdAt: songs.createdAt
+      })
+      .from(songs)
 
     const activeUsers = allUsers.filter((user) => {
       return allSongs.some((song) => {
