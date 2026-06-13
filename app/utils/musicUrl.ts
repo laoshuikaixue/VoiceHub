@@ -26,9 +26,7 @@ export type MusicUrlResolveResult = {
   idType?: string
 }
 
-export const INVALID_QQ_AUDIO_URLS = [
-  'https://panspace.kuwo.cn/2b7877721f6efffecd4abe8359325f29/6a2d0b00/resource/2149972737147268278.mp3'
-]
+export const INVALID_QQ_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
 
 const musicUrlSourceCache = new Map<string, string>()
 
@@ -39,7 +37,8 @@ const normalizeCacheUrl = (url: string) => {
 export const isKnownInvalidQqAudioUrl = (url: string | null | undefined) => {
   if (!url) return false
   const normalizedUrl = normalizeCacheUrl(url)
-  return INVALID_QQ_AUDIO_URLS.includes(normalizedUrl)
+  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0];
+  return urlWithoutParams.endsWith(INVALID_QQ_AUDIO_URL_SUFFIX)
 }
 
 const rememberMusicUrlSource = (url: string | null | undefined, source?: string) => {

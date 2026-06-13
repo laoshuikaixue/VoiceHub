@@ -213,6 +213,7 @@
           @ended="handleEnded"
           @error="handleError"
           @loadedmetadata="handleLoaded"
+          @durationchange="handleDurationChange"
           @loadstart="handleLoadStart"
           @pause="handlePause"
           @play="handlePlay"
@@ -683,6 +684,17 @@ const handlePause = () => {
     volume: 1,
     playlistIndex: sync.globalAudioPlayer.getCurrentPlaylistIndex().value
   })
+}
+
+const handleDurationChange = async () => {
+  if (!audioPlayer.value || isFallbackHandling.value) return
+
+  if (
+    isInvalidTencentAudio(audioPlayer.value.duration, audioPlayer.value.currentSrc || audioPlayer.value.src)
+  ) {
+    const switchedSource = await trySwitchPlaybackSource()
+    if (switchedSource) return
+  }
 }
 
 const handleLoaded = async () => {
