@@ -1,3 +1,5 @@
+import { getServerTimestamp } from './serverTime'
+
 /**
  * 验证码与风控计数器统一存储适配器
  * - 优先 Redis
@@ -8,7 +10,7 @@ const memoryStore = new Map<string, { value: string; expiresAt: number }>()
 
 // 定期清理过期的内存数据，防止无 Redis 环境下的内存泄漏
 const timer = setInterval(() => {
-  const now = Date.now()
+  const now = getServerTimestamp()
   for (const [key, item] of memoryStore.entries()) {
     if (now > item.expiresAt) {
       memoryStore.delete(key)
@@ -39,7 +41,7 @@ export async function setStore(key: string, value: string, ttlSeconds: number) {
   if (redis) {
     await redis.set(key, value, 'EX', ttlSeconds)
   } else {
-    memoryStore.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 })
+    memoryStore.set(key, { value, expiresAt: getServerTimestamp() + ttlSeconds * 1000 })
   }
 }
 
@@ -50,7 +52,7 @@ export async function getStore(key: string): Promise<string | null> {
     return await redis.get(key)
   }
   const item = memoryStore.get(key)
-  if (item && Date.now() < item.expiresAt) return item.value
+  if (item && getServerTimestamp() < item.expiresAt) return item.value
   memoryStore.delete(key)
   return null
 }
@@ -79,7 +81,7 @@ export async function incrStore(key: string, ttlSeconds: number): Promise<number
   }
   const item = memoryStore.get(key)
   const newVal = (item ? parseInt(item.value) + 1 : 1).toString()
-  memoryStore.set(key, { value: newVal, expiresAt: Date.now() + ttlSeconds * 1000 })
+  memoryStore.set(key, { value: newVal, expiresAt: getServerTimestamp() + ttlSeconds * 1000 })
   return parseInt(newVal)
 }
 
@@ -105,6 +107,6 @@ export async function getAndDelStore(key: string): Promise<string | null> {
   // 无 Redis 环境，回退到内存 Map
   const item = memoryStore.get(key)
   memoryStore.delete(key)
-  if (item && Date.now() < item.expiresAt) return item.value
+  if (item && getServerTimestamp() < item.expiresAt) return item.value
   return null
 }

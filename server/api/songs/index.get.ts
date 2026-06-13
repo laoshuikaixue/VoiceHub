@@ -483,8 +483,7 @@ export default defineEventHandler(async (event) => {
       const isRequester = Boolean(user && song.requester?.id === user.id)
       const canViewSubmissionNote =
         Boolean(song.submissionNote) &&
-        Boolean(user) &&
-        (Boolean(isAdmin) || isRequester || song.submissionNotePublic)
+        (!!song.submissionNotePublic || (user && (isAdmin || isRequester)))
 
       // 创建基本歌曲对象
       const songObject: SongResponse = {

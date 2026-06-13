@@ -8,6 +8,7 @@ import {
   redeemCardCodeForSchedule,
   restoreCardCodeAfterScheduleRemoval
 } from '~~/server/services/cardCodeLifecycleService'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -154,7 +155,7 @@ export default defineEventHandler(async (event) => {
 
           await tx
             .update(songReplayRequests)
-            .set({ status: 'PENDING', updatedAt: new Date() })
+            .set({ status: 'PENDING', updatedAt: getServerDate() })
             .where(
               and(
                 inArray(songReplayRequests.songId, finalRestoreIds),
@@ -165,7 +166,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 4. 插入新的排期并处理通知
-      const publishedAt = new Date()
+      const publishedAt = getServerDate()
 
       for (const item of body.songs) {
         const song = songMap.get(item.songId)

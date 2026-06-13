@@ -11,12 +11,13 @@
         <img
           v-if="schedule.song.cover"
           :alt="schedule.song.title"
+          :data-original-src="convertToHttps(schedule.song.cover)"
           :src="convertToHttps(schedule.song.cover)"
           class="song-cover"
           referrerpolicy="no-referrer"
           @error="handleImageError"
         >
-        <div class="cover-placeholder" :class="{ 'show': !schedule.song.cover }">
+        <div class="cover-placeholder" :class="{ show: !schedule.song.cover }">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 1v6m0 6v6" />
@@ -32,7 +33,16 @@
           <!-- 重播标识 -->
           <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
           <!-- 跨学期标识 -->
-          <span v-if="settings.currentSemester && schedule.song.semester && schedule.song.semester !== settings.currentSemester" class="cross-semester-badge-print"> 跨学期 </span>
+          <span
+            v-if="
+              settings.currentSemester &&
+              schedule.song.semester &&
+              schedule.song.semester !== settings.currentSemester
+            "
+            class="cross-semester-badge-print"
+          >
+            跨学期
+          </span>
         </div>
         <div v-if="settings.showArtist" class="song-artist">
           {{ schedule.song.artist }}
@@ -60,7 +70,6 @@
             : schedule.song.voteCount || 0
         }}</span>
       </div>
-
     </div>
   </div>
 </template>

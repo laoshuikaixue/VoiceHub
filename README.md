@@ -4,7 +4,7 @@
 
 <div align="center">
 
-[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e) | [项目宣传片](https://www.bilibili.com/video/BV1B9ArzMEkA)
+[交流群](https://qm.qq.com/cgi-bin/qm/qr?k=5DV4vGlqn82YaNi7a3xW4zjmS8ZUr6cz&jump_from=webapi&authKey=axAl02PMsIVVAwrXij0YUUrOrUTeLpqLipu5XcTvyBUOzeWaOnicBB+fmBwNJs5S) | [使用学校收集表](https://laoshuikaixue.feishu.cn/share/base/form/shrcniUKakpNYP6KH7qrU20qq5e) | [项目宣传片](https://www.bilibili.com/video/BV1B9ArzMEkA) | [赞助支持](#sponsor)
 
 </div>
 
@@ -150,7 +150,8 @@
    Usage：按需调整
    Network：3000 ，开 Public Access
    Environment Variables：
-      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub 
+      # 可能需要 ?sslmode=disable
       JWT_SECRET=your-jwt-secret-here
       # 按实际情况填写
    ```
@@ -183,7 +184,7 @@ cd VoiceHub
 
 ```yaml
 environment:
-  - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+  - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub # 可能需要 ?sslmode=disable
   - JWT_SECRET=your-jwt-secret-here # 请修改为强随机字符串
   - NODE_ENV=production
 ```
@@ -211,7 +212,8 @@ docker-compose up -d
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -223,7 +225,8 @@ docker run -d \
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -244,7 +247,8 @@ docker build --no-cache -t voicehub .
 # 运行容器
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -255,22 +259,11 @@ docker run -d \
 
 本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
 
-**一键部署命令：**
+**一键命令：**
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/deploy.sh)
+sudo bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
-
-**更新部署：**
-项目更新时，可使用更新脚本快速更新：
-
-```bash
-# 一键更新命令
-bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/update.sh)
-```
-
-**日常管理：**
-部署完成后，可使用 `voicehub` 命令进行日常管理（需在部署时安装）
 
 ### 飞牛 (FnOS) 部署
 
@@ -313,6 +306,7 @@ cp .env.example .env
 ```env
 # 数据库连接地址（必填）
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+# 可能需要替换成 ?sslmode=disable
 
 # JWT 认证密钥（必填）
 JWT_SECRET="your-very-secure-jwt-secret-key"
@@ -377,6 +371,9 @@ pnpm run start
 ### 数据库管理命令
 
 ```bash
+# 新的数据库初始化
+pnpm run init-help
+
 # 生成迁移文件
 pnpm run db:generate
 
@@ -577,6 +574,8 @@ VoiceHub/
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片
+│   │   │   ├── CaptchaInput.vue      # 图形验证码输入组件
+│   │   │   ├── TurnstileWidget.vue   # Cloudflare Turnstile验证组件
 │   │   │   ├── OAuthButtons.vue      # OAuth登录按钮组
 │   │   │   ├── TwoFactorSetup.vue    # 双重认证设置组件
 │   │   │   └── TwoFactorVerify.vue   # 双重认证验证组件
@@ -589,6 +588,7 @@ VoiceHub/
 │   │   │       ├── AMLyric.vue        # Apple Music风格歌词
 │   │   │       └── DefaultLyric.vue   # 默认风格歌词
 │   │   ├── Songs/             # 歌曲相关组件
+│   │   │   ├── AlbumDetailsModal.vue   # 网易云音乐专辑详情弹窗
 │   │   │   ├── BilibiliEpisodesModal.vue # Bilibili剧集选择弹窗
 │   │   │   ├── DuplicateSongModal.vue # 重复歌曲处理对话框
 │   │   │   ├── ImportSongsModal.vue   # 导入歌曲弹窗
@@ -596,6 +596,7 @@ VoiceHub/
 │   │   │   ├── NeteaseUploadDialog.vue # 网易云云盘上传弹窗
 │   │   │   ├── PlaylistSelectionModal.vue # 歌单选择弹窗
 │   │   │   ├── PodcastEpisodesModal.vue # 播客节目弹窗
+│   │   │   ├── QQMusicLoginModal.vue # QQ音乐登录弹窗
 │   │   │   ├── RecentSongsModal.vue   # 最近播放弹窗
 │   │   │   ├── RequestForm.vue        # 点歌表单
 │   │   │   ├── ScheduleList.vue       # 排期列表展示
@@ -625,7 +626,10 @@ VoiceHub/
 │   │   │   ├── Notification.vue       # 单个通知组件
 │   │   │   ├── NotificationContainer.vue # 通知容器组件
 │   │   │   ├── PageTransition.vue     # 页面过渡动画
-│   │   │   └── ProgressBar.vue        # 进度条组件
+│   │   │   ├── ProgressBar.vue        # 进度条组件
+│   │   │   ├── AppLoadingScreen.vue   # 启动加载屏幕组件
+│   │   │   ├── SongComments.vue       # 网易云音乐评论组件
+│   │   │   └── WarpCanvas.vue         # 动态画布背景组件
 │   │   ├── year-review/       # 年度回顾组件
 │   │   └── SiteFooter.vue         # 站点页脚
 │   ├── composables/           # Vue 3 组合式API
@@ -818,7 +822,7 @@ VoiceHub/
 │   │   │       │   └── status.put.ts    # 更新用户状态
 │   │   │       ├── [id].delete.ts   # 删除用户
 │   │   │       ├── [id].put.ts      # 更新用户
-│   │   │       ├── [id].ts          # 用户详情
+│   │   │       ├── [id].get.ts      # 用户详情
 │   │   │       ├── batch-grade-update.post.ts # 批量年级更新
 │   │   │       ├── batch-status.put.ts # 批量状态更新
 │   │   │       ├── batch-update.post.ts # 批量更新用户
@@ -832,6 +836,8 @@ VoiceHub/
 │   │   │   └── netease/           # 网易云增强接口代理
 │   │   │       └── [...path].ts   # 转发网易云API请求
 │   │   ├── auth/           # 认证API
+│   │   │   ├── captcha.get.ts         # 图形验证码
+│   │   │   ├── oauth-register-options.get.ts # OAuth注册选项
 │   │   │   ├── 2fa/             # 2FA验证API
 │   │   │   │   ├── send-email.post.ts # 发送2FA验证邮件
 │   │   │   │   └── verify.post.ts     # 验证2FA代码
@@ -866,9 +872,16 @@ VoiceHub/
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
 │   │   ├── music/          # 音乐相关API
+│   │   │   ├── resolve-url.post.ts # 音乐播放链接统一解析
 │   │   │   ├── state.post.ts        # 音乐状态管理
 │   │   │   └── websocket.ts         # 音乐WebSocket连接
 │   │   ├── native-api/     # 原生音乐API
+│   │   │   ├── lyric/               # 歌词API
+│   │   │   │   └── tx.get.ts        # 腾讯音乐歌词
+│   │   │   ├── qq/                  # QQ音乐账号API
+│   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
+│   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
+│   │   │   │   └── login-qr.get.ts  # 获取登录二维码
 │   │   │   └── search/              # 搜索API
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
@@ -922,6 +935,7 @@ VoiceHub/
 │   │   ├── sys/            # 系统辅助API
 │   │   │   └── time.get.ts          # 获取校准后的服务器时间
 │   │   ├── system/         # 系统API
+│   │   │   ├── instance.get.ts      # 实例信息
 │   │   │   ├── location.get.ts      # 获取系统位置信息
 │   │   │   ├── reconnect.post.ts    # 重连数据库
 │   │   │   └── status.get.ts        # 系统状态
@@ -975,6 +989,7 @@ VoiceHub/
 │   │   ├── native_common.ts # 原生API通用工具
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
+│   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth.ts        # OAuth通用工具
@@ -1841,8 +1856,10 @@ Thanks goes to these wonderful people:
 - [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源搜索功能参考)
 - [Bilibili-audio-extraction](https://github.com/rio4raki/Bilibili-audio-extraction) (哔哩哔哩音频流获取参考)
 - [SPlayer](https://github.com/imsyy/SPlayer)
+- [Apple Music-like Lyrics](https://github.com/amll-dev/applemusic-like-lyrics)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
-- [Netease_url](https://github.com/Suxiaoqinx/Netease_url)
+- [MusicAPI-rrvenn](https://music.rrvenn.cn)
+- [qq-music-api](https://github.com/sansenjian/qq-music-api) (QQ音乐歌词获取参考)
 
 ## 许可证
 
@@ -1861,6 +1878,16 @@ Thanks goes to these wonderful people:
 本项目有对应的原生鸿蒙版本：https://github.com/laoshuikaixue/VoiceHub-hmos
 
 该项目通过创新的混合架构设计，实现了Web端Vue音频播放器与鸿蒙原生端的跨平台音频控制同步
+
+<h2 id="sponsor">赞助支持</h2>
+
+如果这个项目对你有帮助，欢迎赞助支持，让我有更多动力持续维护和更新。
+
+<div align="center">
+
+<img width="200" alt="wechat" src="https://github.com/user-attachments/assets/0cd13f75-bd9c-4486-8bba-a8895e2e55fd" />
+
+</div>
 
 ---
 

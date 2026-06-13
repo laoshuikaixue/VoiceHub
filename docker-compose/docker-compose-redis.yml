@@ -6,7 +6,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub?sslmode=disable
       - REDIS_URL=redis://default:your-redis-password-here@redis:6379
       - JWT_SECRET=your-jwt-secret-here
       - NODE_ENV=production

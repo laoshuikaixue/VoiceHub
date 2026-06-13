@@ -20,9 +20,12 @@
           <td v-for="date in dates" :key="date" class="song-cell">
             <div v-if="getSchedule(date, pt.key, rowIndex - 1)" class="song-item">
               <img
-v-if="settings.showCover && getSchedule(date, pt.key, rowIndex - 1).song.cover" 
-                   :src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
-                   class="song-cover" @error="handleImageError" >
+                v-if="settings.showCover && getSchedule(date, pt.key, rowIndex - 1).song.cover"
+                :src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
+                :data-original-src="convertToHttps(getSchedule(date, pt.key, rowIndex - 1).song.cover)"
+                class="song-cover"
+                @error="handleImageError"
+              >
               <div class="song-details">
                 <div v-if="settings.showTitle" class="song-title">
                   <span class="title-text">{{ getSchedule(date, pt.key, rowIndex - 1).song.title }}</span>
@@ -56,9 +59,12 @@ v-if="settings.showCover && getSchedule(date, pt.key, rowIndex - 1).song.cover"
           <td v-for="date in dates" :key="date" class="song-cell">
             <div v-if="getScheduleAll(date, rowIndex - 1)" class="song-item">
               <img
-v-if="settings.showCover && getScheduleAll(date, rowIndex - 1).song.cover" 
-                   :src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
-                   class="song-cover" @error="handleImageError" >
+                v-if="settings.showCover && getScheduleAll(date, rowIndex - 1).song.cover"
+                :src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
+                :data-original-src="convertToHttps(getScheduleAll(date, rowIndex - 1).song.cover)"
+                class="song-cover"
+                @error="handleImageError"
+              >
               <div class="song-details">
                 <div v-if="settings.showTitle" class="song-title">
                   <span class="title-text">{{ getScheduleAll(date, rowIndex - 1).song.title }}</span>

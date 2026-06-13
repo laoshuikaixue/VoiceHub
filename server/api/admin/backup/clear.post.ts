@@ -29,15 +29,7 @@ import { eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-    throw createError({
-      statusCode: 403,
-      message: '权限不足'
-    })
-  }
-
-  // 只有超级管理员可以清空数据库
-  if (user.role !== 'SUPER_ADMIN') {
+  if (!user || user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
       message: '只有超级管理员可以清空数据库'
@@ -151,10 +143,14 @@ export default defineEventHandler(async (event) => {
       await db.delete(songReplayRequests)
       await db.delete(schedules)
       await db.delete(votes)
-      await db.delete(userStatusLogs).where(notInArray(userStatusLogs.userId, preservedSuperAdminIds))
+      await db
+        .delete(userStatusLogs)
+        .where(notInArray(userStatusLogs.userId, preservedSuperAdminIds))
       await db.delete(emailTemplates)
       await db.delete(songBlacklists)
-      await db.delete(userIdentities).where(notInArray(userIdentities.userId, preservedSuperAdminIds))
+      await db
+        .delete(userIdentities)
+        .where(notInArray(userIdentities.userId, preservedSuperAdminIds))
       await db.delete(songs)
       await db.delete(cardCodes)
       await db.delete(playTimes)

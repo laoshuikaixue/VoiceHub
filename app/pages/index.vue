@@ -579,9 +579,10 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
-                  v-html="submissionGuidelines.replace(/\n/g, '<br>')"
-                />
+                  class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50 whitespace-pre-line"
+                >
+                  {{ submissionGuidelines }}
+                </div>
                 <div
                   v-else
                   class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
@@ -1026,7 +1027,7 @@ const getVisiblePages = () => {
 // 格式化通知时间
 const formatNotificationTime = (timeString) => {
   const date = new Date(timeString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now.getTime() - date.getTime()
 
   // 小于1分钟
@@ -1065,7 +1066,11 @@ watch(
   async (newAuthState, oldAuthState) => {
     if (newAuthState && !oldAuthState) {
       hasInitializedAuthData.value = true
-      await Promise.allSettled([loadNotifications(), fetchNotificationSettings(), songs.fetchSongs()])
+      await Promise.allSettled([
+        loadNotifications(),
+        fetchNotificationSettings(),
+        songs.fetchSongs()
+      ])
       await updateSongCounts()
       return
     }
@@ -1089,7 +1094,7 @@ onMounted(() => {
 
 // 获取当前日期和星期
 const getCurrentDate = () => {
-  const now = new Date()
+  const now = getSyncedDate()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const date = now.getDate()
@@ -1338,7 +1343,10 @@ const handleRequest = async (songData) => {
     return false
   } catch (err) {
     if (window.$showNotification) {
-      window.$showNotification(err?.data?.message || err?.message || err?.statusMessage || '点歌失败', 'error')
+      window.$showNotification(
+        err?.data?.message || err?.message || err?.statusMessage || '点歌失败',
+        'error'
+      )
     }
     return false
   }
@@ -1533,7 +1541,10 @@ const handleCollaborationReply = async (notification, accept) => {
   } catch (error) {
     console.error('处理联合投稿邀请失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(error?.data?.message || error?.message || error?.statusMessage || '操作失败', 'error')
+      window.$showNotification(
+        error?.data?.message || error?.message || error?.statusMessage || '操作失败',
+        'error'
+      )
     }
   } finally {
     notification.processing = false

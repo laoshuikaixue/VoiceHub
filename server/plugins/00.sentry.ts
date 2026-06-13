@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node'
 import type { H3Event } from 'h3'
-import { getInstanceId } from '../utils/instance-id'
+import { getInstanceIdInfo } from '../utils/instance-id'
 import { isTelemetryEnabled, isTelemetryEnabledCached } from '../utils/telemetry'
 
 declare global {
@@ -14,6 +14,8 @@ const getDeploymentTarget = (): string => {
   if (process.env.NITRO_PRESET?.includes('cloudflare')) return 'cloudflare'
   return 'self-hosted-node'
 }
+
+const INSTANCE_ONLINE_TRANSACTION = 'voicehub.instance.online'
 
 const shouldCaptureServerError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') return true
@@ -44,8 +46,35 @@ const buildRequestContext = (event: H3Event) => {
   }
 }
 
+const captureInstanceOnlineTransaction = (instanceId: string, deploymentTarget: string) => {
+  Sentry.startSpan(
+    {
+      name: INSTANCE_ONLINE_TRANSACTION,
+      op: 'app.startup',
+      forceTransaction: true,
+      parentSpan: null,
+      attributes: {
+        'voicehub.event_type': 'instance_online',
+        'voicehub.instance_id': instanceId,
+        'deployment.target': deploymentTarget,
+        'runtime.name': 'nuxt',
+        'nitro.preset': process.env.NITRO_PRESET || 'node-server'
+      }
+    },
+    () => {}
+  )
+}
+
 export default defineNitroPlugin((nitroApp) => {
   const config = useRuntimeConfig()
+  const jwtSecret = process.env.JWT_SECRET || config.jwtSecret
+  if (!jwtSecret) {
+    // 配置错误不进入遥测链路，避免在认证未初始化时泄露启动上下文
+    throw new Error(
+      'JWT_SECRET is required. Set it to a random string for local development.'
+    )
+  }
+
   const sentryConfig = config.sentry
 
   if (!sentryConfig?.enabled || !sentryConfig.dsn) {
@@ -68,12 +97,17 @@ export default defineNitroPlugin((nitroApp) => {
       }
 
       let instanceId = ''
+      let instanceIdPersisted = false
 
       try {
-        instanceId = await getInstanceId()
+        const instanceInfo = await getInstanceIdInfo()
+        instanceId = instanceInfo.instanceId
+        instanceIdPersisted = instanceInfo.persisted
       } catch (error) {
         console.warn('[Sentry] Failed to resolve instance ID for server tagging:', error)
       }
+
+      const deploymentTarget = getDeploymentTarget()
 
       Sentry.init({
         dsn: sentryConfig.dsn,
@@ -85,9 +119,16 @@ export default defineNitroPlugin((nitroApp) => {
           })
         ],
         enableLogs: true,
-        tracesSampleRate: sentryConfig.tracesSampleRate,
+        tracesSampler(samplingContext) {
+          return samplingContext.name === INSTANCE_ONLINE_TRANSACTION
+            ? 1
+            : samplingContext.inheritOrSampleWith(sentryConfig.tracesSampleRate)
+        },
         sendDefaultPii: false,
         beforeSend(event) {
+          return isTelemetryEnabledCached() ? event : null
+        },
+        beforeSendTransaction(event) {
           return isTelemetryEnabledCached() ? event : null
         }
       })
@@ -95,24 +136,24 @@ export default defineNitroPlugin((nitroApp) => {
       globalThis.__voicehubSentryServerInitialized = true
 
       Sentry.setTag('runtime', 'nuxt')
-      Sentry.setTag('deployment_target', getDeploymentTarget())
+      Sentry.setTag('deployment_target', deploymentTarget)
       Sentry.setTag('nitro_preset', process.env.NITRO_PRESET || 'node-server')
       if (instanceId) {
         Sentry.setTag('instance_id', instanceId)
+        Sentry.setTag('instance_id_persisted', String(instanceIdPersisted))
         Sentry.setContext('instance', {
-          instanceId
+          instanceId,
+          persisted: instanceIdPersisted
         })
       }
 
-      Sentry.withScope((scope) => {
-        scope.setLevel('info')
-        scope.setFingerprint(['instance_online', instanceId || 'unknown'])
-        scope.setTag('event_type', 'instance_online')
-        if (instanceId) {
-          scope.setTag('instance_id', instanceId)
-        }
-        Sentry.captureMessage('instance_online')
-      })
+      if (instanceIdPersisted && instanceId) {
+        captureInstanceOnlineTransaction(instanceId, deploymentTarget)
+      } else {
+        console.warn(
+          '[Sentry] Skipped instance startup transaction because instance ID was not persisted.'
+        )
+      }
 
       return true
     })().finally(() => {

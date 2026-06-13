@@ -999,14 +999,67 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { convertToHttps } from '~/utils/url'
+import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
-import { getNeteaseCookie } from '~/utils/url'
+
+const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
+
+// 日期选择器只关心日历日期，避免 UTC 转换让北京时间凌晨落到前一天
+const parseDateValue = (dateValue) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue)
+  if (!match) return null
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null
+  }
+
+  return { year, month, day }
+}
+
+const formatUtcDateValue = (date) => {
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const addDaysToDateValue = (dateValue, days) => {
+  const parsed = parseDateValue(dateValue)
+  if (!parsed) return dateValue
+
+  const date = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day + days))
+  return formatUtcDateValue(date)
+}
+
+const getScheduleDateValue = (playDate) => {
+  if (!playDate) return ''
+
+  if (typeof playDate === 'string') {
+    const dateValue = playDate.slice(0, 10)
+    if (parseDateValue(dateValue)) return dateValue
+  }
+
+  const date = new Date(playDate)
+  if (Number.isNaN(date.getTime())) return ''
+  return formatUtcDateValue(date)
+}
 
 // 响应式数据
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const selectedDate = useState('adminSelectedDate', getTodayDateValue)
 const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
@@ -1315,22 +1368,22 @@ let semesterService = null
 // 生成日期列表（无限滚动模式）
 const availableDates = computed(() => {
   const dates = []
-  const today = new Date()
+  const todayValue = getTodayDateValue()
 
   // 根据当前范围生成日期
   for (let i = dateRange.value.start; i <= dateRange.value.end; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() + i)
+    const dateStr = addDaysToDateValue(todayValue, i)
+    const parsedDate = parseDateValue(dateStr)
+    if (!parsedDate) continue
 
-    const dateStr = date.toISOString().split('T')[0]
     const isToday = i === 0
     const weekdays = ['日', '一', '二', '三', '四', '五', '六']
-    const weekday = weekdays[date.getDay()]
+    const weekday = weekdays[new Date(Date.UTC(parsedDate.year, parsedDate.month - 1, parsedDate.day)).getUTCDay()]
 
     dates.push({
       value: dateStr,
-      day: date.getDate().toString().padStart(2, '0'),
-      month: (date.getMonth() + 1).toString().padStart(2, '0'),
+      day: String(parsedDate.day).padStart(2, '0'),
+      month: String(parsedDate.month).padStart(2, '0'),
       weekday,
       isToday
     })
@@ -1463,7 +1516,7 @@ const isDesktop = ref(true)
 // 方法
 const formatDate = (dateString) => {
   const date = new Date(dateString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now - date
 
   if (diff < 60000) return '刚刚'
@@ -1687,6 +1740,7 @@ const handleSemesterSelect = async (value) => {
 // 初始化
 let unregisterBeforeNavigate = null
 const registerBeforeNavigate = inject('registerBeforeNavigate', null)
+let suppressSelectedDateLoad = false
 
 onMounted(async () => {
   window.addEventListener('beforeunload', handleBeforeUnload)
@@ -1704,6 +1758,12 @@ onMounted(async () => {
   adminService = useAdmin()
   auth = useAuth()
   semesterService = useSemesters()
+
+  await useSyncedTime().syncTime()
+  suppressSelectedDateLoad = true
+  selectedDate.value = getTodayDateValue()
+  await nextTick()
+  suppressSelectedDateLoad = false
 
   // 初始化窗口大小检测
   checkWindowSize()
@@ -1812,7 +1872,7 @@ const confirmManualDate = () => {
 
 // 定位到今天
 const scrollToToday = () => {
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = getTodayDateValue()
   const isAlreadyToday = selectedDate.value === todayStr
 
   if (!isAlreadyToday) {
@@ -1835,6 +1895,7 @@ const scrollToToday = () => {
 
 // 监听日期变化
 watch(selectedDate, async () => {
+  if (suppressSelectedDateLoad) return
   await loadData()
 })
 
@@ -2048,14 +2109,14 @@ const updateLocalScheduledSongs = () => {
   // 获取已发布的排期
   const todaySchedules = publicSchedules.value.filter((s) => {
     if (!s.playDate) return false
-    const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
+    const scheduleDateStr = getScheduleDateValue(s.playDate)
     return scheduleDateStr === selectedDate.value
   })
 
   // 获取草稿排期
   const todayDrafts = drafts.value.filter((draft) => {
     if (!draft.playDate) return false
-    const draftDateStr = new Date(draft.playDate).toISOString().split('T')[0]
+    const draftDateStr = getScheduleDateValue(draft.playDate)
     return draftDateStr === selectedDate.value
   })
 
@@ -2435,11 +2496,7 @@ const openMoveDateDialog = () => {
 const confirmMoveDate = async () => {
   const targetDate = moveTargetDate.value.trim()
 
-  const targetDateTime = new Date(`${targetDate}T00:00:00.000Z`)
-  if (
-    Number.isNaN(targetDateTime.getTime()) ||
-    targetDateTime.toISOString().split('T')[0] !== targetDate
-  ) {
+  if (!parseDateValue(targetDate)) {
     if (window.$showNotification) {
       window.$showNotification('目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效', 'error')
     }
@@ -2456,7 +2513,7 @@ const confirmMoveDate = async () => {
   const sourceDate = selectedDate.value
   const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
     if (!schedule.playDate) return false
-    return new Date(schedule.playDate).toISOString().split('T')[0] === sourceDate
+    return getScheduleDateValue(schedule.playDate) === sourceDate
   })
 
   if (sourceSchedules.length === 0) {
@@ -2547,7 +2604,7 @@ const saveDraft = async () => {
     // 删除当天指定播出时段的所有排期和草稿
     const existingSchedules = [...publicSchedules.value, ...drafts.value].filter((s) => {
       if (!s.playDate) return false
-      const scheduleDateStr = new Date(s.playDate).toISOString().split('T')[0]
+      const scheduleDateStr = getScheduleDateValue(s.playDate)
       const isTargetDate = scheduleDateStr === selectedDate.value
 
       if (selectedPlayTime.value) {

@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
     '/api/system/location', // 系统位置检测API
     '/api/open/', // 开放API路径，由api-auth中间件处理认证
     '/api/auth/webauthn/login', // WebAuthn 登录接口
+    '/api/music/resolve-url', // 音乐播放链接解析
     '/api/music/state', // 音乐状态同步
     '/api/music/websocket', // WebSocket 连接
     '/api/sys/time' // 服务器时间同步

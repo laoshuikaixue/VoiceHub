@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { createError, defineEventHandler, getCookie, getQuery } from 'h3'
 import jwt from 'jsonwebtoken'
 import { db } from '~/drizzle/db'
 
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
   // 获取进度ID和token
   const query = getQuery(event)
   const id = query.id as string
-  const token = query.token as string
+  const token = (query.token as string) || getCookie(event, 'auth-token')
 
   if (!id) {
     throw createError({

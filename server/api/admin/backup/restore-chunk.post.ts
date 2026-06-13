@@ -21,10 +21,10 @@ import { and, eq } from 'drizzle-orm'
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
   const user = event.context.user
-  if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (!user || user.role !== 'SUPER_ADMIN') {
     throw createError({
       statusCode: 403,
-      message: '权限不足'
+      message: '只有超级管理员可以恢复备份'
     })
   }
 
@@ -276,7 +276,10 @@ export default defineEventHandler(async (event) => {
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
 
-            if (!shouldOverwriteSuperAdmin && preservedSuperAdminIds.has(Number(validIdentityUserId))) {
+            if (
+              !shouldOverwriteSuperAdmin &&
+              preservedSuperAdminIds.has(Number(validIdentityUserId))
+            ) {
               stats.updated++
               break
             }

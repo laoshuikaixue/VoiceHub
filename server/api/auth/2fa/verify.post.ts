@@ -5,9 +5,12 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { delStore, getStore, incrStore } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
 
 const { authenticator } = otplib
+const TOTP_FAILURE_LIMIT = 5
+const TOTP_FAILURE_WINDOW_SECONDS = 5 * 60
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -49,8 +52,21 @@ export default defineEventHandler(async (event) => {
   }
 
   let verified = false
+  const clientIp = getClientIP(event)
+  const totpUserFailureKey = `2fa_totp_user:${targetUserId}`
+  const totpIpFailureKey = `2fa_totp_ip:${clientIp}`
 
   if (type === 'totp') {
+    const userFailureCount = Number((await getStore(totpUserFailureKey)) || 0)
+    const ipFailureCount = Number((await getStore(totpIpFailureKey)) || 0)
+
+    if (userFailureCount >= TOTP_FAILURE_LIMIT || ipFailureCount >= TOTP_FAILURE_LIMIT) {
+      throw createError({
+        statusCode: 429,
+        message: '动态验证码错误次数过多，请在 5 分钟后重试'
+      })
+    }
+
     const identity = await db.query.userIdentities.findFirst({
       where: and(eq(userIdentities.userId, targetUserId), eq(userIdentities.provider, 'totp'))
     })
@@ -60,8 +76,13 @@ export default defineEventHandler(async (event) => {
     verified = authenticator.check(code, identity.providerUserId)
     
     if (!verified) {
+      await incrStore(totpUserFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
+      await incrStore(totpIpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
       throw createError({ statusCode: 400, message: '动态验证码错误' })
     }
+
+    await delStore(totpUserFailureKey)
+    await delStore(totpIpFailureKey)
   } else if (type === 'email') {
     const stored = twoFactorCodes.get(targetUserId)
     
@@ -94,8 +115,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // 验证通过，更新登录信息
-  const clientIp = getClientIP(event)
-
   const bindingToken = getCookie(event, 'binding-token')
   if (bindingToken) {
     let bindingPayload

@@ -5,6 +5,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const { userId: reqUserId, token: rawToken, email } = await readBody(event)
@@ -56,10 +57,11 @@ export default defineEventHandler(async (event) => {
 
   // 检查是否在冷却时间内
   const existingCode = twoFactorCodes.get(userId)
-  if (existingCode && existingCode.expiresAt > Date.now()) {
+  const now = getServerTimestamp()
+  if (existingCode && existingCode.expiresAt > now) {
     // 5 * 60 * 1000 = 300000ms
     const totalDuration = 5 * 60 * 1000
-    const timePassed = totalDuration - (existingCode.expiresAt - Date.now())
+    const timePassed = totalDuration - (existingCode.expiresAt - now)
     
     if (timePassed < 60 * 1000) { // 60秒冷却
       const remainingSeconds = Math.ceil((60000 - timePassed) / 1000)
@@ -73,7 +75,7 @@ export default defineEventHandler(async (event) => {
   const code = randomInt(100000, 999999).toString()
   twoFactorCodes.set(userId, { 
     code, 
-    expiresAt: Date.now() + 5 * 60 * 1000,
+    expiresAt: now + 5 * 60 * 1000,
     attempts: 0 
   })
 

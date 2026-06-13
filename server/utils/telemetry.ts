@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { CacheService } from '../services/cacheService'
 import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
+import { getServerTimestamp } from './serverTime'
 
 let telemetryEnabledCache: boolean | null = null
 let telemetryEnabledCacheExpiresAt = 0
@@ -31,13 +32,13 @@ const readTelemetryEnabled = async (): Promise<boolean> => {
 
 export const setTelemetryEnabledCache = (enabled: boolean) => {
   telemetryEnabledCache = enabled
-  telemetryEnabledCacheExpiresAt = Date.now() + TELEMETRY_CACHE_TTL_MS
+  telemetryEnabledCacheExpiresAt = getServerTimestamp() + TELEMETRY_CACHE_TTL_MS
 }
 
 export const isTelemetryEnabledCached = () => telemetryEnabledCache === true
 
 export const isTelemetryEnabled = async (): Promise<boolean> => {
-  if (telemetryEnabledCache !== null && telemetryEnabledCacheExpiresAt > Date.now()) {
+  if (telemetryEnabledCache !== null && telemetryEnabledCacheExpiresAt > getServerTimestamp()) {
     return telemetryEnabledCache
   }
 
