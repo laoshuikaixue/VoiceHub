@@ -2,7 +2,7 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
-import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
+import { ensureCardCodeSystemSettingsColumns, SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -23,6 +23,8 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    await ensureCardCodeSystemSettingsColumns()
+
     const body = await readBody(event)
 
     // 验证请求体

@@ -1,3 +1,5 @@
+import { db, sql } from '~/drizzle/db'
+
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
   enablePlayTimeSelection: false,
@@ -95,6 +97,22 @@ export const filterPublicSettings = (data: any) => {
     }
   }
   return result
+}
+
+let cardCodeSystemSettingsColumnsReady = false
+
+export async function ensureCardCodeSystemSettingsColumns() {
+  if (cardCodeSystemSettingsColumnsReady) {
+    return
+  }
+
+  await db.execute(sql`
+    ALTER TABLE "SystemSettings"
+      ADD COLUMN IF NOT EXISTS "enableCardCodeRequests" boolean DEFAULT false NOT NULL,
+      ADD COLUMN IF NOT EXISTS "requireCardCodeForRequests" boolean DEFAULT false NOT NULL
+  `)
+
+  cardCodeSystemSettingsColumnsReady = true
 }
 
 //为兼容旧代码，导出别名
