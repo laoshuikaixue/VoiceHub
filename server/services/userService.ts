@@ -15,7 +15,7 @@ export async function updateUserPassword(
   userId: number,
   newPassword: string,
   forceReset: boolean = false
-): Promise<{ passwordChangedAt: string | null }> {
+): Promise<{ passwordChangedAt: Date | string | null }> {
   // 1. 加密新密码
   const hashedNewPassword = await bcrypt.hash(newPassword, 12)
 
