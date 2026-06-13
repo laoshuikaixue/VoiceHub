@@ -7,10 +7,12 @@ import {
   getQqCookieDiagnostic,
   normalizeQqCookie
 } from '~~/server/utils/qq_music_sdk'
-import { isKnownInvalidQqAudioUrl } from '~~/app/utils/musicUrl'
 
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
+const INVALID_TX_AUDIO_URLS = [
+  'https://panspace.kuwo.cn/2b7877721f6efffecd4abe8359325f29/6a2d0b00/resource/2149972737147268278.mp3'
+]
 
 const txQualityMap: Record<string, string> = {
   '4': '128k',
@@ -75,11 +77,12 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
 }
 
 const validateResolvedTxUrl = (url: string, source: string) => {
-  if (isKnownInvalidQqAudioUrl(url)) {
+  const normalizedUrl = upgradeTxAudioUrl(url.trim())
+  if (INVALID_TX_AUDIO_URLS.includes(normalizedUrl)) {
     throw new Error(`${source} 返回已知无效音频链接`)
   }
 
-  return url
+  return normalizedUrl
 }
 
 const normalizeExcludedSources = (value: unknown) => {

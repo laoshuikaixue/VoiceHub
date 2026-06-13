@@ -265,7 +265,11 @@ import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useMediaSession } from '~/composables/useMediaSession'
 import { getBilibiliUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
-import { getCachedMusicUrlSource, getMusicUrlResult } from '~/utils/musicUrl'
+import {
+  getCachedMusicUrlSource,
+  getMusicUrlResult,
+  isKnownInvalidQqAudioUrl
+} from '~/utils/musicUrl'
 
 // 添加 router 导入
 const router = useRouter()
@@ -321,6 +325,7 @@ const fallbackOpenDialogMessage = ref('播放地址不可直接播放，是否�
 const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重试逻辑
 const consecutiveSkipCount = ref(0) // 连续跳过失败的歌曲数
 const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
+const MIN_VALID_QQ_AUDIO_DURATION = 10
 const failedPlaybackSources = ref<string[]>([])
 
 // 获取音频播放器引用
@@ -567,6 +572,17 @@ const trySwitchPlaybackSource = async () => {
   }
 }
 
+const isInvalidTencentAudio = (duration, url) => {
+  if (activeSong.value?.musicPlatform !== 'tencent') return false
+
+  const numericDuration = Number(duration)
+  if (Number.isFinite(numericDuration) && numericDuration > 0 && numericDuration < MIN_VALID_QQ_AUDIO_DURATION) {
+    return true
+  }
+
+  return isKnownInvalidQqAudioUrl(url)
+}
+
 // 音频事件处理器
 const handleTimeUpdate = () => {
   if (!audioPlayer.value || isSyncingFromGlobal.value) return
@@ -659,6 +675,16 @@ const handlePause = () => {
 
 const handleLoaded = async () => {
   if (!audioPlayer.value) return
+
+  if (
+    !isFallbackHandling.value &&
+    isInvalidTencentAudio(audioPlayer.value.duration, audioPlayer.value.currentSrc || audioPlayer.value.src)
+  ) {
+    const switchedSource = await trySwitchPlaybackSource()
+    if (switchedSource) {
+      return
+    }
+  }
 
   control.onLoaded(audioPlayer.value.duration)
 

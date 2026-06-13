@@ -874,8 +874,9 @@ VoiceHub/
 │   │   │   ├── lyric/               # 歌词API
 │   │   │   │   └── tx.get.ts        # 腾讯音乐歌词
 │   │   │   ├── qq/                  # QQ音乐账号API
-│   │   │   │   ├── check-login.post.ts # 检查QQ扫码登录
-│   │   │   │   └── login-qr.get.ts  # 获取QQ登录二维码
+│   │   │   │   ├── avatar.get.ts    # 获取QQ音乐头像
+│   │   │   │   ├── check-login.post.ts # 检查扫码登录情况
+│   │   │   │   └── login-qr.get.ts  # 获取登录二维码
 │   │   │   └── search/              # 搜索API
 │   │   │       ├── tx.get.ts        # 腾讯音乐搜索
 │   │   │       └── wy.get.ts        # 网易云音乐搜索
