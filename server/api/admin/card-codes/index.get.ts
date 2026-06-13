@@ -40,21 +40,20 @@ export default defineEventHandler(async (event) => {
       countQueryBuilder = countQueryBuilder.where(and(...conditions))
     }
 
-    const [
-      result,
-      totalResult,
-      allResult,
-      availableResult,
-      lockedResult,
-      redeemedResult
-    ] = await Promise.all([
+    const [result, totalResult, statsRows] = await Promise.all([
       queryBuilder.orderBy(desc(cardCodes.createdAt)).limit(limit).offset(offset),
       countQueryBuilder,
-      db.select({ count: count() }).from(cardCodes),
-      db.select({ count: count() }).from(cardCodes).where(eq(cardCodes.status, 'AVAILABLE')),
-      db.select({ count: count() }).from(cardCodes).where(eq(cardCodes.status, 'LOCKED')),
-      db.select({ count: count() }).from(cardCodes).where(eq(cardCodes.status, 'REDEEMED'))
+      db.select({ status: cardCodes.status, count: count() }).from(cardCodes).groupBy(cardCodes.status)
     ])
+
+    const stats = { total: 0, available: 0, locked: 0, redeemed: 0 }
+    for (const row of statsRows) {
+      const value = Number(row.count || 0)
+      stats.total += value
+      if (row.status === 'AVAILABLE') stats.available = value
+      if (row.status === 'LOCKED') stats.locked = value
+      if (row.status === 'REDEEMED') stats.redeemed = value
+    }
 
     const total = Number(totalResult[0]?.count || 0)
     return {
@@ -66,12 +65,7 @@ export default defineEventHandler(async (event) => {
         total,
         totalPages: Math.max(1, Math.ceil(total / limit))
       },
-      stats: {
-        total: Number(allResult[0]?.count || 0),
-        available: Number(availableResult[0]?.count || 0),
-        locked: Number(lockedResult[0]?.count || 0),
-        redeemed: Number(redeemedResult[0]?.count || 0)
-      }
+      stats
     }
   } catch (err) {
     console.error('获取点歌券列表失败', err)

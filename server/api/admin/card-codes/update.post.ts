@@ -67,27 +67,31 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
 
-    const res = await db.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
+    const res = await db.transaction(async (tx) => {
+      const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
 
-    if (['REDEEMED', 'AVAILABLE'].includes(status) && res.length > 0) {
-      const logsToInsert = res
-        .filter((row) => {
-          const before = beforeMap.get(row.id)
-          return before && before.status !== status
-        })
-        .map((row) => ({
-          cardCodeId: row.id,
-          codeSnapshot: row.code,
-          redeemedBy: user.id,
-          redeemedAt: row.redeemedAt || new Date(),
-          source: 'ADMIN_MANUAL',
-          songId: null
-        }))
+      if (['REDEEMED', 'AVAILABLE'].includes(status) && updatedRows.length > 0) {
+        const logsToInsert = updatedRows
+          .filter((row) => {
+            const before = beforeMap.get(row.id)
+            return before && before.status !== status
+          })
+          .map((row) => ({
+            cardCodeId: row.id,
+            codeSnapshot: row.code,
+            redeemedBy: user.id,
+            redeemedAt: row.redeemedAt || new Date(),
+            source: 'ADMIN_MANUAL',
+            songId: null
+          }))
 
-      if (logsToInsert.length > 0) {
-        await db.insert(cardCodeRedeemLogs).values(logsToInsert)
+        if (logsToInsert.length > 0) {
+          await tx.insert(cardCodeRedeemLogs).values(logsToInsert)
+        }
       }
-    }
+
+      return updatedRows
+    })
 
     return { success: true, data: res }
   } catch (err: any) {

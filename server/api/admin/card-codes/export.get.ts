@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
 import { and, desc, eq, ilike, or, inArray } from 'drizzle-orm'
+import { setHeader } from 'h3'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -74,9 +75,8 @@ export default defineEventHandler(async (event) => {
 
     const csv = '\ufeff' + csvRows.join('\n')
 
-    const res = event.node.res
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
-    res.setHeader('Content-Disposition', 'attachment; filename="card-codes.csv"')
+    setHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
+    setHeader(event, 'Content-Disposition', 'attachment; filename="card-codes.csv"')
     return csv
   } catch (err: any) {
     console.error('导出点歌券失败', err)
