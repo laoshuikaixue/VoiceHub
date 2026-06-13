@@ -223,7 +223,6 @@ export default defineEventHandler(async (event) => {
         semester: songs.semester,
         createdAt: songs.createdAt,
         updatedAt: songs.updatedAt,
-          cardCodeId: songs.cardCodeId,
         cover: songs.cover,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
@@ -502,7 +501,7 @@ export default defineEventHandler(async (event) => {
         requestedAt: formatDateTime(song.createdAt), // 添加请求时间的格式化字符串
         scheduled: scheduledSongs.has(song.id), // 是否存在已发布排期
         cover: song.cover || null, // 添加封面字段
-        cardCodeId: song.cardCodeId || null,
+        cardCodeId: null,
         musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
         musicId: song.musicId || null, // 添加音乐ID字段
         playUrl: song.playUrl || null, // 添加播放地址字段

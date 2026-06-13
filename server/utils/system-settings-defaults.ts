@@ -100,19 +100,36 @@ export const filterPublicSettings = (data: any) => {
 }
 
 let cardCodeSystemSettingsColumnsReady = false
+let cardCodeSystemSettingsColumnsPromise: Promise<void> | null = null
 
 export async function ensureCardCodeSystemSettingsColumns() {
   if (cardCodeSystemSettingsColumnsReady) {
     return
   }
 
-  await db.execute(sql`
-    ALTER TABLE "SystemSettings"
-      ADD COLUMN IF NOT EXISTS "enableCardCodeRequests" boolean DEFAULT false NOT NULL,
-      ADD COLUMN IF NOT EXISTS "requireCardCodeForRequests" boolean DEFAULT false NOT NULL
-  `)
+  if (cardCodeSystemSettingsColumnsPromise) {
+    return cardCodeSystemSettingsColumnsPromise
+  }
 
-  cardCodeSystemSettingsColumnsReady = true
+  cardCodeSystemSettingsColumnsPromise = db
+    .execute(
+      sql`
+      ALTER TABLE "SystemSettings"
+        ADD COLUMN IF NOT EXISTS "enableCardCodeRequests" boolean DEFAULT false NOT NULL,
+        ADD COLUMN IF NOT EXISTS "requireCardCodeForRequests" boolean DEFAULT false NOT NULL
+    `
+    )
+    .then(() => {
+      cardCodeSystemSettingsColumnsReady = true
+    })
+    .catch((error) => {
+      console.error('自动补齐 SystemSettings 点歌券字段失败:', error)
+    })
+    .finally(() => {
+      cardCodeSystemSettingsColumnsPromise = null
+    })
+
+  await cardCodeSystemSettingsColumnsPromise
 }
 
 //为兼容旧代码，导出别名

@@ -29,7 +29,8 @@ export default defineEventHandler(async (event) => {
     // 检查用户是否已登录并获取角色
     const authResult = await verifyUserAuth(event)
     const isLoggedIn = authResult.success
-    const isAdmin = isLoggedIn && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(authResult.user?.role)
+    const isAdmin =
+      isLoggedIn && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(authResult.user?.role)
     const user = authResult.success ? authResult.user : null
 
     // 根据用户权限动态过滤投稿备注字段
@@ -154,7 +155,6 @@ export default defineEventHandler(async (event) => {
           playUrl: songs.playUrl,
           semester: songs.semester,
           requesterId: songs.requesterId,
-          cardCodeId: songs.cardCodeId,
           createdAt: songs.createdAt,
           submissionNote: songs.submissionNote,
           submissionNotePublic: songs.submissionNotePublic
@@ -407,7 +407,7 @@ export default defineEventHandler(async (event) => {
           voteCount: voteCounts.get(schedule.song.id) || 0,
           played: schedule.song.played || false,
           cover: schedule.song.cover || null,
-          cardCodeId: schedule.song.cardCodeId || null,
+          cardCodeId: null,
           musicPlatform: schedule.song.musicPlatform || null,
           musicId: schedule.song.musicId || null,
           playUrl: schedule.song.playUrl || null,
@@ -453,7 +453,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 深拷贝数据以避免修改缓存的原始数据
-    const resultToReturn = JSON.parse(JSON.stringify(finalResult || allSchedulesResult)) as PublicScheduleItem[]
+    const resultToReturn = JSON.parse(
+      JSON.stringify(finalResult || allSchedulesResult)
+    ) as PublicScheduleItem[]
 
     // 过滤投稿备注权限
     filterSubmissionNotes(resultToReturn)
