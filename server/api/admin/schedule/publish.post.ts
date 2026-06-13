@@ -167,7 +167,7 @@ export default defineEventHandler(async (event) => {
                 codeSnapshot: codeRow.code,
                 redeemedBy: user.id,
                 redeemedAt: publishedAt,
-                source: 'SCHEDULE',
+                source: 'SCHEDULE_AUTO',
                 songId: draft.song.id
               })
               console.log(`点歌券 ${cardCodeId} 已在发布排期时完成核销 (songId=${draft.song.id})`)

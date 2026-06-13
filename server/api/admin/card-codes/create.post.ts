@@ -14,12 +14,20 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
   const rawCodes = Array.isArray(body.codes) ? body.codes : body.codes ? [body.codes] : []
-  const codes = rawCodes.map((c: string) => String(c).trim()).filter(Boolean)
+  const codes = rawCodes.map((c: string) => String(c).trim().toUpperCase()).filter(Boolean)
 
-  const batchCount = Number.isInteger(body.count) ? Number(body.count) : 0
-  const prefix = typeof body.prefix === 'string' ? body.prefix.trim() : ''
+  const MAX_BATCH_COUNT = 10000
+  const requestedBatchCount = Number.isInteger(body.count) ? Number(body.count) : 0
+  if (requestedBatchCount > MAX_BATCH_COUNT) {
+    throw createError({
+      statusCode: 400,
+      message: `单次最多生成 ${MAX_BATCH_COUNT} 个点歌券`
+    })
+  }
+  const batchCount = requestedBatchCount
+  const prefix = typeof body.prefix === 'string' ? body.prefix.trim().toUpperCase() : ''
   const length = Number.isInteger(body.length) ? Number(body.length) : 12
-  const charset = typeof body.charset === 'string' && body.charset.trim() ? body.charset.trim() : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const charset = typeof body.charset === 'string' && body.charset.trim() ? body.charset.trim().toUpperCase() : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
   const generatedCodes: string[] = []
   if (batchCount > 0) {
@@ -31,11 +39,20 @@ export default defineEventHandler(async (event) => {
       return code
     }
 
-    while (generatedCodes.length < batchCount) {
+    let attempts = 0
+    const maxAttempts = batchCount * 100
+    while (generatedCodes.length < batchCount && attempts < maxAttempts) {
+      attempts++
       const next = makeRandom()
       if (!generatedCodes.includes(next) && !codes.includes(next)) {
         generatedCodes.push(next)
       }
+    }
+    if (generatedCodes.length < batchCount) {
+      throw createError({
+        statusCode: 400,
+        message: '可用字符集过小或长度不足，无法生成足够数量的唯一点歌券，请增大字符集或长度'
+      })
     }
   }
 

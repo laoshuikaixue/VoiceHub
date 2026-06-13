@@ -22,12 +22,12 @@ export const usePermissions = () => {
 
     // 管理员可以访问的页面
     if (role === 'ADMIN') {
-      return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis'].includes(page)
+      return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'].includes(page)
     }
 
     // 歌曲管理员可以访问的页面
     if (role === 'SONG_ADMIN') {
-      return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis'].includes(page)
+      return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'].includes(page)
     }
 
     return false
@@ -59,9 +59,9 @@ export const usePermissions = () => {
           'data-analysis'
         ]
       case 'ADMIN':
-        return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis']
+        return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes']
       case 'SONG_ADMIN':
-        return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis']
+        return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes']
       default:
         return []
     }

@@ -1,6 +1,7 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
+import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -25,11 +26,9 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const schema = await import('~/drizzle/schema')
-
     const updated = await db.transaction(async (tx) => {
       // 获取当前状态
-      const rows = await tx.select().from(schema.cardCodes).where(eq(schema.cardCodes.id, id)).limit(1)
+      const rows = await tx.select().from(cardCodes).where(eq(cardCodes.id, id)).limit(1)
       const current = rows[0]
       if (!current) throw createError({ statusCode: 404, message: '点歌券未找到' })
 
@@ -61,18 +60,18 @@ export default defineEventHandler(async (event) => {
 
       if (note !== null) newValues.note = note
 
-      const res = await tx.update(schema.cardCodes).set(newValues).where(eq(schema.cardCodes.id, id)).returning()
+      const res = await tx.update(cardCodes).set(newValues).where(eq(cardCodes.id, id)).returning()
       const newRow = res[0]
 
-      // 写日志（对于 REDEEMED 和 AVAILABLE 操作写入兑换/变更日志，来源标记为 ADMIN）
+      // 写日志（对于 REDEEMED 和 AVAILABLE 操作写入兑换/变更日志，来源标记为 ADMIN_MANUAL）
       try {
         if (['REDEEMED', 'AVAILABLE'].includes(status)) {
-          await tx.insert(schema.cardCodeRedeemLogs).values({
+          await tx.insert(cardCodeRedeemLogs).values({
             cardCodeId: id,
             codeSnapshot: newRow.code,
             redeemedBy: user.id,
             redeemedAt: now,
-            source: 'ADMIN',
+            source: 'ADMIN_MANUAL',
             songId: null
           })
         }

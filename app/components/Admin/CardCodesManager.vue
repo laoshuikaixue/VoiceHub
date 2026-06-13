@@ -106,7 +106,7 @@
                     type="checkbox"
                     class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-500"
                     :checked="allVisibleSelected"
-                    :indeterminate.prop="someVisibleSelected && !allVisibleSelected"
+                    :indeterminate="someVisibleSelected && !allVisibleSelected"
                     @change="toggleSelectAll"
                   >
                 </th>
@@ -422,7 +422,10 @@ const statusMeta = (status) => statusMap[status] || { label: status || '未知',
 
 const logSourceMap = {
   ADMIN_MANUAL: { label: '手动核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+  ADMIN: { label: '管理员操作', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
   SCHEDULE_AUTO: { label: '排期自动', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+  SCHEDULE: { label: '排期', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+  WITHDRAW: { label: '撤回', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
   UNKNOWN: { label: '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
 }
 
@@ -578,7 +581,7 @@ const exportVisibleCodes = () => {
     ].map(escapeCsv).join(','))
   })
 
-  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const blob = new Blob(['\ufeff' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

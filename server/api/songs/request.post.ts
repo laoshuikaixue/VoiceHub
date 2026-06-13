@@ -210,13 +210,14 @@ export default defineEventHandler(async (event) => {
 
     // 点歌券相关站点设置
     if (systemSettingsData?.requireCardCodeForRequests) {
-      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim() : ''
+      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
         throw createError({ statusCode: 403, message: '本站点已启用仅点歌券投稿，请提供有效点歌券' })
       }
     }
 
-    if (typeof body.cardCode === 'string' && body.cardCode.trim() && !systemSettingsData?.enableCardCodeRequests && !isAdmin) {
+    const isCardCodeEnabled = !!(systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests)
+    if (typeof body.cardCode === 'string' && body.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
       throw createError({ statusCode: 400, message: '点歌券投稿功能未启用' })
     }
 
@@ -267,7 +268,7 @@ export default defineEventHandler(async (event) => {
     const song = await db.transaction(async (tx) => {
       // 如果提交了点歌券，先尝试锁定
       let providedCardCodeId: number | null = null
-      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim() : ''
+      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
 
       if (providedCardCode) {
         // 查询点歌券是否存在且可用

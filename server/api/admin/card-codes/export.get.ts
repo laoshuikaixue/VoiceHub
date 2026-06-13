@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
-import { and, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, desc, eq, ilike, or, inArray } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     let rows
     if (idsParam) {
       const ids = idsParam.split(',').map((s) => Number(s)).filter(Boolean)
-      rows = await db.select().from(cardCodes).where(cardCodes.id.in(ids)).orderBy(desc(cardCodes.createdAt))
+      rows = await db.select().from(cardCodes).where(inArray(cardCodes.id, ids)).orderBy(desc(cardCodes.createdAt))
     } else {
       let qb = db.select().from(cardCodes)
       if (conditions.length) qb = qb.where(and(...conditions))
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
       ].join(','))
     }
 
-    const csv = csvRows.join('\n')
+    const csv = '\ufeff' + csvRows.join('\n')
 
     // set headers and return raw csv
     const res = event.node.res
