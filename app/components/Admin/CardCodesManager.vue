@@ -510,7 +510,6 @@ const fetchCodes = async (page = pagination.value.page) => {
         locked: Number(res.stats?.locked || 0),
         redeemed: Number(res.stats?.redeemed || 0)
       }
-      selectedIds.value = selectedIds.value.filter((id) => codes.value.some((item) => item.id === id))
     }
   } catch (error) {
     console.error('获取点歌券失败', error)

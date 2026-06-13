@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
     for (const r of rows) {
       const esc = (v: any) => {
         if (v === null || typeof v === 'undefined') return ''
-        const s = String(v)
+        const s = v instanceof Date ? v.toISOString() : String(v)
         return s.includes(',') || s.includes('\n') || s.includes('"') ? '"' + s.replace(/"/g, '""') + '"' : s
       }
       csvRows.push([

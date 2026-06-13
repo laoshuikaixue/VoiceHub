@@ -17,7 +17,8 @@ export default defineEventHandler(async (event) => {
   const codes = rawCodes.map((c: string) => String(c).trim().toUpperCase()).filter(Boolean)
 
   const MAX_BATCH_COUNT = 10000
-  const requestedBatchCount = Number.isInteger(body.count) ? Number(body.count) : 0
+  const parsedCount = Number(body.count)
+  const requestedBatchCount = Number.isInteger(parsedCount) ? parsedCount : 0
   if (requestedBatchCount > MAX_BATCH_COUNT) {
     throw createError({
       statusCode: 400,
@@ -26,7 +27,8 @@ export default defineEventHandler(async (event) => {
   }
   const batchCount = requestedBatchCount
   const prefix = typeof body.prefix === 'string' ? body.prefix.trim().toUpperCase() : ''
-  const length = Number.isInteger(body.length) ? Number(body.length) : 12
+  const parsedLength = Number(body.length)
+  const length = Number.isInteger(parsedLength) ? parsedLength : 12
   if (length > 64) {
     throw createError({ statusCode: 400, message: '点歌券随机长度不能超过 64 位' })
   }
