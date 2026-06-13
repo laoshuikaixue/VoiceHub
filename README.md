@@ -150,7 +150,8 @@
    Usage：按需调整
    Network：3000 ，开 Public Access
    Environment Variables：
-      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub # 可能需要 ?sslmode=disable
+      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub 
+      # 可能需要 ?sslmode=disable
       JWT_SECRET=your-jwt-secret-here
       # 按实际情况填写
    ```
@@ -211,7 +212,8 @@ docker-compose up -d
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  # 可能需要替换成 ?sslmode=disable
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -223,7 +225,8 @@ docker run -d \
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  # 可能需要替换成 ?sslmode=disable
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -244,7 +247,8 @@ docker build --no-cache -t voicehub .
 # 运行容器
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  # 可能需要替换成 ?sslmode=disable
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -258,7 +262,7 @@ docker run -d \
 **一键命令：**
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
+sudo bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
 
 ### 飞牛 (FnOS) 部署
@@ -301,7 +305,8 @@ cp .env.example .env
 
 ```env
 # 数据库连接地址（必填）
-DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"  # 可能需要替换成 ?sslmode=disable
+DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+# 可能需要替换成 ?sslmode=disable
 
 # JWT 认证密钥（必填）
 JWT_SECRET="your-very-secure-jwt-secret-key"

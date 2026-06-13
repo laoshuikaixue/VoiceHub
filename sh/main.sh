@@ -219,8 +219,8 @@ redeploy_service() {
 
     # 7. 进入容器执行初始化命令
     echo -e "${GREEN}正在执行：进入 Voicehub...${NC}"
-    echo -e "${YELLOW}请输入 pnpm run init-help 后一直按回车，结束后输入 exit${NC}"
-    cd "${COMPOSE_DIR}" && ${DOCKER_COMPOSE_CMD} exec voicehub sh
+    echo -e "${YELLOW}可能需要一直按回车{NC}"
+    cd "${COMPOSE_DIR}" && ${DOCKER_COMPOSE_CMD} exec voicehub pnpm run init-help
 
     echo -e "\n${GREEN}✅ 重新部署完成！${NC}"
     status_service
