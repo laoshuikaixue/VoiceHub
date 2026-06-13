@@ -28,7 +28,25 @@ export default defineEventHandler(async (event) => {
   // 获取歌曲信息及重播申请数量，同时关联用户信息
   const requestsQuery = db
     .select({
-      song: songs,
+      song: {
+        id: songs.id,
+        createdAt: songs.createdAt,
+        updatedAt: songs.updatedAt,
+        title: songs.title,
+        artist: songs.artist,
+        requesterId: songs.requesterId,
+        played: songs.played,
+        playedAt: songs.playedAt,
+        semester: songs.semester,
+        preferredPlayTimeId: songs.preferredPlayTimeId,
+        cover: songs.cover,
+        playUrl: songs.playUrl,
+        musicPlatform: songs.musicPlatform,
+        musicId: songs.musicId,
+        submissionNote: songs.submissionNote,
+        submissionNotePublic: songs.submissionNotePublic,
+        hitRequestId: songs.hitRequestId
+      },
       requester: {
         id: users.id,
         name: users.name,
