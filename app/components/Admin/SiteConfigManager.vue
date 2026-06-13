@@ -485,7 +485,8 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
-import { siteConfig as locale } from '~/utils/locale/zh-CN'
+import { useLocale } from '~/utils/locale'
+const { siteConfig: locale } = useLocale()
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()

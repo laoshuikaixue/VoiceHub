@@ -18,6 +18,8 @@ export const useAuth = () => {
   const isAuthenticated = useState<boolean>('isAuthenticated', () => false)
   const isAdmin = useState<boolean>('isAdmin', () => false)
   const loading = useState<boolean>('loading', () => false)
+  // 客户端是否已完成一次认证状态探测，避免未登录访客每次路由切换都重复请求 /api/auth/verify
+  const authChecked = useState<boolean>('authChecked', () => false)
 
   const clearAuthState = () => {
     user.value = null
@@ -50,6 +52,11 @@ export const useAuth = () => {
       return user.value
     }
 
+    // 已探测过且确认未登录，则不再重复请求 verify（未登录访客在公共页面间切换时尤为关键）
+    if (authChecked.value && !isAuthenticated.value) {
+      return null
+    }
+
     try {
       const data = await $fetch<{ user: User }>('/api/auth/verify', {
         headers: {
@@ -80,6 +87,9 @@ export const useAuth = () => {
         clearAuthState()
       }
       return null
+    } finally {
+      // 无论成功或失败，标记已完成一次探测，避免未登录访客重复请求 verify
+      authChecked.value = true
     }
   }
 

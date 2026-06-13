@@ -57,56 +57,56 @@ export default defineEventHandler(async (event) => {
   }
 
   // 公共API路径（仅 API 请求需要做白名单跳过；页面请求始终走"软认证"流程）
-if (isApiRequest) {
-  const publicApiPaths = [
-    '/api/auth/login',
-    '/api/auth/captcha', // 验证码图片
-    '/api/auth/bind', // 账号绑定
-    '/api/auth/oauth-register',
-    '/api/auth/2fa/verify',
-    '/api/auth/2fa/send-email',
-    '/api/auth/forgot-password', // 找回密码
-    '/api/auth/reset-password', // 重置密码
-    '/api/semesters/current',
-    '/api/play-times',
-    '/api/schedules/public',
-    '/api/songs/count',
-    '/api/songs/public',
-    '/api/site-config',
-    '/api/proxy/', // 代理API路径，用于图片代理等功能
-    '/api/bilibili/', // 哔哩哔哩相关API
-    '/api/api-enhanced/', // 网易云音乐API代理路径
-    '/api/native-api/', // Native Music 集成API
-    '/api/system/location', // 系统位置检测API
-    '/api/open/', // 开放API路径，由 api-auth 中间件处理认证
-    '/api/auth/webauthn/login', // WebAuthn 登录接口
-    '/api/music/resolve-url', // 音乐播放链接解析
-    '/api/music/state', // 音乐状态同步
-    '/api/music/websocket', // WebSocket 连接
-    '/api/sys/time' // 服务器时间同步
-  ]
+  if (isApiRequest) {
+    const publicApiPaths = [
+      '/api/auth/login',
+      '/api/auth/captcha', // 验证码图片
+      '/api/auth/bind', // 账号绑定
+      '/api/auth/oauth-register',
+      '/api/auth/2fa/verify',
+      '/api/auth/2fa/send-email',
+      '/api/auth/forgot-password', // 找回密码
+      '/api/auth/reset-password', // 重置密码
+      '/api/semesters/current',
+      '/api/play-times',
+      '/api/schedules/public',
+      '/api/songs/count',
+      '/api/songs/public',
+      '/api/site-config',
+      '/api/proxy/', // 代理API路径，用于图片代理等功能
+      '/api/bilibili/', // 哔哩哔哩相关API
+      '/api/api-enhanced/', // 网易云音乐API代理路径
+      '/api/native-api/', // Native Music 集成API
+      '/api/system/location', // 系统位置检测API
+      '/api/open/', // 开放API路径，由 api-auth 中间件处理认证
+      '/api/auth/webauthn/login', // WebAuthn 登录接口
+      '/api/music/resolve-url', // 音乐播放链接解析
+      '/api/music/state', // 音乐状态同步
+      '/api/music/websocket', // WebSocket 连接
+      '/api/sys/time' // 服务器时间同步
+    ]
 
-    // 公共路径跳过认证检查
-    if (publicApiPaths.some((path) => pathname.startsWith(path))) {
-      return
-    }
-
-    // 动态判断 OAuth 路径
-    // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
-    // 但排除已知的受保护/特定 Auth 端点
-    if (pathname.startsWith('/api/auth/')) {
-      const segments = pathname.split('/')
-      const provider = segments[3]
-      const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
-      const isProviderCallbackPath =
-        segments.length === 5 &&
-        segments[4] === 'callback' &&
-        isSupportedOAuthProvider(provider || '')
-
-      if (isProviderIndexPath || isProviderCallbackPath) {
+      // 公共路径跳过认证检查
+      if (publicApiPaths.some((path) => pathname.startsWith(path))) {
         return
       }
-    }
+
+      // 动态判断 OAuth 路径
+      // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
+      // 但排除已知的受保护/特定 Auth 端点
+      if (pathname.startsWith('/api/auth/')) {
+        const segments = pathname.split('/')
+        const provider = segments[3]
+        const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
+        const isProviderCallbackPath =
+          segments.length === 5 &&
+          segments[4] === 'callback' &&
+          isSupportedOAuthProvider(provider || '')
+
+        if (isProviderIndexPath || isProviderCallbackPath) {
+          return
+        }
+      }
   }
 
   // 从请求头或cookie获取token

@@ -20,7 +20,12 @@ export async function updateUserPassword(
   const hashedNewPassword = await bcrypt.hash(newPassword, 12)
 
   // 2. 更新数据库
-  const passwordChangedAt = forceReset ? null : getBeijingTime()
+  // 即使是强制重置（forceReset=true），也必须将 passwordChangedAt 更新为当前时间：
+  //   1) 使密码修改前签发的历史 JWT 立即失效（auth.ts 中按 iat < passwordChangedTime 拒绝）；
+  //   2) 使 hasSetPassword 为 true，从而阻止他人借旧会话经 /api/auth/set-initial-password
+  //      绕过临时密码直接重置，强制走 /api/auth/change-password 验证临时密码。
+  // 强制改密的语义由 forcePasswordChange=forceReset 承载，且 resolveRequirePasswordChange 优先判断该标志。
+  const passwordChangedAt = getBeijingTime()
   await db
     .update(users)
     .set({
