@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: '权限不足' })
   }
 
-  const body = await readBody(event)
+  const body = await readBody(event) ?? {}
 
   const rawCodes = Array.isArray(body.codes) ? body.codes : body.codes ? [body.codes] : []
   const codes = rawCodes.map((c: string) => String(c).trim().toUpperCase()).filter(Boolean)
@@ -27,14 +27,30 @@ export default defineEventHandler(async (event) => {
   const batchCount = requestedBatchCount
   const prefix = typeof body.prefix === 'string' ? body.prefix.trim().toUpperCase() : ''
   const length = Number.isInteger(body.length) ? Number(body.length) : 12
-  const charset = typeof body.charset === 'string' && body.charset.trim() ? body.charset.trim().toUpperCase() : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  if (length > 64) {
+    throw createError({ statusCode: 400, message: '点歌券随机长度不能超过 64 位' })
+  }
+  const charsetInput = typeof body.charset === 'string' && body.charset.trim() ? body.charset.trim().toUpperCase() : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const charset = [...new Set(charsetInput.split(''))].join('')
+  if (!charset) {
+    throw createError({ statusCode: 400, message: '字符集不能为空' })
+  }
 
   const manualCodeSet = new Set(codes)
   const generatedCodeSet = new Set<string>()
   if (batchCount > 0) {
+    const actualLength = Math.max(4, length)
+    const maxPossibleCodes = charset.length ** actualLength
+    if (maxPossibleCodes < batchCount) {
+      throw createError({
+        statusCode: 400,
+        message: '可用字符集过小或长度不足，无法生成足够数量的唯一点歌券，请增大字符集或长度'
+      })
+    }
+
     const makeRandom = () => {
       let code = prefix
-      for (let i = 0; i < Math.max(4, length); i++) {
+      for (let i = 0; i < actualLength; i++) {
         code += charset.charAt(Math.floor(Math.random() * charset.length))
       }
       return code

@@ -54,7 +54,26 @@ export const redeemCardCodeForSchedule = async (
     throw createError({ statusCode: 400, message: '关联的点歌券不存在，无法发布排期' })
   }
   if (current.status === 'REDEEMED') {
-    return { changed: false, status: 'REDEEMED' }
+    const existingLogs = await tx
+      .select({ id: cardCodeRedeemLogs.id })
+      .from(cardCodeRedeemLogs)
+      .where(
+        and(
+          eq(cardCodeRedeemLogs.cardCodeId, cardCodeId),
+          eq(cardCodeRedeemLogs.songId, songId),
+          eq(cardCodeRedeemLogs.source, 'SCHEDULE_AUTO')
+        )
+      )
+      .limit(1)
+
+    if (existingLogs.length > 0) {
+      return { changed: false, status: 'REDEEMED' }
+    }
+
+    throw createError({
+      statusCode: 409,
+      message: '该点歌券已被其他歌曲核销，无法用于此歌曲排期'
+    })
   }
 
   // 作废券继续排期会让财务/发放记录失真，因此这里让事务失败。
