@@ -575,7 +575,7 @@ const trySwitchPlaybackSource = async () => {
 const normalizeSongDurationSeconds = (value) => {
   const duration = Number(value || 0)
   if (!Number.isFinite(duration) || duration <= 0) return 0
-  return duration > 1000 ? duration / 1000 : duration
+  return duration > 10000 ? duration / 1000 : duration
 }
 
 const isInvalidTencentAudio = (duration, url) => {

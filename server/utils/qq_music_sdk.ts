@@ -353,8 +353,17 @@ export const resolveQqOfficialPlayUrl = async ({
     authst: cookieObject.qqmusic_key
   })
 
-  const normalResponse = await requestQqOfficialVkey(payload, normalizedCookie, false)
-  let { url, info } = parseQqOfficialPlayUrl(normalResponse, songmidValue, guid)
+  let url: string | undefined
+  let info: Record<string, any> | undefined
+
+  try {
+    const normalResponse = await requestQqOfficialVkey(payload, normalizedCookie, false)
+    const parsed = parseQqOfficialPlayUrl(normalResponse, songmidValue, guid)
+    url = parsed.url
+    info = parsed.info
+  } catch (normalErr) {
+    console.warn('[qq_music_sdk] 未签名请求失败，尝试签名请求:', normalErr)
+  }
 
   if (!url) {
     try {
@@ -362,8 +371,8 @@ export const resolveQqOfficialPlayUrl = async ({
       const signedResult = parseQqOfficialPlayUrl(signedResponse, songmidValue, guid)
       url = signedResult.url || url
       info = signedResult.info || info
-    } catch {
-      // 普通接口已成功响应，签名接口失败时保留普通接口的诊断结果。
+    } catch (signedErr) {
+      console.error('[qq_music_sdk] 签名请求也失败，保留已获取的诊断信息:', signedErr)
     }
   }
 

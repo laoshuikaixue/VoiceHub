@@ -46,7 +46,7 @@ const formatSdkSearchList = (items: any[]) => {
       songmid,
       img:
         albumMid === '' || albumMid === '空'
-          ? item.singer?.length
+          ? Array.isArray(item.singer) && item.singer.length > 0 && item.singer[0]?.mid
             ? `https://y.gtimg.cn/music/photo_new/T001R500x500M000${item.singer[0].mid}.jpg`
             : ''
           : `https://y.gtimg.cn/music/photo_new/T002R500x500M000${albumMid}.jpg`,
@@ -155,7 +155,7 @@ export default defineEventHandler(async (event) => {
         songmid: item.mid,
         img:
           albumId === '' || albumId === '空'
-            ? item.singer?.length
+            ? Array.isArray(item.singer) && item.singer.length > 0 && item.singer[0]?.mid
               ? `https://y.gtimg.cn/music/photo_new/T001R500x500M000${item.singer[0].mid}.jpg`
               : ''
             : `https://y.gtimg.cn/music/photo_new/T002R500x500M000${albumId}.jpg`,
