@@ -37,7 +37,9 @@ export async function getSystemSettingsCached(): Promise<DBSystemSettings | null
  */
 export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
   const settings = await getSystemSettingsCached()
-  if (settings) {
+  // 仅当字段确为布尔值时才采用其值；字段缺失或为 undefined/null 时回退到保守默认 true，
+  // 避免 undefined 穿透至 computeRequirePasswordChange 导致首次登录强制改密被静默关闭。
+  if (settings && typeof settings.forcePasswordChangeOnFirstLogin === 'boolean') {
     return settings.forcePasswordChangeOnFirstLogin
   }
   return true

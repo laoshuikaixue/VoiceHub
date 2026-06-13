@@ -54,8 +54,11 @@ const GLOBAL_VERSION_CACHE_TTL = 3000 // 3 秒
  * 优先返回本地缓存中的版本号，过期后从 Redis 重新读取。
  */
 async function getGlobalVersion(): Promise<string | null> {
+  // 以时间戳是否已初始化（cachedGlobalVersionTime !== 0）作为判断依据，而非版本号是否为 null。
+  // 否则当 Redis 尚未初始化 AUTH_GLOBAL_VERSION_KEY 时，cache.get 返回 null，
+  // 会导致内存缓存始终判定为未命中，每次请求都穿透到 Redis。
   if (
-    cachedGlobalVersion !== null &&
+    cachedGlobalVersionTime !== 0 &&
     Date.now() - cachedGlobalVersionTime < GLOBAL_VERSION_CACHE_TTL
   ) {
     return cachedGlobalVersion
