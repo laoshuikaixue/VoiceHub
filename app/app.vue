@@ -13,6 +13,7 @@
       :is-playlist-mode="isPlaylistMode"
       @close="handlePlayerClose"
       @ended="handlePlayerEnded"
+      @song-change="handlePlayerSongChange"
     />
 
     <main class="main-content">
@@ -112,6 +113,12 @@ const handlePlayerEnded = () => {
       isPlayerVisible.value = false
     }, 500)
   }
+}
+
+const handlePlayerSongChange = (song) => {
+  if (!song) return
+  currentSong.value = song
+  audioPlayer.playSong(song)
 }
 
 // 使用onMounted确保只在客户端初始化认证

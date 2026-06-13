@@ -160,7 +160,9 @@ const getSessionCookie = (session) => {
   return ''
 }
 
-const buildUserInfo = (session) => {
+const buildUserInfo = (session, user) => {
+  if (user) return user
+
   const uin = session?.uin || session?.loginUin || session?.cookieObject?.uin || ''
   return {
     userId: uin,
@@ -211,25 +213,32 @@ const checkStatus = async () => {
       }
     })
     const data = response?.data || {}
+    const loginStatus = data.status || (data.isOk ? 'success' : data.refresh ? 'expired' : 'waiting')
 
-    if (data.isOk) {
-      const cookie = getSessionCookie(data.session)
+    if (loginStatus === 'success' || data.isOk) {
+      const cookie = data.cookie || getSessionCookie(data.session)
       if (!cookie) throw new Error('QQ 登录成功但未返回 Cookie')
 
       status.value = 'success'
       stopPolling()
       emit('login-success', {
         cookie,
-        user: buildUserInfo(data.session)
+        user: buildUserInfo(data.session, data.user),
+        authDiagnostic: data.authDiagnostic
       })
       handleClose()
       return
     }
 
-    if (data.refresh) {
+    if (loginStatus === 'expired' || data.refresh) {
       status.value = 'expired'
       isExpired.value = true
       stopPolling()
+      return
+    }
+
+    if (data.message) {
+      status.value = 'waiting'
       return
     }
 

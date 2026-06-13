@@ -344,7 +344,13 @@
               <div v-else class="user-status">
                 <div class="user-compact-row">
                   <div class="user-profile">
-                    <div class="qq-user-avatar">
+                    <img
+                      v-if="qqMusicUser?.avatarUrl"
+                      :src="convertToHttps(qqMusicUser.avatarUrl)"
+                      alt="avatar"
+                      class="user-avatar"
+                    >
+                    <div v-else class="qq-user-avatar">
                       <Icon :size="14" name="music" />
                     </div>
                     <span class="user-name">{{ qqMusicUser?.nickname || 'QQ音乐已登录' }}</span>
@@ -2388,7 +2394,13 @@ const getAudioUrl = async (result) => {
         const fallbackUrl = await resolveMusicUrl(
           result.musicPlatform,
           result.musicId,
-          result.playUrl
+          result.playUrl,
+          {
+            mediaId:
+              result.sourceInfo?.strMediaMid ||
+              result.sourceInfo?.mediaId ||
+              result.sourceInfo?.mediaMid
+          }
         )
         if (fallbackUrl) {
           result.url = fallbackUrl

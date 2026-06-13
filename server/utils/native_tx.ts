@@ -202,24 +202,36 @@ export const getTxSongPlayableInfo = async (
   const cached = getCachedTxSongDetail(cacheKey)
   if (cached) return cached
 
-  if (normalized.idType === 'mid') {
-    const value = {
-      ...normalized,
-      songmid: normalized.normalizedMusicId
+  // 旧 QQ 数字 ID 只在播放时转 MID，避免批量改历史数据。
+  let result: any
+  try {
+    result = await txRequest(TX_MUSICU_URL, createTxSongDetailBody(normalized))
+  } catch (error) {
+    if (normalized.idType === 'mid') {
+      const value = {
+        ...normalized,
+        songmid: normalized.normalizedMusicId
+      }
+      setCachedTxSongDetail(cacheKey, value)
+      return value
     }
-    setCachedTxSongDetail(cacheKey, value)
-    return value
+    throw error
   }
 
-  // 旧 QQ 数字 ID 只在播放时转 MID，避免批量改历史数据。
-  const result: any = await txRequest(TX_MUSICU_URL, createTxSongDetailBody(normalized))
-
   if (!result || result.code !== 0 || result.req?.code !== 0) {
+    if (normalized.idType === 'mid') {
+      const value = {
+        ...normalized,
+        songmid: normalized.normalizedMusicId
+      }
+      setCachedTxSongDetail(cacheKey, value)
+      return value
+    }
     throw createError({ statusCode: 502, message: 'QQ 音乐详情接口异常' })
   }
 
   const trackInfo = result.req?.data?.track_info
-  const songmid = trackInfo?.mid
+  const songmid = trackInfo?.mid || normalized.normalizedMusicId
   if (!songmid) {
     throw createError({ statusCode: 502, message: 'QQ 音乐详情缺少 MID' })
   }
@@ -227,8 +239,8 @@ export const getTxSongPlayableInfo = async (
   const value = {
     ...normalized,
     songmid,
-    songId: String(trackInfo.id || normalized.normalizedMusicId),
-    strMediaMid: trackInfo.file?.media_mid
+    songId: String(trackInfo?.id || normalized.normalizedMusicId),
+    strMediaMid: trackInfo?.file?.media_mid
   }
 
   setCachedTxSongDetail(cacheKey, value)
