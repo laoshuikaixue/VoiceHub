@@ -41,8 +41,13 @@ export default defineEventHandler(async (event) => {
       rows = await qb.orderBy(desc(cardCodes.createdAt))
     }
 
-    // Build CSV
-    const header = ['id', 'code', 'status', 'lockedBy', 'lockedAt', 'redeemedBy', 'redeemedAt', 'note', 'createdAt']
+    const statusLabelMap: Record<string, string> = {
+      AVAILABLE: '可用',
+      LOCKED: '已锁定',
+      REDEEMED: '已核销',
+      INVALID: '已作废'
+    }
+    const header = ['ID', '点歌券', '状态', '备注', '创建时间', '更新时间', '锁定用户ID', '锁定时间', '核销用户ID', '核销时间']
     const csvRows = [header.join(',')]
     for (const r of rows) {
       const esc = (v: any) => {
@@ -53,19 +58,19 @@ export default defineEventHandler(async (event) => {
       csvRows.push([
         esc(r.id),
         esc(r.code),
-        esc(r.status),
+        esc(statusLabelMap[r.status] || r.status),
+        esc(r.note),
+        esc(r.createdAt),
+        esc(r.updatedAt),
         esc(r.lockedBy),
         esc(r.lockedAt),
         esc(r.redeemedBy),
-        esc(r.redeemedAt),
-        esc(r.note),
-        esc(r.createdAt)
+        esc(r.redeemedAt)
       ].join(','))
     }
 
     const csv = '\ufeff' + csvRows.join('\n')
 
-    // set headers and return raw csv
     const res = event.node.res
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename="card-codes.csv"')

@@ -17,9 +17,10 @@
         </button>
         <button
           class="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:border-zinc-700 transition-all"
-          @click="exportVisibleCodes"
+          :disabled="exporting"
+          @click="exportCodes"
         >
-          <Download :size="14" /> 导出当前页
+          <Download :size="14" /> {{ exporting ? '导出中...' : exportButtonText }}
         </button>
       </div>
     </div>
@@ -34,8 +35,8 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-[1.25fr_0.95fr] gap-6">
-      <section class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-5">
+    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+      <section class="min-w-0 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex flex-1 flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
@@ -90,12 +91,12 @@
           </button>
         </div>
 
-        <div v-if="loading" class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
-          加载点歌券中...
-        </div>
+        <div class="overflow-x-auto rounded-2xl border border-zinc-800">
+          <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
+            加载点歌券中...
+          </div>
 
-        <div v-else class="overflow-x-auto rounded-2xl border border-zinc-800">
-          <table class="min-w-[880px] table-fixed text-left text-sm">
+          <table v-else class="min-w-[880px] table-fixed text-left text-sm">
             <thead class="bg-zinc-950/80 text-zinc-500">
               <tr>
                 <th class="px-3 py-3 w-10">
@@ -185,22 +186,22 @@
         />
       </section>
 
-      <section class="space-y-6">
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-4">
+      <section class="space-y-4">
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">批量创建 / 导入</h3>
+              <h3 class="text-sm font-black text-zinc-100">批量创建 / 导入</h3>
               <p class="mt-1 text-[11px] text-zinc-500">支持手动粘贴、分隔导入，也支持自动生成点歌券</p>
             </div>
             <div class="inline-flex shrink-0 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
               <button
-                :class="['min-w-[76px] whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
+                :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
                 @click="createMode = 'manual'"
               >
                 手动导入
               </button>
               <button
-                :class="['min-w-[76px] whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
+                :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
                 @click="createMode = 'generate'"
               >
                 自动生成
@@ -211,57 +212,57 @@
           <div v-if="createMode === 'manual'" class="space-y-3">
             <textarea
               v-model="manualCodes"
-              rows="6"
+              rows="4"
               placeholder="输入单个点歌券，或使用逗号/换行/空格分隔多个点歌券"
-              class="w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+              class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
             />
           </div>
 
-          <div v-else class="grid grid-cols-2 gap-3">
+          <div v-else class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">生成数量</label>
-              <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">生成数量</label>
+              <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
             <div>
-              <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">前缀</label>
-              <input v-model="generateForm.prefix" type="text" placeholder="例如 VH-" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">前缀</label>
+              <input v-model="generateForm.prefix" type="text" placeholder="例如 VH-" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
             <div>
-              <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">随机长度</label>
-              <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">随机长度</label>
+              <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
             <div>
-              <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">字符集</label>
-              <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">字符集</label>
+              <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
           </div>
 
           <div>
-            <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">备注</label>
-            <input v-model="createNote" type="text" placeholder="可选：批量备注" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40">
+            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">备注</label>
+            <input v-model="createNote" type="text" placeholder="可选：批量备注" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40">
           </div>
 
           <div class="flex flex-wrap gap-2">
             <button
-              class="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+              class="flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
               :disabled="saving"
               @click="createCodes"
             >
               <Plus :size="14" /> 创建点歌券
             </button>
-            <button class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm font-bold text-zinc-300" @click="fillDemoCodes">
+            <button class="rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-bold text-zinc-300" @click="fillDemoCodes">
               填充示例
             </button>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-4">
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">快速说明</h3>
           <ul class="space-y-2 text-[12px] leading-relaxed text-zinc-500">
             <li>· 支持按状态和关键词筛选，搜索范围包含点歌券和备注。</li>
             <li>· 支持单条和批量状态切换，方便锁定、核销或作废。</li>
             <li>· 备注可直接就地编辑，适合记录发放对象、批次来源等信息。</li>
-            <li>· 导出当前列表会生成 CSV，便于备份或线下核对。</li>
+            <li>· 导出会按当前筛选条件生成完整 CSV；勾选点歌券后会优先导出勾选项。</li>
           </ul>
         </div>
       </section>
@@ -409,6 +410,7 @@ const redeemLogs = ref([])
 const loading = ref(false)
 const logsLoading = ref(false)
 const saving = ref(false)
+const exporting = ref(false)
 const selectedIds = ref([])
 const bulkStatus = ref('AVAILABLE')
 const pagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
@@ -473,6 +475,7 @@ const stats = computed(() => {
 
 const allVisibleSelected = computed(() => codes.value.length > 0 && codes.value.every((item) => selectedIds.value.includes(item.id)))
 const someVisibleSelected = computed(() => codes.value.some((item) => selectedIds.value.includes(item.id)))
+const exportButtonText = computed(() => (selectedIds.value.length ? `导出已选 ${selectedIds.value.length} 项` : '导出筛选结果'))
 
 const queryString = computed(() => {
   const query = new URLSearchParams()
@@ -601,34 +604,51 @@ const copyCode = async (code) => {
   }
 }
 
-const exportVisibleCodes = () => {
-  const header = ['id', 'code', 'status', 'note', 'createdAt', 'updatedAt', 'lockedAt', 'redeemedAt']
-  const escapeCsv = (value) => {
-    const text = value == null ? '' : String(value)
-    return `"${text.replaceAll('"', '""')}"`
+const buildExportQuery = () => {
+  const query = new URLSearchParams()
+  if (selectedIds.value.length) {
+    query.set('ids', selectedIds.value.join(','))
+    return query
   }
-  const rows = [header.join(',')]
-  codes.value.forEach((item) => {
-    rows.push([
-      item.id,
-      item.code,
-      item.status,
-      item.note || '',
-      item.createdAt || '',
-      item.updatedAt || '',
-      item.lockedAt || '',
-      item.redeemedAt || ''
-    ].map(escapeCsv).join(','))
-  })
+  if (filters.value.q.trim()) query.set('q', filters.value.q.trim())
+  if (filters.value.status) query.set('status', filters.value.status)
+  return query
+}
 
-  const blob = new Blob(['\ufeff' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `card-codes-${new Date().toISOString().replaceAll(':', '-').slice(0, 19)}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-  showToast('已导出当前页', 'success')
+const exportCodes = async () => {
+  exporting.value = true
+  try {
+    const query = buildExportQuery()
+    const response = await fetch(`/api/admin/card-codes/export?${query.toString()}`, {
+      credentials: 'same-origin'
+    })
+    if (!response.ok) {
+      let message = '导出点歌券失败'
+      try {
+        const errorBody = await response.json()
+        message = errorBody?.message || errorBody?.statusMessage || message
+      } catch {
+        // CSV 接口错误响应不一定是 JSON。
+      }
+      throw new Error(message)
+    }
+
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `card-codes-${new Date().toISOString().replaceAll(':', '-').slice(0, 19)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    showToast(selectedIds.value.length ? '已导出勾选点歌券' : '已导出筛选结果', 'success')
+  } catch (error) {
+    console.error('导出点歌券失败', error)
+    showToast(error?.message || '导出点歌券失败', 'error')
+  } finally {
+    exporting.value = false
+  }
 }
 
 const updateStatus = async (ids, status) => {
