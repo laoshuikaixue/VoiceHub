@@ -18,7 +18,8 @@ NC='\033[0m'
 
 # ==================== root 提权 ====================
 if [ "$(id -u)" -ne 0 ]; then
-    echo -e "${YELLOW}当前非 root 用户，正在通过 sudo 提权执行...${NC}"
+    echo -e "${YELLOW}当前非 root 用户${NC}"
+    exit 1
     exec sudo "$0" "$@"
 fi
 
