@@ -11,9 +11,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: '权限不足' })
   }
 
-  const body = await readBody(event)
+  const body = await readBody(event) ?? {}
   const ids = Array.isArray(body.ids) ? body.ids : body.id ? [body.id] : []
-  const status = body.status
+  const status = typeof body.status === 'string' ? body.status.trim().toUpperCase() : ''
   if (!ids.length) {
     throw createError({ statusCode: 400, message: '缺少点歌券ID' })
   }
@@ -36,7 +36,12 @@ export default defineEventHandler(async (event) => {
     const beforeMap = new Map(beforeRows.map((row) => [row.id, row]))
 
     const updateObj: any = {}
-    if (status) updateObj.status = status
+    if (status) {
+      if (!['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID'].includes(status)) {
+        throw createError({ statusCode: 400, message: '不支持的状态值' })
+      }
+      updateObj.status = status
+    }
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
       updateObj.redeemedAt = new Date()
@@ -57,6 +62,9 @@ export default defineEventHandler(async (event) => {
     }
     if (typeof body.note !== 'undefined') {
       updateObj.note = typeof body.note === 'string' ? body.note.trim() || null : body.note
+    }
+    if (Object.keys(updateObj).length === 0) {
+      throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
 
     const res = await db.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
@@ -82,8 +90,8 @@ export default defineEventHandler(async (event) => {
     }
 
     return { success: true, data: res }
-  } catch (err) {
+  } catch (err: any) {
     console.error('更新点歌券失败', err)
-    throw createError({ statusCode: 500, message: '更新点歌券失败' })
+    throw createError({ statusCode: err.statusCode || 500, message: err.message || '更新点歌券失败' })
   }
 })

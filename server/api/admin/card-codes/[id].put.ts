@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '点歌券ID无效' })
   }
 
-  const body = await readBody(event)
+  const body = await readBody(event) ?? {}
   const status = typeof body.status === 'string' ? body.status.trim().toUpperCase() : ''
   const note = typeof body.note === 'string' ? body.note.trim() : null
 
