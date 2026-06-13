@@ -52,6 +52,8 @@ export default defineEventHandler(async (event) => {
         newValues.status = 'LOCKED'
         newValues.lockedBy = user.id
         newValues.lockedAt = now
+        newValues.redeemedBy = null
+        newValues.redeemedAt = null
       } else if (status === 'INVALID') {
         newValues.status = 'INVALID'
       } else {

@@ -69,11 +69,11 @@ export default defineEventHandler(async (event) => {
 
     const res = await db.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
 
-    if (status === 'REDEEMED' && res.length > 0) {
+    if (['REDEEMED', 'AVAILABLE'].includes(status) && res.length > 0) {
       const logsToInsert = res
         .filter((row) => {
           const before = beforeMap.get(row.id)
-          return before && before.status !== 'REDEEMED'
+          return before && before.status !== status
         })
         .map((row) => ({
           cardCodeId: row.id,

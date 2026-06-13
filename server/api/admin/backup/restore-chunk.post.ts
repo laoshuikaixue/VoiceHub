@@ -391,6 +391,7 @@ export default defineEventHandler(async (event) => {
               if (!record[field]) return null
               const mappedUserId = userIdMapping.get(record[field])
               if (mappedUserId) return mappedUserId
+              if (mode === 'merge') return null
               const userExists = await tx.query.users.findFirst({
                 where: eq(users.id, record[field])
               })

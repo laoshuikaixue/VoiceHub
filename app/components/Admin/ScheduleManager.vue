@@ -1999,7 +1999,6 @@ const loadData = async () => {
 
     songs.value = songsService.songs.value
     publicSchedules.value = songsService.publicSchedules.value
-    console.log('[ScheduleManager] songs 总数:', songs.value.length, '含 cardCodeId 的数量:', songs.value.filter(s=>s.cardCodeId).length)
 
     // 在草稿加载完成后再更新本地排期数据
     updateLocalScheduledSongs()
