@@ -28,7 +28,8 @@
     "postinstall": "nuxt prepare && node scripts/postinstall.js",
     "lint": "nuxt prepare && eslint .",
     "lint:fix": "nuxt prepare && eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "init-help": "pnpm run db:push && pnpm run create-admin"
   },
   "dependencies": {
     "@applemusic-like-lyrics/lyric": "^0.3.0",

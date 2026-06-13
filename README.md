@@ -150,7 +150,8 @@
    Usage：按需调整
    Network：3000 ，开 Public Access
    Environment Variables：
-      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub 
+      # 可能需要 ?sslmode=disable
       JWT_SECRET=your-jwt-secret-here
       # 按实际情况填写
    ```
@@ -183,7 +184,7 @@ cd VoiceHub
 
 ```yaml
 environment:
-  - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
+  - DATABASE_URL=postgresql://user:password@postgres:5432/voicehub # 可能需要 ?sslmode=disable
   - JWT_SECRET=your-jwt-secret-here # 请修改为强随机字符串
   - NODE_ENV=production
 ```
@@ -211,7 +212,8 @@ docker-compose up -d
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -223,7 +225,8 @@ docker run -d \
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -244,7 +247,8 @@ docker build --no-cache -t voicehub .
 # 运行容器
 docker run -d \
   -p 3000:3000 \
-  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \
+  -e DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require" \  
+  # 可能需要替换成 ?sslmode=disable
   -e JWT_SECRET="your-very-secure-jwt-secret-key" \
   -e NODE_ENV=production \
   --name voicehub \
@@ -255,22 +259,11 @@ docker run -d \
 
 本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
 
-**一键部署命令：**
+**一键命令：**
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/deploy.sh)
+sudo bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
-
-**更新部署：**
-项目更新时，可使用更新脚本快速更新：
-
-```bash
-# 一键更新命令
-bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/update.sh)
-```
-
-**日常管理：**
-部署完成后，可使用 `voicehub` 命令进行日常管理（需在部署时安装）
 
 ### 飞牛 (FnOS) 部署
 
@@ -313,6 +306,7 @@ cp .env.example .env
 ```env
 # 数据库连接地址（必填）
 DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+# 可能需要替换成 ?sslmode=disable
 
 # JWT 认证密钥（必填）
 JWT_SECRET="your-very-secure-jwt-secret-key"
@@ -377,6 +371,9 @@ pnpm run start
 ### 数据库管理命令
 
 ```bash
+# 新的数据库初始化
+pnpm run init-help
+
 # 生成迁移文件
 pnpm run db:generate
 
