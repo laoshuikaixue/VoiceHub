@@ -4,6 +4,7 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { config } from 'dotenv'
+import postgres from 'postgres'
 config({ path: path.resolve(process.cwd(), '.env') })
 
 const colors = {
@@ -48,59 +49,138 @@ function ensureDrizzleFiles() {
   if (!fileExists('app/drizzle/schema.ts')) throw new Error('Schema 文件不存在')
 }
 
-function isEmptyDatabase() {
-  try {
-    const output = execSync('pnpm exec drizzle-kit introspect --config=drizzle.config.ts', {
-      stdio: 'pipe',
-      env: NON_INTERACTIVE_ENV,
-      encoding: 'utf8'
-    })
-    const tablesMatch = output.match(/(\d+)\s+tables/i)
-    const hasTablesCount = tablesMatch && Number(tablesMatch[1]) > 0
-    const listsTables = /\bcolumns\b|\bindexes\b|\bfks\b/i.test(output)
-    return !(hasTablesCount || listsTables)
-  } catch {
-    warn('无法检测数据库状态，按非空库处理')
+function createSqlClient() {
+  return postgres(process.env.DATABASE_URL, { max: 1 })
+}
+
+async function isEmptyDatabase(sql) {
+  const result = await sql`
+    SELECT COUNT(*)::int AS count
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_type = 'BASE TABLE'
+      AND table_name <> '__drizzle_migrations__'
+  `
+
+  return result[0]?.count === 0
+}
+
+async function hasMigrationRecords(sql) {
+  const migrationTable = await sql`
+    SELECT to_regclass('public.__drizzle_migrations__') AS table_name
+  `
+
+  if (!migrationTable[0]?.table_name) {
     return false
   }
+
+  const result = await sql`
+    SELECT COUNT(*)::int AS count
+    FROM public.__drizzle_migrations__
+  `
+
+  return (result[0]?.count || 0) > 0
 }
 
-// 检查数据库schema是否与代码中的schema一致
-function checkSchemaConsistency() {
-  try {
-    // 使用 drizzle-kit introspect 获取当前数据库schema
-    const output = execSync('pnpm exec drizzle-kit introspect --config=drizzle.config.ts', {
-      stdio: 'pipe',
-      env: NON_INTERACTIVE_ENV,
-      encoding: 'utf8'
-    })
+async function enumExists(sql, enumName) {
+  const result = await sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_type t
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+      WHERE n.nspname = 'public'
+        AND t.typname = ${enumName}
+        AND t.typtype = 'e'
+    ) AS exists
+  `
 
-    // 检查关键表和字段是否存在
-    const checks = [
-      { pattern: /"status".*user_status/i, name: 'user_status enum type' },
-      { pattern: /"api_keys"/i, name: 'api_keys table' }
-    ]
+  return result[0]?.exists === true
+}
 
-    const missing = []
-    for (const check of checks) {
-      if (!check.pattern.test(output)) {
-        missing.push(check.name)
-      }
+async function enumValueExists(sql, enumName, enumValue) {
+  const result = await sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_type t
+      JOIN pg_namespace n ON n.oid = t.typnamespace
+      JOIN pg_enum e ON e.enumtypid = t.oid
+      WHERE n.nspname = 'public'
+        AND t.typname = ${enumName}
+        AND e.enumlabel = ${enumValue}
+    ) AS exists
+  `
+
+  return result[0]?.exists === true
+}
+
+async function tableExists(sql, tableName) {
+  const result = await sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+    ) AS exists
+  `
+
+  return result[0]?.exists === true
+}
+
+async function columnExists(sql, tableName, columnName) {
+  const result = await sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ${tableName}
+        AND column_name = ${columnName}
+    ) AS exists
+  `
+
+  return result[0]?.exists === true
+}
+
+// 检查数据库schema是否包含当前代码依赖的关键对象。
+async function checkSchemaConsistency(sql) {
+  const checks = [
+    {
+      name: 'user_status enum type',
+      exists: () => enumExists(sql, 'user_status')
+    },
+    {
+      name: 'user_status graduate enum value',
+      exists: () => enumValueExists(sql, 'user_status', 'graduate')
+    },
+    {
+      name: 'api_keys table',
+      exists: () => tableExists(sql, 'api_keys')
+    },
+    {
+      name: 'SystemSettings.instance_id column',
+      exists: () => columnExists(sql, 'SystemSettings', 'instance_id')
+    },
+    {
+      name: 'SystemSettings.telemetryEnabled column',
+      exists: () => columnExists(sql, 'SystemSettings', 'telemetryEnabled')
     }
+  ]
 
-    if (missing.length > 0) {
-      warn(`检测到数据库schema不完整，缺少: ${missing.join(', ')}`)
-      return false
+  const missing = []
+  for (const check of checks) {
+    if (!(await check.exists())) {
+      missing.push(check.name)
     }
-
-    return true
-  } catch (e) {
-    warn('无法检测数据库schema一致性')
-    return true // 出错时不阻止继续
   }
+
+  if (missing.length > 0) {
+    warn(`检测到数据库schema不完整，缺少: ${missing.join(', ')}`)
+    return false
+  }
+
+  return true
 }
 
-function main() {
+async function main() {
   log('🔄 数据库同步', 'cyan')
 
   if (!process.env.DATABASE_URL) {
@@ -110,60 +190,66 @@ function main() {
 
   ensureDrizzleFiles()
 
-  const emptyDb = isEmptyDatabase()
-  if (emptyDb) {
-    log('🆕 检测到空库，执行迁移 (migrate)...', 'cyan')
-    if (!safeExec('pnpm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
-      err('数据库迁移失败')
-      process.exit(1)
-    }
-    ok('空库迁移完成')
-  } else {
-    log('🔁 检测到非空库，检查schema一致性...', 'cyan')
+  const sql = createSqlClient()
 
-    // 检查数据库schema是否与代码一致
-    const schemaConsistent = checkSchemaConsistency()
-
-    if (!schemaConsistent) {
-      warn('数据库schema不完整，尝试使用 push --force 进行修复...', 'cyan')
-      const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
-      if (
-        !safeExec(pushCommand, {
-          env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
-        })
-      ) {
-        err('数据库schema修复失败')
+  try {
+    const emptyDb = await isEmptyDatabase(sql)
+    if (emptyDb) {
+      log('🆕 检测到空库，执行迁移 (migrate)...', 'cyan')
+      if (!safeExec('pnpm run db:migrate', { env: NON_INTERACTIVE_ENV })) {
+        err('数据库迁移失败')
         process.exit(1)
       }
-      ok('schema修复成功')
+      ok('空库迁移完成')
     } else {
-      log('🔁 数据库schema一致，尝试执行 migrate 同步...', 'cyan')
+      log('🔁 检测到非空库，检查schema一致性...', 'cyan')
 
-      // 尝试执行 migrate
-      const migrateSuccess = safeExec('pnpm run db:migrate', {
-        env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
-      })
+      const migrationRecordsExist = await hasMigrationRecords(sql)
+      const schemaConsistent = await checkSchemaConsistency(sql)
 
-      if (migrateSuccess) {
-        ok('migrate 同步成功')
-      } else {
-        warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
-        log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
-
-        // 在 CI 环境下，push 命令如果遇到重命名等歧义可能会弹出交互式提示
-        // 确保 DRIZZLE_KIT_NON_INTERACTIVE 已设置
+      if (!schemaConsistent) {
+        warn('数据库schema不完整，尝试使用 push --force 进行修复...', 'cyan')
         const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
         if (
           !safeExec(pushCommand, {
             env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
           })
         ) {
-          err('数据库同步完全失败。请检查数据库连接或手动运行 pnpm exec drizzle-kit push 以解决歧义。')
+          err('数据库schema修复失败')
           process.exit(1)
         }
-        ok('强制同步 (push) 成功')
+        ok('schema修复成功')
+      } else if (!migrationRecordsExist) {
+        warn('检测到 legacy 数据库：schema 已存在，但迁移记录为空。跳过 migrate 以避免重放历史迁移。')
+        ok('legacy schema 检查通过')
+      } else {
+        log('🔁 数据库schema一致，尝试执行 migrate 同步...', 'cyan')
+
+        const migrateSuccess = safeExec('pnpm run db:migrate', {
+          env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
+        })
+
+        if (migrateSuccess) {
+          ok('migrate 同步成功')
+        } else {
+          warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
+          log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
+
+          const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
+          if (
+            !safeExec(pushCommand, {
+              env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
+            })
+          ) {
+            err('数据库同步完全失败。请检查数据库连接或手动运行 pnpm exec drizzle-kit push 以解决歧义。')
+            process.exit(1)
+          }
+          ok('强制同步 (push) 成功')
+        }
       }
     }
+  } finally {
+    await sql.end()
   }
 
   ok('数据库同步流程完成')

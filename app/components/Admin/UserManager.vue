@@ -491,8 +491,7 @@
                     />
                     <input
                       v-model="userForm.username"
-                      :disabled="!!editingUser"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 disabled:opacity-50"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                       placeholder="登录唯一标识"
                       type="text"
                     >
@@ -1625,7 +1624,7 @@ watch(currentPage, (newPage) => {
 const formatDate = (dateString) => {
   if (!dateString) return '从未登录'
   const date = new Date(dateString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now - date
 
   if (diff < 60000) return '刚刚'

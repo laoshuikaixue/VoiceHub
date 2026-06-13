@@ -32,6 +32,16 @@ export default defineEventHandler(async (event) => {
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
 
+    if (body.telemetryEnabled !== undefined) {
+      if (typeof body.telemetryEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'telemetryEnabled 必须是布尔值'
+        })
+      }
+      updateData.telemetryEnabled = body.telemetryEnabled
+    }
+
     if (body.hideStudentInfo !== undefined) {
       if (typeof body.hideStudentInfo !== 'boolean') {
         throw createError({
@@ -212,7 +222,7 @@ export default defineEventHandler(async (event) => {
       }
       updateData.captchaMaxFailures = body.captchaMaxFailures
     }
-    
+
     if (body.captchaProvider !== undefined) {
       if (body.captchaProvider !== 'graphic' && body.captchaProvider !== 'turnstile') {
         throw createError({
@@ -220,17 +230,17 @@ export default defineEventHandler(async (event) => {
           message: 'captchaProvider 必须是 graphic 或 turnstile'
         })
       }
-      
+
       const nextTurnstileSiteKey = body.turnstileSiteKey !== undefined ? body.turnstileSiteKey : settings?.turnstileSiteKey
       const nextTurnstileSecretKey = body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK ? body.turnstileSecretKey : settings?.turnstileSecretKey
-      
+
       if (body.captchaProvider === 'turnstile' && (!nextTurnstileSiteKey || !nextTurnstileSecretKey)) {
         throw createError({
           statusCode: 400,
           message: '启用 Turnstile 验证前，请先配置 Site Key 和 Secret Key'
         })
       }
-      
+
       updateData.captchaProvider = body.captchaProvider
     }
 
@@ -241,7 +251,7 @@ export default defineEventHandler(async (event) => {
     if (body.turnstileSecretKey !== undefined && body.turnstileSecretKey !== SECRET_FIELD_MASK) {
       updateData.turnstileSecretKey = body.turnstileSecretKey
     }
-    
+
     if (body.enableRequestTimeLimitation !== undefined) {
       if (typeof body.enableRequestTimeLimitation !== 'boolean') {
         throw createError({
@@ -622,6 +632,15 @@ export default defineEventHandler(async (event) => {
         console.log('[Cache] 已清除所有用户认证缓存（强制改密设置变更）')
       } catch (e) {
         console.warn('清除用户认证缓存失败:', e)
+      }
+    }
+
+    if (updateData.telemetryEnabled !== undefined) {
+      try {
+        const { setTelemetryEnabledCache } = await import('~~/server/utils/telemetry')
+        setTelemetryEnabledCache(updateData.telemetryEnabled)
+      } catch (telemetryError) {
+        console.warn('[Telemetry] 遥测开关缓存更新失败:', telemetryError)
       }
     }
 

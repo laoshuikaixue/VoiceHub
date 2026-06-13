@@ -1,5 +1,10 @@
 import { db, getConnectionStatus } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import {
+  getConnectionPoolStatus,
+  getDatabaseMetrics
+} from './database-health'
+import { getServerTimestamp } from './serverTime'
 
 /**
  * 数据库管理器
@@ -28,7 +33,7 @@ export class DatabaseManager {
     connectionStatus: string
     error?: string
   }> {
-    const now = Date.now()
+    const now = getServerTimestamp()
 
     // 检查缓存
     if (this.healthCheckCache && now - this.healthCheckCache.timestamp < this.CACHE_TTL) {
@@ -106,12 +111,13 @@ export class DatabaseManager {
         WHERE datname = current_database() AND state = 'active'
       `)
 
-      const sizeRow = sizeResult[0] as any
-      const connectionRow = connectionStats[0] as any
+      const sizeRow = sizeResult[0] as { database_size?: string } | undefined
+      const connectionRow = connectionStats[0] as { active_connections?: number | string } | undefined
 
       return {
         databaseSize: sizeRow?.database_size || 'Unknown',
-        activeConnections: parseInt(connectionRow?.active_connections) || 0,
+        activeConnections:
+          Number.parseInt(String(connectionRow?.active_connections ?? '0'), 10) || 0,
         serverless: true // Neon Database 是无服务器架构
       }
     } catch (error) {
@@ -126,33 +132,67 @@ export class DatabaseManager {
    * 获取连接状态 - 适配 Neon Database 无服务器架构
    */
   async getConnectionStatus(): Promise<{
+    connected: boolean
     status: string
     activeConnections: number
     serverlessMode: boolean
     autoSuspend: boolean
+    error: string | null
   }> {
     try {
       const connectionStatus = await getConnectionStatus()
 
-      // 获取当前活跃连接数
-      const connectionStats = await db.execute(sql`
-        SELECT count(*) as active_connections
-        FROM pg_stat_activity
-        WHERE datname = current_database() AND state = 'active'
-      `)
+      // 用最小查询判断真实连通性，避免底层连接对象状态或统计查询误判。
+      await db.execute(sql`SELECT 1 as connection_check`)
 
-      const connRow = connectionStats[0] as any
+      // 获取当前活跃连接数
+      let activeConnections = 0
+      try {
+        const connectionStats = await db.execute(sql`
+          SELECT count(*) as active_connections
+          FROM pg_stat_activity
+          WHERE datname = current_database() AND state = 'active'
+        `)
+
+        const connRow = connectionStats[0] as { active_connections?: number | string } | undefined
+        activeConnections = Number.parseInt(String(connRow?.active_connections ?? '0'), 10) || 0
+      } catch (metricsError) {
+        console.warn('Failed to get active connection count:', metricsError)
+      }
 
       return {
-        status: connectionStatus.status,
-        activeConnections: parseInt(connRow?.active_connections) || 0,
+        connected: true,
+        status: connectionStatus.status || 'connected',
+        activeConnections,
         serverlessMode: true, // Neon Database 是无服务器架构
-        autoSuspend: true // 支持自动暂停
+        autoSuspend: true, // 支持自动暂停
+        error: null
       }
     } catch (error) {
       console.error('Failed to get connection status:', error)
-      throw new Error('Failed to retrieve connection status')
+      return {
+        connected: false,
+        status: 'error',
+        activeConnections: 0,
+        serverlessMode: true,
+        autoSuspend: true,
+        error: error instanceof Error ? error.message : 'Failed to retrieve connection status'
+      }
     }
+  }
+
+  /**
+   * 获取连接池状态
+   */
+  async getConnectionPoolStatus() {
+    return await getConnectionPoolStatus()
+  }
+
+  /**
+   * 获取数据库性能指标
+   */
+  async getPerformanceMetrics() {
+    return await getDatabaseMetrics()
   }
 
   /**
@@ -166,7 +206,8 @@ export class DatabaseManager {
       `)
 
       // postgres-js returns count in the result array object properties
-      return (result as any).count || 0
+      const deleteResult = result as { count?: number | string }
+      return Number.parseInt(String(deleteResult.count ?? '0'), 10) || 0
     } catch (error) {
       console.error('Failed to cleanup expired sessions:', error)
       throw new Error('Failed to cleanup expired sessions')

@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { randomUUID } from 'node:crypto'
 
 // 简化的JWT载荷接口
 export interface JWTPayload {
@@ -46,7 +47,7 @@ export class JWTEnhanced {
     }
 
     // 生成唯一的JWT ID
-    const jti = `${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const jti = randomUUID()
 
     // JWT载荷
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {

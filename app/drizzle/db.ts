@@ -89,8 +89,12 @@ export async function testConnection() {
 
 // 获取数据库连接状态
 export function getConnectionStatus() {
+  const isConnected = !client.ended;
+
   return {
-    isConnected: !client.ended,
+    isConnected,
+    connected: isConnected,
+    status: isConnected ? 'connected' : 'disconnected',
     maxConnections: client.options.max,
     idleTimeout: client.options.idle_timeout,
     connectTimeout: client.options.connect_timeout

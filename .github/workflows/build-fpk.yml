@@ -23,9 +23,26 @@ jobs:
 
       - name: 读取版本号 & 安装 fnpack
         run: |
-          VER=$(node -p "require('./package.json').version")
-          echo "APP_VER=$VER" >> "$GITHUB_ENV"
-          echo "📦 版本: $VER"
+          # 读取原始版本号
+          ORIGINAL_VER=$(node -p "require('./package.json').version")
+          echo "📦 原始版本: $ORIGINAL_VER"
+          
+          # 转换为三段式版本号 (x.y.zw 格式，将第四段拼接到第三段)
+          FNOS_VER=$(echo "$ORIGINAL_VER" | awk -F. '{
+            if (NF >= 4) {
+              # 四段式版本号，拼接最后两段
+              printf "%s.%s.%s%s", $1, $2, $3, $4
+            } else if (NF == 3) {
+              # 已经是三段式，直接使用
+              printf "%s.%s.%s", $1, $2, $3
+            } else {
+              # 其他情况，保持原样
+              print $0
+            }
+          }')
+          
+          echo "APP_VER=$FNOS_VER" >> "$GITHUB_ENV"
+          echo "📦 转换后版本: $FNOS_VER"
 
           wget -q https://static2.fnnas.com/fnpack/fnpack-1.2.1-linux-amd64 -O /usr/local/bin/fnpack
           chmod +x /usr/local/bin/fnpack

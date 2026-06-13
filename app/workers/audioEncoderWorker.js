@@ -57,16 +57,16 @@ const floatTo16BitPCM = (view, offset, input) => {
   }
 }
 
-const encodeWavBlob = (left, right, sampleRate) => {
-  const interleaved = interleave(left, right)
+const writeWavHeader = (sampleRate, totalSamples) => {
   const numChannels = 2
   const bitDepth = 16
   const bytesPerSample = bitDepth / 8
   const blockAlign = numChannels * bytesPerSample
-  const buffer = new ArrayBuffer(44 + interleaved.length * bytesPerSample)
+  const dataSize = totalSamples * numChannels * bytesPerSample
+  const buffer = new ArrayBuffer(44)
   const view = new DataView(buffer)
   writeString(view, 0, 'RIFF')
-  view.setUint32(4, 36 + interleaved.length * bytesPerSample, true)
+  view.setUint32(4, 36 + dataSize, true)
   writeString(view, 8, 'WAVE')
   writeString(view, 12, 'fmt ')
   view.setUint32(16, 16, true)
@@ -77,7 +77,34 @@ const encodeWavBlob = (left, right, sampleRate) => {
   view.setUint16(32, blockAlign, true)
   view.setUint16(34, bitDepth, true)
   writeString(view, 36, 'data')
-  view.setUint32(40, interleaved.length * bytesPerSample, true)
+  view.setUint32(40, dataSize, true)
+  return view
+}
+
+const encodeWavChunk = (left, right) => {
+  const bytesPerSample = 2
+  const numChannels = 2
+  const buffer = new ArrayBuffer(left.length * numChannels * bytesPerSample)
+  const view = new DataView(buffer)
+  let offset = 0
+  for (let i = 0; i < left.length; i++) {
+    const l = clamp(left[i], -1, 1)
+    const r = clamp(right[i], -1, 1)
+    view.setInt16(offset, l < 0 ? l * 0x8000 : l * 0x7fff, true)
+    offset += 2
+    view.setInt16(offset, r < 0 ? r * 0x8000 : r * 0x7fff, true)
+    offset += 2
+  }
+  return new Uint8Array(buffer)
+}
+
+const encodeWavBlob = (left, right, sampleRate) => {
+  const interleaved = interleave(left, right)
+  const bytesPerSample = 2
+  const header = writeWavHeader(sampleRate, left.length)
+  const buffer = new ArrayBuffer(44 + interleaved.length * bytesPerSample)
+  const view = new DataView(buffer)
+  new Uint8Array(buffer).set(new Uint8Array(header.buffer), 0)
   floatTo16BitPCM(view, 44, interleaved)
   return new Blob([view], { type: 'audio/wav' })
 }
@@ -120,8 +147,157 @@ const encodeMp3Blob = async (left, right, sampleRate) => {
   return new Blob(chunks, { type: 'audio/mp3' })
 }
 
+let streamState = null
+
+const resetStreamState = () => {
+  streamState = null
+}
+
+const ensureMp3StreamEncoder = async () => {
+  if (!streamState.encoder) {
+    const encoder = await createMp3Encoder()
+    encoder.configure({
+      sampleRate: streamState.sampleRate,
+      channels: 2,
+      bitrate: 192,
+      outputSampleRate: streamState.sampleRate
+    })
+    streamState.encoder = encoder
+  }
+  return streamState.encoder
+}
+
+const appendEncodedChunk = (chunk) => {
+  if (chunk.length === 0) return
+  const copy = new Uint8Array(chunk.length)
+  copy.set(chunk)
+  streamState.chunks.push(copy)
+}
+
+const encodeStreamTrack = async (track, requestId) => {
+  let left = new Float32Array(track.left)
+  let right = new Float32Array(track.right)
+  const sharedChannels = left.buffer === right.buffer
+  if (streamState.normalize) {
+    if (sharedChannels) {
+      normalizeStereo(left, new Float32Array(left.length), streamState.targetDb)
+    } else {
+      normalizeStereo(left, right, streamState.targetDb)
+    }
+  }
+  if (track.sampleRate !== streamState.sampleRate) {
+    if (sharedChannels) {
+      left = resampleLinear(left, track.sampleRate, streamState.sampleRate)
+      right = left
+    } else {
+      left = resampleLinear(left, track.sampleRate, streamState.sampleRate)
+      right = resampleLinear(right, track.sampleRate, streamState.sampleRate)
+    }
+  }
+
+  const chunkSize = streamState.sampleRate * 2
+  let processed = 0
+  while (processed < left.length) {
+    const end = Math.min(processed + chunkSize, left.length)
+    const leftChunk = left.subarray(processed, end)
+    const rightChunk = right.subarray(processed, end)
+    if (streamState.format === 'wav') {
+      streamState.chunks.push(encodeWavChunk(leftChunk, rightChunk))
+    } else {
+      const encoder = await ensureMp3StreamEncoder()
+      appendEncodedChunk(encoder.encode([leftChunk, rightChunk]))
+    }
+    processed = end
+    postMessage({
+      type: 'progress',
+      stage: 'encode',
+      value: Math.round((processed / left.length) * 100),
+      requestId
+    })
+  }
+
+  streamState.totalSamples += left.length
+  postMessage({
+    type: 'trackDone',
+    requestId
+  })
+}
+
+const finishStream = async (requestId) => {
+  let blob
+  if (streamState.format === 'wav') {
+    blob = new Blob([writeWavHeader(streamState.sampleRate, streamState.totalSamples), ...streamState.chunks], {
+      type: 'audio/wav'
+    })
+  } else {
+    const encoder = await ensureMp3StreamEncoder()
+    appendEncodedChunk(encoder.finalize())
+    blob = new Blob(streamState.chunks, { type: 'audio/mp3' })
+  }
+
+  const sampleRate = streamState.sampleRate
+  resetStreamState()
+  postMessage({
+    type: 'done',
+    blob,
+    sampleRate,
+    requestId
+  })
+}
+
 self.onmessage = async (event) => {
   const payload = event.data
+  if (payload?.cmd === 'startStream') {
+    resetStreamState()
+    streamState = {
+      format: payload.format === 'wav' ? 'wav' : 'mp3',
+      normalize: Boolean(payload.normalize),
+      targetDb: payload.targetDb,
+      sampleRate: Math.min(payload.sampleRate || 44100, payload.format === 'mp3' ? 48000 : 96000),
+      chunks: [],
+      totalSamples: 0,
+      encoder: null
+    }
+    postMessage({
+      type: 'ready',
+      requestId: payload.requestId
+    })
+    return
+  }
+
+  if (payload?.cmd === 'appendTrack') {
+    try {
+      if (!streamState) throw new Error('编码任务未初始化')
+      await encodeStreamTrack(payload.track, payload.requestId)
+    } catch (error) {
+      postMessage({
+        type: 'error',
+        message: error?.message || '编码失败',
+        requestId: payload.requestId
+      })
+    }
+    return
+  }
+
+  if (payload?.cmd === 'finishStream') {
+    try {
+      if (!streamState) throw new Error('编码任务未初始化')
+      await finishStream(payload.requestId)
+    } catch (error) {
+      postMessage({
+        type: 'error',
+        message: error?.message || '编码失败',
+        requestId: payload.requestId
+      })
+    }
+    return
+  }
+
+  if (payload?.cmd === 'cancelStream') {
+    resetStreamState()
+    return
+  }
+
   if (payload?.cmd !== 'encode' || !payload.tracks?.length) return
   try {
     let baseSampleRate = Math.max(...payload.tracks.map((track) => track.sampleRate))

@@ -77,7 +77,7 @@ const copyrightOwner = getCopyrightOwner()
 const systemName = getSystemName()
 const repoUrl = getRepoUrl()
 const systemVersion = packageJson.version
-const currentYear = new Date().getFullYear()
+const currentYear = getSyncedDate().getFullYear()
 
 const responseTime = ref(0)
 

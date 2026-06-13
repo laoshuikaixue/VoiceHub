@@ -199,6 +199,15 @@ export const useAuth = () => {
     }
   }
 
+  const getToken = () => {
+    // httpOnly cookie 模式下客户端不能读取真实 JWT，调用方应依赖同源 cookie。
+    if (token.value === 'cookie-based') {
+      return null
+    }
+
+    return token.value
+  }
+
   return {
     user,
     token,
@@ -212,9 +221,9 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
-    getAuthConfig,
-    // 暴露内部状态更新方法，供中间件等外部场景复用，避免重复实现 isAdmin 判断逻辑
     setAuthState,
-    clearAuthState
+    clearAuthState,
+    getToken,
+    getAuthConfig
   }
 }

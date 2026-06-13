@@ -1,6 +1,42 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+
 const neteaseEnhancedApiPromise = import('@neteasecloudmusicapienhanced/api').then((mod) => {
   return (mod.default || {}) as Record<string, (params: Record<string, any>) => Promise<any>>
 })
+
+// xeapi 公钥缓存文件路径（由 generateConfig 写入系统临时目录）
+const xeapiPublicKeyPath = join(tmpdir(), 'xeapi_public_key')
+
+let ncmConfigReady = false
+let ncmConfigPromise: Promise<void> | null = null
+
+const ensureNcmConfig = (): Promise<void> => {
+  if (ncmConfigReady) return Promise.resolve()
+  if (!ncmConfigPromise) {
+    ncmConfigPromise = import('@neteasecloudmusicapienhanced/api/generateConfig.js')
+      .then((mod) => (mod.default || mod)())
+      .then(() => {
+        if (existsSync(xeapiPublicKeyPath)) {
+          ncmConfigReady = true
+          console.log('[Netease] xeapi 公钥初始化完成')
+        } else {
+          console.error('[Netease] xeapi 公钥生成失败，下次请求将重试')
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('[Netease] xeapi 配置初始化失败:', error)
+      })
+      .finally(() => {
+        ncmConfigPromise = null
+      })
+  }
+  return ncmConfigPromise
+}
+
+// 预热配置，不阻塞启动
+ensureNcmConfig()
 
 const normalizeParams = (input: Record<string, any>) => {
   const output: Record<string, any> = {}
@@ -54,6 +90,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const params = { ...queryParams, ...bodyParams }
+
+  // 等待 xeapi 公钥等配置就绪
+  await ensureNcmConfig()
 
   try {
     const result = await handler(params)

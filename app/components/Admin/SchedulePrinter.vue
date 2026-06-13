@@ -122,13 +122,13 @@
                   type="date"
                   class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
                   max="9999-12-31"
-                >
+                />
                 <input
                   v-model="settings.endDate"
                   type="date"
                   class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
                   max="9999-12-31"
-                >
+                />
               </div>
               <div class="flex gap-2 flex-wrap">
                 <button
@@ -168,7 +168,7 @@
                   >
                     <CheckCircle2 v-if="settings[option.key]" class="w-3 h-3 text-white" />
                   </div>
-                  <input v-model="settings[option.key]" type="checkbox" class="hidden" >
+                  <input v-model="settings[option.key]" type="checkbox" class="hidden" />
                   <span
                     :class="[
                       'text-sm font-medium transition-colors',
@@ -194,7 +194,7 @@
                   >
                     <CheckCircle2 v-if="settings.showSchoolLogo" class="w-3 h-3 text-white" />
                   </div>
-                  <input v-model="settings.showSchoolLogo" type="checkbox" class="hidden" >
+                  <input v-model="settings.showSchoolLogo" type="checkbox" class="hidden" />
                   <span
                     :class="[
                       'text-sm font-medium transition-colors',
@@ -296,7 +296,7 @@
                 <!-- 页面头部 -->
                 <div class="page-header">
                   <div class="logo-section">
-                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" >
+                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
                     <!-- 竖线分割 -->
                     <div class="logo-divider" />
                     <!-- 学校logo -->
@@ -305,7 +305,7 @@
                       :src="schoolLogoPrintUrl"
                       alt="学校Logo"
                       class="school-logo-print"
-                    >
+                    />
                     <div class="title-section">
                       <h1>{{ siteTitle }}</h1>
                       <h2>广播排期表</h2>
@@ -359,7 +359,7 @@
                               >({{ playTimeData.schedules.length }}首)</span
                             >
                           </h4>
-                          
+
                           <!-- 经典排布 -->
                           <div class="schedule-list">
                             <div
@@ -387,7 +387,10 @@
                   </div>
                   <!-- 如果是表格排布，显示单一的大表格 -->
                   <div v-else-if="filteredSchedules.length > 0" class="schedule-table-wrapper">
-                    <ScheduleTablePrint :grouped-schedules="groupedSchedules" :settings="settings" />
+                    <ScheduleTablePrint
+                      :grouped-schedules="groupedSchedules"
+                      :settings="settings"
+                    />
                   </div>
                 </div>
 
@@ -416,7 +419,6 @@ import { useRuntimeConfig } from '#app'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useAuth } from '~/composables/useAuth'
-import { convertToHttps } from '~/utils/url'
 import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import {
@@ -598,7 +600,7 @@ const formatDateRange = () => {
 
 // 根据预设类型计算日期范围
 const calculateDateRange = (type) => {
-  const today = new Date()
+  const today = getSyncedDate()
   const start = new Date(today)
   const end = new Date(today)
 
@@ -909,29 +911,29 @@ const exportPDFForPrint = async (action = 'print') => {
       const contentWrapper = pageContainer.querySelector('.schedule-content')
       if (contentWrapper) {
         const dGroups = contentWrapper.querySelectorAll('.date-group')
-        dGroups.forEach(dg => {
+        dGroups.forEach((dg) => {
           if (dg.querySelectorAll('.schedule-item').length === 0) {
             dg.remove()
           } else {
             const ptGroups = dg.querySelectorAll('.playtime-group')
-            ptGroups.forEach(ptg => {
+            ptGroups.forEach((ptg) => {
               if (ptg.querySelectorAll('.schedule-item').length === 0) {
                 ptg.remove()
               }
             })
             const ptWrappers = dg.querySelectorAll('.playtime-groups')
-            ptWrappers.forEach(ptw => {
+            ptWrappers.forEach((ptw) => {
               if (ptw.children.length === 0) ptw.remove()
             })
           }
         })
 
         const tableWrappers = contentWrapper.querySelectorAll('.schedule-table-wrapper')
-        tableWrappers.forEach(wrapper => {
+        tableWrappers.forEach((wrapper) => {
           const table = wrapper.querySelector('.schedule-timetable')
           if (table) {
             // 移除没有歌曲项的 tbody (播放时间组)
-            table.querySelectorAll('tbody').forEach(tbody => {
+            table.querySelectorAll('tbody').forEach((tbody) => {
               if (tbody.querySelectorAll('.song-item').length === 0) {
                 tbody.remove()
               }
@@ -1252,16 +1254,73 @@ const exportPDFForPrint = async (action = 'print') => {
   }
 }
 
+const isPrivateIPv4 = (hostname) => {
+  const parts = hostname.split('.').map(Number)
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part))) return false
+  const [first, second] = parts
+  return (
+    first === 10 ||
+    first === 127 ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168)
+  )
+}
+
+const isPrivateIPv6 = (hostname) => {
+  const normalizedHost = hostname.toLowerCase()
+  return (
+    normalizedHost === '::1' ||
+    normalizedHost.startsWith('fc') ||
+    normalizedHost.startsWith('fd') ||
+    normalizedHost.startsWith('fe8') ||
+    normalizedHost.startsWith('fe9') ||
+    normalizedHost.startsWith('fea') ||
+    normalizedHost.startsWith('feb')
+  )
+}
+
+const shouldFetchImageDirectly = (url) => {
+  try {
+    const parsedUrl = new URL(url, window.location.origin)
+    const hostname = parsedUrl.hostname.toLowerCase().replace(/^\[(.*)\]$/, '$1')
+    return (
+      parsedUrl.origin === window.location.origin ||
+      hostname === 'localhost' ||
+      hostname.endsWith('.localhost') ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.lan') ||
+      hostname.endsWith('.internal') ||
+      isPrivateIPv4(hostname) ||
+      isPrivateIPv6(hostname)
+    )
+  } catch {
+    return true
+  }
+}
+
+const fetchImageBlob = async (url, useProxy) => {
+  const targetUrl = useProxy ? `/api/proxy/image?url=${encodeURIComponent(url)}` : url
+  const response = await fetch(targetUrl)
+  if (!response.ok) {
+    throw new Error(useProxy ? '图片代理下载失败' : '图片直连下载失败')
+  }
+  return response.blob()
+}
+
 // 预下载图片并转换为base64
 const downloadImageAsBase64 = async (url) => {
   try {
-    // 使用代理API获取图片
-    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(url)}`
-    const response = await fetch(proxyUrl)
+    const directFirst = shouldFetchImageDirectly(url)
+    let blob
+    try {
+      blob = await fetchImageBlob(url, !directFirst)
+    } catch (error) {
+      if (directFirst) throw error
+      // 代理拒绝内网解析时，交给浏览器按用户网络环境直连
+      blob = await fetchImageBlob(url, false)
+    }
 
-    if (!response.ok) throw new Error('图片代理下载失败')
-
-    const blob = await response.blob()
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result)
@@ -1282,7 +1341,7 @@ const preprocessImages = async (element) => {
   const imagePromises = Array.from(images).map(async (img) => {
     if (img.src && !img.src.startsWith('data:')) {
       try {
-        const base64 = await downloadImageAsBase64(img.src)
+        const base64 = await downloadImageAsBase64(img.dataset.originalSrc || img.src)
         if (base64) {
           img.src = base64
         } else {

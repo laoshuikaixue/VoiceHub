@@ -1,4 +1,5 @@
 export const SYSTEM_SETTINGS_DEFAULTS = {
+  telemetryEnabled: true,
   enablePlayTimeSelection: false,
   siteTitle: 'VoiceHub',
   siteLogoUrl: '/favicon.ico',

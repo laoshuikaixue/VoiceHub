@@ -3,6 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { cacheService } from '../services/cacheService'
 import { isRedisReady } from '../utils/redis'
 import { SYSTEM_SETTINGS_DEFAULTS, filterPublicSettings } from '../utils/system-settings-defaults'
+import { getInstanceId } from '../utils/instance-id'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,9 +29,15 @@ export default defineEventHandler(async (event) => {
       settings = newSettings[0]
     }
 
+    // Ensure instance ID is set after defaults are applied and merge into settings
+    const instanceId = await getInstanceId()
+    if (instanceId && settings) {
+      settings.instanceId = instanceId
+    }
+
     const publicSettings = filterPublicSettings(settings)
 
-    // 将结果缓存到Redis（如果可用）- 永久缓存
+    // 将结果缓存到Redis（如果可用）- 永久缓存；确保缓存包含最新的 instanceId
     if (settings && isRedisReady()) {
       await cacheService.setSystemSettings(settings)
       console.log('[API] 系统设置已缓存到Redis')

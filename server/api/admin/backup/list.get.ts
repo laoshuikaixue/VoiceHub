@@ -6,10 +6,10 @@ export default defineEventHandler(async (event) => {
   try {
     // 验证管理员权限
     const user = event.context.user
-    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       throw createError({
         statusCode: 403,
-        message: '权限不足'
+        message: '只有超级管理员可以查看备份文件'
       })
     }
 
@@ -109,7 +109,10 @@ export default defineEventHandler(async (event) => {
           filename.startsWith('users-system-backup-')
         ) {
           type = 'users'
-        } else if (filename.startsWith('songs-backup-') || filename.startsWith('songs-system-backup-')) {
+        } else if (
+          filename.startsWith('songs-backup-') ||
+          filename.startsWith('songs-system-backup-')
+        ) {
           type = 'songs'
         } else if (filename.startsWith('system-settings-backup-')) {
           type = 'system'

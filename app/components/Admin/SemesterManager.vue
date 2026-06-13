@@ -657,7 +657,7 @@ const closeModal = () => {
 }
 
 const getRecommendedName = () => {
-  const now = new Date()
+  const now = getSyncedDate()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 

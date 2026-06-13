@@ -5,10 +5,11 @@
       <!-- SVG 图片（可点击刷新） -->
       <div
         class="captcha-svg-container border border-gray-300 dark:border-gray-600 cursor-pointer"
-        @click="refreshCaptcha"
         title="点击刷新验证码"
-        v-html="svgContent"
-      />
+        @click="refreshCaptcha"
+      >
+        <img v-if="svgDataUrl" :src="svgDataUrl" alt="验证码" class="captcha-svg-image">
+      </div>
       <!-- 输入框 -->
       <input
         v-model="inputValue"
@@ -17,8 +18,8 @@
         autocomplete="off"
         placeholder="请输入验证码"
         class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-        @input="inputValue = ($event.target as HTMLInputElement).value.trim(); $emit('update:modelValue', inputValue)"
-      />
+        @input="handleInput"
+      >
       <!-- 刷新按钮（也可直接点图片，这里提供文字按钮辅助） -->
       <button
         type="button"
@@ -31,26 +32,35 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
 
-const props = defineProps<{
-  modelValue: string
-}>()
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: ''
+  }
+})
 
-const emit = defineEmits<{
-  'update:modelValue': [value: string]
-  'update:captchaId': [id: string]
-}>()
+const emit = defineEmits(['update:modelValue', 'update:captchaId'])
 
-const svgContent = ref('')
+const svgDataUrl = ref('')
 const captchaId = ref('')
 const inputValue = ref(props.modelValue || '')
 
+function svgToDataUrl(svg) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+function handleInput(event) {
+  inputValue.value = event.target.value.trim()
+  emit('update:modelValue', inputValue.value)
+}
+
 async function refreshCaptcha() {
   try {
-    const res = await $fetch<{ id: string; svg: string }>('/api/auth/captcha')
-    svgContent.value = res.svg
+    const res = await $fetch('/api/auth/captcha')
+    svgDataUrl.value = svgToDataUrl(res.svg)
     captchaId.value = res.id
     emit('update:captchaId', res.id)
     inputValue.value = ''
@@ -70,6 +80,12 @@ onMounted(() => {
 <style scoped>
 /* 保证 SVG 自适应容器，不被裁剪 */
 :deep(svg) {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.captcha-svg-image {
   max-width: 100%;
   height: auto;
   display: block;

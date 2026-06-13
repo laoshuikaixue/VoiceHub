@@ -147,6 +147,20 @@
             <span class="text-xs font-bold text-zinc-200">{{ status.value }}</span>
           </div>
         </div>
+        <div class="mt-auto border-t border-zinc-800 px-6 py-4 flex flex-col items-center justify-center gap-1 text-center">
+          <span class="text-[10px] font-medium uppercase tracking-[0.3em] text-zinc-600">
+            实例 ID
+          </span>
+          <button
+            type="button"
+            class="max-w-full text-xs text-zinc-500 hover:text-zinc-300 transition-colors break-all leading-relaxed"
+            :title="instanceId || '暂无实例 ID'"
+            :disabled="!instanceId"
+            @click="copyInstanceId"
+          >
+            {{ instanceId || '暂无实例 ID' }}
+          </button>
+        </div>
       </div>
 
       <!-- 快速操作 -->
@@ -181,27 +195,29 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
-  Music,
-  Users,
+  Activity,
+  Ban,
+  Bell,
   Calendar,
+  Clock,
+  ExternalLink,
   Heart,
+  Inbox,
+  Music,
+  RefreshCw,
+  ShieldCheck,
   TrendingDown,
   TrendingUp,
-  Activity,
-  ShieldCheck,
-  RefreshCw,
-  Clock,
-  Zap,
-  Bell,
-  Ban,
-  ExternalLink,
-  Inbox
+  Users,
+  Zap
 } from 'lucide-vue-next'
 import packageJson from '~~/package.json'
+import { useToast } from '~/composables/useToast'
 
 const emit = defineEmits(['navigate'])
+const { success: showSuccess, error: showError } = useToast()
 
 const systemVersion = ref(packageJson.version)
 const stats = ref({
@@ -219,6 +235,7 @@ const stats = ref({
 
 const recentActivities = ref([])
 const loadingActivities = ref(false)
+const instanceId = ref('')
 
 const systemStatus = ref({
   online: true,
@@ -292,7 +309,7 @@ const quickActions = [
 ]
 
 const formatNumber = (num) => {
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
   return num.toString()
 }
 
@@ -302,6 +319,7 @@ const getActivityStyle = (type) => {
     user: { icon: Users, bg: 'bg-pink-500/10 text-pink-500 border-pink-500/20' },
     schedule: { icon: Calendar, bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' }
   }
+
   return styles[type] || { icon: Activity, bg: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20' }
 }
 
@@ -313,6 +331,60 @@ const loadStats = async () => {
     stats.value = response
   } catch (error) {
     console.error('加载统计数据失败:', error)
+  }
+}
+
+const loadSystemStatus = async () => {
+  try {
+    const response = await $fetch('/api/system/status')
+    systemStatus.value.online = response?.status === 'ok'
+    systemStatus.value.database = !!response?.database?.connected
+    systemStatus.value.api = response?.status === 'ok'
+    instanceId.value = response?.instance?.instanceId || ''
+  } catch (error) {
+    console.error('加载系统状态失败:', error)
+    systemStatus.value.online = false
+    systemStatus.value.database = false
+    systemStatus.value.api = false
+    instanceId.value = ''
+  }
+}
+
+const copyToClipboard = async (text) => {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return true
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', 'true')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+
+  const copied = document.execCommand('copy')
+  document.body.removeChild(textarea)
+  return copied
+}
+
+const copyInstanceId = async () => {
+  if (!instanceId.value) {
+    showError('暂无实例 ID')
+    return
+  }
+
+  try {
+    const copied = await copyToClipboard(instanceId.value)
+    if (copied) {
+      showSuccess('实例 ID 已复制')
+    } else {
+      showError('复制失败')
+    }
+  } catch (error) {
+    console.error('复制实例 ID 失败:', error)
+    showError('复制失败')
   }
 }
 
@@ -337,7 +409,7 @@ const refreshActivities = () => {
 
 const formatTime = (dateString) => {
   const date = new Date(dateString)
-  const now = new Date()
+  const now = getSyncedDate()
   const diff = now - date
 
   if (diff < 60000) return '刚刚'
@@ -352,6 +424,7 @@ const navigateTo = (tab) => {
 
 onMounted(() => {
   loadStats()
+  loadSystemStatus()
   loadRecentActivities()
 })
 </script>

@@ -92,6 +92,33 @@
         </div>
       </div>
 
+      <!-- 年级班级字段 - 仅创建模式，可选 -->
+      <div v-if="showCreateMode" class="form-group">
+        <div class="class-row">
+          <CustomSelect
+            v-model="grade"
+            :options="gradeSelectOptions"
+            :disabled="classOptionsLoading || gradeOptions.length === 0"
+            label="年级"
+            placeholder="不填写"
+            class-name="class-select"
+            @change="handleGradeChange"
+          />
+          <CustomSelect
+            v-model="studentClass"
+            :options="classSelectOptions"
+            :disabled="classOptionsLoading || !grade || availableClassOptions.length === 0"
+            label="班级"
+            :placeholder="grade ? '请选择班级' : '先选择年级'"
+            class-name="class-select"
+            @change="error = ''"
+          />
+        </div>
+        <p class="hint-text">
+          {{ gradeOptions.length > 0 ? '可选，只能选择系统内已有用户的年级和班级' : '暂无可选年级班级，可直接跳过' }}
+        </p>
+      </div>
+
       <!-- 密码字段 -->
       <div class="form-group">
         <div class="flex justify-between items-center w-full mb-2">
@@ -304,7 +331,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
@@ -312,6 +339,7 @@ import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { Fingerprint } from 'lucide-vue-next'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
 
@@ -348,6 +376,8 @@ const getFormTitle = computed(() => {
 
 const username = ref('')
 const name = ref('')
+const grade = ref('')
+const studentClass = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const error = ref('')
@@ -355,6 +385,9 @@ const loading = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isWebAuthnSupported = ref(false)
+const classOptionsLoading = ref(false)
+const classOptionsLoaded = ref(false)
+const classOptions = ref<{ grade: string, class: string }[]>([])
 const show2FA = ref(false)
 const userId2FA = ref(0)
 const methods2FA = ref<string[]>([])
@@ -381,6 +414,58 @@ const redirectAfterLogin = async () => {
   }
 }
 
+const gradeOptions = computed(() => {
+  return [...new Set(classOptions.value.map(item => item.grade))]
+})
+
+const gradeSelectOptions = computed(() => {
+  return [
+    { label: '不填写', value: '' },
+    ...gradeOptions.value.map(option => ({ label: option, value: option }))
+  ]
+})
+
+const availableClassOptions = computed(() => {
+  if (!grade.value) return []
+
+  return classOptions.value
+    .filter(item => item.grade === grade.value)
+    .map(item => item.class)
+})
+
+const classSelectOptions = computed(() => {
+  return availableClassOptions.value.map(option => ({ label: option, value: option }))
+})
+
+const fetchClassOptions = async () => {
+  if (classOptionsLoaded.value || classOptionsLoading.value) return
+
+  classOptionsLoading.value = true
+  try {
+    const response = await $fetch<{
+      success: boolean
+      classes: { grade: string, class: string }[]
+    }>('/api/auth/oauth-register-options')
+
+    if (response.success) {
+      classOptions.value = response.classes || []
+      classOptionsLoaded.value = true
+    }
+  } catch (e) {
+    console.error('获取年级班级选项失败:', e)
+  } finally {
+    classOptionsLoading.value = false
+  }
+}
+
+const handleGradeChange = () => {
+  error.value = ''
+  studentClass.value = ''
+}
+
+const handle2FASuccess = async () => {
+  if (auth.isAdmin.value) {
+
 const handle2FASuccess = async () => {
   // verify2FA 内部已通过 setAuthState 更新了全局 user 状态（含 requirePasswordChange），
   // 无需再发起 /api/auth/verify 请求，直接根据现有状态跳转即可
@@ -389,6 +474,9 @@ const handle2FASuccess = async () => {
 
 onMounted(async () => {
   await fetchSiteConfig()
+  if (isBindMode.value) {
+    await fetchClassOptions()
+  }
 
   const isApiSupported = browserSupportsWebAuthn()
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
@@ -402,6 +490,15 @@ onMounted(async () => {
   isWebAuthnSupported.value = isApiSupported
 })
 
+watch(showCreateMode, async (enabled) => {
+  if (enabled) {
+    await fetchClassOptions()
+  } else {
+    grade.value = ''
+    studentClass.value = ''
+  }
+})
+
 const handleLogin = async () => {
   if (!username.value || !password.value) {
     error.value = '请填写完整的登录信息'
@@ -412,6 +509,10 @@ const handleLogin = async () => {
   if (isBindMode.value && showCreateMode.value) {
     if (!name.value || !confirmPassword.value) {
       error.value = '请填写完整的注册信息'
+      return
+    }
+    if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
+      error.value = '年级和班级需要同时选择，或全部留空'
       return
     }
     return handleRegisterOAuth()
@@ -508,6 +609,8 @@ const handleRegisterOAuth = async () => {
       body: {
         username: username.value,
         name: name.value,
+        grade: grade.value,
+        class: studentClass.value,
         password: password.value,
         confirmPassword: confirmPassword.value
       }
@@ -680,6 +783,16 @@ const handleWebAuthnLogin = async () => {
 
 .input-wrapper input:hover {
   filter: brightness(1.03);
+}
+
+.class-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.class-select {
+  min-width: 0;
 }
 
 .input-wrapper input.input-error {
@@ -924,6 +1037,10 @@ const handleWebAuthnLogin = async () => {
   .mode-btn svg {
     width: 16px;
     height: 16px;
+  }
+
+  .class-row {
+    grid-template-columns: 1fr;
   }
 }
 

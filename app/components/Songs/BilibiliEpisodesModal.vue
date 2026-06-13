@@ -314,7 +314,21 @@ const playEpisode = (episode) => {
     title: props.video?.title,
     artist: props.video?.artist
   }
-  emit('play', episodeData)
+
+  // 构建所有分P的播放列表
+  const playlist = props.episodes.map(e => ({
+    ...e,
+    cover: props.video?.cover,
+    bvid: props.video?.id,
+    title: props.video?.title,
+    artist: props.video?.artist,
+    musicPlatform: 'bilibili',
+    musicId: props.video?.id,
+    bilibiliCid: e.cid
+  }))
+  const currentIndex = playlist.findIndex(e => e.cid === episode.cid)
+
+  emit('play', { song: episodeData, playlist, playlistIndex: currentIndex })
 }
 
 const selectEpisode = (episode) => {

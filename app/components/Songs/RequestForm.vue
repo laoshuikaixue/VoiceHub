@@ -3,11 +3,9 @@
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content-desktop">
-        <div
-          v-if="submissionGuidelines"
-          class="guidelines-content"
-          v-html="submissionGuidelines.replace(/\n/g, '<br>')"
-        />
+        <div v-if="submissionGuidelines" class="guidelines-content">
+          {{ submissionGuidelines }}
+        </div>
         <div v-else class="default-guidelines">
           <p>1. 投稿时无需加入书名号</p>
           <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
@@ -31,11 +29,9 @@
         投稿须知
       </h3>
       <div class="rules-content">
-        <div
-          v-if="submissionGuidelines"
-          class="guidelines-content"
-          v-html="submissionGuidelines.replace(/\n/g, '<br>')"
-        />
+        <div v-if="submissionGuidelines" class="guidelines-content">
+          {{ submissionGuidelines }}
+        </div>
         <div v-else class="default-guidelines">
           <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
           <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
@@ -327,6 +323,53 @@
                 </div>
               </div>
             </div>
+
+            <!-- QQ音乐登录状态和选项 -->
+            <div v-if="platform === 'tencent'" class="netease-options">
+              <div v-if="!isQQMusicLoggedIn" class="login-entry">
+                <div class="login-desc">
+                  <p class="login-title">登录 QQ 音乐提升播放稳定性</p>
+                </div>
+                <div class="login-actions">
+                  <button
+                    class="login-btn qq-login-btn"
+                    type="button"
+                    @click="showQQLoginModal = true"
+                  >
+                    立即登录
+                  </button>
+                </div>
+              </div>
+
+              <div v-else class="user-status">
+                <div class="user-compact-row">
+                  <div class="user-profile">
+                    <img
+                      v-if="qqMusicUser?.avatarUrl"
+                      :src="convertToHttps(qqMusicUser.avatarUrl)"
+                      alt="avatar"
+                      class="user-avatar"
+                    >
+                    <div v-else class="qq-user-avatar">
+                      <Icon :size="14" name="music" />
+                    </div>
+                    <span class="user-name">{{ qqMusicUser?.nickname || 'QQ音乐已登录' }}</span>
+                  </div>
+
+                  <div class="user-actions-row">
+                    <button
+                      class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
+                      aria-label="退出 QQ 音乐登录"
+                      title="退出 QQ 音乐登录"
+                      type="button"
+                      @click="handleLogoutQQMusic"
+                    >
+                      <Icon :size="14" name="logout" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="results-content">
@@ -349,7 +392,9 @@
               <div v-if="enableSubmissionRemarks" class="form-group">
                 <div class="input-wrapper">
                   <div class="flex items-center justify-between mb-2">
-                    <label for="submission-note" class="text-[12px] font-bold text-zinc-300">投稿备注留言</label>
+                    <label for="submission-note" class="text-[12px] font-bold text-zinc-300"
+                      >投稿备注留言</label
+                    >
                     <label class="custom-checkbox-wrapper">
                       <input
                         v-model="submissionNotePublic"
@@ -357,8 +402,19 @@
                         class="custom-checkbox-input"
                       >
                       <span class="custom-checkbox-box">
-                        <svg class="custom-checkbox-icon" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M1 5L4.5 8.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <svg
+                          class="custom-checkbox-icon"
+                          viewBox="0 0 12 10"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M1 5L4.5 8.5L11 1.5"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
                         </svg>
                       </span>
                       <span class="custom-checkbox-text">公开给已登录用户</span>
@@ -411,12 +467,26 @@
                     <div class="result-info">
                       <h4 class="result-title">{{ result.song || result.title }}</h4>
                       <p class="result-artist">{{ result.singer || result.artist }}</p>
-                      <p v-if="result.album" class="result-album">专辑：{{ result.album }}</p>
+                      <p
+                        v-if="result.album"
+                        :class="['result-album', { 'clickable-album': isNeteaseAlbum(result) }]"
+                        :title="isNeteaseAlbum(result) ? '点击查看专辑详情' : result.album"
+                        @click.stop="isNeteaseAlbum(result) ? openAlbumDetails(result) : null"
+                      >
+                        <span class="album-label">专辑：</span>
+                        <span class="album-name">{{ result.album }}</span>
+                        <Icon
+                          v-if="isNeteaseAlbum(result)"
+                          name="external-link"
+                          :size="12"
+                          class="album-link-icon"
+                        />
+                      </p>
                     </div>
                     <div class="result-actions">
-                      <!-- QQ音乐上传到网易云按钮 -->
+                      <!-- QQ音乐上传到网易云按钮（仅当结果确实来自QQ音乐时显示） -->
                       <button
-                        v-if="platform === 'tencent'"
+                        v-if="isTencentSource(result)"
                         class="cloud-disk-btn"
                         title="上传到网易云音乐云盘"
                         @click.stop.prevent="openUploadDialog(result)"
@@ -609,6 +679,13 @@
       @login-success="handleLoginSuccess"
     />
 
+    <!-- QQ音乐登录弹窗 -->
+    <QQMusicLoginModal
+      :show="showQQLoginModal"
+      @close="showQQLoginModal = false"
+      @login-success="handleQQLoginSuccess"
+    />
+
     <!-- 播客节目列表弹窗 -->
     <PodcastEpisodesModal
       ref="podcastModalRef"
@@ -633,6 +710,21 @@
       @play="handleBilibiliEpisodePlay"
       @submit="handleBilibiliEpisodeSelect"
       @vote="handleEpisodeVote"
+    />
+
+    <!-- 专辑详情弹窗 -->
+    <AlbumDetailsModal
+      ref="albumModalRef"
+      :show="showAlbumDetailsModal"
+      :album-id="selectedAlbumId"
+      :album-name="selectedAlbumName"
+      :platform="selectedAlbumPlatform"
+      :submitted-songs="songService.songs.value || []"
+      :current-user-id="user?.id"
+      @close="showAlbumDetailsModal = false"
+      @play="handleAlbumSongPlay"
+      @submit="handleAlbumSongSubmit"
+      @vote="handleAlbumSongVote"
     />
 
     <!-- 上传到网易云音乐弹窗 -->
@@ -695,11 +787,13 @@
               <div class="relative">
                 <div
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
-                  :class="audioMatchRecording
-                    ? 'bg-red-500/20 text-red-400 scale-110'
-                    : audioMatchError
-                      ? 'bg-zinc-800/50 text-zinc-500'
-                      : 'bg-blue-500/10 text-blue-400'"
+                  :class="
+                    audioMatchRecording
+                      ? 'bg-red-500/20 text-red-400 scale-110'
+                      : audioMatchError
+                        ? 'bg-zinc-800/50 text-zinc-500'
+                        : 'bg-blue-500/10 text-blue-400'
+                  "
                 >
                   <Icon :size="32" name="mic" />
                 </div>
@@ -714,9 +808,7 @@
               <p class="mt-2 text-sm text-zinc-400 max-w-[260px]">
                 {{
                   audioMatchStatus ||
-                  (audioMatchError
-                    ? audioMatchError
-                    : '靠近音源播放，录制 3 秒识别歌曲')
+                  (audioMatchError ? audioMatchError : '靠近音源播放，录制 3 秒识别歌曲')
                 }}
               </p>
 
@@ -746,17 +838,16 @@
                   <span class="recording-dot" />
                   录制中...
                 </button>
-                <button
-                  class="audio-match-cancel-btn"
-                  type="button"
-                  @click="closeAudioMatchModal"
-                >
+                <button class="audio-match-cancel-btn" type="button" @click="closeAudioMatchModal">
                   取消
                 </button>
               </div>
             </div>
 
-            <div v-if="audioMatchResults.length" class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
+            <div
+              v-if="audioMatchResults.length"
+              class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
+            >
               <div class="border-t border-zinc-800/60 pt-5">
                 <h4 class="text-sm font-semibold text-zinc-300 mb-4">识别结果</h4>
                 <div class="space-y-2">
@@ -768,10 +859,19 @@
                     @click="useAudioMatchResult(match)"
                   >
                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                      <div class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800/50 flex items-center justify-center" @click.stop="playAudioMatchResult(match)">
-                        <img v-if="match.cover" :src="match.cover" class="w-full h-full object-cover" />
+                      <div
+                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800/50 flex items-center justify-center"
+                        @click.stop="playAudioMatchResult(match)"
+                      >
+                        <img
+                          v-if="match.cover"
+                          :src="match.cover"
+                          class="w-full h-full object-cover"
+                        >
                         <Music v-else class="w-5 h-5 text-zinc-500" />
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all">
+                        <div
+                          class="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
+                        >
                           <Play class="w-4 h-4 text-white fill-white" />
                         </div>
                       </div>
@@ -814,9 +914,13 @@
             @click.stop
           >
             <!-- Header -->
-            <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0">
+            <div
+              class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0"
+            >
               <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500">
+                <div
+                  class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                >
                   <Edit3 :size="24" />
                 </div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
@@ -834,7 +938,9 @@
               <div class="grid grid-cols-1 gap-6">
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌曲名称</label>
+                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    >歌曲名称</label
+                  >
                   <div class="relative group">
                     <input
                       :value="title"
@@ -850,7 +956,11 @@
 
                 <!-- 歌手名称 -->
                 <div class="space-y-2">
-                  <label for="modal-artist" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌手名称</label>
+                  <label
+                    for="modal-artist"
+                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    >歌手名称</label
+                  >
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
@@ -863,7 +973,11 @@
 
                 <!-- 歌曲封面地址 -->
                 <div class="space-y-2">
-                  <label for="modal-cover" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">歌曲封面地址（选填）</label>
+                  <label
+                    for="modal-cover"
+                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    >歌曲封面地址（选填）</label
+                  >
                   <div class="relative group">
                     <input
                       id="modal-cover"
@@ -877,7 +991,10 @@
                       placeholder="请输入歌曲封面图片URL"
                       type="url"
                     >
-                    <div v-if="coverValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                    <div
+                      v-if="coverValidation.validating"
+                      class="absolute inset-y-0 right-4 flex items-center"
+                    >
                       <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
                     </div>
                   </div>
@@ -887,10 +1004,16 @@
                     enter-to-class="opacity-100 translate-y-0"
                   >
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
-                      <p v-if="!coverValidation.valid" class="text-[10px] font-bold text-red-500/80 flex items-center gap-1">
+                      <p
+                        v-if="!coverValidation.valid"
+                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
+                      >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
-                      <p v-else class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1">
+                      <p
+                        v-else
+                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
+                      >
                         <Check class="w-3 h-3" /> URL有效
                       </p>
                     </div>
@@ -899,7 +1022,11 @@
 
                 <!-- 播放地址 -->
                 <div class="space-y-2">
-                  <label for="modal-play-url" class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">播放地址（选填）</label>
+                  <label
+                    for="modal-play-url"
+                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    >播放地址（选填）</label
+                  >
                   <div class="relative group">
                     <input
                       id="modal-play-url"
@@ -913,7 +1040,10 @@
                       placeholder="请输入歌曲播放URL"
                       type="url"
                     >
-                    <div v-if="playUrlValidation.validating" class="absolute inset-y-0 right-4 flex items-center">
+                    <div
+                      v-if="playUrlValidation.validating"
+                      class="absolute inset-y-0 right-4 flex items-center"
+                    >
                       <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
                     </div>
                   </div>
@@ -923,10 +1053,16 @@
                     enter-to-class="opacity-100 translate-y-0"
                   >
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
-                      <p v-if="!playUrlValidation.valid" class="text-[10px] font-bold text-red-500/80 flex items-center gap-1">
+                      <p
+                        v-if="!playUrlValidation.valid"
+                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
+                      >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
-                      <p v-else class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1">
+                      <p
+                        v-else
+                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
+                      >
                         <Check class="w-3 h-3" /> URL有效
                       </p>
                     </div>
@@ -936,7 +1072,9 @@
             </div>
 
             <!-- Footer -->
-            <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end shrink-0">
+            <div
+              class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end shrink-0"
+            >
               <button
                 class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-all"
                 type="button"
@@ -989,8 +1127,10 @@ import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
+import QQMusicLoginModal from './QQMusicLoginModal.vue'
 import PodcastEpisodesModal from './PodcastEpisodesModal.vue'
 import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
+import AlbumDetailsModal from './AlbumDetailsModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
 import UserSearchModal from '../Common/UserSearchModal.vue'
@@ -1040,9 +1180,13 @@ const requestingReplay = ref(false)
 
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
+const showQQLoginModal = ref(false)
 const isNeteaseLoggedIn = ref(false)
 const neteaseUser = ref(null)
 const neteaseCookie = ref('')
+const isQQMusicLoggedIn = ref(false)
+const qqMusicUser = ref(null)
+const qqMusicCookie = ref('')
 const searchType = ref(1) // 1: 单曲, 1009: 播客/电台
 
 // 播客弹窗相关
@@ -1100,6 +1244,13 @@ const showManualModal = ref(false)
 const showBilibiliEpisodesModal = ref(false)
 const selectedBilibiliVideo = ref(null)
 const bilibiliEpisodes = ref([])
+
+// 专辑详情相关
+const showAlbumDetailsModal = ref(false)
+const selectedAlbumId = ref(null)
+const selectedAlbumName = ref(null)
+const selectedAlbumPlatform = ref('netease')
+
 const manualArtist = ref('')
 const manualCover = ref('')
 const manualPlayUrl = ref('')
@@ -1291,7 +1442,7 @@ const initializeAudioMatch = async () => {
       // 兼容不支持 AudioWorklet 的浏览器 (如旧版 Safari)
       const bufferSize = 4096
       const scriptNode = audioMatchContext.createScriptProcessor(bufferSize, 1, 1)
-      
+
       let maxLength = 0
       let recbuffer = new Float32Array()
       let recording = false
@@ -1299,11 +1450,11 @@ const initializeAudioMatch = async () => {
 
       scriptNode.onaudioprocess = (e) => {
         if (!recording) return
-        
+
         const channelL = e.inputBuffer.getChannelData(0)
         const progress = bufIndex / maxLength
         const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
-        
+
         // 提高更新频率以改善用户体验
         if (bufIndex % bufferSize === 0) {
           audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
@@ -1312,13 +1463,13 @@ const initializeAudioMatch = async () => {
         if (bufIndex + channelL.length > maxLength) {
           recording = false
           audioMatchRecording.value = false
-          
+
           // 确保包含最后一块数据
           const remaining = maxLength - bufIndex
           if (remaining > 0) {
             recbuffer.set(channelL.subarray(0, remaining), bufIndex)
           }
-          
+
           bufIndex = 0
           handleAudioMatchFingerprint(recbuffer)
         } else {
@@ -1358,7 +1509,10 @@ const initializeAudioMatch = async () => {
         }
       }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('麦克风授权超时，请在系统设置中确认已允许麦克风权限')), GET_USER_MEDIA_TIMEOUT_MS)
+        setTimeout(
+          () => reject(new Error('麦克风授权超时，请在系统设置中确认已允许麦克风权限')),
+          GET_USER_MEDIA_TIMEOUT_MS
+        )
       )
     ])
 
@@ -1636,6 +1790,49 @@ const handleLogoutNetease = () => {
   }
 }
 
+const checkQQMusicLoginStatus = () => {
+  if (!import.meta.client) return
+
+  const cookie = localStorage.getItem('qq_music_cookie')
+  const userStr = localStorage.getItem('qq_music_user')
+
+  if (!cookie) {
+    handleLogoutQQMusic()
+    return
+  }
+
+  qqMusicCookie.value = cookie
+  isQQMusicLoggedIn.value = true
+
+  try {
+    qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: 'QQ音乐已登录' }
+  } catch {
+    qqMusicUser.value = { nickname: 'QQ音乐已登录' }
+  }
+}
+
+const handleQQLoginSuccess = (data) => {
+  qqMusicCookie.value = data.cookie
+  qqMusicUser.value = data.user || { nickname: 'QQ音乐已登录' }
+  isQQMusicLoggedIn.value = true
+
+  if (import.meta.client) {
+    localStorage.setItem('qq_music_cookie', data.cookie)
+    localStorage.setItem('qq_music_user', JSON.stringify(qqMusicUser.value))
+  }
+}
+
+const handleLogoutQQMusic = () => {
+  qqMusicCookie.value = ''
+  qqMusicUser.value = null
+  isQQMusicLoggedIn.value = false
+
+  if (import.meta.client) {
+    localStorage.removeItem('qq_music_cookie')
+    localStorage.removeItem('qq_music_user')
+  }
+}
+
 watch(
   () => searchType.value,
   () => {
@@ -1664,6 +1861,7 @@ watch(
 
 onMounted(async () => {
   checkNeteaseLoginStatus()
+  checkQQMusicLoginStatus()
   fetchPlayTimes()
   initSiteConfig()
   fetchSubmissionStatus()
@@ -1691,10 +1889,7 @@ const formattedPlayTimes = computed(() => {
     ...pt,
     displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
-  return [
-    { id: '', displayName: '不指定时段' },
-    ...options
-  ]
+  return [{ id: '', displayName: '不指定时段' }, ...options]
 })
 
 // 格式化播出时段时间范围
@@ -1776,11 +1971,12 @@ const handleEpisodeVote = async (episode) => {
 // 检查搜索结果是否已存在完全匹配的歌曲
 // 标准化字符串（与useSongs中的逻辑保持一致）
 const normalizeString = (str) => {
+  if (!str) return ''
   return str
     .toLowerCase()
-    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
+    .replace(/\b(feat\.?|ft\.?)\b/gi, '')
+    .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉"'、，。！？：；～·]/g, '')
     .replace(/[&＆]/g, 'and')
-    .replace(/[feat\.?|ft\.?]/gi, '')
     .trim()
 }
 
@@ -1905,7 +2101,11 @@ const handleSearch = async () => {
       limit: 20,
       signal: signal, // 传递AbortSignal
       type: requestPlatform === 'netease' ? requestSearchType : 1,
-      cookie: requestPlatform === 'netease' ? neteaseCookie.value : undefined
+      cookie: requestPlatform === 'netease'
+        ? neteaseCookie.value
+        : requestPlatform === 'tencent'
+          ? qqMusicCookie.value
+          : undefined
     }
 
     console.log('开始多音源搜索:', searchParams)
@@ -1940,6 +2140,15 @@ const handleSearch = async () => {
         actualMusicPlatform:
           item.musicPlatform || (results.source === 'netease-backup' ? 'netease' : results.source)
       }))
+
+      // 如果QQ音乐搜索降级到网易云，自动切换选项卡
+      if (platform.value === 'tencent' && searchResults.value.length > 0) {
+        const firstPlatform =
+          searchResults.value[0].actualMusicPlatform || searchResults.value[0].musicPlatform || ''
+        if (firstPlatform.includes('netease')) {
+          platform.value = 'netease'
+        }
+      }
 
       console.log('搜索成功，找到', results.data.length, '首歌曲')
     } else {
@@ -2185,7 +2394,13 @@ const getAudioUrl = async (result) => {
         const fallbackUrl = await resolveMusicUrl(
           result.musicPlatform,
           result.musicId,
-          result.playUrl
+          result.playUrl,
+          {
+            mediaId:
+              result.sourceInfo?.strMediaMid ||
+              result.sourceInfo?.mediaId ||
+              result.sourceInfo?.mediaMid
+          }
         )
         if (fallbackUrl) {
           result.url = fallbackUrl
@@ -2207,7 +2422,7 @@ const getAudioUrl = async (result) => {
 }
 
 // 播放歌曲
-const playSong = async (result) => {
+const playSong = async (result, playlist, playlistIndex) => {
   // 如果还没有获取URL，先获取
   if (!result.hasUrl && !result.url) {
     result = await getAudioUrl(result)
@@ -2248,8 +2463,26 @@ const playSong = async (result) => {
 
   console.log('[RequestForm] 准备播放歌曲:', song)
 
+  // 处理播放列表：如果提供了playlist，将其转换为audioPlayer需要的格式
+  let finalPlaylist
+  let finalIndex
+  if (playlist && playlist.length > 0) {
+    finalPlaylist = playlist.map((s) => ({
+      ...s,
+      id: String(s.id),
+      musicId: String(s.musicId || s.id),
+      musicUrl: s.musicUrl || s.url || null
+    }))
+    // 如果提供了playlistIndex则使用，否则自动查找
+    finalIndex =
+      typeof playlistIndex === 'number'
+        ? playlistIndex
+        : finalPlaylist.findIndex((s) => s.id === String(song.id))
+    if (finalIndex < 0) finalIndex = 0
+  }
+
   // 使用全局播放器播放歌曲
-  const playResult = audioPlayer.playSong(song)
+  const playResult = audioPlayer.playSong(song, finalPlaylist, finalIndex)
 
   if (!playResult) {
     console.error('[RequestForm] 播放器返回 false，播放失败')
@@ -2441,28 +2674,31 @@ const submitSong = async (result, options = {}) => {
   selectedCover.value = result.cover || ''
   selectedUrl.value = result.url || result.file || ''
 
-  try {
-    // 检查黑名单
-    const blacklistCheck = await $fetch('/api/blacklist/check', {
-      method: 'POST',
-      body: {
-        title: title.value,
-        artist: artist.value
-      }
-    })
+  // 管理员不受黑名单限制
+  if (!auth.isAdmin.value) {
+    try {
+      // 检查黑名单
+      const blacklistCheck = await $fetch('/api/blacklist/check', {
+        method: 'POST',
+        body: {
+          title: title.value,
+          artist: artist.value
+        }
+      })
 
-    if (blacklistCheck.isBlocked) {
-      const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-      error.value = `该歌曲无法点歌: ${reasons}`
-      if (window.$showNotification) {
-        window.$showNotification(error.value, 'error')
+      if (blacklistCheck.isBlocked) {
+        const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
+        error.value = `该歌曲无法点歌: ${reasons}`
+        if (window.$showNotification) {
+          window.$showNotification(error.value, 'error')
+        }
+        submitting.value = false
+        return
       }
-      submitting.value = false
-      return
+    } catch (err) {
+      console.error('黑名单检查失败:', err)
+      // 黑名单检查失败不阻止提交，只记录错误
     }
-  } catch (err) {
-    console.error('黑名单检查失败:', err)
-    // 黑名单检查失败不阻止提交，只记录错误
   }
 
   // 确保获取完整的URL
@@ -2634,20 +2870,64 @@ const handleBilibiliEpisodeSelect = async (episode) => {
   }
 }
 
-const handleBilibiliEpisodePlay = async (episodeData) => {
+const handleBilibiliEpisodePlay = async ({ song: episodeData, playlist, playlistIndex }) => {
+  // 与 biliPlaylist 使用相同的 ID 构建逻辑，确保匹配
   const bvid = episodeData.bvid || episodeData.id
+  let finalId = bvid
+  if (episodeData.cid) {
+    finalId = bvid + ':' + episodeData.cid
+    const page = episodeData.bilibiliPage || episodeData.page
+    if (page && Number(page) > 1) {
+      finalId += ':' + page
+    }
+  }
+
   const episodeResult = {
-    id: bvid,
+    id: finalId,
     title: `${episodeData.title} - ${episodeData.part}`,
     artist: episodeData.artist,
     cover: episodeData.cover || '',
-    musicId: bvid,
+    musicId: finalId,
     musicPlatform: 'bilibili',
     bilibiliCid: episodeData.cid,
     duration: episodeData.duration,
     sourceInfo: { source: 'bilibili' }
   }
-  await playSong(episodeResult)
+
+  // 转换播放列表为统一格式
+  let biliPlaylist
+  let biliIndex
+  if (playlist && playlist.length > 0) {
+    biliPlaylist = playlist.map((e) => {
+      const bvid = e.bvid || e.id
+      let finalId = bvid
+      if (e.cid) {
+        finalId = bvid + ':' + e.cid
+        const page = e.bilibiliPage || e.page
+        if (page && Number(page) > 1) {
+          finalId += ':' + page
+        }
+      }
+      return {
+        id: finalId,
+        title: `${e.title} - ${e.part}`,
+        artist: e.artist,
+        cover: e.cover || '',
+        musicId: finalId,
+        musicPlatform: 'bilibili',
+        bilibiliCid: e.cid,
+        duration: e.duration,
+        sourceInfo: { source: 'bilibili' }
+      }
+    })
+    biliIndex =
+      typeof playlistIndex === 'number'
+        ? playlistIndex
+        : playlist.findIndex((e) => e.cid === episodeData.cid)
+    if (biliIndex < 0) biliIndex = 0
+  }
+
+  await playSong(episodeResult, biliPlaylist, biliIndex)
 }
 
 // 引用模态框组件
@@ -2655,6 +2935,84 @@ const bilibiliModalRef = ref(null)
 const podcastModalRef = ref(null)
 const recentSongsModalRef = ref(null)
 const playlistModalRef = ref(null)
+const albumModalRef = ref(null)
+
+// 判断搜索结果是否为网易云专辑（仅网易云支持专辑详情弹窗）
+const isNeteaseAlbum = (result) => {
+  const p = result.actualMusicPlatform || result.musicPlatform || platform.value
+  return !!(result.albumId && p && p.includes('netease'))
+}
+
+// 判断结果是否来自QQ音乐（用于显示上传按钮）
+const isTencentSource = (result) => {
+  const p = result.actualMusicPlatform || result.musicPlatform || ''
+  return p.includes('vkeys') || p === 'tencent'
+}
+
+// 打开专辑详情（标准化平台名称，AlbumDetailsModal 只识别 netease/tencent）
+const openAlbumDetails = (result) => {
+  if (!result.albumId) return
+
+  selectedAlbumId.value = result.albumId
+  selectedAlbumName.value = result.album || result.albumName
+  const rawPlatform = result.actualMusicPlatform || result.musicPlatform || platform.value
+  selectedAlbumPlatform.value = rawPlatform.includes('netease') ? 'netease' : 'tencent'
+  showAlbumDetailsModal.value = true
+}
+
+// 处理专辑歌曲播放
+const handleAlbumSongPlay = async ({ song, playlist, playlistIndex }) => {
+  await playSong(song, playlist, playlistIndex)
+}
+
+// 处理专辑歌曲投稿
+const handleAlbumSongSubmit = async (songData) => {
+  const success = await submitSong(songData, { isDirectSubmit: true })
+
+  if (success) {
+    showAlbumDetailsModal.value = false
+  }
+
+  if (albumModalRef.value && albumModalRef.value.resetSubmissionState) {
+    albumModalRef.value.resetSubmissionState()
+  }
+}
+
+// 处理专辑歌曲点赞
+const handleAlbumSongVote = async (song) => {
+  if (voting.value) return
+  if (!song.songId) {
+    if (window.$showNotification) {
+      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+    }
+    return
+  }
+
+  if (song.voted) {
+    return
+  }
+
+  voting.value = true
+  try {
+    await songService.voteSong(song.songId)
+
+    if (window.$showNotification) {
+      window.$showNotification('点赞成功！', 'success')
+    }
+
+    // 静默刷新歌曲列表
+    songService.refreshSongsSilent().catch((err) => {
+      console.error('刷新歌曲列表失败', err)
+    })
+  } catch (error) {
+    console.error('点赞失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification(error.message || '点赞失败，请稍后重试', 'error')
+    }
+  } finally {
+    voting.value = false
+  }
+}
 
 // 处理播客单集提交
 const handlePodcastSubmit = async (song) => {
@@ -2751,25 +3109,34 @@ const handleManualSubmit = async () => {
   submitting.value = true
   error.value = ''
 
-  try {
-    // 检查黑名单
-    const blacklistCheck = await $fetch('/api/blacklist/check', {
-      method: 'POST',
-      body: {
-        title: title.value,
-        artist: manualArtist.value
-      }
-    })
+  // 管理员不受黑名单限制
+  if (!auth.isAdmin.value) {
+    try {
+      // 检查黑名单
+      const blacklistCheck = await $fetch('/api/blacklist/check', {
+        method: 'POST',
+        body: {
+          title: title.value,
+          artist: manualArtist.value
+        }
+      })
 
-    if (blacklistCheck.isBlocked) {
-      const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-      error.value = `该歌曲无法点歌: ${reasons}`
-      if (window.$showNotification) {
-        window.$showNotification(error.value, 'error')
+      if (blacklistCheck.isBlocked) {
+        const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
+        error.value = `该歌曲无法点歌: ${reasons}`
+        if (window.$showNotification) {
+          window.$showNotification(error.value, 'error')
+        }
+        submitting.value = false
+        return
       }
-      submitting.value = false
-      return
+    } catch (err) {
+      console.error('黑名单检查失败:', err)
+      // 黑名单检查失败不阻止提交，只记录错误
     }
+  }
+
+  try {
     // 构建歌曲数据对象
     // 如果手动填入了 playUrl，则不保留平台标识符
     const trimmedPlayUrl = manualPlayUrl.value?.trim() || ''
@@ -3165,6 +3532,11 @@ defineExpose({
 
 .rules-content-desktop p {
   margin-bottom: 0.6rem;
+}
+
+.guidelines-content {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 /* 移动端样式 */
@@ -3683,6 +4055,15 @@ defineExpose({
   filter: brightness(1.1);
 }
 
+.qq-login-btn {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  box-shadow: 0 4px 10px rgba(6, 182, 212, 0.15);
+}
+
+.qq-login-btn:hover {
+  box-shadow: 0 5px 14px rgba(6, 182, 212, 0.25);
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -3763,6 +4144,19 @@ defineExpose({
   border: 1.5px solid rgba(255, 255, 255, 0.1);
 }
 
+.qq-user-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #22d3ee;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1.5px solid rgba(6, 182, 212, 0.22);
+}
+
 .user-name {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
@@ -3815,15 +4209,37 @@ defineExpose({
   animation: wave 1.2s ease-in-out infinite;
 }
 
-.audio-waveform .wave-bar:nth-child(1) { animation-delay: 0s; height: 45%; }
-.audio-waveform .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 70%; }
-.audio-waveform .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 100%; }
-.audio-waveform .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 60%; }
-.audio-waveform .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 40%; }
+.audio-waveform .wave-bar:nth-child(1) {
+  animation-delay: 0s;
+  height: 45%;
+}
+.audio-waveform .wave-bar:nth-child(2) {
+  animation-delay: 0.1s;
+  height: 70%;
+}
+.audio-waveform .wave-bar:nth-child(3) {
+  animation-delay: 0.2s;
+  height: 100%;
+}
+.audio-waveform .wave-bar:nth-child(4) {
+  animation-delay: 0.3s;
+  height: 60%;
+}
+.audio-waveform .wave-bar:nth-child(5) {
+  animation-delay: 0.4s;
+  height: 40%;
+}
 
 @keyframes wave {
-  0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
-  50% { transform: scaleY(1); opacity: 1; }
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 .audio-match-primary-btn,
@@ -3886,8 +4302,15 @@ defineExpose({
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
 }
 
 .audio-match-cancel-btn {
@@ -5317,7 +5740,7 @@ defineExpose({
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .platform-selection {
     background: rgba(0, 0, 0, 0.2);
     padding: 4px;
@@ -5728,5 +6151,33 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
+}
+
+/* 专辑详情样式 */
+.clickable-album {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.clickable-album:hover .album-name {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.album-label {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.album-link-icon {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-album:hover .album-link-icon {
+  opacity: 1;
 }
 </style>

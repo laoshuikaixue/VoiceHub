@@ -3,6 +3,7 @@ import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~
 import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -95,7 +96,7 @@ export default defineEventHandler(async (event) => {
           playTimeId: body.playTimeId || null,
           // 草稿支持：根据参数决定是否为草稿
           isDraft: isDraft,
-          publishedAt: isDraft ? null : new Date()
+          publishedAt: isDraft ? null : getServerDate()
         })
         .returning()
 
@@ -139,7 +140,7 @@ export default defineEventHandler(async (event) => {
           // 标记该歌曲的所有待处理重播申请为已完成
           await tx
             .update(songReplayRequests)
-            .set({ status: 'FULFILLED', updatedAt: scheduleResult[0].publishedAt || new Date() })
+            .set({ status: 'FULFILLED', updatedAt: scheduleResult[0].publishedAt || getServerDate() })
             .where(
               and(
                 eq(songReplayRequests.songId, schedule.song.id),
