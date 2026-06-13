@@ -19,7 +19,7 @@
           class="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:border-zinc-700 transition-all"
           @click="exportVisibleCodes"
         >
-          <Download :size="14" /> 导出当前列表
+          <Download :size="14" /> 导出当前页
         </button>
       </div>
     </div>
@@ -45,21 +45,20 @@
                 type="text"
                 placeholder="搜索点歌券、备注"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40 transition-all"
-                @keyup.enter="fetchCodes"
+                @keyup.enter="fetchCodes(1)"
               >
             </div>
 
-            <select
+            <CustomSelect
               v-model="filters.status"
-              class="min-w-[160px] bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40 transition-all"
-              @change="fetchCodes"
-            >
-              <option value="">全部状态</option>
-              <option value="AVAILABLE">可用</option>
-              <option value="LOCKED">已锁定</option>
-              <option value="REDEEMED">已核销</option>
-              <option value="INVALID">已作废</option>
-            </select>
+              label="状态"
+              :options="statusFilterOptions"
+              label-key="label"
+              value-key="value"
+              placeholder="全部状态"
+              class-name="min-w-[160px] sm:w-40"
+              @change="fetchCodes(1)"
+            />
           </div>
 
           <button
@@ -72,15 +71,13 @@
 
         <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
           <span class="text-xs font-black text-blue-400">已选择 {{ selectedIds.length }} 项</span>
-          <select
+          <CustomSelect
             v-model="bulkStatus"
-            class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-blue-500/40"
-          >
-            <option value="AVAILABLE">设为可用</option>
-            <option value="LOCKED">设为锁定</option>
-            <option value="REDEEMED">设为核销</option>
-            <option value="INVALID">设为作废</option>
-          </select>
+            :options="bulkStatusOptions"
+            label-key="label"
+            value-key="value"
+            class-name="w-32"
+          />
           <button
             class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors"
             :disabled="saving"
@@ -97,8 +94,8 @@
           加载点歌券中...
         </div>
 
-        <div v-else class="overflow-hidden rounded-2xl border border-zinc-800">
-          <table class="min-w-full text-left text-sm">
+        <div v-else class="overflow-x-auto rounded-2xl border border-zinc-800">
+          <table class="min-w-[880px] table-fixed text-left text-sm">
             <thead class="bg-zinc-950/80 text-zinc-500">
               <tr>
                 <th class="px-3 py-3 w-10">
@@ -111,7 +108,7 @@
                   >
                 </th>
                 <th class="px-3 py-3 w-16">ID</th>
-                <th class="px-3 py-3">点歌券</th>
+                <th class="px-3 py-3 w-64">点歌券</th>
                 <th class="px-3 py-3 w-28">状态</th>
                 <th class="px-3 py-3 w-60">备注</th>
                 <th class="px-3 py-3 w-40">时间</th>
@@ -130,9 +127,9 @@
                 </td>
                 <td class="px-3 py-3 align-top text-zinc-500">{{ item.id }}</td>
                 <td class="px-3 py-3 align-top font-mono text-zinc-100">
-                  <div class="flex items-center gap-2">
-                    <span class="break-all">{{ item.code }}</span>
-                    <button class="text-zinc-500 hover:text-zinc-200 transition-colors" title="复制点歌券" @click="copyCode(item.code)">
+                  <div class="flex max-w-full items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2">
+                    <span class="block min-w-0 flex-1 truncate text-xs tracking-[0.08em]" :title="item.code">{{ item.code }}</span>
+                    <button class="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors" title="复制点歌券" @click="copyCode(item.code)">
                       <Copy :size="14" />
                     </button>
                   </div>
@@ -178,6 +175,14 @@
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          v-model:current-page="pagination.page"
+          :total-pages="pagination.totalPages"
+          :total-items="pagination.total"
+          item-name="张点歌券"
+          @change="fetchCodes"
+        />
       </section>
 
       <section class="space-y-6">
@@ -187,15 +192,15 @@
               <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">批量创建 / 导入</h3>
               <p class="mt-1 text-[11px] text-zinc-500">支持手动粘贴、分隔导入，也支持自动生成点歌券</p>
             </div>
-            <div class="inline-flex rounded-xl border border-zinc-800 bg-zinc-950 p-1">
+            <div class="inline-flex shrink-0 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
               <button
-                :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
+                :class="['min-w-[76px] whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
                 @click="createMode = 'manual'"
               >
                 手动导入
               </button>
               <button
-                :class="['px-3 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
+                :class="['min-w-[76px] whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
                 @click="createMode = 'generate'"
               >
                 自动生成
@@ -393,6 +398,8 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { Copy, Download, Plus, RefreshCw, Search } from 'lucide-vue-next'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import Pagination from '~/components/UI/Common/Pagination.vue'
 import { useToast } from '~/composables/useToast'
 
 const { showToast } = useToast()
@@ -404,6 +411,8 @@ const logsLoading = ref(false)
 const saving = ref(false)
 const selectedIds = ref([])
 const bulkStatus = ref('AVAILABLE')
+const pagination = ref({ page: 1, limit: 10, total: 0, totalPages: 1 })
+const cardStats = ref({ total: 0, available: 0, locked: 0, redeemed: 0 })
 
 const filters = ref({ q: '', status: '' })
 const logFilters = ref({ q: '', source: '', redeemer: '', startDate: '', endDate: '' })
@@ -411,6 +420,21 @@ const createMode = ref('manual')
 const manualCodes = ref('')
 const createNote = ref('')
 const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' })
+
+const statusFilterOptions = [
+  { label: '全部状态', value: '' },
+  { label: '可用', value: 'AVAILABLE' },
+  { label: '已锁定', value: 'LOCKED' },
+  { label: '已核销', value: 'REDEEMED' },
+  { label: '已作废', value: 'INVALID' }
+]
+
+const bulkStatusOptions = [
+  { label: '设为可用', value: 'AVAILABLE' },
+  { label: '设为锁定', value: 'LOCKED' },
+  { label: '设为核销', value: 'REDEEMED' },
+  { label: '设为作废', value: 'INVALID' }
+]
 
 const statusMap = {
   AVAILABLE: { label: '可用', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
@@ -434,10 +458,10 @@ const logSourceMap = {
 const logSourceMeta = (source) => logSourceMap[source] || logSourceMap.UNKNOWN
 
 const stats = computed(() => {
-  const total = codes.value.length
-  const available = codes.value.filter((item) => item.status === 'AVAILABLE').length
-  const locked = codes.value.filter((item) => item.status === 'LOCKED').length
-  const redeemed = codes.value.filter((item) => item.status === 'REDEEMED').length
+  const total = cardStats.value.total
+  const available = cardStats.value.available
+  const locked = cardStats.value.locked
+  const redeemed = cardStats.value.redeemed
 
   return [
     { label: '总数', value: total, hint: '全部', badgeClass: 'bg-zinc-800 text-zinc-200' },
@@ -454,6 +478,8 @@ const queryString = computed(() => {
   const query = new URLSearchParams()
   if (filters.value.q.trim()) query.set('q', filters.value.q.trim())
   if (filters.value.status) query.set('status', filters.value.status)
+  query.set('page', String(pagination.value.page))
+  query.set('limit', String(pagination.value.limit))
   return query.toString()
 })
 
@@ -462,13 +488,25 @@ const normalizeRows = (rows) => rows.map((row) => ({
   noteDraft: row.note || ''
 }))
 
-const fetchCodes = async () => {
+const fetchCodes = async (page = pagination.value.page) => {
+  const nextPage = Number(page)
+  pagination.value.page = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1
   loading.value = true
   try {
-    const url = queryString.value ? `/api/admin/card-codes?${queryString.value}` : '/api/admin/card-codes'
-    const res = await $fetch(url)
+    const res = await $fetch(`/api/admin/card-codes?${queryString.value}`)
     if (res?.success) {
       codes.value = normalizeRows(res.data || [])
+      pagination.value = {
+        ...pagination.value,
+        ...(res.pagination || {}),
+        totalPages: Math.max(1, Number(res.pagination?.totalPages || 1))
+      }
+      cardStats.value = {
+        total: Number(res.stats?.total || 0),
+        available: Number(res.stats?.available || 0),
+        locked: Number(res.stats?.locked || 0),
+        redeemed: Number(res.stats?.redeemed || 0)
+      }
       selectedIds.value = selectedIds.value.filter((id) => codes.value.some((item) => item.id === id))
     }
   } catch (error) {
@@ -513,7 +551,7 @@ const refreshAll = async () => {
 
 const resetFilters = async () => {
   filters.value = { q: '', status: '' }
-  await fetchCodes()
+  await fetchCodes(1)
 }
 
 const clearSelection = () => {
@@ -590,7 +628,7 @@ const exportVisibleCodes = () => {
   a.download = `card-codes-${new Date().toISOString().replaceAll(':', '-').slice(0, 19)}.csv`
   a.click()
   URL.revokeObjectURL(url)
-  showToast('已导出当前列表', 'success')
+  showToast('已导出当前页', 'success')
 }
 
 const updateStatus = async (ids, status) => {

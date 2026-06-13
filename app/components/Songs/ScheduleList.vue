@@ -144,8 +144,7 @@
                     :key="schedule.id"
                     :class="{
                       played: schedule.song.played && schedule.song.replayRequestCount === 0,
-                      playing: isCurrentPlaying(schedule.song.id),
-                      'card-required': !!schedule.song.cardCodeId
+                      playing: isCurrentPlaying(schedule.song.id)
                     }"
                     class="song-card"
                   >
@@ -195,8 +194,6 @@
                           <span class="title-text"
                             >{{ schedule.song.title }} - {{ schedule.song.artist }}</span
                           >
-                          <!-- 点歌券标识 -->
-                          <span v-if="schedule.song.cardCodeId" class="card-badge" title="此歌曲使用了点歌券投稿，等待核销">点歌券</span>
                           <!-- 重播标识 -->
                           <span
                             v-if="schedule.song.replayRequestCount > 0"
@@ -3154,25 +3151,6 @@ const vRipple = {
     filter: grayscale(0.35);
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  /* 点歌券投稿高亮样式 */
-  .song-card.card-required {
-    border-color: rgba(34, 197, 94, 0.6); /* green-500 */
-    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.08);
-  }
-
-  .card-badge {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 2px 6px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #065f46; /* green-800 */
-    background: rgba(34, 197, 94, 0.12);
-    border-radius: 9999px;
-    border: 1px solid rgba(34, 197, 94, 0.18);
-    vertical-align: middle;
   }
 
   .song-card-main {

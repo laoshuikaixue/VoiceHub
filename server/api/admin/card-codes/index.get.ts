@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
-import { and, desc, eq, ilike, or } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -15,6 +15,10 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const status = typeof query.status === 'string' ? query.status.trim().toUpperCase() : ''
     const keyword = typeof query.q === 'string' ? query.q.trim() : ''
+    const page = Math.max(1, Number.parseInt(String(query.page || '1'), 10) || 1)
+    const limitInput = Number.parseInt(String(query.limit || '10'), 10) || 10
+    const limit = Math.min(100, Math.max(1, limitInput))
+    const offset = (page - 1) * limit
 
     const conditions = [] as any[]
     if (status) {
@@ -30,12 +34,45 @@ export default defineEventHandler(async (event) => {
     }
 
     let queryBuilder = db.select().from(cardCodes)
+    let countQueryBuilder = db.select({ count: count() }).from(cardCodes)
     if (conditions.length > 0) {
       queryBuilder = queryBuilder.where(and(...conditions))
+      countQueryBuilder = countQueryBuilder.where(and(...conditions))
     }
 
-    const result = await queryBuilder.orderBy(desc(cardCodes.createdAt))
-    return { success: true, data: result }
+    const [
+      result,
+      totalResult,
+      allResult,
+      availableResult,
+      lockedResult,
+      redeemedResult
+    ] = await Promise.all([
+      queryBuilder.orderBy(desc(cardCodes.createdAt)).limit(limit).offset(offset),
+      countQueryBuilder,
+      db.select({ count: count() }).from(cardCodes),
+      db.select({ count: count() }).from(cardCodes).where(eq(cardCodes.status, 'AVAILABLE')),
+      db.select({ count: count() }).from(cardCodes).where(eq(cardCodes.status, 'LOCKED')),
+      db.select({ count: count() }).from(cardCodes).where(eq(cardCodes.status, 'REDEEMED'))
+    ])
+
+    const total = Number(totalResult[0]?.count || 0)
+    return {
+      success: true,
+      data: result,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit))
+      },
+      stats: {
+        total: Number(allResult[0]?.count || 0),
+        available: Number(availableResult[0]?.count || 0),
+        locked: Number(lockedResult[0]?.count || 0),
+        redeemed: Number(redeemedResult[0]?.count || 0)
+      }
+    }
   } catch (err) {
     console.error('获取点歌券列表失败', err)
     throw createError({ statusCode: 500, message: '获取点歌券列表失败' })

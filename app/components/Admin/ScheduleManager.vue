@@ -313,9 +313,6 @@
                 @touchmove="handleTouchMove"
                 @touchstart="handleTouchStart($event, song, 'song')"
               >
-                <div v-if="song.cardCodeId" class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold bg-amber-500 text-zinc-900">
-                  点歌券待核销
-                </div>
                 <!-- 歌曲卡片内容 -->
                 <div class="flex items-center gap-3">
                   <!-- 封面图片 -->
@@ -340,8 +337,8 @@
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div class="flex items-center gap-2">
-                      <h4 class="font-bold text-zinc-100 text-sm truncate flex items-center gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <h4 class="font-bold text-zinc-100 text-sm truncate flex items-center gap-2 min-w-0">
                         <span
                           v-if="isBilibiliSong(song)"
                           class="text-zinc-100 flex items-center gap-1 text-left truncate"
@@ -373,6 +370,13 @@
                       >
                         <MessageSquare :size="12" />
                       </button>
+                      <span
+                        v-if="song.cardCodeId"
+                        class="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 whitespace-nowrap flex-shrink-0"
+                        title="点歌券待核销"
+                      >
+                        点歌券待核销
+                      </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
@@ -640,8 +644,8 @@
                   </div>
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                    <div class="flex items-center gap-2">
-                      <h4 class="font-bold text-zinc-200 text-sm truncate">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <h4 class="font-bold text-zinc-200 text-sm truncate min-w-0">
                         {{ schedule.song.title }}
                       </h4>
                       <button
@@ -675,9 +679,13 @@
                         >草稿</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
-                      <div v-if="schedule.song.cardCodeId" class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold bg-amber-500 text-zinc-900">
+                      <span
+                        v-if="schedule.song.cardCodeId"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        title="点歌券待核销"
+                      >
                         点歌券
-                      </div>
+                      </span>
                     </div>
                     <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
                     <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
