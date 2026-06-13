@@ -464,9 +464,6 @@ const handleGradeChange = () => {
 }
 
 const handle2FASuccess = async () => {
-  if (auth.isAdmin.value) {
-
-const handle2FASuccess = async () => {
   // verify2FA 内部已通过 setAuthState 更新了全局 user 状态（含 requirePasswordChange），
   // 无需再发起 /api/auth/verify 请求，直接根据现有状态跳转即可
   await redirectAfterLogin()
