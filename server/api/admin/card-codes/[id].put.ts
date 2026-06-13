@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const id = Number(getRouterParam(event, 'id'))
-  if (!id) {
+  if (!Number.isInteger(id) || id <= 0) {
     throw createError({ statusCode: 400, message: '点歌券ID无效' })
   }
 
@@ -21,8 +21,8 @@ export default defineEventHandler(async (event) => {
   const status = typeof body.status === 'string' ? body.status.trim().toUpperCase() : ''
   const note = typeof body.note === 'string' ? body.note.trim() || null : undefined
 
-  if (!status) {
-    throw createError({ statusCode: 400, message: '需要提供状态' })
+  if (!status && note === undefined) {
+    throw createError({ statusCode: 400, message: '没有需要更新的字段' })
   }
 
   try {
@@ -35,29 +35,31 @@ export default defineEventHandler(async (event) => {
       const newValues: any = { updatedAt: new Date() }
       const now = new Date()
 
-      if (status === 'REDEEMED') {
-        newValues.status = 'REDEEMED'
-        newValues.redeemedBy = user.id
-        newValues.redeemedAt = now
-        // 清理锁定信息
-        newValues.lockedBy = null
-        newValues.lockedAt = null
-      } else if (status === 'AVAILABLE') {
-        newValues.status = 'AVAILABLE'
-        newValues.lockedBy = null
-        newValues.lockedAt = null
-        newValues.redeemedBy = null
-        newValues.redeemedAt = null
-      } else if (status === 'LOCKED') {
-        newValues.status = 'LOCKED'
-        newValues.lockedBy = user.id
-        newValues.lockedAt = now
-        newValues.redeemedBy = null
-        newValues.redeemedAt = null
-      } else if (status === 'INVALID') {
-        newValues.status = 'INVALID'
-      } else {
-        throw createError({ statusCode: 400, message: '不支持的状态值' })
+      if (status) {
+        if (status === 'REDEEMED') {
+          newValues.status = 'REDEEMED'
+          newValues.redeemedBy = user.id
+          newValues.redeemedAt = now
+          // 清理锁定信息
+          newValues.lockedBy = null
+          newValues.lockedAt = null
+        } else if (status === 'AVAILABLE') {
+          newValues.status = 'AVAILABLE'
+          newValues.lockedBy = null
+          newValues.lockedAt = null
+          newValues.redeemedBy = null
+          newValues.redeemedAt = null
+        } else if (status === 'LOCKED') {
+          newValues.status = 'LOCKED'
+          newValues.lockedBy = user.id
+          newValues.lockedAt = now
+          newValues.redeemedBy = null
+          newValues.redeemedAt = null
+        } else if (status === 'INVALID') {
+          newValues.status = 'INVALID'
+        } else {
+          throw createError({ statusCode: 400, message: '不支持的状态值' })
+        }
       }
 
       if (note !== undefined) newValues.note = note
@@ -65,20 +67,15 @@ export default defineEventHandler(async (event) => {
       const res = await tx.update(cardCodes).set(newValues).where(eq(cardCodes.id, id)).returning()
       const newRow = res[0]
 
-      // 写日志（对于 REDEEMED 和 AVAILABLE 操作写入兑换/变更日志，来源标记为 ADMIN_MANUAL）
-      try {
-        if (['REDEEMED', 'AVAILABLE'].includes(status)) {
-          await tx.insert(cardCodeRedeemLogs).values({
-            cardCodeId: id,
-            codeSnapshot: newRow.code,
-            redeemedBy: user.id,
-            redeemedAt: now,
-            source: 'ADMIN_MANUAL',
-            songId: null
-          })
-        }
-      } catch (logErr) {
-        console.error('写入点歌券日志失败:', logErr)
+      if (['REDEEMED', 'AVAILABLE'].includes(status) && current.status !== status) {
+        await tx.insert(cardCodeRedeemLogs).values({
+          cardCodeId: id,
+          codeSnapshot: newRow.code,
+          redeemedBy: user.id,
+          redeemedAt: newRow.redeemedAt || now,
+          source: 'ADMIN_MANUAL',
+          songId: null
+        })
       }
 
       return newRow

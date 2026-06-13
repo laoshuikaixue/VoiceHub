@@ -81,11 +81,17 @@ export default defineEventHandler(async (event) => {
 
         if (otherSchedules.length === 0) {
           if (!existingSchedule.isDraft && existingSchedule.cardCodeId) {
-            await restoreCardCodeAfterScheduleRemoval(tx, {
+            const restoreResult = await restoreCardCodeAfterScheduleRemoval(tx, {
               songId: existingSchedule.songId,
               cardCodeId: existingSchedule.cardCodeId,
               operatorId: user.id
             })
+            if (
+              !restoreResult.changed &&
+              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(String(restoreResult.reason || ''))
+            ) {
+              throw createError({ statusCode: 409, message: '点歌券返还失败，移除排期已终止' })
+            }
           }
 
           const updatedRequests = await tx

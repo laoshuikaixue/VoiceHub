@@ -486,10 +486,14 @@ const queryString = computed(() => {
   return query.toString()
 })
 
-const normalizeRows = (rows) => rows.map((row) => ({
-  ...row,
-  noteDraft: row.note || ''
-}))
+const normalizeRows = (rows) => rows.map((row) => {
+  const existing = codes.value.find((item) => item.id === row.id)
+  const hasUnsavedNote = existing && existing.noteDraft !== (existing.note || '')
+  return {
+    ...row,
+    noteDraft: hasUnsavedNote ? existing.noteDraft : (row.note || '')
+  }
+})
 
 const fetchCodes = async (page = pagination.value.page) => {
   const nextPage = Number(page)

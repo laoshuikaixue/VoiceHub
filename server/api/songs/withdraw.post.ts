@@ -159,19 +159,25 @@ export default defineEventHandler(async (event) => {
       }
 
       if (song.cardCodeId) {
-        await releaseCardCodeAfterSongWithdrawal(tx, {
+        const releaseResult = await releaseCardCodeAfterSongWithdrawal(tx, {
           songId: song.id,
           cardCodeId: song.cardCodeId,
           operatorId: user.id
         })
+        if (
+          !releaseResult.changed &&
+          ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(String(releaseResult.reason || ''))
+        ) {
+          throw createError({ statusCode: 409, message: '点歌券释放失败，撤回已终止' })
+        }
       }
 
       // 删除歌曲（在事务内）
       await tx.delete(songs).where(eq(songs.id, body.songId))
     })
-  } catch (txErr) {
+  } catch (txErr: any) {
     console.error('撤回事务失败:', txErr)
-    throw createError({ statusCode: 500, message: '撤回歌曲失败，请稍后重试' })
+    throw createError({ statusCode: txErr.statusCode || 500, message: txErr.message || '撤回歌曲失败，请稍后重试' })
   }
 
   // 清除歌曲列表缓存

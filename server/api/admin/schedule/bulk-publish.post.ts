@@ -146,11 +146,17 @@ export default defineEventHandler(async (event) => {
           }
 
           for (const [songId, cardCodeId] of restoreCardCodeMap) {
-            await restoreCardCodeAfterScheduleRemoval(tx, {
+            const restoreResult = await restoreCardCodeAfterScheduleRemoval(tx, {
               songId,
               cardCodeId,
               operatorId: user.id
             })
+            if (
+              !restoreResult.changed &&
+              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(String(restoreResult.reason || ''))
+            ) {
+              throw createError({ statusCode: 409, message: '点歌券返还失败，发布排期已终止' })
+            }
           }
 
           await tx

@@ -79,6 +79,12 @@ export default defineEventHandler(async (event) => {
   if (!finalCodes.length) {
     throw createError({ statusCode: 400, message: '请提供要创建的点歌券或生成数量' })
   }
+  if (finalCodes.length > MAX_BATCH_COUNT) {
+    throw createError({
+      statusCode: 400,
+      message: `单次最多创建 ${MAX_BATCH_COUNT} 个点歌券`
+    })
+  }
 
   try {
     const uniqueCodes = [...new Set(finalCodes)]
