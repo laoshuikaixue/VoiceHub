@@ -49,7 +49,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   // 管理员路由权限校验：非管理员访问 /admin* 时，重定向到 /dashboard
-  // 这一检查在 server/middleware/auth.ts 中已提前清除了 ctxUser，但为双保险仍在此处执行。
+  // server/middleware/auth.ts 为保留 SSR 登录态，刻意未清除 ctxUser（仅作日志记录），
+  // 将重定向交由此前端中间件硬性拦截，因此这里是非管理员访问 /admin* 的实际拦截点。
   if (to.path.startsWith('/admin') && isAuthenticated.value) {
     if (!isAdminRole(user.value?.role)) {
       return navigateTo('/dashboard')

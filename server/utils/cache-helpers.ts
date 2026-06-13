@@ -63,7 +63,11 @@ async function getGlobalVersion(): Promise<string | null> {
   ) {
     return cachedGlobalVersion
   }
-  const version = await cache.get<string>(AUTH_GLOBAL_VERSION_KEY)
+  // Redis INCR 返回数字，经 JSON.parse 后为 number；而 clearAllAuth 内存缓存写入的是 String()
+  // 转换后的字符串。此处统一归一化为 string，避免 getAuth 版本校验时因 number 与 string
+  // 类型不一致（如 1 !== "1"）导致校验恒失败、所有认证缓存频繁穿透。
+  const raw = await cache.get<string | number>(AUTH_GLOBAL_VERSION_KEY)
+  const version = raw === null || raw === undefined ? null : String(raw)
   cachedGlobalVersion = version
   cachedGlobalVersionTime = Date.now()
   return version
