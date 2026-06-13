@@ -29,7 +29,7 @@
     "lint": "nuxt prepare && eslint .",
     "lint:fix": "nuxt prepare && eslint . --fix",
     "format": "prettier --write .",
-    "fuck": "pnpm run db:push && pnpm run create-admin"
+    "init-help": "pnpm run db:push && pnpm run create-admin"
   },
   "dependencies": {
     "@applemusic-like-lyrics/lyric": "^0.3.0",
