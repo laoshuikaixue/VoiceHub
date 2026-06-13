@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
 
     // 获取系统设置
     const systemSettingsData = await db
-      .select()
+      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
       .from(systemSettings)
       .limit(1)
       .then((result) => result[0])
