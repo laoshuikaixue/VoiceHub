@@ -162,7 +162,8 @@ export default defineEventHandler(async (event) => {
           id: song.id,
           title: song.title,
           artist: song.artist,
-          requesterId: song.requesterId
+          requesterId: song.requesterId,
+          cardCodeId: song.cardCodeId
         }
       }
     })

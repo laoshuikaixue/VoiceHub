@@ -1,9 +1,17 @@
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
+import {
+  playTimes,
+  schedules,
+  songs,
+  users,
+  votes,
+  songReplayRequests
+} from '~/drizzle/schema'
 import { and, asc, count, eq, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
+import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -47,7 +55,8 @@ export default defineEventHandler(async (event) => {
           id: songs.id,
           title: songs.title,
           artist: songs.artist,
-          requesterId: songs.requesterId
+          requesterId: songs.requesterId,
+          cardCodeId: songs.cardCodeId
         }
       })
       .from(schedules)
@@ -137,6 +146,13 @@ export default defineEventHandler(async (event) => {
       } else {
         console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
       }
+
+      await redeemCardCodeForSchedule(tx, {
+        songId: draft.song.id,
+        cardCodeId: draft.song.cardCodeId,
+        operatorId: user.id,
+        at: publishedAt
+      })
       
       return schedule
     })

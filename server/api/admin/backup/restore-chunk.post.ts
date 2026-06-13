@@ -1,6 +1,8 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import {
+  cardCodeRedeemLogs,
+  cardCodes,
   notificationSettings,
   notifications,
   playTimes,
@@ -57,6 +59,9 @@ export default defineEventHandler(async (event) => {
   const songIdMapping = new Map(
     Object.entries(mappings?.songs || {}).map(([k, v]) => [Number(k), Number(v)])
   )
+  const cardCodeIdMapping = new Map(
+    Object.entries(mappings?.cardCodes || {}).map(([k, v]) => [Number(k), Number(v)])
+  )
   const preservedSuperAdminIds = new Set(
     (mappings?.meta?.preservedSuperAdminIds || []).map((id) => Number(id))
   )
@@ -67,7 +72,8 @@ export default defineEventHandler(async (event) => {
 
   const newMappings = {
     users: {},
-    songs: {}
+    songs: {},
+    cardCodes: {}
   }
 
   const stats = {
@@ -370,6 +376,72 @@ export default defineEventHandler(async (event) => {
             break
           }
 
+          case 'cardCodes': {
+            const cardCodeData: any = {}
+            const cardCodeFields = ['code', 'status', 'note']
+            cardCodeFields.forEach((field) => {
+              if (record.hasOwnProperty(field)) {
+                cardCodeData[field] = record[field]
+              }
+            })
+
+            if (!cardCodeData.code) return
+
+            const mapUserId = async (field: 'lockedBy' | 'redeemedBy') => {
+              if (!record[field]) return null
+              const mappedUserId = userIdMapping.get(record[field])
+              if (mappedUserId) return mappedUserId
+              if (mode === 'merge') return null
+              const userExists = await tx.query.users.findFirst({
+                where: eq(users.id, record[field])
+              })
+              return userExists ? record[field] : null
+            }
+
+            cardCodeData.lockedBy = await mapUserId('lockedBy')
+            cardCodeData.redeemedBy = await mapUserId('redeemedBy')
+            cardCodeData.lockedAt = record.lockedAt ? new Date(record.lockedAt) : null
+            cardCodeData.redeemedAt = record.redeemedAt ? new Date(record.redeemedAt) : null
+            cardCodeData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()
+            cardCodeData.updatedAt = record.updatedAt ? new Date(record.updatedAt) : new Date()
+
+            let restoredCardCode
+            if (mode === 'merge') {
+              const existing = await tx.query.cardCodes.findFirst({
+                where: eq(cardCodes.code, cardCodeData.code)
+              })
+              if (existing) {
+                restoredCardCode = (
+                  await tx.update(cardCodes).set(cardCodeData).where(eq(cardCodes.id, existing.id)).returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredCardCode = (await tx.insert(cardCodes).values(cardCodeData).returning())[0]
+                stats.created++
+              }
+            } else {
+              const existing = await tx.query.cardCodes.findFirst({
+                where: eq(cardCodes.id, record.id)
+              })
+              if (existing) {
+                restoredCardCode = (
+                  await tx.update(cardCodes).set(cardCodeData).where(eq(cardCodes.id, record.id)).returning()
+                )[0]
+                stats.updated++
+              } else {
+                restoredCardCode = (
+                  await tx.insert(cardCodes).values({ ...cardCodeData, id: record.id }).returning()
+                )[0]
+                stats.created++
+              }
+            }
+
+            if (record.id && restoredCardCode?.id) {
+              newMappings.cardCodes[record.id] = restoredCardCode.id
+            }
+            break
+          }
+
           case 'songs': {
             let validRequesterId = record.requesterId
             let validPreferredPlayTimeId = record.preferredPlayTimeId
@@ -400,9 +472,25 @@ export default defineEventHandler(async (event) => {
               }
             }
 
+            let validCardCodeId = record.cardCodeId || null
+            if (record.cardCodeId) {
+              const mappedCardCodeId = cardCodeIdMapping.get(record.cardCodeId)
+              if (mappedCardCodeId) {
+                validCardCodeId = mappedCardCodeId
+              } else {
+                const cardCodeExists = await tx.query.cardCodes.findFirst({
+                  where: eq(cardCodes.id, record.cardCodeId)
+                })
+                if (!cardCodeExists) {
+                  validCardCodeId = null
+                }
+              }
+            }
+
             const songData: any = {
               requesterId: validRequesterId,
               preferredPlayTimeId: validPreferredPlayTimeId,
+              cardCodeId: validCardCodeId,
               played: record.hasOwnProperty('played') ? record.played : false
             }
 
@@ -607,6 +695,8 @@ export default defineEventHandler(async (event) => {
               'enableReplayRequests',
               'enableCollaborativeSubmission',
               'enableSubmissionRemarks',
+              'enableCardCodeRequests',
+              'requireCardCodeForRequests',
               'enableRequestTimeLimitation',
               'requestTimeLimitation',
               'forceBlockAllRequests',
@@ -933,6 +1023,76 @@ export default defineEventHandler(async (event) => {
                 stats.updated++
               } else {
                 await tx.insert(songBlacklists).values({ ...blacklistData, id: record.id })
+                stats.created++
+              }
+            }
+            break
+          }
+
+          case 'cardCodeRedeemLogs': {
+            let validCardCodeId = record.cardCodeId
+            if (record.cardCodeId) {
+              const mappedCardCodeId = cardCodeIdMapping.get(record.cardCodeId)
+              if (mappedCardCodeId) {
+                validCardCodeId = mappedCardCodeId
+              } else {
+                const cardCodeExists = await tx.query.cardCodes.findFirst({
+                  where: eq(cardCodes.id, record.cardCodeId)
+                })
+                if (!cardCodeExists) return
+              }
+            } else return
+
+            let validRedeemedBy = record.redeemedBy
+            if (record.redeemedBy) {
+              const mappedUserId = userIdMapping.get(record.redeemedBy)
+              if (mappedUserId) {
+                validRedeemedBy = mappedUserId
+              } else {
+                const userExists = await tx.query.users.findFirst({
+                  where: eq(users.id, record.redeemedBy)
+                })
+                if (!userExists) return
+              }
+            } else return
+
+            let validSongId = record.songId || null
+            if (record.songId) {
+              const mappedSongId = songIdMapping.get(record.songId)
+              if (mappedSongId) {
+                validSongId = mappedSongId
+              } else {
+                const songExists = await tx.query.songs.findFirst({
+                  where: eq(songs.id, record.songId)
+                })
+                if (!songExists) validSongId = null
+              }
+            }
+
+            const logData: any = {
+              cardCodeId: validCardCodeId,
+              codeSnapshot: record.codeSnapshot,
+              redeemedBy: validRedeemedBy,
+              redeemedAt: record.redeemedAt ? new Date(record.redeemedAt) : new Date(),
+              source: record.source || 'UNKNOWN',
+              songId: validSongId,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+
+            if (!logData.codeSnapshot) return
+
+            if (mode === 'merge') {
+              await tx.insert(cardCodeRedeemLogs).values(logData)
+              stats.created++
+            } else {
+              const existing = await tx.query.cardCodeRedeemLogs.findFirst({
+                where: eq(cardCodeRedeemLogs.id, record.id)
+              })
+              if (existing) {
+                await tx.update(cardCodeRedeemLogs).set(logData).where(eq(cardCodeRedeemLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(cardCodeRedeemLogs).values({ ...logData, id: record.id })
                 stats.created++
               }
             }

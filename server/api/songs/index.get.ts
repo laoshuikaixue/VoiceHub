@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { db, systemSettings  } from '~/drizzle/db'
+import { db } from '~/drizzle/db'
 import {
   playTimes,
   schedules,
@@ -15,7 +15,6 @@ import { cacheService } from '~~/server/services/cacheService'
 import { formatDateTime } from '~/utils/timeUtils'
 import { maskSongsInfo, MaskableSong, MaskableUser } from '~~/server/utils/studentMask'
 import crypto from 'crypto'
-import { defaultSystemSettings } from '~~/server/utils/system-settings-defaults'
 
 interface SongResponse {
   id: number
@@ -35,6 +34,7 @@ interface SongResponse {
   cover: string | null
   musicPlatform: string | null
   musicId: string | null
+  cardCodeId?: number | null
   playUrl: string | null
   requesterGrade: string | null
   requesterClass: string | null
@@ -223,6 +223,7 @@ export default defineEventHandler(async (event) => {
         semester: songs.semester,
         createdAt: songs.createdAt,
         updatedAt: songs.updatedAt,
+          cardCodeId: songs.cardCodeId,
         cover: songs.cover,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
@@ -501,6 +502,7 @@ export default defineEventHandler(async (event) => {
         requestedAt: formatDateTime(song.createdAt), // 添加请求时间的格式化字符串
         scheduled: scheduledSongs.has(song.id), // 是否存在已发布排期
         cover: song.cover || null, // 添加封面字段
+        cardCodeId: song.cardCodeId || null,
         musicPlatform: song.musicPlatform || null, // 添加音乐平台字段
         musicId: song.musicId || null, // 添加音乐ID字段
         playUrl: song.playUrl || null, // 添加播放地址字段

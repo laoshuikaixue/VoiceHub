@@ -1,21 +1,19 @@
-import { pgTable, serial, timestamp, varchar, text, integer, boolean, bigint, uuid, unique, foreignKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, bigint, foreignKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
+export const cardCodeStatus = pgEnum("card_code_status", ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID'])
 export const collaboratorStatus = pgEnum("collaborator_status", ['PENDING', 'ACCEPTED', 'REJECTED'])
 export const replayRequestStatus = pgEnum("replay_request_status", ['PENDING', 'FULFILLED', 'REJECTED'])
 export const userStatus = pgEnum("user_status", ['active', 'withdrawn', 'graduate'])
 
 
-export const emailTemplate = pgTable("EmailTemplate", {
+export const semester = pgTable("Semester", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	key: varchar({ length: 100 }).notNull(),
-	name: varchar({ length: 200 }).notNull(),
-	subject: varchar({ length: 300 }).notNull(),
-	html: text().notNull(),
-	updatedByUserId: integer(),
+	name: text().notNull(),
+	isActive: boolean().default(false).notNull(),
 });
 
 export const notification = pgTable("Notification", {
@@ -29,19 +27,6 @@ export const notification = pgTable("Notification", {
 	songId: integer(),
 });
 
-export const notificationSettings = pgTable("NotificationSettings", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	userId: integer().notNull(),
-	enabled: boolean().default(true).notNull(),
-	songRequestEnabled: boolean().default(true).notNull(),
-	songVotedEnabled: boolean().default(true).notNull(),
-	songPlayedEnabled: boolean().default(true).notNull(),
-	refreshInterval: integer().default(60).notNull(),
-	songVotedThreshold: integer().default(1).notNull(),
-});
-
 export const playTime = pgTable("PlayTime", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -53,20 +38,15 @@ export const playTime = pgTable("PlayTime", {
 	description: text(),
 });
 
-export const requestTime = pgTable("RequestTime", {
+export const songBlacklist = pgTable("SongBlacklist", {
 	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	startTime: timestamp({ mode: 'string' }).notNull(),
-	endTime: timestamp({ mode: 'string' }).notNull(),
-	enabled: boolean().default(true).notNull(),
-	description: text(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	expected: bigint({ mode: "number" }).default(0).notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	accepted: bigint({ mode: "number" }).default(0).notNull(),
-	past: boolean().default(false).notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	type: blacklistType().notNull(),
+	value: text().notNull(),
+	reason: text(),
+	isActive: boolean().default(true).notNull(),
+	createdBy: integer(),
 });
 
 export const schedule = pgTable("Schedule", {
@@ -82,12 +62,32 @@ export const schedule = pgTable("Schedule", {
 	publishedAt: timestamp({ mode: 'string' }),
 });
 
-export const semester = pgTable("Semester", {
+export const notificationSettings = pgTable("NotificationSettings", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	isActive: boolean().default(false).notNull(),
+	userId: integer().notNull(),
+	enabled: boolean().default(true).notNull(),
+	songRequestEnabled: boolean().default(true).notNull(),
+	songVotedEnabled: boolean().default(true).notNull(),
+	songPlayedEnabled: boolean().default(true).notNull(),
+	refreshInterval: integer().default(60).notNull(),
+	songVotedThreshold: integer().default(1).notNull(),
+});
+
+export const apiLogs = pgTable("api_logs", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	apiKeyId: uuid("api_key_id"),
+	endpoint: varchar({ length: 500 }).notNull(),
+	method: varchar({ length: 10 }).notNull(),
+	ipAddress: text("ip_address").notNull(),
+	userAgent: text("user_agent"),
+	statusCode: integer("status_code").notNull(),
+	responseTimeMs: integer("response_time_ms").notNull(),
+	requestBody: text("request_body"),
+	responseBody: text("response_body"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	errorMessage: text("error_message"),
 });
 
 export const song = pgTable("Song", {
@@ -102,23 +102,13 @@ export const song = pgTable("Song", {
 	semester: text(),
 	preferredPlayTimeId: integer(),
 	cover: text(),
-	playUrl: text(),
 	musicPlatform: text(),
 	musicId: text(),
+	playUrl: text(),
 	hitRequestId: integer(),
 	submissionNote: text(),
 	submissionNotePublic: boolean().default(false).notNull(),
-});
-
-export const songBlacklist = pgTable("SongBlacklist", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	type: blacklistType().notNull(),
-	value: text().notNull(),
-	reason: text(),
-	isActive: boolean().default(true).notNull(),
-	createdBy: integer(),
+	cardCodeId: integer(),
 });
 
 export const vote = pgTable("Vote", {
@@ -133,6 +123,16 @@ export const apiKeyPermissions = pgTable("api_key_permissions", {
 	apiKeyId: uuid("api_key_id").notNull(),
 	permission: varchar({ length: 100 }).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const userStatusLogs = pgTable("user_status_logs", {
+	id: serial().primaryKey().notNull(),
+	userId: integer("user_id").notNull(),
+	oldStatus: userStatus("old_status"),
+	newStatus: userStatus("new_status").notNull(),
+	reason: text(),
+	operatorId: integer("operator_id"),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 });
 
 export const apiKeys = pgTable("api_keys", {
@@ -152,19 +152,38 @@ export const apiKeys = pgTable("api_keys", {
 	unique("api_keys_key_hash_unique").on(table.keyHash),
 ]);
 
-export const apiLogs = pgTable("api_logs", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	apiKeyId: uuid("api_key_id"),
-	endpoint: varchar({ length: 500 }).notNull(),
-	method: varchar({ length: 10 }).notNull(),
-	ipAddress: text("ip_address").notNull(),
-	userAgent: text("user_agent"),
-	statusCode: integer("status_code").notNull(),
-	responseTimeMs: integer("response_time_ms").notNull(),
-	requestBody: text("request_body"),
-	responseBody: text("response_body"),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	errorMessage: text("error_message"),
+export const user = pgTable("User", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	username: text().notNull(),
+	name: text(),
+	grade: text(),
+	class: text(),
+	role: text().default('USER').notNull(),
+	password: text().notNull(),
+	lastLogin: timestamp({ mode: 'string' }),
+	lastLoginIp: text(),
+	passwordChangedAt: timestamp({ mode: 'string' }),
+	forcePasswordChange: boolean().default(true).notNull(),
+	meowNickname: text(),
+	meowBoundAt: timestamp({ mode: 'string' }),
+	status: userStatus().default('active').notNull(),
+	statusChangedAt: timestamp({ mode: 'string' }).defaultNow(),
+	statusChangedBy: integer(),
+	email: text(),
+	emailVerified: boolean().default(false),
+});
+
+export const emailTemplate = pgTable("EmailTemplate", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	key: varchar({ length: 100 }).notNull(),
+	name: varchar({ length: 200 }).notNull(),
+	subject: varchar({ length: 300 }).notNull(),
+	html: text().notNull(),
+	updatedByUserId: integer(),
 });
 
 export const collaborationLogs = pgTable("collaboration_logs", {
@@ -174,6 +193,22 @@ export const collaborationLogs = pgTable("collaboration_logs", {
 	operatorId: integer("operator_id").notNull(),
 	ipAddress: text("ip_address"),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+});
+
+export const requestTime = pgTable("RequestTime", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ precision: 6, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	startTime: timestamp({ mode: 'string' }).notNull(),
+	endTime: timestamp({ mode: 'string' }).notNull(),
+	enabled: boolean().default(true).notNull(),
+	description: text(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	expected: bigint({ mode: "number" }).default(0).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	accepted: bigint({ mode: "number" }).default(0).notNull(),
+	past: boolean().default(false).notNull(),
 });
 
 export const songCollaborators = pgTable("song_collaborators", {
@@ -196,22 +231,73 @@ export const songReplayRequests = pgTable("song_replay_requests", {
 	unique("song_replay_requests_song_id_user_id_unique").on(table.songId, table.userId),
 ]);
 
-export const userStatusLogs = pgTable("user_status_logs", {
+export const userIdentity = pgTable("UserIdentity", {
 	id: serial().primaryKey().notNull(),
-	userId: integer("user_id").notNull(),
-	oldStatus: userStatus("old_status"),
-	newStatus: userStatus("new_status").notNull(),
-	reason: text(),
-	operatorId: integer("operator_id"),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-});
+	userId: integer().notNull(),
+	provider: text().notNull(),
+	providerUserId: text().notNull(),
+	providerUsername: text(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: "UserIdentity_userId_User_id_fk"
+		}).onDelete("cascade"),
+	unique("UserIdentity_provider_providerUserId_unique").on(table.provider, table.providerUserId),
+]);
 
-export const drizzleMigrations = pgTable("__drizzle_migrations__", {
+export const cardCode = pgTable("CardCode", {
 	id: serial().primaryKey().notNull(),
-	hash: text().notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	createdAt: bigint("created_at", { mode: "number" }),
-});
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	code: text().notNull(),
+	status: cardCodeStatus().default('AVAILABLE').notNull(),
+	lockedBy: integer(),
+	lockedAt: timestamp({ mode: 'string' }),
+	redeemedBy: integer(),
+	redeemedAt: timestamp({ mode: 'string' }),
+	note: text(),
+}, (table) => [
+	foreignKey({
+			columns: [table.lockedBy],
+			foreignColumns: [user.id],
+			name: "CardCode_lockedBy_User_id_fk"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.redeemedBy],
+			foreignColumns: [user.id],
+			name: "CardCode_redeemedBy_User_id_fk"
+		}).onDelete("set null"),
+	unique("CardCode_code_unique").on(table.code),
+]);
+
+export const cardCodeRedeemLog = pgTable("CardCodeRedeemLog", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	cardCodeId: integer().notNull(),
+	codeSnapshot: text().notNull(),
+	redeemedBy: integer().notNull(),
+	redeemedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	source: text().default('UNKNOWN').notNull(),
+	songId: integer(),
+}, (table) => [
+	foreignKey({
+			columns: [table.cardCodeId],
+			foreignColumns: [cardCode.id],
+			name: "CardCodeRedeemLog_cardCodeId_CardCode_id_fk"
+		}).onDelete("restrict"),
+	foreignKey({
+			columns: [table.redeemedBy],
+			foreignColumns: [user.id],
+			name: "CardCodeRedeemLog_redeemedBy_User_id_fk"
+		}).onDelete("restrict"),
+	foreignKey({
+			columns: [table.songId],
+			foreignColumns: [song.id],
+			name: "CardCodeRedeemLog_songId_Song_id_fk"
+		}).onDelete("set null"),
+]);
 
 export const systemSettings = pgTable("SystemSettings", {
 	id: serial().primaryKey().notNull(),
@@ -241,12 +327,23 @@ export const systemSettings = pgTable("SystemSettings", {
 	enableRequestTimeLimitation: boolean().default(false).notNull(),
 	forceBlockAllRequests: boolean().default(false).notNull(),
 	enableReplayRequests: boolean().default(false).notNull(),
-	gonganNumber: text(),
-	showBeianIcon: boolean().default(false).notNull(),
 	monthlySubmissionLimit: integer(),
+	gonganNumber: text(),
 	enableCollaborativeSubmission: boolean().default(true).notNull(),
 	enableSubmissionRemarks: boolean().default(false).notNull(),
-	allowOauthRegistration: boolean().default(false).notNull(),
+	customOauthEnabled: boolean().default(false).notNull(),
+	customOauthDisplayName: text(),
+	customOauthAuthorizeUrl: text(),
+	customOauthTokenUrl: text(),
+	customOauthUserInfoUrl: text(),
+	customOauthScope: text(),
+	customOauthClientId: text(),
+	customOauthClientSecret: text(),
+	customOauthUserIdField: text(),
+	customOauthUsernameField: text(),
+	customOauthNameField: text(),
+	customOauthEmailField: text(),
+	customOauthAvatarField: text(),
 	oauthRedirectUri: text(),
 	oauthStateSecret: text(),
 	oauthProviders: text().default('[]'),
@@ -261,19 +358,8 @@ export const systemSettings = pgTable("SystemSettings", {
 	googleOauthEnabled: boolean().default(false).notNull(),
 	googleClientId: text(),
 	googleClientSecret: text(),
-	customOauthEnabled: boolean().default(false).notNull(),
-	customOauthDisplayName: text(),
-	customOauthAuthorizeUrl: text(),
-	customOauthTokenUrl: text(),
-	customOauthUserInfoUrl: text(),
-	customOauthScope: text(),
-	customOauthClientId: text(),
-	customOauthClientSecret: text(),
-	customOauthUserIdField: text(),
-	customOauthUsernameField: text(),
-	customOauthNameField: text(),
-	customOauthEmailField: text(),
-	customOauthAvatarField: text(),
+	showBeianIcon: boolean().default(false).notNull(),
+	allowOauthRegistration: boolean().default(false).notNull(),
 	captchaEnabled: boolean().default(false).notNull(),
 	captchaMaxFailures: integer().default(3).notNull(),
 	captchaProvider: text().default('graphic').notNull(),
@@ -281,43 +367,6 @@ export const systemSettings = pgTable("SystemSettings", {
 	turnstileSecretKey: text(),
 	instanceId: text("instance_id"),
 	telemetryEnabled: boolean().default(true).notNull(),
+	enableCardCodeRequests: boolean().default(false).notNull(),
+	requireCardCodeForRequests: boolean().default(false).notNull(),
 });
-
-export const user = pgTable("User", {
-	id: serial().primaryKey().notNull(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	username: text().notNull(),
-	name: text(),
-	grade: text(),
-	class: text(),
-	role: text().default('USER').notNull(),
-	password: text().notNull(),
-	email: text(),
-	emailVerified: boolean().default(false),
-	lastLogin: timestamp({ mode: 'string' }),
-	lastLoginIp: text(),
-	passwordChangedAt: timestamp({ mode: 'string' }),
-	forcePasswordChange: boolean().default(true).notNull(),
-	meowNickname: text(),
-	meowBoundAt: timestamp({ mode: 'string' }),
-	status: userStatus().default('active').notNull(),
-	statusChangedAt: timestamp({ mode: 'string' }).defaultNow(),
-	statusChangedBy: integer(),
-});
-
-export const userIdentity = pgTable("UserIdentity", {
-	id: serial().primaryKey().notNull(),
-	userId: integer().notNull(),
-	provider: text().notNull(),
-	providerUserId: text().notNull(),
-	providerUsername: text(),
-	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "UserIdentity_userId_User_id_fk"
-		}).onDelete("cascade"),
-	unique("UserIdentity_provider_providerUserId_unique").on(table.provider, table.providerUserId),
-]);

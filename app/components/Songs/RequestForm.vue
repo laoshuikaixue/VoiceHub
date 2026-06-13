@@ -433,6 +433,44 @@
               </div>
             </div>
 
+            <div v-if="enableCardCodeRequests || requireCardCodeForRequests" class="form-row mt-4">
+              <div class="form-group">
+                <div class="input-wrapper">
+                  <label
+                    for="card-code"
+                    :class="[
+                      'text-[12px] font-bold',
+                      cardCodeFieldMeta.required ? 'text-yellow-300' : 'text-zinc-300'
+                    ]"
+                  >
+                    点歌券
+                    <span
+                      v-if="cardCodeFieldMeta.required"
+                      class="ml-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-black text-yellow-300 align-middle"
+                    >
+                      必填
+                    </span>
+                  </label>
+                  <input
+                    id="card-code"
+                    v-model="cardCode"
+                    :placeholder="cardCodeFieldMeta.placeholder"
+                    :required="cardCodeFieldMeta.required"
+                    class="w-full mt-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-yellow-400/50 focus:ring-1 focus:ring-yellow-400/30"
+                    type="text"
+                  />
+                  <p
+                    :class="[
+                      'mt-1 text-[11px]',
+                      cardCodeFieldMeta.required ? 'text-yellow-300/80' : 'text-zinc-500'
+                    ]"
+                  >
+                    {{ cardCodeFieldMeta.helper }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <div class="loading-spinner" />
@@ -1151,7 +1189,9 @@ const {
   initSiteConfig,
   enableReplayRequests,
   enableCollaborativeSubmission,
-  enableSubmissionRemarks
+  enableSubmissionRemarks,
+  enableCardCodeRequests,
+  requireCardCodeForRequests
 } = useSiteConfig()
 
 // 用户认证
@@ -1172,6 +1212,7 @@ const platform = ref('netease') // 默认使用网易云音乐
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
+const cardCode = ref('')
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
@@ -1204,6 +1245,14 @@ const songService = useSongs()
 const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
+
+const cardCodeFieldMeta = computed(() => ({
+  required: requireCardCodeForRequests.value,
+  helper: requireCardCodeForRequests.value
+    ? '开启强制点歌券后，提交点歌时必须填写有效点歌券。'
+    : '填写点歌券可用于抵扣或提交点歌。',
+  placeholder: '请输入点歌券'
+}))
 
 // 投稿状态
 const submissionStatus = ref(null)
@@ -2735,6 +2784,10 @@ const submitSong = async (result, options = {}) => {
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
+      // 如果用户填写了点歌券，传递给后端
+      if (cardCode.value && cardCode.value.trim()) {
+        songData.cardCode = cardCode.value.trim()
+      }
 
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
@@ -2782,6 +2835,9 @@ const handleSubmit = async () => {
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id)
+    }
+    if (cardCode.value && cardCode.value.trim()) {
+      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -3151,6 +3207,10 @@ const handleManualSubmit = async () => {
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value
+    }
+
+    if (cardCode.value && cardCode.value.trim()) {
+      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用

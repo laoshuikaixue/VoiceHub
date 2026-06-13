@@ -154,6 +154,7 @@ export default defineEventHandler(async (event) => {
           playUrl: songs.playUrl,
           semester: songs.semester,
           requesterId: songs.requesterId,
+          cardCodeId: songs.cardCodeId,
           createdAt: songs.createdAt,
           submissionNote: songs.submissionNote,
           submissionNotePublic: songs.submissionNotePublic
@@ -406,6 +407,7 @@ export default defineEventHandler(async (event) => {
           voteCount: voteCounts.get(schedule.song.id) || 0,
           played: schedule.song.played || false,
           cover: schedule.song.cover || null,
+          cardCodeId: schedule.song.cardCodeId || null,
           musicPlatform: schedule.song.musicPlatform || null,
           musicId: schedule.song.musicId || null,
           playUrl: schedule.song.playUrl || null,
