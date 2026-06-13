@@ -4,7 +4,13 @@ import { getBeijingTimeISOString } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   try {
-    const settingsResult = await db.select().from(systemSettings).limit(1)
+    const settingsResult = await db
+      .select({
+        enableRequestTimeLimitation: systemSettings.enableRequestTimeLimitation,
+        forceBlockAllRequests: systemSettings.forceBlockAllRequests
+      })
+      .from(systemSettings)
+      .limit(1)
     const settings = settingsResult[0] || null
     let enabled = settings?.enableRequestTimeLimitation || false
     const forceBlockAllRequests = settings?.forceBlockAllRequests || false

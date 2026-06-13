@@ -4,7 +4,10 @@ import type { PlayTime } from '~/drizzle/schema'
 export default defineEventHandler(async (event) => {
   try {
     // 获取系统设置，检查是否启用播出时段选择
-    const settingsResult = await db.select().from(systemSettings).limit(1)
+    const settingsResult = await db
+      .select({ enablePlayTimeSelection: systemSettings.enablePlayTimeSelection })
+      .from(systemSettings)
+      .limit(1)
     const settings = settingsResult[0] || null
     const enabled = settings?.enablePlayTimeSelection || false
 
