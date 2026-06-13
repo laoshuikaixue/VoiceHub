@@ -134,6 +134,7 @@ export default defineEventHandler(async (event) => {
           playUrl: songs.playUrl,
           semester: songs.semester,
           requesterId: songs.requesterId,
+          cardCodeId: songs.cardCodeId,
           createdAt: songs.createdAt
         },
         requester: {

@@ -30,7 +30,10 @@ export default defineEventHandler(async (event) => {
 
     let rows
     if (idsParam) {
-      const ids = idsParam.split(',').map((s) => Number(s)).filter(Boolean)
+      const ids = idsParam.split(',').map((s) => Number(s)).filter((id) => Number.isInteger(id) && id > 0)
+      if (ids.length === 0) {
+        throw createError({ statusCode: 400, message: '无效的点歌券ID' })
+      }
       rows = await db.select().from(cardCodes).where(inArray(cardCodes.id, ids)).orderBy(desc(cardCodes.createdAt))
     } else {
       let qb = db.select().from(cardCodes)
@@ -67,8 +70,8 @@ export default defineEventHandler(async (event) => {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename="card-codes.csv"')
     return csv
-  } catch (err) {
+  } catch (err: any) {
     console.error('导出点歌券失败', err)
-    throw createError({ statusCode: 500, message: '导出点歌券失败' })
+    throw createError({ statusCode: err.statusCode || 500, message: err.message || '导出点歌券失败' })
   }
 })

@@ -296,6 +296,7 @@
             <option value="">全部来源</option>
             <option value="ADMIN_MANUAL">手动核销</option>
             <option value="SCHEDULE_AUTO">排期自动</option>
+            <option value="SCHEDULE_REMOVE">移除排期</option>
           </select>
         </div>
         <div>
@@ -424,6 +425,7 @@ const logSourceMap = {
   ADMIN_MANUAL: { label: '手动核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
   ADMIN: { label: '管理员操作', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
   SCHEDULE_AUTO: { label: '排期自动', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+  SCHEDULE_REMOVE: { label: '移除排期', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
   SCHEDULE: { label: '排期', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
   WITHDRAW: { label: '撤回', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
   UNKNOWN: { label: '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }

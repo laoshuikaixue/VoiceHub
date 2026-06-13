@@ -23,3 +23,33 @@ ALTER TABLE "Song" ADD COLUMN IF NOT EXISTS "cardCodeId" integer;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "CardCode_code_unique" ON "CardCode" ("code");
 --> statement-breakpoint
+
+DO $$ BEGIN
+  ALTER TABLE "CardCode"
+    ADD CONSTRAINT "CardCode_lockedBy_User_id_fk"
+    FOREIGN KEY ("lockedBy") REFERENCES "public"."User"("id")
+    ON DELETE SET NULL ON UPDATE NO ACTION;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+
+DO $$ BEGIN
+  ALTER TABLE "CardCode"
+    ADD CONSTRAINT "CardCode_redeemedBy_User_id_fk"
+    FOREIGN KEY ("redeemedBy") REFERENCES "public"."User"("id")
+    ON DELETE SET NULL ON UPDATE NO ACTION;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+
+DO $$ BEGIN
+  ALTER TABLE "Song"
+    ADD CONSTRAINT "Song_cardCodeId_CardCode_id_fk"
+    FOREIGN KEY ("cardCodeId") REFERENCES "public"."CardCode"("id")
+    ON DELETE SET NULL ON UPDATE NO ACTION;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint

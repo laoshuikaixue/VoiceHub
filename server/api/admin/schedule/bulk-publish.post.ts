@@ -4,6 +4,10 @@ import { inArray, and, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import {
+  redeemCardCodeForSchedule,
+  restoreCardCodeAfterScheduleRemoval
+} from '~~/server/services/cardCodeLifecycleService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -94,11 +98,23 @@ export default defineEventHandler(async (event) => {
 
       const existingPublishedSongIds = new Set(globalExistingPublished.map((s) => s.songId))
 
+      const schedulesToDelete = await tx
+        .select({
+          songId: schedules.songId,
+          isDraft: schedules.isDraft,
+          cardCodeId: songs.cardCodeId
+        })
+        .from(schedules)
+        .leftJoin(songs, eq(schedules.songId, songs.id))
+        .where(and(...whereConditions))
+
       // 3. 删除该时间段内的所有排期（包括草稿和已发布）
-      const deletedSchedules = await tx.delete(schedules).where(and(...whereConditions)).returning({ songId: schedules.songId })
+      await tx.delete(schedules).where(and(...whereConditions))
       
       // 记录本次删除了哪些歌的排期，如果新排期里没有它们，并且全局也没别的正式排期了，需要恢复 PENDING
-      const deletedSongIds = new Set(deletedSchedules.map(s => s.songId))
+      const deletedSongIds = new Set(
+        schedulesToDelete.filter((s) => !s.isDraft).map((s) => s.songId)
+      )
       const songsToRestore = Array.from(deletedSongIds).filter(id => !newSongIds.has(id))
 
       if (songsToRestore.length > 0) {
@@ -116,6 +132,26 @@ export default defineEventHandler(async (event) => {
         const finalRestoreIds = songsToRestore.filter(id => !songsWithOtherSchedules.has(id))
 
         if (finalRestoreIds.length > 0) {
+          const finalRestoreIdSet = new Set(finalRestoreIds)
+          const restoreCardCodeMap = new Map<number, number>()
+          for (const deletedSchedule of schedulesToDelete) {
+            if (
+              !deletedSchedule.isDraft &&
+              deletedSchedule.cardCodeId &&
+              finalRestoreIdSet.has(deletedSchedule.songId)
+            ) {
+              restoreCardCodeMap.set(deletedSchedule.songId, deletedSchedule.cardCodeId)
+            }
+          }
+
+          for (const [songId, cardCodeId] of restoreCardCodeMap) {
+            await restoreCardCodeAfterScheduleRemoval(tx, {
+              songId,
+              cardCodeId,
+              operatorId: user.id
+            })
+          }
+
           await tx
             .update(songReplayRequests)
             .set({ status: 'PENDING', updatedAt: new Date() })
@@ -170,6 +206,13 @@ export default defineEventHandler(async (event) => {
               and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
             )
         }
+
+        await redeemCardCodeForSchedule(tx, {
+          songId: song.id,
+          cardCodeId: song.cardCodeId,
+          operatorId: user.id,
+          at: publishedAt
+        })
       }
     })
 

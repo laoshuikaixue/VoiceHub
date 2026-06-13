@@ -6,10 +6,12 @@ import {
   systemSettings,
   votes,
   songCollaborators,
-  collaborationLogs
+  collaborationLogs,
+  requestTimes
 } from '~/drizzle/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { getTimeRange, type LimitType } from '~~/server/utils/submissionLimit'
+import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -140,64 +142,28 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 删除关联的联合投稿记录
-  await db.delete(songCollaborators).where(eq(songCollaborators.songId, body.songId))
-
-  // 删除歌曲的所有投票
-  await db.delete(votes).where(eq(votes.songId, body.songId))
-
-  // 如果有 hitRequestId，减少对应时段的已接纳数量
-  if (song.hitRequestId) {
-    try {
-      // 需要引入 requestTimes 和 sql
-      const { requestTimes } = await import('~/drizzle/schema')
-      const { sql } = await import('drizzle-orm')
-
-      await db
-        .update(requestTimes)
-        .set({
-          accepted: sql`GREATEST(0, accepted - 1)`
-        })
-        .where(eq(requestTimes.id, song.hitRequestId))
-      console.log(`已减少投稿时段 ${song.hitRequestId} 的接纳数量`)
-    } catch (error) {
-      console.error(`减少投稿时段接纳数量失败: ${error.message}`)
-    }
-  }
-
-  // 如果使用了点歌券，先尝试在事务内恢复点歌券状态，然后删除歌曲
+  // 投稿关联数据一起进入事务，避免撤回失败时只删掉一部分数据。
   try {
     await db.transaction(async (tx) => {
-      if (song.cardCodeId) {
-        try {
-          // 读取点歌券信息用于日志
-          const schema = await import('~/drizzle/schema')
-          const codeRow = await tx.select().from(schema.cardCodes).where(eq(schema.cardCodes.id, song.cardCodeId)).limit(1)
-          const card = codeRow[0]
-          if (card) {
-            // 仅当点歌券处于 LOCKED 时才恢复为 AVAILABLE，避免误改已被核销的点歌券
-            const updateRes = await tx
-              .update(schema.cardCodes)
-              .set({ status: 'AVAILABLE', lockedBy: null, lockedAt: null })
-              .where(and(eq(schema.cardCodes.id, song.cardCodeId), eq(schema.cardCodes.status, 'LOCKED')))
-              .returning()
+      await tx.delete(songCollaborators).where(eq(songCollaborators.songId, body.songId))
+      await tx.delete(votes).where(eq(votes.songId, body.songId))
 
-            if (updateRes.length > 0) {
-              // 写入兑换/恢复日志，source 标注为 WITHDRAW
-              await tx.insert(schema.cardCodeRedeemLogs).values({
-                cardCodeId: song.cardCodeId,
-                codeSnapshot: card.code,
-                redeemedBy: user.id,
-                redeemedAt: new Date(),
-                source: 'WITHDRAW',
-                songId: song.id
-              })
-              console.log(`点歌券 ${song.cardCodeId} 在撤回时已恢复为 AVAILABLE (songId=${song.id})`)
-            }
-          }
-        } catch (err) {
-          console.error('撤回时恢复点歌券失败:', err)
-        }
+      if (song.hitRequestId) {
+        await tx
+          .update(requestTimes)
+          .set({
+            accepted: sql`GREATEST(0, accepted - 1)`
+          })
+          .where(eq(requestTimes.id, song.hitRequestId))
+        console.log(`已减少投稿时段 ${song.hitRequestId} 的接纳数量`)
+      }
+
+      if (song.cardCodeId) {
+        await releaseCardCodeAfterSongWithdrawal(tx, {
+          songId: song.id,
+          cardCodeId: song.cardCodeId,
+          operatorId: user.id
+        })
       }
 
       // 删除歌曲（在事务内）

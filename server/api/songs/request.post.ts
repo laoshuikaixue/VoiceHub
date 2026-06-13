@@ -209,7 +209,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 点歌券相关站点设置
-    if (systemSettingsData?.requireCardCodeForRequests) {
+    if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
       const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
         throw createError({ statusCode: 403, message: '本站点已启用仅点歌券投稿，请提供有效点歌券' })

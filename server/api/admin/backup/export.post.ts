@@ -4,6 +4,8 @@ import {
   apiKeys,
   apiKeyPermissions,
   apiLogs,
+  cardCodeRedeemLogs,
+  cardCodes,
   collaborationLogs,
   emailTemplates,
   notifications,
@@ -101,6 +103,53 @@ export default defineEventHandler(async (event) => {
           }))
         },
         description: '歌曲数据'
+      },
+      cardCodes: {
+        query: async () => {
+          const codesData = await db.select().from(cardCodes)
+          const usersData = await db
+            .select({
+              id: users.id,
+              username: users.username,
+              name: users.name
+            })
+            .from(users)
+
+          return codesData.map((code) => ({
+            ...code,
+            lockedByUser: code.lockedBy ? usersData.find((user) => user.id === code.lockedBy) : null,
+            redeemedByUser: code.redeemedBy ? usersData.find((user) => user.id === code.redeemedBy) : null
+          }))
+        },
+        description: '点歌券数据'
+      },
+      cardCodeRedeemLogs: {
+        query: async () => {
+          const logsData = await db.select().from(cardCodeRedeemLogs)
+          const codesData = await db.select({ id: cardCodes.id, code: cardCodes.code }).from(cardCodes)
+          const songsData = await db
+            .select({
+              id: songs.id,
+              title: songs.title,
+              artist: songs.artist
+            })
+            .from(songs)
+          const usersData = await db
+            .select({
+              id: users.id,
+              username: users.username,
+              name: users.name
+            })
+            .from(users)
+
+          return logsData.map((log) => ({
+            ...log,
+            cardCode: codesData.find((code) => code.id === log.cardCodeId),
+            redeemer: usersData.find((user) => user.id === log.redeemedBy),
+            song: log.songId ? songsData.find((song) => song.id === log.songId) : null
+          }))
+        },
+        description: '点歌券日志'
       },
       votes: {
         query: async () => {

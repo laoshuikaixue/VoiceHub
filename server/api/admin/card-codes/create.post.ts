@@ -29,7 +29,8 @@ export default defineEventHandler(async (event) => {
   const length = Number.isInteger(body.length) ? Number(body.length) : 12
   const charset = typeof body.charset === 'string' && body.charset.trim() ? body.charset.trim().toUpperCase() : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
-  const generatedCodes: string[] = []
+  const manualCodeSet = new Set(codes)
+  const generatedCodeSet = new Set<string>()
   if (batchCount > 0) {
     const makeRandom = () => {
       let code = prefix
@@ -41,14 +42,14 @@ export default defineEventHandler(async (event) => {
 
     let attempts = 0
     const maxAttempts = batchCount * 100
-    while (generatedCodes.length < batchCount && attempts < maxAttempts) {
+    while (generatedCodeSet.size < batchCount && attempts < maxAttempts) {
       attempts++
       const next = makeRandom()
-      if (!generatedCodes.includes(next) && !codes.includes(next)) {
-        generatedCodes.push(next)
+      if (!generatedCodeSet.has(next) && !manualCodeSet.has(next)) {
+        generatedCodeSet.add(next)
       }
     }
-    if (generatedCodes.length < batchCount) {
+    if (generatedCodeSet.size < batchCount) {
       throw createError({
         statusCode: 400,
         message: '可用字符集过小或长度不足，无法生成足够数量的唯一点歌券，请增大字符集或长度'
@@ -56,7 +57,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const finalCodes = [...codes, ...generatedCodes]
+  const finalCodes = [...codes, ...generatedCodeSet]
   if (!finalCodes.length) {
     throw createError({ statusCode: 400, message: '请提供要创建的点歌券或生成数量' })
   }
@@ -85,8 +86,8 @@ export default defineEventHandler(async (event) => {
       data: res,
       skipped: uniqueCodes.length - insertCodes.length
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('创建点歌券失败', err)
-    throw createError({ statusCode: 500, message: '创建点歌券失败' })
+    throw createError({ statusCode: err.statusCode || 500, message: err.message || '创建点歌券失败' })
   }
 })

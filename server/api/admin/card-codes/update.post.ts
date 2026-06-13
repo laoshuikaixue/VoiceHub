@@ -40,6 +40,14 @@ export default defineEventHandler(async (event) => {
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
       updateObj.redeemedAt = new Date()
+      updateObj.lockedBy = null
+      updateObj.lockedAt = null
+    }
+    if (status === 'LOCKED') {
+      updateObj.lockedBy = user.id
+      updateObj.lockedAt = new Date()
+      updateObj.redeemedBy = null
+      updateObj.redeemedAt = null
     }
     if (status === 'AVAILABLE') {
       updateObj.lockedBy = null

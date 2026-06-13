@@ -1,5 +1,6 @@
 import { db, eq, ne, schedules, songs, songReplayRequests, and } from '~/drizzle/db'
 import { cacheService } from '~~/server/services/cacheService'
+import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -31,6 +32,8 @@ export default defineEventHandler(async (event) => {
       .select({
         id: schedules.id,
         songId: schedules.songId,
+        isDraft: schedules.isDraft,
+        cardCodeId: songs.cardCodeId,
         songTitle: songs.title,
         songArtist: songs.artist
       })
@@ -76,6 +79,14 @@ export default defineEventHandler(async (event) => {
           .limit(1)
 
         if (otherSchedules.length === 0) {
+          if (!existingSchedule.isDraft && existingSchedule.cardCodeId) {
+            await restoreCardCodeAfterScheduleRemoval(tx, {
+              songId: existingSchedule.songId,
+              cardCodeId: existingSchedule.cardCodeId,
+              operatorId: user.id
+            })
+          }
+
           const updatedRequests = await tx
             .update(songReplayRequests)
             .set({

@@ -258,7 +258,46 @@ export const cardCode = pgTable("CardCode", {
 	redeemedBy: integer(),
 	redeemedAt: timestamp({ mode: 'string' }),
 	note: text(),
-});
+}, (table) => [
+	foreignKey({
+			columns: [table.lockedBy],
+			foreignColumns: [user.id],
+			name: "CardCode_lockedBy_User_id_fk"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.redeemedBy],
+			foreignColumns: [user.id],
+			name: "CardCode_redeemedBy_User_id_fk"
+		}).onDelete("set null"),
+	unique("CardCode_code_unique").on(table.code),
+]);
+
+export const cardCodeRedeemLog = pgTable("CardCodeRedeemLog", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	cardCodeId: integer().notNull(),
+	codeSnapshot: text().notNull(),
+	redeemedBy: integer().notNull(),
+	redeemedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	source: text().default('UNKNOWN').notNull(),
+	songId: integer(),
+}, (table) => [
+	foreignKey({
+			columns: [table.cardCodeId],
+			foreignColumns: [cardCode.id],
+			name: "CardCodeRedeemLog_cardCodeId_CardCode_id_fk"
+		}).onDelete("restrict"),
+	foreignKey({
+			columns: [table.redeemedBy],
+			foreignColumns: [user.id],
+			name: "CardCodeRedeemLog_redeemedBy_User_id_fk"
+		}).onDelete("restrict"),
+	foreignKey({
+			columns: [table.songId],
+			foreignColumns: [song.id],
+			name: "CardCodeRedeemLog_songId_Song_id_fk"
+		}).onDelete("set null"),
+]);
 
 export const systemSettings = pgTable("SystemSettings", {
 	id: serial().primaryKey().notNull(),

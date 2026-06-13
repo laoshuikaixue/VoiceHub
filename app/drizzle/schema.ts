@@ -68,7 +68,7 @@ export const songs = pgTable('Song', {
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
   hitRequestId: integer(),
-  cardCodeId: integer('cardCodeId'),
+  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
 });
 
 // 投票表
@@ -551,11 +551,11 @@ export const cardCodes = pgTable('CardCode', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-  code: text('code').notNull(),
+  code: text('code').notNull().unique(),
   status: cardCodeStatusEnum('status').default('AVAILABLE').notNull(),
-  lockedBy: integer('lockedBy'),
+  lockedBy: integer('lockedBy').references(() => users.id, { onDelete: 'set null' }),
   lockedAt: timestamp('lockedAt'),
-  redeemedBy: integer('redeemedBy'),
+  redeemedBy: integer('redeemedBy').references(() => users.id, { onDelete: 'set null' }),
   redeemedAt: timestamp('redeemedAt'),
   note: text('note'),
 });
@@ -564,12 +564,12 @@ export const cardCodes = pgTable('CardCode', {
 export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
   id: serial('id').primaryKey(),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
-  cardCodeId: integer('cardCodeId').notNull(),
+  cardCodeId: integer('cardCodeId').notNull().references(() => cardCodes.id, { onDelete: 'restrict' }),
   codeSnapshot: text('codeSnapshot').notNull(),
-  redeemedBy: integer('redeemedBy').notNull(),
+  redeemedBy: integer('redeemedBy').notNull().references(() => users.id, { onDelete: 'restrict' }),
   redeemedAt: timestamp('redeemedAt').defaultNow().notNull(),
   source: text('source').default('UNKNOWN').notNull(),
-  songId: integer('songId')
+  songId: integer('songId').references(() => songs.id, { onDelete: 'set null' })
 });
 
 export type CardCode = typeof cardCodes.$inferSelect;

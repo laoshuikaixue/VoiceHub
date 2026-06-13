@@ -5,14 +5,13 @@ import {
   songs,
   users,
   votes,
-  songReplayRequests,
-  cardCodes,
-  cardCodeRedeemLogs
+  songReplayRequests
 } from '~/drizzle/schema'
 import { and, asc, count, eq, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
+import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -56,7 +55,8 @@ export default defineEventHandler(async (event) => {
           id: songs.id,
           title: songs.title,
           artist: songs.artist,
-          requesterId: songs.requesterId
+          requesterId: songs.requesterId,
+          cardCodeId: songs.cardCodeId
         }
       })
       .from(schedules)
@@ -143,42 +143,16 @@ export default defineEventHandler(async (event) => {
         if (updatedRequests.length > 0) {
           console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
         }
-        // 如果该歌曲使用点歌券投稿，自动将点歌券标记为已核销并写入核销日志
-        try {
-          const songRow = await tx
-            .select({ cardCodeId: songs.cardCodeId })
-            .from(songs)
-            .where(eq(songs.id, draft.song.id))
-            .limit(1)
-
-          const cardCodeId = songRow[0]?.cardCodeId
-          if (cardCodeId) {
-            // 将点歌券标记为 REDEEMED（避免重复核销）
-            const redeemRes = await tx
-              .update(cardCodes)
-              .set({ status: 'REDEEMED', redeemedBy: user.id, redeemedAt: publishedAt })
-              .where(and(eq(cardCodes.id, cardCodeId), ne(cardCodes.status, 'REDEEMED')))
-              .returning()
-
-            if (redeemRes.length > 0) {
-              const codeRow = redeemRes[0]
-              await tx.insert(cardCodeRedeemLogs).values({
-                cardCodeId: cardCodeId,
-                codeSnapshot: codeRow.code,
-                redeemedBy: user.id,
-                redeemedAt: publishedAt,
-                source: 'SCHEDULE_AUTO',
-                songId: draft.song.id
-              })
-              console.log(`点歌券 ${cardCodeId} 已在发布排期时完成核销 (songId=${draft.song.id})`)
-            }
-          }
-        } catch (redeemErr) {
-          console.error('自动核销点歌券时发生错误:', redeemErr)
-        }
       } else {
         console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
       }
+
+      await redeemCardCodeForSchedule(tx, {
+        songId: draft.song.id,
+        cardCodeId: draft.song.cardCodeId,
+        operatorId: user.id,
+        at: publishedAt
+      })
       
       return schedule
     })
