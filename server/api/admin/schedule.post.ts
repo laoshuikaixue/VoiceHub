@@ -107,7 +107,8 @@ export default defineEventHandler(async (event) => {
           id: song.id,
           title: song.title,
           artist: song.artist,
-          requesterId: song.requesterId
+          requesterId: song.requesterId,
+          cardCodeId: song.cardCodeId
         }
       }
 
@@ -151,8 +152,8 @@ export default defineEventHandler(async (event) => {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
         }
         await redeemCardCodeForSchedule(tx, {
-          songId: song.id,
-          cardCodeId: song.cardCodeId,
+          songId: schedule.song.id,
+          cardCodeId: schedule.song.cardCodeId,
           operatorId: user.id,
           at: scheduleResult[0].publishedAt || getServerDate()
         })
