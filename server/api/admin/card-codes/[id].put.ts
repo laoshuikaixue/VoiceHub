@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event) ?? {}
   const status = typeof body.status === 'string' ? body.status.trim().toUpperCase() : ''
-  const note = typeof body.note === 'string' ? body.note.trim() : null
+  const note = typeof body.note === 'string' ? body.note.trim() || null : undefined
 
   if (!status) {
     throw createError({ statusCode: 400, message: '需要提供状态' })
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: '不支持的状态值' })
       }
 
-      if (note !== null) newValues.note = note
+      if (note !== undefined) newValues.note = note
 
       const res = await tx.update(cardCodes).set(newValues).where(eq(cardCodes.id, id)).returning()
       const newRow = res[0]

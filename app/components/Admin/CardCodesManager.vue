@@ -685,7 +685,7 @@ const saveNote = async (item) => {
       body: { id: item.id, note: item.noteDraft }
     })
     showToast('备注已保存', 'success')
-    await fetchCodes()
+    item.note = item.noteDraft || null
   } catch (error) {
     console.error('保存备注失败', error)
     showToast('保存备注失败', 'error')
