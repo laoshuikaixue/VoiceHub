@@ -572,11 +572,23 @@ const trySwitchPlaybackSource = async () => {
   }
 }
 
+const normalizeSongDurationSeconds = (value) => {
+  const duration = Number(value || 0)
+  if (!Number.isFinite(duration) || duration <= 0) return 0
+  return duration > 1000 ? duration / 1000 : duration
+}
+
 const isInvalidTencentAudio = (duration, url) => {
   if (activeSong.value?.musicPlatform !== 'tencent') return false
 
   const numericDuration = Number(duration)
-  if (Number.isFinite(numericDuration) && numericDuration > 0 && numericDuration < MIN_VALID_QQ_AUDIO_DURATION) {
+  const expectedDuration = normalizeSongDurationSeconds(activeSong.value?.duration)
+  if (
+    expectedDuration >= MIN_VALID_QQ_AUDIO_DURATION &&
+    Number.isFinite(numericDuration) &&
+    numericDuration > 0 &&
+    numericDuration < MIN_VALID_QQ_AUDIO_DURATION
+  ) {
     return true
   }
 

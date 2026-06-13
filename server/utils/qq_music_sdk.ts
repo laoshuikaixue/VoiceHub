@@ -119,8 +119,19 @@ export const getQqCookieDiagnostic = (cookie?: string) => {
 const decodeMaybeBase64 = (value: unknown) => {
   if (typeof value !== 'string' || !value) return ''
 
+  const normalizedValue = value.trim()
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(normalizedValue) || normalizedValue.length % 4 !== 0) {
+    return value
+  }
+
   try {
-    const decoded = Buffer.from(value, 'base64').toString()
+    const decoded = Buffer.from(normalizedValue, 'base64').toString()
+    if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/.test(decoded)) {
+      return value
+    }
+    if (!/[\r\n[\]\u4e00-\u9fa5]/.test(decoded)) {
+      return value
+    }
     return decoded || value
   } catch {
     return value
@@ -466,17 +477,23 @@ export const getQqUserAvatar = async ({
 export const searchQqMusic = async ({
   key,
   limit,
-  page
+  page,
+  cookie
 }: {
   key: string
   limit?: number
   page?: number
+  cookie?: string
 }) => {
+  const normalizedCookie = normalizeQqCookie(cookie)
   const body = unwrapQqSdkResponse(
     await search({
       key,
       limit,
-      page
+      page,
+      option: normalizedCookie
+        ? { headers: { Cookie: normalizedCookie } }
+        : undefined
     }),
     'qq-music-api 搜索失败'
   )

@@ -185,6 +185,10 @@ export const useMusicSources = () => {
 
     const endpoint = platform === 'netease' ? 'wy' : 'tx'
     const url = `/api/native-api/search/${endpoint}`
+    const qqMusicCookie =
+      platform === 'tencent' && import.meta.client
+        ? localStorage.getItem('qq_music_cookie') || undefined
+        : undefined
 
     try {
       console.log(`[searchNativeMusic] Requesting ${platform} search: ${params.keywords}`)
@@ -192,7 +196,8 @@ export const useMusicSources = () => {
         params: {
           str: params.keywords,
           page: Math.floor((params.offset || 0) / (params.limit || 30)) + 1,
-          limit: params.limit || 30
+          limit: params.limit || 30,
+          cookie: qqMusicCookie
         }
       })
 

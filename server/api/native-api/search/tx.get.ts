@@ -2,7 +2,7 @@ import { createTxSearchBody, txRequest, txSignedRequest } from '../../../utils/n
 import { decodeName, formatPlayTime, sizeFormate } from '../../../utils/native_common'
 import { searchQqMusic } from '~~/server/utils/qq_music_sdk'
 
-const stripHtml = (value: unknown) => String(value || '').replace(/<[^>]*>/g, '')
+const stripHtml = (value: unknown) => String(value ?? '').replace(/[<>]/g, '')
 
 const formatSdkSearchList = (items: any[]) => {
   return items.map((item: any) => {
@@ -33,7 +33,7 @@ const formatSdkSearchList = (items: any[]) => {
     }
 
     return {
-      singer: decodeName(stripHtml(singers).replace(/、/g, '、')),
+      singer: decodeName(stripHtml(singers)),
       name: decodeName(stripHtml(item.songname || item.name || item.title)),
       albumName: decodeName(stripHtml(item.albumname || item.albumName || item.album?.name || '')),
       albumId: albumMid,
@@ -62,6 +62,7 @@ export default defineEventHandler(async (event) => {
   const str = query.str as string
   const page = parseInt((query.page as string) || '1')
   const limit = parseInt((query.limit as string) || '50') // 腾讯接口默认每页 50 条
+  const cookie = String(query.cookie || '').trim()
 
   if (!str) {
     throw createError({ statusCode: 400, message: 'Missing search query' })
@@ -72,7 +73,7 @@ export default defineEventHandler(async (event) => {
   let result: any
   try {
     try {
-      const sdkResult: any = await searchQqMusic({ key: str, page, limit })
+      const sdkResult: any = await searchQqMusic({ key: str, page, limit, cookie })
       const sdkList = sdkResult?.song?.list || sdkResult?.data?.song?.list || []
       const list = formatSdkSearchList(sdkList)
 

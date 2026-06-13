@@ -139,6 +139,7 @@ const loading = ref(false)
 const status = ref('')
 const isExpired = ref(false)
 const errorMessage = ref('')
+const checking = ref(false)
 let timer = null
 let qrPayload = null
 
@@ -202,8 +203,9 @@ const initLogin = async () => {
 }
 
 const checkStatus = async () => {
-  if (!qrPayload?.ptqrtoken || !qrPayload?.qrsig) return
+  if (!qrPayload?.ptqrtoken || !qrPayload?.qrsig || checking.value) return
 
+  checking.value = true
   try {
     const response = await $fetch('/api/native-api/qq/check-login', {
       method: 'POST',
@@ -247,6 +249,8 @@ const checkStatus = async () => {
     console.error('检查 QQ 登录状态失败:', error)
     errorMessage.value = error?.message || '检查 QQ 登录状态失败'
     stopPolling()
+  } finally {
+    checking.value = false
   }
 }
 
