@@ -37,7 +37,8 @@ const normalizeCacheUrl = (url: string) => {
 export const isKnownInvalidQqAudioUrl = (url: string | null | undefined) => {
   if (!url) return false
   const normalizedUrl = normalizeCacheUrl(url)
-  return normalizedUrl.endsWith(INVALID_QQ_AUDIO_URL_SUFFIX)
+  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0];
+  return urlWithoutParams.endsWith(INVALID_QQ_AUDIO_URL_SUFFIX)
 }
 
 const rememberMusicUrlSource = (url: string | null | undefined, source?: string) => {

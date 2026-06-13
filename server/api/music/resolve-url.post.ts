@@ -76,7 +76,8 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
 
 const validateResolvedTxUrl = (url: string, source: string) => {
   const normalizedUrl = upgradeTxAudioUrl(url.trim())
-  if (normalizedUrl.endsWith(INVALID_TX_AUDIO_URL_SUFFIX)) {
+  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0];
+  if (urlWithoutParams.endsWith(INVALID_TX_AUDIO_URL_SUFFIX)) {
     throw new Error(`${source} 返回已知无效音频链接`)
   }
 
