@@ -3,9 +3,16 @@ import {
   normalizeTxMusicId,
   upgradeTxAudioUrl
 } from '~~/server/utils/native_tx'
+import {
+  getQqCookieDiagnostic,
+  normalizeQqCookie
+} from '~~/server/utils/qq_music_sdk'
 
 const TX_MUSICU_FALLBACK_QUALITY = 8
 const TX_DISABLED_EXPERIMENTAL_SOURCES = ['grass', 'flower']
+const INVALID_TX_AUDIO_URLS = [
+  'https://panspace.kuwo.cn/2b7877721f6efffecd4abe8359325f29/6a2d0b00/resource/2149972737147268278.mp3'
+]
 
 const txQualityMap: Record<string, string> = {
   '4': '128k',
@@ -69,11 +76,38 @@ const resolveTxWithHuibq = async (songmid: string, quality: string) => {
   return upgradeTxAudioUrl(data.url)
 }
 
+const validateResolvedTxUrl = (url: string, source: string) => {
+  const normalizedUrl = upgradeTxAudioUrl(url.trim())
+  if (INVALID_TX_AUDIO_URLS.includes(normalizedUrl)) {
+    throw new Error(`${source} 返回已知无效音频链接`)
+  }
+
+  return normalizedUrl
+}
+
+const normalizeExcludedSources = (value: unknown) => {
+  if (!Array.isArray(value)) return new Set<string>()
+  return new Set(value.map((item) => String(item || '').trim()).filter(Boolean))
+}
+
+const buildResolveMeta = (
+  cookie: string,
+  attempts: Array<{ source: string; status: string; error?: string }>,
+  mediaId?: string
+) => ({
+  authUsed: Boolean(cookie),
+  authDiagnostic: getQqCookieDiagnostic(cookie),
+  resolvedMediaId: mediaId || undefined,
+  attempts
+})
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const platform = String(body?.platform || '').trim()
   const musicId = body?.musicId
   const playUrl = String(body?.playUrl || '').trim()
+  const cookie = normalizeQqCookie(String(body?.cookie || '').trim())
+  const excludedSources = normalizeExcludedSources(body?.excludeSources)
 
   if (playUrl) {
     return {
@@ -81,7 +115,10 @@ export default defineEventHandler(async (event) => {
       url: platform === 'tencent' ? upgradeTxAudioUrl(playUrl) : playUrl,
       source: 'play-url',
       normalizedMusicId: musicId ? String(musicId).trim() : '',
-      idType: 'provided-url'
+      idType: 'provided-url',
+      authUsed: Boolean(cookie),
+      authDiagnostic: getQqCookieDiagnostic(cookie),
+      attempts: [{ source: 'play-url', status: 'success' }]
     }
   }
 
@@ -91,35 +128,57 @@ export default defineEventHandler(async (event) => {
 
   const normalized = normalizeTxMusicId(musicId)
   const playableInfo = await getTxSongPlayableInfo(musicId)
+  const mediaId = String(
+    body?.mediaId ||
+      body?.strMediaMid ||
+      playableInfo.strMediaMid ||
+      ''
+  ).trim() || undefined
   const huibqQuality = normalizeTxQuality(body?.quality)
   const errors: string[] = []
+  const attempts: Array<{ source: string; status: string; error?: string }> = []
+  const tryResolvers = ['huibq', 'music.3e0.cn']
 
-  // 优先尝试支持音质参数的源，确保用户选择的音质生效
-  try {
-    const url = await resolveTxWithHuibq(playableInfo.songmid, huibqQuality)
-    return {
-      success: true,
-      url,
-      source: 'huibq',
-      normalizedMusicId: playableInfo.songmid,
-      idType: normalized.idType
+  for (const source of tryResolvers) {
+    if (excludedSources.has(source)) {
+      errors.push(`${source}: 已跳过失败源`)
+      attempts.push({ source, status: 'skipped' })
+      continue
     }
-  } catch (error: any) {
-    errors.push(`huibq: ${error?.message || error}`)
-  }
 
-  // DreamMeting 不支持音质参数，作为最后的兜底
-  try {
-    const url = await resolveTxWithDreamMeting(playableInfo.songmid)
-    return {
-      success: true,
-      url,
-      source: 'music.3e0.cn',
-      normalizedMusicId: playableInfo.songmid,
-      idType: normalized.idType
+    try {
+      if (source === 'huibq') {
+        const url = validateResolvedTxUrl(
+          await resolveTxWithHuibq(playableInfo.songmid, huibqQuality),
+          source
+        )
+        return {
+          success: true,
+          url,
+          source,
+          normalizedMusicId: playableInfo.songmid,
+          idType: normalized.idType,
+          ...buildResolveMeta(cookie, [...attempts, { source, status: 'success' }], mediaId)
+        }
+      }
+
+      const url = validateResolvedTxUrl(
+        await resolveTxWithDreamMeting(playableInfo.songmid),
+        source
+      )
+      return {
+        success: true,
+        url,
+        source,
+        normalizedMusicId: playableInfo.songmid,
+        idType: normalized.idType,
+        ...buildResolveMeta(cookie, [...attempts, { source, status: 'success' }], mediaId)
+      }
+    } catch (error: any) {
+      const message = String(error?.message || error)
+      errors.push(`${source}: ${message}`)
+      attempts.push({ source, status: 'error', error: message })
     }
-  } catch (error: any) {
-    errors.push(`music.3e0.cn: ${error?.message || error}`)
   }
 
   throw createError({

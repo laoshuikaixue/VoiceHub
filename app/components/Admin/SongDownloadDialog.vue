@@ -908,7 +908,11 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
       (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
     const options = {
       unblock: isPodcast ? false : undefined,
-      quality: quality
+      quality: quality,
+      mediaId:
+        song.sourceInfo?.strMediaMid ||
+        song.sourceInfo?.mediaId ||
+        song.sourceInfo?.mediaMid
     }
 
     const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, options)

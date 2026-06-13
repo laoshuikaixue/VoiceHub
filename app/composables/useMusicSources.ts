@@ -185,6 +185,10 @@ export const useMusicSources = () => {
 
     const endpoint = platform === 'netease' ? 'wy' : 'tx'
     const url = `/api/native-api/search/${endpoint}`
+    const qqMusicCookie =
+      platform === 'tencent' && import.meta.client
+        ? localStorage.getItem('qq_music_cookie') || undefined
+        : undefined
 
     try {
       console.log(`[searchNativeMusic] Requesting ${platform} search: ${params.keywords}`)
@@ -192,7 +196,8 @@ export const useMusicSources = () => {
         params: {
           str: params.keywords,
           page: Math.floor((params.offset || 0) / (params.limit || 30)) + 1,
-          limit: params.limit || 30
+          limit: params.limit || 30,
+          cookie: qqMusicCookie
         }
       })
 
@@ -202,6 +207,7 @@ export const useMusicSources = () => {
 
       return response.list.map((item: any) => {
         const isNetease = platform === 'netease'
+        const txSource = response.source === 'qq-music-api' ? 'qq-music-api' : 'native-tx'
         const mid = item.songmid
         const id = isNetease ? item.songmid : mid || item.songId
 
@@ -218,7 +224,7 @@ export const useMusicSources = () => {
           url: undefined,
           hasUrl: false,
           sourceInfo: {
-            source: isNetease ? 'netease-backup' : 'native-tx',
+            source: isNetease ? 'netease-backup' : txSource,
             originalId: id?.toString(),
             originalSongId: !isNetease && item.songId ? item.songId.toString() : undefined,
             fetchedAt: new Date(),
@@ -802,10 +808,12 @@ export const useMusicSources = () => {
     options?: {
       unblock?: boolean
       bilibiliCid?: string
+      excludeSources?: string[]
     }
   ): Promise<{
     success: boolean
     url?: string
+    source?: string
     error?: string
   }> => {
     // 特殊处理 netease-podcast 平台：使用网易云逻辑但禁用 unblock
@@ -919,6 +927,10 @@ export const useMusicSources = () => {
 
       // 逐个尝试音源
       for (const { source, type } of sourcesToTry) {
+        if (options?.excludeSources?.includes(source.id)) {
+          continue
+        }
+
         try {
           let url: string | null = null
 
@@ -1159,7 +1171,7 @@ export const useMusicSources = () => {
             const validation = await validatePlayUrl(url)
 
             if (validation.valid) {
-              return { success: true, url }
+              return { success: true, url, source: source.id }
             } else {
               // 继续尝试下一个音源
             }
@@ -1273,8 +1285,16 @@ export const useMusicSources = () => {
 
         if (platform === 'tencent') {
           try {
+            let qqMusicCookie = ''
+            if (import.meta.client) {
+              qqMusicCookie = localStorage.getItem('qq_music_cookie') || ''
+            }
+
             const nativeResp = await $fetch('/api/native-api/lyric/tx', {
-              params: { songmid: String(id) },
+              params: {
+                songmid: String(id),
+                ...(qqMusicCookie ? { cookie: qqMusicCookie } : {})
+              },
               timeout: 8000
             })
             if (nativeResp?.success && nativeResp?.data) {
