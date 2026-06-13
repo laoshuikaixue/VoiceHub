@@ -255,14 +255,11 @@ docker run -d \
 
 本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
 
-**一键部署命令：**
+**一键命令：**
 
 ```bash
 bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
-
-**日常管理：**
-部署完成后，可使用 `voicehub` 命令进行日常管理（需在部署时安装）
 
 ### 飞牛 (FnOS) 部署
 
