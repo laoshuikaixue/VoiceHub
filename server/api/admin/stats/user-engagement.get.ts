@@ -22,21 +22,21 @@ export default defineEventHandler(async (event) => {
     // 获取用户参与度数据
     // 1. 获取总用户数
     const totalUsersResult = await db.select({ count: count() }).from(users)
-    const totalUsers = Number(totalUsersResult[0].count || 0)
+    const totalUsers = Number(totalUsersResult[0]?.count || 0)
 
     // 2. 获取有请求歌曲的用户数
     const activeUsersResult = await db
       .select({ count: sql<number>`COUNT(DISTINCT ${songs.requesterId})` })
       .from(songs)
       .where(songWhereCondition)
-    const activeUsers = Number(activeUsersResult[0].count || 0)
+    const activeUsers = Number(activeUsersResult[0]?.count || 0)
 
     // 3. 获取用户请求歌曲的平均数量
     const totalSongRequestsResult = await db
       .select({ count: count() })
       .from(songs)
       .where(songWhereCondition)
-    const totalSongRequests = Number(totalSongRequestsResult[0].count || 0)
+    const totalSongRequests = Number(totalSongRequestsResult[0]?.count || 0)
     const averageSongsPerUser = totalUsers > 0 ? totalSongRequests / totalUsers : 0
 
     // 4. 获取最近活跃用户
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
       .select({ count: sql<number>`COUNT(DISTINCT ${songs.requesterId})` })
       .from(songs)
       .where(recentWhereCondition)
-    const recentActiveUsers = Number(recentActiveUsersResult[0].count || 0)
+    const recentActiveUsers = Number(recentActiveUsersResult[0]?.count || 0)
 
     return {
       totalUsers,
