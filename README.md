@@ -711,6 +711,7 @@ VoiceHub/
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
+│       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── oauth.ts           # OAuth工具

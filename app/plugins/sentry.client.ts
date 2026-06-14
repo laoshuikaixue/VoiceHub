@@ -1,64 +1,36 @@
 import * as Sentry from '@sentry/vue'
 import type { Event, EventHint } from '@sentry/vue'
+import {
+  getSentryEventSearchText,
+  isExpectedUpstreamMusicError
+} from '~/utils/sentryUpstreamMusicErrors'
 
 let sentryClientInitialized = false
 let sentryClientInitializing = false
 let instanceId = ''
 const TELEMETRY_STORAGE_KEY = 'voicehub.telemetryEnabled'
-const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
-  'QQ 音乐播放链接解析失败：',
-  '返回已知无效音频链接',
-  'music.3e0.cn 未返回播放重定向',
-  'Huibq 返回',
-  'Huibq 未返回播放链接',
-  'qq-music-api 未返回歌词',
-  '[tx.lyric] qq-music-api 歌词接口失败'
-]
 
-const stringifyErrorValue = (value: unknown): string => {
-  if (!value) return ''
-  if (typeof value === 'string') return value
-  if (value instanceof Error) return `${value.name}: ${value.message}`
-  if (typeof value !== 'object') return String(value)
-
-  const record = value as Record<string, unknown>
-  return [
-    record.message,
-    record.statusMessage,
-    record.statusCode,
-    stringifyErrorValue(record.cause)
-  ]
-    .filter((item) => item !== undefined && item !== null && item !== '')
-    .map(String)
-    .join(' ')
+const isTelemetryDisabledLocally = (): boolean => {
+  try {
+    return typeof localStorage !== 'undefined' &&
+      localStorage.getItem(TELEMETRY_STORAGE_KEY) === 'false'
+  } catch {
+    return false
+  }
 }
 
-const getSentryEventSearchText = (event: Event, hint?: EventHint): string => {
-  const exceptionTexts = event.exception?.values?.flatMap(value => [
-    value.type,
-    value.value
-  ]) || []
-
-  return [
-    event.message,
-    ...exceptionTexts,
-    stringifyErrorValue(hint?.originalException),
-    stringifyErrorValue(hint?.syntheticException)
-  ]
-    .filter((item) => item !== undefined && item !== null && item !== '')
-    .map(String)
-    .join('\n')
-}
-
-const isExpectedUpstreamMusicError = (text: string): boolean => {
-  const normalizedText = text.toLowerCase()
-  return EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS.some((pattern) =>
-    normalizedText.includes(pattern.toLowerCase())
-  )
+const setTelemetryStorageValue = (value: string) => {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TELEMETRY_STORAGE_KEY, value)
+    }
+  } catch {
+    // 隐私模式可能禁用 localStorage，遥测开关以服务端返回为准。
+  }
 }
 
 const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
-  if (typeof localStorage !== 'undefined' && localStorage.getItem(TELEMETRY_STORAGE_KEY) === 'false') {
+  if (isTelemetryDisabledLocally()) {
     return true
   }
 
@@ -114,11 +86,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       }>('/api/system/instance')
 
       if (!response?.data?.telemetryEnabled) {
-        localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+        setTelemetryStorageValue('false')
         return
       }
 
-      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'true')
+      setTelemetryStorageValue('true')
       instanceId = response.data.instanceId || ''
       console.log(`[VoiceHub] 遥测已开启，实例 ID: ${instanceId}（提交 Bug 时可提供此 ID 以便开发者定位）`)
 
@@ -172,7 +144,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         Sentry.setContext('instance', { instanceId })
       }
     } catch (error) {
-      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+      setTelemetryStorageValue('false')
       console.warn('[Sentry] Failed to initialize client telemetry:', error)
     } finally {
       sentryClientInitializing = false
