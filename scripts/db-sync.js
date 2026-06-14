@@ -183,7 +183,7 @@ async function checkSchemaConsistency(sql) {
     'CardCodeRedeemLog'
   ]
   const requiredColumns = {
-    User: ['status', 'statusChangedAt', 'statusChangedBy', 'email', 'emailVerified', 'emailVerifiedAt'],
+    User: ['status', 'statusChangedAt', 'statusChangedBy', 'email', 'emailVerified'],
     Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId', 'cardCodeId'],
     Schedule: ['isDraft', 'publishedAt'],
     SystemSettings: [
@@ -237,12 +237,6 @@ async function checkSchemaConsistency(sql) {
       'customOAuthAvatarField',
       'captchaEnabled',
       'captchaMaxFailures'
-    ],
-    NotificationSettings: [
-      'emailSongRequestEnabled',
-      'emailSongVotedEnabled',
-      'emailSongPlayedEnabled',
-      'emailSystemNoticeEnabled'
     ]
   }
 
