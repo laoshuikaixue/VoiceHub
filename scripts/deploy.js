@@ -157,7 +157,7 @@ async function deploy() {
         logSuccess('数据库同步成功')
         dbSyncSuccess = true
       } else {
-        logWarning('数据库同步失败')
+        throw new Error('数据库同步失败，已终止部署以避免运行时schema不一致')
       }
     } else {
       logWarning('未设置 DATABASE_URL，跳过数据库迁移')

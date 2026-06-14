@@ -47,6 +47,7 @@ function fileExists(p) {
 function ensureDrizzleFiles() {
   if (!fileExists('drizzle.config.ts')) throw new Error('Drizzle 配置文件不存在')
   if (!fileExists('app/drizzle/schema.ts')) throw new Error('Schema 文件不存在')
+  if (!fileExists('app/drizzle/migrations/meta/_journal.json')) throw new Error('Drizzle journal 文件不存在')
 }
 
 function createSqlClient() {
@@ -80,6 +81,34 @@ async function hasMigrationRecords(sql) {
   `
 
   return (result[0]?.count || 0) > 0
+}
+
+function loadMigrationJournalEntries() {
+  const journalPath = path.resolve(process.cwd(), 'app/drizzle/migrations/meta/_journal.json')
+  const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'))
+  return [...journal.entries].sort((a, b) => a.when - b.when)
+}
+
+async function seedLegacyMigrationRecords(sql) {
+  const entries = loadMigrationJournalEntries()
+
+  await sql`CREATE TABLE IF NOT EXISTS public.__drizzle_migrations__ (
+    id SERIAL PRIMARY KEY,
+    hash text NOT NULL,
+    created_at bigint
+  )`
+
+  for (const entry of entries) {
+    await sql`
+      INSERT INTO public.__drizzle_migrations__ (hash, created_at)
+      SELECT ${`legacy:${entry.tag}`}, ${entry.when}
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM public.__drizzle_migrations__
+        WHERE created_at = ${entry.when}
+      )
+    `
+  }
 }
 
 async function enumExists(sql, enumName) {
@@ -142,33 +171,107 @@ async function columnExists(sql, tableName, columnName) {
 
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
-  const checks = [
-    {
-      name: 'user_status enum type',
-      exists: () => enumExists(sql, 'user_status')
-    },
-    {
-      name: 'user_status graduate enum value',
-      exists: () => enumValueExists(sql, 'user_status', 'graduate')
-    },
-    {
-      name: 'api_keys table',
-      exists: () => tableExists(sql, 'api_keys')
-    },
-    {
-      name: 'SystemSettings.instance_id column',
-      exists: () => columnExists(sql, 'SystemSettings', 'instance_id')
-    },
-    {
-      name: 'SystemSettings.telemetryEnabled column',
-      exists: () => columnExists(sql, 'SystemSettings', 'telemetryEnabled')
-    }
+  const requiredEnums = [
+    ['user_status', ['graduate']],
+    ['card_code_status', ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID']]
   ]
+  const requiredTables = [
+    'api_keys',
+    'api_key_permissions',
+    'api_logs',
+    'CardCode',
+    'CardCodeRedeemLog'
+  ]
+  const requiredColumns = {
+    User: ['status', 'statusChangedAt', 'statusChangedBy', 'email', 'emailVerified', 'emailVerifiedAt'],
+    Song: ['playUrl', 'submissionNote', 'submissionNotePublic', 'hitRequestId', 'cardCodeId'],
+    Schedule: ['isDraft', 'publishedAt'],
+    SystemSettings: [
+      'instance_id',
+      'telemetryEnabled',
+      'smtpEnabled',
+      'smtpHost',
+      'smtpPort',
+      'smtpSecure',
+      'smtpUsername',
+      'smtpPassword',
+      'smtpFromEmail',
+      'smtpFromName',
+      'enableRequestTimeLimitation',
+      'forceBlockAllRequests',
+      'enableReplayRequests',
+      'enableCollaborativeSubmission',
+      'enableSubmissionRemarks',
+      'enableCardCodeRequests',
+      'requireCardCodeForRequests',
+      'captchaProvider',
+      'turnstileSiteKey',
+      'turnstileSecretKey',
+      'allowOAuthRegistration',
+      'oauthRedirectUri',
+      'oauthStateSecret',
+      'oauthProviders',
+      'githubOAuthEnabled',
+      'githubClientId',
+      'githubClientSecret',
+      'casdoorOAuthEnabled',
+      'casdoorServerUrl',
+      'casdoorClientId',
+      'casdoorClientSecret',
+      'casdoorOrganizationName',
+      'googleOAuthEnabled',
+      'googleClientId',
+      'googleClientSecret',
+      'customOAuthEnabled',
+      'customOAuthDisplayName',
+      'customOAuthAuthorizeUrl',
+      'customOAuthTokenUrl',
+      'customOAuthUserInfoUrl',
+      'customOAuthScope',
+      'customOAuthClientId',
+      'customOAuthClientSecret',
+      'customOAuthUserIdField',
+      'customOAuthUsernameField',
+      'customOAuthNameField',
+      'customOAuthEmailField',
+      'customOAuthAvatarField',
+      'captchaEnabled',
+      'captchaMaxFailures'
+    ],
+    NotificationSettings: [
+      'emailSongRequestEnabled',
+      'emailSongVotedEnabled',
+      'emailSongPlayedEnabled',
+      'emailSystemNoticeEnabled'
+    ]
+  }
 
   const missing = []
-  for (const check of checks) {
-    if (!(await check.exists())) {
-      missing.push(check.name)
+
+  for (const [enumName, enumValues] of requiredEnums) {
+    if (!(await enumExists(sql, enumName))) {
+      missing.push(`${enumName} enum type`)
+      continue
+    }
+
+    for (const enumValue of enumValues) {
+      if (!(await enumValueExists(sql, enumName, enumValue))) {
+        missing.push(`${enumName}.${enumValue} enum value`)
+      }
+    }
+  }
+
+  for (const tableName of requiredTables) {
+    if (!(await tableExists(sql, tableName))) {
+      missing.push(`${tableName} table`)
+    }
+  }
+
+  for (const [tableName, columns] of Object.entries(requiredColumns)) {
+    for (const columnName of columns) {
+      if (!(await columnExists(sql, tableName, columnName))) {
+        missing.push(`${tableName}.${columnName} column`)
+      }
     }
   }
 
@@ -205,7 +308,7 @@ async function main() {
       log('🔁 检测到非空库，检查schema一致性...', 'cyan')
 
       const migrationRecordsExist = await hasMigrationRecords(sql)
-      const schemaConsistent = await checkSchemaConsistency(sql)
+      let schemaConsistent = await checkSchemaConsistency(sql)
 
       if (!schemaConsistent) {
         warn('数据库schema不完整，尝试使用 push --force 进行修复...', 'cyan')
@@ -218,10 +321,22 @@ async function main() {
           err('数据库schema修复失败')
           process.exit(1)
         }
+        schemaConsistent = await checkSchemaConsistency(sql)
+        if (!schemaConsistent) {
+          err('push 后数据库schema仍不完整')
+          process.exit(1)
+        }
         ok('schema修复成功')
+
+        if (!migrationRecordsExist) {
+          warn('检测到 legacy 数据库迁移记录为空，写入迁移基线记录以便后续版本继续 migrate。')
+          await seedLegacyMigrationRecords(sql)
+          ok('legacy 迁移基线记录写入完成')
+        }
       } else if (!migrationRecordsExist) {
         warn('检测到 legacy 数据库：schema 已存在，但迁移记录为空。跳过 migrate 以避免重放历史迁移。')
-        ok('legacy schema 检查通过')
+        await seedLegacyMigrationRecords(sql)
+        ok('legacy schema 检查通过，迁移基线记录写入完成')
       } else {
         log('🔁 数据库schema一致，尝试执行 migrate 同步...', 'cyan')
 
