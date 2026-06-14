@@ -5,6 +5,57 @@ let sentryClientInitialized = false
 let sentryClientInitializing = false
 let instanceId = ''
 const TELEMETRY_STORAGE_KEY = 'voicehub.telemetryEnabled'
+const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
+  'QQ 音乐播放链接解析失败：',
+  '返回已知无效音频链接',
+  'music.3e0.cn 未返回播放重定向',
+  'Huibq 返回',
+  'Huibq 未返回播放链接',
+  'qq-music-api 未返回歌词',
+  '[tx.lyric] qq-music-api 歌词接口失败'
+]
+
+const stringifyErrorValue = (value: unknown): string => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (value instanceof Error) return `${value.name}: ${value.message}`
+  if (typeof value !== 'object') return String(value)
+
+  const record = value as Record<string, unknown>
+  return [
+    record.message,
+    record.statusMessage,
+    record.statusCode,
+    stringifyErrorValue(record.cause)
+  ]
+    .filter((item) => item !== undefined && item !== null && item !== '')
+    .map(String)
+    .join(' ')
+}
+
+const getSentryEventSearchText = (event: Event, hint?: EventHint): string => {
+  const exceptionTexts = event.exception?.values?.flatMap(value => [
+    value.type,
+    value.value
+  ]) || []
+
+  return [
+    event.message,
+    ...exceptionTexts,
+    stringifyErrorValue(hint?.originalException),
+    stringifyErrorValue(hint?.syntheticException)
+  ]
+    .filter((item) => item !== undefined && item !== null && item !== '')
+    .map(String)
+    .join('\n')
+}
+
+const isExpectedUpstreamMusicError = (text: string): boolean => {
+  const normalizedText = text.toLowerCase()
+  return EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS.some((pattern) =>
+    normalizedText.includes(pattern.toLowerCase())
+  )
+}
 
 const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
   if (typeof localStorage !== 'undefined' && localStorage.getItem(TELEMETRY_STORAGE_KEY) === 'false') {
@@ -17,6 +68,11 @@ const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
   }
 
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return true
+  }
+
+  // 外部音源接口波动属于预期失败，本地交互提示即可。
+  if (isExpectedUpstreamMusicError(getSentryEventSearchText(event, hint))) {
     return true
   }
 
@@ -72,7 +128,10 @@ export default defineNuxtPlugin((nuxtApp) => {
           ? 'vercel'
           : 'self-hosted-node'
 
-      const integrations = [Sentry.browserTracingIntegration({ router: nuxtApp.$router })]
+      const sentryRouter = nuxtApp.$router as NonNullable<
+        Parameters<typeof Sentry.browserTracingIntegration>[0]
+      >['router']
+      const integrations = [Sentry.browserTracingIntegration({ router: sentryRouter })]
       integrations.push(
         Sentry.consoleLoggingIntegration({
           levels: import.meta.dev ? ['log', 'warn', 'error'] : ['error']

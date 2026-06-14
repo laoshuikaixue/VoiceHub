@@ -16,6 +16,64 @@ const getDeploymentTarget = (): string => {
 }
 
 const INSTANCE_ONLINE_TRANSACTION = 'voicehub.instance.online'
+const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
+  'QQ 音乐播放链接解析失败：',
+  '返回已知无效音频链接',
+  'music.3e0.cn 未返回播放重定向',
+  'Huibq 返回',
+  'Huibq 未返回播放链接',
+  'qq-music-api 未返回歌词',
+  '[tx.lyric] qq-music-api 歌词接口失败'
+]
+
+const stringifyErrorValue = (value: unknown): string => {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (value instanceof Error) return `${value.name}: ${value.message}`
+  if (typeof value !== 'object') return String(value)
+
+  const record = value as Record<string, unknown>
+  return [
+    record.message,
+    record.statusMessage,
+    record.statusCode,
+    stringifyErrorValue(record.cause)
+  ]
+    .filter((item) => item !== undefined && item !== null && item !== '')
+    .map(String)
+    .join(' ')
+}
+
+const getSentryEventSearchText = (
+  event: Record<string, any>,
+  hint?: Record<string, any>
+): string => {
+  const exceptionValues = event.exception?.values || []
+  const exceptionTexts = exceptionValues.flatMap((value: Record<string, unknown>) => [
+    value.type,
+    value.value
+  ])
+  const logEntry = event.logentry || {}
+
+  return [
+    event.message,
+    logEntry.message,
+    ...(Array.isArray(logEntry.params) ? logEntry.params : []),
+    ...exceptionTexts,
+    stringifyErrorValue(hint?.originalException),
+    stringifyErrorValue(hint?.syntheticException)
+  ]
+    .filter((item) => item !== undefined && item !== null && item !== '')
+    .map(String)
+    .join('\n')
+}
+
+const isExpectedUpstreamMusicError = (text: string): boolean => {
+  const normalizedText = text.toLowerCase()
+  return EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS.some((pattern) =>
+    normalizedText.includes(pattern.toLowerCase())
+  )
+}
 
 const shouldCaptureServerError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') return true
@@ -24,6 +82,11 @@ const shouldCaptureServerError = (error: unknown): boolean => {
 
   // Drop expected business/auth errors (4xx) to avoid Sentry noise.
   if (statusCode && statusCode >= 400 && statusCode < 500) {
+    return false
+  }
+
+  // 外部音源接口波动属于预期失败，本地保留日志和接口返回即可。
+  if (isExpectedUpstreamMusicError(stringifyErrorValue(error))) {
     return false
   }
 
@@ -125,8 +188,16 @@ export default defineNitroPlugin((nitroApp) => {
             : samplingContext.inheritOrSampleWith(sentryConfig.tracesSampleRate)
         },
         sendDefaultPii: false,
-        beforeSend(event) {
-          return isTelemetryEnabledCached() ? event : null
+        beforeSend(event, hint) {
+          if (!isTelemetryEnabledCached()) {
+            return null
+          }
+
+          if (isExpectedUpstreamMusicError(getSentryEventSearchText(event, hint))) {
+            return null
+          }
+
+          return event
         },
         beforeSendTransaction(event) {
           return isTelemetryEnabledCached() ? event : null
