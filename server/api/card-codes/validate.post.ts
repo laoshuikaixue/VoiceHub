@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '需要登录才能验证点歌券' })
   }
 
-  const body = await readBody(event)
+  const body = (await readBody(event)) || {}
   const code = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
   if (!code) {
     throw createError({ statusCode: 400, message: '请输入点歌券' })

@@ -420,7 +420,7 @@
                       >
                         <Icon
                           :size="12"
-                          :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? 'check' : 'plus'"
+                          :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? (cardCodeValidation.valid === false ? 'close' : 'check') : 'plus'"
                         />
                         <span>{{ mobileCardCodeLabel }}</span>
                       </button>
@@ -542,7 +542,7 @@
                   <span class="flex min-w-0 items-center gap-2">
                     <Icon
                       :size="14"
-                      :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? 'check' : 'plus'"
+                      :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? (cardCodeValidation.valid === false ? 'close' : 'check') : 'plus'"
                     />
                     <span class="truncate">{{ cardCodeStatusText }}</span>
                   </span>
@@ -1498,7 +1498,7 @@ const closeCardCodeModal = () => {
 }
 
 const validateCardCode = async (code) => {
-  const normalizedCode = typeof code === 'string' ? code.trim() : ''
+  const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : ''
   if (!normalizedCode) {
     resetCardCodeValidation()
     return !requireCardCodeForRequests.value
@@ -1539,7 +1539,7 @@ const validateCardCode = async (code) => {
 }
 
 const saveCardCode = async () => {
-  const draft = cardCodeDraft.value.trim()
+  const draft = cardCodeDraft.value.trim().toUpperCase()
   if (requireCardCodeForRequests.value && !draft) {
     if (window.$showNotification) {
       window.$showNotification('请先填写点歌券', 'warning')
@@ -1582,6 +1582,11 @@ const ensureCardCodeForSubmit = async () => {
       window.$showNotification('请先填写点歌券', 'warning')
     }
     return false
+  }
+
+  // 已验证过且未变动则跳过重复验证
+  if (cardCodeValidation.value.valid === true) {
+    return true
   }
 
   return await validateCardCode(trimmedCardCode.value)
