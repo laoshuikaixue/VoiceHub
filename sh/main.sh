@@ -8,6 +8,7 @@ COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
 # 数据库固定账号库名（可自行修改）
 PG_USER="user"
 PG_DB_NAME="voicehub"
+GHCR_HOST="ghcr.nju.edu.cn"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -18,9 +19,11 @@ NC='\033[0m'
 
 # ==================== root 提权 ====================
 if [ "$(id -u)" -ne 0 ]; then
-    echo -e "${YELLOW}当前非 root 用户${NC}"
+    echo -e "权限：root 用户：${RED}非 root${NC}"
     exit 1
     exec sudo "$0" "$@"
+else
+    echo -e "权限：root 用户：${GREEN}正常${NC}"
 fi
 
 # ==================== 系统信息展示 ====================
@@ -96,6 +99,15 @@ else
     echo -e "${YELLOW}警告：未找到openssl，降级使用Bash内置RANDOM生成${NC}"
     JWT_SECRET=$(gen_bash_random 64)
     PG_PASSWORD=$(gen_bash_random 32)
+fi
+
+# ==================== 检查网络 ====================
+echo -e "网络：${GHCR_HOST} ...${NC}"
+if ping -c 4 -W 5 "${GHCR_HOST}" >/dev/null 2>&1; then
+    echo -e "网络：${GHCR_HOST} ${GREEN}连通正常${NC}"
+else
+    echo -e "网络：${GHCR_HOST} ${RED}失败，网络无法连通该镜像仓库，退出执行${NC}"
+    exit 1
 fi
 
 # ==================== 生成配置 ====================
@@ -182,6 +194,25 @@ status_service() {
     cd "${COMPOSE_DIR}" && ${DOCKER_COMPOSE_CMD} ps
 }
 
+# ==================== 检查镜像函数 ====================
+check_image_outdated() {
+    local IMAGE_FULL="ghcr.nju.edu.cn/laoshuikaixue/voicehub:latest"
+
+    if ! docker images -q "${IMAGE_FULL}" &>/dev/null; then
+        echo -e "镜像版本：${YELLOW}本地无该镜像，部署时自动拉取最新版${NC}"
+        return 2
+    fi
+
+    # 尝试预拉取检测有无更新，不实际下载完整镜像
+    if docker pull -q "${IMAGE_FULL}" --dry-run &>/dev/null; then
+        echo -e "镜像版本：${GREEN}已是最新${NC}"
+        return 0
+    else
+        echo -e "镜像版本：${RED}检测到远端存在新版本镜像，本地已落后${NC}"
+        return 1
+    fi
+}
+
 # ==================== 重新部署功能 ====================
 redeploy_service() {
     echo -e "\n${RED}=================================================="
@@ -195,7 +226,8 @@ redeploy_service() {
     fi
 
     # 1. 停止服务
-    stop_service
+    echo -e "${YELLOW}停止旧的 voicehub (若有)${NC}"
+    cd "${COMPOSE_DIR}" && ${DOCKER_COMPOSE_CMD} down 2>/dev/null || true
     sleep 2
 
     # 2. 删除旧配置文件
@@ -232,26 +264,29 @@ show_menu() {
     echo -e "\n========================================"
     echo -e "           VoiceHub 管理菜单"
     echo -e "========================================"
-    echo -e "  1. 启动服务"
-    echo -e "  2. 停止服务"
-    echo -e "  3. 重启服务"
-    echo -e "  4. 查看服务状态"
-    echo -e "  5. 重新部署"
+    echo -e "  1. 重新部署"
+    echo -e "  2. 启动服务"
+    echo -e "  3. 停止服务"
+    echo -e "  4. 重启服务"
+    echo -e "  5. 查看服务状态"
+    echo -e "  6. 检查本地镜像是否落后"
     echo -e "  0. 退出脚本"
     echo -e "========================================"
     echo -n "请输入数字选择操作："
 }
+
 
 # 循环菜单
 while true; do
     show_menu
     read -r choice
     case $choice in
-        1) start_service ;;
-        2) stop_service ;;
-        3) restart_service ;;
-        4) status_service ;;
-        5) redeploy_service ;;
+        1) redeploy_service ;;
+        2) start_service ;;
+        3) stop_service ;;
+        4) restart_service ;;
+        5) status_service ;;
+        6) check_image_outdated ;;
         0) echo -e "\n${GREEN}退出脚本${NC}"; exit 0 ;;
         *) echo -e "\n${RED}输入错误，请输入有效数字！${NC}" ;;
     esac
