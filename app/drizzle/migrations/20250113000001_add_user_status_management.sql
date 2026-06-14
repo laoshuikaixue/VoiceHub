@@ -1,10 +1,14 @@
 -- 创建用户状态枚举类型
-CREATE TYPE "public"."user_status" AS ENUM('active', 'withdrawn');--> statement-breakpoint
+DO $$ BEGIN
+  CREATE TYPE "public"."user_status" AS ENUM('active', 'withdrawn');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 
 -- 添加用户状态相关字段到用户表
-ALTER TABLE "User" ADD COLUMN "status" "user_status" DEFAULT 'active' NOT NULL;--> statement-breakpoint
-ALTER TABLE "User" ADD COLUMN "statusChangedAt" timestamp DEFAULT now();--> statement-breakpoint
-ALTER TABLE "User" ADD COLUMN "statusChangedBy" integer;--> statement-breakpoint
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "status" "user_status" DEFAULT 'active' NOT NULL;--> statement-breakpoint
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "statusChangedAt" timestamp DEFAULT now();--> statement-breakpoint
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "statusChangedBy" integer;--> statement-breakpoint
 
 -- 创建用户状态变更日志表
 CREATE TABLE IF NOT EXISTS "user_status_logs" (
@@ -23,11 +27,29 @@ CREATE INDEX IF NOT EXISTS "idx_user_status_logs_user_id" ON "user_status_logs" 
 CREATE INDEX IF NOT EXISTS "idx_user_status_logs_created_at" ON "user_status_logs" USING btree ("created_at" DESC);--> statement-breakpoint
 
 -- 添加外键约束
-ALTER TABLE "User" ADD CONSTRAINT "User_statusChangedBy_User_id_fk" FOREIGN KEY ("statusChangedBy") REFERENCES "User"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user_status_logs" ADD CONSTRAINT "user_status_logs_user_id_User_id_fk" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user_status_logs" ADD CONSTRAINT "user_status_logs_operator_id_User_id_fk" FOREIGN KEY ("operator_id") REFERENCES "User"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+DO $$ BEGIN
+  ALTER TABLE "User" ADD CONSTRAINT "User_statusChangedBy_User_id_fk" FOREIGN KEY ("statusChangedBy") REFERENCES "User"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  ALTER TABLE "user_status_logs" ADD CONSTRAINT "user_status_logs_user_id_User_id_fk" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
+DO $$ BEGIN
+  ALTER TABLE "user_status_logs" ADD CONSTRAINT "user_status_logs_operator_id_User_id_fk" FOREIGN KEY ("operator_id") REFERENCES "User"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;--> statement-breakpoint
 
 -- 为现有用户初始化状态变更日志
 INSERT INTO "user_status_logs" ("user_id", "old_status", "new_status", "reason", "created_at")
 SELECT "id", NULL, 'active', '系统迁移初始化', "createdAt"
-FROM "User";
+FROM "User"
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "user_status_logs"
+  WHERE "user_status_logs"."user_id" = "User"."id"
+    AND "user_status_logs"."reason" = '系统迁移初始化'
+);
