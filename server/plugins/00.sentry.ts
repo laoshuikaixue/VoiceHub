@@ -1,5 +1,10 @@
 import * as Sentry from '@sentry/node'
 import type { H3Event } from 'h3'
+import {
+  getSentryEventSearchText,
+  isExpectedUpstreamMusicError,
+  stringifyErrorValue
+} from '~~/app/utils/sentryUpstreamMusicErrors'
 import { getInstanceIdInfo } from '../utils/instance-id'
 import { isTelemetryEnabled, isTelemetryEnabledCached } from '../utils/telemetry'
 
@@ -24,6 +29,11 @@ const shouldCaptureServerError = (error: unknown): boolean => {
 
   // Drop expected business/auth errors (4xx) to avoid Sentry noise.
   if (statusCode && statusCode >= 400 && statusCode < 500) {
+    return false
+  }
+
+  // 外部音源接口波动属于预期失败，本地保留日志和接口返回即可。
+  if (isExpectedUpstreamMusicError(stringifyErrorValue(error))) {
     return false
   }
 
@@ -125,8 +135,16 @@ export default defineNitroPlugin((nitroApp) => {
             : samplingContext.inheritOrSampleWith(sentryConfig.tracesSampleRate)
         },
         sendDefaultPii: false,
-        beforeSend(event) {
-          return isTelemetryEnabledCached() ? event : null
+        beforeSend(event, hint) {
+          if (!isTelemetryEnabledCached()) {
+            return null
+          }
+
+          if (isExpectedUpstreamMusicError(getSentryEventSearchText(event, hint))) {
+            return null
+          }
+
+          return event
         },
         beforeSendTransaction(event) {
           return isTelemetryEnabledCached() ? event : null
