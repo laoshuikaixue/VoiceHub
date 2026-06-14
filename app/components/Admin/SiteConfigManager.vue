@@ -244,9 +244,7 @@
               </div>
 
               <div>
-                <label :class="labelClass"
-                  >{{ activeLimitTab === 'daily' ? '单日' : (activeLimitTab === 'weekly' ? '单周' : '单月') }}投稿上限</label
-                >
+                <label :class="labelClass">{{ currentLimitLabel }}</label>
                 <div class="relative">
                   <input
                     v-model.number="currentLimitValue"
@@ -429,9 +427,9 @@
                 >
               </div>
               <label for="telemetry-enabled" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">启用错误追踪与遥测</p>
+                <p class="text-xs font-bold text-zinc-200">{{ locale.telemetryEnabled }}</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  默认开启。开启后，系统会向 Sentry 发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。<strong class="text-zinc-400">不会收集任何个人身份信息、用户数据或业务内容</strong>。
+                  {{ locale.telemetryEnabledDesc }} <strong class="text-zinc-400">{{ locale.telemetryPrivacy }}</strong>
                 </p>
               </label>
             </div>
@@ -486,10 +484,10 @@ import {
 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-const { siteConfig: locale } = useLocale()
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
+const { siteConfig: locale } = useLocale()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -597,6 +595,17 @@ const currentLimitValue = computed({
       formData.value.weeklySubmissionLimit = val
     }
   }
+})
+
+const currentLimitLabel = computed(() => {
+  const limitTypeLabel =
+    activeLimitTab.value === 'daily'
+      ? locale.value.dailyLimitLabel
+      : activeLimitTab.value === 'weekly'
+        ? locale.value.weeklyLimitLabel
+        : locale.value.monthlyLimitLabel
+
+  return `${locale.value.limitLabelPrefix}${limitTypeLabel}${locale.value.limitLabelSuffix}`
 })
 
 // 加载配置

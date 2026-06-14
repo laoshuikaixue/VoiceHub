@@ -1,39 +1,78 @@
-/**
- * 统一语言入口（i18n 轻量抽象）。
- *
- * 设计目的：
- * 1. 避免组件直接静态导入 `~/utils/locale/zh-CN`，与具体语言实现解耦。
- * 2. 后续引入 vue-i18n / 其它语言包时，只需调整本文件选择策略，组件零修改。
- * 3. 当前默认返回中文；预留 `currentLocale` ref 以便后续接入用户偏好或浏览器语言。
- */
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useState } from '#imports'
+import * as enUS from './en-US'
 import * as zhCN from './zh-CN'
 
-export type Locale = 'zh-CN' | string
+export const supportedLocales = [
+  { code: 'zh-CN', label: '简体中文' },
+  { code: 'en-US', label: 'English' }
+] as const
 
-const messages: Record<string, any> = {
-  'zh-CN': zhCN
+export type Locale = typeof supportedLocales[number]['code']
+type LocaleSection<T extends Record<string, string>> = {
+  [Key in keyof T]: string
 }
 
-const currentLocale = ref<Locale>('zh-CN')
+export type LocaleMessages = {
+  siteConfig: LocaleSection<typeof zhCN.siteConfig>
+  changePassword: LocaleSection<typeof zhCN.changePassword>
+  common: LocaleSection<typeof zhCN.common>
+}
 
-/**
- * 切换当前语言（预留 API，后续接入 vue-i18n 时直接调用此函数）。
- * 传入未知语言码时静默忽略并保持当前语言，避免破坏页面渲染。
- */
+const LOCALE_STORAGE_KEY = 'voicehub.locale'
+const FALLBACK_LOCALE: Locale = 'zh-CN'
+
+const messages: Record<Locale, LocaleMessages> = {
+  'zh-CN': zhCN,
+  'en-US': enUS
+}
+
+const isSupportedLocale = (locale: string | null | undefined): locale is Locale =>
+  supportedLocales.some((item) => item.code === locale)
+
+const resolveInitialLocale = (): Locale => {
+  if (!import.meta.client) return FALLBACK_LOCALE
+
+  const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+  if (isSupportedLocale(savedLocale)) return savedLocale
+
+  const browserLocale = window.navigator.language
+  if (isSupportedLocale(browserLocale)) return browserLocale
+  if (browserLocale?.toLowerCase().startsWith('zh')) return 'zh-CN'
+  if (browserLocale?.toLowerCase().startsWith('en')) return 'en-US'
+
+  return FALLBACK_LOCALE
+}
+
+const getCurrentLocale = () => useState<Locale>('voicehub-locale', resolveInitialLocale)
+
+export function initLocale() {
+  if (!import.meta.client) return
+  setLocale(resolveInitialLocale())
+}
+
 export function setLocale(locale: Locale) {
-  if (messages[locale]) {
-    currentLocale.value = locale
+  if (!isSupportedLocale(locale)) return
+
+  const currentLocale = getCurrentLocale()
+  currentLocale.value = locale
+  if (import.meta.client) {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+    document.documentElement.lang = locale
   }
 }
 
 export function useLocale() {
-  // 返回按当前语言动态解析的具名模块，避免组件直接耦合到具体语言包。
-  // 采用 getter 实现响应式：currentLocale 变化时访问 locale.siteConfig 等属性也会随之更新。
+  const currentLocale = getCurrentLocale()
+  const currentMessages = computed(() => messages[currentLocale.value] ?? messages[FALLBACK_LOCALE])
+
   return {
-    currentLocale: currentLocale.value,
+    currentLocale,
+    supportedLocales,
+    initLocale,
     setLocale,
-    get siteConfig() { return messages[currentLocale.value]?.siteConfig ?? messages['zh-CN'].siteConfig },
-    get changePassword() { return messages[currentLocale.value]?.changePassword ?? messages['zh-CN'].changePassword }
+    siteConfig: computed(() => currentMessages.value.siteConfig),
+    changePassword: computed(() => currentMessages.value.changePassword),
+    common: computed(() => currentMessages.value.common)
   }
 }

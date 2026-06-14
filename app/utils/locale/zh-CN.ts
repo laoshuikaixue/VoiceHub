@@ -51,6 +51,8 @@ export const siteConfig = {
   dailyLimitLabel: '单日',
   weeklyLimitLabel: '单周',
   monthlyLimitLabel: '单月',
+  limitLabelPrefix: '',
+  limitLabelSuffix: '投稿上限',
 
   // 安全与隐私
   securityPrivacy: '安全与隐私设置',
@@ -72,6 +74,9 @@ export const siteConfig = {
   showBlacklistKeywordsDesc: '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc: '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
+  telemetryEnabled: '启用错误追踪与遥测',
+  telemetryEnabledDesc: '默认开启。开启后，系统会向 Sentry 发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。',
+  telemetryPrivacy: '不会收集任何个人身份信息、用户数据或业务内容。',
   configWarning: '站点基础配置在保存后将立即对所有终端生效。请在修改关键业务逻辑（如投稿限额）前确保已知晓对现有用户的影响。',
 
   // 投稿须知
@@ -104,4 +109,9 @@ export const changePassword = {
   forgotPassword: '忘记密码',
   logout: '退出登录',
   logoutConfirm: '确定要退出登录吗？退出后需要重新登录才能继续操作。'
+} as const
+
+export const common = {
+  language: '语言',
+  workerIn: '响应耗时'
 } as const

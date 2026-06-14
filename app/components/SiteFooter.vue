@@ -29,7 +29,7 @@
       </span>
       <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
       <span v-else class="footer-item">© {{ currentYear }} {{ copyrightOwner }}</span>
-      <span class="footer-item">Worker in {{ responseTime }}ms</span>
+      <span class="footer-item">{{ common.workerIn }} {{ responseTime }}ms</span>
       <span class="footer-item">
         <a class="voicehub-link" :href="repoUrl" rel="noopener noreferrer" target="_blank">
           {{ systemName }} v{{ systemVersion }}
@@ -48,6 +48,24 @@
           >
         </a>
       </span>
+      <span class="footer-item language-item">
+        <label class="sr-only" for="footer-language-select">{{ common.language }}</label>
+        <select
+          id="footer-language-select"
+          :value="currentLocale"
+          class="language-select"
+          :aria-label="common.language"
+          @change="handleLocaleChange"
+        >
+          <option
+            v-for="localeOption in supportedLocales"
+            :key="localeOption.code"
+            :value="localeOption.code"
+          >
+            {{ localeOption.label }}
+          </option>
+        </select>
+      </span>
     </div>
   </div>
 </template>
@@ -55,11 +73,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/security'
+import { useLocale, type Locale } from '~/utils/locale'
 import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
 const { siteTitle, icp: icpNumber, gonganNumber, showBeianIcon } = useSiteConfig()
 const config = useRuntimeConfig()
+const { common, currentLocale, initLocale, setLocale, supportedLocales } = useLocale()
 
 // 自动生成公安联网备案链接
 const gonganLink = computed(() => {
@@ -81,7 +101,15 @@ const currentYear = getSyncedDate().getFullYear()
 
 const responseTime = ref(0)
 
+const handleLocaleChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  setLocale(target.value as Locale)
+}
+
 onMounted(() => {
+  initLocale()
+  document.documentElement.lang = currentLocale.value
+
   if (typeof window !== 'undefined' && window.performance) {
     // 使用 requestAnimationFrame 确保在渲染后计算
     requestAnimationFrame(() => {
@@ -165,6 +193,44 @@ onMounted(() => {
   vertical-align: middle;
   margin-right: 4px;
   display: inline-block;
+}
+
+.language-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.language-select {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 22px 4px 8px;
+}
+
+.language-select:focus {
+  border-color: rgba(255, 255, 255, 0.42);
+  outline: none;
+}
+
+.language-select option {
+  background: #111111;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.sr-only {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {

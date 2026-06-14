@@ -10,16 +10,16 @@
           </div>
 
           <div v-if="isFirstLogin" class="welcome-message">
-            <h2>欢迎使用VoiceHub</h2>
-            <p>为了保障您的账号安全，请设置一个新的密码</p>
+            <h2>{{ locale.welcomeTitle }}</h2>
+            <p>{{ locale.welcomeDesc }}</p>
           </div>
           <div v-else class="security-message">
-            <h2>账号安全</h2>
-            <p>定期更新密码有助于保护您的账号安全</p>
+            <h2>{{ locale.securityTitle }}</h2>
+            <p>{{ locale.securityDesc }}</p>
           </div>
 
           <div class="security-tips">
-            <h3>密码安全建议</h3>
+            <h3>{{ locale.tipsTitle }}</h3>
             <div class="tip-list">
               <div class="tip-item">
                 <svg
@@ -31,7 +31,7 @@
                 >
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
-                <span>至少8个字符</span>
+                <span>{{ locale.tipMinLength }}</span>
               </div>
               <div class="tip-item">
                 <svg
@@ -43,7 +43,7 @@
                 >
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
-                <span>包含大小写字母</span>
+                <span>{{ locale.tipCase }}</span>
               </div>
               <div class="tip-item">
                 <svg
@@ -55,7 +55,7 @@
                 >
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
-                <span>包含数字和特殊字符</span>
+                <span>{{ locale.tipSpecial }}</span>
               </div>
             </div>
           </div>
@@ -66,8 +66,8 @@
       <div class="form-section">
         <div class="form-container">
           <div class="form-header">
-            <h2>{{ isFirstLogin ? '设置新密码' : '修改密码' }}</h2>
-            <p>{{ isFirstLogin ? '请设置一个安全的密码' : '更新您的登录密码' }}</p>
+            <h2>{{ isFirstLogin ? locale.setNewPassword : locale.changePasswordTitle }}</h2>
+            <p>{{ isFirstLogin ? locale.setNewPasswordDesc : locale.updatePasswordDesc }}</p>
           </div>
 
           <ClientOnly>
@@ -108,10 +108,11 @@
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import { computed, ref } from 'vue'
 import logo from '~~/public/images/logo.svg'
-import { changePassword as locale } from '~/utils/locale/zh-CN'
+import { useLocale } from '~/utils/locale'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
+const { changePassword: locale } = useLocale()
 
 const auth = useAuth()
 const router = useRouter()
@@ -123,7 +124,7 @@ const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordC
 
 const handleLogout = async () => {
   if (!import.meta.client) return
-  const confirmed = window.confirm(locale.logoutConfirm)
+  const confirmed = window.confirm(locale.value.logoutConfirm)
   if (!confirmed) return
   await auth.logout()
 }
