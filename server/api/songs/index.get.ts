@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
 
     // 获取系统设置
     const systemSettingsData = await db
-      .select()
+      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
       .from(systemSettings)
       .limit(1)
       .then((result) => result[0])
@@ -223,10 +223,10 @@ export default defineEventHandler(async (event) => {
         semester: songs.semester,
         createdAt: songs.createdAt,
         updatedAt: songs.updatedAt,
-          cardCodeId: songs.cardCodeId,
         cover: songs.cover,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
+        cardCodeId: songs.cardCodeId,
         playUrl: songs.playUrl,
         submissionNote: songs.submissionNote,
         submissionNotePublic: songs.submissionNotePublic,
