@@ -1,7 +1,6 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { CacheService } from '../../../services/cacheService'
-import { ensureCardCodeSystemSettingsColumns } from '../../../utils/system-settings-defaults'
 import { maskSystemSettingsSecrets } from './secretMask'
 
 export default defineEventHandler(async (event) => {
@@ -23,8 +22,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    await ensureCardCodeSystemSettingsColumns()
-
     // 尝试从缓存获取系统设置
     const cacheService = CacheService.getInstance()
     let settings = await cacheService.getSystemSettings()
