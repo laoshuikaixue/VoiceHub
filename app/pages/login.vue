@@ -9,7 +9,7 @@
             <img
               v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()"
               :src="schoolLogoHomeUrl"
-              alt="学校Logo"
+              :alt="locale.schoolLogoAlt"
               class="school-logo"
             >
           </div>
@@ -30,9 +30,12 @@
 import { onMounted, computed, ref } from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
 import logo from '~~/public/images/logo.svg'
+import { useLocale } from '~/utils/locale'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber } = useSiteConfig()
+const { pages } = useLocale()
+const locale = computed(() => pages.value.login)
 // 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value
@@ -47,7 +50,7 @@ onMounted(async () => {
 
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
-    document.title = `登录 | ${siteTitle.value}`
+    document.title = `${locale.value.title} | ${siteTitle.value}`
   }
 })
 </script>

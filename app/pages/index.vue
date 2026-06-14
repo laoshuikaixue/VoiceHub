@@ -19,7 +19,7 @@
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
             <div class="logo-divider" />
-            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo" >
+            <img :src="proxiedSchoolLogoUrl" :alt="locale.schoolLogoAlt" class="school-logo" >
           </div>
         </div>
 
@@ -28,7 +28,7 @@
           <ClientOnly>
             <div v-if="isClientAuthenticated" class="user-info">
               <div class="user-details-desktop">
-                <span class="user-name">{{ user?.name || '用户' }}</span>
+                <span class="user-name">{{ user?.name || locale.userFallback }}</span>
                 <span v-if="isAdmin" class="user-badge admin">{{ roleName }}</span>
                 <span v-else class="user-badge">{{ userClassInfo }}</span>
               </div>
@@ -49,15 +49,15 @@
                 <div v-if="showUserActions" class="user-actions-dropdown">
                   <NuxtLink class="action-item" to="/account">
                     <Icon name="user" :size="16" />
-                    <span>账号管理</span>
+                    <span>{{ locale.account }}</span>
                   </NuxtLink>
                   <NuxtLink v-if="isAdmin" class="action-item" to="/dashboard">
                     <Icon name="settings" :size="16" />
-                    <span>管理后台</span>
+                    <span>{{ locale.dashboard }}</span>
                   </NuxtLink>
                   <button class="action-item logout" @click="handleLogout">
                     <Icon name="logout" :size="16" />
-                    <span>退出登录</span>
+                    <span>{{ locale.logout }}</span>
                   </button>
                 </div>
               </Transition>
@@ -66,7 +66,7 @@
             <div v-else class="login-options">
               <NuxtLink class="login-btn" to="/login">
                 <Icon name="user" :size="16" />
-                <span>登录</span>
+                <span>{{ locale.login }}</span>
               </NuxtLink>
             </div>
           </ClientOnly>
@@ -77,7 +77,7 @@
         <div class="title-container">
           <h2 class="main-title">{{ siteTitle }}</h2>
           <div class="title-divider" />
-          <span class="sub-title">VoiceHub 校园广播系统</span>
+          <span class="sub-title">{{ locale.subtitle }}</span>
         </div>
       </div>
 
@@ -91,7 +91,7 @@
             @click="handleTabClick('schedule')"
           >
             <Icon class="tab-icon" name="calendar" :size="20" />
-            <span class="tab-text">播出排期</span>
+            <span class="tab-text">{{ locale.tabs.schedule }}</span>
           </div>
           <div
             :class="{ active: activeTab === 'songs' }"
@@ -99,7 +99,7 @@
             @click="handleTabClick('songs')"
           >
             <Icon class="tab-icon" name="music" :size="20" />
-            <span class="tab-text">歌曲列表</span>
+            <span class="tab-text">{{ locale.tabs.songs }}</span>
           </div>
           <div
             :class="{ active: activeTab === 'request' }"
@@ -107,7 +107,7 @@
             @click="handleTabClick('request')"
           >
             <Icon class="tab-icon" name="search" :size="20" />
-            <span class="tab-text">投稿歌曲</span>
+            <span class="tab-text">{{ locale.tabs.request }}</span>
           </div>
           <ClientOnly>
             <div
@@ -125,7 +125,7 @@
                 />
               </div>
               <span class="tab-text">
-                消息
+                {{ locale.tabs.notification }}
                 <span
                   v-if="isClientAuthenticated && hasUnreadNotifications"
                   class="notification-badge-desktop"
@@ -135,7 +135,7 @@
             <template #fallback>
               <div class="section-tab disabled" data-tab="notification">
                 <Icon class="tab-icon" name="message-circle" :size="20" />
-                <span class="tab-text">消息</span>
+                <span class="tab-text">{{ locale.tabs.notification }}</span>
               </div>
             </template>
           </ClientOnly>
@@ -193,15 +193,15 @@
               <div v-if="!isClientAuthenticated" class="login-required-container">
                 <div class="login-required-content">
                   <div class="login-icon">🔒</div>
-                  <h3>需要登录</h3>
-                  <p>您需要登录才能查看通知</p>
-                  <button class="login-button" @click="navigateToLogin">立即登录</button>
+                  <h3>{{ locale.loginRequired }}</h3>
+                  <p>{{ locale.loginRequiredDesc }}</p>
+                  <button class="login-button" @click="navigateToLogin">{{ locale.loginNow }}</button>
                 </div>
               </div>
               <div v-else class="notification-container">
                 <!-- 标题和设置按钮 -->
                 <div class="notification-header">
-                  <h2 class="notification-title">通知中心</h2>
+                  <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
                   <button class="settings-icon" @click="toggleNotificationSettings">
                     <svg
                       fill="none"
@@ -226,14 +226,14 @@
                 <div class="notification-list">
                   <div v-if="notificationsLoading" class="loading-indicator">
                     <div class="loading-spinner" />
-                    <span>加载中...</span>
+                    <span>{{ locale.loading }}</span>
                   </div>
 
                   <div v-else-if="userNotifications.length === 0" class="empty-notification">
                     <div class="empty-icon">
                       <Icon :size="48" color="#6b7280" name="bell" />
                     </div>
-                    <p>暂无通知</p>
+                    <p>{{ locale.noNotifications }}</p>
                   </div>
 
                   <Transition mode="out-in" name="notification-list-fade">
@@ -292,16 +292,16 @@
                           </div>
                           <div class="notification-title-row">
                             <div class="notification-title">
-                              <span v-if="notification.type === 'SONG_SELECTED'">歌曲已选中</span>
+                              <span v-if="notification.type === 'SONG_SELECTED'">{{ locale.notificationTypes.SONG_SELECTED }}</span>
                               <span v-else-if="notification.type === 'SONG_PLAYED'"
-                                >歌曲已播放</span
+                                >{{ locale.notificationTypes.SONG_PLAYED }}</span
                               >
-                              <span v-else-if="notification.type === 'SONG_VOTED'">收到新投票</span>
+                              <span v-else-if="notification.type === 'SONG_VOTED'">{{ locale.notificationTypes.SONG_VOTED }}</span>
                               <span v-else-if="notification.type === 'SONG_REJECTED'"
-                                >歌曲被驳回</span
+                                >{{ locale.notificationTypes.SONG_REJECTED }}</span
                               >
                               <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
-                                联合投稿邀请
+                                {{ locale.notificationTypes.COLLABORATION_INVITE }}
                                 <span
                                   v-if="notification.handled"
                                   :class="[
@@ -315,17 +315,17 @@
                                 >
                                   {{
                                     notification.status === 'ACCEPTED'
-                                      ? '- 已接受'
+                                      ? locale.inviteStatus.accepted
                                       : notification.status === 'INVALID'
-                                        ? '- 已失效'
-                                        : '- 已拒绝'
+                                        ? locale.inviteStatus.invalid
+                                        : locale.inviteStatus.rejected
                                   }}
                                 </span>
                               </span>
                               <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
-                                >联合投稿回复</span
+                                >{{ locale.notificationTypes.COLLABORATION_RESPONSE }}</span
                               >
-                              <span v-else>系统通知</span>
+                              <span v-else>{{ locale.notificationTypes.SYSTEM }}</span>
                               <span v-if="!notification.read" class="unread-indicator" />
                             </div>
                             <div class="notification-time">
@@ -348,21 +348,21 @@
                               class="action-button accept-btn"
                               @click.stop="handleCollaborationReply(notification, true)"
                             >
-                              {{ notification.processing ? '处理中...' : '接受邀请' }}
+                              {{ notification.processing ? locale.processing : locale.acceptInvite }}
                             </button>
                             <button
                               :disabled="notification.processing"
                               class="action-button reject-btn"
                               @click.stop="handleCollaborationReply(notification, false)"
                             >
-                              拒绝
+                              {{ locale.reject }}
                             </button>
                           </div>
                         </div>
                         <div class="notification-card-actions">
                           <button
                             class="action-button delete"
-                            title="删除"
+                            :title="locale.delete"
                             @click.stop="deleteNotification(notification.id)"
                           >
                             <svg
@@ -381,7 +381,7 @@
                                 d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
                               />
                             </svg>
-                            <span>删除</span>
+                            <span>{{ locale.delete }}</span>
                           </button>
                         </div>
                       </div>
@@ -396,16 +396,18 @@
                 >
                   <div class="pagination-info">
                     <span class="pagination-text">
-                      共 {{ notificationsService.totalCount.value }} 条通知， 第
-                      {{ notificationsService.currentPage.value }} /
-                      {{ notificationsService.totalPages.value }} 页
+                      {{ locale.paginationInfo(
+                        notificationsService.totalCount.value,
+                        notificationsService.currentPage.value,
+                        notificationsService.totalPages.value
+                      ) }}
                     </span>
                   </div>
 
                   <div class="pagination-controls">
                     <!-- 每页显示数量选择器 -->
                     <div class="page-size-selector">
-                      <label for="pageSize">每页显示：</label>
+                      <label for="pageSize">{{ locale.pageSize }}</label>
                       <CustomSelect
                         id="pageSize"
                         :model-value="notificationsService.pageSize.value"
@@ -423,7 +425,7 @@
                           notificationsService.isPaginationLoading.value
                         "
                         class="page-nav-button"
-                        title="上一页"
+                        :title="locale.previousPage"
                         @click="notificationsService.prevPage()"
                       >
                         <svg
@@ -465,7 +467,7 @@
                           notificationsService.isPaginationLoading.value
                         "
                         class="page-nav-button"
-                        title="下一页"
+                        :title="locale.nextPage"
                         @click="notificationsService.nextPage()"
                       >
                         <svg
@@ -491,7 +493,7 @@
                     class="pagination-loading"
                   >
                     <div class="loading-spinner" />
-                    <span>加载中...</span>
+                    <span>{{ locale.loading }}</span>
                   </div>
                 </div>
 
@@ -503,10 +505,10 @@
                     class="action-button-large"
                     @click="markAllNotificationsAsRead"
                   >
-                    全部标记为已读
+                    {{ locale.markAllRead }}
                   </button>
                   <button class="action-button-large danger" @click="clearAllNotifications">
-                    清空所有消息
+                    {{ locale.clearAllMessages }}
                   </button>
                 </div>
 
@@ -557,9 +559,9 @@
                   >
                     <Icon name="bell" :size="20" />
                   </div>
-                  点歌规则
+                  {{ locale.rulesTitle }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">投稿前请仔细阅读以下规则</p>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
                 class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -575,7 +577,7 @@
                   class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
                 >
                   <Icon name="message-circle" :size="12" />
-                  投稿须知
+                  {{ locale.submissionGuidelines }}
                 </h4>
                 <div
                   v-if="submissionGuidelines"
@@ -589,15 +591,15 @@
                 >
                   <div class="flex gap-3 text-sm text-zinc-400 font-medium">
                     <span class="text-blue-500 font-black">01</span>
-                    <p>投稿时无需加入书名号</p>
+                    <p>{{ locale.defaultRules[0] }}</p>
                   </div>
                   <div class="flex gap-3 text-sm text-zinc-400 font-medium">
                     <span class="text-blue-500 font-black">02</span>
-                    <p>除DJ外，其他类型歌曲均接收（包括小语种）</p>
+                    <p>{{ locale.defaultRules[1] }}</p>
                   </div>
                   <div class="flex gap-3 text-sm text-zinc-400 font-medium">
                     <span class="text-blue-500 font-black">03</span>
-                    <p>禁止投递含有违规内容的歌曲</p>
+                    <p>{{ locale.defaultRules[2] }}</p>
                   </div>
                 </div>
               </div>
@@ -607,7 +609,7 @@
                   class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
                 >
                   <Icon name="calendar" :size="12" />
-                  播放时间
+                  {{ locale.playbackTime }}
                 </h4>
                 <div
                   class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4"
@@ -618,7 +620,7 @@
                     <Icon name="clock" :size="24" />
                   </div>
                   <div>
-                    <p class="text-sm font-black text-zinc-100">每天夜自修静班前</p>
+                    <p class="text-sm font-black text-zinc-100">{{ locale.playbackTimeDesc }}</p>
                     <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
                       PLAYBACK TIME
                     </p>
@@ -632,7 +634,7 @@
                 class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
                 @click="showRules = false"
               >
-                我知道了
+                {{ locale.gotIt }}
               </button>
             </div>
           </div>
@@ -654,10 +656,13 @@ import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
 const router = useRouter()
+const { pages } = useLocale()
+const locale = computed(() => pages.value.home)
 
 // 站点配置
 const {
@@ -677,20 +682,14 @@ const user = computed(() => auth?.user?.value || null)
 
 const roleName = computed(() => {
   const role = user.value?.role
-  const map = {
-    ADMIN: '管理员',
-    SUPER_ADMIN: '超级管理员',
-    SONG_ADMIN: '审歌员',
-    USER: '普通用户'
-  }
-  return map[role] || '管理员'
+  return locale.value.roles[role] || locale.value.defaultRole
 })
 
 const userClassInfo = computed(() => {
   if (user.value?.grade && user.value?.class) {
     return `${user.value.grade} ${user.value.class}`
   }
-  return '同学'
+  return locale.value.classFallback
 })
 
 const songs = useSongs()
@@ -723,20 +722,9 @@ const BOOT_PROGRESS = {
 const MIN_BOOT_TIME_MS = 720
 const BOOT_EXIT_DELAY_MS = 180
 const BOOT_SLOW_THRESHOLD_MS = 8000
-const BOOT_MESSAGES = {
-  START: '正在准备音乐播放环境',
-  CONFIG: '正在加载站点配置',
-  AUTH: '正在校验登录状态',
-  SLOW_NETWORK: '网络有点慢，仍在同步数据',
-  CONTENT: '正在同步排期与歌曲列表',
-  FALLBACK: '正在使用可用数据继续打开首页',
-  FINALIZING: '正在整理播放数据',
-  COMPLETE: '加载完成，正在打开首页'
-}
-
 const showBootLoading = ref(true)
 const bootProgress = ref(BOOT_PROGRESS.INITIAL)
-const bootMessage = ref(BOOT_MESSAGES.START)
+const bootMessage = ref(locale.value.bootMessages.START)
 let bootSlowTimer = null
 
 const hasShownBootLoading = useState('hasShownBootLoading', () => false)
@@ -764,7 +752,7 @@ const waitForFirstPaint = async () => {
 }
 
 const finishBootLoading = async (startedAt) => {
-  setBootState({ progress: BOOT_PROGRESS.COMPLETE, message: BOOT_MESSAGES.COMPLETE })
+  setBootState({ progress: BOOT_PROGRESS.COMPLETE, message: locale.value.bootMessages.COMPLETE })
 
   const elapsed = Date.now() - startedAt
   const restTime = Math.max(0, MIN_BOOT_TIME_MS - elapsed)
@@ -833,12 +821,12 @@ const hasUnreadNotifications = computed(() => {
 })
 const showNotificationSettings = ref(false)
 
-const pageSizeOptions = [
-  { label: '5条', value: 5 },
-  { label: '10条', value: 10 },
-  { label: '20条', value: 20 },
-  { label: '50条', value: 50 }
-]
+const pageSizeOptions = computed(() => [
+  { label: locale.value.pageSizeOptions.five, value: 5 },
+  { label: locale.value.pageSizeOptions.ten, value: 10 },
+  { label: locale.value.pageSizeOptions.twenty, value: 20 },
+  { label: locale.value.pageSizeOptions.fifty, value: 50 }
+])
 
 const notificationSettings = ref({
   songSelectedNotify: true,
@@ -917,11 +905,11 @@ const deleteNotification = async (id) => {
   pendingAction.value = 'delete'
   pendingId.value = id
   confirmDialogConfig.value = {
-    title: '删除消息',
-    message: '确定要删除此消息吗？',
+    title: locale.value.confirm.deleteTitle,
+    message: locale.value.confirm.deleteMessage,
     type: 'warning',
-    confirmText: '删除',
-    cancelText: '取消'
+    confirmText: locale.value.delete,
+    cancelText: locale.value.confirm.cancel
   }
   showConfirmDialog.value = true
 }
@@ -930,11 +918,11 @@ const deleteNotification = async (id) => {
 const clearAllNotifications = async () => {
   pendingAction.value = 'clearAll'
   confirmDialogConfig.value = {
-    title: '清空所有消息',
-    message: '确定要清空所有消息吗？此操作不可撤销。',
+    title: locale.value.confirm.clearTitle,
+    message: locale.value.confirm.clearMessage,
     type: 'danger',
-    confirmText: '清空',
-    cancelText: '取消'
+    confirmText: locale.value.confirm.clearConfirm,
+    cancelText: locale.value.confirm.cancel
   }
   showConfirmDialog.value = true
 }
@@ -945,8 +933,8 @@ const confirmDialogConfig = ref({
   title: '',
   message: '',
   type: 'warning',
-  confirmText: '确定',
-  cancelText: '取消'
+  confirmText: locale.value.confirm.ok,
+  cancelText: locale.value.confirm.cancel
 })
 const pendingAction = ref('')
 const pendingId = ref(null)
@@ -1032,22 +1020,22 @@ const formatNotificationTime = (timeString) => {
 
   // 小于1分钟
   if (diff < 60000) {
-    return '刚刚'
+    return locale.value.time.justNow
   }
 
   // 小于1小时
   if (diff < 3600000) {
-    return `${Math.floor(diff / 60000)}分钟前`
+    return locale.value.time.minutesAgo(Math.floor(diff / 60000))
   }
 
   // 小于24小时
   if (diff < 86400000) {
-    return `${Math.floor(diff / 3600000)}小时前`
+    return locale.value.time.hoursAgo(Math.floor(diff / 3600000))
   }
 
   // 小于30天
   if (diff < 2592000000) {
-    return `${Math.floor(diff / 86400000)}天前`
+    return locale.value.time.daysAgo(Math.floor(diff / 86400000))
   }
 
   // 大于30天，显示具体日期
@@ -1098,10 +1086,9 @@ const getCurrentDate = () => {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const date = now.getDate()
-  const weekDays = ['日', '一', '二', '三', '四', '五', '六']
-  const weekDay = weekDays[now.getDay()]
+  const weekDay = locale.value.time.weekdays[now.getDay()]
 
-  return `${year}年${month}月${date}日 周${weekDay}`
+  return locale.value.time.dateFormat(year, month, date, weekDay)
 }
 
 // RequestForm组件引用
@@ -1134,7 +1121,7 @@ watch(
   siteTitle,
   (newSiteTitle) => {
     if (typeof document !== 'undefined' && newSiteTitle) {
-      document.title = `首页 | ${newSiteTitle}`
+      document.title = `${locale.value.titleHome} | ${newSiteTitle}`
     }
   },
   { immediate: true }
@@ -1161,24 +1148,24 @@ onMounted(async () => {
       bootSlowTimer = setTimeout(() => {
         setBootState({
           progress: Math.max(bootProgress.value, BOOT_PROGRESS.SLOW_NETWORK),
-          message: BOOT_MESSAGES.SLOW_NETWORK
+          message: locale.value.bootMessages.SLOW_NETWORK
         })
       }, BOOT_SLOW_THRESHOLD_MS)
 
       await waitForFirstPaint()
     }
 
-    setBootState({ progress: BOOT_PROGRESS.CONFIG, message: BOOT_MESSAGES.CONFIG })
+    setBootState({ progress: BOOT_PROGRESS.CONFIG, message: locale.value.bootMessages.CONFIG })
     await initSiteConfig()
 
-    setBootState({ progress: BOOT_PROGRESS.AUTH, message: BOOT_MESSAGES.AUTH })
+    setBootState({ progress: BOOT_PROGRESS.AUTH, message: locale.value.bootMessages.AUTH })
     const currentUser = await auth.initAuth()
 
     if (typeof document !== 'undefined' && siteTitle.value) {
-      document.title = `首页 | ${siteTitle.value}`
+      document.title = `${locale.value.titleHome} | ${siteTitle.value}`
     }
 
-    setBootState({ progress: BOOT_PROGRESS.CONTENT, message: BOOT_MESSAGES.CONTENT })
+    setBootState({ progress: BOOT_PROGRESS.CONTENT, message: locale.value.bootMessages.CONTENT })
     if (isClientAuthenticated.value) {
       hasInitializedAuthData.value = true
       await Promise.allSettled([
@@ -1193,7 +1180,7 @@ onMounted(async () => {
       await Promise.allSettled([songs.fetchSongCount(), songs.fetchPublicSchedules()])
     }
 
-    setBootState({ progress: BOOT_PROGRESS.FINALIZING, message: BOOT_MESSAGES.FINALIZING })
+    setBootState({ progress: BOOT_PROGRESS.FINALIZING, message: locale.value.bootMessages.FINALIZING })
     await updateSongCounts()
 
     const setupRefreshInterval = () => {
@@ -1237,7 +1224,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('首页初始化失败:', error)
     if (isFirstVisit) {
-      setBootState({ progress: BOOT_PROGRESS.FALLBACK, message: BOOT_MESSAGES.FALLBACK })
+      setBootState({ progress: BOOT_PROGRESS.FALLBACK, message: locale.value.bootMessages.FALLBACK })
     }
     await Promise.allSettled([songs.fetchPublicSchedules(), songs.fetchSongCount()])
     await updateSongCounts()
@@ -1306,7 +1293,7 @@ const proxiedSchoolLogoUrl = computed(() => {
 const handleRequest = async (songData) => {
   if (!auth || !isClientAuthenticated.value) {
     if (window.$showNotification) {
-      window.$showNotification('需要登录才能投稿歌曲', 'error')
+      window.$showNotification(locale.value.messages.requestLogin, 'error')
     }
     showRequestModal.value = false
     return false
@@ -1319,7 +1306,7 @@ const handleRequest = async (songData) => {
     if (result) {
       // 显示投稿成功通知
       if (window.$showNotification) {
-        window.$showNotification(`《${songData.title} - ${songData.artist}》投稿成功！`, 'success')
+        window.$showNotification(locale.value.messages.requestSuccess(songData.title, songData.artist), 'success')
       }
 
       // 强制刷新歌曲列表
@@ -1344,7 +1331,7 @@ const handleRequest = async (songData) => {
   } catch (err) {
     if (window.$showNotification) {
       window.$showNotification(
-        err?.data?.message || err?.message || err?.statusMessage || '点歌失败',
+        err?.data?.message || err?.message || err?.statusMessage || locale.value.messages.requestFailed,
         'error'
       )
     }
@@ -1355,7 +1342,7 @@ const handleRequest = async (songData) => {
 // 处理投票
 const handleVote = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification('请先登录后再投票', 'error')
+    showNotification(locale.value.messages.voteLogin, 'error')
     return
   }
 
@@ -1386,7 +1373,7 @@ const handleVote = async (song) => {
 
 const handleCancelReplay = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification('请先登录才能取消重播申请', 'error')
+    showNotification(locale.value.messages.cancelReplayLogin, 'error')
     return
   }
 
@@ -1401,7 +1388,7 @@ const handleCancelReplay = async (song) => {
 
 const handleRequestReplay = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification('请先登录才能申请重播', 'error')
+    showNotification(locale.value.messages.requestReplayLogin, 'error')
     return
   }
 
@@ -1417,7 +1404,7 @@ const handleRequestReplay = async (song) => {
 // 处理撤回投稿
 const handleWithdraw = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification('请先登录才能撤回投稿', 'error')
+    showNotification(locale.value.messages.withdrawLogin, 'error')
     return
   }
 
@@ -1527,7 +1514,10 @@ const handleCollaborationReply = async (notification, accept) => {
     // notification.message += accept ? ' (已接受)' : ' (已拒绝)'
 
     if (window.$showNotification) {
-      window.$showNotification(accept ? '已接受联合投稿邀请' : '已拒绝联合投稿邀请', 'success')
+      window.$showNotification(
+        accept ? locale.value.messages.inviteAccepted : locale.value.messages.inviteRejected,
+        'success'
+      )
     }
 
     // 标记通知为已读
@@ -1542,7 +1532,7 @@ const handleCollaborationReply = async (notification, accept) => {
     console.error('处理联合投稿邀请失败:', error)
     if (window.$showNotification) {
       window.$showNotification(
-        error?.data?.message || error?.message || error?.statusMessage || '操作失败',
+        error?.data?.message || error?.message || error?.statusMessage || locale.value.messages.operationFailed,
         'error'
       )
     }
@@ -1554,11 +1544,13 @@ const handleCollaborationReply = async (notification, accept) => {
 // 格式化刷新间隔
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
-    return `${seconds}秒`
+    return locale.value.time.seconds(seconds)
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return remainingSeconds > 0 ? `${minutes}分${remainingSeconds}秒` : `${minutes}分钟`
+    return remainingSeconds > 0
+      ? locale.value.time.minutesSeconds(minutes, remainingSeconds)
+      : locale.value.time.minutes(minutes)
   }
 }
 
@@ -1597,7 +1589,7 @@ const navigateToLogin = () => {
 // 显示登录提示
 const showLoginNotice = () => {
   if (window.$showNotification) {
-    window.$showNotification('需要登录才能查看通知', 'info')
+    window.$showNotification(locale.value.messages.notificationLogin, 'info')
   }
 }
 
@@ -1612,7 +1604,7 @@ const checkPasswordChangeRequired = async (user = null) => {
       setTimeout(() => {
         if (window.$showNotification) {
           window.$showNotification(
-            '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。',
+            locale.value.messages.changePasswordTip,
             'info',
             true,
             8000 // 显示8秒

@@ -13,9 +13,9 @@
             <ArrowLeft :size="20" />
           </button>
           <div>
-            <h1 class="text-xl font-black text-zinc-100 tracking-tight">账号管理</h1>
+            <h1 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h1>
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">
-              Account Management
+              {{ locale.subtitle }}
             </p>
           </div>
         </div>
@@ -84,8 +84,8 @@
                 <LinkIcon :size="20" class="text-purple-500" />
               </div>
               <div>
-                <h2 class="text-base font-black text-zinc-100">第三方账号绑定</h2>
-                <p class="text-xs text-zinc-500 mt-0.5">绑定社交账号以便更快捷地登录系统</p>
+                <h2 class="text-base font-black text-zinc-100">{{ locale.oauthBinding }}</h2>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ locale.oauthBindingDesc }}</p>
               </div>
             </div>
             <AuthOAuthBindingCard />
@@ -98,8 +98,8 @@
                 <Lock :size="20" class="text-blue-500" />
               </div>
               <div>
-                <h2 class="text-base font-black text-zinc-100">修改密码</h2>
-                <p class="text-xs text-zinc-500 mt-0.5">为了您的账号安全，建议定期更换高强度密码</p>
+                <h2 class="text-base font-black text-zinc-100">{{ locale.changePassword }}</h2>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ locale.changePasswordDesc }}</p>
               </div>
             </div>
             <div class="max-w-md">
@@ -122,12 +122,15 @@ import { computed, onMounted } from 'vue'
 import { ArrowLeft, User, Link as LinkIcon, Lock } from 'lucide-vue-next'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { showToast } = useToast()
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
+const { pages } = useLocale()
+const locale = computed(() => pages.value.account)
 
 const hasOAuthProviders = computed(() => {
   return oauthProviders.value.length > 0
@@ -167,13 +170,7 @@ const userInitials = computed(() => {
 
 const roleName = computed(() => {
   const role = auth.user.value?.role
-  const map = {
-    ADMIN: '管理员',
-    SUPER_ADMIN: '超级管理员',
-    SONG_ADMIN: '审歌员',
-    USER: '普通用户'
-  }
-  return map[role] || role
+  return locale.value.roles[role] || role
 })
 
 const goBack = () => {

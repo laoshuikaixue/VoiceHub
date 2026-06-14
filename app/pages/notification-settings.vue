@@ -13,9 +13,9 @@
             <ArrowLeft :size="20" />
           </button>
           <div>
-            <h1 class="text-xl font-black text-zinc-100 tracking-tight">消息设置</h1>
+            <h1 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h1>
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">
-              Notification Settings
+              {{ locale.subtitle }}
             </p>
           </div>
         </div>
@@ -25,8 +25,8 @@
           class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
           @click="saveSettings"
         >
-          <template v-if="saving"> <Loader2 :size="14" class="animate-spin" /> 保存中... </template>
-          <template v-else> <Save :size="14" /> 保存设置 </template>
+          <template v-if="saving"> <Loader2 :size="14" class="animate-spin" /> {{ locale.saving }} </template>
+          <template v-else> <Save :size="14" /> {{ locale.saveSettings }} </template>
         </button>
       </div>
     </div>
@@ -34,7 +34,7 @@
     <div class="max-w-[1000px] mx-auto px-4">
       <div v-if="loading" class="flex flex-col items-center justify-center py-32">
         <Loader2 :size="32" class="text-blue-500 animate-spin mb-4" />
-        <p class="text-zinc-500 text-sm font-medium">加载设置中...</p>
+        <p class="text-zinc-500 text-sm font-medium">{{ locale.loading }}</p>
       </div>
 
       <div v-else class="space-y-8">
@@ -45,8 +45,8 @@
               <Bell :size="20" class="text-blue-500" />
             </div>
             <div>
-              <h2 class="text-base font-black text-zinc-100">站内消息设置</h2>
-              <p class="text-xs text-zinc-500 mt-0.5">配置您希望在系统内接收的消息类型</p>
+              <h2 class="text-base font-black text-zinc-100">{{ locale.inAppTitle }}</h2>
+              <p class="text-xs text-zinc-500 mt-0.5">{{ locale.inAppDesc }}</p>
             </div>
           </div>
 
@@ -54,8 +54,8 @@
             <!-- 歌曲被选中消息 -->
             <div :class="itemClass">
               <div class="flex-1">
-                <h3 class="text-sm font-bold text-zinc-200">歌曲被选中消息</h3>
-                <p class="text-[11px] text-zinc-500 mt-1">当您投稿的歌曲被选中播放时通知您</p>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.songSelectedTitle }}</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">{{ locale.songSelectedDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -69,8 +69,8 @@
             <!-- 歌曲已播放消息 -->
             <div :class="itemClass">
               <div class="flex-1">
-                <h3 class="text-sm font-bold text-zinc-200">歌曲已播放消息</h3>
-                <p class="text-[11px] text-zinc-500 mt-1">当您投稿的歌曲播放完成时通知您</p>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.songPlayedTitle }}</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">{{ locale.songPlayedDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -84,8 +84,8 @@
             <!-- 歌曲获得投票消息 -->
             <div :class="itemClass">
               <div class="flex-1">
-                <h3 class="text-sm font-bold text-zinc-200">歌曲获得投票消息</h3>
-                <p class="text-[11px] text-zinc-500 mt-1">当您投稿的歌曲获得投票时通知您</p>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.songVotedTitle }}</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">{{ locale.songVotedDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -99,8 +99,8 @@
             <!-- 系统通知 -->
             <div :class="itemClass">
               <div class="flex-1">
-                <h3 class="text-sm font-bold text-zinc-200">系统通知</h3>
-                <p class="text-[11px] text-zinc-500 mt-1">接收系统重要通知和公告</p>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.systemTitle }}</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">{{ locale.systemDesc }}</p>
               </div>
               <div class="shrink-0">
                 <input
@@ -114,8 +114,8 @@
             <!-- 投票阈值设置 -->
             <div :class="[itemClass, 'md:col-span-1']">
               <div class="flex-1">
-                <h3 class="text-sm font-bold text-zinc-200">投票通知阈值</h3>
-                <p class="text-[11px] text-zinc-500 mt-1">当投票数达到此阈值时才发送通知</p>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.voteThresholdTitle }}</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">{{ locale.voteThresholdDesc }}</p>
               </div>
               <div class="flex items-center gap-2">
                 <input
@@ -125,15 +125,15 @@
                   min="1"
                   class="w-16 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:border-blue-500/30"
                 >
-                <span class="text-[10px] font-black text-zinc-600 uppercase">票</span>
+                <span class="text-[10px] font-black text-zinc-600 uppercase">{{ locale.voteUnit }}</span>
               </div>
             </div>
 
             <!-- 通知刷新间隔 -->
             <div :class="[itemClass, 'md:col-span-1']">
               <div class="flex-1">
-                <h3 class="text-sm font-bold text-zinc-200">通知刷新间隔</h3>
-                <p class="text-[11px] text-zinc-500 mt-1">设置系统自动检查新通知的时间间隔</p>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.refreshTitle }}</h3>
+                <p class="text-[11px] text-zinc-500 mt-1">{{ locale.refreshDesc }}</p>
               </div>
               <div class="flex items-center gap-3">
                 <input
@@ -159,8 +159,8 @@
               <Link :size="20" class="text-purple-500" />
             </div>
             <div>
-              <h2 class="text-base font-black text-zinc-100">社交账号绑定</h2>
-              <p class="text-xs text-zinc-500 mt-0.5">绑定您的社交账号以接收实时推送通知</p>
+              <h2 class="text-base font-black text-zinc-100">{{ locale.socialTitle }}</h2>
+              <p class="text-xs text-zinc-500 mt-0.5">{{ locale.socialDesc }}</p>
             </div>
           </div>
 
@@ -171,7 +171,7 @@
                 <div class="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
                   <Mail :size="16" class="text-zinc-400" />
                 </div>
-                <h3 class="text-sm font-bold text-zinc-200">邮箱消息通知</h3>
+                <h3 class="text-sm font-bold text-zinc-200">{{ locale.emailNotifyTitle }}</h3>
               </div>
 
               <div class="space-y-4">
@@ -181,7 +181,7 @@
                       <p
                         class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1"
                       >
-                        当前绑定邮箱
+                        {{ locale.currentEmail }}
                       </p>
                       <p class="text-sm font-medium text-zinc-200">{{ userEmail }}</p>
                     </div>
@@ -193,20 +193,20 @@
                           : 'bg-amber-500/10 text-amber-500'
                       ]"
                     >
-                      {{ emailVerified ? '已验证' : '待验证' }}
+                      {{ emailVerified ? locale.verified : locale.pendingVerify }}
                     </div>
                   </div>
                 </div>
 
                 <!-- 未绑定状态 -->
                 <div v-if="!userEmail" class="space-y-3">
-                  <p class="text-xs text-zinc-500">绑定邮箱后，您可以接收到实时的邮件通知提醒。</p>
+                  <p class="text-xs text-zinc-500">{{ locale.emailUnboundDesc }}</p>
                   <div class="flex flex-col sm:flex-row gap-2">
                     <input
                       v-model="newEmail"
                       :disabled="bindingEmail"
                       type="email"
-                      placeholder="请输入邮箱地址"
+                      :placeholder="locale.emailPlaceholder"
                       class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
                     >
                     <button
@@ -214,7 +214,7 @@
                       class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap"
                       @click="bindEmail"
                     >
-                      {{ bindingEmail ? '请稍候...' : '立即绑定' }}
+                      {{ bindingEmail ? locale.pleaseWait : locale.bindNow }}
                     </button>
                   </div>
                 </div>
@@ -226,7 +226,7 @@
                   >
                     <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
                     <p class="text-[11px] text-zinc-500 leading-relaxed">
-                      验证码已发送至您的邮箱，请在 5 分钟内完成验证。若未收到邮件，请检查垃圾箱。
+                      {{ locale.emailCodeSentTip }}
                     </p>
                   </div>
 
@@ -235,7 +235,7 @@
                       v-model="emailCode"
                       type="text"
                       maxlength="6"
-                      placeholder="输入 6 位数字验证码"
+                      :placeholder="locale.emailCodePlaceholder"
                       :class="[
                         'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                         emailCodeError
@@ -251,21 +251,21 @@
                         class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
                         @click="verifyEmailCode"
                       >
-                        {{ bindingEmail ? '验证中...' : '确认验证' }}
+                        {{ bindingEmail ? locale.verifying : locale.confirmVerify }}
                       </button>
                       <button
                         :disabled="resendingEmail"
                         class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                         @click="resendVerificationEmail"
                       >
-                        {{ resendingEmail ? '发送中...' : '重新发送' }}
+                        {{ resendingEmail ? locale.sending : locale.resend }}
                       </button>
                     </div>
                     <button
                       class="w-full py-2 text-zinc-600 hover:text-zinc-400 text-[10px] font-black uppercase tracking-widest transition-all"
                       @click="changeEmail"
                     >
-                      更换邮箱地址
+                      {{ locale.changeEmailAddress }}
                     </button>
                   </div>
                 </div>
@@ -276,14 +276,14 @@
                     class="flex-1 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
                     @click="changeEmail"
                   >
-                    更换邮箱
+                    {{ locale.changeEmail }}
                   </button>
                   <button
                     :disabled="unbindingEmail"
                     class="flex-1 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
                     @click="unbindEmail"
                   >
-                    {{ unbindingEmail ? '正在解绑...' : '解绑邮箱' }}
+                    {{ unbindingEmail ? locale.unbinding : locale.unbindEmail }}
                   </button>
                 </div>
               </div>
@@ -296,7 +296,7 @@
                   <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
                     <Smartphone :size="16" class="text-blue-500" />
                   </div>
-                  <h3 class="text-sm font-bold text-zinc-200">MeoW App 推送</h3>
+                  <h3 class="text-sm font-bold text-zinc-200">{{ locale.meowPushTitle }}</h3>
                 </div>
               </div>
 
@@ -310,7 +310,7 @@
                       <p
                         class="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mb-1"
                       >
-                        当前绑定 ID
+                        {{ locale.currentBoundId }}
                       </p>
                       <p class="text-sm font-black text-blue-500 tracking-tight">
                         {{ localSettings.meowUserId }}
@@ -319,7 +319,7 @@
                     <div
                       class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider"
                     >
-                      已连接
+                      {{ locale.connected }}
                     </div>
                   </div>
                 </div>
@@ -327,7 +327,7 @@
                 <!-- 未绑定状态 -->
                 <div v-if="!localSettings.meowUserId" class="space-y-3">
                   <p class="text-xs text-zinc-500">
-                    通过 MeoW 客户端接收更及时的系统通知和歌曲状态变更提醒。
+                    {{ locale.meowDesc }}
                   </p>
 
                   <!-- 第一步：输入用户ID -->
@@ -336,7 +336,7 @@
                       v-model="meowUserId"
                       :disabled="binding"
                       type="text"
-                      placeholder="请输入 MeoW 用户 ID"
+                      :placeholder="locale.meowIdPlaceholder"
                       class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
                     >
                     <button
@@ -344,7 +344,7 @@
                       class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-900/20 whitespace-nowrap"
                       @click="sendVerificationCode"
                     >
-                      {{ binding ? '发送中...' : '发送验证码' }}
+                      {{ binding ? locale.sending : locale.sendCode }}
                     </button>
                   </div>
 
@@ -355,9 +355,9 @@
                     >
                       <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
                       <p class="text-[11px] text-zinc-500 leading-relaxed">
-                        验证码已发送至 MeoW ID:
+                        {{ locale.meowCodeSentPrefix }}
                         <span class="font-bold text-zinc-200">{{ meowUserId }}</span
-                        >，请在客户端查收。
+                        >{{ locale.meowCodeSentSuffix }}
                       </p>
                     </div>
 
@@ -366,7 +366,7 @@
                         v-model="verificationCode"
                         type="text"
                         maxlength="6"
-                        placeholder="输入 6 位验证码"
+                        :placeholder="locale.codePlaceholder"
                         :class="[
                           'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                           verificationCodeError
@@ -382,14 +382,14 @@
                           class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
                           @click="verifyAndBind"
                         >
-                          {{ binding ? '验证中...' : '确认绑定' }}
+                          {{ binding ? locale.verifying : locale.confirmBind }}
                         </button>
                         <button
                           :disabled="binding"
                           class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                           @click="cancelVerification"
                         >
-                          取消
+                          {{ locale.cancel }}
                         </button>
                       </div>
                     </div>
@@ -402,7 +402,7 @@
                     class="w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
                     @click="showUnbindConfirm"
                   >
-                    解除 MeoW 账号绑定
+                    {{ locale.unbindMeow }}
                   </button>
                 </div>
               </div>
@@ -426,20 +426,13 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   Bell,
   Mail,
   Link,
-  MessageSquare,
-  Clock,
   ArrowLeft,
   Save,
-  Shield,
-  Trash2,
-  User,
-  ExternalLink,
-  CheckCircle2,
   AlertCircle,
   Loader2,
   Smartphone
@@ -447,9 +440,12 @@ import {
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const { siteTitle, smtpEnabled, initSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
+const { pages } = useLocale()
+const locale = computed(() => pages.value.notificationSettings)
 
 // 样式类常量
 const sectionClass = 'bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'
@@ -517,7 +513,7 @@ onMounted(async () => {
 
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
-    document.title = `通知设置 | ${siteTitle.value}`
+    document.title = `${locale.value.title} | ${siteTitle.value}`
   }
 
   await loadSettings()
@@ -560,8 +556,8 @@ const loadSettings = async () => {
       emailVerified.value = response.data.emailVerified || false
     }
   } catch (err) {
-    console.error('加载设置失败:', err)
-    showNotification('加载设置失败，请刷新页面重试', 'error')
+    console.error(locale.value.loadFailedLog, err)
+    showNotification(locale.value.loadFailed, 'error')
   } finally {
     loading.value = false
   }
@@ -570,7 +566,7 @@ const loadSettings = async () => {
 // 发送验证码
 const sendVerificationCode = async () => {
   if (!meowUserId.value.trim()) {
-    showNotification('请输入 MeoW 用户 ID', 'error')
+    showNotification(locale.value.meowIdRequired, 'error')
     return
   }
 
@@ -586,12 +582,12 @@ const sendVerificationCode = async () => {
 
     if (response.success) {
       verificationSent.value = true
-      showNotification('验证码已发送到您的 MeoW 账号', 'success')
+      showNotification(locale.value.meowCodeSent, 'success')
     } else {
-      showNotification(response.message || '发送验证码失败', 'error')
+      showNotification(response.message || locale.value.sendCodeFailed, 'error')
     }
   } catch (err) {
-    showNotification(err.data?.message || '发送验证码失败', 'error')
+    showNotification(err.data?.message || locale.value.sendCodeFailed, 'error')
   } finally {
     binding.value = false
   }
@@ -600,7 +596,7 @@ const sendVerificationCode = async () => {
 // 验证并绑定
 const verifyAndBind = async () => {
   if (!verificationCode.value || verificationCode.value.length !== 6) {
-    showNotification('请输入6位验证码', 'error')
+    showNotification(locale.value.codeRequired, 'error')
     verificationCodeError.value = true
     return
   }
@@ -621,13 +617,13 @@ const verifyAndBind = async () => {
       meowUserId.value = ''
       verificationCode.value = ''
       verificationSent.value = false
-      showNotification('MeoW 账号绑定成功！', 'success')
+      showNotification(locale.value.meowBindSuccess, 'success')
     } else {
-      showNotification(response.message || '验证失败', 'error')
+      showNotification(response.message || locale.value.verifyFailed, 'error')
       verificationCodeError.value = true
     }
   } catch (err) {
-    showNotification(err.data?.message || '验证失败', 'error')
+    showNotification(err.data?.message || locale.value.verifyFailed, 'error')
     verificationCodeError.value = true
   } finally {
     binding.value = false
@@ -644,8 +640,8 @@ const cancelVerification = () => {
 // 显示解绑确认对话框
 const showUnbindConfirm = () => {
   confirmDialog.value = {
-    title: '解绑 MeoW 账号',
-    message: '确定要解绑 MeoW 账号吗？解绑后将无法接收推送通知。',
+    title: locale.value.unbindMeowTitle,
+    message: locale.value.unbindMeowMessage,
     type: 'danger',
     loading: false,
     onConfirm: performUnbind,
@@ -664,13 +660,13 @@ const performUnbind = async () => {
 
     if (response.success) {
       localSettings.value.meowUserId = ''
-      showNotification('MeoW 账号已解绑', 'success')
+      showNotification(locale.value.meowUnbound, 'success')
       showConfirmDialog.value = false
     } else {
-      showNotification(response.message || '解绑失败', 'error')
+      showNotification(response.message || locale.value.unbindFailed, 'error')
     }
   } catch (err) {
-    showNotification(err.data?.message || '解绑失败', 'error')
+    showNotification(err.data?.message || locale.value.unbindFailed, 'error')
   } finally {
     confirmDialog.value.loading = false
   }
@@ -679,13 +675,13 @@ const performUnbind = async () => {
 // 邮箱绑定相关方法
 const bindEmail = async () => {
   if (!newEmail.value) {
-    showNotification('请输入邮箱地址', 'error')
+    showNotification(locale.value.emailRequired, 'error')
     return
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(newEmail.value)) {
-    showNotification('请输入有效的邮箱地址', 'error')
+    showNotification(locale.value.emailInvalid, 'error')
     return
   }
 
@@ -700,12 +696,12 @@ const bindEmail = async () => {
       userEmail.value = newEmail.value
       emailVerified.value = false
       newEmail.value = ''
-      showNotification('验证码已发送，请查收邮箱', 'success')
+      showNotification(locale.value.emailCodeSent, 'success')
     } else {
-      showNotification(response.message || '绑定失败', 'error')
+      showNotification(response.message || locale.value.bindFailed, 'error')
     }
   } catch (err) {
-    showNotification(err.data?.message || '绑定失败', 'error')
+    showNotification(err.data?.message || locale.value.bindFailed, 'error')
   } finally {
     bindingEmail.value = false
   }
@@ -724,7 +720,7 @@ const handleEmailCodeKeydown = (event) => {
 const verifyEmailCode = async () => {
   if (emailCode.value.length !== 6) {
     emailCodeError.value = true
-    showNotification('请输入6位验证码', 'error')
+    showNotification(locale.value.codeRequired, 'error')
     return
   }
   try {
@@ -736,14 +732,14 @@ const verifyEmailCode = async () => {
     if (response.success) {
       emailVerified.value = true
       emailCode.value = ''
-      showNotification('邮箱验证成功', 'success')
+      showNotification(locale.value.emailVerifySuccess, 'success')
     } else {
       emailCodeError.value = true
-      showNotification(response.message || '验证失败', 'error')
+      showNotification(response.message || locale.value.verifyFailed, 'error')
     }
   } catch (err) {
     emailCodeError.value = true
-    showNotification(err.data?.message || '验证失败', 'error')
+    showNotification(err.data?.message || locale.value.verifyFailed, 'error')
   } finally {
     bindingEmail.value = false
   }
@@ -751,8 +747,8 @@ const verifyEmailCode = async () => {
 
 const changeEmail = () => {
   confirmDialog.value = {
-    title: '更换邮箱',
-    message: '更换邮箱将清除当前绑定的邮箱信息，需要重新验证新邮箱。确定要继续吗？',
+    title: locale.value.changeEmailTitle,
+    message: locale.value.changeEmailMessage,
     type: 'warning',
     loading: false,
     onConfirm: performChangeEmail,
@@ -770,7 +766,7 @@ const performChangeEmail = () => {
   emailCode.value = ''
   emailCodeError.value = false
   showConfirmDialog.value = false
-  showNotification('已清除邮箱信息', 'info')
+  showNotification(locale.value.emailCleared, 'info')
 }
 
 const resendVerificationEmail = async () => {
@@ -780,12 +776,12 @@ const resendVerificationEmail = async () => {
     if (response.success) {
       emailCode.value = ''
       emailCodeError.value = false
-      showNotification('验证码已重新发送', 'success')
+      showNotification(locale.value.emailCodeResent, 'success')
     } else {
-      showNotification(response.message || '发送失败', 'error')
+      showNotification(response.message || locale.value.sendFailed, 'error')
     }
   } catch (err) {
-    showNotification(err.data?.message || '发送失败', 'error')
+    showNotification(err.data?.message || locale.value.sendFailed, 'error')
   } finally {
     resendingEmail.value = false
   }
@@ -793,8 +789,8 @@ const resendVerificationEmail = async () => {
 
 const unbindEmail = async () => {
   confirmDialog.value = {
-    title: '确认解绑邮箱',
-    message: '解绑后将无法接收邮件通知，确定要继续吗？',
+    title: locale.value.unbindEmailTitle,
+    message: locale.value.unbindEmailMessage,
     type: 'warning',
     loading: false,
     onConfirm: performEmailUnbind,
@@ -812,13 +808,13 @@ const performEmailUnbind = async () => {
     if (response.success) {
       userEmail.value = ''
       emailVerified.value = false
-      showNotification('邮箱已解绑', 'success')
+      showNotification(locale.value.emailUnbound, 'success')
       showConfirmDialog.value = false
     } else {
-      showNotification(response.message || '解绑失败', 'error')
+      showNotification(response.message || locale.value.unbindFailed, 'error')
     }
   } catch (err) {
-    showNotification(err.data?.message || '解绑失败', 'error')
+    showNotification(err.data?.message || locale.value.unbindFailed, 'error')
   } finally {
     confirmDialog.value.loading = false
   }
@@ -833,12 +829,12 @@ const saveSettings = async () => {
       body: localSettings.value
     })
     if (response.success) {
-      showNotification('设置保存成功', 'success')
+      showNotification(locale.value.saveSuccess, 'success')
     } else {
-      showNotification(response.message || '保存失败', 'error')
+      showNotification(response.message || locale.value.saveFailed, 'error')
     }
   } catch (err) {
-    showNotification(err.data?.message || '保存失败', 'error')
+    showNotification(err.data?.message || locale.value.saveFailed, 'error')
   } finally {
     saving.value = false
   }

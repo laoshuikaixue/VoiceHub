@@ -9,15 +9,17 @@ export const supportedLocales = [
 ] as const
 
 export type Locale = typeof supportedLocales[number]['code']
-type LocaleSection<T extends Record<string, string>> = {
-  [Key in keyof T]: string
-}
+type LocaleValue<T> = T extends (...args: infer Args) => infer Return
+  ? (...args: Args) => Return
+  : T extends readonly (infer Item)[]
+    ? readonly LocaleValue<Item>[]
+    : T extends string
+      ? string
+      : T extends object
+        ? { [Key in keyof T]: LocaleValue<T[Key]> }
+        : T
 
-export type LocaleMessages = {
-  siteConfig: LocaleSection<typeof zhCN.siteConfig>
-  changePassword: LocaleSection<typeof zhCN.changePassword>
-  common: LocaleSection<typeof zhCN.common>
-}
+export type LocaleMessages = LocaleValue<typeof zhCN>
 
 const LOCALE_STORAGE_KEY = 'voicehub.locale'
 const FALLBACK_LOCALE: Locale = 'zh-CN'
@@ -73,6 +75,7 @@ export function useLocale() {
     setLocale,
     siteConfig: computed(() => currentMessages.value.siteConfig),
     changePassword: computed(() => currentMessages.value.changePassword),
-    common: computed(() => currentMessages.value.common)
+    common: computed(() => currentMessages.value.common),
+    pages: computed(() => currentMessages.value.pages)
   }
 }
