@@ -373,10 +373,10 @@
           </div>
 
           <div class="results-content">
-            <!-- 播出时段和备注 -->
-            <div v-if="playTimeSelectionEnabled || enableSubmissionRemarks" class="form-row">
+            <!-- 播出时段、备注和点歌券 -->
+            <div v-if="playTimeSelectionEnabled" class="form-row mb-4">
               <!-- 播出时段选择 -->
-              <div v-if="playTimeSelectionEnabled" class="form-group">
+              <div class="form-group">
                 <div class="input-wrapper">
                   <CustomSelect
                     v-model="preferredPlayTimeId"
@@ -388,37 +388,67 @@
                   />
                 </div>
               </div>
+            </div>
 
-              <div v-if="enableSubmissionRemarks" class="form-group">
+            <div
+              v-if="enableSubmissionRemarks || cardCodeEnabled"
+              class="form-row submission-meta-row"
+            >
+              <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
                 <div class="input-wrapper">
-                  <div class="flex items-center justify-between mb-2">
+                  <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <label for="submission-note" class="text-[12px] font-bold text-zinc-300"
                       >投稿备注留言</label
                     >
-                    <label class="custom-checkbox-wrapper">
-                      <input
-                        v-model="submissionNotePublic"
-                        type="checkbox"
-                        class="custom-checkbox-input"
+                    <div class="flex items-center gap-2">
+                      <button
+                        v-if="cardCodeEnabled"
+                        :class="[
+                          'mobile-card-code-chip',
+                          trimmedCardCode
+                            ? cardCodeValidation.valid
+                              ? 'is-valid'
+                              : cardCodeValidation.valid === false
+                                ? 'is-invalid'
+                                : 'has-code'
+                            : cardCodeFieldMeta.required
+                              ? 'is-required'
+                              : ''
+                        ]"
+                        type="button"
+                        @click="openCardCodeModal"
                       >
-                      <span class="custom-checkbox-box">
-                        <svg
-                          class="custom-checkbox-icon"
-                          viewBox="0 0 12 10"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
+                        <Icon
+                          :size="12"
+                          :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? 'check' : 'plus'"
+                        />
+                        <span>{{ mobileCardCodeLabel }}</span>
+                      </button>
+                      <label class="custom-checkbox-wrapper">
+                        <input
+                          v-model="submissionNotePublic"
+                          type="checkbox"
+                          class="custom-checkbox-input"
                         >
-                          <path
-                            d="M1 5L4.5 8.5L11 1.5"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                      </span>
-                      <span class="custom-checkbox-text">公开给已登录用户</span>
-                    </label>
+                        <span class="custom-checkbox-box">
+                          <svg
+                            class="custom-checkbox-icon"
+                            viewBox="0 0 12 10"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M1 5L4.5 8.5L11 1.5"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                            />
+                          </svg>
+                        </span>
+                        <span class="custom-checkbox-text">公开给已登录用户</span>
+                      </label>
+                    </div>
                   </div>
                   <textarea
                     id="submission-note"
@@ -431,43 +461,93 @@
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="enableCardCodeRequests || requireCardCodeForRequests" class="form-row mt-4">
-              <div class="form-group">
-                <div class="input-wrapper">
-                  <label
-                    for="card-code"
-                    :class="[
-                      'text-[12px] font-bold',
-                      cardCodeFieldMeta.required ? 'text-yellow-300' : 'text-zinc-300'
-                    ]"
-                  >
-                    点歌券
-                    <span
-                      v-if="cardCodeFieldMeta.required"
-                      class="ml-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-black text-yellow-300 align-middle"
+              <div
+                v-if="cardCodeEnabled"
+                :class="[
+                  'form-group card-code-form-group',
+                  { 'mobile-hidden-card-code-group': enableSubmissionRemarks }
+                ]"
+              >
+                <div class="desktop-card-code-panel">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-black text-zinc-200">点歌券</span>
+                        <span
+                          :class="[
+                            'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
+                            cardCodeFieldMeta.required
+                              ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
+                              : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
+                          ]"
+                        >
+                          {{ cardCodeFieldMeta.required ? '必填' : '可选' }}
+                        </span>
+                      </div>
+                      <p
+                        :class="[
+                          'mt-1 truncate text-[11px]',
+                          cardCodeValidation.valid
+                            ? 'text-emerald-300/80'
+                            : cardCodeValidation.valid === false
+                              ? 'text-red-300/80'
+                              : cardCodeFieldMeta.required
+                                ? 'text-yellow-300/80'
+                                : 'text-zinc-500'
+                        ]"
+                      >
+                        {{ cardCodeStatusText }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <button
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-yellow-500/25 bg-yellow-500/10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-yellow-400/40 hover:bg-yellow-500/15"
+                      type="button"
+                      @click="openCardCodeModal"
                     >
-                      必填
-                    </span>
-                  </label>
-                  <input
-                    id="card-code"
-                    v-model="cardCode"
-                    :placeholder="cardCodeFieldMeta.placeholder"
-                    :required="cardCodeFieldMeta.required"
-                    class="w-full mt-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-yellow-400/50 focus:ring-1 focus:ring-yellow-400/30"
-                    type="text"
-                  />
-                  <p
-                    :class="[
-                      'mt-1 text-[11px]',
-                      cardCodeFieldMeta.required ? 'text-yellow-300/80' : 'text-zinc-500'
-                    ]"
-                  >
-                    {{ cardCodeFieldMeta.helper }}
-                  </p>
+                      <Icon :size="13" :name="trimmedCardCode ? 'edit' : 'plus'" />
+                      {{ trimmedCardCode ? '修改' : '添加' }}
+                    </button>
+                    <button
+                      v-if="trimmedCardCode"
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-500 transition-all hover:border-red-500/30 hover:text-red-300"
+                      title="清除点歌券"
+                      type="button"
+                      @click="clearCardCode"
+                    >
+                      <Icon :size="13" name="close" />
+                    </button>
+                  </div>
                 </div>
+
+                <button
+                  v-if="!enableSubmissionRemarks"
+                  :class="[
+                    'mobile-card-code-button',
+                    trimmedCardCode
+                      ? cardCodeValidation.valid
+                        ? 'is-valid'
+                        : cardCodeValidation.valid === false
+                          ? 'is-invalid'
+                          : 'has-code'
+                      : cardCodeFieldMeta.required
+                        ? 'is-required'
+                        : ''
+                  ]"
+                  type="button"
+                  @click="openCardCodeModal"
+                >
+                  <span class="flex min-w-0 items-center gap-2">
+                    <Icon
+                      :size="14"
+                      :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? 'check' : 'plus'"
+                    />
+                    <span class="truncate">{{ cardCodeStatusText }}</span>
+                  </span>
+                  <Icon :size="13" name="chevron-right" />
+                </button>
               </div>
             </div>
 
@@ -803,6 +883,113 @@
       title="添加联合投稿人"
       @select="handleUserSelect"
     />
+
+    <!-- 点歌券输入弹窗 -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="showCardCodeModal"
+          class="fixed inset-0 z-[105] flex items-end justify-center bg-zinc-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+          @click.self="closeCardCodeModal"
+        >
+          <div
+            class="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+            @click.stop
+          >
+            <div class="flex items-center justify-between border-b border-zinc-800/70 px-5 py-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base font-black text-zinc-100">点歌券</h3>
+                  <span
+                    :class="[
+                      'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
+                      cardCodeFieldMeta.required
+                        ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
+                        : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
+                    ]"
+                  >
+                    {{ cardCodeFieldMeta.required ? '必填' : '可选' }}
+                  </span>
+                </div>
+                <p class="mt-1 text-[11px] text-zinc-500">{{ cardCodeFieldMeta.helper }}</p>
+              </div>
+              <button
+                class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800/60 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-zinc-100"
+                type="button"
+                @click="closeCardCodeModal"
+              >
+                <Icon :size="15" name="close" />
+              </button>
+            </div>
+
+            <div class="px-5 py-5">
+              <label
+                for="card-code-modal"
+                class="px-1 text-[10px] font-black uppercase tracking-widest text-zinc-600"
+              >
+                券码
+              </label>
+              <input
+                id="card-code-modal"
+                ref="cardCodeInputRef"
+                v-model="cardCodeDraft"
+                :placeholder="cardCodeFieldMeta.placeholder"
+                class="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 placeholder-zinc-600 transition-all focus:border-yellow-400/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
+                type="text"
+                @keydown.enter.prevent="saveCardCode"
+              >
+              <p
+                :class="[
+                  'mt-2 px-1 text-[11px]',
+                  cardCodeValidation.valid
+                    ? 'text-emerald-300/80'
+                    : cardCodeValidation.valid === false
+                      ? 'text-red-300/80'
+                      : 'text-zinc-500'
+                ]"
+              >
+                {{ cardCodeModalHint }}
+              </p>
+            </div>
+
+            <div
+              class="flex flex-col-reverse gap-2 border-t border-zinc-800/70 bg-zinc-900/70 px-5 py-4 sm:flex-row sm:justify-end"
+            >
+              <button
+                class="rounded-lg px-4 py-2.5 text-xs font-bold text-zinc-500 transition-all hover:text-zinc-300"
+                type="button"
+                @click="closeCardCodeModal"
+              >
+                取消
+              </button>
+              <button
+                v-if="trimmedCardCode"
+                class="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-all hover:border-red-500/30 hover:text-red-300"
+                type="button"
+                @click="clearCardCode"
+              >
+                清除
+              </button>
+              <button
+                :disabled="cardCodeValidation.checking"
+                class="rounded-lg bg-yellow-500 px-5 py-2.5 text-xs font-black text-zinc-950 transition-all hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                @click="saveCardCode"
+              >
+                {{ cardCodeValidation.checking ? '验证中...' : '保存' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <Teleport to="body">
       <Transition
@@ -1213,6 +1400,14 @@ const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(true)
 const cardCode = ref('')
+const cardCodeDraft = ref('')
+const showCardCodeModal = ref(false)
+const cardCodeInputRef = ref(null)
+const cardCodeValidation = ref({
+  checking: false,
+  valid: null,
+  message: ''
+})
 const error = ref('')
 const success = ref('')
 const submitting = ref(false)
@@ -1253,6 +1448,144 @@ const cardCodeFieldMeta = computed(() => ({
     : '填写点歌券可用于抵扣或提交点歌。',
   placeholder: '请输入点歌券'
 }))
+
+const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
+const trimmedCardCode = computed(() => cardCode.value.trim())
+const cardCodeStatusText = computed(() => {
+  if (cardCodeValidation.value.checking) return '正在验证点歌券...'
+  if (trimmedCardCode.value) {
+    return cardCodeValidation.value.message || '已填写点歌券，提交前会验证'
+  }
+  return cardCodeFieldMeta.value.required ? '提交前需要添加有效点歌券' : '可选添加点歌券'
+})
+const mobileCardCodeLabel = computed(() => {
+  if (cardCodeValidation.value.checking) return '验证中'
+  if (trimmedCardCode.value) {
+    if (cardCodeValidation.value.valid === false) return '点歌券无效'
+    if (cardCodeValidation.value.valid) return '点歌券可用'
+    return '已填点歌券'
+  }
+  return cardCodeFieldMeta.value.required ? '点歌券必填' : '点歌券可选'
+})
+const cardCodeModalHint = computed(() => {
+  if (cardCodeValidation.value.checking) return '正在验证点歌券...'
+  if (cardCodeValidation.value.message) return cardCodeValidation.value.message
+  return '保存时会先验证点歌券是否可用。'
+})
+
+const resetCardCodeValidation = () => {
+  cardCodeValidation.value = {
+    checking: false,
+    valid: null,
+    message: ''
+  }
+}
+
+const openCardCodeModal = async () => {
+  cardCodeDraft.value = cardCode.value
+  showCardCodeModal.value = true
+  await nextTick()
+  cardCodeInputRef.value?.focus()
+}
+
+const closeCardCodeModal = () => {
+  const draftChanged = cardCodeDraft.value.trim() !== cardCode.value.trim()
+  showCardCodeModal.value = false
+  cardCodeDraft.value = cardCode.value
+  if (draftChanged) {
+    resetCardCodeValidation()
+  }
+}
+
+const validateCardCode = async (code) => {
+  const normalizedCode = typeof code === 'string' ? code.trim() : ''
+  if (!normalizedCode) {
+    resetCardCodeValidation()
+    return !requireCardCodeForRequests.value
+  }
+
+  cardCodeValidation.value = {
+    checking: true,
+    valid: null,
+    message: '正在验证点歌券...'
+  }
+
+  try {
+    const response = await $fetch('/api/card-codes/validate', {
+      method: 'POST',
+      body: { cardCode: normalizedCode },
+      ...auth.getAuthConfig()
+    })
+
+    cardCodeValidation.value = {
+      checking: false,
+      valid: true,
+      message: response?.message || '点歌券可用'
+    }
+    return true
+  } catch (err) {
+    const message =
+      err?.data?.message || err?.message || err?.statusMessage || '点歌券验证失败，请稍后重试'
+    cardCodeValidation.value = {
+      checking: false,
+      valid: false,
+      message
+    }
+    if (window.$showNotification) {
+      window.$showNotification(message, 'error')
+    }
+    return false
+  }
+}
+
+const saveCardCode = async () => {
+  const draft = cardCodeDraft.value.trim()
+  if (requireCardCodeForRequests.value && !draft) {
+    if (window.$showNotification) {
+      window.$showNotification('请先填写点歌券', 'warning')
+    }
+    return
+  }
+
+  if (!draft) {
+    clearCardCode()
+    return
+  }
+
+  if (!(await validateCardCode(draft))) {
+    return
+  }
+
+  cardCode.value = draft
+  showCardCodeModal.value = false
+}
+
+const clearCardCode = () => {
+  cardCode.value = ''
+  cardCodeDraft.value = ''
+  showCardCodeModal.value = false
+  resetCardCodeValidation()
+}
+
+const ensureCardCodeForSubmit = async () => {
+  if (!cardCodeEnabled.value) {
+    return true
+  }
+
+  if (!trimmedCardCode.value) {
+    if (!requireCardCodeForRequests.value) {
+      return true
+    }
+
+    await openCardCodeModal()
+    if (window.$showNotification) {
+      window.$showNotification('请先填写点歌券', 'warning')
+    }
+    return false
+  }
+
+  return await validateCardCode(trimmedCardCode.value)
+}
 
 // 投稿状态
 const submissionStatus = ref(null)
@@ -1982,6 +2315,18 @@ watch(enableSubmissionRemarks, (enabled) => {
   }
 })
 
+watch([enableCardCodeRequests, requireCardCodeForRequests], ([enabled, required]) => {
+  if (!enabled && !required) {
+    clearCardCode()
+  }
+})
+
+watch(cardCodeDraft, (value) => {
+  if (value.trim() !== cardCode.value.trim()) {
+    resetCardCodeValidation()
+  }
+})
+
 // 处理剧集投票
 const handleEpisodeVote = async (episode) => {
   if (!episode.songId) {
@@ -2644,6 +2989,10 @@ const submitSong = async (result, options = {}) => {
 
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
 
+  if (!(await ensureCardCodeForSubmit())) {
+    return false
+  }
+
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -2809,6 +3158,10 @@ const submitSong = async (result, options = {}) => {
 // 直接提交表单
 const handleSubmit = async () => {
   if (submitting.value) return
+
+  if (!(await ensureCardCodeForSubmit())) {
+    return
+  }
 
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
@@ -3152,6 +3505,10 @@ const handleManualSubmit = async () => {
     return
   }
 
+  if (!(await ensureCardCodeForSubmit())) {
+    return
+  }
+
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -3366,6 +3723,10 @@ const resetForm = () => {
   collaborators.value = []
   submissionNote.value = ''
   submissionNotePublic.value = true
+  cardCode.value = ''
+  cardCodeDraft.value = ''
+  showCardCodeModal.value = false
+  resetCardCodeValidation()
   // 重置URL验证状态
   coverValidation.value = { valid: true, error: '', validating: false }
   playUrlValidation.value = { valid: true, error: '', validating: false }
@@ -3979,6 +4340,33 @@ defineExpose({
 .form-row .form-group {
   flex: 1;
   min-width: 0;
+}
+
+.submission-meta-row {
+  align-items: stretch;
+}
+
+.submission-note-group,
+.card-code-form-group {
+  flex-basis: 0;
+}
+
+.desktop-card-code-panel {
+  min-height: 94px;
+  height: 100%;
+  border: 1px solid rgba(39, 39, 42, 0.8);
+  border-radius: 12px;
+  background: rgba(24, 24, 27, 0.35);
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-card-code-chip,
+.mobile-card-code-button {
+  display: none;
 }
 
 .form-group {
@@ -5869,6 +6257,80 @@ defineExpose({
   .form-row {
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .submission-meta-row {
+    gap: 0.75rem;
+  }
+
+  .card-code-form-group {
+    margin-bottom: 0;
+  }
+
+  .mobile-hidden-card-code-group {
+    display: none;
+  }
+
+  .desktop-card-code-panel {
+    display: none;
+  }
+
+  .mobile-card-code-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(113, 113, 122, 0.45);
+    background: rgba(39, 39, 42, 0.75);
+    color: rgba(212, 212, 216, 0.9);
+    padding: 0.25rem 0.55rem;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .mobile-card-code-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(113, 113, 122, 0.4);
+    background: rgba(24, 24, 27, 0.65);
+    color: rgba(228, 228, 231, 0.9);
+    padding: 0.65rem 0.85rem;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .mobile-card-code-chip.is-required,
+  .mobile-card-code-button.is-required {
+    border-color: rgba(234, 179, 8, 0.35);
+    background: rgba(234, 179, 8, 0.1);
+    color: #fde68a;
+  }
+
+  .mobile-card-code-chip.has-code,
+  .mobile-card-code-button.has-code {
+    border-color: rgba(234, 179, 8, 0.3);
+    color: #facc15;
+  }
+
+  .mobile-card-code-chip.is-valid,
+  .mobile-card-code-button.is-valid {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.1);
+    color: #6ee7b7;
+  }
+
+  .mobile-card-code-chip.is-invalid,
+  .mobile-card-code-button.is-invalid {
+    border-color: rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.1);
+    color: #fca5a5;
   }
 
   .form-group label {
