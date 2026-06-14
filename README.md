@@ -869,6 +869,8 @@ VoiceHub/
 │   │   │   └── search.get.ts        # Bilibili视频搜索
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
+│   │   ├── card-codes/     # 点歌券API
+│   │   │   └── validate.post.ts     # 验证点歌券可用性
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
