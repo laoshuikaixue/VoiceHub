@@ -25,7 +25,7 @@ NC='\033[0m'
 if [ "$(id -u)" -ne 0 ]; then
     echo -e "权限：root 用户：${RED}非 root${NC}"
     exit 1
-    exec sudo "$0" "$@"
+    # exec sudo "$0" "$@"
 else
     echo -e "权限：root 用户：${GREEN}正常${NC}"
 fi
@@ -200,7 +200,7 @@ check_and_update_image() {
     local IMAGE_NAME="$2"
 
     # 1. 本地无镜像 → 直接拉取
-    if ! docker images -q "${IMAGE_FULL}" &>/dev/null; then
+    if [ -z "$(docker images -q "${IMAGE_FULL}")" ]; then
         echo -e "镜像版本：${YELLOW}${IMAGE_NAME}本地无镜像，开始拉取最新版${NC}"
         if docker pull "${IMAGE_FULL}"; then
             echo -e "镜像版本：${GREEN}${IMAGE_NAME}拉取成功${NC}"
@@ -215,6 +215,10 @@ check_and_update_image() {
     echo -e "镜像版本：${YELLOW}检测${IMAGE_NAME}更新状态${NC}"
     local PULL_OUTPUT
     PULL_OUTPUT=$(docker pull "${IMAGE_FULL}" 2>&1)
+    if [ $? -ne 0 ]; then
+        echo -e "镜像版本：${RED}${IMAGE_NAME}拉取失败：${PULL_OUTPUT}${NC}"
+        return 1
+    fi
 
     if echo "${PULL_OUTPUT}" | grep -q "Image is up to date"; then
         echo -e "镜像版本：${GREEN}${IMAGE_NAME}已是最新${NC}"
@@ -225,35 +229,14 @@ check_and_update_image() {
     fi
 }
 
-# 菜单专用：检查镜像是否落后
-check_image_outdated() {
-    local IMAGE_FULL="${VOICEHUB_IMAGE}"
-    if ! docker images -q "${IMAGE_FULL}" &>/dev/null; then
-        echo -e "镜像版本：${YELLOW}本地无该镜像，部署时自动拉取最新版${NC}"
-        return 2
-    fi
-
-    echo -e "镜像版本：${YELLOW}正在检测更新...${NC}"
-    local PULL_OUTPUT
-    PULL_OUTPUT=$(docker pull "${IMAGE_FULL}" 2>&1)
-
-    if echo "${PULL_OUTPUT}" | grep -q "Image is up to date"; then
-        echo -e "镜像版本：${GREEN}已是最新${NC}"
-        return 0
-    else
-        echo -e "镜像版本：${RED}检测到远端存在新版本镜像，本地已落后${NC}"
-        return 1
-    fi
-}
-
 # ==================== 交互式初始化函数（仅重新部署使用） ====================
 run_interactive_init() {
     echo -e "\n${BLUE}=== 进入交互式初始化环境 ===${NC}"
-    echo -e "${YELLOW}提示：进入容器后执行 pnpm run init-help，(可能需要按回车），完成后输入 exit 退出${NC}"
+    echo -e "${YELLOW}提示：进入容器后执行可能需要按回车${NC}"
 
     cd "${COMPOSE_DIR}"
     # 临时启动容器进入bash，退出自动删除
-    ${DOCKER_COMPOSE_CMD} run --rm voicehub sh
+    ${DOCKER_COMPOSE_CMD} run --rm voicehub pnpm run init-help
 }
 
 # ==================== 1.重新部署（清空数据卷 + 执行初始化） ====================
@@ -359,11 +342,7 @@ show_menu() {
     echo -e "========================================"
     echo -e "  1. 重新部署（清空数据，全新安装+初始化）"
     echo -e "  2. 版本更新（保留旧数据，仅升级镜像）"
-    echo -e "  3. 启动服务"
-    echo -e "  4. 停止服务"
-    echo -e "  5. 重启服务"
-    echo -e "  6. 查看服务状态"
-    echo -e "  7. 检查版本是否落后（不更新）"
+    echo -e "  3. 查看服务状态"
     echo -e "  0. 退出脚本"
     echo -e "========================================"
     echo -n "请输入数字选择操作："
@@ -376,11 +355,7 @@ while true; do
     case $choice in
         1) redeploy_service ;;
         2) update_version ;;
-        3) start_service ;;
-        4) stop_service ;;
-        5) restart_service ;;
-        6) status_service ;;
-        7) check_image_outdated ;;
+        3) status_service ;;
         0) echo -e "\n${GREEN}退出脚本${NC}"; exit 0 ;;
         *) echo -e "\n${RED}输入错误，请输入有效数字！${NC}" ;;
     esac
