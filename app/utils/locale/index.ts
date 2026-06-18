@@ -67,18 +67,24 @@ export function setLocale(locale: Locale) {
 export function useLocale() {
   const currentLocale = getCurrentLocale()
   const currentMessages = computed(() => messages[currentLocale.value] ?? messages[FALLBACK_LOCALE])
+  const fallbackMessages = messages[FALLBACK_LOCALE]
+  const withFallback = <Key extends keyof LocaleMessages>(key: Key) =>
+    computed(() => ({
+      ...fallbackMessages[key],
+      ...(currentMessages.value[key] ?? {})
+    }) as LocaleMessages[Key])
 
   return {
     currentLocale,
     supportedLocales,
     initLocale,
     setLocale,
-    siteConfig: computed(() => currentMessages.value.siteConfig),
-    changePassword: computed(() => currentMessages.value.changePassword),
-    common: computed(() => currentMessages.value.common),
-    pages: computed(() => currentMessages.value.pages),
-    auth: computed(() => currentMessages.value.auth),
-    ui: computed(() => currentMessages.value.ui),
-    songs: computed(() => currentMessages.value.songs)
+    siteConfig: withFallback('siteConfig'),
+    changePassword: withFallback('changePassword'),
+    common: withFallback('common'),
+    pages: withFallback('pages'),
+    auth: withFallback('auth'),
+    ui: withFallback('ui'),
+    songs: withFallback('songs')
   }
 }
