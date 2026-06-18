@@ -28,9 +28,9 @@
                 >
                   <Icon name="music" :size="20" />
                 </div>
-                网易云扫码登录
+                {{ locale.neteaseTitle }}
               </h3>
-              <p class="text-xs text-zinc-500 mt-1 ml-13">扫描二维码以安全登录您的账号</p>
+              <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.neteaseDesc }}</p>
             </div>
             <button
               class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -45,7 +45,7 @@
             <div class="w-full flex flex-col items-center min-h-[250px] justify-center">
               <div v-if="loading" class="flex flex-col items-center text-zinc-500">
                 <Icon name="loader" :size="48" class="mb-4 animate-spin text-zinc-400" />
-                <p class="font-bold uppercase tracking-widest text-[10px]">正在获取二维码...</p>
+                <p class="font-bold uppercase tracking-widest text-[10px]">{{ locale.loadingQr }}</p>
               </div>
 
               <div v-else-if="qrImg" class="relative group">
@@ -62,8 +62,8 @@
                 >
                   <div class="flex flex-col items-center text-zinc-100">
                     <Icon name="refresh" :size="40" class="mb-3 text-zinc-400" />
-                    <span class="font-black uppercase tracking-widest text-xs">二维码已失效</span>
-                    <span class="text-[10px] text-zinc-500 mt-1 font-bold">点击刷新</span>
+                    <span class="font-black uppercase tracking-widest text-xs">{{ locale.qrExpired }}</span>
+                    <span class="text-[10px] text-zinc-500 mt-1 font-bold">{{ locale.clickRefresh }}</span>
                   </div>
                 </div>
               </div>
@@ -78,26 +78,26 @@
                     v-if="status === 800"
                     class="text-zinc-400 text-xs font-black uppercase tracking-widest"
                   >
-                    二维码已过期，请点击刷新
+                    {{ locale.expiredRefresh }}
                   </p>
                   <p
                     v-else-if="status === 801"
                     class="text-zinc-400 text-xs font-black uppercase tracking-widest"
                   >
-                    请使用网易云音乐APP扫码登录
+                    {{ locale.neteaseWaiting }}
                   </p>
                   <p
                     v-else-if="status === 802"
                     class="text-blue-500 text-xs font-black uppercase tracking-widest flex items-center justify-center"
                   >
                     <Icon name="check" :size="16" class="mr-2" />
-                    扫描成功，请在手机上确认
+                    {{ locale.scanSuccess }}
                   </p>
                   <p
                     v-else-if="status === 803"
                     class="text-emerald-500 text-xs font-black uppercase tracking-widest"
                   >
-                    登录成功，正在跳转...
+                    {{ locale.neteaseSuccess }}
                   </p>
                 </Transition>
               </div>
@@ -108,7 +108,7 @@
               <p
                 class="text-[10px] leading-relaxed text-zinc-500 text-center uppercase tracking-[0.15em] font-black"
               >
-                说明：登录状态将保存到您的浏览器中，用于搜索播客等功能。
+                {{ locale.neteaseTip }}
               </p>
             </div>
           </div>
@@ -119,14 +119,17 @@
 </template>
 
 <script lang="ts" setup>
-import { onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
 
 interface Props {
   show: boolean
 }
 
 const props = defineProps<Props>()
+const { songs } = useLocale()
+const locale = computed(() => songs.value.musicLoginModal)
 
 const emit = defineEmits<{
   (e: 'close'): void

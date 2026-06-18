@@ -2,7 +2,7 @@
   <div v-if="hasEnabledProviders" class="mt-6 w-full">
     <div class="flex items-center text-center text-[var(--text-tertiary)] text-xs mb-4">
       <div class="flex-1 border-b border-[var(--border-color)] opacity-20" />
-      <span class="px-2.5">或使用第三方账号登录</span>
+      <span class="px-2.5">{{ locale.divider }}</span>
       <div class="flex-1 border-b border-[var(--border-color)] opacity-20" />
     </div>
     <div class="flex justify-center gap-4">
@@ -11,7 +11,7 @@
         :key="provider.key"
         type="button"
         :class="providerButtonClass(provider.key)"
-        :title="`使用 ${provider.name} 登录`"
+        :title="locale.loginWith(provider.name)"
         @click="loginWith(provider.key)"
       >
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
@@ -25,8 +25,11 @@
 
 <script setup lang="ts">
 import { Shield } from 'lucide-vue-next'
+import { useLocale } from '~/utils/locale'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
+const { auth } = useLocale()
+const locale = computed(() => auth.value.oauthButtons)
 
 onMounted(async () => {
   await refreshSiteConfig()

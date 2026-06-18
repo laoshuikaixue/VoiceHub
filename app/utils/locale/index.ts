@@ -76,6 +76,9 @@ export function useLocale() {
     siteConfig: computed(() => currentMessages.value.siteConfig),
     changePassword: computed(() => currentMessages.value.changePassword),
     common: computed(() => currentMessages.value.common),
-    pages: computed(() => currentMessages.value.pages)
+    pages: computed(() => currentMessages.value.pages),
+    auth: computed(() => currentMessages.value.auth),
+    ui: computed(() => currentMessages.value.ui),
+    songs: computed(() => currentMessages.value.songs)
   }
 }

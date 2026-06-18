@@ -54,7 +54,7 @@
       <!-- 加载文本 -->
       <div class="w-full space-y-2">
         <h3 v-if="title" class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h3>
-        <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ message }}</p>
+        <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ displayMessage }}</p>
 
         <!-- 进度条 -->
         <div v-if="showProgress" class="mt-8 space-y-2">
@@ -66,7 +66,7 @@
           </div>
           <div class="flex justify-between items-center px-1">
             <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-              >加载进度</span
+              >{{ locale.progress }}</span
             >
             <span class="text-[10px] font-black text-blue-500 tracking-widest"
               >{{ progress }}%</span
@@ -119,7 +119,7 @@
         class="mt-10 px-6 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
         @click="onCancel"
       >
-        取消加载
+        {{ locale.cancel }}
       </button>
     </div>
   </div>
@@ -127,6 +127,11 @@
 
 <script lang="ts" setup>
 import { Check } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useLocale } from '~/utils/locale'
+
+const { ui } = useLocale()
+const locale = computed(() => ui.value.loadingState)
 
 interface Props {
   title?: string
@@ -141,9 +146,9 @@ interface Props {
   onCancel?: () => void
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: '',
-  message: '正在加载...',
+  message: undefined,
   spinnerType: 'circle',
   fullScreen: false,
   showProgress: false,
@@ -153,6 +158,8 @@ withDefaults(defineProps<Props>(), {
   showCancel: false,
   onCancel: undefined
 })
+
+const displayMessage = computed(() => props.message || locale.value.defaultMessage)
 </script>
 
 <style scoped>

@@ -34,7 +34,7 @@
 
     <div v-else-if="isLoading" class="placeholder">
       <div class="loading-spinner" />
-      <p>歌词加载中...</p>
+      <p>{{ locale.loading }}</p>
     </div>
 
     <div v-else-if="error" class="placeholder error">
@@ -42,13 +42,17 @@
     </div>
 
     <div v-else class="placeholder">
-      <p>暂无歌词</p>
+      <p>{{ locale.empty }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useLocale } from '~/utils/locale'
+
+const { ui } = useLocale()
+const locale = computed(() => ui.value.lyrics)
 
 const props = defineProps({
   // 歌词数据

@@ -15,9 +15,9 @@
           @click.stop
         >
           <div class="text-center space-y-2">
-            <h3 class="text-xl font-bold text-zinc-100">双重认证</h3>
+            <h3 class="text-xl font-bold text-zinc-100">{{ locale.title }}</h3>
             <p class="text-sm text-zinc-400">
-              {{ method === 'totp' ? '请输入您的认证器应用生成的6位验证码' : '请输入发送到您邮箱的验证码' }}
+              {{ method === 'totp' ? locale.totpDesc : locale.emailDesc }}
             </p>
           </div>
 
@@ -25,16 +25,16 @@
             <!-- 邮箱输入 (仅 Email 模式) -->
             <div v-if="method === 'email'" class="space-y-2">
               <label class="block text-sm text-zinc-400">
-                请补全您的邮箱以接收验证码
+                {{ locale.emailLabel }}
                 <span v-if="maskedEmail" class="block text-xs text-zinc-500 mt-1">
-                  提示: {{ maskedEmail }}
+                  {{ locale.maskedEmailTip }} {{ maskedEmail }}
                 </span>
               </label>
               <div class="relative">
                 <input
                   v-model="emailInput"
                   type="email"
-                  placeholder="请输入完整邮箱地址"
+                  :placeholder="locale.emailPlaceholder"
                   class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                   :disabled="emailSent && cooldown > 0"
                   @keyup.enter="!emailSent && sendEmailCode()"
@@ -65,7 +65,7 @@
                 :disabled="cooldown > 0 || sending || !emailInput"
                 class="text-sm text-blue-500 hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {{ cooldown > 0 ? `${cooldown}秒后重新发送` : (emailSent ? '重新发送验证码' : '发送验证码') }}
+                {{ cooldown > 0 ? locale.resendCountdown(cooldown) : (emailSent ? locale.resendCode : locale.sendCode) }}
               </button>
             </div>
 
@@ -80,7 +80,7 @@
               class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <Loader2 v-if="loading" class="animate-spin" :size="18" />
-              <span>验证登录</span>
+              <span>{{ locale.verifyLogin }}</span>
             </button>
             
             <!-- 切换验证方式按钮 -->
@@ -89,14 +89,14 @@
               @click="toggleMethod"
               class="w-full py-2 text-blue-500 hover:text-blue-400 text-sm transition-colors"
             >
-              {{ method === 'totp' ? '无法使用验证器？切换到邮箱验证' : '使用验证器应用验证' }}
+              {{ method === 'totp' ? locale.switchToEmail : locale.switchToTotp }}
             </button>
 
             <button
               @click="$emit('cancel')"
               class="w-full py-2 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
             >
-              返回登录
+              {{ locale.backLogin }}
             </button>
           </div>
         </div>
@@ -109,6 +109,7 @@
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue'
 import { Loader2, AlertCircle } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps<{
   show: boolean
@@ -124,6 +125,8 @@ const emit = defineEmits<{
 }>()
 
 const { showToast } = useToast()
+const { auth } = useLocale()
+const locale = computed(() => auth.value.twoFactorVerify)
 // 默认优先使用 TOTP，如果没有则使用 Email
 const defaultMethod = computed(() => props.availableMethods?.includes('totp') ? 'totp' : 'email')
 const method = ref(defaultMethod.value)
@@ -160,7 +163,7 @@ const toggleMethod = () => {
 const sendEmailCode = async () => {
   try {
     if (!emailInput.value) {
-      error.value = '请输入您的邮箱地址'
+      error.value = locale.value.emailRequired
       return
     }
 
@@ -176,7 +179,7 @@ const sendEmailCode = async () => {
       }
     })
 
-    showToast('验证码已发送', 'success')
+    showToast(locale.value.codeSent, 'success')
     emailSent.value = true
     cooldown.value = 60
     timer = setInterval(() => {
@@ -190,7 +193,7 @@ const sendEmailCode = async () => {
     // 发送成功后自动聚焦验证码输入框
     nextTick(() => inputRef.value?.focus())
   } catch (err: any) {
-    error.value = err.data?.message || err.message || '发送失败'
+    error.value = err.data?.message || err.message || locale.value.sendFailed
   } finally {
     sending.value = false
   }
@@ -208,7 +211,7 @@ const handleVerify = async () => {
     
     emit('success', response)
   } catch (err: any) {
-    error.value = err.data?.message || err.message || '验证失败'
+    error.value = err.data?.message || err.message || locale.value.verifyFailed
     code.value = '' // 出错清空
   } finally {
     loading.value = false

@@ -42,7 +42,7 @@
                   {{ video?.title }}
                 </h3>
                 <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mt-1">
-                  UP主：{{ video?.artist }}
+                  {{ locale.uploader }}{{ video?.artist }}
                 </p>
               </div>
             </div>
@@ -65,7 +65,7 @@
               >
                 <Icon name="play" :size="32" class="opacity-20" />
               </div>
-              <p class="text-sm font-bold uppercase tracking-widest">暂无剧集</p>
+              <p class="text-sm font-bold uppercase tracking-widest">{{ locale.empty }}</p>
             </div>
 
             <div v-else class="program-list space-y-3">
@@ -108,7 +108,7 @@
                   <!-- 预听/暂停按钮 -->
                   <button
                     class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
-                    :title="isCurrentEpisode(episode) && isPlaying ? '暂停' : '预听'"
+                    :title="isCurrentEpisode(episode) && isPlaying ? locale.pause : locale.preview"
                     @click.stop="togglePlay(episode)"
                   >
                     <Icon
@@ -122,7 +122,7 @@
                     <div
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
-                      已播放
+                      {{ locale.played }}
                     </div>
                   </template>
 
@@ -131,7 +131,7 @@
                     <div
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
-                      已排期
+                      {{ locale.scheduled }}
                     </div>
                   </template>
 
@@ -141,7 +141,7 @@
                       <div
                         class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                       >
-                        已投稿
+                        {{ locale.submitted }}
                       </div>
 
                       <!-- 点赞按钮（非自己投稿） -->
@@ -162,7 +162,7 @@
                             :size="12"
                             :class="getEpisodeStatus(episode).voted ? 'fill-current' : ''"
                           />
-                          <span>{{ getEpisodeStatus(episode).voted ? '已点赞' : '点赞' }}</span>
+                          <span>{{ getEpisodeStatus(episode).voted ? locale.liked : locale.like }}</span>
                         </span>
                       </button>
                     </div>
@@ -175,8 +175,8 @@
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                       @click.stop="selectEpisode(episode)"
                     >
-                      <span v-if="submitting && selectedEpisodeCid === episode.cid">提交中...</span>
-                      <span v-else><span class="hidden sm:inline">选择</span>投稿</span>
+                      <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>
+                      <span v-else><span class="hidden sm:inline">{{ locale.select }}</span>{{ locale.submit }}</span>
                     </button>
                   </template>
                 </div>
@@ -194,6 +194,10 @@ import { ref, computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { useLocale } from '~/utils/locale'
+
+const { songs } = useLocale()
+const locale = computed(() => songs.value.bilibiliEpisodesModal)
 
 const props = defineProps({
   show: Boolean,
