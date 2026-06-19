@@ -32,6 +32,10 @@ export const siteConfig = {
   enableCollaborativeDesc: 'Allow users to add collaborators and submit requests together',
   enableRemarks: 'Enable Request Remarks',
   enableRemarksDesc: 'Allow users to add public or admin-only notes when submitting requests',
+  enableCardCodeRequests: 'Enable Request Cards',
+  enableCardCodeRequestsDesc: 'Allow users to use request cards when submitting song requests',
+  requireCardCodeForRequests: 'Require Request Cards',
+  requireCardCodeForRequestsDesc: 'When enabled, all users must provide a valid request card before submitting.',
   enableReplay: 'Enable Replay Requests',
   enableReplayDesc: 'Allow users to request songs that have already been played this semester',
   enableLimit: 'Enable Request Limits',
@@ -53,6 +57,7 @@ export const siteConfig = {
   captchaGraphic: 'Image CAPTCHA',
   captchaTurnstile: 'Cloudflare Turnstile',
   captchaMaxFailures: 'Trigger Threshold (Failures)',
+  captchaMaxFailuresPlaceholder: 'e.g. 3',
   captchaMaxFailuresDesc: 'Require CAPTCHA after this many consecutive password failures. Recommended: 3-5.',
   turnstileSiteKey: 'Site Key',
   turnstileSiteKeyPlaceholder: 'Enter the Turnstile Site Key',
@@ -72,6 +77,15 @@ export const siteConfig = {
 
   submissionGuidelines: 'Submission Guidelines',
   guidelinesPlaceholder: 'Enter submission guidelines',
+  defaultSiteTitle: 'Campus Radio Request System',
+  defaultSubmissionGuidelines: `1. Do not include book-title brackets when submitting.
+2. Songs of all genres except DJ tracks are accepted, including songs in minority languages.
+3. Songs containing prohibited content are not allowed.
+4. Requested songs are reviewed by administrators.
+5. Approved songs will be scheduled during broadcast periods.
+6. Submitting means you have read the guidelines and understand the song may not be played.
+7. This system only provides music search and playback management. It does not store music files. All music comes from third-party platforms and copyright belongs to the original platforms and rights holders. Please follow the relevant platform terms and respect copyrights. We encourage supporting official music sources.
+8. The radio station reserves the final right of interpretation.`,
 
   loadFailed: 'Failed to load configuration',
   saveFailed: 'Failed to save configuration',
@@ -199,6 +213,8 @@ export const pages = {
     saving: 'Saving...',
     saveSettings: 'Save Settings',
     loading: 'Loading settings...',
+    loadingShort: 'Loading...',
+    retry: 'Retry',
     inAppTitle: 'In-app Notifications',
     inAppDesc: 'Choose which messages you want to receive in the system',
     songSelectedTitle: 'Song Selected Notifications',
@@ -211,9 +227,13 @@ export const pages = {
     systemDesc: 'Receive important system notifications and announcements',
     voteThresholdTitle: 'Vote Notification Threshold',
     voteThresholdDesc: 'Only send notifications when votes reach this threshold',
+    voteThresholdText: (count: number) => `Notify every ${count} votes`,
     voteUnit: 'votes',
     refreshTitle: 'Notification Refresh Interval',
     refreshDesc: 'Set how often the system checks for new notifications',
+    seconds: (seconds: number) => `${seconds}s`,
+    minutes: (minutes: number) => `${minutes}m`,
+    minutesSeconds: (minutes: number, seconds: number) => `${minutes}m ${seconds}s`,
     socialTitle: 'Social Account Binding',
     socialDesc: 'Bind social accounts to receive real-time push notifications',
     emailNotifyTitle: 'Email Notifications',
@@ -1622,7 +1642,59 @@ export const admin = {
     testEmailPlaceholder: 'Enter test email address',
     send: 'Send',
     sending: 'Sending',
-    sent: 'Sent'
+    sent: 'Sent',
+    secureOptions: {
+      ssl: 'SSL/TLS',
+      none: 'None'
+    },
+    defaultFromName: 'Campus Radio',
+    loadFailed: 'Failed to load configuration',
+    incompleteConfig: 'Please complete the SMTP configuration',
+    saveSuccess: 'SMTP configuration saved',
+    saveFailed: 'Failed to save configuration',
+    resetSuccess: 'Configuration reset',
+    reloadSuccess: 'SMTP configuration reloaded',
+    reloadFailed: 'Failed to reload SMTP configuration',
+    serverRequired: 'Please configure the SMTP server first',
+    testConnectionFailed: 'Connection test failed',
+    testEmailRequired: 'Please enter a test email address',
+    testEmailSuccess: 'Test email sent',
+    testEmailFailed: 'Failed to send test email'
+  },
+  emailTemplateManager: {
+    title: 'Email Template Management',
+    desc: 'Customize system email subjects and content with variable substitution',
+    refreshPreview: 'Refresh Preview',
+    livePreview: 'Live Preview',
+    saving: 'Saving...',
+    updateTemplate: 'Update Template',
+    searchPlaceholder: 'Search templates...',
+    builtin: 'Built-in',
+    custom: 'Custom',
+    templateName: 'Template Name',
+    emailSubject: 'Email Subject',
+    supportsVariables: 'Supports Variables',
+    subjectPlaceholder: 'Enter email subject...',
+    availableVariables: 'Available Variables',
+    htmlContent: 'HTML Content',
+    restoreDefault: 'Restore Default',
+    livePreviewLabel: 'Live Preview:',
+    hidePreview: 'Hide Preview',
+    emptySelectTemplate: 'Select an email template on the left',
+    previewData: {
+      name: 'Alex',
+      title: 'System Notification',
+      message: 'This is preview content\nLine breaks and links are supported'
+    },
+    messages: {
+      saved: 'Template saved',
+      restored: 'Default template restored'
+    },
+    errors: {
+      saveFailed: 'Failed to save',
+      restoreFailed: 'Failed to restore',
+      previewFailed: 'Preview failed'
+    }
   },
   notificationSender: {
     title: 'Send Notifications',
@@ -1640,6 +1712,46 @@ export const admin = {
     selectClassPlaceholder: 'Select class',
     add: 'Add',
     noClassSelected: 'No classes selected',
+    userSearchPlaceholder: 'Search and select users (name, username, or ID)...',
+    searchResults: (count: number) => `Search Results (${count})`,
+    selected: 'Selected',
+    select: 'Select',
+    selectedUsers: (count: number) => `Selected Users (${count})`,
+    clearAll: 'Clear All',
+    noUsersSelected: 'No users selected',
+    send: 'Send Notification',
+    sending: 'Sending...',
+    previewTitle: 'Notification Preview',
+    previewSender: 'VoiceHub System',
+    justNow: 'Just now',
+    previewTitlePlaceholder: 'Notification title',
+    previewContentPlaceholder: 'Notification content preview will appear here...',
+    previewScope: (scope: string) => `Scope: ${scope}`,
+    previewHint: 'The preview is for layout reference only. Actual rendering may vary by device language and screen size.',
+    roles: {
+      admin: 'Admin',
+      teacher: 'Teacher',
+      student: 'Student'
+    },
+    scopeDescriptions: {
+      all: 'All users',
+      grade: (grade: string) => `Grade ${grade}`,
+      class: (grade: string, className: string) => `Grade ${grade} Class ${className}`,
+      multiClass: (count: number) => `${count} classes`,
+      specificUsers: (count: number) => `${count} users selected`,
+      selectGrade: 'Select a grade',
+      selectClass: 'Select a class',
+      selectUsers: 'Select users'
+    },
+    messages: {
+      sendSuccess: (count: number) => `Notification sent to ${count} users`
+    },
+    errors: {
+      adminOnly: 'Only admins can send system notifications',
+      incomplete: 'Please complete all required fields',
+      sendFailed: 'Failed to send notification',
+      sendError: 'An error occurred while sending the notification'
+    },
     targets: {
       all: 'All Users',
       grade: 'By Grade',
@@ -1780,6 +1892,28 @@ export const admin = {
     selectFile: 'Click or drag a backup file here',
     fileHint: 'Only .json files exported by VoiceHub are supported',
     restoreMode: 'Restore Mode',
+    restoreModes: {
+      merge: { title: 'Incremental Mode', desc: 'Import only new non-duplicate records' },
+      replace: { title: 'Replace Mode', desc: 'Clear existing tables before full restore' }
+    },
+    overwriteSuperAdmin: 'Overwrite super admin account data from backup',
+    overwriteSuperAdminDesc: 'When disabled, the current super admin account plus third-party bindings and 2FA data are kept.',
+    replaceWarning: 'Warning: replace mode permanently clears matching tables in the current database. Existing sessions will be interrupted.',
+    restoring: 'Restoring...',
+    confirmRestore: 'Confirm and Start Restore',
+    resetSequenceTitle: 'Reset Table Sequences',
+    selectTargetTable: 'Select Target Table',
+    sequenceHelpTitle: 'What is sequence reset?',
+    sequenceHelpDesc: 'If table IDs have gaps or stop auto-incrementing after manual database operations, resetting sequences updates the database counters to current max ID + 1. This resolves write failures caused by ID conflicts without modifying existing data.',
+    resetting: 'Resetting...',
+    executeReset: 'Run Reset',
+    dangerResetTitle: 'Dangerous Operation: Reset Database',
+    dangerResetHeading: 'You are performing an extremely dangerous operation!',
+    dangerResetPrefix: 'The reset permanently deletes all',
+    dangerResetScope: 'songs, submissions, schedules, notifications, logs, and user accounts except yours',
+    confirmCodeLabel: 'Enter the following code to confirm',
+    confirmCodePlaceholder: 'Enter the code above...',
+    confirmResetDatabase: 'Confirm Full Reset',
     cards: {
       backup: { title: 'Create Backup', desc: 'Export all current database data to a file for backup or migration.', button: 'Create Backup File' },
       restore: { title: 'Restore Backup', desc: 'Restore system data from a previously exported backup file.', button: 'Select Backup File' },
@@ -1790,6 +1924,54 @@ export const admin = {
       songs: { label: 'Songs & Schedules', desc: 'Includes song library, user submissions, and historical broadcast schedules' },
       system: { label: 'System Configuration', desc: 'Includes site settings, blacklist, play times, and global parameters' },
       users: { label: 'User Accounts', desc: 'Includes registered user permissions and preferences, excluding sensitive admin data' }
+    },
+    tableOptions: [
+      { label: 'Reset All Tables (All)', value: 'all' },
+      { label: 'Song Table (Song)', value: 'Song' },
+      { label: 'User Table (User)', value: 'User' },
+      { label: 'Vote Table (Vote)', value: 'Vote' },
+      { label: 'Schedule Table (Schedule)', value: 'Schedule' },
+      { label: 'Notification Table (Notification)', value: 'Notification' },
+      { label: 'Notification Settings Table (NotificationSettings)', value: 'NotificationSettings' },
+      { label: 'Play Time Table (PlayTime)', value: 'PlayTime' },
+      { label: 'Semester Table (Semester)', value: 'Semester' },
+      { label: 'System Settings Table (SystemSettings)', value: 'SystemSettings' },
+      { label: 'Song Blacklist Table (SongBlacklist)', value: 'SongBlacklist' }
+    ],
+    progress: {
+      readingFile: 'Reading file...',
+      clearingData: 'Clearing existing data...',
+      restoringTable: (table: string, start: number, end: number, total: number, percent: number) =>
+        `Restoring ${table} (${start}-${end}/${total}) ${percent}%`,
+      fixingSequence: 'Fixing table sequences...',
+      reloadingSmtp: 'Reloading SMTP configuration...',
+      finalizingAdmin: 'Finalizing admin replacement...'
+    },
+    messages: {
+      parseBackupFailed: 'Unable to parse backup file. Please check the file format.',
+      invalidJsonFile: 'Please select a valid JSON backup file',
+      backupDownloaded: 'Backup file downloaded',
+      selectBackupFile: 'Please select a backup file',
+      restoreSuccessRelogin: 'Database restored. Signing in again...',
+      restoreSuccess: 'Database restored successfully',
+      sequenceResetSuccess: 'Sequence reset successfully',
+      databaseResetSuccess: 'Database reset successfully'
+    },
+    errors: {
+      noBackupContent: 'Select at least one backup item',
+      downloadFailed: (status: number) => `Download failed: ${status}`,
+      createBackupFailed: 'Failed to create backup',
+      createBackupFailedWithMessage: (message: string) => `Failed to create backup: ${message}`,
+      invalidBackupFormat: 'Unable to parse backup file. File format is invalid',
+      missingBackupData: 'Backup file is missing the data section',
+      clearDataFailed: 'Failed to clear data',
+      restoreTableFailed: (table: string) => `Failed to restore table ${table}`,
+      fixSequenceFailed: 'Failed to fix sequences',
+      smtpReloadFailed: 'Failed to reload SMTP configuration',
+      restoreBackupFailedWithMessage: (message: string) => `Failed to restore backup: ${message}`,
+      resetFailed: 'Reset failed',
+      resetSequenceFailedWithMessage: (message: string) => `Failed to reset sequence: ${message}`,
+      resetDatabaseFailedWithMessage: (message: string) => `Failed to reset database: ${message}`
     }
   },
   userManager: {

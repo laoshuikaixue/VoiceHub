@@ -79,10 +79,10 @@
                   >{{ locale.secure }}</label
                 >
                 <CustomSelect
-                  :model-value="config.smtpSecure ? 'SSL/TLS' : '无'"
-                  :options="['SSL/TLS', '无']"
+                  :model-value="config.smtpSecure ? locale.secureOptions.ssl : locale.secureOptions.none"
+                  :options="[locale.secureOptions.ssl, locale.secureOptions.none]"
                   class="w-full"
-                  @update:model-value="(val) => (config.smtpSecure = val === 'SSL/TLS')"
+                  @update:model-value="(val) => (config.smtpSecure = val === locale.secureOptions.ssl)"
                 />
               </div>
             </div>
@@ -129,7 +129,7 @@
               <input
                 v-model="config.smtpFromName"
                 type="text"
-                placeholder="校园广播站"
+                :placeholder="locale.defaultFromName"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
               >
             </div>
@@ -220,7 +220,7 @@ const config = ref({
   smtpUsername: '',
   smtpPassword: '',
   smtpFromEmail: '',
-  smtpFromName: '校园广播站'
+  smtpFromName: locale.value.defaultFromName
 })
 
 const testEmail = ref('')
@@ -243,14 +243,14 @@ const loadConfig = async () => {
       smtpUsername: response.smtpUsername || '',
       smtpPassword: response.smtpPassword || '',
       smtpFromEmail: response.smtpFromEmail || '',
-      smtpFromName: response.smtpFromName || '校园广播站'
+      smtpFromName: response.smtpFromName || locale.value.defaultFromName
     }
 
     // 保存原始配置用于重置
     originalConfig.value = { ...config.value }
   } catch (error) {
     console.error('加载SMTP配置失败:', error)
-    showNotification('加载配置失败', 'error')
+    showNotification(locale.value.loadFailed, 'error')
   }
 }
 
@@ -259,7 +259,7 @@ const saveConfig = async () => {
   if (config.value.smtpEnabled) {
     // 验证必填字段
     if (!config.value.smtpHost || !config.value.smtpUsername || !config.value.smtpPassword) {
-      showNotification('请填写完整的SMTP配置信息', 'error')
+      showNotification(locale.value.incompleteConfig, 'error')
       return
     }
   }
@@ -272,10 +272,10 @@ const saveConfig = async () => {
     })
 
     originalConfig.value = { ...config.value }
-    showNotification('SMTP配置保存成功', 'success')
+    showNotification(locale.value.saveSuccess, 'success')
   } catch (error) {
     console.error('保存SMTP配置失败:', error)
-    showNotification(error.data?.message || '保存配置失败', 'error')
+    showNotification(error.data?.message || locale.value.saveFailed, 'error')
   } finally {
     saving.value = false
   }
@@ -285,7 +285,7 @@ const saveConfig = async () => {
 const resetConfig = () => {
   config.value = { ...originalConfig.value }
   testResult.value = null
-  showNotification('配置已重置', 'info')
+  showNotification(locale.value.resetSuccess, 'info')
 }
 
 const reloadSmtpConfig = async () => {
@@ -295,12 +295,12 @@ const reloadSmtpConfig = async () => {
       method: 'POST'
     })
     if (!response.success) {
-      throw new Error(response.message || 'SMTP重载失败')
+      throw new Error(response.message || locale.value.reloadFailed)
     }
-    showNotification(response.message || 'SMTP配置已重载', 'success')
+    showNotification(response.message || locale.value.reloadSuccess, 'success')
   } catch (error) {
     console.error('重载SMTP配置失败:', error)
-    showNotification(error.data?.message || error.message || '重载SMTP配置失败', 'error')
+    showNotification(error.data?.message || error.message || locale.value.reloadFailed, 'error')
   } finally {
     reloading.value = false
   }
@@ -309,7 +309,7 @@ const reloadSmtpConfig = async () => {
 // 测试连接
 const testConnection = async () => {
   if (!config.value.smtpEnabled || !config.value.smtpHost) {
-    showNotification('请先配置SMTP服务器信息', 'error')
+    showNotification(locale.value.serverRequired, 'error')
     return
   }
 
@@ -327,7 +327,7 @@ const testConnection = async () => {
     console.error('测试连接失败:', error)
     testResult.value = {
       success: false,
-      message: error.data?.message || '测试连接失败'
+      message: error.data?.message || locale.value.testConnectionFailed
     }
   } finally {
     testing.value = false
@@ -337,7 +337,7 @@ const testConnection = async () => {
 // 发送测试邮件
 const sendTestEmail = async () => {
   if (!testEmail.value) {
-    showNotification('请输入测试邮箱地址', 'error')
+    showNotification(locale.value.testEmailRequired, 'error')
     return
   }
 
@@ -355,7 +355,7 @@ const sendTestEmail = async () => {
 
     testResult.value = response
     if (response.success) {
-      showNotification('测试邮件发送成功', 'success')
+      showNotification(locale.value.testEmailSuccess, 'success')
       setTimeout(() => {
         testResult.value = null
       }, 5000)
@@ -364,7 +364,7 @@ const sendTestEmail = async () => {
     console.error('发送测试邮件失败:', error)
     testResult.value = {
       success: false,
-      message: error.data?.message || '发送测试邮件失败'
+      message: error.data?.message || locale.value.testEmailFailed
     }
   } finally {
     testing.value = false

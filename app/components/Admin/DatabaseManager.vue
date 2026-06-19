@@ -216,9 +216,9 @@
                     restoreForm.mode === 'merge' ? 'text-emerald-400' : 'text-zinc-500'
                   ]"
                 >
-                  增量模式
+                  {{ locale.restoreModes.merge.title }}
                 </h6>
-                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">仅导入不重复的新记录</p>
+                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes.merge.desc }}</p>
               </button>
               <button
                 :class="[
@@ -235,9 +235,9 @@
                     restoreForm.mode === 'replace' ? 'text-emerald-400' : 'text-zinc-500'
                   ]"
                 >
-                  覆盖模式
+                  {{ locale.restoreModes.replace.title }}
                 </h6>
-                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">清空现有表后完整恢复</p>
+                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes.replace.desc }}</p>
               </button>
             </div>
           </div>
@@ -253,9 +253,9 @@
                 class="mt-0.5 accent-emerald-500"
               >
               <div>
-                <p class="text-xs font-bold text-zinc-200">覆盖备份中的超级管理员账号数据</p>
+                <p class="text-xs font-bold text-zinc-200">{{ locale.overwriteSuperAdmin }}</p>
                 <p class="text-[10px] text-zinc-500 mt-1">
-                  关闭时将保留当前超级管理员账号及其第三方绑定、2FA等关联数据
+                  {{ locale.overwriteSuperAdminDesc }}
                 </p>
               </div>
             </label>
@@ -266,7 +266,7 @@
           >
             <AlertCircle class="text-amber-500 shrink-0 mt-0.5 w-4 h-4" />
             <p class="text-[10px] text-zinc-500 leading-normal font-medium">
-              注意：覆盖模式将永久清空当前数据库中对应的表内容。此操作将导致现有会话中断。
+              {{ locale.replaceWarning }}
             </p>
           </div>
         </div>
@@ -275,14 +275,14 @@
             class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
           >
-            取消
+            {{ locale.cancel }}
           </button>
           <button
             :disabled="uploadLoading || !selectedFile"
             class="px-8 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="restoreBackup"
           >
-            {{ uploadLoading ? restoreProgress || '正在恢复...' : '确认并开始恢复' }}
+            {{ uploadLoading ? restoreProgress || locale.restoring : locale.confirmRestore }}
           </button>
         </div>
       </div>
@@ -298,7 +298,7 @@
         class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100 tracking-tight">重置数据表序列</h3>
+          <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.resetSequenceTitle }}</h3>
           <button
             class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
             @click="activeModal = 'none'"
@@ -309,7 +309,7 @@
         <div class="p-8 space-y-6">
           <div class="space-y-2">
             <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-              >选择目标表</label
+              >{{ locale.selectTargetTable }}</label
             >
             <CustomSelect
               v-model="sequenceForm.table"
@@ -326,13 +326,11 @@
                 <AlertCircle class="w-4 h-4" />
               </div>
               <h6 class="text-xs font-bold text-zinc-300 uppercase tracking-widest">
-                什么是重置序列？
+                {{ locale.sequenceHelpTitle }}
               </h6>
             </div>
             <p class="text-[11px] text-zinc-500 leading-relaxed font-medium">
-              如果您的数据表 ID
-              出现了断档或在手动操作数据库后无法自增，重置序列可以将数据库底层的计数器更新为当前 ID
-              最大值 +1，从而解决 ID 冲突导致的写入失败问题。此操作不会修改任何现有数据。
+              {{ locale.sequenceHelpDesc }}
             </p>
           </div>
         </div>
@@ -341,14 +339,14 @@
             class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
           >
-            取消
+            {{ locale.cancel }}
           </button>
           <button
             :disabled="sequenceLoading || !sequenceForm.table"
             class="px-8 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="resetSequence"
           >
-            {{ sequenceLoading ? '正在重置...' : '执行重置' }}
+            {{ sequenceLoading ? locale.resetting : locale.executeReset }}
           </button>
         </div>
       </div>
@@ -364,7 +362,7 @@
         class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-rose-500 tracking-tight">危险操作：重置数据库</h3>
+          <h3 class="text-xl font-black text-rose-500 tracking-tight">{{ locale.dangerResetTitle }}</h3>
           <button
             class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
             @click="activeModal = 'none'"
@@ -378,12 +376,12 @@
           >
             <Trash2 class="text-rose-500 mb-4 w-12 h-12" />
             <h4 class="text-lg font-black text-rose-500 tracking-tight">
-              您正在执行极其危险的操作！
+              {{ locale.dangerResetHeading }}
             </h4>
             <p class="text-xs text-zinc-500 mt-2 font-medium leading-relaxed">
-              重置操作将永久删除系统中的所有
+              {{ locale.dangerResetPrefix }}
               <span class="text-zinc-300 font-bold"
-                >歌曲、投稿记录、排期文件、通知、日志及除您以外的用户账号</span
+                >{{ locale.dangerResetScope }}</span
               >。
             </p>
           </div>
@@ -392,7 +390,7 @@
             <label
               class="text-[11px] font-black text-rose-500/80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
             >
-              请输入以下代码以确认操作
+              {{ locale.confirmCodeLabel }}
             </label>
             <div
               class="bg-zinc-950 border border-rose-900/30 rounded-xl px-4 py-3 font-mono text-[10px] text-rose-400 text-center select-all"
@@ -402,7 +400,7 @@
             <input
               v-model="resetConfirmText"
               type="text"
-              placeholder="在此输入上述代码..."
+              :placeholder="locale.confirmCodePlaceholder"
               class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-rose-500/40 text-center font-mono placeholder:text-zinc-700"
             >
           </div>
@@ -412,7 +410,7 @@
               class="py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
               @click="activeModal = 'none'"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               :disabled="resetConfirmText !== CONFIRM_CODE || resetLoading"
@@ -424,7 +422,7 @@
               "
               @click="resetDatabase"
             >
-              {{ resetLoading ? '正在重置...' : '确认彻底重置' }}
+              {{ resetLoading ? locale.resetting : locale.confirmResetDatabase }}
             </button>
           </div>
         </div>
@@ -527,36 +525,14 @@ const restoreForm = ref({
 })
 
 const sequenceForm = ref({
-  table: '重置所有表 (All)'
+  table: 'all'
 })
 
-const tableOptions = [
-  '重置所有表 (All)',
-  '歌曲表 (Song)',
-  '用户表 (User)',
-  '投票表 (Vote)',
-  '排期表 (Schedule)',
-  '通知表 (Notification)',
-  '通知设置表 (NotificationSettings)',
-  '播放时段表 (PlayTime)',
-  '学期表 (Semester)',
-  '系统设置表 (SystemSettings)',
-  '歌曲黑名单表 (SongBlacklist)'
-]
+const tableOptions = computed(() => locale.value.tableOptions.map((item) => item.label))
 
-const labelToValueMap = {
-  '重置所有表 (All)': 'all',
-  '歌曲表 (Song)': 'Song',
-  '用户表 (User)': 'User',
-  '投票表 (Vote)': 'Vote',
-  '排期表 (Schedule)': 'Schedule',
-  '通知表 (Notification)': 'Notification',
-  '通知设置表 (NotificationSettings)': 'NotificationSettings',
-  '播放时段表 (PlayTime)': 'PlayTime',
-  '学期表 (Semester)': 'Semester',
-  '系统设置表 (SystemSettings)': 'SystemSettings',
-  '歌曲黑名单表 (SongBlacklist)': 'SongBlacklist'
-}
+const labelToValueMap = computed(() =>
+  Object.fromEntries(locale.value.tableOptions.map((item) => [item.label, item.value]))
+)
 
 // 辅助函数
 const isLoading = (id) => {
@@ -587,7 +563,7 @@ const parseBackupSuperAdmin = async (file) => {
   } catch (error) {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
-    showNotification('无法解析备份文件，请检查文件格式是否正确。', 'error')
+    showNotification(locale.value.messages.parseBackupFailed, 'error')
     console.error('解析备份文件失败:', error)
   }
 }
@@ -598,7 +574,7 @@ const handleFileSelect = async (event) => {
     selectedFile.value = file
     await parseBackupSuperAdmin(file)
   } else {
-    showNotification('请选择有效的JSON备份文件', 'error')
+    showNotification(locale.value.messages.invalidJsonFile, 'error')
   }
 }
 
@@ -608,7 +584,7 @@ const handleFileDrop = async (event) => {
     selectedFile.value = file
     await parseBackupSuperAdmin(file)
   } else {
-    showNotification('请选择有效的JSON备份文件', 'error')
+    showNotification(locale.value.messages.invalidJsonFile, 'error')
   }
 }
 
@@ -626,7 +602,7 @@ const createBackup = async () => {
     } else if (createForm.value.includeSystemData) {
       tables = ['systemSettings']
     } else {
-      throw new Error('请至少选择一项备份内容')
+      throw new Error(locale.value.errors.noBackupContent)
     }
 
     const response = await $fetch('/api/admin/backup/export', {
@@ -650,7 +626,7 @@ const createBackup = async () => {
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        showNotification('备份文件已下载', 'success')
+        showNotification(locale.value.messages.backupDownloaded, 'success')
         activeModal.value = 'none'
       } else if (response.backup.downloadMode === 'file' && response.backup.filename) {
         const downloadUrl = `/api/admin/backup/download/${response.backup.filename}`
@@ -658,7 +634,7 @@ const createBackup = async () => {
           method: 'GET',
           credentials: 'include'
         })
-        if (!downloadResponse.ok) throw new Error(`下载失败: ${downloadResponse.status}`)
+        if (!downloadResponse.ok) throw new Error(locale.value.errors.downloadFailed(downloadResponse.status))
         const blob = await downloadResponse.blob()
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -668,25 +644,25 @@ const createBackup = async () => {
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        showNotification('备份文件已下载', 'success')
+        showNotification(locale.value.messages.backupDownloaded, 'success')
         activeModal.value = 'none'
       }
     } else {
-      throw new Error(response.message || '备份创建失败')
+      throw new Error(response.message || locale.value.errors.createBackupFailed)
     }
   } catch (error) {
     console.error('创建备份失败:', error)
-    showNotification('创建备份失败: ' + error.message, 'error')
+    showNotification(locale.value.errors.createBackupFailedWithMessage(error.message), 'error')
   } finally {
     createLoading.value = false
   }
 }
 
 const restoreBackup = async () => {
-  if (!selectedFile.value) return showNotification('请选择备份文件', 'error')
+  if (!selectedFile.value) return showNotification(locale.value.messages.selectBackupFile, 'error')
 
   uploadLoading.value = true
-  restoreProgress.value = '正在读取文件...'
+  restoreProgress.value = locale.value.progress.readingFile
 
   try {
     const fileContent = await selectedFile.value.text()
@@ -694,10 +670,10 @@ const restoreBackup = async () => {
     try {
       backupData = JSON.parse(fileContent)
     } catch {
-      throw new Error('无法解析备份文件，文件格式不正确')
+      throw new Error(locale.value.errors.invalidBackupFormat)
     }
 
-    if (!backupData.data) throw new Error('备份文件缺少数据部分')
+    if (!backupData.data) throw new Error(locale.value.errors.missingBackupData)
     const fileHasSuperAdmin = hasSuperAdminInBackup.value
     if (!fileHasSuperAdmin) {
       restoreForm.value.overwriteSuperAdmin = false
@@ -707,7 +683,7 @@ const restoreBackup = async () => {
     let temporaryPreservedUserId = null
 
     if (restoreForm.value.mode === 'replace') {
-      restoreProgress.value = '正在清空现有数据...'
+      restoreProgress.value = locale.value.progress.clearingData
       const clearResult = await $fetch('/api/admin/backup/clear', {
         method: 'POST',
         body: {
@@ -715,7 +691,7 @@ const restoreBackup = async () => {
           hasSuperAdminInBackup: fileHasSuperAdmin
         }
       })
-      if (!clearResult.success) throw new Error(clearResult.message || '清空数据失败')
+      if (!clearResult.success) throw new Error(clearResult.message || locale.value.errors.clearDataFailed)
       preservedSuperAdminIds = clearResult.preservedSuperAdminIds || []
       temporaryPreservedUserId = clearResult.temporaryPreservedUserId || null
     }
@@ -760,7 +736,13 @@ const restoreBackup = async () => {
       for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE)
         const progressPercent = Math.round((totalProcessed / totalRecords) * 100)
-        restoreProgress.value = `正在恢复 ${tableName} (${i + 1}-${Math.min(i + CHUNK_SIZE, records.length)}/${records.length}) ${progressPercent}%`
+        restoreProgress.value = locale.value.progress.restoringTable(
+          tableName,
+          i + 1,
+          Math.min(i + CHUNK_SIZE, records.length),
+          records.length,
+          progressPercent
+        )
 
         const response = await $fetch('/api/admin/backup/restore-chunk', {
           method: 'POST',
@@ -774,7 +756,7 @@ const restoreBackup = async () => {
           }
         })
 
-        if (!response.success) throw new Error(response.message || `恢复表 ${tableName} 失败`)
+        if (!response.success) throw new Error(response.message || locale.value.errors.restoreTableFailed(tableName))
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
@@ -783,21 +765,21 @@ const restoreBackup = async () => {
       }
     }
 
-    restoreProgress.value = '正在修复数据表序列...'
+    restoreProgress.value = locale.value.progress.fixingSequence
     const sequenceResult = await $fetch('/api/admin/fix-sequence', {
       method: 'POST',
       body: { table: 'all' }
     })
     if (!sequenceResult.success) {
-      throw new Error(sequenceResult.message || sequenceResult.error || '序列修复失败')
+      throw new Error(sequenceResult.message || sequenceResult.error || locale.value.errors.fixSequenceFailed)
     }
 
-    restoreProgress.value = '正在重载SMTP配置...'
+    restoreProgress.value = locale.value.progress.reloadingSmtp
     const smtpReloadResult = await $fetch('/api/admin/smtp/reload', {
       method: 'POST'
     })
     if (!smtpReloadResult.success) {
-      throw new Error(smtpReloadResult.message || 'SMTP配置重载失败')
+      throw new Error(smtpReloadResult.message || locale.value.errors.smtpReloadFailed)
     }
 
     const shouldFinalizeTempUser =
@@ -809,7 +791,7 @@ const restoreBackup = async () => {
     if (shouldFinalizeTempUser) {
       const restoredUserIds = Object.values(mappings.users).map((id) => Number(id))
       if (!restoredUserIds.includes(Number(temporaryPreservedUserId))) {
-        restoreProgress.value = '正在完成管理员替换...'
+        restoreProgress.value = locale.value.progress.finalizingAdmin
         await $fetch('/api/admin/backup/clear', {
           method: 'POST',
           body: {
@@ -817,7 +799,7 @@ const restoreBackup = async () => {
           }
         })
       }
-      showNotification('数据库恢复成功，正在重新登录', 'success')
+      showNotification(locale.value.messages.restoreSuccessRelogin, 'success')
       activeModal.value = 'none'
       setTimeout(() => {
         if (auth.logout) {
@@ -830,11 +812,11 @@ const restoreBackup = async () => {
       return
     }
 
-    showNotification('数据库恢复成功', 'success')
+    showNotification(locale.value.messages.restoreSuccess, 'success')
     activeModal.value = 'none'
   } catch (error) {
     console.error('恢复备份失败:', error)
-    showNotification('恢复备份失败: ' + error.message, 'error')
+    showNotification(locale.value.errors.restoreBackupFailedWithMessage(error.message), 'error')
   } finally {
     uploadLoading.value = false
     restoreProgress.value = ''
@@ -845,20 +827,20 @@ const resetSequence = async () => {
   if (!sequenceForm.value.table) return
   sequenceLoading.value = true
   try {
-    const tableValue = labelToValueMap[sequenceForm.value.table] || sequenceForm.value.table
+    const tableValue = labelToValueMap.value[sequenceForm.value.table] || sequenceForm.value.table
     const response = await $fetch('/api/admin/fix-sequence', {
       method: 'POST',
       body: { table: tableValue }
     })
     if (response.success) {
-      showNotification(response.message || '序列重置成功', 'success')
+      showNotification(response.message || locale.value.messages.sequenceResetSuccess, 'success')
       activeModal.value = 'none'
     } else {
-      throw new Error(response.error || response.message || '重置失败')
+      throw new Error(response.error || response.message || locale.value.errors.resetFailed)
     }
   } catch (error) {
     console.error('重置序列失败:', error)
-    showNotification('重置序列失败: ' + error.message, 'error')
+    showNotification(locale.value.errors.resetSequenceFailedWithMessage(error.message), 'error')
   } finally {
     sequenceLoading.value = false
   }
@@ -870,15 +852,15 @@ const resetDatabase = async () => {
   try {
     const response = await $fetch('/api/admin/database/reset', { method: 'POST' })
     if (response.success) {
-      showNotification('数据库已成功重置', 'success')
+      showNotification(locale.value.messages.databaseResetSuccess, 'success')
       activeModal.value = 'none'
       setTimeout(() => window.location.reload(), 1500)
     } else {
-      throw new Error(response.message || '重置失败')
+      throw new Error(response.message || locale.value.errors.resetFailed)
     }
   } catch (error) {
     console.error('重置数据库失败:', error)
-    showNotification('重置数据库失败: ' + error.message, 'error')
+    showNotification(locale.value.errors.resetDatabaseFailedWithMessage(error.message), 'error')
   } finally {
     resetLoading.value = false
   }

@@ -40,6 +40,10 @@ export const siteConfig = {
   enableCollaborativeDesc: '允许用户添加联合投稿人并发起协作投稿',
   enableRemarks: '启用投稿备注留言',
   enableRemarksDesc: '允许用户在投稿时附加公开或仅管理员可见的备注',
+  enableCardCodeRequests: '启用点歌券点歌',
+  enableCardCodeRequestsDesc: '允许用户使用点歌券在投稿时抵扣或提交点歌',
+  requireCardCodeForRequests: '强制使用点歌券投稿',
+  requireCardCodeForRequestsDesc: '开启后，所有用户提交点歌时必须填写有效点歌券',
   enableReplay: '启用重播申请',
   enableReplayDesc: '允许用户对本学期已播放过的歌曲再次申请',
   enableLimit: '启用投稿限额',
@@ -62,6 +66,7 @@ export const siteConfig = {
   captchaGraphic: '图形验证码',
   captchaTurnstile: 'Cloudflare Turnstile',
   captchaMaxFailures: '触发阈值（失败次数）',
+  captchaMaxFailuresPlaceholder: '例如: 3',
   captchaMaxFailuresDesc: '连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。',
   turnstileSiteKey: 'Site Key (Sitekey)',
   turnstileSiteKeyPlaceholder: '在此输入 Turnstile 的 Site Key',
@@ -82,6 +87,15 @@ export const siteConfig = {
   // 投稿须知
   submissionGuidelines: '投稿须知',
   guidelinesPlaceholder: '请输入投稿须知内容',
+  defaultSiteTitle: '校园广播站点歌系统',
+  defaultSubmissionGuidelines: `1. 投稿时无需加入书名号
+2. 除DJ外，其他类型歌曲均接收（包括小语种）
+3. 禁止投递含有违规内容的歌曲
+4. 点播的歌曲将由管理员进行审核
+5. 审核通过后将安排在播放时段播出
+6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
+7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
+8. 最终解释权归广播站所有`,
 
   // 提示消息
   loadFailed: '加载配置失败',
@@ -210,6 +224,8 @@ export const pages = {
     saving: '保存中...',
     saveSettings: '保存设置',
     loading: '加载设置中...',
+    loadingShort: '加载中...',
+    retry: '重试',
     inAppTitle: '站内消息设置',
     inAppDesc: '配置您希望在系统内接收的消息类型',
     songSelectedTitle: '歌曲被选中消息',
@@ -222,9 +238,13 @@ export const pages = {
     systemDesc: '接收系统重要通知和公告',
     voteThresholdTitle: '投票通知阈值',
     voteThresholdDesc: '当投票数达到此阈值时才发送通知',
+    voteThresholdText: (count: number) => `每获得 ${count} 票通知一次`,
     voteUnit: '票',
     refreshTitle: '通知刷新间隔',
     refreshDesc: '设置系统自动检查新通知的时间间隔',
+    seconds: (seconds: number) => `${seconds}秒`,
+    minutes: (minutes: number) => `${minutes}分钟`,
+    minutesSeconds: (minutes: number, seconds: number) => `${minutes}分${seconds}秒`,
     socialTitle: '社交账号绑定',
     socialDesc: '绑定您的社交账号以接收实时推送通知',
     emailNotifyTitle: '邮箱消息通知',
@@ -1633,7 +1653,59 @@ export const admin = {
     testEmailPlaceholder: '输入测试邮箱地址',
     send: '发送',
     sending: '发送中',
-    sent: '已发送'
+    sent: '已发送',
+    secureOptions: {
+      ssl: 'SSL/TLS',
+      none: '无'
+    },
+    defaultFromName: '校园广播站',
+    loadFailed: '加载配置失败',
+    incompleteConfig: '请填写完整的SMTP配置信息',
+    saveSuccess: 'SMTP配置保存成功',
+    saveFailed: '保存配置失败',
+    resetSuccess: '配置已重置',
+    reloadSuccess: 'SMTP配置已重载',
+    reloadFailed: '重载SMTP配置失败',
+    serverRequired: '请先配置SMTP服务器信息',
+    testConnectionFailed: '测试连接失败',
+    testEmailRequired: '请输入测试邮箱地址',
+    testEmailSuccess: '测试邮件发送成功',
+    testEmailFailed: '发送测试邮件失败'
+  },
+  emailTemplateManager: {
+    title: '邮件模板管理',
+    desc: '自定义系统邮件的主题与内容，支持变量替换',
+    refreshPreview: '刷新预览',
+    livePreview: '实时预览',
+    saving: '保存中...',
+    updateTemplate: '更新模板',
+    searchPlaceholder: '搜索模板...',
+    builtin: '内置',
+    custom: '自定义',
+    templateName: '模板名称',
+    emailSubject: '邮件主题',
+    supportsVariables: '支持变量',
+    subjectPlaceholder: '请输入邮件主题...',
+    availableVariables: '可用变量',
+    htmlContent: 'HTML 内容',
+    restoreDefault: '恢复默认配置',
+    livePreviewLabel: '实时预览:',
+    hidePreview: '隐藏预览',
+    emptySelectTemplate: '请在左侧选择一个邮件模板',
+    previewData: {
+      name: '张三',
+      title: '系统通知',
+      message: '这是一条预览内容\n支持换行与链接'
+    },
+    messages: {
+      saved: '模板已保存',
+      restored: '已恢复默认模板'
+    },
+    errors: {
+      saveFailed: '保存失败',
+      restoreFailed: '恢复失败',
+      previewFailed: '预览失败'
+    }
   },
   notificationSender: {
     title: '向用户发送通知',
@@ -1651,6 +1723,46 @@ export const admin = {
     selectClassPlaceholder: '请选择班级',
     add: '添加',
     noClassSelected: '未选择任何班级',
+    userSearchPlaceholder: '搜索并选择用户 (姓名、用户名或ID)...',
+    searchResults: (count: number) => `搜索结果 (${count})`,
+    selected: '已选择',
+    select: '选择',
+    selectedUsers: (count: number) => `已选择用户 (${count})`,
+    clearAll: '清空全部',
+    noUsersSelected: '未选择任何用户',
+    send: '发送通知',
+    sending: '发送中...',
+    previewTitle: '通知预览',
+    previewSender: 'VoiceHub 系统',
+    justNow: '刚刚',
+    previewTitlePlaceholder: '通知标题',
+    previewContentPlaceholder: '这里将显示通知的详细内容预览...',
+    previewScope: (scope: string) => `发送范围: ${scope}`,
+    previewHint: '预览图仅供参考布局，实际发送效果可能会根据用户设备显示语言和屏幕尺寸有所不同。',
+    roles: {
+      admin: '管理员',
+      teacher: '教师',
+      student: '学生'
+    },
+    scopeDescriptions: {
+      all: '全体用户',
+      grade: (grade: string) => `${grade}年级`,
+      class: (grade: string, className: string) => `${grade}年级${className}班`,
+      multiClass: (count: number) => `${count}个班级`,
+      specificUsers: (count: number) => `已选择${count}个用户`,
+      selectGrade: '请选择年级',
+      selectClass: '请选择班级',
+      selectUsers: '请选择用户'
+    },
+    messages: {
+      sendSuccess: (count: number) => `成功发送通知给 ${count} 名用户`
+    },
+    errors: {
+      adminOnly: '只有管理员可以发送系统通知',
+      incomplete: '请填写完整信息',
+      sendFailed: '发送通知失败',
+      sendError: '发送通知时发生错误'
+    },
     targets: {
       all: '全体用户',
       grade: '按年级选择',
@@ -1791,6 +1903,28 @@ export const admin = {
     selectFile: '点击选择或拖拽备份文件',
     fileHint: '仅支持 VoiceHub 导出的 .json 格式',
     restoreMode: '恢复模式',
+    restoreModes: {
+      merge: { title: '增量模式', desc: '仅导入不重复的新记录' },
+      replace: { title: '覆盖模式', desc: '清空现有表后完整恢复' }
+    },
+    overwriteSuperAdmin: '覆盖备份中的超级管理员账号数据',
+    overwriteSuperAdminDesc: '关闭时将保留当前超级管理员账号及其第三方绑定、2FA等关联数据',
+    replaceWarning: '注意：覆盖模式将永久清空当前数据库中对应的表内容。此操作将导致现有会话中断。',
+    restoring: '正在恢复...',
+    confirmRestore: '确认并开始恢复',
+    resetSequenceTitle: '重置数据表序列',
+    selectTargetTable: '选择目标表',
+    sequenceHelpTitle: '什么是重置序列？',
+    sequenceHelpDesc: '如果您的数据表 ID 出现了断档或在手动操作数据库后无法自增，重置序列可以将数据库底层的计数器更新为当前 ID 最大值 +1，从而解决 ID 冲突导致的写入失败问题。此操作不会修改任何现有数据。',
+    resetting: '正在重置...',
+    executeReset: '执行重置',
+    dangerResetTitle: '危险操作：重置数据库',
+    dangerResetHeading: '您正在执行极其危险的操作！',
+    dangerResetPrefix: '重置操作将永久删除系统中的所有',
+    dangerResetScope: '歌曲、投稿记录、排期文件、通知、日志及除您以外的用户账号',
+    confirmCodeLabel: '请输入以下代码以确认操作',
+    confirmCodePlaceholder: '在此输入上述代码...',
+    confirmResetDatabase: '确认彻底重置',
     cards: {
       backup: { title: '创建备份', desc: '导出当前数据库的所有数据到文件，用于安全备份或迁移。', button: '创建备份文件' },
       restore: { title: '恢复备份', desc: '从之前导出的备份文件中恢复系统数据。', button: '选择备份文件' },
@@ -1801,6 +1935,54 @@ export const admin = {
       songs: { label: '歌曲与排期数据', desc: '包含所有歌曲库、用户投稿记录及历史播音排期' },
       system: { label: '系统配置信息', desc: '包含站点设置、黑名单、播出时段等全局参数' },
       users: { label: '用户账户数据', desc: '包含所有注册用户的权限、偏好设置（不含管理员敏感信息）' }
+    },
+    tableOptions: [
+      { label: '重置所有表 (All)', value: 'all' },
+      { label: '歌曲表 (Song)', value: 'Song' },
+      { label: '用户表 (User)', value: 'User' },
+      { label: '投票表 (Vote)', value: 'Vote' },
+      { label: '排期表 (Schedule)', value: 'Schedule' },
+      { label: '通知表 (Notification)', value: 'Notification' },
+      { label: '通知设置表 (NotificationSettings)', value: 'NotificationSettings' },
+      { label: '播放时段表 (PlayTime)', value: 'PlayTime' },
+      { label: '学期表 (Semester)', value: 'Semester' },
+      { label: '系统设置表 (SystemSettings)', value: 'SystemSettings' },
+      { label: '歌曲黑名单表 (SongBlacklist)', value: 'SongBlacklist' }
+    ],
+    progress: {
+      readingFile: '正在读取文件...',
+      clearingData: '正在清空现有数据...',
+      restoringTable: (table: string, start: number, end: number, total: number, percent: number) =>
+        `正在恢复 ${table} (${start}-${end}/${total}) ${percent}%`,
+      fixingSequence: '正在修复数据表序列...',
+      reloadingSmtp: '正在重载SMTP配置...',
+      finalizingAdmin: '正在完成管理员替换...'
+    },
+    messages: {
+      parseBackupFailed: '无法解析备份文件，请检查文件格式是否正确。',
+      invalidJsonFile: '请选择有效的JSON备份文件',
+      backupDownloaded: '备份文件已下载',
+      selectBackupFile: '请选择备份文件',
+      restoreSuccessRelogin: '数据库恢复成功，正在重新登录',
+      restoreSuccess: '数据库恢复成功',
+      sequenceResetSuccess: '序列重置成功',
+      databaseResetSuccess: '数据库已成功重置'
+    },
+    errors: {
+      noBackupContent: '请至少选择一项备份内容',
+      downloadFailed: (status: number) => `下载失败: ${status}`,
+      createBackupFailed: '备份创建失败',
+      createBackupFailedWithMessage: (message: string) => `创建备份失败: ${message}`,
+      invalidBackupFormat: '无法解析备份文件，文件格式不正确',
+      missingBackupData: '备份文件缺少数据部分',
+      clearDataFailed: '清空数据失败',
+      restoreTableFailed: (table: string) => `恢复表 ${table} 失败`,
+      fixSequenceFailed: '序列修复失败',
+      smtpReloadFailed: 'SMTP配置重载失败',
+      restoreBackupFailedWithMessage: (message: string) => `恢复备份失败: ${message}`,
+      resetFailed: '重置失败',
+      resetSequenceFailedWithMessage: (message: string) => `重置序列失败: ${message}`,
+      resetDatabaseFailedWithMessage: (message: string) => `重置数据库失败: ${message}`
     }
   },
   userManager: {

@@ -9,8 +9,8 @@
           <Mail :size="20" class="text-blue-500" />
         </div>
         <div>
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">邮件模板管理</h3>
-          <p class="text-[10px] text-zinc-500 mt-0.5">自定义系统邮件的主题与内容，支持变量替换</p>
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.title }}</h3>
+          <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.desc }}</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -20,7 +20,7 @@
           :disabled="saving"
           @click="doPreview"
         >
-          <Eye :size="14" /> {{ previewHtml ? '刷新预览' : '实时预览' }}
+          <Eye :size="14" /> {{ previewHtml ? locale.refreshPreview : locale.livePreview }}
         </button>
         <button
           v-if="selected"
@@ -28,7 +28,7 @@
           :disabled="saving"
           @click="save"
         >
-          <Save :size="14" /> {{ saving ? '保存中...' : '更新模板' }}
+          <Save :size="14" /> {{ saving ? locale.saving : locale.updateTemplate }}
         </button>
       </div>
     </div>
@@ -41,7 +41,7 @@
             <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
             <input
               type="text"
-              placeholder="搜索模板..."
+              :placeholder="locale.searchPlaceholder"
               class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-[10px] text-zinc-400 focus:outline-none focus:border-blue-500/30"
             >
           </div>
@@ -74,13 +74,13 @@
                   v-if="t.isBuiltin && !t.isOverridden"
                   class="px-1.5 py-0.5 rounded-md bg-zinc-800 text-[8px] font-black text-zinc-500 uppercase tracking-tighter"
                 >
-                  内置
+                  {{ locale.builtin }}
                 </span>
                 <span
                   v-if="t.isOverridden"
                   class="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-[8px] font-black text-emerald-500 uppercase tracking-tighter"
                 >
-                  自定义
+                  {{ locale.custom }}
                 </span>
               </div>
             </div>
@@ -97,7 +97,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >模板名称</label
+                  >{{ locale.templateName }}</label
                 >
                 <input
                   v-model="form.name"
@@ -108,14 +108,14 @@
               <div class="space-y-2">
                 <div class="flex items-center justify-between px-1">
                   <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                    >邮件主题</label
+                    >{{ locale.emailSubject }}</label
                   >
-                  <span class="text-[9px] text-zinc-500 font-bold uppercase">支持变量</span>
+                  <span class="text-[9px] text-zinc-500 font-bold uppercase">{{ locale.supportsVariables }}</span>
                 </div>
                 <input
                   v-model="form.subject"
                   type="text"
-                  placeholder="请输入邮件主题..."
+                  :placeholder="locale.subjectPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
                 >
               </div>
@@ -130,7 +130,7 @@
               </div>
               <div class="space-y-1">
                 <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                  可用变量
+                  {{ locale.availableVariables }}
                 </h4>
                 <p class="text-[11px] text-zinc-500 leading-relaxed font-mono">
                   <template v-if="selected.key === 'verification.code'">
@@ -148,7 +148,7 @@
               <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-2">
                   <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                    >HTML 内容</label
+                    >{{ locale.htmlContent }}</label
                   >
                   <span
                     class="px-2 py-0.5 rounded-md bg-zinc-900 text-[8px] font-black text-zinc-500 uppercase"
@@ -160,7 +160,7 @@
                   class="flex items-center gap-1.5 text-[10px] font-bold text-rose-500 hover:text-rose-400 transition-colors"
                   @click="restore"
                 >
-                  <RotateCcw :size="12" /> 恢复默认配置
+                  <RotateCcw :size="12" /> {{ locale.restoreDefault }}
                 </button>
               </div>
               <div class="relative group">
@@ -189,14 +189,14 @@
                   <label
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2"
                   >
-                    <Eye :size="14" /> 实时预览:
+                    <Eye :size="14" /> {{ locale.livePreviewLabel }}
                     <span class="text-zinc-400 font-normal normal-case">{{ previewSubject }}</span>
                   </label>
                   <button
                     class="text-[10px] font-bold text-zinc-500 hover:text-zinc-300"
                     @click="previewHtml = ''"
                   >
-                    隐藏预览
+                    {{ locale.hidePreview }}
                   </button>
                 </div>
                 <div class="rounded-2xl overflow-hidden border border-zinc-800 bg-white shadow-2xl">
@@ -217,7 +217,7 @@
           >
             <Mail :size="32" class="text-zinc-800" />
           </div>
-          <p class="text-xs font-bold tracking-widest uppercase">请在左侧选择一个邮件模板</p>
+          <p class="text-xs font-bold tracking-widest uppercase">{{ locale.emptySelectTemplate }}</p>
         </div>
       </div>
     </div>
@@ -227,6 +227,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 import { Mail, Info, Save, RotateCcw, Eye, Code, Search, ChevronRight } from 'lucide-vue-next'
 
 type TemplateItem = {
@@ -239,6 +240,8 @@ type TemplateItem = {
 }
 
 const { success, error } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.emailTemplateManager)
 const templates = ref<TemplateItem[]>([])
 const selectedKey = ref<string>('')
 const form = ref<{ key: string; name: string; subject: string; html: string }>({
@@ -278,10 +281,10 @@ async function save() {
   try {
     saving.value = true
     await $fetch('/api/admin/email-templates', { method: 'POST', body: form.value })
-    success('模板已保存')
+    success(locale.value.messages.saved)
     await loadList()
   } catch (e: any) {
-    error(e?.data?.message || '保存失败')
+    error(e?.data?.message || locale.value.errors.saveFailed)
   } finally {
     saving.value = false
   }
@@ -293,10 +296,10 @@ async function restore() {
     await $fetch(`/api/admin/email-templates?key=${encodeURIComponent(form.value.key)}`, {
       method: 'DELETE'
     })
-    success('已恢复默认模板')
+    success(locale.value.messages.restored)
     await loadList()
   } catch (e: any) {
-    error(e?.data?.message || '恢复失败')
+    error(e?.data?.message || locale.value.errors.restoreFailed)
   } finally {
     saving.value = false
   }
@@ -306,10 +309,15 @@ async function doPreview() {
   try {
     const defaultData =
       form.value.key === 'verification.code'
-        ? { name: '张三', email: 'example@school.edu', code: '123456', expiresInMinutes: 5 }
+        ? {
+            name: locale.value.previewData.name,
+            email: 'example@school.edu',
+            code: '123456',
+            expiresInMinutes: 5
+          }
         : {
-            title: '系统通知',
-            message: '这是一条预览内容\n支持换行与链接',
+            title: locale.value.previewData.title,
+            message: locale.value.previewData.message,
             actionUrl: 'https://example.com'
           }
     const res = await $fetch('/api/admin/email-templates/preview', {
@@ -319,7 +327,7 @@ async function doPreview() {
     previewHtml.value = res.html
     previewSubject.value = res.subject
   } catch (e: any) {
-    error(e?.data?.message || '预览失败')
+    error(e?.data?.message || locale.value.errors.previewFailed)
   }
 }
 

@@ -222,38 +222,38 @@
           <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >名称 *</label
+                >{{ locale.name }}</label
               >
               <input
                 v-model="form.name"
                 type="text"
-                placeholder="输入API密钥名称"
+                :placeholder="locale.namePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 placeholder:text-zinc-800"
               >
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >描述</label
+                >{{ locale.description }}</label
               >
               <textarea
                 v-model="form.description"
-                placeholder="输入API密钥描述 (可选)"
+                :placeholder="locale.descriptionPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 min-h-[80px] resize-none placeholder:text-zinc-800"
               />
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >过期时间</label
+                >{{ locale.expiresAt }}</label
               >
               <CustomSelect
                 v-model="expiresAtText"
                 :options="[
-                  '永不过期',
-                  '3天后过期',
-                  '7天后过期',
-                  '30天后过期',
-                  '60天后过期',
-                  '90天后过期'
+                  locale.expiresOptions.never,
+                  locale.expiresOptions.threeDays,
+                  locale.expiresOptions.sevenDays,
+                  locale.expiresOptions.thirtyDays,
+                  locale.expiresOptions.sixtyDays,
+                  locale.expiresOptions.ninetyDays
                 ]"
                 class-name="w-full"
                 @change="handleExpiresAtChange"
@@ -261,7 +261,7 @@
             </div>
             <div class="space-y-3">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >权限设置 *</label
+                >{{ locale.permissionSettings }}</label
               >
               <div class="grid grid-cols-2 gap-2">
                 <label
@@ -303,7 +303,7 @@
               >
               <span
                 class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
-                >启用此API密钥</span
+                >{{ locale.enabled }}</span
               >
             </label>
           </div>
@@ -313,14 +313,14 @@
               class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="closeModals"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               :disabled="submitting"
               class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 transition-all"
               @click="showCreateModal ? createApiKey() : updateApiKey()"
             >
-              {{ submitting ? '保存中...' : showCreateModal ? '创建密钥' : '保存更改' }}
+              {{ submitting ? locale.saving : showCreateModal ? locale.createKey : locale.saveChanges }}
             </button>
           </div>
         </div>
@@ -332,7 +332,7 @@
         >
           <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">
-              API密钥创建成功
+              {{ locale.createSuccessTitle }}
             </h3>
             <button
               class="text-zinc-500 hover:text-zinc-200 transition-colors"
@@ -351,13 +351,13 @@
               >
                 <Check :size="24" :stroke-width="3" />
               </div>
-              <h4 class="text-lg font-black text-emerald-400">API密钥创建成功！</h4>
-              <p class="text-xs text-zinc-500 mt-2">请妥善保管以下API密钥，它只会显示这一次。</p>
+              <h4 class="text-lg font-black text-emerald-400">{{ locale.createSuccessHeading }}</h4>
+              <p class="text-xs text-zinc-500 mt-2">{{ locale.createSuccessDesc }}</p>
             </div>
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >完整API密钥</label
+                >{{ locale.fullKey }}</label
               >
               <div class="flex items-center gap-2">
                 <div
@@ -383,7 +383,7 @@
               >
                 <AlertTriangle :size="14" class="shrink-0" />
                 <p class="text-[10px] font-bold">
-                  请立即复制并保存此API密钥，关闭此窗口后将无法再次查看完整密钥
+                  {{ locale.copyWarning }}
                 </p>
               </div>
             </div>
@@ -394,7 +394,7 @@
               class="w-full py-2.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all"
               @click="closeModals"
             >
-              我已保存，关闭窗口
+              {{ locale.closeSaved }}
             </button>
           </div>
         </div>
@@ -405,7 +405,7 @@
           class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
         >
           <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
-            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">API密钥详情</h3>
+            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">{{ locale.details }}</h3>
             <button
               class="text-zinc-500 hover:text-zinc-200 transition-colors"
               @click="closeModals"
@@ -419,53 +419,53 @@
               <h5
                 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2"
               >
-                基本信息
+                {{ locale.basicInfo }}
               </h5>
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">名称:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.nameField }}</span>
                   <p class="text-xs font-bold text-zinc-200">{{ selectedApiKey.name }}</p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">状态:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.statusField }}</span>
                   <div>
                     <span
                       v-if="selectedApiKey.status === 'active'"
                       class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20"
-                      >活跃</span
+                      >{{ locale.active }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'inactive'"
                       class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50"
-                      >非活跃</span
+                      >{{ locale.inactive }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'expired'"
                       class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20"
-                      >已过期</span
+                      >{{ locale.expired }}</span
                     >
                   </div>
                 </div>
                 <div class="col-span-2 space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">描述:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.descField }}</span>
                   <p class="text-xs font-bold text-zinc-400 leading-relaxed">
-                    {{ selectedApiKey.description || '暂无描述' }}
+                    {{ selectedApiKey.description || locale.noDescription }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">创建者:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.creatorField }}</span>
                   <p class="text-xs font-bold text-zinc-200">
-                    {{ selectedApiKey.creatorName || '未知' }}
+                    {{ selectedApiKey.creatorName || locale.unknown }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">创建时间:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.createdAtField }}</span>
                   <p class="text-xs font-bold text-zinc-200">
                     {{ formatDate(selectedApiKey.createdAt) }}
                   </p>
                 </div>
                 <div v-if="selectedApiKey.expiresAt" class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">过期时间:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.expiresAtField }}</span>
                   <p
                     class="text-xs font-bold"
                     :class="selectedApiKey.isExpired ? 'text-red-400' : 'text-zinc-200'"
@@ -480,7 +480,7 @@
               <h5
                 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2"
               >
-                使用统计
+                {{ locale.usageStats }}
               </h5>
               <div class="grid grid-cols-2 gap-4">
                 <div
@@ -488,7 +488,7 @@
                 >
                   <div class="space-y-0.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                      >总调用次数</span
+                      >{{ locale.totalCalls }}</span
                     >
                     <p class="text-xl font-black text-zinc-100">
                       {{ selectedApiKey.usageCount || 0 }}
@@ -505,13 +505,13 @@
                 >
                   <div class="space-y-0.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                      >最后使用时间</span
+                      >{{ locale.lastUsedAt }}</span
                     >
                     <p class="text-xs font-bold text-zinc-100">
                       {{
                         selectedApiKey.lastUsedAt
                           ? formatDate(selectedApiKey.lastUsedAt)
-                          : '从未核对'
+                          : locale.neverChecked
                       }}
                     </p>
                   </div>
@@ -527,7 +527,7 @@
             <section class="space-y-4">
               <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
                 <h5 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-                  最近调用日志
+                  {{ locale.recentLogs }}
                 </h5>
                 <Pagination
                   v-model:current-page="logsPagination.page"
@@ -542,7 +542,7 @@
                   class="flex flex-col items-center justify-center py-10 text-zinc-600 gap-2"
                 >
                   <RefreshCw :size="24" class="animate-spin" />
-                  <span class="text-[10px] font-bold">正在加载日志...</span>
+                  <span class="text-[10px] font-bold">{{ locale.loadingLogs }}</span>
                 </div>
                 <div
                   v-else-if="apiLogs.length === 0"
@@ -550,7 +550,7 @@
                 >
                   <History :size="24" class="text-zinc-800 mb-2" />
                   <span class="text-[10px] font-bold text-zinc-700 uppercase tracking-widest"
-                    >暂无调用记录</span
+                    >{{ locale.noLogs }}</span
                   >
                 </div>
                 <div

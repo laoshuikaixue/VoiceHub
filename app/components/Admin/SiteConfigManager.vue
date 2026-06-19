@@ -181,8 +181,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">启用点歌券点歌</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户使用点歌券在投稿时抵扣或提交点歌</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.enableCardCodeRequests }}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
             </div>
             <input
               v-model="formData.enableCardCodeRequests"
@@ -195,8 +195,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">强制使用点歌券投稿</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">开启后，所有用户提交点歌时必须填写有效点歌券</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.requireCardCodeForRequests }}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
             </div>
             <input
               v-model="formData.requireCardCodeForRequests"
@@ -209,8 +209,8 @@
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">启用重播申请</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户对本学期已播放过的歌曲再次申请</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.enableReplay }}</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableReplayDesc }}</p>
             </div>
             <input
               v-model="formData.enableReplayRequests"
@@ -350,7 +350,7 @@
                       v-model.number="formData.captchaMaxFailures"
                       type="number"
                       min="1"
-                      placeholder="例如: 3"
+                      :placeholder="locale.captchaMaxFailuresPlaceholder"
                       class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                     >
                     <p class="text-[10px] text-zinc-500 mt-1">
@@ -527,14 +527,7 @@ const inputClass =
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
 const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
 
-const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
-2. 除DJ外，其他类型歌曲均接收（包括小语种）
-3. 禁止投递含有违规内容的歌曲
-4. 点播的歌曲将由管理员进行审核
-5. 审核通过后将安排在播放时段播出
-6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
-7. 本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
-8. 最终解释权归广播站所有`
+const defaultSubmissionGuidelines = computed(() => locale.value.defaultSubmissionGuidelines)
 
 const formData = ref({
   siteTitle: '',
@@ -647,7 +640,7 @@ const loadConfig = async () => {
       credentials: 'include'
     })
 
-    if (!response.ok) throw new Error('获取配置失败')
+    if (!response.ok) throw new Error(locale.value.fetchFailed)
 
     const data = await response.json()
 
@@ -659,7 +652,7 @@ const loadConfig = async () => {
       schoolLogoHomeUrl: data.schoolLogoHomeUrl || '',
       schoolLogoPrintUrl: data.schoolLogoPrintUrl || '',
       siteDescription: data.siteDescription || '',
-      submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines,
+      submissionGuidelines: data.submissionGuidelines || defaultSubmissionGuidelines.value,
       icpNumber: data.icpNumber || '',
       gonganNumber: data.gonganNumber || '',
       showBeianIcon: !!data.showBeianIcon,
@@ -714,7 +707,7 @@ const loadConfig = async () => {
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
     console.error('加载配置失败:', error)
-    showNotification('加载配置失败', 'error')
+    showNotification(locale.value.loadFailed, 'error')
   } finally {
     loading.value = false
   }
@@ -726,10 +719,10 @@ const saveConfig = async () => {
     saving.value = true
     const configToSave = {
       ...formData.value,
-      siteTitle: (formData.value.siteTitle || '').trim() || '校园广播站点歌系统',
+      siteTitle: (formData.value.siteTitle || '').trim() || locale.value.defaultSiteTitle,
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
-        (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines,
+        (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value,
       // 确保根据限额类型处理空值
       dailySubmissionLimit:
         activeLimitTab.value === 'daily' ? formData.value.dailySubmissionLimit : null,
@@ -747,7 +740,7 @@ const saveConfig = async () => {
     })
 
     if (!response.ok) {
-      let message = '保存配置失败'
+      let message = locale.value.saveFailed
       try {
         const errorData = await response.json()
         console.error('API错误响应:', errorData)
@@ -761,7 +754,7 @@ const saveConfig = async () => {
           return null
         }
 
-        message = getErrorMessage(errorData) || '保存配置失败'
+        message = getErrorMessage(errorData) || locale.value.saveFailed
       } catch (parseError) {
         console.error('无法解析API错误响应:', parseError)
       }
@@ -772,14 +765,14 @@ const saveConfig = async () => {
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
-    showNotification('配置保存成功！', 'success')
+    showNotification(locale.value.saveSuccess, 'success')
 
     setTimeout(() => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
     console.error('保存配置失败:', error)
-    let message = '保存配置失败，请重试'
+    let message = locale.value.saveFailedRetry
     if (error?.message) {
       message = error.message
     }

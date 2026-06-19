@@ -195,7 +195,7 @@
                     <input
                       v-model="userSearchQuery"
                       type="text"
-                      placeholder="搜索并选择用户 (姓名、用户名或ID)..."
+                      :placeholder="locale.userSearchPlaceholder"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                       @input="onUserSearchInput"
                     >
@@ -208,7 +208,7 @@
                   >
                     <div class="px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/40">
                       <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >搜索结果 ({{ userSearchResults.length }})</span
+                        >{{ locale.searchResults(userSearchResults.length) }}</span
                       >
                     </div>
                     <div
@@ -239,7 +239,7 @@
                         class="px-3 py-1.5 bg-zinc-800 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 text-[10px] font-black rounded-lg transition-all uppercase"
                         @click="addUserToSelection(user)"
                       >
-                        {{ isUserSelected(user.id) ? '已选择' : '选择' }}
+                        {{ isUserSelected(user.id) ? locale.selected : locale.select }}
                       </button>
                     </div>
                   </div>
@@ -248,13 +248,13 @@
                   <div v-if="form.selectedUsers.length > 0" class="space-y-3">
                     <div class="flex items-center justify-between px-1">
                       <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >已选择用户 ({{ form.selectedUsers.length }})</span
+                        >{{ locale.selectedUsers(form.selectedUsers.length) }}</span
                       >
                       <button
                         class="text-[9px] font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors"
                         @click="clearAllSelectedUsers"
                       >
-                        清空全部
+                        {{ locale.clearAll }}
                       </button>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -280,7 +280,7 @@
                   </div>
                   <div v-else class="text-center py-4">
                     <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
-                      未选择任何用户
+                      {{ locale.noUsersSelected }}
                     </p>
                   </div>
                 </div>
@@ -319,7 +319,7 @@
             >
               <Loader2 v-if="loading" class="animate-spin" :size="16" />
               <Send v-else :size="16" />
-              {{ loading ? '发送中...' : '发送通知' }}
+              {{ loading ? locale.sending : locale.send }}
             </button>
           </div>
         </div>
@@ -333,7 +333,7 @@
           <h3
             class="text-sm font-black text-zinc-100 uppercase tracking-widest mb-6 flex items-center gap-2"
           >
-            <Eye :size="16" class="text-blue-500" /> 通知预览
+            <Eye :size="16" class="text-blue-500" /> {{ locale.previewTitle }}
           </h3>
 
           <div class="flex-1 flex flex-col items-center justify-center p-4">
@@ -352,11 +352,11 @@
                       <Bell :size="14" />
                     </div>
                     <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                      >VoiceHub 系统</span
+                      >{{ locale.previewSender }}</span
                     >
                   </div>
                   <span class="text-[9px] text-zinc-700 font-bold uppercase tracking-wider"
-                    >刚刚</span
+                    >{{ locale.justNow }}</span
                   >
                 </div>
 
@@ -367,7 +367,7 @@
                       form.title ? 'text-zinc-100' : 'text-zinc-800 italic'
                     ]"
                   >
-                    {{ form.title || '通知标题' }}
+                    {{ form.title || locale.previewTitlePlaceholder }}
                   </h4>
                   <p
                     :class="[
@@ -375,7 +375,7 @@
                       form.content ? 'text-zinc-400' : 'text-zinc-800 italic line-clamp-3'
                     ]"
                   >
-                    {{ form.content || '这里将显示通知的详细内容预览...' }}
+                    {{ form.content || locale.previewContentPlaceholder }}
                   </p>
                 </div>
 
@@ -383,7 +383,7 @@
                   <div class="flex items-center gap-1.5">
                     <Users :size="12" class="text-zinc-700" />
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-wider">
-                      发送范围: {{ scopeDescription }}
+                      {{ locale.previewScope(scopeDescription) }}
                     </span>
                   </div>
                   <button
@@ -406,7 +406,7 @@
               >
                 <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
                 <p class="text-[10px] font-bold text-zinc-500 leading-normal">
-                  预览图仅供参考布局，实际发送效果可能会根据用户设备显示语言和屏幕尺寸有所不同。
+                  {{ locale.previewHint }}
                 </p>
               </div>
             </div>
@@ -621,9 +621,9 @@ const clearAllSelectedUsers = () => {
 // 获取角色文本
 const getRoleText = (role) => {
   const roleMap = {
-    admin: '管理员',
-    teacher: '教师',
-    student: '学生'
+    admin: locale.value.roles.admin,
+    teacher: locale.value.roles.teacher,
+    student: locale.value.roles.student
   }
   return roleMap[role] || role
 }
@@ -657,21 +657,21 @@ const isFormValid = computed(() => {
 const scopeDescription = computed(() => {
   switch (form.value.scope) {
     case 'ALL':
-      return '全体用户'
+      return locale.value.scopeDescriptions.all
     case 'GRADE':
-      return form.value.grade ? `${form.value.grade}年级` : '请选择年级'
+      return form.value.grade ? locale.value.scopeDescriptions.grade(form.value.grade) : locale.value.scopeDescriptions.selectGrade
     case 'CLASS':
       return form.value.classGrade && form.value.className
-        ? `${form.value.classGrade}年级${form.value.className}班`
-        : '请选择班级'
+        ? locale.value.scopeDescriptions.class(form.value.classGrade, form.value.className)
+        : locale.value.scopeDescriptions.selectClass
     case 'MULTI_CLASS':
       return form.value.selectedClasses.length > 0
-        ? `${form.value.selectedClasses.length}个班级`
-        : '请选择班级'
+        ? locale.value.scopeDescriptions.multiClass(form.value.selectedClasses.length)
+        : locale.value.scopeDescriptions.selectClass
     case 'SPECIFIC_USERS':
       return form.value.selectedUsers.length > 0
-        ? `已选择${form.value.selectedUsers.length}个用户`
-        : '请选择用户'
+        ? locale.value.scopeDescriptions.specificUsers(form.value.selectedUsers.length)
+        : locale.value.scopeDescriptions.selectUsers
     default:
       return ''
   }
@@ -680,12 +680,12 @@ const scopeDescription = computed(() => {
 // 发送通知
 const sendNotification = async () => {
   if (!isAdmin.value) {
-    error.value = '只有管理员可以发送系统通知'
+    error.value = locale.value.errors.adminOnly
     return
   }
 
   if (!isFormValid.value) {
-    error.value = '请填写完整信息'
+    error.value = locale.value.errors.incomplete
     return
   }
 
@@ -718,7 +718,7 @@ const sendNotification = async () => {
     const result = await sendAdminNotification(notificationData)
 
     if (result && result.success) {
-      success.value = `成功发送通知给 ${result.sentCount} 名用户`
+      success.value = locale.value.messages.sendSuccess(result.sentCount)
 
       // 3秒后自动隐藏成功提示
       setTimeout(() => {
@@ -747,10 +747,10 @@ const sendNotification = async () => {
       userSearchLoading.value = false
       clearTimeout(userSearchTimeout)
     } else {
-      throw new Error(result?.message || '发送通知失败')
+      throw new Error(result?.message || locale.value.errors.sendFailed)
     }
   } catch (err) {
-    error.value = err.message || '发送通知时发生错误'
+    error.value = err.message || locale.value.errors.sendError
     console.error('发送通知错误:', err)
 
     // 3秒后自动隐藏错误提示
