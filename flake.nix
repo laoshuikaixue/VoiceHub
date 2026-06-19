@@ -11,159 +11,160 @@
     , nixpkgs
     , flake-utils
     }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs { inherit system; };
+    flake-utils.lib.eachDefaultSystem
+      (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
 
-        pnpm = pkgs.pnpm_10.override {
-          version = "10.29.3";
-          hash = "sha256-p09NvT9afKh00AQTUnHwtpe2g78f0vwhM5YRYc0lspw=";
-        };
-
-        version = (builtins.fromJSON (builtins.readFile ./package.json)).version;
-
-        voicehub = pkgs.stdenv.mkDerivation (finalAttrs: {
-          pname = "voicehub";
-          inherit version;
-
-          src = self;
-
-          pnpmDeps = pkgs.fetchPnpmDeps {
-            inherit (finalAttrs) pname version src;
-            inherit pnpm;
-            fetcherVersion = 4;
-            hash = "sha256-MGdGLwunE3U35l219/A+MzzY50I0JwM4YDRsoZsnoAA=";
+          pnpm = pkgs.pnpm_10.override {
+            version = "10.29.3";
+            hash = "sha256-p09NvT9afKh00AQTUnHwtpe2g78f0vwhM5YRYc0lspw=";
           };
 
-          nativeBuildInputs = [
-            pkgs.nodejs_24
-            pkgs.pnpmConfigHook
-            pnpm
-            pkgs.makeWrapper
-          ];
+          version = (builtins.fromJSON (builtins.readFile ./package.json)).version;
 
-          configurePhase = ''
-            runHook preConfigure
-            export HOME="$TMPDIR"
-            export NODE_OPTIONS="--max-old-space-size=8192"
-            runHook postConfigure
-          '';
+          voicehub = pkgs.stdenv.mkDerivation (finalAttrs: {
+            pname = "voicehub";
+            inherit version;
 
-          buildPhase = ''
-            runHook preBuild
-            export NUXT_TELEMETRY_DISABLED=1
-            pnpm run build
-            runHook postBuild
-          '';
+            src = self;
 
-          installPhase = ''
-            runHook preInstall
+            pnpmDeps = pkgs.fetchPnpmDeps {
+              inherit (finalAttrs) pname version src;
+              inherit pnpm;
+              fetcherVersion = 4;
+              hash = "sha256-MGdGLwunE3U35l219/A+MzzY50I0JwM4YDRsoZsnoAA=";
+            };
 
-            mkdir -p "$out/lib/voicehub" "$out/bin"
-
-            cp -r .output            "$out/lib/voicehub/"
-            cp -r node_modules       "$out/lib/voicehub/"
-            cp package.json          "$out/lib/voicehub/"
-            cp drizzle.config.ts     "$out/lib/voicehub/"
-
-            mkdir -p "$out/lib/voicehub/app/drizzle"
-            cp -r app/drizzle/.      "$out/lib/voicehub/app/drizzle/"
-
-            cp -r scripts            "$out/lib/voicehub/"
-
-            makeWrapper ${pkgs.nodejs_24}/bin/node "$out/bin/voicehub" \
-              --add-flags ".output/server/index.mjs" \
-              --chdir "$out/lib/voicehub" \
-              --set PREBUILT true \
-              --set NODE_ENV production \
-              --prefix PATH : ${pnpm}/bin
-
-            runHook postInstall
-          '';
-
-          meta = with pkgs.lib; {
-            description = "校园广播站点歌管理系统";
-            homepage = "https://github.com/laoshuikaixue/VoiceHub";
-            license = licenses.gpl3Only;
-            mainProgram = "voicehub";
-            platforms = pkgs.nodejs_24.meta.platforms;
-          };
-        });
-
-      in
-      {
-        packages = {
-          inherit voicehub;
-          default = voicehub;
-        };
-
-        devShells = {
-          default = pkgs.mkShell {
-            buildInputs = [
+            nativeBuildInputs = [
               pkgs.nodejs_24
+              pkgs.pnpmConfigHook
               pnpm
-              pkgs.postgresql_15
-              pkgs.git
+              pkgs.makeWrapper
             ];
 
-            shellHook = ''
-              echo ""
-              echo "  VoiceHub 开发环境"
-              echo "  -----------------"
-              echo "  Node.js : $(node --version)"
-              echo "  pnpm    : $(pnpm --version)"
-              echo ""
-              echo "  快速开始:"
-              echo "    cp .env.example .env   # 配置 DATABASE_URL + JWT_SECRET"
-              echo "    pnpm install           # 安装依赖"
-              echo "    pnpm run dev           # 启动开发服务器 (port 3000)"
-              echo "    pnpm run build         # 构建"
-              echo ""
+            configurePhase = ''
+              runHook preConfigure
+              export HOME="$TMPDIR"
+              export NODE_OPTIONS="--max-old-space-size=8192"
+              runHook postConfigure
             '';
+
+            buildPhase = ''
+              runHook preBuild
+              export NUXT_TELEMETRY_DISABLED=1
+              pnpm run build
+              runHook postBuild
+            '';
+
+            installPhase = ''
+              runHook preInstall
+
+              mkdir -p "$out/lib/voicehub" "$out/bin"
+
+              cp -r .output            "$out/lib/voicehub/"
+              cp -r node_modules       "$out/lib/voicehub/"
+              cp package.json          "$out/lib/voicehub/"
+              cp drizzle.config.ts     "$out/lib/voicehub/"
+
+              mkdir -p "$out/lib/voicehub/app/drizzle"
+              cp -r app/drizzle/.      "$out/lib/voicehub/app/drizzle/"
+
+              cp -r scripts            "$out/lib/voicehub/"
+
+              makeWrapper ${pkgs.nodejs_24}/bin/node "$out/bin/voicehub" \
+                --add-flags ".output/server/index.mjs" \
+                --chdir "$out/lib/voicehub" \
+                --set PREBUILT true \
+                --set NODE_ENV production \
+                --prefix PATH : ${pnpm}/bin
+
+              runHook postInstall
+            '';
+
+            meta = with pkgs.lib; {
+              description = "校园广播站点歌管理系统";
+              homepage = "https://github.com/laoshuikaixue/VoiceHub";
+              license = licenses.gpl3Only;
+              mainProgram = "voicehub";
+              platforms = pkgs.nodejs_24.meta.platforms;
+            };
+          });
+
+        in
+        {
+          packages = {
+            inherit voicehub;
+            default = voicehub;
           };
-        };
 
-        apps = {
-          default = {
-            type = "app";
-            program = "${voicehub}/bin/voicehub";
+          devShells = {
+            default = pkgs.mkShell {
+              buildInputs = [
+                pkgs.nodejs_24
+                pnpm
+                pkgs.postgresql_15
+                pkgs.git
+              ];
+
+              shellHook = ''
+                echo ""
+                echo "  VoiceHub 开发环境"
+                echo "  -----------------"
+                echo "  Node.js : $(node --version)"
+                echo "  pnpm    : $(pnpm --version)"
+                echo ""
+                echo "  快速开始:"
+                echo "    cp .env.example .env   # 配置 DATABASE_URL + JWT_SECRET"
+                echo "    pnpm install           # 安装依赖"
+                echo "    pnpm run dev           # 启动开发服务器 (port 3000)"
+                echo "    pnpm run build         # 构建"
+                echo ""
+              '';
+            };
           };
 
-          # Impure build helper — use this to compute the pnpmDeps hash
-          build = {
-            type = "app";
-            program =
-              let
-                buildScript = pkgs.writeShellApplication {
-                  name = "voicehub-build";
-                  runtimeInputs = [
-                    pkgs.nodejs_24
-                    pnpm
-                    pkgs.git
-                    pkgs.cacert
-                  ];
-                  text = ''
-                    set -euo pipefail
+          apps = {
+            default = {
+              type = "app";
+              program = "${voicehub}/bin/voicehub";
+            };
 
-                    echo "正在构建 VoiceHub v${version} ..."
+            # Impure build helper — use this to compute the pnpmDeps hash
+            build = {
+              type = "app";
+              program =
+                let
+                  buildScript = pkgs.writeShellApplication {
+                    name = "voicehub-build";
+                    runtimeInputs = [
+                      pkgs.nodejs_24
+                      pnpm
+                      pkgs.git
+                      pkgs.cacert
+                    ];
+                    text = ''
+                      set -euo pipefail
 
-                    export HOME="''${HOME:-/tmp}"
-                    export NODE_OPTIONS="--max-old-space-size=6144"
-                    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+                      echo "正在构建 VoiceHub v${version} ..."
 
-                    pnpm install --frozen-lockfile
-                    pnpm run build
+                      export HOME="''${HOME:-/tmp}"
+                      export NODE_OPTIONS="--max-old-space-size=6144"
+                      export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
 
-                    echo "构建完成: $(pwd)/.output"
-                  '';
-                };
-              in
-              "${buildScript}/bin/voicehub-build";
+                      pnpm install --frozen-lockfile
+                      pnpm run build
+
+                      echo "构建完成: $(pwd)/.output"
+                    '';
+                  };
+                in
+                "${buildScript}/bin/voicehub-build";
+            };
           };
-        };
-      }
-    )
+        }
+      )
     // {
 
       # ──────────────────────────────────────────────────────────────
@@ -269,7 +270,7 @@
               description = "VoiceHub - 校园广播站点歌服务";
               documentation = [ "https://github.com/laoshuikaixue/VoiceHub" ];
               after = [ "network.target" ]
-                ++ lib.optionals cfg.database.createLocally [ "postgresql.target" ];
+              ++ lib.optionals cfg.database.createLocally [ "postgresql.target" ];
               requires = lib.optionals cfg.database.createLocally [ "postgresql.target" ];
               wantedBy = [ "multi-user.target" ];
 
