@@ -223,7 +223,7 @@
               @click="toggleRequestTimeStatus(slot)"
             >
               <Power :size="12" />
-              {{ slot.enabled ? '禁用' : '启用' }}
+              {{ slot.enabled ? locale.disable : locale.enable }}
             </button>
           </div>
         </div>
@@ -270,7 +270,7 @@
         >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">
-              {{ editingRequestTime ? '编辑投稿开放时段' : '添加投稿开放时段' }}
+              {{ editingRequestTime ? locale.editTitle : locale.addTitle }}
             </h3>
             <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="cancelForm">
               <X :size="20" />
@@ -280,12 +280,12 @@
           <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >时段名称</label
+                >{{ locale.name }}</label
               >
               <input
                 v-model="formData.name"
                 type="text"
-                placeholder="例如: 2025冬季常规点歌"
+                :placeholder="locale.namePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
               >
             </div>
@@ -293,7 +293,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >开始日期时间</label
+                  >{{ locale.startDateTime }}</label
                 >
                 <input
                   v-model="formData.startTime"
@@ -303,7 +303,7 @@
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >结束日期时间</label
+                  >{{ locale.endDateTime }}</label
                 >
                 <input
                   v-model="formData.endTime"
@@ -316,7 +316,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >计划投稿数</label
+                  >{{ locale.expectedCount }}</label
                 >
                 <div class="relative group">
                   <input
@@ -328,10 +328,10 @@
                     class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-zinc-600 font-bold text-[10px]"
                   >
                     <Hash :size="12" />
-                    首歌曲
+                    {{ locale.songUnit }}
                   </div>
                 </div>
-                <p class="text-[9px] text-zinc-600 px-1">填 0 表示不限制投稿总数</p>
+                <p class="text-[9px] text-zinc-600 px-1">{{ locale.expectedHint }}</p>
               </div>
               <div class="space-y-2 flex flex-col justify-center pt-2">
                 <label class="flex items-center gap-3 cursor-pointer group px-1">
@@ -343,10 +343,10 @@
                   <div>
                     <span
                       class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
-                      >启用此投稿时段</span
+                      >{{ locale.enableThisRequestTime }}</span
                     >
                     <p class="text-[9px] text-zinc-600 font-medium">
-                      只有启用的时段才会根据时间限制生效
+                      {{ locale.enableThisRequestTimeHint }}
                     </p>
                   </div>
                 </label>
@@ -355,11 +355,11 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >时段描述 (可选)</label
+                >{{ locale.descriptionOptional }}</label
               >
               <textarea
                 v-model="formData.description"
-                placeholder="请输入针对此开放周期的特殊规则或介绍信息..."
+                :placeholder="locale.descriptionPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
               />
             </div>
@@ -378,14 +378,14 @@
               class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="cancelForm"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               :disabled="formSubmitting"
               class="px-10 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50"
               @click="saveRequestTime"
             >
-              {{ formSubmitting ? '保存中...' : '保存设置' }}
+              {{ formSubmitting ? locale.saving : locale.saveSettings }}
             </button>
           </div>
         </div>
@@ -417,11 +417,11 @@
             </div>
             <div class="text-center space-y-2 px-4">
               <h4 class="text-lg font-bold text-zinc-100">
-                确定要彻底移除 "{{ RequestTimeToDelete?.name }}" 吗？
+                {{ locale.deleteConfirmTitle(RequestTimeToDelete?.name || '') }}
               </h4>
               <p class="text-xs text-zinc-500 leading-relaxed">
-                删除时段后，原本属于此周期的投稿关联记录可能失效。建议先尝试
-                <span class="text-zinc-300 font-bold">禁用</span> 该时段。
+                {{ locale.deleteConfirmPrefix }}
+                <span class="text-zinc-300 font-bold">{{ locale.disable }}</span> {{ locale.deleteConfirmSuffix }}
               </p>
             </div>
             <div class="flex gap-3 w-full pt-4">
@@ -429,14 +429,14 @@
                 class="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-xs font-black rounded-2xl transition-all"
                 @click="showDeleteConfirm = false"
               >
-                保留时段
+                {{ locale.keepTime }}
               </button>
               <button
                 :disabled="deleteInProgress"
                 class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-2xl shadow-xl shadow-red-900/20 transition-all active:scale-95 disabled:opacity-50"
                 @click="deleteRequestTime"
               >
-                {{ deleteInProgress ? '删除中...' : '确认删除' }}
+                {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}
               </button>
             </div>
           </div>
@@ -450,27 +450,27 @@
         <h4
           class="text-xs font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
         >
-          <CheckCircle2 :size="14" class="text-emerald-500" /> 逻辑优先级说明
+          <CheckCircle2 :size="14" class="text-emerald-500" /> {{ locale.priorityTitle }}
         </h4>
         <ul class="text-[11px] text-zinc-500 space-y-2 font-medium">
           <li class="flex gap-2">
             <span class="text-zinc-700 font-black">1.</span>
             <span
-              ><span class="text-zinc-300">全局开关</span>
-              具有最高优先级，关闭后所有投稿均不可用。</span
+              ><span class="text-zinc-300">{{ locale.globalSwitch }}</span>
+              {{ locale.priorityGlobal }}</span
             >
           </li>
           <li class="flex gap-2">
             <span class="text-zinc-700 font-black">2.</span>
             <span
-              >开启 <span class="text-zinc-300">时段限制</span> 后，系统会检查当前时间是否处于任一
-              <span class="text-zinc-300">已启用</span> 且未达到
-              <span class="text-zinc-300">计划数</span> 的时段内。</span
+              >{{ locale.priorityTimeLimitPrefix }} <span class="text-zinc-300">{{ locale.timeLimit }}</span> {{ locale.priorityTimeLimitMiddle }}
+              <span class="text-zinc-300">{{ locale.enabled }}</span> {{ locale.priorityTimeLimitAnd }}
+              <span class="text-zinc-300">{{ locale.expectedCountShort }}</span> {{ locale.priorityTimeLimitSuffix }}</span
             >
           </li>
           <li class="flex gap-2">
             <span class="text-zinc-700 font-black">3.</span>
-            <span>若关闭时段限制，则全天候均可投稿（只要全局开关开启）。</span>
+            <span>{{ locale.priorityNoLimit }}</span>
           </li>
         </ul>
       </div>
@@ -479,20 +479,20 @@
         <h4
           class="text-xs font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
         >
-          <XCircle :size="14" class="text-rose-500" /> 注意事项
+          <XCircle :size="14" class="text-rose-500" /> {{ locale.noticeTitle }}
         </h4>
         <ul class="text-[11px] text-zinc-500 space-y-2 font-medium">
           <li class="flex gap-2">
             <span class="text-zinc-700 font-black">•</span>
-            <span>时段重叠时，系统将合并开放范围。</span>
+            <span>{{ locale.noticeOverlap }}</span>
           </li>
           <li class="flex gap-2">
             <span class="text-zinc-700 font-black">•</span>
-            <span>计划投稿数设置为 0 时，系统将忽略数量上限检查。</span>
+            <span>{{ locale.noticeUnlimited }}</span>
           </li>
           <li class="flex gap-2">
             <span class="text-zinc-700 font-black">•</span>
-            <span>过期的时段将自动显示为“已过期”，不可编辑或重新启用。</span>
+            <span>{{ locale.noticeExpired }}</span>
           </li>
         </ul>
       </div>
@@ -567,29 +567,29 @@ const stats = computed(() => {
 
   return [
     {
-      label: '活跃时段',
+      label: locale.value.stats.activeSlots,
       value: activeSlots.length.toString(),
       icon: Clock,
       color: 'blue'
     },
     {
-      label: '累计已接收',
+      label: locale.value.stats.totalAccepted,
       value: totalAcceptedAll.toString(),
       icon: BarChart3,
       color: 'emerald'
     },
     {
-      label: '计划总容量',
-      value: activeSlots.length === 0 ? '暂无' : (hasUnlimitedActiveSlot ? '不限' : totalExpectedActive.toString()),
+      label: locale.value.stats.totalCapacity,
+      value: activeSlots.length === 0 ? locale.value.none : (hasUnlimitedActiveSlot ? locale.value.unlimited : totalExpectedActive.toString()),
       icon: Hash,
       color: 'purple'
     },
     {
-      label: '剩余总名额',
+      label: locale.value.stats.remainingCapacity,
       value: activeSlots.length === 0 
-        ? '暂无' 
+        ? locale.value.none
         : (hasUnlimitedActiveSlot 
-            ? '不限' 
+            ? locale.value.unlimited
             : Math.max(0, totalExpectedActive - totalAcceptedActive).toString()),
       icon: Filter,
       color: 'amber'
@@ -612,7 +612,7 @@ onUnmounted(() => {
 
 const fetchRequestTimes = async () => {
   if (!isAdmin.value) {
-    error.value = '只有管理员才能管理投稿开放时段'
+    error.value = locale.value.errors.adminOnly
     return
   }
 
@@ -630,7 +630,7 @@ const fetchRequestTimes = async () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `获取投稿开放时段失败: ${response.status}`)
+      throw new Error(errorData.message || locale.value.errors.fetchFailedWithStatus(response.status))
     }
 
     const data = await response.json()
@@ -649,7 +649,7 @@ const fetchRequestTimes = async () => {
       return a.name.localeCompare(b.name)
     })
   } catch (err: any) {
-    error.value = err.message || '获取投稿开放时段失败'
+    error.value = err.message || locale.value.errors.fetchFailed
   } finally {
     loading.value = false
   }
@@ -715,10 +715,10 @@ const updateSystemSettings = async () => {
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `更新系统设置失败: ${response.status}`)
+      throw new Error(errorData.message || locale.value.errors.updateSystemSettingsFailedWithStatus(response.status))
     }
   } catch (err: any) {
-    error.value = err.message || '更新系统设置失败'
+    error.value = err.message || locale.value.errors.updateSystemSettingsFailed
   }
 }
 
@@ -747,12 +747,12 @@ const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `更新投稿开放时段状态失败: ${response.status}`)
+      throw new Error(errorData.message || locale.value.errors.updateStatusFailedWithStatus(response.status))
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
   } catch (err: any) {
-    error.value = err.message || '更新投稿开放时段状态失败'
+    error.value = err.message || locale.value.errors.updateStatusFailed
   }
 }
 
@@ -772,14 +772,14 @@ const deleteRequestTime = async () => {
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `删除投稿开放时段失败: ${response.status}`)
+      throw new Error(errorData.message || locale.value.errors.deleteFailedWithStatus(response.status))
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
     showDeleteConfirm.value = false
     RequestTimeToDelete.value = null
   } catch (err: any) {
-    error.value = err.message || '删除投稿开放时段失败'
+    error.value = err.message || locale.value.errors.deleteFailed
   } finally {
     deleteInProgress.value = false
   }
@@ -788,11 +788,11 @@ const deleteRequestTime = async () => {
 const saveRequestTime = async () => {
   formError.value = ''
   if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
-    formError.value = '开始时间必须早于结束时间'
+    formError.value = locale.value.errors.startBeforeEnd
     return
   }
   if (!formData.name.trim()) {
-    formError.value = '时段名称不能为空'
+    formError.value = locale.value.errors.nameRequired
     return
   }
   const isUpdate = !!editingRequestTime.value
@@ -802,7 +802,7 @@ const saveRequestTime = async () => {
       (!isUpdate || pt.id !== formData.id)
   )
   if (nameExists) {
-    formError.value = '投稿开放时段名称已存在，请使用其他名称'
+    formError.value = locale.value.errors.nameExists
     return
   }
   formSubmitting.value = true
@@ -827,14 +827,14 @@ const saveRequestTime = async () => {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(
-        errorData.message || `${isUpdate ? '更新' : '创建'}投稿开放时段失败: ${response.status}`
+        errorData.message || locale.value.errors.saveFailedWithStatus(isUpdate, response.status)
       )
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
     cancelForm()
   } catch (err: any) {
-    formError.value = err.message || '保存投稿开放时段失败'
+    formError.value = err.message || locale.value.errors.saveFailed
   } finally {
     formSubmitting.value = false
   }

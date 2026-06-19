@@ -216,7 +216,7 @@
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >开始时间 (可选)</label
+                    >{{ locale.startTimeOptional }}</label
                   >
                   <div class="relative">
                     <input
@@ -229,11 +229,11 @@
                       :size="14"
                     />
                   </div>
-                  <p class="text-[9px] text-zinc-600 px-1">留空表示不限制开始时间</p>
+                  <p class="text-[9px] text-zinc-600 px-1">{{ locale.startTimeHint }}</p>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >结束时间 (可选)</label
+                    >{{ locale.endTimeOptional }}</label
                   >
                   <div class="relative">
                     <input
@@ -246,7 +246,7 @@
                       :size="14"
                     />
                   </div>
-                  <p class="text-[9px] text-zinc-600 px-1">留空表示不限制结束时间</p>
+                  <p class="text-[9px] text-zinc-600 px-1">{{ locale.endTimeHint }}</p>
                 </div>
               </div>
 
@@ -254,11 +254,11 @@
                 <label
                   class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 flex items-center gap-2"
                 >
-                  <AlignLeft :size="10" /> 描述 (可选)
+                  <AlignLeft :size="10" /> {{ locale.descriptionOptional }}
                 </label>
                 <textarea
                   v-model="formData.description"
-                  placeholder="请输入时段描述信息..."
+                  :placeholder="locale.descriptionPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
                 />
               </div>
@@ -271,7 +271,7 @@
                 >
                 <span
                   class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
-                  >启用此播出时段</span
+                  >{{ locale.enableThisPlayTime }}</span
                 >
               </label>
 
@@ -289,14 +289,14 @@
               class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="cancelForm"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               :disabled="formSubmitting"
               class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-lg transition-all active:scale-95"
               @click="savePlayTime"
             >
-              {{ formSubmitting ? '保存中...' : '保存设置' }}
+              {{ formSubmitting ? locale.saving : locale.saveSettings }}
             </button>
           </div>
         </div>
@@ -322,10 +322,10 @@
               </div>
               <div class="text-center space-y-2 px-4">
                 <h4 class="text-lg font-bold text-zinc-100">
-                  确定要删除播出时段 "{{ playTimeToDelete?.name }}" 吗？
+                  {{ locale.deleteConfirmTitle(playTimeToDelete?.name || '') }}
                 </h4>
                 <p class="text-xs text-zinc-500 leading-relaxed">
-                  此操作不可恢复，相关的歌曲点播和排期的时段设置将受影响或被清除。
+                  {{ locale.deleteConfirmDesc }}
                 </p>
               </div>
               <div class="flex gap-3 w-full pt-4">
@@ -333,14 +333,14 @@
                   class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 text-zinc-500 text-xs font-black rounded-lg transition-all hover:bg-zinc-800"
                   @click="showDeleteConfirm = false"
                 >
-                  取消
+                  {{ locale.cancel }}
                 </button>
                 <button
                   :disabled="deleteInProgress"
                   class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95"
                   @click="deletePlayTime"
                 >
-                  {{ deleteInProgress ? '删除中...' : '确认删除' }}
+                  {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}
                 </button>
               </div>
             </div>
@@ -406,7 +406,7 @@ onMounted(async () => {
 // 获取播出时段列表
 const fetchPlayTimes = async () => {
   if (!isAdmin.value) {
-    error.value = '只有管理员才能管理播出时段'
+    error.value = locale.value.errors.adminOnly
     return
   }
 
@@ -449,7 +449,7 @@ const fetchPlayTimes = async () => {
       return a.name.localeCompare(b.name)
     })
   } catch (err: any) {
-    error.value = err.message || '获取播出时段失败'
+    error.value = err.message || locale.value.errors.fetchPlayTimesFailed
   } finally {
     loading.value = false
   }
@@ -490,9 +490,9 @@ const updateSystemSettings = async () => {
       ...authConfig
     })
 
-    showNotification('系统设置已更新', 'success')
+    showNotification(locale.value.messages.systemSettingsUpdated, 'success')
   } catch (err: any) {
-    error.value = err.message || '更新系统设置失败'
+    error.value = err.message || locale.value.errors.updateSystemSettingsFailed
     showNotification(error.value, 'error')
     // 如果失败，恢复状态
     enablePlayTimeSelection.value = !enablePlayTimeSelection.value
@@ -541,9 +541,12 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
 
     // 更新本地数据
     await fetchPlayTimes()
-    showNotification(playTime.enabled ? '播出时段已禁用' : '播出时段已启用', 'success')
+    showNotification(
+      playTime.enabled ? locale.value.messages.playTimeDisabled : locale.value.messages.playTimeEnabled,
+      'success'
+    )
   } catch (err: any) {
-    error.value = err.message || '更新播出时段状态失败'
+    error.value = err.message || locale.value.errors.updatePlayTimeStatusFailed
     showNotification(error.value, 'error')
   }
 }
@@ -571,9 +574,9 @@ const deletePlayTime = async () => {
     await fetchPlayTimes()
     showDeleteConfirm.value = false
     playTimeToDelete.value = null
-    showNotification('播出时段已删除', 'success')
+    showNotification(locale.value.messages.playTimeDeleted, 'success')
   } catch (err: any) {
-    error.value = err.message || '删除播出时段失败'
+    error.value = err.message || locale.value.errors.deletePlayTimeFailed
     showNotification(error.value, 'error')
   } finally {
     deleteInProgress.value = false
@@ -586,13 +589,13 @@ const savePlayTime = async () => {
 
   // 时间验证（仅当两个时间都有填写时才进行比较）
   if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
-    formError.value = '开始时间必须早于结束时间'
+    formError.value = locale.value.errors.startBeforeEnd
     return
   }
 
   // 至少要有名称
   if (!formData.name.trim()) {
-    formError.value = '时段名称不能为空'
+    formError.value = locale.value.errors.nameRequired
     return
   }
 
@@ -605,7 +608,7 @@ const savePlayTime = async () => {
   )
 
   if (nameExists) {
-    formError.value = '播出时段名称已存在，请使用其他名称'
+    formError.value = locale.value.errors.nameExists
     return
   }
 
@@ -629,9 +632,12 @@ const savePlayTime = async () => {
     // 更新本地数据
     await fetchPlayTimes()
     cancelForm()
-    showNotification(isUpdate ? '播出时段已更新' : '播出时段已创建', 'success')
+    showNotification(
+      isUpdate ? locale.value.messages.playTimeUpdated : locale.value.messages.playTimeCreated,
+      'success'
+    )
   } catch (err: any) {
-    formError.value = err.message || '保存播出时段失败'
+    formError.value = err.message || locale.value.errors.savePlayTimeFailed
     showNotification(formError.value, 'error')
   } finally {
     formSubmitting.value = false
