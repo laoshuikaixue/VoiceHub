@@ -16,20 +16,15 @@ export default defineEventHandler((event) => {
     return
   }
 
-  // 检查是否配置了 NUXT_PUBLIC_HOST，若未配置，则尝试从请求头中获取可信的 Host。
-  // 在反代环境下，为了保证即使没有 NUXT_PUBLIC_HOST 也能工作，
-  // 优先取 x-forwarded-host，其次取 host，作为我们回退校验的信任基准。
+  // 解析可信来源：优先使用 NUXT_PUBLIC_HOST，未配置时回退到 Host 头
   const config = useRuntimeConfig(event)
   let configuredHost = config.public?.host
 
   if (!configuredHost) {
-    const forwardedHost = getHeader(event, 'x-forwarded-host')
     const hostHeader = getHeader(event, 'host')
-    const fallbackHost = forwardedHost || hostHeader
     
-    if (fallbackHost) {
-      // 兼容多代理环境，取第一个 host
-      configuredHost = fallbackHost.split(',')[0].trim()
+    if (hostHeader) {
+      configuredHost = hostHeader.split(',')[0].trim()
       
       // 如果 x-forwarded-proto 存在，可以带上协议，使校验更精准
       const forwardedProto = getHeader(event, 'x-forwarded-proto')
@@ -38,7 +33,6 @@ export default defineEventHandler((event) => {
         configuredHost = `${proto}://${configuredHost}`
       }
     } else {
-      // 如果什么 host 都拿不到，拒绝请求以保证安全
       throw createError({ statusCode: 400, message: 'Bad Request: 缺少Host请求头' })
     }
   }
@@ -71,8 +65,8 @@ export default defineEventHandler((event) => {
         sourceOrigin.protocol === trustedOrigin.protocol &&
         sourceOrigin.port === trustedOrigin.port
 
-      // 检查来源是否与当前请求的 Host 头一致（覆盖域名、IP 直连场景）
-      // 此处仅取 host 头，避免 X-Forwarded-Host 可被前端伪造
+      // 额外检查：来源是否与当前请求的 Host 头一致（覆盖域名 / IP 直连场景）
+      // Host 头不会被前端 JS 伪造，因此 sourceOrigin.origin === hostOrigin 是有效的第二信任锚点
       const requestHost = getHeader(event, 'host')
       const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
       const matchesRequestHost = hostOrigin && sourceOrigin.origin === hostOrigin
@@ -85,7 +79,6 @@ export default defineEventHandler((event) => {
         })
       }
     } catch (e: unknown) {
-      // 如果是我们主动抛出的 HTTP 错误，则重新抛出
       if (
         typeof e === 'object' &&
         e !== null &&
@@ -94,7 +87,6 @@ export default defineEventHandler((event) => {
       ) {
         throw e
       }
-      // 对于其他错误（如无效的URL），这是一个错误的请求
       console.warn(`[CORS Middleware] 无效的来源 URL: ${sourceUrl}`, e)
       throw createError({
         statusCode: 400,
@@ -105,15 +97,7 @@ export default defineEventHandler((event) => {
     // 允许没有 Origin/Referer 但明确标记为同源的请求
     return
   } else {
-    // 没有 Origin/Referer —— 检查 Host 头是否等于可信来源
-    // 注意：Host 头不能被前端 JS 伪造，可以安全用于放行
-    const requestHost = getHeader(event, 'host')
-    const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
-    if (hostOrigin && hostOrigin === trustedOrigin.origin) {
-      return
-    }
-
-    // 仍然没有来源信息 → 拦截
+    // 没有来源信息且非 same-origin 上下文 → 拦截（无法区分同站和跨站）
     console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'none'}`)
     throw createError({
       statusCode: 403,
@@ -123,10 +107,8 @@ export default defineEventHandler((event) => {
 })
 
 /**
- * 从 Host 头提取 origin，只使用标准 Host 头（不可被前端 JS 伪造）
- * @param hostHeader Host 请求头的值
- * @param defaultProtocol 默认协议
- * @returns origin 字符串，解析失败时返回 null
+ * 从 Host 头提取 origin
+ * 仅使用标准 Host 头（不可被前端 JS 伪造），不信任 X-Forwarded-Host
  */
 function getOriginFromHost(hostHeader: string | undefined, defaultProtocol: string): string | null {
   if (!hostHeader) return null
