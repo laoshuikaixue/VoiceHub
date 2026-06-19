@@ -701,3 +701,7 @@ export const pages = {
     }
   }
 } as const
+
+export const auth = pages.auth
+export const ui = pages.ui
+export const songs = pages.songs

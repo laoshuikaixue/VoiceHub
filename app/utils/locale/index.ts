@@ -20,6 +20,8 @@ type LocaleValue<T> = T extends (...args: infer Args) => infer Return
         : T
 
 export type LocaleMessages = LocaleValue<typeof zhCN>
+type LocaleSectionKey = keyof LocaleMessages
+type LegacyNestedSectionKey = 'auth' | 'ui' | 'songs'
 
 const LOCALE_STORAGE_KEY = 'voicehub.locale'
 const FALLBACK_LOCALE: Locale = 'zh-CN'
@@ -48,6 +50,50 @@ const resolveInitialLocale = (): Locale => {
 
 const getCurrentLocale = () => useState<Locale>('voicehub-locale', resolveInitialLocale)
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  Object.prototype.toString.call(value) === '[object Object]'
+
+const mergeLocaleFallback = <T>(fallbackValue: T, currentValue: unknown): T => {
+  if (Array.isArray(fallbackValue) || typeof fallbackValue === 'function') {
+    return (currentValue ?? fallbackValue) as T
+  }
+
+  if (!isPlainObject(fallbackValue)) {
+    return (currentValue ?? fallbackValue) as T
+  }
+
+  const currentObject = isPlainObject(currentValue) ? currentValue : {}
+  const merged = { ...fallbackValue } as Record<string, unknown>
+
+  for (const key of Object.keys(currentObject)) {
+    merged[key] = currentObject[key]
+  }
+
+  for (const [key, value] of Object.entries(fallbackValue)) {
+    merged[key] = mergeLocaleFallback(value, currentObject[key])
+  }
+
+  return merged as T
+}
+
+const getLocaleSection = <Key extends LocaleSectionKey>(
+  localeMessages: LocaleMessages,
+  key: Key
+) => {
+  const section = localeMessages[key]
+
+  // 兼容早期迁移时 auth/ui/songs 被临时挂在 pages 下的结构，避免 SSR 首屏读取空对象崩溃。
+  if (
+    section === undefined &&
+    (key === 'auth' || key === 'ui' || key === 'songs') &&
+    isPlainObject(localeMessages.pages)
+  ) {
+    return localeMessages.pages[key as LegacyNestedSectionKey] as LocaleMessages[Key]
+  }
+
+  return section
+}
+
 export function initLocale() {
   if (!import.meta.client) return
   setLocale(resolveInitialLocale())
@@ -69,10 +115,10 @@ export function useLocale() {
   const currentMessages = computed(() => messages[currentLocale.value] ?? messages[FALLBACK_LOCALE])
   const fallbackMessages = messages[FALLBACK_LOCALE]
   const withFallback = <Key extends keyof LocaleMessages>(key: Key) =>
-    computed(() => ({
-      ...fallbackMessages[key],
-      ...(currentMessages.value[key] ?? {})
-    }) as LocaleMessages[Key])
+    computed(() => mergeLocaleFallback(
+      getLocaleSection(fallbackMessages, key),
+      getLocaleSection(currentMessages.value, key)
+    ))
 
   return {
     currentLocale,
