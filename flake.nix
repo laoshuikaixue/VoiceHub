@@ -292,7 +292,8 @@
                     startScript = pkgs.writeShellScript "voicehub-start" ''
                       set -e
                       cd "${cfg.package}/lib/voicehub"
-                      export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm pkgs.util-linux ]}:$PATH"
+                      export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm pkgs.util-linux pkgs.bash ]}:$PATH"
+                      export SHELL="$(command -v bash)"
                       ${lib.optionalString cfg.database.createLocally ''
                         export DATABASE_URL="postgresql:///${cfg.database.name}"
                         export PGHOST="${cfg.database.host}"
@@ -300,7 +301,10 @@
                       ${lib.optionalString cfg.runDeployScript ''
                         echo "[voicehub] 正在执行部署脚本..."
                         echo "[voicehub] 同步数据库..."
-                        script -q -c "echo 1 | pnpm exec drizzle-kit push --force" /dev/null
+                        script -q -c "echo 1 | pnpm exec drizzle-kit push --force" /dev/null || {
+                          echo "[voicehub] 数据库迁移失败"
+                          exit 1
+                        }
                         if [ -f scripts/create-admin.js ]; then
                           echo "[voicehub] 检查管理员账户..."
                           node scripts/create-admin.js 2>/dev/null || true
