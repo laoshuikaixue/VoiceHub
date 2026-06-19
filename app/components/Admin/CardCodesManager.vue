@@ -2,9 +2,9 @@
   <div class="space-y-6">
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
-        <h2 class="text-lg font-black">点歌券管理</h2>
+        <h2 class="text-lg font-black">{{ locale.title }}</h2>
         <p class="text-xs text-zinc-500 mt-1 font-medium">
-          管理点歌券的创建、筛选、批量核销、导入导出和备注信息
+          {{ locale.desc }}
         </p>
       </div>
 
@@ -13,14 +13,14 @@
           class="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:border-zinc-700 transition-all"
           @click="refreshAll"
         >
-          <RefreshCw :size="14" /> 刷新
+          <RefreshCw :size="14" /> {{ locale.refresh }}
         </button>
         <button
           class="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:border-zinc-700 transition-all"
           :disabled="exporting"
           @click="exportCodes"
         >
-          <Download :size="14" /> {{ exporting ? '导出中...' : exportButtonText }}
+          <Download :size="14" /> {{ exporting ? locale.exporting : exportButtonText }}
         </button>
       </div>
     </div>
@@ -44,7 +44,7 @@
               <input
                 v-model="filters.q"
                 type="text"
-                placeholder="搜索点歌券、备注"
+                :placeholder="locale.searchPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40 transition-all"
                 @keyup.enter="fetchCodes(1)"
               >
@@ -52,11 +52,11 @@
 
             <CustomSelect
               v-model="filters.status"
-              label="状态"
+              :label="locale.status"
               :options="statusFilterOptions"
               label-key="label"
               value-key="value"
-              placeholder="全部状态"
+              :placeholder="locale.allStatus"
               class-name="min-w-[160px] sm:w-40"
               @change="fetchCodes(1)"
             />
@@ -66,12 +66,12 @@
             class="text-xs font-bold text-zinc-500 hover:text-zinc-200 transition-colors"
             @click="resetFilters"
           >
-            清空筛选
+            {{ locale.clearFilters }}
           </button>
         </div>
 
         <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
-          <span class="text-xs font-black text-blue-400">已选择 {{ selectedIds.length }} 项</span>
+          <span class="text-xs font-black text-blue-400">{{ locale.selectedItems(selectedIds.length) }}</span>
           <CustomSelect
             v-model="bulkStatus"
             :options="bulkStatusOptions"
@@ -84,16 +84,16 @@
             :disabled="saving"
             @click="applyBulkStatus"
           >
-            执行批量操作
+            {{ locale.applyBulk }}
           </button>
           <button class="px-3 py-2 rounded-lg bg-zinc-900 text-zinc-300 text-xs font-bold border border-zinc-800" @click="clearSelection">
-            取消选择
+            {{ locale.cancelSelection }}
           </button>
         </div>
 
         <div class="overflow-x-auto rounded-2xl border border-zinc-800">
           <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
-            加载点歌券中...
+            {{ locale.loading }}
           </div>
 
           <table v-else class="min-w-[880px] table-fixed text-left text-sm">
@@ -109,11 +109,11 @@
                   >
                 </th>
                 <th class="px-3 py-3 w-16">ID</th>
-                <th class="px-3 py-3 w-64">点歌券</th>
-                <th class="px-3 py-3 w-28">状态</th>
-                <th class="px-3 py-3 w-60">备注</th>
-                <th class="px-3 py-3 w-40">时间</th>
-                <th class="px-3 py-3 w-44">操作</th>
+                <th class="px-3 py-3 w-64">{{ locale.cardCode }}</th>
+                <th class="px-3 py-3 w-28">{{ locale.status }}</th>
+                <th class="px-3 py-3 w-60">{{ locale.note }}</th>
+                <th class="px-3 py-3 w-40">{{ locale.time }}</th>
+                <th class="px-3 py-3 w-44">{{ locale.actions }}</th>
               </tr>
             </thead>
             <tbody>
@@ -130,7 +130,7 @@
                 <td class="px-3 py-3 align-top font-mono text-zinc-100">
                   <div class="flex max-w-full items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2">
                     <span class="block min-w-0 flex-1 truncate text-xs tracking-[0.08em]" :title="item.code">{{ item.code }}</span>
-                    <button class="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors" title="复制点歌券" @click="copyCode(item.code)">
+                    <button class="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors" :title="locale.copy" @click="copyCode(item.code)">
                       <Copy :size="14" />
                     </button>
                   </div>
@@ -140,8 +140,8 @@
                     {{ statusMeta(item.status).label }}
                   </span>
                   <p v-if="item.lockedAt || item.redeemedAt" class="mt-1 text-[10px] text-zinc-500 leading-relaxed">
-                    <span v-if="item.lockedAt">锁定：{{ formatDate(item.lockedAt) }}</span>
-                    <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}核销：{{ formatDate(item.redeemedAt) }}</span>
+                    <span v-if="item.lockedAt">{{ locale.lockedAt(formatDate(item.lockedAt)) }}</span>
+                    <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ locale.redeemedAt(formatDate(item.redeemedAt)) }}</span>
                   </p>
                 </td>
                 <td class="px-3 py-3 align-top">
@@ -149,29 +149,29 @@
                     <textarea
                       v-model="item.noteDraft"
                       rows="2"
-                      placeholder="备注"
+                      :placeholder="locale.note"
                       class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
                     />
                     <button class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 hover:text-blue-300 transition-colors" @click="saveNote(item)">
-                      保存备注
+                      {{ locale.saveNote }}
                     </button>
                   </div>
                 </td>
                 <td class="px-3 py-3 align-top text-[11px] text-zinc-500 leading-relaxed">
-                  <p>创建：{{ formatDate(item.createdAt) }}</p>
-                  <p>更新：{{ formatDate(item.updatedAt) }}</p>
+                  <p>{{ locale.createdAt(formatDate(item.createdAt)) }}</p>
+                  <p>{{ locale.updatedAt(formatDate(item.updatedAt)) }}</p>
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-zinc-300" @click="updateStatus([item.id], 'AVAILABLE')">可用</button>
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-amber-300" @click="updateStatus([item.id], 'LOCKED')">锁定</button>
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300" @click="updateStatus([item.id], 'REDEEMED')">核销</button>
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-red-300" @click="updateStatus([item.id], 'INVALID')">作废</button>
+                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-zinc-300" @click="updateStatus([item.id], 'AVAILABLE')">{{ locale.available }}</button>
+                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-amber-300" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
+                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-red-300" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
                   </div>
                 </td>
               </tr>
               <tr v-if="!codes.length">
-                <td colspan="7" class="px-3 py-10 text-center text-sm text-zinc-500">没有找到符合条件的点歌券</td>
+                <td colspan="7" class="px-3 py-10 text-center text-sm text-zinc-500">{{ locale.empty }}</td>
               </tr>
             </tbody>
           </table>
@@ -181,7 +181,7 @@
           v-model:current-page="pagination.page"
           :total-pages="pagination.totalPages"
           :total-items="pagination.total"
-          item-name="张点歌券"
+          :item-name="locale.itemName"
           @change="fetchCodes"
         />
       </section>
@@ -402,8 +402,11 @@ import { Copy, Download, Plus, RefreshCw, Search } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const { showToast } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.cardCodesManager)
 
 const codes = ref([])
 const redeemLogs = ref([])
@@ -423,29 +426,30 @@ const manualCodes = ref('')
 const createNote = ref('')
 const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' })
 
-const statusFilterOptions = [
-  { label: '全部状态', value: '' },
-  { label: '可用', value: 'AVAILABLE' },
-  { label: '已锁定', value: 'LOCKED' },
-  { label: '已核销', value: 'REDEEMED' },
-  { label: '已作废', value: 'INVALID' }
-]
+const statusFilterOptions = computed(() => [
+  { label: locale.value.allStatus, value: '' },
+  { label: locale.value.available, value: 'AVAILABLE' },
+  { label: locale.value.lockedStatus, value: 'LOCKED' },
+  { label: locale.value.redeemedStatus, value: 'REDEEMED' },
+  { label: locale.value.invalidStatus, value: 'INVALID' }
+])
 
-const bulkStatusOptions = [
-  { label: '设为可用', value: 'AVAILABLE' },
-  { label: '设为锁定', value: 'LOCKED' },
-  { label: '设为核销', value: 'REDEEMED' },
-  { label: '设为作废', value: 'INVALID' }
-]
+const bulkStatusOptions = computed(() => [
+  { label: locale.value.setAvailable, value: 'AVAILABLE' },
+  { label: locale.value.setLocked, value: 'LOCKED' },
+  { label: locale.value.setRedeemed, value: 'REDEEMED' },
+  { label: locale.value.setInvalid, value: 'INVALID' }
+])
 
-const statusMap = {
-  AVAILABLE: { label: '可用', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-  LOCKED: { label: '锁定', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-  REDEEMED: { label: '核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-  INVALID: { label: '作废', class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
+const statusMeta = (status) => {
+  const statusMap = {
+    AVAILABLE: { label: locale.value.available, class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    LOCKED: { label: locale.value.locked, class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    REDEEMED: { label: locale.value.redeemed, class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    INVALID: { label: locale.value.invalid, class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
+  }
+  return statusMap[status] || { label: status || locale.value.unknown, class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
 }
-
-const statusMeta = (status) => statusMap[status] || { label: status || '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
 
 const logSourceMap = {
   ADMIN_MANUAL: { label: '手动核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
@@ -466,10 +470,10 @@ const stats = computed(() => {
   const redeemed = cardStats.value.redeemed
 
   return [
-    { label: '总数', value: total, hint: '全部', badgeClass: 'bg-zinc-800 text-zinc-200' },
-    { label: '可用', value: available, hint: '未使用', badgeClass: 'bg-emerald-500/10 text-emerald-300' },
-    { label: '锁定', value: locked, hint: '待核销', badgeClass: 'bg-amber-500/10 text-amber-300' },
-    { label: '核销', value: redeemed, hint: '已完成', badgeClass: 'bg-blue-500/10 text-blue-300' }
+    { label: locale.value.stats.total, value: total, hint: locale.value.stats.all, badgeClass: 'bg-zinc-800 text-zinc-200' },
+    { label: locale.value.stats.available, value: available, hint: locale.value.stats.unused, badgeClass: 'bg-emerald-500/10 text-emerald-300' },
+    { label: locale.value.stats.locked, value: locked, hint: locale.value.stats.pendingRedeem, badgeClass: 'bg-amber-500/10 text-amber-300' },
+    { label: locale.value.stats.redeemed, value: redeemed, hint: locale.value.stats.completed, badgeClass: 'bg-blue-500/10 text-blue-300' }
   ]
 })
 

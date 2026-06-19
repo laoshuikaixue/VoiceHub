@@ -3,9 +3,9 @@
     <!-- 头部区域 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">邮件服务配置</h2>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-zinc-500 mt-1">
-          配置 SMTP 服务以发送系统验证码、投稿通知及其他重要提醒
+          {{ locale.desc }}
         </p>
       </div>
       <div class="flex items-center gap-3">
@@ -15,14 +15,14 @@
           @click="reloadSmtpConfig"
         >
           <RotateCw :size="14" :class="reloading ? 'animate-spin' : ''" />
-          {{ reloading ? '重载中...' : '重载SMTP' }}
+          {{ reloading ? locale.reloading : locale.reload }}
         </button>
         <button
           class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
           :disabled="saving"
           @click="saveConfig"
         >
-          <Save :size="14" /> {{ saving ? '保存中...' : '保存配置' }}
+          <Save :size="14" /> {{ saving ? locale.saving : locale.save }}
         </button>
       </div>
     </div>
@@ -36,7 +36,7 @@
             <h3
               class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
             >
-              <Server :size="16" class="text-blue-500" /> 服务配置
+              <Server :size="16" class="text-blue-500" /> {{ locale.serviceConfig }}
             </h3>
             <button
               class="relative w-10 h-5 rounded-full transition-colors"
@@ -53,7 +53,7 @@
           <div class="space-y-4">
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >SMTP 服务器</label
+                >{{ locale.smtpHost }}</label
               >
               <input
                 v-model="config.smtpHost"
@@ -65,7 +65,7 @@
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >端口</label
+                  >{{ locale.port }}</label
                 >
                 <input
                   v-model.number="config.smtpPort"
@@ -76,7 +76,7 @@
               </div>
               <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >加密方式</label
+                  >{{ locale.secure }}</label
                 >
                 <CustomSelect
                   :model-value="config.smtpSecure ? 'SSL/TLS' : '无'"
@@ -88,7 +88,7 @@
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >发件人账号</label
+                >{{ locale.username }}</label
               >
               <input
                 v-model="config.smtpUsername"
@@ -99,7 +99,7 @@
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >发件人邮箱 (From Email)</label
+                >{{ locale.fromEmail }}</label
               >
               <input
                 v-model="config.smtpFromEmail"
@@ -108,12 +108,12 @@
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
               >
               <p class="text-[9px] text-zinc-500 px-1 italic">
-                通常与发件人账号一致，部分服务商强制要求一致。
+                {{ locale.fromEmailHint }}
               </p>
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >授权码 / 密码</label
+                >{{ locale.password }}</label
               >
               <input
                 v-model="config.smtpPassword"
@@ -124,7 +124,7 @@
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >发件人姓名</label
+                >{{ locale.fromName }}</label
               >
               <input
                 v-model="config.smtpFromName"
@@ -141,19 +141,19 @@
           <h3
             class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
           >
-            <Send :size="16" class="text-emerald-500" /> 服务测试
+            <Send :size="16" class="text-emerald-500" /> {{ locale.serviceTest }}
           </h3>
 
           <div class="space-y-4">
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >测试接收邮箱</label
+                >{{ locale.testEmail }}</label
               >
               <div class="flex gap-2">
                 <input
                   v-model="testEmail"
                   type="email"
-                  placeholder="输入测试邮箱地址"
+                  :placeholder="locale.testEmailPlaceholder"
                   class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
                 >
                 <button
@@ -163,7 +163,7 @@
                 >
                   <Check v-if="testResult?.success" :size="14" class="text-emerald-500" />
                   <Send v-else :size="14" />
-                  {{ testing ? '发送中' : testResult?.success ? '已发送' : '发送' }}
+                  {{ testing ? locale.sending : testResult?.success ? locale.sent : locale.send }}
                 </button>
               </div>
             </div>
@@ -200,13 +200,16 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from 'lucide-vue-next'
 
 const { showToast: showNotification } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.smtpManager)
 
 // 响应式数据
 const config = ref({

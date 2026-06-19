@@ -2,8 +2,8 @@
   <div class="max-w-[1400px] mx-auto space-y-8 pb-20">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">向用户发送通知</h2>
-        <p class="text-xs text-zinc-500 mt-1">即时推送系统公告、活动信息或重要提醒至指定群体</p>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-zinc-500 mt-1">{{ locale.desc }}</p>
       </div>
     </div>
 
@@ -15,12 +15,12 @@
             <!-- 标题 -->
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >通知标题</label
+                >{{ locale.notificationTitle }}</label
               >
               <input
                 v-model="form.title"
                 type="text"
-                placeholder="请输入通知标题"
+                :placeholder="locale.titlePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800"
               >
             </div>
@@ -28,11 +28,11 @@
             <!-- 内容 -->
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >通知内容</label
+                >{{ locale.notificationContent }}</label
               >
               <textarea
                 v-model="form.content"
-                placeholder="请输入通知详情内容..."
+                :placeholder="locale.contentPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800 min-h-[160px] resize-none"
               />
             </div>
@@ -40,7 +40,7 @@
             <!-- 范围选择 -->
             <div class="space-y-3 pt-4 border-t border-zinc-800/50">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >通知范围</label
+                >{{ locale.scope }}</label
               >
               <div class="flex flex-wrap gap-2">
                 <button
@@ -70,21 +70,21 @@
                 >
                   <Info class="text-blue-500 shrink-0" :size="18" />
                   <p class="text-[11px] font-bold text-zinc-400">
-                    将向系统中所有已注册的活跃用户发送此通知。
+                    {{ locale.allUsersHint }}
                   </p>
                 </div>
 
                 <div v-else-if="form.scope === 'GRADE'" key="grade" class="space-y-4">
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                      >选择年级</span
+                      >{{ locale.selectGrade }}</span
                     >
                     <CustomSelect
                       v-model="form.grade"
                       :options="gradeOptions"
                       label-key="label"
                       value-key="value"
-                      placeholder="请选择年级"
+                      :placeholder="locale.selectGradePlaceholder"
                       class-name="w-full md:w-64"
                     />
                   </div>
@@ -97,27 +97,27 @@
                 >
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                      >年级</span
+                      >{{ locale.grade }}</span
                     >
                     <CustomSelect
                       v-model="form.classGrade"
                       :options="gradeOptions"
                       label-key="label"
                       value-key="value"
-                      placeholder="请选择年级"
+                      :placeholder="locale.selectGradePlaceholder"
                       class-name="w-full"
                     />
                   </div>
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                      >班级</span
+                      >{{ locale.className }}</span
                     >
                     <CustomSelect
                       v-model="form.className"
                       :options="classOptionsForClassScope"
                       label-key="label"
                       value-key="value"
-                      placeholder="请选择班级"
+                      :placeholder="locale.selectClassPlaceholder"
                       class-name="w-full"
                       :disabled="!form.classGrade"
                     />
@@ -132,7 +132,7 @@
                         :options="gradeOptions"
                         label-key="label"
                         value-key="value"
-                        placeholder="请选择年级"
+                          :placeholder="locale.selectGradePlaceholder"
                         class-name="w-full"
                       />
                       <div class="flex gap-2">
@@ -141,7 +141,7 @@
                           :options="classOptionsForMultiClassScope"
                           label-key="label"
                           value-key="value"
-                          placeholder="请选择班级"
+                          :placeholder="locale.selectClassPlaceholder"
                           class-name="flex-1"
                           :disabled="!multiClassForm.grade"
                         />
@@ -150,7 +150,7 @@
                           class="px-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 font-bold rounded-xl text-xs transition-all"
                           @click="addClassToSelection"
                         >
-                          添加
+                          {{ locale.add }}
                         </button>
                       </div>
                     </div>
@@ -174,7 +174,7 @@
                     </div>
                     <div v-else class="text-center py-4">
                       <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
-                        未选择任何班级
+                        {{ locale.noClassSelected }}
                       </p>
                     </div>
                   </div>
@@ -440,10 +440,13 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
+import { useLocale } from '~/utils/locale'
 
 const { isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.notificationSender)
 
 onMounted(() => {
   userFilters.fetchOptions()
@@ -500,13 +503,13 @@ const showUserSearchResults = ref(false)
 const userSearchLoading = ref(false)
 let userSearchTimeout = null
 
-const targetOptions = [
-  { id: 'ALL', label: '全体用户', icon: Users },
-  { id: 'GRADE', label: '按年级选择', icon: GraduationCap },
-  { id: 'CLASS', label: '按班级选择', icon: LayoutGrid },
-  { id: 'MULTI_CLASS', label: '多班级选择', icon: Plus },
-  { id: 'SPECIFIC_USERS', label: '指定用户', icon: User }
-]
+const targetOptions = computed(() => [
+  { id: 'ALL', label: locale.value.targets.all, icon: Users },
+  { id: 'GRADE', label: locale.value.targets.grade, icon: GraduationCap },
+  { id: 'CLASS', label: locale.value.targets.class, icon: LayoutGrid },
+  { id: 'MULTI_CLASS', label: locale.value.targets.multiClass, icon: Plus },
+  { id: 'SPECIFIC_USERS', label: locale.value.targets.specificUsers, icon: User }
+])
 
 // 判断是否可以添加班级
 const canAddClass = computed(() => {

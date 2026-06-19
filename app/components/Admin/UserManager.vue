@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">用户管理</h2>
-        <p class="text-xs text-zinc-500 mt-1">系统共有 {{ totalUsers }} 位成员 · 权限与账户管理</p>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-zinc-500 mt-1">{{ locale.subtitle(totalUsers) }}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -12,21 +12,21 @@
           @click="showAddModal = true"
         >
           <UserPlus :size="14" />
-          添加
+          {{ locale.add }}
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
           @click="showImportModal = true"
         >
           <FileSpreadsheet class="text-emerald-500" :size="14" />
-          导入
+          {{ locale.import }}
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
           @click="showBatchUpdateModal = true"
         >
           <Layers class="text-purple-500" :size="14" />
-          更新
+          {{ locale.update }}
         </button>
       </div>
     </div>
@@ -43,7 +43,7 @@
         <input
           v-model="searchQuery"
           class="w-full bg-zinc-950 border border-zinc-800/80 rounded-lg pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-          placeholder="通过姓名或学号搜索..."
+          :placeholder="locale.searchPlaceholder"
           type="text"
         >
       </div>
@@ -54,8 +54,8 @@
         <CustomSelect
           v-model="roleFilter"
           :options="roleFilterOptions"
-          label="角色"
-          placeholder="全部角色"
+          :label="locale.role"
+          :placeholder="locale.allRoles"
           label-key="displayName"
           value-key="name"
           class-name="flex-1 lg:w-40 min-w-[120px]"
@@ -65,8 +65,8 @@
         <CustomSelect
           v-model="statusFilter"
           :options="statusFilterOptions"
-          label="状态"
-          placeholder="全部状态"
+          :label="locale.status"
+          :placeholder="locale.allStatus"
           label-key="label"
           value-key="value"
           class-name="flex-1 lg:w-32 min-w-[100px]"
@@ -76,8 +76,8 @@
         <CustomSelect
           v-model="currentSort"
           :options="sortOptions"
-          label="排序"
-          placeholder="排序方式"
+          :label="locale.sort"
+          :placeholder="locale.sortPlaceholder"
           label-key="label"
           value-key="value"
           class-name="flex-1 lg:w-40 min-w-[140px]"
@@ -98,7 +98,7 @@
         <div
           class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
         />
-        <div class="text-xs font-black uppercase tracking-widest">正在加载用户...</div>
+        <div class="text-xs font-black uppercase tracking-widest">{{ locale.loading }}</div>
       </div>
 
       <div
@@ -111,7 +111,7 @@
           <Search :size="32" />
         </div>
         <div class="text-sm font-black text-zinc-500 uppercase tracking-widest">
-          {{ searchQuery ? '没有找到匹配的用户' : '暂无用户数据' }}
+          {{ searchQuery ? locale.emptySearch : locale.empty }}
         </div>
       </div>
 
@@ -125,9 +125,9 @@
               <tr
                 class="bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
               >
-                <th class="px-6 py-5 text-left">用户详情</th>
-                <th class="px-6 py-5 text-left">角色权限</th>
-                <th class="px-6 py-5 text-left">账户状态</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.userDetails }}</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.role }}</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.status }}</th>
                 <th class="px-6 py-5 text-center">所在班级</th>
                 <th class="px-6 py-5 text-left">最后交互</th>
                 <th class="px-6 py-5 text-right pr-10">操作</th>
@@ -1444,6 +1444,10 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useLocale } from '~/utils/locale'
+
+const { admin } = useLocale()
+const locale = computed(() => admin.value.userManager)
 
 // 响应式数据
 const loading = ref(false)
@@ -1458,15 +1462,15 @@ const pageSize = ref(50)
 const totalUsers = ref(0)
 const totalPages = ref(1)
 
-const sortOptions = [
-  { label: '默认排序 (ID)', value: 'id-asc' },
-  { label: '名称 (A-Z)', value: 'name-asc' },
-  { label: '名称 (Z-A)', value: 'name-desc' },
-  { label: '最近登录', value: 'lastLogin-desc' },
-  { label: '最早登录', value: 'lastLogin-asc' },
-  { label: '最近注册', value: 'createdAt-desc' },
-  { label: '最早注册', value: 'createdAt-asc' }
-]
+const sortOptions = computed(() => [
+  { label: locale.value.sortOptions.default, value: 'id-asc' },
+  { label: locale.value.sortOptions.nameAsc, value: 'name-asc' },
+  { label: locale.value.sortOptions.nameDesc, value: 'name-desc' },
+  { label: locale.value.sortOptions.lastLoginDesc, value: 'lastLogin-desc' },
+  { label: locale.value.sortOptions.lastLoginAsc, value: 'lastLogin-asc' },
+  { label: locale.value.sortOptions.createdAtDesc, value: 'createdAt-desc' },
+  { label: locale.value.sortOptions.createdAtAsc, value: 'createdAt-asc' }
+])
 
 const currentSort = computed({
   get: () => `${sortBy.value}-${sortOrder.value}`,

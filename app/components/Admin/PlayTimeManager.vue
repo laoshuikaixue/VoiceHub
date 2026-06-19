@@ -3,9 +3,9 @@
     <!-- 页面标题 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">播出时段管理</h2>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-zinc-500 mt-1">
-          定义校园广播的常规播放窗口，用户仅可在这些时间段内进行点歌或查看排期
+          {{ locale.desc }}
         </p>
       </div>
       <div class="flex items-center gap-3">
@@ -13,7 +13,7 @@
           class="bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3"
         >
           <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-            >启用播出时段选择</span
+            >{{ locale.enableSelection }}</span
           >
           <button
             :class="[
@@ -34,7 +34,7 @@
           class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
           @click="openAddForm"
         >
-          <Plus :size="14" /> 添加播出时段
+          <Plus :size="14" /> {{ locale.add }}
         </button>
       </div>
     </div>
@@ -43,9 +43,9 @@
     <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
       <Info class="text-blue-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
-        <p class="text-xs font-bold text-zinc-300">关于时段限制</p>
+        <p class="text-xs font-bold text-zinc-300">{{ locale.aboutTitle }}</p>
         <p class="text-[11px] text-zinc-500 leading-relaxed">
-          启用全局时段选择后，系统将仅在定义的时段内开放点歌功能。如果未设置开始或结束时间，系统将视为该边界不设限。
+          {{ locale.aboutDesc }}
         </p>
       </div>
     </div>
@@ -58,7 +58,7 @@
       <div
         class="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"
       />
-      <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">加载中...</p>
+      <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">{{ locale.loading }}</p>
     </div>
 
     <!-- 错误状态 -->
@@ -68,7 +68,7 @@
     >
       <AlertCircle class="text-red-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
-        <p class="text-xs font-bold text-zinc-300">获取数据失败</p>
+        <p class="text-xs font-bold text-zinc-300">{{ locale.fetchFailed }}</p>
         <p class="text-[11px] text-zinc-500 leading-relaxed">{{ error }}</p>
       </div>
     </div>
@@ -82,8 +82,8 @@
         <Clock :size="48" />
       </div>
       <div class="text-center space-y-2">
-        <h3 class="text-lg font-bold text-zinc-100">暂无播出时段</h3>
-        <p class="text-xs text-zinc-500">点击“添加播出时段”按钮创建第一个播出时段</p>
+        <h3 class="text-lg font-bold text-zinc-100">{{ locale.emptyTitle }}</h3>
+        <p class="text-xs text-zinc-500">{{ locale.emptyDesc }}</p>
       </div>
     </div>
 
@@ -116,7 +116,7 @@
                     : 'bg-zinc-800/50 text-zinc-600 border-zinc-700/50'
                 ]"
               >
-                {{ playTime.enabled ? '已启用' : '已禁用' }}
+                {{ playTime.enabled ? locale.enabled : locale.disabled }}
               </span>
               <button class="p-1.5 text-zinc-700 hover:text-zinc-400">
                 <MoreVertical :size="14" />
@@ -134,14 +134,14 @@
               <div
                 class="flex items-center gap-2 mt-1.5 text-blue-500/80 font-black tracking-tighter"
               >
-                <span class="text-xl">{{ playTime.startTime || '不限' }}</span>
+                <span class="text-xl">{{ playTime.startTime || locale.unlimited }}</span>
                 <div class="w-4 h-[2px] bg-zinc-800" />
-                <span class="text-xl">{{ playTime.endTime || '不限' }}</span>
+                <span class="text-xl">{{ playTime.endTime || locale.unlimited }}</span>
               </div>
             </div>
 
             <p class="text-xs text-zinc-500 font-medium leading-relaxed min-h-[32px] line-clamp-2">
-              {{ playTime.description || '暂无详细描述...' }}
+              {{ playTime.description || locale.noDescription }}
             </p>
           </div>
 
@@ -170,7 +170,7 @@
               @click="togglePlayTimeStatus(playTime)"
             >
               <Power :size="12" />
-              {{ playTime.enabled ? '禁用' : '启用' }}
+              {{ playTime.enabled ? locale.disable : locale.enable }}
             </button>
           </div>
         </div>
@@ -190,7 +190,7 @@
           <div class="p-8">
             <div class="flex items-center justify-between mb-8">
               <h3 class="text-xl font-black text-zinc-100 tracking-tight">
-                {{ editingPlayTime ? '编辑播出时段' : '添加播出时段' }}
+                {{ editingPlayTime ? locale.editTitle : locale.addTitle }}
               </h3>
               <button
                 class="p-2 text-zinc-500 hover:text-zinc-200 transition-colors"
@@ -203,12 +203,12 @@
             <div class="space-y-6">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >时段名称</label
+                  >{{ locale.name }}</label
                 >
                 <input
                   v-model="formData.name"
                   type="text"
-                  placeholder="例如: 午间广播"
+                  :placeholder="locale.namePlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
                 >
               </div>
@@ -352,9 +352,10 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 import type { PlayTime } from '~/types'
 import {
   Plus,
@@ -371,6 +372,8 @@ import {
 
 const { getAuthConfig, isAdmin } = useAuth()
 const { showToast: showNotification } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.playTimeManager)
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)

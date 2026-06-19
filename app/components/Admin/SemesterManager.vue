@@ -3,9 +3,9 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">学期管理</h2>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-zinc-500 mt-1">
-          定义系统的教学周期，点歌、排期及统计数据将基于当前活跃学期进行归档
+          {{ locale.desc }}
         </p>
       </div>
       <button
@@ -26,7 +26,7 @@
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        添加新学期
+        {{ locale.add }}
       </button>
     </div>
 
@@ -51,7 +51,7 @@
             />
           </svg>
           <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-            当前活跃学期
+            {{ locale.currentActive }}
           </h3>
         </div>
 
@@ -99,14 +99,14 @@
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                创建于 {{ formatDate(currentSemester.createdAt) }}
+                {{ locale.createdAt(formatDate(currentSemester.createdAt)) }}
               </div>
             </div>
             <div class="pt-4">
               <span
                 class="px-4 py-2 bg-white text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
               >
-                正在进行中
+                {{ locale.inProgress }}
               </span>
             </div>
           </div>
@@ -152,9 +152,9 @@
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <p class="text-sm font-bold text-zinc-600">未设置当前活跃学期</p>
+          <p class="text-sm font-bold text-zinc-600">{{ locale.noCurrent }}</p>
           <button class="text-xs text-blue-500 font-black hover:underline" @click="openModal">
-            立即创建
+            {{ locale.createNow }}
           </button>
         </div>
 
@@ -176,9 +176,9 @@
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <div class="space-y-1">
-            <p class="text-xs font-bold text-zinc-400">学期切换说明</p>
+            <p class="text-xs font-bold text-zinc-400">{{ locale.switchTitle }}</p>
             <p class="text-[11px] text-zinc-600 leading-relaxed">
-              切换学期后，前端点歌界面将清空旧排期。所有历史数据会自动归档至对应学期下，您仍可在数据中心进行查看。
+              {{ locale.switchDesc }}
             </p>
           </div>
         </div>
@@ -499,8 +499,11 @@
 import { onMounted, ref, computed } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.semesterManager)
 
 const {
   semesters,

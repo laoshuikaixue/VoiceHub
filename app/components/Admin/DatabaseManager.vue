@@ -2,9 +2,9 @@
   <div class="max-w-[1200px] mx-auto space-y-8 pb-20 px-2">
     <!-- 页面标题 -->
     <div class="space-y-1">
-      <h2 class="text-2xl font-black text-zinc-100 tracking-tight">数据库操作</h2>
+      <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
       <p class="text-xs text-zinc-500 font-medium">
-        执行系统底层维护任务，包括备份、恢复及全局数据重置
+        {{ locale.desc }}
       </p>
     </div>
 
@@ -33,7 +33,7 @@
             <span
               v-if="card.isDanger"
               class="px-2 py-0.5 bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase tracking-widest border border-rose-500/20 rounded"
-              >高风险操作</span
+              >{{ locale.highRisk }}</span
             >
           </div>
 
@@ -56,7 +56,7 @@
             "
             @click="openModal(card.id)"
           >
-            <span v-if="isLoading(card.id)">执行中...</span>
+            <span v-if="isLoading(card.id)">{{ locale.executing }}</span>
             <span v-else>{{ card.btnText }}</span>
           </button>
         </div>
@@ -75,9 +75,9 @@
     <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
       <AlertCircle class="text-blue-500 shrink-0 mt-0.5 w-[18px] h-[18px]" />
       <div class="space-y-1">
-        <p class="text-[11px] font-bold text-zinc-300">数据库维护建议</p>
+        <p class="text-[11px] font-bold text-zinc-300">{{ locale.maintenanceTitle }}</p>
         <p class="text-[10px] text-zinc-500 leading-relaxed">
-          建议每周进行一次全量备份。在执行“恢复备份”或“重置数据库”前，请务必先创建一份当前的数据备份，以免误操作造成不可挽回的损失。
+          {{ locale.maintenanceDesc }}
         </p>
       </div>
     </div>
@@ -92,7 +92,7 @@
         class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100 tracking-tight">创建数据库备份</h3>
+          <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.backupTitle }}</h3>
           <button
             class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
             @click="activeModal = 'none'"
@@ -103,7 +103,7 @@
         <div class="p-8 space-y-6">
           <div class="space-y-2">
             <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">
-              选择包含的内容
+              {{ locale.selectContent }}
             </p>
             <div class="space-y-2">
               <label
@@ -131,7 +131,7 @@
           </div>
           <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl">
             <p class="text-[10px] text-zinc-500 text-center italic">
-              备份文件将以 .json 格式生成并自动下载
+              {{ locale.backupHint }}
             </p>
           </div>
         </div>
@@ -140,14 +140,14 @@
             class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
           >
-            取消
+            {{ locale.cancel }}
           </button>
           <button
             :disabled="createLoading"
             class="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="createBackup"
           >
-            {{ createLoading ? '正在导出...' : '开始导出' }}
+            {{ createLoading ? locale.exporting : locale.startExport }}
           </button>
         </div>
       </div>
@@ -163,7 +163,7 @@
         class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
         <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100 tracking-tight">恢复数据库备份</h3>
+          <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.restoreTitle }}</h3>
           <button
             class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
             @click="activeModal = 'none'"
@@ -182,10 +182,10 @@
               class="w-8 h-8 text-zinc-700 mb-4 group-hover:text-emerald-500 transition-colors"
             />
             <h5 class="text-sm font-bold text-zinc-300">
-              {{ selectedFile ? selectedFile.name : '点击选择或拖拽备份文件' }}
+              {{ selectedFile ? selectedFile.name : locale.selectFile }}
             </h5>
             <p class="text-[10px] text-zinc-600 font-bold uppercase mt-1 tracking-widest">
-              仅支持 VoiceHub 导出的 .json 格式
+              {{ locale.fileHint }}
             </p>
             <input
               ref="fileInput"
@@ -198,7 +198,7 @@
 
           <div class="space-y-3">
             <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-              >恢复模式</label
+              >{{ locale.restoreMode }}</label
             >
             <div class="grid grid-cols-2 gap-3">
               <button
@@ -434,14 +434,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from 'lucide-vue-next'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
+import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
 const auth = useAuth()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.databaseManager)
 
 // 状态
 const activeModal = ref('none')
@@ -456,60 +459,60 @@ const hasSuperAdminInBackup = ref(false)
 const CONFIRM_CODE = 'CONFIRM-DATABASE-RESET-OPERATION'
 
 // 卡片配置
-const cards = [
+const cards = computed(() => [
   {
     id: 'backup',
-    title: '创建备份',
-    desc: '导出当前数据库的所有数据到文件，用于安全备份或迁移。',
+    title: locale.value.cards.backup.title,
+    desc: locale.value.cards.backup.desc,
     icon: Download,
     color: 'blue',
-    btnText: '创建备份文件'
+    btnText: locale.value.cards.backup.button
   },
   {
     id: 'restore',
-    title: '恢复备份',
-    desc: '从之前导出的备份文件中恢复系统数据。',
+    title: locale.value.cards.restore.title,
+    desc: locale.value.cards.restore.desc,
     icon: Upload,
     color: 'emerald',
-    btnText: '选择备份文件'
+    btnText: locale.value.cards.restore.button
   },
   {
     id: 'reset-seq',
-    title: '重置序列',
-    desc: '修复数据表的自增ID序列，确保新记录的ID从正确值开始。',
+    title: locale.value.cards.resetSeq.title,
+    desc: locale.value.cards.resetSeq.desc,
     icon: RotateCw,
     color: 'amber',
-    btnText: '开始重置序列'
+    btnText: locale.value.cards.resetSeq.button
   },
   {
     id: 'reset-db',
-    title: '重置数据库',
-    desc: '清空除管理员账号外的所有系统数据。此操作不可撤销。',
+    title: locale.value.cards.resetDb.title,
+    desc: locale.value.cards.resetDb.desc,
     icon: Trash2,
     color: 'rose',
-    btnText: '立即重置数据库',
+    btnText: locale.value.cards.resetDb.button,
     isDanger: true
   }
-]
+])
 
 // 备份选项
-const backupOptions = [
+const backupOptions = computed(() => [
   {
     key: 'includeSongs',
-    label: '歌曲与排期数据',
-    desc: '包含所有歌曲库、用户投稿记录及历史播音排期'
+    label: locale.value.backupOptions.songs.label,
+    desc: locale.value.backupOptions.songs.desc
   },
   {
     key: 'includeSystemData',
-    label: '系统配置信息',
-    desc: '包含站点设置、黑名单、播出时段等全局参数'
+    label: locale.value.backupOptions.system.label,
+    desc: locale.value.backupOptions.system.desc
   },
   {
     key: 'includeUsers',
-    label: '用户账户数据',
-    desc: '包含所有注册用户的权限、偏好设置（不含管理员敏感信息）'
+    label: locale.value.backupOptions.users.label,
+    desc: locale.value.backupOptions.users.desc
   }
-]
+])
 
 // 表单数据
 const createForm = ref({

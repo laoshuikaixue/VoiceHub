@@ -3,8 +3,8 @@
     <!-- 顶部标题和全局开关 -->
     <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
       <div class="space-y-1">
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">投稿开放管理</h2>
-        <p class="text-xs text-zinc-500">管理全校师生点歌投稿的开放时间、限制数量及全局状态控制</p>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-zinc-500">{{ locale.desc }}</p>
       </div>
 
       <div
@@ -12,7 +12,7 @@
       >
         <div class="flex items-center gap-3 px-3 border-r border-zinc-800/50 mr-1">
           <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-            >当前状态</span
+            >{{ locale.currentStatus }}</span
           >
           <span
             :class="[
@@ -20,13 +20,13 @@
               hitRequestTime ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'
             ]"
           >
-            {{ hitRequestTime ? '已开放' : '已关闭' }}
+            {{ hitRequestTime ? locale.open : locale.closed }}
           </span>
         </div>
 
         <div class="flex items-center gap-3 px-2">
           <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest"
-            >启用投稿</span
+            >{{ locale.enableRequest }}</span
           >
           <button
             :class="[
@@ -46,7 +46,7 @@
 
         <div class="flex items-center gap-3 px-2 border-l border-zinc-800/50">
           <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest"
-            >启用时段限制</span
+            >{{ locale.enableTimeLimit }}</span
           >
           <button
             :class="[
@@ -82,9 +82,9 @@
           <h4
             class="text-sm font-black text-zinc-400 group-hover:text-blue-400 transition-colors uppercase tracking-widest"
           >
-            添加投稿时段
+            {{ locale.addTime }}
           </h4>
-          <p class="text-[10px] text-zinc-600 mt-1">创建一个新的投稿开放周期</p>
+          <p class="text-[10px] text-zinc-600 mt-1">{{ locale.addTimeDesc }}</p>
         </div>
       </button>
 
@@ -127,7 +127,7 @@
                       : 'bg-zinc-800/50 text-zinc-600 border-zinc-700/50'
                 ]"
               >
-                {{ slot.past ? '已过期' : slot.enabled ? '已启用' : '已禁用' }}
+                {{ slot.past ? locale.expired : slot.enabled ? locale.enabled : locale.disabled }}
               </span>
             </div>
           </div>
@@ -146,13 +146,13 @@
                 <div class="flex items-center gap-2 text-zinc-500 font-bold">
                   <Clock :size="12" class="text-zinc-700" />
                   <span class="text-[10px] uppercase tracking-tighter truncate">{{
-                    slot.startTime || '不限'
+                    slot.startTime || locale.unlimited
                   }}</span>
                 </div>
                 <div class="flex items-center gap-2 text-zinc-500 font-bold">
                   <div class="w-3 h-[2px] bg-zinc-800 ml-1.5" />
                   <span class="text-[10px] uppercase tracking-tighter truncate">{{
-                    slot.endTime || '不限'
+                    slot.endTime || locale.unlimited
                   }}</span>
                 </div>
               </div>
@@ -161,7 +161,7 @@
             <p
               class="text-xs text-zinc-500 font-medium leading-relaxed min-h-[32px] line-clamp-2 italic"
             >
-              {{ slot.description || '暂无详细描述...' }}
+              {{ slot.description || locale.noDescription }}
             </p>
 
             <!-- 投稿进度条 -->
@@ -169,7 +169,7 @@
               <div
                 class="flex justify-between text-[9px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
               >
-                <span>投稿进度</span>
+                <span>{{ locale.progress }}</span>
                 <span
                   >{{
                     slot.expected > 0
@@ -503,6 +503,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, reactive, ref, computed } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useLocale } from '~/utils/locale'
 import type { RequestTime } from '~/types'
 import {
   Plus,
@@ -521,6 +522,8 @@ import {
 } from 'lucide-vue-next'
 
 const { getAuthConfig, isAdmin } = useAuth()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.requestTimeManager)
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)
