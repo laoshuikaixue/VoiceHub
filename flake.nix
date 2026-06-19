@@ -269,6 +269,12 @@
             systemd.services.voicehub = {
               description = "VoiceHub - 校园广播站点歌服务";
               documentation = [ "https://github.com/laoshuikaixue/VoiceHub" ];
+
+              unitConfig = {
+                StartLimitIntervalSec = 600;
+                StartLimitBurst = 3;
+              };
+
               after = [ "network.target" ]
               ++ lib.optionals cfg.database.createLocally [ "postgresql.target" ];
               requires = lib.optionals cfg.database.createLocally [ "postgresql.target" ];
