@@ -158,6 +158,22 @@
 5. **等待部署**：平台会自动构建和部署应用
 6. **访问应用**：部署完成后，您将获得一个可访问的 URL
 
+### Linux 服务器部署
+
+本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
+
+**一键命令：**
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
+```
+
+如果你需要 gh-proxy 加速，使用以下命令：
+
+```bash
+bash <(curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
+```
+
 ### Docker 部署
 
 VoiceHub 支持通过 Docker 进行容器化部署，提供了多种部署方式。
@@ -253,16 +269,6 @@ docker run -d \
   -e NODE_ENV=production \
   --name voicehub \
   voicehub
-```
-
-### Linux 服务器部署
-
-本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
-
-**一键命令：**
-
-```bash
-sudo bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
 
 ### 飞牛 (FnOS) 部署
