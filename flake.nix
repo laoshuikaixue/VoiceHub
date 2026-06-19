@@ -91,7 +91,7 @@
           meta = with pkgs.lib; {
             description = "Campus Radio Station Song Request Management System";
             homepage = "https://github.com/laoshuikaixue/VoiceHub";
-            license = licenses.mit;
+            license = licenses.gpl3Only;
             mainProgram = "voicehub";
             platforms = nodejs.meta.platforms;
           };
@@ -207,16 +207,10 @@
               description = "Host address to bind to";
             };
 
-            databaseUrl = lib.mkOption {
-              type = lib.types.str;
-              description = "PostgreSQL connection URL (DATABASE_URL)";
-              example = "postgresql://voicehub:secret@localhost:5432/voicehub";
-            };
-
             environmentFile = lib.mkOption {
               type = lib.types.nullOr lib.types.path;
               default = null;
-              description = "Path to environment file containing sensitive variables like JWT_SECRET";
+              description = "Path to environment file containing sensitive variables like DATABASE_URL and JWT_SECRET";
             };
 
             extraEnvironment = lib.mkOption {
@@ -247,7 +241,6 @@
                   NODE_ENV = "production";
                   PORT = toString cfg.port;
                   HOST = cfg.host;
-                  DATABASE_URL = cfg.databaseUrl;
                   PREBUILT = "true";
                   SKIP_INSTALL = "true";
                   SKIP_BUILD = "true";
