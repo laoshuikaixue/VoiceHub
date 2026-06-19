@@ -10,7 +10,7 @@
           <input
             v-model="searchQuery"
             class="mobile-search-input"
-            placeholder="搜索点播记录..."
+            :placeholder="locale.mobileSearchPlaceholder"
             type="text"
           >
         </div>
@@ -22,7 +22,7 @@
             class="mobile-tab-btn"
             @click="setActiveTab('all')"
           >
-            全部投稿
+            {{ locale.tabs.all }}
             <div v-if="activeTab === 'all'" class="active-indicator" />
           </button>
           <button
@@ -32,7 +32,7 @@
             class="mobile-tab-btn"
             @click="setActiveTab('mine')"
           >
-            我的投稿
+            {{ locale.tabs.mine }}
             <div v-if="activeTab === 'mine'" class="active-indicator" />
           </button>
           <button
@@ -42,7 +42,7 @@
             class="mobile-tab-btn"
             @click="setActiveTab('replays')"
           >
-            我的重播
+            {{ locale.tabs.replays }}
             <div v-if="activeTab === 'replays'" class="active-indicator" />
           </button>
         </div>
@@ -57,7 +57,7 @@
             class="tab-button"
             @click="setActiveTab('all')"
           >
-            全部投稿
+            {{ locale.tabs.all }}
           </button>
           <button
             v-if="isAuthenticated"
@@ -66,7 +66,7 @@
             class="tab-button"
             @click="setActiveTab('mine')"
           >
-            我的投稿
+            {{ locale.tabs.mine }}
           </button>
           <button
             v-if="isAuthenticated"
@@ -75,7 +75,7 @@
             class="tab-button"
             @click="setActiveTab('replays')"
           >
-            我的重播
+            {{ locale.tabs.replays }}
           </button>
         </div>
 
@@ -84,7 +84,7 @@
             <input
               v-model="searchQuery"
               class="search-input"
-              placeholder="输入想要搜索的歌曲"
+              :placeholder="locale.searchPlaceholder"
               type="text"
             >
             <span class="search-icon">🔍</span>
@@ -93,7 +93,7 @@
           <!-- 学期选择器 -->
           <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
             <button
-              :title="'当前学期: ' + selectedSemester"
+              :title="locale.currentSemester + selectedSemester"
               class="semester-toggle-btn"
               @click="showSemesterDropdown = !showSemesterDropdown"
             >
@@ -128,7 +128,7 @@
           <!-- 添加刷新按钮 - 使用SVG图标 -->
           <button
             :disabled="loading"
-            :title="loading ? '正在刷新...' : '刷新歌曲列表'"
+            :title="loading ? locale.refreshing : locale.refresh"
             class="refresh-button"
             @click="handleRefresh"
           >
@@ -157,7 +157,7 @@
 
     <!-- 使用Transition组件包裹所有内容 -->
     <Transition mode="out-in" name="tab-switch">
-      <div v-if="loading" :key="'loading'" class="loading">加载中...</div>
+      <div v-if="loading" :key="'loading'" class="loading">{{ locale.loading }}</div>
 
       <div v-else-if="error" :key="'error'" class="error">
         {{ error }}
@@ -166,10 +166,10 @@
       <div v-else-if="displayedSongs.length === 0" :key="'empty-' + activeTab" class="empty">
         {{
           activeTab === 'mine'
-            ? '您还没有投稿歌曲，马上去点歌吧！'
+            ? locale.emptyMine
             : activeTab === 'replays'
-              ? '您还没有申请重播的歌曲，去看看已经播放过的歌吧！'
-              : '暂无歌曲，马上去点歌吧！'
+              ? locale.emptyReplays
+              : locale.emptyAll
         }}
       </div>
 
@@ -208,7 +208,7 @@
                   v-if="(song.musicPlatform && song.musicId) || song.playUrl"
                   class="play-button-overlay"
                 >
-                  <button :title="isCurrentPlaying(song.id) ? '暂停' : '播放'" class="play-button">
+                  <button :title="isCurrentPlaying(song.id) ? locale.pause : locale.play" class="play-button">
                     <Icon v-if="isCurrentPlaying(song.id)" :size="16" color="white" name="pause" />
                     <Icon v-else :size="16" color="white" name="play" />
                   </button>
@@ -225,29 +225,29 @@
                     v-if="song.played"
                     :title="
                       song.scheduleDate
-                        ? `播放日期：${formatScheduleDate(song.scheduleDate)}`
-                        : '已播放'
+                        ? locale.playDate(formatScheduleDate(song.scheduleDate))
+                        : locale.played
                     "
                     class="played-tag"
                   >
-                    已播放
+                    {{ locale.played }}
                   </span>
                   <span
                     v-else-if="song.scheduled"
                     :title="
                       song.scheduleDate
-                        ? `排期日期：${formatScheduleDate(song.scheduleDate)}`
-                        : '已排期'
+                        ? locale.scheduleDate(formatScheduleDate(song.scheduleDate))
+                        : locale.scheduled
                     "
                     class="scheduled-tag"
                   >
-                    已排期
+                    {{ locale.scheduled }}
                   </span>
-                  <span v-else-if="song.isReplay" title="重播歌曲" class="replay-tag"> 重播 </span>
+                  <span v-else-if="song.isReplay" :title="locale.replaySong" class="replay-tag"> {{ locale.replay }} </span>
                   <button
                     v-if="song.hasSubmissionNote && song.submissionNote"
                     class="submission-note-trigger"
-                    title="查看备注留言"
+                    :title="locale.viewSubmissionNote"
                     @click.stop="openSubmissionNote(song)"
                   >
                     <Icon :size="14" name="message-circle" />
@@ -257,18 +257,18 @@
                   <span
                     :title="
                       (song.collaborators && song.collaborators.length
-                        ? '主投稿人: '
-                        : '投稿人: ') +
+                        ? locale.mainRequesterTitle
+                        : locale.requesterTitle) +
                       song.requester +
                       (song.collaborators && song.collaborators.length
-                        ? '\n联合投稿: ' +
+                        ? '\n' + locale.collaboratorsTitle +
                           song.collaborators.map((c) => c.displayName || c.name).join(', ')
                         : '')
                     "
                     class="requester"
                   >
                     <template v-if="song.isReplay">
-                      重播申请 ({{ song.replayRequestCount || 0 }})：{{
+                      {{ locale.replayRequest(song.replayRequestCount || 0) }}{{
                         song.replayRequesters
                           ? song.replayRequesters
                               .map((r) => r.name)
@@ -278,7 +278,7 @@
                       }}
                     </template>
                     <template v-else>
-                      投稿人：{{ song.requester }}
+                      {{ locale.requester }}{{ song.requester }}
                       <span v-if="song.collaborators && song.collaborators.length > 0">
                         & {{ song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
                       </span>
@@ -292,7 +292,7 @@
                 <!-- 热度展示 -->
                 <div class="vote-count">
                   <span class="count">{{ song.voteCount }}</span>
-                  <span class="label">热度</span>
+                  <span class="label">{{ locale.heat }}</span>
                 </div>
 
                 <!-- 点赞按钮 -->
@@ -307,7 +307,7 @@
                     class="like-button"
                     @click.stop="handleVote(song)"
                   >
-                    <img alt="点赞" class="like-icon" :src="thumbsUp" >
+                    <img :alt="locale.likeAlt" class="like-icon" :src="thumbsUp" >
                   </button>
                 </div>
               </div>
@@ -315,17 +315,17 @@
 
             <!-- 投稿时间和撤销按钮 -->
             <div class="submission-footer">
-              <div class="submission-time">投稿时间：{{ song.requestedAt }}</div>
+              <div class="submission-time">{{ locale.requestedAt }}{{ song.requestedAt }}</div>
 
               <!-- 如果是自己的投稿或联合投稿，显示撤回/退出按钮 -->
               <button
                 v-if="(isMySong(song) || isCollaborator(song)) && !song.played && !song.scheduled"
                 :disabled="actionInProgress"
-                :title="isMySong(song) ? '撤回投稿' : '退出联合投稿'"
+                :title="isMySong(song) ? locale.withdrawSubmission : locale.leaveCollaboration"
                 class="withdraw-button"
                 @click.stop="handleWithdraw(song)"
               >
-                撤销
+                {{ locale.withdraw }}
               </button>
 
               <!-- 申请/取消重播按钮 -->
@@ -334,10 +334,10 @@
                   v-if="shouldShowCancelButton(song)"
                   :disabled="actionInProgress"
                   class="withdraw-button replay-cancel-btn"
-                  title="撤回重播申请"
+                  :title="locale.cancelReplayTitle"
                   @click.stop="handleCancelReplay(song)"
                 >
-                  撤回申请
+                  {{ locale.cancelReplay }}
                 </button>
                 <button
                   v-else-if="enableReplayRequests && shouldShowRequestButton(song)"
@@ -358,7 +358,7 @@
           v-model:current-page="currentPage"
           :total-pages="totalPages"
           :total-items="displayedSongs.length"
-          item-name="首歌曲"
+          :item-name="locale.itemName"
         />
 
         <!-- 确认对话框 -->
@@ -388,7 +388,7 @@
             >
               <div class="submission-note-modal" @click.stop>
                 <div class="submission-note-header">
-                  <h4>投稿备注留言</h4>
+                  <h4>{{ locale.submissionNote }}</h4>
                   <button @click="closeSubmissionNote">
                     <Icon :size="14" name="close" />
                   </button>
@@ -396,7 +396,7 @@
                 <div class="submission-note-meta">
                   <span class="song-title-tag">{{ submissionNoteDialog.songTitle }}</span>
                   <span :class="['visibility-tag', submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private']">
-                    {{ submissionNoteDialog.isPublic ? '公开备注' : '仅管理员可见' }}
+                    {{ submissionNoteDialog.isPublic ? locale.publicNote : locale.privateNote }}
                   </span>
                 </div>
                 <div class="submission-note-content-box">
@@ -425,6 +425,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import { useLocale } from '~/utils/locale'
 import thumbsUp from '~~/public/images/thumbs-up.svg'
 
 import dayjs from 'dayjs'
@@ -460,6 +461,8 @@ const emit = defineEmits([
 ])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
+const { currentLocale, songs: songsLocale } = useLocale()
+const locale = computed(() => songsLocale.value.songList)
 const sortBy = ref('popularity')
 const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const searchQuery = ref('') // 搜索查询
@@ -656,14 +659,26 @@ const submissionNoteDialog = ref({
 
 // 格式化日期为 X年X月X日
 const formatDate = (dateString) => {
-  if (!dateString) return '未知时间'
-  return dayjs(dateString).tz(BEIJING_TIMEZONE).format('YYYY年M月D日')
+  if (!dateString) return locale.value.unknownTime
+  const date = dayjs(dateString).tz(BEIJING_TIMEZONE).toDate()
+  return new Intl.DateTimeFormat(currentLocale.value, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(date)
 }
 
 // 格式化日期为 X年X月X日 HH:MM
 const formatDateTime = (dateString) => {
-  if (!dateString) return '未知时间'
-  return dayjs(dateString).tz(BEIJING_TIMEZONE).format('YYYY年M月D日 HH:mm')
+  if (!dateString) return locale.value.unknownTime
+  const date = dayjs(dateString).tz(BEIJING_TIMEZONE).toDate()
+  return new Intl.DateTimeFormat(currentLocale.value, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
 }
 
 // 根据播出时段功能开启状态格式化排期日期
@@ -786,34 +801,34 @@ const isVoteButtonDisabled = (song) => {
 
 // 获取点赞按钮标题（tooltip）
 const getVoteButtonTitle = (song) => {
-  if (!song) return '点赞'
+  if (!song) return locale.value.like
 
   // 检查学期
   if (!currentSemester.value || song.semester !== currentSemester.value.name) {
-    return '非活跃学期'
+    return locale.value.inactiveSemester
   }
 
   // 检查状态
   if (song.played) {
-    return '已播放的歌曲不能点赞'
+    return locale.value.playedCannotLike
   }
   if (song.scheduled) {
-    return '已排期的歌曲不能点赞'
+    return locale.value.scheduledCannotLike
   }
 
   // 检查是否是自己的歌曲
   if (isMySong(song)) {
-    return '不允许自己给自己点赞'
+    return locale.value.selfLikeDisabled
   }
 
-  return song.voted ? '点击取消点赞' : '点赞'
+  return song.voted ? locale.value.unlike : locale.value.like
 }
 
 const handleVote = async (song) => {
   // 检查用户是否登录
   if (!isAuthenticated.value) {
     if (window.$showNotification) {
-      window.$showNotification('请先登录后再点赞', 'error')
+      window.$showNotification(locale.value.loginBeforeLike, 'error')
     }
     return
   }
@@ -821,7 +836,7 @@ const handleVote = async (song) => {
   // 检查学期
   if (!currentSemester.value || song.semester !== currentSemester.value.name) {
     if (window.$showNotification) {
-      window.$showNotification('非活跃学期', 'error')
+      window.$showNotification(locale.value.inactiveSemester, 'error')
     }
     return
   }
@@ -834,7 +849,7 @@ const handleVote = async (song) => {
   // 检查是否是自己的歌曲
   if (isMySong(song)) {
     if (window.$showNotification) {
-      window.$showNotification('不允许自己给自己点赞', 'error')
+      window.$showNotification(locale.value.selfLikeDisabled, 'error')
     }
     return
   }
@@ -864,8 +879,8 @@ const handleWithdraw = (song) => {
   if (isMySong(song)) {
     confirmDialog.value = {
       show: true,
-      title: '撤回投稿',
-      message: `确认撤回歌曲《${song.title}》的投稿吗？这将同时取消所有联合投稿关联。`,
+      title: locale.value.withdrawTitle,
+      message: locale.value.withdrawMessage(song.title),
       type: 'info',
       action: 'withdraw',
       data: song
@@ -873,8 +888,8 @@ const handleWithdraw = (song) => {
   } else if (isCollaborator(song)) {
     confirmDialog.value = {
       show: true,
-      title: '退出联合投稿',
-      message: `确认退出歌曲《${song.title}》的联合投稿吗？`,
+      title: locale.value.leaveTitle,
+      message: locale.value.leaveMessage(song.title),
       type: 'info',
       action: 'withdraw', // 后端使用相同的接口，根据用户身份处理
       data: song
@@ -885,8 +900,8 @@ const handleWithdraw = (song) => {
 const handleCancelReplay = (song) => {
   confirmDialog.value = {
     show: true,
-    title: '取消重播申请',
-    message: `确认取消歌曲《${song.title}》的重播申请吗？`,
+    title: locale.value.cancelReplayConfirmTitle,
+    message: locale.value.cancelReplayMessage(song.title),
     type: 'warning',
     action: 'cancelReplay',
     data: song
@@ -896,8 +911,8 @@ const handleCancelReplay = (song) => {
 const handleRequestReplay = (song) => {
   confirmDialog.value = {
     show: true,
-    title: '申请重播',
-    message: `确认申请重播歌曲《${song.title}》吗？`,
+    title: locale.value.requestReplayTitle,
+    message: locale.value.requestReplayMessage(song.title),
     type: 'info',
     action: 'requestReplay',
     data: song
@@ -906,61 +921,61 @@ const handleRequestReplay = (song) => {
 
 // 获取重播按钮文本
 const getReplayButtonText = (song) => {
-  if (actionInProgress.value) return '处理中...'
-  if (!song) return '申请重播'
+  if (actionInProgress.value) return locale.value.processing
+  if (!song) return locale.value.requestReplay
 
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '非本学期'
+    return locale.value.notCurrentSemester
   }
 
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
+      return locale.value.replayRejectedCooldown(song.replayRequestCooldownRemaining)
     }
     // 冷却期已过
-    return '申请重播'
+    return locale.value.requestReplay
   }
 
   if (song.replayRequestStatus === 'FULFILLED') {
-    return '已重播'
+    return locale.value.replayed
   }
 
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '撤回申请'
+    return locale.value.cancelReplay
   }
 
-  return '申请重播'
+  return locale.value.requestReplay
 }
 
 // 获取重播按钮标题（tooltip）
 const getReplayButtonTitle = (song) => {
-  if (!song) return '申请重播'
+  if (!song) return locale.value.requestReplay
 
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '只能申请重播当前学期的歌曲'
+    return locale.value.onlyCurrentSemesterReplay
   }
 
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
+      return locale.value.replayRejectedTooltip(song.replayRequestCooldownRemaining)
     }
-    return '申请重播'
+    return locale.value.requestReplay
   }
 
   if (song.replayRequestStatus === 'FULFILLED') {
-    return '该歌曲已重播'
+    return locale.value.alreadyReplayed
   }
 
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '撤回重播申请'
+    return locale.value.cancelReplayTitle
   }
 
-  return '申请重播'
+  return locale.value.requestReplay
 }
 
 // 检查重播按钮是否应该禁用
@@ -1034,7 +1049,7 @@ const openSubmissionNote = (song) => {
   if (!song?.submissionNote) return
   submissionNoteDialog.value = {
     show: true,
-    songTitle: `${song.title || '未知歌曲'} - ${song.artist || '未知歌手'}`,
+    songTitle: `${song.title || locale.value.unknownSong} - ${song.artist || locale.value.unknownArtist}`,
     note: song.submissionNote,
     isPublic: song.submissionNotePublic === true
   }
@@ -1057,7 +1072,7 @@ const handleImageError = (event, song) => {
 
 // 获取歌曲标题的第一个字符作为封面
 const getFirstChar = (title) => {
-  if (!title) return '音'
+  if (!title) return locale.value.textCoverFallback
   return title.trim().charAt(0)
 }
 
@@ -1069,7 +1084,7 @@ const playSongWithUrlFetching = async (song) => {
   } catch (error) {
     if (!isBilibiliSong(song)) {
       if (window.$showNotification) {
-        window.$showNotification('获取音乐播放链接失败', 'error')
+        window.$showNotification(locale.value.musicUrlFailed, 'error')
       }
     }
   }
@@ -1176,7 +1191,7 @@ const getMusicUrl = async (song) => {
 
   // 如果没有playUrl，检查platform和musicId是否有效
   if (!platform || !musicId) {
-    throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
+    throw new Error(locale.value.musicUrlFailed)
   }
 
   // 检查是否为播客内容
@@ -1385,7 +1400,7 @@ const fetchAvailableSemesters = async () => {
     await selectDefaultSemester()
   } catch (error) {
     console.error('获取学期信息失败:', error)
-    semesterError.value = '获取学期信息失败，请刷新页面重试'
+    semesterError.value = locale.value.semesterLoadFailed
 
     // 错误恢复：使用缓存的学期信息
     try {

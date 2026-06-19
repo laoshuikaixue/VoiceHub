@@ -1304,7 +1304,7 @@ const loadAudioMatchScript = (src) =>
     script.async = true
     script.dataset.audioMatch = src
     script.onload = () => resolve()
-    script.onerror = () => reject(new Error(`加载识曲资源失败: ${src}`))
+    script.onerror = () => reject(new Error(locale.value.audioMatchScriptLoadFailed(src)))
     document.head.appendChild(script)
   })
 
@@ -1320,7 +1320,7 @@ const ensureAudioMatchScripts = async () => {
       .then(() => loadAudioMatchScript('/audio-match/afp.js'))
       .then(() => {
         if (typeof window.GenerateFP !== 'function') {
-          throw new Error('识曲引擎初始化失败')
+          throw new Error(locale.value.audioMatchEngineFailed)
         }
       })
       .catch((err) => {
@@ -1349,8 +1349,8 @@ const parseAudioMatchResults = (response) => {
     return {
       key: `${song.id || 'unknown'}-${index}`,
       id: song.id,
-      name: song.name || '未知歌曲',
-      artist: artists.join(' / ') || '未知歌手',
+      name: song.name || locale.value.unknownSong,
+      artist: artists.join(' / ') || locale.value.unknownArtist,
       album: song.album?.name || '',
       cover: song.album?.picUrl || song.al?.picUrl || '',
       startTime: typeof item?.startTime === 'number' ? item.startTime : 0
@@ -1361,7 +1361,7 @@ const parseAudioMatchResults = (response) => {
 const handleAudioMatchFingerprint = async (recording) => {
   try {
     audioMatchProcessing.value = true
-    audioMatchStatus.value = '正在生成指纹并识别...'
+    audioMatchStatus.value = locale.value.audioMatchGenerating
 
     const fingerprint = await window.GenerateFP(recording)
     const response = await $fetch('/api/api-enhanced/netease/audio/match', {
@@ -1374,14 +1374,14 @@ const handleAudioMatchFingerprint = async (recording) => {
 
     const matches = parseAudioMatchResults(response)
     if (!matches.length) {
-      throw new Error('未识别到匹配歌曲，请换一段更清晰的副歌重试')
+      throw new Error(locale.value.audioMatchNoMatch)
     }
 
     audioMatchResults.value = matches
-    audioMatchStatus.value = `识别完成，找到 ${matches.length} 个候选结果`
+    audioMatchStatus.value = locale.value.audioMatchDone(matches.length)
   } catch (err) {
     console.error('听歌识曲失败:', err)
-    audioMatchError.value = err?.message || '听歌识曲失败，请稍后重试'
+    audioMatchError.value = err?.message || locale.value.audioMatchFailed
     audioMatchStatus.value = ''
     audioMatchResults.value = []
   } finally {
@@ -1394,7 +1394,7 @@ const initializeAudioMatch = async () => {
   await stopAudioMatchSession()
 
   audioMatchPreparing.value = true
-  audioMatchStatus.value = '正在请求麦克风权限...'
+  audioMatchStatus.value = locale.value.microphoneRequesting
 
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext
@@ -1404,7 +1404,7 @@ const initializeAudioMatch = async () => {
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error('当前环境不支持麦克风访问，请确保使用 HTTPS 访问或 localhost 调试')
+      throw new Error(locale.value.microphoneUnsupported)
     }
 
     if (audioMatchContext.audioWorklet) {
@@ -1416,7 +1416,7 @@ const initializeAudioMatch = async () => {
           case 'bufferhealth': {
             const progress = Math.min(1, Number(event.data.health) || 0)
             const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
-            audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
+            audioMatchStatus.value = locale.value.audioMatchRecordingProgress(currentSeconds, AUDIO_MATCH_DURATION)
             break
           }
           case 'finished':
@@ -1446,7 +1446,7 @@ const initializeAudioMatch = async () => {
 
         // 提高更新频率以改善用户体验
         if (bufIndex % bufferSize === 0) {
-          audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
+          audioMatchStatus.value = locale.value.audioMatchRecordingProgress(currentSeconds, AUDIO_MATCH_DURATION)
         }
 
         if (bufIndex + channelL.length > maxLength) {
@@ -1499,7 +1499,7 @@ const initializeAudioMatch = async () => {
       }),
       new Promise((_, reject) =>
         setTimeout(
-          () => reject(new Error('麦克风授权超时，请在系统设置中确认已允许麦克风权限')),
+          () => reject(new Error(locale.value.microphoneTimeout)),
           GET_USER_MEDIA_TIMEOUT_MS
         )
       )
@@ -1507,7 +1507,7 @@ const initializeAudioMatch = async () => {
 
     audioMatchMicSourceNode = audioMatchContext.createMediaStreamSource(audioMatchMicStream)
     audioMatchMicSourceNode.connect(audioMatchRecorderNode)
-    audioMatchStatus.value = '麦克风已连接，点击开始识曲'
+    audioMatchStatus.value = locale.value.microphoneReady
   } catch (err) {
     await stopAudioMatchSession()
     throw err
@@ -1524,7 +1524,7 @@ const openAudioMatchModal = async () => {
     await initializeAudioMatch()
   } catch (err) {
     console.error('初始化听歌识曲失败:', err)
-    audioMatchError.value = err?.message || '无法初始化听歌识曲，请检查麦克风权限'
+    audioMatchError.value = err?.message || locale.value.audioMatchInitFailed
   }
 }
 
@@ -1568,12 +1568,12 @@ const startAudioMatchRecording = async () => {
       await initializeAudioMatch()
     } catch (err) {
       console.error('重新初始化听歌识曲失败:', err)
-      audioMatchError.value = err?.message || '无法访问麦克风，请稍后重试'
+      audioMatchError.value = err?.message || locale.value.microphoneAccessFailed
       return
     }
   }
 
-  audioMatchStatus.value = `录音中 0.0s / ${AUDIO_MATCH_DURATION}s`
+  audioMatchStatus.value = locale.value.audioMatchRecordingProgress('0.0', AUDIO_MATCH_DURATION)
   audioMatchRecording.value = true
   audioMatchRecorderNode.port.postMessage({
     message: 'start',
