@@ -71,8 +71,10 @@ export default defineEventHandler((event) => {
         sourceOrigin.protocol === trustedOrigin.protocol &&
         sourceOrigin.port === trustedOrigin.port
 
-      // 检查来源是否与当前请求的 Host 头一致（覆盖域名、私有 IP、公网 IP 所有场景）
-      const hostOrigin = getHostHeaderOrigin()
+      // 检查来源是否与当前请求的 Host 头一致（覆盖域名、IP 直连场景）
+      // 此处仅取 host 头，避免 X-Forwarded-Host 可被前端伪造
+      const requestHost = getHeader(event, 'host')
+      const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
       const matchesRequestHost = hostOrigin && sourceOrigin.origin === hostOrigin
 
       if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin && !matchesRequestHost) {
@@ -103,10 +105,11 @@ export default defineEventHandler((event) => {
     // 允许没有 Origin/Referer 但明确标记为同源的请求
     return
   } else {
-    // 没有 Origin/Referer —— 检查能否从 Host 头推断出可信来源
-    const hostOrigin = getHostHeaderOrigin()
-    if (hostOrigin) {
-      // 请求确实发到了本站，只是缺乏来源头（隐私扩展/非浏览器/IP 直连）
+    // 没有 Origin/Referer —— 检查 Host 头是否等于可信来源
+    // 注意：Host 头不能被前端 JS 伪造，可以安全用于放行
+    const requestHost = getHeader(event, 'host')
+    const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
+    if (hostOrigin && hostOrigin === trustedOrigin.origin) {
       return
     }
 
@@ -118,16 +121,20 @@ export default defineEventHandler((event) => {
     })
   }
 })
-  // 从 Host 头提取 origin（不含路径），用于 IP 直连场景下与 Referer/Origin 比对
-  function getHostHeaderOrigin() {
-    const hostHeader = getHeader(event, 'host') || getHeader(event, 'x-forwarded-host') || ''
-    if (!hostHeader) return null
-    // 兼容多代理环境，取第一个
-    const firstHost = hostHeader.split(',')[0].trim()
-    try {
-      const normalized = firstHost.includes('://') ? firstHost : `${requestUrl.protocol}//${firstHost}`
-      return new URL(normalized).origin
-    } catch {
-      return null
-    }
+
+/**
+ * 从 Host 头提取 origin，只使用标准 Host 头（不可被前端 JS 伪造）
+ * @param hostHeader Host 请求头的值
+ * @param defaultProtocol 默认协议
+ * @returns origin 字符串，解析失败时返回 null
+ */
+function getOriginFromHost(hostHeader: string | undefined, defaultProtocol: string): string | null {
+  if (!hostHeader) return null
+  const firstHost = hostHeader.split(',')[0].trim()
+  try {
+    const normalized = firstHost.includes('://') ? firstHost : `${defaultProtocol}//${firstHost}`
+    return new URL(normalized).origin
+  } catch {
+    return null
   }
+}
