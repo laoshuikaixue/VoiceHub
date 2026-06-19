@@ -207,10 +207,40 @@
               description = "Host address to bind to";
             };
 
+            database = {
+
+              createLocally = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = ''
+                  Automatically configure a local PostgreSQL database.
+                  Enables services.postgresql with ensureDatabases/ensureUsers
+                  and auto-constructs DATABASE_URL from the database options below.
+                '';
+              };
+
+              name = lib.mkOption {
+                type = lib.types.str;
+                default = "voicehub";
+              };
+
+              user = lib.mkOption {
+                type = lib.types.str;
+                default = "voicehub";
+              };
+
+              host = lib.mkOption {
+                type = lib.types.str;
+                default = "/run/postgresql";
+                description = "PostgreSQL host. Default Unix socket for local peer auth.";
+              };
+
+            };
+
             environmentFile = lib.mkOption {
               type = lib.types.nullOr lib.types.path;
               default = null;
-              description = "Path to environment file containing sensitive variables like DATABASE_URL and JWT_SECRET";
+              description = "Path to environment file containing sensitive variables like JWT_SECRET";
             };
 
             extraEnvironment = lib.mkOption {
@@ -230,10 +260,18 @@
           };
 
           config = lib.mkIf cfg.enable {
+            services.postgresql = lib.mkIf cfg.database.createLocally {
+              enable = true;
+              ensureDatabases = [ cfg.database.name ];
+              ensureUsers = [{ name = cfg.database.user; ensureDBOwnership = true; }];
+            };
+
             systemd.services.voicehub = {
               description = "VoiceHub - Campus Radio Song Request Service";
               documentation = [ "https://github.com/laoshuikaixue/VoiceHub" ];
-              after = [ "network.target" ];
+              after = [ "network.target" ]
+                ++ lib.optionals cfg.database.createLocally [ "postgresql.target" ];
+              requires = lib.optionals cfg.database.createLocally [ "postgresql.target" ];
               wantedBy = [ "multi-user.target" ];
 
               environment =
@@ -255,6 +293,9 @@
                       set -e
                       cd "${cfg.package}/lib/voicehub"
                       export PATH="${pkgs.lib.makeBinPath [ pkgs.nodejs_22 pkgs.pnpm ]}:$PATH"
+                      ${lib.optionalString cfg.database.createLocally ''
+                        export DATABASE_URL="postgresql:///${cfg.database.name}?host=${cfg.database.host}"
+                      ''}
                       ${lib.optionalString cfg.runDeployScript ''
                         echo "[voicehub] Running deploy script..."
                         node scripts/deploy.js
