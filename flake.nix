@@ -295,6 +295,7 @@
                       export PATH="${pkgs.lib.makeBinPath [ nodejs pnpm ]}:$PATH"
                       ${lib.optionalString cfg.database.createLocally ''
                         export DATABASE_URL="postgresql:///${cfg.database.name}?host=${cfg.database.host}"
+                        export PGHOST="${cfg.database.host}"
                       ''}
                       ${lib.optionalString cfg.runDeployScript ''
                         echo "[voicehub] 正在执行部署脚本..."
