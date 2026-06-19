@@ -26,6 +26,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enableReplayRequests: false,
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
+  // 卡密点歌相关
+  enableCardCodeRequests: false,
+  requireCardCodeForRequests: false,
   enableRequestTimeLimitation: false,
   forceBlockAllRequests: false,
   forcePasswordChangeOnFirstLogin: true,
@@ -65,6 +68,8 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enableReplayRequests',
   'enableCollaborativeSubmission',
   'enableSubmissionRemarks',
+  'enableCardCodeRequests',
+  'requireCardCodeForRequests',
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
   'forcePasswordChangeOnFirstLogin',

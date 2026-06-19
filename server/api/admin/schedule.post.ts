@@ -3,6 +3,7 @@ import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~
 import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
 import { cacheService } from '~~/server/services/cacheService'
+import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -106,7 +107,8 @@ export default defineEventHandler(async (event) => {
           id: song.id,
           title: song.title,
           artist: song.artist,
-          requesterId: song.requesterId
+          requesterId: song.requesterId,
+          cardCodeId: song.cardCodeId
         }
       }
 
@@ -137,7 +139,6 @@ export default defineEventHandler(async (event) => {
             }
           )
 
-          // 标记该歌曲的所有待处理重播申请为已完成
           await tx
             .update(songReplayRequests)
             .set({ status: 'FULFILLED', updatedAt: scheduleResult[0].publishedAt || getServerDate() })
@@ -150,6 +151,12 @@ export default defineEventHandler(async (event) => {
         } else {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
         }
+        await redeemCardCodeForSchedule(tx, {
+          songId: schedule.song.id,
+          cardCodeId: schedule.song.cardCodeId,
+          operatorId: user.id,
+          at: scheduleResult[0].publishedAt || getServerDate()
+        })
       }
     })
 

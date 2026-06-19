@@ -4,6 +4,7 @@ import {
   playTimes,
   requestTimes,
   semesters,
+  cardCodes,
   songCollaborators,
   songs,
   systemSettings
@@ -207,6 +208,19 @@ export default defineEventHandler(async (event) => {
       // 注意：这里仅作初步检查，严格检查在事务内进行
     }
 
+    // 点歌券相关站点设置
+    if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
+      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
+      if (!providedCardCode) {
+        throw createError({ statusCode: 403, message: '本站点已启用仅点歌券投稿，请提供有效点歌券' })
+      }
+    }
+
+    const isCardCodeEnabled = !!(systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests)
+    if (typeof body.cardCode === 'string' && body.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
+      throw createError({ statusCode: 400, message: '点歌券投稿功能未启用' })
+    }
+
     // 检查期望的播出时段是否存在
     let preferredPlayTime = null
     if (body.preferredPlayTimeId) {
@@ -250,7 +264,38 @@ export default defineEventHandler(async (event) => {
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     // 创建歌曲和更新状态（使用事务）
+    // 如果提交了点歌券，需要在事务内锁定点歌券以保证原子性
     const song = await db.transaction(async (tx) => {
+      // 如果提交了点歌券，先尝试锁定
+      let providedCardCodeId: number | null = null
+      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
+
+      if (providedCardCode) {
+        // 查询点歌券是否存在且可用
+        const codeRows = await tx
+          .select()
+          .from(cardCodes)
+          .where(eq(cardCodes.code, providedCardCode))
+          .limit(1)
+
+        const found = codeRows[0]
+        if (!found || found.status !== 'AVAILABLE') {
+          throw createError({ statusCode: 400, message: '点歌券无效或已被使用' })
+        }
+
+        // 使用原子更新将点歌券置为 LOCKED
+        const lockResult = await tx
+          .update(cardCodes)
+          .set({ status: 'LOCKED', lockedBy: user.id, lockedAt: new Date() })
+          .where(and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'AVAILABLE')))
+          .returning()
+
+        if (lockResult.length === 0) {
+          throw createError({ statusCode: 400, message: '点歌券已被锁定或不可用' })
+        }
+
+        providedCardCodeId = found.id
+      }
       // 检查投稿限额（在事务内进行，防止并发绕过限制）
       if (
         systemSettingsData?.enableSubmissionLimit &&
@@ -334,6 +379,7 @@ export default defineEventHandler(async (event) => {
           cover: body.cover || null,
           musicPlatform: isBilibili ? 'bilibili' : (body.musicPlatform || null),
           musicId: finalMusicId,
+          cardCodeId: providedCardCodeId || null,
           playUrl: body.playUrl || null,
           submissionNote,
           submissionNotePublic,

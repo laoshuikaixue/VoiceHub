@@ -1,13 +1,36 @@
 import * as Sentry from '@sentry/vue'
 import type { Event, EventHint } from '@sentry/vue'
+import {
+  getSentryEventSearchText,
+  isExpectedUpstreamMusicError
+} from '~/utils/sentryUpstreamMusicErrors'
 
 let sentryClientInitialized = false
 let sentryClientInitializing = false
 let instanceId = ''
 const TELEMETRY_STORAGE_KEY = 'voicehub.telemetryEnabled'
 
+const isTelemetryDisabledLocally = (): boolean => {
+  try {
+    return typeof localStorage !== 'undefined' &&
+      localStorage.getItem(TELEMETRY_STORAGE_KEY) === 'false'
+  } catch {
+    return false
+  }
+}
+
+const setTelemetryStorageValue = (value: string) => {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(TELEMETRY_STORAGE_KEY, value)
+    }
+  } catch {
+    // 隐私模式可能禁用 localStorage，遥测开关以服务端返回为准。
+  }
+}
+
 const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
-  if (typeof localStorage !== 'undefined' && localStorage.getItem(TELEMETRY_STORAGE_KEY) === 'false') {
+  if (isTelemetryDisabledLocally()) {
     return true
   }
 
@@ -17,6 +40,11 @@ const shouldDropClientEvent = (event: Event, hint?: EventHint): boolean => {
   }
 
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return true
+  }
+
+  // 外部音源接口波动属于预期失败，本地交互提示即可。
+  if (isExpectedUpstreamMusicError(getSentryEventSearchText(event, hint))) {
     return true
   }
 
@@ -58,11 +86,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       }>('/api/system/instance')
 
       if (!response?.data?.telemetryEnabled) {
-        localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+        setTelemetryStorageValue('false')
         return
       }
 
-      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'true')
+      setTelemetryStorageValue('true')
       instanceId = response.data.instanceId || ''
       console.log(`[VoiceHub] 遥测已开启，实例 ID: ${instanceId}（提交 Bug 时可提供此 ID 以便开发者定位）`)
 
@@ -72,7 +100,10 @@ export default defineNuxtPlugin((nuxtApp) => {
           ? 'vercel'
           : 'self-hosted-node'
 
-      const integrations = [Sentry.browserTracingIntegration({ router: nuxtApp.$router })]
+      const sentryRouter = nuxtApp.$router as NonNullable<
+        Parameters<typeof Sentry.browserTracingIntegration>[0]
+      >['router']
+      const integrations = [Sentry.browserTracingIntegration({ router: sentryRouter })]
       integrations.push(
         Sentry.consoleLoggingIntegration({
           levels: import.meta.dev ? ['log', 'warn', 'error'] : ['error']
@@ -113,7 +144,7 @@ export default defineNuxtPlugin((nuxtApp) => {
         Sentry.setContext('instance', { instanceId })
       }
     } catch (error) {
-      localStorage.setItem(TELEMETRY_STORAGE_KEY, 'false')
+      setTelemetryStorageValue('false')
       console.warn('[Sentry] Failed to initialize client telemetry:', error)
     } finally {
       sentryClientInitializing = false

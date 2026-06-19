@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users } from '~/drizzle/schema'
-import { count } from 'drizzle-orm'
+import { and, count, eq, gte, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -17,47 +17,40 @@ export default defineEventHandler(async (event) => {
   const semester = query.semester as string
 
   try {
-    // 构建查询条件
-    const where = semester && semester !== 'all' ? { semester: semester } : {}
+    const songWhereCondition = semester && semester !== 'all' ? eq(songs.semester, semester) : undefined
 
     // 获取用户参与度数据
     // 1. 获取总用户数
     const totalUsersResult = await db.select({ count: count() }).from(users)
-    const totalUsers = totalUsersResult[0].count
+    const totalUsers = Number(totalUsersResult[0]?.count || 0)
 
     // 2. 获取有请求歌曲的用户数
-    const allUsers = await db.select().from(users)
-    const allSongs = await db.select().from(songs)
-
-    const activeUsers = allUsers.filter((user) => {
-      return allSongs.some((song) => {
-        if (song.requesterId !== user.id) return false
-        if (semester && semester !== 'all' && song.semester !== semester) return false
-        return true
-      })
-    }).length
+    const activeUsersResult = await db
+      .select({ count: sql<number>`COUNT(DISTINCT ${songs.requesterId})` })
+      .from(songs)
+      .where(songWhereCondition)
+    const activeUsers = Number(activeUsersResult[0]?.count || 0)
 
     // 3. 获取用户请求歌曲的平均数量
-    const userSongCounts = allUsers.map((user) => {
-      const songCount = allSongs.filter((song) => song.requesterId === user.id).length
-      return { ...user, _count: { songs: songCount } }
-    })
-
-    const totalSongRequests = userSongCounts.reduce((sum, user) => sum + user._count.songs, 0)
+    const totalSongRequestsResult = await db
+      .select({ count: count() })
+      .from(songs)
+      .where(songWhereCondition)
+    const totalSongRequests = Number(totalSongRequestsResult[0]?.count || 0)
     const averageSongsPerUser = totalUsers > 0 ? totalSongRequests / totalUsers : 0
 
     // 4. 获取最近活跃用户
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-    const recentActiveUsers = allUsers.filter((user) => {
-      return allSongs.some((song) => {
-        if (song.requesterId !== user.id) return false
-        if (semester && semester !== 'all' && song.semester !== semester) return false
-        if (song.createdAt < oneWeekAgo) return false
-        return true
-      })
-    }).length
+    const recentWhereCondition = songWhereCondition
+      ? and(songWhereCondition, gte(songs.createdAt, oneWeekAgo))
+      : gte(songs.createdAt, oneWeekAgo)
+    const recentActiveUsersResult = await db
+      .select({ count: sql<number>`COUNT(DISTINCT ${songs.requesterId})` })
+      .from(songs)
+      .where(recentWhereCondition)
+    const recentActiveUsers = Number(recentActiveUsersResult[0]?.count || 0)
 
     return {
       totalUsers,

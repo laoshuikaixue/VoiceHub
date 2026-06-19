@@ -158,6 +158,22 @@
 5. **等待部署**：平台会自动构建和部署应用
 6. **访问应用**：部署完成后，您将获得一个可访问的 URL
 
+### Linux 服务器部署
+
+本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
+
+**一键命令：**
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
+```
+
+如果你需要 gh-proxy 加速，使用以下命令：
+
+```bash
+bash <(curl -sL https://gh-proxy.com/https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
+```
+
 ### Docker 部署
 
 VoiceHub 支持通过 Docker 进行容器化部署，提供了多种部署方式。
@@ -253,16 +269,6 @@ docker run -d \
   -e NODE_ENV=production \
   --name voicehub \
   voicehub
-```
-
-### Linux 服务器部署
-
-本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
-
-**一键命令：**
-
-```bash
-sudo bash <(curl -sL https://raw.githubusercontent.com/laoshuikaixue/VoiceHub/main/sh/main.sh)
 ```
 
 ### 飞牛 (FnOS) 部署
@@ -535,6 +541,7 @@ VoiceHub/
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
+│   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
@@ -710,6 +717,7 @@ VoiceHub/
 │       ├── lyricAdapter.ts    # 歌词适配器
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
+│       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── oauth.ts           # OAuth工具
@@ -742,6 +750,13 @@ VoiceHub/
 │   │   │   │   ├── [id].patch.ts    # 更新黑名单项
 │   │   │   │   ├── index.get.ts     # 获取黑名单列表
 │   │   │   │   └── index.post.ts    # 添加黑名单项
+│   │   │   ├── card-codes/          # 点歌券管理API
+│   │   │   │   ├── [id].put.ts      # 更新单张点歌券
+│   │   │   │   ├── create.post.ts   # 创建点歌券
+│   │   │   │   ├── export.get.ts    # 导出点歌券
+│   │   │   │   ├── index.get.ts     # 获取点歌券列表
+│   │   │   │   ├── redeem-logs.get.ts # 获取点歌券日志
+│   │   │   │   └── update.post.ts   # 批量更新点歌券
 │   │   │   ├── database/            # 数据库管理API
 │   │   │   │   ├── cleanup.post.ts  # 数据库清理
 │   │   │   │   ├── performance.get.ts # 数据库性能监控
@@ -860,6 +875,8 @@ VoiceHub/
 │   │   │   └── search.get.ts        # Bilibili视频搜索
 │   │   ├── blacklist/      # 黑名单API
 │   │   │   └── check.post.ts        # 检查黑名单
+│   │   ├── card-codes/     # 点歌券API
+│   │   │   └── validate.post.ts     # 验证点歌券可用性
 │   │   ├── meow/           # MeoW账号绑定API
 │   │   │   ├── bind.post.ts         # 绑定MeoW账号
 │   │   │   └── unbind.post.ts       # 解绑MeoW账号
@@ -961,6 +978,7 @@ VoiceHub/
 │   │   └── error-handler.ts # 错误处理插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
+│   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务

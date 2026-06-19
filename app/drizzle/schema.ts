@@ -6,6 +6,12 @@ export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn', 'graduate']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
+export const cardCodeStatusEnum = pgEnum('card_code_status', [
+  'AVAILABLE',
+  'LOCKED',
+  'REDEEMED',
+  'INVALID'
+]);
 
 // 用户表
 export const users = pgTable('User', {
@@ -62,6 +68,7 @@ export const songs = pgTable('Song', {
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
   hitRequestId: integer(),
+  cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
 });
 
 // 投票表
@@ -160,6 +167,9 @@ export const systemSettings = pgTable('SystemSettings', {
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
   enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
+  // 卡密点歌相关开关（用于允许用户使用卡密或强制使用卡密投稿）
+  enableCardCodeRequests: boolean('enableCardCodeRequests').default(false).notNull(),
+  requireCardCodeForRequests: boolean('requireCardCodeForRequests').default(false).notNull(),
   
   // 验证码配置
   captchaProvider: text('captchaProvider').default('graphic').notNull(),
@@ -537,3 +547,31 @@ export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type Re
 export type NewRequestTime = typeof requestTimes.$inferInsert;
 export type UserIdentity = typeof userIdentities.$inferSelect;
 export type NewUserIdentity = typeof userIdentities.$inferInsert;
+// 卡密表
+export const cardCodes = pgTable('CardCode', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  code: text('code').notNull().unique(),
+  status: cardCodeStatusEnum('status').default('AVAILABLE').notNull(),
+  lockedBy: integer('lockedBy').references(() => users.id, { onDelete: 'set null' }),
+  lockedAt: timestamp('lockedAt'),
+  redeemedBy: integer('redeemedBy').references(() => users.id, { onDelete: 'set null' }),
+  redeemedAt: timestamp('redeemedAt'),
+  note: text('note'),
+});
+
+// 卡密兑换日志表
+export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  cardCodeId: integer('cardCodeId').notNull().references(() => cardCodes.id, { onDelete: 'restrict' }),
+  codeSnapshot: text('codeSnapshot').notNull(),
+  redeemedBy: integer('redeemedBy').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  redeemedAt: timestamp('redeemedAt').defaultNow().notNull(),
+  source: text('source').default('UNKNOWN').notNull(),
+  songId: integer('songId').references(() => songs.id, { onDelete: 'set null' })
+});
+
+export type CardCode = typeof cardCodes.$inferSelect;
+export type NewCardCode = typeof cardCodes.$inferInsert;
