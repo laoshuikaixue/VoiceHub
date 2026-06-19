@@ -32,6 +32,9 @@ backups/
 .figma
 scripts/package-lock.json
 
+# Nix build output
+result
+
 # Local env files
 .env
 .env.*

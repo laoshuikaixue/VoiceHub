@@ -276,6 +276,123 @@ docker run -d \
 VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
 - 从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
 
+### Nix / NixOS
+
+VoiceHub 提供了一个 Nix flake，用于构建、开发和在 NixOS 上部署。
+
+#### 前提条件
+
+- [Nix](https://nixos.org/download)（带 flake 支持）
+- PostgreSQL 数据库
+
+#### 开发环境
+
+进入开发 shell（自动提供 Node.js、pnpm、PostgreSQL 客户端）：
+
+```bash
+nix develop
+```
+
+然后在 shell 内：
+
+```bash
+cp .env.example .env   # 配置 DATABASE_URL + JWT_SECRET
+pnpm install
+pnpm run dev           # 启动开发服务器 (port 3000)
+```
+
+#### 构建
+
+```bash
+nix build              # 产出 result/bin/voicehub
+```
+
+构建产物可以直接运行（需要 `DATABASE_URL` 等环境变量）：
+
+```bash
+DATABASE_URL="postgresql://..." JWT_SECRET="..." ./result/bin/voicehub
+```
+
+或使用附带的环境文件：
+
+```bash
+nix run .#default --impure
+```
+
+> `nix run` 需要设置 `DATABASE_URL` 环境变量，否则会启动失败。
+
+#### 更新 pnpm 依赖哈希
+
+当 `pnpm-lock.yaml` 更新后，需要更新 `flake.nix` 中的 `pnpmDeps` 哈希。使用以下命令：
+
+```bash
+nix run .#build                # 先尝试构建，让 Nix 给出预期的哈希
+# 然后把预期的哈希复制到 flake.nix 中
+# 或者使用 nix hash 计算：
+nix hash path $(nix build .#build 2>&1 | grep -oP '/nix/store/[^"]+')
+```
+
+或者使用 impure 构建辅助命令（需要网络和已安装的 pnpm）：
+
+```bash
+nix run .#build                # 在项目目录中执行，生成 .output 目录
+```
+
+#### NixOS 模块
+
+首先，将 VoiceHub 添加为 flake input：
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    voicehub.url = "github:laoshuikaixue/VoiceHub";
+  };
+
+  outputs = { self, nixpkgs, voicehub, ... }: {
+    nixosConfigurations.my-server = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit voicehub; };
+      modules = [
+        voicehub.nixosModules.default
+        ./configuration.nix
+      ];
+    };
+  };
+}
+```
+
+然后在 NixOS 配置中使用模块：
+
+```nix
+{ pkgs, inputs, ... }: {
+  imports = [ inputs.voicehub.nixosModules.default ];
+
+  services.voicehub = {
+    enable = true;
+    port = 3000;
+    databaseUrl = "postgresql://voicehub:secret@localhost:5432/voicehub";
+    environmentFile = "/run/secrets/voicehub-env";  # 包含 JWT_SECRET 等敏感变量
+    runDeployScript = true;   # 首次部署自动执行 db:migrate + create-admin
+  };
+
+  # 可选：反向代理
+  services.nginx.virtualHosts."voicehub.example.com" = {
+    locations."/" = { proxyPass = "http://127.0.0.1:3000"; };
+  };
+}
+```
+
+环境文件 (`/run/secrets/voicehub-env`) 格式：
+
+```env
+JWT_SECRET=your-very-secure-jwt-secret-key
+NUXT_PUBLIC_HOST=https://voicehub.example.com
+```
+
+模块会自动设置 `DynamicUser`、`ProtectSystem=strict`、`NoNewPrivileges` 等安全加固。
+
+---
+
 ### 本地开发部署
 
 #### 前提条件
