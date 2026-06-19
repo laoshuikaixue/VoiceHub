@@ -5,8 +5,14 @@ export default defineEventHandler((event) => {
   // 只处理特定的内部API路由，防止站外调用
   const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
                          pathname.startsWith('/api/native-api')
-                         
+
   if (!isProtectedApi) {
+    return
+  }
+
+  // 内部受信客户端绕过 CORS 校验
+  const requestedFrom = getHeader(event, 'x-requested-from')
+  if (requestedFrom === 'ClassIslandPlugin') {
     return
   }
 
