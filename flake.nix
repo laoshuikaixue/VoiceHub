@@ -47,6 +47,7 @@
             configurePhase = ''
               runHook preConfigure
               export HOME="$TMPDIR"
+              export CI=true
               export NODE_OPTIONS="--max-old-space-size=8192"
               runHook postConfigure
             '';
