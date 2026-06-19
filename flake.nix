@@ -17,7 +17,7 @@
         pkgs = import nixpkgs { inherit system; };
 
         nodejs = pkgs.nodejs_22;
-        version = "1.5.8.2";
+        version = (builtins.fromJSON (builtins.readFile ./package.json)).version;
 
         # Pin pnpm to exact version matching package.json (packageManager field)
         pnpm = pkgs.pnpm_10.override {
