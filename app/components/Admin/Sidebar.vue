@@ -20,7 +20,7 @@
             <p
               class="text-[10px] text-zinc-500 mt-1.5 uppercase tracking-widest font-bold leading-none"
             >
-              管理控制台
+              {{ locale.console }}
             </p>
           </div>
         </NuxtLink>
@@ -84,23 +84,23 @@
             v-else
             class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 font-bold border border-zinc-700 shrink-0"
           >
-            {{ (currentUser?.name || '管').charAt(0) }}
+            {{ (currentUser?.name || locale.avatarFallback).charAt(0) }}
           </div>
           <!-- 用户详细信息 -->
           <div class="flex-1 min-w-0">
             <p class="text-xs font-black truncate text-zinc-100">
-              {{ currentUser?.name || '管理员' }}
+              {{ currentUser?.name || locale.adminFallback }}
             </p>
             <p
               class="text-[10px] text-zinc-500 truncate uppercase tracking-wider font-medium mt-0.5"
             >
-              {{ currentUser?.role?.replace('_', ' ') || 'ADMIN' }}
+              {{ getRoleDisplayName(currentUser?.role || 'ADMIN') }}
             </p>
           </div>
           <!-- 退出按钮 -->
           <button
             class="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-            title="退出登录"
+            :title="locale.logout"
             @click="$emit('logout')"
           >
             <LogOut :size="16" />
@@ -135,8 +135,11 @@ import {
   Lock
 } from 'lucide-vue-next'
 import logo from '~~/public/images/logo.png'
+import { useLocale } from '~/utils/locale'
 
 const avatarError = ref(false)
+const { admin } = useLocale()
+const locale = computed(() => admin.value.sidebar)
 
 const props = defineProps({
   // 侧边栏是否打开（移动端）
@@ -161,46 +164,46 @@ watch(
 const emit = defineEmits(['navigate', 'close', 'logout'])
 
 // 菜单分组配置
-const menuGroups = [
+const menuGroups = computed(() => [
   {
-    section: '概览',
-    items: [{ icon: LayoutDashboard, label: '数据概览', id: 'overview' }]
+    section: locale.value.sections.overview,
+    items: [{ icon: LayoutDashboard, label: locale.value.menu.overview, id: 'overview' }]
   },
   {
-    section: '内容管理',
+    section: locale.value.sections.content,
     items: [
-      { icon: CalendarDays, label: '排期管理', id: 'schedule' },
-      { icon: Printer, label: '打印排期', id: 'print' },
-      { icon: Music2, label: '歌曲管理', id: 'songs' },
-      { icon: BarChart3, label: '数据分析', id: 'data-analysis', permissionId: 'data-analysis' }
+      { icon: CalendarDays, label: locale.value.menu.schedule, id: 'schedule' },
+      { icon: Printer, label: locale.value.menu.print, id: 'print' },
+      { icon: Music2, label: locale.value.menu.songs, id: 'songs' },
+      { icon: BarChart3, label: locale.value.menu.dataAnalysis, id: 'data-analysis', permissionId: 'data-analysis' }
     ]
   },
   {
-    section: '用户管理',
-    items: [{ icon: Users, label: '用户管理', id: 'users' }]
+    section: locale.value.sections.users,
+    items: [{ icon: Users, label: locale.value.menu.users, id: 'users' }]
   },
   {
-    section: 'API管理',
-    items: [{ icon: Key, label: 'API密钥管理', id: 'api-keys' }]
+    section: locale.value.sections.api,
+    items: [{ icon: Key, label: locale.value.menu.apiKeys, id: 'api-keys' }]
   },
   {
-    section: '系统管理',
+    section: locale.value.sections.system,
     items: [
-      { icon: Bell, label: '通知管理', id: 'notifications' },
-      { icon: Mail, label: '邮件配置', id: 'smtp-config' },
-      { icon: Clock, label: '播出时段', id: 'playtimes' },
-      { icon: FileEdit, label: '投稿管理', id: 'request-times' },
-      { icon: BookOpen, label: '学期管理', id: 'semesters' },
-      { icon: Ban, label: '黑名单管理', id: 'blacklist' },
-      { icon: Globe, label: '站点配置', id: 'site-config' },
-      { icon: Database, label: '数据库操作', id: 'database' }
+      { icon: Bell, label: locale.value.menu.notifications, id: 'notifications' },
+      { icon: Mail, label: locale.value.menu.smtpConfig, id: 'smtp-config' },
+      { icon: Clock, label: locale.value.menu.playtimes, id: 'playtimes' },
+      { icon: FileEdit, label: locale.value.menu.requestTimes, id: 'request-times' },
+      { icon: BookOpen, label: locale.value.menu.semesters, id: 'semesters' },
+      { icon: Ban, label: locale.value.menu.blacklist, id: 'blacklist' },
+      { icon: Globe, label: locale.value.menu.siteConfig, id: 'site-config' },
+      { icon: Database, label: locale.value.menu.database, id: 'database' }
     ]
   },
   {
-    section: '账户管理',
-    items: [{ icon: Lock, label: '修改密码', id: 'password' }]
+    section: locale.value.sections.account,
+    items: [{ icon: Lock, label: locale.value.menu.password, id: 'password' }]
   }
-]
+])
 
 /**
  * 判断是否应该显示该菜单组
@@ -228,13 +231,7 @@ const onNavigate = (id) => {
  * @param {string} role 角色标识
  */
 const getRoleDisplayName = (role) => {
-  const roleNames = {
-    USER: '普通用户',
-    SONG_ADMIN: '歌曲管理员',
-    ADMIN: '管理员',
-    SUPER_ADMIN: '超级管理员'
-  }
-  return roleNames[role] || role
+  return locale.value.roles[role] || role
 }
 </script>
 

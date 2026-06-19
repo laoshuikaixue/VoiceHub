@@ -1,23 +1,15 @@
 <template>
   <div class="request-form">
     <div class="rules-section desktop-only-rules">
-      <h2 class="section-title">投稿须知</h2>
+      <h2 class="section-title">{{ locale.guidelinesTitle }}</h2>
       <div class="rules-content-desktop">
         <div v-if="submissionGuidelines" class="guidelines-content">
           {{ submissionGuidelines }}
         </div>
         <div v-else class="default-guidelines">
-          <p>1. 投稿时无需加入书名号</p>
-          <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
-          <p>3. 禁止投递含有违规内容的歌曲</p>
-          <p>4. 点播的歌曲将由管理员进行审核</p>
-          <p>5. 审核通过后将安排在播放时段播出</p>
-          <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>
-            7.
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
+          <p v-for="(rule, index) in locale.defaultGuidelines" :key="`desktop-rule-${index}`">
+            {{ index + 1 }}. {{ rule }}
           </p>
-          <p>8. 最终解释权归广播站所有</p>
         </div>
       </div>
     </div>
@@ -26,26 +18,20 @@
     <div class="rules-section mobile-only-rules">
       <h3 class="rules-title">
         <Icon :size="16" class="rules-icon" name="bell" />
-        投稿须知
+        {{ locale.guidelinesTitle }}
       </h3>
       <div class="rules-content">
         <div v-if="submissionGuidelines" class="guidelines-content">
           {{ submissionGuidelines }}
         </div>
         <div v-else class="default-guidelines">
-          <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
-          <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
-          <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
-          <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
-          <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
-          <div class="rule-item">
-            <span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
+          <div
+            v-for="(rule, index) in locale.mobileDefaultGuidelines"
+            :key="`mobile-rule-${index}`"
+            class="rule-item"
+          >
+            <span>{{ index + 1 }}.</span> {{ rule }}
           </div>
-          <div class="rule-item">
-            <span>7.</span>
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。
-          </div>
-          <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
     </div>
@@ -56,13 +42,13 @@
         <div class="form-header-row">
           <!-- 歌曲搜索区域 -->
           <div class="search-section">
-            <div class="search-label">歌曲搜索</div>
+            <div class="search-label">{{ locale.searchLabel }}</div>
             <div class="search-input-group">
               <input
                 id="title"
                 v-model="title"
                 class="search-input"
-                placeholder="请输入歌曲名称"
+                :placeholder="locale.searchPlaceholder"
                 required
                 type="text"
               >
@@ -71,35 +57,35 @@
                 class="search-button"
                 type="submit"
               >
-                {{ loading || searching ? '处理中...' : '搜索' }}
+                {{ loading || searching ? locale.processing : locale.search }}
               </button>
               <button
                 :disabled="loading || searching"
-                aria-label="听歌识曲"
+                :aria-label="locale.audioMatch"
                 class="audio-match-btn"
-                title="听歌识曲"
+                :title="locale.audioMatch"
                 type="button"
                 @click="openAudioMatchModal"
               >
                 <Icon :size="16" name="mic" />
-                <span class="btn-text">识曲</span>
+                <span class="btn-text">{{ locale.audioMatchShort }}</span>
               </button>
             </div>
             <button
               v-if="showImportSemesterBtn"
               class="import-semester-btn"
               type="button"
-              title="从往期导入"
+              :title="locale.importFromPast"
               @click="showImportSongsModal = true"
             >
               <Icon :size="16" name="history" />
-              <span class="btn-text">从往期导入</span>
+              <span class="btn-text">{{ locale.importFromPast }}</span>
             </button>
           </div>
 
           <!-- 联合投稿人区域 -->
           <div v-if="user && enableCollaborativeSubmission" class="collaborators-section">
-            <div class="section-label">联合投稿</div>
+            <div class="section-label">{{ locale.collaborators }}</div>
             <div class="collaborators-list">
               <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
                 <span class="collaborator-name">{{ user.name }}</span>
@@ -117,7 +103,7 @@
                 @click="showUserSearchModal = true"
               >
                 <Icon :size="14" name="plus" />
-                添加
+                {{ locale.add }}
               </button>
             </div>
           </div>
@@ -136,7 +122,7 @@
               class="admin-notice-horizontal"
             >
               <span class="admin-icon">👑</span>
-              <span class="admin-text">您是管理员，不受投稿限制</span>
+              <span class="admin-text">{{ locale.adminUnlimited }}</span>
             </div>
 
             <!-- 投稿关闭提示 -->
@@ -145,8 +131,8 @@
               <span class="closed-text">
                 {{
                   submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod
-                    ? '当前不在投稿开放时段'
-                    : '投稿功能已关闭'
+                    ? locale.outsideRequestTime
+                    : locale.submissionClosed
                 }}
               </span>
             </div>
@@ -158,35 +144,35 @@
                 v-if="submissionStatus.timeLimitationEnabled && submissionStatus.currentTimePeriod"
                 class="status-item-horizontal"
               >
-                <span class="status-label">当前时段：</span>
+                <span class="status-label">{{ locale.currentPeriod }}</span>
                 <span class="status-value">{{ submissionStatus.currentTimePeriod.name }}</span>
                 <span
                   v-if="submissionStatus.currentTimePeriod.expected > 0"
                   class="status-remaining"
                 >
-                  (已接纳 {{ submissionStatus.currentTimePeriod.accepted }} /
+                  ({{ locale.accepted }} {{ submissionStatus.currentTimePeriod.accepted }} /
                   {{ submissionStatus.currentTimePeriod.expected }})
                 </span>
               </div>
 
               <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
-                <span class="status-label">今日投稿：</span>
+                <span class="status-label">{{ locale.todayRequests }}</span>
                 <span class="status-value"
                   >{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span
                 >
                 <span class="status-remaining"
-                  >剩余
+                  >{{ locale.remaining }}
                   {{ Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed) }}</span
                 >
               </div>
 
               <div v-if="submissionStatus.weeklyLimit" class="status-item-horizontal">
-                <span class="status-label">本周投稿：</span>
+                <span class="status-label">{{ locale.weeklyRequests }}</span>
                 <span class="status-value"
                   >{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span
                 >
                 <span class="status-remaining"
-                  >剩余
+                  >{{ locale.remaining }}
                   {{
                     Math.max(0, submissionStatus.weeklyLimit - submissionStatus.weeklyUsed)
                   }}</span
@@ -194,12 +180,12 @@
               </div>
 
               <div v-if="submissionStatus.monthlyLimit" class="status-item-horizontal">
-                <span class="status-label">本月投稿：</span>
+                <span class="status-label">{{ locale.monthlyRequests }}</span>
                 <span class="status-value"
                   >{{ submissionStatus.monthlyUsed }} / {{ submissionStatus.monthlyLimit }}</span
                 >
                 <span class="status-remaining"
-                  >剩余
+                  >{{ locale.remaining }}
                   {{
                     Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
                   }}</span
@@ -216,21 +202,21 @@
                 type="button"
                 @click="switchPlatform('netease')"
               >
-                网易云音乐
+                {{ locale.platforms.netease }}
               </button>
               <button
                 :class="['platform-btn', { active: platform === 'tencent' }]"
                 type="button"
                 @click="switchPlatform('tencent')"
               >
-                QQ音乐
+                {{ locale.platforms.tencent }}
               </button>
               <button
                 :class="['platform-btn', { active: platform === 'bilibili' }]"
                 type="button"
                 @click="switchPlatform('bilibili')"
               >
-                哔哩哔哩
+                {{ locale.platforms.bilibili }}
               </button>
             </div>
 
@@ -240,22 +226,22 @@
               <div v-if="checkingNeteaseLogin" class="netease-loading-state">
                 <div class="loading-content">
                   <div class="loading-spinner" />
-                  <span class="loading-text">刷新中</span>
+                  <span class="loading-text">{{ locale.refreshing }}</span>
                 </div>
               </div>
 
               <!-- 未登录状态 -->
               <div v-else-if="!isNeteaseLoggedIn" class="login-entry">
                 <div class="login-desc">
-                  <p class="login-title">登录网易云获取完整体验</p>
+                  <p class="login-title">{{ locale.neteaseLoginTitle }}</p>
                 </div>
                 <div class="login-actions">
                   <button class="login-btn" type="button" @click="showLoginModal = true">
-                    立即登录
+                    {{ locale.loginNow }}
                   </button>
                   <button class="import-btn" type="button" @click="handleImportClick">
                     <Icon :size="14" name="upload" />
-                    导入数据
+                    {{ locale.importData }}
                   </button>
                 </div>
               </div>
@@ -270,41 +256,41 @@
                       alt="avatar"
                       class="user-avatar"
                     >
-                    <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
+                    <span class="user-name">{{ neteaseUser?.nickname || locale.loggedIn }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio" > 单曲
+                      <input v-model="searchType" :value="1" type="radio" > {{ locale.single }}
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio" > 播客
+                      <input v-model="searchType" :value="1009" type="radio" > {{ locale.podcast }}
                     </label>
                   </div>
 
                   <div class="user-actions-row">
                     <button
                       class="action-btn-compact"
-                      title="最近播放"
+                      :title="locale.recent"
                       type="button"
                       @click="showRecentSongsModal = true"
                     >
                       <Icon :size="14" name="history" />
-                      <span>最近</span>
+                      <span>{{ locale.recent }}</span>
                     </button>
                     <button
                       class="action-btn-compact"
-                      title="从歌单投稿"
+                      :title="locale.playlist"
                       type="button"
                       @click="showPlaylistModal = true"
                     >
                       <Icon :size="14" name="playlist" />
-                      <span>歌单</span>
+                      <span>{{ locale.playlist }}</span>
                     </button>
                     <button
                       class="action-btn-compact"
-                      aria-label="导出Cookie数据"
-                      title="导出Cookie数据"
+                      :aria-label="locale.exportCookie"
+                      :title="locale.exportCookie"
                       type="button"
                       @click="handleExportData"
                     >
@@ -312,8 +298,8 @@
                     </button>
                     <button
                       class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                      aria-label="退出登录"
-                      title="退出登录"
+                      :aria-label="locale.logout"
+                      :title="locale.logout"
                       type="button"
                       @click="handleLogoutNetease"
                     >
@@ -328,7 +314,7 @@
             <div v-if="platform === 'tencent'" class="netease-options">
               <div v-if="!isQQMusicLoggedIn" class="login-entry">
                 <div class="login-desc">
-                  <p class="login-title">登录 QQ 音乐提升播放稳定性</p>
+                  <p class="login-title">{{ locale.qqLoginTitle }}</p>
                 </div>
                 <div class="login-actions">
                   <button
@@ -336,7 +322,7 @@
                     type="button"
                     @click="showQQLoginModal = true"
                   >
-                    立即登录
+                    {{ locale.loginNow }}
                   </button>
                 </div>
               </div>
@@ -353,14 +339,14 @@
                     <div v-else class="qq-user-avatar">
                       <Icon :size="14" name="music" />
                     </div>
-                    <span class="user-name">{{ qqMusicUser?.nickname || 'QQ音乐已登录' }}</span>
+                    <span class="user-name">{{ qqMusicUser?.nickname || locale.qqLoggedIn }}</span>
                   </div>
 
                   <div class="user-actions-row">
                     <button
                       class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
-                      aria-label="退出 QQ 音乐登录"
-                      title="退出 QQ 音乐登录"
+                      :aria-label="locale.logoutQQ"
+                      :title="locale.logoutQQ"
                       type="button"
                       @click="handleLogoutQQMusic"
                     >
@@ -381,10 +367,10 @@
                   <CustomSelect
                     v-model="preferredPlayTimeId"
                     :options="formattedPlayTimes"
-                    label="期望播出时段"
+                    :label="locale.preferredPlayTime"
                     label-key="displayName"
                     value-key="id"
-                    placeholder="选择时段"
+                    :placeholder="locale.choosePlayTime"
                   />
                 </div>
               </div>
@@ -393,7 +379,7 @@
                 <div class="input-wrapper">
                   <div class="flex items-center justify-between mb-2">
                     <label for="submission-note" class="text-[12px] font-bold text-zinc-300"
-                      >投稿备注留言</label
+                      >{{ locale.submissionNote }}</label
                     >
                     <label class="custom-checkbox-wrapper">
                       <input
@@ -417,7 +403,7 @@
                           />
                         </svg>
                       </span>
-                      <span class="custom-checkbox-text">公开给已登录用户</span>
+                      <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                     </label>
                   </div>
                   <textarea
@@ -436,7 +422,7 @@
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <div class="loading-spinner" />
-              <p class="loading-text">处理中...</p>
+              <p class="loading-text">{{ locale.processing }}</p>
             </div>
 
             <!-- 搜索结果列表 -->
@@ -454,7 +440,7 @@
                     >
                       <img
                         :src="convertToHttps(result.cover)"
-                        alt="封面"
+                        :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
                       >
@@ -470,10 +456,10 @@
                       <p
                         v-if="result.album"
                         :class="['result-album', { 'clickable-album': isNeteaseAlbum(result) }]"
-                        :title="isNeteaseAlbum(result) ? '点击查看专辑详情' : result.album"
+                        :title="isNeteaseAlbum(result) ? locale.albumDetailsTitle : result.album"
                         @click.stop="isNeteaseAlbum(result) ? openAlbumDetails(result) : null"
                       >
-                        <span class="album-label">专辑：</span>
+                        <span class="album-label">{{ locale.album }}</span>
                         <span class="album-name">{{ result.album }}</span>
                         <Icon
                           v-if="isNeteaseAlbum(result)"
@@ -488,7 +474,7 @@
                       <button
                         v-if="isTencentSource(result)"
                         class="cloud-disk-btn"
-                        title="上传到网易云音乐云盘"
+                        :title="locale.uploadToNeteaseCloud"
                         @click.stop.prevent="openUploadDialog(result)"
                       >
                         <Icon name="cloud-upload" :size="18" />
@@ -501,7 +487,7 @@
                         "
                         class="similar-song-info"
                       >
-                        <span class="similar-text">所有剧集已存在</span>
+                        <span class="similar-text">{{ locale.allEpisodesSubmitted }}</span>
                       </div>
                       <div
                         v-else-if="
@@ -510,13 +496,13 @@
                         "
                         class="similar-song-info"
                       >
-                        <span class="similar-text">部分剧集已存在</span>
+                        <span class="similar-text">{{ locale.partialEpisodesSubmitted }}</span>
                         <button
                           :disabled="submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                         >
-                          选择剧集
+                          {{ locale.chooseEpisodes }}
                         </button>
                       </div>
                       <!-- 检查是否已存在相似歌曲 -->
@@ -528,18 +514,18 @@
                         >
                           {{
                             isSuperAdmin
-                              ? '歌曲已播放'
+                              ? locale.songPlayed
                               : enableReplayRequests
-                                ? '歌曲已播放'
-                                : '歌曲已播放'
+                                ? locale.songPlayed
+                                : locale.songPlayed
                           }}
                         </span>
                         <span
                           v-else-if="getSimilarSong(result)?.scheduled"
                           class="similar-text status-scheduled"
-                          >歌曲已排期</span
+                          >{{ locale.songScheduled }}</span
                         >
-                        <span v-else class="similar-text">歌曲已存在</span>
+                        <span v-else class="similar-text">{{ locale.songExists }}</span>
 
                         <!-- 超级管理员对已播放的相似歌曲：显示继续投稿 -->
                         <button
@@ -548,7 +534,7 @@
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { forceResubmit: true })"
                         >
-                          继续投稿
+                          {{ locale.continueSubmit }}
                         </button>
 
                         <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
@@ -580,12 +566,12 @@
                           "
                           :title="
                             getSimilarSong(result)?.played
-                              ? '已播放的歌曲不能点赞'
+                              ? locale.playedCannotLike
                               : getSimilarSong(result)?.scheduled
-                                ? '已排期的歌曲不能点赞'
+                                ? locale.scheduledCannotLike
                                 : getSimilarSong(result)?.voted
-                                  ? '已点赞'
-                                  : '点赞'
+                                  ? locale.liked
+                                  : locale.like
                           "
                           class="like-btn"
                           @click.stop.prevent="
@@ -606,12 +592,12 @@
                           </svg>
                           {{
                             getSimilarSong(result)?.played
-                              ? '已播放'
+                              ? locale.played
                               : getSimilarSong(result)?.scheduled
-                                ? '已排期'
+                                ? locale.scheduled
                                 : getSimilarSong(result)?.voted
-                                  ? '已点赞'
-                                  : '点赞'
+                                  ? locale.liked
+                                  : locale.like
                           }}
                         </button>
                       </div>
@@ -623,12 +609,12 @@
                       >
                         {{
                           submitting
-                            ? '处理中...'
+                            ? locale.processing
                             : platform === 'netease' && searchType === 1009
-                              ? '选择节目'
+                              ? locale.chooseProgram
                               : isBilibiliMultiP(result)
-                                ? '选择剧集'
-                                : '选择投稿'
+                                ? locale.chooseEpisodes
+                                : locale.chooseSubmit
                         }}
                       </button>
                     </div>
@@ -638,7 +624,7 @@
                 <!-- 手动输入按钮 -->
                 <div class="no-results-action">
                   <button class="manual-submit-btn" type="button" @click="showManualModal = true">
-                    以上没有我想要的歌曲，手动输入提交
+                    {{ locale.manualSubmitLong }}
                   </button>
                 </div>
               </div>
@@ -646,17 +632,17 @@
               <!-- 空状态 -->
               <div v-else-if="!searching && hasSearched" key="empty" class="empty-state">
                 <div class="empty-icon">🔍</div>
-                <p class="empty-text">未找到相关歌曲</p>
-                <p class="empty-hint">试试其他关键词或切换平台</p>
+                <p class="empty-text">{{ locale.noResults }}</p>
+                <p class="empty-hint">{{ locale.noResultsHint }}</p>
                 <button class="manual-submit-btn" type="button" @click="showManualModal = true">
-                  手动输入提交
+                  {{ locale.manualSubmit }}
                 </button>
               </div>
 
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon" >
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="searchIcon" >
                 </div>
               </div>
             </Transition>
@@ -762,7 +748,7 @@
       v-model:show="showUserSearchModal"
       :exclude-ids="[user?.id, ...collaborators.map((u) => u.id)]"
       :multiple="true"
-      title="添加联合投稿人"
+      :title="locale.addCollaboratorTitle"
       @select="handleUserSelect"
     />
 
@@ -803,12 +789,12 @@
                 />
               </div>
 
-              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">听歌识曲</h3>
+              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">{{ locale.audioMatch }}</h3>
 
               <p class="mt-2 text-sm text-zinc-400 max-w-[260px]">
                 {{
                   audioMatchStatus ||
-                  (audioMatchError ? audioMatchError : '靠近音源播放，录制 3 秒识别歌曲')
+                  (audioMatchError ? audioMatchError : locale.audioMatchHint)
                 }}
               </p>
 
@@ -822,10 +808,10 @@
                 >
                   {{
                     audioMatchPreparing
-                      ? '准备中...'
+                      ? locale.preparing
                       : audioMatchProcessing
-                        ? '识别中...'
-                        : '开始识曲'
+                        ? locale.recognizing
+                        : locale.startAudioMatch
                   }}
                 </button>
                 <button
@@ -836,10 +822,10 @@
                   @click="stopAudioMatchRecording"
                 >
                   <span class="recording-dot" />
-                  录制中...
+                  {{ locale.recording }}
                 </button>
                 <button class="audio-match-cancel-btn" type="button" @click="closeAudioMatchModal">
-                  取消
+                  {{ locale.cancel }}
                 </button>
               </div>
             </div>
@@ -849,7 +835,7 @@
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
               <div class="border-t border-zinc-800/60 pt-5">
-                <h4 class="text-sm font-semibold text-zinc-300 mb-4">识别结果</h4>
+                <h4 class="text-sm font-semibold text-zinc-300 mb-4">{{ locale.audioMatchResults }}</h4>
                 <div class="space-y-2">
                   <button
                     v-for="match in audioMatchResults"
@@ -923,7 +909,7 @@
                 >
                   <Edit3 :size="24" />
                 </div>
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
+                <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.manualTitle }}</h3>
               </div>
               <button
                 class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
@@ -939,7 +925,7 @@
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >歌曲名称</label
+                    >{{ locale.songName }}</label
                   >
                   <div class="relative group">
                     <input
@@ -959,13 +945,13 @@
                   <label
                     for="modal-artist"
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >歌手名称</label
+                    >{{ locale.artistName }}</label
                   >
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
-                    placeholder="请输入歌手名称"
+                    :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
                   >
@@ -976,7 +962,7 @@
                   <label
                     for="modal-cover"
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >歌曲封面地址（选填）</label
+                    >{{ locale.coverUrl }}</label
                   >
                   <div class="relative group">
                     <input
@@ -988,7 +974,7 @@
                           ? 'border-red-500/50 focus:border-red-500/50'
                           : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
-                      placeholder="请输入歌曲封面图片URL"
+                      :placeholder="locale.coverPlaceholder"
                       type="url"
                     >
                     <div
@@ -1014,7 +1000,7 @@
                         v-else
                         class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
                       >
-                        <Check class="w-3 h-3" /> URL有效
+                        <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
                     </div>
                   </Transition>
@@ -1025,7 +1011,7 @@
                   <label
                     for="modal-play-url"
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >播放地址（选填）</label
+                    >{{ locale.playUrl }}</label
                   >
                   <div class="relative group">
                     <input
@@ -1037,7 +1023,7 @@
                           ? 'border-red-500/50 focus:border-red-500/50'
                           : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
-                      placeholder="请输入歌曲播放URL"
+                      :placeholder="locale.playUrlPlaceholder"
                       type="url"
                     >
                     <div
@@ -1063,7 +1049,7 @@
                         v-else
                         class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
                       >
-                        <Check class="w-3 h-3" /> URL有效
+                        <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
                     </div>
                   </Transition>
@@ -1080,7 +1066,7 @@
                 type="button"
                 @click="showManualModal = false"
               >
-                取消
+                {{ locale.cancel }}
               </button>
               <button
                 :disabled="!canSubmitManualForm || submitting"
@@ -1088,7 +1074,7 @@
                 type="button"
                 @click="handleManualSubmit"
               >
-                {{ submitting ? '提交中...' : '确认提交' }}
+                {{ submitting ? locale.submitting : locale.confirmSubmit }}
               </button>
             </div>
           </div>
@@ -1118,6 +1104,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
@@ -1144,6 +1131,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['request', 'vote'])
+const { songs: songsLocale } = useLocale()
+const locale = computed(() => songsLocale.value.requestForm)
 
 // 站点配置
 const {
@@ -1805,15 +1794,15 @@ const checkQQMusicLoginStatus = () => {
   isQQMusicLoggedIn.value = true
 
   try {
-    qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: 'QQ音乐已登录' }
+    qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: locale.value.qqLoggedIn }
   } catch {
-    qqMusicUser.value = { nickname: 'QQ音乐已登录' }
+    qqMusicUser.value = { nickname: locale.value.qqLoggedIn }
   }
 }
 
 const handleQQLoginSuccess = (data) => {
   qqMusicCookie.value = data.cookie
-  qqMusicUser.value = data.user || { nickname: 'QQ音乐已登录' }
+  qqMusicUser.value = data.user || { nickname: locale.value.qqLoggedIn }
   isQQMusicLoggedIn.value = true
 
   if (import.meta.client) {
@@ -1889,7 +1878,7 @@ const formattedPlayTimes = computed(() => {
     ...pt,
     displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
-  return [{ id: '', displayName: '不指定时段' }, ...options]
+  return [{ id: '', displayName: locale.value.choosePlayTime }, ...options]
 })
 
 // 格式化播出时段时间范围
@@ -1899,12 +1888,12 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`
+    return `${playTime.startTime}`
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`
+    return `${playTime.endTime}`
   }
 
-  return '不限时间'
+  return locale.value.choosePlayTime
 }
 
 // 监听用户状态变化，当用户登录后重新获取投稿状态

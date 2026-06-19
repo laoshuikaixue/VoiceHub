@@ -131,6 +131,7 @@ export function useLocale() {
     pages: withFallback('pages'),
     auth: withFallback('auth'),
     ui: withFallback('ui'),
-    songs: withFallback('songs')
+    songs: withFallback('songs'),
+    admin: withFallback('admin')
   }
 }
