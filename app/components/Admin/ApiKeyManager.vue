@@ -776,7 +776,7 @@ const loadApiKeys = async () => {
     }
   } catch (error) {
     console.error('加载API密钥失败:', error)
-    toast.error('加载API密钥失败')
+    toast.error(locale.value.loadFailed)
   } finally {
     loading.value = false
   }
@@ -788,8 +788,8 @@ const openCreateModal = () => {
 }
 
 const createApiKey = async () => {
-  if (!form.name) return toast.error('请输入密钥名称')
-  if (form.permissions.length === 0) return toast.error('请至少选择一个权限')
+  if (!form.name) return toast.error(locale.value.nameRequired)
+  if (form.permissions.length === 0) return toast.error(locale.value.permissionRequired)
 
   submitting.value = true
   try {
@@ -807,7 +807,7 @@ const createApiKey = async () => {
     })
 
     if (response.success) {
-      toast.success('API密钥创建成功')
+      toast.success(locale.value.createSuccessTitle)
       newApiKey.value = response.data
       showCreateModal.value = false
       showSuccessModal.value = true
@@ -816,7 +816,7 @@ const createApiKey = async () => {
     }
   } catch (error) {
     console.error('创建API密钥失败:', error)
-    toast.error(error.data?.message || '创建API密钥失败')
+    toast.error(error.data?.message || locale.value.createFailed)
   } finally {
     submitting.value = false
   }
@@ -824,8 +824,8 @@ const createApiKey = async () => {
 
 const updateApiKey = async () => {
   if (!selectedApiKey.value) return
-  if (!form.name) return toast.error('请输入密钥名称')
-  if (form.permissions.length === 0) return toast.error('请至少选择一个权限')
+  if (!form.name) return toast.error(locale.value.nameRequired)
+  if (form.permissions.length === 0) return toast.error(locale.value.permissionRequired)
 
   submitting.value = true
   try {
@@ -844,13 +844,13 @@ const updateApiKey = async () => {
     })
 
     if (response.success) {
-      toast.success('API密钥更新成功')
+      toast.success(locale.value.updateSuccess)
       closeModals()
       await loadApiKeys()
     }
   } catch (error) {
     console.error('更新API密钥失败:', error)
-    toast.error(error.data?.message || '更新API密钥失败')
+    toast.error(error.data?.message || locale.value.updateFailed)
   } finally {
     submitting.value = false
   }
@@ -859,11 +859,11 @@ const updateApiKey = async () => {
 const deleteApiKey = (apiKey) => {
   pendingDeleteApiKey.value = apiKey
   confirmDialogConfig.value = {
-    title: '确认删除',
-    message: `确定要删除API密钥 "${apiKey.name}" 吗？此操作不可撤销。`,
+    title: locale.value.confirmDeleteTitle,
+    message: locale.value.deleteMessage(apiKey.name),
     type: 'danger',
-    confirmText: '删除',
-    cancelText: '取消'
+    confirmText: locale.value.delete,
+    cancelText: locale.value.cancel
   }
   showConfirmDialog.value = true
 }
@@ -877,12 +877,12 @@ const confirmDelete = async () => {
     })
 
     if (response.success) {
-      toast.success('API密钥删除成功')
+      toast.success(locale.value.deleteSuccess)
       await loadApiKeys()
     }
   } catch (error) {
     console.error('删除API密钥失败:', error)
-    toast.error(error.data?.message || '删除API密钥失败')
+    toast.error(error.data?.message || locale.value.deleteFailed)
   } finally {
     showConfirmDialog.value = false
     pendingDeleteApiKey.value = null
@@ -906,7 +906,7 @@ const viewApiKey = async (apiKey) => {
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
-    toast.error('获取API密钥详情失败')
+    toast.error(locale.value.detailFailed)
   } finally {
     loadingViewId.value = null
   }
@@ -925,10 +925,10 @@ const editApiKey = async (apiKey) => {
 
       if (response.data.expiresAt) {
         const date = new Date(response.data.expiresAt)
-        expiresAtText.value = `到期: ${date.toLocaleDateString()}`
+        expiresAtText.value = locale.value.expiresAtText(date.toLocaleDateString())
         form.expiresAt = 'keep'
       } else {
-        expiresAtText.value = '永不过期'
+        expiresAtText.value = locale.value.expiresOptions.never
         form.expiresAt = ''
       }
 
@@ -939,7 +939,7 @@ const editApiKey = async (apiKey) => {
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
-    toast.error('获取API密钥详情失败')
+    toast.error(locale.value.detailFailed)
   } finally {
     loadingEditId.value = null
   }
@@ -972,7 +972,7 @@ const loadApiLogs = async (page = 1) => {
     }
   } catch (error) {
     console.error('获取API使用日志失败:', error)
-    toast.error('获取API使用日志失败')
+    toast.error(locale.value.logsFailed)
     apiLogs.value = []
   } finally {
     loadingLogs.value = false
@@ -1013,7 +1013,7 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.expiresAt = ''
-  expiresAtText.value = '永不过期'
+  expiresAtText.value = locale.value.expiresOptions.never
   form.permissions = []
   form.isActive = true
 }
@@ -1034,11 +1034,11 @@ const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     copied.value = true
-    toast.success('已复制到剪贴板')
+    toast.success(locale.value.copied)
     setTimeout(() => (copied.value = false), 2000)
   } catch (error) {
     console.error('复制失败:', error)
-    toast.error('复制失败')
+    toast.error(locale.value.copyFailed)
   }
 }
 

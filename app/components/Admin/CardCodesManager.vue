@@ -190,21 +190,21 @@
         <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <h3 class="text-sm font-black text-zinc-100">批量创建 / 导入</h3>
-              <p class="mt-1 text-[11px] text-zinc-500">支持手动粘贴、分隔导入，也支持自动生成点歌券</p>
+              <h3 class="text-sm font-black text-zinc-100">{{ locale.createTitle }}</h3>
+              <p class="mt-1 text-[11px] text-zinc-500">{{ locale.createDesc }}</p>
             </div>
             <div class="inline-flex shrink-0 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
               <button
                 :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
                 @click="createMode = 'manual'"
               >
-                手动导入
+                {{ locale.manualImport }}
               </button>
               <button
                 :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
                 @click="createMode = 'generate'"
               >
-                自动生成
+                {{ locale.autoGenerate }}
               </button>
             </div>
           </div>
@@ -213,33 +213,33 @@
             <textarea
               v-model="manualCodes"
               rows="4"
-              placeholder="输入单个点歌券，或使用逗号/换行/空格分隔多个点歌券"
+              :placeholder="locale.manualPlaceholder"
               class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
             />
           </div>
 
           <div v-else class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">生成数量</label>
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.generateCount }}</label>
               <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">前缀</label>
-              <input v-model="generateForm.prefix" type="text" placeholder="例如 VH-" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.prefix }}</label>
+              <input v-model="generateForm.prefix" type="text" :placeholder="locale.prefixPlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">随机长度</label>
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.randomLength }}</label>
               <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">字符集</label>
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.charset }}</label>
               <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
             </div>
           </div>
 
           <div>
-            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">备注</label>
-            <input v-model="createNote" type="text" placeholder="可选：批量备注" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40">
+            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.note }}</label>
+            <input v-model="createNote" type="text" :placeholder="locale.bulkNotePlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40">
           </div>
 
           <div class="flex flex-wrap gap-2">
@@ -248,21 +248,18 @@
               :disabled="saving"
               @click="createCodes"
             >
-              <Plus :size="14" /> 创建点歌券
+              <Plus :size="14" /> {{ locale.createCardCode }}
             </button>
             <button class="rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-bold text-zinc-300" @click="fillDemoCodes">
-              填充示例
+              {{ locale.fillDemo }}
             </button>
           </div>
         </div>
 
         <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">快速说明</h3>
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
           <ul class="space-y-2 text-[12px] leading-relaxed text-zinc-500">
-            <li>· 支持按状态和关键词筛选，搜索范围包含点歌券和备注。</li>
-            <li>· 支持单条和批量状态切换，方便锁定、核销或作废。</li>
-            <li>· 备注可直接就地编辑，适合记录发放对象、批次来源等信息。</li>
-            <li>· 导出会按当前筛选条件生成完整 CSV；勾选点歌券后会优先导出勾选项。</li>
+            <li v-for="tip in locale.quickTips" :key="tip">· {{ tip }}</li>
           </ul>
         </div>
       </section>
@@ -271,51 +268,51 @@
     <section class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">兑换日志</h3>
-          <p class="mt-1 text-[11px] text-zinc-500">记录点歌券被哪个账号兑换、兑换时间、来源与关联歌曲</p>
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">{{ locale.redeemLogsTitle }}</h3>
+          <p class="mt-1 text-[11px] text-zinc-500">{{ locale.redeemLogsDesc }}</p>
         </div>
         <button
           class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300"
           @click="fetchRedeemLogs"
         >
-          刷新日志
+          {{ locale.refreshLogs }}
         </button>
       </div>
 
       <div class="grid grid-cols-1 gap-3 xl:grid-cols-6">
         <div class="xl:col-span-2">
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">关键词</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.keyword }}</label>
           <input
             v-model="logFilters.q"
             type="text"
-            placeholder="点歌券 / 账号 / 歌曲 / 来源"
+            :placeholder="locale.logSearchPlaceholder"
             class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
             @keyup.enter="fetchRedeemLogs"
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">来源</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.source }}</label>
           <select
             v-model="logFilters.source"
             class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
           >
-            <option value="">全部来源</option>
-            <option value="ADMIN_MANUAL">手动核销</option>
-            <option value="SCHEDULE_AUTO">排期自动</option>
-            <option value="SCHEDULE_REMOVE">移除排期</option>
+            <option value="">{{ locale.allSources }}</option>
+            <option value="ADMIN_MANUAL">{{ locale.sources.adminManual }}</option>
+            <option value="SCHEDULE_AUTO">{{ locale.sources.scheduleAuto }}</option>
+            <option value="SCHEDULE_REMOVE">{{ locale.sources.scheduleRemove }}</option>
           </select>
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">兑换账号</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.redeemer }}</label>
           <input
             v-model="logFilters.redeemer"
             type="text"
-            placeholder="用户名 / 昵称"
+            :placeholder="locale.redeemerPlaceholder"
             class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">起始日期</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.startDate }}</label>
           <input
             v-model="logFilters.startDate"
             type="date"
@@ -323,7 +320,7 @@
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">结束日期</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.endDate }}</label>
           <input
             v-model="logFilters.endDate"
             type="date"
@@ -337,30 +334,30 @@
           class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white hover:bg-blue-500 transition-colors"
           @click="fetchRedeemLogs"
         >
-          查询日志
+          {{ locale.queryLogs }}
         </button>
         <button
           class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-xs font-bold text-zinc-300"
           @click="resetLogFilters"
         >
-          清空条件
+          {{ locale.clearConditions }}
         </button>
       </div>
 
       <div v-if="logsLoading" class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-6 text-center text-sm text-zinc-500">
-        加载兑换日志中...
+        {{ locale.loadingLogs }}
       </div>
 
       <div v-else class="overflow-hidden rounded-2xl border border-zinc-800">
         <table class="min-w-full text-left text-sm">
           <thead class="bg-zinc-950/80 text-zinc-500">
             <tr>
-              <th class="px-3 py-3 w-20">日志ID</th>
-              <th class="px-3 py-3">点歌券</th>
-              <th class="px-3 py-3 w-28">来源</th>
-              <th class="px-3 py-3 w-56">兑换账号</th>
-              <th class="px-3 py-3 w-40">兑换时间</th>
-              <th class="px-3 py-3">关联歌曲</th>
+              <th class="px-3 py-3 w-20">{{ locale.logId }}</th>
+              <th class="px-3 py-3">{{ locale.cardCode }}</th>
+              <th class="px-3 py-3 w-28">{{ locale.source }}</th>
+              <th class="px-3 py-3 w-56">{{ locale.redeemer }}</th>
+              <th class="px-3 py-3 w-40">{{ locale.redeemedTime }}</th>
+              <th class="px-3 py-3">{{ locale.relatedSong }}</th>
             </tr>
           </thead>
           <tbody>
@@ -377,7 +374,7 @@
                 </span>
               </td>
               <td class="px-3 py-3 text-zinc-300">
-                {{ item.redeemer?.name || '未知用户' }}
+                {{ item.redeemer?.name || locale.unknownUser }}
                 <span class="text-zinc-500">({{ item.redeemer?.username || 'unknown' }})</span>
               </td>
               <td class="px-3 py-3 text-zinc-400">{{ formatDate(item.redeemedAt) }}</td>
@@ -387,7 +384,7 @@
               </td>
             </tr>
             <tr v-if="!redeemLogs.length">
-              <td colspan="6" class="px-3 py-8 text-center text-sm text-zinc-500">暂无兑换日志</td>
+              <td colspan="6" class="px-3 py-8 text-center text-sm text-zinc-500">{{ locale.noRedeemLogs }}</td>
             </tr>
           </tbody>
         </table>
@@ -451,17 +448,18 @@ const statusMeta = (status) => {
   return statusMap[status] || { label: status || locale.value.unknown, class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
 }
 
-const logSourceMap = {
-  ADMIN_MANUAL: { label: '手动核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-  ADMIN: { label: '管理员操作', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-  SCHEDULE_AUTO: { label: '排期自动', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-  SCHEDULE_REMOVE: { label: '移除排期', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-  SCHEDULE: { label: '排期', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-  WITHDRAW: { label: '撤回', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-  UNKNOWN: { label: '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+const logSourceMeta = (source) => {
+  const sourceMap = {
+    ADMIN_MANUAL: { label: locale.value.sources.adminManual, class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    ADMIN: { label: locale.value.sources.admin, class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    SCHEDULE_AUTO: { label: locale.value.sources.scheduleAuto, class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    SCHEDULE_REMOVE: { label: locale.value.sources.scheduleRemove, class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    SCHEDULE: { label: locale.value.sources.schedule, class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    WITHDRAW: { label: locale.value.sources.withdraw, class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    UNKNOWN: { label: locale.value.unknown, class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+  }
+  return sourceMap[source] || sourceMap.UNKNOWN
 }
-
-const logSourceMeta = (source) => logSourceMap[source] || logSourceMap.UNKNOWN
 
 const stats = computed(() => {
   const total = cardStats.value.total
@@ -479,7 +477,7 @@ const stats = computed(() => {
 
 const allVisibleSelected = computed(() => codes.value.length > 0 && codes.value.every((item) => selectedIds.value.includes(item.id)))
 const someVisibleSelected = computed(() => codes.value.some((item) => selectedIds.value.includes(item.id)))
-const exportButtonText = computed(() => (selectedIds.value.length ? `导出已选 ${selectedIds.value.length} 项` : '导出筛选结果'))
+const exportButtonText = computed(() => (selectedIds.value.length ? locale.value.exportSelected(selectedIds.value.length) : locale.value.exportFiltered))
 
 const queryString = computed(() => {
   const query = new URLSearchParams()
@@ -521,7 +519,7 @@ const fetchCodes = async (page = pagination.value.page) => {
     }
   } catch (error) {
     console.error('获取点歌券失败', error)
-    showToast('获取点歌券失败', 'error')
+    showToast(locale.value.messages.fetchFailed, 'error')
   } finally {
     loading.value = false
   }
@@ -544,7 +542,7 @@ const fetchRedeemLogs = async () => {
     }
   } catch (error) {
     console.error('获取点歌券兑换日志失败', error)
-    showToast('获取点歌券兑换日志失败', 'error')
+    showToast(locale.value.messages.fetchLogsFailed, 'error')
   } finally {
     logsLoading.value = false
   }
@@ -604,10 +602,10 @@ const formatDate = (value) => {
 const copyCode = async (code) => {
   try {
     await navigator.clipboard.writeText(code)
-    showToast('点歌券已复制', 'success')
+    showToast(locale.value.messages.copied, 'success')
   } catch (error) {
     console.error('复制失败', error)
-    showToast('复制失败，请手动复制', 'error')
+    showToast(locale.value.messages.copyFailed, 'error')
   }
 }
 
@@ -630,7 +628,7 @@ const exportCodes = async () => {
       credentials: 'same-origin'
     })
     if (!response.ok) {
-      let message = '导出点歌券失败'
+      let message = locale.value.messages.exportFailed
       try {
         const errorBody = await response.json()
         message = errorBody?.message || errorBody?.statusMessage || message
@@ -649,10 +647,10 @@ const exportCodes = async () => {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    showToast(selectedIds.value.length ? '已导出勾选点歌券' : '已导出筛选结果', 'success')
+    showToast(selectedIds.value.length ? locale.value.messages.exportSelectedSuccess : locale.value.messages.exportFilteredSuccess, 'success')
   } catch (error) {
     console.error('导出点歌券失败', error)
-    showToast(error?.message || '导出点歌券失败', 'error')
+    showToast(error?.message || locale.value.messages.exportFailed, 'error')
   } finally {
     exporting.value = false
   }
@@ -675,11 +673,11 @@ const updateStatus = async (ids, status) => {
       })
     }
 
-    showToast('状态已更新', 'success')
+    showToast(locale.value.messages.statusUpdated, 'success')
     await Promise.all([fetchCodes(), fetchRedeemLogs()])
   } catch (error) {
     console.error('更新点歌券状态失败', error)
-    showToast('更新点歌券状态失败', 'error')
+    showToast(locale.value.messages.updateStatusFailed, 'error')
   } finally {
     saving.value = false
   }
@@ -692,11 +690,11 @@ const saveNote = async (item) => {
       method: 'POST',
       body: { id: item.id, note: item.noteDraft }
     })
-    showToast('备注已保存', 'success')
+    showToast(locale.value.messages.noteSaved, 'success')
     item.note = item.noteDraft || null
   } catch (error) {
     console.error('保存备注失败', error)
-    showToast('保存备注失败', 'error')
+    showToast(locale.value.messages.saveNoteFailed, 'error')
   } finally {
     saving.value = false
   }
@@ -719,7 +717,7 @@ const createCodes = async () => {
         .map((value) => value.trim())
         .filter(Boolean)
       if (!list.length) {
-        showToast('请先输入点歌券', 'warning')
+        showToast(locale.value.messages.inputRequired, 'warning')
         return
       }
       body = { ...body, codes: [...new Set(list)] }
@@ -740,13 +738,13 @@ const createCodes = async () => {
 
     const inserted = Array.isArray(res?.data) ? res.data.length : 0
     const skipped = Number(res?.skipped || 0)
-    showToast(skipped ? `创建完成，成功 ${inserted} 条，跳过 ${skipped} 条重复项` : `创建成功，共 ${inserted} 条`, 'success')
+    showToast(skipped ? locale.value.messages.createDone(inserted, skipped) : locale.value.messages.createSuccess(inserted), 'success')
     manualCodes.value = ''
     createNote.value = ''
     await fetchCodes()
   } catch (error) {
     console.error('创建点歌券失败', error)
-    showToast(error?.data?.message || error?.message || '创建点歌券失败', 'error')
+    showToast(error?.data?.message || error?.message || locale.value.messages.createFailed, 'error')
   } finally {
     saving.value = false
   }
@@ -757,7 +755,7 @@ const createFormCount = computed(() => generateForm.value.count)
 const fillDemoCodes = () => {
   createMode.value = 'manual'
   manualCodes.value = ['DEMO-2026-A001', 'DEMO-2026-A002', 'DEMO-2026-A003'].join('\n')
-  createNote.value = '示例点歌券'
+  createNote.value = locale.value.demoNote
 }
 
 onMounted(refreshAll)

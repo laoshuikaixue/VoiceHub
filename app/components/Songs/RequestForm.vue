@@ -459,7 +459,7 @@
                   <div class="flex min-w-0 items-center gap-2">
                     <div class="min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-zinc-200">点歌券</span>
+                        <span class="text-xs font-black text-zinc-200">{{ locale.cardCode }}</span>
                         <span
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
@@ -468,7 +468,7 @@
                               : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
                           ]"
                         >
-                          {{ cardCodeFieldMeta.required ? '必填' : '可选' }}
+                          {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
                         </span>
                       </div>
                       <p
@@ -494,12 +494,12 @@
                       @click="openCardCodeModal"
                     >
                       <Icon :size="13" :name="trimmedCardCode ? 'edit' : 'plus'" />
-                      {{ trimmedCardCode ? '修改' : '添加' }}
+                      {{ trimmedCardCode ? locale.editCardCode : locale.addCardCode }}
                     </button>
                     <button
                       v-if="trimmedCardCode"
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-500 transition-all hover:border-red-500/30 hover:text-red-300"
-                      title="清除点歌券"
+                      :title="locale.clearCardCode"
                       type="button"
                       @click="clearCardCode"
                     >
@@ -892,7 +892,7 @@
             <div class="flex items-center justify-between border-b border-zinc-800/70 px-5 py-4">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-zinc-100">点歌券</h3>
+                  <h3 class="text-base font-black text-zinc-100">{{ locale.cardCode }}</h3>
                   <span
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
@@ -901,7 +901,7 @@
                         : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
                     ]"
                   >
-                    {{ cardCodeFieldMeta.required ? '必填' : '可选' }}
+                    {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
                   </span>
                 </div>
                 <p class="mt-1 text-[11px] text-zinc-500">{{ cardCodeFieldMeta.helper }}</p>
@@ -920,7 +920,7 @@
                 for="card-code-modal"
                 class="px-1 text-[10px] font-black uppercase tracking-widest text-zinc-600"
               >
-                券码
+                {{ locale.cardCodeLabel }}
               </label>
               <input
                 id="card-code-modal"
@@ -961,7 +961,7 @@
                 type="button"
                 @click="clearCardCode"
               >
-                清除
+                {{ locale.clear }}
               </button>
               <button
                 :disabled="cardCodeValidation.checking"
@@ -969,7 +969,7 @@
                 type="button"
                 @click="saveCardCode"
               >
-                {{ cardCodeValidation.checking ? '验证中...' : '保存' }}
+                {{ cardCodeValidation.checking ? locale.validatingCardCode : locale.save }}
               </button>
             </div>
           </div>
@@ -1433,33 +1433,33 @@ const loadingPlayTimes = ref(false)
 const cardCodeFieldMeta = computed(() => ({
   required: requireCardCodeForRequests.value,
   helper: requireCardCodeForRequests.value
-    ? '开启强制点歌券后，提交点歌时必须填写有效点歌券。'
-    : '填写点歌券可用于抵扣或提交点歌。',
-  placeholder: '请输入点歌券'
+    ? locale.value.cardCodeRequiredHelper
+    : locale.value.cardCodeOptionalHelper,
+  placeholder: locale.value.cardCodePlaceholder
 }))
 
 const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
 const trimmedCardCode = computed(() => cardCode.value.trim())
 const cardCodeStatusText = computed(() => {
-  if (cardCodeValidation.value.checking) return '正在验证点歌券...'
+  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
   if (trimmedCardCode.value) {
-    return cardCodeValidation.value.message || '已填写点歌券，提交前会验证'
+    return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
   }
-  return cardCodeFieldMeta.value.required ? '提交前需要添加有效点歌券' : '可选添加点歌券'
+  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredStatus : locale.value.cardCodeOptionalStatus
 })
 const mobileCardCodeLabel = computed(() => {
-  if (cardCodeValidation.value.checking) return '验证中'
+  if (cardCodeValidation.value.checking) return locale.value.validatingShort
   if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid === false) return '点歌券无效'
-    if (cardCodeValidation.value.valid) return '点歌券可用'
-    return '已填点歌券'
+    if (cardCodeValidation.value.valid === false) return locale.value.cardCodeInvalid
+    if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
+    return locale.value.cardCodeFilled
   }
-  return cardCodeFieldMeta.value.required ? '点歌券必填' : '点歌券可选'
+  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredShort : locale.value.cardCodeOptionalShort
 })
 const cardCodeModalHint = computed(() => {
-  if (cardCodeValidation.value.checking) return '正在验证点歌券...'
+  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
   if (cardCodeValidation.value.message) return cardCodeValidation.value.message
-  return '保存时会先验证点歌券是否可用。'
+  return locale.value.cardCodeSaveHint
 })
 
 const resetCardCodeValidation = () => {
@@ -1496,7 +1496,7 @@ const validateCardCode = async (code) => {
   cardCodeValidation.value = {
     checking: true,
     valid: null,
-    message: '正在验证点歌券...'
+    message: locale.value.validatingCardCode
   }
 
   try {
@@ -1509,12 +1509,12 @@ const validateCardCode = async (code) => {
     cardCodeValidation.value = {
       checking: false,
       valid: true,
-      message: response?.message || '点歌券可用'
+      message: response?.message || locale.value.cardCodeAvailable
     }
     return true
   } catch (err) {
     const message =
-      err?.data?.message || err?.message || err?.statusMessage || '点歌券验证失败，请稍后重试'
+      err?.data?.message || err?.message || err?.statusMessage || locale.value.cardCodeValidateFailed
     cardCodeValidation.value = {
       checking: false,
       valid: false,
@@ -1531,7 +1531,7 @@ const saveCardCode = async () => {
   const draft = cardCodeDraft.value.trim().toUpperCase()
   if (requireCardCodeForRequests.value && !draft) {
     if (window.$showNotification) {
-      window.$showNotification('请先填写点歌券', 'warning')
+      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
     }
     return
   }
@@ -1568,7 +1568,7 @@ const ensureCardCodeForSubmit = async () => {
 
     await openCardCodeModal()
     if (window.$showNotification) {
-      window.$showNotification('请先填写点歌券', 'warning')
+      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
     }
     return false
   }
@@ -2088,7 +2088,7 @@ const handleExportData = () => {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
   if (window.$showNotification) {
-    window.$showNotification('导出成功', 'success')
+    window.$showNotification(locale.value.notifications.exportSuccess, 'success')
   }
 }
 
@@ -2106,7 +2106,7 @@ const handleImportData = async (event) => {
     if (data.cookie) {
       checkingNeteaseLogin.value = true
       if (window.$showNotification) {
-        window.$showNotification('正在验证Cookie有效性...', 'info')
+        window.$showNotification(locale.value.notifications.validatingCookie, 'info')
       }
 
       const res = await getLoginStatus(data.cookie)
@@ -2117,22 +2117,22 @@ const handleImportData = async (event) => {
           user: dataObj.profile || dataObj.account
         })
         if (window.$showNotification) {
-          window.$showNotification('导入成功', 'success')
+          window.$showNotification(locale.value.notifications.importSuccess, 'success')
         }
       } else {
         if (window.$showNotification) {
-          window.$showNotification('导入的Cookie无效或已过期', 'error')
+          window.$showNotification(locale.value.notifications.cookieInvalid, 'error')
         }
       }
     } else {
       if (window.$showNotification) {
-        window.$showNotification('文件格式错误', 'error')
+        window.$showNotification(locale.value.notifications.fileFormatError, 'error')
       }
     }
   } catch (e) {
     console.error('导入失败', e)
     if (window.$showNotification) {
-      window.$showNotification('导入失败: ' + e.message, 'error')
+      window.$showNotification(locale.value.notifications.importFailed(e.message), 'error')
     }
   } finally {
     checkingNeteaseLogin.value = false
@@ -2325,7 +2325,7 @@ watch(cardCodeDraft, (value) => {
 const handleEpisodeVote = async (episode) => {
   if (!episode.songId) {
     if (window.$showNotification) {
-      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+      window.$showNotification(locale.value.notifications.missingSongId, 'error')
     }
     return
   }
@@ -2349,7 +2349,7 @@ const handleEpisodeVote = async (episode) => {
     })
   } catch (err) {
     if (window.$showNotification) {
-      window.$showNotification(err.message || '点赞失败', 'error')
+      window.$showNotification(err.message || locale.value.notifications.likeFailed, 'error')
     }
   } finally {
     voting.value = false
@@ -2409,7 +2409,7 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
+      const message = song.played ? locale.value.playedCannotLike : locale.value.scheduledCannotLike
       window.$showNotification(message, 'warning')
     }
     return
@@ -2459,9 +2459,9 @@ const handleSearch = async () => {
   searchError.value = ''
 
   if (!title.value.trim()) {
-    error.value = '歌曲名称不能为空'
+    error.value = locale.value.notifications.songNameRequired
     if (window.$showNotification) {
-      window.$showNotification('歌曲名称不能为空', 'error')
+      window.$showNotification(locale.value.notifications.songNameRequired, 'error')
     }
     return
   }
@@ -2541,7 +2541,7 @@ const handleSearch = async () => {
       console.log('搜索成功，找到', results.data.length, '首歌曲')
     } else {
       searchResults.value = []
-      const errorMsg = results && results.error ? results.error : '没有找到匹配的歌曲'
+      const errorMsg = results && results.error ? results.error : locale.value.noMatchingSongs
       error.value = errorMsg
       if (window.$showNotification) {
         window.$showNotification(errorMsg, 'info')
@@ -2555,7 +2555,7 @@ const handleSearch = async () => {
     }
 
     console.error('搜索错误:', err)
-    searchError.value = err.message || '搜索请求失败，请稍后重试'
+    searchError.value = err.message || locale.value.searchRequestFailed
     error.value = searchError.value
 
     if (window.$showNotification) {
@@ -2801,9 +2801,9 @@ const getAudioUrl = async (result) => {
 
     return result
   } catch (err) {
-    error.value = '获取音乐URL失败，请稍后重试'
+    error.value = locale.value.notifications.musicUrlFailedRetry
     if (window.$showNotification) {
-      window.$showNotification('获取音乐URL失败，请稍后重试', 'error')
+      window.$showNotification(locale.value.notifications.musicUrlFailedRetry, 'error')
     }
     return result
   }
@@ -2818,9 +2818,9 @@ const playSong = async (result, playlist, playlistIndex) => {
 
   // 对于非哔哩哔哩平台，如果没有URL则提示错误
   if (!result.url && !isBilibiliSong(result)) {
-    error.value = '该歌曲无法播放，可能是付费内容'
+    error.value = locale.value.notifications.songUnavailable
     if (window.$showNotification) {
-      window.$showNotification('该歌曲无法播放，可能是付费内容', 'error')
+      window.$showNotification(locale.value.notifications.songUnavailable, 'error')
     }
     return
   }
@@ -2875,7 +2875,7 @@ const playSong = async (result, playlist, playlistIndex) => {
   if (!playResult) {
     console.error('[RequestForm] 播放器返回 false，播放失败')
     if (window.$showNotification) {
-      window.$showNotification('播放失败，请稍后重试', 'error')
+      window.$showNotification(locale.value.notifications.playFailed, 'error')
     }
     return
   }
@@ -2918,9 +2918,9 @@ const selectResult = async (result) => {
 
   // 如果没有URL，给出提示
   if (!result.url) {
-    success.value = '已选择歌曲，但可能无法播放完整版本'
+    success.value = locale.value.notifications.songSelectedMaybeLimited
     if (window.$showNotification) {
-      window.$showNotification('已选择歌曲，但可能无法播放完整版本', 'info')
+      window.$showNotification(locale.value.notifications.songSelectedMaybeLimited, 'info')
     }
   }
 
@@ -3027,7 +3027,7 @@ const submitSong = async (result, options = {}) => {
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
-              '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+              locale.value.notifications.duplicateSong,
               'warning'
             )
           }
@@ -3048,7 +3048,7 @@ const submitSong = async (result, options = {}) => {
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
-              '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+              locale.value.notifications.duplicateSong,
               'warning'
             )
           }
@@ -3080,7 +3080,7 @@ const submitSong = async (result, options = {}) => {
 
       if (blacklistCheck.isBlocked) {
         const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-        error.value = `该歌曲无法点歌: ${reasons}`
+        error.value = locale.value.notifications.blacklistedSong(reasons)
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
@@ -3139,7 +3139,7 @@ const submitSong = async (result, options = {}) => {
     resetForm()
     return true
   } catch (err) {
-    error.value = err.message || '投稿失败，请稍后重试'
+    error.value = err.message || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3193,7 +3193,7 @@ const handleSubmit = async () => {
     // 成功提示由父组件处理，这里只重置表单
     resetForm()
   } catch (err) {
-    error.value = err.message || '投稿失败，请稍后重试'
+    error.value = err.message || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3386,7 +3386,7 @@ const handleAlbumSongVote = async (song) => {
   if (voting.value) return
   if (!song.songId) {
     if (window.$showNotification) {
-      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+      window.$showNotification(locale.value.notifications.missingSongId, 'error')
     }
     return
   }
@@ -3400,7 +3400,7 @@ const handleAlbumSongVote = async (song) => {
     await songService.voteSong(song.songId)
 
     if (window.$showNotification) {
-      window.$showNotification('点赞成功！', 'success')
+      window.$showNotification(locale.value.notifications.likeSuccess, 'success')
     }
 
     // 静默刷新歌曲列表
@@ -3410,7 +3410,7 @@ const handleAlbumSongVote = async (song) => {
   } catch (error) {
     console.error('点赞失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(error.message || '点赞失败，请稍后重试', 'error')
+      window.$showNotification(error.message || locale.value.notifications.likeFailedRetry, 'error')
     }
   } finally {
     voting.value = false
@@ -3475,26 +3475,26 @@ const handlePlaylistPlay = async (song) => {
 // 手动输入相关方法
 const handleManualSubmit = async () => {
   if (!title.value.trim() || !manualArtist.value.trim()) {
-    error.value = '请输入完整的歌曲信息'
+    error.value = locale.value.notifications.completeSongInfoRequired
     if (window.$showNotification) {
-      window.$showNotification('请输入完整的歌曲信息', 'error')
+      window.$showNotification(locale.value.notifications.completeSongInfoRequired, 'error')
     }
     return
   }
 
   // 验证URL
   if (manualCover.value && !coverValidation.value.valid) {
-    error.value = '请修正封面URL错误后再提交'
+    error.value = locale.value.notifications.fixCoverUrl
     if (window.$showNotification) {
-      window.$showNotification('请修正封面URL错误后再提交', 'error')
+      window.$showNotification(locale.value.notifications.fixCoverUrl, 'error')
     }
     return
   }
 
   if (manualPlayUrl.value && !playUrlValidation.value.valid) {
-    error.value = '请修正播放地址URL错误后再提交'
+    error.value = locale.value.notifications.fixPlayUrl
     if (window.$showNotification) {
-      window.$showNotification('请修正播放地址URL错误后再提交', 'error')
+      window.$showNotification(locale.value.notifications.fixPlayUrl, 'error')
     }
     return
   }
@@ -3530,7 +3530,7 @@ const handleManualSubmit = async () => {
 
       if (blacklistCheck.isBlocked) {
         const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-        error.value = `该歌曲无法点歌: ${reasons}`
+        error.value = locale.value.notifications.blacklistedSong(reasons)
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
@@ -3571,7 +3571,7 @@ const handleManualSubmit = async () => {
     resetForm()
     showManualModal.value = false
   } catch (err) {
-    error.value = err.message || '投稿失败，请稍后重试'
+    error.value = err.message || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3587,7 +3587,7 @@ const handleRequestReplay = async (song) => {
   // 如果已经申请过，不执行
   if (song.replayRequested) {
     if (window.$showNotification) {
-      window.$showNotification('该歌曲已申请过重播', 'info')
+      window.$showNotification(locale.value.notifications.replayAlreadyRequested, 'info')
     }
     return
   }
@@ -3600,12 +3600,12 @@ const handleRequestReplay = async (song) => {
       songService.refreshSongsSilent().catch(console.error)
     }, 500)
     if (window.$showNotification) {
-      window.$showNotification('申请重播成功', 'success')
+      window.$showNotification(locale.value.notifications.replayRequestSuccess, 'success')
     }
   } catch (err) {
     console.error('申请重播失败:', err)
     if (window.$showNotification) {
-      window.$showNotification('申请重播失败: ' + err.message, 'error')
+      window.$showNotification(locale.value.notifications.replayRequestFailed(err.message), 'error')
     }
   } finally {
     requestingReplay.value = false
@@ -3614,61 +3614,61 @@ const handleRequestReplay = async (song) => {
 
 // 获取重播按钮文本
 const getReplayButtonText = (song) => {
-  if (requestingReplay.value) return '申请中...'
-  if (!song) return '申请重播'
+  if (requestingReplay.value) return locale.value.replayRequesting
+  if (!song) return locale.value.requestReplay
 
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '非本学期'
+    return locale.value.notCurrentSemester
   }
 
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
+      return locale.value.replayRejectedCooldown(song.replayRequestCooldownRemaining)
     }
     // 冷却期已过
-    return '申请重播'
+    return locale.value.requestReplay
   }
 
   if (song.replayRequestStatus === 'FULFILLED') {
-    return '已重播'
+    return locale.value.replayed
   }
 
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '已申请重播'
+    return locale.value.alreadyRequestedReplay
   }
 
-  return '申请重播'
+  return locale.value.requestReplay
 }
 
 // 获取重播按钮标题（tooltip）
 const getReplayButtonTitle = (song) => {
-  if (!song) return '申请重播'
+  if (!song) return locale.value.requestReplay
 
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '只能申请重播当前学期的歌曲'
+    return locale.value.onlyCurrentSemesterReplay
   }
 
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
+      return locale.value.replayRejectedTooltip(song.replayRequestCooldownRemaining)
     }
-    return '申请重播'
+    return locale.value.requestReplay
   }
 
   if (song.replayRequestStatus === 'FULFILLED') {
-    return '该歌曲已重播'
+    return locale.value.alreadyReplayed
   }
 
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '该歌曲已申请过重播'
+    return locale.value.alreadyRequestedReplay
   }
 
-  return '申请重播'
+  return locale.value.requestReplay
 }
 
 // 检查重播按钮是否应该禁用
@@ -3761,9 +3761,9 @@ const checkSubmissionLimit = () => {
 
   // 检查投稿是否已关闭
   if (submissionStatus.value.submissionClosed) {
-    let message = '投稿功能已关闭'
+    let message = locale.value.submissionClosed
     if (submissionStatus.value.timeLimitationEnabled && !submissionStatus.value.currentTimePeriod) {
-      message = '当前不在投稿开放时段'
+      message = locale.value.outsideRequestTime
     }
     return {
       canSubmit: false,
@@ -3777,7 +3777,7 @@ const checkSubmissionLimit = () => {
     if (expected > 0 && accepted >= expected) {
       return {
         canSubmit: false,
-        message: `当前时段投稿名额已满 (${accepted}/${expected})`
+        message: locale.value.notifications.periodQuotaFull(accepted, expected)
       }
     }
   }
@@ -3789,7 +3789,7 @@ const checkSubmissionLimit = () => {
   if (dailyLimit && dailyUsed >= dailyLimit) {
     return {
       canSubmit: false,
-      message: `今日投稿已达上限 (${dailyUsed}/${dailyLimit})`
+      message: locale.value.notifications.dailyLimitReached(dailyUsed, dailyLimit)
     }
   }
 
@@ -3797,7 +3797,7 @@ const checkSubmissionLimit = () => {
   if (weeklyLimit && weeklyUsed >= weeklyLimit) {
     return {
       canSubmit: false,
-      message: `本周投稿已达上限 (${weeklyUsed}/${weeklyLimit})`
+      message: locale.value.notifications.weeklyLimitReached(weeklyUsed, weeklyLimit)
     }
   }
 
@@ -3805,7 +3805,7 @@ const checkSubmissionLimit = () => {
   if (monthlyLimit && monthlyUsed >= monthlyLimit) {
     return {
       canSubmit: false,
-      message: `本月投稿已达上限 (${monthlyUsed}/${monthlyLimit})`
+      message: locale.value.notifications.monthlyLimitReached(monthlyUsed, monthlyLimit)
     }
   }
 

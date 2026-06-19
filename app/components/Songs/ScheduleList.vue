@@ -1207,13 +1207,13 @@ const reloadPlaylists = async () => {
       }
     } else {
       if (window.$showNotification) {
-        const text = message ? `获取歌单列表失败：${message}` : '获取歌单列表失败'
+        const text = message ? locale.value.playlistLoadFailedWithMessage(message) : locale.value.playlistLoadFailed
         window.$showNotification(text, 'error')
       }
     }
   } catch (error) {
     if (window.$showNotification) {
-      window.$showNotification('获取歌单列表失败', 'error')
+      window.$showNotification(locale.value.playlistLoadFailed, 'error')
     }
   } finally {
     playlistsLoading.value = false
@@ -1234,7 +1234,7 @@ const handleCreatePlaylist = async () => {
     if (code === 200) {
       const createdId = body && (body.id || (body.playlist && body.playlist.id))
       if (window.$showNotification) {
-        window.$showNotification('歌单创建成功', 'success')
+        window.$showNotification(locale.value.playlistCreateSuccess, 'success')
       }
       newPlaylistName.value = ''
       await reloadPlaylists()
@@ -1243,13 +1243,13 @@ const handleCreatePlaylist = async () => {
       }
     } else {
       if (window.$showNotification) {
-        const text = message ? `歌单创建失败：${message}` : '歌单创建失败'
+        const text = message ? locale.value.playlistCreateFailedWithMessage(message) : locale.value.playlistCreateFailed
         window.$showNotification(text, 'error')
       }
     }
   } catch (error) {
     if (window.$showNotification) {
-      window.$showNotification('歌单创建失败', 'error')
+      window.$showNotification(locale.value.playlistCreateFailed, 'error')
     }
   } finally {
     playlistActionLoading.value = false
@@ -1262,8 +1262,8 @@ const handleDeletePlaylist = async () => {
 
   confirmDialog.value = {
     show: true,
-    title: '删除歌单',
-    message: '确定要删除当前歌单吗？此操作无法撤销。',
+    title: locale.value.deletePlaylistTitle,
+    message: locale.value.deletePlaylistMessage,
     type: 'danger',
     onConfirm: async () => {
       playlistActionLoading.value = true
@@ -1274,7 +1274,7 @@ const handleDeletePlaylist = async () => {
         )
         if (code === 200) {
           if (window.$showNotification) {
-            window.$showNotification('歌单删除成功', 'success')
+            window.$showNotification(locale.value.playlistDeleteSuccess, 'success')
           }
           await reloadPlaylists()
           if (
@@ -1286,7 +1286,7 @@ const handleDeletePlaylist = async () => {
           closeConfirmDialog()
         } else {
           if (window.$showNotification) {
-            const text = message ? `歌单删除失败：${message}` : '歌单删除失败'
+            const text = message ? locale.value.playlistDeleteFailedWithMessage(message) : locale.value.playlistDeleteFailed
             window.$showNotification(text, 'error')
           }
           // 失败也关闭弹窗，或者保留让用户重试？通常关闭比较好，避免死循环
@@ -1294,7 +1294,7 @@ const handleDeletePlaylist = async () => {
         }
       } catch (error) {
         if (window.$showNotification) {
-          window.$showNotification('歌单删除失败', 'error')
+          window.$showNotification(locale.value.playlistDeleteFailed, 'error')
         }
         closeConfirmDialog()
       } finally {
@@ -1375,18 +1375,18 @@ const handleAddSongsToPlaylist = async () => {
     )
     if (code === 200) {
       if (window.$showNotification) {
-        window.$showNotification(`成功添加 ${tracks.length} 首歌曲到歌单`, 'success')
+        window.$showNotification(locale.value.playlistAddSuccess(tracks.length), 'success')
       }
       showPlaylistModal.value = false
     } else {
       if (window.$showNotification) {
-        const text = message ? `添加到歌单失败：${message}` : '添加到歌单失败'
+        const text = message ? locale.value.playlistAddFailedWithMessage(message) : locale.value.playlistAddFailed
         window.$showNotification(text, 'error')
       }
     }
   } catch (error) {
     if (window.$showNotification) {
-      window.$showNotification('添加到歌单失败', 'error')
+      window.$showNotification(locale.value.playlistAddFailed, 'error')
     }
   } finally {
     playlistActionLoading.value = false
@@ -1425,13 +1425,13 @@ const togglePlaySong = async (song) => {
             audioPlayer.playSong(playableSong)
           } else {
             if (window.$showNotification) {
-              window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
+              window.$showNotification(locale.value.musicUrlUnavailable, 'error')
             }
           }
         } catch (error) {
           console.error('获取音乐URL失败:', error)
           if (window.$showNotification) {
-            window.$showNotification('获取音乐播放链接失败', 'error')
+            window.$showNotification(locale.value.musicUrlFailed, 'error')
           }
         }
       }
@@ -1495,14 +1495,14 @@ const togglePlaySong = async (song) => {
         audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
-          window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
+          window.$showNotification(locale.value.musicUrlUnavailable, 'error')
         }
         audioPlayer.playSong({ ...song, musicUrl: null }, [], -1)
       }
     } catch (error) {
       console.error('获取音乐URL失败:', error)
       if (window.$showNotification) {
-        window.$showNotification('获取音乐播放链接失败', 'error')
+        window.$showNotification(locale.value.musicUrlFailed, 'error')
       }
       const { playlist, songIndex } = buildPlaylistForSong(song)
       audioPlayer.playSong({ ...song, musicUrl: null }, playlist, songIndex)
