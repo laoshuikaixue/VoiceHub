@@ -4,23 +4,23 @@
     <div class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
         <div class="space-y-1">
-          <h2 class="text-3xl font-black text-zinc-100 tracking-tight">歌曲管理</h2>
+          <h2 class="text-3xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
           <div class="flex items-center gap-6 mt-4">
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >总计</span
+                >{{ locale.stats.total }}</span
               >
               <span class="text-sm font-bold text-zinc-300">{{ baseFilteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >已播放</span
+                >{{ locale.stats.played }}</span
               >
               <span class="text-sm font-bold text-emerald-500">{{ playedCount }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >待播放</span
+                >{{ locale.stats.pending }}</span
               >
               <span class="text-sm font-bold text-blue-500">{{ pendingCount }}</span>
             </div>
@@ -45,7 +45,7 @@
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="openDownloadDialog"
               >
-                <Download :size="14" class="text-emerald-500/70" /> 下载 ({{
+                <Download :size="14" class="text-emerald-500/70" /> {{ locale.actions.download }} ({{
                   selectedSongs.length
                 }})
               </button>
@@ -53,7 +53,7 @@
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchDelete"
               >
-                <Trash2 :size="14" class="text-red-500/70" /> 删除 ({{ selectedSongs.length }})
+                <Trash2 :size="14" class="text-red-500/70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
               </button>
             </div>
           </Transition>
@@ -62,14 +62,14 @@
             class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-lg transition-all active:scale-95"
             @click="openAddSongModal"
           >
-            <Plus :size="16" /> 手动添加
+            <Plus :size="16" /> {{ locale.actions.addManual }}
           </button>
           <button
             :disabled="loading"
             class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 transition-all disabled:opacity-50"
             @click="refreshSongs(true)"
           >
-            <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> 刷新
+            <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> {{ locale.actions.refresh }}
           </button>
         </div>
       </div>
@@ -86,41 +86,41 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="搜索歌曲标题、艺术家或投稿人..."
+            :placeholder="locale.searchPlaceholder"
             class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
           >
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:flex lg:items-center gap-3 w-full lg:w-auto">
           <CustomSelect
             v-model="selectedSemester"
-            label="学期"
+            :label="locale.filters.semester"
             :options="availableSemesters"
             label-key="name"
             value-key="name"
-            placeholder="选择学期"
+            :placeholder="locale.filters.selectSemester"
             class-name="w-full lg:w-40"
           />
           <CustomSelect
             v-model="selectedPlayTime"
-            label="播出时段"
+            :label="locale.filters.playTime"
             :options="availablePlayTimes"
             label-key="name"
             value-key="id"
-            placeholder="选择时段"
+            :placeholder="locale.filters.selectPlayTime"
             class-name="w-full lg:w-40"
           />
           <CustomSelect
             v-model="statusFilter"
-            label="状态"
+            :label="locale.filters.status"
             :options="statusOptions"
-            placeholder="选择状态"
+            :placeholder="locale.filters.selectStatus"
             class-name="w-full lg:w-32"
           />
           <CustomSelect
             v-model="sortOption"
-            label="排序"
+            :label="locale.filters.sort"
             :options="sortOptions"
-            placeholder="选择排序"
+            :placeholder="locale.filters.selectSort"
             class-name="w-full lg:w-36 col-span-2 md:col-span-1"
           />
         </div>
@@ -140,7 +140,7 @@
           <div
             class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
           />
-          <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">正在加载...</span>
+          <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">{{ locale.loading }}</span>
         </div>
       </div>
 
@@ -157,25 +157,25 @@
           >
         </div>
         <div class="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-          歌曲信息
+          {{ locale.table.songInfo }}
         </div>
         <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-          投稿人
+          {{ locale.table.requester }}
         </div>
         <div
           class="col-span-1 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
         >
-          统计
+          {{ locale.table.stats }}
         </div>
         <div
           class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
         >
-          状态
+          {{ locale.table.status }}
         </div>
         <div
           class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right pr-4"
         >
-          操作
+          {{ locale.table.actions }}
         </div>
       </div>
 
@@ -191,9 +191,9 @@
             class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
             @change="toggleSelectAll"
           >
-          全选本页
+          {{ locale.table.selectPage }}
         </label>
-        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">已选择 {{ selectedSongs.length }} 项</span>
+        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">{{ locale.selectedItems(selectedSongs.length) }}</span>
       </div>
 
       <!-- 空状态 -->
@@ -202,7 +202,7 @@
         class="py-20 flex flex-col items-center justify-center text-zinc-500"
       >
         <Music :size="48" class="text-zinc-800 mb-4" />
-        <p class="text-sm font-bold">{{ searchQuery ? '没有找到匹配的歌曲' : '暂无歌曲数据' }}</p>
+        <p class="text-sm font-bold">{{ searchQuery ? locale.empty.search : locale.empty.default }}</p>
       </div>
 
       <!-- 列表内容 -->
@@ -267,7 +267,7 @@
                 <button
                   v-if="song.hasSubmissionNote && song.submissionNote"
                   class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all"
-                  title="查看备注留言"
+                  :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
                   <MessageSquare :size="12" />
@@ -275,7 +275,7 @@
                 <span
                   v-if="song.hasSubmissionNote && song.submissionNote"
                   class="ml-2 text-xs text-blue-400/80 truncate max-w-[200px] cursor-pointer hover:text-blue-400 transition-colors font-normal"
-                  title="查看备注留言"
+                  :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
                   {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
@@ -294,12 +294,12 @@
             <!-- Left side: Requester, Votes, Status -->
             <div class="flex items-center gap-3 lg:contents">
               <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
-                <span class="text-xs font-bold text-zinc-400 truncate max-w-[100px]">{{ song.requester || '未知' }}</span>
+                <span class="text-xs font-bold text-zinc-400 truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
                 <span v-if="song.user" class="text-[10px] font-bold text-zinc-600 truncate max-w-[100px]"
                   >@{{ song.user.username }}</span
                 >
                 <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-blue-500 mt-1">
-                  期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                  {{ locale.preferredPlayTime(getPlayTimeName(song.preferredPlayTimeId)) }}
                 </span>
                 <span
                   class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
@@ -345,7 +345,7 @@
             >
               <button
                 class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="编辑歌曲"
+                :title="locale.actions.edit"
                 @click="editSong(song)"
               >
                 <Edit2 :size="14" />
@@ -354,7 +354,7 @@
               <button
                 v-if="!song.played"
                 class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="标记为已播放"
+                :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
               >
                 <Check :size="14" />
@@ -362,7 +362,7 @@
               <button
                 v-else
                 class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="标记为未播放"
+                :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
               >
                 <RotateCcw :size="14" />
@@ -370,14 +370,14 @@
 
               <button
                 class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="驳回歌曲"
+                :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
                 class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="删除歌曲"
+                :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
               >
                 <Trash2 :size="14" />
@@ -393,7 +393,7 @@
       v-model:current-page="currentPage"
       :total-pages="totalPages"
       :total-items="filteredSongs.length"
-      item-name="首歌曲"
+      :item-name="locale.paginationItemName"
     />
 
     <!-- 移动端悬浮批量操作栏 -->
@@ -410,8 +410,8 @@
         class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-zinc-900/95 border border-zinc-800 rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
       >
         <div class="px-3 flex flex-col">
-          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">已选择</span>
-          <span class="text-sm font-bold text-blue-400">{{ selectedSongs.length }} 首歌曲</span>
+          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ locale.selected }}</span>
+          <span class="text-sm font-bold text-blue-400">{{ locale.selectedSongs(selectedSongs.length) }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -419,14 +419,14 @@
             @click="openDownloadDialog"
           >
             <Download :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">下载</span>
+            <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
           </button>
           <button
             class="flex flex-col items-center justify-center w-14 h-12 bg-zinc-800 hover:bg-zinc-700 text-red-400 rounded-xl border border-zinc-700/50 transition-all active:scale-95"
             @click="batchDelete"
           >
             <Trash2 :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">删除</span>
+            <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
           </button>
         </div>
       </div>
@@ -440,8 +440,8 @@
       :message="deleteDialogMessage"
       :loading="loading"
       type="danger"
-      confirm-text="确认删除"
-      cancel-text="取消"
+      :confirm-text="locale.dialog.confirmDelete"
+      :cancel-text="locale.dialog.cancel"
       @confirm="confirmDelete"
       @close="showDeleteDialog = false"
     />
@@ -474,7 +474,7 @@
           @click.stop
         >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-zinc-100">驳回歌曲</h3>
+            <h3 class="text-xl font-black text-zinc-100">{{ locale.rejectDialog.title }}</h3>
             <button
               class="text-zinc-500 hover:text-zinc-300 transition-colors"
               @click="cancelReject"
@@ -492,17 +492,17 @@
               </div>
               <div>
                 <h4 class="font-bold text-zinc-100 text-sm">{{ rejectSongInfo.title }}</h4>
-                <p class="text-xs text-zinc-500">投稿人: {{ rejectSongInfo.requester }}</p>
+                <p class="text-xs text-zinc-500">{{ locale.rejectDialog.requester(rejectSongInfo.requester) }}</p>
               </div>
             </div>
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >驳回原因</label
+                >{{ locale.rejectDialog.reason }}</label
               >
               <textarea
                 v-model="rejectReason"
-                placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
+                :placeholder="locale.rejectDialog.reasonPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-red-500/30 min-h-[120px] resize-none transition-all"
               />
             </div>
@@ -516,10 +516,10 @@
               <div>
                 <span
                   class="text-xs font-bold text-zinc-300 group-hover:text-red-400 transition-colors"
-                  >同时将此歌曲加入黑名单</span
+                  >{{ locale.rejectDialog.addToBlacklist }}</span
                 >
                 <p class="text-[10px] text-zinc-600 font-medium">
-                  加入黑名单后，该歌曲将无法再次被投稿
+                  {{ locale.rejectDialog.blacklistHint }}
                 </p>
               </div>
             </label>
@@ -530,14 +530,14 @@
               class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="cancelReject"
             >
-              取消
+              {{ locale.dialog.cancel }}
             </button>
             <button
               :disabled="rejectLoading"
               class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
               @click="confirmReject"
             >
-              {{ rejectLoading ? '处理中...' : '确认驳回' }}
+              {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
             </button>
           </div>
         </div>
@@ -573,7 +573,7 @@
         >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">
-              {{ showEditModal ? '编辑歌曲' : '手动添加歌曲' }}
+              {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
             </h3>
             <button
               class="text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -587,39 +587,39 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >歌曲名称</label
+                  >{{ locale.editModal.titleLabel }}</label
                 >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.title"
                   type="text"
-                  placeholder="输入歌曲标题"
+                  :placeholder="locale.editModal.titlePlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
                 <input
                   v-else
                   v-model="addForm.title"
                   type="text"
-                  placeholder="输入歌曲标题"
+                  :placeholder="locale.editModal.titlePlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >歌手</label
+                  >{{ locale.editModal.artistLabel }}</label
                 >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.artist"
                   type="text"
-                  placeholder="输入歌手姓名"
+                  :placeholder="locale.editModal.artistPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
                 <input
                   v-else
                   v-model="addForm.artist"
                   type="text"
-                  placeholder="输入歌手姓名"
+                  :placeholder="locale.editModal.artistPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
               </div>
@@ -1087,6 +1087,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
 import { useSongPlayer } from '~/composables/useSongPlayer'
+import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { validateUrl, convertToHttps } from '~/utils/url'
 import dayjs from 'dayjs'
@@ -1096,6 +1097,8 @@ dayjs.extend(customParseFormat)
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.songManagement)
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
@@ -1116,22 +1119,22 @@ const selectedPlayTime = ref('all')
 const availablePlayTimes = ref([])
 
 // 选项配置
-const statusOptions = [
-  { label: '全部状态', value: 'all' },
-  { label: '待排期', value: 'pending' },
-  { label: '已排期', value: 'scheduled' },
-  { label: '已播放', value: 'played' },
-  { label: '有备注', value: 'has-note' }
-]
+const statusOptions = computed(() => [
+  { label: locale.value.options.allStatus, value: 'all' },
+  { label: locale.value.options.pending, value: 'pending' },
+  { label: locale.value.options.scheduled, value: 'scheduled' },
+  { label: locale.value.options.played, value: 'played' },
+  { label: locale.value.options.hasNote, value: 'has-note' }
+])
 
-const sortOptions = [
-  { label: '最新投稿', value: 'time-desc' },
-  { label: '最早投稿', value: 'time-asc' },
-  { label: '热度最高', value: 'votes-desc' },
-  { label: '热度最低', value: 'votes-asc' },
-  { label: '标题 A-Z', value: 'title-asc' },
-  { label: '标题 Z-A', value: 'title-desc' }
-]
+const sortOptions = computed(() => [
+  { label: locale.value.options.newest, value: 'time-desc' },
+  { label: locale.value.options.oldest, value: 'time-asc' },
+  { label: locale.value.options.hotDesc, value: 'votes-desc' },
+  { label: locale.value.options.hotAsc, value: 'votes-asc' },
+  { label: locale.value.options.titleAsc, value: 'title-asc' },
+  { label: locale.value.options.titleDesc, value: 'title-desc' }
+])
 
 // 删除对话框相关
 const showDeleteDialog = ref(false)

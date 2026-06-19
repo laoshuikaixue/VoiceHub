@@ -190,15 +190,15 @@ const menuGroups = computed(() => [
   {
     section: locale.value.sections.system,
     items: [
-      { icon: Bell, label: '通知管理', id: 'notifications' },
-      { icon: Mail, label: '邮件配置', id: 'smtp-config' },
-      { icon: Clock, label: '播出时段', id: 'playtimes' },
-      { icon: FileEdit, label: '投稿管理', id: 'request-times' },
-      { icon: BookOpen, label: '学期管理', id: 'semesters' },
-      { icon: Ban, label: '黑名单管理', id: 'blacklist' },
-      { icon: Ticket, label: '点歌券管理', id: 'card-codes' },
-      { icon: Globe, label: '站点配置', id: 'site-config' },
-      { icon: Database, label: '数据库操作', id: 'database' }
+      { icon: Bell, label: locale.value.menu.notifications, id: 'notifications' },
+      { icon: Mail, label: locale.value.menu.smtpConfig, id: 'smtp-config' },
+      { icon: Clock, label: locale.value.menu.playtimes, id: 'playtimes' },
+      { icon: FileEdit, label: locale.value.menu.requestTimes, id: 'request-times' },
+      { icon: BookOpen, label: locale.value.menu.semesters, id: 'semesters' },
+      { icon: Ban, label: locale.value.menu.blacklist, id: 'blacklist' },
+      { icon: Ticket, label: locale.value.menu.cardCodes, id: 'card-codes' },
+      { icon: Globe, label: locale.value.menu.siteConfig, id: 'site-config' },
+      { icon: Database, label: locale.value.menu.database, id: 'database' }
     ]
   },
   {

@@ -65,7 +65,7 @@
           <!-- 定位到今天 -->
           <button
             class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
-            title="跳转到今天"
+            :title="locale.jumpToday"
             @click="scrollToToday"
           >
             <CircleDot class="w-5 h-5" />
@@ -74,7 +74,7 @@
           <!-- 手动日期选择按钮 -->
           <button
             class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
-            title="选择特定日期"
+            :title="locale.selectSpecificDate"
             @click="openManualDatePicker"
           >
             <CalendarIcon class="w-5 h-5" />
@@ -93,7 +93,7 @@
         @click.stop
       >
         <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">选择日期</h3>
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.selectDate }}</h3>
           <button
             class="text-zinc-500 hover:text-zinc-300 transition-colors"
             @click="showManualDatePicker = false"
@@ -112,13 +112,13 @@
               class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
               @click="showManualDatePicker = false"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider"
               @click="confirmManualDate"
             >
-              确认
+              {{ locale.confirm }}
             </button>
           </div>
         </div>
@@ -132,7 +132,7 @@
     >
       <CustomSelect
         :model-value="selectedPlayTime"
-        label="播出时段"
+        :label="locale.playTime"
         :options="playTimeOptions"
         class-name="w-full"
         @update:model-value="handlePlayTimeSelect"
@@ -141,7 +141,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 min-h-[60vh]">
-      <LoadingState title="正在加载排期数据" message="请稍候..." />
+      <LoadingState :title="locale.loadingTitle" :message="locale.loadingMessage" />
     </div>
 
     <div v-else>
@@ -157,7 +157,7 @@
         >
           <ListMusic class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
-            >待排歌曲
+            >{{ locale.pendingSongs }}
             <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
               filteredUnscheduledSongs.length
             }}</span></span
@@ -172,7 +172,7 @@
         >
           <PlaySquare class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
-            >播放列表
+            >{{ locale.playlist }}
             <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
               localScheduledSongs.length
             }}</span></span
@@ -194,17 +194,13 @@
         >
           <div class="flex items-center justify-between px-1">
             <h3 class="hidden lg:block text-lg font-black tracking-tight text-zinc-100 uppercase">
-              待排歌曲
+              {{ locale.pendingSongs }}
             </h3>
             <div
               class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800"
             >
               <button
-                v-for="tab in [
-                  { id: 'normal', label: '普通投稿' },
-                  { id: 'replay', label: '重播申请' },
-                  { id: 'all', label: '所有' }
-                ]"
+                v-for="tab in scheduleTabs"
                 :key="tab.id"
                 :class="[
                   'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
@@ -227,7 +223,7 @@
             >
               <div class="flex items-center gap-2 text-zinc-400">
                 <Filter class="w-3.5 h-3.5" />
-                <span class="text-[11px] font-black uppercase tracking-widest">检索与筛选</span>
+                <span class="text-[11px] font-black uppercase tracking-widest">{{ locale.searchAndFilter }}</span>
               </div>
               <ChevronRight
                 :class="[
@@ -248,7 +244,7 @@
                 <input
                   v-model="searchQuery"
                   type="text"
-                  placeholder="搜索歌曲、艺术家..."
+                  :placeholder="locale.searchPlaceholder"
                   class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                 >
                 <button
@@ -262,7 +258,7 @@
               <div class="grid grid-cols-1 gap-2">
                 <CustomSelect
                   :model-value="selectedSemester"
-                  label="当前学期"
+                  :label="locale.currentSemester"
                   :options="availableSemesters"
                   label-key="name"
                   value-key="name"
@@ -271,12 +267,12 @@
                 <CustomSelect
                   v-if="playTimeEnabled"
                   v-model="selectedFilterPlayTime"
-                  label="期望时段"
+                  :label="locale.preferredTime"
                   :options="filterPlayTimeOptions"
                 />
                 <div class="grid grid-cols-2 gap-2">
-                  <CustomSelect v-model="selectedGrade" label="年级" :options="availableGrades" />
-                  <CustomSelect v-model="songSortOption" label="排序" :options="sortOptions" />
+                  <CustomSelect v-model="selectedGrade" :label="locale.grade" :options="availableGrades" />
+                  <CustomSelect v-model="songSortOption" :label="locale.sort" :options="sortOptions" />
                 </div>
                 <button
                   class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
@@ -284,7 +280,7 @@
                   @click="showPlaylistFilterModal = true"
                 >
                   <ListMusic class="w-3.5 h-3.5" />
-                  <span>{{ isPlaylistFilterActive ? '已应用歌单过滤' : '歌单查重过滤' }}</span>
+                  <span>{{ isPlaylistFilterActive ? locale.playlistFilterApplied : locale.playlistFilter }}</span>
                 </button>
               </div>
             </div>
@@ -365,7 +361,7 @@
                       <button
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
-                        title="查看备注留言"
+                        :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
                         <MessageSquare :size="12" />
@@ -373,14 +369,14 @@
                       <span
                         v-if="song.cardCodeId"
                         class="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 whitespace-nowrap flex-shrink-0"
-                        title="点歌券待核销"
+                        :title="locale.cardPending"
                       >
-                        点歌券待核销
+                        {{ locale.cardPending }}
                       </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
-                        title="查看备注留言"
+                        :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
                         {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
@@ -402,7 +398,7 @@
                         v-if="song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                        {{ locale.preferredPlayTime(getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -423,14 +419,14 @@
                       class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
                       @click.stop="openReplayModal(song)"
                     >
-                      查看
+                      {{ locale.view }}
                     </button>
 
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
                       class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
-                      title="拒绝申请"
+                      :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
                       <CloseIcon class="w-3.5 h-3.5" />
@@ -461,11 +457,11 @@
               >
                 <div v-if="searchQuery" class="flex flex-col items-center">
                   <Search class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">未找到匹配的歌曲</p>
+                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.emptySearch }}</p>
                 </div>
                 <div v-else class="flex flex-col items-center">
                   <ListMusic class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">暂无歌曲记录</p>
+                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.emptySongs }}</p>
                 </div>
               </div>
             </div>
@@ -475,7 +471,7 @@
               v-model:current-page="currentPage"
               :total-pages="totalPages"
               :total-items="allUnscheduledSongs.length"
-              item-name="首待排歌曲"
+              :item-name="locale.pendingSongItemName"
             />
           </div>
         </div>
@@ -491,7 +487,7 @@
           <div
             class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
           >
-            <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">播放顺序</h3>
+            <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">{{ locale.playOrder }}</h3>
             <div
               class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl"
             >
@@ -1008,9 +1004,13 @@ import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
+
+const { admin } = useLocale()
+const locale = computed(() => admin.value.scheduleManager)
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
@@ -1076,6 +1076,11 @@ const selectedGrade = ref('全部')
 const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
+const scheduleTabs = computed(() => [
+  { id: 'normal', label: locale.value.tabs.normal },
+  { id: 'replay', label: locale.value.tabs.replay },
+  { id: 'all', label: locale.value.tabs.all }
+])
 
 // 歌单过滤状态
 const showPlaylistFilterModal = ref(false)
@@ -1302,8 +1307,8 @@ const selectedFilterPlayTime = ref('all')
 // 待排歌曲的播出时段筛选选项
 const filterPlayTimeOptions = computed(() => {
   const options = [
-    { label: '全部时段', value: 'all' },
-    { label: '未指定时段', value: 'none' }
+    { label: locale.value.allPlayTimes, value: 'all' },
+    { label: locale.value.unspecifiedPlayTime, value: 'none' }
   ]
   if (playTimes.value) {
     playTimes.value.forEach((pt) => {
@@ -1319,7 +1324,7 @@ const filterPlayTimeOptions = computed(() => {
 
 // 播出时段选项
 const playTimeOptions = computed(() => {
-  const options = [{ label: '未选择时段 (全天)', value: '' }]
+  const options = [{ label: locale.value.noPlayTimeAllDay, value: '' }]
   if (playTimes.value) {
     playTimes.value.forEach((pt) => {
       let label = pt.name
@@ -1333,12 +1338,12 @@ const playTimeOptions = computed(() => {
 })
 
 // 排序选项
-const sortOptions = [
-  { label: '最新投稿', value: 'time-desc' },
-  { label: '最早投稿', value: 'time-asc' },
-  { label: '热度最高', value: 'votes-desc' },
-  { label: '热度最低', value: 'votes-asc' }
-]
+const sortOptions = computed(() => [
+  { label: locale.value.sortOptions.newest, value: 'time-desc' },
+  { label: locale.value.sortOptions.oldest, value: 'time-asc' },
+  { label: locale.value.sortOptions.hotDesc, value: 'votes-desc' },
+  { label: locale.value.sortOptions.hotAsc, value: 'votes-asc' }
+])
 
 // 学期相关
 const availableSemesters = ref([])
