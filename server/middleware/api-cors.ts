@@ -71,7 +71,11 @@ export default defineEventHandler((event) => {
         sourceOrigin.protocol === trustedOrigin.protocol &&
         sourceOrigin.port === trustedOrigin.port
 
-      if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin) {
+      // 检查来源是否与当前请求的 Host 头一致（覆盖域名、私有 IP、公网 IP 所有场景）
+      const hostOrigin = getHostHeaderOrigin()
+      const matchesRequestHost = hostOrigin && sourceOrigin.origin === hostOrigin
+
+      if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin && !matchesRequestHost) {
         console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${sourceOrigin.origin}, 期望 ${trustedOrigin.origin}, 路径 ${pathname}`)
         throw createError({
           statusCode: 403,
@@ -99,7 +103,14 @@ export default defineEventHandler((event) => {
     // 允许没有 Origin/Referer 但明确标记为同源的请求
     return
   } else {
-    // 拦截没有来源信息的受保护API请求
+    // 没有 Origin/Referer —— 检查能否从 Host 头推断出可信来源
+    const hostOrigin = getHostHeaderOrigin()
+    if (hostOrigin) {
+      // 请求确实发到了本站，只是缺乏来源头（隐私扩展/非浏览器/IP 直连）
+      return
+    }
+
+    // 仍然没有来源信息 → 拦截
     console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'none'}`)
     throw createError({
       statusCode: 403,
@@ -107,3 +118,16 @@ export default defineEventHandler((event) => {
     })
   }
 })
+  // 从 Host 头提取 origin（不含路径），用于 IP 直连场景下与 Referer/Origin 比对
+  function getHostHeaderOrigin() {
+    const hostHeader = getHeader(event, 'host') || getHeader(event, 'x-forwarded-host') || ''
+    if (!hostHeader) return null
+    // 兼容多代理环境，取第一个
+    const firstHost = hostHeader.split(',')[0].trim()
+    try {
+      const normalized = firstHost.includes('://') ? firstHost : `${requestUrl.protocol}//${firstHost}`
+      return new URL(normalized).origin
+    } catch {
+      return null
+    }
+  }
