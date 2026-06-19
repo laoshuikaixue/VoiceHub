@@ -162,6 +162,13 @@
       "when": 1779603809404,
       "tag": "20260524062329_add_instance_id_and_telemetry_toggle",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1781798400000,
+      "tag": "20260619000001_ensure_force_password_change_on_first_login",
+      "breakpoints": true
     }
   ]
 }

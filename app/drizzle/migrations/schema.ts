@@ -240,6 +240,7 @@ export const systemSettings = pgTable("SystemSettings", {
 	smtpFromName: text().default('校园广播站'),
 	enableRequestTimeLimitation: boolean().default(false).notNull(),
 	forceBlockAllRequests: boolean().default(false).notNull(),
+	forcePasswordChangeOnFirstLogin: boolean().default(true).notNull(),
 	enableReplayRequests: boolean().default(false).notNull(),
 	gonganNumber: text(),
 	showBeianIcon: boolean().default(false).notNull(),
