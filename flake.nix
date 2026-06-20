@@ -48,7 +48,7 @@
               runHook preConfigure
               export HOME="$TMPDIR"
               export CI=true
-              export NODE_OPTIONS="--max-old-space-size=8192"
+              export NODE_OPTIONS="--max-old-space-size=6144"
               runHook postConfigure
             '';
 
@@ -306,12 +306,10 @@
                         export PGHOST="${cfg.database.host}"
                       ''}
                       ${lib.optionalString cfg.runDeployScript ''
-                        echo "正在执行部署脚本..."
                         script -q -c "node scripts/deploy.js" /dev/null || {
-                          echo "部署脚本执行失败"
+                          echo "❌ 部署脚本执行失败"
                           exit 1
                         }
-                        echo "部署完成。"
                       ''}
                       exec ${cfg.package}/bin/voicehub
                     '';
