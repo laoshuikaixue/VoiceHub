@@ -1,6 +1,11 @@
 {
   description = "VoiceHub - 校园广播站点歌管理系统";
 
+  nixConfig = {
+    extra-substituters = [ "https://voicehub.cachix.org" ];
+    extra-trusted-public-keys = [ "voicehub.cachix.org-1:<请替换为实际 public key>" ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
