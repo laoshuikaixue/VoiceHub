@@ -61,7 +61,8 @@ export const useLyricManager = () => {
       const result = await getLyrics(platform, musicId, {
         title: track.title,
         artist: track.artist,
-        album: track.album
+        album: track.album,
+        duration: track.duration
       })
 
       // 令牌失效：歌曲已切换，丢弃结果

@@ -2905,7 +2905,7 @@ const playSong = async (result, playlist, playlistIndex) => {
       await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId, {
         title: song.title,
         artist: song.artist,
-        album: song.album || ''
+        album: result.album || ''
       })
     } catch (error) {
       console.error('获取歌词失败:', error)

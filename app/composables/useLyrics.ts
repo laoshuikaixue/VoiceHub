@@ -209,7 +209,8 @@ export const useLyrics = () => {
       const result = await getLyrics(platform as 'netease' | 'tencent', musicId, {
         title: meta?.title ?? currentSong?.title ?? '',
         artist: meta?.artist ?? currentSong?.artist ?? '',
-        album: meta?.album ?? currentSong?.album ?? ''
+        album: meta?.album ?? currentSong?.album ?? '',
+        duration: currentSong?.duration
       })
 
       if (token !== currentToken) return

@@ -27,6 +27,8 @@ type LyricUpgradeMeta = {
   title?: string
   artist?: string
   album?: string
+  /** 毫秒，用于跨平台匹配时过滤时长差异过大的候选 */
+  duration?: number
   /** false = 明确禁止跨平台升级（防止递归），undefined/true = 允许 */
   allowCrossPlatformUpgrade?: boolean
 }
@@ -252,7 +254,6 @@ export const useMusicSources = () => {
     if (meta?.allowCrossPlatformUpgrade === false) return false
     if (!meta?.title || !meta?.artist) return false
     if (currentData.ttml) return false
-    if (!currentData.lrc && !currentData.yrc && !currentData.trans) return false
 
     const currentRank = getCurrentRank(currentData)
     const targetPlatform = platform === 'netease' ? 'tencent' : 'netease'

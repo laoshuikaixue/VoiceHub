@@ -694,10 +694,10 @@ export const resolveQqNativeLyric = async ({
   const data = resp?.req?.data ?? resp?.request?.data ?? {}
   const result: { lrc?: string; qrc?: string; trans?: string; roma?: string } = {}
 
-  // qrc_t !== 0 时 lyric 字段是 QRC，否则是 LRC
+  // qrc_t 为非零数字时 lyric 字段是 QRC，否则是 LRC
   const mainDecrypted = tryDecryptQrc(data.lyric)
   if (mainDecrypted) {
-    if (data.qrc_t !== 0) {
+    if (typeof data.qrc_t === 'number' && data.qrc_t !== 0) {
       result.qrc = mainDecrypted
     } else {
       result.lrc = mainDecrypted
