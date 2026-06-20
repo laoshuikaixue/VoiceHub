@@ -321,8 +321,6 @@
                 RestartSec = "5s";
                 WorkingDirectory = "${cfg.package}/lib/voicehub";
 
-                User = "voicehub";
-                Group = "voicehub";
                 DynamicUser = true;
 
                 EnvironmentFile = lib.mkIf (cfg.environmentFile != null) [ cfg.environmentFile ];
