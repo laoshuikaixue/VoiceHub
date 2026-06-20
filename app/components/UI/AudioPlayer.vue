@@ -330,9 +330,11 @@ const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
 const MIN_VALID_QQ_AUDIO_DURATION = 10
 const NETEASE_SCROBBLE_MIN_SECONDS = 30
 const NETEASE_SCROBBLE_SHORT_AUDIO_RATIO = 0.8
+const MAX_NETEASE_SCROBBLE_RETRIES = 3
 const failedPlaybackSources = ref<string[]>([])
 const neteaseScrobbleReportedKey = ref<string | null>(null)
 const neteaseScrobblePendingKey = ref<string | null>(null)
+const neteaseScrobbleRetryCount = ref(0)
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -470,6 +472,7 @@ watch(
       failedPlaybackSources.value = []
       neteaseScrobbleReportedKey.value = null
       neteaseScrobblePendingKey.value = null
+      neteaseScrobbleRetryCount.value = 0
       enhanced.resetRetryState()
     }
   }
@@ -633,15 +636,12 @@ const getNeteaseScrobbleThreshold = (durationValue) => {
   )
 }
 
-const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue) => {
-  if (!control.isPlaying.value || typeof window === 'undefined') return
+const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded = false) => {
+  if ((!control.isPlaying.value && !isEnded) || typeof window === 'undefined') return
 
   const song = activeSong.value
   const songId = getNeteaseScrobbleSongId(song)
   if (!songId) return
-
-  const cookie = window.localStorage.getItem('netease_cookie')
-  if (!cookie) return
 
   const threshold = getNeteaseScrobbleThreshold(durationValue)
   if (currentTimeValue < threshold) return
@@ -650,12 +650,17 @@ const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue) => {
   const scrobbleKey = `${songId}:${sourceId}`
   if (
     neteaseScrobbleReportedKey.value === scrobbleKey ||
-    neteaseScrobblePendingKey.value === scrobbleKey
+    neteaseScrobblePendingKey.value === scrobbleKey ||
+    neteaseScrobbleRetryCount.value >= MAX_NETEASE_SCROBBLE_RETRIES
   ) {
     return
   }
 
+  const cookie = window.localStorage.getItem('netease_cookie')
+  if (!cookie) return
+
   neteaseScrobblePendingKey.value = scrobbleKey
+  neteaseScrobbleRetryCount.value++
   try {
     const playTime = Math.max(
       1,
@@ -992,7 +997,11 @@ const handleError = async (error) => {
 
 const handleEnded = () => {
   if (audioPlayer.value) {
-    void tryScrobbleNeteaseSong(audioPlayer.value.duration || control.currentTime.value, audioPlayer.value.duration)
+    void tryScrobbleNeteaseSong(
+      audioPlayer.value.duration || control.currentTime.value,
+      audioPlayer.value.duration,
+      true
+    )
   }
 
   // 在执行 onEnded（可能会切换到下一首）之前，记录当前是否还有下一首
