@@ -1,6 +1,10 @@
 import { computed, type Ref } from 'vue'
+import { useLocale } from '~/utils/locale'
 
 export function usePasswordStrength(passwordRef: Ref<string>) {
+  const { common } = useLocale()
+  const strengthLevels = computed(() => common.value.passwordStrengthLevels)
+
   return computed(() => {
     if (!passwordRef.value) {
       return { width: '0%', colorClass: '', textColorClass: '', text: '' }
@@ -21,28 +25,28 @@ export function usePasswordStrength(passwordRef: Ref<string>) {
         width: `${scorePercentage || 10}%`,
         colorClass: 'bg-rose-500',
         textColorClass: 'text-rose-500',
-        text: '弱'
+        text: strengthLevels.value.weak
       }
     } else if (score < 4) {
       return {
         width: `${scorePercentage}%`,
         colorClass: 'bg-amber-500',
         textColorClass: 'text-amber-500',
-        text: '中等'
+        text: strengthLevels.value.medium
       }
     } else if (score < 5) {
       return {
         width: `${scorePercentage}%`,
         colorClass: 'bg-blue-500',
         textColorClass: 'text-blue-500',
-        text: '强'
+        text: strengthLevels.value.strong
       }
     } else {
       return {
         width: '100%',
         colorClass: 'bg-emerald-500',
         textColorClass: 'text-emerald-500',
-        text: '极强'
+        text: strengthLevels.value.veryStrong
       }
     }
   })

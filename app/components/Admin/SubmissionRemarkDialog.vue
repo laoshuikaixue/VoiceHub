@@ -17,7 +17,7 @@
         @click.stop
       >
         <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100">投稿备注留言</h3>
+          <h3 class="text-xl font-black text-zinc-100">{{ locale.title }}</h3>
           <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="close">
             <X :size="20" />
           </button>
@@ -42,9 +42,9 @@
                     : 'bg-amber-500/10 text-amber-500 border-amber-500/20 group-hover:bg-amber-500/20'
                 ]"
               >
-                {{ isPublic ? '公开备注' : '仅管理员可见' }}
+                {{ isPublic ? locale.publicRemark : locale.adminOnly }}
               </span>
-              <span v-if="isUpdatingPublic" class="text-[10px] text-zinc-500 animate-pulse">更新中...</span>
+              <span v-if="isUpdatingPublic" class="text-[10px] text-zinc-500 animate-pulse">{{ locale.updating }}</span>
             </label>
           </div>
           <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4">
@@ -59,7 +59,9 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { X } from 'lucide-vue-next'
+import { useLocale } from '~/utils/locale'
 
 defineProps({
   show: {
@@ -85,6 +87,8 @@ defineProps({
 })
 
 const emit = defineEmits(['close', 'update:isPublic'])
+const { admin } = useLocale()
+const locale = computed(() => admin.value.scheduleManager.remarkDialog)
 
 const close = () => {
   emit('close')

@@ -20,7 +20,7 @@
           <div class="flex items-center justify-end gap-2 mb-3">
             <button
               class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all flex items-center gap-2"
-              title="在新标签页打开"
+              :title="locale.openInNewTab"
               @click="openInNewTab"
             >
               <svg
@@ -34,11 +34,11 @@
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
-              在哔哩哔哩打开
+              {{ locale.openInBilibili }}
             </button>
             <button
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-all"
-              title="关闭"
+              :title="locale.close"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -58,7 +58,7 @@
             <div v-else class="w-full h-full flex items-center justify-center text-zinc-500">
               <div class="text-center">
                 <Icon name="alert-circle" :size="48" class="mx-auto mb-4 opacity-20" />
-                <p class="text-sm font-bold">无法加载视频</p>
+                <p class="text-sm font-bold">{{ locale.loadFailed }}</p>
               </div>
             </div>
           </div>
@@ -71,6 +71,7 @@
 <script setup>
 import { computed } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/composables/useLocale'
 
 const props = defineProps({
   show: Boolean,
@@ -82,6 +83,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
+const { ui } = useLocale()
+const locale = computed(() => ui.value.bilibiliIframe)
 
 // 构建 iframe URL（使用移动端播放器）
 const iframeUrl = computed(() => {

@@ -26,9 +26,9 @@
   >
     <div class="lyric-content">
       <Transition name="fade" mode="out-in">
-        <div v-if="lyricManager.loading.value" class="lyric-loading">歌词正在加载中...</div>
+        <div v-if="lyricManager.loading.value" class="lyric-loading">{{ locale.loading }}</div>
         <div v-else-if="!currentLyricData || currentLyricData.length === 0" class="lyric-loading">
-          暂无歌词
+          {{ locale.empty }}
         </div>
         <div
           v-else
@@ -137,6 +137,7 @@ import { useLyricManager } from '~/composables/useLyricManager'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import { useLocale } from '~/composables/useLocale'
 
 const props = defineProps({
   currentTime: {
@@ -149,6 +150,8 @@ const lyricManager = useLyricManager()
 const settings = useLyricSettings()
 const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
+const { ui } = useLocale()
+const locale = computed(() => ui.value.lyrics)
 
 const lyricScrollContainer = ref<HTMLElement | null>(null)
 

@@ -18,7 +18,7 @@
     <Transition name="fade" mode="out-in">
       <div v-if="lyricManager.loading.value" class="lyric-message-container">
         <Icon name="loader" :size="32" class="spin-animation" />
-        <div class="message-text">歌词加载中...</div>
+        <div class="message-text">{{ locale.loading }}</div>
       </div>
       <div v-else-if="lyricManager.error.value" class="lyric-message-container">
         <Icon name="alert-circle" :size="32" />
@@ -26,7 +26,7 @@
       </div>
       <div v-else-if="!lyricLines || lyricLines.length === 0" class="lyric-message-container">
         <Icon name="music" :size="48" style="opacity: 0.5" />
-        <div class="message-text">暂无歌词</div>
+        <div class="message-text">{{ locale.empty }}</div>
       </div>
       <LyricPlayer
         v-else
@@ -62,6 +62,7 @@ import { useLyricManager } from '~/composables/useLyricManager'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import { useLocale } from '~/composables/useLocale'
 import type { LyricLineMouseEvent } from '@applemusic-like-lyrics/core'
 import { cloneDeep } from 'lodash-es'
 
@@ -76,6 +77,8 @@ const lyricManager = useLyricManager()
 const settings = useLyricSettings()
 const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
+const { ui } = useLocale()
+const locale = computed(() => ui.value.lyrics)
 
 const lyricPlayerRef = ref<LyricPlayerRef | null>(null)
 

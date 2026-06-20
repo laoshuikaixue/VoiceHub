@@ -3,13 +3,13 @@
     <h3
       class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
     >
-      <Shield :size="16" class="text-green-500" /> OAuth 第三方登录配置
+      <Shield :size="16" class="text-green-500" /> {{ locale.title }}
     </h3>
 
     <!-- 基础配置 -->
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">基础设置</h4>
+        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ locale.baseSettings }}</h4>
         <button
           v-if="envData.hasBaseConfig"
           type="button"
@@ -17,14 +17,14 @@
           @click="importEnvData('base')"
         >
           <Download :size="12" />
-          导入环境配置
+          {{ locale.importEnv }}
         </button>
       </div>
 
       <div class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
         <div>
-          <label :class="labelClass">允许第三方注册</label>
-          <p class="text-[10px] text-zinc-600 mt-1">开启后，允许用户通过 OAuth 创建新账号；关闭时，仅允许绑定已有账号</p>
+          <label :class="labelClass">{{ locale.allowRegistration }}</label>
+          <p class="text-[10px] text-zinc-600 mt-1">{{ locale.allowRegistrationDesc }}</p>
         </div>
         <div class="flex items-center gap-2">
           <span
@@ -33,7 +33,7 @@
               formData.allowOAuthRegistration ? 'text-green-500' : 'text-zinc-500'
             ]"
           >
-            {{ formData.allowOAuthRegistration ? '已允许' : '未允许' }}
+            {{ formData.allowOAuthRegistration ? locale.allowed : locale.notAllowed }}
           </span>
           <input
             v-model="formData.allowOAuthRegistration"
@@ -44,9 +44,9 @@
       </div>
 
       <div>
-        <label :class="labelClass">OAuth 重定向 URI</label>
+        <label :class="labelClass">{{ locale.redirectUri }}</label>
         <p class="text-[10px] text-zinc-600 px-1 mb-2">
-          例: <code class="bg-zinc-950 px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
+          {{ locale.redirectExample }} <code class="bg-zinc-950 px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
         </p>
         <input
           v-model="formData.oauthRedirectUri"
@@ -57,13 +57,13 @@
       </div>
 
       <div>
-        <label :class="labelClass">OAuth State 密钥</label>
-        <p class="text-[10px] text-zinc-600 px-1 mb-2">用于加密/解密 OAuth 状态参数，建议使用强随机字符串</p>
+        <label :class="labelClass">{{ locale.stateSecret }}</label>
+        <p class="text-[10px] text-zinc-600 px-1 mb-2">{{ locale.stateSecretDesc }}</p>
         <div class="flex gap-2">
           <input
             v-model="formData.oauthStateSecret"
             :type="showSecrets.state ? 'text' : 'password'"
-            placeholder="输入强随机字符串"
+            :placeholder="locale.stateSecretPlaceholder"
             :class="inputClass"
           >
           <button
@@ -71,7 +71,7 @@
             class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
             @click="showSecrets.state = !showSecrets.state"
           >
-            {{ showSecrets.state ? '隐藏' : '显示' }}
+            {{ showSecrets.state ? locale.hide : locale.show }}
           </button>
         </div>
       </div>
@@ -94,7 +94,7 @@
     >
       <template #before-fields v-if="provider.id === 'casdoor'">
         <div>
-          <label :class="labelClass">Casdoor 服务器 URL</label>
+          <label :class="labelClass">{{ locale.casdoorServerUrl }}</label>
           <input
             v-model="formData.casdoorServerUrl"
             type="text"
@@ -105,11 +105,11 @@
       </template>
       <template #after-fields v-if="provider.id === 'casdoor'">
         <div>
-          <label :class="labelClass">Casdoor 组织名称</label>
+          <label :class="labelClass">{{ locale.casdoorOrganizationName }}</label>
           <input
             v-model="formData.casdoorOrganizationName"
             type="text"
-            placeholder="输入组织名称"
+            :placeholder="locale.organizationPlaceholder"
             :class="inputClass"
           >
         </div>
@@ -119,7 +119,7 @@
     <!-- Custom OAuth2 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">第三方 OAuth2</h4>
+        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ locale.customOAuth }}</h4>
         <div class="flex items-center gap-2">
           <span
             :class="[
@@ -127,7 +127,7 @@
               formData.customOAuthEnabled ? 'text-green-500' : 'text-red-500'
             ]"
           >
-            {{ formData.customOAuthEnabled ? '已启用' : '未启用' }}
+            {{ formData.customOAuthEnabled ? locale.enabled : locale.disabled }}
           </span>
           <input
             v-model="formData.customOAuthEnabled"
@@ -139,17 +139,17 @@
 
       <div v-if="formData.customOAuthEnabled" class="space-y-4">
         <div>
-          <label :class="labelClass">按钮显示名称</label>
+          <label :class="labelClass">{{ locale.displayName }}</label>
           <input
             v-model="formData.customOAuthDisplayName"
             type="text"
-            placeholder="例如：校园统一认证"
+            :placeholder="locale.displayNamePlaceholder"
             :class="inputClass"
           >
         </div>
 
         <div>
-          <label :class="labelClass">授权地址 (Authorize URL)</label>
+          <label :class="labelClass">{{ locale.authorizeUrl }}</label>
           <input
             v-model="formData.customOAuthAuthorizeUrl"
             type="text"
@@ -159,7 +159,7 @@
         </div>
 
         <div>
-          <label :class="labelClass">令牌地址 (Token URL)</label>
+          <label :class="labelClass">{{ locale.tokenUrl }}</label>
           <input
             v-model="formData.customOAuthTokenUrl"
             type="text"
@@ -169,7 +169,7 @@
         </div>
 
         <div>
-          <label :class="labelClass">用户信息地址 (UserInfo URL)</label>
+          <label :class="labelClass">{{ locale.userInfoUrl }}</label>
           <input
             v-model="formData.customOAuthUserInfoUrl"
             type="text"
@@ -193,7 +193,7 @@
           <input
             v-model="formData.customOAuthClientId"
             type="text"
-            placeholder="输入 Client ID"
+            :placeholder="locale.clientIdPlaceholder"
             :class="inputClass"
           >
         </div>
@@ -204,7 +204,7 @@
             <input
               v-model="formData.customOAuthClientSecret"
               :type="showSecrets.custom ? 'text' : 'password'"
-              :placeholder="showSecrets.custom ? '输入 Client Secret' : '••••••••••••••••'"
+              :placeholder="showSecrets.custom ? locale.clientSecretPlaceholder : '••••••••••••••••'"
               :class="inputClass"
             >
             <button
@@ -212,14 +212,14 @@
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
               @click="showSecrets.custom = !showSecrets.custom"
             >
-              {{ showSecrets.custom ? '隐藏' : '显示' }}
+              {{ showSecrets.custom ? locale.hide : locale.show }}
             </button>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label :class="labelClass">用户 ID 字段</label>
+            <label :class="labelClass">{{ locale.userIdField }}</label>
             <input
               v-model="formData.customOAuthUserIdField"
               type="text"
@@ -229,7 +229,7 @@
           </div>
 
           <div>
-            <label :class="labelClass">用户名字段</label>
+            <label :class="labelClass">{{ locale.usernameField }}</label>
             <input
               v-model="formData.customOAuthUsernameField"
               type="text"
@@ -239,7 +239,7 @@
           </div>
 
           <div>
-            <label :class="labelClass">昵称字段</label>
+            <label :class="labelClass">{{ locale.nameField }}</label>
             <input
               v-model="formData.customOAuthNameField"
               type="text"
@@ -249,7 +249,7 @@
           </div>
 
           <div>
-            <label :class="labelClass">邮箱字段</label>
+            <label :class="labelClass">{{ locale.emailField }}</label>
             <input
               v-model="formData.customOAuthEmailField"
               type="text"
@@ -259,7 +259,7 @@
           </div>
 
           <div class="md:col-span-2">
-            <label :class="labelClass">头像字段</label>
+            <label :class="labelClass">{{ locale.avatarField }}</label>
             <input
               v-model="formData.customOAuthAvatarField"
               type="text"
@@ -276,9 +276,9 @@
       <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
         <p>
-          在 Vercel 等平台进行多环境部署时，GitHub OAuth App 等提供商通常只能配置单一的回调地址。为了解决这个问题，项目可以使用 
+          {{ locale.brokerHintPrefix }}
           <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-blue-500 hover:underline">VoiceHub-Auth-Broker</a> 
-          中间件作为统一的回调入口。该中间件能根据 <code>state</code> 参数动态转发回调请求到正确的部署环境，从而实现单个 OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。
+          {{ locale.brokerHintSuffix }}
         </p>
       </div>
     </div>
@@ -289,6 +289,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   modelValue: {
@@ -300,6 +301,8 @@ const props = defineProps({
 const emits = defineEmits(['update:modelValue'])
 
 const { showToast } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value.oauthConfig)
 
 const inputClass =
   'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
@@ -332,9 +335,9 @@ const oauthProviders = computed(() => [
     clientIdKey: 'githubClientId',
     clientSecretKey: 'githubClientSecret',
     clientIdLabel: 'GitHub Client ID',
-    clientIdPlaceholder: '输入 GitHub Client ID',
+    clientIdPlaceholder: locale.value.githubClientIdPlaceholder,
     clientSecretLabel: 'GitHub Client Secret',
-    clientSecretPlaceholder: '输入 GitHub Client Secret',
+    clientSecretPlaceholder: locale.value.githubClientSecretPlaceholder,
   },
   {
     id: 'casdoor',
@@ -344,9 +347,9 @@ const oauthProviders = computed(() => [
     clientIdKey: 'casdoorClientId',
     clientSecretKey: 'casdoorClientSecret',
     clientIdLabel: 'Casdoor Client ID',
-    clientIdPlaceholder: '输入 Client ID',
+    clientIdPlaceholder: locale.value.clientIdPlaceholder,
     clientSecretLabel: 'Casdoor Client Secret',
-    clientSecretPlaceholder: '输入 Client Secret',
+    clientSecretPlaceholder: locale.value.clientSecretPlaceholder,
   },
   {
     id: 'google',
@@ -356,9 +359,9 @@ const oauthProviders = computed(() => [
     clientIdKey: 'googleClientId',
     clientSecretKey: 'googleClientSecret',
     clientIdLabel: 'Google Client ID',
-    clientIdPlaceholder: '输入 Google Client ID（xxx.apps.googleusercontent.com）',
+    clientIdPlaceholder: locale.value.googleClientIdPlaceholder,
     clientSecretLabel: 'Google Client Secret',
-    clientSecretPlaceholder: '输入 Google Client Secret',
+    clientSecretPlaceholder: locale.value.googleClientSecretPlaceholder,
   }
 ])
 
@@ -383,7 +386,7 @@ const importEnvData = async (provider) => {
     }
   } catch (e) {
     console.error('导入环境配置失败:', e)
-    showToast('导入环境配置失败', 'error')
+    showToast(locale.value.importFailed, 'error')
   }
 }
 

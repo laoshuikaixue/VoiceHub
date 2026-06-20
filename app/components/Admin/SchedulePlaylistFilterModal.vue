@@ -21,7 +21,7 @@
         >
           <!-- Header -->
           <div class="flex items-center justify-between p-6 border-b border-zinc-800/50">
-            <h3 class="text-lg font-black text-zinc-100 tracking-tight">歌单重复过滤</h3>
+            <h3 class="text-lg font-black text-zinc-100 tracking-tight">{{ locale.title }}</h3>
             <button
               class="p-2 rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
               @click="close"
@@ -35,7 +35,7 @@
             <!-- Default Playlists -->
             <div class="space-y-3">
               <label class="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                预设榜单
+                {{ locale.defaultPlaylists }}
               </label>
               <div class="grid grid-cols-2 gap-2">
                 <button
@@ -61,7 +61,7 @@
                       <Music2 class="w-4 h-4 opacity-50" />
                     </div>
                   </div>
-                  <span class="flex-1 truncate z-10">{{ playlist.name }}</span>
+                  <span class="flex-1 truncate z-10">{{ getDefaultPlaylistName(playlist.id) }}</span>
                   <Check v-if="selectedIds.includes(playlist.id)" class="w-4 h-4 flex-shrink-0 z-10" />
                 </button>
               </div>
@@ -71,16 +71,16 @@
             <div class="space-y-3">
               <div class="flex items-center justify-between">
                 <label class="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                  自定义歌单 ID / 链接
+                  {{ locale.customPlaylists }}
                 </label>
                 <button
                   class="p-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-all flex items-center gap-1.5 text-[10px] font-bold"
                   @click="refreshCustomPlaylists"
                   :disabled="isRefreshingCustom"
-                  title="重新获取所有自定义歌单信息"
+                  :title="locale.refreshTitle"
                 >
                   <RefreshCw class="w-3 h-3" :class="{ 'animate-spin': isRefreshingCustom }" />
-                  <span>刷新信息</span>
+                  <span>{{ locale.refresh }}</span>
                 </button>
               </div>
               
@@ -106,7 +106,7 @@
                     <input
                       v-model="item.inputValue"
                       type="text"
-                      placeholder="输入歌单 ID 或链接"
+                      :placeholder="locale.playlistPlaceholder"
                       class="w-full pl-9 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm focus:outline-none focus:border-blue-500/30 text-zinc-200 transition-all"
                       @input="handleCustomInputChange(index)"
                     />
@@ -128,7 +128,7 @@
                   @click="addCustomPlaylist"
                 >
                   <Plus class="w-4 h-4" />
-                  <span>添加自定义歌单</span>
+                  <span>{{ locale.addCustomPlaylist }}</span>
                 </button>
               </div>
             </div>
@@ -140,7 +140,7 @@
               class="flex-1 px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-bold transition-all"
               @click="clearSelection"
             >
-              清除过滤
+              {{ locale.clearFilter }}
             </button>
             <button
               class="flex-1 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -149,9 +149,9 @@
             >
               <span v-if="isApplying" class="flex items-center justify-center gap-2">
                 <Loader2 class="w-4 h-4 animate-spin" />
-                获取中...
+                {{ locale.fetching }}
               </span>
-              <span v-else>应用过滤</span>
+              <span v-else>{{ locale.applyFilter }}</span>
             </button>
           </div>
         </div>
@@ -165,6 +165,7 @@ import { computed, ref, onMounted, watch, onUnmounted } from 'vue'
 import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from 'lucide-vue-next'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps<{
   show: boolean
@@ -185,12 +186,25 @@ interface CustomPlaylist {
   trackIds?: string[]
 }
 
+const { admin } = useLocale()
+const locale = computed(() => admin.value.scheduleManager.playlistFilterModal)
+
 const defaultPlaylists = ref([
-  { id: '19723756', name: '飙升榜', coverImgUrl: '', trackIds: [] as string[] },
-  { id: '3779629', name: '新歌榜', coverImgUrl: '', trackIds: [] as string[] },
-  { id: '2884035', name: '原创榜', coverImgUrl: '', trackIds: [] as string[] },
-  { id: '3778678', name: '热歌榜', coverImgUrl: '', trackIds: [] as string[] }
+  { id: '19723756', coverImgUrl: '', trackIds: [] as string[] },
+  { id: '3779629', coverImgUrl: '', trackIds: [] as string[] },
+  { id: '2884035', coverImgUrl: '', trackIds: [] as string[] },
+  { id: '3778678', coverImgUrl: '', trackIds: [] as string[] }
 ])
+
+const getDefaultPlaylistName = (id: string) => {
+  const names: Record<string, string> = {
+    '19723756': locale.value.defaultNames.soaring,
+    '3779629': locale.value.defaultNames.newSongs,
+    '2884035': locale.value.defaultNames.original,
+    '3778678': locale.value.defaultNames.hotSongs
+  }
+  return names[id] || admin.value.scheduleManager.playlistName(id)
+}
 
 const selectedIds = ref<string[]>([])
 const customPlaylists = ref<CustomPlaylist[]>([])
@@ -362,7 +376,7 @@ onMounted(async () => {
         }
       }
     } catch (err) {
-      console.error(`获取榜单 ${playlist.name} 详情失败:`, err)
+      console.error(`获取榜单 ${getDefaultPlaylistName(playlist.id)} 详情失败:`, err)
     }
   }))
 })
@@ -442,7 +456,7 @@ const applyFilter = async () => {
     for (const id of selectedIds.value) {
       const defaultPl = defaultPlaylists.value.find(p => p.id === id)
       if (defaultPl) {
-        playlistNamesMap[id] = defaultPl.name
+        playlistNamesMap[id] = getDefaultPlaylistName(id)
         if (defaultPl.trackIds && defaultPl.trackIds.length > 0) {
           trackIdsMap[id] = defaultPl.trackIds
         }
@@ -456,7 +470,7 @@ const applyFilter = async () => {
         if (item.name) {
           playlistNamesMap[item.id] = item.name
         } else {
-          playlistNamesMap[item.id] = `歌单 ${item.id}`
+          playlistNamesMap[item.id] = admin.value.scheduleManager.playlistName(item.id)
         }
         
         if (item.trackIds && item.trackIds.length > 0) {

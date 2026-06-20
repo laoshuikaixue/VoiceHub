@@ -5,7 +5,7 @@
         <!-- 上一首按钮 -->
         <button
           :disabled="!hasPrevious"
-          :title="hasPrevious ? '上一首' : '没有上一首'"
+          :title="hasPrevious ? locale.previous : locale.noPrevious"
           class="control-btn prev-btn"
           @click="$emit('previous')"
         >
@@ -26,7 +26,7 @@
         <!-- 下一首按钮 -->
         <button
           :disabled="!hasNext"
-          :title="hasNext ? '下一首' : '没有下一首'"
+          :title="hasNext ? locale.next : locale.noNext"
           class="control-btn next-btn"
           @click="$emit('next')"
         >
@@ -61,8 +61,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/composables/useLocale'
 
 const props = defineProps({
   isPlaying: {
@@ -117,6 +118,8 @@ const emit = defineEmits([
 ])
 
 const progressBar = ref(null)
+const { ui } = useLocale()
+const locale = computed(() => ui.value.playerControls)
 
 const formatTime = (time) => {
   if (!time || isNaN(time)) return '0:00'
