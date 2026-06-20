@@ -285,85 +285,9 @@ VoiceHub 提供了一个 Nix flake，用于构建、开发和在 NixOS 上部署
 - [Nix](https://nixos.org/download)（带 flake 支持）
 - PostgreSQL 数据库
 
-#### 开发环境
-
-进入开发 shell（自动提供 Node.js、pnpm、PostgreSQL 客户端）：
-
-```bash
-nix develop
-```
-
-然后在 shell 内：
-
-```bash
-cp .env.example .env   # 配置 DATABASE_URL + JWT_SECRET
-pnpm install
-pnpm run dev           # 启动开发服务器 (port 3000)
-```
-
-#### 构建
-
-```bash
-nix build              # 产出 result/bin/voicehub
-```
-
-构建产物可以直接运行（需要 `DATABASE_URL` 等环境变量）：
-
-```bash
-DATABASE_URL="postgresql://..." JWT_SECRET="..." ./result/bin/voicehub
-```
-
-或使用附带的环境文件：
-
-```bash
-nix run .#default --impure
-```
-
-> `nix run` 需要设置 `DATABASE_URL` 环境变量，否则会启动失败。
-
-#### 更新 pnpm 依赖哈希
-
-当 `pnpm-lock.yaml` 更新后，需要更新 `flake.nix` 中的 `pnpmDeps` 哈希。使用以下命令：
-
-```bash
-nix run .#build                # 先尝试构建，让 Nix 给出预期的哈希
-# 然后把预期的哈希复制到 flake.nix 中
-# 或者使用 nix hash 计算：
-nix hash path $(nix build .#build 2>&1 | grep -oP '/nix/store/[^"]+')
-```
-
-或者使用 impure 构建辅助命令（需要网络和已安装的 pnpm）：
-
-```bash
-nix run .#build                # 在项目目录中执行，生成 .output 目录
-```
-
-#### 使用 Binary Cache 加速构建
-
-VoiceHub CI 会将构建产物推送到 [Cachix](https://cachix.org) binary cache，
-下游用户可直接下载预构建的 `pnpmDeps` 和 `voicehub` 包，跳过本地构建。
-
-在你的 flake 中添加以下配置：
-
-```nix
-{
-  nixConfig = {
-    extra-substituters = [ "https://voicehub.cachix.org" ];
-    extra-trusted-public-keys = [ "voicehub.cachix.org-1:CKw4/RvZy5c0WVpyo5ZyLbJgdpHZ/+epofIwGOeIOhU=" ];
-  };
-  inputs = {
-    voicehub.url = "github:laoshuikaixue/VoiceHub";
-  };
-}
-```
-
-> [!IMPORTANT]
-> 请勿通过 `follows` 覆盖 VoiceHub 的 `nixpkgs` input。缓存中的产物使用
-> VoiceHub 自带的 nixpkgs 构建，替换后 hash 不同，无法命中缓存。
-
 #### NixOS 部署
 
-首先，将 VoiceHub 添加为 flake input：
+将 VoiceHub 添加为 flake input：
 
 ```nix
 {
@@ -383,6 +307,9 @@ VoiceHub CI 会将构建产物推送到 [Cachix](https://cachix.org) binary cach
   };
 }
 ```
+
+> [!TIP]
+> 启用 Binary Cache 可大幅加快构建速度，详见下方[使用 Binary Cache 加速构建](#使用-binary-cache-加速构建)。
 
 然后在 NixOS 配置中使用模块，根据数据库管理方式选择对应场景。
 
@@ -454,6 +381,84 @@ journalctl -u voicehub -f
 ```
 
 默认监听 `0.0.0.0:3000`，可通过 `services.voicehub.host` 和 `services.voicehub.port` 修改。
+
+#### 使用 Binary Cache 加速构建
+
+VoiceHub CI 会将构建产物推送到 [Cachix](https://cachix.org) binary cache，
+下游用户可直接下载预构建的 `pnpmDeps` 和 `voicehub` 包，跳过本地构建。
+
+在你的 flake 中添加 `nixConfig` 以启用：
+
+```nix
+{
+  nixConfig = {
+    extra-substituters = [ "https://voicehub.cachix.org" ];
+    extra-trusted-public-keys = [ "voicehub.cachix.org-1:CKw4/RvZy5c0WVpyo5ZyLbJgdpHZ/+epofIwGOeIOhU=" ];
+  };
+  inputs = {
+    voicehub.url = "github:laoshuikaixue/VoiceHub";
+  };
+}
+```
+
+> [!IMPORTANT]
+> 请勿通过 `follows` 覆盖 VoiceHub 的 `nixpkgs` input。缓存中的产物使用
+> VoiceHub 自带的 nixpkgs 构建，替换后 hash 不同，无法命中缓存。
+
+#### 其他功能
+
+##### 开发环境
+
+进入开发 shell（自动提供 Node.js、pnpm、PostgreSQL 客户端）：
+
+```bash
+nix develop
+```
+
+然后在 shell 内：
+
+```bash
+cp .env.example .env   # 配置 DATABASE_URL + JWT_SECRET
+pnpm install
+pnpm run dev           # 启动开发服务器 (port 3000)
+```
+
+##### 构建
+
+```bash
+nix build              # 产出 result/bin/voicehub
+```
+
+构建产物可以直接运行（需要 `DATABASE_URL` 等环境变量）：
+
+```bash
+DATABASE_URL="postgresql://..." JWT_SECRET="..." ./result/bin/voicehub
+```
+
+或使用附带的环境文件：
+
+```bash
+nix run .#default --impure
+```
+
+> `nix run` 需要设置 `DATABASE_URL` 环境变量，否则会启动失败。
+
+##### 更新 pnpm 依赖哈希
+
+当 `pnpm-lock.yaml` 更新后，需要更新 `flake.nix` 中的 `pnpmDeps` 哈希。使用以下命令：
+
+```bash
+nix run .#build                # 先尝试构建，让 Nix 给出预期的哈希
+# 然后把预期的哈希复制到 flake.nix 中
+# 或者使用 nix hash 计算：
+nix hash path $(nix build .#build 2>&1 | grep -oP '/nix/store/[^"]+')
+```
+
+或者使用 impure 构建辅助命令（需要网络和已安装的 pnpm）：
+
+```bash
+nix run .#build                # 在项目目录中执行，生成 .output 目录
+```
 
 ---
 
