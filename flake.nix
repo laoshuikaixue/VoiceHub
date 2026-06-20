@@ -191,8 +191,8 @@
 
             package = lib.mkOption {
               type = lib.types.package;
-              default = self.packages.${pkgs.system}.default;
-              defaultText = lib.literalExpression "self.packages.''${pkgs.system}.default";
+              default = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
+              defaultText = lib.literalExpression "self.packages.''${pkgs.stdenv.hostPlatform.system}.default";
               description = "使用的 VoiceHub 包";
             };
 
