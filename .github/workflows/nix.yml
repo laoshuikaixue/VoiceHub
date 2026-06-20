@@ -11,7 +11,6 @@ jobs:
   nix-check:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
     steps:
       - name: Checkout repository
@@ -20,11 +19,8 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
 
-      - name: FlakeHub Cache
-        uses: DeterminateSystems/flakehub-cache-action@main
-
-      - name: Flake Checker
-        uses: DeterminateSystems/flake-checker-action@main
-
       - name: Run nix flake check
         run: nix flake check
+
+      - name: Build voicehub (validate hashes)
+        run: nix build .#voicehub
