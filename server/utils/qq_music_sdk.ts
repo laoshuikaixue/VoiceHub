@@ -588,22 +588,26 @@ const _desBlock = (inp: Buffer, key: number[][]): Buffer => {
   return _fp(s0,s1)
 }
 
-const tripleDesDecrypt = (data: Buffer, key: Buffer): Buffer => {
-  // DECRYPT 模式：k1=key[16..24] decrypt, k2=key[8..16] encrypt, k3=key[0..8] decrypt
-  const k1=_ks(key.slice(16,24),0)
-  const k2=_ks(key.slice(8,16),1)
-  const k3=_ks(key.slice(0,8),0)
-  const result=Buffer.alloc(data.length)
-  for(let i=0;i<data.length;i+=8){
-    const b=data.slice(i,i+8)
-    _desBlock(_desBlock(_desBlock(b,k1),k2),k3).copy(result,i)
+// 预计算 QRC_KEY 的密钥调度，避免每次解密重复计算
+const QRC_DES_KEYS = {
+  k1: _ks(QRC_KEY.slice(16, 24), 0),
+  k2: _ks(QRC_KEY.slice(8, 16), 1),
+  k3: _ks(QRC_KEY.slice(0, 8), 0)
+}
+
+const tripleDesDecrypt = (data: Buffer): Buffer => {
+  const { k1, k2, k3 } = QRC_DES_KEYS
+  const result = Buffer.alloc(data.length)
+  for (let i = 0; i < data.length; i += 8) {
+    const b = data.slice(i, i + 8)
+    _desBlock(_desBlock(_desBlock(b, k1), k2), k3).copy(result, i)
   }
   return result
 }
 
 const decryptQrc = (encryptedHex: string): string => {
   if (!encryptedHex?.trim()) throw new Error('QRC 密文为空')
-  const decrypted = tripleDesDecrypt(Buffer.from(encryptedHex, 'hex'), QRC_KEY)
+  const decrypted = tripleDesDecrypt(Buffer.from(encryptedHex, 'hex'))
   for (const decompress of [inflateSync, inflateRawSync, unzipSync]) {
     try { return decompress(decrypted).toString('utf8') } catch { /* 继续 */ }
   }
