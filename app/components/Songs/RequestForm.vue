@@ -432,7 +432,7 @@
                             />
                           </svg>
                         </span>
-                        <span class="custom-checkbox-text">公开给已登录用户</span>
+                        <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                       </label>
                     </div>
                   </div>
@@ -953,7 +953,7 @@
                 type="button"
                 @click="closeCardCodeModal"
               >
-                取消
+                {{ locale.cancel }}
               </button>
               <button
                 v-if="trimmedCardCode"
@@ -2584,7 +2584,7 @@ const getAudioUrl = async (result) => {
     if (sourceType === 'bilibili' || isBilibiliSong(result)) {
       try {
         const songId = result.musicId || result.id
-        if (!songId) throw new Error('缺少歌曲ID参数')
+        if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
         const options = result.bilibiliCid ? { bilibiliCid: String(result.bilibiliCid) } : undefined
         const urlResult = await musicSources.getSongUrl(songId, 0, 'bilibili', undefined, options)
@@ -2603,7 +2603,7 @@ const getAudioUrl = async (result) => {
     if (sourceType === 'vkeys-v3') {
       try {
         const songId = result.musicId || result.id
-        if (!songId) throw new Error('缺少歌曲ID参数')
+        if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
         const { getQuality } = useAudioQuality()
         const quality = getQuality(platform.value) || 8
@@ -2639,7 +2639,7 @@ const getAudioUrl = async (result) => {
         if (platform.value === 'tencent') {
           try {
             const songId = result.musicId || result.id
-            if (!songId) throw new Error('缺少歌曲ID参数')
+            if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
             const { getQuality } = useAudioQuality()
             const quality = getQuality(platform.value) || 8
