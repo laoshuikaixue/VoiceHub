@@ -308,7 +308,7 @@
                       ${lib.optionalString cfg.runDeployScript ''
                         echo "[voicehub] 正在执行部署脚本..."
                         echo "[voicehub] 同步数据库..."
-                        script -q -c "echo 1 | pnpm exec drizzle-kit push --force" /dev/null || {
+                        CI=true DRIZZLE_KIT_FORCE=true node scripts/db-sync.js || {
                           echo "[voicehub] 数据库迁移失败"
                           exit 1
                         }
@@ -326,8 +326,6 @@
                 RestartSec = "5s";
                 WorkingDirectory = "${cfg.package}/lib/voicehub";
 
-                User = "voicehub";
-                Group = "voicehub";
                 DynamicUser = true;
 
                 EnvironmentFile = lib.mkIf (cfg.environmentFile != null) [ cfg.environmentFile ];
