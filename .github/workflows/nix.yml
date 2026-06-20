@@ -23,7 +23,7 @@ jobs:
         uses: cachix/cachix-action@v14
         with:
           name: voicehub
-          signingKey: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Run nix flake check
         run: nix flake check
