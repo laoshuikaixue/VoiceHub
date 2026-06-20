@@ -12,7 +12,7 @@
             class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg"
           >
             <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest"
-              >已选择 {{ selectedRows.length }} 项</span
+              >{{ locale.selectedItems(selectedRows.length) }}</span
             >
             <button
               class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors"
@@ -32,7 +32,7 @@
             @click="$emit('refresh')"
           >
             <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
-            <span>刷新数据</span>
+            <span>{{ locale.refreshData }}</span>
           </button>
         </slot>
       </div>
@@ -51,7 +51,7 @@
           class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
         />
         <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{{
-          loadingText
+          resolvedLoadingText
         }}</span>
       </div>
 
@@ -83,7 +83,7 @@
                 v-if="hasActions"
                 class="p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right"
               >
-                操作
+                {{ locale.actions }}
               </th>
             </tr>
           </thead>
@@ -94,7 +94,7 @@
                   <div class="flex flex-col items-center gap-3 text-zinc-700">
                     <Database :size="40" stroke-width="1" />
                     <span class="text-[10px] font-black uppercase tracking-widest"
-                      >暂无数据内容</span
+                      >{{ locale.noData }}</span
                     >
                   </div>
                 </slot>
@@ -134,13 +134,13 @@
                   <slot name="actions" :row="row" :index="index">
                     <button
                       class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
-                      title="编辑"
+                      :title="locale.edit"
                     >
                       <Edit2 :size="14" />
                     </button>
                     <button
                       class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
-                      title="删除"
+                      :title="locale.delete"
                     >
                       <Trash2 :size="14" />
                     </button>
@@ -158,7 +158,7 @@
           <slot name="empty">
             <div class="flex flex-col items-center gap-3 text-zinc-700">
               <Database :size="40" stroke-width="1" />
-              <span class="text-[10px] font-black uppercase tracking-widest">暂无数据内容</span>
+              <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.noData }}</span>
             </div>
           </slot>
         </div>
@@ -234,12 +234,13 @@ import {
   ChevronRight,
   MoreHorizontal
 } from 'lucide-vue-next'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   columns: { type: Array, required: true },
   data: { type: Array, required: true },
   loading: { type: Boolean, default: false },
-  loadingText: { type: String, default: '正在加载数据...' },
+  loadingText: { type: String, default: '' },
   selectable: { type: Boolean, default: false },
   selectedRows: { type: Array, default: () => [] },
   rowKey: { type: [String, Function], default: 'id' },
@@ -250,6 +251,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:selectedRows', 'row-click', 'refresh', 'clear-selection'])
+const { common } = useLocale()
+const locale = computed(() => common.value)
+const resolvedLoadingText = computed(() => props.loadingText || locale.value.loadingData)
 
 const totalColumns = computed(() => {
   let count = props.columns.length

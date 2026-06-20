@@ -45,7 +45,7 @@
             class="bg-transparent border-none text-[10px] font-bold text-zinc-300 focus:ring-0 px-2 py-1 w-28"
             @input="updateDateRange(filter.key, 'start', $event.target.value)"
           >
-          <span class="text-zinc-700 text-[10px] font-black uppercase">至</span>
+          <span class="text-zinc-700 text-[10px] font-black uppercase">{{ locale.to }}</span>
           <input
             type="date"
             :value="filterValues[filter.key]?.end || ''"
@@ -121,7 +121,7 @@
         @click="clearAllFilters"
       >
         <RotateCcw :size="14" />
-        <span>清除筛选</span>
+        <span>{{ locale.clearFilters }}</span>
       </button>
 
       <slot name="actions" />
@@ -133,10 +133,11 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Search, X, ChevronDown, RotateCcw } from 'lucide-vue-next'
 import CustomSelect from './CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   searchQuery: { type: String, default: '' },
-  searchPlaceholder: { type: String, default: '搜索...' },
+  searchPlaceholder: { type: String, default: '' },
   filters: { type: Array, default: () => [] },
   filterValues: { type: Object, default: () => ({}) },
   showActions: { type: Boolean, default: true }
@@ -146,6 +147,9 @@ const emit = defineEmits(['update:searchQuery', 'update:filterValues', 'filter-c
 
 const openDropdown = ref(null)
 const dropdownRef = ref(null)
+const { common } = useLocale()
+const locale = computed(() => common.value)
+const searchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder)
 
 const hasActiveFilters = computed(() => {
   return (
@@ -176,7 +180,7 @@ const updateSelectFilter = (filter, label) => {
 const getSelectValueLabel = (filter) => {
   const value = props.filterValues[filter.key]
   const option = filter.options.find((o) => o.value === value)
-  return option ? option.label : filter.placeholder || '请选择'
+  return option ? option.label : filter.placeholder || locale.value.selectPlaceholder
 }
 
 const updateDateRange = (key, type, value) => {
@@ -199,12 +203,12 @@ const toggleDropdown = (key) => {
 
 const getMultiSelectLabel = (filter) => {
   const selectedValues = props.filterValues[filter.key] || []
-  if (selectedValues.length === 0) return filter.placeholder || '请选择'
+  if (selectedValues.length === 0) return filter.placeholder || locale.value.selectPlaceholder
   if (selectedValues.length === 1) {
     const option = filter.options.find((opt) => opt.value === selectedValues[0])
     return option ? option.label : selectedValues[0]
   }
-  return `已选 ${selectedValues.length} 项`
+  return locale.value.selectedCount(selectedValues.length)
 }
 
 const clearAllFilters = () => {

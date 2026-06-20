@@ -1039,7 +1039,7 @@ const formatDate = (dateStr, isMobile = false) => {
   try {
     const parsedDate = parseLocalDateParts(dateStr)
     if (!parsedDate) {
-      throw new Error('无效的日期格式')
+      throw new Error(locale.value.invalidDateFormat)
     }
 
     const { year, month, day } = parsedDate
@@ -1049,25 +1049,23 @@ const formatDate = (dateStr, isMobile = false) => {
 
     // 检查日期是否有效
     if (isNaN(date.getTime())) {
-      throw new Error('无效的日期')
+      throw new Error(locale.value.invalidDate)
     }
 
     const weekday = new Intl.DateTimeFormat(currentLocale.value, { weekday: 'long' }).format(date)
 
     // 移动端显示更紧凑的格式
     if (isMobile) {
-      return currentLocale.value === 'zh-CN'
-        ? `${month}月${day}日 ${weekday}`
-        : `${new Intl.DateTimeFormat(currentLocale.value, { month: 'short', day: 'numeric' }).format(date)} ${weekday}`
+      const formattedMobileDate = new Intl.DateTimeFormat(currentLocale.value, { month: 'short', day: 'numeric' }).format(date)
+      return locale.value.mobileDate(month, day, weekday, formattedMobileDate)
     }
 
-    const formattedDate = currentLocale.value === 'zh-CN'
-      ? `${year}年${month}月${day}日`
-      : new Intl.DateTimeFormat(currentLocale.value, {
+    const intlFormattedDate = new Intl.DateTimeFormat(currentLocale.value, {
           year: 'numeric',
           month: 'short',
           day: 'numeric'
         }).format(date)
+    const formattedDate = locale.value.fullDate(year, month, day, intlFormattedDate)
     return `${formattedDate}\n<span class="weekday">${weekday}</span>`
   } catch (e) {
     return dateStr || locale.value.unknown
@@ -1537,7 +1535,7 @@ const getMusicUrl = async (song) => {
 
   // 如果没有playUrl，检查platform和musicId是否有效
   if (!platform || !musicId) {
-    throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
+    throw new Error(locale.value.missingMusicInfo)
   }
 
   // 检查是否为播客内容
@@ -1647,9 +1645,9 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`
+    return locale.value.playTimeStart(playTime.startTime)
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`
+    return locale.value.playTimeEnd(playTime.endTime)
   }
 
   return locale.value.unspecifiedPlayTime
@@ -1983,7 +1981,7 @@ const vRipple = {
 }
 
 /* ----------------------------------
-   添加歌单按钮
+   Add playlist button
    ---------------------------------- */
 .add-playlist-btn {
   display: inline-flex;
@@ -2018,7 +2016,7 @@ const vRipple = {
 }
 
 /* ----------------------------------
-   歌单模态框
+   Playlist modal
    ---------------------------------- */
 .playlist-modal-overlay {
   position: fixed;
