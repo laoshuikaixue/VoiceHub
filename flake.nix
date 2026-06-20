@@ -3,7 +3,7 @@
 
   nixConfig = {
     extra-substituters = [ "https://voicehub.cachix.org" ];
-    extra-trusted-public-keys = [ "voicehub.cachix.org-1:<请替换为实际 public key>" ];
+    extra-trusted-public-keys = [ "voicehub.cachix.org-1:CKw4/RvZy5c0WVpyo5ZyLbJgdpHZ/+epofIwGOeIOhU=" ];
   };
 
   inputs = {
