@@ -338,6 +338,29 @@ nix hash path $(nix build .#build 2>&1 | grep -oP '/nix/store/[^"]+')
 nix run .#build                # 在项目目录中执行，生成 .output 目录
 ```
 
+#### 使用 Binary Cache 加速构建
+
+VoiceHub CI 会将构建产物推送到 [Cachix](https://cachix.org) binary cache，
+下游用户可直接下载预构建的 `pnpmDeps` 和 `voicehub` 包，跳过本地构建。
+
+在你的 flake 中添加以下配置：
+
+```nix
+{
+  nixConfig = {
+    extra-substituters = [ "https://voicehub.cachix.org" ];
+    extra-trusted-public-keys = [ "voicehub.cachix.org-1:CKw4/RvZy5c0WVpyo5ZyLbJgdpHZ/+epofIwGOeIOhU=" ];
+  };
+  inputs = {
+    voicehub.url = "github:laoshuikaixue/VoiceHub";
+  };
+}
+```
+
+> [!IMPORTANT]
+> 请勿通过 `follows` 覆盖 VoiceHub 的 `nixpkgs` input。缓存中的产物使用
+> VoiceHub 自带的 nixpkgs 构建，替换后 hash 不同，无法命中缓存。
+
 #### NixOS 部署
 
 首先，将 VoiceHub 添加为 flake input：
