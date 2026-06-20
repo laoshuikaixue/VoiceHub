@@ -271,7 +271,11 @@ export const useAudioPlayerSync = () => {
 
             // 获取新歌曲的歌词（但不立即设置元数据，让AudioPlayer的handleLoaded处理）
             if (newSong.musicPlatform && newSong.musicId) {
-              await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
+              await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId, {
+                title: newSong.title,
+                artist: newSong.artist,
+                album: newSong.album
+              })
             }
 
             // 如果之前是播放状态，切换歌曲后自动开始播放
@@ -394,7 +398,11 @@ export const useAudioPlayerSync = () => {
 
             // 获取新歌曲的歌词（但不立即设置元数据，让AudioPlayer的handleLoaded处理）
             if (newSong.musicPlatform && newSong.musicId) {
-              await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId)
+              await lyrics.fetchLyrics(newSong.musicPlatform, newSong.musicId, {
+                title: newSong.title,
+                artist: newSong.artist,
+                album: newSong.album
+              })
             }
 
             // 如果之前是播放状态，切换歌曲后自动开始播放

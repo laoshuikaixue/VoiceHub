@@ -869,7 +869,11 @@ const handleLoaded = async () => {
   // 如果歌曲有平台信息，主动获取并等待歌词加载完成后单独传递歌词
   if (props.song?.musicPlatform && props.song?.musicId) {
     // 主动触发歌词获取
-    await control.lyrics.fetchLyrics(props.song.musicPlatform, props.song.musicId)
+    await control.lyrics.fetchLyrics(props.song.musicPlatform, props.song.musicId, {
+      title: props.song.title,
+      artist: props.song.artist,
+      album: props.song.album
+    })
 
     // 等待歌词数据实际加载完成，最多等待8秒
     const maxWaitTime = 8000
