@@ -335,6 +335,7 @@ const failedPlaybackSources = ref<string[]>([])
 const neteaseScrobbleReportedKey = ref<string | null>(null)
 const neteaseScrobblePendingKey = ref<string | null>(null)
 const neteaseScrobbleRetryCount = ref(0)
+const neteaseScrobbleWasPastThreshold = ref(false)
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -473,6 +474,7 @@ watch(
       neteaseScrobbleReportedKey.value = null
       neteaseScrobblePendingKey.value = null
       neteaseScrobbleRetryCount.value = 0
+      neteaseScrobbleWasPastThreshold.value = false
       enhanced.resetRetryState()
     }
   }
@@ -636,6 +638,14 @@ const getNeteaseScrobbleThreshold = (durationValue) => {
   )
 }
 
+const resetNeteaseScrobbleStateForReplay = (scrobbleKey) => {
+  if (neteaseScrobbleReportedKey.value === scrobbleKey) {
+    neteaseScrobbleReportedKey.value = null
+  }
+  neteaseScrobbleRetryCount.value = 0
+  neteaseScrobbleWasPastThreshold.value = false
+}
+
 const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded = false) => {
   if ((!control.isPlaying.value && !isEnded) || typeof window === 'undefined') return
 
@@ -643,11 +653,17 @@ const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded =
   const songId = getNeteaseScrobbleSongId(song)
   if (!songId) return
 
-  const threshold = getNeteaseScrobbleThreshold(durationValue)
-  if (currentTimeValue < threshold) return
-
   const sourceId = getNeteaseScrobbleSourceId(song, songId)
   const scrobbleKey = `${songId}:${sourceId}`
+  const threshold = getNeteaseScrobbleThreshold(durationValue)
+  if (currentTimeValue < threshold) {
+    if (neteaseScrobbleWasPastThreshold.value) {
+      resetNeteaseScrobbleStateForReplay(scrobbleKey)
+    }
+    return
+  }
+
+  neteaseScrobbleWasPastThreshold.value = true
   if (
     neteaseScrobbleReportedKey.value === scrobbleKey ||
     neteaseScrobblePendingKey.value === scrobbleKey ||
