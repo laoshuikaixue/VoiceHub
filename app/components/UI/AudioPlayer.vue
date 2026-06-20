@@ -265,6 +265,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useMediaSession } from '~/composables/useMediaSession'
 import { getBilibiliUrl } from '~/utils/url'
+import { scrobbleSong } from '~/utils/neteaseApi'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import {
   getCachedMusicUrlSource,
@@ -327,7 +328,11 @@ const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重
 const consecutiveSkipCount = ref(0) // 连续跳过失败的歌曲数
 const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
 const MIN_VALID_QQ_AUDIO_DURATION = 10
+const NETEASE_SCROBBLE_MIN_SECONDS = 30
+const NETEASE_SCROBBLE_SHORT_AUDIO_RATIO = 0.8
 const failedPlaybackSources = ref<string[]>([])
+const neteaseScrobbleReportedKey = ref<string | null>(null)
+const neteaseScrobblePendingKey = ref<string | null>(null)
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -463,6 +468,8 @@ watch(
       lastOpenedFallbackSongId.value = null
       isFallbackHandling.value = false
       failedPlaybackSources.value = []
+      neteaseScrobbleReportedKey.value = null
+      neteaseScrobblePendingKey.value = null
       enhanced.resetRetryState()
     }
   }
@@ -596,6 +603,88 @@ const isInvalidTencentAudio = (duration, url) => {
   return isKnownInvalidQqAudioUrl(url)
 }
 
+const getNeteaseScrobbleSongId = (song) => {
+  if (!song || song.musicPlatform !== 'netease') return null
+  if (song.sourceInfo?.type === 'voice') return null
+
+  const rawId = String(song.musicId || song.id || '').trim()
+  if (!/^\d+$/.test(rawId)) return null
+  return rawId
+}
+
+const getNeteaseScrobbleSourceId = (song, songId) => {
+  const sourceId =
+    song?.sourceInfo?.sourceId ||
+    song?.sourceInfo?.sourceid ||
+    song?.sourceInfo?.playlistId ||
+    song?.sourceInfo?.albumId ||
+    song?.albumId ||
+    songId
+
+  return String(sourceId || songId)
+}
+
+const getNeteaseScrobbleThreshold = (durationValue) => {
+  const normalizedDuration = normalizeSongDurationSeconds(durationValue)
+  if (!normalizedDuration) return NETEASE_SCROBBLE_MIN_SECONDS
+  return Math.min(
+    NETEASE_SCROBBLE_MIN_SECONDS,
+    Math.max(5, normalizedDuration * NETEASE_SCROBBLE_SHORT_AUDIO_RATIO)
+  )
+}
+
+const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue) => {
+  if (!control.isPlaying.value || typeof window === 'undefined') return
+
+  const song = activeSong.value
+  const songId = getNeteaseScrobbleSongId(song)
+  if (!songId) return
+
+  const cookie = window.localStorage.getItem('netease_cookie')
+  if (!cookie) return
+
+  const threshold = getNeteaseScrobbleThreshold(durationValue)
+  if (currentTimeValue < threshold) return
+
+  const sourceId = getNeteaseScrobbleSourceId(song, songId)
+  const scrobbleKey = `${songId}:${sourceId}`
+  if (
+    neteaseScrobbleReportedKey.value === scrobbleKey ||
+    neteaseScrobblePendingKey.value === scrobbleKey
+  ) {
+    return
+  }
+
+  neteaseScrobblePendingKey.value = scrobbleKey
+  try {
+    const playTime = Math.max(
+      1,
+      Math.round(Math.min(currentTimeValue, normalizeSongDurationSeconds(durationValue) || currentTimeValue))
+    )
+
+    const result = await scrobbleSong(
+      {
+        id: songId,
+        sourceid: sourceId,
+        time: playTime
+      },
+      cookie
+    )
+
+    if (result?.code === 200 || result?.body?.code === 200 || result?.body?.data === 'success') {
+      neteaseScrobbleReportedKey.value = scrobbleKey
+    } else {
+      console.warn('[AudioPlayer] 网易云听歌打卡未成功:', result?.message || result)
+    }
+  } catch (scrobbleError) {
+    console.warn('[AudioPlayer] 网易云听歌打卡失败:', scrobbleError)
+  } finally {
+    if (neteaseScrobblePendingKey.value === scrobbleKey) {
+      neteaseScrobblePendingKey.value = null
+    }
+  }
+}
+
 // 音频事件处理器
 const handleTimeUpdate = () => {
   if (!audioPlayer.value || isSyncingFromGlobal.value) return
@@ -614,6 +703,7 @@ const handleTimeUpdate = () => {
   // 不传递song参数，避免覆盖已设置的元数据
   if (control.isPlaying.value) {
     sync.throttledProgressUpdate(currentTime, duration, control.isPlaying.value)
+    void tryScrobbleNeteaseSong(currentTime, duration)
   }
 }
 
@@ -901,6 +991,10 @@ const handleError = async (error) => {
 }
 
 const handleEnded = () => {
+  if (audioPlayer.value) {
+    void tryScrobbleNeteaseSong(audioPlayer.value.duration || control.currentTime.value, audioPlayer.value.duration)
+  }
+
   // 在执行 onEnded（可能会切换到下一首）之前，记录当前是否还有下一首
   const hasNextBeforeEnded = sync.globalAudioPlayer.hasNext.value
 

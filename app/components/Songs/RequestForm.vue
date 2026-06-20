@@ -2857,6 +2857,8 @@ const playSong = async (result, playlist, playlistIndex) => {
     musicUrl: result.url || null, // 哔哩哔哩可能没有音频URL
     musicPlatform: result.musicPlatform || platform.value,
     musicId: finalMusicId,
+    albumId: result.albumId,
+    sourceInfo: result.sourceInfo,
     bilibiliCid: result.bilibiliCid // 确保传递 cid
   }
 
