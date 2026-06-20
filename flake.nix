@@ -306,17 +306,12 @@
                         export PGHOST="${cfg.database.host}"
                       ''}
                       ${lib.optionalString cfg.runDeployScript ''
-                        echo "[voicehub] 正在执行部署脚本..."
-                        echo "[voicehub] 同步数据库..."
-                        script -q -c "echo 1 | pnpm exec drizzle-kit push --force" /dev/null || {
-                          echo "[voicehub] 数据库迁移失败"
+                        echo "正在执行部署脚本..."
+                        script -q -c "node scripts/deploy.js" /dev/null || {
+                          echo "部署脚本执行失败"
                           exit 1
                         }
-                        if [ -f scripts/create-admin.js ]; then
-                          echo "[voicehub] 检查管理员账户..."
-                          node scripts/create-admin.js 2>/dev/null || true
-                        fi
-                        echo "[voicehub] 部署完成。"
+                        echo "部署完成。"
                       ''}
                       exec ${cfg.package}/bin/voicehub
                     '';
