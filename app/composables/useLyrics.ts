@@ -1,26 +1,158 @@
-import { computed, ref } from 'vue'
+import { computed, readonly, ref } from 'vue'
+import { cleanTTMLTranslations, parseQRCLyric, parseSmartLrc } from '~/utils/lyric/lyricParser'
+import { parseTTML, parseYrc } from '@applemusic-like-lyrics/lyric'
+import { useAudioPlayer } from './useAudioPlayer'
+import { useMusicSources } from './useMusicSources'
 
-// 歌词行接口
 export interface ParsedLyricLine {
-  time: number // 时间戳（毫秒）
-  content: string // 歌词内容
+  time: number
+  content: string
   words?: Array<{
-    // 逐字歌词（可选）
     time: number
     duration: number
     content: string
   }>
 }
 
-// 歌词数据接口
+type ParsedLyricWord = NonNullable<ParsedLyricLine['words']>[number]
+
 export interface LyricData {
-  lrc: string // 普通歌词
-  trans?: string // 翻译歌词
-  yrc?: string // 逐字歌词
+  lrc: string
+  trans?: string
+  yrc?: string
+  ttml?: string
 }
 
+// ─── 内部解析工具 ────────────────────────────────────────────────
+
+/**
+ * 将 @applemusic-like-lyrics/lyric 库返回的 lines 数组统一转换为
+ * ParsedLyricLine[]，兼容 TTML / YRC / SmartLrc 三种来源。
+ */
+const convertLibraryLines = (lines: any[]): ParsedLyricLine[] => {
+  return lines
+    .map((line): ParsedLyricLine | null => {
+      const words: ParsedLyricWord[] | undefined = Array.isArray(line?.words)
+        ? line.words
+            .map((word: any): ParsedLyricWord | null => {
+              const startTime = typeof word?.startTime === 'number' ? word.startTime : 0
+              const endTime =
+                typeof word?.endTime === 'number'
+                  ? word.endTime
+                  : startTime + (typeof word?.duration === 'number' ? word.duration : 0)
+              const content =
+                typeof word?.word === 'string' ? word.word : String(word?.content ?? '')
+              if (!content) return null
+              return { time: startTime, duration: Math.max(endTime - startTime, 0), content }
+            })
+            .filter((w: ParsedLyricWord | null): w is ParsedLyricWord => w !== null)
+        : undefined
+
+      const content =
+        words?.map((w) => w.content).join('') ||
+        (typeof line?.content === 'string' ? line.content : '')
+
+      const time =
+        typeof line?.startTime === 'number' ? line.startTime : (line?.time ?? 0)
+
+      if (!content && (!words || words.length === 0)) return null
+      return { time, content, words: words && words.length > 0 ? words : undefined }
+    })
+    .filter((l): l is ParsedLyricLine => l !== null)
+    .sort((a, b) => a.time - b.time)
+}
+
+const hasWordByWord = (lines: ParsedLyricLine[]): boolean =>
+  lines.some((l) => (l.words?.length ?? 0) > 1)
+
+/**
+ * 尝试将单段文本解析为歌词行。
+ * 优先级：TTML > QRC > YRC(JSON) > SmartLrc
+ */
+const parseFlexibleLyrics = (
+  text: string
+): { lines: ParsedLyricLine[]; wordByWord: boolean } => {
+  const raw = text?.trim()
+  if (!raw) return { lines: [], wordByWord: false }
+
+  // TTML（XML 开头）
+  if (raw.startsWith('<')) {
+    // 先尝试 TTML
+    try {
+      const parsed = parseTTML(cleanTTMLTranslations(raw))
+      const ttmlLines = convertLibraryLines((parsed as any)?.lines ?? [])
+      if (ttmlLines.length > 0) {
+        return { lines: ttmlLines, wordByWord: hasWordByWord(ttmlLines) }
+      }
+    } catch {
+      // 解析失败继续尝试 QRC
+    }
+
+    // QRC（QQ 音乐 XML 格式）
+    if (
+      raw.includes('LyricContent="') ||
+      raw.includes('<lyric') ||
+      raw.includes('<LrcContent')
+    ) {
+      try {
+        const qrcLines = convertLibraryLines(parseQRCLyric(raw))
+        if (qrcLines.length > 0) {
+          return { lines: qrcLines, wordByWord: hasWordByWord(qrcLines) }
+        }
+      } catch {
+        // 继续回退
+      }
+    }
+  }
+
+  // YRC（网易云 JSON 逐字格式）
+  if (raw.startsWith('{') || raw.trim().split('\n')[0]?.trimStart().startsWith('{')) {
+    try {
+      const lines = parseYrc(raw)
+      if (lines && lines.length > 0) {
+        const converted = convertLibraryLines(lines)
+        if (converted.length > 0) {
+          return { lines: converted, wordByWord: hasWordByWord(converted) }
+        }
+      }
+    } catch {
+      // 回退到 SmartLrc
+    }
+  }
+
+  // SmartLrc（通用 LRC / 逐字扩展 LRC）
+  const { lines: smartLines, format } = parseSmartLrc(raw)
+  if (smartLines.length > 0) {
+    const converted = convertLibraryLines(smartLines)
+    return {
+      lines: converted,
+      wordByWord: hasWordByWord(converted) || format !== 'line'
+    }
+  }
+
+  return { lines: [], wordByWord: false }
+}
+
+/**
+ * 按优先级顺序尝试多个候选文本，返回第一个成功解析的结果。
+ * 外部调用时按 [ttml, yrc, lrc] 顺序传入。
+ */
+const parseBestLyrics = (
+  candidates: Array<string | undefined | null>
+): { lines: ParsedLyricLine[]; wordByWord: boolean } => {
+  for (const candidate of candidates) {
+    if (!candidate?.trim()) continue
+    const parsed = parseFlexibleLyrics(candidate)
+    if (parsed.lines.length > 0) return parsed
+  }
+  return { lines: [], wordByWord: false }
+}
+
+// ─── Composable ────────────────────────────────────────────────
+
 export const useLyrics = () => {
-  // 响应式状态
+  const audioPlayer = useAudioPlayer()
+
   const currentLyrics = ref<ParsedLyricLine[]>([])
   const translationLyrics = ref<ParsedLyricLine[]>([])
   const wordByWordLyrics = ref<ParsedLyricLine[]>([])
@@ -29,375 +161,216 @@ export const useLyrics = () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // 歌词显示设置
   const showTranslation = ref(false)
   const showWordByWord = ref(false)
 
-  // 解析LRC格式歌词
-  const parseLrcLyrics = (lrcText: string): ParsedLyricLine[] => {
-    if (!lrcText) return []
+  // 竞态令牌
+  let currentToken = 0
 
-    const lines = lrcText.split('\n')
-    const lyrics: ParsedLyricLine[] = []
+  // ─── 通知 HarmonyOS ────────────────────────────────────────────
 
-    for (const line of lines) {
-      // 匹配时间标签 [mm:ss.xx] 或 [mm:ss:xx]
-      const timeMatch = line.match(/\[(\d{2}):(\d{2})[.:](\d{2,3})\](.*)/)
-      if (timeMatch) {
-        const minutes = parseInt(timeMatch[1])
-        const seconds = parseInt(timeMatch[2])
-        const milliseconds = parseInt(timeMatch[3].padEnd(3, '0'))
-        const content = timeMatch[4].trim()
-
-        const time = minutes * 60 * 1000 + seconds * 1000 + milliseconds
-
-        if (content) {
-          // 只添加有内容的歌词行
-          lyrics.push({ time, content })
-        }
-      }
+  const notifyHarmonyOSLyricsUpdate = (lyrics: string) => {
+    if (typeof window === 'undefined') return
+    if (!window.HarmonyOS?.postMessage) {
+      console.warn('[useLyrics] 鸿蒙侧消息接口不可用')
+      return
     }
-
-    return lyrics.sort((a, b) => a.time - b.time)
+    try {
+      window.HarmonyOS.postMessage(
+        JSON.stringify({ method: 'updateLyrics', parameters: { lyrics } })
+      )
+    } catch (e) {
+      console.error('[useLyrics] 通知鸿蒙侧失败:', e)
+    }
   }
 
-  // 解析网易云逐字歌词
-  const parseYrcLyrics = (yrcText: string): ParsedLyricLine[] => {
-    if (!yrcText) return []
+  // ─── 歌词获取 ────────────────────────────────────────────────
 
-    const lines = yrcText.split('\n')
-    const lyrics: ParsedLyricLine[] = []
-
-    for (const line of lines) {
-      try {
-        // 网易云逐字歌词格式：{"t":12420,"c":[{"tx":"ya ","t":290},{"tx":"la ","t":380}]}
-        if (line.startsWith('{')) {
-          const data = JSON.parse(line)
-          if (typeof data.t === 'number' && Array.isArray(data.c)) {
-            const start = data.t
-            let accTime = start
-            const words = data.c.map((word: any) => {
-              const d = typeof word.t === 'number' ? word.t : 0 // t 为毫秒时长
-              const wContent = typeof word.tx === 'string' ? word.tx : ''
-              const wTime = accTime
-              accTime += d
-              return {
-                time: wTime,
-                duration: d,
-                content: wContent
-              }
-            })
-
-            const content = data.c
-              .map((word: any) => (typeof word.tx === 'string' ? word.tx : ''))
-              .join('')
-            lyrics.push({
-              time: start,
-              content,
-              words
-            })
-          }
-        }
-        // 方括号 + 括号 的逐字格式
-        else if (line.includes('[')) {
-          // 示例 A（绝对时间在括号前）：[12420,3470](12420,290,0)ya (12710,380,0)la
-          // 示例 B（相对时间在括号后）：[0,4690]嘘(0,293)つ(293,293)き(586,293)
-          const timeMatch = line.match(/\[(\d+),(\d+)\](.*)/)
-          if (!timeMatch) continue
-
-          const startTime = parseInt(timeMatch[1])
-          const duration = parseInt(timeMatch[2])
-          const wordsText = timeMatch[3]
-
-          const words: Array<{ time: number; duration: number; content: string }> = []
-
-          // 解析示例 B：字(相对或绝对时间, 时长) —— 单位均为毫秒
-          for (const wordMatch of wordsText.matchAll(/([^()]+)\((\d+),(\d+)\)/g)) {
-            const content = wordMatch[1]
-            const t = parseInt(wordMatch[2])
-            const durMs = parseInt(wordMatch[3])
-            // 如果时间小于行起始时间，视为相对时间；否则视为绝对时间
-            const absTime = startTime > 0 && t < startTime ? startTime + t : t
-            words.push({
-              time: absTime,
-              duration: durMs,
-              content
-            })
-          }
-
-          // 若上面未匹配到，则解析示例 A： (绝对时间, 时长, 0)字 —— 单位为毫秒
-          if (words.length === 0) {
-            for (const wordMatch of wordsText.matchAll(/\((\d+),(\d+),\d+\)([^()]*)/g)) {
-              const absTime = parseInt(wordMatch[1])
-              const durMs = parseInt(wordMatch[2])
-              const content = wordMatch[3]
-              words.push({
-                time: absTime,
-                duration: durMs,
-                content
-              })
-            }
-          }
-
-          const content = words.map((w) => w.content).join('')
-          if (content.length > 0) {
-            lyrics.push({
-              time: startTime,
-              content,
-              words
-            })
-          }
-        }
-      } catch (e) {
-        console.warn('解析逐字歌词行失败:', line, e)
-      }
-    }
-
-    return lyrics.sort((a, b) => a.time - b.time)
-  }
-
-  // 统一调度后，移除旧的备用源歌词获取逻辑
-
-  // 统一调度后，移除旧的网易云逐字歌词解析函数（现统一用 parseYrcLyrics）
-
-  // 获取歌词（统一调度：先备用源，再vkeys）
-  const fetchLyrics = async (platform: string, musicId: string): Promise<void> => {
+  const fetchLyrics = async (
+    platform: string,
+    musicId: string,
+    meta?: { title?: string; artist?: string; album?: string }
+  ): Promise<void> => {
     if (!platform || !musicId) {
-      console.error('fetchLyrics 参数错误:', { platform, musicId })
+      console.error('[useLyrics] fetchLyrics 参数错误:', { platform, musicId })
       error.value = '缺少必要参数'
-      currentLyrics.value = []
-      translationLyrics.value = []
-      wordByWordLyrics.value = []
-      currentLyricIndex.value = 0
-      notifyHarmonyOSLyricsUpdate('')
+      _resetState()
       return
     }
 
+    const token = ++currentToken
     isLoading.value = true
     error.value = null
-
-    currentLyrics.value = []
-    translationLyrics.value = []
-    wordByWordLyrics.value = []
-    currentLyricIndex.value = 0
-    notifyHarmonyOSLyricsUpdate('')
+    _resetState()
 
     try {
       const { getLyrics } = useMusicSources()
-      const result = await getLyrics(platform as 'netease' | 'tencent', musicId)
+      const currentSong = audioPlayer.getCurrentSong().value as any
+      const result = await getLyrics(platform as 'netease' | 'tencent', musicId, {
+        title: meta?.title ?? currentSong?.title ?? '',
+        artist: meta?.artist ?? currentSong?.artist ?? '',
+        album: meta?.album ?? currentSong?.album ?? ''
+      })
 
-      if (result.success && result.data) {
-        const lyricData = result.data
+      if (token !== currentToken) return
 
-        // 优先使用逐字歌词
-        if (lyricData.yrc) {
-          wordByWordLyrics.value = parseYrcLyrics(lyricData.yrc)
-          currentLyrics.value = wordByWordLyrics.value
-        } else if (lyricData.lrc) {
-          currentLyrics.value = parseLrcLyrics(lyricData.lrc)
-        } else {
-          currentLyrics.value = []
-        }
-
-        // 翻译歌词
-        if (lyricData.trans) {
-          translationLyrics.value = parseLrcLyrics(lyricData.trans)
-          showTranslation.value = true
-        } else {
-          translationLyrics.value = []
-          showTranslation.value = false
-        }
-
-        const harmonyLyrics = getFormattedLyricsForHarmonyOS()
-        notifyHarmonyOSLyricsUpdate(harmonyLyrics)
-
-        error.value = null
-        isLoading.value = false
-        return
-      } else {
+      if (!result.success || !result.data) {
         throw new Error(result.error || '未获取到歌词')
       }
-    } catch (e: any) {
-      console.error('获取歌词失败:', e?.message || e)
-      error.value = e?.message || '获取歌词失败'
 
-      currentLyrics.value = []
-      translationLyrics.value = []
-      wordByWordLyrics.value = []
-      currentLyricIndex.value = 0
+      const lyricData = result.data
+
+      // 主歌词：按优先级 ttml > yrc > lrc 解析
+      const parsedMain = parseBestLyrics([lyricData.ttml, lyricData.yrc, lyricData.lrc])
+      currentLyrics.value = parsedMain.lines
+      wordByWordLyrics.value = parsedMain.wordByWord ? parsedMain.lines : []
+      showWordByWord.value = parsedMain.wordByWord
+
+      // 翻译歌词
+      if (lyricData.trans) {
+        const parsedTrans = parseBestLyrics([lyricData.trans])
+        if (parsedTrans.lines.length > 0) {
+          translationLyrics.value = parsedTrans.lines
+          showTranslation.value = true
+        }
+      }
+
+      const harmonyLyrics = getFormattedLyricsForHarmonyOS()
+      notifyHarmonyOSLyricsUpdate(harmonyLyrics)
+
+      error.value = null
+    } catch (e: any) {
+      if (token !== currentToken) return
+      console.error('[useLyrics] 获取歌词失败:', e?.message ?? e)
+      error.value = e?.message ?? '获取歌词失败'
+      _resetState()
       notifyHarmonyOSLyricsUpdate('')
     } finally {
-      isLoading.value = false
-    }
-  }
-
-  // 通知鸿蒙侧歌词更新的辅助函数
-  const notifyHarmonyOSLyricsUpdate = (lyrics: string) => {
-    if (typeof window !== 'undefined' && window.HarmonyOS && window.HarmonyOS.postMessage) {
-      try {
-        const message = {
-          method: 'updateLyrics',
-          parameters: {
-            lyrics: lyrics
-          }
-        }
-        window.HarmonyOS.postMessage(JSON.stringify(message))
-        // 通知鸿蒙侧更新歌词
-      } catch (error) {
-        console.error('通知鸿蒙侧更新歌词失败:', error)
+      if (token === currentToken) {
+        isLoading.value = false
       }
-    } else {
-      console.warn('鸿蒙侧消息接口不可用，无法更新歌词')
     }
   }
 
-  // 根据当前时间更新歌词索引
+  // ─── 时间同步 ────────────────────────────────────────────────
+
   const updateCurrentLyricIndex = (time: number): void => {
     currentTime.value = time
+    const lyricList = currentLyrics.value
+    if (lyricList.length === 0) return
 
-    const lyrics = currentLyrics.value
-    if (lyrics.length === 0) {
-      // 没有歌词数据
-      return
+    // 二分查找当前时间所在行
+    let lo = 0
+    let hi = lyricList.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1
+      if (lyricList[mid].time <= time) lo = mid
+      else hi = mid - 1
     }
 
-    // 找到当前时间对应的歌词行
-    for (let i = 0; i < lyrics.length; i++) {
-      if (time >= lyrics[i].time && (i === lyrics.length - 1 || time < lyrics[i + 1].time)) {
-        if (currentLyricIndex.value !== i) {
-          // 歌词索引更新
-          currentLyricIndex.value = i
-        }
-        return
-      }
+    if (currentLyricIndex.value !== lo) {
+      currentLyricIndex.value = lo
     }
-
-    // 未找到匹配的歌词行
   }
 
-  // 获取当前歌词内容
+  // ─── 计算属性 ────────────────────────────────────────────────
+
   const currentLyricContent = computed(() => {
-    const lyrics = currentLyrics.value
-    if (lyrics.length === 0 || currentLyricIndex.value >= lyrics.length) {
-      return ''
-    }
-    return lyrics[currentLyricIndex.value].content
+    const lyricList = currentLyrics.value
+    if (lyricList.length === 0 || currentLyricIndex.value >= lyricList.length) return ''
+    return lyricList[currentLyricIndex.value].content
   })
 
-  // 获取当前翻译歌词
   const currentTranslationContent = computed(() => {
-    if (!showTranslation.value || translationLyrics.value.length === 0) {
-      return ''
-    }
+    if (!showTranslation.value || translationLyrics.value.length === 0) return ''
+    const refTime = currentLyrics.value[currentLyricIndex.value]?.time
+    if (refTime == null) return ''
 
-    const currentTime = currentLyrics.value[currentLyricIndex.value]?.time
-    if (!currentTime) return ''
-
-    // 找到对应时间的翻译歌词
-    for (let i = 0; i < translationLyrics.value.length; i++) {
-      if (
-        currentTime >= translationLyrics.value[i].time &&
-        (i === translationLyrics.value.length - 1 ||
-          currentTime < translationLyrics.value[i + 1].time)
-      ) {
-        return translationLyrics.value[i].content
-      }
+    const list = translationLyrics.value
+    let lo = 0
+    let hi = list.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1
+      if (list[mid].time <= refTime) lo = mid
+      else hi = mid - 1
     }
-    return ''
+    return list[lo]?.time <= refTime ? list[lo].content : ''
   })
 
-  // 获取格式化的LRC歌词文本
+  // ─── 格式化工具 ────────────────────────────────────────────────
+
+  const _formatTime = (ms: number): string => {
+    const minutes = Math.floor(ms / 60000)
+    const seconds = Math.floor((ms % 60000) / 1000)
+    const centiseconds = Math.floor((ms % 1000) / 10)
+    return `[${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}]`
+  }
+
   const getFormattedLrcText = (): string => {
-    if (currentLyrics.value.length === 0) {
-      return '[00:00.00]暂无歌词'
-    }
-
+    if (currentLyrics.value.length === 0) return '[00:00.00]暂无歌词'
     return currentLyrics.value
-      .map((line) => {
-        const minutes = Math.floor(line.time / 60000)
-        const seconds = Math.floor((line.time % 60000) / 1000)
-        const milliseconds = Math.floor((line.time % 1000) / 10)
-
-        const timeStr = `[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}]`
-        return `${timeStr}${line.content}`
-      })
+      .map((line) => `${_formatTime(line.time)}${line.content}`)
       .join('\r\n')
   }
 
-  // 获取格式化的歌词用于鸿蒙侧，符合AVMetadata.lyric要求
   const getFormattedLyricsForHarmonyOS = (): string => {
-    if (currentLyrics.value.length === 0) {
-      return '[00:00.00]暂无歌词'
-    }
+    if (currentLyrics.value.length === 0) return '[00:00.00]暂无歌词'
 
-    // 按照鸿蒙侧要求格式化歌词：[mm:ss.xx]歌词内容\r\n
-    let formattedLyrics = currentLyrics.value
-      .map((line) => {
-        const minutes = Math.floor(line.time / 60000)
-        const seconds = Math.floor((line.time % 60000) / 1000)
-        const milliseconds = Math.floor((line.time % 1000) / 10)
-
-        // 格式：[mm:ss.xx]歌词内容
-        const timeStr = `[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}]`
-        return `${timeStr}${line.content}`
-      })
-      .join('\r\n')
-
-    // 鸿蒙侧字符串长度限制：<40960字节
-    const maxBytes = 40960
+    const MAX_BYTES = 40960
     const encoder = new TextEncoder()
+    const lines = currentLyrics.value
+    const parts: string[] = []
+    let byteCount = 0
 
-    // 检查字符串长度是否超过限制
-    if (encoder.encode(formattedLyrics).length > maxBytes) {
-      console.warn('歌词长度超过鸿蒙侧限制，正在截断...')
-
-      // 逐行添加歌词，直到接近字节限制
-      let truncatedLyrics = ''
-      for (const line of currentLyrics.value) {
-        const minutes = Math.floor(line.time / 60000)
-        const seconds = Math.floor((line.time % 60000) / 1000)
-        const milliseconds = Math.floor((line.time % 1000) / 10)
-
-        const timeStr = `[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}]`
-        const lineText = `${timeStr}${line.content}\r\n`
-
-        // 检查添加这一行后是否会超过限制
-        const testLyrics = truncatedLyrics + lineText
-        if (encoder.encode(testLyrics).length > maxBytes - 100) {
-          // 留100字节缓冲
-          break
-        }
-
-        truncatedLyrics += lineText
-      }
-
-      formattedLyrics = truncatedLyrics.trim()
+    for (const line of lines) {
+      const lineText = `${_formatTime(line.time)}${line.content}\r\n`
+      const lineBytes = encoder.encode(lineText).length
+      // 留 100 字节缓冲
+      if (byteCount + lineBytes > MAX_BYTES - 100) break
+      parts.push(lineText)
+      byteCount += lineBytes
     }
 
-    // 歌词格式化完成
-    return formattedLyrics
+    return parts.join('').trimEnd()
   }
 
-  // 清空歌词
-  const clearLyrics = (): void => {
+  // ─── 清理 ────────────────────────────────────────────────────
+
+  const _resetState = () => {
     currentLyrics.value = []
     translationLyrics.value = []
     wordByWordLyrics.value = []
     currentLyricIndex.value = 0
+    showTranslation.value = false
+    showWordByWord.value = false
+  }
+
+  const clearLyrics = (): void => {
+    currentToken++
+    _resetState()
     currentTime.value = 0
     error.value = null
   }
 
-  // 跳转到指定歌词行
   const seekToLyricLine = (index: number): number => {
     if (index >= 0 && index < currentLyrics.value.length) {
-      return currentLyrics.value[index].time / 1000 // 返回秒数
+      return currentLyrics.value[index].time / 1000
     }
     return 0
   }
 
+  // 保留向后兼容的解析方法（部分组件可能直接调用）
+  const parseLrcLyrics = (lrcText: string): ParsedLyricLine[] => {
+    if (!lrcText) return []
+    return parseFlexibleLyrics(lrcText).lines
+  }
+
+  const parseYrcLyrics = (yrcText: string): ParsedLyricLine[] => {
+    if (!yrcText) return []
+    return parseFlexibleLyrics(yrcText).lines
+  }
+
   return {
-    // 状态
     currentLyrics: readonly(currentLyrics),
     translationLyrics: readonly(translationLyrics),
     wordByWordLyrics: readonly(wordByWordLyrics),
@@ -406,20 +379,17 @@ export const useLyrics = () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
 
-    // 设置
     showTranslation,
     showWordByWord,
 
-    // 计算属性
     currentLyricContent,
     currentTranslationContent,
 
-    // 方法
     fetchLyrics,
     updateCurrentLyricIndex,
     getFormattedLrcText,
-    getFormattedLyricsForHarmonyOS, // 保持向后兼容
-    notifyHarmonyOSLyricsUpdate, // 鸿蒙侧歌词更新通知
+    getFormattedLyricsForHarmonyOS,
+    notifyHarmonyOSLyricsUpdate,
     clearLyrics,
     seekToLyricLine,
     parseLrcLyrics,

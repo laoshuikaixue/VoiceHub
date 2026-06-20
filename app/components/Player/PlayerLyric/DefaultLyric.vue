@@ -157,7 +157,7 @@ const isYrcMode = computed(() => {
   const format = lyricManager.lyricFormat.value
   return (
     settings.showYrc.value &&
-    (format === 'qrc' || format === 'word-by-word' || format === 'enhanced')
+    (format === 'qrc' || format === 'ttml' || format === 'word-by-word' || format === 'enhanced')
   )
 })
 
