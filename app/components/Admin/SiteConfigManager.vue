@@ -632,6 +632,71 @@ const currentLimitLabel = computed(() => {
   return `${locale.value.limitLabelPrefix}${limitTypeLabel}${locale.value.limitLabelSuffix}`
 })
 
+const getLocalizedServerMessage = (message) => {
+  if (!message) return locale.value.saveFailed
+
+  const serverMessages = locale.value.serverMessages
+  const rawMessages = serverMessages.raw
+  const exactMessageMap = {
+    [rawMessages.unauthorized]: serverMessages.unauthorized,
+    [rawMessages.adminOnly]: serverMessages.adminOnly,
+    [rawMessages.captchaProviderInvalid]: serverMessages.captchaProviderInvalid,
+    [rawMessages.turnstileRequired]: serverMessages.turnstileRequired,
+    [rawMessages.smtpPortInvalid]: serverMessages.smtpPortInvalid,
+    [rawMessages.oauthBaseRequired]: serverMessages.oauthBaseRequired,
+    [rawMessages.githubClientIdRequired]: serverMessages.githubClientIdRequired,
+    [rawMessages.githubClientSecretRequired]: serverMessages.githubClientSecretRequired,
+    [rawMessages.casdoorServerUrlRequired]: serverMessages.casdoorServerUrlRequired,
+    [rawMessages.casdoorClientIdRequired]: serverMessages.casdoorClientIdRequired,
+    [rawMessages.casdoorClientSecretRequired]: serverMessages.casdoorClientSecretRequired,
+    [rawMessages.casdoorOrganizationRequired]: serverMessages.casdoorOrganizationRequired,
+    [rawMessages.googleClientIdRequired]: serverMessages.googleClientIdRequired,
+    [rawMessages.googleClientSecretRequired]: serverMessages.googleClientSecretRequired,
+    [rawMessages.onlyOneLimit]: serverMessages.onlyOneLimit,
+    [rawMessages.updateFailed]: serverMessages.updateFailed
+  }
+
+  if (exactMessageMap[message]) return exactMessageMap[message]
+
+  const fieldLabelMap = {
+    [rawMessages.customOAuthAuthorizeUrlLabel]: serverMessages.fields.customOAuthAuthorizeUrl,
+    [rawMessages.customOAuthTokenUrlLabel]: serverMessages.fields.customOAuthTokenUrl,
+    [rawMessages.customOAuthUserInfoUrlLabel]: serverMessages.fields.customOAuthUserInfoUrl,
+    [rawMessages.customOAuthUserIdFieldLabel]: serverMessages.fields.customOAuthUserIdField,
+    customOAuthAuthorizeUrl: serverMessages.fields.customOAuthAuthorizeUrl,
+    customOAuthTokenUrl: serverMessages.fields.customOAuthTokenUrl,
+    customOAuthUserInfoUrl: serverMessages.fields.customOAuthUserInfoUrl,
+    customOAuthUserIdField: serverMessages.fields.customOAuthUserIdField
+  }
+
+  if (message.endsWith(rawMessages.booleanSuffix)) {
+    return serverMessages.mustBeBoolean(message.slice(0, -rawMessages.booleanSuffix.length))
+  }
+
+  if (message.endsWith(rawMessages.positiveIntegerSuffix)) {
+    return serverMessages.mustBePositiveInteger(message.slice(0, -rawMessages.positiveIntegerSuffix.length))
+  }
+
+  if (message.endsWith(rawMessages.nonNegativeIntegerOrNullSuffix)) {
+    return serverMessages.mustBeNonNegativeIntegerOrNull(
+      message.slice(0, -rawMessages.nonNegativeIntegerOrNullSuffix.length)
+    )
+  }
+
+  if (message.startsWith(rawMessages.customOAuthRequiredPrefix)) {
+    const rawField = message.slice(rawMessages.customOAuthRequiredPrefix.length)
+    const fieldLabel = fieldLabelMap[rawField] || rawField
+    return serverMessages.customOAuthFieldRequired(fieldLabel)
+  }
+
+  if (message.endsWith(rawMessages.invalidUrlSuffix)) {
+    const rawField = message.slice(0, -rawMessages.invalidUrlSuffix.length)
+    return serverMessages.invalidUrl(fieldLabelMap[rawField] || rawField)
+  }
+
+  return message
+}
+
 // 加载配置
 const loadConfig = async () => {
   try {
@@ -754,7 +819,7 @@ const saveConfig = async () => {
           return null
         }
 
-        message = getErrorMessage(errorData) || locale.value.saveFailed
+        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value.saveFailed)
       } catch (parseError) {
         console.error('无法解析API错误响应:', parseError)
       }
@@ -774,7 +839,7 @@ const saveConfig = async () => {
     console.error('保存配置失败:', error)
     let message = locale.value.saveFailedRetry
     if (error?.message) {
-      message = error.message
+      message = getLocalizedServerMessage(error.message)
     }
     showNotification(message, 'error')
   } finally {

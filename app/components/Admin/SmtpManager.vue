@@ -230,6 +230,22 @@ const reloading = ref(false)
 const testResult = ref(null)
 const originalConfig = ref({})
 
+// 将服务端返回的固定文案映射为当前语言，避免后端中文穿透到前端界面。
+const getLocalizedServerMessage = (message) => {
+  if (!message) {
+    return ''
+  }
+
+  const serverMessages = locale.value.serverMessages || {}
+  const matchedEntry = Object.values(serverMessages).find((entry) => entry.raw === message)
+  return matchedEntry?.text || message
+}
+
+const localizeSmtpResult = (response) => ({
+  ...response,
+  message: getLocalizedServerMessage(response?.message) || response?.message
+})
+
 // 加载配置
 const loadConfig = async () => {
   try {
@@ -275,7 +291,7 @@ const saveConfig = async () => {
     showNotification(locale.value.saveSuccess, 'success')
   } catch (error) {
     console.error('保存SMTP配置失败:', error)
-    showNotification(error.data?.message || locale.value.saveFailed, 'error')
+    showNotification(getLocalizedServerMessage(error.data?.message) || locale.value.saveFailed, 'error')
   } finally {
     saving.value = false
   }
@@ -295,12 +311,15 @@ const reloadSmtpConfig = async () => {
       method: 'POST'
     })
     if (!response.success) {
-      throw new Error(response.message || locale.value.reloadFailed)
+      throw new Error(getLocalizedServerMessage(response.message) || locale.value.reloadFailed)
     }
-    showNotification(response.message || locale.value.reloadSuccess, 'success')
+    showNotification(getLocalizedServerMessage(response.message) || locale.value.reloadSuccess, 'success')
   } catch (error) {
     console.error('重载SMTP配置失败:', error)
-    showNotification(error.data?.message || error.message || locale.value.reloadFailed, 'error')
+    showNotification(
+      getLocalizedServerMessage(error.data?.message || error.message) || locale.value.reloadFailed,
+      'error'
+    )
   } finally {
     reloading.value = false
   }
@@ -322,12 +341,13 @@ const testConnection = async () => {
       body: config.value
     })
 
-    testResult.value = response
+    testResult.value = localizeSmtpResult(response)
   } catch (error) {
     console.error('测试连接失败:', error)
     testResult.value = {
       success: false,
-      message: error.data?.message || locale.value.testConnectionFailed
+      message:
+        getLocalizedServerMessage(error.data?.message) || locale.value.testConnectionFailed
     }
   } finally {
     testing.value = false
@@ -353,7 +373,7 @@ const sendTestEmail = async () => {
       }
     })
 
-    testResult.value = response
+    testResult.value = localizeSmtpResult(response)
     if (response.success) {
       showNotification(locale.value.testEmailSuccess, 'success')
       setTimeout(() => {
@@ -364,7 +384,7 @@ const sendTestEmail = async () => {
     console.error('发送测试邮件失败:', error)
     testResult.value = {
       success: false,
-      message: error.data?.message || locale.value.testEmailFailed
+      message: getLocalizedServerMessage(error.data?.message) || locale.value.testEmailFailed
     }
   } finally {
     testing.value = false

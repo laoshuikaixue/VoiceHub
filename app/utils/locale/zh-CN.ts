@@ -102,7 +102,63 @@ export const siteConfig = {
   saveFailed: '保存配置失败',
   saveFailedRetry: '保存配置失败，请重试',
   saveSuccess: '配置保存成功！',
-  fetchFailed: '获取配置失败'
+  fetchFailed: '获取配置失败',
+  serverMessages: {
+    raw: {
+      unauthorized: '未授权访问',
+      adminOnly: '只有管理员才能更新系统设置',
+      captchaProviderInvalid: 'captchaProvider 必须是 graphic 或 turnstile',
+      turnstileRequired: '启用 Turnstile 验证前，请先配置 Site Key 和 Secret Key',
+      smtpPortInvalid: 'smtpPort 必须是1-65535之间的整数',
+      oauthBaseRequired: '启用 OAuth 登录方式前，请先在管理员后台配置 OAuth 重定向 URI 和 OAuth State 密钥',
+      githubClientIdRequired: '启用 GitHub 登录时必须提供 Client ID',
+      githubClientSecretRequired: '启用 GitHub 登录时必须提供 Client Secret',
+      casdoorServerUrlRequired: '启用 Casdoor 登录时必须提供服务器 URL',
+      casdoorClientIdRequired: '启用 Casdoor 登录时必须提供 Client ID',
+      casdoorClientSecretRequired: '启用 Casdoor 登录时必须提供 Client Secret',
+      casdoorOrganizationRequired: '启用 Casdoor 登录时必须提供组织名称',
+      googleClientIdRequired: '启用 Google 登录时必须提供 Client ID',
+      googleClientSecretRequired: '启用 Google 登录时必须提供 Client Secret',
+      onlyOneLimit: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空',
+      updateFailed: '更新系统设置失败',
+      booleanSuffix: ' 必须是布尔值',
+      positiveIntegerSuffix: ' 必须是正整数',
+      nonNegativeIntegerOrNullSuffix: ' 必须是非负整数或null',
+      customOAuthRequiredPrefix: '启用自定义 OAuth2 登录时必须提供 ',
+      invalidUrlSuffix: ' 不是合法URL',
+      customOAuthAuthorizeUrlLabel: '授权端点 URL',
+      customOAuthTokenUrlLabel: 'Token 端点 URL',
+      customOAuthUserInfoUrlLabel: '用户信息端点 URL',
+      customOAuthUserIdFieldLabel: '用户 ID 字段名'
+    },
+    unauthorized: '未授权访问',
+    adminOnly: '只有管理员才能更新系统设置',
+    mustBeBoolean: (field: string) => `${field} 必须是布尔值`,
+    mustBePositiveInteger: (field: string) => `${field} 必须是正整数`,
+    mustBeNonNegativeIntegerOrNull: (field: string) => `${field} 必须是非负整数或null`,
+    captchaProviderInvalid: 'captchaProvider 必须是 graphic 或 turnstile',
+    turnstileRequired: '启用 Turnstile 验证前，请先配置 Site Key 和 Secret Key',
+    smtpPortInvalid: 'smtpPort 必须是1-65535之间的整数',
+    oauthBaseRequired: '启用 OAuth 登录方式前，请先在管理员后台配置 OAuth 重定向 URI 和 OAuth State 密钥',
+    githubClientIdRequired: '启用 GitHub 登录时必须提供 Client ID',
+    githubClientSecretRequired: '启用 GitHub 登录时必须提供 Client Secret',
+    casdoorServerUrlRequired: '启用 Casdoor 登录时必须提供服务器 URL',
+    casdoorClientIdRequired: '启用 Casdoor 登录时必须提供 Client ID',
+    casdoorClientSecretRequired: '启用 Casdoor 登录时必须提供 Client Secret',
+    casdoorOrganizationRequired: '启用 Casdoor 登录时必须提供组织名称',
+    googleClientIdRequired: '启用 Google 登录时必须提供 Client ID',
+    googleClientSecretRequired: '启用 Google 登录时必须提供 Client Secret',
+    customOAuthFieldRequired: (field: string) => `启用自定义 OAuth2 登录时必须提供 ${field}`,
+    invalidUrl: (field: string) => `${field} 不是合法URL`,
+    onlyOneLimit: '每日限额、每周限额和每月限额只能选择其中一种，其他必须设置为空',
+    updateFailed: '更新系统设置失败',
+    fields: {
+      customOAuthAuthorizeUrl: '授权端点 URL',
+      customOAuthTokenUrl: 'Token 端点 URL',
+      customOAuthUserInfoUrl: '用户信息端点 URL',
+      customOAuthUserIdField: '用户 ID 字段名'
+    }
+  }
 } as const
 
 export const changePassword = {
@@ -253,7 +309,25 @@ export const pages = {
     usernameRequired: '请输入账号名',
     emailRequired: '请补全邮箱地址',
     mailSent: '重置邮件已发送',
-    requestFailed: '请求失败，请稍后重试'
+  requestFailed: '请求失败，请稍后重试',
+  serverMessages: {
+    raw: {
+      rateLimitedPattern: '操作过于频繁，请等待\\s*(\\d+)\\s*分钟后再试',
+      usernameMissing: '请提供账号名',
+      userNotFound: '找不到该账号名，请检查是否拼写错误',
+      emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
+      emailRequiredFull: '请输入完整的邮箱地址以验证身份',
+      mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
+      systemError: '系统错误，请稍后重试'
+    },
+    rateLimited: (minutes: string | number) => `操作过于频繁，请等待 ${minutes} 分钟后再试`,
+      usernameMissing: '请提供账号名',
+      userNotFound: '找不到该账号名，请检查是否拼写错误',
+      emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
+      emailRequiredFull: '请输入完整的邮箱地址以验证身份',
+      mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
+      systemError: '系统错误，请稍后重试'
+    }
   },
   account: {
     title: '账号管理',
@@ -558,11 +632,16 @@ export const pages = {
       bindFailed: '绑定失败，请检查账号密码',
       loginFailed: '登录失败，请检查账号密码',
       registerFailed: '注册失败，请稍后重试',
-      passkeyFailed: 'Passkey 登录失败'
+      passkeyFailed: 'Passkey 登录失败',
+      usernameLengthInvalid: '用户名长度需要在3-30个字符之间',
+      usernamePatternInvalid: '用户名仅可包含英文、数字、下划线和连字符',
+      registerPasswordTooShort: '密码长度至少为8个字符',
+      registerPasswordMismatch: '两次输入的密码不一致'
     },
     oauthButtons: {
       divider: '或使用第三方账号登录',
-      loginWith: (providerName: string) => `使用 ${providerName} 登录`
+      loginWith: (providerName: string) => `使用 ${providerName} 登录`,
+      customOAuthProvider: '第三方 OAuth'
     },
     changePasswordForm: {
       currentPassword: '当前密码',
@@ -2448,7 +2527,31 @@ export const admin = {
     testConnectionFailed: '测试连接失败',
     testEmailRequired: '请输入测试邮箱地址',
     testEmailSuccess: '测试邮件发送成功',
-    testEmailFailed: '发送测试邮件失败'
+    testEmailFailed: '发送测试邮件失败',
+    serverMessages: {
+      methodNotAllowed: { raw: '方法不被允许', text: '方法不被允许' },
+      unauthorized: { raw: '未授权访问', text: '未授权访问' },
+      adminReloadOnly: { raw: '只有管理员才能重载SMTP配置', text: '只有管理员才能重载 SMTP 配置' },
+      adminTestConnectionOnly: { raw: '只有管理员才能测试SMTP连接', text: '只有管理员才能测试 SMTP 连接' },
+      adminTestEmailOnly: { raw: '只有管理员才能发送测试邮件', text: '只有管理员才能发送测试邮件' },
+      smtpDisabled: { raw: 'SMTP服务未启用', text: 'SMTP 服务未启用' },
+      incompleteConfig: { raw: '请填写完整的SMTP配置信息', text: '请填写完整的 SMTP 配置信息' },
+      testEmailRequired: { raw: '请输入测试邮箱地址', text: '请输入测试邮箱地址' },
+      reloadSuccess: { raw: 'SMTP配置已重载', text: 'SMTP 配置已重载' },
+      reloadCleared: {
+        raw: 'SMTP未启用或配置不完整，已清空当前SMTP实例',
+        text: 'SMTP 未启用或配置不完整，已清空当前 SMTP 实例'
+      },
+      reloadFailed: { raw: 'SMTP配置重载失败', text: 'SMTP 配置重载失败' },
+      invalidOrDisabled: { raw: 'SMTP配置无效或未启用', text: 'SMTP 配置无效或未启用' },
+      initializeFailed: { raw: '初始化SMTP配置失败', text: '初始化 SMTP 配置失败' },
+      connectionSuccess: { raw: 'SMTP连接测试成功', text: 'SMTP 连接测试成功' },
+      connectionFailed: { raw: 'SMTP连接测试失败', text: 'SMTP 连接测试失败' },
+      testConnectionFailed: { raw: '测试连接失败', text: '测试连接失败' },
+      testEmailSuccess: { raw: '测试邮件发送成功', text: '测试邮件发送成功' },
+      testEmailSendFailed: { raw: '测试邮件发送失败', text: '测试邮件发送失败' },
+      sendTestEmailFailed: { raw: '发送测试邮件失败', text: '发送测试邮件失败' }
+    }
   },
   emailTemplateManager: {
     title: '邮件模板管理',
