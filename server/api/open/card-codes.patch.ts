@@ -6,7 +6,7 @@ import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
 const updateCardCodesSchema = z.object({
   id: z.union([z.number().int().positive(), z.string()]).optional(),
-  ids: z.array(z.union([z.number().int().positive(), z.string()])).max(1000, '单次最多更新 1000 个点歌券').optional(),
+  ids: z.array(z.union([z.number().int().positive(), z.string()])).max(500, '单次最多更新 500 个点歌券').optional(),
   status: z.enum(CARD_CODE_STATUSES).optional(),
   note: z.union([z.string(), z.null()]).optional()
 })

@@ -2,8 +2,10 @@ import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
+import crypto from 'crypto'
 
 const MAX_BATCH_COUNT = 10000
+const DB_CHUNK_SIZE = 500
 
 const createCardCodesSchema = z.object({
   codes: z.union([z.string(), z.array(z.string())]).optional(),
@@ -56,7 +58,7 @@ export default defineEventHandler(async (event) => {
       const makeRandom = () => {
         let code = prefix
         for (let i = 0; i < length; i++) {
-          code += charset.charAt(Math.floor(Math.random() * charset.length))
+          code += charset.charAt(crypto.randomInt(0, charset.length))
         }
         return code
       }
@@ -87,11 +89,19 @@ export default defineEventHandler(async (event) => {
     }
 
     const uniqueCodes = [...new Set(finalCodes)]
-    const existingRows = await db
-      .select({ code: cardCodes.code })
-      .from(cardCodes)
-      .where(inArray(cardCodes.code, uniqueCodes))
-    const existingCodes = new Set(existingRows.map((row) => row.code))
+    const existingCodes = new Set<string>()
+
+    for (let i = 0; i < uniqueCodes.length; i += DB_CHUNK_SIZE) {
+      const chunk = uniqueCodes.slice(i, i + DB_CHUNK_SIZE)
+      const existingRows = await db
+        .select({ code: cardCodes.code })
+        .from(cardCodes)
+        .where(inArray(cardCodes.code, chunk))
+      for (const row of existingRows) {
+        existingCodes.add(row.code)
+      }
+    }
+
     const insertCodes = uniqueCodes.filter((code) => !existingCodes.has(code))
 
     if (!insertCodes.length) {
@@ -101,10 +111,15 @@ export default defineEventHandler(async (event) => {
     const note = typeof validatedData.note === 'string' ? validatedData.note.trim() || null : null
     const inserts = insertCodes.map((code) => ({
       code,
-      status: 'AVAILABLE',
+      status: 'AVAILABLE' as const,
       note
     }))
-    const createdCardCodes = await db.insert(cardCodes).values(inserts).returning()
+    const createdCardCodes = []
+    for (let i = 0; i < inserts.length; i += DB_CHUNK_SIZE) {
+      const chunk = inserts.slice(i, i + DB_CHUNK_SIZE)
+      const result = await db.insert(cardCodes).values(chunk).returning()
+      createdCardCodes.push(...result)
+    }
 
     return {
       success: true,
