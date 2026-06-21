@@ -630,9 +630,10 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
+import { admin as fallbackAdminLocale } from '~/utils/locale/zh-CN'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value.apiKeys)
+const locale = computed(() => admin.value?.apiKeys || fallbackAdminLocale.apiKeys)
 
 // 响应式数据
 const loading = ref(false)
@@ -651,8 +652,8 @@ const loadingEditId = ref(null)
 const loadingViewId = ref(null)
 
 // 文本映射
-const statusFilterText = ref(locale.value.allStatus)
-const expiresAtText = ref(locale.value.expiresOptions.never)
+const statusFilterText = ref('')
+const expiresAtText = ref('')
 const statusFilterOptions = computed(() => [
   locale.value.allStatus,
   locale.value.active,
@@ -701,6 +702,40 @@ const form = reactive({
   permissions: [],
   isActive: true
 })
+
+const getStatusFilterText = () => {
+  const statusTextMap = {
+    active: locale.value.active,
+    inactive: locale.value.inactive,
+    expired: locale.value.expired
+  }
+  return statusTextMap[filters.status] || locale.value.allStatus
+}
+
+const getExpiresAtText = () => {
+  if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
+    const date = new Date(selectedApiKey.value.expiresAt)
+    return locale.value.expiresAtText(date.toLocaleDateString())
+  }
+
+  const expiresAtTextMap = {
+    '3d': locale.value.expiresOptions.threeDays,
+    '7d': locale.value.expiresOptions.sevenDays,
+    '30d': locale.value.expiresOptions.thirtyDays,
+    '60d': locale.value.expiresOptions.sixtyDays,
+    '90d': locale.value.expiresOptions.ninetyDays
+  }
+  return expiresAtTextMap[form.expiresAt] || locale.value.expiresOptions.never
+}
+
+watch(
+  locale,
+  () => {
+    statusFilterText.value = getStatusFilterText()
+    expiresAtText.value = getExpiresAtText()
+  },
+  { immediate: true }
+)
 
 // 可用权限列表
 const availablePermissions = computed(() => [

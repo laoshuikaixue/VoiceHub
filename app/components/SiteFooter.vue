@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/security'
 import { useLocale, type Locale } from '~/utils/locale'
 import packageJson from '~~/package.json'
@@ -101,6 +101,16 @@ const currentYear = getSyncedDate().getFullYear()
 
 const responseTime = ref(0)
 
+watch(
+  currentLocale,
+  (locale) => {
+    if (import.meta.client) {
+      document.documentElement.lang = locale
+    }
+  },
+  { immediate: true }
+)
+
 const handleLocaleChange = (event: Event) => {
   const target = event.target as HTMLSelectElement
   setLocale(target.value as Locale)
@@ -108,7 +118,6 @@ const handleLocaleChange = (event: Event) => {
 
 onMounted(() => {
   initLocale()
-  document.documentElement.lang = currentLocale.value
 
   if (typeof window !== 'undefined' && window.performance) {
     // 使用 requestAnimationFrame 确保在渲染后计算

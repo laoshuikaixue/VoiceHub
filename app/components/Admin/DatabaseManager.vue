@@ -313,7 +313,9 @@
             >
             <CustomSelect
               v-model="sequenceForm.table"
-              :options="tableOptions"
+              :options="locale.tableOptions"
+              label-key="label"
+              value-key="value"
               class="w-full"
             />
           </div>
@@ -527,12 +529,6 @@ const restoreForm = ref({
 const sequenceForm = ref({
   table: 'all'
 })
-
-const tableOptions = computed(() => locale.value.tableOptions.map((item) => item.label))
-
-const labelToValueMap = computed(() =>
-  Object.fromEntries(locale.value.tableOptions.map((item) => [item.label, item.value]))
-)
 
 // 辅助函数
 const isLoading = (id) => {
@@ -827,10 +823,9 @@ const resetSequence = async () => {
   if (!sequenceForm.value.table) return
   sequenceLoading.value = true
   try {
-    const tableValue = labelToValueMap.value[sequenceForm.value.table] || sequenceForm.value.table
     const response = await $fetch('/api/admin/fix-sequence', {
       method: 'POST',
-      body: { table: tableValue }
+      body: { table: sequenceForm.value.table }
     })
     if (response.success) {
       showNotification(response.message || locale.value.messages.sequenceResetSuccess, 'success')

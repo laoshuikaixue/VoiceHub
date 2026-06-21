@@ -16,9 +16,9 @@
         </div>
       </div>
 
-      <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ errorTitle }}</h3>
+      <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ displayTitle }}</h3>
       <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest max-w-xs mb-8">
-        {{ errorMessage }}
+        {{ displayMessage }}
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
@@ -93,8 +93,8 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const hasError = computed(() => !!props.error)
-const errorTitle = computed(() => props.errorTitle || locale.value.defaultTitle)
-const errorMessage = computed(() => props.errorMessage || locale.value.defaultMessage)
+const displayTitle = computed(() => props.errorTitle || locale.value.defaultTitle)
+const displayMessage = computed(() => props.errorMessage || locale.value.defaultMessage)
 const retrying = ref(false)
 const showErrorDetails = ref(false)
 

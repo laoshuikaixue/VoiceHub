@@ -748,13 +748,13 @@ const auth = useAuth()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value.userManager.batchUpdateModal)
-const excelColumnKeys = {
-  username: '\u7528\u6237\u540d',
-  name: '\u59d3\u540d',
-  grade: '\u5e74\u7ea7',
-  class: '\u73ed\u7ea7',
-  newUsername: '\u65b0\u7528\u6237\u540d'
-}
+const excelColumnKeys = computed(() => ({
+  username: locale.value.template.headers.username,
+  name: locale.value.template.headers.name,
+  grade: locale.value.template.headers.grade,
+  class: locale.value.template.headers.class,
+  newUsername: locale.value.template.headers.newUsername
+}))
 
 const statusOptions = computed(() => [
   { label: locale.value.statusOptions.active, value: 'active' },
@@ -945,11 +945,12 @@ const parseExcelData = (jsonData) => {
   })
 
   jsonData.forEach((row, index) => {
-    const username = (row[excelColumnKeys.username] || row['username'] || '').toString().trim()
-    const name = (row[excelColumnKeys.name] || row['name'] || '').toString().trim().toLowerCase()
-    const newGrade = row[excelColumnKeys.grade] || row['grade'] ? String(row[excelColumnKeys.grade] || row['grade']).trim() : ''
-    const newClass = row[excelColumnKeys.class] || row['class'] ? String(row[excelColumnKeys.class] || row['class']).trim() : ''
-    const explicitNewUsername = (row[excelColumnKeys.newUsername] || row['new_username'] || '').toString().trim()
+    const columnKeys = excelColumnKeys.value
+    const username = (row[columnKeys.username] || row['username'] || '').toString().trim()
+    const name = (row[columnKeys.name] || row['name'] || '').toString().trim().toLowerCase()
+    const newGrade = row[columnKeys.grade] || row['grade'] ? String(row[columnKeys.grade] || row['grade']).trim() : ''
+    const newClass = row[columnKeys.class] || row['class'] ? String(row[columnKeys.class] || row['class']).trim() : ''
+    const explicitNewUsername = (row[columnKeys.newUsername] || row['new_username'] || '').toString().trim()
     const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name
