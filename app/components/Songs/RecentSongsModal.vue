@@ -389,6 +389,7 @@ const playSong = (songData) => {
     title: songData.name,
     artist: songData.ar?.map((a) => a.name).join('/'),
     cover: songData.al?.picUrl,
+    albumId: songData.al?.id,
     musicPlatform: 'netease',
     musicId: songData.id.toString(),
     sourceInfo: {
@@ -408,6 +409,7 @@ const selectSong = (songData) => {
     artist: songData.ar?.map((a) => a.name).join('/'),
     cover: songData.al?.picUrl,
     album: songData.al?.name,
+    albumId: songData.al?.id,
     duration: songData.dt,
     musicPlatform: 'netease',
     musicId: songData.id.toString(),

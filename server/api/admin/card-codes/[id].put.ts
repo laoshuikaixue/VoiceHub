@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
+import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -36,6 +37,9 @@ export default defineEventHandler(async (event) => {
       const now = new Date()
 
       if (status) {
+        if (!CARD_CODE_STATUSES.includes(status as any)) {
+          throw createError({ statusCode: 400, message: '不支持的状态值' })
+        }
         if (status === 'REDEEMED') {
           newValues.status = 'REDEEMED'
           newValues.redeemedBy = user.id
@@ -57,8 +61,6 @@ export default defineEventHandler(async (event) => {
           newValues.redeemedAt = null
         } else if (status === 'INVALID') {
           newValues.status = 'INVALID'
-        } else {
-          throw createError({ statusCode: 400, message: '不支持的状态值' })
         }
       }
 
@@ -67,7 +69,7 @@ export default defineEventHandler(async (event) => {
       const res = await tx.update(cardCodes).set(newValues).where(eq(cardCodes.id, id)).returning()
       const newRow = res[0]
 
-      if (['REDEEMED', 'AVAILABLE'].includes(status) && current.status !== status) {
+      if (status === 'REDEEMED' && current.status !== status) {
         await tx.insert(cardCodeRedeemLogs).values({
           cardCodeId: id,
           codeSnapshot: newRow.code,

@@ -1,0 +1,32 @@
+name: Nix CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  nix-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Setup Cachix binary cache
+        uses: cachix/cachix-action@v14
+        with:
+          name: voicehub
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Run nix flake check
+        run: nix flake check
+
+      - name: Build voicehub (validate hashes)
+        run: nix build .#voicehub

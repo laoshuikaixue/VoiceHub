@@ -276,6 +276,191 @@ docker run -d \
 VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
 - 从 [GitHub Actions](https://github.com/laoshuikaixue/VoiceHub/actions/workflows/build-fpk.yml) 获取最新版本
 
+### Nix / NixOS
+
+VoiceHub 提供了一个 Nix flake，用于构建、开发和在 NixOS 上部署。
+
+#### 前提条件
+
+- [Nix](https://nixos.org/download)（带 flake 支持）
+- PostgreSQL 数据库
+
+#### NixOS 部署
+
+将 VoiceHub 添加为 flake input：
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    voicehub.url = "github:laoshuikaixue/VoiceHub";
+  };
+
+  outputs = { self, nixpkgs, voicehub, ... }: {
+    nixosConfigurations.my-server = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit voicehub; };
+      modules = [
+        voicehub.nixosModules.default
+        ./configuration.nix
+      ];
+    };
+  };
+}
+```
+
+> [!TIP]
+> 启用 Binary Cache 可大幅加快构建速度，详见下方[使用 Binary Cache 加速构建](#使用-binary-cache-加速构建)。
+
+然后在 NixOS 配置中使用模块，根据数据库管理方式选择对应场景。
+
+```nix
+# 场景 A：自动配置本地 PostgreSQL
+# environmentFile 只需提供 JWT_SECRET，DATABASE_URL 由模块自动构造
+{ pkgs, inputs, config, ... }: {
+  imports = [ inputs.voicehub.nixosModules.default ];
+
+  services.voicehub = {
+    enable = true;
+    database.createLocally = true;
+    environmentFile = config.sops.templates."voicehub-env".path;
+    runDeployScript = true;
+  };
+
+  sops.templates."voicehub-env" = {
+    content = ''
+      JWT_SECRET=${config.sops.placeholder."voicehub/jwt-secret"}
+    '';
+  };
+}
+```
+
+```nix
+# 场景 B：手动管理数据库（Neon / Docker / 远程 PG）
+# environmentFile 需同时提供 DATABASE_URL 和 JWT_SECRET
+{ pkgs, inputs, config, ... }: {
+  imports = [ inputs.voicehub.nixosModules.default ];
+
+  services.voicehub = {
+    enable = true;
+    environmentFile = config.sops.templates."voicehub-env".path;
+    runDeployScript = true;
+  };
+
+  sops.templates."voicehub-env" = {
+    content = ''
+      DATABASE_URL=${config.sops.placeholder."voicehub/database-url"}
+      JWT_SECRET=${config.sops.placeholder."voicehub/jwt-secret"}
+    '';
+  };
+}
+```
+
+环境文件 (`sops.templates."voicehub-env".content`) 格式参考：
+
+```env
+DATABASE_URL=postgresql://voicehub:secret@localhost:5432/voicehub
+JWT_SECRET=your-very-secure-jwt-secret-key
+NUXT_PUBLIC_HOST=https://voicehub.example.com
+```
+
+推荐使用 [sops-nix](https://github.com/Mic92/sops-nix) 管理 secrets，避免明文存储在 Nix store 中。
+
+模块会自动设置 `DynamicUser`、`ProtectSystem=strict`、`NoNewPrivileges` 等安全加固。
+
+应用配置并部署：
+
+```bash
+sudo nixos-rebuild switch --flake .#my-server
+```
+
+查看服务状态和日志：
+
+```bash
+systemctl status voicehub
+journalctl -u voicehub -f
+```
+
+默认监听 `0.0.0.0:3000`，可通过 `services.voicehub.host` 和 `services.voicehub.port` 修改。
+
+#### 使用 Binary Cache 加速构建
+
+VoiceHub CI 会将构建产物推送到 [Cachix](https://cachix.org) binary cache，
+下游用户可直接下载预构建的 `pnpmDeps` 和 `voicehub` 包，跳过本地构建。
+
+在你的 flake 中添加 `nixConfig` 以启用：
+
+```nix
+{
+  nixConfig = {
+    extra-substituters = [ "https://voicehub.cachix.org" ];
+    extra-trusted-public-keys = [ "voicehub.cachix.org-1:CKw4/RvZy5c0WVpyo5ZyLbJgdpHZ/+epofIwGOeIOhU=" ];
+  };
+  inputs = {
+    voicehub.url = "github:laoshuikaixue/VoiceHub";
+  };
+}
+```
+
+> [!IMPORTANT]
+> 请勿通过 `follows` 覆盖 VoiceHub 的 `nixpkgs` input。缓存中的产物使用
+> VoiceHub 自带的 nixpkgs 构建，替换后 hash 不同，无法命中缓存。
+
+#### 其他功能
+
+##### 开发环境
+
+进入开发 shell（自动提供 Node.js、pnpm、PostgreSQL 客户端）：
+
+```bash
+nix develop
+```
+
+然后在 shell 内：
+
+```bash
+cp .env.example .env   # 配置 DATABASE_URL + JWT_SECRET
+pnpm install
+pnpm run dev           # 启动开发服务器 (port 3000)
+```
+
+##### 构建
+
+```bash
+nix build              # 产出 result/bin/voicehub
+```
+
+构建产物可以直接运行（需要 `DATABASE_URL` 等环境变量）：
+
+```bash
+DATABASE_URL="postgresql://..." JWT_SECRET="..." ./result/bin/voicehub
+```
+
+或使用附带的环境文件：
+
+```bash
+nix run .#default --impure
+```
+
+> `nix run` 需要设置 `DATABASE_URL` 环境变量，否则会启动失败。
+
+##### 更新 pnpm 依赖哈希
+
+当 `pnpm-lock.yaml` 更新后，需要同步 `flake.nix` 中的 `pnpmDeps` 哈希。仓库已配置 GitHub Actions，会在 `pnpm-lock.yaml` 或 `flake.nix` 变更时自动计算新哈希并提交回触发分支。
+
+如果需要在本地手动更新，可以先将 `flake.nix` 中 `pnpmDeps.hash` 临时改为空字符串，然后运行：
+
+```bash
+nix build .#voicehub
+```
+
+Nix 会因固定输出哈希不匹配而失败，并输出 `got: sha256-...`，将该值写回 `pnpmDeps.hash` 即可。也可以使用 impure 构建辅助命令（需要网络和已安装的 pnpm）：
+
+```bash
+nix run .#build                # 在项目目录中执行，生成 .output 目录
+```
+
+---
+
 ### 本地开发部署
 
 #### 前提条件
@@ -521,6 +706,13 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ```
 VoiceHub/
+├── .github/                   # GitHub 配置目录
+│   └── workflows/             # GitHub Actions 工作流
+│       ├── build-fpk.yml      # FnOS FPK 安装包构建
+│       ├── docker-build.yml   # Docker 镜像构建
+│       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
+│       ├── nix.yml            # Nix 构建校验
+│       └── update-nix-pnpm-hash.yml # 自动同步 pnpmDeps 哈希
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
@@ -1027,6 +1219,8 @@ VoiceHub/
 ├── docker-compose.yml     # Docker编排文件
 ├── Dockerfile             # Docker构建文件
 ├── drizzle.config.ts      # Drizzle配置文件
+├── flake.lock             # Nix flake锁定文件
+├── flake.nix              # Nix构建与NixOS模块配置
 ├── LICENSE                # 开源许可证文件
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
@@ -1865,6 +2059,7 @@ Thanks goes to these wonderful people:
 - [Sound-of-experiment - 实验之声广播站点歌系统](https://github.com/ljk743121/Sound-of-experiment) (哔哩哔哩音源搜索功能参考)
 - [Bilibili-audio-extraction](https://github.com/rio4raki/Bilibili-audio-extraction) (哔哩哔哩音频流获取参考)
 - [SPlayer](https://github.com/imsyy/SPlayer)
+- [SPlayer-Next](https://github.com/SPlayer-Dev/SPlayer-Next)
 - [Apple Music-like Lyrics](https://github.com/amll-dev/applemusic-like-lyrics)
 - [official-website - Sparkinit](https://github.com/Sparkinit/official-website)
 - [MusicAPI-rrvenn](https://music.rrvenn.cn)

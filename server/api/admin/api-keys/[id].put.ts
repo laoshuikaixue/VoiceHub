@@ -2,6 +2,7 @@ import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { apiPermissionSchema } from './permissions'
 
 /**
  * 更新API Key
@@ -20,7 +21,7 @@ const updateApiKeySchema = z.object({
   expiresAt: z.string().optional().nullable(),
 
   permissions: z
-    .array(z.enum(['schedules:read', 'songs:read', 'songs:write']))
+    .array(apiPermissionSchema)
     .min(1, '至少需要选择一个权限')
     .optional()
 })

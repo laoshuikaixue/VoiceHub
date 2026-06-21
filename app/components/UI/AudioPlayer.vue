@@ -265,6 +265,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useMediaSession } from '~/composables/useMediaSession'
 import { getBilibiliUrl } from '~/utils/url'
+import { scrobbleSong } from '~/utils/neteaseApi'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import {
   getCachedMusicUrlSource,
@@ -327,7 +328,15 @@ const isFallbackHandling = ref(false) // 标记正在处理 fallback，阻止重
 const consecutiveSkipCount = ref(0) // 连续跳过失败的歌曲数
 const MAX_CONSECUTIVE_SKIP = 3 // 最大连续跳过次数
 const MIN_VALID_QQ_AUDIO_DURATION = 10
+const NETEASE_SCROBBLE_MIN_SECONDS = 30
+const NETEASE_SCROBBLE_SHORT_AUDIO_RATIO = 0.8
+const MAX_NETEASE_SCROBBLE_RETRIES = 3
 const failedPlaybackSources = ref<string[]>([])
+const neteaseScrobbleReportedKey = ref<string | null>(null)
+const neteaseScrobblePendingKey = ref<string | null>(null)
+const neteaseScrobbleRetryCount = ref(0)
+const neteaseScrobbleWasPastThreshold = ref(false)
+const neteaseScrobblePlayEpoch = ref(0)
 
 // 获取音频播放器引用
 const audioPlayer = computed(() => audioElementRef.value?.audioPlayer)
@@ -456,13 +465,31 @@ const handleFallbackDialogCancel = () => {
   isFallbackHandling.value = false
 }
 
+const resetNeteaseScrobbleState = () => {
+  neteaseScrobbleReportedKey.value = null
+  neteaseScrobblePendingKey.value = null
+  neteaseScrobbleRetryCount.value = 0
+  neteaseScrobbleWasPastThreshold.value = false
+  neteaseScrobblePlayEpoch.value++
+}
+
+const getScrobblePlaybackIdentity = (song) => {
+  if (!song) return null
+  return [
+    song.musicPlatform || '',
+    song.musicId || '',
+    song.id || ''
+  ].join(':')
+}
+
 watch(
-  () => activeSong.value?.id,
-  (newId, oldId) => {
-    if (newId !== oldId) {
+  () => getScrobblePlaybackIdentity(activeSong.value),
+  (newIdentity, oldIdentity) => {
+    if (newIdentity !== oldIdentity) {
       lastOpenedFallbackSongId.value = null
       isFallbackHandling.value = false
       failedPlaybackSources.value = []
+      resetNeteaseScrobbleState()
       enhanced.resetRetryState()
     }
   }
@@ -596,6 +623,108 @@ const isInvalidTencentAudio = (duration, url) => {
   return isKnownInvalidQqAudioUrl(url)
 }
 
+const getNeteaseScrobbleSongId = (song) => {
+  if (!song || song.musicPlatform !== 'netease') return null
+  if (song.sourceInfo?.type === 'voice') return null
+
+  const rawId = String(song.musicId || song.id || '').trim()
+  if (!/^\d+$/.test(rawId)) return null
+  return rawId
+}
+
+const getNeteaseScrobbleSourceId = (song, songId) => {
+  const sourceId =
+    song?.sourceInfo?.sourceId ||
+    song?.sourceInfo?.sourceid ||
+    song?.sourceInfo?.playlistId ||
+    song?.sourceInfo?.albumId ||
+    song?.albumId ||
+    songId
+
+  return String(sourceId || songId)
+}
+
+const getNeteaseScrobbleThreshold = (durationValue) => {
+  const normalizedDuration = normalizeSongDurationSeconds(durationValue)
+  if (!normalizedDuration) return NETEASE_SCROBBLE_MIN_SECONDS
+  return Math.min(
+    NETEASE_SCROBBLE_MIN_SECONDS,
+    Math.max(5, normalizedDuration * NETEASE_SCROBBLE_SHORT_AUDIO_RATIO)
+  )
+}
+
+const resetNeteaseScrobbleStateForReplay = () => {
+  resetNeteaseScrobbleState()
+}
+
+const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded = false) => {
+  if ((!control.isPlaying.value && !isEnded) || typeof window === 'undefined') return
+
+  const song = activeSong.value
+  const songId = getNeteaseScrobbleSongId(song)
+  if (!songId) return
+
+  const sourceId = getNeteaseScrobbleSourceId(song, songId)
+  const scrobbleKey = `${songId}:${sourceId}`
+  const threshold = getNeteaseScrobbleThreshold(durationValue)
+  if (currentTimeValue < threshold) {
+    if (neteaseScrobbleWasPastThreshold.value) {
+      resetNeteaseScrobbleStateForReplay()
+    }
+    return
+  }
+
+  neteaseScrobbleWasPastThreshold.value = true
+  if (
+    neteaseScrobbleReportedKey.value === scrobbleKey ||
+    neteaseScrobblePendingKey.value === scrobbleKey ||
+    neteaseScrobbleRetryCount.value >= MAX_NETEASE_SCROBBLE_RETRIES
+  ) {
+    return
+  }
+
+  const cookie = window.localStorage.getItem('netease_cookie')
+  if (!cookie) return
+
+  neteaseScrobblePendingKey.value = scrobbleKey
+  neteaseScrobbleRetryCount.value++
+  const playEpoch = neteaseScrobblePlayEpoch.value
+  try {
+    const playTime = Math.max(
+      1,
+      Math.round(Math.min(currentTimeValue, normalizeSongDurationSeconds(durationValue) || currentTimeValue))
+    )
+
+    const result = await scrobbleSong(
+      {
+        id: songId,
+        sourceid: sourceId,
+        time: playTime
+      },
+      cookie
+    )
+
+    if (playEpoch !== neteaseScrobblePlayEpoch.value) {
+      return
+    }
+
+    if (result?.code === 200 || result?.body?.code === 200 || result?.body?.data === 'success') {
+      neteaseScrobbleReportedKey.value = scrobbleKey
+    } else {
+      console.warn('[AudioPlayer] 网易云听歌打卡未成功:', result?.message || result)
+    }
+  } catch (scrobbleError) {
+    console.warn('[AudioPlayer] 网易云听歌打卡失败:', scrobbleError)
+  } finally {
+    if (
+      playEpoch === neteaseScrobblePlayEpoch.value &&
+      neteaseScrobblePendingKey.value === scrobbleKey
+    ) {
+      neteaseScrobblePendingKey.value = null
+    }
+  }
+}
+
 // 音频事件处理器
 const handleTimeUpdate = () => {
   if (!audioPlayer.value || isSyncingFromGlobal.value) return
@@ -614,6 +743,7 @@ const handleTimeUpdate = () => {
   // 不传递song参数，避免覆盖已设置的元数据
   if (control.isPlaying.value) {
     sync.throttledProgressUpdate(currentTime, duration, control.isPlaying.value)
+    void tryScrobbleNeteaseSong(currentTime, duration)
   }
 }
 
@@ -739,7 +869,11 @@ const handleLoaded = async () => {
   // 如果歌曲有平台信息，主动获取并等待歌词加载完成后单独传递歌词
   if (props.song?.musicPlatform && props.song?.musicId) {
     // 主动触发歌词获取
-    await control.lyrics.fetchLyrics(props.song.musicPlatform, props.song.musicId)
+    await control.lyrics.fetchLyrics(props.song.musicPlatform, props.song.musicId, {
+      title: props.song.title,
+      artist: props.song.artist,
+      album: props.song.album
+    })
 
     // 等待歌词数据实际加载完成，最多等待8秒
     const maxWaitTime = 8000
@@ -901,15 +1035,23 @@ const handleError = async (error) => {
 }
 
 const handleEnded = () => {
+  if (audioPlayer.value) {
+    void tryScrobbleNeteaseSong(
+      audioPlayer.value.duration || control.currentTime.value,
+      audioPlayer.value.duration,
+      true
+    )
+  }
+
   // 在执行 onEnded（可能会切换到下一首）之前，记录当前是否还有下一首
   const hasNextBeforeEnded = sync.globalAudioPlayer.hasNext.value
 
   control.onEnded()
-  
+
   // 只有在播放模式为 'off'，或者在 'order' 模式且没有下一首歌时才关闭全屏歌词模态
   const isOffMode = control.playMode.value === 'off'
   const isOrderFinished = control.playMode.value === 'order' && !hasNextBeforeEnded
-  
+
   if (isOffMode || isOrderFinished) {
     showFullscreenLyrics.value = false
   }
@@ -1231,6 +1373,7 @@ const stopPlaying = () => {
   lastOpenedFallbackSongId.value = null
   isFallbackHandling.value = false
   consecutiveSkipCount.value = 0
+  resetNeteaseScrobbleState()
   enhanced.resetRetryState()
 
   control.stop()
@@ -1293,7 +1436,7 @@ watch(
       // 从关闭状态唤醒
       isClosed.value = false
       isClosing.value = false
-      
+
       // 如果当前处于错误状态，尝试重新加载
       if (control.hasError.value && props.song) {
         control.loadSong(props.song).then((success) => {
@@ -1432,6 +1575,7 @@ onMounted(async () => {
       },
       onStop: () => {
         isSyncingFromGlobal.value = true
+        resetNeteaseScrobbleState()
         control.stop()
         sync.syncStopToGlobal()
 

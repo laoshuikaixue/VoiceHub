@@ -86,3 +86,7 @@ export async function getRecentSongs(limit = 100, cookie) {
 export async function getLoginStatus(cookie) {
   return fetchNetease('/login/status', {}, cookie)
 }
+
+export async function scrobbleSong(params, cookie) {
+  return fetchNetease('/scrobble', params, cookie)
+}

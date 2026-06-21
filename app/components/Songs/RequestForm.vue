@@ -2846,6 +2846,8 @@ const playSong = async (result, playlist, playlistIndex) => {
     musicUrl: result.url || null, // 哔哩哔哩可能没有音频URL
     musicPlatform: result.musicPlatform || platform.value,
     musicId: finalMusicId,
+    albumId: result.albumId,
+    sourceInfo: result.sourceInfo,
     bilibiliCid: result.bilibiliCid // 确保传递 cid
   }
 
@@ -2889,7 +2891,11 @@ const playSong = async (result, playlist, playlistIndex) => {
       const lyrics = useLyrics()
       // 请求歌词（对于bilibili，传递原始的bvid，不包含cid）
       const lyricMusicId = result.bilibiliCid ? result.musicId : song.musicId
-      await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId)
+      await lyrics.fetchLyrics(song.musicPlatform, lyricMusicId, {
+        title: song.title,
+        artist: song.artist,
+        album: result.album || ''
+      })
     } catch (error) {
       console.error('获取歌词失败:', error)
       // 歌词获取失败不影响播放

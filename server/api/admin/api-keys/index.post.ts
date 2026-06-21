@@ -2,6 +2,7 @@ import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import crypto from 'crypto'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { apiPermissionSchema } from './permissions'
 
 /**
  * 创建API Key
@@ -16,7 +17,7 @@ const createApiKeySchema = z.object({
     .optional(),
   expiresAt: z.union([z.string(), z.null(), z.undefined()]).optional(),
 
-  permissions: z.array(z.enum(['schedules:read', 'songs:read', 'songs:write'])).min(1, '至少需要选择一个权限')
+  permissions: z.array(apiPermissionSchema).min(1, '至少需要选择一个权限')
 })
 
 export default defineEventHandler(async (event) => {
