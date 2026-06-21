@@ -8,6 +8,14 @@ import { getBeijingTime } from '~/utils/timeUtils'
  * PUT /api/admin/api-keys/[id]
  */
 
+const apiPermissionSchema = z.enum([
+  'schedules:read',
+  'songs:read',
+  'songs:write',
+  'card-codes:read',
+  'card-codes:write'
+])
+
 // 请求体验证schema
 const updateApiKeySchema = z.object({
   name: z
@@ -20,7 +28,7 @@ const updateApiKeySchema = z.object({
   expiresAt: z.string().optional().nullable(),
 
   permissions: z
-    .array(z.enum(['schedules:read', 'songs:read', 'songs:write']))
+    .array(apiPermissionSchema)
     .min(1, '至少需要选择一个权限')
     .optional()
 })

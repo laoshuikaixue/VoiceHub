@@ -708,6 +708,16 @@ const availablePermissions = [
     value: 'songs:write',
     label: '歌曲管理',
     description: '更新歌曲状态'
+  },
+  {
+    value: 'card-codes:read',
+    label: '点歌券查询',
+    description: '查看点歌券列表和统计'
+  },
+  {
+    value: 'card-codes:write',
+    label: '点歌券管理',
+    description: '创建和更新点歌券'
   }
 ]
 

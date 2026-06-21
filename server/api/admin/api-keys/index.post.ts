@@ -8,6 +8,14 @@ import { getBeijingTime } from '~/utils/timeUtils'
  * POST /api/admin/api-keys
  */
 
+const apiPermissionSchema = z.enum([
+  'schedules:read',
+  'songs:read',
+  'songs:write',
+  'card-codes:read',
+  'card-codes:write'
+])
+
 // 请求体验证schema
 const createApiKeySchema = z.object({
   name: z.string().min(1, 'API Key名称不能为空').max(100, 'API Key名称不能超过100个字符'),
@@ -16,7 +24,7 @@ const createApiKeySchema = z.object({
     .optional(),
   expiresAt: z.union([z.string(), z.null(), z.undefined()]).optional(),
 
-  permissions: z.array(z.enum(['schedules:read', 'songs:read', 'songs:write'])).min(1, '至少需要选择一个权限')
+  permissions: z.array(apiPermissionSchema).min(1, '至少需要选择一个权限')
 })
 
 export default defineEventHandler(async (event) => {
