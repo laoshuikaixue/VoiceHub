@@ -633,11 +633,13 @@ const currentLimitLabel = computed(() => {
 })
 
 const getLocalizedServerMessage = (message) => {
-  if (!message) return locale.value.saveFailed
+  if (!message) return locale.value?.saveFailed || '保存失败'
   if (typeof message !== 'string') return String(message)
 
-  const serverMessages = locale.value.serverMessages
+  const serverMessages = locale.value?.serverMessages
+  if (!serverMessages) return message
   const rawMessages = serverMessages.raw
+  if (!rawMessages) return message
   const exactMessageMap = {
     [rawMessages.unauthorized]: serverMessages.unauthorized,
     [rawMessages.adminOnly]: serverMessages.adminOnly,

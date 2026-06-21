@@ -1077,9 +1077,9 @@ const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
 const scheduleTabs = computed(() => [
-  { id: 'normal', label: locale.value.tabs.normal },
-  { id: 'replay', label: locale.value.tabs.replay },
-  { id: 'all', label: locale.value.tabs.all }
+  { id: 'normal', label: locale.value?.tabs?.normal || '普通投稿' },
+  { id: 'replay', label: locale.value?.tabs?.replay || '重播申请' },
+  { id: 'all', label: locale.value?.tabs?.all || '所有' }
 ])
 
 // 歌单过滤状态

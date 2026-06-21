@@ -749,11 +749,11 @@ const userFilters = useUserFilters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value.userManager.batchUpdateModal)
 const excelColumnKeys = computed(() => ({
-  username: locale.value.template.headers.username,
-  name: locale.value.template.headers.name,
-  grade: locale.value.template.headers.grade,
-  class: locale.value.template.headers.class,
-  newUsername: locale.value.template.headers.newUsername
+  username: locale.value?.template?.headers?.username,
+  name: locale.value?.template?.headers?.name,
+  grade: locale.value?.template?.headers?.grade,
+  class: locale.value?.template?.headers?.class,
+  newUsername: locale.value?.template?.headers?.newUsername
 }))
 
 const statusOptions = computed(() => [

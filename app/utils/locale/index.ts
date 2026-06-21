@@ -1,5 +1,4 @@
-import { computed } from 'vue'
-import { useState } from '#app'
+import { computed, ref } from 'vue'
 import * as enUS from './en-US'
 import * as zhCN from './zh-CN'
 
@@ -48,7 +47,9 @@ const resolveInitialLocale = (): Locale => {
   return FALLBACK_LOCALE
 }
 
-const getCurrentLocale = () => useState<Locale>('voicehub-locale', resolveInitialLocale)
+const currentLocaleState = ref<Locale>(resolveInitialLocale())
+
+const getCurrentLocale = () => currentLocaleState
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Object.prototype.toString.call(value) === '[object Object]'

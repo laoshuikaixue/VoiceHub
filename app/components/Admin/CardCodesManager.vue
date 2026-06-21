@@ -462,23 +462,23 @@ const bulkStatusOptions = computed(() => [
 
 const statusMeta = (status) => {
   const statusMap = {
-    AVAILABLE: { label: locale.value.available, class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    LOCKED: { label: locale.value.locked, class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    REDEEMED: { label: locale.value.redeemed, class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    INVALID: { label: locale.value.invalid, class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
+    AVAILABLE: { label: locale.value?.available || '可用', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    LOCKED: { label: locale.value?.locked || '锁定', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    REDEEMED: { label: locale.value?.redeemed || '核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    INVALID: { label: locale.value?.invalid || '作废', class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
   }
-  return statusMap[status] || { label: status || locale.value.unknown, class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+  return statusMap[status] || { label: status || locale.value?.unknown || '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
 }
 
 const logSourceMeta = (source) => {
   const sourceMap = {
-    ADMIN_MANUAL: { label: locale.value.sources.adminManual, class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    ADMIN: { label: locale.value.sources.admin, class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    SCHEDULE_AUTO: { label: locale.value.sources.scheduleAuto, class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    SCHEDULE_REMOVE: { label: locale.value.sources.scheduleRemove, class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    SCHEDULE: { label: locale.value.sources.schedule, class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    WITHDRAW: { label: locale.value.sources.withdraw, class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    UNKNOWN: { label: locale.value.unknown, class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || '手动核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    ADMIN: { label: locale.value?.sources?.admin || '管理员操作', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || '排期自动', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || '移除排期', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    SCHEDULE: { label: locale.value?.sources?.schedule || '排期', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    WITHDRAW: { label: locale.value?.sources?.withdraw || '撤回', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    UNKNOWN: { label: locale.value?.unknown || '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
   }
   return sourceMap[source] || sourceMap.UNKNOWN
 }
