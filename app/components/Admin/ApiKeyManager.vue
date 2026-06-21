@@ -630,10 +630,9 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
-import { admin as fallbackAdminLocale } from '~/utils/locale/zh-CN'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.apiKeys || fallbackAdminLocale.apiKeys)
+const locale = computed(() => admin.value.apiKeys)
 
 // 响应式数据
 const loading = ref(false)

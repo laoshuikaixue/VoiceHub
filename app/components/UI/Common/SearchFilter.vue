@@ -8,7 +8,7 @@
       <input
         :value="searchQuery"
         type="text"
-        :placeholder="searchPlaceholder"
+        :placeholder="resolvedSearchPlaceholder"
         class="block w-full pl-11 pr-11 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-blue-600/5 transition-all"
         @input="$emit('update:searchQuery', $event.target.value)"
       >
@@ -149,7 +149,7 @@ const openDropdown = ref(null)
 const dropdownRef = ref(null)
 const { common } = useLocale()
 const locale = computed(() => common.value)
-const searchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder)
+const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder)
 
 const hasActiveFilters = computed(() => {
   return (

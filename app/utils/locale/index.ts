@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useState } from '#imports'
+import { useState } from '#app'
 import * as enUS from './en-US'
 import * as zhCN from './zh-CN'
 

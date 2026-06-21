@@ -634,6 +634,7 @@ const currentLimitLabel = computed(() => {
 
 const getLocalizedServerMessage = (message) => {
   if (!message) return locale.value.saveFailed
+  if (typeof message !== 'string') return String(message)
 
   const serverMessages = locale.value.serverMessages
   const rawMessages = serverMessages.raw

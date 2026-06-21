@@ -946,11 +946,11 @@ const parseExcelData = (jsonData) => {
 
   jsonData.forEach((row, index) => {
     const columnKeys = excelColumnKeys.value
-    const username = (row[columnKeys.username] || row['username'] || '').toString().trim()
-    const name = (row[columnKeys.name] || row['name'] || '').toString().trim().toLowerCase()
-    const newGrade = row[columnKeys.grade] || row['grade'] ? String(row[columnKeys.grade] || row['grade']).trim() : ''
-    const newClass = row[columnKeys.class] || row['class'] ? String(row[columnKeys.class] || row['class']).trim() : ''
-    const explicitNewUsername = (row[columnKeys.newUsername] || row['new_username'] || '').toString().trim()
+    const username = (row[columnKeys.username] || row['用户名'] || row['username'] || '').toString().trim()
+    const name = (row[columnKeys.name] || row['姓名'] || row['name'] || '').toString().trim().toLowerCase()
+    const newGrade = row[columnKeys.grade] || row['年级'] || row['grade'] ? String(row[columnKeys.grade] || row['年级'] || row['grade']).trim() : ''
+    const newClass = row[columnKeys.class] || row['班级'] || row['class'] ? String(row[columnKeys.class] || row['班级'] || row['class']).trim() : ''
+    const explicitNewUsername = (row[columnKeys.newUsername] || row['新用户名'] || row['new_username'] || '').toString().trim()
     const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name
