@@ -1,0 +1,110 @@
+name: 更新 Nix pnpm 依赖哈希
+
+on:
+  push:
+    paths:
+      - pnpm-lock.yaml
+      - flake.nix
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - pnpm-lock.yaml
+      - flake.nix
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-nix-pnpm-hash-${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  update-hash:
+    name: 同步 pnpmDeps 哈希
+    if: github.actor != 'github-actions[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+      CHECKOUT_REPOSITORY: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+
+    steps:
+      - name: 检出触发分支
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CHECKOUT_REPOSITORY }}
+          ref: ${{ env.TARGET_BRANCH }}
+
+      - name: 安装 Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: 配置 Git 提交身份
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: 计算 pnpmDeps 哈希
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("flake.nix")
+          text = path.read_text(encoding="utf-8")
+          marker = "pnpmDeps = pkgs.fetchPnpmDeps {"
+          start = text.index(marker)
+          key = 'hash = "'
+          hash_start = text.index(key, start) + len(key)
+          hash_end = text.index('"', hash_start)
+          path.write_text(text[:hash_start] + text[hash_end:], encoding="utf-8")
+          PY
+
+          set +e
+          nix build .#voicehub --no-link 2>&1 | tee nix-build.log
+          status="${PIPESTATUS[0]}"
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            echo "Nix 构建在空哈希下意外成功，无法提取新的 pnpmDeps 哈希。"
+            exit 1
+          fi
+
+          new_hash="$(grep -Eo 'got:[[:space:]]+sha256-[A-Za-z0-9+/=_-]+' nix-build.log | tail -n 1 | sed -E 's/got:[[:space:]]+//')"
+
+          if [ -z "$new_hash" ]; then
+            echo "没有在 Nix 输出中找到 got: sha256-...，请查看上方日志。"
+            exit 1
+          fi
+
+          HASH="$new_hash" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          new_hash = os.environ["HASH"]
+          path = Path("flake.nix")
+          text = path.read_text(encoding="utf-8")
+          marker = "pnpmDeps = pkgs.fetchPnpmDeps {"
+          start = text.index(marker)
+          key = 'hash = "'
+          hash_start = text.index(key, start) + len(key)
+          hash_end = text.index('"', hash_start)
+          path.write_text(text[:hash_start] + new_hash + text[hash_end:], encoding="utf-8")
+          PY
+
+          echo "新的 pnpmDeps 哈希: $new_hash"
+
+      - name: 提交哈希更新
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- flake.nix; then
+            echo "pnpmDeps 哈希已经是最新，无需提交。"
+            exit 0
+          fi
+
+          git add flake.nix
+          git commit -m "ci: 同步 pnpmDeps 哈希"
+          git push origin "HEAD:${TARGET_BRANCH}"

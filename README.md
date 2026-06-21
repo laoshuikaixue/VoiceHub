@@ -323,16 +323,15 @@ nix run .#default --impure
 
 #### 更新 pnpm 依赖哈希
 
-当 `pnpm-lock.yaml` 更新后，需要更新 `flake.nix` 中的 `pnpmDeps` 哈希。使用以下命令：
+当 `pnpm-lock.yaml` 更新后，需要同步 `flake.nix` 中的 `pnpmDeps` 哈希。仓库已配置 GitHub Actions，会在 `pnpm-lock.yaml` 或 `flake.nix` 变更时自动计算新哈希并提交回触发分支。
+
+如果需要在本地手动更新，可以先将 `flake.nix` 中 `pnpmDeps.hash` 临时改为空字符串，然后运行：
 
 ```bash
-nix run .#build                # 先尝试构建，让 Nix 给出预期的哈希
-# 然后把预期的哈希复制到 flake.nix 中
-# 或者使用 nix hash 计算：
-nix hash path $(nix build .#build 2>&1 | grep -oP '/nix/store/[^"]+')
+nix build .#voicehub
 ```
 
-或者使用 impure 构建辅助命令（需要网络和已安装的 pnpm）：
+Nix 会因固定输出哈希不匹配而失败，并输出 `got: sha256-...`，将该值写回 `pnpmDeps.hash` 即可。也可以使用 impure 构建辅助命令（需要网络和已安装的 pnpm）：
 
 ```bash
 nix run .#build                # 在项目目录中执行，生成 .output 目录
@@ -679,6 +678,13 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 ```
 VoiceHub/
+├── .github/                   # GitHub 配置目录
+│   └── workflows/             # GitHub Actions 工作流
+│       ├── build-fpk.yml      # FnOS FPK 安装包构建
+│       ├── docker-build.yml   # Docker 镜像构建
+│       ├── docker-postgres.yml # PostgreSQL Docker 镜像构建
+│       ├── nix.yml            # Nix 构建校验
+│       └── update-nix-pnpm-hash.yml # 自动同步 pnpmDeps 哈希
 ├── app/                       # Nuxt 4 应用主目录
 │   ├── app.vue                # 应用入口文件
 │   ├── assets/                # 静态资源目录
