@@ -309,18 +309,18 @@ export const pages = {
     usernameRequired: '请输入账号名',
     emailRequired: '请补全邮箱地址',
     mailSent: '重置邮件已发送',
-  requestFailed: '请求失败，请稍后重试',
-  serverMessages: {
-    raw: {
-      rateLimitedPattern: '操作过于频繁，请等待\\s*(\\d+)\\s*分钟后再试',
-      usernameMissing: '请提供账号名',
-      userNotFound: '找不到该账号名，请检查是否拼写错误',
-      emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
-      emailRequiredFull: '请输入完整的邮箱地址以验证身份',
-      mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
-      systemError: '系统错误，请稍后重试'
-    },
-    rateLimited: (minutes: string | number) => `操作过于频繁，请等待 ${minutes} 分钟后再试`,
+    requestFailed: '请求失败，请稍后重试',
+    serverMessages: {
+      raw: {
+        rateLimitedPattern: '操作过于频繁，请等待\\s*(\\d+)\\s*分钟后再试',
+        usernameMissing: '请提供账号名',
+        userNotFound: '找不到该账号名，请检查是否拼写错误',
+        emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
+        emailRequiredFull: '请输入完整的邮箱地址以验证身份',
+        mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
+        systemError: '系统错误，请稍后重试'
+      },
+      rateLimited: (minutes: string | number) => `操作过于频繁，请等待 ${minutes} 分钟后再试`,
       usernameMissing: '请提供账号名',
       userNotFound: '找不到该账号名，请检查是否拼写错误',
       emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
@@ -792,6 +792,51 @@ export const pages = {
       noPrevious: '没有上一首',
       next: '下一首',
       noNext: '没有下一首'
+    },
+    playerInfo: {
+      openLyrics: '点击打开歌词',
+      coverAlt: '封面',
+      lyrics: '歌词',
+      textCoverFallback: '音'
+    },
+    lyricsModal: {
+      unknownSong: '未知歌曲',
+      unknownArtist: '未知艺术家',
+      lyrics: '歌词',
+      comments: '评论',
+      settings: '歌词设置',
+      amStyleLyrics: 'AM 风格歌词',
+      fontSize: '字体大小',
+      lyricOffset: '歌词偏移 (ms)',
+      showTranslation: '显示翻译',
+      showRoma: '显示罗马音',
+      showYrc: '逐字歌词 (YRC)',
+      quality: '音质',
+      playMode: {
+        loopOne: '单曲循环',
+        order: '列表循环',
+        off: '单曲播放'
+      },
+      notifications: {
+        loopOne: '已切换为单曲循环',
+        off: '已切换为单曲播放',
+        order: '已切换为列表循环'
+      }
+    },
+    audioQuality: {
+      unknown: '未知音质',
+      options: {
+        standard: { label: '标准', description: '适合流量有限的情况' },
+        neteaseHq: { label: 'HQ极高', description: '高品质音乐体验' },
+        neteaseSq: { label: 'SQ无损', description: '无损音质，文件较大' },
+        neteaseHiRes: { label: 'Hi-Res', description: '高解析度无损' },
+        neteaseMaster: { label: '超清母带', description: '最高音质' },
+        tencentHq: { label: 'HQ高音质', description: '高品质音乐体验' },
+        tencentSq: { label: 'SQ无损', description: '无损音质，文件较大' },
+        tencentHiRes: { label: 'Hi-Res', description: '高解析度音质' },
+        tencentMaster: { label: '臻品母带2.0', description: '最高音质' },
+        bilibiliDefault: { label: '默认', description: '默认音质' }
+      }
     },
     bilibiliIframe: {
       openInNewTab: '在新标签页打开',

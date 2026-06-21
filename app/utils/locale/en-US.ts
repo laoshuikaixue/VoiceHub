@@ -298,18 +298,18 @@ export const pages = {
     usernameRequired: 'Please enter your username',
     emailRequired: 'Please complete the email address',
     mailSent: 'Reset email sent',
-  requestFailed: 'Request failed. Please try again later.',
-  serverMessages: {
-    raw: {
-      rateLimitedPattern: '操作过于频繁，请等待\\s*(\\d+)\\s*分钟后再试',
-      usernameMissing: '请提供账号名',
-      userNotFound: '找不到该账号名，请检查是否拼写错误',
-      emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
-      emailRequiredFull: '请输入完整的邮箱地址以验证身份',
-      mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
-      systemError: '系统错误，请稍后重试'
-    },
-    rateLimited: (minutes: string | number) => `Too many requests. Please wait ${minutes} minute(s) and try again.`,
+    requestFailed: 'Request failed. Please try again later.',
+    serverMessages: {
+      raw: {
+        rateLimitedPattern: '操作过于频繁，请等待\\s*(\\d+)\\s*分钟后再试',
+        usernameMissing: '请提供账号名',
+        userNotFound: '找不到该账号名，请检查是否拼写错误',
+        emailNotBound: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。',
+        emailRequiredFull: '请输入完整的邮箱地址以验证身份',
+        mailSentFull: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。',
+        systemError: '系统错误，请稍后重试'
+      },
+      rateLimited: (minutes: string | number) => `Too many requests. Please wait ${minutes} minute(s) and try again.`,
       usernameMissing: 'Please provide your username',
       userNotFound: 'No account was found for that username. Please check the spelling.',
       emailNotBound: 'This account has no security email bound, so password recovery is unavailable. Please contact an administrator.',
@@ -781,6 +781,51 @@ export const pages = {
       noPrevious: 'No previous track',
       next: 'Next',
       noNext: 'No next track'
+    },
+    playerInfo: {
+      openLyrics: 'Open lyrics',
+      coverAlt: 'Cover',
+      lyrics: 'Lyrics',
+      textCoverFallback: 'M'
+    },
+    lyricsModal: {
+      unknownSong: 'Unknown Song',
+      unknownArtist: 'Unknown Artist',
+      lyrics: 'Lyrics',
+      comments: 'Comments',
+      settings: 'Lyrics settings',
+      amStyleLyrics: 'Apple Music style lyrics',
+      fontSize: 'Font size',
+      lyricOffset: 'Lyric offset (ms)',
+      showTranslation: 'Show translation',
+      showRoma: 'Show romanization',
+      showYrc: 'Word-by-word lyrics (YRC)',
+      quality: 'Quality',
+      playMode: {
+        loopOne: 'Repeat One',
+        order: 'Repeat Playlist',
+        off: 'Play Once'
+      },
+      notifications: {
+        loopOne: 'Switched to Repeat One',
+        off: 'Switched to Play Once',
+        order: 'Switched to Repeat Playlist'
+      }
+    },
+    audioQuality: {
+      unknown: 'Unknown quality',
+      options: {
+        standard: { label: 'Standard', description: 'Suitable when data is limited' },
+        neteaseHq: { label: 'HQ High', description: 'High-quality music experience' },
+        neteaseSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
+        neteaseHiRes: { label: 'Hi-Res', description: 'High-resolution lossless' },
+        neteaseMaster: { label: 'Master', description: 'Highest quality' },
+        tencentHq: { label: 'HQ High', description: 'High-quality music experience' },
+        tencentSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
+        tencentHiRes: { label: 'Hi-Res', description: 'High-resolution quality' },
+        tencentMaster: { label: 'Master 2.0', description: 'Highest quality' },
+        bilibiliDefault: { label: 'Default', description: 'Default quality' }
+      }
     },
     bilibiliIframe: {
       openInNewTab: 'Open in new tab',

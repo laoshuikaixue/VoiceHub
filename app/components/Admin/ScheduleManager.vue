@@ -1929,6 +1929,15 @@ watch(searchQuery, () => {
   resetAllPages()
 })
 
+watch(
+  () => locale.value.allGrades,
+  (newValue, oldValue) => {
+    if (selectedGrade.value === oldValue) {
+      selectedGrade.value = newValue
+    }
+  }
+)
+
 // 监听年级筛选变化，重置分页
 watch(selectedGrade, () => {
   resetAllPages()

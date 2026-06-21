@@ -661,38 +661,59 @@ const getLocalizedServerMessage = (message) => {
 
   if (exactMessageMap[message]) return exactMessageMap[message]
 
+  const fields = serverMessages.fields || {}
   const fieldLabelMap = {
-    [rawMessages.customOAuthAuthorizeUrlLabel]: serverMessages.fields.customOAuthAuthorizeUrl,
-    [rawMessages.customOAuthTokenUrlLabel]: serverMessages.fields.customOAuthTokenUrl,
-    [rawMessages.customOAuthUserInfoUrlLabel]: serverMessages.fields.customOAuthUserInfoUrl,
-    [rawMessages.customOAuthUserIdFieldLabel]: serverMessages.fields.customOAuthUserIdField,
-    customOAuthAuthorizeUrl: serverMessages.fields.customOAuthAuthorizeUrl,
-    customOAuthTokenUrl: serverMessages.fields.customOAuthTokenUrl,
-    customOAuthUserInfoUrl: serverMessages.fields.customOAuthUserInfoUrl,
-    customOAuthUserIdField: serverMessages.fields.customOAuthUserIdField
+    [rawMessages.customOAuthAuthorizeUrlLabel]: fields.customOAuthAuthorizeUrl,
+    [rawMessages.customOAuthTokenUrlLabel]: fields.customOAuthTokenUrl,
+    [rawMessages.customOAuthUserInfoUrlLabel]: fields.customOAuthUserInfoUrl,
+    [rawMessages.customOAuthUserIdFieldLabel]: fields.customOAuthUserIdField,
+    customOAuthAuthorizeUrl: fields.customOAuthAuthorizeUrl,
+    customOAuthTokenUrl: fields.customOAuthTokenUrl,
+    customOAuthUserInfoUrl: fields.customOAuthUserInfoUrl,
+    customOAuthUserIdField: fields.customOAuthUserIdField
   }
 
-  if (message.endsWith(rawMessages.booleanSuffix)) {
+  if (
+    rawMessages.booleanSuffix &&
+    typeof serverMessages.mustBeBoolean === 'function' &&
+    message.endsWith(rawMessages.booleanSuffix)
+  ) {
     return serverMessages.mustBeBoolean(message.slice(0, -rawMessages.booleanSuffix.length))
   }
 
-  if (message.endsWith(rawMessages.positiveIntegerSuffix)) {
+  if (
+    rawMessages.positiveIntegerSuffix &&
+    typeof serverMessages.mustBePositiveInteger === 'function' &&
+    message.endsWith(rawMessages.positiveIntegerSuffix)
+  ) {
     return serverMessages.mustBePositiveInteger(message.slice(0, -rawMessages.positiveIntegerSuffix.length))
   }
 
-  if (message.endsWith(rawMessages.nonNegativeIntegerOrNullSuffix)) {
+  if (
+    rawMessages.nonNegativeIntegerOrNullSuffix &&
+    typeof serverMessages.mustBeNonNegativeIntegerOrNull === 'function' &&
+    message.endsWith(rawMessages.nonNegativeIntegerOrNullSuffix)
+  ) {
     return serverMessages.mustBeNonNegativeIntegerOrNull(
       message.slice(0, -rawMessages.nonNegativeIntegerOrNullSuffix.length)
     )
   }
 
-  if (message.startsWith(rawMessages.customOAuthRequiredPrefix)) {
+  if (
+    rawMessages.customOAuthRequiredPrefix &&
+    typeof serverMessages.customOAuthFieldRequired === 'function' &&
+    message.startsWith(rawMessages.customOAuthRequiredPrefix)
+  ) {
     const rawField = message.slice(rawMessages.customOAuthRequiredPrefix.length)
     const fieldLabel = fieldLabelMap[rawField] || rawField
     return serverMessages.customOAuthFieldRequired(fieldLabel)
   }
 
-  if (message.endsWith(rawMessages.invalidUrlSuffix)) {
+  if (
+    rawMessages.invalidUrlSuffix &&
+    typeof serverMessages.invalidUrl === 'function' &&
+    message.endsWith(rawMessages.invalidUrlSuffix)
+  ) {
     const rawField = message.slice(0, -rawMessages.invalidUrlSuffix.length)
     return serverMessages.invalidUrl(fieldLabelMap[rawField] || rawField)
   }
