@@ -38,9 +38,7 @@ const readNumberEnv = (value: string | undefined, fallback: number): number => {
 }
 
 const ssrInlineLyricPackages = [
-  '@applemusic-like-lyrics/core',
-  '@applemusic-like-lyrics/lyric',
-  '@applemusic-like-lyrics/vue'
+  '@applemusic-like-lyrics/lyric'
 ]
 
 const backendSentryDsnDefault =
@@ -399,11 +397,10 @@ export default defineNuxtConfig({
     assetsInclude: ['**/*.wasm'],
     // SSR配置
     ssr: {
-      noExternal: process.env.NETLIFY
-        ? ['drizzle-orm', 'postgres', ...ssrInlineLyricPackages]
-        : process.env.VERCEL
-          ? ssrInlineLyricPackages
-          : ['drizzle-orm', 'postgres', ...ssrInlineLyricPackages]
+      noExternal: [
+        ...(process.env.VERCEL ? [] : ['drizzle-orm', 'postgres']),
+        ...ssrInlineLyricPackages
+      ]
     }
   },
 
