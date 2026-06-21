@@ -37,6 +37,10 @@ const readNumberEnv = (value: string | undefined, fallback: number): number => {
   return parsed
 }
 
+const ssrInlineLyricPackages = [
+  '@applemusic-like-lyrics/lyric'
+]
+
 const backendSentryDsnDefault =
   'https://2fca0c8a939c8909e02c082ec847e8e8@o4508946125619200.ingest.de.sentry.io/4511244961448016'
 const frontendSentryDsnDefault =
@@ -251,6 +255,9 @@ export default defineNuxtConfig({
       wasm: true,
       asyncContext: true
     },
+    externals: {
+      inline: ssrInlineLyricPackages
+    },
     timing: true,
     // 增加请求超时时间
     routeRules: {
@@ -390,11 +397,10 @@ export default defineNuxtConfig({
     assetsInclude: ['**/*.wasm'],
     // SSR配置
     ssr: {
-      noExternal: process.env.NETLIFY
-        ? ['drizzle-orm', 'postgres']
-        : process.env.VERCEL
-          ? []
-          : ['drizzle-orm', 'postgres']
+      noExternal: [
+        ...(process.env.VERCEL ? [] : ['drizzle-orm', 'postgres']),
+        ...ssrInlineLyricPackages
+      ]
     }
   },
 
