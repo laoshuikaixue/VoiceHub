@@ -17,7 +17,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
  * 记录API访问日志
  */
 async function logApiAccess(
-  apiKeyId: number,
+  apiKeyId: string,
   method: string,
   endpoint: string,
   statusCode: number,
@@ -147,7 +147,8 @@ export default defineEventHandler(async (event) => {
         name: apiKeys.name,
         isActive: apiKeys.isActive,
         expiresAt: apiKeys.expiresAt,
-        usageCount: apiKeys.usageCount
+        usageCount: apiKeys.usageCount,
+        createdByUserId: apiKeys.createdByUserId
       })
       .from(apiKeys)
       .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.keyPrefix, keyPrefix)))
@@ -331,6 +332,10 @@ export default defineEventHandler(async (event) => {
  * 根据路径和方法获取所需权限
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
+  if (pathname.startsWith('/api/open/card-codes')) {
+    return method === 'GET' ? 'card-codes:read' : 'card-codes:write'
+  }
+
   if (pathname.startsWith('/api/open/schedules')) {
     return 'schedules:read'
   }
