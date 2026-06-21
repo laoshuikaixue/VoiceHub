@@ -48,14 +48,18 @@ export default defineEventHandler(async (event) => {
       countQueryBuilder = countQueryBuilder.where(and(...conditions))
     }
 
-    const [items, totalResult] = await Promise.all([
+    const statsQuery = includeStats
+      ? db.select({ status: cardCodes.status, count: count() }).from(cardCodes).groupBy(cardCodes.status)
+      : Promise.resolve([])
+
+    const [items, totalResult, statsRows] = await Promise.all([
       queryBuilder.orderBy(desc(cardCodes.createdAt)).limit(limit).offset(offset),
-      countQueryBuilder
+      countQueryBuilder,
+      statsQuery
     ])
 
     let stats
     if (includeStats) {
-      const statsRows = await db.select({ status: cardCodes.status, count: count() }).from(cardCodes).groupBy(cardCodes.status)
       stats = { total: 0, available: 0, locked: 0, redeemed: 0, invalid: 0 }
       for (const row of statsRows) {
         const value = Number(row.count || 0)

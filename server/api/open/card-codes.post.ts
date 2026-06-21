@@ -1,6 +1,5 @@
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
-import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import crypto from 'crypto'
 
@@ -109,27 +108,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const uniqueCodes = [...new Set(finalCodes)]
-    const existingCodes = new Set<string>()
-
-    for (let i = 0; i < uniqueCodes.length; i += DB_CHUNK_SIZE) {
-      const chunk = uniqueCodes.slice(i, i + DB_CHUNK_SIZE)
-      const existingRows = await db
-        .select({ code: cardCodes.code })
-        .from(cardCodes)
-        .where(inArray(cardCodes.code, chunk))
-      for (const row of existingRows) {
-        existingCodes.add(row.code)
-      }
-    }
-
-    const insertCodes = uniqueCodes.filter((code) => !existingCodes.has(code))
-
-    if (!insertCodes.length) {
-      throw createError({ statusCode: 400, message: '这些点歌券已经存在，无需重复创建' })
-    }
-
     const note = typeof validatedData.note === 'string' ? validatedData.note.trim() || null : null
-    const inserts = insertCodes.map((code) => ({
+    const inserts = uniqueCodes.map((code) => ({
       code,
       status: 'AVAILABLE' as const,
       note
