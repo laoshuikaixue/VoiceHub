@@ -14,11 +14,11 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ lower(github.repository) }}
 
 jobs:
   build-and-push:
-    if: github.repository == 'laoshuikaixue/VoiceHub' ||github.event_name == 'workflow_dispatch'
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -54,7 +54,7 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ lower(github.actor) }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
