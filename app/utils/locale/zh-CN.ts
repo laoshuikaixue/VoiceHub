@@ -2600,6 +2600,9 @@ export const admin = {
     createCardCode: '创建点歌券',
     fillDemo: '填充示例',
     demoNote: '示例点歌券',
+    lastGeneratedTitle: (count: number) => `本次生成 ${count} 张点歌券`,
+    lastGeneratedDesc: '仅保留最近一次自动生成结果，方便发放前复制。',
+    copyAll: '一键复制',
     quickTipsTitle: '快速说明',
     quickTips: [
       '支持按状态和关键词筛选，搜索范围包含点歌券和备注。',
@@ -2651,7 +2654,9 @@ export const admin = {
       inputRequired: '请先输入点歌券',
       createSuccess: (count: number) => `创建成功，共 ${count} 条`,
       createDone: (inserted: number, skipped: number) => `创建完成，成功 ${inserted} 条，跳过 ${skipped} 条重复项`,
-      createFailed: '创建点歌券失败'
+      createFailed: '创建点歌券失败',
+      noGeneratedToCopy: '暂无可复制的本次生成点歌券',
+      copiedGenerated: (count: number) => `已复制 ${count} 张点歌券`
     },
     stats: {
       total: '总数',
@@ -3202,7 +3207,9 @@ export const admin = {
     permissionOptions: {
       scheduleRead: { label: '排期查询', description: '查看排期列表和详情' },
       songsRead: { label: '歌曲查询', description: '查看歌曲列表和详情' },
-      songsWrite: { label: '歌曲管理', description: '更新歌曲状态' }
+      songsWrite: { label: '歌曲管理', description: '更新歌曲状态' },
+      cardCodesRead: { label: '点歌券查询', description: '查看点歌券列表和统计' },
+      cardCodesWrite: { label: '点歌券管理', description: '创建和更新点歌券' }
     },
     loadFailed: '加载API密钥失败',
     nameRequired: '请输入密钥名称',

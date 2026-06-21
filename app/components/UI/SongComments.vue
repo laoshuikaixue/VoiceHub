@@ -97,7 +97,7 @@ import { computed, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { fetchNetease } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
-import { useLocale } from '~/composables/useLocale'
+import { useLocale } from '~/utils/locale'
 
 interface NeteaseUser {
   avatarUrl?: string

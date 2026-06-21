@@ -137,7 +137,7 @@ import { useLyricManager } from '~/composables/useLyricManager'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
-import { useLocale } from '~/composables/useLocale'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   currentTime: {

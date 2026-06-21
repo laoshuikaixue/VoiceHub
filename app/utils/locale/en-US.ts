@@ -2589,6 +2589,9 @@ export const admin = {
     createCardCode: 'Create Request Cards',
     fillDemo: 'Fill Demo',
     demoNote: 'Demo request cards',
+    lastGeneratedTitle: (count: number) => `${count} request cards generated this time`,
+    lastGeneratedDesc: 'Only the latest auto-generated result is kept so you can copy it before distribution.',
+    copyAll: 'Copy All',
     quickTipsTitle: 'Quick Tips',
     quickTips: [
       'Filter by status and keyword; search covers request cards and notes.',
@@ -2640,7 +2643,9 @@ export const admin = {
       inputRequired: 'Please enter request cards first',
       createSuccess: (count: number) => `Created ${count} request cards`,
       createDone: (inserted: number, skipped: number) => `Created ${inserted}; skipped ${skipped} duplicates`,
-      createFailed: 'Failed to create request cards'
+      createFailed: 'Failed to create request cards',
+      noGeneratedToCopy: 'No generated request cards to copy',
+      copiedGenerated: (count: number) => `Copied ${count} request cards`
     },
     stats: {
       total: 'Total',
@@ -3191,7 +3196,9 @@ export const admin = {
     permissionOptions: {
       scheduleRead: { label: 'Schedule Read', description: 'View schedule list and details' },
       songsRead: { label: 'Song Read', description: 'View song list and details' },
-      songsWrite: { label: 'Song Management', description: 'Update song status' }
+      songsWrite: { label: 'Song Management', description: 'Update song status' },
+      cardCodesRead: { label: 'Request Card Read', description: 'View request card list and statistics' },
+      cardCodesWrite: { label: 'Request Card Management', description: 'Create and update request cards' }
     },
     loadFailed: 'Failed to load API keys',
     nameRequired: 'Enter key name',

@@ -716,18 +716,18 @@ const availablePermissions = computed(() => [
   },
   {
     value: 'songs:write',
-    label: '歌曲管理',
-    description: '更新歌曲状态'
+    label: locale.value.permissionOptions.songsWrite.label,
+    description: locale.value.permissionOptions.songsWrite.description
   },
   {
     value: 'card-codes:read',
-    label: '点歌券查询',
-    description: '查看点歌券列表和统计'
+    label: locale.value.permissionOptions.cardCodesRead.label,
+    description: locale.value.permissionOptions.cardCodesRead.description
   },
   {
     value: 'card-codes:write',
-    label: '点歌券管理',
-    description: '创建和更新点歌券'
+    label: locale.value.permissionOptions.cardCodesWrite.label,
+    description: locale.value.permissionOptions.cardCodesWrite.description
   }
 ])
 

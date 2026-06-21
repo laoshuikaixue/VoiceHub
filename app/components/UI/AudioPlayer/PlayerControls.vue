@@ -63,7 +63,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
-import { useLocale } from '~/composables/useLocale'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   isPlaying: {

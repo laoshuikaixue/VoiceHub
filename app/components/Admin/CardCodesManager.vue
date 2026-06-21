@@ -261,14 +261,14 @@
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="text-xs font-black text-zinc-100">本次生成 {{ lastGeneratedCodes.length }} 张点歌券</p>
-                <p class="mt-1 text-[11px] text-zinc-500">仅保留最近一次自动生成结果，方便发放前复制。</p>
+                <p class="text-xs font-black text-zinc-100">{{ locale.lastGeneratedTitle(lastGeneratedCodes.length) }}</p>
+                <p class="mt-1 text-[11px] text-zinc-500">{{ locale.lastGeneratedDesc }}</p>
               </div>
               <button
                 class="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300 hover:border-zinc-700 hover:text-zinc-100 transition-colors"
                 @click="copyLastGeneratedCodes"
               >
-                <Copy :size="14" /> 一键复制
+                <Copy :size="14" /> {{ locale.copyAll }}
               </button>
             </div>
             <div class="max-h-32 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-950 p-3 font-mono text-xs leading-relaxed text-zinc-200">
@@ -633,16 +633,16 @@ const copyCode = async (code) => {
 
 const copyLastGeneratedCodes = async () => {
   if (!lastGeneratedCodes.value.length) {
-    showToast('暂无可复制的本次生成点歌券', 'warning')
+    showToast(locale.value.messages.noGeneratedToCopy, 'warning')
     return
   }
 
   try {
     await navigator.clipboard.writeText(lastGeneratedCodes.value.join('\n'))
-    showToast(`已复制 ${lastGeneratedCodes.value.length} 张点歌券`, 'success')
+    showToast(locale.value.messages.copiedGenerated(lastGeneratedCodes.value.length), 'success')
   } catch (error) {
     console.error('批量复制点歌券失败', error)
-    showToast('复制失败，请手动复制', 'error')
+    showToast(locale.value.messages.copyFailed, 'error')
   }
 }
 
@@ -778,7 +778,7 @@ const createCodes = async () => {
     lastGeneratedCodes.value = createMode.value === 'generate'
       ? (Array.isArray(res?.data) ? res.data.map((item) => item.code).filter(Boolean) : [])
       : []
-    showToast(skipped ? `创建完成，成功 ${inserted} 条，跳过 ${skipped} 条重复项` : `创建成功，共 ${inserted} 条`, 'success')
+    showToast(skipped ? locale.value.messages.createDone(inserted, skipped) : locale.value.messages.createSuccess(inserted), 'success')
     manualCodes.value = ''
     createNote.value = ''
     await fetchCodes()

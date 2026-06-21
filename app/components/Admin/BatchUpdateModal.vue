@@ -682,7 +682,7 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useUserFilters } from '~/composables/useUserFilters'
-import { useLocale } from '~/composables/useLocale'
+import { useLocale } from '~/utils/locale'
 import {
   Layers,
   X,
