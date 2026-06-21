@@ -6,14 +6,25 @@ import crypto from 'crypto'
 
 const MAX_BATCH_COUNT = 10000
 const DB_CHUNK_SIZE = 500
+const MAX_CODE_LENGTH = 128
+const MAX_PREFIX_LENGTH = 32
+const MAX_CHARSET_LENGTH = 128
+const MAX_NOTE_LENGTH = 500
+const MIN_RANDOM_SPACE_MULTIPLIER = 10
+const DEFAULT_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 const createCardCodesSchema = z.object({
-  codes: z.union([z.string(), z.array(z.string())]).optional(),
+  codes: z
+    .union([
+      z.string().max(MAX_CODE_LENGTH),
+      z.array(z.string().max(MAX_CODE_LENGTH)).max(MAX_BATCH_COUNT)
+    ])
+    .optional(),
   count: z.number().int().min(0).max(MAX_BATCH_COUNT).optional(),
-  prefix: z.string().optional(),
+  prefix: z.string().max(MAX_PREFIX_LENGTH).optional(),
   length: z.number().int().min(4).max(64).optional(),
-  charset: z.string().optional(),
-  note: z.union([z.string(), z.null()]).optional()
+  charset: z.string().max(MAX_CHARSET_LENGTH).optional(),
+  note: z.union([z.string().max(MAX_NOTE_LENGTH), z.null()]).optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -39,19 +50,28 @@ export default defineEventHandler(async (event) => {
     const length = validatedData.length || 12
     const charsetInput = typeof validatedData.charset === 'string' && validatedData.charset.trim()
       ? validatedData.charset.trim().toUpperCase()
-      : 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+      : DEFAULT_CHARSET
     const charset = [...new Set(charsetInput.split(''))].join('')
 
     if (!charset) {
       throw createError({ statusCode: 400, message: '字符集不能为空' })
     }
+    if (manualCodeSet.size + batchCount > MAX_BATCH_COUNT) {
+      throw createError({ statusCode: 400, message: `单次最多创建 ${MAX_BATCH_COUNT} 个点歌券` })
+    }
 
     if (batchCount > 0) {
-      const maxPossibleCodes = charset.length ** length
-      if (maxPossibleCodes < batchCount) {
+      const charsetSet = new Set(charset.split(''))
+      const generatedNamespaceManualCount = codes.filter((code) => {
+        if (!code.startsWith(prefix) || code.length !== prefix.length + length) return false
+        return code.slice(prefix.length).split('').every((char) => charsetSet.has(char))
+      }).length
+      const maxPossibleCodes = BigInt(charset.length) ** BigInt(length)
+      const requiredSpace = BigInt(batchCount + generatedNamespaceManualCount) * BigInt(MIN_RANDOM_SPACE_MULTIPLIER)
+      if (maxPossibleCodes < requiredSpace) {
         throw createError({
           statusCode: 400,
-          message: '可用字符集过小或长度不足，无法生成足够数量的唯一点歌券，请增大字符集或长度'
+          message: '可用字符集空间过小或长度不足，容易导致生成碰撞和性能问题，请增大字符集或长度'
         })
       }
 
@@ -114,11 +134,18 @@ export default defineEventHandler(async (event) => {
       status: 'AVAILABLE' as const,
       note
     }))
-    const createdCardCodes = []
-    for (let i = 0; i < inserts.length; i += DB_CHUNK_SIZE) {
-      const chunk = inserts.slice(i, i + DB_CHUNK_SIZE)
-      const result = await db.insert(cardCodes).values(chunk).returning()
-      createdCardCodes.push(...result)
+    const createdCardCodes = await db.transaction(async (tx) => {
+      const rows: any[] = []
+      for (let i = 0; i < inserts.length; i += DB_CHUNK_SIZE) {
+        const chunk = inserts.slice(i, i + DB_CHUNK_SIZE)
+        const result = await tx.insert(cardCodes).values(chunk).onConflictDoNothing().returning()
+        rows.push(...result)
+      }
+      return rows
+    })
+
+    if (!createdCardCodes.length) {
+      throw createError({ statusCode: 400, message: '这些点歌券已经存在，无需重复创建' })
     }
 
     return {
@@ -127,7 +154,7 @@ export default defineEventHandler(async (event) => {
       data: {
         cardCodes: createdCardCodes,
         created: createdCardCodes.length,
-        skipped: uniqueCodes.length - insertCodes.length
+        skipped: uniqueCodes.length - createdCardCodes.length
       }
     }
   } catch (err: any) {

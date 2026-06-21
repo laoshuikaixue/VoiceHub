@@ -4,11 +4,14 @@ import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
+const MAX_ID_LENGTH = 32
+const MAX_NOTE_LENGTH = 500
+
 const updateCardCodesSchema = z.object({
-  id: z.union([z.number().int().positive(), z.string()]).optional(),
-  ids: z.array(z.union([z.number().int().positive(), z.string()])).max(500, '单次最多更新 500 个点歌券').optional(),
+  id: z.union([z.number().int().positive(), z.string().max(MAX_ID_LENGTH)]).optional(),
+  ids: z.array(z.union([z.number().int().positive(), z.string().max(MAX_ID_LENGTH)])).max(500, '单次最多更新 500 个点歌券').optional(),
   status: z.enum(CARD_CODE_STATUSES).optional(),
-  note: z.union([z.string(), z.null()]).optional()
+  note: z.union([z.string().max(MAX_NOTE_LENGTH), z.null()]).optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -54,12 +57,6 @@ export default defineEventHandler(async (event) => {
         updateObj.redeemedAt = null
       }
       if (status === 'AVAILABLE') {
-        updateObj.lockedBy = null
-        updateObj.lockedAt = null
-        updateObj.redeemedBy = null
-        updateObj.redeemedAt = null
-      }
-      if (status === 'INVALID') {
         updateObj.lockedBy = null
         updateObj.lockedAt = null
         updateObj.redeemedBy = null
