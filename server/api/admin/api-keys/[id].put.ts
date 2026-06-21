@@ -2,19 +2,12 @@ import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { apiPermissionSchema } from './permissions'
 
 /**
  * 更新API Key
  * PUT /api/admin/api-keys/[id]
  */
-
-const apiPermissionSchema = z.enum([
-  'schedules:read',
-  'songs:read',
-  'songs:write',
-  'card-codes:read',
-  'card-codes:write'
-])
 
 // 请求体验证schema
 const updateApiKeySchema = z.object({

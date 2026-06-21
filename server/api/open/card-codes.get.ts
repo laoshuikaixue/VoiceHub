@@ -1,8 +1,7 @@
 import { db } from '~/drizzle/db'
 import { cardCodes } from '~/drizzle/schema'
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
-
-const CARD_CODE_STATUSES = ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID'] as const
+import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
 export default defineEventHandler(async (event) => {
   const apiKey = event.context.apiKey

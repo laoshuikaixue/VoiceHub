@@ -2,8 +2,7 @@ import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { z } from 'zod'
-
-const CARD_CODE_STATUSES = ['AVAILABLE', 'LOCKED', 'REDEEMED', 'INVALID'] as const
+import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
 
 const updateCardCodesSchema = z.object({
   id: z.union([z.number().int().positive(), z.string()]).optional(),
@@ -87,7 +86,7 @@ export default defineEventHandler(async (event) => {
 
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, ids)).returning()
 
-      if (['REDEEMED', 'AVAILABLE'].includes(status || '') && updatedRows.length > 0) {
+      if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows
           .filter((row) => {
             const before = beforeMap.get(row.id)

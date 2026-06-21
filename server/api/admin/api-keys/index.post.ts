@@ -2,19 +2,12 @@ import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import crypto from 'crypto'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { apiPermissionSchema } from './permissions'
 
 /**
  * 创建API Key
  * POST /api/admin/api-keys
  */
-
-const apiPermissionSchema = z.enum([
-  'schedules:read',
-  'songs:read',
-  'songs:write',
-  'card-codes:read',
-  'card-codes:write'
-])
 
 // 请求体验证schema
 const createApiKeySchema = z.object({
