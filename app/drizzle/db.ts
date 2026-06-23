@@ -60,26 +60,43 @@ const innerClient = postgres(process.env.DATABASE_URL, {
 });
 
 // ── SQL 转义辅助 ────────────────────────────────────────────────────────────
-const escS = (s: string): string => s.replace(/'/g, "''");
-const escI = (s: string): string => `"${s.replace(/"/g, '""')}"`;
+const escS = (s: string): string => {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "''");
+};
+const escI = (s: string): string => {
+  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '""')}"`;
+};
 
 // ── PG 内置类型判断（避免把枚举类型加引号导致报错）───────────────
-const BUILTIN_PREFIXES: string[] = [
+const BUILTIN_TYPES: string[] = [
   'serial', 'integer', 'bigint', 'smallint', 'boolean', 'text', 'uuid',
   'timestamp', 'timestamptz', 'date', 'time', 'json', 'jsonb',
   'numeric', 'decimal', 'real', 'double precision', 'inet', 'bytea',
   'character varying', 'varchar', 'character', 'char',
 ];
 
+const BUILTIN_PREFIX_TYPES: string[] = [
+  'serial', 'integer', 'bigint', 'smallint', 'timestamp', 'timestamptz',
+  'numeric', 'decimal', 'character varying', 'varchar', 'character', 'char',
+];
+
 function isBuiltinType(typeStr: string): boolean {
-  if (BUILTIN_PREFIXES.includes(typeStr)) return true;
+  if (BUILTIN_TYPES.includes(typeStr)) return true;
+  
   const lower = typeStr.toLowerCase();
-  for (const prefix of BUILTIN_PREFIXES) {
+  
+  if (lower.startsWith('character varying')) {
+    const rest = lower.slice('character varying'.length);
+    return rest.length === 0 || rest.startsWith('(');
+  }
+  
+  for (const prefix of BUILTIN_PREFIX_TYPES) {
     if (lower.startsWith(prefix)) {
       const rest = lower.slice(prefix.length);
-      if (rest.length === 0 || rest.startsWith(' ') || rest.startsWith('(')) return true;
+      if (rest.length === 0 || rest.startsWith('(')) return true;
     }
   }
+  
   return false;
 }
 
@@ -90,11 +107,20 @@ function defaultToSql(d: unknown): string | null {
   if (typeof d === 'number') return String(d);
   if (typeof d === 'string') return `'${escS(d)}'`;
   if (typeof d === 'object') {
-    // drizzle SQL 表达式对象（如 defaultNow()、defaultRandom()）
-    const obj = d as { queryChunks?: unknown; sql?: unknown };
-    if (Array.isArray(obj.queryChunks)) {
+    // 使用 Drizzle 官方的 toSQL() 方法（推荐，不依赖内部实现细节）
+    const obj = d as { toSQL?: () => { sql: string; params?: unknown[] } };
+    if (typeof obj.toSQL === 'function') {
+      const result = obj.toSQL();
+      if (result && typeof result.sql === 'string' && result.sql.length > 0) {
+        return result.sql;
+      }
+    }
+    
+    // 兼容旧版本的备用方案（不推荐依赖内部属性）
+    const oldApi = d as { queryChunks?: unknown; sql?: unknown };
+    if (Array.isArray(oldApi.queryChunks)) {
       const parts: string[] = [];
-      for (const chunk of obj.queryChunks) {
+      for (const chunk of oldApi.queryChunks) {
         if (!chunk || typeof chunk !== 'object') continue;
         const c = chunk as { value?: unknown; chunk?: unknown };
         if (Array.isArray(c.value)) parts.push(...c.value.map((v) => String(v)));
@@ -103,15 +129,53 @@ function defaultToSql(d: unknown): string | null {
       const joined = parts.join(' ').trim();
       if (joined.length > 0) return joined;
     }
-    if (typeof obj.sql === 'string' && obj.sql.length > 0) return obj.sql;
+    if (typeof oldApi.sql === 'string' && oldApi.sql.length > 0) return oldApi.sql;
   }
   return null;
 }
 
 // ── Schema 内省：构建 表 + 枚举 映射 ─────────────────────────────────
-interface ColDef { name: string; sqlType: string; notNull: boolean; isPrimary: boolean; defaultSql: string | null; isSerial: boolean; }
+interface ColDef { name: string; sqlType: string; notNull: boolean; isPrimary: boolean; defaultSql: string | null; isSerial: boolean; referencesTable?: string; }
 interface TableDef { name: string; columns: ColDef[]; }
 interface EnumDef { name: string; values: string[]; }
+
+// ── Drizzle 内部类型定义 ─────────────────────────────────────────────
+interface DrizzleColumnConfig {
+  default?: unknown;
+  references?: () => { _table?: { _name?: string; tableName?: string } };
+}
+
+interface DrizzleColumn {
+  name?: unknown;
+  primary?: unknown;
+  notNull?: unknown;
+  default?: unknown;
+  getSQLType?: () => unknown;
+  config?: DrizzleColumnConfig;
+}
+
+interface DrizzleTableRef {
+  _name?: string;
+  tableName?: string;
+  config?: { tableName?: string; name?: string };
+  [key: string]: unknown;
+  [key: symbol]: unknown;
+}
+
+// ── postgres.js 客户端类型定义 ───────────────────────────────────────────
+interface PostgresQuery {
+  then?: (onFulfilled?: any, onRejected?: any) => Promise<any>;
+  values?: () => Promise<any[]>;
+  execute?: () => Promise<any>;
+  [key: string]: unknown;
+}
+
+interface PostgresClientInternal extends ReturnType<typeof postgres> {
+  ended?: boolean;
+  end?: (options?: { timeout?: number }) => Promise<void>;
+}
+
+type PostgresClient = ReturnType<typeof postgres>;
 
 const { tables: schemaTables, enums: schemaEnums } = buildSchemaMaps();
 
@@ -146,8 +210,23 @@ function buildSchemaMaps(): { tables: Map<string, TableDef>; enums: Map<string, 
       const sqlType = typeof rawType === 'string' ? rawType : 'text';
       const isSerial = sqlType === 'serial';
       const isPrimary = !!c.primary;
-      const colConfig = (c as any).config;
+      const colConfig = (c as DrizzleColumn).config;
       const defaultValue = colConfig?.default ?? c.default;
+
+      let referencesTable: string | undefined;
+      if (colConfig?.references && typeof colConfig.references === 'function') {
+        try {
+          const refResult = colConfig.references();
+          if (refResult && typeof refResult === 'object') {
+            const refSchema = refResult as { _table?: { _name?: string; tableName?: string } };
+            if (refSchema._table) {
+              referencesTable = refSchema._table._name ?? refSchema._table.tableName;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
 
       columns.push({
         name: typeof c.name === 'string' ? c.name : String(c),
@@ -156,6 +235,7 @@ function buildSchemaMaps(): { tables: Map<string, TableDef>; enums: Map<string, 
         isPrimary,
         defaultSql: isPrimary && isSerial ? null : defaultToSql(defaultValue),
         isSerial,
+        referencesTable,
       });
     }
 
@@ -179,28 +259,28 @@ function findDrizzleSymbol(description: string): symbol | null {
 function getTableNameFromSchema(val: unknown): string | undefined {
   if (!val || typeof val !== 'object') return undefined;
   
-  const obj = val as object;
+  const obj = val as DrizzleTableRef;
   
   const tableSymbol = findDrizzleSymbol('drizzle:Name');
   if (tableSymbol) {
-    const name = (val as any)[tableSymbol];
+    const name = obj[tableSymbol];
     if (name) return String(name);
   }
   
   const keys = Object.keys(obj);
   
   if (keys.includes('_name')) {
-    const name = (val as any)._name;
+    const name = obj._name;
     if (name && typeof name === 'string') return name;
   }
   
   if (keys.includes('tableName')) {
-    const name = (val as any).tableName;
+    const name = obj.tableName;
     if (name && typeof name === 'string') return name;
   }
   
   for (const key of keys) {
-    const value = (val as any)[key];
+    const value = obj[key];
     if (typeof value === 'string' && value.length > 0 && !value.includes('(')) {
       return value;
     }
@@ -208,13 +288,13 @@ function getTableNameFromSchema(val: unknown): string | undefined {
   
   const symbols = Object.getOwnPropertySymbols(obj);
   for (const sym of symbols) {
-    const name = (val as any)[sym];
+    const name = obj[sym];
     if (typeof name === 'string' && name.length > 0 && !name.includes('(')) {
       return name;
     }
   }
   
-  const config = (val as any).config;
+  const config = obj.config;
   if (config && typeof config === 'object') {
     if (typeof config.tableName === 'string') return config.tableName;
     if (typeof config.name === 'string') return config.name;
@@ -270,9 +350,12 @@ function buildAlterTableSql(tbl: TableDef, col: ColDef): string {
   ];
   if (col.defaultSql) {
     parts.push(`DEFAULT ${col.defaultSql}`);
-    if (col.notNull) parts.push('NOT NULL');
   }
   return parts.join(' ');
+}
+
+function buildAlterTableAddNotNull(tbl: TableDef, col: ColDef): string {
+  return `ALTER TABLE ${escI(tbl.name)} ALTER COLUMN ${escI(col.name)} SET NOT NULL`;
 }
 
 function buildAlterColumnDefaultSql(tbl: TableDef, col: ColDef): string {
@@ -322,11 +405,12 @@ async function columnMissingDefault(table: string, col: string): Promise<boolean
 // ── Schema 修复引擎 ──────────────────────────────────────────────────────
 // runningFixes: 同一目标（表/列/枚举）并发请求只执行一次 DDL
 const runningFixes = new Map<string, Promise<boolean>>();
-const MAX_RECURSION = 8;
+const MAX_RECURSION = 32;
 
 type FixTarget =
   | { kind: 'table'; name: string; ddl: string }
-  | { kind: 'column'; table: string; col: string; ddl: string }
+  | { kind: 'column'; table: string; col: string; ddl: string; notNull?: boolean; colDef?: ColDef }
+  | { kind: 'columnNotNull'; table: string; col: string; ddl: string }
   | { kind: 'columnDefault'; table: string; col: string; ddl: string }
   | { kind: 'type'; name: string; ddl: string };
 
@@ -334,12 +418,22 @@ function targetKey(t: FixTarget): string {
   if (t.kind === 'type') return `e:${t.name}`;
   if (t.kind === 'table') return `t:${t.name}`;
   if (t.kind === 'columnDefault') return `d:${t.table}:${t.col}`;
+  if (t.kind === 'columnNotNull') return `nn:${t.table}:${t.col}`;
   return `c:${t.table}:${t.col}`;
+}
+
+async function columnHasNotNull(table: string, col: string): Promise<boolean> {
+  const rows = await innerClient.unsafe(
+    'SELECT is_nullable FROM information_schema.columns WHERE table_schema = current_schema() AND LOWER(table_name) = LOWER($1) AND LOWER(column_name) = LOWER($2)',
+    [table, col],
+  ) as { is_nullable: string }[];
+  return rows.length > 0 && rows[0].is_nullable === 'NO';
 }
 
 async function objectMissing(t: FixTarget): Promise<boolean> {
   if (t.kind === 'table') return objectMissingTable(t.name);
   if (t.kind === 'column') return objectMissingColumn(t.table, t.col);
+  if (t.kind === 'columnNotNull') return !(await columnHasNotNull(t.table, t.col));
   if (t.kind === 'columnDefault') return columnMissingDefault(t.table, t.col);
   return objectMissingType(t.name);
 }
@@ -350,10 +444,19 @@ async function fixTarget(target: FixTarget, depth: number): Promise<boolean> {
     return false;
   }
 
-  // 并发去重：如果已有同目标的修复 Promise，直接复用
   const key = targetKey(target);
+  
+  // 并发去重：如果已有同目标的修复 Promise，等待它完成
   const pending = runningFixes.get(key);
-  if (pending) return await pending;
+  if (pending) {
+    const result = await pending;
+    // 如果之前的修复失败，当前请求尝试自己重新修复
+    if (!result) {
+      info(`等待的修复失败，当前请求尝试重新修复: ${key}`);
+    } else {
+      return true;
+    }
+  }
 
   const fixPromise = (async (): Promise<boolean> => {
     try {
@@ -379,6 +482,22 @@ async function fixTarget(target: FixTarget, depth: number): Promise<boolean> {
       }
 
       success(`schema 已修复: ${key}`);
+
+      if (target.kind === 'column') {
+        if (target.notNull && target.colDef) {
+          const tbl = findTableCI(target.table);
+          if (tbl) {
+            const notNullDdl = buildAlterTableAddNotNull(tbl, target.colDef);
+            action(`添加 NOT NULL 约束: ${notNullDdl}`);
+            try {
+              await innerClient.unsafe(notNullDdl);
+              success(`NOT NULL 约束已添加: ${targetKey(target)}`);
+            } catch (e) {
+              warn(`添加 NOT NULL 约束失败（${targetKey(target)}）: ${(e as Error).message}`);
+            }
+          }
+        }
+      }
 
       if (target.kind === 'columnDefault') {
         await fixAllMissingDefaults(target.table);
@@ -450,7 +569,7 @@ function targetFromError(err: unknown): FixTarget | null {
       const tbl = findTableCI(m[2]);
       if (tbl) {
         const col = findColumnCI(tbl, m[1]);
-        if (col) return { kind: 'column', table: tbl.name, col: col.name, ddl: buildAlterTableSql(tbl, col) };
+        if (col) return { kind: 'column', table: tbl.name, col: col.name, ddl: buildAlterTableSql(tbl, col), notNull: col.notNull, colDef: col };
       }
     }
   }
@@ -495,14 +614,15 @@ function wrapPromise<T>(promise: Promise<T>, execute: () => Promise<T>): Promise
   });
 }
 
-// wrapQuery: 对 postgres.js 的 Query 对象覆盖 .then / .values / .execute
-function wrapWithSchemaFix<T>(result: any, execute: () => Promise<T>): any {
+function wrapWithSchemaFix<T>(result: PostgresQuery | Promise<T>, execute: () => Promise<T>): PostgresQuery | Promise<T> {
   if (result && typeof result.values === 'function') {
-    const origThen = result.then.bind(result);
-    const origValues = result.values?.bind(result);
-    const origExecute = result.execute?.bind(result);
+    const query = result as PostgresQuery;
+    const origThen = query.then?.bind(query);
+    const origValues = query.values?.bind(query);
+    const origExecute = query.execute?.bind(query);
 
-    result.then = function (onFulfilled: any, onRejected: any): any {
+    query.then = function (onFulfilled, onRejected) {
+      if (!origThen) return Promise.resolve();
       return origThen(
         onFulfilled,
         async (err: unknown) => {
@@ -516,45 +636,41 @@ function wrapWithSchemaFix<T>(result: any, execute: () => Promise<T>): any {
     };
 
     if (origValues) {
-      result.values = function (): any {
-        return wrapPromise(origValues(), () => execute() as any);
+      query.values = function () {
+        return wrapPromise(origValues(), execute);
       };
     }
 
     if (origExecute) {
-      result.execute = function (): any {
-        return wrapPromise(origExecute(), () => execute() as any);
+      query.execute = function () {
+        return wrapPromise(origExecute(), execute);
       };
     }
 
-    return result;
+    return query;
   }
 
-  // 普通 Promise / thenable
-  return wrapPromise(result as any, execute);
+  return wrapPromise(result as Promise<T>, execute);
 }
 
 // ── 对外 client：Proxy 包装 innerClient ───────────────────────
-const client = new Proxy(innerClient as any, {
-  // client`SELECT 1` 形式（Tagged Template）
-  apply(_t, _this, args) {
-    const result = innerClient(...(args as any));
-    return wrapWithSchemaFix(result, () => innerClient(...(args as any)));
+const client = new Proxy(innerClient as PostgresClient, {
+  apply(_t, _this, args: unknown[]) {
+    const result = innerClient(...(args as Parameters<typeof innerClient>));
+    return wrapWithSchemaFix(result, () => innerClient(...(args as Parameters<typeof innerClient>)));
   },
-  // client.unsafe(sql), client.end() 等方法调用
   get(target, prop, _receiver) {
     const value = Reflect.get(target, prop);
     if (typeof value !== 'function') return value;
     const boundFn = (value as Function).bind(target);
-    // 生命周期方法直接透传（不参与 schema 修复）
     const s = String(prop);
     if (s === 'end' || s === 'destroy' || s === 'close' || s === 'cancel') return boundFn;
-    return function (this: unknown, ...args: unknown[]): any {
+    return function (this: unknown, ...args: unknown[]): PostgresQuery | Promise<unknown> {
       const result = boundFn(...args);
-      return wrapWithSchemaFix(result, () => boundFn(...args) as any);
+      return wrapWithSchemaFix(result as Promise<unknown>, () => boundFn(...args) as Promise<unknown>);
     };
   },
-}) as ReturnType<typeof postgres>;
+}) as PostgresClient;
 
 // ── 对外导出 ───────────────────────────────────────────────────────────────
 export const db = drizzle(client, { schema });
@@ -633,9 +749,13 @@ function sortTablesByDependency(): TableDef[] {
   
   for (const table of tables) {
     for (const col of table.columns) {
-      for (const refTable of schemaTables.keys()) {
-        if (col.sqlType.toLowerCase().includes(refTable.toLowerCase() + 'id')) {
-          adjacency.get(refTable)?.add(table.name);
+      if (col.referencesTable) {
+        const refTableName = schemaTables.has(col.referencesTable) 
+          ? col.referencesTable 
+          : [...schemaTables.keys()].find(k => k.toLowerCase() === col.referencesTable.toLowerCase());
+        
+        if (refTableName && refTableName !== table.name) {
+          adjacency.get(refTableName)?.add(table.name);
           inDegree.set(table.name, (inDegree.get(table.name) || 0) + 1);
         }
       }
@@ -670,18 +790,25 @@ function sortTablesByDependency(): TableDef[] {
 }
 
 export function getConnectionStatus(): { connected: boolean; status: string } {
-  return { connected: !(innerClient as any).ended, status: (innerClient as any).ended ? 'disconnected' : 'connected' };
+  const client = innerClient as PostgresClientInternal;
+  return { connected: !client.ended, status: client.ended ? 'disconnected' : 'connected' };
 }
 
 export async function closeConnection(): Promise<void> {
-  try { if (!(innerClient as any).ended) { await (innerClient as any).end({ timeout: 10 }); success('连接已优雅关闭'); } }
+  const client = innerClient as PostgresClientInternal;
+  try { if (!client.ended && client.end) { await client.end({ timeout: 10 }); success('连接已优雅关闭'); } }
   catch (error) { error(`关闭连接失败: ${error}`); }
 }
 
 if (typeof process !== 'undefined') {
-  process.on('SIGINT', closeConnection);
-  process.on('SIGTERM', closeConnection);
-  process.on('beforeExit', closeConnection);
+  process.on('SIGINT', async () => {
+    await closeConnection();
+    process.exit(0);
+  });
+  process.on('SIGTERM', async () => {
+    await closeConnection();
+    process.exit(0);
+  });
 }
 
 let initPromise: Promise<void> | null = null;
