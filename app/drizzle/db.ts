@@ -1,178 +1,706 @@
-import {drizzle} from 'drizzle-orm/postgres-js';
-import {and, asc, count, desc, eq, exists, gt, gte, lt, lte, ne, or, sql} from 'drizzle-orm';
+// ==========================================================================
+// VoiceHub · PostgreSQL + Drizzle 连接层
+//
+// Lazy schema 自动修复：任何查询失败 → 如 PG 返回 42P01/42703/42704
+// → 解析缺失对象 → 查元数据确认 → 执行 DDL → 重试查询
+// ==========================================================================
+
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import {
+  and, asc, count, desc, eq, exists, gt, gte,
+  lt, lte, ne, or, sql,
+} from 'drizzle-orm';
 import * as schema from './schema.ts';
-import {config} from 'dotenv';
-import path from 'path';
-import {fileURLToPath} from 'url';
+import { config } from 'dotenv';
+import path from 'node:path';
 
-// 加载环境变量（优先使用工作目录的 .env，确保构建后运行时能正确加载）
 config({ path: path.resolve(process.cwd(), '.env') });
-
-// 检查环境变量
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
-// 创建PostgreSQL连接
-const connectionString = process.env.DATABASE_URL;
+import chalk from 'chalk';
 
-// 检测数据库类型
-const isNeonDatabase = connectionString.includes('neon.tech') || connectionString.includes('neon.database.com');
+const DEV = process.env.NODE_ENV === 'development';
 
-// 根据数据库类型选择配置
-const getDatabaseConfig = () => {
-  if (isNeonDatabase) {
-    // Neon Database Serverless 优化配置
-    return {
-      max: 1, // Serverless 环境下每个实例保持最小连接数，利用 Neon 自身的连接池
-      idle_timeout: 0, // 立即释放空闲连接，适应 Serverless 的快速冻结特性
-      connect_timeout: 10, // Neon 连接速度快，减少超时时间
-      max_lifetime: 3600, // 连接最大生命周期（1小时）
-      ssl: 'require', // Neon 默认需要 SSL
-      prepare: false, // 禁用预处理语句以提高兼容性
-      transform: {
-        undefined: null, // 将undefined转换为null
-      },
-      connection: {
-        application_name: 'voicehub-app'
-      },
-      onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
-      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
-    };
-  } else {
-    // 标准 PostgreSQL 数据库配置
-    return {
-      max: process.env.NODE_ENV === 'production' ? 10 : 5, // 普通PostgreSQL可以支持更多连接
-      idle_timeout: 20, // 增加空闲超时时间
-      connect_timeout: 30, // 增加连接超时时间以适应网络延迟
-      max_lifetime: 3600, // 连接最大生命周期（1小时）
-      ssl: connectionString.includes('sslmode=require') || connectionString.includes('ssl=true') ? 'require' : false,
-      prepare: false, // 禁用预处理语句以提高兼容性
-      transform: {
-        undefined: null, // 将undefined转换为null
-      },
-      connection: {
-        application_name: 'voicehub-app'
-      },
-      onnotice: process.env.NODE_ENV === 'development' ? console.log : undefined,
-      debug: process.env.NODE_ENV === 'development' && process.env.DEBUG_SQL === 'true'
-    };
-  }
+const log = (...args: unknown[]) => { 
+  if (DEV) console.log(chalk.gray('[db]'), ...args); 
 };
 
-const client = postgres(connectionString, getDatabaseConfig());
+const warn = (...args: unknown[]) => { 
+  console.log(chalk.gray('[db]'), chalk.yellow(...args)); 
+};
 
-// 创建Drizzle数据库实例
-export const db = drizzle(client, { schema });
+const success = (...args: unknown[]) => {
+  if (DEV) console.log(chalk.gray('[db]'), chalk.green(...args));
+};
 
-// 导出连接客户端（用于手动查询或关闭连接）
-export { client };
+const error = (...args: unknown[]) => {
+  console.log(chalk.gray('[db]'), chalk.red(...args));
+};
 
-// 导出schema以便在其他地方使用
-export * from './schema.ts';
+const info = (...args: unknown[]) => {
+  if (DEV) console.log(chalk.gray('[db]'), chalk.blue(...args));
+};
 
-// 导出drizzle-orm函数
-export {eq, ne, and, gt, gte, lt, lte, count, exists, desc, asc, or, sql};
+const action = (...args: unknown[]) => {
+  if (DEV) console.log(chalk.gray('[db]'), chalk.cyan(...args));
+};
 
-// 数据库连接测试函数
-export async function testConnection() {
-  try {
-    await client`SELECT 1`;
-    console.log('✅ Database connection successful');
-    return true;
-  } catch (error) {
-    console.error('❌ Database connection failed:', error);
+// ── 内部 client（不被 Proxy 拦截，用于 schema 检查和 DDL）────
+const innerClient = postgres(process.env.DATABASE_URL, {
+  max: process.env.NODE_ENV === 'production' ? 10 : 5,
+  idle_timeout: 20,
+  connect_timeout: 30,
+  prepare: false,
+  transform: { undefined: null },
+  connection: { application_name: 'voicehub-app' },
+  onnotice: DEV ? console.log : undefined,
+});
+
+// ── SQL 转义辅助 ────────────────────────────────────────────────────────────
+const escS = (s: string): string => s.replace(/'/g, "''");
+const escI = (s: string): string => `"${s.replace(/"/g, '""')}"`;
+
+// ── PG 内置类型判断（避免把枚举类型加引号导致报错）───────────────
+const BUILTIN_PREFIXES: string[] = [
+  'serial', 'integer', 'bigint', 'smallint', 'boolean', 'text', 'uuid',
+  'timestamp', 'timestamptz', 'date', 'time', 'json', 'jsonb',
+  'numeric', 'decimal', 'real', 'double precision', 'inet', 'bytea',
+  'character varying', 'varchar', 'character', 'char',
+];
+
+function isBuiltinType(typeStr: string): boolean {
+  if (BUILTIN_PREFIXES.includes(typeStr)) return true;
+  const lower = typeStr.toLowerCase();
+  for (const prefix of BUILTIN_PREFIXES) {
+    if (lower.startsWith(prefix)) {
+      const rest = lower.slice(prefix.length);
+      if (rest.length === 0 || rest.startsWith(' ') || rest.startsWith('(')) return true;
+    }
+  }
+  return false;
+}
+
+// ── default → SQL 字面量/表达式 ───────────────────────────────────────────
+function defaultToSql(d: unknown): string | null {
+  if (d === undefined || d === null) return null;
+  if (typeof d === 'boolean') return d ? 'true' : 'false';
+  if (typeof d === 'number') return String(d);
+  if (typeof d === 'string') return `'${escS(d)}'`;
+  if (typeof d === 'object') {
+    // drizzle SQL 表达式对象（如 defaultNow()、defaultRandom()）
+    const obj = d as { queryChunks?: unknown; sql?: unknown };
+    if (Array.isArray(obj.queryChunks)) {
+      const parts: string[] = [];
+      for (const chunk of obj.queryChunks) {
+        if (!chunk || typeof chunk !== 'object') continue;
+        const c = chunk as { value?: unknown; chunk?: unknown };
+        if (Array.isArray(c.value)) parts.push(...c.value.map((v) => String(v)));
+        else if (typeof c.chunk === 'string') parts.push(c.chunk);
+      }
+      const joined = parts.join(' ').trim();
+      if (joined.length > 0) return joined;
+    }
+    if (typeof obj.sql === 'string' && obj.sql.length > 0) return obj.sql;
+  }
+  return null;
+}
+
+// ── Schema 内省：构建 表 + 枚举 映射 ─────────────────────────────────
+interface ColDef { name: string; sqlType: string; notNull: boolean; isPrimary: boolean; defaultSql: string | null; isSerial: boolean; }
+interface TableDef { name: string; columns: ColDef[]; }
+interface EnumDef { name: string; values: string[]; }
+
+const { tables: schemaTables, enums: schemaEnums } = buildSchemaMaps();
+
+function buildSchemaMaps(): { tables: Map<string, TableDef>; enums: Map<string, EnumDef> } {
+  const tables = new Map<string, TableDef>();
+  const enums = new Map<string, EnumDef>();
+
+  // 1. 枚举收集（pgEnum 返回的 function 同时挂有 .enumName/.enumValues）
+  for (const val of Object.values(schema)) {
+    if (val && typeof val === 'function') {
+      const f = val as { enumName?: unknown; enumValues?: unknown };
+      if (typeof f.enumName === 'string' && Array.isArray(f.enumValues)) {
+        enums.set(f.enumName, { name: f.enumName, values: (f.enumValues as unknown[]).map((x) => String(x)) });
+      }
+    }
+  }
+
+  // 2. 表 + 列收集（pgTable 返回的对象挂有 Symbol(drizzle:Name)）
+  for (const val of Object.values(schema)) {
+    if (!val || typeof val !== 'object') continue;
+
+    const tableName = getTableNameFromSchema(val);
+    if (!tableName) continue;
+
+    const columns: ColDef[] = [];
+    for (const col of Object.values(val as object)) {
+      if (!col || typeof col !== 'object') continue;
+      const c = col as { name?: unknown; primary?: unknown; notNull?: unknown; default?: unknown; getSQLType?: () => unknown };
+      if (typeof c.getSQLType !== 'function') continue;
+
+      const rawType = c.getSQLType();
+      const sqlType = typeof rawType === 'string' ? rawType : 'text';
+      const isSerial = sqlType === 'serial';
+      const isPrimary = !!c.primary;
+      const colConfig = (c as any).config;
+      const defaultValue = colConfig?.default ?? c.default;
+
+      columns.push({
+        name: typeof c.name === 'string' ? c.name : String(c),
+        sqlType,
+        notNull: !!c.notNull || isPrimary,
+        isPrimary,
+        defaultSql: isPrimary && isSerial ? null : defaultToSql(defaultValue),
+        isSerial,
+      });
+    }
+
+    if (columns.length > 0) tables.set(tableName, { name: tableName, columns });
+  }
+
+  success(`schema 映射完成：${tables.size} 张表，${enums.size} 个枚举`);
+  return { tables, enums };
+}
+
+function findDrizzleSymbol(description: string): symbol | null {
+  for (const val of Object.values(schema)) {
+    if (!val || typeof val !== 'object') continue;
+    for (const sym of Object.getOwnPropertySymbols(val)) {
+      if (sym.toString().includes(description)) return sym;
+    }
+  }
+  return null;
+}
+
+function getTableNameFromSchema(val: unknown): string | undefined {
+  if (!val || typeof val !== 'object') return undefined;
+  
+  const obj = val as object;
+  
+  const tableSymbol = findDrizzleSymbol('drizzle:Name');
+  if (tableSymbol) {
+    const name = (val as any)[tableSymbol];
+    if (name) return String(name);
+  }
+  
+  const keys = Object.keys(obj);
+  
+  if (keys.includes('_name')) {
+    const name = (val as any)._name;
+    if (name && typeof name === 'string') return name;
+  }
+  
+  if (keys.includes('tableName')) {
+    const name = (val as any).tableName;
+    if (name && typeof name === 'string') return name;
+  }
+  
+  for (const key of keys) {
+    const value = (val as any)[key];
+    if (typeof value === 'string' && value.length > 0 && !value.includes('(')) {
+      return value;
+    }
+  }
+  
+  const symbols = Object.getOwnPropertySymbols(obj);
+  for (const sym of symbols) {
+    const name = (val as any)[sym];
+    if (typeof name === 'string' && name.length > 0 && !name.includes('(')) {
+      return name;
+    }
+  }
+  
+  const config = (val as any).config;
+  if (config && typeof config === 'object') {
+    if (typeof config.tableName === 'string') return config.tableName;
+    if (typeof config.name === 'string') return config.name;
+  }
+  
+  return undefined;
+}
+
+// ── 大小写不敏感查找 ───────────────────────────────────────────────────────
+function findTableCI(name: string): TableDef | undefined {
+  const exact = schemaTables.get(name);
+  if (exact) return exact;
+  const lower = name.toLowerCase();
+  for (const [key, info] of schemaTables) if (key.toLowerCase() === lower) return info;
+  return undefined;
+}
+
+function findEnumCI(name: string): EnumDef | undefined {
+  const exact = schemaEnums.get(name);
+  if (exact) return exact;
+  const lower = name.toLowerCase();
+  for (const [key, info] of schemaEnums) if (key.toLowerCase() === lower) return info;
+  return undefined;
+}
+
+function findColumnCI(tbl: TableDef, colName: string): ColDef | undefined {
+  const exact = tbl.columns.find((c) => c.name === colName);
+  if (exact) return exact;
+  const lower = colName.toLowerCase();
+  return tbl.columns.find((c) => c.name.toLowerCase() === lower);
+}
+
+// ── DDL 生成 ───────────────────────────────────────────────────────────────
+function colTypeForDdl(col: ColDef): string {
+  return isBuiltinType(col.sqlType) ? col.sqlType : escI(col.sqlType);
+}
+
+function buildCreateTableSql(tbl: TableDef): string {
+  const colParts = tbl.columns.map((col) => {
+    const parts = [escI(col.name), colTypeForDdl(col)];
+    if (col.defaultSql) parts.push(`DEFAULT ${col.defaultSql}`);
+    if (col.notNull && !col.isSerial) parts.push('NOT NULL');
+    return parts.join(' ');
+  });
+  const pkCol = tbl.columns.find((c) => c.isPrimary);
+  if (pkCol) colParts.push(`PRIMARY KEY (${escI(pkCol.name)})`);
+  return `CREATE TABLE IF NOT EXISTS ${escI(tbl.name)} (${colParts.join(', ')})`;
+}
+
+function buildAlterTableSql(tbl: TableDef, col: ColDef): string {
+  const parts = [
+    `ALTER TABLE ${escI(tbl.name)} ADD COLUMN IF NOT EXISTS ${escI(col.name)} ${colTypeForDdl(col)}`,
+  ];
+  if (col.defaultSql) {
+    parts.push(`DEFAULT ${col.defaultSql}`);
+    if (col.notNull) parts.push('NOT NULL');
+  }
+  return parts.join(' ');
+}
+
+function buildAlterColumnDefaultSql(tbl: TableDef, col: ColDef): string {
+  if (!col.defaultSql) return '';
+  return `ALTER TABLE ${escI(tbl.name)} ALTER COLUMN ${escI(col.name)} SET DEFAULT ${col.defaultSql}`;
+}
+
+function buildCreateTypeSql(en: EnumDef): string {
+  // objectMissing 已确认类型不存在，不需要 IF NOT EXISTS
+  const vals = en.values.map((v) => `'${escS(v)}'`).join(', ');
+  return `CREATE TYPE ${escI(en.name)} AS ENUM (${vals})`;
+}
+
+// ── 对象存在性检查（参数化查询，避免 SQL 注入）──────────────
+async function objectMissingTable(name: string): Promise<boolean> {
+  const rows = await innerClient.unsafe(
+    'SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND LOWER(table_name) = LOWER($1)',
+    [name],
+  ) as unknown[];
+  return rows.length === 0;
+}
+
+async function objectMissingColumn(table: string, col: string): Promise<boolean> {
+  const rows = await innerClient.unsafe(
+    'SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND LOWER(table_name) = LOWER($1) AND LOWER(column_name) = LOWER($2)',
+    [table, col],
+  ) as unknown[];
+  return rows.length === 0;
+}
+
+async function objectMissingType(name: string): Promise<boolean> {
+  const rows = await innerClient.unsafe(
+    'SELECT 1 FROM pg_type t JOIN pg_namespace n ON t.typnamespace = n.oid WHERE LOWER(t.typname) = LOWER($1) AND n.nspname = current_schema()',
+    [name],
+  ) as unknown[];
+  return rows.length === 0;
+}
+
+async function columnMissingDefault(table: string, col: string): Promise<boolean> {
+  const rows = await innerClient.unsafe(
+    'SELECT column_default FROM information_schema.columns WHERE table_schema = current_schema() AND LOWER(table_name) = LOWER($1) AND LOWER(column_name) = LOWER($2)',
+    [table, col],
+  ) as { column_default: string | null }[];
+  return rows.length === 0 || rows[0].column_default === null;
+}
+
+// ── Schema 修复引擎 ──────────────────────────────────────────────────────
+// runningFixes: 同一目标（表/列/枚举）并发请求只执行一次 DDL
+const runningFixes = new Map<string, Promise<boolean>>();
+const MAX_RECURSION = 8;
+
+type FixTarget =
+  | { kind: 'table'; name: string; ddl: string }
+  | { kind: 'column'; table: string; col: string; ddl: string }
+  | { kind: 'columnDefault'; table: string; col: string; ddl: string }
+  | { kind: 'type'; name: string; ddl: string };
+
+function targetKey(t: FixTarget): string {
+  if (t.kind === 'type') return `e:${t.name}`;
+  if (t.kind === 'table') return `t:${t.name}`;
+  if (t.kind === 'columnDefault') return `d:${t.table}:${t.col}`;
+  return `c:${t.table}:${t.col}`;
+}
+
+async function objectMissing(t: FixTarget): Promise<boolean> {
+  if (t.kind === 'table') return objectMissingTable(t.name);
+  if (t.kind === 'column') return objectMissingColumn(t.table, t.col);
+  if (t.kind === 'columnDefault') return columnMissingDefault(t.table, t.col);
+  return objectMissingType(t.name);
+}
+
+async function fixTarget(target: FixTarget, depth: number): Promise<boolean> {
+  if (depth >= MAX_RECURSION) {
+    warn(`递归修复达到上限（${MAX_RECURSION}），放弃: ${targetKey(target)}`);
     return false;
   }
-}
 
-// 获取数据库连接状态
-export function getConnectionStatus() {
-  const isConnected = !client.ended;
+  // 并发去重：如果已有同目标的修复 Promise，直接复用
+  const key = targetKey(target);
+  const pending = runningFixes.get(key);
+  if (pending) return await pending;
 
-  return {
-    isConnected,
-    connected: isConnected,
-    status: isConnected ? 'connected' : 'disconnected',
-    maxConnections: client.options.max,
-    idleTimeout: client.options.idle_timeout,
-    connectTimeout: client.options.connect_timeout
-  };
-}
-
-// 连接管理 - 根据数据库类型自适应
-let idleTimer: NodeJS.Timeout | null = null;
-// Neon 数据库使用更短的空闲时间以支持自动启停，普通 PostgreSQL 使用更长的空闲时间
-const IDLE_TIMEOUT = isNeonDatabase ? 5 * 60 * 1000 : 10 * 60 * 1000; // Neon: 5分钟，PostgreSQL: 10分钟
-
-// 重置空闲计时器
-function resetIdleTimer() {
-  if (idleTimer) {
-    clearTimeout(idleTimer);
-  }
-  
-  // 只在生产环境启用自动断开
-  if (process.env.NODE_ENV === 'production') {
-    idleTimer = setTimeout(async () => {
-      try {
-        if (!client.ended) {
-          const dbType = isNeonDatabase ? 'Neon' : 'PostgreSQL';
-          console.log(`🔄 Auto-closing idle ${dbType} database connections${isNeonDatabase ? ' for Serverless optimization' : ''}`);
-          await client.end({ timeout: isNeonDatabase ? 5 : 10 });
-        }
-      } catch (error) {
-        console.error('❌ Error during auto-close:', error);
-      }
-    }, IDLE_TIMEOUT);
-  }
-}
-
-// 包装数据库操作以支持自动启停
-export function withAutoReconnect<T extends any[], R>(
-  operation: (...args: T) => Promise<R>
-) {
-  return async (...args: T): Promise<R> => {
-    resetIdleTimer();
-    
+  const fixPromise = (async (): Promise<boolean> => {
     try {
-      return await operation(...args);
-    } catch (error: any) {
-      // 如果连接已关闭，记录信息
-      if (error?.code === 'CONNECTION_ENDED' || client.ended) {
-        const dbType = isNeonDatabase ? 'Neon' : 'PostgreSQL';
-        console.log(`🔄 ${dbType} database connection ended${isNeonDatabase ? ', Neon will auto-reconnect on next query' : ', will reconnect on next query'}`);
+      const missing = await objectMissing(target);
+      if (!missing) {
+        success(`对象已存在: ${key}`);
+        return true;
       }
-      throw error;
+
+      action(`执行 DDL (depth=${depth}): ${target.ddl}`);
+
+      try {
+        await innerClient.unsafe(target.ddl);
+      } catch (ddlErr) {
+        // DDL 自身缺 schema 对象？递归修复依赖后重试
+        if (!isSchemaError(ddlErr)) throw ddlErr;
+        const dep = targetFromError(ddlErr);
+        if (!dep) throw ddlErr;
+        info(`DDL 依赖其他 schema 对象，先递归修复: ${targetKey(dep)}`);
+        const depFixed = await fixTarget(dep, depth + 1);
+        if (!depFixed) throw ddlErr;
+        await innerClient.unsafe(target.ddl);
+      }
+
+      success(`schema 已修复: ${key}`);
+
+      if (target.kind === 'columnDefault') {
+        await fixAllMissingDefaults(target.table);
+      }
+
+      return true;
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      warn(`schema 修复失败（${key}）: ${msg}`);
+      return false;
+    } finally {
+      runningFixes.delete(key);
     }
-  };
+  })();
+
+  runningFixes.set(key, fixPromise);
+  return await fixPromise;
 }
 
-// 优雅关闭数据库连接
-export async function closeConnection() {
-  try {
-    if (idleTimer) {
-      clearTimeout(idleTimer);
-      idleTimer = null;
-    }
+async function fixAllMissingDefaults(tableName: string): Promise<void> {
+  const tbl = findTableCI(tableName);
+  if (!tbl) return;
+
+  for (const col of tbl.columns) {
+    if (!col.defaultSql) continue;
     
-    if (!client.ended) {
-      await client.end({ timeout: 10 });
-      console.log('✅ Database connection closed gracefully');
+    const key = `d:${tbl.name}:${col.name}`;
+    if (runningFixes.has(key)) continue;
+
+    const missing = await columnMissingDefault(tbl.name, col.name);
+    if (missing) {
+      const ddl = buildAlterColumnDefaultSql(tbl, col);
+      if (ddl) {
+        action(`批量修复默认值: ${ddl}`);
+        try {
+          await innerClient.unsafe(ddl);
+          success(`默认值已修复: ${key}`);
+        } catch (e) {
+          const msg = (e as { message?: string })?.message ?? String(e);
+          warn(`默认值修复失败（${key}）: ${msg}`);
+        }
+      }
     }
-  } catch (error) {
-    console.error('❌ Error closing database connection:', error);
   }
 }
 
-// 设置优雅关闭处理
-if (typeof process !== 'undefined') {
-  const gracefulShutdown = async () => {
-    console.log('🔄 Shutting down database connections...');
-    await closeConnection();
-  };
-  
-  process.on('SIGINT', gracefulShutdown);
-  process.on('SIGTERM', gracefulShutdown);
-  process.on('beforeExit', gracefulShutdown);
+// ── 错误解析：从 PG 错误消息判断缺哪个 schema 对象 ─────────
+const SCHEMA_ERROR_CODES = new Set(['42P01', '42703', '42704', '23502']);
+function isSchemaError(err: unknown): boolean {
+  const code = (err as { code?: string })?.code;
+  return !!code && SCHEMA_ERROR_CODES.has(code);
 }
+
+function targetFromError(err: unknown): FixTarget | null {
+  const e = err as { code?: string; message?: string };
+  const code = e.code ?? '';
+  const msg = e.message ?? '';
+
+  if (code === '42P01') {
+    const m = msg.match(/relation\s+"([^"]+)"/i);
+    if (m) {
+      const info = findTableCI(m[1]);
+      if (info) return { kind: 'table', name: info.name, ddl: buildCreateTableSql(info) };
+    }
+  }
+  if (code === '42703') {
+    const m = msg.match(/column\s+"([^"]+)"\s+of\s+relation\s+"([^"]+)"/i);
+    if (m) {
+      const tbl = findTableCI(m[2]);
+      if (tbl) {
+        const col = findColumnCI(tbl, m[1]);
+        if (col) return { kind: 'column', table: tbl.name, col: col.name, ddl: buildAlterTableSql(tbl, col) };
+      }
+    }
+  }
+  if (code === '42704') {
+    const m = msg.match(/type\s+"([^"]+)"/i);
+    if (m) {
+      const info = findEnumCI(m[1]);
+      if (info) return { kind: 'type', name: info.name, ddl: buildCreateTypeSql(info) };
+    }
+  }
+  if (code === '23502') {
+    const m = msg.match(/column\s+"([^"]+)"\s+of\s+relation\s+"([^"]+)"/i);
+    if (m) {
+      const tbl = findTableCI(m[2]);
+      if (tbl) {
+        const col = findColumnCI(tbl, m[1]);
+        if (col && col.defaultSql) {
+          const ddl = buildAlterColumnDefaultSql(tbl, col);
+          if (ddl) return { kind: 'columnDefault', table: tbl.name, col: col.name, ddl };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+async function ensureSchemaFixedFor(err: unknown): Promise<boolean> {
+  const target = targetFromError(err);
+  if (!target) return false;
+  return fixTarget(target, 0);
+}
+
+// ── Proxy 包装：拦截业务查询 + schema 错误自动修复 ────────────
+// wrapPromise: 对任意 Promise 捕获 schema 错误 → 修复 → 重新 execute
+function wrapPromise<T>(promise: Promise<T>, execute: () => Promise<T>): Promise<T> {
+  return promise.catch(async (err) => {
+    if (!isSchemaError(err)) throw err;
+    const fixed = await ensureSchemaFixedFor(err);
+    if (!fixed) throw err;
+    action(`重试查询（schema 已修复）`);
+    return await execute();
+  });
+}
+
+// wrapQuery: 对 postgres.js 的 Query 对象覆盖 .then / .values / .execute
+function wrapWithSchemaFix<T>(result: any, execute: () => Promise<T>): any {
+  if (result && typeof result.values === 'function') {
+    const origThen = result.then.bind(result);
+    const origValues = result.values?.bind(result);
+    const origExecute = result.execute?.bind(result);
+
+    result.then = function (onFulfilled: any, onRejected: any): any {
+      return origThen(
+        onFulfilled,
+        async (err: unknown) => {
+          if (!isSchemaError(err)) throw err;
+          const fixed = await ensureSchemaFixedFor(err);
+          if (!fixed) throw err;
+          action(`重试查询（schema 已修复）`);
+          return await execute();
+        },
+      );
+    };
+
+    if (origValues) {
+      result.values = function (): any {
+        return wrapPromise(origValues(), () => execute() as any);
+      };
+    }
+
+    if (origExecute) {
+      result.execute = function (): any {
+        return wrapPromise(origExecute(), () => execute() as any);
+      };
+    }
+
+    return result;
+  }
+
+  // 普通 Promise / thenable
+  return wrapPromise(result as any, execute);
+}
+
+// ── 对外 client：Proxy 包装 innerClient ───────────────────────
+const client = new Proxy(innerClient as any, {
+  // client`SELECT 1` 形式（Tagged Template）
+  apply(_t, _this, args) {
+    const result = innerClient(...(args as any));
+    return wrapWithSchemaFix(result, () => innerClient(...(args as any)));
+  },
+  // client.unsafe(sql), client.end() 等方法调用
+  get(target, prop, _receiver) {
+    const value = Reflect.get(target, prop);
+    if (typeof value !== 'function') return value;
+    const boundFn = (value as Function).bind(target);
+    // 生命周期方法直接透传（不参与 schema 修复）
+    const s = String(prop);
+    if (s === 'end' || s === 'destroy' || s === 'close' || s === 'cancel') return boundFn;
+    return function (this: unknown, ...args: unknown[]): any {
+      const result = boundFn(...args);
+      return wrapWithSchemaFix(result, () => boundFn(...args) as any);
+    };
+  },
+}) as ReturnType<typeof postgres>;
+
+// ── 对外导出 ───────────────────────────────────────────────────────────────
+export const db = drizzle(client, { schema });
+export { client };
+export * from './schema.ts';
+export { eq, ne, and, gt, gte, lt, lte, count, exists, desc, asc, or, sql };
+
+export async function testConnection(): Promise<boolean> {
+  try { await client`SELECT 1`; success('连接正常'); return true; }
+  catch (error) { error(`连接失败: ${error}`); return false; }
+}
+
+export async function ensureAllTablesExist(): Promise<void> {
+  info('开始检查并创建缺失的表...');
+  
+  const MAX_RETRY = 3;
+  let retryCount = 0;
+  let hasFailures = true;
+  
+  while (hasFailures && retryCount < MAX_RETRY) {
+    hasFailures = false;
+    retryCount++;
+    
+    if (retryCount > 1) {
+      log(`🔄 第 ${retryCount} 次重试创建缺失的对象...`);
+    }
+    
+    for (const [enumName, enumDef] of schemaEnums) {
+      const exists = !(await objectMissingType(enumName));
+      if (!exists) {
+        action(`创建枚举类型: ${enumName}`);
+        const ddl = buildCreateTypeSql(enumDef);
+        try {
+          await innerClient.unsafe(ddl);
+          success(`枚举 ${enumName} 创建成功`);
+        } catch (error) {
+          error(`创建枚举 ${enumName} 失败: ${error}`);
+          hasFailures = true;
+        }
+      }
+    }
+    
+    const sortedTables = sortTablesByDependency();
+    for (const tableDef of sortedTables) {
+      const exists = !(await objectMissingTable(tableDef.name));
+      if (!exists) {
+        action(`创建表: ${tableDef.name}`);
+        const ddl = buildCreateTableSql(tableDef);
+        try {
+          await innerClient.unsafe(ddl);
+          success(`表 ${tableDef.name} 创建成功`);
+        } catch (error) {
+          error(`创建表 ${tableDef.name} 失败: ${error}`);
+          hasFailures = true;
+        }
+      }
+    }
+  }
+  
+  if (hasFailures) {
+    warn(`经过 ${MAX_RETRY} 次重试后仍有表创建失败，请检查数据库配置`);
+  }
+  
+  success('表检查完成');
+}
+
+function sortTablesByDependency(): TableDef[] {
+  const tables = Array.from(schemaTables.values());
+  const inDegree = new Map<string, number>();
+  const adjacency = new Map<string, Set<string>>();
+  
+  for (const table of tables) {
+    inDegree.set(table.name, 0);
+    adjacency.set(table.name, new Set());
+  }
+  
+  for (const table of tables) {
+    for (const col of table.columns) {
+      for (const refTable of schemaTables.keys()) {
+        if (col.sqlType.toLowerCase().includes(refTable.toLowerCase() + 'id')) {
+          adjacency.get(refTable)?.add(table.name);
+          inDegree.set(table.name, (inDegree.get(table.name) || 0) + 1);
+        }
+      }
+    }
+  }
+  
+  const queue: string[] = [];
+  for (const [name, degree] of inDegree) {
+    if (degree === 0) queue.push(name);
+  }
+  
+  const sorted: TableDef[] = [];
+  while (queue.length > 0) {
+    const name = queue.shift()!;
+    const table = schemaTables.get(name);
+    if (table) sorted.push(table);
+    
+    for (const neighbor of adjacency.get(name) || []) {
+      const deg = (inDegree.get(neighbor) || 0) - 1;
+      inDegree.set(neighbor, deg);
+      if (deg === 0) queue.push(neighbor);
+    }
+  }
+  
+  for (const table of tables) {
+    if (!sorted.find(t => t.name === table.name)) {
+      sorted.push(table);
+    }
+  }
+  
+  return sorted;
+}
+
+export function getConnectionStatus(): { connected: boolean; status: string } {
+  return { connected: !(innerClient as any).ended, status: (innerClient as any).ended ? 'disconnected' : 'connected' };
+}
+
+export async function closeConnection(): Promise<void> {
+  try { if (!(innerClient as any).ended) { await (innerClient as any).end({ timeout: 10 }); success('连接已优雅关闭'); } }
+  catch (error) { error(`关闭连接失败: ${error}`); }
+}
+
+if (typeof process !== 'undefined') {
+  process.on('SIGINT', closeConnection);
+  process.on('SIGTERM', closeConnection);
+  process.on('beforeExit', closeConnection);
+}
+
+let initPromise: Promise<void> | null = null;
+
+export async function initDatabase(): Promise<void> {
+  if (initPromise) return initPromise;
+  
+  initPromise = (async () => {
+    try {
+      await ensureAllTablesExist();
+    } catch (error) {
+      error(`数据库初始化失败: ${error}`);
+    }
+  })();
+  
+  return initPromise;
+}
+
+// 自动初始化但不阻塞 - 仅在需要时初始化
+// 移除自动初始化，避免与脚本中的 client.end() 冲突
+// 如果需要启动时初始化，应在服务器启动时显式调用
+

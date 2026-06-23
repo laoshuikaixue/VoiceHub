@@ -24,23 +24,26 @@ async function main() {
       .where(eq(users.role, 'SUPER_ADMIN'))
       .limit(1)
 
-    if (existingSuperAdmin.length > 0) {
-      console.log('✅ 管理员已存在')
-      return existingSuperAdmin[0]
-    }
+    let admin = existingSuperAdmin.length > 0 ? existingSuperAdmin[0] : null
 
-    // 创建管理员
-    const hashedPassword = await bcrypt.hash('admin123', 10)
-    const [admin] = await db
-      .insert(users)
-      .values({
-        username: 'admin',
-        name: '超级管理员',
-        password: hashedPassword,
-        role: 'SUPER_ADMIN',
-        forcePasswordChange: false
-      })
-      .returning()
+    if (!admin) {
+      // 创建管理员
+      const hashedPassword = await bcrypt.hash('admin123', 10)
+      const [newAdmin] = await db
+        .insert(users)
+        .values({
+          username: 'admin',
+          name: '超级管理员',
+          password: hashedPassword,
+          role: 'SUPER_ADMIN',
+          forcePasswordChange: false
+        })
+        .returning()
+      admin = newAdmin
+      console.log('✅ 管理员创建成功 (admin/admin123)')
+    } else {
+      console.log('✅ 管理员已存在')
+    }
 
     // 创建通知设置
     await db
@@ -65,7 +68,6 @@ async function main() {
       })
       .onConflictDoNothing()
 
-    console.log('✅ 管理员创建成功 (admin/admin123)')
     return admin
   } catch (error) {
     console.error('❌ 创建管理员失败:', error)
