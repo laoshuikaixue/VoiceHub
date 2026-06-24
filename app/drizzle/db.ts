@@ -33,6 +33,7 @@ const DB_CONNECT_TIMEOUT = 30;
 const SCHEMA_FIX_MAX_RECURSION = 32;
 const SCHEMA_FIX_MAX_ATTEMPTS = 10;
 const SCHEMA_FIX_MAX_RETRY = 3;
+const FIX_TIMEOUT_MS = 60000; // 单次修复超时 60 秒
 
 /**
  * 脱敏错误消息，移除可能的敏感信息（如密码）
@@ -581,6 +582,14 @@ async function fixTarget(target: FixTarget, depth: number): Promise<boolean> {
   });
   runningFixes.set(key, placeholderPromise);
 
+  // 设置超时，防止修复卡住导致永久阻塞
+  const timeoutId = setTimeout(() => {
+    if (runningFixes.get(key) === placeholderPromise) {
+      runningFixes.delete(key);
+      warn(`修复超时 (${FIX_TIMEOUT_MS / 1000}s)，已清除: ${key}`);
+    }
+  }, FIX_TIMEOUT_MS);
+
   // 执行实际修复工作
   const fixPromise = (async (): Promise<boolean> => {
     try {
@@ -660,6 +669,7 @@ async function fixTarget(target: FixTarget, depth: number): Promise<boolean> {
       warn(`schema 修复失败（${key}）: ${msg}`);
       return false;
     } finally {
+      clearTimeout(timeoutId);
       runningFixes.delete(key);
     }
   })();
