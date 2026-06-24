@@ -366,6 +366,11 @@ NUXT_PUBLIC_HOST=https://voicehub.example.com
 推荐使用 [sops-nix](https://github.com/Mic92/sops-nix) 管理 secrets，避免明文存储在 Nix store 中。
 
 模块会自动设置 `DynamicUser`、`ProtectSystem=strict`、`NoNewPrivileges` 等安全加固。
+防火墙默认不开放端口，在配置中启用以允许外部访问：
+
+```nix
+services.voicehub.openFirewall = true;
+```
 
 应用配置并部署：
 
