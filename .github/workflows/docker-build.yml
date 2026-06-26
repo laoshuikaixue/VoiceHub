@@ -14,35 +14,110 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push:
-    if: github.repository == 'laoshuikaixue/VoiceHub' ||github.event_name == 'workflow_dispatch'
+  # 阶段1：优先构建并推送 amd64 架构，立即可用
+  build-amd64:
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: '0'
 
-      # 提取版本号并处理成不同格式
+      - name: Prepare lowercase names
+        id: names
+        run: |
+          echo "image-name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "actor-name=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Extract version from package.json
         id: extract-version
         run: |
-          # 提取完整版本号
           FULL_VERSION=$(node -p "require('./package.json').version")
-          # 提取主版本.次版本 (如 1.2 从 1.2.3)
           MAJOR_MINOR_VERSION=$(echo "$FULL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/')
-
           echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
           echo "major-minor-version=$MAJOR_MINOR_VERSION" >> $GITHUB_OUTPUT
           echo "Extracted full version: $FULL_VERSION"
           echo "Extracted major.minor version: $MAJOR_MINOR_VERSION"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ steps.names.outputs.actor-name }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.names.outputs.image-name }}
+          tags: |
+            # 正式标签 - amd64 构建完成后立即可用
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=${{ steps.extract-version.outputs.full-version }}
+            type=raw,value=${{ steps.extract-version.outputs.major-minor-version }}
+            # 架构后缀标签 - 用于后续多架构合并
+            type=raw,value=latest-amd64,enable={{is_default_branch}}
+            type=raw,value=${{ steps.extract-version.outputs.full-version }}-amd64
+            type=raw,value=${{ steps.extract-version.outputs.major-minor-version }}-amd64
+
+      - name: Build and push amd64 image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha,scope=amd64
+          cache-to: type=gha,mode=max,scope=amd64
+
+  # 阶段2：并行构建其余架构，各自推送带后缀的独立标签
+  build-other-arches:
+    if: github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        arch:
+          - { platform: linux/arm64, suffix: -arm64 }
+          - { platform: linux/arm/v7, suffix: -armv7 }
+          - { platform: linux/arm/v6, suffix: -armv6 }
+          - { platform: linux/ppc64le, suffix: -ppc64le }
+          - { platform: linux/s390x, suffix: -s390x }
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: '0'
+
+      - name: Prepare lowercase names
+        id: names
+        run: |
+          echo "image-name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "actor-name=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Extract version from package.json
+        id: extract-version
+        run: |
+          FULL_VERSION=$(node -p "require('./package.json').version")
+          MAJOR_MINOR_VERSION=$(echo "$FULL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/')
+          echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
+          echo "major-minor-version=$MAJOR_MINOR_VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -54,31 +129,94 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ steps.names.outputs.actor-name }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.names.outputs.image-name }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-            type=ref,event=pr
-            # 使用从package.json提取的完整版本号
-            type=raw,value=${{ steps.extract-version.outputs.full-version }}
-            # 使用主版本.次版本格式
-            type=raw,value=${{ steps.extract-version.outputs.major-minor-version }}
+            type=raw,value=latest${{ matrix.arch.suffix }},enable={{is_default_branch}}
+            type=raw,value=${{ steps.extract-version.outputs.full-version }}${{ matrix.arch.suffix }}
+            type=raw,value=${{ steps.extract-version.outputs.major-minor-version }}${{ matrix.arch.suffix }}
 
-      - name: Build and push Docker image
-        id: build-and-push
+      - name: Build and push ${{ matrix.arch.platform }} image
         uses: docker/build-push-action@v7
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          platforms: ${{ matrix.arch.platform }}
+          cache-from: type=gha,scope=${{ matrix.arch.suffix }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.arch.suffix }}
+
+  # 阶段3：所有架构构建完成后，合并为多架构 manifest 清单并推送正式标签
+  merge-manifests:
+    if: (github.repository == 'laoshuikaixue/VoiceHub' || github.event_name == 'workflow_dispatch') && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [build-amd64, build-other-arches]
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare lowercase names
+        id: names
+        run: |
+          echo "image-name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "actor-name=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Extract version from package.json
+        id: extract-version
+        run: |
+          FULL_VERSION=$(node -p "require('./package.json').version")
+          MAJOR_MINOR_VERSION=$(echo "$FULL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+$/\1/')
+          echo "full-version=$FULL_VERSION" >> $GITHUB_OUTPUT
+          echo "major-minor-version=$MAJOR_MINOR_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ steps.names.outputs.actor-name }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-architecture manifest lists
+        env:
+          IMAGE_BASE: ${{ env.REGISTRY }}/${{ steps.names.outputs.image-name }}
+          FULL_VER: ${{ steps.extract-version.outputs.full-version }}
+          MAJOR_MINOR_VER: ${{ steps.extract-version.outputs.major-minor-version }}
+        run: |
+          # 所有架构后缀列表
+          ARCH_SUFFIXES=("-amd64" "-arm64" "-armv7" "-armv6" "-ppc64le" "-s390x")
+
+          # 生成指定标签的所有架构镜像参数
+          build_arch_args() {
+            local tag=$1
+            local args=""
+            for suffix in "${ARCH_SUFFIXES[@]}"; do
+              args="$args ${IMAGE_BASE}:${tag}${suffix}"
+            done
+            echo "$args"
+          }
+
+          # 合并 latest 标签（仅默认分支）
+          if [ "${{ github.ref == 'refs/heads/main' }}" = "true" ]; then
+            echo "Merging multi-arch manifest for latest tag"
+            docker buildx imagetools create -t "${IMAGE_BASE}:latest" $(build_arch_args "latest")
+          fi
+
+          # 合并完整版本号标签
+          echo "Merging multi-arch manifest for ${FULL_VER} tag"
+          docker buildx imagetools create -t "${IMAGE_BASE}:${FULL_VER}" $(build_arch_args "${FULL_VER}")
+
+          # 合并主次版本号标签
+          echo "Merging multi-arch manifest for ${MAJOR_MINOR_VER} tag"
+          docker buildx imagetools create -t "${IMAGE_BASE}:${MAJOR_MINOR_VER}" $(build_arch_args "${MAJOR_MINOR_VER}")
