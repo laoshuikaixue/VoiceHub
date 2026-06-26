@@ -1,6 +1,6 @@
 import { createError, getQuery, readBody } from 'h3'
 import { z } from 'zod'
-import { deleteCardCodesByIds } from '~~/server/services/cardCodeCleanupService'
+import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
 
 const MAX_DELETE_COUNT = 500
 

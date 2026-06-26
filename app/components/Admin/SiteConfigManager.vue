@@ -205,28 +205,6 @@
             >
           </div>
 
-          <div class="p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-3">
-            <div>
-              <p class="text-xs font-bold text-zinc-200">点歌券自动删除</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5 leading-relaxed">
-                作废或核销后的点歌券将在指定天数后自动删除，设置为 0 表示不自动删除。
-              </p>
-            </div>
-            <div>
-              <label :class="labelClass">保留天数</label>
-              <div class="relative">
-                <input
-                  v-model.number="formData.cardCodeAutoDeleteDays"
-                  type="number"
-                  min="0"
-                  max="3650"
-                  :class="[inputClass, 'pr-16']"
-                >
-                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-700 uppercase">天</span>
-              </div>
-            </div>
-          </div>
-
           <div
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
@@ -556,7 +534,6 @@ const formData = ref({
   // 点歌券点歌设置
   enableCardCodeRequests: false,
   requireCardCodeForRequests: false,
-  cardCodeAutoDeleteDays: 0,
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
@@ -662,7 +639,6 @@ const loadConfig = async () => {
       // 点歌券点歌设置
       enableCardCodeRequests: !!data.enableCardCodeRequests,
       requireCardCodeForRequests: !!data.requireCardCodeForRequests,
-      cardCodeAutoDeleteDays: Number.isInteger(data.cardCodeAutoDeleteDays) ? data.cardCodeAutoDeleteDays : 0,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
@@ -722,7 +698,6 @@ const saveConfig = async () => {
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
         (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines,
-      cardCodeAutoDeleteDays: Math.min(3650, Math.max(0, Number.parseInt(String(formData.value.cardCodeAutoDeleteDays ?? 0), 10) || 0)),
       // 确保根据限额类型处理空值
       dailySubmissionLimit:
         activeLimitTab.value === 'daily' ? formData.value.dailySubmissionLimit : null,

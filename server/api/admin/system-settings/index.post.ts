@@ -3,7 +3,6 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
-import { CARD_CODE_AUTO_DELETE_MAX_DAYS } from '~~/server/services/cardCodeCleanupService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -134,16 +133,6 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.requireCardCodeForRequests = body.requireCardCodeForRequests
-    }
-
-    if (body.cardCodeAutoDeleteDays !== undefined) {
-      if (!Number.isInteger(body.cardCodeAutoDeleteDays) || body.cardCodeAutoDeleteDays < 0 || body.cardCodeAutoDeleteDays > CARD_CODE_AUTO_DELETE_MAX_DAYS) {
-        throw createError({
-          statusCode: 400,
-          message: `cardCodeAutoDeleteDays 必须是 0 到 ${CARD_CODE_AUTO_DELETE_MAX_DAYS} 之间的整数`
-        })
-      }
-      updateData.cardCodeAutoDeleteDays = body.cardCodeAutoDeleteDays
     }
 
     if (body.dailySubmissionLimit !== undefined) {

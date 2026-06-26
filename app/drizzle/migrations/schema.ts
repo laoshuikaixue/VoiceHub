@@ -369,5 +369,4 @@ export const systemSettings = pgTable("SystemSettings", {
 	telemetryEnabled: boolean().default(true).notNull(),
 	enableCardCodeRequests: boolean().default(false).notNull(),
 	requireCardCodeForRequests: boolean().default(false).notNull(),
-	cardCodeAutoDeleteDays: integer().default(0).notNull(),
 });

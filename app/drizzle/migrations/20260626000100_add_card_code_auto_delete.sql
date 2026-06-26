@@ -1,6 +1,3 @@
-ALTER TABLE "SystemSettings"
-  ADD COLUMN IF NOT EXISTS "cardCodeAutoDeleteDays" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
-
 ALTER TABLE "CardCodeRedeemLog"
   ALTER COLUMN "cardCodeId" DROP NOT NULL;--> statement-breakpoint
 

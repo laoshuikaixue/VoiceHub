@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { deleteCardCodesByIds } from '~~/server/services/cardCodeCleanupService'
+import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
 
 const parseIds = (body: any): number[] => {
   const rawIds = Array.isArray(body?.ids) ? body.ids : body?.id !== undefined ? [body.id] : []

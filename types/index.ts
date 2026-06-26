@@ -140,7 +140,6 @@ export interface SystemSettings {
   enableSubmissionRemarks?: boolean
   enableCardCodeRequests?: boolean
   requireCardCodeForRequests?: boolean
-  cardCodeAutoDeleteDays?: number
 }
 
 export interface RequestTime {

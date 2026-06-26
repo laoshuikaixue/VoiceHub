@@ -1536,13 +1536,6 @@
           "notNull": true,
           "default": false
         },
-        "cardCodeAutoDeleteDays": {
-          "name": "cardCodeAutoDeleteDays",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
         "captchaProvider": {
           "name": "captchaProvider",
           "type": "text",

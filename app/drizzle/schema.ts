@@ -169,7 +169,6 @@ export const systemSettings = pgTable('SystemSettings', {
   // 卡密点歌相关开关（用于允许用户使用卡密或强制使用卡密投稿）
   enableCardCodeRequests: boolean('enableCardCodeRequests').default(false).notNull(),
   requireCardCodeForRequests: boolean('requireCardCodeForRequests').default(false).notNull(),
-  cardCodeAutoDeleteDays: integer('cardCodeAutoDeleteDays').default(0).notNull(),
   
   // 验证码配置
   captchaProvider: text('captchaProvider').default('graphic').notNull(),

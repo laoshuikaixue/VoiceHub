@@ -1129,7 +1129,6 @@ export default defineEventHandler(async (event) => {
                           'enableSubmissionRemarks',
                           'enableCardCodeRequests',
                           'requireCardCodeForRequests',
-                          'cardCodeAutoDeleteDays',
                           'hideStudentInfo',
                           'smtpEnabled',
                           'smtpHost',
