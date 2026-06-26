@@ -50,8 +50,8 @@ export const cleanupExpiredCardCodes = async (options: { days?: number; now?: Da
     .delete(cardCodes)
     .where(
       or(
-        and(eq(cardCodes.status, 'INVALID'), sql`${cardCodes.updatedAt} < ${cutoffValue}::timestamp`),
-        and(eq(cardCodes.status, 'REDEEMED'), sql`coalesce(${cardCodes.redeemedAt}, ${cardCodes.updatedAt}) < ${cutoffValue}::timestamp`)
+        and(eq(cardCodes.status, 'INVALID'), sql`${cardCodes.updatedAt} AT TIME ZONE 'UTC' < ${cutoffValue}::timestamptz`),
+        and(eq(cardCodes.status, 'REDEEMED'), sql`coalesce(${cardCodes.redeemedAt}, ${cardCodes.updatedAt}) AT TIME ZONE 'UTC' < ${cutoffValue}::timestamptz`)
       )
     )
     .returning({ id: cardCodes.id })
