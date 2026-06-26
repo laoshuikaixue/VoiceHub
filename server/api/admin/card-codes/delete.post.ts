@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
   if (!ids.length) {
     throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })
   }
+  if (ids.length > 500) {
+    throw createError({ statusCode: 400, message: '单次最多删除 500 个点歌券' })
+  }
 
   try {
     const deletedRows = await deleteCardCodesByIds(ids)

@@ -1,4 +1,4 @@
-import { and, eq, inArray, lt, or } from 'drizzle-orm'
+import { and, eq, inArray, lt, or, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { cardCodes, systemSettings } from '~/drizzle/schema'
 
@@ -50,7 +50,7 @@ export const cleanupExpiredCardCodes = async (options: { days?: number; now?: Da
     .where(
       or(
         and(eq(cardCodes.status, 'INVALID'), lt(cardCodes.updatedAt, cutoff)),
-        and(eq(cardCodes.status, 'REDEEMED'), lt(cardCodes.redeemedAt, cutoff))
+        and(eq(cardCodes.status, 'REDEEMED'), lt(sql<Date>`coalesce(${cardCodes.redeemedAt}, ${cardCodes.updatedAt})`, cutoff))
       )
     )
     .returning({ id: cardCodes.id })

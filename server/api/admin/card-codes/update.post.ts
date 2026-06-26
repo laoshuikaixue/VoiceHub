@@ -42,7 +42,6 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: '不支持的状态值' })
       }
       updateObj.status = status
-      updateObj.updatedAt = new Date()
     }
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
@@ -74,6 +73,7 @@ export default defineEventHandler(async (event) => {
     if (Object.keys(updateObj).length === 0) {
       throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
+    updateObj.updatedAt = new Date()
 
     const res = await db.transaction(async (tx) => {
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
