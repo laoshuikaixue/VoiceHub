@@ -263,6 +263,12 @@
                 当使用独立的迁移流程时可设为 false。
               '';
             };
+
+            openFirewall = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "在防火墙中开放 VoiceHub 端口";
+            };
           };
 
           config = lib.mkIf cfg.enable {
@@ -271,6 +277,8 @@
               ensureDatabases = [ cfg.database.name ];
               ensureUsers = [{ name = cfg.database.user; ensureDBOwnership = true; }];
             };
+
+            networking.firewall.allowedTCPPorts = lib.optionals cfg.openFirewall [ cfg.port ];
 
             systemd.services.voicehub = {
               description = "VoiceHub - 校园广播站点歌服务";
