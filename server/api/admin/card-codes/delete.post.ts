@@ -4,7 +4,10 @@ import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
 const parseIds = (body: any): number[] => {
   const rawIds = Array.isArray(body?.ids) ? body.ids : body?.id !== undefined ? [body.id] : []
   return Array.from(new Set(
-    rawIds.map((id: any) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
+    rawIds
+      .filter((id: any) => (typeof id === 'number' || typeof id === 'string') && id !== '')
+      .map((id: any) => Number(id))
+      .filter((id: number) => Number.isInteger(id) && id > 0)
   ))
 }
 
@@ -17,7 +20,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: '权限不足' })
   }
 
-  const body = await readBody(event) ?? {}
+  const body = await readBody(event).catch(() => ({})) ?? {}
   const ids = parseIds(body)
   if (!ids.length) {
     throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })
