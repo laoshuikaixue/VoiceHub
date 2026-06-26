@@ -7,6 +7,8 @@ const deleteCardCodesSchema = z.object({
   ids: z.array(z.coerce.number().int().positive()).max(500, '单次最多删除 500 个点歌券').optional()
 })
 
+const MAX_DELETE_COUNT = 500
+
 export default defineEventHandler(async (event) => {
   const apiKey = event.context.apiKey
   if (!apiKey) {
@@ -24,6 +26,9 @@ export default defineEventHandler(async (event) => {
 
     if (!ids.length) {
       throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })
+    }
+    if (ids.length > MAX_DELETE_COUNT) {
+      throw createError({ statusCode: 400, message: `单次最多删除 ${MAX_DELETE_COUNT} 个点歌券` })
     }
 
     const deletedRows = await deleteCardCodesByIds(ids)
