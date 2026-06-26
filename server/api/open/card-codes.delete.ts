@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { deleteCardCodesByIds } from '~~/server/services/cardCodeCleanupService'
 
 const deleteCardCodesSchema = z.object({
-  id: z.union([z.number().int().positive(), z.string()]).optional(),
-  ids: z.array(z.union([z.number().int().positive(), z.string()])).max(500, '单次最多删除 500 个点歌券').optional()
+  id: z.coerce.number().int().positive().optional(),
+  ids: z.array(z.coerce.number().int().positive()).max(500, '单次最多删除 500 个点歌券').optional()
 })
 
 export default defineEventHandler(async (event) => {
@@ -20,9 +20,7 @@ export default defineEventHandler(async (event) => {
       ...(validatedData.id !== undefined ? [validatedData.id] : []),
       ...(validatedData.ids || [])
     ]
-    const ids = Array.from(new Set(
-      rawIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
-    ))
+    const ids = Array.from(new Set(rawIds))
 
     if (!ids.length) {
       throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })

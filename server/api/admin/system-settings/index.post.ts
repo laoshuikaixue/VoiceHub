@@ -3,7 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
-import { CARD_CODE_AUTO_DELETE_MAX_DAYS } from '../../../services/cardCodeCleanupService'
+import { CARD_CODE_AUTO_DELETE_MAX_DAYS } from '~~/server/services/cardCodeCleanupService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限

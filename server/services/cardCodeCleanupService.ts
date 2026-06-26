@@ -1,6 +1,6 @@
 import { and, eq, inArray, lt, or } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { cardCodeRedeemLogs, cardCodes, systemSettings } from '~/drizzle/schema'
+import { cardCodes, systemSettings } from '~/drizzle/schema'
 
 export const CARD_CODE_AUTO_DELETE_DISABLED = 0
 export const CARD_CODE_AUTO_DELETE_MAX_DAYS = 3650
@@ -27,17 +27,10 @@ export const deleteCardCodesByIds = async (ids: number[]) => {
     return []
   }
 
-  return await db.transaction(async (tx) => {
-    await tx
-      .update(cardCodeRedeemLogs)
-      .set({ cardCodeId: null })
-      .where(inArray(cardCodeRedeemLogs.cardCodeId, normalizedIds))
-
-    return await tx
-      .delete(cardCodes)
-      .where(inArray(cardCodes.id, normalizedIds))
-      .returning()
-  })
+  return await db
+    .delete(cardCodes)
+    .where(inArray(cardCodes.id, normalizedIds))
+    .returning()
 }
 
 export const cleanupExpiredCardCodes = async (options: { days?: number; now?: Date } = {}) => {
@@ -52,18 +45,15 @@ export const cleanupExpiredCardCodes = async (options: { days?: number; now?: Da
   const now = options.now || new Date()
   const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
 
-  const expiredRows = await db
-    .select({ id: cardCodes.id })
-    .from(cardCodes)
+  const deletedRows = await db
+    .delete(cardCodes)
     .where(
       or(
         and(eq(cardCodes.status, 'INVALID'), lt(cardCodes.updatedAt, cutoff)),
         and(eq(cardCodes.status, 'REDEEMED'), lt(cardCodes.redeemedAt, cutoff))
       )
     )
-
-  const ids = expiredRows.map((row) => row.id)
-  const deletedRows = await deleteCardCodesByIds(ids)
+    .returning({ id: cardCodes.id })
 
   return { deleted: deletedRows.length, days, cutoff }
 }
