@@ -1,4 +1,4 @@
-import { and, eq, inArray, lt, or, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull, isNull, lt, or } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { cardCodes, systemSettings } from '~/drizzle/schema'
 
@@ -44,14 +44,14 @@ export const cleanupExpiredCardCodes = async (options: { days?: number; now?: Da
 
   const now = options.now || new Date()
   const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
-  const cutoffValue = cutoff.toISOString()
 
   const deletedRows = await db
     .delete(cardCodes)
     .where(
       or(
         and(eq(cardCodes.status, 'INVALID'), lt(cardCodes.updatedAt, cutoff)),
-        and(eq(cardCodes.status, 'REDEEMED'), sql`coalesce(${cardCodes.redeemedAt}, ${cardCodes.updatedAt}) AT TIME ZONE 'UTC' < ${cutoffValue}::timestamptz`)
+        and(eq(cardCodes.status, 'REDEEMED'), isNotNull(cardCodes.redeemedAt), lt(cardCodes.redeemedAt, cutoff)),
+        and(eq(cardCodes.status, 'REDEEMED'), isNull(cardCodes.redeemedAt), lt(cardCodes.updatedAt, cutoff))
       )
     )
     .returning({ id: cardCodes.id })
