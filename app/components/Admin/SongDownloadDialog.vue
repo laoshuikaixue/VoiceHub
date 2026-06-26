@@ -293,7 +293,7 @@
                     v-if="selectedSongs.size > 0"
                     class="text-[10px] font-bold text-purple-500 hover:text-purple-400 transition-colors flex items-center gap-1"
                     :disabled="estimatingDuration"
-                    title="快速预估选中歌曲的总时长（网易云无需下载）"
+                    title="快速预估选中歌曲的总时长"
                     @click="estimateSelectedDurations"
                   >
                     <Clock class="w-3 h-3" />
@@ -627,6 +627,8 @@ const activeDownloads = reactive(new Map())
 const activeEncoderWorker = ref(null)
 const DOWNLOAD_CONCURRENCY = 3
 const MERGE_DECODE_CONCURRENCY = 3
+const ESTIMATE_DURATION_CONCURRENCY = 3
+const AUDIO_METADATA_TIMEOUT_MS = 10000
 const PCM_BYTES_PER_SECOND = 44100 * 2 * 4
 const FAST_MERGE_MIN_BUDGET_BYTES = 96 * 1024 * 1024
 const FAST_MERGE_MEMORY_RATIO = 0.04
@@ -668,14 +670,49 @@ const isNeteaseSong = (song) => {
   return platform === 'netease' || platform === 'netease-podcast'
 }
 
-const isTencentSong = (song) => getSongPlatform(song) === 'tencent'
-
 // 格式化时长
 const formatDuration = (seconds) => {
   if (!seconds) return '00:00'
   const m = Math.floor(seconds / 60)
   const s = Math.floor(seconds % 60)
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+const readAudioMetadataDuration = (src, options = {}) => {
+  const timeoutMs = options.timeoutMs || AUDIO_METADATA_TIMEOUT_MS
+  const revokeObjectUrl = options.revokeObjectUrl || false
+
+  return new Promise((resolve) => {
+    const audio = new Audio()
+    let settled = false
+    let timeoutId = null
+
+    const cleanup = () => {
+      audio.onloadedmetadata = null
+      audio.onerror = null
+      audio.src = ''
+      audio.load()
+      if (revokeObjectUrl) {
+        URL.revokeObjectURL(src)
+      }
+    }
+
+    const finish = (duration = 0) => {
+      if (settled) return
+      settled = true
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      cleanup()
+      resolve(duration)
+    }
+
+    timeoutId = setTimeout(() => finish(0), timeoutMs)
+    audio.preload = 'metadata'
+    audio.onloadedmetadata = () => finish(audio.duration)
+    audio.onerror = () => finish(0)
+    audio.src = src
+  })
 }
 
 const getUsablePreload = (songId, quality) => {
@@ -724,15 +761,8 @@ const preloadSong = async (song) => {
     const contentType = response.headers.get('content-type') || 'audio/mpeg'
     const blob = new Blob(chunks, { type: contentType })
 
-    // 解析音频时长
-    const duration = await new Promise((resolve) => {
-      const audio = new Audio(URL.createObjectURL(blob))
-      audio.onloadedmetadata = () => {
-        resolve(audio.duration)
-        URL.revokeObjectURL(audio.src)
-      }
-      audio.onerror = () => resolve(0)
-    })
+    const objectUrl = URL.createObjectURL(blob)
+    const duration = await readAudioMetadataDuration(objectUrl, { revokeObjectUrl: true })
 
     preloadedSongs.set(song.id, {
       blob,
@@ -830,8 +860,7 @@ const estimateSelectedDurations = async () => {
     let successCount = 0
     let failCount = 0
     
-    // 并发获取时长
-    const promises = songsToEstimate.map(async (songItem) => {
+    const estimateSongDuration = async (songItem) => {
       try {
         console.log('[预估时长] 正在获取歌曲时长:', songItem.song.title)
         
@@ -874,15 +903,6 @@ const estimateSelectedDurations = async () => {
           } catch (apiError) {
             console.warn('[预估时长] 网易API调用失败，尝试从播放链接获取:', songItem.song.title, apiError)
           }
-        } else if (isTencentSong(songItem.song)) {
-          await preloadSong(songItem.song)
-          const cached = getUsablePreload(songItem.song.id, selectedQuality.value)
-          if (cached?.duration) {
-            successCount++
-            return
-          }
-          failCount++
-          return
         }
         
         // 非网易音源或网易 API 失败时，通过实际播放链接读取元数据。
@@ -894,16 +914,7 @@ const estimateSelectedDurations = async () => {
           )
           
           if (result.success && result.url) {
-            const audio = new Audio()
-            const duration = await new Promise((resolve) => {
-              audio.preload = 'metadata'
-              audio.onloadedmetadata = () => {
-                resolve(audio.duration)
-                audio.src = ''
-              }
-              audio.onerror = () => resolve(0)
-              audio.src = result.url
-            })
+            const duration = await readAudioMetadataDuration(result.url)
             
             if (duration && duration > 0) {
               estimatedDurations.set(songItem.song.id, {
@@ -929,9 +940,24 @@ const estimateSelectedDurations = async () => {
         console.error('[预估时长] 处理歌曲失败:', songItem.song.title, error)
         failCount++
       }
-    })
+    }
 
-    await Promise.all(promises)
+    const queue = [...songsToEstimate]
+    const workers = []
+    const worker = async () => {
+      while (queue.length > 0) {
+        const songItem = queue.shift()
+        if (songItem) {
+          await estimateSongDuration(songItem)
+        }
+      }
+    }
+
+    for (let i = 0; i < Math.min(ESTIMATE_DURATION_CONCURRENCY, songsToEstimate.length); i++) {
+      workers.push(worker())
+    }
+
+    await Promise.all(workers)
 
     console.log(`[预估时长] 完成 - 成功: ${successCount}, 失败: ${failCount}`)
 
@@ -985,6 +1011,9 @@ const getKnownSongDuration = (songItem) => {
   const song = songItem.song
   const cached = getUsablePreload(song.id, selectedQuality.value)
   if (cached?.duration) return cached.duration
+
+  const estimated = estimatedDurations.get(song.id)
+  if (estimated?.durationSeconds) return estimated.durationSeconds
 
   // 优先检查常见的时长字段
   const millisecondCandidates = [
