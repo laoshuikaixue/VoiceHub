@@ -18,9 +18,16 @@ const runCleanup = async () => {
   }
 }
 
-export default defineNitroPlugin(() => {
+export default defineNitroPlugin((nitroApp) => {
   if (cleanupTimer) return
   runCleanup()
   cleanupTimer = setInterval(runCleanup, 60 * 60 * 1000)
   if (typeof cleanupTimer.unref === 'function') cleanupTimer.unref()
+
+  nitroApp.hooks.hook('close', () => {
+    if (cleanupTimer) {
+      clearInterval(cleanupTimer)
+      cleanupTimer = null
+    }
+  })
 })
