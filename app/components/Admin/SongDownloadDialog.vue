@@ -590,6 +590,15 @@ const qualityDescriptions = {
   9: '超清母带'
 }
 
+const neteaseQualityLevelMap = {
+  2: 'standard',
+  3: 'higher',
+  4: 'exhigh',
+  5: 'lossless',
+  6: 'hires',
+  9: 'jymaster'
+}
+
 // 生成带描述的音质选项
 const extendedQualityOptions = computed(() => {
   const options = getQualityOptions('netease')
@@ -679,6 +688,8 @@ const formatDuration = (seconds) => {
 }
 
 const readAudioMetadataDuration = (src, options = {}) => {
+  if (!src) return Promise.resolve(0)
+
   const timeoutMs = options.timeoutMs || AUDIO_METADATA_TIMEOUT_MS
   const revokeObjectUrl = options.revokeObjectUrl || false
 
@@ -713,6 +724,17 @@ const readAudioMetadataDuration = (src, options = {}) => {
     audio.onerror = () => finish(0)
     audio.src = src
   })
+}
+
+const parsePositiveDuration = (value) => {
+  const duration = Number(value)
+  if (!Number.isFinite(duration) || duration <= 0) return 0
+  return duration
+}
+
+const getSongMetadataDuration = (song) => {
+  const duration = parsePositiveDuration(song.time)
+  return duration > 0 ? duration / 1000 : 0
 }
 
 const getUsablePreload = (songId, quality) => {
@@ -829,6 +851,7 @@ const estimateSelectedDurations = async () => {
     // 导入 useMusicSources
     const { useMusicSources } = await import('~/composables/useMusicSources')
     const { getSongUrl } = useMusicSources()
+    const level = neteaseQualityLevelMap[selectedQuality.value] || 'exhigh'
     
     const songsToEstimate = []
     
@@ -837,12 +860,8 @@ const estimateSelectedDurations = async () => {
       const songId = songItem.song?.id
       if (!songId || !selectedSongs.value.has(songId)) return
       
-      // 跳过已有预下载缓存的歌曲
-      const cached = getUsablePreload(songId, selectedQuality.value)
-      if (cached?.duration) return
-      
-      // 跳过已有 API 预估的歌曲
-      if (estimatedDurations.has(songId)) return
+      // 已有缓存、API 预估或歌曲元数据时，无需再次请求网络。
+      if (getKnownSongDuration(songItem) > 0) return
       
       songsToEstimate.push(songItem)
     })
@@ -863,17 +882,6 @@ const estimateSelectedDurations = async () => {
     const estimateSongDuration = async (songItem) => {
       try {
         console.log('[预估时长] 正在获取歌曲时长:', songItem.song.title)
-        
-        // 音质映射
-        const qualityMap = {
-          2: 'standard',
-          3: 'higher', 
-          4: 'exhigh',
-          5: 'lossless',
-          6: 'hires',
-          9: 'jymaster'
-        }
-        const level = qualityMap[selectedQuality.value] || 'exhigh'
         
         if (isNeteaseSong(songItem.song)) {
           try {
@@ -982,30 +990,19 @@ const estimateSelectedDurations = async () => {
 const estimatedTotalDuration = computed(() => {
   let total = 0
   let count = 0
+  const songMap = new Map(props.songs.map((item) => [item.song?.id, item]))
   selectedSongs.value.forEach((id) => {
-    // 优先使用预下载缓存的精确时长
-    const cached = getUsablePreload(id, selectedQuality.value)
-    if (cached && cached.duration) {
-      total += cached.duration
-      count++
-      return
-    }
-    
-    // 其次使用 API 预估的时长
-    const estimated = estimatedDurations.get(id)
-    if (estimated && estimated.durationSeconds) {
-      total += estimated.durationSeconds
+    const songItem = songMap.get(id)
+    if (!songItem) return
+
+    const duration = getKnownSongDuration(songItem)
+    if (duration > 0) {
+      total += duration
       count++
     }
   })
   return { total, count }
 })
-
-const parsePositiveDuration = (value) => {
-  const duration = Number(value)
-  if (!Number.isFinite(duration) || duration <= 0) return 0
-  return duration
-}
 
 const getKnownSongDuration = (songItem) => {
   const song = songItem.song
@@ -1015,49 +1012,7 @@ const getKnownSongDuration = (songItem) => {
   const estimated = estimatedDurations.get(song.id)
   if (estimated?.durationSeconds) return estimated.durationSeconds
 
-  // 优先检查常见的时长字段
-  const millisecondCandidates = [
-    song.durationMs,
-    song.duration_ms,
-    song.dt,
-    song.time,  // 网易云 API 返回的时长字段
-    song.sourceInfo?.durationMs,
-    song.sourceInfo?.duration_ms,
-    song.sourceInfo?.time
-  ]
-
-  for (const candidate of millisecondCandidates) {
-    const duration = parsePositiveDuration(candidate)
-    if (duration > 0) return duration / 1000
-  }
-
-  const secondCandidates = [
-    song.durationSeconds,
-    song.durationSecond,
-    song.sourceInfo?.durationSeconds,
-    song.sourceInfo?.durationSecond
-  ]
-
-  for (const candidate of secondCandidates) {
-    const duration = parsePositiveDuration(candidate)
-    if (duration > 0) return duration
-  }
-
-  const ambiguousCandidates = [song.duration, song.sourceInfo?.duration]
-  const isLikelyMillisecondPlatform = getSongPlatform(song)?.startsWith('netease')
-
-  for (const candidate of ambiguousCandidates) {
-    const duration = parsePositiveDuration(candidate)
-    if (duration <= 0) continue
-
-    // 模糊字段按保守策略处理，避免长音频秒数被误除导致低估内存。
-    if (isLikelyMillisecondPlatform || duration > 15000) {
-      return duration / 1000
-    }
-    return duration
-  }
-
-  return 0
+  return getSongMetadataDuration(song)
 }
 
 const getBrowserMergeMemoryBudget = () => {
