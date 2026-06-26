@@ -737,17 +737,6 @@ const readAudioMetadataDuration = (src, options = {}) => {
   })
 }
 
-const parsePositiveDuration = (value) => {
-  const duration = Number(value)
-  if (!Number.isFinite(duration) || duration <= 0) return 0
-  return duration
-}
-
-const getSongMetadataDuration = (song) => {
-  const duration = parsePositiveDuration(song.time)
-  return duration > 0 ? duration / 1000 : 0
-}
-
 const getUsablePreload = (songId, quality) => {
   const cached = preloadedSongs.get(songId)
   if (!cached || cached.loading || !cached.blob) return null
@@ -1023,7 +1012,7 @@ const getKnownSongDuration = (songItem) => {
   const estimated = estimatedDurations.get(song.id)
   if (estimated?.durationSeconds) return estimated.durationSeconds
 
-  return getSongMetadataDuration(song)
+  return 0
 }
 
 const getBrowserMergeMemoryBudget = () => {
