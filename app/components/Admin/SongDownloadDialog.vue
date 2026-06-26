@@ -638,6 +638,7 @@ const DOWNLOAD_CONCURRENCY = 3
 const MERGE_DECODE_CONCURRENCY = 3
 const ESTIMATE_DURATION_CONCURRENCY = 3
 const AUDIO_METADATA_TIMEOUT_MS = 10000
+const NETEASE_PREVIEW_DURATION_SECONDS = 30
 const PCM_BYTES_PER_SECOND = 44100 * 2 * 4
 const FAST_MERGE_MIN_BUDGET_BYTES = 96 * 1024 * 1024
 const FAST_MERGE_MEMORY_RATIO = 0.04
@@ -677,6 +678,16 @@ const getSongPlatform = (song) => {
 const isNeteaseSong = (song) => {
   const platform = getSongPlatform(song)
   return platform === 'netease' || platform === 'netease-podcast'
+}
+
+const getNeteaseCookie = () => {
+  if (!import.meta.client) return ''
+
+  try {
+    return localStorage.getItem('netease_cookie') || ''
+  } catch {
+    return ''
+  }
 }
 
 // 格式化时长
@@ -848,10 +859,8 @@ const estimateSelectedDurations = async () => {
   estimatingDuration.value = true
 
   try {
-    // 导入 useMusicSources
-    const { useMusicSources } = await import('~/composables/useMusicSources')
-    const { getSongUrl } = useMusicSources()
     const level = neteaseQualityLevelMap[selectedQuality.value] || 'exhigh'
+    const neteaseCookie = getNeteaseCookie()
     
     const songsToEstimate = []
     
@@ -888,7 +897,9 @@ const estimateSelectedDurations = async () => {
             const apiResponse = await $fetch('/api/api-enhanced/netease/song/url/v1', {
               params: {
                 id: songItem.song.musicId,
-                level: level
+                level: level,
+                cookie: neteaseCookie || undefined,
+                unblock: neteaseCookie ? false : true
               },
               timeout: 5000
             })
@@ -898,14 +909,18 @@ const estimateSelectedDurations = async () => {
               const durationMs = songData.time
               
               if (durationMs && durationMs > 0) {
-                estimatedDurations.set(songItem.song.id, {
-                  durationSeconds: Math.floor(durationMs / 1000),
-                  durationMs: durationMs,
-                  source: 'netease-api'
-                })
-                console.log('[预估时长] 成功获取时长:', songItem.song.title, Math.floor(durationMs / 1000) + '秒')
-                successCount++
-                return
+                const durationSeconds = Math.floor(durationMs / 1000)
+                if (durationSeconds !== NETEASE_PREVIEW_DURATION_SECONDS) {
+                  estimatedDurations.set(songItem.song.id, {
+                    durationSeconds,
+                    durationMs: durationMs,
+                    source: 'netease-api'
+                  })
+                  console.log('[预估时长] 成功获取时长:', songItem.song.title, durationSeconds + '秒')
+                  successCount++
+                  return
+                }
+                console.warn('[预估时长] 网易API返回疑似试听时长，尝试第三方音源:', songItem.song.title)
               }
             }
           } catch (apiError) {
@@ -913,31 +928,27 @@ const estimateSelectedDurations = async () => {
           }
         }
         
-        // 非网易音源或网易 API 失败时，通过实际播放链接读取元数据。
+        // 非网易音源、网易 API 失败或返回试听片段时，复用预下载的音源解析逻辑读取元数据。
         try {
-          const result = await getSongUrl(
-            songItem.song.musicId,
-            selectedQuality.value,
-            getSongPlatform(songItem.song)
-          )
-          
-          if (result.success && result.url) {
-            const duration = await readAudioMetadataDuration(result.url)
+          const audioUrl = await getMusicUrlForDownload(songItem.song, selectedQuality.value)
+          const duration = await readAudioMetadataDuration(audioUrl)
             
-            if (duration && duration > 0) {
-              estimatedDurations.set(songItem.song.id, {
-                durationSeconds: Math.floor(duration),
-                durationMs: Math.floor(duration * 1000),
-                source: 'audio-metadata'
-              })
-              console.log('[预估时长] 从播放链接获取时长:', songItem.song.title, Math.floor(duration) + '秒')
-              successCount++
-            } else {
-              console.warn('[预估时长] 无法从播放链接获取时长:', songItem.song.title)
+          if (duration && duration > 0) {
+            const durationSeconds = Math.floor(duration)
+            if (isNeteaseSong(songItem.song) && durationSeconds === NETEASE_PREVIEW_DURATION_SECONDS) {
+              console.warn('[预估时长] 播放链接仍为疑似试听时长:', songItem.song.title)
               failCount++
+              return
             }
+            estimatedDurations.set(songItem.song.id, {
+              durationSeconds,
+              durationMs: Math.floor(duration * 1000),
+              source: 'audio-metadata'
+            })
+            console.log('[预估时长] 从播放链接获取时长:', songItem.song.title, durationSeconds + '秒')
+            successCount++
           } else {
-            console.warn('[预估时长] 获取播放链接失败:', songItem.song.title)
+            console.warn('[预估时长] 无法从播放链接获取时长:', songItem.song.title)
             failCount++
           }
         } catch (audioError) {
