@@ -1,4 +1,4 @@
-import { createError, readBody } from 'h3'
+import { createError, getQuery, readBody } from 'h3'
 import { z } from 'zod'
 import { deleteCardCodesByIds } from '~~/server/services/cardCodeCleanupService'
 
@@ -6,7 +6,15 @@ const MAX_DELETE_COUNT = 500
 
 const deleteCardCodesSchema = z.object({
   id: z.coerce.number().int().positive().optional(),
-  ids: z.array(z.coerce.number().int().positive()).max(MAX_DELETE_COUNT, `单次最多删除 ${MAX_DELETE_COUNT} 个点歌券`).optional()
+  ids: z.preprocess(
+    (value) => {
+      if (typeof value === 'string') {
+        return value.split(',').map((item) => item.trim()).filter(Boolean)
+      }
+      return value
+    },
+    z.array(z.coerce.number().int().positive()).max(MAX_DELETE_COUNT, `单次最多删除 ${MAX_DELETE_COUNT} 个点歌券`).optional()
+  )
 })
 
 export const handleOpenCardCodeDelete = async (event: any) => {
@@ -16,8 +24,9 @@ export const handleOpenCardCodeDelete = async (event: any) => {
   }
 
   try {
-    const body = await readBody(event) ?? {}
-    const validatedData = deleteCardCodesSchema.parse(body)
+    const query = getQuery(event)
+    const body = await readBody(event).catch(() => ({})) ?? {}
+    const validatedData = deleteCardCodesSchema.parse({ ...query, ...body })
     const rawIds = [
       ...(validatedData.id !== undefined ? [validatedData.id] : []),
       ...(validatedData.ids || [])
