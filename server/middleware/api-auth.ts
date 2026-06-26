@@ -333,7 +333,7 @@ export default defineEventHandler(async (event) => {
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
   if (pathname === '/api/open/card-codes' || pathname.startsWith('/api/open/card-codes/')) {
-    if (pathname.startsWith('/api/open/card-codes/delete')) return 'card-codes:delete'
+    if (pathname === '/api/open/card-codes/delete' || pathname.startsWith('/api/open/card-codes/delete/')) return 'card-codes:delete'
     if (method === 'GET') return 'card-codes:read'
     if (method === 'DELETE') return 'card-codes:delete'
     return 'card-codes:write'

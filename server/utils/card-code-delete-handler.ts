@@ -3,9 +3,13 @@ import { z } from 'zod'
 import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
 
 const MAX_DELETE_COUNT = 500
+const idSchema = z.preprocess(
+  (value) => (typeof value === 'number' || typeof value === 'string' ? value : undefined),
+  z.coerce.number().int().positive()
+)
 
 const deleteCardCodesSchema = z.object({
-  id: z.coerce.number().int().positive().optional(),
+  id: idSchema.optional(),
   ids: z.preprocess(
     (value) => {
       if (typeof value === 'string') {
@@ -13,7 +17,7 @@ const deleteCardCodesSchema = z.object({
       }
       return value
     },
-    z.array(z.coerce.number().int().positive()).max(MAX_DELETE_COUNT, `单次最多删除 ${MAX_DELETE_COUNT} 个点歌券`).optional()
+    z.array(idSchema).max(MAX_DELETE_COUNT, `单次最多删除 ${MAX_DELETE_COUNT} 个点歌券`).optional()
   )
 })
 
