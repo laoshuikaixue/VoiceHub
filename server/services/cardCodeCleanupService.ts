@@ -1,0 +1,69 @@
+import { and, eq, inArray, lt, or } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { cardCodeRedeemLogs, cardCodes, systemSettings } from '~/drizzle/schema'
+
+export const CARD_CODE_AUTO_DELETE_DISABLED = 0
+export const CARD_CODE_AUTO_DELETE_MAX_DAYS = 3650
+
+export const normalizeCardCodeAutoDeleteDays = (value: unknown) => {
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  if (!Number.isInteger(numericValue) || numericValue < CARD_CODE_AUTO_DELETE_DISABLED) {
+    return CARD_CODE_AUTO_DELETE_DISABLED
+  }
+  return Math.min(numericValue, CARD_CODE_AUTO_DELETE_MAX_DAYS)
+}
+
+const getCardCodeAutoDeleteDays = async () => {
+  const settingsRows = await db
+    .select({ cardCodeAutoDeleteDays: systemSettings.cardCodeAutoDeleteDays })
+    .from(systemSettings)
+    .limit(1)
+  return normalizeCardCodeAutoDeleteDays(settingsRows[0]?.cardCodeAutoDeleteDays ?? CARD_CODE_AUTO_DELETE_DISABLED)
+}
+
+export const deleteCardCodesByIds = async (ids: number[]) => {
+  const normalizedIds = Array.from(new Set(ids.filter((id) => Number.isInteger(id) && id > 0)))
+  if (!normalizedIds.length) {
+    return []
+  }
+
+  return await db.transaction(async (tx) => {
+    await tx
+      .update(cardCodeRedeemLogs)
+      .set({ cardCodeId: null })
+      .where(inArray(cardCodeRedeemLogs.cardCodeId, normalizedIds))
+
+    return await tx
+      .delete(cardCodes)
+      .where(inArray(cardCodes.id, normalizedIds))
+      .returning()
+  })
+}
+
+export const cleanupExpiredCardCodes = async (options: { days?: number; now?: Date } = {}) => {
+  const days = options.days !== undefined
+    ? normalizeCardCodeAutoDeleteDays(options.days)
+    : await getCardCodeAutoDeleteDays()
+
+  if (days <= CARD_CODE_AUTO_DELETE_DISABLED) {
+    return { deleted: 0, days, cutoff: null }
+  }
+
+  const now = options.now || new Date()
+  const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+
+  const expiredRows = await db
+    .select({ id: cardCodes.id })
+    .from(cardCodes)
+    .where(
+      or(
+        and(eq(cardCodes.status, 'INVALID'), lt(cardCodes.updatedAt, cutoff)),
+        and(eq(cardCodes.status, 'REDEEMED'), lt(cardCodes.redeemedAt, cutoff))
+      )
+    )
+
+  const ids = expiredRows.map((row) => row.id)
+  const deletedRows = await deleteCardCodesByIds(ids)
+
+  return { deleted: deletedRows.length, days, cutoff }
+}

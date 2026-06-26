@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: '不支持的状态值' })
       }
       updateObj.status = status
+      updateObj.updatedAt = new Date()
     }
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
@@ -56,6 +57,12 @@ export default defineEventHandler(async (event) => {
       updateObj.redeemedAt = null
     }
     if (status === 'AVAILABLE') {
+      updateObj.lockedBy = null
+      updateObj.lockedAt = null
+      updateObj.redeemedBy = null
+      updateObj.redeemedAt = null
+    }
+    if (status === 'INVALID') {
       updateObj.lockedBy = null
       updateObj.lockedAt = null
       updateObj.redeemedBy = null

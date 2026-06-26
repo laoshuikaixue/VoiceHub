@@ -697,6 +697,7 @@ export default defineEventHandler(async (event) => {
               'enableSubmissionRemarks',
               'enableCardCodeRequests',
               'requireCardCodeForRequests',
+              'cardCodeAutoDeleteDays',
               'enableRequestTimeLimitation',
               'requestTimeLimitation',
               'forceBlockAllRequests',
