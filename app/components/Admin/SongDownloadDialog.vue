@@ -291,6 +291,17 @@
                 <div class="flex items-center gap-2">
                   <button
                     v-if="selectedSongs.size > 0"
+                    class="text-[10px] font-bold text-purple-500 hover:text-purple-400 transition-colors flex items-center gap-1"
+                    :disabled="estimatingDuration"
+                    title="快速预估选中歌曲的总时长（网易云无需下载）"
+                    @click="estimateSelectedDurations"
+                  >
+                    <Clock class="w-3 h-3" />
+                    <span v-if="estimatingDuration">预估中...</span>
+                    <span v-else>预估时长</span>
+                  </button>
+                  <button
+                    v-if="selectedSongs.size > 0"
                     class="text-[10px] font-bold text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
                     title="预下载选中歌曲到浏览器缓存"
                     @click="preloadSelectedSongs"
@@ -356,7 +367,7 @@
                   >
                     <div class="flex items-center gap-2">
                       <p class="text-xs font-bold text-zinc-300 truncate">{{ song.song.title }}</p>
-                      <!-- 预下载标记 -->
+                      <!-- 预下载标记（精确时长） -->
                       <div
                         v-if="getUsablePreload(song.song.id, selectedQuality)"
                         class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20"
@@ -366,13 +377,23 @@
                           formatDuration(getUsablePreload(song.song.id, selectedQuality).duration)
                         }}</span>
                       </div>
+                      <!-- API 预估标记 -->
+                      <div
+                        v-else-if="estimatedDurations.has(song.song.id)"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20"
+                      >
+                        <Clock class="w-2 h-2 text-purple-400" />
+                        <span class="text-[9px] font-mono text-purple-400">{{
+                          formatDuration(estimatedDurations.get(song.song.id).durationSeconds)
+                        }}</span>
+                      </div>
                     </div>
                     <p class="text-[10px] text-zinc-500 truncate">{{ song.song.artist }}</p>
                   </div>
 
                   <div class="flex items-center gap-3">
                     <div class="text-[9px] font-mono text-zinc-600 uppercase">
-                      {{ getPlatformShortName(song.song.musicPlatform) }}
+                      {{ getPlatformShortName(getSongPlatform(song.song)) }}
                     </div>
 
                     <!-- 单个预下载/删除按钮 -->
@@ -613,6 +634,10 @@ const FAST_MERGE_MEMORY_RATIO = 0.04
 // 当前正在执行的任务类型 ('merge' | 'download' | '')
 const currentTaskType = ref('')
 
+// 预估时长状态
+const estimatingDuration = ref(false)
+const estimatedDurations = reactive(new Map())
+
 const getPlatformShortName = (platform) => {
   switch (platform) {
     case 'netease':
@@ -627,6 +652,23 @@ const getPlatformShortName = (platform) => {
       return 'OT'
   }
 }
+
+const getSongPlatform = (song) => {
+  return (
+    song?.actualMusicPlatform ||
+    song?.musicPlatform ||
+    song?.sourceInfo?.actualMusicPlatform ||
+    song?.sourceInfo?.musicPlatform ||
+    ''
+  )
+}
+
+const isNeteaseSong = (song) => {
+  const platform = getSongPlatform(song)
+  return platform === 'netease' || platform === 'netease-podcast'
+}
+
+const isTencentSong = (song) => getSongPlatform(song) === 'tencent'
 
 // 格式化时长
 const formatDuration = (seconds) => {
@@ -747,14 +789,186 @@ const removePreloaded = (songId) => {
   preloadedSongs.delete(songId)
 }
 
+// 预估选中歌曲的时长
+const estimateSelectedDurations = async () => {
+  if (selectedSongs.value.size === 0 || estimatingDuration.value) return
+
+  estimatingDuration.value = true
+
+  try {
+    // 导入 useMusicSources
+    const { useMusicSources } = await import('~/composables/useMusicSources')
+    const { getSongUrl } = useMusicSources()
+    
+    const songsToEstimate = []
+    
+    // 筛选需要预估的歌曲
+    props.songs.forEach((songItem) => {
+      const songId = songItem.song?.id
+      if (!songId || !selectedSongs.value.has(songId)) return
+      
+      // 跳过已有预下载缓存的歌曲
+      const cached = getUsablePreload(songId, selectedQuality.value)
+      if (cached?.duration) return
+      
+      // 跳过已有 API 预估的歌曲
+      if (estimatedDurations.has(songId)) return
+      
+      songsToEstimate.push(songItem)
+    })
+
+    console.log(`[预估时长] 需要预估的歌曲数量: ${songsToEstimate.length}`)
+
+    if (songsToEstimate.length === 0) {
+      if (window.$showNotification) {
+        window.$showNotification('所有选中歌曲已有时长信息', 'info')
+      }
+      estimatingDuration.value = false
+      return
+    }
+
+    let successCount = 0
+    let failCount = 0
+    
+    // 并发获取时长
+    const promises = songsToEstimate.map(async (songItem) => {
+      try {
+        console.log('[预估时长] 正在获取歌曲时长:', songItem.song.title)
+        
+        // 音质映射
+        const qualityMap = {
+          2: 'standard',
+          3: 'higher', 
+          4: 'exhigh',
+          5: 'lossless',
+          6: 'hires',
+          9: 'jymaster'
+        }
+        const level = qualityMap[selectedQuality.value] || 'exhigh'
+        
+        if (isNeteaseSong(songItem.song)) {
+          try {
+            const apiResponse = await $fetch('/api/api-enhanced/netease/song/url/v1', {
+              params: {
+                id: songItem.song.musicId,
+                level: level
+              },
+              timeout: 5000
+            })
+            
+            if (apiResponse?.code === 200 && Array.isArray(apiResponse.data) && apiResponse.data.length > 0) {
+              const songData = apiResponse.data[0]
+              const durationMs = songData.time
+              
+              if (durationMs && durationMs > 0) {
+                estimatedDurations.set(songItem.song.id, {
+                  durationSeconds: Math.floor(durationMs / 1000),
+                  durationMs: durationMs,
+                  source: 'netease-api'
+                })
+                console.log('[预估时长] 成功获取时长:', songItem.song.title, Math.floor(durationMs / 1000) + '秒')
+                successCount++
+                return
+              }
+            }
+          } catch (apiError) {
+            console.warn('[预估时长] 网易API调用失败，尝试从播放链接获取:', songItem.song.title, apiError)
+          }
+        } else if (isTencentSong(songItem.song)) {
+          await preloadSong(songItem.song)
+          const cached = getUsablePreload(songItem.song.id, selectedQuality.value)
+          if (cached?.duration) {
+            successCount++
+            return
+          }
+          failCount++
+          return
+        }
+        
+        // 非网易音源或网易 API 失败时，通过实际播放链接读取元数据。
+        try {
+          const result = await getSongUrl(
+            songItem.song.musicId,
+            selectedQuality.value,
+            getSongPlatform(songItem.song)
+          )
+          
+          if (result.success && result.url) {
+            const audio = new Audio()
+            const duration = await new Promise((resolve) => {
+              audio.preload = 'metadata'
+              audio.onloadedmetadata = () => {
+                resolve(audio.duration)
+                audio.src = ''
+              }
+              audio.onerror = () => resolve(0)
+              audio.src = result.url
+            })
+            
+            if (duration && duration > 0) {
+              estimatedDurations.set(songItem.song.id, {
+                durationSeconds: Math.floor(duration),
+                durationMs: Math.floor(duration * 1000),
+                source: 'audio-metadata'
+              })
+              console.log('[预估时长] 从播放链接获取时长:', songItem.song.title, Math.floor(duration) + '秒')
+              successCount++
+            } else {
+              console.warn('[预估时长] 无法从播放链接获取时长:', songItem.song.title)
+              failCount++
+            }
+          } else {
+            console.warn('[预估时长] 获取播放链接失败:', songItem.song.title)
+            failCount++
+          }
+        } catch (audioError) {
+          console.error('[预估时长] 播放链接获取时长失败:', songItem.song.title, audioError)
+          failCount++
+        }
+      } catch (error) {
+        console.error('[预估时长] 处理歌曲失败:', songItem.song.title, error)
+        failCount++
+      }
+    })
+
+    await Promise.all(promises)
+
+    console.log(`[预估时长] 完成 - 成功: ${successCount}, 失败: ${failCount}`)
+
+    if (successCount > 0 && window.$showNotification) {
+      window.$showNotification(`成功预估 ${successCount} 首歌曲的时长`, 'success')
+    }
+    
+    if (failCount > 0 && window.$showNotification) {
+      window.$showNotification(`${failCount} 首歌曲预估失败`, 'warning')
+    }
+  } catch (error) {
+    console.error('[预估时长] 总体失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('预估时长失败', 'error')
+    }
+  } finally {
+    estimatingDuration.value = false
+  }
+}
+
 // 计算预估总时长
 const estimatedTotalDuration = computed(() => {
   let total = 0
   let count = 0
   selectedSongs.value.forEach((id) => {
-    const data = getUsablePreload(id, selectedQuality.value)
-    if (data && data.duration) {
-      total += data.duration
+    // 优先使用预下载缓存的精确时长
+    const cached = getUsablePreload(id, selectedQuality.value)
+    if (cached && cached.duration) {
+      total += cached.duration
+      count++
+      return
+    }
+    
+    // 其次使用 API 预估的时长
+    const estimated = estimatedDurations.get(id)
+    if (estimated && estimated.durationSeconds) {
+      total += estimated.durationSeconds
       count++
     }
   })
@@ -772,12 +986,15 @@ const getKnownSongDuration = (songItem) => {
   const cached = getUsablePreload(song.id, selectedQuality.value)
   if (cached?.duration) return cached.duration
 
+  // 优先检查常见的时长字段
   const millisecondCandidates = [
     song.durationMs,
     song.duration_ms,
     song.dt,
+    song.time,  // 网易云 API 返回的时长字段
     song.sourceInfo?.durationMs,
-    song.sourceInfo?.duration_ms
+    song.sourceInfo?.duration_ms,
+    song.sourceInfo?.time
   ]
 
   for (const candidate of millisecondCandidates) {
@@ -798,7 +1015,7 @@ const getKnownSongDuration = (songItem) => {
   }
 
   const ambiguousCandidates = [song.duration, song.sourceInfo?.duration]
-  const isLikelyMillisecondPlatform = song.musicPlatform?.startsWith('netease')
+  const isLikelyMillisecondPlatform = getSongPlatform(song)?.startsWith('netease')
 
   for (const candidate of ambiguousCandidates) {
     const duration = parsePositiveDuration(candidate)
@@ -902,8 +1119,9 @@ const closeDialog = () => {
 const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
   try {
     // 播客内容特殊处理
+    const platform = getSongPlatform(song)
     const isPodcast =
-      song.musicPlatform === 'netease-podcast' ||
+      platform === 'netease-podcast' ||
       song.sourceInfo?.type === 'voice' ||
       (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
     const options = {
@@ -915,7 +1133,7 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
         song.sourceInfo?.mediaMid
     }
 
-    const url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, options)
+    const url = await getMusicUrl(platform, song.musicId, song.playUrl, options)
     if (!url) {
       throw new Error('无法获取音乐播放链接')
     }
@@ -924,8 +1142,8 @@ const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
     console.error('获取音乐播放链接失败:', error)
 
     // 失败自动重试一次
-    if (retryCount === 0 && song.musicPlatform && song.musicId) {
-      console.log(`正在重试获取音乐链接: ${song.musicPlatform}, ${song.musicId}`)
+    if (retryCount === 0 && getSongPlatform(song) && song.musicId) {
+      console.log(`正在重试获取音乐链接: ${getSongPlatform(song)}, ${song.musicId}`)
       await new Promise((resolve) => setTimeout(resolve, 1000))
       return getMusicUrlForDownload(song, quality, 1)
     }
