@@ -15,7 +15,6 @@ const isBlockedIPv4 = (address) => {
     (first === 172 && second >= 16 && second <= 31) ||
     (first === 192 && (second === 0 || second === 168)) ||
     (first === 100 && second >= 64 && second <= 127) ||
-    (first === 198 && (second === 18 || second === 19 || second === 51)) ||
     (first === 203 && second === 0) ||
     first >= 224
   )

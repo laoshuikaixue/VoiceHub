@@ -8,6 +8,27 @@ import type {
 const isClient = typeof window !== 'undefined'
 let CoreModule: typeof import('@applemusic-like-lyrics/core') | null = null
 
+const CORS_PROXY_PATH = '/api/proxy/image'
+
+const needsCorsProxy = (url: string): boolean => {
+  try {
+    const u = new URL(url)
+    const h = u.hostname.toLowerCase()
+    return (
+      h.endsWith('.y.qq.com') || h === 'y.qq.com' ||
+      h.endsWith('.y.gtimg.cn') || h === 'y.gtimg.cn' ||
+      h.endsWith('.music.126.net') || h === 'music.126.net'
+    )
+  } catch {
+    return false
+  }
+}
+
+const toProxiedUrl = (url: string): string => {
+  if (!needsCorsProxy(url)) return url
+  return `${CORS_PROXY_PATH}?url=${encodeURIComponent(url)}`
+}
+
 const ensureCoreModule = async () => {
   if (!isClient) return null
 
@@ -68,8 +89,9 @@ export const useBackgroundRenderer = () => {
     renderer.setHasLyric(config.value.hasLyric ?? true)
     renderer.setStaticMode(!config.value.dynamic)
 
-    if (currentCoverUrl.value) {
-      await renderer.setAlbum(currentCoverUrl.value, false)
+    const cover = currentCoverUrl.value
+    if (cover) {
+      await renderer.setAlbum(toProxiedUrl(cover), false)
     }
 
     if (isRendering.value && config.value.dynamic) {
@@ -125,7 +147,7 @@ export const useBackgroundRenderer = () => {
     if (!backgroundRenderer.value || !coverUrl) return
 
     try {
-      await backgroundRenderer.value.setAlbum(coverUrl, false)
+      await backgroundRenderer.value.setAlbum(toProxiedUrl(coverUrl), false)
     } catch (error) {
       hasRenderError.value = true
       console.error('应用封面到背景失败:', error)
