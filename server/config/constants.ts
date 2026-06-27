@@ -142,6 +142,7 @@ export const SORT_CONSTANTS = {
 export const PERMISSIONS = {
   SCHEDULES_READ: 'schedules:read',
   SONGS_READ: 'songs:read',
+  SONGS_REQUEST: 'songs:request',
   ADMIN_ACCESS: 'admin:access'
 } as const
 

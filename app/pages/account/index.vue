@@ -91,6 +91,101 @@
             <AuthOAuthBindingCard />
           </section>
 
+          <!-- 个人 API Key -->
+          <section :class="sectionClass">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/50 pb-5 mb-6">
+              <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-emerald-500/10 rounded-xl">
+                  <KeyRound :size="20" class="text-emerald-500" />
+                </div>
+                <div>
+                  <h2 class="text-base font-black text-zinc-100">个人 API Key</h2>
+                  <p class="text-xs text-zinc-500 mt-0.5">用于个人集成和投稿</p>
+                </div>
+              </div>
+              <button
+                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                :disabled="apiKeyLoading || apiKeyCreating"
+                @click="createPersonalApiKey"
+              >
+                <RefreshCw v-if="apiKeyCreating" :size="14" class="animate-spin" />
+                <Plus v-else :size="14" />
+                创建 API Key
+              </button>
+            </div>
+
+            <div v-if="apiKeyLoading" class="flex items-center gap-2 py-8 text-xs text-zinc-500">
+              <RefreshCw :size="16" class="animate-spin" />
+              正在加载 API Key...
+            </div>
+
+            <div
+              v-else-if="personalApiKeys.length === 0"
+              class="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-5 py-8 text-center"
+            >
+              <KeyRound :size="28" class="mx-auto text-zinc-700 mb-3" />
+              <p class="text-sm font-bold text-zinc-300">还没有个人 API Key</p>
+              <p class="text-xs text-zinc-600 mt-2 leading-relaxed">
+                创建后可用于个人侧的集成与投稿。
+              </p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="key in personalApiKeys"
+                :key="key.id"
+                class="rounded-2xl border border-zinc-800/70 bg-zinc-950/45 p-4"
+              >
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h3 class="text-sm font-black text-zinc-100">{{ key.name }}</h3>
+                      <span
+                        class="px-2 py-0.5 rounded text-[10px] font-black border"
+                        :class="getApiKeyStatusClass(key.status)"
+                      >
+                        {{ getApiKeyStatusLabel(key.status) }}
+                      </span>
+                    </div>
+                    <p class="text-xs text-zinc-500 mt-1">{{ key.description || '暂无描述' }}</p>
+                  </div>
+                  <button
+                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                    :disabled="apiKeyDeletingId === key.id"
+                    @click="deletePersonalApiKey(key)"
+                  >
+                    <RefreshCw v-if="apiKeyDeletingId === key.id" :size="13" class="animate-spin" />
+                    <Trash2 v-else :size="13" />
+                    删除
+                  </button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
+                  <div class="space-y-1">
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Key 前缀</p>
+                    <p class="font-mono text-xs text-blue-400">{{ key.keyPrefix }}...</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">创建时间</p>
+                    <p class="text-xs text-zinc-400">{{ formatDate(key.createdAt) }}</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">最后使用</p>
+                    <p class="text-xs text-zinc-400">{{ key.lastUsedAt ? formatDate(key.lastUsedAt) : '从未使用' }}</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">调用次数</p>
+                    <p class="text-xs font-bold text-zinc-300">{{ key.usageCount || 0 }}</p>
+                  </div>
+                  <div class="space-y-1">
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">过期时间</p>
+                    <p class="text-xs text-zinc-400">{{ key.expiresAt ? formatDate(key.expiresAt) : '永不过期' }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <!-- 修改密码 -->
           <section :class="sectionClass">
             <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
@@ -114,12 +209,81 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="createdApiKey"
+          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        >
+          <div class="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-black text-zinc-100">API Key 创建成功</h3>
+                <p class="text-xs text-zinc-500 mt-1">完整 Key 只会显示这一次</p>
+              </div>
+              <button class="text-zinc-500 hover:text-zinc-200 transition-colors" @click="closeCreatedApiKey">
+                <X :size="20" />
+              </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+              <div class="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-400">
+                <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
+                <p class="text-xs font-bold leading-relaxed">
+                  请现在复制并保存。关闭窗口后，VoiceHub 不会再次显示完整 Key。
+                </p>
+              </div>
+
+              <div class="space-y-2">
+                <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">完整 Key</p>
+                <div class="flex items-stretch gap-2">
+                  <div class="flex-1 min-w-0 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 font-mono text-xs text-blue-400 break-all select-all">
+                    {{ createdApiKey.apiKey }}
+                  </div>
+                  <button
+                    class="w-12 rounded-xl flex items-center justify-center transition-all"
+                    :class="apiKeyCopied ? 'bg-emerald-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'"
+                    @click="copyApiKey(createdApiKey.apiKey)"
+                  >
+                    <Check v-if="apiKeyCopied" :size="16" />
+                    <Copy v-else :size="16" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-6 border-t border-zinc-800">
+              <button
+                class="w-full py-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all"
+                @click="closeCreatedApiKey"
+              >
+                我已保存，关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import { ArrowLeft, User, Link as LinkIcon, Lock } from '@lucide/vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  Copy,
+  KeyRound,
+  Link as LinkIcon,
+  Lock,
+  Plus,
+  RefreshCw,
+  Trash2,
+  User,
+  X
+} from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 
@@ -134,6 +298,12 @@ const hasOAuthProviders = computed(() => {
 })
 
 const avatarError = ref(false)
+const personalApiKeys = ref([])
+const apiKeyLoading = ref(false)
+const apiKeyCreating = ref(false)
+const apiKeyDeletingId = ref(null)
+const createdApiKey = ref(null)
+const apiKeyCopied = ref(false)
 
 // 监听用户头像变化，重置错误状态
 watch(
@@ -146,6 +316,7 @@ watch(
 // 处理来自 OAuth 回调的消息
 onMounted(() => {
   refreshSiteConfig()
+  loadPersonalApiKeys()
 
   if (route.query.message) {
     showToast(route.query.message, 'success')
@@ -178,5 +349,114 @@ const roleName = computed(() => {
 
 const goBack = () => {
   navigateTo('/')
+}
+
+const loadPersonalApiKeys = async () => {
+  apiKeyLoading.value = true
+  try {
+    const response = await $fetch('/api/user/api-keys')
+    if (response.success) {
+      personalApiKeys.value = response.data || []
+    }
+  } catch (error) {
+    console.error('加载个人 API Key 失败:', error)
+    showToast(error.data?.message || '加载个人 API Key 失败', 'error')
+  } finally {
+    apiKeyLoading.value = false
+  }
+}
+
+const createPersonalApiKey = async () => {
+  apiKeyCreating.value = true
+  try {
+    const response = await $fetch('/api/user/api-keys', {
+      method: 'POST',
+      body: {
+        name: '个人 API Key',
+        description: '用于个人集成和投稿'
+      }
+    })
+
+    if (response.success) {
+      createdApiKey.value = response.data
+      showToast('个人 API Key 创建成功', 'success')
+      await loadPersonalApiKeys()
+    }
+  } catch (error) {
+    console.error('创建个人 API Key 失败:', error)
+    showToast(error.data?.message || '创建个人 API Key 失败', 'error')
+  } finally {
+    apiKeyCreating.value = false
+  }
+}
+
+const deletePersonalApiKey = async (key) => {
+  const confirmed = window.confirm(`确定要删除个人 API Key “${key.name}”吗？删除后相关集成将无法继续使用。`)
+  if (!confirmed) return
+
+  apiKeyDeletingId.value = key.id
+  try {
+    const response = await $fetch(`/api/user/api-keys/${key.id}`, {
+      method: 'DELETE'
+    })
+
+    if (response.success) {
+      showToast('个人 API Key 已删除', 'success')
+      await loadPersonalApiKeys()
+    }
+  } catch (error) {
+    console.error('删除个人 API Key 失败:', error)
+    showToast(error.data?.message || '删除个人 API Key 失败', 'error')
+  } finally {
+    apiKeyDeletingId.value = null
+  }
+}
+
+const copyApiKey = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    apiKeyCopied.value = true
+    showToast('已复制到剪贴板', 'success')
+    setTimeout(() => {
+      apiKeyCopied.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('复制 API Key 失败:', error)
+    showToast('复制失败，请手动选择 Key 复制', 'error')
+  }
+}
+
+const closeCreatedApiKey = () => {
+  createdApiKey.value = null
+  apiKeyCopied.value = false
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const getApiKeyStatusLabel = (status) => {
+  const map = {
+    active: '可用',
+    inactive: '停用',
+    expired: '已过期'
+  }
+  return map[status] || status
+}
+
+const getApiKeyStatusClass = (status) => {
+  const map = {
+    active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    inactive: 'bg-zinc-800 text-zinc-500 border-zinc-700/50',
+    expired: 'bg-red-500/10 text-red-400 border-red-500/20'
+  }
+  return map[status] || 'bg-zinc-800 text-zinc-500 border-zinc-700/50'
 }
 </script>

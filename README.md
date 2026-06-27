@@ -1114,7 +1114,8 @@ VoiceHub/
 │   │   │   ├── card-codes.patch.ts  # 更新点歌券
 │   │   │   ├── card-codes.post.ts   # 创建点歌券
 │   │   │   ├── songs/               # 歌曲相关开放API
-│   │   │   │   └── mark-played.post.ts # 标记歌曲已播放（供外部调用）
+│   │   │   │   ├── mark-played.post.ts # 标记歌曲已播放（供外部调用）
+│   │   │   │   └── request.post.ts  # 使用个人集成令牌投稿歌曲
 │   │   │   ├── schedules.get.ts     # 获取公开排期
 │   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
@@ -1159,6 +1160,10 @@ VoiceHub/
 │   │   │   │   ├── disable.post.ts  # 关闭双重认证
 │   │   │   │   ├── enable.post.ts   # 开启双重认证
 │   │   │   │   └── generate.post.ts # 生成双重认证密钥
+│   │   │   ├── api-keys/          # 个人集成令牌API
+│   │   │   │   ├── [id].delete.ts # 删除个人集成令牌
+│   │   │   │   ├── index.get.ts   # 获取个人集成令牌列表
+│   │   │   │   └── index.post.ts  # 创建个人集成令牌
 │   │   │   ├── email/               # 用户邮箱管理
 │   │   │   │   ├── bind.post.ts     # 绑定邮箱
 │   │   │   │   ├── resend-verification.post.ts # 重发验证邮件
@@ -1190,6 +1195,7 @@ VoiceHub/
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── securityService.ts # 安全服务
+│   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数

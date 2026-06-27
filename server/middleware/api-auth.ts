@@ -347,6 +347,10 @@ function getRequiredPermission(pathname: string, method: string): string | null 
     return 'songs:write'
   }
 
+  if (pathname === '/api/open/songs/request' && method === 'POST') {
+    return 'songs:request'
+  }
+
   if (pathname.startsWith('/api/open/songs')) {
     return 'songs:read'
   }
