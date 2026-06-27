@@ -443,7 +443,7 @@ import {
   AlertCircle,
   Loader2,
   Smartphone
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'

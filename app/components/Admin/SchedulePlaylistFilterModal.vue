@@ -162,7 +162,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch, onUnmounted } from 'vue'
-import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from 'lucide-vue-next'
+import { X, Check, Plus, Trash2, Loader2, Music2, RefreshCw } from '@lucide/vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 

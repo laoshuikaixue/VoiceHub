@@ -1334,7 +1334,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import searchIcon from '~~/public/images/search.svg'
-import { X, Lock, Loader2, Check, Edit3, Music, Play } from 'lucide-vue-next'
+import { X, Lock, Loader2, Check, Edit3, Music, Play } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'

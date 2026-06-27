@@ -126,7 +126,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Check } from 'lucide-vue-next'
+import { Check } from '@lucide/vue'
 
 interface Props {
   title?: string

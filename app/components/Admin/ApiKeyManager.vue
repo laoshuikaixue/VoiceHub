@@ -624,7 +624,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'

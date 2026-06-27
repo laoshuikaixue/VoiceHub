@@ -69,7 +69,7 @@
 </template>
 
 <script lang="ts" setup>
-import { AlertCircle, RefreshCw } from 'lucide-vue-next'
+import { AlertCircle, RefreshCw } from '@lucide/vue'
 import { computed, ref } from 'vue'
 
 interface Props {

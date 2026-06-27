@@ -335,7 +335,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 

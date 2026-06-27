@@ -72,7 +72,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Download } from 'lucide-vue-next'
+import { Download } from '@lucide/vue'
 
 const props = defineProps({
   title: String,

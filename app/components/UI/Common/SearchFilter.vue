@@ -131,7 +131,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { Search, X, ChevronDown, RotateCcw } from 'lucide-vue-next'
+import { Search, X, ChevronDown, RotateCcw } from '@lucide/vue'
 import CustomSelect from './CustomSelect.vue'
 
 const props = defineProps({

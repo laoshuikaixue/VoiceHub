@@ -107,7 +107,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue'
-import { Loader2, AlertCircle } from 'lucide-vue-next'
+import { Loader2, AlertCircle } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 
 const props = defineProps<{

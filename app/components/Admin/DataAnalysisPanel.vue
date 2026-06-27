@@ -619,7 +619,7 @@ import {
   MousePointer2,
   Check,
   X
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useSemesters } from '~/composables/useSemesters'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
