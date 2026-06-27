@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  console.log(`[API Auth Middleware] 开始处理开放API请求: ${pathname}`)
+  console.log(`[API Auth Middleware] 开始处理开放API请求: ${method} ${pathname}`)
 
   const startTime = Date.now()
   const method = getMethod(event)
@@ -120,9 +120,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 验证API Key格式 (应该是 vhub_xxxxxxxxxxxxxxxx 格式)
-    console.log(
-      `[API Auth Middleware] 验证API Key格式: 长度=${apiKey.length}, 前缀=${apiKey.startsWith('vhub_')}`
-    )
+    console.log('[API Auth Middleware] 验证API Key格式')
 
     if (
       !apiKey.startsWith(API_KEY_CONSTANTS.PREFIX) ||
@@ -172,9 +170,7 @@ export default defineEventHandler(async (event) => {
       throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY])
     }
 
-    console.log(
-      `[API Auth Middleware] API Key记录: ID=${apiKeyRecord.id}, 名称=${apiKeyRecord.name}, 过期时间=${apiKeyRecord.expiresAt}`
-    )
+    console.log('[API Auth Middleware] API Key验证通过')
 
     // 检查API Key是否激活
     if (!apiKeyRecord.isActive) {
@@ -194,7 +190,7 @@ export default defineEventHandler(async (event) => {
 
     // 检查API Key是否过期
     if (apiKeyRecord.expiresAt && getBeijingTime() > apiKeyRecord.expiresAt) {
-      console.log(`[API Auth Middleware] API Key已过期`)
+      console.log('[API Auth Middleware] API Key已过期')
       await ApiLogService.logAccess({
         apiKeyId: apiKeyRecord.id,
         endpoint: pathname,
@@ -249,7 +245,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 使用原子操作更新API Key使用统计
-    console.log(`[API Auth Middleware] 开始原子更新API Key使用统计`)
+    console.log('[API Auth Middleware] 开始原子更新API Key使用统计')
     await db
       .update(apiKeys)
       .set({
@@ -258,10 +254,10 @@ export default defineEventHandler(async (event) => {
         updatedAt: new Date()
       })
       .where(eq(apiKeys.id, apiKeyRecord.id))
-    console.log(`[API Auth Middleware] API Key使用统计原子更新完成`)
+    console.log('[API Auth Middleware] API Key使用统计原子更新完成')
 
     // 记录成功的API访问
-    console.log(`[API Auth Middleware] 开始记录API访问日志`)
+    console.log('[API Auth Middleware] 开始记录API访问日志')
     try {
       await logApiAccess(
         apiKeyRecord.id,
@@ -272,12 +268,12 @@ export default defineEventHandler(async (event) => {
         ipAddress,
         getHeader(event, 'user-agent') || 'Unknown'
       )
-      console.log(`[API Auth Middleware] API访问日志记录完成`)
+      console.log('[API Auth Middleware] API访问日志记录完成')
     } catch (error) {
       console.error(`[API Auth Middleware] 记录API访问日志失败:`, error)
     }
 
-    console.log(`[API Auth Middleware] 验证成功，继续处理请求`)
+    console.log('[API Auth Middleware] 验证成功，继续处理请求')
 
     // 将API Key信息添加到事件上下文中，供后续处理使用
     event.context.apiKey = apiKeyRecord
