@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
     const apiKey = generateApiKey()
     const keyPrefix = apiKey.substring(0, 10)
-    const keyHash = hashApiKey(apiKey)
+    const keyHash = await hashApiKey(apiKey)
     const name = validatedData.name?.trim() || '个人 API Key'
     const description = validatedData.description?.trim() || '用于个人集成和投稿'
 

@@ -152,7 +152,7 @@ export default defineEventHandler(async (event) => {
       `[API Auth Middleware] 数据库查询结果: ${apiKeyResult.length > 0 ? '找到记录' : '未找到记录'}`
     )
 
-    const apiKeyRecord = apiKeyResult.find((record) => verifyApiKey(apiKey, record.keyHash))
+    const apiKeyRecord = await findValidApiKeyRecord(apiKey, apiKeyResult)
 
     if (!apiKeyRecord) {
       console.log(`[API Auth Middleware] API Key未找到或未激活`)
@@ -353,6 +353,16 @@ function getRequiredPermission(pathname: string, method: string): string | null 
 
   if (normalizedPathname.startsWith('/api/open/songs')) {
     return 'songs:read'
+  }
+
+  return null
+}
+
+async function findValidApiKeyRecord(apiKey: string, records: Array<{ keyHash: string }>) {
+  for (const record of records) {
+    if (await verifyApiKey(apiKey, record.keyHash)) {
+      return record
+    }
   }
 
   return null

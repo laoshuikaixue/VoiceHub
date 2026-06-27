@@ -1,22 +1,24 @@
 import crypto from 'crypto'
+import { promisify } from 'util'
 
 const API_KEY_PREFIX = 'vhub_'
 const API_KEY_BYTES = 16
 const HASH_SALT_BYTES = 16
 const HASH_DERIVED_LENGTH = 64
+const scryptAsync = promisify(crypto.scrypt)
 
 export function generateApiKey(): string {
   const randomBytes = crypto.randomBytes(API_KEY_BYTES).toString('hex')
   return API_KEY_PREFIX + randomBytes
 }
 
-export function hashApiKey(apiKey: string): string {
+export async function hashApiKey(apiKey: string): Promise<string> {
   const salt = crypto.randomBytes(HASH_SALT_BYTES).toString('hex')
-  const derivedKey = crypto.scryptSync(apiKey, salt, HASH_DERIVED_LENGTH).toString('hex')
+  const derivedKey = toHex(await scryptAsync(apiKey, salt, HASH_DERIVED_LENGTH))
   return `${salt}:${derivedKey}`
 }
 
-export function verifyApiKey(apiKey: string, storedHash: string): boolean {
+export async function verifyApiKey(apiKey: string, storedHash: string): Promise<boolean> {
   if (!apiKey || !storedHash) {
     return false
   }
@@ -31,8 +33,20 @@ export function verifyApiKey(apiKey: string, storedHash: string): boolean {
     return false
   }
 
-  const derivedKey = crypto.scryptSync(apiKey, salt, HASH_DERIVED_LENGTH).toString('hex')
+  const derivedKey = toHex(await scryptAsync(apiKey, salt, HASH_DERIVED_LENGTH))
   return safeEqualHex(derivedKey, expectedDerivedKey)
+}
+
+function toHex(value: unknown): string {
+  if (Buffer.isBuffer(value)) {
+    return value.toString('hex')
+  }
+
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value).toString('hex')
+  }
+
+  return Buffer.from(String(value)).toString('hex')
 }
 
 function safeEqualHex(left: string, right: string): boolean {
