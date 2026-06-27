@@ -1051,7 +1051,7 @@ watch(
 )
 
 watch(currentCoverUrl, async (coverUrl) => {
-  if (!props.isVisible || !coverUrl) return
+  if (!props.isVisible) return
 
   await backgroundRenderer.setCoverBackground(coverUrl)
 })

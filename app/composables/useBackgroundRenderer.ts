@@ -90,8 +90,11 @@ export const useBackgroundRenderer = () => {
     renderer.setStaticMode(!config.value.dynamic)
 
     const cover = currentCoverUrl.value
-    if (cover) {
-      await renderer.setAlbum(toProxiedUrl(cover), false)
+    try {
+      await renderer.setAlbum(cover ? toProxiedUrl(cover) : '', false)
+    } catch (error) {
+      hasRenderError.value = true
+      console.error('应用封面到背景失败:', error)
     }
 
     if (isRendering.value && config.value.dynamic) {
@@ -140,8 +143,8 @@ export const useBackgroundRenderer = () => {
   const setCoverBackground = async (coverUrl: string) => {
     currentCoverUrl.value = coverUrl || ''
 
-    if (coverBlurElement.value && coverUrl) {
-      coverBlurElement.value.style.backgroundImage = `url(${coverUrl})`
+    if (coverBlurElement.value) {
+      coverBlurElement.value.style.backgroundImage = coverUrl ? `url(${coverUrl})` : ''
     }
 
     if (!backgroundRenderer.value || !coverUrl) return
@@ -207,6 +210,8 @@ export const useBackgroundRenderer = () => {
     isInitialized.value = false
     isRendering.value = false
     containerElement.value = null
+    coverBlurElement.value = null
+    currentCoverUrl.value = ''
   }
 
   onUnmounted(() => {
