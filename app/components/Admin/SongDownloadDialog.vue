@@ -737,7 +737,8 @@ const resolveDownloadAudioCandidate = async (
 
 const withDownloadSourceFallback = async (song, quality, executor) => {
   let excludeSources = []
-  let ignoreProvidedUrl = false
+  const hasPlayUrl = !!(song?.playUrl && song.playUrl.trim())
+  let ignoreProvidedUrl = !hasPlayUrl
   let lastError = null
 
   for (let attempt = 0; attempt < DOWNLOAD_URL_RETRY_LIMIT; attempt++) {
@@ -1219,17 +1220,6 @@ const toggleSongSelection = (songId) => {
 const closeDialog = () => {
   // 下载中关闭仅隐藏弹窗，后台继续运行
   emit('close')
-}
-
-// 获取下载链接
-const getMusicUrlForDownload = async (song, quality) => {
-  try {
-    const result = await resolveDownloadAudioCandidate(song, quality)
-    return result.url
-  } catch (error) {
-    console.error('获取音乐播放链接失败:', error)
-    throw new Error('获取音乐播放链接失败: ' + error.message)
-  }
 }
 
 // 通用的音频下载函数
