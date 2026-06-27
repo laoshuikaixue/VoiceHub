@@ -54,16 +54,16 @@ importers:
         specifier: 2.4.0
         version: 2.4.0
       '@sentry/node':
-        specifier: ^10.59.0
+        specifier: ^10.62.0
         version: 10.62.0(@opentelemetry/core@2.8.0(@opentelemetry/api@1.9.1))
       '@sentry/vue':
-        specifier: ^10.59.0
+        specifier: ^10.62.0
         version: 10.62.0(vue@3.5.39(typescript@6.0.3))
       '@simplewebauthn/browser':
         specifier: ^13.3.0
         version: 13.3.0
       '@simplewebauthn/server':
-        specifier: ^13.3.1
+        specifier: ^13.3.2
         version: 13.3.2
       '@types/bcryptjs':
         specifier: ^2.4.6
@@ -87,13 +87,13 @@ importers:
         specifier: ^8.20.0
         version: 8.20.0
       '@ungap/structured-clone':
-        specifier: ^1.3.1
+        specifier: ^1.3.2
         version: 1.3.2
       '@vercel/speed-insights':
         specifier: ^1.3.1
         version: 1.3.1(vue-router@4.6.4(vue@3.5.39(typescript@6.0.3)))(vue@3.5.39(typescript@6.0.3))
       axios:
-        specifier: ^1.18.0
+        specifier: ^1.18.1
         version: 1.18.1
       bcryptjs:
         specifier: ^2.4.3
@@ -186,7 +186,7 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0(vite@7.3.6(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
       vue:
-        specifier: ^3.5.38
+        specifier: ^3.5.39
         version: 3.5.39(typescript@6.0.3)
       vue-router:
         specifier: ^4.6.4
@@ -211,7 +211,7 @@ importers:
         specifier: ^9.39.4
         version: 9.39.4(jiti@2.7.0)
       prettier:
-        specifier: ^3.8.4
+        specifier: ^3.8.5
         version: 3.8.5
 
 packages:
@@ -3595,8 +3595,8 @@ packages:
       bare-buffer:
         optional: true
 
-  bare-os@3.9.1:
-    resolution: {integrity: sha512-6M5XjcnsygQNPMCMPXSK379xrJFiZ/AEMNBmFEmQW8d/789VQATvriyi5r0HYTL9TkQ26rn3kgdTG3aisbrXkQ==}
+  bare-os@3.9.2:
+    resolution: {integrity: sha512-h530JsrkYi8518ZfR57GHaLoI5YzXkGGEV0Y+mf4KYPBn4OnNajiznwkDq7FgE+Vnmyss9Utnzi44y7sowiAXA==}
     engines: {bare: '>=1.14.0'}
 
   bare-path@3.0.1:
@@ -11301,11 +11301,11 @@ snapshots:
       - bare-abort-controller
       - react-native-b4a
 
-  bare-os@3.9.1: {}
+  bare-os@3.9.2: {}
 
   bare-path@3.0.1:
     dependencies:
-      bare-os: 3.9.1
+      bare-os: 3.9.2
 
   bare-stream@2.13.3(bare-events@2.9.1):
     dependencies:
