@@ -93,7 +93,9 @@ export const useBackgroundRenderer = () => {
     const cover = currentCoverUrl.value
     if (cover !== loadedCoverUrl.value) {
       try {
-        await renderer.setAlbum(cover ? toProxiedUrl(cover) : '', false)
+        if (cover) {
+          await renderer.setAlbum(toProxiedUrl(cover), false)
+        }
         if (currentCoverUrl.value === cover) {
           loadedCoverUrl.value = cover
           hasRenderError.value = false

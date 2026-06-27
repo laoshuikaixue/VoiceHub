@@ -1234,6 +1234,7 @@ onUnmounted(() => {
 
 .gradient-background.visible {
   opacity: 1;
+  z-index: 1;
 }
 
 .gradient-background.dynamic {
@@ -1270,6 +1271,7 @@ onUnmounted(() => {
 
 .cover-background.visible {
   opacity: 1;
+  z-index: 1;
 }
 
 .background-overlay {
