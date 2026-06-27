@@ -709,7 +709,9 @@ const getDownloadResolveOptions = (song, quality, excludeSources = [], ignorePro
 
 const isRetryableDownloadError = (error) => {
   const message = String(error?.message || error || '')
-  return /404|not found|failed to fetch|networkerror|http error/i.test(message)
+  return /404|not found|failed to fetch|networkerror|http error|疑似试听时长|无法从播放链接获取时长|无法获取音乐播放链接/i.test(
+    message
+  )
 }
 
 const resolveDownloadAudioCandidate = async (
@@ -739,12 +741,29 @@ const withDownloadSourceFallback = async (song, quality, executor) => {
   let lastError = null
 
   for (let attempt = 0; attempt < DOWNLOAD_URL_RETRY_LIMIT; attempt++) {
-    const candidate = await resolveDownloadAudioCandidate(
-      song,
-      quality,
-      excludeSources,
-      ignoreProvidedUrl
-    )
+    let candidate
+
+    try {
+      candidate = await resolveDownloadAudioCandidate(
+        song,
+        quality,
+        excludeSources,
+        ignoreProvidedUrl
+      )
+    } catch (resolveError) {
+      lastError = resolveError
+
+      if (!isRetryableDownloadError(resolveError)) {
+        throw resolveError
+      }
+
+      if (ignoreProvidedUrl) {
+        throw resolveError
+      }
+
+      ignoreProvidedUrl = true
+      continue
+    }
 
     try {
       return await executor(candidate)
@@ -765,7 +784,11 @@ const withDownloadSourceFallback = async (song, quality, executor) => {
         continue
       }
 
-      throw error
+      if (ignoreProvidedUrl) {
+        throw error
+      }
+
+      ignoreProvidedUrl = true
     }
   }
 
