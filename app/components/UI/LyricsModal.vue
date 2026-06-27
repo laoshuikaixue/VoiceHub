@@ -16,14 +16,15 @@
           <!-- 动态背景 -->
           <div ref="backgroundContainer" class="background-layer">
             <div
-              v-if="backgroundConfig.type === 'gradient'"
-              :class="{ dynamic: backgroundConfig.dynamic }"
+              v-if="!currentCoverUrl"
+              :class="{ dynamic: backgroundConfig.dynamic, visible: showBackgroundFallback }"
               class="gradient-background"
             />
             <div
-              v-else-if="backgroundConfig.type === 'cover' && currentSong?.cover"
+              v-else
               ref="coverBlurContainer"
-              :style="{ backgroundImage: `url(${convertToHttps(currentSong.cover)})` }"
+              :class="{ visible: showBackgroundFallback }"
+              :style="{ backgroundImage: `url(${currentCoverUrl})` }"
               class="cover-background"
             />
             <!-- 叠加暗化层，提升白色背景下歌词对比度 -->
@@ -65,7 +66,7 @@
               :src="convertToHttps(currentSong.cover)"
               class="cover-image"
               referrerpolicy="no-referrer"
-            >
+            />
             <div v-else class="default-cover">
               <Icon name="music" size="64" />
             </div>
@@ -95,7 +96,7 @@
                       class="cover-image"
                       referrerpolicy="no-referrer"
                       @error="handleCoverError"
-                    >
+                    />
                     <div v-else class="default-cover">
                       <Icon name="music" size="64" />
                     </div>
@@ -196,7 +197,7 @@
                     <div class="lyric-settings-content">
                       <div class="setting-item switch">
                         <span class="label">AM 风格歌词</span>
-                        <input v-model="lyricSettings.useAMLyrics.value" type="checkbox" >
+                        <input v-model="lyricSettings.useAMLyrics.value" type="checkbox" />
                       </div>
                       <div class="setting-item">
                         <span class="label">字体大小</span>
@@ -216,15 +217,15 @@
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
                         <span class="label">显示翻译</span>
-                        <input v-model="lyricSettings.showTranslation.value" type="checkbox" >
+                        <input v-model="lyricSettings.showTranslation.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
                         <span class="label">显示罗马音</span>
-                        <input v-model="lyricSettings.showRoma.value" type="checkbox" >
+                        <input v-model="lyricSettings.showRoma.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
                         <span class="label">逐字歌词 (YRC)</span>
-                        <input v-model="lyricSettings.showYrc.value" type="checkbox" >
+                        <input v-model="lyricSettings.showYrc.value" type="checkbox" />
                       </div>
                     </div>
                   </template>
@@ -376,6 +377,16 @@ const currentTime = computed(() => audioPlayer.getCurrentPosition().value)
 const duration = computed(() => audioPlayer.getDuration().value)
 const { getQuality, getQualityLabel, getQualityOptions, saveQuality } = useAudioQuality()
 const enhanced = useAudioPlayerEnhanced()
+const currentCoverUrl = computed(() =>
+  currentSong.value?.cover ? convertToHttps(currentSong.value.cover) : ''
+)
+const hasCurrentLyrics = computed(() => {
+  const lyrics = audioPlayerControl.lyrics.currentLyrics.value
+  return Array.isArray(lyrics) && lyrics.length > 0
+})
+const showBackgroundFallback = computed(
+  () => !backgroundRenderer.isInitialized.value || backgroundRenderer.hasRenderError.value
+)
 
 const currentLyricLine = computed(() => {
   const index = audioPlayerControl.lyrics.currentLyricIndex.value
@@ -669,13 +680,27 @@ const progressPercentage = computed(() => {
 
 // 背景配置
 const backgroundConfig = ref({
-  type: 'cover',
+  type: 'gradient',
   dynamic: true,
-  blur: 40,
-  brightness: 0.6,
-  saturation: 1.05,
-  flowSpeed: 0.3
+  flowSpeed: 2,
+  fps: 30,
+  renderScale: 0.5
 })
+
+const syncBackgroundState = async () => {
+  await backgroundRenderer.updateConfig({
+    ...backgroundConfig.value,
+    hasLyric: hasCurrentLyrics.value
+  })
+
+  await backgroundRenderer.setCoverBackground(currentCoverUrl.value)
+
+  if (isPlaying.value) {
+    backgroundRenderer.resumeRender()
+  } else {
+    backgroundRenderer.pauseRender()
+  }
+}
 
 // 定义窗口大小变化处理函数（防抖优化）
 const handleResize = () => {
@@ -972,15 +997,12 @@ watch(
       if (backgroundContainer.value) {
         await backgroundRenderer.initializeBackground(backgroundContainer.value)
 
-        if (coverBlurContainer.value && backgroundConfig.value.type === 'cover') {
-          backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
-        }
-
+        backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+        await syncBackgroundState()
         backgroundRenderer.startRender()
-      }
-
-      if (currentSong.value && currentSong.value.cover) {
-        backgroundRenderer.setCoverBackground(currentSong.value.cover)
+        if (!isPlaying.value) {
+          backgroundRenderer.pauseRender()
+        }
       }
 
       // 歌词由 LyricManager 自动监听 currentTrack 变化并获取，这里不需要手动 fetch
@@ -1017,19 +1039,19 @@ watch(
   backgroundConfig,
   async (newConfig) => {
     if (props.isVisible) {
-      await backgroundRenderer.updateConfig(newConfig)
+      await backgroundRenderer.updateConfig({
+        ...newConfig,
+        hasLyric: hasCurrentLyrics.value
+      })
     }
   },
   { deep: true }
 )
 
-watch(currentSong, async (newSong) => {
-  if (!props.isVisible || !newSong) return
+watch(currentCoverUrl, async (coverUrl) => {
+  if (!props.isVisible) return
 
-  if (newSong.cover) {
-    backgroundRenderer.setCoverBackground(newSong.cover)
-    await backgroundRenderer.setGradientFromCover(newSong.cover)
-  }
+  await backgroundRenderer.setCoverBackground(coverUrl)
 })
 
 watch(isPlaying, (playing) => {
@@ -1037,9 +1059,17 @@ watch(isPlaying, (playing) => {
 
   if (playing) {
     startProgressTimer()
+    backgroundRenderer.startRender()
   } else {
     stopProgressTimer()
+    backgroundRenderer.pauseRender()
   }
+})
+
+watch(hasCurrentLyrics, async (hasLyric) => {
+  if (!props.isVisible) return
+
+  await backgroundRenderer.updateConfig({ hasLyric })
 })
 
 watch(canShowComments, (available) => {
@@ -1188,8 +1218,23 @@ onUnmounted(() => {
 }
 
 .gradient-background {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  z-index: 0;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(84, 130, 255, 0.32), transparent 34%),
+    radial-gradient(circle at 70% 40%, rgba(255, 88, 126, 0.25), transparent 32%),
+    linear-gradient(135deg, #14141c 0%, #090910 100%);
+  background-size: 180% 180%;
+  transition: opacity 0.5s ease;
+}
+
+.gradient-background.visible {
+  opacity: 1;
+  z-index: 1;
 }
 
 .gradient-background.dynamic {
@@ -1209,13 +1254,24 @@ onUnmounted(() => {
 }
 
 .cover-background {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  z-index: 0;
   background-size: cover;
   background-position: center;
   filter: blur(60px) brightness(0.4) saturate(1.4);
   transform: scale(1.3);
-  transition: background-image 0.8s ease-in-out;
+  opacity: 0;
+  transition:
+    background-image 0.8s ease-in-out,
+    opacity 0.5s ease;
+}
+
+.cover-background.visible {
+  opacity: 1;
+  z-index: 1;
 }
 
 .background-overlay {
