@@ -211,6 +211,13 @@
       "when": 1782432001000,
       "tag": "20260626000100_add_card_code_auto_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1782527721417,
+      "tag": "20260627023521_add_card_code_foreign_key_indexes",
+      "breakpoints": true
     }
   ]
 }
