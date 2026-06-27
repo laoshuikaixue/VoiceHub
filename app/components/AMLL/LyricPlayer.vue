@@ -4,7 +4,6 @@
  */
 import {
   type BaseRenderer,
-  LyricPlayer as CoreLyricPlayer,
   type LyricLine,
   type LyricLineMouseEvent,
   type LyricPlayerBase,
@@ -160,7 +159,7 @@ export interface LyricPlayerRef {
 // 模板引用
 const wrapperRef = ref<HTMLDivElement | null>(null)
 // 歌词播放实例
-const playerRef = ref<CoreLyricPlayer>()
+const playerRef = ref<LyricPlayerBase>()
 
 // 事件处理器
 const lineClickHandler = (e: Event) => emit('lineClick', e as LyricLineMouseEvent)
@@ -170,13 +169,20 @@ const lineContextMenuHandler = (e: Event) => emit('lineContextmenu', e as LyricL
 const bottomLineEl = computed(() => playerRef.value?.getBottomLineElement())
 
 // 组件挂载时初始化
-onMounted(() => {
+onMounted(async () => {
   const wrapper = wrapperRef.value
-  if (wrapper) {
+  if (!wrapper) return
+
+  try {
+    const { LyricPlayer: CoreLyricPlayer } = await import('@applemusic-like-lyrics/core')
+    if (wrapperRef.value !== wrapper) return
+
     playerRef.value = new CoreLyricPlayer()
     wrapper.appendChild(playerRef.value.getElement())
     playerRef.value.addEventListener('line-click', lineClickHandler)
     playerRef.value.addEventListener('line-contextmenu', lineContextMenuHandler)
+  } catch (error) {
+    console.error('AM 歌词播放器初始化失败:', error)
   }
 })
 

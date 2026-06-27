@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@applemusic-like-lyrics/core':
+        specifier: ^0.5.1
+        version: 0.5.1(@pixi/app@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3)))(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3))(@pixi/filter-blur@7.4.3(@pixi/core@7.4.3))(@pixi/filter-bulge-pinch@5.1.1(@pixi/core@7.4.3))(@pixi/filter-color-matrix@7.4.3(@pixi/core@7.4.3))(@pixi/sprite@7.4.3(@pixi/core@7.4.3)(@pixi/display@7.4.3(@pixi/core@7.4.3)))
       '@applemusic-like-lyrics/lyric':
         specifier: ^0.3.0
         version: 0.3.0
@@ -176,9 +179,6 @@ importers:
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
-      vite-plugin-glsl:
-        specifier: ^1.6.0
-        version: 1.6.0(@rollup/pluginutils@5.4.0(rollup@4.62.2))(esbuild@0.28.1)(vite@7.3.6(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
       vite-plugin-top-level-await:
         specifier: ^1.6.0
         version: 1.6.0(@swc/helpers@0.5.23)(rollup@4.62.2)(vite@7.3.6(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
@@ -7489,19 +7489,6 @@ packages:
       typescript:
         optional: true
       vue-tsc:
-        optional: true
-
-  vite-plugin-glsl@1.6.0:
-    resolution: {integrity: sha512-3i3ZvIVb13LhTcAXEHGTOW+cNG2jbJ++XsDFyCWUpnoFN1NPXvdtC4j66pig+i0QjDnmusOK/YCpiDWizxBY0A==}
-    engines: {node: '>= 20.17.0', npm: '>= 10.8.3'}
-    peerDependencies:
-      '@rollup/pluginutils': ^5.x
-      esbuild: '>= 0.25'
-      vite: '>= 3.x'
-    peerDependenciesMeta:
-      '@rollup/pluginutils':
-        optional: true
-      esbuild:
         optional: true
 
   vite-plugin-inspect@11.4.1:
@@ -15785,13 +15772,6 @@ snapshots:
       eslint: 9.39.4(jiti@2.7.0)
       optionator: 0.9.4
       typescript: 6.0.3
-
-  vite-plugin-glsl@1.6.0(@rollup/pluginutils@5.4.0(rollup@4.62.2))(esbuild@0.28.1)(vite@7.3.6(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)):
-    dependencies:
-      vite: 7.3.6(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
-    optionalDependencies:
-      '@rollup/pluginutils': 5.4.0(rollup@4.62.2)
-      esbuild: 0.28.1
 
   vite-plugin-inspect@11.4.1(@nuxt/kit@4.4.8(magicast@0.5.3))(vite@7.3.6(@types/node@26.0.1)(jiti@2.7.0)(sass@1.101.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)):
     dependencies:
