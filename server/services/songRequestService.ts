@@ -16,19 +16,42 @@ import { createCollaborationInvitationNotification } from '~~/server/services/no
 import { isLimitReached } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import { z } from 'zod'
 
 type SongRequestUser = {
   id: number
   role: string
 }
 
+const songRequestBodySchema = z.object({
+  title: z.string().trim().min(1, '歌曲名称不能为空').max(200, '歌曲名称不能超过200个字符'),
+  artist: z.string().trim().min(1, '艺术家不能为空').max(200, '艺术家不能超过200个字符'),
+  cover: z.string().trim().max(1000, '封面地址不能超过1000个字符').optional().nullable(),
+  musicPlatform: z.string().trim().max(50, '音乐平台标识不能超过50个字符').optional().nullable(),
+  musicId: z.string().trim().max(200, '音乐 ID 不能超过200个字符').optional().nullable(),
+  bilibiliCid: z.string().trim().max(100, 'Bilibili CID 不能超过100个字符').optional().nullable(),
+  bilibiliPage: z.union([z.string(), z.number()]).optional().nullable(),
+  playUrl: z.string().trim().max(2000, '播放链接不能超过2000个字符').optional().nullable(),
+  submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
+  submissionNotePublic: z.boolean().optional(),
+  preferredPlayTimeId: z.string().uuid('播出时段 ID 无效').optional().nullable(),
+  cardCode: z.string().trim().max(100, '点歌券不能超过100个字符').optional().nullable(),
+  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
+})
+
 export async function requestSongForUser(event: any, user: SongRequestUser, body: any) {
-  if (!body || typeof body !== 'object' || !body.title || !body.artist) {
+  const parsedBody = songRequestBodySchema.safeParse(body || {})
+  if (!parsedBody.success) {
+    const issues = parsedBody.error.issues || []
     throw createError({
       statusCode: 400,
-      message: '歌曲名称和艺术家不能为空'
+      message: issues.length
+        ? `请求参数验证失败：${issues.map((issue) => issue.message).join(', ')}`
+        : '请求参数验证失败'
     })
   }
+
+  const requestBody = parsedBody.data
 
   try {
     // 标准化后再比较，避免同一首歌因标点或空格差异绕过重复检查。
@@ -41,24 +64,24 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         .trim()
     }
 
-    const normalizedTitle = normalizeForMatch(body.title)
-    const normalizedArtist = normalizeForMatch(body.artist)
+    const normalizedTitle = normalizeForMatch(requestBody.title)
+    const normalizedArtist = normalizeForMatch(requestBody.artist)
 
     const currentSemester = await getCurrentSemesterName()
 
     const isBilibili =
-      body.musicPlatform === 'bilibili' ||
-      String(body.musicId || '').startsWith('BV') ||
-      String(body.musicId || '').startsWith('av')
+      requestBody.musicPlatform === 'bilibili' ||
+      String(requestBody.musicId || '').startsWith('BV') ||
+      String(requestBody.musicId || '').startsWith('av')
 
-    if (isBilibili && body.musicId) {
-      let fullMusicId = String(body.musicId)
+    if (isBilibili && requestBody.musicId) {
+      let fullMusicId = String(requestBody.musicId)
       const bvId = fullMusicId.split(':')[0]
 
-      if (body.bilibiliCid) {
-        const musicIdParts = [bvId, body.bilibiliCid]
-        if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
-          musicIdParts.push(String(body.bilibiliPage))
+      if (requestBody.bilibiliCid) {
+        const musicIdParts = [bvId, requestBody.bilibiliCid]
+        if (requestBody.bilibiliPage && Number(requestBody.bilibiliPage) > 1) {
+          musicIdParts.push(String(requestBody.bilibiliPage))
         }
         fullMusicId = musicIdParts.join(':')
       }
@@ -84,7 +107,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         if (!isSuperAdmin || hasUnplayedDuplicate) {
           throw createError({
             statusCode: 400,
-            message: `《${body.title}》已经在列表中，不能重复投稿`
+            message: `《${requestBody.title}》已经在列表中，不能重复投稿`
           })
         }
       }
@@ -112,7 +135,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         if (!isSuperAdmin || hasUnplayedDuplicate) {
           throw createError({
             statusCode: 400,
-            message: `《${body.title}》已经在列表中，不能重复投稿`
+            message: `《${requestBody.title}》已经在列表中，不能重复投稿`
           })
         }
       }
@@ -190,7 +213,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     }
 
     if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
-      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
+      const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
         throw createError({ statusCode: 403, message: '本站点已启用仅点歌券投稿，请提供有效点歌券' })
       }
@@ -199,12 +222,12 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const isCardCodeEnabled = !!(
       systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests
     )
-    if (typeof body.cardCode === 'string' && body.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
+    if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
       throw createError({ statusCode: 400, message: '点歌券投稿功能未启用' })
     }
 
     let preferredPlayTime = null
-    if (body.preferredPlayTimeId) {
+    if (requestBody.preferredPlayTimeId) {
       if (!systemSettingsData?.enablePlayTimeSelection) {
         throw createError({
           statusCode: 400,
@@ -215,7 +238,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       const playTimeResult = await db
         .select()
         .from(playTimes)
-        .where(and(eq(playTimes.id, body.preferredPlayTimeId), eq(playTimes.enabled, true)))
+        .where(and(eq(playTimes.id, requestBody.preferredPlayTimeId), eq(playTimes.enabled, true)))
         .limit(1)
       preferredPlayTime = playTimeResult[0]
 
@@ -227,22 +250,17 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    const rawSubmissionNote = typeof body.submissionNote === 'string' ? body.submissionNote.trim() : ''
-    if (rawSubmissionNote.length > 300) {
-      throw createError({
-        statusCode: 400,
-        message: '备注留言不能超过300个字符'
-      })
-    }
+    const rawSubmissionNote = requestBody.submissionNote || ''
     const submissionNote =
       systemSettingsData?.enableSubmissionRemarks && rawSubmissionNote ? rawSubmissionNote : null
-    const submissionNotePublic = submissionNote !== null ? body.submissionNotePublic !== false : false
+    const submissionNotePublic =
+      submissionNote !== null ? requestBody.submissionNotePublic !== false : false
 
     const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
 
     const song = await db.transaction(async (tx) => {
       let providedCardCodeId: number | null = null
-      const providedCardCode = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
+      const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
 
       if (providedCardCode) {
         const codeRows = await tx
@@ -319,16 +337,16 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         }
       }
 
-      let finalMusicId = body.musicId ? String(body.musicId) : null
+      let finalMusicId = requestBody.musicId ? String(requestBody.musicId) : null
 
       if (isBilibili) {
         const bvId = finalMusicId?.split(':')[0]
         if (bvId) {
           const musicIdParts = [bvId]
-          if (body.bilibiliCid) {
-            musicIdParts.push(body.bilibiliCid)
-            if (body.bilibiliPage && Number(body.bilibiliPage) > 1) {
-              musicIdParts.push(String(body.bilibiliPage))
+          if (requestBody.bilibiliCid) {
+            musicIdParts.push(requestBody.bilibiliCid)
+            if (requestBody.bilibiliPage && Number(requestBody.bilibiliPage) > 1) {
+              musicIdParts.push(String(requestBody.bilibiliPage))
             }
           }
           finalMusicId = musicIdParts.join(':')
@@ -338,16 +356,16 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       const songResult = await tx
         .insert(songs)
         .values({
-          title: body.title,
-          artist: body.artist,
+          title: requestBody.title,
+          artist: requestBody.artist,
           requesterId: user.id,
           preferredPlayTimeId: preferredPlayTime?.id || null,
           semester: currentSemester,
-          cover: body.cover || null,
-          musicPlatform: isBilibili ? 'bilibili' : body.musicPlatform || null,
+          cover: requestBody.cover || null,
+          musicPlatform: isBilibili ? 'bilibili' : requestBody.musicPlatform || null,
           musicId: finalMusicId,
           cardCodeId: providedCardCodeId || null,
-          playUrl: body.playUrl || null,
+          playUrl: requestBody.playUrl || null,
           submissionNote,
           submissionNotePublic,
           hitRequestId: hitRequestTime?.id || null
@@ -359,11 +377,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
 
       if (
-        body.collaborators &&
-        Array.isArray(body.collaborators) &&
-        body.collaborators.length > 0
+        requestBody.collaborators &&
+        Array.isArray(requestBody.collaborators) &&
+        requestBody.collaborators.length > 0
       ) {
-        const collaboratorIds = body.collaborators.map((id: any) => Number(id)) as number[]
+        const collaboratorIds = requestBody.collaborators.map((id: any) => Number(id)) as number[]
         const uniqueCollaboratorIds = [...new Set<number>(collaboratorIds)].filter(
           (id) => !isNaN(id) && id !== user.id
         )

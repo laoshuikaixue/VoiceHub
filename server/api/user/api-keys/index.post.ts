@@ -23,30 +23,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const validatedData = createPersonalApiKeySchema.parse(body || {})
 
-    const existingKeys = await db
-      .select({ id: apiKeys.id })
-      .from(apiKeys)
-      .innerJoin(apiKeyPermissions, eq(apiKeyPermissions.apiKeyId, apiKeys.id))
-      .where(
-        and(
-          eq(apiKeys.createdByUserId, user.id),
-          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
-          sql`NOT EXISTS (
-            SELECT 1
-            FROM ${apiKeyPermissions}
-            WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
-              AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
-          )`
-        )
-      )
-
-    if (existingKeys.length >= 5) {
-      throw createError({
-        statusCode: 400,
-        message: '每个用户最多只能创建 5 个个人集成令牌'
-      })
-    }
-
     const apiKey = generateApiKey()
     const keyPrefix = apiKey.substring(0, 10)
     const keyHash = hashApiKey(apiKey)
@@ -54,6 +30,32 @@ export default defineEventHandler(async (event) => {
     const description = validatedData.description?.trim() || '用于个人集成和投稿'
 
     const result = await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${user.id}::bigint)`)
+
+      const existingKeys = await tx
+        .select({ id: apiKeys.id })
+        .from(apiKeys)
+        .innerJoin(apiKeyPermissions, eq(apiKeyPermissions.apiKeyId, apiKeys.id))
+        .where(
+          and(
+            eq(apiKeys.createdByUserId, user.id),
+            eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
+            sql`NOT EXISTS (
+              SELECT 1
+              FROM ${apiKeyPermissions}
+              WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
+                AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
+            )`
+          )
+        )
+
+      if (existingKeys.length >= 5) {
+        throw createError({
+          statusCode: 400,
+          message: '每个用户最多只能创建 5 个个人集成令牌'
+        })
+      }
+
       const apiKeyResult = await tx
         .insert(apiKeys)
         .values({
