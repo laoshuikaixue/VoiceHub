@@ -8,11 +8,14 @@ const ALLOWED_FIELDS = [
   'cover',
   'musicPlatform',
   'musicId',
+  'bilibiliCid',
+  'bilibiliPage',
   'playUrl',
   'submissionNote',
   'submissionNotePublic',
   'preferredPlayTimeId',
-  'cardCode'
+  'cardCode',
+  'collaborators'
 ]
 
 export default defineEventHandler(async (event) => {

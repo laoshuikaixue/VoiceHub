@@ -1,7 +1,9 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq } from 'drizzle-orm'
+import { z } from 'zod'
 
 const PERSONAL_PERMISSION = 'songs:request'
+const apiKeyIdSchema = z.string().uuid('无效的令牌 ID')
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -12,13 +14,23 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const apiKeyId = getRouterParam(event, 'id')
-  if (!apiKeyId) {
+  const apiKeyIdRaw = getRouterParam(event, 'id')
+  if (!apiKeyIdRaw) {
     throw createError({
       statusCode: 400,
       message: '令牌 ID 不能为空'
     })
   }
+
+  const parsedApiKeyId = apiKeyIdSchema.safeParse(apiKeyIdRaw)
+  if (!parsedApiKeyId.success) {
+    throw createError({
+      statusCode: 400,
+      message: parsedApiKeyId.error.issues[0]?.message || '无效的令牌 ID'
+    })
+  }
+
+  const apiKeyId = parsedApiKeyId.data
 
   try {
     const existingApiKey = await db

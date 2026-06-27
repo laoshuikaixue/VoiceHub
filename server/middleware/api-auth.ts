@@ -1,6 +1,5 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq, sql } from 'drizzle-orm'
-import crypto from 'crypto'
 import { ApiLogService } from '~~/server/services/apiLogService'
 import {
   API_ERROR_CODES,
@@ -12,6 +11,7 @@ import { openApiCache } from '~~/server/utils/open-api-cache'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getIPBlockRemainingTime, isIPBlocked } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { verifyApiKey } from '~~/server/utils/apiKeyUtils'
 
 /**
  * 记录API访问日志
@@ -134,31 +134,29 @@ export default defineEventHandler(async (event) => {
       throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY_FORMAT])
     }
 
-    // 提取前缀和哈希API Key
+    // 提取前缀
     const keyPrefix = apiKey.substring(0, API_KEY_CONSTANTS.PREFIX_LENGTH)
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
-
-    console.log(`[API Auth Middleware] 查询API Key哈希: ${keyHash.substring(0, 10)}...`)
+    console.log(`[API Auth Middleware] 查询API Key前缀: ${keyPrefix}`)
 
     // 查询API Key信息
     const apiKeyResult = await db
       .select({
         id: apiKeys.id,
         name: apiKeys.name,
+        keyHash: apiKeys.keyHash,
         isActive: apiKeys.isActive,
         expiresAt: apiKeys.expiresAt,
         usageCount: apiKeys.usageCount,
         createdByUserId: apiKeys.createdByUserId
       })
       .from(apiKeys)
-      .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.keyPrefix, keyPrefix)))
-      .limit(1)
+      .where(eq(apiKeys.keyPrefix, keyPrefix))
 
     console.log(
       `[API Auth Middleware] 数据库查询结果: ${apiKeyResult.length > 0 ? '找到记录' : '未找到记录'}`
     )
 
-    const apiKeyRecord = apiKeyResult[0]
+    const apiKeyRecord = apiKeyResult.find((record) => verifyApiKey(apiKey, record.keyHash))
 
     if (!apiKeyRecord) {
       console.log(`[API Auth Middleware] API Key未找到或未激活`)
@@ -332,26 +330,34 @@ export default defineEventHandler(async (event) => {
  * 根据路径和方法获取所需权限
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
-  if (pathname === '/api/open/card-codes' || pathname.startsWith('/api/open/card-codes/')) {
-    if (pathname === '/api/open/card-codes/delete' || pathname.startsWith('/api/open/card-codes/delete/')) return 'card-codes:delete'
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+
+  if (
+    normalizedPathname === '/api/open/card-codes' ||
+    normalizedPathname.startsWith('/api/open/card-codes/')
+  ) {
+    if (
+      normalizedPathname === '/api/open/card-codes/delete' ||
+      normalizedPathname.startsWith('/api/open/card-codes/delete/')
+    ) return 'card-codes:delete'
     if (method === 'GET') return 'card-codes:read'
     if (method === 'DELETE') return 'card-codes:delete'
     return 'card-codes:write'
   }
 
-  if (pathname.startsWith('/api/open/schedules')) {
+  if (normalizedPathname.startsWith('/api/open/schedules')) {
     return 'schedules:read'
   }
 
-  if (pathname.startsWith('/api/open/songs/mark-played')) {
+  if (normalizedPathname.startsWith('/api/open/songs/mark-played')) {
     return 'songs:write'
   }
 
-  if (pathname === '/api/open/songs/request' && method === 'POST') {
+  if (normalizedPathname === '/api/open/songs/request' && method === 'POST') {
     return 'songs:request'
   }
 
-  if (pathname.startsWith('/api/open/songs')) {
+  if (normalizedPathname.startsWith('/api/open/songs')) {
     return 'songs:read'
   }
 

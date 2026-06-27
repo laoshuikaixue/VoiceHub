@@ -1,6 +1,6 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
-import crypto from 'crypto'
 import { z } from 'zod'
+import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
 
 const PERSONAL_PERMISSION = 'songs:request'
 
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
 
     const apiKey = generateApiKey()
     const keyPrefix = apiKey.substring(0, 10)
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
+    const keyHash = hashApiKey(apiKey)
     const name = validatedData.name?.trim() || '个人 API Key'
     const description = validatedData.description?.trim() || '用于个人集成和投稿'
 
@@ -100,9 +100,3 @@ export default defineEventHandler(async (event) => {
     })
   }
 })
-
-function generateApiKey(): string {
-  const prefix = 'vhub_'
-  const randomBytes = crypto.randomBytes(16).toString('hex')
-  return prefix + randomBytes
-}

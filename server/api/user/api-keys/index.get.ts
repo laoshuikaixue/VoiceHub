@@ -1,5 +1,6 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, desc, eq } from 'drizzle-orm'
+import { getBeijingTime } from '~/utils/timeUtils'
 
 const PERSONAL_PERMISSION = 'songs:request'
 
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
       )
       .orderBy(desc(apiKeys.createdAt))
 
-    const now = new Date()
+    const now = getBeijingTime()
     const items = rows.map((key) => {
       const expiresAt = key.expiresAt ? new Date(key.expiresAt) : null
       return {

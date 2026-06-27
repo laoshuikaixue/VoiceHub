@@ -1,8 +1,8 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
-import crypto from 'crypto'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
+import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
 
 /**
  * 创建API Key
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     // 生成API Key
     const apiKey = generateApiKey()
     const keyPrefix = apiKey.substring(0, 10) // vhub_xxxxx
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
+    const keyHash = hashApiKey(apiKey)
 
     // 处理过期时间
     let expiresAt: Date | null = null
@@ -100,7 +100,15 @@ export default defineEventHandler(async (event) => {
         })
         .returning({ id: apiKeys.id })
 
-      const apiKeyId = apiKeyResult[0].id
+      const createdApiKey = apiKeyResult[0]
+      if (!createdApiKey) {
+        throw createError({
+          statusCode: 500,
+          message: '创建 API Key 失败'
+        })
+      }
+
+      const apiKeyId = createdApiKey.id
 
       // 插入权限记录
       const permissionValues = validatedData.permissions.map((permission) => ({
@@ -112,7 +120,7 @@ export default defineEventHandler(async (event) => {
 
       return {
         id: apiKeyId,
-        apiKey, // 只在创建时返回完整的API Key
+        apiKey,
         name: validatedData.name,
         description: validatedData.description,
         keyPrefix,
@@ -151,12 +159,3 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-/**
- * 生成API Key
- * 格式: vhub_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (37字符)
- */
-function generateApiKey(): string {
-  const prefix = 'vhub_'
-  const randomBytes = crypto.randomBytes(16).toString('hex') // 32字符
-  return prefix + randomBytes
-}

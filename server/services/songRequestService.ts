@@ -13,6 +13,7 @@ import { and, eq, gt, lt, lte, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import { isLimitReached } from '~~/server/utils/submissionLimit'
+import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 
 type SongRequestUser = {
@@ -21,7 +22,7 @@ type SongRequestUser = {
 }
 
 export async function requestSongForUser(event: any, user: SongRequestUser, body: any) {
-  if (!body.title || !body.artist) {
+  if (!body || typeof body !== 'object' || !body.title || !body.artist) {
     throw createError({
       statusCode: 400,
       message: '歌曲名称和艺术家不能为空'
@@ -397,9 +398,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
               collaboratorId: collab.id,
               action: 'INVITE',
               operatorId: user.id,
-              ipAddress:
-                (event.node.req.headers['x-forwarded-for'] as string) ||
-                event.node.req.socket.remoteAddress
+              ipAddress: getClientIP(event)
             })
 
             notificationsToSend.push({
