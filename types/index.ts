@@ -138,6 +138,8 @@ export interface SystemSettings {
   enableReplayRequests?: boolean
   enableCollaborativeSubmission?: boolean
   enableSubmissionRemarks?: boolean
+  enableCardCodeRequests?: boolean
+  requireCardCodeForRequests?: boolean
 }
 
 export interface RequestTime {

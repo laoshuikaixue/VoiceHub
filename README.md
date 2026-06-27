@@ -870,6 +870,8 @@ VoiceHub/
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
+│   │       ├── *.sql           # Drizzle 迁移脚本
+│   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
 │   │   └── default.vue         # 默认布局模板
 │   ├── middleware/            # 中间件
@@ -950,6 +952,7 @@ VoiceHub/
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
 │   │   │   │   ├── create.post.ts   # 创建点歌券
+│   │   │   │   ├── delete.post.ts   # 删除点歌券
 │   │   │   │   ├── export.get.ts    # 导出点歌券
 │   │   │   │   ├── index.get.ts     # 获取点歌券列表
 │   │   │   │   ├── redeem-logs.get.ts # 获取点歌券日志
@@ -1104,6 +1107,12 @@ VoiceHub/
 │   │   │   ├── settings.post.ts     # 更新通知设置
 │   │   │   └── settings.ts          # 获取通知设置
 │   │   ├── open/           # 开放API（无需认证）
+│   │   │   ├── card-codes/          # 点歌券开放API
+│   │   │   │   └── delete.post.ts   # 删除点歌券（兼容不支持 DELETE body 的代理）
+│   │   │   ├── card-codes.delete.ts # 删除点歌券
+│   │   │   ├── card-codes.get.ts    # 获取点歌券列表
+│   │   │   ├── card-codes.patch.ts  # 更新点歌券
+│   │   │   ├── card-codes.post.ts   # 创建点歌券
 │   │   │   ├── songs/               # 歌曲相关开放API
 │   │   │   │   └── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   ├── schedules.get.ts     # 获取公开排期
@@ -1175,6 +1184,7 @@ VoiceHub/
 │   │   └── error-handler.ts # 错误处理插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
+│   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
@@ -1186,6 +1196,7 @@ VoiceHub/
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── cache-helpers.ts # 缓存辅助工具
+│   │   ├── card-code-delete-handler.ts # 点歌券删除开放API处理器
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具

@@ -718,6 +718,11 @@ const availablePermissions = [
     value: 'card-codes:write',
     label: '点歌券管理',
     description: '创建和更新点歌券'
+  },
+  {
+    value: 'card-codes:delete',
+    label: '点歌券删除',
+    description: '删除点歌券'
   }
 ]
 

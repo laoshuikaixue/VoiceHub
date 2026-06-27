@@ -1718,7 +1718,7 @@ export default defineEventHandler(async (event) => {
                         break
 
                       case 'cardCodeRedeemLogs': {
-                        let validCardCodeId = record.cardCodeId
+                        let validCardCodeId = record.cardCodeId || null
                         if (record.cardCodeId) {
                           const mappedCardCodeId = cardCodeIdMapping.get(record.cardCodeId)
                           if (mappedCardCodeId) {
@@ -1730,13 +1730,9 @@ export default defineEventHandler(async (event) => {
                               .where(eq(cardCodes.id, record.cardCodeId))
                               .limit(1)
                             if (cardCodeExists.length === 0) {
-                              console.warn(`点歌券日志的点歌券ID ${record.cardCodeId} 不存在，跳过此记录`)
-                              return
+                              validCardCodeId = null
                             }
                           }
-                        } else {
-                          console.warn('点歌券日志缺少cardCodeId，跳过此记录')
-                          return
                         }
 
                         let validRedeemedBy = record.redeemedBy

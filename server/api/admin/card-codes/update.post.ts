@@ -61,12 +61,19 @@ export default defineEventHandler(async (event) => {
       updateObj.redeemedBy = null
       updateObj.redeemedAt = null
     }
+    if (status === 'INVALID') {
+      updateObj.lockedBy = null
+      updateObj.lockedAt = null
+      updateObj.redeemedBy = null
+      updateObj.redeemedAt = null
+    }
     if (typeof body.note !== 'undefined') {
       updateObj.note = typeof body.note === 'string' ? body.note.trim() || null : body.note
     }
     if (Object.keys(updateObj).length === 0) {
       throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
+    updateObj.updatedAt = new Date()
 
     const res = await db.transaction(async (tx) => {
       const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()

@@ -275,7 +275,7 @@ export const cardCode = pgTable("CardCode", {
 export const cardCodeRedeemLog = pgTable("CardCodeRedeemLog", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
-	cardCodeId: integer().notNull(),
+	cardCodeId: integer(),
 	codeSnapshot: text().notNull(),
 	redeemedBy: integer().notNull(),
 	redeemedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -286,7 +286,7 @@ export const cardCodeRedeemLog = pgTable("CardCodeRedeemLog", {
 			columns: [table.cardCodeId],
 			foreignColumns: [cardCode.id],
 			name: "CardCodeRedeemLog_cardCodeId_CardCode_id_fk"
-		}).onDelete("restrict"),
+		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.redeemedBy],
 			foreignColumns: [user.id],

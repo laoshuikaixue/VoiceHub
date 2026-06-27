@@ -332,8 +332,11 @@ export default defineEventHandler(async (event) => {
  * 根据路径和方法获取所需权限
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
-  if (pathname.startsWith('/api/open/card-codes')) {
-    return method === 'GET' ? 'card-codes:read' : 'card-codes:write'
+  if (pathname === '/api/open/card-codes' || pathname.startsWith('/api/open/card-codes/')) {
+    if (pathname === '/api/open/card-codes/delete' || pathname.startsWith('/api/open/card-codes/delete/')) return 'card-codes:delete'
+    if (method === 'GET') return 'card-codes:read'
+    if (method === 'DELETE') return 'card-codes:delete'
+    return 'card-codes:write'
   }
 
   if (pathname.startsWith('/api/open/schedules')) {
