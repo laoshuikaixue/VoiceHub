@@ -60,11 +60,10 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  console.log(`[API Auth Middleware] 开始处理开放API请求: ${method} ${pathname}`)
-
   const startTime = Date.now()
   const method = getMethod(event)
   const userAgent = getHeader(event, 'user-agent') || ''
+  console.log(`[API Auth Middleware] 开始处理开放API请求: ${method} ${pathname}`)
 
   // 获取客户端真实IP地址
   const ipAddress = getClientIP(event)
