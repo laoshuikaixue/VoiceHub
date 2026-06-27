@@ -700,7 +700,7 @@ import {
   CheckCircle2,
   ShieldAlert,
   MessageSquare
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 

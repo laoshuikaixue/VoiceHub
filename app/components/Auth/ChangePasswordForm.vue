@@ -192,7 +192,7 @@ import {
   XCircle,
   AlertCircle,
   Loader2
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 // 组件属性
 const props = defineProps({

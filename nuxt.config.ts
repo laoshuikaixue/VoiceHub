@@ -384,7 +384,7 @@ export default defineNuxtConfig({
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return
-            if (id.includes('lucide-vue-next')) return 'icons'
+            if (id.includes('@lucide/vue')) return 'icons'
             if (id.includes('@pixi')) return 'pixi'
             if (id.includes('@applemusic-like-lyrics')) return 'lyric-engine'
             if (id.includes('drizzle-orm') || id.includes('postgres')) return 'database'

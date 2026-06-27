@@ -98,7 +98,7 @@ import {
   Clock,
   BarChart3,
   MessageSquare
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const props = defineProps({
   label: { type: String, required: true },

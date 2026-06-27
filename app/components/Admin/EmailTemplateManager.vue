@@ -227,7 +227,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
-import { Mail, Info, Save, RotateCcw, Eye, Code, Search, ChevronRight } from 'lucide-vue-next'
+import { Mail, Info, Save, RotateCcw, Eye, Code, Search, ChevronRight } from '@lucide/vue'
 
 type TemplateItem = {
   key: string

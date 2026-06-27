@@ -119,7 +119,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { ArrowLeft, User, Link as LinkIcon, Lock } from 'lucide-vue-next'
+import { ArrowLeft, User, Link as LinkIcon, Lock } from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 

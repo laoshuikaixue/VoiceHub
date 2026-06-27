@@ -1438,7 +1438,7 @@ import {
   AtSign,
   Briefcase,
   Link
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'

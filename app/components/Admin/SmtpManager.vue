@@ -204,7 +204,7 @@ import { onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
 import EmailTemplateManager from '~/components/Admin/EmailTemplateManager.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from 'lucide-vue-next'
+import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from '@lucide/vue'
 
 const { showToast: showNotification } = useToast()
 

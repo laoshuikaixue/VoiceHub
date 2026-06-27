@@ -190,7 +190,7 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { Menu, ChevronUp } from 'lucide-vue-next'
+import { Menu, ChevronUp } from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
 import logo from '~~/public/images/logo.svg'
 import { usePermissions } from '~/composables/usePermissions'

@@ -1080,7 +1080,7 @@ import {
   ChevronsRight,
   ExternalLink,
   MessageSquare
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAdmin } from '~/composables/useAdmin'
 import { useAuth } from '~/composables/useAuth'

@@ -492,7 +492,7 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertCircle
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 

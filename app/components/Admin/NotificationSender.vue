@@ -435,7 +435,7 @@ import {
   Eye,
   MessageSquare,
   Loader2
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
