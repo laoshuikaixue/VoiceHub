@@ -1,6 +1,5 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq, sql } from 'drizzle-orm'
-import crypto from 'crypto'
 import { ApiLogService } from '~~/server/services/apiLogService'
 import {
   API_ERROR_CODES,
@@ -12,6 +11,7 @@ import { openApiCache } from '~~/server/utils/open-api-cache'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getIPBlockRemainingTime, isIPBlocked } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { verifyApiKey } from '~~/server/utils/apiKeyUtils'
 
 /**
  * 记录API访问日志
@@ -60,11 +60,10 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  console.log(`[API Auth Middleware] 开始处理开放API请求: ${pathname}`)
-
   const startTime = Date.now()
   const method = getMethod(event)
   const userAgent = getHeader(event, 'user-agent') || ''
+  console.log(`[API Auth Middleware] 开始处理开放API请求: ${method} ${pathname}`)
 
   // 获取客户端真实IP地址
   const ipAddress = getClientIP(event)
@@ -95,9 +94,7 @@ export default defineEventHandler(async (event) => {
   // 获取API Key
   const apiKey = getHeader(event, 'x-api-key')
 
-  console.log(
-    `[API Auth Middleware] 获取到的API Key: ${apiKey ? apiKey.substring(0, 10) + '...' : 'null'}`
-  )
+  console.log('[API Auth Middleware] 已收到开放API Key，开始校验')
 
   if (!apiKey) {
     console.log(`[API Auth Middleware] API Key缺失`)
@@ -122,9 +119,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 验证API Key格式 (应该是 vhub_xxxxxxxxxxxxxxxx 格式)
-    console.log(
-      `[API Auth Middleware] 验证API Key格式: 长度=${apiKey.length}, 前缀=${apiKey.startsWith('vhub_')}`
-    )
+    console.log('[API Auth Middleware] 验证API Key格式')
 
     if (
       !apiKey.startsWith(API_KEY_CONSTANTS.PREFIX) ||
@@ -134,31 +129,29 @@ export default defineEventHandler(async (event) => {
       throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY_FORMAT])
     }
 
-    // 提取前缀和哈希API Key
+    // 提取前缀用于候选匹配，不输出任何明文片段
     const keyPrefix = apiKey.substring(0, API_KEY_CONSTANTS.PREFIX_LENGTH)
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
-
-    console.log(`[API Auth Middleware] 查询API Key哈希: ${keyHash.substring(0, 10)}...`)
+    console.log('[API Auth Middleware] 开始按前缀匹配API Key候选')
 
     // 查询API Key信息
     const apiKeyResult = await db
       .select({
         id: apiKeys.id,
         name: apiKeys.name,
+        keyHash: apiKeys.keyHash,
         isActive: apiKeys.isActive,
         expiresAt: apiKeys.expiresAt,
         usageCount: apiKeys.usageCount,
         createdByUserId: apiKeys.createdByUserId
       })
       .from(apiKeys)
-      .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.keyPrefix, keyPrefix)))
-      .limit(1)
+      .where(eq(apiKeys.keyPrefix, keyPrefix))
 
     console.log(
       `[API Auth Middleware] 数据库查询结果: ${apiKeyResult.length > 0 ? '找到记录' : '未找到记录'}`
     )
 
-    const apiKeyRecord = apiKeyResult[0]
+    const apiKeyRecord = await findValidApiKeyRecord(apiKey, apiKeyResult)
 
     if (!apiKeyRecord) {
       console.log(`[API Auth Middleware] API Key未找到或未激活`)
@@ -176,9 +169,7 @@ export default defineEventHandler(async (event) => {
       throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY])
     }
 
-    console.log(
-      `[API Auth Middleware] API Key记录: ID=${apiKeyRecord.id}, 名称=${apiKeyRecord.name}, 过期时间=${apiKeyRecord.expiresAt}`
-    )
+    console.log('[API Auth Middleware] API Key验证通过')
 
     // 检查API Key是否激活
     if (!apiKeyRecord.isActive) {
@@ -198,7 +189,7 @@ export default defineEventHandler(async (event) => {
 
     // 检查API Key是否过期
     if (apiKeyRecord.expiresAt && getBeijingTime() > apiKeyRecord.expiresAt) {
-      console.log(`[API Auth Middleware] API Key已过期`)
+      console.log('[API Auth Middleware] API Key已过期')
       await ApiLogService.logAccess({
         apiKeyId: apiKeyRecord.id,
         endpoint: pathname,
@@ -253,7 +244,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 使用原子操作更新API Key使用统计
-    console.log(`[API Auth Middleware] 开始原子更新API Key使用统计`)
+    console.log('[API Auth Middleware] 开始原子更新API Key使用统计')
     await db
       .update(apiKeys)
       .set({
@@ -262,10 +253,10 @@ export default defineEventHandler(async (event) => {
         updatedAt: new Date()
       })
       .where(eq(apiKeys.id, apiKeyRecord.id))
-    console.log(`[API Auth Middleware] API Key使用统计原子更新完成`)
+    console.log('[API Auth Middleware] API Key使用统计原子更新完成')
 
     // 记录成功的API访问
-    console.log(`[API Auth Middleware] 开始记录API访问日志`)
+    console.log('[API Auth Middleware] 开始记录API访问日志')
     try {
       await logApiAccess(
         apiKeyRecord.id,
@@ -276,12 +267,12 @@ export default defineEventHandler(async (event) => {
         ipAddress,
         getHeader(event, 'user-agent') || 'Unknown'
       )
-      console.log(`[API Auth Middleware] API访问日志记录完成`)
+      console.log('[API Auth Middleware] API访问日志记录完成')
     } catch (error) {
       console.error(`[API Auth Middleware] 记录API访问日志失败:`, error)
     }
 
-    console.log(`[API Auth Middleware] 验证成功，继续处理请求`)
+    console.log('[API Auth Middleware] 验证成功，继续处理请求')
 
     // 将API Key信息添加到事件上下文中，供后续处理使用
     event.context.apiKey = apiKeyRecord
@@ -332,23 +323,45 @@ export default defineEventHandler(async (event) => {
  * 根据路径和方法获取所需权限
  */
 function getRequiredPermission(pathname: string, method: string): string | null {
-  if (pathname === '/api/open/card-codes' || pathname.startsWith('/api/open/card-codes/')) {
-    if (pathname === '/api/open/card-codes/delete' || pathname.startsWith('/api/open/card-codes/delete/')) return 'card-codes:delete'
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+
+  if (
+    normalizedPathname === '/api/open/card-codes' ||
+    normalizedPathname.startsWith('/api/open/card-codes/')
+  ) {
+    if (
+      normalizedPathname === '/api/open/card-codes/delete' ||
+      normalizedPathname.startsWith('/api/open/card-codes/delete/')
+    ) return 'card-codes:delete'
     if (method === 'GET') return 'card-codes:read'
     if (method === 'DELETE') return 'card-codes:delete'
     return 'card-codes:write'
   }
 
-  if (pathname.startsWith('/api/open/schedules')) {
+  if (normalizedPathname.startsWith('/api/open/schedules')) {
     return 'schedules:read'
   }
 
-  if (pathname.startsWith('/api/open/songs/mark-played')) {
+  if (normalizedPathname.startsWith('/api/open/songs/mark-played')) {
     return 'songs:write'
   }
 
-  if (pathname.startsWith('/api/open/songs')) {
+  if (normalizedPathname === '/api/open/songs/request' && method === 'POST') {
+    return 'songs:request'
+  }
+
+  if (normalizedPathname.startsWith('/api/open/songs')) {
     return 'songs:read'
+  }
+
+  return null
+}
+
+async function findValidApiKeyRecord(apiKey: string, records: Array<{ keyHash: string }>) {
+  for (const record of records) {
+    if (await verifyApiKey(apiKey, record.keyHash)) {
+      return record
+    }
   }
 
   return null

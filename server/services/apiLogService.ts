@@ -24,13 +24,10 @@ export class ApiLogService {
   }) {
     try {
       console.log(`[ApiLogService] 记录API访问日志:`, {
-        apiKeyId: logData.apiKeyId,
         endpoint: logData.endpoint,
         method: logData.method,
-        ipAddress: logData.ipAddress,
         statusCode: logData.statusCode,
         responseTimeMs: logData.responseTimeMs,
-        userAgent: logData.userAgent?.substring(0, 50) + '...',
         hasError: !!logData.errorMessage
       })
 
