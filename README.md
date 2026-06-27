@@ -1162,6 +1162,7 @@ VoiceHub/
 │   │   │   │   └── generate.post.ts # 生成双重认证密钥
 │   │   │   ├── api-keys/          # 个人集成令牌API
 │   │   │   │   ├── [id].delete.ts # 删除个人集成令牌
+│   │   │   │   ├── [id]/logs.get.ts # 获取个人集成令牌调用日志
 │   │   │   │   ├── index.get.ts   # 获取个人集成令牌列表
 │   │   │   │   └── index.post.ts  # 创建个人集成令牌
 │   │   │   ├── email/               # 用户邮箱管理
@@ -1217,6 +1218,7 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth.ts        # OAuth通用工具
 │   │   ├── apiKeyUtils.ts   # API Key生成、哈希与校验
+│   │   ├── ip-utils.ts      # IP地址工具
 │   │   ├── open-api-cache.ts # 开放API缓存
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── redis.ts        # Redis连接和操作工具

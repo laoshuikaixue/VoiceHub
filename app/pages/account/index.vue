@@ -114,9 +114,9 @@
               </button>
             </div>
 
-            <div v-if="apiKeyLoading" class="flex items-center gap-2 py-8 text-xs text-zinc-500">
+            <div v-if="apiKeyLoading" class="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500 text-center">
               <RefreshCw :size="16" class="animate-spin" />
-              正在加载 API Key...
+              <span>正在加载 API Key...</span>
             </div>
 
             <div
@@ -175,7 +175,12 @@
                   </div>
                   <div class="space-y-1">
                     <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">调用次数</p>
-                    <p class="text-xs font-bold text-zinc-300">{{ key.usageCount || 0 }}</p>
+                    <button
+                      class="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors disabled:cursor-default disabled:opacity-60"
+                      @click="openPersonalApiKeyLogs(key)"
+                    >
+                      {{ key.usageCount || 0 }}
+                    </button>
                   </div>
                   <div class="space-y-1">
                     <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">过期时间</p>
@@ -209,6 +214,18 @@
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-model:show="showDeleteConfirmDialog"
+      type="danger"
+      title="删除个人 API Key"
+      :message="deleteConfirmMessage"
+      confirm-text="删除"
+      cancel-text="取消"
+      :loading="apiKeyDeletingId !== null"
+      @confirm="confirmDeletePersonalApiKey"
+      @cancel="cancelDeletePersonalApiKey"
+    />
 
     <Teleport to="body">
       <Transition name="modal">
@@ -265,6 +282,105 @@
         </div>
       </Transition>
     </Teleport>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showApiKeyLogsModal"
+          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+        >
+          <div class="w-full max-w-4xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-zinc-800 flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-black text-zinc-100">调用记录</h3>
+                <p class="text-xs text-zinc-500 mt-1">
+                  {{ selectedApiKeyForLogs?.name || '个人 API Key' }} · 共 {{ apiKeyLogsPagination.total }} 条
+                </p>
+              </div>
+              <button class="text-zinc-500 hover:text-zinc-200 transition-colors" @click="closePersonalApiKeyLogs">
+                <X :size="20" />
+              </button>
+            </div>
+
+            <div class="p-6">
+              <div v-if="apiKeyLogsLoading" class="flex items-center justify-center gap-2 py-10 text-xs text-zinc-500">
+                <RefreshCw :size="16" class="animate-spin" />
+                <span>正在加载调用记录...</span>
+              </div>
+
+              <div v-else-if="apiKeyLogs.length === 0" class="py-10 text-center">
+                <p class="text-sm font-bold text-zinc-300">暂无调用记录</p>
+                <p class="text-xs text-zinc-600 mt-2">这个令牌还没有产生过 API 调用。</p>
+              </div>
+
+              <div v-else class="space-y-4">
+                <div class="overflow-hidden rounded-2xl border border-zinc-800">
+                  <div class="max-h-[60vh] overflow-auto">
+                    <table class="min-w-full text-left">
+                      <thead class="sticky top-0 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
+                        <tr class="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                          <th class="px-4 py-3">时间</th>
+                          <th class="px-4 py-3">方法</th>
+                          <th class="px-4 py-3">接口</th>
+                          <th class="px-4 py-3">状态</th>
+                          <th class="px-4 py-3">IP</th>
+                          <th class="px-4 py-3">耗时</th>
+                          <th class="px-4 py-3">错误</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="log in apiKeyLogs" :key="log.id" class="border-b border-zinc-900 last:border-0">
+                          <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ formatDate(log.createdAt) }}</td>
+                          <td class="px-4 py-3">
+                            <span
+                              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border"
+                              :class="getApiMethodClass(log.method)"
+                            >
+                              {{ log.method }}
+                            </span>
+                          </td>
+                          <td class="px-4 py-3 text-xs text-zinc-300 break-all">{{ log.endpoint }}</td>
+                          <td class="px-4 py-3 text-xs font-bold" :class="getApiStatusClass(log.statusCode)">
+                            {{ log.statusCode }}
+                          </td>
+                          <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ log.ipAddress }}</td>
+                          <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ log.responseTimeMs }} ms</td>
+                          <td class="px-4 py-3 text-xs text-zinc-500 break-all">
+                            {{ log.errorMessage || '无' }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-xs text-zinc-500">
+                    第 {{ apiKeyLogsPagination.page }} / {{ apiKeyLogsPagination.totalPages || 1 }} 页
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <button
+                      class="px-3 py-2 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40"
+                      :disabled="apiKeyLogsPagination.page <= 1 || apiKeyLogsLoading"
+                      @click="changePersonalApiKeyLogsPage(apiKeyLogsPagination.page - 1)"
+                    >
+                      上一页
+                    </button>
+                    <button
+                      class="px-3 py-2 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40"
+                      :disabled="apiKeyLogsPagination.page >= apiKeyLogsPagination.totalPages || apiKeyLogsLoading"
+                      @click="changePersonalApiKeyLogsPage(apiKeyLogsPagination.page + 1)"
+                    >
+                      下一页
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -286,6 +402,7 @@ import {
 } from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 
 const auth = useAuth()
 const router = useRouter()
@@ -304,6 +421,18 @@ const apiKeyCreating = ref(false)
 const apiKeyDeletingId = ref(null)
 const createdApiKey = ref(null)
 const apiKeyCopied = ref(false)
+const showDeleteConfirmDialog = ref(false)
+const pendingDeleteApiKey = ref(null)
+const showApiKeyLogsModal = ref(false)
+const selectedApiKeyForLogs = ref(null)
+const apiKeyLogs = ref([])
+const apiKeyLogsLoading = ref(false)
+const apiKeyLogsPagination = ref({
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 0
+})
 
 // 监听用户头像变化，重置错误状态
 watch(
@@ -391,8 +520,16 @@ const createPersonalApiKey = async () => {
 }
 
 const deletePersonalApiKey = async (key) => {
-  const confirmed = window.confirm(`确定要删除个人 API Key “${key.name}”吗？删除后相关集成将无法继续使用。`)
-  if (!confirmed) return
+  pendingDeleteApiKey.value = key
+  showDeleteConfirmDialog.value = true
+}
+
+const confirmDeletePersonalApiKey = async () => {
+  const key = pendingDeleteApiKey.value
+  if (!key) {
+    showDeleteConfirmDialog.value = false
+    return
+  }
 
   apiKeyDeletingId.value = key.id
   try {
@@ -409,8 +546,23 @@ const deletePersonalApiKey = async (key) => {
     showToast(error.data?.message || '删除个人 API Key 失败', 'error')
   } finally {
     apiKeyDeletingId.value = null
+    showDeleteConfirmDialog.value = false
+    pendingDeleteApiKey.value = null
   }
 }
+
+const cancelDeletePersonalApiKey = () => {
+  showDeleteConfirmDialog.value = false
+  pendingDeleteApiKey.value = null
+}
+
+const deleteConfirmMessage = computed(() => {
+  const key = pendingDeleteApiKey.value
+  if (!key) {
+    return '确定要删除这个个人 API Key 吗？删除后相关集成将无法继续使用。'
+  }
+  return `确定要删除个人 API Key “${key.name}”吗？删除后相关集成将无法继续使用。`
+})
 
 const copyApiKey = async (text) => {
   try {
@@ -429,6 +581,66 @@ const copyApiKey = async (text) => {
 const closeCreatedApiKey = () => {
   createdApiKey.value = null
   apiKeyCopied.value = false
+}
+
+const openPersonalApiKeyLogs = async (key) => {
+  if (!key) {
+    return
+  }
+
+  selectedApiKeyForLogs.value = key
+  showApiKeyLogsModal.value = true
+  apiKeyLogsPagination.value = {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  }
+  await loadPersonalApiKeyLogs(1)
+}
+
+const loadPersonalApiKeyLogs = async (page = 1) => {
+  const key = selectedApiKeyForLogs.value
+  if (!key) return
+
+  apiKeyLogsLoading.value = true
+  try {
+    const response = await $fetch(`/api/user/api-keys/${key.id}/logs`, {
+      query: {
+        page,
+        limit: apiKeyLogsPagination.value.limit
+      }
+    })
+
+    if (response.success) {
+      apiKeyLogs.value = response.data?.logs || []
+      apiKeyLogsPagination.value = response.data?.pagination || {
+        page,
+        limit: apiKeyLogsPagination.value.limit,
+        total: 0,
+        totalPages: 0
+      }
+    }
+  } catch (error) {
+    console.error('加载个人 API Key 调用记录失败:', error)
+    showToast(error.data?.message || '加载调用记录失败', 'error')
+    apiKeyLogs.value = []
+  } finally {
+    apiKeyLogsLoading.value = false
+  }
+}
+
+const changePersonalApiKeyLogsPage = async (page) => {
+  if (page < 1) return
+  if (apiKeyLogsPagination.value.totalPages > 0 && page > apiKeyLogsPagination.value.totalPages) return
+  await loadPersonalApiKeyLogs(page)
+}
+
+const closePersonalApiKeyLogs = () => {
+  showApiKeyLogsModal.value = false
+  selectedApiKeyForLogs.value = null
+  apiKeyLogs.value = []
+  apiKeyLogsLoading.value = false
 }
 
 const formatDate = (dateString) => {
@@ -460,5 +672,21 @@ const getApiKeyStatusClass = (status) => {
     expired: 'bg-red-500/10 text-red-400 border-red-500/20'
   }
   return map[status] || 'bg-zinc-800 text-zinc-500 border-zinc-700/50'
+}
+
+const getApiMethodClass = (method) => {
+  const map = {
+    GET: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    POST: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    PUT: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    DELETE: 'bg-red-500/10 text-red-400 border-red-500/20'
+  }
+  return map[method] || 'bg-zinc-800 text-zinc-400 border-zinc-700/50'
+}
+
+const getApiStatusClass = (statusCode) => {
+  if (statusCode >= 200 && statusCode < 300) return 'text-emerald-400'
+  if (statusCode >= 300 && statusCode < 400) return 'text-amber-400'
+  return 'text-red-400'
 }
 </script>
