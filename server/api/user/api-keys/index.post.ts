@@ -1,4 +1,5 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
+import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
 
@@ -21,6 +22,30 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
     const validatedData = createPersonalApiKeySchema.parse(body || {})
+
+    const existingKeys = await db
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .innerJoin(apiKeyPermissions, eq(apiKeyPermissions.apiKeyId, apiKeys.id))
+      .where(
+        and(
+          eq(apiKeys.createdByUserId, user.id),
+          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
+          sql`NOT EXISTS (
+            SELECT 1
+            FROM ${apiKeyPermissions}
+            WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
+              AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
+          )`
+        )
+      )
+
+    if (existingKeys.length >= 5) {
+      throw createError({
+        statusCode: 400,
+        message: '每个用户最多只能创建 5 个个人集成令牌'
+      })
+    }
 
     const apiKey = generateApiKey()
     const keyPrefix = apiKey.substring(0, 10)

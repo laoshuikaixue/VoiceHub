@@ -1,5 +1,5 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 const PERSONAL_PERMISSION = 'songs:request'
@@ -44,7 +44,13 @@ export default defineEventHandler(async (event) => {
         and(
           eq(apiKeys.id, apiKeyId),
           eq(apiKeys.createdByUserId, user.id),
-          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION)
+          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
+          sql`NOT EXISTS (
+            SELECT 1
+            FROM ${apiKeyPermissions}
+            WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
+              AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
+          )`
         )
       )
       .limit(1)

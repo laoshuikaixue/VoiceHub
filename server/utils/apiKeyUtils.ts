@@ -21,18 +21,18 @@ export function verifyApiKey(apiKey: string, storedHash: string): boolean {
     return false
   }
 
-  if (storedHash.includes(':')) {
-    const [salt, expectedDerivedKey] = storedHash.split(':')
-    if (!salt || !expectedDerivedKey) {
-      return false
-    }
-
-    const derivedKey = crypto.scryptSync(apiKey, salt, HASH_DERIVED_LENGTH).toString('hex')
-    return safeEqualHex(derivedKey, expectedDerivedKey)
+  const parts = storedHash.split(':')
+  if (parts.length !== 2) {
+    return false
   }
 
-  const legacyHash = crypto.createHash('sha256').update(apiKey).digest('hex')
-  return safeEqualHex(legacyHash, storedHash)
+  const [salt, expectedDerivedKey] = parts
+  if (!salt || !expectedDerivedKey) {
+    return false
+  }
+
+  const derivedKey = crypto.scryptSync(apiKey, salt, HASH_DERIVED_LENGTH).toString('hex')
+  return safeEqualHex(derivedKey, expectedDerivedKey)
 }
 
 function safeEqualHex(left: string, right: string): boolean {

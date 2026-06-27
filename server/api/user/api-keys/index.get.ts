@@ -1,5 +1,5 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 
 const PERSONAL_PERMISSION = 'songs:request'
@@ -31,7 +31,13 @@ export default defineEventHandler(async (event) => {
       .where(
         and(
           eq(apiKeys.createdByUserId, user.id),
-          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION)
+          eq(apiKeyPermissions.permission, PERSONAL_PERMISSION),
+          sql`NOT EXISTS (
+            SELECT 1
+            FROM ${apiKeyPermissions}
+            WHERE ${apiKeyPermissions.apiKeyId} = ${apiKeys.id}
+              AND ${apiKeyPermissions.permission} != ${PERSONAL_PERMISSION}
+          )`
         )
       )
       .orderBy(desc(apiKeys.createdAt))

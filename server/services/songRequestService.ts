@@ -7,9 +7,10 @@ import {
   cardCodes,
   songCollaborators,
   songs,
-  systemSettings
+  systemSettings,
+  users
 } from '~/drizzle/db'
-import { and, eq, gt, lt, lte, sql } from 'drizzle-orm'
+import { and, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import { isLimitReached } from '~~/server/utils/submissionLimit'
@@ -363,51 +364,62 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         body.collaborators.length > 0
       ) {
         const collaboratorIds = body.collaborators.map((id: any) => Number(id)) as number[]
-        const uniqueCollaboratorIds = [...new Set<number>(collaboratorIds)]
+        const uniqueCollaboratorIds = [...new Set<number>(collaboratorIds)].filter(
+          (id) => !isNaN(id) && id !== user.id
+        )
 
-        for (const collaboratorId of uniqueCollaboratorIds) {
-          if (isNaN(collaboratorId) || collaboratorId === user.id) continue
+        if (uniqueCollaboratorIds.length > 0) {
+          const validUsers = await tx
+            .select({ id: users.id })
+            .from(users)
+            .where(inArray(users.id, uniqueCollaboratorIds))
 
-          try {
-            const existingCollab = await tx
-              .select()
-              .from(songCollaborators)
-              .where(
-                and(
-                  eq(songCollaborators.songId, newSong.id),
-                  eq(songCollaborators.userId, collaboratorId)
+          const validUserIds = new Set(validUsers.map((item) => item.id))
+
+          for (const collaboratorId of uniqueCollaboratorIds) {
+            if (!validUserIds.has(collaboratorId)) continue
+
+            try {
+              const existingCollab = await tx
+                .select()
+                .from(songCollaborators)
+                .where(
+                  and(
+                    eq(songCollaborators.songId, newSong.id),
+                    eq(songCollaborators.userId, collaboratorId)
+                  )
                 )
-              )
-              .limit(1)
+                .limit(1)
 
-            if (existingCollab.length > 0) continue
+              if (existingCollab.length > 0) continue
 
-            const collabResult = await tx
-              .insert(songCollaborators)
-              .values({
-                songId: newSong.id,
-                userId: collaboratorId,
-                status: 'PENDING'
+              const collabResult = await tx
+                .insert(songCollaborators)
+                .values({
+                  songId: newSong.id,
+                  userId: collaboratorId,
+                  status: 'PENDING'
+                })
+                .returning()
+
+              const collab = collabResult[0]
+              if (!collab) continue
+
+              await tx.insert(collaborationLogs).values({
+                collaboratorId: collab.id,
+                action: 'INVITE',
+                operatorId: user.id,
+                ipAddress: getClientIP(event)
               })
-              .returning()
 
-            const collab = collabResult[0]
-            if (!collab) continue
-
-            await tx.insert(collaborationLogs).values({
-              collaboratorId: collab.id,
-              action: 'INVITE',
-              operatorId: user.id,
-              ipAddress: getClientIP(event)
-            })
-
-            notificationsToSend.push({
-              userId: collaboratorId,
-              songId: newSong.id,
-              songTitle: newSong.title
-            })
-          } catch (err) {
-            console.error(`邀请用户 ${collaboratorId} 失败:`, err)
+              notificationsToSend.push({
+                userId: collaboratorId,
+                songId: newSong.id,
+                songTitle: newSong.title
+              })
+            } catch (err) {
+              console.error(`邀请用户 ${collaboratorId} 失败:`, err)
+            }
           }
         }
       }
