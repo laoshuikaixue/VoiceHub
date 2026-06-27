@@ -59,6 +59,7 @@ export const useBackgroundRenderer = () => {
   const isRendering = ref(false)
   const hasRenderError = ref(false)
   const currentCoverUrl = ref('')
+  const loadedCoverUrl = ref('')
 
   const config = ref<BackgroundConfig>({
     type: 'gradient',
@@ -90,11 +91,19 @@ export const useBackgroundRenderer = () => {
     renderer.setStaticMode(!config.value.dynamic)
 
     const cover = currentCoverUrl.value
-    try {
-      await renderer.setAlbum(cover ? toProxiedUrl(cover) : '', false)
-    } catch (error) {
-      hasRenderError.value = true
-      console.error('应用封面到背景失败:', error)
+    if (cover !== loadedCoverUrl.value) {
+      try {
+        await renderer.setAlbum(cover ? toProxiedUrl(cover) : '', false)
+        if (currentCoverUrl.value === cover) {
+          loadedCoverUrl.value = cover
+          hasRenderError.value = false
+        }
+      } catch (error) {
+        if (currentCoverUrl.value === cover) {
+          hasRenderError.value = true
+        }
+        console.error('应用封面到背景失败:', error)
+      }
     }
 
     if (isRendering.value && config.value.dynamic) {
@@ -147,14 +156,7 @@ export const useBackgroundRenderer = () => {
       coverBlurElement.value.style.backgroundImage = coverUrl ? `url(${coverUrl})` : ''
     }
 
-    if (!backgroundRenderer.value || !coverUrl) return
-
-    try {
-      await backgroundRenderer.value.setAlbum(toProxiedUrl(coverUrl), false)
-    } catch (error) {
-      hasRenderError.value = true
-      console.error('应用封面到背景失败:', error)
-    }
+    await applyRendererState()
   }
 
   const setCoverBlurElement = (element: HTMLElement | null) => {
@@ -212,6 +214,7 @@ export const useBackgroundRenderer = () => {
     containerElement.value = null
     coverBlurElement.value = null
     currentCoverUrl.value = ''
+    loadedCoverUrl.value = ''
   }
 
   onUnmounted(() => {

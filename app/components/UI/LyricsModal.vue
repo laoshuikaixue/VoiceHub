@@ -693,9 +693,7 @@ const syncBackgroundState = async () => {
     hasLyric: hasCurrentLyrics.value
   })
 
-  if (currentCoverUrl.value) {
-    await backgroundRenderer.setCoverBackground(currentCoverUrl.value)
-  }
+  await backgroundRenderer.setCoverBackground(currentCoverUrl.value)
 
   if (isPlaying.value) {
     backgroundRenderer.resumeRender()
