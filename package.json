@@ -1,6 +1,6 @@
 {
   "name": "voicehub",
-  "version": "1.5.8.3",
+  "version": "1.5.8.4",
   "description": "校园广播站点歌管理系统 - 基于数据库存储的现代化点歌、排期和播放管理平台",
   "private": true,
   "packageManager": "pnpm@10.29.3",
@@ -105,7 +105,7 @@
     "@nuxt/eslint": "^1.16.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^9.39.4",
-    "prettier": "^3.8.5"
+    "prettier": "^3.9.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
