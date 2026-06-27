@@ -539,7 +539,7 @@
 <script setup>
 import { computed, ref, watch, reactive, onUnmounted } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
-import { getMusicUrl } from '~/utils/musicUrl'
+import { getMusicUrlResult } from '~/utils/musicUrl'
 import {
   X as CloseIcon,
   Check,
@@ -637,6 +637,7 @@ const activeEncoderWorker = ref(null)
 const DOWNLOAD_CONCURRENCY = 3
 const MERGE_DECODE_CONCURRENCY = 3
 const ESTIMATE_DURATION_CONCURRENCY = 3
+const DOWNLOAD_URL_RETRY_LIMIT = 3
 const AUDIO_METADATA_TIMEOUT_MS = 10000
 const NETEASE_PREVIEW_DURATION_SECONDS = 30
 const PCM_BYTES_PER_SECOND = 44100 * 2 * 4
@@ -688,6 +689,87 @@ const getNeteaseCookie = () => {
   } catch {
     return ''
   }
+}
+
+const getDownloadResolveOptions = (song, quality, excludeSources = [], ignoreProvidedUrl = false) => {
+  const platform = getSongPlatform(song)
+  const isPodcast =
+    platform === 'netease-podcast' ||
+    song?.sourceInfo?.type === 'voice' ||
+    (song?.sourceInfo?.source === 'netease-backup' && song?.sourceInfo?.type === 'voice')
+
+  return {
+    unblock: isPodcast ? false : undefined,
+    quality,
+    mediaId: song?.sourceInfo?.strMediaMid || song?.sourceInfo?.mediaId || song?.sourceInfo?.mediaMid,
+    excludeSources,
+    ignoreProvidedUrl
+  }
+}
+
+const isRetryableDownloadError = (error) => {
+  const message = String(error?.message || error || '')
+  return /404|not found|failed to fetch|networkerror|http error/i.test(message)
+}
+
+const resolveDownloadAudioCandidate = async (
+  song,
+  quality,
+  excludeSources = [],
+  ignoreProvidedUrl = false
+) => {
+  const platform = getSongPlatform(song)
+  const result = await getMusicUrlResult(
+    platform,
+    song.musicId,
+    song.playUrl,
+    getDownloadResolveOptions(song, quality, excludeSources, ignoreProvidedUrl)
+  )
+
+  if (!result?.url) {
+    throw new Error('无法获取音乐播放链接')
+  }
+
+  return result
+}
+
+const withDownloadSourceFallback = async (song, quality, executor) => {
+  let excludeSources = []
+  let ignoreProvidedUrl = false
+  let lastError = null
+
+  for (let attempt = 0; attempt < DOWNLOAD_URL_RETRY_LIMIT; attempt++) {
+    const candidate = await resolveDownloadAudioCandidate(
+      song,
+      quality,
+      excludeSources,
+      ignoreProvidedUrl
+    )
+
+    try {
+      return await executor(candidate)
+    } catch (error) {
+      lastError = error
+
+      if (!isRetryableDownloadError(error)) {
+        throw error
+      }
+
+      if (candidate.source === 'play-url') {
+        ignoreProvidedUrl = true
+        continue
+      }
+
+      if (candidate.source && !excludeSources.includes(candidate.source)) {
+        excludeSources = [...excludeSources, candidate.source]
+        continue
+      }
+
+      throw error
+    }
+  }
+
+  throw lastError || new Error('获取音乐播放链接失败')
 }
 
 // 格式化时长
@@ -751,49 +833,54 @@ const preloadSong = async (song) => {
   preloadedSongs.set(song.id, { loading: true, progress: 0 })
 
   try {
-    const url = await getMusicUrlForDownload(song, selectedQuality.value)
+    const result = await withDownloadSourceFallback(song, selectedQuality.value, async (candidate) => {
+      const response = await fetch(candidate.url)
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
 
-    // 使用 fetch 获取并追踪下载进度
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+      const contentLength = response.headers.get('content-length')
+      const total = contentLength ? parseInt(contentLength, 10) : 0
+      let loaded = 0
 
-    const contentLength = response.headers.get('content-length')
-    const total = contentLength ? parseInt(contentLength, 10) : 0
-    let loaded = 0
+      const reader = response.body.getReader()
+      const chunks = []
 
-    const reader = response.body.getReader()
-    const chunks = []
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
+        chunks.push(value)
+        loaded += value.length
 
-      chunks.push(value)
-      loaded += value.length
-
-      if (total) {
-        const progress = (loaded / total) * 100
-        const current = preloadedSongs.get(song.id)
-        if (current) {
-          current.progress = progress
+        if (total) {
+          const progress = (loaded / total) * 100
+          const current = preloadedSongs.get(song.id)
+          if (current) {
+            current.progress = progress
+          }
         }
       }
-    }
 
-    const contentType = response.headers.get('content-type') || 'audio/mpeg'
-    const blob = new Blob(chunks, { type: contentType })
+      const contentType = response.headers.get('content-type') || 'audio/mpeg'
+      const blob = new Blob(chunks, { type: contentType })
+      const objectUrl = URL.createObjectURL(blob)
+      const duration = await readAudioMetadataDuration(objectUrl, { revokeObjectUrl: true })
 
-    const objectUrl = URL.createObjectURL(blob)
-    const duration = await readAudioMetadataDuration(objectUrl, { revokeObjectUrl: true })
+      return {
+        blob,
+        duration,
+        url: candidate.url,
+        contentType
+      }
+    })
 
     preloadedSongs.set(song.id, {
-      blob,
-      duration,
+      blob: result.blob,
+      duration: result.duration,
       loading: false,
       progress: 100,
       quality: selectedQuality.value,
-      url,
-      contentType
+      url: result.url,
+      contentType: result.contentType
     })
   } catch (error) {
     console.error('预下载失败:', error)
@@ -919,27 +1006,39 @@ const estimateSelectedDurations = async () => {
         
         // 非网易音源、网易 API 失败或返回试听片段时，复用预下载的音源解析逻辑读取元数据。
         try {
-          const audioUrl = await getMusicUrlForDownload(songItem.song, selectedQuality.value)
-          const duration = await readAudioMetadataDuration(audioUrl)
-            
-          if (duration && duration > 0) {
-            const durationSeconds = Math.floor(duration)
-            if (isNeteaseSong(songItem.song) && durationSeconds === NETEASE_PREVIEW_DURATION_SECONDS) {
-              console.warn('[预估时长] 播放链接仍为疑似试听时长:', songItem.song.title)
-              failCount++
-              return
+          const durationResult = await withDownloadSourceFallback(
+            songItem.song,
+            selectedQuality.value,
+            async (candidate) => {
+              const duration = await readAudioMetadataDuration(candidate.url)
+
+              if (!duration || duration <= 0) {
+                throw new Error('无法从播放链接获取时长')
+              }
+
+              const durationSeconds = Math.floor(duration)
+              if (
+                isNeteaseSong(songItem.song) &&
+                durationSeconds === NETEASE_PREVIEW_DURATION_SECONDS
+              ) {
+                throw new Error('疑似试听时长')
+              }
+
+              return {
+                durationSeconds,
+                durationMs: Math.floor(duration * 1000),
+                source: 'audio-metadata'
+              }
             }
-            estimatedDurations.set(songItem.song.id, {
-              durationSeconds,
-              durationMs: Math.floor(duration * 1000),
-              source: 'audio-metadata'
-            })
-            console.log('[预估时长] 从播放链接获取时长:', songItem.song.title, durationSeconds + '秒')
-            successCount++
-          } else {
-            console.warn('[预估时长] 无法从播放链接获取时长:', songItem.song.title)
-            failCount++
-          }
+          )
+
+          estimatedDurations.set(songItem.song.id, durationResult)
+          console.log(
+            '[预估时长] 从播放链接获取时长:',
+            songItem.song.title,
+            durationResult.durationSeconds + '秒'
+          )
+          successCount++
         } catch (audioError) {
           console.error('[预估时长] 播放链接获取时长失败:', songItem.song.title, audioError)
           failCount++
@@ -1100,38 +1199,12 @@ const closeDialog = () => {
 }
 
 // 获取下载链接
-const getMusicUrlForDownload = async (song, quality, retryCount = 0) => {
+const getMusicUrlForDownload = async (song, quality) => {
   try {
-    // 播客内容特殊处理
-    const platform = getSongPlatform(song)
-    const isPodcast =
-      platform === 'netease-podcast' ||
-      song.sourceInfo?.type === 'voice' ||
-      (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-    const options = {
-      unblock: isPodcast ? false : undefined,
-      quality: quality,
-      mediaId:
-        song.sourceInfo?.strMediaMid ||
-        song.sourceInfo?.mediaId ||
-        song.sourceInfo?.mediaMid
-    }
-
-    const url = await getMusicUrl(platform, song.musicId, song.playUrl, options)
-    if (!url) {
-      throw new Error('无法获取音乐播放链接')
-    }
-    return url
+    const result = await resolveDownloadAudioCandidate(song, quality)
+    return result.url
   } catch (error) {
     console.error('获取音乐播放链接失败:', error)
-
-    // 失败自动重试一次
-    if (retryCount === 0 && getSongPlatform(song) && song.musicId) {
-      console.log(`正在重试获取音乐链接: ${getSongPlatform(song)}, ${song.musicId}`)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      return getMusicUrlForDownload(song, quality, 1)
-    }
-
     throw new Error('获取音乐播放链接失败: ' + error.message)
   }
 }
@@ -1176,14 +1249,15 @@ const getAudioBlobForSong = async (song, quality) => {
     }
   }
 
-  const audioUrl = await getMusicUrlForDownload(song, quality)
-  processingStatus.value = `下载中: ${song.title}`
-  const blob = await fetchAudioWithProgress(audioUrl, song.id, song.title)
-  return {
-    blob,
-    sourceUrl: audioUrl,
-    fromCache: false
-  }
+  return await withDownloadSourceFallback(song, quality, async (candidate) => {
+    processingStatus.value = `下载中: ${song.title}`
+    const blob = await fetchAudioWithProgress(candidate.url, song.id, song.title)
+    return {
+      blob,
+      sourceUrl: candidate.url,
+      fromCache: false
+    }
+  })
 }
 
 // 触发浏览器下载
