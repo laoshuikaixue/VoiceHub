@@ -95,9 +95,7 @@ export default defineEventHandler(async (event) => {
   // 获取API Key
   const apiKey = getHeader(event, 'x-api-key')
 
-  console.log(
-    `[API Auth Middleware] 获取到的API Key: ${apiKey ? apiKey.substring(0, 10) + '...' : 'null'}`
-  )
+  console.log('[API Auth Middleware] 已收到开放API Key，开始校验')
 
   if (!apiKey) {
     console.log(`[API Auth Middleware] API Key缺失`)
@@ -134,9 +132,9 @@ export default defineEventHandler(async (event) => {
       throw new Error(API_ERROR_MESSAGES[API_ERROR_CODES.INVALID_API_KEY_FORMAT])
     }
 
-    // 提取前缀
+    // 提取前缀用于候选匹配，不输出任何明文片段
     const keyPrefix = apiKey.substring(0, API_KEY_CONSTANTS.PREFIX_LENGTH)
-    console.log(`[API Auth Middleware] 查询API Key前缀: ${keyPrefix}`)
+    console.log('[API Auth Middleware] 开始按前缀匹配API Key候选')
 
     // 查询API Key信息
     const apiKeyResult = await db

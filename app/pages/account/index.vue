@@ -433,7 +433,9 @@ const closeCreatedApiKey = () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleString('zh-CN', {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
