@@ -293,12 +293,12 @@
                     v-if="selectedSongs.size > 0"
                     class="text-[10px] font-bold text-purple-500 hover:text-purple-400 transition-colors flex items-center gap-1"
                     :disabled="estimatingDuration"
-                    title="快速预估选中歌曲的总时长"
+                    :title="locale.estimateSelectedTitle"
                     @click="estimateSelectedDurations"
                   >
                     <Clock class="w-3 h-3" />
-                    <span v-if="estimatingDuration">预估中...</span>
-                    <span v-else>预估时长</span>
+                    <span v-if="estimatingDuration">{{ locale.estimatingDuration }}</span>
+                    <span v-else>{{ locale.estimateDuration }}</span>
                   </button>
                   <button
                     v-if="selectedSongs.size > 0"
@@ -584,15 +584,6 @@ const showDbPresetSaved = ref(false)
 const exportFormat = ref('mp3')
 // const saveIntermediateWav = ref(false) // 已移除
 
-const qualityDescriptions = {
-  2: '节省流量',
-  3: '高品质体验',
-  4: '极高音质',
-  5: '无损音质',
-  6: 'Hi-Res无损',
-  9: '超清母带'
-}
-
 const neteaseQualityLevelMap = {
   2: 'standard',
   3: 'higher',
@@ -732,7 +723,7 @@ const resolveDownloadAudioCandidate = async (
   )
 
   if (!result?.url) {
-    throw new Error('无法获取音乐播放链接')
+    throw new Error(locale.value.musicUrlMissing)
   }
 
   return result
@@ -792,7 +783,7 @@ const withDownloadSourceFallback = async (song, quality, executor) => {
     }
   }
 
-  throw lastError || new Error('获取音乐播放链接失败')
+  throw lastError || new Error(locale.value.musicUrlMissing)
 }
 
 // 格式化时长
@@ -978,7 +969,7 @@ const estimateSelectedDurations = async () => {
 
     if (songsToEstimate.length === 0) {
       if (window.$showNotification) {
-        window.$showNotification('所有选中歌曲已有时长信息', 'info')
+        window.$showNotification(locale.value.allSelectedHaveDuration, 'info')
       }
       estimatingDuration.value = false
       return
@@ -1036,7 +1027,7 @@ const estimateSelectedDurations = async () => {
               const duration = await readAudioMetadataDuration(candidate.url)
 
               if (!duration || duration <= 0) {
-                throw new Error('无法从播放链接获取时长')
+                throw new Error(locale.value.durationFromPlaybackUrlFailed)
               }
 
               const durationSeconds = Math.floor(duration)
@@ -1044,7 +1035,7 @@ const estimateSelectedDurations = async () => {
                 isNeteaseSong(songItem.song) &&
                 durationSeconds === NETEASE_PREVIEW_DURATION_SECONDS
               ) {
-                throw new Error('疑似试听时长')
+                throw new Error(locale.value.previewDurationDetected)
               }
 
               return {
@@ -1092,16 +1083,16 @@ const estimateSelectedDurations = async () => {
     console.log(`[预估时长] 完成 - 成功: ${successCount}, 失败: ${failCount}`)
 
     if (successCount > 0 && window.$showNotification) {
-      window.$showNotification(`成功预估 ${successCount} 首歌曲的时长`, 'success')
+      window.$showNotification(locale.value.estimateSuccess(successCount), 'success')
     }
     
     if (failCount > 0 && window.$showNotification) {
-      window.$showNotification(`${failCount} 首歌曲预估失败`, 'warning')
+      window.$showNotification(locale.value.estimateFailedCount(failCount), 'warning')
     }
   } catch (error) {
     console.error('[预估时长] 总体失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('预估时长失败', 'error')
+      window.$showNotification(locale.value.estimateFailed, 'error')
     }
   } finally {
     estimatingDuration.value = false
@@ -1262,7 +1253,7 @@ const getAudioBlobForSong = async (song, quality) => {
   }
 
   return await withDownloadSourceFallback(song, quality, async (candidate) => {
-    processingStatus.value = `下载中: ${song.title}`
+    processingStatus.value = locale.value.downloadingTitle(song.title)
     const blob = await fetchAudioWithProgress(candidate.url, song.id, song.title)
     return {
       blob,

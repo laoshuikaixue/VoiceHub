@@ -1660,6 +1660,15 @@ export const admin = {
       date: '日期',
       songList: '歌曲列表',
       estimatedDuration: (duration: string) => `预估总时长: ${duration}`,
+      estimateSelectedTitle: '快速预估选中歌曲的总时长',
+      estimatingDuration: '预估中...',
+      estimateDuration: '预估时长',
+      allSelectedHaveDuration: '所有选中歌曲已有时长信息',
+      durationFromPlaybackUrlFailed: '无法从播放链接获取时长',
+      previewDurationDetected: '疑似试听时长',
+      estimateSuccess: (count: number) => `成功预估 ${count} 首歌曲的时长`,
+      estimateFailedCount: (count: number) => `${count} 首歌曲预估失败`,
+      estimateFailed: '预估时长失败',
       preloadSelectedTitle: '预下载选中歌曲到浏览器缓存',
       preloadSelected: '预下载选中',
       selectAll: '全选',
@@ -3149,9 +3158,11 @@ export const admin = {
     permissionOptions: {
       scheduleRead: { label: '排期查询', description: '查看排期列表和详情' },
       songsRead: { label: '歌曲查询', description: '查看歌曲列表和详情' },
+      songsRequest: { label: '歌曲投稿', description: '代表令牌所属用户提交点歌' },
       songsWrite: { label: '歌曲管理', description: '更新歌曲状态' },
       cardCodesRead: { label: '点歌券查询', description: '查看点歌券列表和统计' },
-      cardCodesWrite: { label: '点歌券管理', description: '创建和更新点歌券' }
+      cardCodesWrite: { label: '点歌券管理', description: '创建和更新点歌券' },
+      cardCodesDelete: { label: '点歌券删除', description: '删除点歌券' }
     },
     loadFailed: '加载API密钥失败',
     nameRequired: '请输入密钥名称',

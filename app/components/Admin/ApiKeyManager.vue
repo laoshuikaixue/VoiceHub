@@ -750,8 +750,8 @@ const availablePermissions = computed(() => [
   },
   {
     value: 'songs:request',
-    label: '歌曲投稿',
-    description: '代表令牌所属用户提交点歌'
+    label: locale.value.permissionOptions.songsRequest.label,
+    description: locale.value.permissionOptions.songsRequest.description
   },
   {
     value: 'songs:write',
@@ -765,15 +765,13 @@ const availablePermissions = computed(() => [
   },
   {
     value: 'card-codes:write',
-    label: '点歌券管理',
-    description: '创建和更新点歌券'
+    label: locale.value.permissionOptions.cardCodesWrite.label,
+    description: locale.value.permissionOptions.cardCodesWrite.description
   },
   {
     value: 'card-codes:delete',
-    label: '点歌券删除',
-    description: '删除点歌券'
-    label: locale.value.permissionOptions.cardCodesWrite.label,
-    description: locale.value.permissionOptions.cardCodesWrite.description
+    label: locale.value.permissionOptions.cardCodesDelete.label,
+    description: locale.value.permissionOptions.cardCodesDelete.description
   }
 ])
 

@@ -196,7 +196,7 @@
                   <template #content>
                     <div class="lyric-settings-content">
                       <div class="setting-item switch">
-                        <span class="label">AM 风格歌词</span>
+                        <span class="label">{{ locale.amStyleLyrics }}</span>
                         <input v-model="lyricSettings.useAMLyrics.value" type="checkbox" />
                       </div>
                       <div class="setting-item">
@@ -216,15 +216,15 @@
                         </div>
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
-                        <span class="label">显示翻译</span>
+                        <span class="label">{{ locale.showTranslation }}</span>
                         <input v-model="lyricSettings.showTranslation.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
-                        <span class="label">显示罗马音</span>
+                        <span class="label">{{ locale.showRoma }}</span>
                         <input v-model="lyricSettings.showRoma.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
-                        <span class="label">逐字歌词 (YRC)</span>
+                        <span class="label">{{ locale.showYrc }}</span>
                         <input v-model="lyricSettings.showYrc.value" type="checkbox" />
                       </div>
                     </div>

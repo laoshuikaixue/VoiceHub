@@ -1649,6 +1649,15 @@ export const admin = {
       date: 'date',
       songList: 'Song List',
       estimatedDuration: (duration: string) => `Estimated total duration: ${duration}`,
+      estimateSelectedTitle: 'Quickly estimate the total duration of selected songs',
+      estimatingDuration: 'Estimating...',
+      estimateDuration: 'Estimate duration',
+      allSelectedHaveDuration: 'All selected songs already have duration information',
+      durationFromPlaybackUrlFailed: 'Unable to read duration from playback URL',
+      previewDurationDetected: 'Preview duration detected',
+      estimateSuccess: (count: number) => `Estimated duration for ${count} songs`,
+      estimateFailedCount: (count: number) => `${count} songs failed to estimate`,
+      estimateFailed: 'Failed to estimate duration',
       preloadSelectedTitle: 'Preload selected songs into browser cache',
       preloadSelected: 'Preload Selected',
       selectAll: 'Select All',
@@ -3138,9 +3147,11 @@ export const admin = {
     permissionOptions: {
       scheduleRead: { label: 'Schedule Read', description: 'View schedule list and details' },
       songsRead: { label: 'Song Read', description: 'View song list and details' },
+      songsRequest: { label: 'Song Request', description: 'Submit song requests as the API key owner' },
       songsWrite: { label: 'Song Management', description: 'Update song status' },
       cardCodesRead: { label: 'Request Card Read', description: 'View request card list and statistics' },
-      cardCodesWrite: { label: 'Request Card Management', description: 'Create and update request cards' }
+      cardCodesWrite: { label: 'Request Card Management', description: 'Create and update request cards' },
+      cardCodesDelete: { label: 'Request Card Delete', description: 'Delete request cards' }
     },
     loadFailed: 'Failed to load API keys',
     nameRequired: 'Enter key name',
