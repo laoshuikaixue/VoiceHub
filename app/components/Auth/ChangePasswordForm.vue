@@ -194,6 +194,7 @@ import {
   Loader2
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import { usePasswordStrength } from '~/composables/usePasswordStrength'
 
 // 组件属性
 const props = defineProps({
@@ -225,47 +226,7 @@ const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
 // 密码强度计算
-const passwordStrength = computed(() => {
-  const password = newPassword.value
-  if (!password) return { width: '0%', colorClass: '', textColorClass: '', text: '' }
-
-  let score = 0
-
-  if (password.length >= 8) score += 25
-  if (/[A-Z]/.test(password)) score += 25
-  if (/[a-z]/.test(password)) score += 25
-  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score += 25
-
-  if (score < 50) {
-    return {
-      width: `${score || 10}%`,
-      colorClass: 'bg-rose-500',
-      textColorClass: 'text-rose-500',
-      text: locale.value.weak
-    }
-  } else if (score < 75) {
-    return {
-      width: `${score}%`,
-      colorClass: 'bg-amber-500',
-      textColorClass: 'text-amber-500',
-      text: locale.value.medium
-    }
-  } else if (score < 100) {
-    return {
-      width: `${score}%`,
-      colorClass: 'bg-blue-500',
-      textColorClass: 'text-blue-500',
-      text: locale.value.strong
-    }
-  } else {
-    return {
-      width: '100%',
-      colorClass: 'bg-emerald-500',
-      textColorClass: 'text-emerald-500',
-      text: locale.value.veryStrong
-    }
-  }
-})
+const passwordStrength = usePasswordStrength(newPassword)
 
 // 表单验证
 const isFormValid = computed(() => {

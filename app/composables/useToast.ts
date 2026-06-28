@@ -121,9 +121,8 @@ const toastOperationTranslations = new Map<string, string>([
 
 const translateToastDetail = (detail: string) => exactToastTranslations.get(detail.trim()) || detail
 
-const translateToastMessage = (message: string) => {
-  const { currentLocale } = useLocale()
-  if (currentLocale.value === 'zh-CN') return message
+const translateToastMessage = (message: string, locale: string) => {
+  if (locale === 'zh-CN') return message
 
   const normalized = message.trim()
   const withoutPunctuation = normalized.replace(/[。！]$/, '')
@@ -158,6 +157,8 @@ const translateToastMessage = (message: string) => {
 }
 
 export const useToast = () => {
+  const { currentLocale } = useLocale()
+
   const showToast = (
     message: string,
     type: 'success' | 'error' | 'info' | 'warning' = 'info',
@@ -166,7 +167,7 @@ export const useToast = () => {
     const id = ++toastId
     const toast: ToastMessage = {
       id,
-      message: translateToastMessage(message),
+      message: translateToastMessage(message, currentLocale.value),
       type,
       duration
     }

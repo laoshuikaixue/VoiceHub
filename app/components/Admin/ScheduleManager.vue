@@ -271,7 +271,13 @@
                   :options="filterPlayTimeOptions"
                 />
                 <div class="grid grid-cols-2 gap-2">
-                  <CustomSelect v-model="selectedGrade" :label="locale.grade" :options="availableGrades" />
+                  <CustomSelect
+                    v-model="selectedGrade"
+                    :label="locale.grade"
+                    :options="availableGrades"
+                    label-key="label"
+                    value-key="value"
+                  />
                   <CustomSelect v-model="songSortOption" :label="locale.sort" :options="sortOptions" />
                 </div>
                 <button
@@ -1072,7 +1078,7 @@ const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
 const searchQuery = ref('')
-const selectedGrade = ref(locale.value.allGrades)
+const selectedGrade = ref('')
 const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
@@ -1407,7 +1413,7 @@ const availableDates = computed(() => {
 
 // 获取所有可选年级
 const availableGrades = computed(() => {
-  if (!songs.value) return [locale.value.allGrades]
+  if (!songs.value) return [{ label: locale.value.allGrades, value: '' }]
 
   const grades = new Set()
   songs.value.forEach((song) => {
@@ -1418,7 +1424,10 @@ const availableGrades = computed(() => {
 
   // 对年级进行简单排序
   const sortedGrades = Array.from(grades).sort()
-  return [locale.value.allGrades, ...sortedGrades]
+  return [
+    { label: locale.value.allGrades, value: '' },
+    ...sortedGrades.map((grade) => ({ label: grade, value: grade }))
+  ]
 })
 
 // 过滤未排期歌曲（所有）
@@ -1459,7 +1468,7 @@ const allUnscheduledSongs = computed(() => {
   // 年级过滤 (针对普通投稿和所有歌曲)
   if (
     (activeTab.value === 'normal' || activeTab.value === 'all') &&
-    selectedGrade.value !== locale.value.allGrades
+    selectedGrade.value
   ) {
     unscheduledSongs = unscheduledSongs.filter(
       (song) => song.requesterGrade === selectedGrade.value
@@ -1928,15 +1937,6 @@ watch(songSortOption, () => {
 watch(searchQuery, () => {
   resetAllPages()
 })
-
-watch(
-  () => locale.value.allGrades,
-  (newValue, oldValue) => {
-    if (selectedGrade.value === oldValue) {
-      selectedGrade.value = newValue
-    }
-  }
-)
 
 // 监听年级筛选变化，重置分页
 watch(selectedGrade, () => {

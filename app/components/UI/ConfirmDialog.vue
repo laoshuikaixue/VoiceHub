@@ -29,7 +29,7 @@
 
             <!-- 文字内容 -->
             <div class="space-y-2 mb-8">
-              <h4 class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h4>
+              <h4 class="text-xl font-black text-zinc-100 tracking-tight">{{ resolvedTitle }}</h4>
               <p class="text-sm text-zinc-500 leading-relaxed font-medium whitespace-pre-line break-all">
                 {{ message }}
               </p>
@@ -53,7 +53,7 @@
                 :disabled="loading"
                 @click="handleCancel"
               >
-                {{ cancelText }}
+                {{ resolvedCancelText }}
               </button>
               <button
                 class="flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -130,9 +130,9 @@ const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 const inputValue = ref('')
 const { common } = useLocale()
 const locale = computed(() => common.value)
-const title = computed(() => props.title || locale.value.confirmOperation)
+const resolvedTitle = computed(() => props.title || locale.value.confirmOperation)
 const resolvedConfirmText = computed(() => props.confirmText || locale.value.confirm)
-const cancelText = computed(() => props.cancelText || locale.value.cancel)
+const resolvedCancelText = computed(() => props.cancelText || locale.value.cancel)
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
