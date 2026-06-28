@@ -633,6 +633,10 @@ import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value.apiKeys)
+const getLocaleText = (key) => locale.value?.[key] || ''
+const getExpiresOptionText = (key) => locale.value?.expiresOptions?.[key] || ''
+const getPermissionOptionText = (key, field) => locale.value?.permissionOptions?.[key]?.[field] || ''
+const getDeleteTitle = (name) => locale.value?.deleteMessage?.(name) || ''
 
 // 响应式数据
 const loading = ref(false)
@@ -654,10 +658,10 @@ const loadingViewId = ref(null)
 const statusFilterText = ref('')
 const expiresAtText = ref('')
 const statusFilterOptions = computed(() => [
-  locale.value.allStatus,
-  locale.value.active,
-  locale.value.inactive,
-  locale.value.expired
+  getLocaleText('allStatus'),
+  getLocaleText('active'),
+  getLocaleText('inactive'),
+  getLocaleText('expired')
 ])
 
 const logsPagination = ref({
@@ -670,11 +674,11 @@ const logsPagination = ref({
 // 确认对话框相关
 const showConfirmDialog = ref(false)
 const confirmDialogConfig = ref({
-  title: locale.value.confirmDeleteTitle,
+  title: getLocaleText('confirmDeleteTitle'),
   message: '',
   type: 'danger',
-  confirmText: locale.value.delete,
-  cancelText: locale.value.cancel
+  confirmText: getLocaleText('delete'),
+  cancelText: getLocaleText('cancel')
 })
 const pendingDeleteApiKey = ref(null)
 
@@ -704,27 +708,27 @@ const form = reactive({
 
 const getStatusFilterText = () => {
   const statusTextMap = {
-    active: locale.value.active,
-    inactive: locale.value.inactive,
-    expired: locale.value.expired
+    active: getLocaleText('active'),
+    inactive: getLocaleText('inactive'),
+    expired: getLocaleText('expired')
   }
-  return statusTextMap[filters.status] || locale.value.allStatus
+  return statusTextMap[filters.status] || getLocaleText('allStatus')
 }
 
 const getExpiresAtText = () => {
   if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
     const date = new Date(selectedApiKey.value.expiresAt)
-    return locale.value.expiresAtText(date.toLocaleDateString())
+    return locale.value?.expiresAtText?.(date.toLocaleDateString()) || ''
   }
 
   const expiresAtTextMap = {
-    '3d': locale.value.expiresOptions.threeDays,
-    '7d': locale.value.expiresOptions.sevenDays,
-    '30d': locale.value.expiresOptions.thirtyDays,
-    '60d': locale.value.expiresOptions.sixtyDays,
-    '90d': locale.value.expiresOptions.ninetyDays
+    '3d': getExpiresOptionText('threeDays'),
+    '7d': getExpiresOptionText('sevenDays'),
+    '30d': getExpiresOptionText('thirtyDays'),
+    '60d': getExpiresOptionText('sixtyDays'),
+    '90d': getExpiresOptionText('ninetyDays')
   }
-  return expiresAtTextMap[form.expiresAt] || locale.value.expiresOptions.never
+  return expiresAtTextMap[form.expiresAt] || getExpiresOptionText('never')
 }
 
 watch(
@@ -740,38 +744,38 @@ watch(
 const availablePermissions = computed(() => [
   {
     value: 'schedules:read',
-    label: locale.value.permissionOptions.scheduleRead.label,
-    description: locale.value.permissionOptions.scheduleRead.description
+    label: getPermissionOptionText('scheduleRead', 'label'),
+    description: getPermissionOptionText('scheduleRead', 'description')
   },
   {
     value: 'songs:read',
-    label: locale.value.permissionOptions.songsRead.label,
-    description: locale.value.permissionOptions.songsRead.description
+    label: getPermissionOptionText('songsRead', 'label'),
+    description: getPermissionOptionText('songsRead', 'description')
   },
   {
     value: 'songs:request',
-    label: locale.value.permissionOptions.songsRequest.label,
-    description: locale.value.permissionOptions.songsRequest.description
+    label: getPermissionOptionText('songsRequest', 'label'),
+    description: getPermissionOptionText('songsRequest', 'description')
   },
   {
     value: 'songs:write',
-    label: locale.value.permissionOptions.songsWrite.label,
-    description: locale.value.permissionOptions.songsWrite.description
+    label: getPermissionOptionText('songsWrite', 'label'),
+    description: getPermissionOptionText('songsWrite', 'description')
   },
   {
     value: 'card-codes:read',
-    label: locale.value.permissionOptions.cardCodesRead.label,
-    description: locale.value.permissionOptions.cardCodesRead.description
+    label: getPermissionOptionText('cardCodesRead', 'label'),
+    description: getPermissionOptionText('cardCodesRead', 'description')
   },
   {
     value: 'card-codes:write',
-    label: locale.value.permissionOptions.cardCodesWrite.label,
-    description: locale.value.permissionOptions.cardCodesWrite.description
+    label: getPermissionOptionText('cardCodesWrite', 'label'),
+    description: getPermissionOptionText('cardCodesWrite', 'description')
   },
   {
     value: 'card-codes:delete',
-    label: locale.value.permissionOptions.cardCodesDelete.label,
-    description: locale.value.permissionOptions.cardCodesDelete.description
+    label: getPermissionOptionText('cardCodesDelete', 'label'),
+    description: getPermissionOptionText('cardCodesDelete', 'description')
   }
 ])
 
@@ -781,9 +785,9 @@ const toast = useToast()
 // 方法
 const handleStatusFilterChange = (val) => {
   const statusMap = {
-    [locale.value.active]: 'active',
-    [locale.value.inactive]: 'inactive',
-    [locale.value.expired]: 'expired'
+    [getLocaleText('active')]: 'active',
+    [getLocaleText('inactive')]: 'inactive',
+    [getLocaleText('expired')]: 'expired'
   }
   filters.status = statusMap[val] || ''
   loadApiKeys()
@@ -791,12 +795,12 @@ const handleStatusFilterChange = (val) => {
 
 const handleExpiresAtChange = (val) => {
   const map = {
-    [locale.value.expiresOptions.never]: '',
-    [locale.value.expiresOptions.threeDays]: '3d',
-    [locale.value.expiresOptions.sevenDays]: '7d',
-    [locale.value.expiresOptions.thirtyDays]: '30d',
-    [locale.value.expiresOptions.sixtyDays]: '60d',
-    [locale.value.expiresOptions.ninetyDays]: '90d'
+    [getExpiresOptionText('never')]: '',
+    [getExpiresOptionText('threeDays')]: '3d',
+    [getExpiresOptionText('sevenDays')]: '7d',
+    [getExpiresOptionText('thirtyDays')]: '30d',
+    [getExpiresOptionText('sixtyDays')]: '60d',
+    [getExpiresOptionText('ninetyDays')]: '90d'
   }
   form.expiresAt = map[val] || ''
 }
@@ -830,7 +834,7 @@ const loadApiKeys = async () => {
     }
   } catch (error) {
     console.error('加载API密钥失败:', error)
-    toast.error(locale.value.loadFailed)
+    toast.error(getLocaleText('loadFailed'))
   } finally {
     loading.value = false
   }
@@ -842,8 +846,8 @@ const openCreateModal = () => {
 }
 
 const createApiKey = async () => {
-  if (!form.name) return toast.error(locale.value.nameRequired)
-  if (form.permissions.length === 0) return toast.error(locale.value.permissionRequired)
+  if (!form.name) return toast.error(getLocaleText('nameRequired'))
+  if (form.permissions.length === 0) return toast.error(getLocaleText('permissionRequired'))
 
   submitting.value = true
   try {
@@ -861,7 +865,7 @@ const createApiKey = async () => {
     })
 
     if (response.success) {
-      toast.success(locale.value.createSuccessTitle)
+      toast.success(getLocaleText('createSuccessTitle'))
       newApiKey.value = response.data
       showCreateModal.value = false
       showSuccessModal.value = true
@@ -870,7 +874,7 @@ const createApiKey = async () => {
     }
   } catch (error) {
     console.error('创建API密钥失败:', error)
-    toast.error(error.data?.message || locale.value.createFailed)
+    toast.error(error.data?.message || getLocaleText('createFailed'))
   } finally {
     submitting.value = false
   }
@@ -878,8 +882,8 @@ const createApiKey = async () => {
 
 const updateApiKey = async () => {
   if (!selectedApiKey.value) return
-  if (!form.name) return toast.error(locale.value.nameRequired)
-  if (form.permissions.length === 0) return toast.error(locale.value.permissionRequired)
+  if (!form.name) return toast.error(getLocaleText('nameRequired'))
+  if (form.permissions.length === 0) return toast.error(getLocaleText('permissionRequired'))
 
   submitting.value = true
   try {
@@ -898,13 +902,13 @@ const updateApiKey = async () => {
     })
 
     if (response.success) {
-      toast.success(locale.value.updateSuccess)
+      toast.success(getLocaleText('updateSuccess'))
       closeModals()
       await loadApiKeys()
     }
   } catch (error) {
     console.error('更新API密钥失败:', error)
-    toast.error(error.data?.message || locale.value.updateFailed)
+    toast.error(error.data?.message || getLocaleText('updateFailed'))
   } finally {
     submitting.value = false
   }
@@ -913,11 +917,11 @@ const updateApiKey = async () => {
 const deleteApiKey = (apiKey) => {
   pendingDeleteApiKey.value = apiKey
   confirmDialogConfig.value = {
-    title: locale.value.confirmDeleteTitle,
-    message: locale.value.deleteMessage(apiKey.name),
+    title: getLocaleText('confirmDeleteTitle'),
+    message: getDeleteTitle(apiKey.name),
     type: 'danger',
-    confirmText: locale.value.delete,
-    cancelText: locale.value.cancel
+    confirmText: getLocaleText('delete'),
+    cancelText: getLocaleText('cancel')
   }
   showConfirmDialog.value = true
 }
@@ -931,12 +935,12 @@ const confirmDelete = async () => {
     })
 
     if (response.success) {
-      toast.success(locale.value.deleteSuccess)
+      toast.success(getLocaleText('deleteSuccess'))
       await loadApiKeys()
     }
   } catch (error) {
     console.error('删除API密钥失败:', error)
-    toast.error(error.data?.message || locale.value.deleteFailed)
+    toast.error(error.data?.message || getLocaleText('deleteFailed'))
   } finally {
     showConfirmDialog.value = false
     pendingDeleteApiKey.value = null
@@ -960,7 +964,7 @@ const viewApiKey = async (apiKey) => {
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
-    toast.error(locale.value.detailFailed)
+    toast.error(getLocaleText('detailFailed'))
   } finally {
     loadingViewId.value = null
   }
@@ -979,10 +983,10 @@ const editApiKey = async (apiKey) => {
 
       if (response.data.expiresAt) {
         const date = new Date(response.data.expiresAt)
-        expiresAtText.value = locale.value.expiresAtText(date.toLocaleDateString())
+        expiresAtText.value = locale.value?.expiresAtText?.(date.toLocaleDateString()) || ''
         form.expiresAt = 'keep'
       } else {
-        expiresAtText.value = locale.value.expiresOptions.never
+        expiresAtText.value = getExpiresOptionText('never')
         form.expiresAt = ''
       }
 
@@ -993,7 +997,7 @@ const editApiKey = async (apiKey) => {
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
-    toast.error(locale.value.detailFailed)
+    toast.error(getLocaleText('detailFailed'))
   } finally {
     loadingEditId.value = null
   }
@@ -1026,7 +1030,7 @@ const loadApiLogs = async (page = 1) => {
     }
   } catch (error) {
     console.error('获取API使用日志失败:', error)
-    toast.error(locale.value.logsFailed)
+    toast.error(getLocaleText('logsFailed'))
     apiLogs.value = []
   } finally {
     loadingLogs.value = false
@@ -1067,7 +1071,7 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.expiresAt = ''
-  expiresAtText.value = locale.value.expiresOptions.never
+  expiresAtText.value = getExpiresOptionText('never')
   form.permissions = []
   form.isActive = true
 }
@@ -1088,11 +1092,11 @@ const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     copied.value = true
-    toast.success(locale.value.copied)
+    toast.success(getLocaleText('copied'))
     setTimeout(() => (copied.value = false), 2000)
   } catch (error) {
     console.error('复制失败:', error)
-    toast.error(locale.value.copyFailed)
+    toast.error(getLocaleText('copyFailed'))
   }
 }
 

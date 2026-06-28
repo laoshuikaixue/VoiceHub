@@ -64,6 +64,21 @@
             </div>
 
             <div v-else class="login-options">
+              <div class="language-switcher-inline" :aria-label="common.language">
+                <button
+                  v-for="localeOption in supportedLocales"
+                  :key="localeOption.code"
+                  type="button"
+                  :class="[
+                    'language-switcher-chip',
+                    currentLocale === localeOption.code ? 'is-active' : ''
+                  ]"
+                  :aria-pressed="currentLocale === localeOption.code"
+                  @click="setLocale(localeOption.code)"
+                >
+                  {{ localeOption.code === 'zh-CN' ? 'ZH' : 'EN' }}
+                </button>
+              </div>
               <NuxtLink class="login-btn" to="/login">
                 <Icon name="user" :size="16" />
                 <span>{{ locale.login }}</span>
@@ -661,7 +676,7 @@ import { useLocale } from '~/utils/locale'
 // 获取运行时配置
 const config = useRuntimeConfig()
 const router = useRouter()
-const { pages } = useLocale()
+const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
 const locale = computed(() => pages.value.home)
 
 // 站点配置
@@ -1748,6 +1763,53 @@ if (
   align-items: center;
   gap: 12px;
   cursor: pointer;
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.language-switcher-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.language-switcher-chip {
+  min-width: 34px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.language-switcher-chip:hover,
+.language-switcher-chip:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.language-switcher-chip.is-active {
+  background: #0b5afe;
+  color: #ffffff;
 }
 
 .user-details-desktop {
