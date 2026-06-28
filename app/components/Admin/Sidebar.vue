@@ -140,7 +140,7 @@ import { useLocale } from '~/utils/locale'
 
 const avatarError = ref(false)
 const { admin } = useLocale()
-const locale = computed(() => admin.value.sidebar)
+const locale = computed(() => admin.value?.sidebar || {})
 
 const props = defineProps({
   // 侧边栏是否打开（移动端）
@@ -167,43 +167,48 @@ const emit = defineEmits(['navigate', 'close', 'logout'])
 // 菜单分组配置
 const menuGroups = computed(() => [
   {
-    section: locale.value.sections.overview,
-    items: [{ icon: LayoutDashboard, label: locale.value.menu.overview, id: 'overview' }]
+    section: locale.value.sections?.overview || '概览',
+    items: [{ icon: LayoutDashboard, label: locale.value.menu?.overview || '数据概览', id: 'overview' }]
   },
   {
-    section: locale.value.sections.content,
+    section: locale.value.sections?.content || '内容管理',
     items: [
-      { icon: CalendarDays, label: locale.value.menu.schedule, id: 'schedule' },
-      { icon: Printer, label: locale.value.menu.print, id: 'print' },
-      { icon: Music2, label: locale.value.menu.songs, id: 'songs' },
-      { icon: BarChart3, label: locale.value.menu.dataAnalysis, id: 'data-analysis', permissionId: 'data-analysis' }
+      { icon: CalendarDays, label: locale.value.menu?.schedule || '排班管理', id: 'schedule' },
+      { icon: Printer, label: locale.value.menu?.print || '打印管理', id: 'print' },
+      { icon: Music2, label: locale.value.menu?.songs || '点歌管理', id: 'songs' },
+      {
+        icon: BarChart3,
+        label: locale.value.menu?.dataAnalysis || '数据分析',
+        id: 'data-analysis',
+        permissionId: 'data-analysis'
+      }
     ]
   },
   {
-    section: locale.value.sections.users,
-    items: [{ icon: Users, label: locale.value.menu.users, id: 'users' }]
+    section: locale.value.sections?.users || '用户管理',
+    items: [{ icon: Users, label: locale.value.menu?.users || '用户管理', id: 'users' }]
   },
   {
-    section: locale.value.sections.api,
-    items: [{ icon: Key, label: locale.value.menu.apiKeys, id: 'api-keys' }]
+    section: locale.value.sections?.api || 'API',
+    items: [{ icon: Key, label: locale.value.menu?.apiKeys || 'API 密钥', id: 'api-keys' }]
   },
   {
-    section: locale.value.sections.system,
+    section: locale.value.sections?.system || '系统设置',
     items: [
-      { icon: Bell, label: locale.value.menu.notifications, id: 'notifications' },
-      { icon: Mail, label: locale.value.menu.smtpConfig, id: 'smtp-config' },
-      { icon: Clock, label: locale.value.menu.playtimes, id: 'playtimes' },
-      { icon: FileEdit, label: locale.value.menu.requestTimes, id: 'request-times' },
-      { icon: BookOpen, label: locale.value.menu.semesters, id: 'semesters' },
-      { icon: Ban, label: locale.value.menu.blacklist, id: 'blacklist' },
-      { icon: Ticket, label: locale.value.menu.cardCodes, id: 'card-codes' },
-      { icon: Globe, label: locale.value.menu.siteConfig, id: 'site-config' },
-      { icon: Database, label: locale.value.menu.database, id: 'database' }
+      { icon: Bell, label: locale.value.menu?.notifications || '通知管理', id: 'notifications' },
+      { icon: Mail, label: locale.value.menu?.smtpConfig || 'SMTP 配置', id: 'smtp-config' },
+      { icon: Clock, label: locale.value.menu?.playtimes || '播放时段', id: 'playtimes' },
+      { icon: FileEdit, label: locale.value.menu?.requestTimes || '点歌时段', id: 'request-times' },
+      { icon: BookOpen, label: locale.value.menu?.semesters || '学期管理', id: 'semesters' },
+      { icon: Ban, label: locale.value.menu?.blacklist || '黑名单', id: 'blacklist' },
+      { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
+      { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
+      { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' }
     ]
   },
   {
-    section: locale.value.sections.account,
-    items: [{ icon: Lock, label: locale.value.menu.password, id: 'password' }]
+    section: locale.value.sections?.account || '账户',
+    items: [{ icon: Lock, label: locale.value.menu?.password || '修改密码', id: 'password' }]
   }
 ])
 
@@ -233,7 +238,7 @@ const onNavigate = (id) => {
  * @param {string} role 角色标识
  */
 const getRoleDisplayName = (role) => {
-  return locale.value.roles[role] || role
+  return locale.value.roles?.[role] || role
 }
 </script>
 

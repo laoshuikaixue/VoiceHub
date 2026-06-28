@@ -220,7 +220,7 @@ import { useLocale } from '~/utils/locale'
 const emit = defineEmits(['navigate'])
 const { success: showSuccess, error: showError } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.overview)
+const locale = computed(() => admin.value?.overview || {})
 
 const systemVersion = ref(packageJson.version)
 const stats = ref({
@@ -249,7 +249,7 @@ const systemStatus = ref({
 // 统计卡片数据
 const statCards = computed(() => [
   {
-    label: locale.value.statCards.totalSongs,
+    label: locale.value.statCards?.totalSongs || '总歌曲数',
     value: formatNumber(stats.value.totalSongs),
     icon: Music,
     color: 'blue',
@@ -257,19 +257,19 @@ const statCards = computed(() => [
     trendDown: stats.value.songsChange < 0
   },
   {
-    label: locale.value.statCards.registeredUsers,
+    label: locale.value.statCards?.registeredUsers || '注册用户',
     value: formatNumber(stats.value.totalUsers),
     icon: Users,
     color: 'emerald'
   },
   {
-    label: locale.value.statCards.todaySchedules,
+    label: locale.value.statCards?.todaySchedules || '今日排班',
     value: formatNumber(stats.value.todaySchedules),
     icon: Calendar,
     color: 'zinc'
   },
   {
-    label: locale.value.statCards.weeklyRequests,
+    label: locale.value.statCards?.weeklyRequests || '本周点歌',
     value: formatNumber(stats.value.weeklyRequests),
     icon: Heart,
     color: 'pink',
@@ -281,34 +281,34 @@ const statCards = computed(() => [
 // 系统状态项
 const statusItems = computed(() => [
   {
-    label: locale.value.statusItems.database,
-    value: systemStatus.value.database ? locale.value.normal : locale.value.abnormal,
+    label: locale.value.statusItems?.database || '数据库',
+    value: systemStatus.value.database ? locale.value.normal || '正常' : locale.value.abnormal || '异常',
     active: systemStatus.value.database
   },
   {
-    label: locale.value.statusItems.api,
-    value: systemStatus.value.api ? locale.value.normal : locale.value.abnormal,
+    label: locale.value.statusItems?.api || 'API',
+    value: systemStatus.value.api ? locale.value.normal || '正常' : locale.value.abnormal || '异常',
     active: systemStatus.value.api
   },
   {
-    label: locale.value.statusItems.semester,
-    value: stats.value.currentSemester || locale.value.unset,
+    label: locale.value.statusItems?.semester || '当前学期',
+    value: stats.value.currentSemester || locale.value.unset || '未设置',
     active: !!stats.value.currentSemester
   },
   {
-    label: locale.value.statusItems.blacklist,
-    value: locale.value.itemUnit(stats.value.blacklistCount),
+    label: locale.value.statusItems?.blacklist || '黑名单',
+    value: locale.value.itemUnit?.(stats.value.blacklistCount) || String(stats.value.blacklistCount),
     active: stats.value.blacklistCount >= 0
   },
-  { label: locale.value.statusItems.version, value: `v${systemVersion.value}`, active: true }
+  { label: locale.value.statusItems?.version || '版本', value: `v${systemVersion.value}`, active: true }
 ])
 
 // 快速操作
 const quickActions = computed(() => [
-  { label: locale.value.actions.schedule, icon: Calendar, id: 'schedule', primary: true },
-  { label: locale.value.actions.users, icon: Users, id: 'users' },
-  { label: locale.value.actions.notifications, icon: Bell, id: 'notifications' },
-  { label: locale.value.actions.blacklist, icon: Ban, id: 'blacklist' }
+  { label: locale.value.actions?.schedule || '排班管理', icon: Calendar, id: 'schedule', primary: true },
+  { label: locale.value.actions?.users || '用户管理', icon: Users, id: 'users' },
+  { label: locale.value.actions?.notifications || '通知管理', icon: Bell, id: 'notifications' },
+  { label: locale.value.actions?.blacklist || '黑名单', icon: Ban, id: 'blacklist' }
 ])
 
 const formatNumber = (num) => {
@@ -374,20 +374,20 @@ const copyToClipboard = async (text) => {
 
 const copyInstanceId = async () => {
   if (!instanceId.value) {
-    showError(locale.value.noInstanceId)
+    showError(locale.value.noInstanceId || '暂无实例 ID')
     return
   }
 
   try {
     const copied = await copyToClipboard(instanceId.value)
     if (copied) {
-      showSuccess(locale.value.copied)
+      showSuccess(locale.value.copied || '已复制')
     } else {
-      showError(locale.value.copyFailed)
+      showError(locale.value.copyFailed || '复制失败')
     }
   } catch (error) {
     console.error('复制实例 ID 失败:', error)
-    showError(locale.value.copyFailed)
+    showError(locale.value.copyFailed || '复制失败')
   }
 }
 
