@@ -664,7 +664,8 @@ const formatDate = (dateString) => {
   return new Intl.DateTimeFormat(currentLocale.value, {
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
+    timeZone: BEIJING_TIMEZONE
   }).format(date)
 }
 
@@ -677,7 +678,8 @@ const formatDateTime = (dateString) => {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: BEIJING_TIMEZONE
   }).format(date)
 }
 

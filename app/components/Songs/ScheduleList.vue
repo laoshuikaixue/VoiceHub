@@ -1044,27 +1044,35 @@ const formatDate = (dateStr, isMobile = false) => {
 
     const { year, month, day } = parsedDate
 
-    // 创建日期对象
-    const date = new Date(year, month - 1, day)
+    // 创建 UTC 日期对象，避免浏览器本地时区导致排期日期跨天。
+    const date = new Date(Date.UTC(year, month - 1, day))
 
     // 检查日期是否有效
     if (isNaN(date.getTime())) {
       throw new Error(locale.value.invalidDate)
     }
 
-    const weekday = new Intl.DateTimeFormat(currentLocale.value, { weekday: 'long' }).format(date)
+    const weekday = new Intl.DateTimeFormat(currentLocale.value, {
+      weekday: 'long',
+      timeZone: 'UTC'
+    }).format(date)
 
     // 移动端显示更紧凑的格式
     if (isMobile) {
-      const formattedMobileDate = new Intl.DateTimeFormat(currentLocale.value, { month: 'short', day: 'numeric' }).format(date)
+      const formattedMobileDate = new Intl.DateTimeFormat(currentLocale.value, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+      }).format(date)
       return locale.value.mobileDate(month, day, weekday, formattedMobileDate)
     }
 
     const intlFormattedDate = new Intl.DateTimeFormat(currentLocale.value, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        }).format(date)
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC'
+    }).format(date)
     const formattedDate = locale.value.fullDate(year, month, day, intlFormattedDate)
     return `${formattedDate}\n<span class="weekday">${weekday}</span>`
   } catch (e) {

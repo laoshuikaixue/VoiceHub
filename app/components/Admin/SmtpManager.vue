@@ -239,6 +239,12 @@ const getLocalizedServerMessage = (message) => {
   const serverMessages = locale.value?.serverMessages
   if (!serverMessages) return message
 
+  const rawMessages = serverMessages.raw
+  if (rawMessages) {
+    const key = Object.keys(rawMessages).find((item) => rawMessages[item] === message)
+    return key ? serverMessages[key] : message
+  }
+
   const matchedEntry = Object.values(serverMessages).find((entry) => entry?.raw === message)
   return matchedEntry?.text || message
 }

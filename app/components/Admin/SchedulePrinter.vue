@@ -398,9 +398,9 @@
                 <div class="page-footer">
                   <div class="footer-left">
                     <span>{{ locale.generatedAt(new Date().toLocaleString()) }}</span>
-                    <span v-if="settings.remark" class="remark-text"
-                      >{{ locale.remarkPrefix(settings.remark) }}</span>
-                    >
+                    <span v-if="settings.remark" class="remark-text">
+                      {{ locale.remarkPrefix(settings.remark) }}
+                    </span>
                   </div>
                   <span class="footer-right">{{ locale.footer }}</span>
                 </div>
