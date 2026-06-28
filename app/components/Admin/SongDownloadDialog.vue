@@ -593,6 +593,15 @@ const neteaseQualityLevelMap = {
   9: 'jymaster'
 }
 
+const neteaseQualityLevelMap = {
+  2: 'standard',
+  3: 'higher',
+  4: 'exhigh',
+  5: 'lossless',
+  6: 'hires',
+  9: 'jymaster'
+}
+
 // 生成带描述的音质选项
 const extendedQualityOptions = computed(() => {
   const options = getQualityOptions('netease')
