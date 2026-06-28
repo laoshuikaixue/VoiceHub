@@ -48,38 +48,20 @@
           >
         </a>
       </span>
-      <span class="footer-item language-item">
-        <label class="sr-only" for="footer-language-select">{{ common.language }}</label>
-        <select
-          id="footer-language-select"
-          :value="currentLocale"
-          class="language-select"
-          :aria-label="common.language"
-          @change="handleLocaleChange"
-        >
-          <option
-            v-for="localeOption in supportedLocales"
-            :key="localeOption.code"
-            :value="localeOption.code"
-          >
-            {{ localeOption.label }}
-          </option>
-        </select>
-      </span>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/security'
-import { useLocale, type Locale } from '~/utils/locale'
+import { useLocale } from '~/utils/locale'
 import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
 const { siteTitle, icp: icpNumber, gonganNumber, showBeianIcon } = useSiteConfig()
 const config = useRuntimeConfig()
-const { common, currentLocale, initLocale, setLocale, supportedLocales } = useLocale()
+const { common, currentLocale, initLocale } = useLocale()
 
 // 自动生成公安联网备案链接
 const gonganLink = computed(() => {
@@ -110,11 +92,6 @@ watch(
   },
   { immediate: true }
 )
-
-const handleLocaleChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  setLocale(target.value as Locale)
-}
 
 onMounted(() => {
   initLocale()
@@ -202,33 +179,6 @@ onMounted(() => {
   vertical-align: middle;
   margin-right: 4px;
   display: inline-block;
-}
-
-.language-item {
-  display: inline-flex;
-  align-items: center;
-}
-
-.language-select {
-  appearance: none;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.72);
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-  padding: 4px 22px 4px 8px;
-}
-
-.language-select:focus {
-  border-color: rgba(255, 255, 255, 0.42);
-  outline: none;
-}
-
-.language-select option {
-  background: #111111;
-  color: rgba(255, 255, 255, 0.86);
 }
 
 .sr-only {

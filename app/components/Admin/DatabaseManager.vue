@@ -434,7 +434,7 @@
 </template>
 
 <script setup>
-import { computed,ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
@@ -445,6 +445,18 @@ const { showToast: showNotification } = useToast()
 const auth = useAuth()
 const { admin } = useLocale()
 const locale = computed(() => admin.value.databaseManager)
+const getMessage = (key) => locale.value?.messages?.[key] || ''
+const getLogMessage = (key) => locale.value?.logs?.[key] || key
+const getErrorMessage = (key, ...args) => {
+  const message = locale.value?.errors?.[key]
+  if (typeof message === 'function') return message(...args)
+  return message || args.find(Boolean) || ''
+}
+const getProgressMessage = (key, ...args) => {
+  const message = locale.value?.progress?.[key]
+  if (typeof message === 'function') return message(...args)
+  return message || ''
+}
 
 // 状态
 const activeModal = ref('none')
@@ -462,35 +474,35 @@ const CONFIRM_CODE = 'CONFIRM-DATABASE-RESET-OPERATION'
 const cards = computed(() => [
   {
     id: 'backup',
-    title: locale.value.cards.backup.title,
-    desc: locale.value.cards.backup.desc,
+    title: locale.value?.cards?.backup?.title || '',
+    desc: locale.value?.cards?.backup?.desc || '',
     icon: Download,
     color: 'blue',
-    btnText: locale.value.cards.backup.button
+    btnText: locale.value?.cards?.backup?.button || ''
   },
   {
     id: 'restore',
-    title: locale.value.cards.restore.title,
-    desc: locale.value.cards.restore.desc,
+    title: locale.value?.cards?.restore?.title || '',
+    desc: locale.value?.cards?.restore?.desc || '',
     icon: Upload,
     color: 'emerald',
-    btnText: locale.value.cards.restore.button
+    btnText: locale.value?.cards?.restore?.button || ''
   },
   {
     id: 'reset-seq',
-    title: locale.value.cards.resetSeq.title,
-    desc: locale.value.cards.resetSeq.desc,
+    title: locale.value?.cards?.resetSeq?.title || '',
+    desc: locale.value?.cards?.resetSeq?.desc || '',
     icon: RotateCw,
     color: 'amber',
-    btnText: locale.value.cards.resetSeq.button
+    btnText: locale.value?.cards?.resetSeq?.button || ''
   },
   {
     id: 'reset-db',
-    title: locale.value.cards.resetDb.title,
-    desc: locale.value.cards.resetDb.desc,
+    title: locale.value?.cards?.resetDb?.title || '',
+    desc: locale.value?.cards?.resetDb?.desc || '',
     icon: Trash2,
     color: 'rose',
-    btnText: locale.value.cards.resetDb.button,
+    btnText: locale.value?.cards?.resetDb?.button || '',
     isDanger: true
   }
 ])
@@ -499,18 +511,18 @@ const cards = computed(() => [
 const backupOptions = computed(() => [
   {
     key: 'includeSongs',
-    label: locale.value.backupOptions.songs.label,
-    desc: locale.value.backupOptions.songs.desc
+    label: locale.value?.backupOptions?.songs?.label || '',
+    desc: locale.value?.backupOptions?.songs?.desc || ''
   },
   {
     key: 'includeSystemData',
-    label: locale.value.backupOptions.system.label,
-    desc: locale.value.backupOptions.system.desc
+    label: locale.value?.backupOptions?.system?.label || '',
+    desc: locale.value?.backupOptions?.system?.desc || ''
   },
   {
     key: 'includeUsers',
-    label: locale.value.backupOptions.users.label,
-    desc: locale.value.backupOptions.users.desc
+    label: locale.value?.backupOptions?.users?.label || '',
+    desc: locale.value?.backupOptions?.users?.desc || ''
   }
 ])
 
@@ -559,8 +571,8 @@ const parseBackupSuperAdmin = async (file) => {
   } catch (error) {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
-    showNotification(locale.value.messages.parseBackupFailed, 'error')
-    console.error(locale.value.logs.parseBackupFailed, error)
+    showNotification(getMessage('parseBackupFailed'), 'error')
+    console.error(getLogMessage('parseBackupFailed'), error)
   }
 }
 
@@ -570,7 +582,7 @@ const handleFileSelect = async (event) => {
     selectedFile.value = file
     await parseBackupSuperAdmin(file)
   } else {
-    showNotification(locale.value.messages.invalidJsonFile, 'error')
+    showNotification(getMessage('invalidJsonFile'), 'error')
   }
 }
 
@@ -580,7 +592,7 @@ const handleFileDrop = async (event) => {
     selectedFile.value = file
     await parseBackupSuperAdmin(file)
   } else {
-    showNotification(locale.value.messages.invalidJsonFile, 'error')
+    showNotification(getMessage('invalidJsonFile'), 'error')
   }
 }
 
@@ -598,7 +610,7 @@ const createBackup = async () => {
     } else if (createForm.value.includeSystemData) {
       tables = ['systemSettings']
     } else {
-      throw new Error(locale.value.errors.noBackupContent)
+      throw new Error(getErrorMessage('noBackupContent'))
     }
 
     const response = await $fetch('/api/admin/backup/export', {
@@ -622,7 +634,7 @@ const createBackup = async () => {
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        showNotification(locale.value.messages.backupDownloaded, 'success')
+        showNotification(getMessage('backupDownloaded'), 'success')
         activeModal.value = 'none'
       } else if (response.backup.downloadMode === 'file' && response.backup.filename) {
         const downloadUrl = `/api/admin/backup/download/${response.backup.filename}`
@@ -630,7 +642,7 @@ const createBackup = async () => {
           method: 'GET',
           credentials: 'include'
         })
-        if (!downloadResponse.ok) throw new Error(locale.value.errors.downloadFailed(downloadResponse.status))
+        if (!downloadResponse.ok) throw new Error(getErrorMessage('downloadFailed', downloadResponse.status))
         const blob = await downloadResponse.blob()
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -640,25 +652,25 @@ const createBackup = async () => {
         a.click()
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
-        showNotification(locale.value.messages.backupDownloaded, 'success')
+        showNotification(getMessage('backupDownloaded'), 'success')
         activeModal.value = 'none'
       }
     } else {
-      throw new Error(response.message || locale.value.errors.createBackupFailed)
+      throw new Error(response.message || getErrorMessage('createBackupFailed'))
     }
   } catch (error) {
-    console.error(locale.value.logs.createBackupFailed, error)
-    showNotification(locale.value.errors.createBackupFailedWithMessage(error.message), 'error')
+    console.error(getLogMessage('createBackupFailed'), error)
+    showNotification(getErrorMessage('createBackupFailedWithMessage', error.message), 'error')
   } finally {
     createLoading.value = false
   }
 }
 
 const restoreBackup = async () => {
-  if (!selectedFile.value) return showNotification(locale.value.messages.selectBackupFile, 'error')
+  if (!selectedFile.value) return showNotification(getMessage('selectBackupFile'), 'error')
 
   uploadLoading.value = true
-  restoreProgress.value = locale.value.progress.readingFile
+  restoreProgress.value = getProgressMessage('readingFile')
 
   try {
     const fileContent = await selectedFile.value.text()
@@ -666,10 +678,10 @@ const restoreBackup = async () => {
     try {
       backupData = JSON.parse(fileContent)
     } catch {
-      throw new Error(locale.value.errors.invalidBackupFormat)
+      throw new Error(getErrorMessage('invalidBackupFormat'))
     }
 
-    if (!backupData.data) throw new Error(locale.value.errors.missingBackupData)
+    if (!backupData.data) throw new Error(getErrorMessage('missingBackupData'))
     const fileHasSuperAdmin = hasSuperAdminInBackup.value
     if (!fileHasSuperAdmin) {
       restoreForm.value.overwriteSuperAdmin = false
@@ -679,7 +691,7 @@ const restoreBackup = async () => {
     let temporaryPreservedUserId = null
 
     if (restoreForm.value.mode === 'replace') {
-      restoreProgress.value = locale.value.progress.clearingData
+      restoreProgress.value = getProgressMessage('clearingData')
       const clearResult = await $fetch('/api/admin/backup/clear', {
         method: 'POST',
         body: {
@@ -687,7 +699,7 @@ const restoreBackup = async () => {
           hasSuperAdminInBackup: fileHasSuperAdmin
         }
       })
-      if (!clearResult.success) throw new Error(clearResult.message || locale.value.errors.clearDataFailed)
+      if (!clearResult.success) throw new Error(clearResult.message || getErrorMessage('clearDataFailed'))
       preservedSuperAdminIds = clearResult.preservedSuperAdminIds || []
       temporaryPreservedUserId = clearResult.temporaryPreservedUserId || null
     }
@@ -732,7 +744,8 @@ const restoreBackup = async () => {
       for (let i = 0; i < records.length; i += CHUNK_SIZE) {
         const chunk = records.slice(i, i + CHUNK_SIZE)
         const progressPercent = Math.round((totalProcessed / totalRecords) * 100)
-        restoreProgress.value = locale.value.progress.restoringTable(
+        restoreProgress.value = getProgressMessage(
+          'restoringTable',
           tableName,
           i + 1,
           Math.min(i + CHUNK_SIZE, records.length),
@@ -752,7 +765,7 @@ const restoreBackup = async () => {
           }
         })
 
-        if (!response.success) throw new Error(response.message || locale.value.errors.restoreTableFailed(tableName))
+        if (!response.success) throw new Error(response.message || getErrorMessage('restoreTableFailed', tableName))
         if (response.newMappings) {
           if (response.newMappings.users) Object.assign(mappings.users, response.newMappings.users)
           if (response.newMappings.songs) Object.assign(mappings.songs, response.newMappings.songs)
@@ -761,21 +774,21 @@ const restoreBackup = async () => {
       }
     }
 
-    restoreProgress.value = locale.value.progress.fixingSequence
+    restoreProgress.value = getProgressMessage('fixingSequence')
     const sequenceResult = await $fetch('/api/admin/fix-sequence', {
       method: 'POST',
       body: { table: 'all' }
     })
     if (!sequenceResult.success) {
-      throw new Error(sequenceResult.message || sequenceResult.error || locale.value.errors.fixSequenceFailed)
+      throw new Error(sequenceResult.message || sequenceResult.error || getErrorMessage('fixSequenceFailed'))
     }
 
-    restoreProgress.value = locale.value.progress.reloadingSmtp
+    restoreProgress.value = getProgressMessage('reloadingSmtp')
     const smtpReloadResult = await $fetch('/api/admin/smtp/reload', {
       method: 'POST'
     })
     if (!smtpReloadResult.success) {
-      throw new Error(smtpReloadResult.message || locale.value.errors.smtpReloadFailed)
+      throw new Error(smtpReloadResult.message || getErrorMessage('smtpReloadFailed'))
     }
 
     const shouldFinalizeTempUser =
@@ -787,7 +800,7 @@ const restoreBackup = async () => {
     if (shouldFinalizeTempUser) {
       const restoredUserIds = Object.values(mappings.users).map((id) => Number(id))
       if (!restoredUserIds.includes(Number(temporaryPreservedUserId))) {
-        restoreProgress.value = locale.value.progress.finalizingAdmin
+        restoreProgress.value = getProgressMessage('finalizingAdmin')
         await $fetch('/api/admin/backup/clear', {
           method: 'POST',
           body: {
@@ -795,7 +808,7 @@ const restoreBackup = async () => {
           }
         })
       }
-      showNotification(locale.value.messages.restoreSuccessRelogin, 'success')
+      showNotification(getMessage('restoreSuccessRelogin'), 'success')
       activeModal.value = 'none'
       setTimeout(() => {
         if (auth.logout) {
@@ -808,11 +821,11 @@ const restoreBackup = async () => {
       return
     }
 
-    showNotification(locale.value.messages.restoreSuccess, 'success')
+    showNotification(getMessage('restoreSuccess'), 'success')
     activeModal.value = 'none'
   } catch (error) {
-    console.error(locale.value.logs.restoreBackupFailed, error)
-    showNotification(locale.value.errors.restoreBackupFailedWithMessage(error.message), 'error')
+    console.error(getLogMessage('restoreBackupFailed'), error)
+    showNotification(getErrorMessage('restoreBackupFailedWithMessage', error.message), 'error')
   } finally {
     uploadLoading.value = false
     restoreProgress.value = ''
@@ -828,14 +841,14 @@ const resetSequence = async () => {
       body: { table: sequenceForm.value.table }
     })
     if (response.success) {
-      showNotification(response.message || locale.value.messages.sequenceResetSuccess, 'success')
+      showNotification(response.message || getMessage('sequenceResetSuccess'), 'success')
       activeModal.value = 'none'
     } else {
-      throw new Error(response.error || response.message || locale.value.errors.resetFailed)
+      throw new Error(response.error || response.message || getErrorMessage('resetFailed'))
     }
   } catch (error) {
-    console.error(locale.value.logs.resetSequenceFailed, error)
-    showNotification(locale.value.errors.resetSequenceFailedWithMessage(error.message), 'error')
+    console.error(getLogMessage('resetSequenceFailed'), error)
+    showNotification(getErrorMessage('resetSequenceFailedWithMessage', error.message), 'error')
   } finally {
     sequenceLoading.value = false
   }
@@ -847,15 +860,15 @@ const resetDatabase = async () => {
   try {
     const response = await $fetch('/api/admin/database/reset', { method: 'POST' })
     if (response.success) {
-      showNotification(locale.value.messages.databaseResetSuccess, 'success')
+      showNotification(getMessage('databaseResetSuccess'), 'success')
       activeModal.value = 'none'
       setTimeout(() => window.location.reload(), 1500)
     } else {
-      throw new Error(response.message || locale.value.errors.resetFailed)
+      throw new Error(response.message || getErrorMessage('resetFailed'))
     }
   } catch (error) {
-    console.error(locale.value.logs.resetDatabaseFailed, error)
-    showNotification(locale.value.errors.resetDatabaseFailedWithMessage(error.message), 'error')
+    console.error(getLogMessage('resetDatabaseFailed'), error)
+    showNotification(getErrorMessage('resetDatabaseFailedWithMessage', error.message), 'error')
   } finally {
     resetLoading.value = false
   }

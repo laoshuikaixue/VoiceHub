@@ -16,6 +16,24 @@
       @song-change="handlePlayerSongChange"
     />
 
+    <ClientOnly>
+      <div class="global-language-switcher" :aria-label="common.language">
+        <button
+          v-for="localeOption in supportedLocales"
+          :key="localeOption.code"
+          type="button"
+          :class="[
+            'global-language-option',
+            currentLocale === localeOption.code ? 'is-active' : ''
+          ]"
+          :aria-pressed="currentLocale === localeOption.code"
+          @click="setLocale(localeOption.code)"
+        >
+          {{ localeOption.code === 'zh-CN' ? 'ZH' : 'EN' }}
+        </button>
+      </div>
+    </ClientOnly>
+
     <main class="main-content">
       <div :key="route.path" :data-route="pageViewRouteName" class="page-view">
         <NuxtPage />
@@ -29,11 +47,13 @@ import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
+import { useLocale } from '~/utils/locale'
 import { useRoute } from 'vue-router'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
 const route = useRoute()
+const { common, currentLocale, initLocale, setLocale, supportedLocales } = useLocale()
 const pageViewRouteName = computed(() => {
   if (typeof route.name === 'string' && route.name) {
     return route.name
@@ -194,6 +214,8 @@ const setupHarmonyOSListeners = () => {
 
 // 在组件挂载后初始化认证（只会在客户端执行）
 onMounted(async () => {
+  initLocale()
+
   auth = useAuth()
   isAuthenticated = auth.isAuthenticated.value
 
@@ -229,10 +251,65 @@ const handleLogout = () => {
   background: transparent;
 }
 
+.global-language-switcher {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 5rem);
+  right: calc(env(safe-area-inset-right, 0px) + 1rem);
+  z-index: 35;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(63, 63, 70, 0.9);
+  border-radius: 999px;
+  background: rgba(9, 9, 11, 0.82);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.global-language-option {
+  min-width: 34px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(161, 161, 170, 0.9);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.global-language-option:hover,
+.global-language-option:focus-visible {
+  color: #f4f4f5;
+  outline: none;
+}
+
+.global-language-option.is-active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
   .main-content {
     padding: 0;
+  }
+
+  .global-language-switcher {
+    top: calc(env(safe-area-inset-top, 0px) + 4.75rem);
+    right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+  }
+
+  .global-language-option {
+    min-width: 32px;
+    height: 30px;
   }
 }
 </style>

@@ -303,6 +303,7 @@ const emits = defineEmits(['update:modelValue'])
 const { showToast } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value.oauthConfig)
+const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
   'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
@@ -329,39 +330,39 @@ const envData = ref({
 const oauthProviders = computed(() => [
   {
     id: 'github',
-    title: locale.value.githubTitle,
+    title: locale.value?.githubTitle || '',
     hasEnvConfig: envData.value.hasGithubConfig,
     enabledKey: 'githubOAuthEnabled',
     clientIdKey: 'githubClientId',
     clientSecretKey: 'githubClientSecret',
-    clientIdLabel: locale.value.githubClientId,
-    clientIdPlaceholder: locale.value.githubClientIdPlaceholder,
-    clientSecretLabel: locale.value.githubClientSecret,
-    clientSecretPlaceholder: locale.value.githubClientSecretPlaceholder,
+    clientIdLabel: locale.value?.githubClientId || '',
+    clientIdPlaceholder: locale.value?.githubClientIdPlaceholder || '',
+    clientSecretLabel: locale.value?.githubClientSecret || '',
+    clientSecretPlaceholder: locale.value?.githubClientSecretPlaceholder || '',
   },
   {
     id: 'casdoor',
-    title: locale.value.casdoorTitle,
+    title: locale.value?.casdoorTitle || '',
     hasEnvConfig: envData.value.hasCasdoorConfig,
     enabledKey: 'casdoorOAuthEnabled',
     clientIdKey: 'casdoorClientId',
     clientSecretKey: 'casdoorClientSecret',
-    clientIdLabel: locale.value.casdoorClientId,
-    clientIdPlaceholder: locale.value.clientIdPlaceholder,
-    clientSecretLabel: locale.value.casdoorClientSecret,
-    clientSecretPlaceholder: locale.value.clientSecretPlaceholder,
+    clientIdLabel: locale.value?.casdoorClientId || '',
+    clientIdPlaceholder: locale.value?.clientIdPlaceholder || '',
+    clientSecretLabel: locale.value?.casdoorClientSecret || '',
+    clientSecretPlaceholder: locale.value?.clientSecretPlaceholder || '',
   },
   {
     id: 'google',
-    title: locale.value.googleTitle,
+    title: locale.value?.googleTitle || '',
     hasEnvConfig: envData.value.hasGoogleConfig,
     enabledKey: 'googleOAuthEnabled',
     clientIdKey: 'googleClientId',
     clientSecretKey: 'googleClientSecret',
-    clientIdLabel: locale.value.googleClientId,
-    clientIdPlaceholder: locale.value.googleClientIdPlaceholder,
-    clientSecretLabel: locale.value.googleClientSecret,
-    clientSecretPlaceholder: locale.value.googleClientSecretPlaceholder,
+    clientIdLabel: locale.value?.googleClientId || '',
+    clientIdPlaceholder: locale.value?.googleClientIdPlaceholder || '',
+    clientSecretLabel: locale.value?.googleClientSecret || '',
+    clientSecretPlaceholder: locale.value?.googleClientSecretPlaceholder || '',
   }
 ])
 
@@ -370,7 +371,7 @@ const fetchEnvData = async () => {
     const data = await $fetch('/api/admin/system-settings/env-oauth')
     envData.value = data
   } catch (e) {
-    console.error(locale.value.logs.fetchEnvFailed, e)
+    console.error(getLogMessage('fetchEnvFailed'), e)
   }
 }
 
@@ -385,8 +386,8 @@ const importEnvData = async (provider) => {
       ...data
     }
   } catch (e) {
-    console.error(locale.value.logs.importEnvFailed, e)
-    showToast(locale.value.importFailed, 'error')
+    console.error(getLogMessage('importEnvFailed'), e)
+    showToast(locale.value?.importFailed || '', 'error')
   }
 }
 

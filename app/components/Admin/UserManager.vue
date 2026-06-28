@@ -1448,6 +1448,14 @@ import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value.userManager)
+const getLocaleMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  if (typeof message === 'function') return message(...args)
+  return message || ''
+}
+const getRoleName = (role) => locale.value?.roles?.[role] || role
+const getStatusName = (status) => locale.value?.statuses?.[status] || status
+const getUnknownDetail = () => locale.value?.detail?.unknown || ''
 
 // 响应式数据
 const loading = ref(false)
@@ -1463,13 +1471,13 @@ const totalUsers = ref(0)
 const totalPages = ref(1)
 
 const sortOptions = computed(() => [
-  { label: locale.value.sortOptions.default, value: 'id-asc' },
-  { label: locale.value.sortOptions.nameAsc, value: 'name-asc' },
-  { label: locale.value.sortOptions.nameDesc, value: 'name-desc' },
-  { label: locale.value.sortOptions.lastLoginDesc, value: 'lastLogin-desc' },
-  { label: locale.value.sortOptions.lastLoginAsc, value: 'lastLogin-asc' },
-  { label: locale.value.sortOptions.createdAtDesc, value: 'createdAt-desc' },
-  { label: locale.value.sortOptions.createdAtAsc, value: 'createdAt-asc' }
+  { label: locale.value?.sortOptions?.default || '', value: 'id-asc' },
+  { label: locale.value?.sortOptions?.nameAsc || '', value: 'name-asc' },
+  { label: locale.value?.sortOptions?.nameDesc || '', value: 'name-desc' },
+  { label: locale.value?.sortOptions?.lastLoginDesc || '', value: 'lastLogin-desc' },
+  { label: locale.value?.sortOptions?.lastLoginAsc || '', value: 'lastLogin-asc' },
+  { label: locale.value?.sortOptions?.createdAtDesc || '', value: 'createdAt-desc' },
+  { label: locale.value?.sortOptions?.createdAtAsc || '', value: 'createdAt-asc' }
 ])
 
 const currentSort = computed({
@@ -1482,26 +1490,26 @@ const currentSort = computed({
 })
 
 const allRoles = computed(() => [
-  { name: 'USER', displayName: locale.value.roles.user },
-  { name: 'SONG_ADMIN', displayName: locale.value.roles.songAdmin },
-  { name: 'ADMIN', displayName: locale.value.roles.admin },
-  { name: 'SUPER_ADMIN', displayName: locale.value.roles.superAdmin }
+  { name: 'USER', displayName: getRoleName('user') },
+  { name: 'SONG_ADMIN', displayName: getRoleName('songAdmin') },
+  { name: 'ADMIN', displayName: getRoleName('admin') },
+  { name: 'SUPER_ADMIN', displayName: getRoleName('superAdmin') }
 ])
 
 // 筛选选项
-const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value.allRoles }, ...allRoles.value])
+const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '' }, ...allRoles.value])
 
 const statusFilterOptions = computed(() => [
-  { label: locale.value.allStatus, value: '' },
-  { label: locale.value.statuses.active, value: 'active' },
-  { label: locale.value.statuses.withdrawn, value: 'withdrawn' },
-  { label: locale.value.statuses.graduate, value: 'graduate' }
+  { label: locale.value?.allStatus || '', value: '' },
+  { label: getStatusName('active'), value: 'active' },
+  { label: getStatusName('withdrawn'), value: 'withdrawn' },
+  { label: getStatusName('graduate'), value: 'graduate' }
 ])
 
 const userStatusOptions = computed(() => [
-  { label: locale.value.statuses.activeAccess, value: 'active' },
-  { label: locale.value.statuses.withdrawnAccess, value: 'withdrawn' },
-  { label: locale.value.statuses.graduateAccess, value: 'graduate' }
+  { label: getStatusName('activeAccess'), value: 'active' },
+  { label: getStatusName('withdrawnAccess'), value: 'withdrawn' },
+  { label: getStatusName('graduateAccess'), value: 'graduate' }
 ])
 
 // 模态框状态
@@ -1625,15 +1633,16 @@ watch(currentPage, (newPage) => {
 
 // 方法
 const formatDate = (dateString) => {
-  if (!dateString) return locale.value.time.never
+  const timeLocale = locale.value?.time || {}
+  if (!dateString) return timeLocale.never || ''
   const date = new Date(dateString)
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return locale.value.time.justNow
-  if (diff < 3600000) return locale.value.time.minutesAgo(Math.floor(diff / 60000))
-  if (diff < 86400000) return locale.value.time.hoursAgo(Math.floor(diff / 3600000))
-  if (diff < 86400000 * 7) return locale.value.time.daysAgo(Math.floor(diff / 86400000))
+  if (diff < 60000) return timeLocale.justNow || ''
+  if (diff < 3600000) return timeLocale.minutesAgo?.(Math.floor(diff / 60000)) || ''
+  if (diff < 86400000) return timeLocale.hoursAgo?.(Math.floor(diff / 3600000)) || ''
+  if (diff < 86400000 * 7) return timeLocale.daysAgo?.(Math.floor(diff / 86400000)) || ''
 
   return date.toLocaleDateString('zh-CN')
 }
@@ -1650,10 +1659,10 @@ const getRoleClass = (role) => {
 
 const getRoleDisplayName = (role) => {
   const names = {
-    USER: locale.value.roles.user,
-    ADMIN: locale.value.roles.admin,
-    SONG_ADMIN: locale.value.roles.songAdmin,
-    SUPER_ADMIN: locale.value.roles.superAdmin
+    USER: getRoleName('user'),
+    ADMIN: getRoleName('admin'),
+    SONG_ADMIN: getRoleName('songAdmin'),
+    SUPER_ADMIN: getRoleName('superAdmin')
   }
   return names[role] || role
 }
@@ -1669,18 +1678,18 @@ const getStatusClass = (status) => {
 
 const getStatusDisplayName = (status) => {
   const names = {
-    active: locale.value.statuses.active,
-    withdrawn: locale.value.statuses.withdrawn,
-    graduate: locale.value.statuses.graduate
+    active: getStatusName('active'),
+    withdrawn: getStatusName('withdrawn'),
+    graduate: getStatusName('graduate')
   }
-  return names[status] || locale.value.statuses.active
+  return names[status] || getStatusName('active')
 }
 
 const editUser = (user) => {
   // 禁止编辑自身
   if (isSelf(user)) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.selfEditForbidden, 'warning')
+      window.$showNotification(getLocaleMessage('notifications', 'selfEditForbidden'), 'warning')
     }
     return
   }
@@ -1700,7 +1709,7 @@ const resetPassword = (user) => {
   // 禁止重置自身密码
   if (isSelf(user)) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.selfResetForbidden, 'warning')
+      window.$showNotification(getLocaleMessage('notifications', 'selfResetForbidden'), 'warning')
     }
     return
   }
@@ -1715,7 +1724,7 @@ const confirmDeleteUser = (user) => {
   // 禁止删除自身
   if (isSelf(user)) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.selfDeleteForbidden, 'warning')
+      window.$showNotification(getLocaleMessage('notifications', 'selfDeleteForbidden'), 'warning')
     }
     return
   }
@@ -1780,12 +1789,12 @@ const confirmDelete = async () => {
     closeDeleteModal()
 
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.deleteSuccess, 'success')
+      window.$showNotification(getLocaleMessage('notifications', 'deleteSuccess'), 'success')
     }
   } catch (error) {
       console.error('删除用户失败:', error)
       if (window.$showNotification) {
-        window.$showNotification(locale.value.notifications.deleteFailed(error?.data?.message || error?.message || error?.statusMessage || locale.value.detail.unknown), 'error')
+        window.$showNotification(getLocaleMessage('notifications', 'deleteFailed', error?.data?.message || error?.message || error?.statusMessage || getUnknownDetail()), 'error')
       }
     } finally {
     deleting.value = false
@@ -1819,16 +1828,16 @@ const closeResetPassword = () => {
 const saveUser = async () => {
   // 保护：禁止保存针对自身的更改
   if (editingUser.value && isSelf(editingUser.value)) {
-    formError.value = locale.value.notifications.selfEditForbidden
+    formError.value = getLocaleMessage('notifications', 'selfEditForbidden')
     return
   }
   if (!userForm.value.name || !userForm.value.username) {
-    formError.value = locale.value.errors.requiredInfo
+    formError.value = getLocaleMessage('errors', 'requiredInfo')
     return
   }
 
   if (!editingUser.value && !userForm.value.password) {
-    formError.value = locale.value.errors.passwordRequired
+    formError.value = getLocaleMessage('errors', 'passwordRequired')
     return
   }
 
@@ -1872,19 +1881,20 @@ const saveUser = async () => {
     if (isRoleUpdate && permissions.isSuperAdmin) {
       try {
         const roleNames = {
-          USER: locale.value.roles.user,
-          SONG_ADMIN: locale.value.roles.songAdmin,
-          ADMIN: locale.value.roles.admin,
-          SUPER_ADMIN: locale.value.roles.superAdmin
+          USER: getRoleName('user'),
+          SONG_ADMIN: getRoleName('songAdmin'),
+          ADMIN: getRoleName('admin'),
+          SUPER_ADMIN: getRoleName('superAdmin')
         }
 
-        const notificationMessage = locale.value.permissionNotification.message(roleNames[oldRole], roleNames[newRole])
+        const permissionNotification = locale.value?.permissionNotification || {}
+        const notificationMessage = permissionNotification.message?.(roleNames[oldRole], roleNames[newRole]) || ''
 
         await $fetch('/api/admin/notifications/send', {
           method: 'POST',
           body: {
             userId: editingUser.value.id,
-            title: locale.value.permissionNotification.title,
+            title: permissionNotification.title || '',
             message: notificationMessage,
             type: 'system'
           },
@@ -1900,11 +1910,11 @@ const saveUser = async () => {
     closeModal()
 
     if (window.$showNotification) {
-      window.$showNotification(editingUser.value ? locale.value.notifications.updateSuccess : locale.value.notifications.createSuccess, 'success')
+      window.$showNotification(editingUser.value ? getLocaleMessage('notifications', 'updateSuccess') : getLocaleMessage('notifications', 'createSuccess'), 'success')
     }
   } catch (error) {
       console.error('保存用户失败:', error)
-      formError.value = error?.data?.message || error?.message || error?.statusMessage || locale.value.errors.saveFailed
+      formError.value = error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('errors', 'saveFailed')
     } finally {
     saving.value = false
   }
@@ -1913,16 +1923,16 @@ const saveUser = async () => {
 const confirmResetPassword = async () => {
   // 保护：禁止重置自身密码
   if (resetPasswordUser.value && isSelf(resetPasswordUser.value)) {
-    passwordError.value = locale.value.notifications.selfResetForbidden
+    passwordError.value = getLocaleMessage('notifications', 'selfResetForbidden')
     return
   }
   if (!passwordForm.value.password) {
-    passwordError.value = locale.value.errors.newPasswordRequired
+    passwordError.value = getLocaleMessage('errors', 'newPasswordRequired')
     return
   }
 
   if (passwordForm.value.password !== passwordForm.value.confirmPassword) {
-    passwordError.value = locale.value.errors.passwordMismatch
+    passwordError.value = getLocaleMessage('errors', 'passwordMismatch')
     return
   }
 
@@ -1941,11 +1951,11 @@ const confirmResetPassword = async () => {
     closeResetPassword()
 
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.resetSuccess, 'success')
+      window.$showNotification(getLocaleMessage('notifications', 'resetSuccess'), 'success')
     }
   } catch (error) {
       console.error('重置密码失败:', error)
-      passwordError.value = error?.data?.message || error?.message || error?.statusMessage || locale.value.errors.resetFailed
+      passwordError.value = error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('errors', 'resetFailed')
     } finally {
     resetting.value = false
   }
@@ -1984,7 +1994,7 @@ const loadUsers = async (page = 1, limit = 100) => {
   } catch (error) {
       console.error('加载用户失败:', error)
       if (window.$showNotification) {
-        window.$showNotification(locale.value.notifications.loadFailed(error?.data?.message || error?.message || error?.statusMessage || locale.value.detail.unknown), 'error')
+        window.$showNotification(getLocaleMessage('notifications', 'loadFailed', error?.data?.message || error?.message || error?.statusMessage || getUnknownDetail()), 'error')
       }
     } finally {
     loading.value = false
@@ -2047,7 +2057,7 @@ const loadXLSX = async () => {
       }
 
       if (!loaded) {
-        throw new Error(locale.value.errors.xlsxLoadFailed)
+        throw new Error(getLocaleMessage('errors', 'xlsxLoadFailed'))
       }
     } catch (err) {
       console.error('加载XLSX库失败:', err)
@@ -2070,7 +2080,7 @@ const handleFileUpload = async (event) => {
     await loadXLSX()
 
     if (!window.XLSX) {
-      importError.value = locale.value.errors.xlsxLoadFailed
+      importError.value = getLocaleMessage('errors', 'xlsxLoadFailed')
       return
     }
   }
@@ -2094,12 +2104,12 @@ const handleFileUpload = async (event) => {
           const firstRow = jsonData[0]
           // 检查第一行是否包含常见的标题关键词
           const titleKeywords = [
-            locale.value.importModal.sampleHeaders.name,
-            locale.value.importModal.sampleHeaders.username,
-            locale.value.importModal.sampleHeaders.password,
-            locale.value.importModal.sampleHeaders.role,
-            locale.value.importModal.sampleHeaders.grade,
-            locale.value.importModal.sampleHeaders.class,
+            locale.value?.importModal?.sampleHeaders?.name,
+            locale.value?.importModal?.sampleHeaders?.username,
+            locale.value?.importModal?.sampleHeaders?.password,
+            locale.value?.importModal?.sampleHeaders?.role,
+            locale.value?.importModal?.sampleHeaders?.grade,
+            locale.value?.importModal?.sampleHeaders?.class,
             '姓名',
             '用户名',
             '密码',
@@ -2117,7 +2127,7 @@ const handleFileUpload = async (event) => {
             (cell) =>
               cell &&
               titleKeywords.some((keyword) =>
-                cell.toString().toLowerCase().includes(keyword.toLowerCase())
+                keyword && cell.toString().toLowerCase().includes(keyword.toLowerCase())
               )
           )
 
@@ -2164,25 +2174,25 @@ const handleFileUpload = async (event) => {
         }
 
         if (userData.length === 0) {
-          importError.value = locale.value.errors.noValidData
+          importError.value = getLocaleMessage('errors', 'noValidData')
           return
         }
 
         previewData.value = userData
       } catch (err) {
         console.error('解析Excel出错:', err)
-        importError.value = locale.value.errors.parseExcelFailed(err.message || locale.value.detail.unknown)
+        importError.value = getLocaleMessage('errors', 'parseExcelFailed', err.message || getUnknownDetail())
       }
     }
 
     reader.onerror = () => {
-      importError.value = locale.value.errors.readFileFailed
+      importError.value = getLocaleMessage('errors', 'readFileFailed')
     }
 
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件错误:', err)
-    importError.value = locale.value.errors.processExcelFailed(err.message || locale.value.detail.unknown)
+    importError.value = getLocaleMessage('errors', 'processExcelFailed', err.message || getUnknownDetail())
   }
 }
 
@@ -2192,42 +2202,52 @@ const downloadImportTemplate = async () => {
     await loadXLSX()
     if (!window.XLSX) {
       if (window.$showNotification) {
-        window.$showNotification(locale.value.notifications.excelLoadFailed, 'error')
+        window.$showNotification(getLocaleMessage('notifications', 'excelLoadFailed'), 'error')
       }
       return
     }
   }
 
+  const sampleHeaders = locale.value?.importModal?.sampleHeaders || {}
+  const importModal = locale.value?.importModal || {}
+  const headerName = sampleHeaders.name || 'name'
+  const headerUsername = sampleHeaders.username || 'username'
+  const headerPassword = sampleHeaders.password || 'password'
+  const headerRole = sampleHeaders.role || 'role'
+  const headerGrade = sampleHeaders.grade || 'grade'
+  const headerClass = sampleHeaders.class || 'class'
+
   const templateData = [
     {
-      [locale.value.importModal.sampleHeaders.name]: locale.value.importModal.sampleName,
-      [locale.value.importModal.sampleHeaders.username]: 'zhangsan',
-      [locale.value.importModal.sampleHeaders.password]: '123456',
-      [locale.value.importModal.sampleHeaders.role]: 'USER',
-      [locale.value.importModal.sampleHeaders.grade]: locale.value.importModal.sampleGrade,
-      [locale.value.importModal.sampleHeaders.class]: locale.value.importModal.sampleClass
+      [headerName]: importModal.sampleName || 'Alex',
+      [headerUsername]: 'zhangsan',
+      [headerPassword]: '123456',
+      [headerRole]: 'USER',
+      [headerGrade]: importModal.sampleGrade || '',
+      [headerClass]: importModal.sampleClass || ''
     },
     {
-      [locale.value.importModal.sampleHeaders.name]: 'Lisa',
-      [locale.value.importModal.sampleHeaders.username]: 'lisi',
-      [locale.value.importModal.sampleHeaders.password]: '123456',
-      [locale.value.importModal.sampleHeaders.role]: 'USER',
-      [locale.value.importModal.sampleHeaders.grade]: locale.value.importModal.sampleGrade,
-      [locale.value.importModal.sampleHeaders.class]: 'Class 2'
+      [headerName]: 'Lisa',
+      [headerUsername]: 'lisi',
+      [headerPassword]: '123456',
+      [headerRole]: 'USER',
+      [headerGrade]: importModal.sampleGrade || '',
+      [headerClass]: 'Class 2'
     }
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, locale.value.importModal.title)
-  window.XLSX.writeFile(wb, `${locale.value.importModal.title}.xlsx`)
+  const templateTitle = importModal.title || 'Import Template'
+  window.XLSX.utils.book_append_sheet(wb, ws, templateTitle)
+  window.XLSX.writeFile(wb, `${templateTitle}.xlsx`)
 }
 
 // 格式化导入错误的辅助函数
 const formatImportErrors = (errors) => {
   return errors.map(e => {
     const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
-    return locale.value.importProgress.rowError(e.rowNum || '?', namePart, e.reason)
+    return getLocaleMessage('importProgress', 'rowError', e.rowNum || '?', namePart, e.reason)
   }).join('\n')
 }
 
@@ -2252,7 +2272,7 @@ const importUsers = async () => {
       const batch = dataToImport.slice(i, i + batchSize)
       const currentBatch = Math.floor(i / batchSize) + 1
 
-      importProgressText.value = locale.value.importProgress.processingBatch(currentBatch, totalBatches)
+      importProgressText.value = getLocaleMessage('importProgress', 'processingBatch', currentBatch, totalBatches)
       importProgress.value = Math.round((currentBatch / totalBatches) * 100)
 
       try {
@@ -2277,18 +2297,18 @@ const importUsers = async () => {
       } catch (batchErr) {
         console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
         totalFailed += batch.length
-        allErrors.push({ reason: locale.value.importProgress.batchFailed(currentBatch, batchErr.message) })
+        allErrors.push({ reason: getLocaleMessage('importProgress', 'batchFailed', currentBatch, batchErr.message) })
       }
     }
 
     await loadUsers()
 
     if (totalCreated > 0 || totalFailed === 0) {
-      importProgressText.value = locale.value.importProgress.complete(totalCreated, totalFailed)
+      importProgressText.value = getLocaleMessage('importProgress', 'complete', totalCreated, totalFailed)
       importProgress.value = 100
       
       if (allErrors.length > 0) {
-        importError.value = locale.value.errors.partialImportFailed(formatImportErrors(allErrors))
+        importError.value = getLocaleMessage('errors', 'partialImportFailed', formatImportErrors(allErrors))
       }
       previewData.value = []
 
@@ -2298,11 +2318,11 @@ const importUsers = async () => {
         }
       }, 3000)
     } else {
-      importError.value = locale.value.errors.importFailedWithReasons(formatImportErrors(allErrors))
+      importError.value = getLocaleMessage('errors', 'importFailedWithReasons', formatImportErrors(allErrors))
       importProgressText.value = ''
     }
   } catch (err) {
-    importError.value = locale.value.errors.importRuntimeFailed(totalCreated, err.message || locale.value.detail.unknown)
+    importError.value = getLocaleMessage('errors', 'importRuntimeFailed', totalCreated, err.message || getUnknownDetail())
     importProgressText.value = ''
     console.error('导入用户出错:', err)
   } finally {
@@ -2336,14 +2356,14 @@ const loadStatusLogsPage = async (page) => {
     }
   } catch (error) {
       console.error('加载状态日志失败:', error)
-      statusLogsError.value = error?.data?.message || error?.message || error?.statusMessage || locale.value.errors.statusLogsFailed
+      statusLogsError.value = error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('errors', 'statusLogsFailed')
     } finally {
     statusLogsLoading.value = false
   }
 }
 
 const formatStatusLogDate = (dateString) => {
-  if (!dateString) return locale.value.time.unknown
+  if (!dateString) return locale.value?.time?.unknown || ''
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
 }
