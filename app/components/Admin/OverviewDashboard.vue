@@ -212,7 +212,7 @@ import {
   TrendingUp,
   Users,
   Zap
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import packageJson from '~~/package.json'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'

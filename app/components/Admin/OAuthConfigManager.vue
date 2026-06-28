@@ -287,7 +287,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { AlertCircle, Shield, Download } from 'lucide-vue-next'
+import { AlertCircle, Shield, Download } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 

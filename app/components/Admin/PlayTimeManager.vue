@@ -368,7 +368,7 @@ import {
   AlertCircle,
   X,
   AlignLeft
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const { getAuthConfig, isAdmin } = useAuth()
 const { showToast: showNotification } = useToast()

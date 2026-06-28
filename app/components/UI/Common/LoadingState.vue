@@ -126,7 +126,7 @@
 </template>
 
 <script lang="ts" setup>
-import { Check } from 'lucide-vue-next'
+import { Check } from '@lucide/vue'
 import { computed } from 'vue'
 import { useLocale } from '~/utils/locale'
 

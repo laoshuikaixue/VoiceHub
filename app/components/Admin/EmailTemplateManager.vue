@@ -228,7 +228,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
-import { Mail, Info, Save, RotateCcw, Eye, Code, Search, ChevronRight } from 'lucide-vue-next'
+import { Mail, Info, Save, RotateCcw, Eye, Code, Search, ChevronRight } from '@lucide/vue'
 
 type TemplateItem = {
   key: string

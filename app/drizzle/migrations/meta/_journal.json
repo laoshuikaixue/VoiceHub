@@ -222,6 +222,20 @@
     {
       "idx": 31,
       "version": "7",
+      "when": 1782432001000,
+      "tag": "20260626000100_add_card_code_auto_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1782527721417,
+      "tag": "20260627023521_add_card_code_foreign_key_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
       "when": 1781798400000,
       "tag": "20260619000001_ensure_force_password_change_on_first_login",
       "breakpoints": true

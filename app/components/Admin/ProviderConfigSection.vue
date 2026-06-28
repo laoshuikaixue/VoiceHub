@@ -72,7 +72,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { Download } from 'lucide-vue-next'
+import { Download } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

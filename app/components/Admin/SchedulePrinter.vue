@@ -430,7 +430,7 @@ import {
   ImageIcon,
   AlignLeft,
   RefreshCw
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 

@@ -68,7 +68,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { ShieldAlert, X, LogIn, Home } from 'lucide-vue-next'
+import { ShieldAlert, X, LogIn, Home } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const route = useRoute()

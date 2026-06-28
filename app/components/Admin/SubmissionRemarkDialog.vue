@@ -60,7 +60,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 defineProps({

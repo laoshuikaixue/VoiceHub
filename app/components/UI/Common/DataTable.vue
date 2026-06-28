@@ -233,7 +233,7 @@ import {
   Trash2,
   ChevronRight,
   MoreHorizontal
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

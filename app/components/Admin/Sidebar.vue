@@ -134,7 +134,7 @@ import {
   Database,
   Lock,
   Ticket
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import logo from '~~/public/images/logo.png'
 import { useLocale } from '~/utils/locale'
 

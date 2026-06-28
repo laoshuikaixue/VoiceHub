@@ -137,7 +137,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { Loader2, AlertCircle } from 'lucide-vue-next'
+import { Loader2, AlertCircle } from '@lucide/vue'
 import { useNotifications } from '~/composables/useNotifications'
 import { useLocale } from '~/utils/locale'
 

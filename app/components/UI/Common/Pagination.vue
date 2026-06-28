@@ -94,7 +94,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()

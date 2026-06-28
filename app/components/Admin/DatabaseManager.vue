@@ -434,8 +434,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from 'lucide-vue-next'
+import { computed,ref } from 'vue'
+import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'

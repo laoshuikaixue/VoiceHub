@@ -118,7 +118,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { ShieldCheck, X, Copy, Loader2 } from 'lucide-vue-next'
+import { ShieldCheck, X, Copy, Loader2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 

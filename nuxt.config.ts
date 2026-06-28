@@ -1,6 +1,5 @@
 import wasm from 'vite-plugin-wasm'
 import topLevelAwait from 'vite-plugin-top-level-await'
-import glsl from 'vite-plugin-glsl'
 import { fileURLToPath } from 'url'
 
 // 解析自定义 SEO 和 PWA 配置
@@ -37,9 +36,7 @@ const readNumberEnv = (value: string | undefined, fallback: number): number => {
   return parsed
 }
 
-const ssrInlineLyricPackages = [
-  '@applemusic-like-lyrics/lyric'
-]
+const ssrInlineLyricPackages = ['@applemusic-like-lyrics/lyric']
 
 const backendSentryDsnDefault =
   'https://2fca0c8a939c8909e02c082ec847e8e8@o4508946125619200.ingest.de.sentry.io/4511244961448016'
@@ -357,21 +354,7 @@ export default defineNuxtConfig({
 
   // Vite 配置
   vite: {
-    resolve: {
-      alias: [
-        {
-          find: '@applemusic-like-lyrics/core/style.css',
-          replacement: fileURLToPath(
-            new URL('./vendor/amll-core/src/styles/index.css', import.meta.url)
-          )
-        },
-        {
-          find: '@applemusic-like-lyrics/core',
-          replacement: fileURLToPath(new URL('./vendor/amll-core/src/index.ts', import.meta.url))
-        }
-      ]
-    },
-    plugins: [wasm(), topLevelAwait(), glsl()],
+    plugins: [wasm(), topLevelAwait()],
     optimizeDeps: {
       include: ['drizzle-orm'],
       exclude: [
@@ -388,7 +371,7 @@ export default defineNuxtConfig({
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return
-            if (id.includes('lucide-vue-next')) return 'icons'
+            if (id.includes('@lucide/vue')) return 'icons'
             if (id.includes('@pixi')) return 'pixi'
             if (id.includes('@applemusic-like-lyrics')) return 'lyric-engine'
             if (id.includes('drizzle-orm') || id.includes('postgres')) return 'database'

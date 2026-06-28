@@ -15,7 +15,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-postgres
 
 jobs:
   build-and-push:
@@ -31,6 +30,17 @@ jobs:
         with:
           fetch-depth: '0'
 
+      # 转换仓库名、用户名全小写，解决GHCR大写报错
+      - name: Generate lowercase image & actor name
+        id: lowercase
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          ACTOR_LOWER=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_FULL="${REPO_LOWER}-postgres"
+          echo "repo_lower=$REPO_LOWER" >> $GITHUB_OUTPUT
+          echo "actor_lower=$ACTOR_LOWER" >> $GITHUB_OUTPUT
+          echo "image_name=$IMAGE_FULL" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
@@ -41,14 +51,14 @@ jobs:
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ steps.lowercase.outputs.actor_lower }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.lowercase.outputs.image_name }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=15-alpine,enable={{is_default_branch}}

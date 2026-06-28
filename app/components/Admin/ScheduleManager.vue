@@ -994,7 +994,7 @@ import {
   ExternalLink,
   MessageSquare,
   Trash2
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'

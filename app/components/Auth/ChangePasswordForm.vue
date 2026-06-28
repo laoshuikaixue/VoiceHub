@@ -192,7 +192,7 @@ import {
   XCircle,
   AlertCircle,
   Loader2
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 // 组件属性

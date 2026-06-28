@@ -519,7 +519,7 @@ import {
   X,
   BarChart3,
   Filter
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 const { getAuthConfig, isAdmin } = useAuth()
 const { admin } = useLocale()

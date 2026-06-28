@@ -1,0 +1,2 @@
+CREATE INDEX "card_code_redeem_log_card_code_id_idx" ON "CardCodeRedeemLog" USING btree ("cardCodeId");--> statement-breakpoint
+CREATE INDEX "song_card_code_id_idx" ON "Song" USING btree ("cardCodeId");

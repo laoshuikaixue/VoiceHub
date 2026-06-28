@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { Shield } from 'lucide-vue-next'
+import { Shield } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
