@@ -747,7 +747,7 @@ const updateCurrentBatch = ref(0)
 const auth = useAuth()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.userManager.batchUpdateModal)
+const locale = computed(() => admin.value?.userManager?.batchUpdateModal || {})
 const excelColumnKeys = computed(() => ({
   username: locale.value?.template?.headers?.username,
   name: locale.value?.template?.headers?.name,
@@ -785,14 +785,14 @@ watch(() => gradeFilter.value, () => {
 
 const gradeOptions = computed(() => {
   return [
-    { label: locale.value.studentFilter.allGrades, value: '' },
+    { label: locale.value?.studentFilter?.allGrades || '全部年级', value: '' },
     ...availableGrades.value.map((g) => ({ label: g, value: g }))
   ]
 })
 
 const classOptions = computed(() => {
   return [
-    { label: locale.value.studentFilter.allClasses, value: '' },
+    { label: locale.value?.studentFilter?.allClasses || '全部班级', value: '' },
     ...availableClasses.value.map((c) => ({ label: c, value: c }))
   ]
 })

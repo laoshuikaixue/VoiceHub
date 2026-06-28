@@ -101,8 +101,8 @@ const containerRef = ref(null)
 const dropdownRef = ref(null)
 const dropdownStyle = ref({})
 const { common } = useLocale()
-const locale = computed(() => common.value)
-const resolvedPlaceholder = computed(() => props.placeholder || locale.value.selectPlaceholder)
+const locale = computed(() => common.value || {})
+const resolvedPlaceholder = computed(() => props.placeholder || locale.value.selectPlaceholder || '')
 
 // 统一获取当前值
 const currentValue = computed(() => {

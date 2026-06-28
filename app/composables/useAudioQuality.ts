@@ -35,7 +35,7 @@ let isLoginStatusInitialized = false
 
 export function useAudioQuality() {
   const { ui } = useLocale()
-  const locale = computed(() => ui.value.audioQuality)
+  const locale = computed(() => ui.value?.audioQuality || {})
 
   // 检查网易云登录状态
   const checkNeteaseLoginStatus = () => {

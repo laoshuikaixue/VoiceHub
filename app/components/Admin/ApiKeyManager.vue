@@ -30,11 +30,13 @@
       </div>
       <div class="flex items-center gap-2 w-full lg:w-auto">
         <CustomSelect
-          v-model="statusFilterText"
+          v-model="filters.status"
           :label="locale.status"
           :options="statusFilterOptions"
+          label-key="label"
+          value-key="value"
           class-name="flex-1 lg:w-40"
-          @change="handleStatusFilterChange"
+          @change="loadApiKeys"
         />
         <div class="relative flex-1 lg:w-48">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" :size="14" />
@@ -632,7 +634,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value.apiKeys)
+const locale = computed(() => admin.value?.apiKeys || {})
 const getLocaleText = (key) => locale.value?.[key] || ''
 const getExpiresOptionText = (key) => locale.value?.expiresOptions?.[key] || ''
 const getPermissionOptionText = (key, field) => locale.value?.permissionOptions?.[key]?.[field] || ''
@@ -655,13 +657,12 @@ const loadingEditId = ref(null)
 const loadingViewId = ref(null)
 
 // 文本映射
-const statusFilterText = ref('')
 const expiresAtText = ref('')
 const statusFilterOptions = computed(() => [
-  getLocaleText('allStatus'),
-  getLocaleText('active'),
-  getLocaleText('inactive'),
-  getLocaleText('expired')
+  { label: getLocaleText('allStatus'), value: '' },
+  { label: getLocaleText('active'), value: 'active' },
+  { label: getLocaleText('inactive'), value: 'inactive' },
+  { label: getLocaleText('expired'), value: 'expired' }
 ])
 
 const logsPagination = ref({
@@ -706,15 +707,6 @@ const form = reactive({
   isActive: true
 })
 
-const getStatusFilterText = () => {
-  const statusTextMap = {
-    active: getLocaleText('active'),
-    inactive: getLocaleText('inactive'),
-    expired: getLocaleText('expired')
-  }
-  return statusTextMap[filters.status] || getLocaleText('allStatus')
-}
-
 const getExpiresAtText = () => {
   if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
     const date = new Date(selectedApiKey.value.expiresAt)
@@ -734,7 +726,6 @@ const getExpiresAtText = () => {
 watch(
   locale,
   () => {
-    statusFilterText.value = getStatusFilterText()
     expiresAtText.value = getExpiresAtText()
   },
   { immediate: true }
@@ -783,16 +774,6 @@ const availablePermissions = computed(() => [
 const toast = useToast()
 
 // 方法
-const handleStatusFilterChange = (val) => {
-  const statusMap = {
-    [getLocaleText('active')]: 'active',
-    [getLocaleText('inactive')]: 'inactive',
-    [getLocaleText('expired')]: 'expired'
-  }
-  filters.status = statusMap[val] || ''
-  loadApiKeys()
-}
-
 const handleExpiresAtChange = (val) => {
   const map = {
     [getExpiresOptionText('never')]: '',

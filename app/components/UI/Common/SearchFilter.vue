@@ -148,8 +148,8 @@ const emit = defineEmits(['update:searchQuery', 'update:filterValues', 'filter-c
 const openDropdown = ref(null)
 const dropdownRef = ref(null)
 const { common } = useLocale()
-const locale = computed(() => common.value)
-const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder)
+const locale = computed(() => common.value || {})
+const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder || '')
 
 const hasActiveFilters = computed(() => {
   return (

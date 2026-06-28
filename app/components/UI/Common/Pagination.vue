@@ -98,7 +98,7 @@ import {
 import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
-const locale = computed(() => ui.value.pagination)
+const locale = computed(() => ui.value?.pagination || {})
 
 const props = defineProps({
   currentPage: {

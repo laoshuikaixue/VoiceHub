@@ -527,7 +527,7 @@ const inputClass =
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
 const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
 
-const defaultSubmissionGuidelines = computed(() => locale.value.defaultSubmissionGuidelines)
+const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '')
 
 const formData = ref({
   siteTitle: '',

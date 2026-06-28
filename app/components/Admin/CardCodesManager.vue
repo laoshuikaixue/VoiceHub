@@ -424,7 +424,7 @@ import { useLocale } from '~/utils/locale'
 
 const { showToast } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.cardCodesManager)
+const locale = computed(() => admin.value?.cardCodesManager || {})
 
 const codes = ref([])
 const redeemLogs = ref([])
@@ -446,18 +446,18 @@ const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDE
 const lastGeneratedCodes = ref([])
 
 const statusFilterOptions = computed(() => [
-  { label: locale.value.allStatus, value: '' },
-  { label: locale.value.available, value: 'AVAILABLE' },
-  { label: locale.value.lockedStatus, value: 'LOCKED' },
-  { label: locale.value.redeemedStatus, value: 'REDEEMED' },
-  { label: locale.value.invalidStatus, value: 'INVALID' }
+  { label: locale.value?.allStatus || '全部状态', value: '' },
+  { label: locale.value?.available || '可用', value: 'AVAILABLE' },
+  { label: locale.value?.lockedStatus || '已锁定', value: 'LOCKED' },
+  { label: locale.value?.redeemedStatus || '已核销', value: 'REDEEMED' },
+  { label: locale.value?.invalidStatus || '已失效', value: 'INVALID' }
 ])
 
 const bulkStatusOptions = computed(() => [
-  { label: locale.value.setAvailable, value: 'AVAILABLE' },
-  { label: locale.value.setLocked, value: 'LOCKED' },
-  { label: locale.value.setRedeemed, value: 'REDEEMED' },
-  { label: locale.value.setInvalid, value: 'INVALID' }
+  { label: locale.value?.setAvailable || '设为可用', value: 'AVAILABLE' },
+  { label: locale.value?.setLocked || '设为锁定', value: 'LOCKED' },
+  { label: locale.value?.setRedeemed || '设为核销', value: 'REDEEMED' },
+  { label: locale.value?.setInvalid || '设为失效', value: 'INVALID' }
 ])
 
 const statusMeta = (status) => {

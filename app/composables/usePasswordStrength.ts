@@ -3,7 +3,7 @@ import { useLocale } from '~/utils/locale'
 
 export function usePasswordStrength(passwordRef: Ref<string>) {
   const { common } = useLocale()
-  const strengthLevels = computed(() => common.value?.passwordStrengthLevels)
+  const strengthLevels = computed(() => common.value?.passwordStrengthLevels || {})
 
   return computed(() => {
     if (!passwordRef.value) {

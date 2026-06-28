@@ -126,7 +126,7 @@ const emit = defineEmits<{
 
 const { showToast } = useToast()
 const { auth } = useLocale()
-const locale = computed(() => auth.value.twoFactorVerify)
+const locale = computed(() => auth.value?.twoFactorVerify || {})
 // 默认优先使用 TOTP，如果没有则使用 Email
 const defaultMethod = computed(() => props.availableMethods?.includes('totp') ? 'totp' : 'email')
 const method = ref(defaultMethod.value)
@@ -163,7 +163,7 @@ const toggleMethod = () => {
 const sendEmailCode = async () => {
   try {
     if (!emailInput.value) {
-      error.value = locale.value.emailRequired
+      error.value = locale.value.emailRequired || '请输入邮箱'
       return
     }
 
@@ -179,7 +179,7 @@ const sendEmailCode = async () => {
       }
     })
 
-    showToast(locale.value.codeSent, 'success')
+    showToast(locale.value.codeSent || '验证码已发送', 'success')
     emailSent.value = true
     cooldown.value = 60
     timer = setInterval(() => {
@@ -193,7 +193,7 @@ const sendEmailCode = async () => {
     // 发送成功后自动聚焦验证码输入框
     nextTick(() => inputRef.value?.focus())
   } catch (err: any) {
-    error.value = err.data?.message || err.message || locale.value.sendFailed
+    error.value = err.data?.message || err.message || locale.value.sendFailed || '发送失败'
   } finally {
     sending.value = false
   }
@@ -211,7 +211,7 @@ const handleVerify = async () => {
     
     emit('success', response)
   } catch (err: any) {
-    error.value = err.data?.message || err.message || locale.value.verifyFailed
+    error.value = err.data?.message || err.message || locale.value.verifyFailed || '验证失败'
     code.value = '' // 出错清空
   } finally {
     loading.value = false

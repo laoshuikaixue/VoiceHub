@@ -129,10 +129,10 @@ const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 
 const inputValue = ref('')
 const { common } = useLocale()
-const locale = computed(() => common.value)
-const resolvedTitle = computed(() => props.title || locale.value.confirmOperation)
-const resolvedConfirmText = computed(() => props.confirmText || locale.value.confirm)
-const resolvedCancelText = computed(() => props.cancelText || locale.value.cancel)
+const locale = computed(() => common.value || {})
+const resolvedTitle = computed(() => props.title || locale.value.confirmOperation || '')
+const resolvedConfirmText = computed(() => props.confirmText || locale.value.confirm || '')
+const resolvedCancelText = computed(() => props.cancelText || locale.value.cancel || '')
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
