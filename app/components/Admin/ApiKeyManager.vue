@@ -754,11 +754,6 @@ const availablePermissions = computed(() => [
     description: locale.value.permissionOptions.songsRequest.description
   },
   {
-    value: 'songs:request',
-    label: '歌曲投稿',
-    description: '代表令牌所属用户提交点歌'
-  },
-  {
     value: 'songs:write',
     label: locale.value.permissionOptions.songsWrite.label,
     description: locale.value.permissionOptions.songsWrite.description

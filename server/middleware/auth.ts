@@ -35,7 +35,9 @@ const isPageRenderRequest = (pathname: string): boolean => {
   if (pathname.startsWith('/api/')) return false
   if (NON_PAGE_PREFIXES.some((p) => pathname.startsWith(p))) return false
   // 仅匹配已知静态资源后缀，避免含点号的路由（如 /user/name.surname）被误判
-  if (/\.(?:js|mjs|cjs|css|map|json|ico|png|jpe?g|gif|svg|webp|avif|woff2?|ttf|otf|eot|wasm|mp3|mp4|webm)$/i.test(pathname)) return false
+  if (/\.(?:js|mjs|cjs|css|map|json|ico|png|jpe?g|gif|svg|webp|avif|woff2?|ttf|otf|eot|wasm|mp3|mp4|webm)$/i.test(pathname)) {
+    return false
+  }
   return true
 }
 
@@ -56,57 +58,55 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // 公共API路径（仅 API 请求需要做白名单跳过；页面请求始终走"软认证"流程）
-  if (isApiRequest) {
-    const publicApiPaths = [
-      '/api/auth/login',
-      '/api/auth/captcha', // 验证码图片
-      '/api/auth/bind', // 账号绑定
-      '/api/auth/oauth-register',
-      '/api/auth/2fa/verify',
-      '/api/auth/2fa/send-email',
-      '/api/auth/forgot-password', // 找回密码
-      '/api/auth/reset-password', // 重置密码
-      '/api/semesters/current',
-      '/api/play-times',
-      '/api/schedules/public',
-      '/api/songs/count',
-      '/api/songs/public',
-      '/api/site-config',
-      '/api/proxy/', // 代理API路径，用于图片代理等功能
-      '/api/bilibili/', // 哔哩哔哩相关API
-      '/api/api-enhanced/', // 网易云音乐API代理路径
-      '/api/native-api/', // Native Music 集成API
-      '/api/system/location', // 系统位置检测API
-      '/api/open/', // 开放API路径，由 api-auth 中间件处理认证
-      '/api/auth/webauthn/login', // WebAuthn 登录接口
-      '/api/music/resolve-url', // 音乐播放链接解析
-      '/api/music/state', // 音乐状态同步
-      '/api/music/websocket', // WebSocket 连接
-      '/api/sys/time' // 服务器时间同步
-    ]
+  // 公共API路径
+  const publicApiPaths = [
+    '/api/auth/login',
+    '/api/auth/bind', // 账号绑定
+    '/api/auth/oauth-register',
+    '/api/auth/2fa/verify',
+    '/api/auth/2fa/send-email',
+    '/api/auth/forgot-password', // 找回密码
+    '/api/auth/reset-password', // 重置密码
+    '/api/auth/captcha', // 图形验证码
+    '/api/semesters/current',
+    '/api/play-times',
+    '/api/schedules/public',
+    '/api/songs/count',
+    '/api/songs/public',
+    '/api/site-config',
+    '/api/proxy/', // 代理API路径，用于图片代理等功能
+    '/api/bilibili/', // 哔哩哔哩相关API
+    '/api/api-enhanced/', // 网易云音乐API代理路径
+    '/api/native-api/', // Native Music 集成API
+    '/api/system/location', // 系统位置检测API
+    '/api/open/', // 开放API路径，由api-auth中间件处理认证
+    '/api/auth/webauthn/login', // WebAuthn 登录接口
+    '/api/music/resolve-url', // 音乐播放链接解析
+    '/api/music/state', // 音乐状态同步
+    '/api/music/websocket', // WebSocket 连接
+    '/api/sys/time' // 服务器时间同步
+  ]
 
-      // 公共路径跳过认证检查
-      if (publicApiPaths.some((path) => pathname.startsWith(path))) {
-        return
-      }
+  // 公共路径跳过认证检查。页面请求始终走软认证流程，让 SSR 能拿到登录态。
+  if (isApiRequest && publicApiPaths.some((path) => pathname.startsWith(path))) {
+    return
+  }
 
-      // 动态判断 OAuth 路径
-      // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
-      // 但排除已知的受保护/特定 Auth 端点
-      if (pathname.startsWith('/api/auth/')) {
-        const segments = pathname.split('/')
-        const provider = segments[3]
-        const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
-        const isProviderCallbackPath =
-          segments.length === 5 &&
-          segments[4] === 'callback' &&
-          isSupportedOAuthProvider(provider || '')
+  // 动态判断 OAuth 路径
+  // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
+  // 但排除已知的受保护/特定 Auth 端点
+  if (isApiRequest && pathname.startsWith('/api/auth/')) {
+    const segments = pathname.split('/')
+    const provider = segments[3]
+    const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
+    const isProviderCallbackPath =
+      segments.length === 5 &&
+      segments[4] === 'callback' &&
+      isSupportedOAuthProvider(provider || '')
 
-        if (isProviderIndexPath || isProviderCallbackPath) {
-          return
-        }
-      }
+    if (isProviderIndexPath || isProviderCallbackPath) {
+      return
+    }
   }
 
   // 从请求头或cookie获取token
@@ -120,19 +120,17 @@ export default defineEventHandler(async (event) => {
     token = getCookie(event, 'auth-token') || null
   }
 
-  // 受保护路由缺少token时返回401错误（仅针对 API 请求）
-  // 页面 SSR 请求：无 token 视为未登录访客，静默放行交由前端中间件处理
+  // 受保护路由缺少 token 时返回 401；页面 SSR 请求按未登录访客静默放行。
   if (!token) {
-    if (isApiRequest) {
-      return sendError(
-        event,
-        createError({
-          statusCode: 401,
-          message: '未授权访问：缺少有效的认证信息'
-        })
-      )
-    }
-    return
+    if (isPageRequest) return
+
+    return sendError(
+      event,
+      createError({
+        statusCode: 401,
+        message: '未授权访问：缺少有效的认证信息'
+      })
+    )
   }
 
   try {
@@ -192,12 +190,12 @@ export default defineEventHandler(async (event) => {
       // 页面 SSR 请求：清除失效 cookie 后按未登录访客处理，避免页面渲染因 401 中断
       if (isPageRequest) return
 
-      const errorMessage = !user 
-        ? '用户不存在，请重新登录' 
-        : user.status === 'withdrawn' 
-          ? '该账号已退学，限制访问' 
-          : user.status === 'graduate' 
-            ? '该账号已毕业，限制访问' 
+      const errorMessage = !user
+        ? '用户不存在，请重新登录'
+        : user.status === 'withdrawn'
+          ? '该账号已退学，限制访问'
+          : user.status === 'graduate'
+            ? '该账号已毕业，限制访问'
             : '该账号已被禁用'
 
       return sendError(
@@ -237,16 +235,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // 计算强制改密状态并附加到上下文
-    // 这样 verify.get.ts、前端 SSR 中间件等下游消费者无需重复计算
-    // resolveRequirePasswordChange 内部已包含短路优化（管理员显式标志 / 已设置密码时直接返回）
+    // 这样 verify.get.ts、前端 SSR 中间件等下游消费者无需重复计算。
     const requirePasswordChange = await resolveRequirePasswordChange(user)
     const hasSetPassword = !!user.passwordChangedAt
 
-    // 页面 SSR 请求：在附加上下文之前补全两层安全校验，确保受限用户无法通过 SSR 渲染敏感内容。
-    if (isPageRequest) {
-      // 1. 风控锁定校验：被锁定的用户 token 虽有效但不应渲染任何页面，清除 cookie 后
-      //    前端中间件将视为未认证并重定向到 /login，与 API 层的 401 策略一致。
-      if (isUserBlocked(user.id)) {
+    if (isUserBlocked(user.id)) {
+      delete event.context.user
+      if (isPageRequest) {
         const isSecure = isSecureRequest(event)
         setCookie(event, 'auth-token', '', {
           httpOnly: true,
@@ -258,32 +253,6 @@ export default defineEventHandler(async (event) => {
         return
       }
 
-      // 2. 管理员路由校验：非管理员访问 /admin* 时，前端中间件 auth.global.ts 
-      //    会处理重定向到 /dashboard。此处无需提前 return，否则会导致 SSR 丢失登录态并跳转至登录页。
-      if (pathname.startsWith('/admin') && !isAdminRole(user.role)) {
-        // 仅记录日志或执行其他非中断逻辑（可选）
-      }
-
-      // 通过上述校验后，附加上下文以供前端 SSR 中间件直接读取。
-      event.context.user = {
-        ...user,
-        requirePasswordChange,
-        hasSetPassword
-      }
-      return
-    }
-
-    // API 请求：将完整上下文附加到 event.context.user 以便 verify.get.ts
-    // 等下游 handler 复用已解析的用户状态。
-    event.context.user = {
-      ...user,
-      requirePasswordChange,
-      hasSetPassword
-    }
-
-    // 风控锁定校验优先于强制改密拦截，确保被锁定用户无法访问任何功能（与页面渲染策略一致）
-    if (isUserBlocked(user.id)) {
-      delete event.context.user
       const remaining = getUserBlockRemainingTime(user.id)
       return sendError(
         event,
@@ -294,8 +263,19 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+    event.context.user = {
+      ...user,
+      requirePasswordChange,
+      hasSetPassword
+    }
+
+    // 页面 SSR 请求只负责软认证和上下文注入。管理员页面重定向由前端全局中间件处理。
+    if (isPageRequest) {
+      return
+    }
+
     // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
-    // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口
+    // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口。
     const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
 
     if (!isAllowedDuringPasswordChange && requirePasswordChange) {
@@ -310,7 +290,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查管理员专用路由
-    if (pathname.startsWith('/api/admin') && !isAdminRole(user.role)) {
+    if (
+      pathname.startsWith('/api/admin') &&
+      !isAdminRole(user.role)
+    ) {
       return sendError(
         event,
         createError({
