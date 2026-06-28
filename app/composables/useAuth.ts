@@ -40,7 +40,9 @@ export const useAuth = () => {
     setAuthState({ ...loggedInUser, _isFullProfile: true })
   }
 
-  const initAuth = async () => {
+  const initAuth = async (options: { force?: boolean } = {}) => {
+    const force = options.force === true
+
     // 客户端执行
     if (typeof window === 'undefined' || import.meta.server) {
       return null
@@ -48,12 +50,12 @@ export const useAuth = () => {
 
     // 若 SSR 中间件仅写入了"部分用户视图"（缺 has2FA / avatar 等需要 identities 关联查询的字段），
     // 客户端 hydration 后需主动请求 verify 接口补全完整字段；否则直接复用已有状态避免重复请求。
-    if (isAuthenticated.value && user.value && user.value._isFullProfile) {
+    if (!force && isAuthenticated.value && user.value && user.value._isFullProfile) {
       return user.value
     }
 
     // 已探测过且确认未登录，则不再重复请求 verify（未登录访客在公共页面间切换时尤为关键）
-    if (authChecked.value && !isAuthenticated.value) {
+    if (!force && authChecked.value && !isAuthenticated.value) {
       return null
     }
 

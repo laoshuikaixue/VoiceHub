@@ -41,6 +41,19 @@ const isPageRenderRequest = (pathname: string): boolean => {
   return true
 }
 
+const OPTIONAL_AUTH_API_ROUTES = [
+  { method: 'GET', path: '/api/request-times' },
+  { method: 'GET', path: '/api/songs' },
+  { method: 'POST', path: '/api/blacklist/check' },
+  { method: 'GET', path: '/api/system/instance' },
+  { method: 'POST', path: '/api/system/reconnect' },
+  { method: 'GET', path: '/api/system/status' }
+]
+
+const isOptionalAuthApiRequest = (method: string | undefined, pathname: string): boolean => {
+  return OPTIONAL_AUTH_API_ROUTES.some((route) => route.method === method && route.path === pathname)
+}
+
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
   if (event.context.user) {
@@ -52,6 +65,8 @@ export default defineEventHandler(async (event) => {
 
   const isApiRequest = pathname.startsWith('/api/')
   const isPageRequest = !isApiRequest && isPageRenderRequest(pathname)
+  const requestMethod = event.node.req.method || 'GET'
+  const isOptionalAuthApi = isApiRequest && isOptionalAuthApiRequest(requestMethod, pathname)
 
   // 既非 API 也非 SSR 页面请求（静态资源、HMR 等）→ 直接放行
   if (!isApiRequest && !isPageRequest) {
@@ -120,9 +135,10 @@ export default defineEventHandler(async (event) => {
     token = getCookie(event, 'auth-token') || null
   }
 
+  // 可选认证接口缺少 token 时按访客放行，由 handler 根据 event.context.user 自行降级。
   // 受保护路由缺少 token 时返回 401；页面 SSR 请求按未登录访客静默放行。
   if (!token) {
-    if (isPageRequest) return
+    if (isPageRequest || isOptionalAuthApi) return
 
     return sendError(
       event,

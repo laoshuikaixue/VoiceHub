@@ -1,6 +1,9 @@
+import { getSafeRequestProtocol } from '~~/server/utils/request-utils'
+
 export default defineEventHandler((event) => {
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
+  const requestProtocol = `${getSafeRequestProtocol(event)}:`
   
   // 只处理特定的内部API路由，防止站外调用
   const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
@@ -56,8 +59,8 @@ export default defineEventHandler((event) => {
         }
       }
 
-      const sourceOrigin = normalizeOrigin(sourceUrl, requestUrl.protocol)
-      const trustedOrigin = normalizeOrigin(configuredHost, requestUrl.protocol)
+      const sourceOrigin = normalizeOrigin(sourceUrl, requestProtocol)
+      const trustedOrigin = normalizeOrigin(configuredHost, requestProtocol)
       const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
       const isSameLoopbackOrigin =
         isLocalhost(sourceOrigin.hostname) &&
@@ -66,10 +69,13 @@ export default defineEventHandler((event) => {
         sourceOrigin.port === trustedOrigin.port
 
       // 额外检查：来源是否与当前请求的 Host 头一致（覆盖域名 / IP 直连场景）
-      // Host 头不会被前端 JS 伪造，因此 sourceOrigin.origin === hostOrigin 是有效的第二信任锚点
+      // 代理环境可能丢失外部协议，但 Host 头仍能作为当前部署域名的信任锚点。
       const requestHost = getHeader(event, 'host')
-      const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
-      const matchesRequestHost = hostOrigin && sourceOrigin.origin === hostOrigin
+      const hostOrigin = getOriginFromHost(requestHost, requestProtocol)
+      const matchesRequestHost = hostOrigin && (
+        sourceOrigin.origin === hostOrigin.origin ||
+        isSameRequestHost(sourceOrigin, hostOrigin)
+      )
 
       if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin && !matchesRequestHost) {
         console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${sourceOrigin.origin}, 期望 ${trustedOrigin.origin}, 路径 ${pathname}`)
@@ -110,13 +116,36 @@ export default defineEventHandler((event) => {
  * 从 Host 头提取 origin
  * 仅使用标准 Host 头（不可被前端 JS 伪造），不信任 X-Forwarded-Host
  */
-function getOriginFromHost(hostHeader: string | undefined, defaultProtocol: string): string | null {
+function getOriginFromHost(
+  hostHeader: string | undefined,
+  defaultProtocol: string
+): { origin: string, hostname: string, port: string, protocol: string, hasExplicitPort: boolean } | null {
   if (!hostHeader) return null
   const firstHost = hostHeader.split(',')[0].trim()
   try {
     const normalized = firstHost.includes('://') ? firstHost : `${defaultProtocol}//${firstHost}`
-    return new URL(normalized).origin
+    const url = new URL(normalized)
+    return {
+      origin: url.origin,
+      protocol: url.protocol,
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'https:' ? '443' : '80'),
+      hasExplicitPort: Boolean(url.port)
+    }
   } catch {
     return null
   }
+}
+
+function isSameRequestHost(
+  sourceOrigin: { hostname: string, port: string },
+  hostOrigin: { hostname: string, port: string, hasExplicitPort: boolean }
+): boolean {
+  if (sourceOrigin.hostname !== hostOrigin.hostname) return false
+
+  if (!hostOrigin.hasExplicitPort) {
+    return sourceOrigin.port === '80' || sourceOrigin.port === '443'
+  }
+
+  return sourceOrigin.port === hostOrigin.port
 }

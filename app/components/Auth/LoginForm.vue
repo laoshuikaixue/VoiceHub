@@ -556,8 +556,8 @@ const handleLogin = async () => {
       return
     }
 
-    // 登录成功，刷新认证状态并跳转
-    await auth.initAuth()
+    // 登录成功后必须绕过未登录探测缓存，否则刚写入的 Cookie 无法立即驱动跳转。
+    await auth.initAuth({ force: true })
     await redirectAfterLogin()
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
@@ -617,8 +617,8 @@ const handleRegisterOAuth = async () => {
     })
 
     if (response.success) {
-      // 账户创建成功，刷新认证状态
-      await auth.initAuth()
+      // 账户创建成功后必须重新读取刚写入的 Cookie 登录态。
+      await auth.initAuth({ force: true })
       await navigateTo('/')
     }
   } catch (err: any) {
@@ -650,7 +650,7 @@ const handleWebAuthnLogin = async () => {
 
     if (verification.success) {
       // 登录成功
-      await auth.initAuth()
+      await auth.initAuth({ force: true })
       await navigateTo(verification.redirect || '/')
     }
   } catch (e) {
