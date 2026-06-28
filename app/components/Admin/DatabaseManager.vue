@@ -560,7 +560,7 @@ const parseBackupSuperAdmin = async (file) => {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
     showNotification(locale.value.messages.parseBackupFailed, 'error')
-    console.error('解析备份文件失败:', error)
+    console.error(locale.value.logs.parseBackupFailed, error)
   }
 }
 
@@ -647,7 +647,7 @@ const createBackup = async () => {
       throw new Error(response.message || locale.value.errors.createBackupFailed)
     }
   } catch (error) {
-    console.error('创建备份失败:', error)
+    console.error(locale.value.logs.createBackupFailed, error)
     showNotification(locale.value.errors.createBackupFailedWithMessage(error.message), 'error')
   } finally {
     createLoading.value = false
@@ -811,7 +811,7 @@ const restoreBackup = async () => {
     showNotification(locale.value.messages.restoreSuccess, 'success')
     activeModal.value = 'none'
   } catch (error) {
-    console.error('恢复备份失败:', error)
+    console.error(locale.value.logs.restoreBackupFailed, error)
     showNotification(locale.value.errors.restoreBackupFailedWithMessage(error.message), 'error')
   } finally {
     uploadLoading.value = false
@@ -834,7 +834,7 @@ const resetSequence = async () => {
       throw new Error(response.error || response.message || locale.value.errors.resetFailed)
     }
   } catch (error) {
-    console.error('重置序列失败:', error)
+    console.error(locale.value.logs.resetSequenceFailed, error)
     showNotification(locale.value.errors.resetSequenceFailedWithMessage(error.message), 'error')
   } finally {
     sequenceLoading.value = false
@@ -854,7 +854,7 @@ const resetDatabase = async () => {
       throw new Error(response.message || locale.value.errors.resetFailed)
     }
   } catch (error) {
-    console.error('重置数据库失败:', error)
+    console.error(locale.value.logs.resetDatabaseFailed, error)
     showNotification(locale.value.errors.resetDatabaseFailedWithMessage(error.message), 'error')
   } finally {
     resetLoading.value = false

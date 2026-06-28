@@ -757,9 +757,9 @@ const excelColumnKeys = computed(() => ({
 }))
 
 const statusOptions = computed(() => [
-  { label: locale.value.statusOptions.active, value: 'active' },
-  { label: locale.value.statusOptions.graduate, value: 'graduate' },
-  { label: locale.value.statusOptions.withdrawn, value: 'withdrawn' }
+  { label: locale.value?.statusOptions?.active || '', value: 'active' },
+  { label: locale.value?.statusOptions?.graduate || '', value: 'graduate' },
+  { label: locale.value?.statusOptions?.withdrawn || '', value: 'withdrawn' }
 ])
 
 // 计算属性
@@ -880,7 +880,6 @@ const processExcelFile = async (file) => {
 
     // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
     if (!userFilters.isLoaded.value) {
-      console.log('正在获取全量用户数据以解析Excel...')
       await fetchAllUsers()
       await nextTick()
     }

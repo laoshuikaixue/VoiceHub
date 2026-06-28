@@ -92,6 +92,12 @@ export const siteConfig = {
   saveFailedRetry: 'Failed to save configuration. Please try again.',
   saveSuccess: 'Configuration saved successfully.',
   fetchFailed: 'Failed to fetch configuration',
+  logs: {
+    loadFailed: 'Failed to load configuration:',
+    apiErrorResponse: 'API error response:',
+    parseApiErrorFailed: 'Failed to parse API error response:',
+    saveFailed: 'Failed to save configuration:'
+  },
   serverMessages: {
     raw: {
       unauthorized: '未授权访问',
@@ -2183,6 +2189,18 @@ export const admin = {
     authorizeUrl: 'Authorize URL',
     tokenUrl: 'Token URL',
     userInfoUrl: 'UserInfo URL',
+    scope: 'Scope',
+    clientId: 'Client ID',
+    clientSecret: 'Client Secret',
+    githubTitle: 'GitHub OAuth',
+    githubClientId: 'GitHub Client ID',
+    githubClientSecret: 'GitHub Client Secret',
+    casdoorTitle: 'Casdoor OAuth',
+    casdoorClientId: 'Casdoor Client ID',
+    casdoorClientSecret: 'Casdoor Client Secret',
+    googleTitle: 'Google OAuth',
+    googleClientId: 'Google Client ID',
+    googleClientSecret: 'Google Client Secret',
     clientIdPlaceholder: 'Enter Client ID',
     clientSecretPlaceholder: 'Enter Client Secret',
     githubClientIdPlaceholder: 'Enter GitHub Client ID',
@@ -2196,7 +2214,11 @@ export const admin = {
     avatarField: 'Avatar Field',
     brokerHintPrefix: 'When deploying multiple environments on platforms such as Vercel, providers like GitHub OAuth App usually support only one callback URL. To solve this, the project can use',
     brokerHintSuffix: 'as a unified callback entry. The broker can dynamically forward callback requests to the correct deployment environment according to the state parameter, allowing one OAuth App to support unlimited preview and production environments. See the project documentation for details.',
-    importFailed: 'Failed to import environment configuration'
+    importFailed: 'Failed to import environment configuration',
+    logs: {
+      fetchEnvFailed: 'Failed to fetch environment variables:',
+      importEnvFailed: 'Failed to import environment configuration:'
+    }
   },
   playTimeManager: {
     title: 'Play Time Management',
@@ -2748,6 +2770,13 @@ export const admin = {
       restoreSuccess: 'Database restored successfully',
       sequenceResetSuccess: 'Sequence reset successfully',
       databaseResetSuccess: 'Database reset successfully'
+    },
+    logs: {
+      parseBackupFailed: 'Failed to parse backup file:',
+      createBackupFailed: 'Failed to create backup:',
+      restoreBackupFailed: 'Failed to restore backup:',
+      resetSequenceFailed: 'Failed to reset sequence:',
+      resetDatabaseFailed: 'Failed to reset database:'
     },
     errors: {
       noBackupContent: 'Select at least one backup item',

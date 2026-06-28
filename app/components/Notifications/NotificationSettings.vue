@@ -198,13 +198,13 @@ const saveSettings = async () => {
 // 格式化刷新间隔
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
-    return locale.value.seconds(seconds)
+    return locale.value?.seconds?.(seconds) || `${seconds}s`
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
     return remainingSeconds > 0
-      ? locale.value.minutesSeconds(minutes, remainingSeconds)
-      : locale.value.minutes(minutes)
+      ? locale.value?.minutesSeconds?.(minutes, remainingSeconds) || `${minutes}m ${remainingSeconds}s`
+      : locale.value?.minutes?.(minutes) || `${minutes}m`
   }
 }
 </script>

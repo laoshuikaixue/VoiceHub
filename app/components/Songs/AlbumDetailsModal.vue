@@ -325,8 +325,42 @@ const emit = defineEmits(['close', 'submit', 'play', 'vote'])
 
 const { getCurrentSong, getPlayingStatus, pauseSong } = useAudioPlayer()
 const { songs: songsLocale } = useLocale()
-const requestLocale = computed(() => songsLocale.value.requestForm)
-const locale = computed(() => requestLocale.value.albumModal)
+const fallbackRequestLocale = {
+  played: '',
+  scheduled: '',
+  liked: '',
+  like: '',
+  submitting: ''
+}
+const fallbackAlbumModalLocale = {
+  albumFallback: '',
+  unknownArtist: '',
+  songCount: (count) => String(count),
+  publishTime: (date) => String(date),
+  company: (company) => String(company),
+  viewFullIntro: '',
+  searchPlaceholder: '',
+  loading: '',
+  noMatches: '',
+  noSongs: '',
+  pause: '',
+  preview: '',
+  submitted: '',
+  submit: '',
+  albumIntro: '',
+  loadFailed: '',
+  fetchFailed: '',
+  unsupportedPlatform: '',
+  tencentUnsupported: ''
+}
+const requestLocale = computed(() => ({
+  ...fallbackRequestLocale,
+  ...(songsLocale.value?.requestForm || {})
+}))
+const locale = computed(() => ({
+  ...fallbackAlbumModalLocale,
+  ...(requestLocale.value?.albumModal || {})
+}))
 const currentSong = getCurrentSong()
 const isPlaying = getPlayingStatus()
 

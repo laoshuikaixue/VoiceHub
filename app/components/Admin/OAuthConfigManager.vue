@@ -179,7 +179,7 @@
         </div>
 
         <div>
-          <label :class="labelClass">Scope</label>
+          <label :class="labelClass">{{ locale.scope }}</label>
           <input
             v-model="formData.customOAuthScope"
             type="text"
@@ -189,7 +189,7 @@
         </div>
 
         <div>
-          <label :class="labelClass">Client ID</label>
+          <label :class="labelClass">{{ locale.clientId }}</label>
           <input
             v-model="formData.customOAuthClientId"
             type="text"
@@ -199,7 +199,7 @@
         </div>
 
         <div>
-          <label :class="labelClass">Client Secret</label>
+          <label :class="labelClass">{{ locale.clientSecret }}</label>
           <div class="flex gap-2">
             <input
               v-model="formData.customOAuthClientSecret"
@@ -329,38 +329,38 @@ const envData = ref({
 const oauthProviders = computed(() => [
   {
     id: 'github',
-    title: 'GitHub OAuth',
+    title: locale.value.githubTitle,
     hasEnvConfig: envData.value.hasGithubConfig,
     enabledKey: 'githubOAuthEnabled',
     clientIdKey: 'githubClientId',
     clientSecretKey: 'githubClientSecret',
-    clientIdLabel: 'GitHub Client ID',
+    clientIdLabel: locale.value.githubClientId,
     clientIdPlaceholder: locale.value.githubClientIdPlaceholder,
-    clientSecretLabel: 'GitHub Client Secret',
+    clientSecretLabel: locale.value.githubClientSecret,
     clientSecretPlaceholder: locale.value.githubClientSecretPlaceholder,
   },
   {
     id: 'casdoor',
-    title: 'Casdoor OAuth',
+    title: locale.value.casdoorTitle,
     hasEnvConfig: envData.value.hasCasdoorConfig,
     enabledKey: 'casdoorOAuthEnabled',
     clientIdKey: 'casdoorClientId',
     clientSecretKey: 'casdoorClientSecret',
-    clientIdLabel: 'Casdoor Client ID',
+    clientIdLabel: locale.value.casdoorClientId,
     clientIdPlaceholder: locale.value.clientIdPlaceholder,
-    clientSecretLabel: 'Casdoor Client Secret',
+    clientSecretLabel: locale.value.casdoorClientSecret,
     clientSecretPlaceholder: locale.value.clientSecretPlaceholder,
   },
   {
     id: 'google',
-    title: 'Google OAuth',
+    title: locale.value.googleTitle,
     hasEnvConfig: envData.value.hasGoogleConfig,
     enabledKey: 'googleOAuthEnabled',
     clientIdKey: 'googleClientId',
     clientSecretKey: 'googleClientSecret',
-    clientIdLabel: 'Google Client ID',
+    clientIdLabel: locale.value.googleClientId,
     clientIdPlaceholder: locale.value.googleClientIdPlaceholder,
-    clientSecretLabel: 'Google Client Secret',
+    clientSecretLabel: locale.value.googleClientSecret,
     clientSecretPlaceholder: locale.value.googleClientSecretPlaceholder,
   }
 ])
@@ -370,7 +370,7 @@ const fetchEnvData = async () => {
     const data = await $fetch('/api/admin/system-settings/env-oauth')
     envData.value = data
   } catch (e) {
-    console.error('获取环境变量失败:', e)
+    console.error(locale.value.logs.fetchEnvFailed, e)
   }
 }
 
@@ -385,7 +385,7 @@ const importEnvData = async (provider) => {
       ...data
     }
   } catch (e) {
-    console.error('导入环境配置失败:', e)
+    console.error(locale.value.logs.importEnvFailed, e)
     showToast(locale.value.importFailed, 'error')
   }
 }

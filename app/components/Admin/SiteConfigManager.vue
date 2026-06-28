@@ -624,16 +624,16 @@ const currentLimitValue = computed({
 const currentLimitLabel = computed(() => {
   const limitTypeLabel =
     activeLimitTab.value === 'daily'
-      ? locale.value.dailyLimitLabel
+      ? locale.value?.dailyLimitLabel
       : activeLimitTab.value === 'weekly'
-        ? locale.value.weeklyLimitLabel
-        : locale.value.monthlyLimitLabel
+        ? locale.value?.weeklyLimitLabel
+        : locale.value?.monthlyLimitLabel
 
-  return `${locale.value.limitLabelPrefix}${limitTypeLabel}${locale.value.limitLabelSuffix}`
+  return `${locale.value?.limitLabelPrefix || ''}${limitTypeLabel || ''}${locale.value?.limitLabelSuffix || ''}`
 })
 
 const getLocalizedServerMessage = (message) => {
-  if (!message) return locale.value?.saveFailed || '保存失败'
+  if (!message) return locale.value?.saveFailed || ''
   if (typeof message !== 'string') return String(message)
 
   const serverMessages = locale.value?.serverMessages
@@ -795,7 +795,7 @@ const loadConfig = async () => {
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
-    console.error('加载配置失败:', error)
+    console.error(locale.value.logs.loadFailed, error)
     showNotification(locale.value.loadFailed, 'error')
   } finally {
     loading.value = false
@@ -832,7 +832,7 @@ const saveConfig = async () => {
       let message = locale.value.saveFailed
       try {
         const errorData = await response.json()
-        console.error('API错误响应:', errorData)
+        console.error(locale.value.logs.apiErrorResponse, errorData)
 
         const getErrorMessage = (err) => {
           if (err?.data?.error) return err.data.error
@@ -845,7 +845,7 @@ const saveConfig = async () => {
 
         message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value.saveFailed)
       } catch (parseError) {
-        console.error('无法解析API错误响应:', parseError)
+        console.error(locale.value.logs.parseApiErrorFailed, parseError)
       }
       throw new Error(message)
     }
@@ -860,7 +860,7 @@ const saveConfig = async () => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
-    console.error('保存配置失败:', error)
+    console.error(locale.value.logs.saveFailed, error)
     let message = locale.value.saveFailedRetry
     if (error?.message) {
       message = getLocalizedServerMessage(error.message)

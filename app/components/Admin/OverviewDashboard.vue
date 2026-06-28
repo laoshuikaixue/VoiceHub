@@ -415,10 +415,10 @@ const formatTime = (dateString) => {
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return locale.value.justNow
-  if (diff < 3600000) return locale.value.minutesAgo(Math.floor(diff / 60000))
-  if (diff < 86400000) return locale.value.hoursAgo(Math.floor(diff / 3600000))
-  return locale.value.daysAgo(Math.floor(diff / 86400000))
+  if (diff < 60000) return locale.value?.justNow || ''
+  if (diff < 3600000) return locale.value?.minutesAgo?.(Math.floor(diff / 60000)) || ''
+  if (diff < 86400000) return locale.value?.hoursAgo?.(Math.floor(diff / 3600000)) || ''
+  return locale.value?.daysAgo?.(Math.floor(diff / 86400000)) || ''
 }
 
 const navigateTo = (tab) => {

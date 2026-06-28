@@ -103,6 +103,12 @@ export const siteConfig = {
   saveFailedRetry: '保存配置失败，请重试',
   saveSuccess: '配置保存成功！',
   fetchFailed: '获取配置失败',
+  logs: {
+    loadFailed: '加载配置失败:',
+    apiErrorResponse: 'API错误响应:',
+    parseApiErrorFailed: '无法解析API错误响应:',
+    saveFailed: '保存配置失败:'
+  },
   serverMessages: {
     raw: {
       unauthorized: '未授权访问',
@@ -2194,6 +2200,18 @@ export const admin = {
     authorizeUrl: '授权地址 (Authorize URL)',
     tokenUrl: '令牌地址 (Token URL)',
     userInfoUrl: '用户信息地址 (UserInfo URL)',
+    scope: '授权范围 (Scope)',
+    clientId: '客户端 ID (Client ID)',
+    clientSecret: '客户端密钥 (Client Secret)',
+    githubTitle: 'GitHub OAuth',
+    githubClientId: 'GitHub Client ID',
+    githubClientSecret: 'GitHub Client Secret',
+    casdoorTitle: 'Casdoor OAuth',
+    casdoorClientId: 'Casdoor Client ID',
+    casdoorClientSecret: 'Casdoor Client Secret',
+    googleTitle: 'Google OAuth',
+    googleClientId: 'Google Client ID',
+    googleClientSecret: 'Google Client Secret',
     clientIdPlaceholder: '输入 Client ID',
     clientSecretPlaceholder: '输入 Client Secret',
     githubClientIdPlaceholder: '输入 GitHub Client ID',
@@ -2207,7 +2225,11 @@ export const admin = {
     avatarField: '头像字段',
     brokerHintPrefix: '在 Vercel 等平台进行多环境部署时，GitHub OAuth App 等提供商通常只能配置单一的回调地址。为了解决这个问题，项目可以使用',
     brokerHintSuffix: '中间件作为统一的回调入口。该中间件能根据 state 参数动态转发回调请求到正确的部署环境，从而实现单个 OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。',
-    importFailed: '导入环境配置失败'
+    importFailed: '导入环境配置失败',
+    logs: {
+      fetchEnvFailed: '获取环境变量失败:',
+      importEnvFailed: '导入环境配置失败:'
+    }
   },
   playTimeManager: {
     title: '播出时段管理',
@@ -2759,6 +2781,13 @@ export const admin = {
       restoreSuccess: '数据库恢复成功',
       sequenceResetSuccess: '序列重置成功',
       databaseResetSuccess: '数据库已成功重置'
+    },
+    logs: {
+      parseBackupFailed: '解析备份文件失败:',
+      createBackupFailed: '创建备份失败:',
+      restoreBackupFailed: '恢复备份失败:',
+      resetSequenceFailed: '重置序列失败:',
+      resetDatabaseFailed: '重置数据库失败:'
     },
     errors: {
       noBackupContent: '请至少选择一项备份内容',
