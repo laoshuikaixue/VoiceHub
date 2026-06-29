@@ -543,6 +543,11 @@ const formatLocale = (value, ...args) => {
   return ''
 }
 const getErrorMessage = (key, ...args) => formatLocale(locale.value?.errors?.[key], ...args)
+const getThrownMessage = (err) => {
+  if (!err) return ''
+  if (typeof err === 'string') return err
+  return err?.data?.message || err?.message || err?.statusMessage || ''
+}
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)
@@ -651,7 +656,7 @@ const fetchRequestTimes = async () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || locale.value.errors.fetchFailedWithStatus(response.status))
+      throw new Error(errorData.message || getErrorMessage('fetchFailedWithStatus', response.status))
     }
 
     const data = await response.json()
@@ -670,7 +675,7 @@ const fetchRequestTimes = async () => {
       return a.name.localeCompare(b.name)
     })
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.fetchFailed
+    error.value = getThrownMessage(err) || locale.value.errors.fetchFailed
   } finally {
     loading.value = false
   }
@@ -689,7 +694,7 @@ const fetchSystemSettings = async () => {
     enableRequestTimeLimitation.value = data.enableRequestTimeLimitation
     enableRequest.value = !data.forceBlockAllRequests
   } catch (err: any) {
-    console.error('获取系统设置失败:', err.message)
+    console.error('获取系统设置失败:', getThrownMessage(err))
   }
 }
 
@@ -705,7 +710,7 @@ const fetchRequestTimeHit = async () => {
     const data = await response.json()
     hitRequestTime.value = data.hit
   } catch (err: any) {
-    console.error('获取投稿开放状态失败:', err.message)
+    console.error('获取投稿开放状态失败:', getThrownMessage(err))
   }
 }
 
@@ -736,10 +741,10 @@ const updateSystemSettings = async () => {
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || locale.value.errors.updateSystemSettingsFailedWithStatus(response.status))
+      throw new Error(errorData.message || getErrorMessage('updateSystemSettingsFailedWithStatus', response.status))
     }
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.updateSystemSettingsFailed
+    error.value = getThrownMessage(err) || locale.value.errors.updateSystemSettingsFailed
   }
 }
 
@@ -768,12 +773,12 @@ const toggleRequestTimeStatus = async (RequestTime: RequestTime) => {
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || locale.value.errors.updateStatusFailedWithStatus(response.status))
+      throw new Error(errorData.message || getErrorMessage('updateStatusFailedWithStatus', response.status))
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.updateStatusFailed
+    error.value = getThrownMessage(err) || locale.value.errors.updateStatusFailed
   }
 }
 
@@ -793,14 +798,14 @@ const deleteRequestTime = async () => {
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || locale.value.errors.deleteFailedWithStatus(response.status))
+      throw new Error(errorData.message || getErrorMessage('deleteFailedWithStatus', response.status))
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
     showDeleteConfirm.value = false
     RequestTimeToDelete.value = null
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.deleteFailed
+    error.value = getThrownMessage(err) || locale.value.errors.deleteFailed
   } finally {
     deleteInProgress.value = false
   }
@@ -848,14 +853,14 @@ const saveRequestTime = async () => {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       throw new Error(
-        errorData.message || locale.value.errors.saveFailedWithStatus(isUpdate, response.status)
+        errorData.message || getErrorMessage('saveFailedWithStatus', isUpdate, response.status)
       )
     }
     await fetchRequestTimes()
     await fetchRequestTimeHit()
     cancelForm()
   } catch (err: any) {
-    formError.value = err.message || locale.value.errors.saveFailed
+    formError.value = getThrownMessage(err) || locale.value.errors.saveFailed
   } finally {
     formSubmitting.value = false
   }

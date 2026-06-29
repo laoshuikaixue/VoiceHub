@@ -1049,6 +1049,7 @@ const locale = computed(() => {
     replayDetailTitle: base.replayDetailTitle || emptyText,
     timeAgo: {
       ...(base.timeAgo || {}),
+      never: base.timeAgo?.never || base.unknown || '',
       justNow: base.timeAgo?.justNow || '',
       minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value),
       hours: (value) => formatLocaleValue(base.timeAgo?.hours, value),
@@ -1065,6 +1066,11 @@ const callLocale = (path, fallback = '', ...args) => {
     )
   }
   return value || fallback
+}
+const getThrownMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.data?.statusMessage || error?.message || error?.statusMessage || ''
 }
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
@@ -1586,7 +1592,9 @@ const isDesktop = ref(true)
 
 // 方法
 const formatDate = (dateString) => {
+  if (!dateString) return locale.value.timeAgo.never || ''
   const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return locale.value.timeAgo.never || ''
   const now = getSyncedDate()
   const diff = now - date
 
@@ -2034,7 +2042,7 @@ const rejectReplayRequest = async (songId) => {
     } catch (err) {
       console.error('拒绝申请失败', err)
       if (window.$showNotification) {
-        window.$showNotification(callLocale('errors.rejectReplayFailed', '', err.data?.message || err.message), 'error')
+        window.$showNotification(callLocale('errors.rejectReplayFailed', '', getThrownMessage(err)), 'error')
       }
     }
   }
@@ -2618,7 +2626,7 @@ const confirmMoveDate = async () => {
       if (window.$showNotification) {
         window.$showNotification(
           result?.movedCount > 0
-            ? locale.value.messages.moveDateSuccess(result.movedCount, targetDate)
+            ? callLocale('messages.moveDateSuccess', '', result.movedCount, targetDate)
             : locale.value.errors.noMovableSongs,
           result?.movedCount > 0 ? 'success' : 'warning'
         )
@@ -2626,7 +2634,7 @@ const confirmMoveDate = async () => {
     } catch (error) {
       console.error('迁移排期日期失败:', error)
       if (window.$showNotification) {
-        const backendMessage = error.data?.message || error.data?.statusMessage || error.message
+        const backendMessage = getThrownMessage(error)
         window.$showNotification(
           callLocale('errors.moveDateFailed', '', backendMessage || locale.value.unknown),
           'error'
@@ -2736,7 +2744,7 @@ const saveDraft = async () => {
   } catch (error) {
     console.error('保存草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('errors.saveDraftFailed', '', error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.saveDraftFailed', '', getThrownMessage(error)), 'error')
     }
   } finally {
     loading.value = false
@@ -2806,7 +2814,7 @@ const publishScheduleConfirmed = async () => {
   } catch (error) {
     console.error('发布排期失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('errors.publishScheduleFailed', '', error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.publishScheduleFailed', '', getThrownMessage(error)), 'error')
     }
   } finally {
     loading.value = false
@@ -2846,12 +2854,12 @@ const publishSingleDraftConfirmed = async (draft) => {
     updateLocalScheduledSongs()
 
     if (window.$showNotification) {
-      window.$showNotification(locale.value.messages.draftPublished(draft.song.title), 'success')
+      window.$showNotification(callLocale('messages.draftPublished', '', draft.song.title), 'success')
     }
   } catch (error) {
     console.error('发布单个草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('errors.publishDraftFailed', '', error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.publishDraftFailed', '', getThrownMessage(error)), 'error')
     }
   } finally {
     loading.value = false

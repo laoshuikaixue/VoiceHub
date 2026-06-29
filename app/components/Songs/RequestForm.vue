@@ -1358,8 +1358,13 @@ const props = defineProps({
 const emit = defineEmits(['request', 'vote'])
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
 const callLocale = (key, fallback = '', ...args) => {
-  const value = locale.value?.[key]
+  const value = String(key).split('.').reduce((target, part) => target?.[part], locale.value)
   if (typeof value === 'function') return value(...args)
   if (typeof value === 'string') {
     return value.replace(/{(\d+)}/g, (match, index) =>
@@ -1722,7 +1727,7 @@ const loadAudioMatchScript = (src) =>
     script.async = true
     script.dataset.audioMatch = src
     script.onload = () => resolve()
-    script.onerror = () => reject(new Error(locale.value.audioMatchScriptLoadFailed(src)))
+    script.onerror = () => reject(new Error(callLocale('audioMatchScriptLoadFailed', '', src)))
     document.head.appendChild(script)
   })
 
@@ -1796,7 +1801,7 @@ const handleAudioMatchFingerprint = async (recording) => {
     }
 
     audioMatchResults.value = matches
-    audioMatchStatus.value = locale.value.audioMatchDone(matches.length)
+    audioMatchStatus.value = callLocale('audioMatchDone', '', matches.length)
   } catch (err) {
     console.error('听歌识曲失败:', err)
     audioMatchError.value = err?.message || locale.value.audioMatchFailed
@@ -1834,7 +1839,7 @@ const initializeAudioMatch = async () => {
           case 'bufferhealth': {
             const progress = Math.min(1, Number(event.data.health) || 0)
             const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
-            audioMatchStatus.value = locale.value.audioMatchRecordingProgress(currentSeconds, AUDIO_MATCH_DURATION)
+            audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', currentSeconds, AUDIO_MATCH_DURATION)
             break
           }
           case 'finished':
@@ -1864,7 +1869,7 @@ const initializeAudioMatch = async () => {
 
         // 提高更新频率以改善用户体验
         if (bufIndex % bufferSize === 0) {
-          audioMatchStatus.value = locale.value.audioMatchRecordingProgress(currentSeconds, AUDIO_MATCH_DURATION)
+          audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', currentSeconds, AUDIO_MATCH_DURATION)
         }
 
         if (bufIndex + channelL.length > maxLength) {
@@ -1991,7 +1996,7 @@ const startAudioMatchRecording = async () => {
     }
   }
 
-  audioMatchStatus.value = locale.value.audioMatchRecordingProgress('0.0', AUDIO_MATCH_DURATION)
+  audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', '0.0', AUDIO_MATCH_DURATION)
   audioMatchRecording.value = true
   audioMatchRecorderNode.port.postMessage({
     message: 'start',
@@ -2163,7 +2168,7 @@ const handleImportData = async (event) => {
   } catch (e) {
     console.error('导入失败', e)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.importFailed(e.message), 'error')
+      window.$showNotification(callLocale('notifications.importFailed', '', getErrorMessage(e)), 'error')
     }
   } finally {
     checkingNeteaseLogin.value = false
@@ -2380,7 +2385,7 @@ const handleEpisodeVote = async (episode) => {
     })
   } catch (err) {
     if (window.$showNotification) {
-      window.$showNotification(err.message || locale.value.notifications.likeFailed, 'error')
+      window.$showNotification(getErrorMessage(err) || locale.value.notifications.likeFailed, 'error')
     }
   } finally {
     voting.value = false
@@ -2586,7 +2591,7 @@ const handleSearch = async () => {
     }
 
     console.error('搜索错误:', err)
-    searchError.value = err.message || locale.value.searchRequestFailed
+    searchError.value = getErrorMessage(err) || locale.value.searchRequestFailed
     error.value = searchError.value
 
     if (window.$showNotification) {
@@ -3117,7 +3122,7 @@ const submitSong = async (result, options = {}) => {
 
       if (blacklistCheck.isBlocked) {
         const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-        error.value = locale.value.notifications.blacklistedSong(reasons)
+        error.value = callLocale('notifications.blacklistedSong', '', reasons)
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
@@ -3176,7 +3181,7 @@ const submitSong = async (result, options = {}) => {
     resetForm()
     return true
   } catch (err) {
-    error.value = err.message || locale.value.notifications.submitFailed
+    error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3230,7 +3235,7 @@ const handleSubmit = async () => {
     // 成功提示由父组件处理，这里只重置表单
     resetForm()
   } catch (err) {
-    error.value = err.message || locale.value.notifications.submitFailed
+    error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3447,7 +3452,7 @@ const handleAlbumSongVote = async (song) => {
   } catch (error) {
     console.error('点赞失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(error.message || locale.value.notifications.likeFailedRetry, 'error')
+      window.$showNotification(getErrorMessage(error) || locale.value.notifications.likeFailedRetry, 'error')
     }
   } finally {
     voting.value = false
@@ -3567,7 +3572,7 @@ const handleManualSubmit = async () => {
 
       if (blacklistCheck.isBlocked) {
         const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-        error.value = locale.value.notifications.blacklistedSong(reasons)
+        error.value = callLocale('notifications.blacklistedSong', '', reasons)
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
@@ -3608,7 +3613,7 @@ const handleManualSubmit = async () => {
     resetForm()
     showManualModal.value = false
   } catch (err) {
-    error.value = err.message || locale.value.notifications.submitFailed
+    error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3642,7 +3647,7 @@ const handleRequestReplay = async (song) => {
   } catch (err) {
     console.error('申请重播失败:', err)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.notifications.replayRequestFailed(err.message), 'error')
+      window.$showNotification(callLocale('notifications.replayRequestFailed', '', getErrorMessage(err)), 'error')
     }
   } finally {
     requestingReplay.value = false
@@ -3814,7 +3819,7 @@ const checkSubmissionLimit = () => {
     if (expected > 0 && accepted >= expected) {
       return {
         canSubmit: false,
-        message: locale.value.notifications.periodQuotaFull(accepted, expected)
+        message: callLocale('notifications.periodQuotaFull', '', accepted, expected)
       }
     }
   }
@@ -3826,7 +3831,7 @@ const checkSubmissionLimit = () => {
   if (dailyLimit && dailyUsed >= dailyLimit) {
     return {
       canSubmit: false,
-      message: locale.value.notifications.dailyLimitReached(dailyUsed, dailyLimit)
+      message: callLocale('notifications.dailyLimitReached', '', dailyUsed, dailyLimit)
     }
   }
 
@@ -3834,7 +3839,7 @@ const checkSubmissionLimit = () => {
   if (weeklyLimit && weeklyUsed >= weeklyLimit) {
     return {
       canSubmit: false,
-      message: locale.value.notifications.weeklyLimitReached(weeklyUsed, weeklyLimit)
+      message: callLocale('notifications.weeklyLimitReached', '', weeklyUsed, weeklyLimit)
     }
   }
 
@@ -3842,7 +3847,7 @@ const checkSubmissionLimit = () => {
   if (monthlyLimit && monthlyUsed >= monthlyLimit) {
     return {
       canSubmit: false,
-      message: locale.value.notifications.monthlyLimitReached(monthlyUsed, monthlyLimit)
+      message: callLocale('notifications.monthlyLimitReached', '', monthlyUsed, monthlyLimit)
     }
   }
 

@@ -240,6 +240,15 @@ const locale = computed(() => {
     monthDay: base.monthDay || emptyText
   })
 })
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
@@ -307,10 +316,10 @@ const formatTime = (timestamp) => {
   const diff = now - date
 
   if (diff < 60000) return locale.value.justNow
-  if (diff < 3600000) return locale.value.minutesAgo(Math.floor(diff / 60000))
-  if (diff < 86400000) return locale.value.hoursAgo(Math.floor(diff / 3600000))
+  if (diff < 3600000) return formatLocaleValue(locale.value.minutesAgo, Math.floor(diff / 60000))
+  if (diff < 86400000) return formatLocaleValue(locale.value.hoursAgo, Math.floor(diff / 3600000))
 
-  return locale.value.monthDay(date.getMonth() + 1, date.getDate())
+  return formatLocaleValue(locale.value.monthDay, date.getMonth() + 1, date.getDate())
 }
 
 const fetchRecentSongs = async () => {

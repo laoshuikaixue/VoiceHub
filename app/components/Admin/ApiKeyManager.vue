@@ -249,14 +249,7 @@
               >
               <CustomSelect
                 v-model="expiresAtText"
-                :options="[
-                  locale.expiresOptions.never,
-                  locale.expiresOptions.threeDays,
-                  locale.expiresOptions.sevenDays,
-                  locale.expiresOptions.thirtyDays,
-                  locale.expiresOptions.sixtyDays,
-                  locale.expiresOptions.ninetyDays
-                ]"
+                :options="expiresAtOptions"
                 class-name="w-full"
                 @change="handleExpiresAtChange"
               />
@@ -638,10 +631,29 @@ const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
 const getLocaleText = (key, ...args) => {
   const message = locale.value?.[key]
   if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
   return message || ''
 }
-const getExpiresOptionText = (key) => locale.value?.expiresOptions?.[key] || ''
-const getPermissionOptionText = (key, field) => locale.value?.permissionOptions?.[key]?.[field] || ''
+const formatLocaleValue = (message, ...args) => {
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
+const getExpiresOptionText = (key) => formatLocaleValue(locale.value?.expiresOptions?.[key])
+const getPermissionOptionText = (key, field) => formatLocaleValue(locale.value?.permissionOptions?.[key]?.[field])
 const getDeleteTitle = (name) => getLocaleText('deleteMessage', name)
 
 // 响应式数据
@@ -662,6 +674,14 @@ const loadingViewId = ref(null)
 
 // 文本映射
 const expiresAtText = ref('')
+const expiresAtOptions = computed(() => [
+  getExpiresOptionText('never'),
+  getExpiresOptionText('threeDays'),
+  getExpiresOptionText('sevenDays'),
+  getExpiresOptionText('thirtyDays'),
+  getExpiresOptionText('sixtyDays'),
+  getExpiresOptionText('ninetyDays')
+])
 const statusFilterOptions = computed(() => [
   { label: getLocaleText('allStatus'), value: '' },
   { label: getLocaleText('active'), value: 'active' },
@@ -861,7 +881,7 @@ const createApiKey = async () => {
     }
   } catch (error) {
     console.error('创建API密钥失败:', error)
-    toast.error(error.data?.message || getLocaleText('createFailed'))
+    toast.error(getErrorMessage(error) || getLocaleText('createFailed'))
   } finally {
     submitting.value = false
   }
@@ -895,7 +915,7 @@ const updateApiKey = async () => {
     }
   } catch (error) {
     console.error('更新API密钥失败:', error)
-    toast.error(error.data?.message || getLocaleText('updateFailed'))
+    toast.error(getErrorMessage(error) || getLocaleText('updateFailed'))
   } finally {
     submitting.value = false
   }
@@ -927,7 +947,7 @@ const confirmDelete = async () => {
     }
   } catch (error) {
     console.error('删除API密钥失败:', error)
-    toast.error(error.data?.message || getLocaleText('deleteFailed'))
+    toast.error(getErrorMessage(error) || getLocaleText('deleteFailed'))
   } finally {
     showConfirmDialog.value = false
     pendingDeleteApiKey.value = null
@@ -1065,7 +1085,9 @@ const resetForm = () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleString('zh-CN', {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

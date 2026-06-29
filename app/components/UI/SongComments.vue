@@ -140,6 +140,15 @@ const locale = computed(() => {
     hoursAgo: base.hoursAgo || emptyText
   })
 })
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 
 const comments = ref<NeteaseComment[]>([])
 const hotComments = ref<NeteaseComment[]>([])
@@ -215,8 +224,8 @@ const formatCommentTime = (time?: number) => {
   const diffMinutes = Math.floor(diffMs / 60000)
 
   if (diffMinutes < 1) return locale.value.justNow
-  if (diffMinutes < 60) return locale.value.minutesAgo(diffMinutes)
-  if (diffMinutes < 1440) return locale.value.hoursAgo(Math.floor(diffMinutes / 60))
+  if (diffMinutes < 60) return formatLocaleValue(locale.value.minutesAgo, diffMinutes)
+  if (diffMinutes < 1440) return formatLocaleValue(locale.value.hoursAgo, Math.floor(diffMinutes / 60))
 
   const isSameYear = date.getFullYear() === now.getFullYear()
 

@@ -1125,6 +1125,11 @@ const locale = computed(() => {
     }
   })
 })
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
 const formatString = (value, args) => {
   if (typeof value !== 'string') return value
   return value.replace(/{(\d+)}/g, (match, index) =>
@@ -1722,7 +1727,7 @@ const confirmReject = async () => {
     showNotification(getNestedMessage('messages', 'rejectSuccess'), 'success')
   } catch (error) {
     console.error('驳回歌曲失败:', error)
-    showNotification(getNestedMessage('errors', 'rejectFailed', error.data?.message || error.message), 'error')
+    showNotification(getNestedMessage('errors', 'rejectFailed', getErrorMessage(error)), 'error')
   } finally {
     rejectLoading.value = false
   }
@@ -1831,11 +1836,7 @@ const saveEditSong = async () => {
   } catch (error) {
     console.error('更新歌曲失败:', error)
     let errorMessage = getNestedMessage('errors', 'updateFailed')
-    if (error.data && error.data.message) {
-      errorMessage = error.data.message
-    } else if (error.message) {
-      errorMessage = error.message
-    }
+    errorMessage = getErrorMessage(error) || errorMessage
     showNotification(errorMessage, 'error')
   } finally {
     editLoading.value = false
@@ -1972,11 +1973,7 @@ const saveAddSong = async () => {
   } catch (error) {
     console.error('添加歌曲失败:', error)
     let errorMessage = getNestedMessage('errors', 'addFailed')
-    if (error.data && error.data.message) {
-      errorMessage = error.data.message
-    } else if (error.message) {
-      errorMessage = error.message
-    }
+    errorMessage = getErrorMessage(error) || errorMessage
     showNotification(errorMessage, 'error')
   } finally {
     addLoading.value = false

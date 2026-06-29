@@ -383,6 +383,11 @@ const locale = computed(() => {
     deleteConfirmTitle: base.deleteConfirmTitle || emptyText
   })
 })
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)
@@ -458,7 +463,7 @@ const fetchPlayTimes = async () => {
       return a.name.localeCompare(b.name)
     })
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.fetchPlayTimesFailed
+    error.value = getErrorMessage(err) || locale.value.errors.fetchPlayTimesFailed
   } finally {
     loading.value = false
   }
@@ -475,7 +480,7 @@ const fetchSystemSettings = async () => {
     })
     enablePlayTimeSelection.value = data.enablePlayTimeSelection
   } catch (err: any) {
-    console.error('获取系统设置失败:', err.message)
+    console.error('获取系统设置失败:', getErrorMessage(err))
   }
 }
 
@@ -501,7 +506,7 @@ const updateSystemSettings = async () => {
 
     showNotification(locale.value.messages.systemSettingsUpdated, 'success')
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.updateSystemSettingsFailed
+    error.value = getErrorMessage(err) || locale.value.errors.updateSystemSettingsFailed
     showNotification(error.value, 'error')
     // 如果失败，恢复状态
     enablePlayTimeSelection.value = !enablePlayTimeSelection.value
@@ -557,7 +562,7 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
       'success'
     )
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.updatePlayTimeStatusFailed
+    error.value = getErrorMessage(err) || locale.value.errors.updatePlayTimeStatusFailed
     showNotification(error.value, 'error')
   }
 }
@@ -587,7 +592,7 @@ const deletePlayTime = async () => {
     playTimeToDelete.value = null
     showNotification(locale.value?.messages?.playTimeDeleted || 'Play time deleted', 'success')
   } catch (err: any) {
-    error.value = err.message || locale.value.errors.deletePlayTimeFailed
+    error.value = getErrorMessage(err) || locale.value.errors.deletePlayTimeFailed
     showNotification(error.value, 'error')
   } finally {
     deleteInProgress.value = false
@@ -650,7 +655,7 @@ const savePlayTime = async () => {
       'success'
     )
   } catch (err: any) {
-    formError.value = err.message || locale.value.errors.savePlayTimeFailed
+    formError.value = getErrorMessage(err) || locale.value.errors.savePlayTimeFailed
     showNotification(formError.value, 'error')
   } finally {
     formSubmitting.value = false

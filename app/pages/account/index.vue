@@ -412,6 +412,24 @@ const { showToast } = useToast()
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { currentLocale, pages } = useLocale()
 const locale = computed(() => pages.value?.account || {})
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getAccountText = (path, ...args) => {
+  const value = String(path).split('.').reduce((target, key) => target?.[key], locale.value?.personalApiKey)
+  return formatLocaleValue(value, ...args)
+}
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
 
 const hasOAuthProviders = computed(() => {
   return oauthProviders.value.length > 0
@@ -486,7 +504,7 @@ const loadPersonalApiKeys = async () => {
     }
   } catch (error) {
     console.error('加载个人 API Key 失败:', error)
-    showToast(error.data?.message || locale.value.personalApiKey.loadFailed, 'error')
+    showToast(getErrorMessage(error) || getAccountText('loadFailed'), 'error')
   } finally {
     apiKeyLoading.value = false
   }
@@ -505,12 +523,12 @@ const createPersonalApiKey = async () => {
 
     if (response.success) {
       createdApiKey.value = response.data
-      showToast(locale.value.personalApiKey.createSuccess, 'success')
+      showToast(getAccountText('createSuccess'), 'success')
       await loadPersonalApiKeys()
     }
   } catch (error) {
     console.error('创建个人 API Key 失败:', error)
-    showToast(error.data?.message || locale.value.personalApiKey.createFailed, 'error')
+    showToast(getErrorMessage(error) || getAccountText('createFailed'), 'error')
   } finally {
     apiKeyCreating.value = false
   }
@@ -535,12 +553,12 @@ const confirmDeletePersonalApiKey = async () => {
     })
 
     if (response.success) {
-      showToast(locale.value.personalApiKey.deleteSuccess, 'success')
+      showToast(getAccountText('deleteSuccess'), 'success')
       await loadPersonalApiKeys()
     }
   } catch (error) {
     console.error('删除个人 API Key 失败:', error)
-    showToast(error.data?.message || locale.value.personalApiKey.deleteFailed, 'error')
+    showToast(getErrorMessage(error) || getAccountText('deleteFailed'), 'error')
   } finally {
     apiKeyDeletingId.value = null
     showDeleteConfirmDialog.value = false
@@ -556,22 +574,22 @@ const cancelDeletePersonalApiKey = () => {
 const deleteConfirmMessage = computed(() => {
   const key = pendingDeleteApiKey.value
   if (!key) {
-    return locale.value.personalApiKey.deleteMessageDefault
+    return getAccountText('deleteMessageDefault')
   }
-  return locale.value.personalApiKey.deleteMessage(key.name)
+  return getAccountText('deleteMessage', key.name)
 })
 
 const copyApiKey = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     apiKeyCopied.value = true
-    showToast(locale.value.personalApiKey.copied, 'success')
+    showToast(getAccountText('copied'), 'success')
     setTimeout(() => {
       apiKeyCopied.value = false
     }, 2000)
   } catch (error) {
     console.error('复制 API Key 失败:', error)
-    showToast(locale.value.personalApiKey.copyFailed, 'error')
+    showToast(getAccountText('copyFailed'), 'error')
   }
 }
 
@@ -620,7 +638,7 @@ const loadPersonalApiKeyLogs = async (page = 1) => {
     }
   } catch (error) {
     console.error('加载个人 API Key 调用记录失败:', error)
-    showToast(error.data?.message || locale.value.personalApiKey.logsFailed, 'error')
+    showToast(getErrorMessage(error) || getAccountText('logsFailed'), 'error')
     apiKeyLogs.value = []
   } finally {
     apiKeyLogsLoading.value = false
@@ -655,9 +673,9 @@ const formatDate = (dateString) => {
 
 const getApiKeyStatusLabel = (status) => {
   const map = {
-    active: locale.value.personalApiKey.status.active,
-    inactive: locale.value.personalApiKey.status.inactive,
-    expired: locale.value.personalApiKey.status.expired
+    active: getAccountText('status.active'),
+    inactive: getAccountText('status.inactive'),
+    expired: getAccountText('status.expired')
   }
   return map[status] || status
 }

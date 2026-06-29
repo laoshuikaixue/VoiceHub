@@ -102,7 +102,7 @@
       <div class="flex gap-3 w-full md:w-auto">
         <CustomSelect
           :label="locale.typeFilter"
-          v-model="typeFilterLabel"
+          v-model="filters.type"
           :options="typeOptions"
           label-key="label"
           value-key="value"
@@ -351,6 +351,11 @@ const formatLocaleValue = (value, ...args) => {
   }
   return ''
 }
+const getErrorMessage = (err) => {
+  if (!err) return ''
+  if (typeof err === 'string') return err
+  return err?.data?.message || err?.message || err?.statusMessage || ''
+}
 const locale = computed(() => {
   const base = admin.value?.blacklist || {}
   return {
@@ -395,13 +400,6 @@ const typeOptions = computed(() => [
   { label: locale.value?.keyword || 'Keyword', value: 'KEYWORD' }
 ])
 
-const typeFilterLabel = computed({
-  get: () => filters.type,
-  set: (value) => {
-    filters.type = value || ''
-  }
-})
-
 let searchTimeout = null
 
 // 加载黑名单
@@ -427,7 +425,7 @@ const loadBlacklist = async () => {
     const fetchFailed = locale.value?.fetchFailed || 'Failed to load blacklist'
     error.value = fetchFailed
     console.error('获取黑名单失败:', err)
-    showNotification(`${fetchFailed}: ${err.data?.message || err.message}`, 'error')
+    showNotification(`${fetchFailed}: ${getErrorMessage(err)}`, 'error')
   } finally {
     loading.value = false
   }
@@ -464,7 +462,7 @@ const addBlacklistItem = async () => {
     pagination.page = 1
     await loadBlacklist()
   } catch (err) {
-    error.value = err.data?.message || locale.value.addFailed
+    error.value = getErrorMessage(err) || locale.value.addFailed
     console.error('添加黑名单项失败:', err)
     showNotification(locale.value.addFailedPrefix + error.value, 'error')
   } finally {
@@ -521,7 +519,7 @@ const confirmDelete = async () => {
   } catch (err) {
     error.value = locale.value.deleteFailed
     console.error('删除失败:', err)
-    showNotification(`${locale.value.deleteFailed}: ${err.message}`, 'error')
+    showNotification(`${locale.value.deleteFailed}: ${getErrorMessage(err)}`, 'error')
   } finally {
     loading.value = false
     showDeleteDialog.value = false
@@ -547,7 +545,9 @@ const changePage = (page) => {
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleString('zh-CN', {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

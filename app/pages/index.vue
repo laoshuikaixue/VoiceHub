@@ -681,6 +681,22 @@ const config = useRuntimeConfig()
 const router = useRouter()
 const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
 const locale = computed(() => pages.value?.home || {})
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getHomeText = (section, key, ...args) => formatLocaleValue(locale.value?.[section]?.[key], ...args)
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
+const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
 
 // 站点配置
 const {
@@ -1038,22 +1054,22 @@ const formatNotificationTime = (timeString) => {
 
   // 小于1分钟
   if (diff < 60000) {
-    return locale.value.time.justNow
+    return locale.value.time.justNow || ''
   }
 
   // 小于1小时
   if (diff < 3600000) {
-    return locale.value.time.minutesAgo(Math.floor(diff / 60000))
+    return formatLocaleValue(locale.value.time.minutesAgo, Math.floor(diff / 60000))
   }
 
   // 小于24小时
   if (diff < 86400000) {
-    return locale.value.time.hoursAgo(Math.floor(diff / 3600000))
+    return formatLocaleValue(locale.value.time.hoursAgo, Math.floor(diff / 3600000))
   }
 
   // 小于30�?
   if (diff < 2592000000) {
-    return locale.value.time.daysAgo(Math.floor(diff / 86400000))
+    return formatLocaleValue(locale.value.time.daysAgo, Math.floor(diff / 86400000))
   }
 
   // 大于30天，显示具体日期
@@ -1104,9 +1120,9 @@ const getCurrentDate = () => {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const date = now.getDate()
-  const weekDay = locale.value.time.weekdays[now.getDay()]
+  const weekDay = (locale.value.time.weekdays || [])[now.getDay()] || ''
 
-  return locale.value.time.dateFormat(year, month, date, weekDay)
+  return formatLocaleValue(locale.value.time.dateFormat, year, month, date, weekDay)
 }
 
 // RequestForm组件引用
@@ -1311,7 +1327,7 @@ const proxiedSchoolLogoUrl = computed(() => {
 const handleRequest = async (songData) => {
   if (!auth || !isClientAuthenticated.value) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.messages.requestLogin, 'error')
+      window.$showNotification(getMessage('requestLogin'), 'error')
     }
     showRequestModal.value = false
     return false
@@ -1324,7 +1340,7 @@ const handleRequest = async (songData) => {
     if (result) {
       // 显示投稿成功通知
       if (window.$showNotification) {
-        window.$showNotification(locale.value.messages.requestSuccess(songData.title, songData.artist), 'success')
+        window.$showNotification(getHomeText('messages', 'requestSuccess', songData.title, songData.artist), 'success')
       }
 
       // 强制刷新歌曲列表
@@ -1349,7 +1365,7 @@ const handleRequest = async (songData) => {
   } catch (err) {
     if (window.$showNotification) {
       window.$showNotification(
-        err?.data?.message || err?.message || err?.statusMessage || locale.value.messages.requestFailed,
+        getErrorMessage(err) || getHomeText('messages', 'requestFailed'),
         'error'
       )
     }
@@ -1360,7 +1376,7 @@ const handleRequest = async (songData) => {
 // 处理投票
 const handleVote = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification(locale.value.messages.voteLogin, 'error')
+    showNotification(getMessage('voteLogin'), 'error')
     return
   }
 
@@ -1391,7 +1407,7 @@ const handleVote = async (song) => {
 
 const handleCancelReplay = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification(locale.value.messages.cancelReplayLogin, 'error')
+    showNotification(getMessage('cancelReplayLogin'), 'error')
     return
   }
 
@@ -1406,7 +1422,7 @@ const handleCancelReplay = async (song) => {
 
 const handleRequestReplay = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification(locale.value.messages.requestReplayLogin, 'error')
+    showNotification(getMessage('requestReplayLogin'), 'error')
     return
   }
 
@@ -1422,7 +1438,7 @@ const handleRequestReplay = async (song) => {
 // 处理撤回投稿
 const handleWithdraw = async (song) => {
   if (!isClientAuthenticated.value) {
-    showNotification(locale.value.messages.withdrawLogin, 'error')
+    showNotification(getMessage('withdrawLogin'), 'error')
     return
   }
 
@@ -1533,7 +1549,7 @@ const handleCollaborationReply = async (notification, accept) => {
 
     if (window.$showNotification) {
       window.$showNotification(
-        accept ? locale.value.messages.inviteAccepted : locale.value.messages.inviteRejected,
+        accept ? getMessage('inviteAccepted') : getMessage('inviteRejected'),
         'success'
       )
     }
@@ -1550,7 +1566,7 @@ const handleCollaborationReply = async (notification, accept) => {
     console.error('??????????', error)
     if (window.$showNotification) {
       window.$showNotification(
-        error?.data?.message || error?.message || error?.statusMessage || locale.value.messages.operationFailed,
+        getErrorMessage(error) || getMessage('operationFailed'),
         'error'
       )
     }
@@ -1562,13 +1578,13 @@ const handleCollaborationReply = async (notification, accept) => {
 // 格式化刷新间�?
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
-    return locale.value.time.seconds(seconds)
+    return formatLocaleValue(locale.value.time.seconds, seconds)
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
     return remainingSeconds > 0
-      ? locale.value.time.minutesSeconds(minutes, remainingSeconds)
-      : locale.value.time.minutes(minutes)
+      ? formatLocaleValue(locale.value.time.minutesSeconds, minutes, remainingSeconds)
+      : formatLocaleValue(locale.value.time.minutes, minutes)
   }
 }
 
@@ -1607,7 +1623,7 @@ const navigateToLogin = () => {
 // 显示登录提示
 const showLoginNotice = () => {
   if (window.$showNotification) {
-    window.$showNotification(locale.value.messages.notificationLogin, 'info')
+    window.$showNotification(getMessage('notificationLogin'), 'info')
   }
 }
 
@@ -1622,7 +1638,7 @@ const checkPasswordChangeRequired = async (user = null) => {
       setTimeout(() => {
         if (window.$showNotification) {
           window.$showNotification(
-            locale.value.messages.changePasswordTip,
+            getMessage('changePasswordTip'),
             'info',
             true,
             8000 // 显示8�?

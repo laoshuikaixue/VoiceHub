@@ -1490,11 +1490,13 @@ const formatLocaleMessage = (message, args) => {
       return args[argIndex] !== undefined ? String(args[argIndex]) : match
     })
   }
-  return message || ''
+  return ''
 }
 const getLocaleMessage = (key, ...args) => {
   const directMessage = locale.value?.[key]
-  if (directMessage !== undefined) return formatLocaleMessage(directMessage, args)
+  if (typeof directMessage === 'string' || typeof directMessage === 'function') {
+    return formatLocaleMessage(directMessage, args)
+  }
   const nestedKey = args[0]
   if (typeof nestedKey === 'string') {
     return getNestedMessage(key, nestedKey, ...args.slice(1))
@@ -1508,6 +1510,11 @@ const getNestedMessage = (section, key, ...args) => {
 const getRoleName = (role) => locale.value?.roles?.[role] || role
 const getStatusName = (status) => locale.value?.statuses?.[status] || status
 const getUnknownDetail = () => locale.value?.detail?.unknown || ''
+const getErrorDetail = (error) => {
+  if (!error) return getUnknownDetail()
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || getUnknownDetail()
+}
 
 // 响应式数据
 const loading = ref(false)
@@ -1846,7 +1853,7 @@ const confirmDelete = async () => {
   } catch (error) {
       console.error('删除用户失败:', error)
       if (window.$showNotification) {
-        window.$showNotification(getLocaleMessage('notifications', 'deleteFailed', error?.data?.message || error?.message || error?.statusMessage || getUnknownDetail()), 'error')
+        window.$showNotification(getLocaleMessage('notifications', 'deleteFailed', getErrorDetail(error)), 'error')
       }
     } finally {
     deleting.value = false
@@ -1940,7 +1947,7 @@ const saveUser = async () => {
         }
 
         const permissionNotification = locale.value?.permissionNotification || {}
-        const notificationMessage = permissionNotification.message?.(roleNames[oldRole], roleNames[newRole]) || ''
+        const notificationMessage = getNestedMessage('permissionNotification', 'message', roleNames[oldRole], roleNames[newRole])
 
         await $fetch('/api/admin/notifications/send', {
           method: 'POST',
@@ -1966,7 +1973,7 @@ const saveUser = async () => {
     }
   } catch (error) {
       console.error('保存用户失败:', error)
-      formError.value = error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('errors', 'saveFailed')
+      formError.value = getErrorDetail(error) || getLocaleMessage('errors', 'saveFailed')
     } finally {
     saving.value = false
   }
@@ -2007,7 +2014,7 @@ const confirmResetPassword = async () => {
     }
   } catch (error) {
       console.error('重置密码失败:', error)
-      passwordError.value = error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('errors', 'resetFailed')
+      passwordError.value = getErrorDetail(error) || getLocaleMessage('errors', 'resetFailed')
     } finally {
     resetting.value = false
   }
@@ -2046,7 +2053,7 @@ const loadUsers = async (page = 1, limit = 100) => {
   } catch (error) {
       console.error('加载用户失败:', error)
       if (window.$showNotification) {
-        window.$showNotification(getLocaleMessage('notifications', 'loadFailed', error?.data?.message || error?.message || error?.statusMessage || getUnknownDetail()), 'error')
+        window.$showNotification(getLocaleMessage('notifications', 'loadFailed', getErrorDetail(error)), 'error')
       }
     } finally {
     loading.value = false
@@ -2233,7 +2240,7 @@ const handleFileUpload = async (event) => {
         previewData.value = userData
       } catch (err) {
         console.error('解析Excel出错:', err)
-        importError.value = getLocaleMessage('errors', 'parseExcelFailed', err.message || getUnknownDetail())
+        importError.value = getLocaleMessage('errors', 'parseExcelFailed', getErrorDetail(err))
       }
     }
 
@@ -2244,7 +2251,7 @@ const handleFileUpload = async (event) => {
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件错误:', err)
-    importError.value = getLocaleMessage('errors', 'processExcelFailed', err.message || getUnknownDetail())
+    importError.value = getLocaleMessage('errors', 'processExcelFailed', getErrorDetail(err))
   }
 }
 
@@ -2349,7 +2356,7 @@ const importUsers = async () => {
       } catch (batchErr) {
         console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
         totalFailed += batch.length
-        allErrors.push({ reason: getLocaleMessage('importProgress', 'batchFailed', currentBatch, batchErr.message) })
+        allErrors.push({ reason: getLocaleMessage('importProgress', 'batchFailed', currentBatch, getErrorDetail(batchErr)) })
       }
     }
 
@@ -2374,7 +2381,7 @@ const importUsers = async () => {
       importProgressText.value = ''
     }
   } catch (err) {
-    importError.value = getLocaleMessage('errors', 'importRuntimeFailed', totalCreated, err.message || getUnknownDetail())
+    importError.value = getLocaleMessage('errors', 'importRuntimeFailed', totalCreated, getErrorDetail(err))
     importProgressText.value = ''
     console.error('导入用户出错:', err)
   } finally {

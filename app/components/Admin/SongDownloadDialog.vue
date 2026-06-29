@@ -592,6 +592,11 @@ const formatLocale = (value, fallback = '', ...args) => {
   return value || fallback
 }
 const getLocaleText = (key, fallback = '', ...args) => formatLocale(locale.value?.[key], fallback, ...args)
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
 
 const mergeSongs = ref(false)
 const convertAudioFormat = ref(false)
@@ -1695,7 +1700,8 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
         successCount++
       } catch (error) {
         console.error(`写入合并文件失败: ${song.title}`, error)
-        throw new Error(getLocaleText('writeMergedFileFailed', error.message, error.message))
+        const errorText = getErrorMessage(error)
+        throw new Error(getLocaleText('writeMergedFileFailed', errorText, errorText))
       } finally {
         activeDownloads.delete(song.id)
         downloadedCount.value++
@@ -1717,7 +1723,7 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
     console.error('合并过程出错:', error)
     pushMergeError(error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.mergeFailed + ': ' + error.message, 'error')
+      window.$showNotification(`${getLocaleText('mergeFailed')}: ${getErrorMessage(error)}`, 'error')
     }
   } finally {
     if (streamSession) {
@@ -1757,7 +1763,7 @@ const processAndMergeAudio = async (selectedSongsList, config) => {
     console.error('合并过程出错:', error)
     pushMergeError(error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.mergeFailed + ': ' + error.message, 'error')
+      window.$showNotification(`${getLocaleText('mergeFailed')}: ${getErrorMessage(error)}`, 'error')
     }
   }
 }

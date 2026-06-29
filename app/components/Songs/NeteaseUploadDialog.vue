@@ -190,6 +190,21 @@ const uploadProgress = ref(0)
 const uploadStatus = ref('')
 const uploadMessage = ref('')
 const isLoggedIn = ref(false)
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getLocaleText = (key, ...args) => formatLocaleValue(locale.value?.[key], ...args)
 
 // 检查登录状态
 const checkLoginStatus = () => {
@@ -248,7 +263,7 @@ const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<stri
   })
 
   if (!response.ok) {
-    throw new Error(locale.value.requestFailed(response.status))
+    throw new Error(getLocaleText('requestFailed', response.status))
   }
 
   const data = await response.json()
@@ -319,7 +334,7 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> 
 
   const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(locale.value.downloadFailed(response.status))
+    throw new Error(getLocaleText('downloadFailed', response.status))
   }
 
   const contentType = response.headers.get('content-type')
@@ -429,7 +444,7 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const tokenData = await tokenRes.json()
 
   if (tokenData.code !== 200) {
-    throw new Error(locale.value.tokenFailed(tokenData.msg || tokenData.code))
+    throw new Error(getLocaleText('tokenFailed', tokenData.msg || tokenData.code))
   }
 
   const { needUpload, uploadUrl, uploadToken, objectKey, resourceId, songId } = tokenData.data
@@ -454,7 +469,7 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(xhr.responseText)
         } else {
-          reject(new Error(locale.value.nosFailed(xhr.status)))
+          reject(new Error(getLocaleText('nosFailed', xhr.status)))
         }
       })
 
@@ -501,10 +516,10 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
     if (completeData.code === 502 || completeData.code === 526) {
       console.warn(`完成接口返回 ${completeData.code}，可能为暂时性错误`, completeData)
       throw new Error(
-        locale.value.saveMaybeFailed(completeData.code)
+        getLocaleText('saveMaybeFailed', completeData.code)
       )
     } else {
-      throw new Error(locale.value.publishFailed(completeData.msg || completeData.code))
+      throw new Error(getLocaleText('publishFailed', completeData.msg || completeData.code))
     }
   }
 
@@ -569,9 +584,9 @@ const startUpload = async () => {
   } catch (error: any) {
     console.error('上传失败:', error)
     uploadStatus.value = locale.value.statusFailed
-    uploadMessage.value = error.message || locale.value.unknownError
+    uploadMessage.value = getErrorMessage(error) || locale.value.unknownError
 
-    showError(locale.value.uploadFailed(error.message))
+    showError(getLocaleText('uploadFailed', getErrorMessage(error)))
   } finally {
     uploading.value = false
   }
