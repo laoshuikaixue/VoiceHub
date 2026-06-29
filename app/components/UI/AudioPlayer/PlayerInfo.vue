@@ -55,7 +55,7 @@ const props = defineProps({
 const emit = defineEmits(['openLyrics'])
 
 const { ui } = useLocale()
-const locale = computed(() => ui.value.playerInfo)
+const locale = computed(() => ui.value?.playerInfo || {})
 const coverError = ref(false)
 
 const handleImageError = () => {

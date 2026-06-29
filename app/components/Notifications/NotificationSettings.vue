@@ -74,7 +74,7 @@
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-black text-zinc-500 uppercase tracking-widest">{{ locale.voteThresholdTitle }}</h3>
           <span class="text-xs font-bold text-blue-500"
-            >{{ locale.voteThresholdText(localSettings.songVotedThreshold) }}</span
+            >{{ locale.voteThresholdText?.(localSettings.songVotedThreshold) || '' }}</span
           >
         </div>
         <input
@@ -143,7 +143,7 @@ import { useLocale } from '~/utils/locale'
 
 const notificationsService = useNotifications()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.notificationSettings)
+const locale = computed(() => pages.value?.notificationSettings || {})
 const loading = computed(() => notificationsService.loading.value)
 const error = computed(() => notificationsService.error.value)
 const settings = computed(() => notificationsService.settings.value)

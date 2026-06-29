@@ -33,8 +33,8 @@
 
     <template v-else>
       <div v-if="totalCount || hotComments.length" class="comments-summary">
-        <span v-if="totalCount">{{ locale.commentsCount(formatCount(totalCount)) }}</span>
-        <span v-if="hotComments.length">{{ locale.hotCount(hotComments.length) }}</span>
+        <span v-if="totalCount">{{ locale.commentsCount?.(formatCount(totalCount)) || '' }}</span>
+        <span v-if="hotComments.length">{{ locale.hotCount?.(hotComments.length) || '' }}</span>
       </div>
 
       <div v-if="!commentItems.length" class="comments-state">
@@ -129,7 +129,7 @@ const props = defineProps<{
 
 const PAGE_SIZE = 20
 const { ui } = useLocale()
-const locale = computed(() => ui.value.songComments)
+const locale = computed(() => ui.value?.songComments || {})
 
 const comments = ref<NeteaseComment[]>([])
 const hotComments = ref<NeteaseComment[]>([])

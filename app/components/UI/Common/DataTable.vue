@@ -12,7 +12,7 @@
             class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg"
           >
             <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest"
-              >{{ locale.selectedItems(selectedRows.length) }}</span
+              >{{ locale.selectedItems?.(selectedRows.length) || '' }}</span
             >
             <button
               class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors"
@@ -252,7 +252,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:selectedRows', 'row-click', 'refresh', 'clear-selection'])
 const { common } = useLocale()
-const locale = computed(() => common.value)
+const locale = computed(() => common.value || {})
 const resolvedLoadingText = computed(() => props.loadingText || locale.value.loadingData)
 
 const totalColumns = computed(() => {

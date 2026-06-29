@@ -747,7 +747,66 @@ const updateCurrentBatch = ref(0)
 const auth = useAuth()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.userManager?.batchUpdateModal || {})
+const locale = computed(() => {
+  const base = admin.value?.userManager?.batchUpdateModal || {}
+  const emptyText = () => ''
+  return {
+    ...base,
+    updateTypes: {
+      gradeOnly: {},
+      excelBatch: {},
+      statusBatch: {},
+      ...(base.updateTypes || {})
+    },
+    fields: {},
+    studentFilter: {
+      selectUsers: emptyText,
+      ...(base.studentFilter || {})
+    },
+    gradeSettings: {},
+    statusSettings: {},
+    statusOptions: {},
+    excelUpload: {},
+    matchType: {},
+    fileSpec: {},
+    preview: {
+      blockersTitle: emptyText,
+      dataPreview: emptyText,
+      pending: emptyText,
+      noChangeCount: emptyText,
+      errorCount: emptyText,
+      moreQueued: emptyText,
+      ...(base.preview || {})
+    },
+    actions: {},
+    template: {
+      headers: {},
+      ...(base.template || {})
+    },
+    progress: {
+      processing: emptyText,
+      completed: emptyText,
+      ...(base.progress || {})
+    },
+    messages: {
+      partialGradeSuccess: emptyText,
+      gradeSuccess: emptyText,
+      partialExcelSuccess: emptyText,
+      excelFailed: emptyText,
+      partialStatusSuccess: emptyText,
+      ...(base.messages || {})
+    },
+    errors: {
+      processExcelFailed: emptyText,
+      fieldRequired: emptyText,
+      duplicateTarget: emptyText,
+      usernameOccupied: emptyText,
+      batchUpdateFailed: emptyText,
+      updateFailedWithEtc: emptyText,
+      ...(base.errors || {})
+    }
+  }
+})
 const getNestedText = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
   return typeof message === 'function' ? message(...args) : (message || '')
@@ -948,6 +1007,8 @@ const parseExcelData = (jsonData) => {
   })
 
   jsonData.forEach((row, index) => {
+    if (!row || typeof row !== 'object') return
+
     const columnKeys = excelColumnKeys.value
     const getRowValue = (key, fallbacks, defaultValue = '') => {
       if (key && row[key] !== undefined) return row[key]

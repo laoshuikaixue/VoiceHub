@@ -109,7 +109,7 @@
                   <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
                     <span class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
-                      {{ locale.songCount(playlist.trackCount) }}
+                      {{ locale.songCount?.(playlist.trackCount) || '' }}
                     </span>
                     <span class="flex items-center truncate">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />

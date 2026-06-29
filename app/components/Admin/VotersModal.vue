@@ -22,7 +22,7 @@
                 d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
               />
             </svg>
-            <span class="vote-count">{{ locale.votes(totalVotes) }}</span>
+            <span class="vote-count">{{ locale.votes?.(totalVotes) || '' }}</span>
           </div>
         </div>
 
@@ -52,7 +52,7 @@
         <!-- 投票人员列表 -->
         <div v-else-if="voters.length > 0" class="voters-list">
           <div class="voters-header">
-            <span class="voters-title">{{ locale.voters(voters.length) }}</span>
+            <span class="voters-title">{{ locale.voters?.(voters.length) || '' }}</span>
           </div>
           <div class="voters-container">
             <div v-for="(voter, index) in voters" :key="voter.id" class="voter-item">
@@ -121,7 +121,7 @@ const voters = ref([])
 const totalVotes = ref(0)
 const { common } = useLocale()
 const commonLocale = computed(() => common.value)
-const locale = computed(() => common.value.votersModal)
+const locale = computed(() => common.value?.votersModal || {})
 
 // 方法
 const closeModal = () => {

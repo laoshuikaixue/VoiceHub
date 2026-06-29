@@ -200,7 +200,7 @@ import { useLocale } from '~/utils/locale'
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.dashboard)
+const locale = computed(() => pages.value?.dashboard || {})
 
 // 导入组件
 

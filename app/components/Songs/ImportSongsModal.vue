@@ -271,7 +271,7 @@
                 </button>
                 <div class="h-4 w-px bg-zinc-800 hidden md:block" />
                 <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                  {{ locale.selectedSongs(selectedSongIds.size) }}
+                  {{ locale.selectedSongs?.(selectedSongIds.size) || '' }}
                 </span>
               </div>
 

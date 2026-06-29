@@ -60,7 +60,7 @@ import WarpCanvas from './WarpCanvas.vue'
 import { useLocale } from '~/utils/locale'
 
 const { auth } = useLocale()
-const locale = computed(() => auth.value.appLoadingScreen)
+const locale = computed(() => auth.value?.appLoadingScreen || {})
 const DEFAULT_PROGRESS = 8
 
 const props = defineProps<{

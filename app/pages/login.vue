@@ -35,7 +35,7 @@ import { useLocale } from '~/utils/locale'
 // 使用站点配置
 const { siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber } = useSiteConfig()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.login)
+const locale = computed(() => pages.value?.login || {})
 // 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value

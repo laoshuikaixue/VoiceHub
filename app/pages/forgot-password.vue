@@ -98,7 +98,7 @@ import { useLocale } from '~/utils/locale'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.forgotPassword)
+const locale = computed(() => pages.value?.forgotPassword || {})
 
 const username = ref('')
 const email = ref('')

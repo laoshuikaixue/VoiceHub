@@ -680,7 +680,7 @@ import { useLocale } from '~/utils/locale'
 const config = useRuntimeConfig()
 const router = useRouter()
 const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
-const locale = computed(() => pages.value.home)
+const locale = computed(() => pages.value?.home || {})
 
 // 站点配置
 const {

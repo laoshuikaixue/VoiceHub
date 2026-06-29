@@ -411,7 +411,7 @@ const route = useRoute()
 const { showToast } = useToast()
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { currentLocale, pages } = useLocale()
-const locale = computed(() => pages.value.account)
+const locale = computed(() => pages.value?.account || {})
 
 const hasOAuthProviders = computed(() => {
   return oauthProviders.value.length > 0

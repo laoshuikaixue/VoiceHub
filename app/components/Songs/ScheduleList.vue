@@ -672,7 +672,11 @@ const props = defineProps({
 const audioPlayer = useAudioPlayer()
 const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
 const { currentLocale, songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value.scheduleList)
+const locale = computed(() => songsLocale.value?.scheduleList || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  return typeof value === 'function' ? value(...args) : value || fallback
+}
 
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
@@ -692,7 +696,7 @@ const playlistsLoading = ref(false)
 const formattedPlaylists = computed(() => {
   return playlists.value.map((pl) => ({
     ...pl,
-    displayName: `${pl.name} (${locale.value.songsCount(pl.trackCount)})`
+    displayName: `${pl.name} (${callLocale('songsCount', '', pl.trackCount)})`
   }))
 })
 const selectedPlaylistId = ref('')
@@ -1064,7 +1068,7 @@ const formatDate = (dateStr, isMobile = false) => {
         day: 'numeric',
         timeZone: 'UTC'
       }).format(date)
-      return locale.value.mobileDate(month, day, weekday, formattedMobileDate)
+      return callLocale('mobileDate', formattedMobileDate, month, day, weekday, formattedMobileDate)
     }
 
     const intlFormattedDate = new Intl.DateTimeFormat(currentLocale.value, {
@@ -1073,7 +1077,7 @@ const formatDate = (dateStr, isMobile = false) => {
       day: 'numeric',
       timeZone: 'UTC'
     }).format(date)
-    const formattedDate = locale.value.fullDate(year, month, day, intlFormattedDate)
+    const formattedDate = callLocale('fullDate', intlFormattedDate, year, month, day, intlFormattedDate)
     return `${formattedDate}\n<span class="weekday">${weekday}</span>`
   } catch (e) {
     return dateStr || locale.value.unknown
@@ -1213,7 +1217,9 @@ const reloadPlaylists = async () => {
       }
     } else {
       if (window.$showNotification) {
-        const text = message ? locale.value.playlistLoadFailedWithMessage(message) : locale.value.playlistLoadFailed
+        const text = message
+          ? callLocale('playlistLoadFailedWithMessage', locale.value.playlistLoadFailed || '', message)
+          : locale.value.playlistLoadFailed
         window.$showNotification(text, 'error')
       }
     }
@@ -1249,7 +1255,9 @@ const handleCreatePlaylist = async () => {
       }
     } else {
       if (window.$showNotification) {
-        const text = message ? locale.value.playlistCreateFailedWithMessage(message) : locale.value.playlistCreateFailed
+        const text = message
+          ? callLocale('playlistCreateFailedWithMessage', locale.value.playlistCreateFailed || '', message)
+          : locale.value.playlistCreateFailed
         window.$showNotification(text, 'error')
       }
     }
@@ -1292,7 +1300,9 @@ const handleDeletePlaylist = async () => {
           closeConfirmDialog()
         } else {
           if (window.$showNotification) {
-            const text = message ? locale.value.playlistDeleteFailedWithMessage(message) : locale.value.playlistDeleteFailed
+            const text = message
+              ? callLocale('playlistDeleteFailedWithMessage', locale.value.playlistDeleteFailed || '', message)
+              : locale.value.playlistDeleteFailed
             window.$showNotification(text, 'error')
           }
           // 失败也关闭弹窗，或者保留让用户重试？通常关闭比较好，避免死循环
@@ -1381,12 +1391,14 @@ const handleAddSongsToPlaylist = async () => {
     )
     if (code === 200) {
       if (window.$showNotification) {
-        window.$showNotification(locale.value.playlistAddSuccess(tracks.length), 'success')
+        window.$showNotification(callLocale('playlistAddSuccess', '', tracks.length), 'success')
       }
       showPlaylistModal.value = false
     } else {
       if (window.$showNotification) {
-        const text = message ? locale.value.playlistAddFailedWithMessage(message) : locale.value.playlistAddFailed
+        const text = message
+          ? callLocale('playlistAddFailedWithMessage', locale.value.playlistAddFailed || '', message)
+          : locale.value.playlistAddFailed
         window.$showNotification(text, 'error')
       }
     }
@@ -1653,9 +1665,9 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return locale.value.playTimeStart(playTime.startTime)
+    return callLocale('playTimeStart', playTime.startTime, playTime.startTime)
   } else if (playTime.endTime) {
-    return locale.value.playTimeEnd(playTime.endTime)
+    return callLocale('playTimeEnd', playTime.endTime, playTime.endTime)
   }
 
   return locale.value.unspecifiedPlayTime

@@ -146,7 +146,7 @@ import { useLocale } from '~/utils/locale'
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const route = useRoute()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.resetPassword)
+const locale = computed(() => pages.value?.resetPassword || {})
 
 const token = computed(() => route.query.token || '')
 const password = ref('')

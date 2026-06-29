@@ -52,7 +52,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
-const locale = computed(() => ui.value.lyrics)
+const locale = computed(() => ui.value?.lyrics || {})
 
 const props = defineProps({
   // 歌词数据

@@ -74,7 +74,7 @@ import { computed, ref } from 'vue'
 import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
-const locale = computed(() => ui.value.errorBoundary)
+const locale = computed(() => ui.value?.errorBoundary || {})
 
 interface Props {
   error?: Error | string | null

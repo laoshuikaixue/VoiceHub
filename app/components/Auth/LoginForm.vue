@@ -2,8 +2,8 @@
   <div class="login-form">
     <div class="form-header">
       <h2>{{ getFormTitle }}</h2>
-      <p v-if="isBindMode && !showCreateMode">{{ locale.bindProvider(providerName, providerUsername) }}</p>
-      <p v-else-if="isBindMode && showCreateMode">{{ locale.createWithProvider(providerName) }}</p>
+      <p v-if="isBindMode && !showCreateMode">{{ locale.bindProvider?.(providerName, providerUsername) || '' }}</p>
+      <p v-else-if="isBindMode && showCreateMode">{{ locale.createWithProvider?.(providerName) || '' }}</p>
       <p v-else>{{ locale.loginSubtitle }}</p>
     </div>
 

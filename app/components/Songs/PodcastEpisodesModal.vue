@@ -28,7 +28,7 @@
                 <Icon name="mic" :size="24" />
               </div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
-                {{ locale.programListTitle(radioName) }}
+                {{ locale.programListTitle?.(radioName) || '' }}
               </h3>
             </div>
             <button
@@ -225,7 +225,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useLocale } from '~/utils/locale'
 const { songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value.mediaModals)
+const locale = computed(() => songsLocale.value?.mediaModals || {})
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 

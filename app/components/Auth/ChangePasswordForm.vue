@@ -207,7 +207,7 @@ const props = defineProps({
 const auth = useAuth()
 const router = useRouter()
 const { auth: authLocale } = useLocale()
-const locale = computed(() => authLocale.value.changePasswordForm)
+const locale = computed(() => authLocale.value?.changePasswordForm || {})
 
 const currentPassword = ref('')
 const newPassword = ref('')

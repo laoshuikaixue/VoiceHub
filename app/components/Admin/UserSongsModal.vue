@@ -180,9 +180,9 @@
                       class="flex flex-wrap items-center gap-3 mt-3 sm:hidden text-xs text-zinc-500"
                     >
                       <span>{{ getMetaTime(song) }}</span>
-                      <span v-if="song.voteCount !== undefined">{{ locale.votes(song.voteCount) }}</span>
+                      <span v-if="song.voteCount !== undefined">{{ locale.votes?.(song.voteCount) || '' }}</span>
                       <span v-if="song.requestCount !== undefined"
-                        >{{ locale.requests(song.requestCount) }}</span
+                        >{{ locale.requests?.(song.requestCount) || '' }}</span
                       >
                     </div>
                   </div>
@@ -204,10 +204,10 @@
                       <span class="text-xs text-zinc-400">{{ getMetaTime(song) }}</span>
                       <div class="flex items-center gap-2">
                         <span v-if="song.voteCount !== undefined" class="text-xs text-zinc-500"
-                          >{{ locale.votes(song.voteCount) }}</span
+                          >{{ locale.votes?.(song.voteCount) || '' }}</span
                         >
                         <span v-if="song.requestCount !== undefined" class="text-xs text-zinc-500"
-                          >{{ locale.requests(song.requestCount) }}</span
+                          >{{ locale.requests?.(song.requestCount) || '' }}</span
                         >
                       </div>
                     </div>
@@ -275,7 +275,7 @@ const selectedSemester = ref(null)
 const { semesters, fetchSemesterOptions } = useSemesters()
 const { common } = useLocale()
 const commonLocale = computed(() => common.value)
-const locale = computed(() => common.value.userSongsModal)
+const locale = computed(() => common.value?.userSongsModal || {})
 
 // Computed
 const semesterOptions = computed(() => {

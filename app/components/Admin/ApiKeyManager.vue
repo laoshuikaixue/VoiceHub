@@ -727,7 +727,7 @@ const getExpiresAtText = () => {
 }
 
 watch(
-  locale,
+  [locale, () => form.expiresAt],
   () => {
     expiresAtText.value = getExpiresAtText()
   },

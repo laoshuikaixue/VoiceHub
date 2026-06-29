@@ -84,7 +84,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 const { ui } = useLocale()
-const locale = computed(() => ui.value.bilibiliIframe)
+const locale = computed(() => ui.value?.bilibiliIframe || {})
 
 // 构建 iframe URL（使用移动端播放器）
 const iframeUrl = computed(() => {

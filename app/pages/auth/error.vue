@@ -73,7 +73,7 @@ import { useLocale } from '~/utils/locale'
 
 const route = useRoute()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.authError)
+const locale = computed(() => pages.value?.authError || {})
 
 const errorCode = computed(() => route.query.code)
 const errorMessage = computed(

@@ -1017,6 +1017,10 @@ import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.scheduleManager || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  return typeof value === 'function' ? value(...args) : value || fallback
+}
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
@@ -1396,7 +1400,7 @@ const availableDates = computed(() => {
     if (!parsedDate) continue
 
     const isToday = i === 0
-  const weekdays = locale.value.weekdays
+    const weekdays = locale.value?.weekdays || ['日', '一', '二', '三', '四', '五', '六']
     const weekday = weekdays[new Date(Date.UTC(parsedDate.year, parsedDate.month - 1, parsedDate.day)).getUTCDay()]
 
     dates.push({
@@ -2047,9 +2051,9 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${start} - ${end}`
   } else if (playTime.startTime) {
-    return locale.value.playTimeStart(start)
+    return callLocale('playTimeStart', start, start)
   } else if (playTime.endTime) {
-    return locale.value.playTimeEnd(end)
+    return callLocale('playTimeEnd', end, end)
   }
 
   return locale.value.allDay

@@ -571,7 +571,7 @@ const emit = defineEmits(['close'])
 
 const { getQualityOptions, getQuality } = useAudioQuality()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.songManagement.songDownloadDialog)
+const locale = computed(() => admin.value?.songManagement?.songDownloadDialog || {})
 
 const mergeSongs = ref(false)
 const convertAudioFormat = ref(false)

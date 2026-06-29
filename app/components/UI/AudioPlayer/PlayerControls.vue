@@ -119,7 +119,7 @@ const emit = defineEmits([
 
 const progressBar = ref(null)
 const { ui } = useLocale()
-const locale = computed(() => ui.value.playerControls)
+const locale = computed(() => ui.value?.playerControls || {})
 
 const formatTime = (time) => {
   if (!time || isNaN(time)) return '0:00'

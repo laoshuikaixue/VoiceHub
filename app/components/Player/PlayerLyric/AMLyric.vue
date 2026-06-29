@@ -78,7 +78,7 @@ const settings = useLyricSettings()
 const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
 const { ui } = useLocale()
-const locale = computed(() => ui.value.lyrics)
+const locale = computed(() => ui.value?.lyrics || {})
 
 const lyricPlayerRef = ref<LyricPlayerRef | null>(null)
 

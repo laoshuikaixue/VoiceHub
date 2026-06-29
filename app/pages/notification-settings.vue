@@ -445,7 +445,7 @@ import { useLocale } from '~/utils/locale'
 const { siteTitle, smtpEnabled, initSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
 const { pages } = useLocale()
-const locale = computed(() => pages.value.notificationSettings)
+const locale = computed(() => pages.value?.notificationSettings || {})
 
 // 样式类常量
 const sectionClass = 'bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'

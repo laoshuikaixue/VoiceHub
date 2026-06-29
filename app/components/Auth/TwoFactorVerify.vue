@@ -65,7 +65,7 @@
                 :disabled="cooldown > 0 || sending || !emailInput"
                 class="text-sm text-blue-500 hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {{ cooldown > 0 ? locale.resendCountdown(cooldown) : (emailSent ? locale.resendCode : locale.sendCode) }}
+                {{ cooldown > 0 ? (locale.resendCountdown?.(cooldown) || '') : (emailSent ? locale.resendCode : locale.sendCode) }}
               </button>
             </div>
 

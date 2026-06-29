@@ -139,7 +139,7 @@
             <div class="flex items-center justify-between gap-4">
               <div class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                 <span v-if="selectedUsers.length > 0" class="text-blue-500">
-                  {{ locale.selectedUsers(selectedUsers.length) }}
+                  {{ locale.selectedUsers?.(selectedUsers.length) || '' }}
                 </span>
               </div>
               <div class="flex gap-3">
@@ -206,7 +206,7 @@ const hasSearched = ref(false)
 const selectedUsers = ref([])
 const searchInput = ref(null)
 const { common } = useLocale()
-const locale = computed(() => common.value)
+const locale = computed(() => common.value || {})
 const title = computed(() => props.title || locale.value.searchUsers)
 
 const close = () => {

@@ -135,7 +135,7 @@ const secret = ref('')
 const verificationCode = ref('')
 const { showToast } = useToast()
 const { auth } = useLocale()
-const locale = computed(() => auth.value.twoFactorSetup)
+const locale = computed(() => auth.value?.twoFactorSetup || {})
 
 // 获取当前状态（可选，如果父组件没传可以通过API获取，这里暂时假设父组件会传或者初始化为false，
 // 实际生产中最好有一个 API check status，但为了简化，这里先依赖父组件或默认）

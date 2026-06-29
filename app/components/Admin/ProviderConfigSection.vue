@@ -96,7 +96,7 @@ const emit = defineEmits([
 
 const showSecret = ref(false)
 const { admin } = useLocale()
-const locale = computed(() => admin.value.oauthConfig)
+const locale = computed(() => admin.value?.oauthConfig || {})
 
 const inputClass = 'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'

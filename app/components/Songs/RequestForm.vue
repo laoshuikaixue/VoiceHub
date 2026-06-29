@@ -1357,7 +1357,11 @@ const props = defineProps({
 
 const emit = defineEmits(['request', 'vote'])
 const { songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value.requestForm)
+const locale = computed(() => songsLocale.value?.requestForm || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  return typeof value === 'function' ? value(...args) : value || fallback
+}
 
 // 站点配置
 const {
@@ -3653,7 +3657,7 @@ const getReplayButtonText = (song) => {
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return locale.value.replayRejectedCooldown(song.replayRequestCooldownRemaining)
+      return callLocale('replayRejectedCooldown', '', song.replayRequestCooldownRemaining)
     }
     // 冷却期已过
     return locale.value.requestReplay
@@ -3682,7 +3686,7 @@ const getReplayButtonTitle = (song) => {
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return locale.value.replayRejectedTooltip(song.replayRequestCooldownRemaining)
+      return callLocale('replayRejectedTooltip', '', song.replayRequestCooldownRemaining)
     }
     return locale.value.requestReplay
   }

@@ -37,7 +37,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useLocale } from '~/utils/locale'
 
 const { auth } = useLocale()
-const locale = computed(() => auth.value.captchaInput)
+const locale = computed(() => auth.value?.captchaInput || {})
 
 const props = defineProps({
   modelValue: {

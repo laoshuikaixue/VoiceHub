@@ -101,7 +101,7 @@ import { useLocale } from '~/utils/locale'
 import '~/assets/css/year-review.css'
 
 const { pages } = useLocale()
-const locale = computed(() => pages.value.yearReview)
+const locale = computed(() => pages.value?.yearReview || {})
 
 const { data: responseData, pending, error, refresh } = await useFetch('/api/user/year-review')
 

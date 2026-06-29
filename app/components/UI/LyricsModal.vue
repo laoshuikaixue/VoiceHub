@@ -339,7 +339,7 @@ const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
 const lyricSettings = useLyricSettings()
 const { ui } = useLocale()
-const locale = computed(() => ui.value.lyricsModal)
+const locale = computed(() => ui.value?.lyricsModal || {})
 
 // 背景渲染器
 const backgroundRenderer = useBackgroundRenderer()

@@ -3,7 +3,7 @@
     class="backdrop-blur-md p-6 rounded-xl border border-white/10 bg-slate-800/70 shadow-2xl max-w-[400px] mx-auto text-zinc-100 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]"
   >
     <h3 class="mb-6 pb-2 border-b border-white/10 text-zinc-100 font-bold text-lg">
-      {{ locale.title(song?.title || '') }}
+      {{ locale.title?.(song?.title || '') || '' }}
     </h3>
 
     <form @submit.prevent="handleSubmit">

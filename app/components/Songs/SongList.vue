@@ -462,7 +462,11 @@ const emit = defineEmits([
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const { currentLocale, songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value.songList)
+const locale = computed(() => songsLocale.value?.songList || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  return typeof value === 'function' ? value(...args) : value || fallback
+}
 const sortBy = ref('popularity')
 const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const searchQuery = ref('') // 搜索查询
@@ -882,7 +886,7 @@ const handleWithdraw = (song) => {
     confirmDialog.value = {
       show: true,
       title: locale.value.withdrawTitle,
-      message: locale.value.withdrawMessage(song.title),
+      message: callLocale('withdrawMessage', '', song.title),
       type: 'info',
       action: 'withdraw',
       data: song
@@ -891,7 +895,7 @@ const handleWithdraw = (song) => {
     confirmDialog.value = {
       show: true,
       title: locale.value.leaveTitle,
-      message: locale.value.leaveMessage(song.title),
+      message: callLocale('leaveMessage', '', song.title),
       type: 'info',
       action: 'withdraw', // 后端使用相同的接口，根据用户身份处理
       data: song
@@ -903,7 +907,7 @@ const handleCancelReplay = (song) => {
   confirmDialog.value = {
     show: true,
     title: locale.value.cancelReplayConfirmTitle,
-    message: locale.value.cancelReplayMessage(song.title),
+    message: callLocale('cancelReplayMessage', '', song.title),
     type: 'warning',
     action: 'cancelReplay',
     data: song
@@ -914,7 +918,7 @@ const handleRequestReplay = (song) => {
   confirmDialog.value = {
     show: true,
     title: locale.value.requestReplayTitle,
-    message: locale.value.requestReplayMessage(song.title),
+    message: callLocale('requestReplayMessage', '', song.title),
     type: 'info',
     action: 'requestReplay',
     data: song
@@ -935,7 +939,7 @@ const getReplayButtonText = (song) => {
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return locale.value.replayRejectedCooldown(song.replayRequestCooldownRemaining)
+      return callLocale('replayRejectedCooldown', '', song.replayRequestCooldownRemaining)
     }
     // 冷却期已过
     return locale.value.requestReplay
@@ -964,7 +968,7 @@ const getReplayButtonTitle = (song) => {
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return locale.value.replayRejectedTooltip(song.replayRequestCooldownRemaining)
+      return callLocale('replayRejectedTooltip', '', song.replayRequestCooldownRemaining)
     }
     return locale.value.requestReplay
   }

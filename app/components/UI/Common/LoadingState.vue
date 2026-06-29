@@ -131,7 +131,7 @@ import { computed } from 'vue'
 import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
-const locale = computed(() => ui.value.loadingState)
+const locale = computed(() => ui.value?.loadingState || {})
 
 interface Props {
   title?: string

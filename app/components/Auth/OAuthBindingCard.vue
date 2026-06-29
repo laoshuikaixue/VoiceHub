@@ -192,7 +192,11 @@ import { useLocale } from '~/utils/locale'
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
 const { auth, currentLocale } = useLocale()
-const locale = computed(() => auth.value.oauthBindingCard)
+const locale = computed(() => auth.value?.oauthBindingCard || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  return typeof value === 'function' ? value(...args) : value || fallback
+}
 const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
@@ -310,7 +314,7 @@ const confirmUnbind = (provider) => {
 
   confirmDialog.value = {
     title: locale.value.unbindTitle,
-    message: locale.value.unbindMessage(providerName),
+    message: callLocale('unbindMessage', '', providerName),
     type: 'danger',
     loading: false,
     onConfirm: () => handleUnbind(provider),
@@ -324,7 +328,7 @@ const confirmUnbind = (provider) => {
 const confirmUnbindWebAuthn = (cred) => {
   confirmDialog.value = {
     title: locale.value.removePasskeyTitle,
-    message: locale.value.removePasskeyMessage(cred.providerUsername),
+    message: callLocale('removePasskeyMessage', '', cred.providerUsername),
     type: 'danger',
     loading: false,
     onConfirm: () => handleUnbind('webauthn', cred.id),

@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
       <div>
         <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-1">{{ locale.subtitle(totalUsers) }}</p>
+        <p class="text-xs text-zinc-500 mt-1">{{ locale.subtitle?.(totalUsers) || '' }}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -1447,7 +1447,41 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.userManager || {})
+const locale = computed(() => {
+  const base = admin.value?.userManager || {}
+  const emptyText = () => ''
+  const importModal = base.importModal || {}
+  return {
+    ...base,
+    subtitle: base.subtitle || emptyText,
+    table: { ...(base.table || {}) },
+    roles: { ...(base.roles || {}) },
+    statuses: { ...(base.statuses || {}) },
+    actions: { ...(base.actions || {}) },
+    mobile: { ...(base.mobile || {}) },
+    form: { ...(base.form || {}) },
+    resetPasswordModal: { ...(base.resetPasswordModal || {}) },
+    importModal: {
+      ...importModal,
+      sampleHeaders: {},
+      ...(importModal.sampleHeaders ? { sampleHeaders: importModal.sampleHeaders } : {}),
+      previewData: importModal.previewData || emptyText,
+      moreRecords: importModal.moreRecords || emptyText
+    },
+    deleteDialog: {
+      ...(base.deleteDialog || {}),
+      message: emptyText,
+      ...(base.deleteDialog?.message ? { message: base.deleteDialog.message } : {})
+    },
+    detail: {
+      ...(base.detail || {}),
+      bound: emptyText,
+      ...(base.detail?.bound ? { bound: base.detail.bound } : {})
+    },
+    sortOptions: { ...(base.sortOptions || {}) },
+    batchUpdateModal: { ...(base.batchUpdateModal || {}) }
+  }
+})
 const getLocaleMessage = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
   if (typeof message === 'function') return message(...args)
