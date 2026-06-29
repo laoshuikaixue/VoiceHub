@@ -274,8 +274,15 @@ const selectedSemester = ref(null)
 // Composables
 const { semesters, fetchSemesterOptions } = useSemesters()
 const { common } = useLocale()
-const commonLocale = computed(() => common.value)
-const locale = computed(() => common.value?.userSongsModal || {})
+const commonLocale = computed(() => common.value || {})
+const locale = computed(() => {
+  const base = common.value?.userSongsModal || {}
+  return {
+    ...base,
+    tabs: { ...(base.tabs || {}) },
+    statuses: { ...(base.statuses || {}) }
+  }
+})
 
 // Computed
 const semesterOptions = computed(() => {

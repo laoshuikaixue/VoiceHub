@@ -195,7 +195,13 @@ const { auth, currentLocale } = useLocale()
 const locale = computed(() => auth.value?.oauthBindingCard || {})
 const callLocale = (key, fallback = '', ...args) => {
   const value = locale.value?.[key]
-  return typeof value === 'function' ? value(...args) : value || fallback
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
 }
 const identities = ref([])
 const loading = ref(true)

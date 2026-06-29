@@ -465,7 +465,13 @@ const { currentLocale, songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.songList || {})
 const callLocale = (key, fallback = '', ...args) => {
   const value = locale.value?.[key]
-  return typeof value === 'function' ? value(...args) : value || fallback
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
 }
 const sortBy = ref('popularity')
 const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first

@@ -674,7 +674,8 @@ const getLocalizedServerMessage = (message) => {
   }
 
   if (
-    rawMessages.booleanSuffix &&
+    typeof rawMessages.booleanSuffix === 'string' &&
+    rawMessages.booleanSuffix.length > 0 &&
     typeof serverMessages.mustBeBoolean === 'function' &&
     message.endsWith(rawMessages.booleanSuffix)
   ) {
@@ -682,7 +683,8 @@ const getLocalizedServerMessage = (message) => {
   }
 
   if (
-    rawMessages.positiveIntegerSuffix &&
+    typeof rawMessages.positiveIntegerSuffix === 'string' &&
+    rawMessages.positiveIntegerSuffix.length > 0 &&
     typeof serverMessages.mustBePositiveInteger === 'function' &&
     message.endsWith(rawMessages.positiveIntegerSuffix)
   ) {
@@ -690,7 +692,8 @@ const getLocalizedServerMessage = (message) => {
   }
 
   if (
-    rawMessages.nonNegativeIntegerOrNullSuffix &&
+    typeof rawMessages.nonNegativeIntegerOrNullSuffix === 'string' &&
+    rawMessages.nonNegativeIntegerOrNullSuffix.length > 0 &&
     typeof serverMessages.mustBeNonNegativeIntegerOrNull === 'function' &&
     message.endsWith(rawMessages.nonNegativeIntegerOrNullSuffix)
   ) {
@@ -700,7 +703,8 @@ const getLocalizedServerMessage = (message) => {
   }
 
   if (
-    rawMessages.customOAuthRequiredPrefix &&
+    typeof rawMessages.customOAuthRequiredPrefix === 'string' &&
+    rawMessages.customOAuthRequiredPrefix.length > 0 &&
     typeof serverMessages.customOAuthFieldRequired === 'function' &&
     message.startsWith(rawMessages.customOAuthRequiredPrefix)
   ) {
@@ -710,7 +714,8 @@ const getLocalizedServerMessage = (message) => {
   }
 
   if (
-    rawMessages.invalidUrlSuffix &&
+    typeof rawMessages.invalidUrlSuffix === 'string' &&
+    rawMessages.invalidUrlSuffix.length > 0 &&
     typeof serverMessages.invalidUrl === 'function' &&
     message.endsWith(rawMessages.invalidUrlSuffix)
   ) {
@@ -796,7 +801,7 @@ const loadConfig = async () => {
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
     console.error('Failed to load site config:', error)
-    showNotification(locale.value.loadFailed, 'error')
+    showNotification(locale.value?.loadFailed || '加载配置失败', 'error')
   } finally {
     loading.value = false
   }
@@ -808,7 +813,7 @@ const saveConfig = async () => {
     saving.value = true
     const configToSave = {
       ...formData.value,
-      siteTitle: (formData.value.siteTitle || '').trim() || locale.value.defaultSiteTitle,
+      siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || '校园广播站点歌系统',
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
         (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value,
@@ -829,7 +834,7 @@ const saveConfig = async () => {
     })
 
     if (!response.ok) {
-      let message = locale.value.saveFailed
+      let message = locale.value?.saveFailed || '保存失败'
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
@@ -843,7 +848,7 @@ const saveConfig = async () => {
           return null
         }
 
-        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value.saveFailed)
+        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }
@@ -854,14 +859,14 @@ const saveConfig = async () => {
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
-    showNotification(locale.value.saveSuccess, 'success')
+    showNotification(locale.value?.saveSuccess || '配置已保存', 'success')
 
     setTimeout(() => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
     console.error('Failed to save site config:', error)
-    let message = locale.value.saveFailedRetry
+    let message = locale.value?.saveFailedRetry || '保存失败，请重试'
     if (error?.message) {
       message = getLocalizedServerMessage(error.message)
     }

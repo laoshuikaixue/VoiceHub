@@ -65,7 +65,7 @@
                 :disabled="cooldown > 0 || sending || !emailInput"
                 class="text-sm text-blue-500 hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {{ cooldown > 0 ? (locale.resendCountdown?.(cooldown) || '') : (emailSent ? locale.resendCode : locale.sendCode) }}
+                {{ resendButtonText }}
               </button>
             </div>
 
@@ -127,6 +127,22 @@ const emit = defineEmits<{
 const { showToast } = useToast()
 const { auth } = useLocale()
 const locale = computed(() => auth.value?.twoFactorVerify || {})
+const formatLocaleValue = (value, fallback = '', ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
+  return value || fallback
+}
+const resendButtonText = computed(() => {
+  if (cooldown.value > 0) {
+    return formatLocaleValue(locale.value.resendCountdown, '', cooldown.value)
+  }
+  return emailSent.value ? locale.value.resendCode : locale.value.sendCode
+})
 // 默认优先使用 TOTP，如果没有则使用 Email
 const defaultMethod = computed(() => props.availableMethods?.includes('totp') ? 'totp' : 'email')
 const method = ref(defaultMethod.value)

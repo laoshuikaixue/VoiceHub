@@ -221,6 +221,16 @@ const emit = defineEmits(['navigate'])
 const { success: showSuccess, error: showError } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.overview || {})
+const formatLocaleValue = (value, fallback = '', ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
+  return value || fallback
+}
 
 const systemVersion = ref(packageJson.version)
 const stats = ref({
@@ -297,7 +307,7 @@ const statusItems = computed(() => [
   },
   {
     label: locale.value.statusItems?.blacklist || '黑名单',
-    value: locale.value.itemUnit?.(stats.value.blacklistCount) || String(stats.value.blacklistCount),
+    value: formatLocaleValue(locale.value.itemUnit, String(stats.value.blacklistCount), stats.value.blacklistCount),
     active: stats.value.blacklistCount >= 0
   },
   { label: locale.value.statusItems?.version || '版本', value: `v${systemVersion.value}`, active: true }

@@ -758,7 +758,7 @@ const locale = computed(() => {
       statusBatch: {},
       ...(base.updateTypes || {})
     },
-    fields: {},
+    fields: { ...(base.fields || {}) },
     studentFilter: {
       selectUsers: emptyText,
       ...(base.studentFilter || {})

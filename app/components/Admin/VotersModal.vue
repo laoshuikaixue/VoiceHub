@@ -120,7 +120,7 @@ const songInfo = ref(null)
 const voters = ref([])
 const totalVotes = ref(0)
 const { common } = useLocale()
-const commonLocale = computed(() => common.value)
+const commonLocale = computed(() => common.value || {})
 const locale = computed(() => common.value?.votersModal || {})
 
 // 方法

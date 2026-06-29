@@ -49,10 +49,10 @@
                     {{ locale.songCount?.(albumInfo.size) || '' }}
                   </span>
                   <span v-if="albumInfo && albumInfo.publishTime">
-                    {{ locale.publishTime(formatDate(albumInfo.publishTime)) }}
+                    {{ callLocale('publishTime', '', formatDate(albumInfo.publishTime)) }}
                   </span>
                   <span v-if="albumInfo && albumInfo.company">
-                    {{ locale.company(albumInfo.company) }}
+                    {{ callLocale('company', '', albumInfo.company) }}
                   </span>
                 </div>
                 <!-- 专辑描述 -->
@@ -361,6 +361,16 @@ const locale = computed(() => ({
   ...fallbackAlbumModalLocale,
   ...(requestLocale.value?.albumModal || {})
 }))
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
 const currentSong = getCurrentSong()
 const isPlaying = getPlayingStatus()
 

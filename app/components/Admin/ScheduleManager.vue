@@ -261,7 +261,7 @@
                   :label="locale.currentSemester"
                   :options="availableSemesters"
                   label-key="name"
-                  value-key="name"
+                  value-key="id"
                   @update:model-value="handleSemesterSelect"
                 />
                 <CustomSelect
@@ -1016,10 +1016,42 @@ import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.scheduleManager || {})
+const locale = computed(() => {
+  const base = admin.value?.scheduleManager || {}
+  const emptyText = () => ''
+  return {
+    ...base,
+    messages: { ...(base.messages || {}) },
+    errors: {
+      rejectReplayFailed: emptyText,
+      saveDraftFailed: emptyText,
+      publishScheduleFailed: emptyText,
+      publishDraftFailed: emptyText,
+      moveDateFailed: emptyText,
+      ...(base.errors || {})
+    },
+    confirmations: {
+      moveDateMessage: emptyText,
+      publishDraftMessage: emptyText,
+      ...(base.confirmations || {})
+    },
+    timeAgo: {
+      minutes: emptyText,
+      hours: emptyText,
+      days: emptyText,
+      ...(base.timeAgo || {})
+    }
+  }
+})
 const callLocale = (key, fallback = '', ...args) => {
   const value = locale.value?.[key]
-  return typeof value === 'function' ? value(...args) : value || fallback
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
 }
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
@@ -2002,7 +2034,8 @@ const loadData = async () => {
   loading.value = true
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
-    const semester = selectedSemester.value === locale.value.allSemesters ? undefined : selectedSemester.value
+    const selectedSemesterOption = availableSemesters.value.find((item) => item.id === selectedSemester.value)
+    const semester = selectedSemester.value === 'all' ? undefined : selectedSemesterOption?.name
 
     // 播放列表应该显示所有学期的排期，不受待排歌曲学期选择的影响
     // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
@@ -2110,9 +2143,9 @@ const loadSemesters = async () => {
 
     // 默认选择当前学期（如果存在），否则选择"全部"
     if (semesterService.currentSemester.value) {
-      selectedSemester.value = semesterService.currentSemester.value.name
+      selectedSemester.value = semesterService.currentSemester.value.id || 'current'
     } else if (semesterList.length > 0) {
-      selectedSemester.value = semesterList[0].name
+      selectedSemester.value = semesterList[0].id
     }
   } catch (error) {
     console.error('获取学期列表失败:', error)

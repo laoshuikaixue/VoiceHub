@@ -96,7 +96,7 @@
             :label="locale.filters.semester"
             :options="availableSemesters"
             label-key="name"
-            value-key="name"
+            value-key="id"
             :placeholder="locale.filters.selectSemester"
             class-name="w-full lg:w-40"
           />
@@ -1098,7 +1098,33 @@ dayjs.extend(customParseFormat)
 // 响应式数据
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.songManagement || {})
+const locale = computed(() => {
+  const base = admin.value?.songManagement || {}
+  const emptyText = () => ''
+  return {
+    ...base,
+    stats: { ...(base.stats || {}) },
+    actions: { ...(base.actions || {}) },
+    filters: { ...(base.filters || {}) },
+    table: { ...(base.table || {}) },
+    empty: { ...(base.empty || {}) },
+    dialog: { ...(base.dialog || {}) },
+    rejectDialog: {
+      requester: emptyText,
+      ...(base.rejectDialog || {})
+    },
+    editModal: {
+      selectedUser: emptyText,
+      ...(base.editModal || {})
+    },
+    timeAgo: {
+      minutes: emptyText,
+      hours: emptyText,
+      days: emptyText,
+      ...(base.timeAgo || {})
+    }
+  }
+})
 const getLocaleMessage = (key, ...args) => {
   const message = locale.value?.[key]
   return typeof message === 'function' ? message(...args) : (message || '')
@@ -1121,6 +1147,10 @@ const { playSong } = useSongPlayer()
 // 学期相关
 const selectedSemester = ref('all')
 const availableSemesters = ref([])
+const selectedSemesterName = computed(() => {
+  if (!selectedSemester.value || selectedSemester.value === 'all') return ''
+  return availableSemesters.value.find((semester) => semester.id === selectedSemester.value)?.name || ''
+})
 
 // 时段相关
 const selectedPlayTime = ref('all')
@@ -1274,7 +1304,7 @@ const baseFilteredSongs = computed(() => {
 
   // 学期过滤
   if (selectedSemester.value && selectedSemester.value !== 'all') {
-    filtered = filtered.filter((song) => song.semester === selectedSemester.value)
+    filtered = filtered.filter((song) => song.semester === selectedSemesterName.value)
   }
 
   // 时段过滤
@@ -1852,7 +1882,7 @@ const openAddSongModal = () => {
     title: '',
     artist: '',
     requester: '',
-    semester: selectedSemester.value !== 'all' ? selectedSemester.value : '',
+    semester: selectedSemesterName.value,
     preferredPlayTimeId: selectedPlayTime.value !== 'all' && selectedPlayTime.value !== 'none' ? selectedPlayTime.value : 'none',
     musicPlatform: '',
     musicId: '',
@@ -2155,7 +2185,7 @@ onMounted(async () => {
   availableSemesters.value.unshift({ id: 'all', name: locale.value.allSemesters })
 
   if (currentSemester.value) {
-    selectedSemester.value = currentSemester.value.name
+    selectedSemester.value = currentSemester.value.id
   }
 
   const { fetchPlayTimes, playTimes, formatPlayTimeDisplay: formatter } = songsService

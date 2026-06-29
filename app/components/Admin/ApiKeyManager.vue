@@ -710,10 +710,15 @@ const form = reactive({
   isActive: true
 })
 
+const formatExpiresAtText = (dateText) => {
+  const message = locale.value?.expiresAtText
+  return typeof message === 'function' ? message(dateText) : message || ''
+}
+
 const getExpiresAtText = () => {
   if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
     const date = new Date(selectedApiKey.value.expiresAt)
-    return locale.value?.expiresAtText?.(date.toLocaleDateString()) || ''
+    return formatExpiresAtText(date.toLocaleDateString())
   }
 
   const expiresAtTextMap = {
@@ -967,7 +972,7 @@ const editApiKey = async (apiKey) => {
 
       if (response.data.expiresAt) {
         const date = new Date(response.data.expiresAt)
-        expiresAtText.value = locale.value?.expiresAtText?.(date.toLocaleDateString()) || ''
+        expiresAtText.value = formatExpiresAtText(date.toLocaleDateString())
         form.expiresAt = 'keep'
       } else {
         expiresAtText.value = getExpiresOptionText('never')

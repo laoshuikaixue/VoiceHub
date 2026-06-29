@@ -241,7 +241,17 @@ type TemplateItem = {
 
 const { success, error } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.emailTemplateManager || {})
+const locale = computed(() => {
+  const base = admin.value?.emailTemplateManager || {}
+  return {
+    ...base,
+    messages: { ...(base.messages || {}) },
+    errors: { ...(base.errors || {}) }
+  }
+})
+const getLocaleText = (section: string, key: string, fallback = '') => {
+  return locale.value?.[section]?.[key] || fallback
+}
 const templates = ref<TemplateItem[]>([])
 const selectedKey = ref<string>('')
 const form = ref<{ key: string; name: string; subject: string; html: string }>({
@@ -281,10 +291,10 @@ async function save() {
   try {
     saving.value = true
     await $fetch('/api/admin/email-templates', { method: 'POST', body: form.value })
-    success(locale.value.messages.saved)
+    success(getLocaleText('messages', 'saved', '模板已保存'))
     await loadList()
   } catch (e: any) {
-    error(e?.data?.message || locale.value.errors.saveFailed)
+    error(e?.data?.message || getLocaleText('errors', 'saveFailed', '保存失败'))
   } finally {
     saving.value = false
   }
@@ -296,10 +306,10 @@ async function restore() {
     await $fetch(`/api/admin/email-templates?key=${encodeURIComponent(form.value.key)}`, {
       method: 'DELETE'
     })
-    success(locale.value.messages.restored)
+    success(getLocaleText('messages', 'restored', '已恢复默认模板'))
     await loadList()
   } catch (e: any) {
-    error(e?.data?.message || locale.value.errors.restoreFailed)
+    error(e?.data?.message || getLocaleText('errors', 'restoreFailed', '恢复失败'))
   } finally {
     saving.value = false
   }
@@ -327,7 +337,7 @@ async function doPreview() {
     previewHtml.value = res.html
     previewSubject.value = res.subject
   } catch (e: any) {
-    error(e?.data?.message || locale.value.errors.previewFailed)
+    error(e?.data?.message || getLocaleText('errors', 'previewFailed', '预览失败'))
   }
 }
 

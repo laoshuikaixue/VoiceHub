@@ -523,7 +523,16 @@ import {
 
 const { getAuthConfig, isAdmin } = useAuth()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.requestTimeManager || {})
+const locale = computed(() => {
+  const base = admin.value?.requestTimeManager || {}
+  const emptyText = () => ''
+  return {
+    ...base,
+    errors: { ...(base.errors || {}) },
+    stats: { ...(base.stats || {}) },
+    deleteConfirmTitle: base.deleteConfirmTitle || emptyText
+  }
+})
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)

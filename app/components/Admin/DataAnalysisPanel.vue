@@ -627,7 +627,18 @@ import { useLocale } from '~/utils/locale'
 // 使用学期管理 composable
 const { fetchSemesters, semesters: availableSemesters, currentSemester } = useSemesters()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.dataAnalysis || {})
+const locale = computed(() => {
+  const base = admin.value?.dataAnalysis || {}
+  const emptyText = () => ''
+  return {
+    ...base,
+    userActivity: base.userActivity || emptyText,
+    andMoreUsers: base.andMoreUsers || emptyText,
+    onlineCount: base.onlineCount || emptyText,
+    messages: { ...(base.messages || {}) },
+    errors: { ...(base.errors || {}) }
+  }
+})
 
 // 响应式数据
 const selectedSemester = ref('all')

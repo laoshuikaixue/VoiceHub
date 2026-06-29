@@ -373,7 +373,16 @@ import {
 const { getAuthConfig, isAdmin } = useAuth()
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.playTimeManager || {})
+const locale = computed(() => {
+  const base = admin.value?.playTimeManager || {}
+  const emptyText = () => ''
+  return {
+    ...base,
+    errors: { ...(base.errors || {}) },
+    messages: { ...(base.messages || {}) },
+    deleteConfirmTitle: base.deleteConfirmTitle || emptyText
+  }
+})
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)

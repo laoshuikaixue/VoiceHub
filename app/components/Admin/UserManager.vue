@@ -1485,6 +1485,12 @@ const locale = computed(() => {
 const getLocaleMessage = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
   if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
   return message || ''
 }
 const getRoleName = (role) => locale.value?.roles?.[role] || role
@@ -1674,9 +1680,9 @@ const formatDate = (dateString) => {
   const diff = now - date
 
   if (diff < 60000) return timeLocale.justNow || ''
-  if (diff < 3600000) return timeLocale.minutesAgo?.(Math.floor(diff / 60000)) || ''
-  if (diff < 86400000) return timeLocale.hoursAgo?.(Math.floor(diff / 3600000)) || ''
-  if (diff < 86400000 * 7) return timeLocale.daysAgo?.(Math.floor(diff / 86400000)) || ''
+  if (diff < 3600000) return getLocaleMessage('time', 'minutesAgo', Math.floor(diff / 60000))
+  if (diff < 86400000) return getLocaleMessage('time', 'hoursAgo', Math.floor(diff / 3600000))
+  if (diff < 86400000 * 7) return getLocaleMessage('time', 'daysAgo', Math.floor(diff / 86400000))
 
   return date.toLocaleDateString('zh-CN')
 }
