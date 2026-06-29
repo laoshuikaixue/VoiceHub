@@ -99,7 +99,7 @@
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                {{ locale.createdAt(formatDate(currentSemester.createdAt)) }}
+                {{ getLocaleMessage('createdAt', formatDate(currentSemester.createdAt)) }}
               </div>
             </div>
             <div class="pt-4">
@@ -208,7 +208,7 @@
               {{ locale.historyTitle }}
             </h3>
           </div>
-          <span class="text-[10px] font-black text-zinc-700">{{ locale.historyCount(semesters.length) }}</span>
+          <span class="text-[10px] font-black text-zinc-700">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
         </div>
 
         <div class="space-y-4">
@@ -264,7 +264,7 @@
                   {{ sem.name }}
                 </h5>
                 <p class="text-[10px] text-zinc-600 font-medium uppercase tracking-widest mt-0.5">
-                  {{ locale.createdAt(formatDate(sem.createdAt)) }}
+                  {{ getLocaleMessage('createdAt', formatDate(sem.createdAt)) }}
                 </p>
               </div>
             </div>
@@ -503,7 +503,15 @@ import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.semesterManager)
+const locale = computed(() => admin.value?.semesterManager || {})
+const getLocaleMessage = (key, ...args) => {
+  const message = locale.value?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
 
 const {
   semesters,
@@ -563,13 +571,13 @@ const setActive = async (semesterId) => {
     // 注意：这里需要重新获取error，因为useSemesters内部可能没有正确更新error的响应式引用
     // 或者直接依据success返回值判断
     if (success) {
-      showNotification(locale.value.messages.activeSet, 'success')
+      showNotification(getNestedMessage('messages', 'activeSet'), 'success')
     } else {
       // 如果setActiveSemester返回false，尝试直接显示一个通用错误，因为error可能为空
-      showNotification(error.value || locale.value.errors.setActiveFailedRetry, 'error')
+      showNotification(error.value || getNestedMessage('errors', 'setActiveFailedRetry'), 'error')
     }
   } catch (err) {
-    showNotification(err.message || locale.value.errors.setFailed, 'error')
+    showNotification(err.message || getNestedMessage('errors', 'setFailed'), 'error')
   }
 }
 
@@ -590,12 +598,12 @@ const confirmDelete = async () => {
   try {
     const success = await deleteSemesterAPI(deleteTargetId.value)
     if (success) {
-      showNotification(locale.value.messages.deleted, 'success')
+      showNotification(getNestedMessage('messages', 'deleted'), 'success')
     } else {
-      showNotification(error.value || locale.value.errors.deleteFailed, 'error')
+      showNotification(error.value || getNestedMessage('errors', 'deleteFailed'), 'error')
     }
   } catch (err) {
-    showNotification(err.message || locale.value.errors.deleteFailedShort, 'error')
+    showNotification(err.message || getNestedMessage('errors', 'deleteFailedShort'), 'error')
   }
 
   showDeleteDialog.value = false
@@ -609,7 +617,7 @@ const handleSubmit = async () => {
   if (!normalizedName) return
 
   if (isEditing.value && normalizedName === originalSemesterName.value) {
-    showNotification(locale.value.messages.nameUnchanged, 'info')
+    showNotification(getNestedMessage('messages', 'nameUnchanged'), 'info')
     closeModal()
     return
   }
@@ -622,10 +630,10 @@ const handleSubmit = async () => {
         name: normalizedName
       })
       if (success) {
-        showNotification(locale.value.messages.updated, 'success')
+        showNotification(getNestedMessage('messages', 'updated'), 'success')
         closeModal()
       } else {
-        showNotification(error.value || locale.value.errors.updateFailed, 'error')
+        showNotification(error.value || getNestedMessage('errors', 'updateFailed'), 'error')
       }
     } else {
       // 创建学期
@@ -634,16 +642,16 @@ const handleSubmit = async () => {
         isActive: semesterForm.value.isActive
       })
       if (result) {
-        showNotification(locale.value.messages.created, 'success')
+        showNotification(getNestedMessage('messages', 'created'), 'success')
         closeModal()
       } else {
-        showNotification(error.value || locale.value.errors.createFailed, 'error')
+        showNotification(error.value || getNestedMessage('errors', 'createFailed'), 'error')
       }
     }
   } catch (err) {
     console.error(isEditing.value ? '修改学期失败:' : '创建学期失败:', err)
     showNotification(
-      err.message || (isEditing.value ? locale.value.errors.updateFailed : locale.value.errors.createFailed),
+      err.message || (isEditing.value ? getNestedMessage('errors', 'updateFailed') : getNestedMessage('errors', 'createFailed')),
       'error'
     )
   } finally {
@@ -669,20 +677,20 @@ const getRecommendedName = () => {
   const month = now.getMonth() + 1
 
   let academicYear = year
-  let term = locale.value.terms.first
+  let term = locale.value?.terms?.first || ''
 
   if (month >= 3 && month <= 8) {
     academicYear = year - 1
-    term = locale.value.terms.second
+    term = locale.value?.terms?.second || term
   } else if (month <= 2) {
     academicYear = year - 1
-    term = locale.value.terms.first
+    term = locale.value?.terms?.first || term
   } else {
     academicYear = year
-    term = locale.value.terms.first
+    term = locale.value?.terms?.first || term
   }
 
-  return locale.value.recommendedName(academicYear, term)
+  return getLocaleMessage('recommendedName', academicYear, term)
 }
 
 const openModal = () => {

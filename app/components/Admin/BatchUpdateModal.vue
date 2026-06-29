@@ -748,6 +748,10 @@ const auth = useAuth()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.userManager?.batchUpdateModal || {})
+const getNestedText = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
 const excelColumnKeys = computed(() => ({
   username: locale.value?.template?.headers?.username,
   name: locale.value?.template?.headers?.name,
@@ -902,22 +906,22 @@ const processExcelFile = async (file) => {
         parseExcelData(jsonData)
       } catch (parseError) {
         console.error('解析Excel文件失败:', parseError)
-        error.value = locale.value.errors.invalidExcelFormat
+        error.value = getNestedText('errors', 'invalidExcelFormat')
         loading.value = false
       }
     }
 
     reader.onerror = () => {
       console.error('读取文件失败')
-      error.value = locale.value.errors.readFileFailed
+      error.value = getNestedText('errors', 'readFileFailed')
       loading.value = false
     }
 
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件失败:', err)
-    const errorMessage = err && err.message ? err.message : locale.value.errors.unknownExcelError
-    error.value = locale.value.errors.processExcelFailed(errorMessage)
+    const errorMessage = err && err.message ? err.message : getNestedText('errors', 'unknownExcelError')
+    error.value = getNestedText('errors', 'processExcelFailed', errorMessage)
     loading.value = false
   }
 }
@@ -965,7 +969,7 @@ const parseExcelData = (jsonData) => {
     const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name
-    const keyLabel = matchType.value === 'username' ? locale.value.fields.username : locale.value.fields.name
+    const keyLabel = matchType.value === 'username' ? getNestedText('fields', 'username') : getNestedText('fields', 'name')
 
     if (!keyValue) {
       previewData.push({
@@ -974,7 +978,7 @@ const parseExcelData = (jsonData) => {
         newGrade: newGrade,
         newClass: newClass,
         newUsername: newUsername,
-        error: locale.value.errors.fieldRequired(keyLabel)
+        error: getNestedText('errors', 'fieldRequired', keyLabel)
       })
       return
     }
@@ -994,7 +998,7 @@ const parseExcelData = (jsonData) => {
           newGrade: newGrade,
           newClass: newClass,
           newUsername: newUsername,
-          error: locale.value.errors.duplicateNames
+          error: getNestedText('errors', 'duplicateNames')
         })
         return
       }
@@ -1008,7 +1012,7 @@ const parseExcelData = (jsonData) => {
         newGrade: newGrade,
         newClass: newClass,
         newUsername: newUsername,
-        error: locale.value.errors.userNotFound
+        error: getNestedText('errors', 'userNotFound')
       })
       return
     }
@@ -1069,7 +1073,7 @@ const parseExcelData = (jsonData) => {
     if (row.newUsername) {
       const previous = requestedUsernames.get(row.newUsername)
       if (previous) {
-        const duplicateTargetMessage = locale.value.errors.duplicateTarget(row.newUsername)
+        const duplicateTargetMessage = getNestedText('errors', 'duplicateTarget', row.newUsername)
         previous.error = duplicateTargetMessage
         row.error = duplicateTargetMessage
         continue
@@ -1097,7 +1101,7 @@ const parseExcelData = (jsonData) => {
   for (const row of previewData) {
     if (row.error || row.noChange) continue
     if (row.usernameConflict) {
-      row.error = locale.value.errors.usernameOccupied(row.newUsername, row.usernameConflict.name)
+      row.error = getNestedText('errors', 'usernameOccupied', row.newUsername, row.usernameConflict.name)
     }
   }
 
@@ -1117,7 +1121,7 @@ const loadXLSX = async () => {
     script.onload = resolve
     script.onerror = (error) => {
       console.error('加载XLSX库失败:', error)
-      reject(new Error(locale.value.errors.loadXlsxFailed))
+      reject(new Error(getNestedText('errors', 'loadXlsxFailed')))
     }
     document.head.appendChild(script)
   })
@@ -1129,36 +1133,42 @@ const downloadTemplate = async () => {
       await loadXLSX()
     } catch (err) {
       if (window.$showNotification) {
-        window.$showNotification(locale.value.errors.loadXlsxRetry, 'error')
+        window.$showNotification(getNestedText('errors', 'loadXlsxRetry'), 'error')
       } else {
-        alert(locale.value.errors.loadXlsxRetry)
+        alert(getNestedText('errors', 'loadXlsxRetry'))
       }
       return
     }
   }
 
-  const headers = locale.value.template.headers
+  const headers = {
+    username: locale.value?.template?.headers?.username || 'username',
+    name: locale.value?.template?.headers?.name || 'name',
+    grade: locale.value?.template?.headers?.grade || 'grade',
+    class: locale.value?.template?.headers?.class || 'class',
+    newUsername: locale.value?.template?.headers?.newUsername || 'new_username'
+  }
   const templateData = [
     {
       [headers.username]: 'student001',
-      [headers.name]: locale.value.template.sampleName1,
+      [headers.name]: getNestedText('template', 'sampleName1'),
       [headers.grade]: '2025',
-      [headers.class]: locale.value.template.sampleClass1,
+      [headers.class]: getNestedText('template', 'sampleClass1'),
       [headers.newUsername]: 'new_student001'
     },
     {
       [headers.username]: 'student002',
-      [headers.name]: locale.value.template.sampleName2,
+      [headers.name]: getNestedText('template', 'sampleName2'),
       [headers.grade]: '2025',
-      [headers.class]: locale.value.template.sampleClass2,
+      [headers.class]: getNestedText('template', 'sampleClass2'),
       [headers.newUsername]: ''
     }
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, locale.value.template.sheetName)
-  window.XLSX.writeFile(wb, locale.value.template.fileName)
+  window.XLSX.utils.book_append_sheet(wb, ws, getNestedText('template', 'sheetName') || 'template')
+  window.XLSX.writeFile(wb, getNestedText('template', 'fileName') || 'batch-update-template.xlsx')
 }
 
 // 当匹配方式切换时，重新解析已上传的 Excel 数据
@@ -1200,7 +1210,7 @@ const performUpdate = async () => {
     }
   } catch (err) {
     console.error('批量更新失败:', err)
-    error.value = locale.value.errors.batchUpdateFailed(err?.data?.message || err?.message || err?.statusMessage || locale.value.errors.unknownError)
+    error.value = getNestedText('errors', 'batchUpdateFailed', err?.data?.message || err?.message || err?.statusMessage || getNestedText('errors', 'unknownError'))
   } finally {
     loading.value = false
   }
@@ -1218,20 +1228,20 @@ const performGradeUpdate = async () => {
   })
 
   if (!response.success) {
-    throw new Error(response.message || locale.value.errors.batchUpdateGeneric)
+    throw new Error(response.message || getNestedText('errors', 'batchUpdateGeneric'))
   }
 
   if (response.errors && response.errors.length > 0) {
     if (response.updated === 0) {
-      throw new Error(locale.value.errors.updateFailedWithEtc(response.errors[0].error))
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', response.errors[0].error))
     } else {
       if (window.$showNotification) {
-        window.$showNotification(locale.value.messages.partialGradeSuccess(response.failed), 'warning')
+        window.$showNotification(getNestedText('messages', 'partialGradeSuccess', response.failed), 'warning')
       }
     }
   } else {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.messages.gradeSuccess(response.updated), 'success')
+      window.$showNotification(getNestedText('messages', 'gradeSuccess', response.updated), 'success')
     }
   }
 }
@@ -1240,7 +1250,7 @@ const performExcelUpdate = async () => {
   const validUpdates = excelPreviewData.value.filter((row) => !row.error && !row.noChange && row.userId)
 
   if (validUpdates.length === 0) {
-    throw new Error(locale.value.errors.noValidUpdates)
+    throw new Error(getNestedText('errors', 'noValidUpdates'))
   }
 
   const targetSet = new Set(validUpdates.filter((r) => r.newUsername).map((r) => r.newUsername))
@@ -1263,7 +1273,7 @@ const performExcelUpdate = async () => {
   for (let i = 0; i < validUpdates.length; i += batchSize) {
     const batch = validUpdates.slice(i, i + batchSize)
     updateCurrentBatch.value = Math.floor(i / batchSize) + 1
-    updateProgressText.value = locale.value.progress.processing(updateCurrentBatch.value, updateTotalBatches.value)
+    updateProgressText.value = getNestedText('progress', 'processing', updateCurrentBatch.value, updateTotalBatches.value)
     updateProgress.value = Math.round((updateCurrentBatch.value / updateTotalBatches.value) * 100)
 
     const updates = batch.map((row) => ({
@@ -1281,14 +1291,14 @@ const performExcelUpdate = async () => {
       })
 
       if (!result?.success) {
-        throw new Error(result?.message || locale.value.errors.batchRequestFailed)
+        throw new Error(result?.message || getNestedText('errors', 'batchRequestFailed'))
       }
 
       if (result.data?.summary) {
         totalUpdated += result.data.summary.success || 0
         totalFailed += result.data.summary.failed || 0
       } else {
-        throw new Error(locale.value.errors.invalidBatchResponse)
+        throw new Error(getNestedText('errors', 'invalidBatchResponse'))
       }
     } catch (err) {
       console.error(`第 ${updateCurrentBatch.value} 批更新失败:`, err)
@@ -1298,8 +1308,8 @@ const performExcelUpdate = async () => {
 
   if (totalFailed > 0) {
     const partialMessage = totalUpdated > 0
-      ? locale.value.messages.partialExcelSuccess(totalUpdated, totalFailed)
-      : locale.value.messages.excelFailed(totalFailed)
+      ? getNestedText('messages', 'partialExcelSuccess', totalUpdated, totalFailed)
+      : getNestedText('messages', 'excelFailed', totalFailed)
     
     // 如果存在更新成功的数据，仍然需要通知父组件刷新列表
     if (totalUpdated > 0) {
@@ -1315,7 +1325,7 @@ const performExcelUpdate = async () => {
     }
   }
 
-  updateProgressText.value = locale.value.progress.completed(totalUpdated, totalFailed)
+  updateProgressText.value = getNestedText('progress', 'completed', totalUpdated, totalFailed)
   updateProgress.value = 100
   
   if (totalUpdated > 0) {
@@ -1343,18 +1353,18 @@ const performStatusUpdate = async () => {
 
   if (!response.success) {
     if (response.errors && response.errors.length > 0) {
-      throw new Error(locale.value.errors.updateFailedWithEtc(response.errors[0].error))
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', response.errors[0].error))
     }
-    throw new Error(response.message || locale.value.errors.statusUpdateFailed)
+    throw new Error(response.message || getNestedText('errors', 'statusUpdateFailed'))
   }
 
   if (response.errors && response.errors.length > 0) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.messages.partialStatusSuccess(response.errors.length), 'warning')
+      window.$showNotification(getNestedText('messages', 'partialStatusSuccess', response.errors.length), 'warning')
     }
   } else {
     if (window.$showNotification) {
-      window.$showNotification(response.message || locale.value.messages.statusSuccess, 'success')
+      window.$showNotification(response.message || getNestedText('messages', 'statusSuccess'), 'success')
     }
   }
 }

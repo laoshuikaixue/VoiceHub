@@ -71,7 +71,7 @@
         </div>
 
         <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
-          <span class="text-xs font-black text-blue-400">{{ locale.selectedItems(selectedIds.length) }}</span>
+          <span class="text-xs font-black text-blue-400">{{ getLocaleMessage('selectedItems', selectedIds.length) }}</span>
           <CustomSelect
             v-model="bulkStatus"
             :options="bulkStatusOptions"
@@ -140,8 +140,8 @@
                     {{ statusMeta(item.status).label }}
                   </span>
                   <p v-if="item.lockedAt || item.redeemedAt" class="mt-1 text-[10px] text-zinc-500 leading-relaxed">
-                    <span v-if="item.lockedAt">{{ locale.lockedAt(formatDate(item.lockedAt)) }}</span>
-                    <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ locale.redeemedAt(formatDate(item.redeemedAt)) }}</span>
+                    <span v-if="item.lockedAt">{{ getLocaleMessage('lockedAt', formatDate(item.lockedAt)) }}</span>
+                    <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ getLocaleMessage('redeemedAt', formatDate(item.redeemedAt)) }}</span>
                   </p>
                 </td>
                 <td class="px-3 py-3 align-top">
@@ -158,8 +158,8 @@
                   </div>
                 </td>
                 <td class="px-3 py-3 align-top text-[11px] text-zinc-500 leading-relaxed">
-                  <p>{{ locale.createdAt(formatDate(item.createdAt)) }}</p>
-                  <p>{{ locale.updatedAt(formatDate(item.updatedAt)) }}</p>
+                  <p>{{ getLocaleMessage('createdAt', formatDate(item.createdAt)) }}</p>
+                  <p>{{ getLocaleMessage('updatedAt', formatDate(item.updatedAt)) }}</p>
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
@@ -261,7 +261,7 @@
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="text-xs font-black text-zinc-100">{{ locale.lastGeneratedTitle(lastGeneratedCodes.length) }}</p>
+                <p class="text-xs font-black text-zinc-100">{{ getLocaleMessage('lastGeneratedTitle', lastGeneratedCodes.length) }}</p>
                 <p class="mt-1 text-[11px] text-zinc-500">{{ locale.lastGeneratedDesc }}</p>
               </div>
               <button
@@ -318,9 +318,9 @@
             class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
           >
             <option value="">{{ locale.allSources }}</option>
-            <option value="ADMIN_MANUAL">{{ locale.sources.adminManual }}</option>
-            <option value="SCHEDULE_AUTO">{{ locale.sources.scheduleAuto }}</option>
-            <option value="SCHEDULE_REMOVE">{{ locale.sources.scheduleRemove }}</option>
+            <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual }}</option>
+            <option value="SCHEDULE_AUTO">{{ locale.sources?.scheduleAuto }}</option>
+            <option value="SCHEDULE_REMOVE">{{ locale.sources?.scheduleRemove }}</option>
           </select>
         </div>
         <div>
@@ -425,6 +425,14 @@ import { useLocale } from '~/utils/locale'
 const { showToast } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.cardCodesManager || {})
+const getLocaleMessage = (key, ...args) => {
+  const message = locale.value?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
 
 const codes = ref([])
 const redeemLogs = ref([])
@@ -499,7 +507,7 @@ const stats = computed(() => {
 
 const allVisibleSelected = computed(() => codes.value.length > 0 && codes.value.every((item) => selectedIds.value.includes(item.id)))
 const someVisibleSelected = computed(() => codes.value.some((item) => selectedIds.value.includes(item.id)))
-const exportButtonText = computed(() => (selectedIds.value.length ? locale.value.exportSelected(selectedIds.value.length) : locale.value.exportFiltered))
+const exportButtonText = computed(() => (selectedIds.value.length ? getLocaleMessage('exportSelected', selectedIds.value.length) : getLocaleMessage('exportFiltered')))
 
 const queryString = computed(() => {
   const query = new URLSearchParams()
@@ -541,7 +549,7 @@ const fetchCodes = async (page = pagination.value.page) => {
     }
   } catch (error) {
     console.error('获取点歌券失败', error)
-    showToast(locale.value.messages.fetchFailed, 'error')
+    showToast(getNestedMessage('messages', 'fetchFailed'), 'error')
   } finally {
     loading.value = false
   }
@@ -564,7 +572,7 @@ const fetchRedeemLogs = async () => {
     }
   } catch (error) {
     console.error('获取点歌券兑换日志失败', error)
-    showToast(locale.value.messages.fetchLogsFailed, 'error')
+    showToast(getNestedMessage('messages', 'fetchLogsFailed'), 'error')
   } finally {
     logsLoading.value = false
   }
@@ -624,25 +632,25 @@ const formatDate = (value) => {
 const copyCode = async (code) => {
   try {
     await navigator.clipboard.writeText(code)
-    showToast(locale.value.messages.copied, 'success')
+    showToast(getNestedMessage('messages', 'copied'), 'success')
   } catch (error) {
     console.error('复制失败', error)
-    showToast(locale.value.messages.copyFailed, 'error')
+    showToast(getNestedMessage('messages', 'copyFailed'), 'error')
   }
 }
 
 const copyLastGeneratedCodes = async () => {
   if (!lastGeneratedCodes.value.length) {
-    showToast(locale.value.messages.noGeneratedToCopy, 'warning')
+    showToast(getNestedMessage('messages', 'noGeneratedToCopy'), 'warning')
     return
   }
 
   try {
     await navigator.clipboard.writeText(lastGeneratedCodes.value.join('\n'))
-    showToast(locale.value.messages.copiedGenerated(lastGeneratedCodes.value.length), 'success')
+    showToast(getNestedMessage('messages', 'copiedGenerated', lastGeneratedCodes.value.length), 'success')
   } catch (error) {
     console.error('批量复制点歌券失败', error)
-    showToast(locale.value.messages.copyFailed, 'error')
+    showToast(getNestedMessage('messages', 'copyFailed'), 'error')
   }
 }
 
@@ -665,7 +673,7 @@ const exportCodes = async () => {
       credentials: 'same-origin'
     })
     if (!response.ok) {
-      let message = locale.value.messages.exportFailed
+      let message = getNestedMessage('messages', 'exportFailed')
       try {
         const errorBody = await response.json()
         message = errorBody?.message || errorBody?.statusMessage || message
@@ -684,10 +692,10 @@ const exportCodes = async () => {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
-    showToast(selectedIds.value.length ? locale.value.messages.exportSelectedSuccess : locale.value.messages.exportFilteredSuccess, 'success')
+    showToast(selectedIds.value.length ? getNestedMessage('messages', 'exportSelectedSuccess') : getNestedMessage('messages', 'exportFilteredSuccess'), 'success')
   } catch (error) {
     console.error('导出点歌券失败', error)
-    showToast(locale.value.messages.exportFailed, 'error')
+    showToast(getNestedMessage('messages', 'exportFailed'), 'error')
   } finally {
     exporting.value = false
   }
@@ -710,11 +718,11 @@ const updateStatus = async (ids, status) => {
       })
     }
 
-    showToast(locale.value.messages.statusUpdated, 'success')
+    showToast(getNestedMessage('messages', 'statusUpdated'), 'success')
     await Promise.all([fetchCodes(), fetchRedeemLogs()])
   } catch (error) {
     console.error('更新点歌券状态失败', error)
-    showToast(locale.value.messages.updateStatusFailed, 'error')
+    showToast(getNestedMessage('messages', 'updateStatusFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -727,11 +735,11 @@ const saveNote = async (item) => {
       method: 'POST',
       body: { id: item.id, note: item.noteDraft }
     })
-    showToast(locale.value.messages.noteSaved, 'success')
+    showToast(getNestedMessage('messages', 'noteSaved'), 'success')
     item.note = item.noteDraft || null
   } catch (error) {
     console.error('保存备注失败', error)
-    showToast(locale.value.messages.saveNoteFailed, 'error')
+    showToast(getNestedMessage('messages', 'saveNoteFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -754,7 +762,7 @@ const createCodes = async () => {
         .map((value) => value.trim())
         .filter(Boolean)
       if (!list.length) {
-        showToast(locale.value.messages.inputRequired, 'warning')
+        showToast(getNestedMessage('messages', 'inputRequired'), 'warning')
         return
       }
       body = { ...body, codes: [...new Set(list)] }
@@ -778,13 +786,13 @@ const createCodes = async () => {
     lastGeneratedCodes.value = createMode.value === 'generate'
       ? (Array.isArray(res?.data) ? res.data.map((item) => item.code).filter(Boolean) : [])
       : []
-    showToast(skipped ? locale.value.messages.createDone(inserted, skipped) : locale.value.messages.createSuccess(inserted), 'success')
+    showToast(skipped ? getNestedMessage('messages', 'createDone', inserted, skipped) : getNestedMessage('messages', 'createSuccess', inserted), 'success')
     manualCodes.value = ''
     createNote.value = ''
     await fetchCodes()
   } catch (error) {
     console.error('创建点歌券失败', error)
-    showToast(locale.value.messages.createFailed, 'error')
+    showToast(getNestedMessage('messages', 'createFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -795,7 +803,7 @@ const createFormCount = computed(() => generateForm.value.count)
 const fillDemoCodes = () => {
   createMode.value = 'manual'
   manualCodes.value = ['DEMO-2026-A001', 'DEMO-2026-A002', 'DEMO-2026-A003'].join('\n')
-  createNote.value = locale.value.demoNote
+  createNote.value = getLocaleMessage('demoNote')
 }
 
 onMounted(refreshAll)

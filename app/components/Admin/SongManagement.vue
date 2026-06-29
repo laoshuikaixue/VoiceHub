@@ -193,7 +193,7 @@
           >
           {{ locale.table.selectPage }}
         </label>
-        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">{{ locale.selectedItems(selectedSongs.length) }}</span>
+        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">{{ getLocaleMessage('selectedItems', selectedSongs.length) }}</span>
       </div>
 
       <!-- 空状态 -->
@@ -299,7 +299,7 @@
                   >@{{ song.user.username }}</span
                 >
                 <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-blue-500 mt-1">
-                  {{ locale.preferredPlayTime(getPlayTimeName(song.preferredPlayTimeId)) }}
+                  {{ getLocaleMessage('preferredPlayTime', getPlayTimeName(song.preferredPlayTimeId)) }}
                 </span>
                 <span
                   class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
@@ -411,7 +411,7 @@
       >
         <div class="px-3 flex flex-col">
           <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ locale.selected }}</span>
-          <span class="text-sm font-bold text-blue-400">{{ locale.selectedSongs(selectedSongs.length) }}</span>
+          <span class="text-sm font-bold text-blue-400">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -1098,7 +1098,15 @@ dayjs.extend(customParseFormat)
 // 响应式数据
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.songManagement)
+const locale = computed(() => admin.value?.songManagement || {})
+const getLocaleMessage = (key, ...args) => {
+  const message = locale.value?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
@@ -1120,20 +1128,20 @@ const availablePlayTimes = ref([])
 
 // 选项配置
 const statusOptions = computed(() => [
-  { label: locale.value.options.allStatus, value: 'all' },
-  { label: locale.value.options.pending, value: 'pending' },
-  { label: locale.value.options.scheduled, value: 'scheduled' },
-  { label: locale.value.options.played, value: 'played' },
-  { label: locale.value.options.hasNote, value: 'has-note' }
+  { label: getNestedMessage('options', 'allStatus'), value: 'all' },
+  { label: getNestedMessage('options', 'pending'), value: 'pending' },
+  { label: getNestedMessage('options', 'scheduled'), value: 'scheduled' },
+  { label: getNestedMessage('options', 'played'), value: 'played' },
+  { label: getNestedMessage('options', 'hasNote'), value: 'has-note' }
 ])
 
 const sortOptions = computed(() => [
-  { label: locale.value.options.newest, value: 'time-desc' },
-  { label: locale.value.options.oldest, value: 'time-asc' },
-  { label: locale.value.options.hotDesc, value: 'votes-desc' },
-  { label: locale.value.options.hotAsc, value: 'votes-asc' },
-  { label: locale.value.options.titleAsc, value: 'title-asc' },
-  { label: locale.value.options.titleDesc, value: 'title-desc' }
+  { label: getNestedMessage('options', 'newest'), value: 'time-desc' },
+  { label: getNestedMessage('options', 'oldest'), value: 'time-asc' },
+  { label: getNestedMessage('options', 'hotDesc'), value: 'votes-desc' },
+  { label: getNestedMessage('options', 'hotAsc'), value: 'votes-asc' },
+  { label: getNestedMessage('options', 'titleAsc'), value: 'title-asc' },
+  { label: getNestedMessage('options', 'titleDesc'), value: 'title-desc' }
 ])
 
 // 删除对话框相关
@@ -1395,10 +1403,10 @@ const formatDate = (dateString) => {
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return locale.value.timeAgo.justNow
-  if (diff < 3600000) return locale.value.timeAgo.minutes(Math.floor(diff / 60000))
-  if (diff < 86400000) return locale.value.timeAgo.hours(Math.floor(diff / 3600000))
-  return locale.value.timeAgo.days(Math.floor(diff / 86400000))
+  if (diff < 60000) return getNestedMessage('timeAgo', 'justNow')
+  if (diff < 3600000) return getNestedMessage('timeAgo', 'minutes', Math.floor(diff / 60000))
+  if (diff < 86400000) return getNestedMessage('timeAgo', 'hours', Math.floor(diff / 3600000))
+  return getNestedMessage('timeAgo', 'days', Math.floor(diff / 86400000))
 }
 
 const getPlayTimeName = (playTimeId) => {
@@ -1410,23 +1418,23 @@ const getPlayTimeName = (playTimeId) => {
 }
 
 const getStatusText = (song) => {
-  if (song.played) return locale.value.options.played
+  if (song.played) return getNestedMessage('options', 'played')
   if (song.scheduled) {
     // 如果有排期日期，在待播放后显示排期日期（月/日）
     if (song.scheduleDate) {
       // API返回的日期格式为 "YYYY/M/D H:mm:ss"（如 "2024/1/15 14:30:00"）
       const date = dayjs(song.scheduleDate, 'YYYY/M/D H:mm:ss')
       if (date.isValid()) {
-        return locale.value.scheduledWithDate(date.format('M/D'))
+        return getLocaleMessage('scheduledWithDate', date.format('M/D'))
       }
     }
-    return locale.value.options.scheduled
+    return getNestedMessage('options', 'scheduled')
   }
-  return locale.value.options.pending
+  return getNestedMessage('options', 'pending')
 }
 
 const getCollaboratorDisplayName = (user) => {
-  return user?.displayName || user?.name || user?.username || locale.value.unknownUser
+  return user?.displayName || user?.name || user?.username || getLocaleMessage('unknownUser')
 }
 
 const openSubmissionRemark = (song) => {
@@ -1462,12 +1470,12 @@ const updateSubmissionNotePublic = async (isPublic) => {
     }
 
     if (window.$showNotification) {
-      window.$showNotification(locale.value.messages.remarkVisibilityUpdated, 'success')
+      window.$showNotification(getNestedMessage('messages', 'remarkVisibilityUpdated'), 'success')
     }
   } catch (error) {
     console.error('更新备注可见性失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.remarkVisibilityUpdateFailed, 'error')
+      window.$showNotification(getNestedMessage('errors', 'remarkVisibilityUpdateFailed'), 'error')
     }
     dialogData.isPublic = !isPublic
   } finally {
@@ -1516,7 +1524,7 @@ const markAsPlayed = async (songId) => {
     await refreshSongs()
   } catch (error) {
       console.error('标记已播放失败:', error)
-      showNotification(locale.value.errors.markFailed(error?.data?.message || error?.message || error?.statusMessage || locale.value.unknownError), 'error')
+      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
     }
 }
 
@@ -1526,7 +1534,7 @@ const markAsUnplayed = async (songId) => {
     await refreshSongs()
   } catch (error) {
       console.error('标记未播放失败:', error)
-      showNotification(locale.value.errors.markFailed(error?.data?.message || error?.message || error?.statusMessage || locale.value.unknownError), 'error')
+      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
     }
 }
 
@@ -1534,8 +1542,8 @@ const deleteSong = async (songId) => {
   const song = songs.value.find((s) => s.id === songId)
   if (!song) return
 
-  deleteDialogTitle.value = locale.value.dialog.deleteSongTitle
-  deleteDialogMessage.value = locale.value.dialog.deleteSongMessage(song.title)
+  deleteDialogTitle.value = getNestedMessage('dialog', 'deleteSongTitle')
+  deleteDialogMessage.value = getNestedMessage('dialog', 'deleteSongMessage', song.title)
   deleteAction.value = async () => {
     try {
       await adminService.deleteSong(songId)
@@ -1546,10 +1554,10 @@ const deleteSong = async (songId) => {
         selectedSongs.value.splice(index, 1)
       }
 
-      showNotification(locale.value.messages.deleteSuccess, 'success')
+      showNotification(getNestedMessage('messages', 'deleteSuccess'), 'success')
     } catch (error) {
         console.error('删除歌曲失败:', error)
-        showNotification(locale.value.errors.deleteFailed(error?.data?.message || error?.message || error?.statusMessage || locale.value.unknownError), 'error')
+        showNotification(getNestedMessage('errors', 'deleteFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
       }
   }
   showDeleteDialog.value = true
@@ -1558,8 +1566,8 @@ const deleteSong = async (songId) => {
 const batchDelete = async () => {
   if (selectedSongs.value.length === 0) return
 
-  deleteDialogTitle.value = locale.value.dialog.batchDeleteTitle
-  deleteDialogMessage.value = locale.value.dialog.batchDeleteMessage(selectedSongs.value.length)
+  deleteDialogTitle.value = getNestedMessage('dialog', 'batchDeleteTitle')
+  deleteDialogMessage.value = getNestedMessage('dialog', 'batchDeleteMessage', selectedSongs.value.length)
   deleteAction.value = async () => {
     try {
       loading.value = true
@@ -1571,10 +1579,10 @@ const batchDelete = async () => {
       await refreshSongs()
       selectedSongs.value = []
 
-      showNotification(locale.value.messages.batchDeleteSuccess, 'success')
+      showNotification(getNestedMessage('messages', 'batchDeleteSuccess'), 'success')
     } catch (error) {
         console.error('批量删除失败:', error)
-        showNotification(locale.value.errors.batchDeleteFailed(error?.data?.message || error?.message || error?.statusMessage || locale.value.unknownError), 'error')
+        showNotification(getNestedMessage('errors', 'batchDeleteFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
       } finally {
       loading.value = false
     }
@@ -1605,7 +1613,7 @@ const openDownloadDialog = () => {
         title: song.title,
         artist: song.artist,
         musicPlatform: song.musicPlatform || 'unknown',
-        requester: song.requester || locale.value.unknown,
+        requester: song.requester || getLocaleMessage('unknown'),
         musicId: song.musicId,
         playUrl: song.playUrl
       }
@@ -1638,7 +1646,7 @@ const rejectSong = (songId) => {
     id: song.id,
     title: song.title || '',
     artist: song.artist || '',
-    requester: song.requester || song.requester_name || locale.value.unknown
+    requester: song.requester || song.requester_name || getLocaleMessage('unknown')
   }
 
   rejectReason.value = ''
@@ -1649,7 +1657,7 @@ const rejectSong = (songId) => {
 // 确认驳回
 const confirmReject = async () => {
   if (!rejectReason.value.trim()) {
-    showNotification(locale.value.errors.rejectReasonRequired, 'error')
+    showNotification(getNestedMessage('errors', 'rejectReasonRequired'), 'error')
     return
   }
 
@@ -1673,10 +1681,10 @@ const confirmReject = async () => {
 
     showRejectDialog.value = false
 
-    showNotification(locale.value.messages.rejectSuccess, 'success')
+    showNotification(getNestedMessage('messages', 'rejectSuccess'), 'success')
   } catch (error) {
     console.error('驳回歌曲失败:', error)
-    showNotification(locale.value.errors.rejectFailed(error.data?.message || error.message), 'error')
+    showNotification(getNestedMessage('errors', 'rejectFailed', error.data?.message || error.message), 'error')
   } finally {
     rejectLoading.value = false
   }
@@ -1738,22 +1746,22 @@ const editSong = (song) => {
 
 const saveEditSong = async () => {
   if (!editForm.value.title || !editForm.value.artist) {
-    showNotification(locale.value.errors.songInfoRequired, 'error')
+    showNotification(getNestedMessage('errors', 'songInfoRequired'), 'error')
     return
   }
 
   if (editForm.value.cover && !editCoverValidation.value.valid) {
-    showNotification(locale.value.errors.coverUrlInvalidOrPending, 'error')
+    showNotification(getNestedMessage('errors', 'coverUrlInvalidOrPending'), 'error')
     return
   }
 
   if (editForm.value.playUrl && !editPlayUrlValidation.value.valid) {
-    showNotification(locale.value.errors.playUrlInvalidOrPending, 'error')
+    showNotification(getNestedMessage('errors', 'playUrlInvalidOrPending'), 'error')
     return
   }
 
   if (editCoverValidation.value.validating || editPlayUrlValidation.value.validating) {
-    showNotification(locale.value.messages.validatingUrl, 'warning')
+    showNotification(getNestedMessage('messages', 'validatingUrl'), 'warning')
     return
   }
 
@@ -1781,10 +1789,10 @@ const saveEditSong = async () => {
     await refreshSongs()
     showEditModal.value = false
 
-    showNotification(locale.value.messages.updateSuccess, 'success')
+    showNotification(getNestedMessage('messages', 'updateSuccess'), 'success')
   } catch (error) {
     console.error('更新歌曲失败:', error)
-    let errorMessage = locale.value.errors.updateFailed
+    let errorMessage = getNestedMessage('errors', 'updateFailed')
     if (error.data && error.data.message) {
       errorMessage = error.data.message
     } else if (error.message) {
@@ -1855,38 +1863,38 @@ const openAddSongModal = () => {
 
 const saveAddSong = async () => {
   if (!addForm.value.title || !addForm.value.artist) {
-    showNotification(locale.value.errors.songInfoRequired, 'error')
+    showNotification(getNestedMessage('errors', 'songInfoRequired'), 'error')
     return
   }
 
   if (!selectedUser.value || !addForm.value.requester) {
-    showNotification(locale.value.errors.requesterRequired, 'error')
+    showNotification(getNestedMessage('errors', 'requesterRequired'), 'error')
     return
   }
 
   if (!addForm.value.semester) {
-    showNotification(locale.value.errors.semesterRequired, 'error')
+    showNotification(getNestedMessage('errors', 'semesterRequired'), 'error')
     return
   }
 
   if (addForm.value.cover) {
     if (!addCoverValidation.value.valid) {
-      showNotification(locale.value.errors.coverUrlInvalid, 'error')
+      showNotification(getNestedMessage('errors', 'coverUrlInvalid'), 'error')
       return
     }
     if (addCoverValidation.value.validating) {
-      showNotification(locale.value.messages.validatingCoverUrl, 'warning')
+      showNotification(getNestedMessage('messages', 'validatingCoverUrl'), 'warning')
       return
     }
   }
 
   if (addForm.value.playUrl) {
     if (!addPlayUrlValidation.value.valid) {
-      showNotification(locale.value.errors.playUrlInvalid, 'error')
+      showNotification(getNestedMessage('errors', 'playUrlInvalid'), 'error')
       return
     }
     if (addPlayUrlValidation.value.validating) {
-      showNotification(locale.value.messages.validatingPlayUrl, 'warning')
+      showNotification(getNestedMessage('messages', 'validatingPlayUrl'), 'warning')
       return
     }
   }
@@ -1922,10 +1930,10 @@ const saveAddSong = async () => {
     }
     clearSelectedUser()
 
-    showNotification(locale.value.messages.addSuccess, 'success')
+    showNotification(getNestedMessage('messages', 'addSuccess'), 'success')
   } catch (error) {
     console.error('添加歌曲失败:', error)
-    let errorMessage = locale.value.errors.addFailed
+    let errorMessage = getNestedMessage('errors', 'addFailed')
     if (error.data && error.data.message) {
       errorMessage = error.data.message
     } else if (error.message) {

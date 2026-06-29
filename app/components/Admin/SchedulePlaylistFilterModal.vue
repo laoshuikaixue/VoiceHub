@@ -198,11 +198,11 @@ const defaultPlaylists = ref([
 ])
 
 const getDefaultPlaylistName = (id: string) => {
-  const names: Record<string, string> = {
-    '19723756': locale.value.defaultNames.soaring,
-    '3779629': locale.value.defaultNames.newSongs,
-    '2884035': locale.value.defaultNames.original,
-    '3778678': locale.value.defaultNames.hotSongs
+  const names: Record<string, string | undefined> = {
+    '19723756': locale.value?.defaultNames?.soaring,
+    '3779629': locale.value?.defaultNames?.newSongs,
+    '2884035': locale.value?.defaultNames?.original,
+    '3778678': locale.value?.defaultNames?.hotSongs
   }
   return names[id] || scheduleLocale.value?.playlistName?.(id) || id
 }

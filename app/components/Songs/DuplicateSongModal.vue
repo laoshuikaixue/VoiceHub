@@ -75,7 +75,7 @@
                   class="flex items-center gap-1.5 text-[10px] font-black text-red-500 uppercase tracking-widest"
                 >
                   <Icon name="heart" :size="12" class="fill-current" />
-                  {{ locale.votes(song.voteCount || 0) }}
+                  {{ getLocaleMessage('votes', song.voteCount || 0) }}
                 </div>
                 <div
                   :class="[
@@ -132,7 +132,11 @@ interface Props {
 
 const props = defineProps<Props>()
 const { songs } = useLocale()
-const locale = computed(() => songs.value.duplicateSongModal)
+const locale = computed(() => songs.value?.duplicateSongModal || {})
+const getLocaleMessage = (key: string, ...args: unknown[]) => {
+  const message = locale.value?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
 
 const emit = defineEmits<{
   close: []

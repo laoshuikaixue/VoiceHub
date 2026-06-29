@@ -102,10 +102,12 @@
       <div class="flex gap-3 w-full md:w-auto">
         <CustomSelect
           :label="locale.typeFilter"
-          :value="typeFilterLabel"
-          :options="[locale.allTypes, locale.song, locale.keyword]"
+          v-model="typeFilterLabel"
+          :options="typeOptions"
+          label-key="label"
+          value-key="value"
           class="flex-1 md:w-48"
-          @change="handleTypeFilterChange"
+          @change="() => { pagination.page = 1; loadBlacklist(); }"
         />
         <button
           class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all active:scale-95"
@@ -369,10 +371,17 @@ const pagination = reactive({
   pages: 0
 })
 
-const typeFilterLabel = computed(() => {
-  if (filters.type === 'SONG') return locale.value.song
-  if (filters.type === 'KEYWORD') return locale.value.keyword
-  return locale.value.allTypes
+const typeOptions = computed(() => [
+  { label: locale.value?.allTypes || 'All Types', value: '' },
+  { label: locale.value?.song || 'Song', value: 'SONG' },
+  { label: locale.value?.keyword || 'Keyword', value: 'KEYWORD' }
+])
+
+const typeFilterLabel = computed({
+  get: () => filters.type,
+  set: (value) => {
+    filters.type = value || ''
+  }
 })
 
 let searchTimeout = null
@@ -407,14 +416,6 @@ const loadBlacklist = async () => {
 }
 
 // 处理类型筛选变更
-const handleTypeFilterChange = (label) => {
-  if (label === locale.value.song) filters.type = 'SONG'
-  else if (label === locale.value.keyword) filters.type = 'KEYWORD'
-  else filters.type = ''
-
-  pagination.page = 1
-  loadBlacklist()
-}
 
 // 添加黑名单项
 const addBlacklistItem = async () => {

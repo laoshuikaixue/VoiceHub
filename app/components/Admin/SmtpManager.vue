@@ -79,10 +79,10 @@
                   >{{ locale.secure }}</label
                 >
                 <CustomSelect
-                  :model-value="config.smtpSecure ? locale.secureOptions.ssl : locale.secureOptions.none"
-                  :options="[locale.secureOptions.ssl, locale.secureOptions.none]"
+                  :model-value="config.smtpSecure ? secureOptionLabels.ssl : secureOptionLabels.none"
+                  :options="[secureOptionLabels.ssl, secureOptionLabels.none]"
                   class="w-full"
-                  @update:model-value="(val) => (config.smtpSecure = val === locale.secureOptions.ssl)"
+                  @update:model-value="(val) => (config.smtpSecure = val === secureOptionLabels.ssl)"
                 />
               </div>
             </div>
@@ -209,7 +209,12 @@ import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from '@luci
 
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.smtpManager)
+const locale = computed(() => admin.value?.smtpManager || {})
+const getLocaleMessage = (key) => locale.value?.[key] || ''
+const secureOptionLabels = computed(() => ({
+  ssl: locale.value?.secureOptions?.ssl || 'SSL/TLS',
+  none: locale.value?.secureOptions?.none || 'None'
+}))
 
 // 响应式数据
 const config = ref({
@@ -220,7 +225,7 @@ const config = ref({
   smtpUsername: '',
   smtpPassword: '',
   smtpFromEmail: '',
-  smtpFromName: locale.value.defaultFromName
+  smtpFromName: getLocaleMessage('defaultFromName')
 })
 
 const testEmail = ref('')
@@ -267,14 +272,14 @@ const loadConfig = async () => {
       smtpUsername: response.smtpUsername || '',
       smtpPassword: response.smtpPassword || '',
       smtpFromEmail: response.smtpFromEmail || '',
-      smtpFromName: response.smtpFromName || locale.value.defaultFromName
+      smtpFromName: response.smtpFromName || getLocaleMessage('defaultFromName')
     }
 
     // 保存原始配置用于重置
     originalConfig.value = { ...config.value }
   } catch (error) {
     console.error('加载SMTP配置失败:', error)
-    showNotification(locale.value.loadFailed, 'error')
+    showNotification(getLocaleMessage('loadFailed'), 'error')
   }
 }
 
@@ -283,7 +288,7 @@ const saveConfig = async () => {
   if (config.value.smtpEnabled) {
     // 验证必填字段
     if (!config.value.smtpHost || !config.value.smtpUsername || !config.value.smtpPassword) {
-      showNotification(locale.value.incompleteConfig, 'error')
+      showNotification(getLocaleMessage('incompleteConfig'), 'error')
       return
     }
   }
@@ -296,10 +301,10 @@ const saveConfig = async () => {
     })
 
     originalConfig.value = { ...config.value }
-    showNotification(locale.value.saveSuccess, 'success')
+    showNotification(getLocaleMessage('saveSuccess'), 'success')
   } catch (error) {
     console.error('保存SMTP配置失败:', error)
-    showNotification(getLocalizedServerMessage(error.data?.message) || locale.value.saveFailed, 'error')
+    showNotification(getLocalizedServerMessage(error.data?.message) || getLocaleMessage('saveFailed'), 'error')
   } finally {
     saving.value = false
   }
@@ -309,7 +314,7 @@ const saveConfig = async () => {
 const resetConfig = () => {
   config.value = { ...originalConfig.value }
   testResult.value = null
-  showNotification(locale.value.resetSuccess, 'info')
+  showNotification(getLocaleMessage('resetSuccess'), 'info')
 }
 
 const reloadSmtpConfig = async () => {
@@ -319,13 +324,13 @@ const reloadSmtpConfig = async () => {
       method: 'POST'
     })
     if (!response.success) {
-      throw new Error(getLocalizedServerMessage(response.message) || locale.value.reloadFailed)
+      throw new Error(getLocalizedServerMessage(response.message) || getLocaleMessage('reloadFailed'))
     }
-    showNotification(getLocalizedServerMessage(response.message) || locale.value.reloadSuccess, 'success')
+    showNotification(getLocalizedServerMessage(response.message) || getLocaleMessage('reloadSuccess'), 'success')
   } catch (error) {
     console.error('重载SMTP配置失败:', error)
     showNotification(
-      getLocalizedServerMessage(error.data?.message || error.message) || locale.value.reloadFailed,
+      getLocalizedServerMessage(error.data?.message || error.message) || getLocaleMessage('reloadFailed'),
       'error'
     )
   } finally {
@@ -336,7 +341,7 @@ const reloadSmtpConfig = async () => {
 // 测试连接
 const testConnection = async () => {
   if (!config.value.smtpEnabled || !config.value.smtpHost) {
-    showNotification(locale.value.serverRequired, 'error')
+    showNotification(getLocaleMessage('serverRequired'), 'error')
     return
   }
 
@@ -355,7 +360,7 @@ const testConnection = async () => {
     testResult.value = {
       success: false,
       message:
-        getLocalizedServerMessage(error.data?.message) || locale.value.testConnectionFailed
+        getLocalizedServerMessage(error.data?.message) || getLocaleMessage('testConnectionFailed')
     }
   } finally {
     testing.value = false
@@ -365,7 +370,7 @@ const testConnection = async () => {
 // 发送测试邮件
 const sendTestEmail = async () => {
   if (!testEmail.value) {
-    showNotification(locale.value.testEmailRequired, 'error')
+    showNotification(getLocaleMessage('testEmailRequired'), 'error')
     return
   }
 
@@ -383,7 +388,7 @@ const sendTestEmail = async () => {
 
     testResult.value = localizeSmtpResult(response)
     if (response.success) {
-      showNotification(locale.value.testEmailSuccess, 'success')
+      showNotification(getLocaleMessage('testEmailSuccess'), 'success')
       setTimeout(() => {
         testResult.value = null
       }, 5000)
@@ -392,7 +397,7 @@ const sendTestEmail = async () => {
     console.error('发送测试邮件失败:', error)
     testResult.value = {
       success: false,
-      message: getLocalizedServerMessage(error.data?.message) || locale.value.testEmailFailed
+      message: getLocalizedServerMessage(error.data?.message) || getLocaleMessage('testEmailFailed')
     }
   } finally {
     testing.value = false

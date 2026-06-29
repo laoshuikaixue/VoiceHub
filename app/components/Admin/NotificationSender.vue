@@ -208,7 +208,7 @@
                   >
                     <div class="px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/40">
                       <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >{{ locale.searchResults(userSearchResults.length) }}</span
+                        >{{ getLocaleMessage('searchResults', userSearchResults.length) }}</span
                       >
                     </div>
                     <div
@@ -248,7 +248,7 @@
                   <div v-if="form.selectedUsers.length > 0" class="space-y-3">
                     <div class="flex items-center justify-between px-1">
                       <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >{{ locale.selectedUsers(form.selectedUsers.length) }}</span
+                        >{{ getLocaleMessage('selectedUsers', form.selectedUsers.length) }}</span
                       >
                       <button
                         class="text-[9px] font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors"
@@ -383,7 +383,7 @@
                   <div class="flex items-center gap-1.5">
                     <Users :size="12" class="text-zinc-700" />
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-wider">
-                      {{ locale.previewScope(scopeDescription) }}
+                      {{ getLocaleMessage('previewScope', scopeDescription) }}
                     </span>
                   </div>
                   <button
@@ -446,7 +446,15 @@ const { isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.notificationSender)
+const locale = computed(() => admin.value?.notificationSender || {})
+const getLocaleMessage = (key, ...args) => {
+  const message = locale.value?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  return typeof message === 'function' ? message(...args) : (message || '')
+}
 
 onMounted(() => {
   userFilters.fetchOptions()
@@ -504,11 +512,11 @@ const userSearchLoading = ref(false)
 let userSearchTimeout = null
 
 const targetOptions = computed(() => [
-  { id: 'ALL', label: locale.value.targets.all, icon: Users },
-  { id: 'GRADE', label: locale.value.targets.grade, icon: GraduationCap },
-  { id: 'CLASS', label: locale.value.targets.class, icon: LayoutGrid },
-  { id: 'MULTI_CLASS', label: locale.value.targets.multiClass, icon: Plus },
-  { id: 'SPECIFIC_USERS', label: locale.value.targets.specificUsers, icon: User }
+  { id: 'ALL', label: getNestedMessage('targets', 'all'), icon: Users },
+  { id: 'GRADE', label: getNestedMessage('targets', 'grade'), icon: GraduationCap },
+  { id: 'CLASS', label: getNestedMessage('targets', 'class'), icon: LayoutGrid },
+  { id: 'MULTI_CLASS', label: getNestedMessage('targets', 'multiClass'), icon: Plus },
+  { id: 'SPECIFIC_USERS', label: getNestedMessage('targets', 'specificUsers'), icon: User }
 ])
 
 // 判断是否可以添加班级
@@ -621,9 +629,9 @@ const clearAllSelectedUsers = () => {
 // 获取角色文本
 const getRoleText = (role) => {
   const roleMap = {
-    admin: locale.value.roles.admin,
-    teacher: locale.value.roles.teacher,
-    student: locale.value.roles.student
+    admin: getNestedMessage('roles', 'admin'),
+    teacher: getNestedMessage('roles', 'teacher'),
+    student: getNestedMessage('roles', 'student')
   }
   return roleMap[role] || role
 }
@@ -657,21 +665,23 @@ const isFormValid = computed(() => {
 const scopeDescription = computed(() => {
   switch (form.value.scope) {
     case 'ALL':
-      return locale.value.scopeDescriptions.all
+      return getNestedMessage('scopeDescriptions', 'all')
     case 'GRADE':
-      return form.value.grade ? locale.value.scopeDescriptions.grade(form.value.grade) : locale.value.scopeDescriptions.selectGrade
+      return form.value.grade
+        ? getNestedMessage('scopeDescriptions', 'grade', form.value.grade)
+        : getNestedMessage('scopeDescriptions', 'selectGrade')
     case 'CLASS':
       return form.value.classGrade && form.value.className
-        ? locale.value.scopeDescriptions.class(form.value.classGrade, form.value.className)
-        : locale.value.scopeDescriptions.selectClass
+        ? getNestedMessage('scopeDescriptions', 'class', form.value.classGrade, form.value.className)
+        : getNestedMessage('scopeDescriptions', 'selectClass')
     case 'MULTI_CLASS':
       return form.value.selectedClasses.length > 0
-        ? locale.value.scopeDescriptions.multiClass(form.value.selectedClasses.length)
-        : locale.value.scopeDescriptions.selectClass
+        ? getNestedMessage('scopeDescriptions', 'multiClass', form.value.selectedClasses.length)
+        : getNestedMessage('scopeDescriptions', 'selectClass')
     case 'SPECIFIC_USERS':
       return form.value.selectedUsers.length > 0
-        ? locale.value.scopeDescriptions.specificUsers(form.value.selectedUsers.length)
-        : locale.value.scopeDescriptions.selectUsers
+        ? getNestedMessage('scopeDescriptions', 'specificUsers', form.value.selectedUsers.length)
+        : getNestedMessage('scopeDescriptions', 'selectUsers')
     default:
       return ''
   }
@@ -680,12 +690,12 @@ const scopeDescription = computed(() => {
 // 发送通知
 const sendNotification = async () => {
   if (!isAdmin.value) {
-    error.value = locale.value.errors.adminOnly
+    error.value = getNestedMessage('errors', 'adminOnly')
     return
   }
 
   if (!isFormValid.value) {
-    error.value = locale.value.errors.incomplete
+    error.value = getNestedMessage('errors', 'incomplete')
     return
   }
 
@@ -718,7 +728,7 @@ const sendNotification = async () => {
     const result = await sendAdminNotification(notificationData)
 
     if (result && result.success) {
-      success.value = locale.value.messages.sendSuccess(result.sentCount)
+      success.value = getNestedMessage('messages', 'sendSuccess', result.sentCount)
 
       // 3秒后自动隐藏成功提示
       setTimeout(() => {
@@ -747,10 +757,10 @@ const sendNotification = async () => {
       userSearchLoading.value = false
       clearTimeout(userSearchTimeout)
     } else {
-      throw new Error(result?.message || locale.value.errors.sendFailed)
+      throw new Error(result?.message || getNestedMessage('errors', 'sendFailed'))
     }
   } catch (err) {
-    error.value = err.message || locale.value.errors.sendError
+    error.value = err.message || getNestedMessage('errors', 'sendError')
     console.error('发送通知错误:', err)
 
     // 3秒后自动隐藏错误提示

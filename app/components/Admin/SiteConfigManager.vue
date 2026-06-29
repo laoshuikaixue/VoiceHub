@@ -795,7 +795,7 @@ const loadConfig = async () => {
 
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
-    console.error(locale.value.logs.loadFailed, error)
+    console.error('Failed to load site config:', error)
     showNotification(locale.value.loadFailed, 'error')
   } finally {
     loading.value = false
@@ -832,7 +832,7 @@ const saveConfig = async () => {
       let message = locale.value.saveFailed
       try {
         const errorData = await response.json()
-        console.error(locale.value.logs.apiErrorResponse, errorData)
+        console.error('Site config API error response:', errorData)
 
         const getErrorMessage = (err) => {
           if (err?.data?.error) return err.data.error
@@ -845,7 +845,7 @@ const saveConfig = async () => {
 
         message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value.saveFailed)
       } catch (parseError) {
-        console.error(locale.value.logs.parseApiErrorFailed, parseError)
+        console.error('Failed to parse site config API error:', parseError)
       }
       throw new Error(message)
     }
@@ -860,7 +860,7 @@ const saveConfig = async () => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
-    console.error(locale.value.logs.saveFailed, error)
+    console.error('Failed to save site config:', error)
     let message = locale.value.saveFailedRetry
     if (error?.message) {
       message = getLocalizedServerMessage(error.message)

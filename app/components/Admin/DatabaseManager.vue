@@ -313,7 +313,7 @@
             >
             <CustomSelect
               v-model="sequenceForm.table"
-              :options="locale.tableOptions"
+              :options="locale.tableOptions || []"
               label-key="label"
               value-key="value"
               class="w-full"
