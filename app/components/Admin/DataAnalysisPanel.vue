@@ -627,7 +627,7 @@ import { useLocale } from '~/utils/locale'
 // 使用学期管理 composable
 const { fetchSemesters, semesters: availableSemesters, currentSemester } = useSemesters()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.dataAnalysis)
+const locale = computed(() => admin.value?.dataAnalysis || {})
 
 // 响应式数据
 const selectedSemester = ref('all')
@@ -666,28 +666,28 @@ const analysisData = ref({
 // 计算 KPI 统计数据
 const kpiStats = computed(() => [
   {
-    label: locale.value.kpi.totalUsers,
+    label: locale.value?.kpi?.totalUsers || 'Total users',
     value: analysisData.value.totalUsers,
     trend: analysisData.value.usersChange,
     icon: Users,
     color: 'blue'
   },
   {
-    label: locale.value.kpi.activeSongs,
+    label: locale.value?.kpi?.activeSongs || 'Active songs',
     value: analysisData.value.totalSongs,
     trend: analysisData.value.songsChange,
     icon: Music,
     color: 'emerald'
   },
   {
-    label: locale.value.kpi.scheduleDays,
+    label: locale.value?.kpi?.scheduleDays || 'Schedule days',
     value: analysisData.value.totalSchedules,
     trend: analysisData.value.schedulesChange,
     icon: Calendar,
     color: 'amber'
   },
   {
-    label: locale.value.kpi.totalRequests,
+    label: locale.value?.kpi?.totalRequests || 'Total requests',
     value: analysisData.value.totalRequests,
     trend: analysisData.value.requestsChange,
     icon: Heart,

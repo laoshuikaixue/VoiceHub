@@ -88,7 +88,7 @@ defineProps({
 
 const emit = defineEmits(['close', 'update:isPublic'])
 const { admin } = useLocale()
-const locale = computed(() => admin.value.scheduleManager.remarkDialog)
+const locale = computed(() => admin.value?.scheduleManager?.remarkDialog || {})
 
 const close = () => {
   emit('close')

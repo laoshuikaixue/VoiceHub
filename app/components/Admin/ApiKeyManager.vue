@@ -638,7 +638,10 @@ const locale = computed(() => admin.value?.apiKeys || {})
 const getLocaleText = (key) => locale.value?.[key] || ''
 const getExpiresOptionText = (key) => locale.value?.expiresOptions?.[key] || ''
 const getPermissionOptionText = (key, field) => locale.value?.permissionOptions?.[key]?.[field] || ''
-const getDeleteTitle = (name) => locale.value?.deleteMessage?.(name) || ''
+const getDeleteTitle = (name) => {
+  const message = locale.value?.deleteMessage
+  return typeof message === 'function' ? message(name) : (message || '')
+}
 
 // 响应式数据
 const loading = ref(false)

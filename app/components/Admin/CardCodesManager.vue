@@ -490,10 +490,10 @@ const stats = computed(() => {
   const redeemed = cardStats.value.redeemed
 
   return [
-    { label: locale.value.stats.total, value: total, hint: locale.value.stats.all, badgeClass: 'bg-zinc-800 text-zinc-200' },
-    { label: locale.value.stats.available, value: available, hint: locale.value.stats.unused, badgeClass: 'bg-emerald-500/10 text-emerald-300' },
-    { label: locale.value.stats.locked, value: locked, hint: locale.value.stats.pendingRedeem, badgeClass: 'bg-amber-500/10 text-amber-300' },
-    { label: locale.value.stats.redeemed, value: redeemed, hint: locale.value.stats.completed, badgeClass: 'bg-blue-500/10 text-blue-300' }
+    { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-zinc-800 text-zinc-200' },
+    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-emerald-500/10 text-emerald-300' },
+    { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-amber-500/10 text-amber-300' },
+    { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-blue-500/10 text-blue-300' }
   ]
 })
 

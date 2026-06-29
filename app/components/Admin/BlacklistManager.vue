@@ -397,9 +397,10 @@ const loadBlacklist = async () => {
     blacklist.value = response.blacklist
     Object.assign(pagination, response.pagination)
   } catch (err) {
-    error.value = locale.value.fetchFailed
+    const fetchFailed = locale.value?.fetchFailed || 'Failed to load blacklist'
+    error.value = fetchFailed
     console.error('获取黑名单失败:', err)
-    showNotification(`${locale.value.fetchFailed}: ${err.data?.message || err.message}`, 'error')
+    showNotification(`${fetchFailed}: ${err.data?.message || err.message}`, 'error')
   } finally {
     loading.value = false
   }

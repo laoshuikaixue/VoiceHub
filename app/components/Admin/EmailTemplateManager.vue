@@ -241,7 +241,7 @@ type TemplateItem = {
 
 const { success, error } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.emailTemplateManager)
+const locale = computed(() => admin.value?.emailTemplateManager || {})
 const templates = ref<TemplateItem[]>([])
 const selectedKey = ref<string>('')
 const form = ref<{ key: string; name: string; subject: string; html: string }>({
@@ -310,14 +310,14 @@ async function doPreview() {
     const defaultData =
       form.value.key === 'verification.code'
         ? {
-            name: locale.value.previewData.name,
+            name: locale.value?.previewData?.name || 'Example User',
             email: 'example@school.edu',
             code: '123456',
             expiresInMinutes: 5
           }
         : {
-            title: locale.value.previewData.title,
-            message: locale.value.previewData.message,
+            title: locale.value?.previewData?.title || 'System Notification',
+            message: locale.value?.previewData?.message || 'This is preview content.\nLine breaks and links are supported.',
             actionUrl: 'https://example.com'
           }
     const res = await $fetch('/api/admin/email-templates/preview', {

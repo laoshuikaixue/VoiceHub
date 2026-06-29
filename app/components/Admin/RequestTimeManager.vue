@@ -523,7 +523,7 @@ import {
 
 const { getAuthConfig, isAdmin } = useAuth()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.requestTimeManager)
+const locale = computed(() => admin.value?.requestTimeManager || {})
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)
@@ -567,29 +567,31 @@ const stats = computed(() => {
 
   return [
     {
-      label: locale.value.stats.activeSlots,
+      label: locale.value?.stats?.activeSlots || 'Active slots',
       value: activeSlots.length.toString(),
       icon: Clock,
       color: 'blue'
     },
     {
-      label: locale.value.stats.totalAccepted,
+      label: locale.value?.stats?.totalAccepted || 'Total accepted',
       value: totalAcceptedAll.toString(),
       icon: BarChart3,
       color: 'emerald'
     },
     {
-      label: locale.value.stats.totalCapacity,
-      value: activeSlots.length === 0 ? locale.value.none : (hasUnlimitedActiveSlot ? locale.value.unlimited : totalExpectedActive.toString()),
+      label: locale.value?.stats?.totalCapacity || 'Total capacity',
+      value: activeSlots.length === 0
+        ? (locale.value?.none || 'None')
+        : (hasUnlimitedActiveSlot ? (locale.value?.unlimited || 'Unlimited') : totalExpectedActive.toString()),
       icon: Hash,
       color: 'purple'
     },
     {
-      label: locale.value.stats.remainingCapacity,
+      label: locale.value?.stats?.remainingCapacity || 'Remaining capacity',
       value: activeSlots.length === 0 
-        ? locale.value.none
+        ? (locale.value?.none || 'None')
         : (hasUnlimitedActiveSlot 
-            ? locale.value.unlimited
+            ? (locale.value?.unlimited || 'Unlimited')
             : Math.max(0, totalExpectedActive - totalAcceptedActive).toString()),
       icon: Filter,
       color: 'amber'

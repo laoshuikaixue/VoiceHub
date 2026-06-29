@@ -443,7 +443,7 @@ import logoPng from '~~/public/images/logo.png'
 import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.schedulePrinter)
+const locale = computed(() => admin.value?.schedulePrinter || {})
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()
@@ -496,20 +496,20 @@ const paperSizeOptions = [
 ]
 
 const dateRanges = computed(() => [
-  { label: locale.value.dateRanges.today, value: 'today' },
-  { label: locale.value.dateRanges.tomorrow, value: 'tomorrow' },
-  { label: locale.value.dateRanges.thisWeek, value: 'thisWeek' },
-  { label: locale.value.dateRanges.nextWeek, value: 'nextWeek' }
+  { label: locale.value?.dateRanges?.today || 'Today', value: 'today' },
+  { label: locale.value?.dateRanges?.tomorrow || 'Tomorrow', value: 'tomorrow' },
+  { label: locale.value?.dateRanges?.thisWeek || 'This week', value: 'thisWeek' },
+  { label: locale.value?.dateRanges?.nextWeek || 'Next week', value: 'nextWeek' }
 ])
 
 const contentOptions = computed(() => [
-  { key: 'showCover', label: locale.value.contentOptions.cover },
-  { key: 'showTitle', label: locale.value.contentOptions.title },
-  { key: 'showArtist', label: locale.value.contentOptions.artist },
-  { key: 'showRequester', label: locale.value.contentOptions.requester },
-  { key: 'showVotes', label: locale.value.contentOptions.votes },
-  { key: 'showSequence', label: locale.value.contentOptions.sequence },
-  { key: 'showPlayTime', label: locale.value.contentOptions.playTime }
+  { key: 'showCover', label: locale.value?.contentOptions?.cover || 'Cover' },
+  { key: 'showTitle', label: locale.value?.contentOptions?.title || 'Title' },
+  { key: 'showArtist', label: locale.value?.contentOptions?.artist || 'Artist' },
+  { key: 'showRequester', label: locale.value?.contentOptions?.requester || 'Requester' },
+  { key: 'showVotes', label: locale.value?.contentOptions?.votes || 'Votes' },
+  { key: 'showSequence', label: locale.value?.contentOptions?.sequence || 'Sequence' },
+  { key: 'showPlayTime', label: locale.value?.contentOptions?.playTime || 'Play time' }
 ])
 
 const paperWidths = {

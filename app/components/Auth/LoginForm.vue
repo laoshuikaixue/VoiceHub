@@ -556,6 +556,9 @@ const handleLogin = async () => {
       return
     }
 
+    // 当前表单需要根据登录/绑定接口动态切换 URL，不能直接复用 auth.login()。
+    // 登录成功后刷新一次全局认证态，确保管理员角色在路由守卫执行前已同步。
+    await auth.initAuth({ force: true })
     await redirectAfterLogin()
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }

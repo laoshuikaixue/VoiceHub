@@ -1016,7 +1016,7 @@ import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value.scheduleManager)
+const locale = computed(() => admin.value?.scheduleManager || {})
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
@@ -1108,7 +1108,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
   const cookie = getNeteaseCookie()
   
   const fetchPromises = playlistIds.map(async (id) => {
-  const playlistName = playlistNames[id] || locale.value.playlistName(id)
+  const playlistName = playlistNames[id] || locale.value?.playlistName?.(id) || `Playlist ${id}`
     let trackIds = []
 
     // 优先使用从组件中传来的已经缓存的 trackIds
@@ -1345,10 +1345,10 @@ const playTimeOptions = computed(() => {
 
 // 排序选项
 const sortOptions = computed(() => [
-  { label: locale.value.sortOptions.newest, value: 'time-desc' },
-  { label: locale.value.sortOptions.oldest, value: 'time-asc' },
-  { label: locale.value.sortOptions.hotDesc, value: 'votes-desc' },
-  { label: locale.value.sortOptions.hotAsc, value: 'votes-asc' }
+  { label: locale.value?.sortOptions?.newest || 'Newest', value: 'time-desc' },
+  { label: locale.value?.sortOptions?.oldest || 'Oldest', value: 'time-asc' },
+  { label: locale.value?.sortOptions?.hotDesc || 'Most votes', value: 'votes-desc' },
+  { label: locale.value?.sortOptions?.hotAsc || 'Fewest votes', value: 'votes-asc' }
 ])
 
 // 学期相关

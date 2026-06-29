@@ -957,11 +957,11 @@ const parseExcelData = (jsonData) => {
     const rawGrade = getRowValue(columnKeys.grade, ['年级', 'grade'])
     const rawClass = getRowValue(columnKeys.class, ['班级', 'class'])
     const rawExplicitNewUsername = getRowValue(columnKeys.newUsername, ['新用户名', 'new_username'])
-    const username = String(rawUsername).trim()
-    const name = String(rawName).trim().toLowerCase()
-    const newGrade = rawGrade !== undefined && rawGrade !== null ? String(rawGrade).trim() : ''
-    const newClass = rawClass !== undefined && rawClass !== null ? String(rawClass).trim() : ''
-    const explicitNewUsername = String(rawExplicitNewUsername).trim()
+    const username = rawUsername != null ? String(rawUsername).trim() : ''
+    const name = rawName != null ? String(rawName).trim().toLowerCase() : ''
+    const newGrade = rawGrade != null ? String(rawGrade).trim() : ''
+    const newClass = rawClass != null ? String(rawClass).trim() : ''
+    const explicitNewUsername = rawExplicitNewUsername != null ? String(rawExplicitNewUsername).trim() : ''
     const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name

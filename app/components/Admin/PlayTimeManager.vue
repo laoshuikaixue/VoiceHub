@@ -373,7 +373,7 @@ import {
 const { getAuthConfig, isAdmin } = useAuth()
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.playTimeManager)
+const locale = computed(() => admin.value?.playTimeManager || {})
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)
@@ -542,7 +542,9 @@ const togglePlayTimeStatus = async (playTime: PlayTime) => {
     // 更新本地数据
     await fetchPlayTimes()
     showNotification(
-      playTime.enabled ? locale.value.messages.playTimeDisabled : locale.value.messages.playTimeEnabled,
+      playTime.enabled
+        ? (locale.value?.messages?.playTimeDisabled || 'Play time disabled')
+        : (locale.value?.messages?.playTimeEnabled || 'Play time enabled'),
       'success'
     )
   } catch (err: any) {
@@ -574,7 +576,7 @@ const deletePlayTime = async () => {
     await fetchPlayTimes()
     showDeleteConfirm.value = false
     playTimeToDelete.value = null
-    showNotification(locale.value.messages.playTimeDeleted, 'success')
+    showNotification(locale.value?.messages?.playTimeDeleted || 'Play time deleted', 'success')
   } catch (err: any) {
     error.value = err.message || locale.value.errors.deletePlayTimeFailed
     showNotification(error.value, 'error')
@@ -633,7 +635,9 @@ const savePlayTime = async () => {
     await fetchPlayTimes()
     cancelForm()
     showNotification(
-      isUpdate ? locale.value.messages.playTimeUpdated : locale.value.messages.playTimeCreated,
+      isUpdate
+        ? (locale.value?.messages?.playTimeUpdated || 'Play time updated')
+        : (locale.value?.messages?.playTimeCreated || 'Play time created'),
       'success'
     )
   } catch (err: any) {

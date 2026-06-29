@@ -729,7 +729,7 @@ const loadConfig = async () => {
       credentials: 'include'
     })
 
-    if (!response.ok) throw new Error(locale.value.fetchFailed)
+    if (!response.ok) throw new Error(locale.value?.fetchFailed || 'Failed to load site config')
 
     const data = await response.json()
 

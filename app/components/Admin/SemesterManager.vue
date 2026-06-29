@@ -541,7 +541,8 @@ const sortedSemesters = computed(() => {
 
 // 删除确认信息
 const deleteMessage = computed(() => {
-  return locale.value.deleteMessage(deleteTargetName.value)
+  const message = locale.value?.deleteMessage
+  return typeof message === 'function' ? message(deleteTargetName.value) : (message || '')
 })
 
 // 格式化日期
