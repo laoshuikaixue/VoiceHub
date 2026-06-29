@@ -340,7 +340,7 @@ import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.blacklist)
+const locale = computed(() => admin.value?.blacklist || {})
 
 const blacklist = ref([])
 const loading = ref(false)

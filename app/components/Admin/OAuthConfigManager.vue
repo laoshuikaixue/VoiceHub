@@ -302,7 +302,7 @@ const emits = defineEmits(['update:modelValue'])
 
 const { showToast } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.oauthConfig)
+const locale = computed(() => admin.value?.oauthConfig || {})
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
@@ -330,15 +330,15 @@ const envData = ref({
 const oauthProviders = computed(() => [
   {
     id: 'github',
-    title: locale.value?.githubTitle || '',
+    title: locale.value?.githubTitle || 'GitHub OAuth',
     hasEnvConfig: envData.value.hasGithubConfig,
     enabledKey: 'githubOAuthEnabled',
     clientIdKey: 'githubClientId',
     clientSecretKey: 'githubClientSecret',
-    clientIdLabel: locale.value?.githubClientId || '',
-    clientIdPlaceholder: locale.value?.githubClientIdPlaceholder || '',
-    clientSecretLabel: locale.value?.githubClientSecret || '',
-    clientSecretPlaceholder: locale.value?.githubClientSecretPlaceholder || '',
+    clientIdLabel: locale.value?.githubClientId || 'GitHub Client ID',
+    clientIdPlaceholder: locale.value?.githubClientIdPlaceholder || 'Enter GitHub Client ID',
+    clientSecretLabel: locale.value?.githubClientSecret || 'GitHub Client Secret',
+    clientSecretPlaceholder: locale.value?.githubClientSecretPlaceholder || 'Enter GitHub Client Secret',
   },
   {
     id: 'casdoor',

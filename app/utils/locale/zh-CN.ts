@@ -1254,6 +1254,12 @@ export const pages = {
       cardCodeSaveHint: '保存时会先验证点歌券是否可用。',
       cardCodeValidateFailed: '点歌券验证失败，请稍后重试',
       cardCodeRequiredWarning: '请先填写点歌券',
+      cardCodeAuthRequired: '请先登录后再验证点歌券',
+      cardCodeDisabled: '点歌券投稿功能未启用',
+      cardCodeInvalidOrUsed: '点歌券无效或已被使用',
+      cardCodeLockedOrUnavailable: '点歌券已被锁定或不可用',
+      cardCodeRequiredForSite: '本站点已启用仅点歌券投稿，请提供有效点歌券',
+      cardCodeTooLong: '点歌券不能超过100个字符',
       notifications: {
         exportSuccess: '导出成功',
         validatingCookie: '正在验证Cookie有效性...',

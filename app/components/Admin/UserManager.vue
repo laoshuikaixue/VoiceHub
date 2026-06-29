@@ -1447,7 +1447,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value.userManager)
+const locale = computed(() => admin.value?.userManager || {})
 const getLocaleMessage = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
   if (typeof message === 'function') return message(...args)

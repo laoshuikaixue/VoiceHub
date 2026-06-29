@@ -1,10 +1,12 @@
 import { computed, ref } from 'vue'
 import { useAuth } from './useAuth'
 import { getGlobalDedup } from './useRequestDedup'
+import { useLocale } from '~/utils/locale'
 import type { PlayTime, Schedule, Song } from '~/types'
 
 export const useSongs = () => {
   const { isAuthenticated, user, getAuthConfig, isAdmin } = useAuth()
+  const { songs: songsLocale } = useLocale()
   const dedup = getGlobalDedup()
 
   const songs = ref<Song[]>([])
@@ -16,6 +18,25 @@ export const useSongs = () => {
   const playTimes = ref<PlayTime[]>([])
   const playTimeEnabled = ref(false)
   const songCount = ref(0)
+  const requestFormLocale = computed(() => songsLocale.value?.requestForm)
+
+  const getCardCodeErrorCode = (err: any) =>
+    err?.data?.data?.code || err?.data?.code || err?.statusMessage || err?.data?.statusMessage
+
+  const getLocalizedCardCodeError = (code: string | undefined) => {
+    const locale = requestFormLocale.value
+    const messageMap: Record<string, string | undefined> = {
+      CARD_CODE_AUTH_REQUIRED: locale?.cardCodeAuthRequired,
+      CARD_CODE_REQUIRED: locale?.cardCodeRequiredWarning,
+      CARD_CODE_DISABLED: locale?.cardCodeDisabled,
+      CARD_CODE_INVALID_OR_USED: locale?.cardCodeInvalidOrUsed,
+      CARD_CODE_LOCKED_OR_UNAVAILABLE: locale?.cardCodeLockedOrUnavailable,
+      CARD_CODE_REQUIRED_FOR_SITE: locale?.cardCodeRequiredForSite,
+      CARD_CODE_TOO_LONG: locale?.cardCodeTooLong
+    }
+
+    return code ? messageMap[code] : ''
+  }
 
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -278,7 +299,8 @@ export const useSongs = () => {
 
       return data
     } catch (err: any) {
-      const errorMsg = err.data?.message || err.message || '点歌失败'
+      const cardCodeErrorMsg = getLocalizedCardCodeError(getCardCodeErrorCode(err))
+      const errorMsg = cardCodeErrorMsg || err.data?.message || err.message || '点歌失败'
       // 如果是重复投稿错误，只显示通知而不设置全局错误
       if (errorMsg.includes('已经在列表中') || errorMsg.includes('不能重复投稿')) {
         showNotification(errorMsg, 'info')

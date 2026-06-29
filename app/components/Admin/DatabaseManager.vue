@@ -444,7 +444,7 @@ import { useLocale } from '~/utils/locale'
 const { showToast: showNotification } = useToast()
 const auth = useAuth()
 const { admin } = useLocale()
-const locale = computed(() => admin.value.databaseManager)
+const locale = computed(() => admin.value?.databaseManager || {})
 const getMessage = (key) => locale.value?.messages?.[key] || ''
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 const getErrorMessage = (key, ...args) => {

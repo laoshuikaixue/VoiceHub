@@ -187,7 +187,8 @@ interface CustomPlaylist {
 }
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value.scheduleManager.playlistFilterModal)
+const scheduleLocale = computed(() => admin.value?.scheduleManager || {})
+const locale = computed(() => scheduleLocale.value?.playlistFilterModal || {})
 
 const defaultPlaylists = ref([
   { id: '19723756', coverImgUrl: '', trackIds: [] as string[] },
@@ -203,7 +204,7 @@ const getDefaultPlaylistName = (id: string) => {
     '2884035': locale.value.defaultNames.original,
     '3778678': locale.value.defaultNames.hotSongs
   }
-  return names[id] || admin.value.scheduleManager.playlistName(id)
+  return names[id] || scheduleLocale.value?.playlistName?.(id) || id
 }
 
 const selectedIds = ref<string[]>([])
@@ -470,7 +471,7 @@ const applyFilter = async () => {
         if (item.name) {
           playlistNamesMap[item.id] = item.name
         } else {
-          playlistNamesMap[item.id] = admin.value.scheduleManager.playlistName(item.id)
+          playlistNamesMap[item.id] = scheduleLocale.value?.playlistName?.(item.id) || item.id
         }
         
         if (item.trackIds && item.trackIds.length > 0) {

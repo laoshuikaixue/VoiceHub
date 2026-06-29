@@ -346,7 +346,7 @@ import { useLocale } from '~/utils/locale'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
 const { auth: authLocale } = useLocale()
-const locale = computed(() => authLocale.value.loginForm)
+const locale = computed(() => authLocale.value?.loginForm || {})
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -556,8 +556,6 @@ const handleLogin = async () => {
       return
     }
 
-    // 登录成功后必须绕过未登录探测缓存，否则刚写入的 Cookie 无法立即驱动跳转。
-    await auth.initAuth({ force: true })
     await redirectAfterLogin()
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }

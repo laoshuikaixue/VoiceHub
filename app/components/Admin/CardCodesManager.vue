@@ -446,39 +446,39 @@ const generateForm = ref({ count: 20, prefix: 'VH-', length: 10, charset: 'ABCDE
 const lastGeneratedCodes = ref([])
 
 const statusFilterOptions = computed(() => [
-  { label: locale.value?.allStatus || '全部状态', value: '' },
-  { label: locale.value?.available || '可用', value: 'AVAILABLE' },
-  { label: locale.value?.lockedStatus || '已锁定', value: 'LOCKED' },
-  { label: locale.value?.redeemedStatus || '已核销', value: 'REDEEMED' },
-  { label: locale.value?.invalidStatus || '已失效', value: 'INVALID' }
+  { label: locale.value?.allStatus || 'All Status', value: '' },
+  { label: locale.value?.available || 'Available', value: 'AVAILABLE' },
+  { label: locale.value?.lockedStatus || 'Locked', value: 'LOCKED' },
+  { label: locale.value?.redeemedStatus || 'Redeemed', value: 'REDEEMED' },
+  { label: locale.value?.invalidStatus || 'Invalid', value: 'INVALID' }
 ])
 
 const bulkStatusOptions = computed(() => [
-  { label: locale.value?.setAvailable || '设为可用', value: 'AVAILABLE' },
-  { label: locale.value?.setLocked || '设为锁定', value: 'LOCKED' },
-  { label: locale.value?.setRedeemed || '设为核销', value: 'REDEEMED' },
-  { label: locale.value?.setInvalid || '设为失效', value: 'INVALID' }
+  { label: locale.value?.setAvailable || 'Set Available', value: 'AVAILABLE' },
+  { label: locale.value?.setLocked || 'Set Locked', value: 'LOCKED' },
+  { label: locale.value?.setRedeemed || 'Set Redeemed', value: 'REDEEMED' },
+  { label: locale.value?.setInvalid || 'Set Invalid', value: 'INVALID' }
 ])
 
 const statusMeta = (status) => {
   const statusMap = {
-    AVAILABLE: { label: locale.value?.available || '可用', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    LOCKED: { label: locale.value?.locked || '锁定', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    REDEEMED: { label: locale.value?.redeemed || '核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    INVALID: { label: locale.value?.invalid || '作废', class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
+    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
   }
-  return statusMap[status] || { label: status || locale.value?.unknown || '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
 }
 
 const logSourceMeta = (source) => {
   const sourceMap = {
-    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || '手动核销', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    ADMIN: { label: locale.value?.sources?.admin || '管理员操作', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || '排期自动', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || '移除排期', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    SCHEDULE: { label: locale.value?.sources?.schedule || '排期', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    WITHDRAW: { label: locale.value?.sources?.withdraw || '撤回', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    UNKNOWN: { label: locale.value?.unknown || '未知', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
+    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
+    WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
+    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
   }
   return sourceMap[source] || sourceMap.UNKNOWN
 }
@@ -687,7 +687,7 @@ const exportCodes = async () => {
     showToast(selectedIds.value.length ? locale.value.messages.exportSelectedSuccess : locale.value.messages.exportFilteredSuccess, 'success')
   } catch (error) {
     console.error('导出点歌券失败', error)
-    showToast(error?.message || locale.value.messages.exportFailed, 'error')
+    showToast(locale.value.messages.exportFailed, 'error')
   } finally {
     exporting.value = false
   }
@@ -784,7 +784,7 @@ const createCodes = async () => {
     await fetchCodes()
   } catch (error) {
     console.error('创建点歌券失败', error)
-    showToast(error?.data?.message || error?.message || locale.value.messages.createFailed, 'error')
+    showToast(locale.value.messages.createFailed, 'error')
   } finally {
     saving.value = false
   }

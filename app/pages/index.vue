@@ -87,7 +87,8 @@
                 </NuxtLink>
               </div>
             </div>
-          </ClientOnly>`r`n        </div>
+          </ClientOnly>
+        </div>
       </div>
 
       <div v-if="siteTitle" class="site-title">

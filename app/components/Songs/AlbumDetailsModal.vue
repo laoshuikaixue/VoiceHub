@@ -326,32 +326,32 @@ const emit = defineEmits(['close', 'submit', 'play', 'vote'])
 const { getCurrentSong, getPlayingStatus, pauseSong } = useAudioPlayer()
 const { songs: songsLocale } = useLocale()
 const fallbackRequestLocale = {
-  played: '',
-  scheduled: '',
-  liked: '',
-  like: '',
-  submitting: ''
+  played: 'Played',
+  scheduled: 'Scheduled',
+  liked: 'Liked',
+  like: 'Like',
+  submitting: 'Submitting...'
 }
 const fallbackAlbumModalLocale = {
-  albumFallback: '',
-  unknownArtist: '',
-  songCount: (count) => String(count),
-  publishTime: (date) => String(date),
-  company: (company) => String(company),
-  viewFullIntro: '',
-  searchPlaceholder: '',
-  loading: '',
-  noMatches: '',
-  noSongs: '',
-  pause: '',
-  preview: '',
-  submitted: '',
-  submit: '',
-  albumIntro: '',
-  loadFailed: '',
-  fetchFailed: '',
-  unsupportedPlatform: '',
-  tencentUnsupported: ''
+  albumFallback: 'Album',
+  unknownArtist: 'Unknown artist',
+  songCount: (count) => `${count} songs`,
+  publishTime: (date) => `Published: ${date}`,
+  company: (company) => `Label: ${company}`,
+  viewFullIntro: 'View full intro',
+  searchPlaceholder: 'Search songs in this album...',
+  loading: 'Loading...',
+  noMatches: 'No matching songs found',
+  noSongs: 'No songs',
+  pause: 'Pause',
+  preview: 'Preview',
+  submitted: 'Submitted',
+  submit: 'Submit',
+  albumIntro: 'Album Intro',
+  loadFailed: 'Load failed. Please try again later',
+  fetchFailed: 'Failed to fetch album details',
+  unsupportedPlatform: 'Unsupported platform',
+  tencentUnsupported: 'QQ Music album details are not supported yet'
 }
 const requestLocale = computed(() => ({
   ...fallbackRequestLocale,

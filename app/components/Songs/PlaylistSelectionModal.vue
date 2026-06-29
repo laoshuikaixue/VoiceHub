@@ -283,8 +283,8 @@ const props = defineProps({
 })
 
 const { songs: songsLocale } = useLocale()
-const requestLocale = computed(() => songsLocale.value.requestForm)
-const locale = computed(() => requestLocale.value.playlistModal)
+const requestLocale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => requestLocale.value?.playlistModal || {})
 
 const emit = defineEmits(['close', 'submit', 'play'])
 

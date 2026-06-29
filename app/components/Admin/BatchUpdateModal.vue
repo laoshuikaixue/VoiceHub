@@ -945,11 +945,23 @@ const parseExcelData = (jsonData) => {
 
   jsonData.forEach((row, index) => {
     const columnKeys = excelColumnKeys.value
-    const username = (row[columnKeys.username] || row['用户名'] || row['username'] || '').toString().trim()
-    const name = (row[columnKeys.name] || row['姓名'] || row['name'] || '').toString().trim().toLowerCase()
-    const newGrade = row[columnKeys.grade] || row['年级'] || row['grade'] ? String(row[columnKeys.grade] || row['年级'] || row['grade']).trim() : ''
-    const newClass = row[columnKeys.class] || row['班级'] || row['class'] ? String(row[columnKeys.class] || row['班级'] || row['class']).trim() : ''
-    const explicitNewUsername = (row[columnKeys.newUsername] || row['新用户名'] || row['new_username'] || '').toString().trim()
+    const getRowValue = (key, fallbacks, defaultValue = '') => {
+      if (key && row[key] !== undefined) return row[key]
+      for (const fallback of fallbacks) {
+        if (row[fallback] !== undefined) return row[fallback]
+      }
+      return defaultValue
+    }
+    const rawUsername = getRowValue(columnKeys.username, ['用户名', 'username'])
+    const rawName = getRowValue(columnKeys.name, ['姓名', 'name'])
+    const rawGrade = getRowValue(columnKeys.grade, ['年级', 'grade'])
+    const rawClass = getRowValue(columnKeys.class, ['班级', 'class'])
+    const rawExplicitNewUsername = getRowValue(columnKeys.newUsername, ['新用户名', 'new_username'])
+    const username = String(rawUsername).trim()
+    const name = String(rawName).trim().toLowerCase()
+    const newGrade = rawGrade !== undefined && rawGrade !== null ? String(rawGrade).trim() : ''
+    const newClass = rawClass !== undefined && rawClass !== null ? String(rawClass).trim() : ''
+    const explicitNewUsername = String(rawExplicitNewUsername).trim()
     const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name

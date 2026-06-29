@@ -1243,6 +1243,12 @@ export const pages = {
       cardCodeSaveHint: 'The request card will be validated before saving.',
       cardCodeValidateFailed: 'Failed to validate request card. Please try again later',
       cardCodeRequiredWarning: 'Please enter a request card first',
+      cardCodeAuthRequired: 'Please sign in before validating a request card',
+      cardCodeDisabled: 'Request card submissions are not enabled',
+      cardCodeInvalidOrUsed: 'This request card is invalid or has already been used',
+      cardCodeLockedOrUnavailable: 'This request card is locked or unavailable',
+      cardCodeRequiredForSite: 'This site requires a valid request card to submit songs',
+      cardCodeTooLong: 'Request card code cannot exceed 100 characters',
       notifications: {
         exportSuccess: 'Export successful',
         validatingCookie: 'Validating cookie...',

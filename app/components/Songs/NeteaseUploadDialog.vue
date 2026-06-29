@@ -166,8 +166,8 @@ interface Props {
 
 const props = defineProps<Props>()
 const { songs: songsLocale } = useLocale()
-const requestLocale = computed(() => songsLocale.value.requestForm)
-const locale = computed(() => requestLocale.value.neteaseUpload)
+const requestLocale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => requestLocale.value?.neteaseUpload || {})
 
 const songName = computed(
   () => props.song?.name || props.song?.song || props.song?.title || locale.value.unknownSong

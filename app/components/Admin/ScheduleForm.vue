@@ -94,8 +94,8 @@ const error = ref('')
 const playTimes = ref([])
 const { playTimeEnabled } = useSongs()
 const { common } = useLocale()
-const commonLocale = computed(() => common.value)
-const locale = computed(() => common.value.scheduleForm)
+const commonLocale = computed(() => common.value || {})
+const locale = computed(() => common.value?.scheduleForm || {})
 
 // 转换播出时段为 CustomSelect 选项格式
 const playTimeOptions = computed(() => {

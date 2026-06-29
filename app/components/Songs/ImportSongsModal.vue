@@ -315,8 +315,8 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'import-success'])
 const { songs: songsLocale } = useLocale()
-const requestLocale = computed(() => songsLocale.value.requestForm)
-const locale = computed(() => requestLocale.value.importSongsModal)
+const requestLocale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => requestLocale.value?.importSongsModal || {})
 
 const semesterList = ref([])
 const selectedSemester = ref('')

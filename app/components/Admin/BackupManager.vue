@@ -236,6 +236,11 @@ import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.backupManager || {})
+const getLocaleText = (key, ...args) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  return message || ''
+}
 
 // 响应式数据
 const createLoading = ref(false)
@@ -309,14 +314,14 @@ const createBackup = async () => {
           // 显示成功消息
           const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
           if (window.$showNotification) {
-            window.$showNotification(locale.value?.downloaded?.(backup.filename, sizeText) || '', 'success')
+            window.$showNotification(getLocaleText('downloaded', backup.filename, sizeText), 'success')
           }
 
           console.log('✅ 文件下载成功:', backup.filename)
         } catch (downloadError) {
           console.error('下载失败:', downloadError)
           if (window.$showNotification) {
-            window.$showNotification(locale.value?.fileDownloadFailed?.(downloadError.message) || '', 'error')
+            window.$showNotification(getLocaleText('fileDownloadFailed', downloadError.message), 'error')
           }
         }
       } else if (backup.downloadMode === 'file' && backup.filename) {
@@ -352,14 +357,14 @@ const createBackup = async () => {
           // 显示成功消息
           const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
           if (window.$showNotification) {
-            window.$showNotification(locale.value?.downloaded?.(backup.filename, sizeText) || '', 'success')
+            window.$showNotification(getLocaleText('downloaded', backup.filename, sizeText), 'success')
           }
 
           console.log('✅ 文件下载成功:', backup.filename)
         } catch (downloadError) {
           console.error('文件下载失败:', downloadError)
           if (window.$showNotification) {
-            window.$showNotification(locale.value?.fileDownloadFailed?.(downloadError.message) || '', 'error')
+            window.$showNotification(getLocaleText('fileDownloadFailed', downloadError.message), 'error')
           }
         }
       } else {
@@ -382,7 +387,7 @@ const createBackup = async () => {
     console.error('创建备份失败:', error)
     const errorMessage = error.data?.message || error.message || locale.value?.unknownError || '未知错误'
     if (window.$showNotification) {
-      window.$showNotification(locale.value?.createFailed?.(errorMessage) || '', 'error')
+      window.$showNotification(getLocaleText('createFailed', errorMessage), 'error')
     }
   } finally {
     createLoading.value = false
@@ -462,7 +467,7 @@ const uploadFile = async () => {
       // 显示成功通知
       if (window.$showNotification) {
         window.$showNotification(
-          locale.value?.restoreSuccess?.(response.details?.tablesProcessed || 0, response.details?.recordsRestored || 0) || '',
+          getLocaleText('restoreSuccess', response.details?.tablesProcessed || 0, response.details?.recordsRestored || 0),
           'success'
         )
 
@@ -470,7 +475,7 @@ const uploadFile = async () => {
         if (response.details?.errors && response.details.errors.length > 0) {
           setTimeout(() => {
             window.$showNotification(
-              locale.value?.restoreWarning?.(response.details.errors.length) || '',
+              getLocaleText('restoreWarning', response.details.errors.length),
               'warning'
             )
           }, 1000)
@@ -497,13 +502,13 @@ const uploadFile = async () => {
       }, 5000)
     } else {
       if (window.$showNotification) {
-        window.$showNotification(locale.value?.importFailed?.(response.message || locale.value?.unknownError || '未知错误') || '', 'error')
+        window.$showNotification(getLocaleText('importFailed', response.message || locale.value?.unknownError || '未知错误'), 'error')
       }
     }
   } catch (error) {
     console.error('导入备份失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value?.importFailed?.(error.data?.message || error.message) || '', 'error')
+      window.$showNotification(getLocaleText('importFailed', error.data?.message || error.message), 'error')
     }
   } finally {
     uploadLoading.value = false
