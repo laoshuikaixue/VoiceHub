@@ -500,10 +500,10 @@ const logSourceMeta = (source) => {
 }
 
 const stats = computed(() => {
-  const total = cardStats.value.total
-  const available = cardStats.value.available
-  const locked = cardStats.value.locked
-  const redeemed = cardStats.value.redeemed
+  const total = cardStats.value?.total ?? 0
+  const available = cardStats.value?.available ?? 0
+  const locked = cardStats.value?.locked ?? 0
+  const redeemed = cardStats.value?.redeemed ?? 0
 
   return [
     { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-zinc-800 text-zinc-200' },

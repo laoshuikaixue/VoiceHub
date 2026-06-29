@@ -266,7 +266,7 @@
               <AlignLeft class="w-4.5 h-4.5 text-zinc-500" /> {{ locale.previewArea }}
             </h3>
             <div class="flex items-center gap-2 text-xs font-bold">
-              <span class="text-zinc-400">{{ locale.songCount(filteredSchedules.length) }}</span>
+              <span class="text-zinc-400">{{ formatLocale(locale.songCount, '', filteredSchedules.length) }}</span>
               <span
                 v-if="schedules.length === 0"
                 class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20"
@@ -343,7 +343,7 @@
                     >
                       <h3 class="group-title">
                         {{ formatDate(date) }}
-                        <span class="group-count">({{ locale.countOnly(dateGroup.allSchedules.length) }})</span>
+                        <span class="group-count">({{ formatLocale(locale.countOnly, '', dateGroup.allSchedules.length) }})</span>
                       </h3>
 
                       <!-- 检查是否需要显示时段分组 -->
@@ -356,7 +356,7 @@
                           <h4 class="playtime-title">
                             {{ playTime }}
                             <span class="playtime-count"
-                              >({{ locale.countOnly(playTimeData.schedules.length) }})</span
+                              >({{ formatLocale(locale.countOnly, '', playTimeData.schedules.length) }})</span
                             >
                           </h4>
 

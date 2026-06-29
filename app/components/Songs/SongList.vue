@@ -462,7 +462,16 @@ const emit = defineEmits([
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const { currentLocale, songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value?.songList || {})
+const locale = computed(() => {
+  const base = songsLocale.value?.songList || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    playDate: base.playDate || emptyText,
+    scheduleDate: base.scheduleDate || emptyText,
+    replayRequest: base.replayRequest || emptyText
+  })
+})
 const callLocale = (key, fallback = '', ...args) => {
   const value = locale.value?.[key]
   if (typeof value === 'function') return value(...args)

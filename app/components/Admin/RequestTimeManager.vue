@@ -526,13 +526,23 @@ const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.requestTimeManager || {}
   const emptyText = () => ''
-  return {
+  return useSafeLocale({
     ...base,
     errors: { ...(base.errors || {}) },
     stats: { ...(base.stats || {}) },
     deleteConfirmTitle: base.deleteConfirmTitle || emptyText
-  }
+  })
 })
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getErrorMessage = (key, ...args) => formatLocale(locale.value?.errors?.[key], ...args)
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)

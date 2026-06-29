@@ -860,7 +860,7 @@ VoiceHub/
 │   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
 │   │   ├── useSemesters.ts     # 学期管理hooks
-鈹?  鈹?  鈹溾攢鈹€ useSafeLocale.ts    # 安全 i18n 文本包装hooks
+│   │   ├── useSafeLocale.ts    # 安全 i18n 文本包装hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks

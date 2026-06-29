@@ -193,7 +193,7 @@
               <div class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-                    >{{ locale.studentFilter.selectUsers(selectedUserIds?.length || 0, filteredUsers?.length || 0) }}</label
+                    >{{ getNestedText('studentFilter', 'selectUsers', selectedUserIds?.length || 0, filteredUsers?.length || 0) }}</label
                   >
                   <button
                     class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
@@ -1012,22 +1012,23 @@ const parseExcelData = (jsonData) => {
     }
   })
 
+  const columnKeys = excelColumnKeys.value
+  const getRowValue = (row, key, fallbacks, defaultValue = '') => {
+    if (key && row[key] !== undefined) return row[key]
+    for (const fallback of fallbacks) {
+      if (row[fallback] !== undefined) return row[fallback]
+    }
+    return defaultValue
+  }
+
   jsonData.forEach((row, index) => {
     if (!row || typeof row !== 'object') return
 
-    const columnKeys = excelColumnKeys.value
-    const getRowValue = (key, fallbacks, defaultValue = '') => {
-      if (key && row[key] !== undefined) return row[key]
-      for (const fallback of fallbacks) {
-        if (row[fallback] !== undefined) return row[fallback]
-      }
-      return defaultValue
-    }
-    const rawUsername = getRowValue(columnKeys.username, ['用户名', 'username'])
-    const rawName = getRowValue(columnKeys.name, ['姓名', 'name'])
-    const rawGrade = getRowValue(columnKeys.grade, ['年级', 'grade'])
-    const rawClass = getRowValue(columnKeys.class, ['班级', 'class'])
-    const rawExplicitNewUsername = getRowValue(columnKeys.newUsername, ['新用户名', 'new_username'])
+    const rawUsername = getRowValue(row, columnKeys.username, ['用户名', 'username'])
+    const rawName = getRowValue(row, columnKeys.name, ['姓名', 'name'])
+    const rawGrade = getRowValue(row, columnKeys.grade, ['年级', 'grade'])
+    const rawClass = getRowValue(row, columnKeys.class, ['班级', 'class'])
+    const rawExplicitNewUsername = getRowValue(row, columnKeys.newUsername, ['新用户名', 'new_username'])
     const username = rawUsername != null ? String(rawUsername).trim() : ''
     const name = rawName != null ? String(rawName).trim().toLowerCase() : ''
     const newGrade = rawGrade != null ? String(rawGrade).trim() : ''

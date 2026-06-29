@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
       <div>
         <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-1">{{ locale.subtitle?.(totalUsers) || '' }}</p>
+        <p class="text-xs text-zinc-500 mt-1">{{ getLocaleMessage('subtitle', totalUsers) }}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -866,7 +866,7 @@
               <div v-if="previewData.length > 0" class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
-            >{{ locale.importModal.previewData(previewData.length) }}</label
+            >{{ getNestedMessage('importModal', 'previewData', previewData.length) }}</label
                   >
                 </div>
                 <div class="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/30">
@@ -935,7 +935,7 @@
     <ConfirmDialog
       :show="showDeleteModal"
       :title="locale.deleteDialog.title"
-      :message="locale.deleteDialog.message(deletingUser?.name || '')"
+      :message="getNestedMessage('deleteDialog', 'message', deletingUser?.name || '')"
       type="danger"
       :confirm-text="locale.deleteDialog.confirm"
       :loading="deleting"
@@ -1128,11 +1128,11 @@
                         :class="
                           selectedUserDetail.meowNickname ? 'text-emerald-500' : 'text-zinc-500'
                         "
-                    :title="selectedUserDetail.meowNickname ? locale.detail.bound(selectedUserDetail.meowNickname) : locale.detail.unbound"
+                    :title="selectedUserDetail.meowNickname ? getNestedMessage('detail', 'bound', selectedUserDetail.meowNickname) : locale.detail.unbound"
                       >
                         {{
                           selectedUserDetail.meowNickname
-                    ? locale.detail.bound(selectedUserDetail.meowNickname)
+                    ? getNestedMessage('detail', 'bound', selectedUserDetail.meowNickname)
                     : locale.detail.unbound
                         }}
                       </div>
@@ -1196,11 +1196,11 @@
                         :class="
                           selectedUserDetail.identities?.length > 0 ? 'text-emerald-500' : 'text-zinc-500'
                         "
-                    :title="selectedUserDetail.identities?.length > 0 ? locale.detail.bound(selectedUserDetail.identities.map(id => id.provider).join(', ')) : locale.detail.unbound"
+                    :title="selectedUserDetail.identities?.length > 0 ? getNestedMessage('detail', 'bound', selectedUserDetail.identities.map(id => id.provider).join(', ')) : locale.detail.unbound"
                       >
                         {{
                           selectedUserDetail.identities?.length > 0
-                    ? locale.detail.bound(selectedUserDetail.identities.map(id => id.provider).join(', '))
+                    ? getNestedMessage('detail', 'bound', selectedUserDetail.identities.map(id => id.provider).join(', '))
                     : locale.detail.unbound
                         }}
                       </div>

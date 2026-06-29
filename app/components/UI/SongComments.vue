@@ -129,7 +129,17 @@ const props = defineProps<{
 
 const PAGE_SIZE = 20
 const { ui } = useLocale()
-const locale = computed(() => ui.value?.songComments || {})
+const locale = computed(() => {
+  const base = ui.value?.songComments || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    commentsCount: base.commentsCount || emptyText,
+    hotCount: base.hotCount || emptyText,
+    minutesAgo: base.minutesAgo || emptyText,
+    hoursAgo: base.hoursAgo || emptyText
+  })
+})
 
 const comments = ref<NeteaseComment[]>([])
 const hotComments = ref<NeteaseComment[]>([])

@@ -230,7 +230,16 @@ import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 const { songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value?.mediaModals || {})
+const locale = computed(() => {
+  const base = songsLocale.value?.mediaModals || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    minutesAgo: base.minutesAgo || emptyText,
+    hoursAgo: base.hoursAgo || emptyText,
+    monthDay: base.monthDay || emptyText
+  })
+})
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'

@@ -630,14 +630,15 @@ const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.dataAnalysis || {}
   const emptyText = () => ''
-  return {
+  return useSafeLocale({
     ...base,
+    countSongs: base.countSongs || emptyText,
     userActivity: base.userActivity || emptyText,
     andMoreUsers: base.andMoreUsers || emptyText,
     onlineCount: base.onlineCount || emptyText,
     messages: { ...(base.messages || {}) },
     errors: { ...(base.errors || {}) }
-  }
+  })
 })
 
 // 响应式数据
@@ -655,7 +656,7 @@ const availableSemesterOptions = computed(() => {
 })
 
 // 加载步骤
-const loadingSteps = computed(() => locale.value.loadingSteps)
+const loadingSteps = computed(() => locale.value.loadingSteps || ['获取学期信息', '加载统计数据', '获取图表数据', '加载实时数据'])
 
 const analysisData = ref({
   totalSongs: 0,

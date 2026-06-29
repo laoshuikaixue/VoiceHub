@@ -571,7 +571,27 @@ const emit = defineEmits(['close'])
 
 const { getQualityOptions, getQuality } = useAudioQuality()
 const { admin } = useLocale()
-const locale = computed(() => useSafeLocale(admin.value?.songManagement?.songDownloadDialog || {}))
+const locale = computed(() => {
+  const base = admin.value?.songManagement?.songDownloadDialog || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    estimatedDuration: base.estimatedDuration || emptyText,
+    downloadingSong: base.downloadingSong || emptyText,
+    downloadFailedCount: base.downloadFailedCount || emptyText,
+    selectedSongsCount: base.selectedSongsCount || emptyText
+  })
+})
+const formatLocale = (value, fallback = '', ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
+const getLocaleText = (key, fallback = '', ...args) => formatLocale(locale.value?.[key], fallback, ...args)
 
 const mergeSongs = ref(false)
 const convertAudioFormat = ref(false)
@@ -909,7 +929,7 @@ const preloadSong = async (song) => {
     console.error('预下载失败:', error)
     preloadedSongs.delete(song.id)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.preloadFailed(song.title), 'error')
+      window.$showNotification(getLocaleText('preloadFailed', '', song.title), 'error')
     }
   }
 }
@@ -1092,11 +1112,11 @@ const estimateSelectedDurations = async () => {
     console.log(`[预估时长] 完成 - 成功: ${successCount}, 失败: ${failCount}`)
 
     if (successCount > 0 && window.$showNotification) {
-      window.$showNotification(locale.value.estimateSuccess(successCount), 'success')
+      window.$showNotification(getLocaleText('estimateSuccess', '', successCount), 'success')
     }
     
     if (failCount > 0 && window.$showNotification) {
-      window.$showNotification(locale.value.estimateFailedCount(failCount), 'warning')
+      window.$showNotification(getLocaleText('estimateFailedCount', '', failCount), 'warning')
     }
   } catch (error) {
     console.error('[预估时长] 总体失败:', error)
@@ -1240,7 +1260,7 @@ const fetchAudioWithProgress = async (audioUrl, songId, songTitle) => {
 
     if (total) {
       const percent = Math.round((loaded / total) * 100)
-      processingStatus.value = locale.value.downloadingProgress(songTitle, percent)
+      processingStatus.value = getLocaleText('downloadingProgress', '', songTitle, percent)
       activeDownloads.set(songId, percent)
     }
   }
@@ -1252,7 +1272,7 @@ const fetchAudioWithProgress = async (audioUrl, songId, songTitle) => {
 const getAudioBlobForSong = async (song, quality) => {
   const cached = getUsablePreload(song.id, quality)
   if (cached) {
-    processingStatus.value = locale.value.usingPreloadCache(song.title)
+    processingStatus.value = getLocaleText('usingPreloadCache', '', song.title)
     activeDownloads.set(song.id, 100)
     return {
       blob: cached.blob,
@@ -1262,7 +1282,7 @@ const getAudioBlobForSong = async (song, quality) => {
   }
 
   return await withDownloadSourceFallback(song, quality, async (candidate) => {
-    processingStatus.value = locale.value.downloadingTitle(song.title)
+    processingStatus.value = getLocaleText('downloadingTitle', '', song.title)
     const blob = await fetchAudioWithProgress(candidate.url, song.id, song.title)
     return {
       blob,
@@ -1320,21 +1340,21 @@ const buildMergedFilename = (selectedSongsList, ext, customFilenameValue) => {
     }
   } else {
     const dateStr = new Date().toLocaleDateString('sv-SE')
-    filename = locale.value.mergedFilename(dateStr, selectedSongsList.length, ext)
+    filename = getLocaleText('mergedFilename', filename, dateStr, selectedSongsList.length, ext)
   }
   return filename
 }
 
 const formatWorkerProgress = (stage, value, format) => {
   if (stage === 'prepare') {
-    processingStatus.value = locale.value.preprocessingAudio(value)
+    processingStatus.value = getLocaleText('preprocessingAudio', '', value)
     return
   }
   if (stage === 'merge') {
-    processingStatus.value = locale.value.mergingAudio(value)
+    processingStatus.value = getLocaleText('mergingAudio', '', value)
     return
   }
-  processingStatus.value = locale.value.encodingAudio(format.toUpperCase(), value)
+  processingStatus.value = getLocaleText('encodingAudio', '', format.toUpperCase(), value)
 }
 
 const getTrackTransferables = (track) => {
@@ -1520,7 +1540,7 @@ const createStreamingEncoderSession = async (format, config, sampleRate) => {
 
 const decodeAudioBlobToTrack = async (song, blob, audioContext) => {
   const arrayBuffer = await blob.arrayBuffer()
-  processingStatus.value = locale.value.decoding(song.title)
+  processingStatus.value = getLocaleText('decoding', '', song.title)
   const decoded = await audioContext.decodeAudioData(arrayBuffer)
   const left = new Float32Array(decoded.getChannelData(0))
   const right =
@@ -1565,8 +1585,8 @@ const encodeSingleSong = async (song, audioContext, config) => {
   const track = await decodeSongTrack(song, audioContext, config.quality)
   const extension = config.exportFormat === 'wav' ? 'wav' : 'mp3'
   processingStatus.value = config.normalizeAudio
-    ? locale.value.normalizing(song.title)
-    : locale.value.converting(song.title)
+    ? getLocaleText('normalizing', '', song.title)
+    : getLocaleText('converting', '', song.title)
   const blob = await encodeWithWorker([track], extension, config)
   return { blob, extension }
 }
@@ -1586,7 +1606,7 @@ const processAndMergeAudioFast = async (selectedSongsList, config) => {
         const song = songItem.song
 
         currentDownloadSong.value = `${song.artist} - ${song.title}`
-        processingStatus.value = locale.value.fastPreparing(song.title)
+        processingStatus.value = getLocaleText('fastPreparing', '', song.title)
 
         try {
           results[index] = await decodeSongTrack(song, audioContext, config.quality)
@@ -1623,7 +1643,7 @@ const processAndMergeAudioFast = async (selectedSongsList, config) => {
     const filename = buildMergedFilename(selectedSongsList, extension, config.customFilename)
 
     saveFile(resultBlob, filename)
-    processingStatus.value = locale.value.completedFile(filename)
+    processingStatus.value = getLocaleText('completedFile', '', filename)
     currentDownloadSong.value = ''
   } finally {
     terminateActiveEncoderWorker()
@@ -1648,7 +1668,7 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
     for (let i = 0; i < selectedSongsList.length; i++) {
       const song = selectedSongsList[i].song
       currentDownloadSong.value = `${song.artist} - ${song.title}`
-      processingStatus.value = locale.value.preparingSong(song.title)
+      processingStatus.value = getLocaleText('preparingSong', '', song.title)
 
       let track = null
       try {
@@ -1662,7 +1682,7 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
           id: song.id,
           title: song.title,
           artist: song.artist,
-          error: locale.value.decodeFailed(error.message)
+          error: getLocaleText('decodeFailed', error.message, error.message)
         })
         activeDownloads.delete(song.id)
         downloadedCount.value++
@@ -1670,12 +1690,12 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
       }
 
       try {
-        processingStatus.value = locale.value.writingMergedFile(song.title)
+        processingStatus.value = getLocaleText('writingMergedFile', '', song.title)
         await streamSession.appendTrack(track)
         successCount++
       } catch (error) {
         console.error(`写入合并文件失败: ${song.title}`, error)
-        throw new Error(locale.value.writeMergedFileFailed(error.message))
+        throw new Error(getLocaleText('writeMergedFileFailed', error.message, error.message))
       } finally {
         activeDownloads.delete(song.id)
         downloadedCount.value++
@@ -1691,7 +1711,7 @@ const processAndMergeAudioStreaming = async (selectedSongsList, config) => {
     const filename = buildMergedFilename(selectedSongsList, extension, config.customFilename)
 
     saveFile(resultBlob, filename)
-    processingStatus.value = locale.value.completedFile(filename)
+    processingStatus.value = getLocaleText('completedFile', '', filename)
     currentDownloadSong.value = ''
   } catch (error) {
     console.error('合并过程出错:', error)
@@ -1804,7 +1824,7 @@ const startDownload = async () => {
 
       const song = songItem.song
       activeWorkers++
-      currentDownloadSong.value = locale.value.activeWorkers(`${song.artist} - ${song.title}`, activeWorkers, concurrency)
+      currentDownloadSong.value = getLocaleText('activeWorkers', '', `${song.artist} - ${song.title}`, activeWorkers, concurrency)
 
       try {
         let blob
@@ -1836,7 +1856,7 @@ const startDownload = async () => {
       } finally {
         activeWorkers--
         downloadedCount.value++
-        currentDownloadSong.value = queue.length > 0 ? locale.value.remainingSongs(queue.length) : locale.value.processComplete
+        currentDownloadSong.value = queue.length > 0 ? getLocaleText('remainingSongs', '', queue.length) : locale.value.processComplete
       }
     }
   }
@@ -1862,10 +1882,10 @@ const startDownload = async () => {
   if (window.$showNotification) {
     const successCount = downloadedCount.value - downloadErrors.value.length
     if (downloadErrors.value.length === 0) {
-      window.$showNotification(locale.value.downloadSuccess(successCount), 'success')
+      window.$showNotification(getLocaleText('downloadSuccess', '', successCount), 'success')
     } else {
       window.$showNotification(
-        locale.value.downloadCompleteWithCount(successCount, downloadErrors.value.length),
+        getLocaleText('downloadCompleteWithCount', '', successCount, downloadErrors.value.length),
         'warning'
       )
     }

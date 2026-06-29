@@ -666,7 +666,7 @@ const createBackup = async () => {
     }
   } catch (error) {
     console.error(getLogMessage('createBackupFailed'), error)
-    showNotification(getErrorMessage('createBackupFailedWithMessage', error.message), 'error')
+    showNotification(getErrorMessage('createBackupFailedWithMessage', error?.message), 'error')
   } finally {
     createLoading.value = false
   }
@@ -831,7 +831,7 @@ const restoreBackup = async () => {
     activeModal.value = 'none'
   } catch (error) {
     console.error(getLogMessage('restoreBackupFailed'), error)
-    showNotification(getErrorMessage('restoreBackupFailedWithMessage', error.message), 'error')
+    showNotification(getErrorMessage('restoreBackupFailedWithMessage', error?.message), 'error')
   } finally {
     uploadLoading.value = false
     restoreProgress.value = ''
@@ -854,7 +854,7 @@ const resetSequence = async () => {
     }
   } catch (error) {
     console.error(getLogMessage('resetSequenceFailed'), error)
-    showNotification(getErrorMessage('resetSequenceFailedWithMessage', error.message), 'error')
+    showNotification(getErrorMessage('resetSequenceFailedWithMessage', error?.message), 'error')
   } finally {
     sequenceLoading.value = false
   }
@@ -874,7 +874,7 @@ const resetDatabase = async () => {
     }
   } catch (error) {
     console.error(getLogMessage('resetDatabaseFailed'), error)
-    showNotification(getErrorMessage('resetDatabaseFailedWithMessage', error.message), 'error')
+    showNotification(getErrorMessage('resetDatabaseFailedWithMessage', error?.message), 'error')
   } finally {
     resetLoading.value = false
   }

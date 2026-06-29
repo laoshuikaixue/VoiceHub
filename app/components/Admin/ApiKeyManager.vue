@@ -634,14 +634,15 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.apiKeys || {})
-const getLocaleText = (key) => locale.value?.[key] || ''
+const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
+const getLocaleText = (key, ...args) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  return message || ''
+}
 const getExpiresOptionText = (key) => locale.value?.expiresOptions?.[key] || ''
 const getPermissionOptionText = (key, field) => locale.value?.permissionOptions?.[key]?.[field] || ''
-const getDeleteTitle = (name) => {
-  const message = locale.value?.deleteMessage
-  return typeof message === 'function' ? message(name) : (message || '')
-}
+const getDeleteTitle = (name) => getLocaleText('deleteMessage', name)
 
 // 响应式数据
 const loading = ref(false)
@@ -710,10 +711,7 @@ const form = reactive({
   isActive: true
 })
 
-const formatExpiresAtText = (dateText) => {
-  const message = locale.value?.expiresAtText
-  return typeof message === 'function' ? message(dateText) : message || ''
-}
+const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
 
 const getExpiresAtText = () => {
   if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {

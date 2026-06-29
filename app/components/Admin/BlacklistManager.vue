@@ -358,7 +358,7 @@ const locale = computed(() => {
     listTitle: (total) => formatLocaleValue(base.listTitle, total),
     pagination: (page, pages) => formatLocaleValue(base.pagination, page, pages),
     removeMessage: (value) => formatLocaleValue(base.removeMessage, value),
-    statusSuccess: (isActive) => formatLocaleValue(base.statusSuccess, isActive)
+    statusSuccess: (statusText) => formatLocaleValue(base.statusSuccess, statusText)
   }
 })
 
@@ -487,7 +487,7 @@ const toggleItemStatus = async (item) => {
     })
 
     item.isActive = !item.isActive
-    showNotification(locale.value.statusSuccess(item.isActive), 'success')
+    showNotification(locale.value.statusSuccess(item.isActive ? locale.value.enable : locale.value.disable), 'success')
   } catch (err) {
     error.value = locale.value.updateFailed
     console.error('更新状态失败:', err)

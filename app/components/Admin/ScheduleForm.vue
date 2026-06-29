@@ -95,10 +95,12 @@ const playTimes = ref([])
 const { playTimeEnabled } = useSongs()
 const { common } = useLocale()
 const commonLocale = computed(() => common.value || {})
-const locale = computed(() => common.value?.scheduleForm || {})
+const locale = computed(() => useSafeLocale(common.value?.scheduleForm || {}))
 const scheduleTitle = computed(() => {
   const title = locale.value?.title
-  return typeof title === 'function' ? title(props.song?.title || '') : title || ''
+  if (typeof title === 'string') return title.replace(/{0}/g, props.song?.title || '')
+  if (typeof title === 'function') return title(props.song?.title || '')
+  return ''
 })
 
 // 转换播出时段为 CustomSelect 选项格式
@@ -150,9 +152,9 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return locale.value.startAt(playTime.startTime)
+    return locale.value.startAt?.(playTime.startTime) || playTime.startTime
   } else if (playTime.endTime) {
-    return locale.value.endAt(playTime.endTime)
+    return locale.value.endAt?.(playTime.endTime) || playTime.endTime
   }
 
   return locale.value.unlimited

@@ -557,8 +557,7 @@ const sortedSemesters = computed(() => {
 
 // 删除确认信息
 const deleteMessage = computed(() => {
-  const message = locale.value?.deleteMessage
-  return typeof message === 'function' ? message(deleteTargetName.value) : (message || '')
+  return getLocaleMessage('deleteMessage', deleteTargetName.value)
 })
 
 // 格式化日期

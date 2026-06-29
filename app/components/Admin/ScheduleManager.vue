@@ -40,7 +40,7 @@
               date.weekday
             }}</span>
             <span class="text-lg font-black leading-none my-0.5">{{ date.day }}</span>
-                  <span class="text-[9px] font-bold opacity-60">{{ locale.monthLabel(date.month) }}</span>
+                  <span class="text-[9px] font-bold opacity-60">{{ callLocale('monthLabel', '', date.month) }}</span>
           </button>
         </div>
 
@@ -404,7 +404,7 @@
                         v-if="song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        {{ locale.preferredPlayTime(getPlayTimeName(song.preferredPlayTimeId)) }}
+                        {{ callLocale('preferredPlayTime', '', getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -727,7 +727,7 @@
                         v-if="schedule.song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        {{ locale.preferredPlayTime(getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
+                        {{ callLocale('preferredPlayTime', '', getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -1044,6 +1044,9 @@ const locale = computed(() => {
       publishDraftMessage: emptyText,
       ...(base.confirmations || {})
     },
+    andMoreApplicants: base.andMoreApplicants || emptyText,
+    currentDate: base.currentDate || emptyText,
+    replayDetailTitle: base.replayDetailTitle || emptyText,
     timeAgo: {
       ...(base.timeAgo || {}),
       justNow: base.timeAgo?.justNow || '',
@@ -2044,7 +2047,7 @@ const loadData = async () => {
   loading.value = true
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
-    const selectedSemesterOption = availableSemesters.value.find((item) => item.id === selectedSemester.value)
+    const selectedSemesterOption = availableSemesters.value.find((item) => String(item.id) === String(selectedSemester.value))
     const semester = selectedSemester.value === 'all' ? undefined : selectedSemesterOption?.name
 
     // 播放列表应该显示所有学期的排期，不受待排歌曲学期选择的影响

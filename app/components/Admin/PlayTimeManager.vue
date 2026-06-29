@@ -322,7 +322,7 @@
               </div>
               <div class="text-center space-y-2 px-4">
                 <h4 class="text-lg font-bold text-zinc-100">
-                  {{ locale.deleteConfirmTitle(playTimeToDelete?.name || '') }}
+                  {{ typeof locale.deleteConfirmTitle === 'function' ? locale.deleteConfirmTitle(playTimeToDelete?.name || '') : (locale.deleteConfirmTitle || '').replace('{0}', playTimeToDelete?.name || '') }}
                 </h4>
                 <p class="text-xs text-zinc-500 leading-relaxed">
                   {{ locale.deleteConfirmDesc }}
