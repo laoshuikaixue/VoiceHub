@@ -447,15 +447,21 @@ const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager || {})
 const getMessage = (key) => locale.value?.messages?.[key] || ''
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
+const formatString = (value, args) => {
+  if (typeof value !== 'string') return value
+  return value.replace(/{(\d+)}/g, (match, index) =>
+    args[index] !== undefined ? String(args[index]) : match
+  )
+}
 const getErrorMessage = (key, ...args) => {
   const message = locale.value?.errors?.[key]
   if (typeof message === 'function') return message(...args)
-  return message || args.find(Boolean) || ''
+  return formatString(message, args) || args.find(Boolean) || key
 }
 const getProgressMessage = (key, ...args) => {
   const message = locale.value?.progress?.[key]
   if (typeof message === 'function') return message(...args)
-  return message || ''
+  return formatString(message, args) || ''
 }
 
 // 状态

@@ -571,7 +571,7 @@ const emit = defineEmits(['close'])
 
 const { getQualityOptions, getQuality } = useAudioQuality()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.songManagement?.songDownloadDialog || {})
+const locale = computed(() => useSafeLocale(admin.value?.songManagement?.songDownloadDialog || {}))
 
 const mergeSongs = ref(false)
 const convertAudioFormat = ref(false)
@@ -607,7 +607,7 @@ const extendedQualityOptions = computed(() => {
   const options = getQualityOptions('netease')
   return options.map((opt) => ({
     ...opt,
-    description: locale.value.qualityDescriptions[opt.value] || locale.value.qualityDescriptions.default
+    description: locale.value.qualityDescriptions?.[opt.value] || locale.value.qualityDescriptions?.default || '标准音质'
   }))
 })
 

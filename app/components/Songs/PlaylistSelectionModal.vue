@@ -109,7 +109,7 @@
                   <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
                     <span class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
-                      {{ locale.songCount?.(playlist.trackCount) || '' }}
+                      {{ callLocale('songCount', '', playlist.trackCount) }}
                     </span>
                     <span class="flex items-center truncate">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
@@ -285,6 +285,16 @@ const props = defineProps({
 const { songs: songsLocale } = useLocale()
 const requestLocale = computed(() => songsLocale.value?.requestForm || {})
 const locale = computed(() => requestLocale.value?.playlistModal || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return message || fallback
+}
 
 const emit = defineEmits(['close', 'submit', 'play'])
 

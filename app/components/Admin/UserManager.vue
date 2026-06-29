@@ -1451,7 +1451,7 @@ const locale = computed(() => {
   const base = admin.value?.userManager || {}
   const emptyText = () => ''
   const importModal = base.importModal || {}
-  return {
+  return useSafeLocale({
     ...base,
     subtitle: base.subtitle || emptyText,
     table: { ...(base.table || {}) },
@@ -1480,18 +1480,30 @@ const locale = computed(() => {
     },
     sortOptions: { ...(base.sortOptions || {}) },
     batchUpdateModal: { ...(base.batchUpdateModal || {}) }
-  }
+  })
 })
-const getLocaleMessage = (section, key, ...args) => {
-  const message = locale.value?.[section]?.[key]
+const formatLocaleMessage = (message, args) => {
   if (typeof message === 'function') return message(...args)
   if (typeof message === 'string') {
-    return message.replace(/{(\d+)|{count}/g, (match, index) => {
+    return message.replace(/{(\d+)}|{count}/g, (match, index) => {
       const argIndex = match === '{count}' ? 0 : Number(index)
       return args[argIndex] !== undefined ? String(args[argIndex]) : match
     })
   }
   return message || ''
+}
+const getLocaleMessage = (key, ...args) => {
+  const directMessage = locale.value?.[key]
+  if (directMessage !== undefined) return formatLocaleMessage(directMessage, args)
+  const nestedKey = args[0]
+  if (typeof nestedKey === 'string') {
+    return getNestedMessage(key, nestedKey, ...args.slice(1))
+  }
+  return ''
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  return formatLocaleMessage(message, args)
 }
 const getRoleName = (role) => locale.value?.roles?.[role] || role
 const getStatusName = (status) => locale.value?.statuses?.[status] || status

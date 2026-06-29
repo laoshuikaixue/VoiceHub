@@ -197,7 +197,7 @@ import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useLocale } from '~/utils/locale'
 
 const { songs } = useLocale()
-const locale = computed(() => songs.value.bilibiliEpisodesModal)
+const locale = computed(() => songs.value?.bilibiliEpisodesModal || {})
 
 const props = defineProps({
   show: Boolean,

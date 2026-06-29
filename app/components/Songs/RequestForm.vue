@@ -1357,7 +1357,7 @@ const props = defineProps({
 
 const emit = defineEmits(['request', 'vote'])
 const { songs: songsLocale } = useLocale()
-const locale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const callLocale = (key, fallback = '', ...args) => {
   const value = locale.value?.[key]
   if (typeof value === 'function') return value(...args)

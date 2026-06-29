@@ -1101,7 +1101,7 @@ const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.songManagement || {}
   const emptyText = () => ''
-  return {
+  return useSafeLocale({
     ...base,
     stats: { ...(base.stats || {}) },
     actions: { ...(base.actions || {}) },
@@ -1118,20 +1118,28 @@ const locale = computed(() => {
       ...(base.editModal || {})
     },
     timeAgo: {
-      minutes: emptyText,
-      hours: emptyText,
-      days: emptyText,
-      ...(base.timeAgo || {})
+      ...(base.timeAgo || {}),
+      minutes: (value) => formatString(base.timeAgo?.minutes, [value]) || '',
+      hours: (value) => formatString(base.timeAgo?.hours, [value]) || '',
+      days: (value) => formatString(base.timeAgo?.days, [value]) || ''
     }
-  }
+  })
 })
+const formatString = (value, args) => {
+  if (typeof value !== 'string') return value
+  return value.replace(/{(\d+)}/g, (match, index) =>
+    args[index] !== undefined ? String(args[index]) : match
+  )
+}
 const getLocaleMessage = (key, ...args) => {
   const message = locale.value?.[key]
-  return typeof message === 'function' ? message(...args) : (message || '')
+  if (typeof message === 'function') return message(...args)
+  return formatString(message, args) || ''
 }
 const getNestedMessage = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
-  return typeof message === 'function' ? message(...args) : (message || '')
+  if (typeof message === 'function') return message(...args)
+  return formatString(message, args) || ''
 }
 const loading = ref(false)
 const searchQuery = ref('')

@@ -220,11 +220,11 @@ import { useLocale } from '~/utils/locale'
 const emit = defineEmits(['navigate'])
 const { success: showSuccess, error: showError } = useToast()
 const { admin } = useLocale()
-const locale = computed(() => admin.value?.overview || {})
+const locale = computed(() => useSafeLocale(admin.value?.overview || {}))
 const formatLocaleValue = (value, fallback = '', ...args) => {
   if (typeof value === 'function') return value(...args)
   if (typeof value === 'string') {
-    return value.replace(/{(\d+)|{count}/g, (match, index) => {
+    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
       const argIndex = match === '{count}' ? 0 : Number(index)
       return args[argIndex] !== undefined ? String(args[argIndex]) : match
     })
@@ -426,9 +426,9 @@ const formatTime = (dateString) => {
   const diff = now - date
 
   if (diff < 60000) return locale.value?.justNow || ''
-  if (diff < 3600000) return locale.value?.minutesAgo?.(Math.floor(diff / 60000)) || ''
-  if (diff < 86400000) return locale.value?.hoursAgo?.(Math.floor(diff / 3600000)) || ''
-  return locale.value?.daysAgo?.(Math.floor(diff / 86400000)) || ''
+  if (diff < 3600000) return formatLocaleValue(locale.value?.minutesAgo, '', Math.floor(diff / 60000))
+  if (diff < 86400000) return formatLocaleValue(locale.value?.hoursAgo, '', Math.floor(diff / 3600000))
+  return formatLocaleValue(locale.value?.daysAgo, '', Math.floor(diff / 86400000))
 }
 
 const navigateTo = (tab) => {

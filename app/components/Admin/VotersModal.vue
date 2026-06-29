@@ -155,15 +155,22 @@ const getAvatarText = (name) => {
   return cleanName.slice(-1).toUpperCase()
 }
 
+const formatTimeAgo = (key, value) => {
+  const message = commonLocale.value?.time?.[key]
+  if (typeof message === 'function') return message(value)
+  if (typeof message === 'string') return message.replace(/{(\d+)}/g, (match, index) => index === '0' ? String(value) : match)
+  return ''
+}
+
 const formatVoteTime = (dateString) => {
   const date = new Date(dateString)
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return commonLocale.value.time.justNow
-  if (diff < 3600000) return commonLocale.value.time.minutesAgo(Math.floor(diff / 60000))
-  if (diff < 86400000) return commonLocale.value.time.hoursAgo(Math.floor(diff / 3600000))
-  if (diff < 604800000) return commonLocale.value.time.daysAgo(Math.floor(diff / 86400000))
+  if (diff < 60000) return commonLocale.value?.time?.justNow || ''
+  if (diff < 3600000) return formatTimeAgo('minutesAgo', Math.floor(diff / 60000))
+  if (diff < 86400000) return formatTimeAgo('hoursAgo', Math.floor(diff / 3600000))
+  if (diff < 604800000) return formatTimeAgo('daysAgo', Math.floor(diff / 86400000))
 
   return date.toLocaleDateString('zh-CN', {
     month: 'short',

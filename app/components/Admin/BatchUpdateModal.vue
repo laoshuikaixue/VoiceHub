@@ -750,7 +750,7 @@ const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.userManager?.batchUpdateModal || {}
   const emptyText = () => ''
-  return {
+  return useSafeLocale({
     ...base,
     updateTypes: {
       gradeOnly: {},
@@ -763,12 +763,12 @@ const locale = computed(() => {
       selectUsers: emptyText,
       ...(base.studentFilter || {})
     },
-    gradeSettings: {},
-    statusSettings: {},
-    statusOptions: {},
-    excelUpload: {},
-    matchType: {},
-    fileSpec: {},
+    gradeSettings: { ...(base.gradeSettings || {}) },
+    statusSettings: { ...(base.statusSettings || {}) },
+    statusOptions: { ...(base.statusOptions || {}) },
+    excelUpload: { ...(base.excelUpload || {}) },
+    matchType: { ...(base.matchType || {}) },
+    fileSpec: { ...(base.fileSpec || {}) },
     preview: {
       blockersTitle: emptyText,
       dataPreview: emptyText,
@@ -778,7 +778,7 @@ const locale = computed(() => {
       moreQueued: emptyText,
       ...(base.preview || {})
     },
-    actions: {},
+    actions: { ...(base.actions || {}) },
     template: {
       headers: {},
       ...(base.template || {})
@@ -805,11 +805,17 @@ const locale = computed(() => {
       updateFailedWithEtc: emptyText,
       ...(base.errors || {})
     }
-  }
+  })
 })
 const getNestedText = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
-  return typeof message === 'function' ? message(...args) : (message || '')
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return message || ''
 }
 const excelColumnKeys = computed(() => ({
   username: locale.value?.template?.headers?.username,

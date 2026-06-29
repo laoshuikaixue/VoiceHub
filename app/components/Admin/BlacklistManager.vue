@@ -342,15 +342,23 @@ import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 const locale = computed(() => {
   const base = admin.value?.blacklist || {}
-  const emptyText = () => ''
   return {
     ...base,
-    listTitle: base.listTitle || emptyText,
-    pagination: base.pagination || emptyText,
-    removeMessage: base.removeMessage || emptyText,
-    statusSuccess: base.statusSuccess || emptyText
+    listTitle: (total) => formatLocaleValue(base.listTitle, total),
+    pagination: (page, pages) => formatLocaleValue(base.pagination, page, pages),
+    removeMessage: (value) => formatLocaleValue(base.removeMessage, value),
+    statusSuccess: (isActive) => formatLocaleValue(base.statusSuccess, isActive)
   }
 })
 

@@ -27,7 +27,7 @@
               >
                 <Icon name="user" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h3>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
@@ -207,7 +207,7 @@ const selectedUsers = ref([])
 const searchInput = ref(null)
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
-const title = computed(() => props.title || locale.value.searchUsers)
+const resolvedTitle = computed(() => props.title || locale.value.searchUsers)
 
 const close = () => {
   emit('update:show', false)

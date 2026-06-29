@@ -397,9 +397,9 @@
                 <!-- 页面底部 -->
                 <div class="page-footer">
                   <div class="footer-left">
-                    <span>{{ locale.generatedAt(new Date().toLocaleString()) }}</span>
+                    <span>{{ generatedAtText }}</span>
                     <span v-if="settings.remark" class="remark-text">
-                      {{ locale.remarkPrefix(settings.remark) }}
+                      {{ remarkText }}
                     </span>
                   </div>
                   <span class="footer-right">{{ locale.footer }}</span>
@@ -444,6 +444,20 @@ import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.schedulePrinter || {})
+const formatLocale = (value, fallback = '', ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
+const generatedAtText = ref('')
+const remarkText = computed(() => {
+  const remark = settings.remark || ''
+  return formatLocale(locale.value?.remarkPrefix, remark, remark)
+})
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()
@@ -1704,6 +1718,8 @@ const saveSettings = () => {
 
 // 生命周期
 onMounted(async () => {
+  const nowText = new Date().toLocaleString()
+  generatedAtText.value = formatLocale(locale.value?.generatedAt, nowText, nowText)
   await fetchCurrentSemester()
   settings.value.currentSemester = currentSemester.value?.name
   loadSavedSettings()

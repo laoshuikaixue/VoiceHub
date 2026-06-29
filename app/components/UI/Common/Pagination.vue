@@ -2,8 +2,8 @@
   <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 pt-4">
     <!-- 分页信息 -->
     <div class="text-[10px] font-black text-zinc-700 uppercase tracking-[0.2em] order-2 sm:order-1">
-      {{ locale.info(currentPage, totalPages) }}
-      <span v-if="totalItems !== null"> ({{ locale.totalItems(totalItems, displayItemName) }})</span>
+      {{ formatLocale(locale.info, currentPage, totalPages) }}
+      <span v-if="totalItems !== null"> ({{ formatLocale(locale.totalItems, totalItems, displayItemName) }})</span>
     </div>
 
     <!-- 分页控制 -->
@@ -99,6 +99,15 @@ import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
 const locale = computed(() => ui.value?.pagination || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 
 const props = defineProps({
   currentPage: {

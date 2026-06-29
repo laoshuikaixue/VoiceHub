@@ -135,7 +135,13 @@ const { songs } = useLocale()
 const locale = computed(() => songs.value?.duplicateSongModal || {})
 const getLocaleMessage = (key: string, ...args: unknown[]) => {
   const message = locale.value?.[key]
-  return typeof message === 'function' ? message(...args) : (message || '')
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
+    )
+  }
+  return message || ''
 }
 
 const emit = defineEmits<{

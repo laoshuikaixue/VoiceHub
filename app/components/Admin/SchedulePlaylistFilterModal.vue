@@ -189,6 +189,15 @@ interface CustomPlaylist {
 const { admin } = useLocale()
 const scheduleLocale = computed(() => admin.value?.scheduleManager || {})
 const locale = computed(() => scheduleLocale.value?.playlistFilterModal || {})
+const formatLocaleValue = (value: unknown, ...args: string[]) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
+    )
+  }
+  return ''
+}
 
 const defaultPlaylists = ref([
   { id: '19723756', coverImgUrl: '', trackIds: [] as string[] },
@@ -204,7 +213,7 @@ const getDefaultPlaylistName = (id: string) => {
     '2884035': locale.value?.defaultNames?.original,
     '3778678': locale.value?.defaultNames?.hotSongs
   }
-  return names[id] || scheduleLocale.value?.playlistName?.(id) || id
+  return names[id] || formatLocaleValue(scheduleLocale.value?.playlistName, id) || id
 }
 
 const selectedIds = ref<string[]>([])
@@ -471,7 +480,7 @@ const applyFilter = async () => {
         if (item.name) {
           playlistNamesMap[item.id] = item.name
         } else {
-          playlistNamesMap[item.id] = scheduleLocale.value?.playlistName?.(item.id) || item.id
+          playlistNamesMap[item.id] = formatLocaleValue(scheduleLocale.value?.playlistName, item.id) || item.id
         }
         
         if (item.trackIds && item.trackIds.length > 0) {

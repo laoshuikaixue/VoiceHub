@@ -376,12 +376,12 @@ const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.playTimeManager || {}
   const emptyText = () => ''
-  return {
+  return useSafeLocale({
     ...base,
     errors: { ...(base.errors || {}) },
     messages: { ...(base.messages || {}) },
     deleteConfirmTitle: base.deleteConfirmTitle || emptyText
-  }
+  })
 })
 
 const playTimes = ref<PlayTime[]>([])

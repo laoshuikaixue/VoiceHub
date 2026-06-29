@@ -1016,10 +1016,19 @@ import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 const locale = computed(() => {
   const base = admin.value?.scheduleManager || {}
   const emptyText = () => ''
-  return {
+  return useSafeLocale({
     ...base,
     messages: { ...(base.messages || {}) },
     errors: {
@@ -1036,15 +1045,16 @@ const locale = computed(() => {
       ...(base.confirmations || {})
     },
     timeAgo: {
-      minutes: emptyText,
-      hours: emptyText,
-      days: emptyText,
-      ...(base.timeAgo || {})
+      ...(base.timeAgo || {}),
+      justNow: base.timeAgo?.justNow || '',
+      minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value),
+      hours: (value) => formatLocaleValue(base.timeAgo?.hours, value),
+      days: (value) => formatLocaleValue(base.timeAgo?.days, value)
     }
-  }
+  })
 })
-const callLocale = (key, fallback = '', ...args) => {
-  const value = locale.value?.[key]
+const callLocale = (path, fallback = '', ...args) => {
+  const value = path.split('.').reduce((target, key) => target?.[key], locale.value)
   if (typeof value === 'function') return value(...args)
   if (typeof value === 'string') {
     return value.replace(/{(\d+)}/g, (match, index) =>
@@ -1144,7 +1154,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
   const cookie = getNeteaseCookie()
   
   const fetchPromises = playlistIds.map(async (id) => {
-  const playlistName = playlistNames[id] || locale.value?.playlistName?.(id) || `Playlist ${id}`
+  const playlistName = playlistNames[id] || callLocale('playlistName', `Playlist ${id}`, id)
     let trackIds = []
 
     // 优先使用从组件中传来的已经缓存的 trackIds
@@ -2021,7 +2031,7 @@ const rejectReplayRequest = async (songId) => {
     } catch (err) {
       console.error('拒绝申请失败', err)
       if (window.$showNotification) {
-        window.$showNotification(locale.value.errors.rejectReplayFailed(err.data?.message || err.message), 'error')
+        window.$showNotification(callLocale('errors.rejectReplayFailed', '', err.data?.message || err.message), 'error')
       }
     }
   }
@@ -2582,7 +2592,7 @@ const confirmMoveDate = async () => {
   }
 
   confirmDialogTitle.value = locale.value.moveDateTitle
-  confirmDialogMessage.value = locale.value.confirmations.moveDateMessage(sourceDate, sourceSchedules.length, targetDate)
+  confirmDialogMessage.value = callLocale('confirmations.moveDateMessage', '', sourceDate, sourceSchedules.length, targetDate)
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
   showMoveDateDialog.value = false
@@ -2615,7 +2625,7 @@ const confirmMoveDate = async () => {
       if (window.$showNotification) {
         const backendMessage = error.data?.message || error.data?.statusMessage || error.message
         window.$showNotification(
-          locale.value.errors.moveDateFailed(backendMessage || locale.value.unknown),
+          callLocale('errors.moveDateFailed', '', backendMessage || locale.value.unknown),
           'error'
         )
       }
@@ -2723,7 +2733,7 @@ const saveDraft = async () => {
   } catch (error) {
     console.error('保存草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.saveDraftFailed(error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.saveDraftFailed', '', error.data?.message || error.message), 'error')
     }
   } finally {
     loading.value = false
@@ -2793,7 +2803,7 @@ const publishScheduleConfirmed = async () => {
   } catch (error) {
     console.error('发布排期失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.publishScheduleFailed(error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.publishScheduleFailed', '', error.data?.message || error.message), 'error')
     }
   } finally {
     loading.value = false
@@ -2804,7 +2814,7 @@ const publishScheduleConfirmed = async () => {
 const publishSingleDraft = async (draft) => {
   try {
     confirmDialogTitle.value = locale.value.confirmations.publishDraftTitle
-    confirmDialogMessage.value = locale.value.confirmations.publishDraftMessage(draft.song.title)
+    confirmDialogMessage.value = callLocale('confirmations.publishDraftMessage', '', draft.song.title)
     confirmDialogType.value = 'warning'
     confirmDialogConfirmText.value = locale.value.publish
     confirmAction.value = async () => {
@@ -2838,7 +2848,7 @@ const publishSingleDraftConfirmed = async (draft) => {
   } catch (error) {
     console.error('发布单个草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.publishDraftFailed(error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.publishDraftFailed', '', error.data?.message || error.message), 'error')
     }
   } finally {
     loading.value = false
