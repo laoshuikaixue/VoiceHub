@@ -1014,7 +1014,8 @@ const parseExcelData = (jsonData) => {
 
   const columnKeys = excelColumnKeys.value
   const getRowValue = (row, key, fallbacks, defaultValue = '') => {
-    if (key && row[key] !== undefined) return row[key]
+    const resolvedKey = typeof key === 'function' ? key() : key
+    if (resolvedKey && row[resolvedKey] !== undefined) return row[resolvedKey]
     for (const fallback of fallbacks) {
       if (row[fallback] !== undefined) return row[fallback]
     }
@@ -1209,12 +1210,18 @@ const downloadTemplate = async () => {
     }
   }
 
+  const templateHeaders = locale.value?.template?.headers || {}
+  const getHeaderText = (value, fallback) => {
+    if (typeof value === 'function') return value() || fallback
+    if (typeof value === 'string') return value || fallback
+    return fallback
+  }
   const headers = {
-    username: locale.value?.template?.headers?.username || 'username',
-    name: locale.value?.template?.headers?.name || 'name',
-    grade: locale.value?.template?.headers?.grade || 'grade',
-    class: locale.value?.template?.headers?.class || 'class',
-    newUsername: locale.value?.template?.headers?.newUsername || 'new_username'
+    username: getHeaderText(templateHeaders.username, 'username'),
+    name: getHeaderText(templateHeaders.name, 'name'),
+    grade: getHeaderText(templateHeaders.grade, 'grade'),
+    class: getHeaderText(templateHeaders.class, 'class'),
+    newUsername: getHeaderText(templateHeaders.newUsername, 'new_username')
   }
   const templateData = [
     {

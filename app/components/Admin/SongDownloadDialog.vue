@@ -285,7 +285,7 @@
                     class="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20"
                   >
                     <Clock class="w-3 h-3" />
-                    <span>{{ locale.estimatedDuration(formatDuration(estimatedTotalDuration.total)) }}</span>
+                    <span>{{ getLocaleText('estimatedDuration', '', formatDuration(estimatedTotalDuration.total)) }}</span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -455,7 +455,7 @@
                     processingStatus
                   }}</span>
                   <span v-else>{{
-                    currentDownloadSong ? locale.downloadingSong(currentDownloadSong) : locale.preparing
+                    currentDownloadSong ? getLocaleText('downloadingSong', '', currentDownloadSong) : locale.preparing
                   }}</span>
                 </template>
                 <template v-else>
@@ -470,7 +470,7 @@
               >
                 <div class="text-[10px] font-bold text-red-400 flex items-center gap-2">
                   <AlertTriangle class="w-3 h-3" />
-                  {{ locale.downloadFailedCount(downloadErrors.length) }}
+                  {{ getLocaleText('downloadFailedCount', '', downloadErrors.length) }}
                 </div>
                 <div class="max-h-[60px] overflow-y-auto custom-scrollbar space-y-1">
                   <div
@@ -490,7 +490,7 @@
             class="p-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between shrink-0"
           >
             <div class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">
-              {{ locale.selectedSongsCount(selectedSongs.size) }}
+              {{ getLocaleText('selectedSongsCount', '', selectedSongs.size) }}
             </div>
             <div class="flex items-center gap-2">
               <button

@@ -1507,6 +1507,10 @@ const getNestedMessage = (section, key, ...args) => {
   const message = locale.value?.[section]?.[key]
   return formatLocaleMessage(message, args)
 }
+const getPlainLocaleText = (value, fallback = '') => {
+  const text = formatLocaleMessage(value, [])
+  return typeof text === 'string' && text ? text : fallback
+}
 const getRoleName = (role) => locale.value?.roles?.[role] || role
 const getStatusName = (status) => locale.value?.statuses?.[status] || status
 const getUnknownDetail = () => locale.value?.detail?.unknown || ''
@@ -2163,12 +2167,12 @@ const handleFileUpload = async (event) => {
           const firstRow = jsonData[0]
           // 检查第一行是否包含常见的标题关键词
           const titleKeywords = [
-            locale.value?.importModal?.sampleHeaders?.name,
-            locale.value?.importModal?.sampleHeaders?.username,
-            locale.value?.importModal?.sampleHeaders?.password,
-            locale.value?.importModal?.sampleHeaders?.role,
-            locale.value?.importModal?.sampleHeaders?.grade,
-            locale.value?.importModal?.sampleHeaders?.class,
+            getPlainLocaleText(locale.value?.importModal?.sampleHeaders?.name),
+            getPlainLocaleText(locale.value?.importModal?.sampleHeaders?.username),
+            getPlainLocaleText(locale.value?.importModal?.sampleHeaders?.password),
+            getPlainLocaleText(locale.value?.importModal?.sampleHeaders?.role),
+            getPlainLocaleText(locale.value?.importModal?.sampleHeaders?.grade),
+            getPlainLocaleText(locale.value?.importModal?.sampleHeaders?.class),
             '姓名',
             '用户名',
             '密码',
@@ -2269,12 +2273,12 @@ const downloadImportTemplate = async () => {
 
   const sampleHeaders = locale.value?.importModal?.sampleHeaders || {}
   const importModal = locale.value?.importModal || {}
-  const headerName = sampleHeaders.name || 'name'
-  const headerUsername = sampleHeaders.username || 'username'
-  const headerPassword = sampleHeaders.password || 'password'
-  const headerRole = sampleHeaders.role || 'role'
-  const headerGrade = sampleHeaders.grade || 'grade'
-  const headerClass = sampleHeaders.class || 'class'
+  const headerName = getPlainLocaleText(sampleHeaders.name, 'name')
+  const headerUsername = getPlainLocaleText(sampleHeaders.username, 'username')
+  const headerPassword = getPlainLocaleText(sampleHeaders.password, 'password')
+  const headerRole = getPlainLocaleText(sampleHeaders.role, 'role')
+  const headerGrade = getPlainLocaleText(sampleHeaders.grade, 'grade')
+  const headerClass = getPlainLocaleText(sampleHeaders.class, 'class')
 
   const templateData = [
     {

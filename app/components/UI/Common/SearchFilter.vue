@@ -149,6 +149,16 @@ const openDropdown = ref(null)
 const dropdownRef = ref(null)
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
+  return ''
+}
 const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder || '')
 
 const hasActiveFilters = computed(() => {
@@ -208,7 +218,7 @@ const getMultiSelectLabel = (filter) => {
     const option = filter.options.find((opt) => opt.value === selectedValues[0])
     return option ? option.label : selectedValues[0]
   }
-  return locale.value.selectedCount(selectedValues.length)
+  return formatLocale(locale.value.selectedCount, selectedValues.length)
 }
 
 const clearAllFilters = () => {

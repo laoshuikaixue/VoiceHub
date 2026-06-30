@@ -417,7 +417,7 @@
             </div>
             <div class="text-center space-y-2 px-4">
               <h4 class="text-lg font-bold text-zinc-100">
-                {{ locale.deleteConfirmTitle(RequestTimeToDelete?.name || '') }}
+                {{ deleteConfirmTitleText }}
               </h4>
               <p class="text-xs text-zinc-500 leading-relaxed">
                 {{ locale.deleteConfirmPrefix }}
@@ -559,6 +559,9 @@ const showDeleteConfirm = ref(false)
 const formSubmitting = ref(false)
 const deleteInProgress = ref(false)
 const formError = ref('')
+const deleteConfirmTitleText = computed(() =>
+  formatLocale(locale.value?.deleteConfirmTitle, RequestTimeToDelete.value?.name || '')
+)
 const enableRequestTimeLimitation = ref(false)
 const hitRequestTime = ref(false)
 const enableRequest = ref(true)

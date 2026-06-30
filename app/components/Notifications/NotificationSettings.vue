@@ -74,7 +74,7 @@
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-black text-zinc-500 uppercase tracking-widest">{{ locale.voteThresholdTitle }}</h3>
           <span class="text-xs font-bold text-blue-500"
-            >{{ locale.voteThresholdText?.(localSettings.songVotedThreshold) || '' }}</span
+            >{{ formatLocaleValue(locale.voteThresholdText, localSettings.songVotedThreshold) }}</span
           >
         </div>
         <input
@@ -144,6 +144,15 @@ import { useLocale } from '~/utils/locale'
 const notificationsService = useNotifications()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.notificationSettings || {})
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 const loading = computed(() => notificationsService.loading.value)
 const error = computed(() => notificationsService.error.value)
 const settings = computed(() => notificationsService.settings.value)
@@ -198,13 +207,13 @@ const saveSettings = async () => {
 // 格式化刷新间隔
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
-    return locale.value?.seconds?.(seconds) || `${seconds}s`
+    return formatLocaleValue(locale.value?.seconds, seconds) || `${seconds}s`
   } else {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
     return remainingSeconds > 0
-      ? locale.value?.minutesSeconds?.(minutes, remainingSeconds) || `${minutes}m ${remainingSeconds}s`
-      : locale.value?.minutes?.(minutes) || `${minutes}m`
+      ? formatLocaleValue(locale.value?.minutesSeconds, minutes, remainingSeconds) || `${minutes}m ${remainingSeconds}s`
+      : formatLocaleValue(locale.value?.minutes, minutes) || `${minutes}m`
   }
 }
 </script>

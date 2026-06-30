@@ -180,9 +180,9 @@
                       class="flex flex-wrap items-center gap-3 mt-3 sm:hidden text-xs text-zinc-500"
                     >
                       <span>{{ getMetaTime(song) }}</span>
-                      <span v-if="song.voteCount !== undefined">{{ locale.votes?.(song.voteCount) || '' }}</span>
+                      <span v-if="song.voteCount !== undefined">{{ formatLocale(locale.votes, song.voteCount) }}</span>
                       <span v-if="song.requestCount !== undefined"
-                        >{{ locale.requests?.(song.requestCount) || '' }}</span
+                        >{{ formatLocale(locale.requests, song.requestCount) }}</span
                       >
                     </div>
                   </div>
@@ -204,10 +204,10 @@
                       <span class="text-xs text-zinc-400">{{ getMetaTime(song) }}</span>
                       <div class="flex items-center gap-2">
                         <span v-if="song.voteCount !== undefined" class="text-xs text-zinc-500"
-                          >{{ locale.votes?.(song.voteCount) || '' }}</span
+                          >{{ formatLocale(locale.votes, song.voteCount) }}</span
                         >
                         <span v-if="song.requestCount !== undefined" class="text-xs text-zinc-500"
-                          >{{ locale.requests?.(song.requestCount) || '' }}</span
+                          >{{ formatLocale(locale.requests, song.requestCount) }}</span
                         >
                       </div>
                     </div>
@@ -283,6 +283,15 @@ const locale = computed(() => {
     statuses: { ...(base.statuses || {}) }
   }
 })
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 
 // Computed
 const semesterOptions = computed(() => {

@@ -11,7 +11,7 @@
         :key="provider.key"
         type="button"
         :class="providerButtonClass(provider.key)"
-        :title="locale.loginWith?.(provider.name) || ''"
+        :title="formatLocale(locale.loginWith, provider.name)"
         @click="loginWith(provider.key)"
       >
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
@@ -30,6 +30,15 @@ import { useLocale } from '~/utils/locale'
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { auth } = useLocale()
 const locale = computed(() => auth.value?.oauthButtons || {})
+const formatLocale = (value: unknown, ...args: unknown[]) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
+    )
+  }
+  return ''
+}
 
 onMounted(async () => {
   await refreshSiteConfig()

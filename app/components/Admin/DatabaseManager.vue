@@ -313,7 +313,7 @@
             >
             <CustomSelect
               v-model="sequenceForm.table"
-              :options="locale.tableOptions || []"
+              :options="locale.tableOptions || defaultTableOptions"
               label-key="label"
               value-key="value"
               class="w-full"
@@ -445,6 +445,11 @@ const { showToast: showNotification } = useToast()
 const auth = useAuth()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager || {})
+const defaultTableOptions = [
+  { label: '歌曲表', value: 'songs' },
+  { label: '排期表', value: 'schedules' },
+  { label: '用户表', value: 'users' }
+]
 const getMessage = (key) => locale.value?.messages?.[key] || ''
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 const formatString = (value, args) => {

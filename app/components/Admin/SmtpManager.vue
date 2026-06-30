@@ -211,9 +211,14 @@ const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.smtpManager || {})
 const getLocaleMessage = (key) => locale.value?.[key] || ''
+const getOptionText = (value, fallback) => {
+  if (typeof value === 'function') return value() || fallback
+  if (typeof value === 'string') return value || fallback
+  return fallback
+}
 const secureOptionLabels = computed(() => ({
-  ssl: locale.value?.secureOptions?.ssl || 'SSL/TLS',
-  none: locale.value?.secureOptions?.none || 'None'
+  ssl: getOptionText(locale.value?.secureOptions?.ssl, 'SSL/TLS'),
+  none: getOptionText(locale.value?.secureOptions?.none, 'None')
 }))
 
 // 响应式数据

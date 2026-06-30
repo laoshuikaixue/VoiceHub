@@ -271,7 +271,7 @@
                 </button>
                 <div class="h-4 w-px bg-zinc-800 hidden md:block" />
                 <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                  {{ locale.selectedSongs?.(selectedSongIds.size) || '' }}
+                  {{ formatLocale(locale.selectedSongs, selectedSongIds.size) }}
                 </span>
               </div>
 
@@ -317,6 +317,16 @@ const emit = defineEmits(['close', 'import-success'])
 const { songs: songsLocale } = useLocale()
 const requestLocale = computed(() => songsLocale.value?.requestForm || {})
 const locale = computed(() => requestLocale.value?.importSongsModal || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
+  return ''
+}
 
 const semesterList = ref([])
 const selectedSemester = ref('')

@@ -414,11 +414,14 @@
                 >
                   <div class="pagination-info">
                     <span class="pagination-text">
-                      {{ locale.paginationInfo(
-                        notificationsService.totalCount.value,
-                        notificationsService.currentPage.value,
-                        notificationsService.totalPages.value
-                      ) }}
+                      {{
+                        formatLocaleValue(
+                          locale.paginationInfo,
+                          notificationsService.totalCount.value,
+                          notificationsService.currentPage.value,
+                          notificationsService.totalPages.value
+                        )
+                      }}
                     </span>
                   </div>
 

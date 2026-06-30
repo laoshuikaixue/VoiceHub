@@ -2138,7 +2138,7 @@ const loadSemesters = async () => {
     // 添加当前学期（如果存在）
     if (semesterService.currentSemester.value) {
       semesterList.push({
-        id: semesterService.currentSemester.value.id || 'current',
+        id: semesterService.currentSemester.value.id || 'all',
         name: semesterService.currentSemester.value.name,
         isCurrent: true
       })
@@ -2164,7 +2164,7 @@ const loadSemesters = async () => {
 
     // 默认选择当前学期（如果存在），否则选择"全部"
     if (semesterService.currentSemester.value) {
-      selectedSemester.value = semesterService.currentSemester.value.id || 'current'
+      selectedSemester.value = semesterService.currentSemester.value.id || 'all'
     } else if (semesterList.length > 0) {
       selectedSemester.value = semesterList[0].id
     }
