@@ -1063,7 +1063,7 @@ const formatDate = (dateStr, isMobile = false) => {
     }
 
     const weekday = new Intl.DateTimeFormat(currentLocale.value, {
-      weekday: 'long',
+      weekday: 'short',
       timeZone: 'UTC'
     }).format(date)
 

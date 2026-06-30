@@ -1446,7 +1446,7 @@ import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 
-const { admin } = useLocale()
+const { admin, currentLocale } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.userManager || {}
   const emptyText = () => ''
@@ -1703,7 +1703,7 @@ const formatDate = (dateString) => {
   if (diff < 86400000) return getLocaleMessage('time', 'hoursAgo', Math.floor(diff / 3600000))
   if (diff < 86400000 * 7) return getLocaleMessage('time', 'daysAgo', Math.floor(diff / 86400000))
 
-  return date.toLocaleDateString('zh-CN')
+  return date.toLocaleDateString(currentLocale.value)
 }
 
 const getRoleClass = (role) => {
@@ -2424,7 +2424,7 @@ const loadStatusLogsPage = async (page) => {
 const formatStatusLogDate = (dateString) => {
   if (!dateString) return locale.value?.time?.unknown || ''
   const date = new Date(dateString)
-  return date.toLocaleString('zh-CN')
+  return date.toLocaleString(currentLocale.value)
 }
 
 // 生命周期

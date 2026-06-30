@@ -119,7 +119,7 @@ const error = ref('')
 const songInfo = ref(null)
 const voters = ref([])
 const totalVotes = ref(0)
-const { common } = useLocale()
+const { common, currentLocale } = useLocale()
 const commonLocale = computed(() => common.value || {})
 const locale = computed(() => common.value?.votersModal || {})
 
@@ -172,7 +172,7 @@ const formatVoteTime = (dateString) => {
   if (diff < 86400000) return formatTimeAgo('hoursAgo', Math.floor(diff / 3600000))
   if (diff < 604800000) return formatTimeAgo('daysAgo', Math.floor(diff / 86400000))
 
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString(currentLocale.value, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

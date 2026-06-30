@@ -609,15 +609,6 @@ const showDbPresetSaved = ref(false)
 const exportFormat = ref('mp3')
 // const saveIntermediateWav = ref(false) // 已移除
 
-const NETEASE_DOWNLOAD_QUALITY_LEVEL_MAP = {
-  2: 'standard',
-  3: 'higher',
-  4: 'exhigh',
-  5: 'lossless',
-  6: 'hires',
-  9: 'jymaster'
-}
-
 const neteaseQualityLevelMap = {
   2: 'standard',
   3: 'higher',
@@ -983,7 +974,7 @@ const estimateSelectedDurations = async () => {
   estimatingDuration.value = true
 
   try {
-    const level = NETEASE_DOWNLOAD_QUALITY_LEVEL_MAP[selectedQuality.value] || 'exhigh'
+    const level = neteaseQualityLevelMap[selectedQuality.value] || 'exhigh'
     const neteaseCookie = getNeteaseCookie()
     
     const songsToEstimate = []

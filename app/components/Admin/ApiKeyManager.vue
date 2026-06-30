@@ -626,7 +626,7 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
-const { admin } = useLocale()
+const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
 const getLocaleText = (key, ...args) => {
   const message = locale.value?.[key]
@@ -736,7 +736,7 @@ const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateTex
 const getExpiresAtText = () => {
   if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
     const date = new Date(selectedApiKey.value.expiresAt)
-    return formatExpiresAtText(date.toLocaleDateString())
+    return formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
   }
 
   const expiresAtTextMap = {
@@ -990,7 +990,7 @@ const editApiKey = async (apiKey) => {
 
       if (response.data.expiresAt) {
         const date = new Date(response.data.expiresAt)
-        expiresAtText.value = formatExpiresAtText(date.toLocaleDateString())
+        expiresAtText.value = formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
         form.expiresAt = 'keep'
       } else {
         expiresAtText.value = getExpiresOptionText('never')
@@ -1087,7 +1087,7 @@ const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleString('zh-CN', {
+  return date.toLocaleString(currentLocale.value, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

@@ -442,7 +442,7 @@ import logoPng from '~~/public/images/logo.png'
 // 学期管理
 import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
-const { admin } = useLocale()
+const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.schedulePrinter || {})
 const formatLocale = (value, fallback = '', ...args) => {
   if (typeof value === 'function') return value(...args)
@@ -581,7 +581,7 @@ const formatDate = (dateStr) => {
       ? new Date(dateStr.replace(/-/g, '/'))
       : new Date(dateStr)
 
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString(currentLocale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -1718,7 +1718,7 @@ const saveSettings = () => {
 
 // 生命周期
 onMounted(async () => {
-  const nowText = new Date().toLocaleString()
+  const nowText = new Date().toLocaleString(currentLocale.value)
   generatedAtText.value = formatLocale(locale.value?.generatedAt, nowText, nowText)
   await fetchCurrentSemester()
   settings.value.currentSemester = currentSemester.value?.name

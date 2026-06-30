@@ -341,7 +341,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
-const { admin } = useLocale()
+const { admin, currentLocale } = useLocale()
 const formatLocaleValue = (value, ...args) => {
   if (typeof value === 'function') return value(...args)
   if (typeof value === 'string') {
@@ -547,7 +547,7 @@ const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return '-'
-  return date.toLocaleString('zh-CN', {
+  return date.toLocaleString(currentLocale.value, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

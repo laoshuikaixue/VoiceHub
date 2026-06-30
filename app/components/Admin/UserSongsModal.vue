@@ -273,7 +273,7 @@ const selectedSemester = ref(null)
 
 // Composables
 const { semesters, fetchSemesterOptions } = useSemesters()
-const { common } = useLocale()
+const { common, currentLocale } = useLocale()
 const commonLocale = computed(() => common.value || {})
 const locale = computed(() => {
   const base = common.value?.userSongsModal || {}
@@ -415,7 +415,7 @@ const formatDate = (dateString) => {
   if (diff < 86400000) return formatTimeAgo('hoursAgo', Math.floor(diff / 3600000))
   if (diff < 86400000 * 7) return formatTimeAgo('daysAgo', Math.floor(diff / 86400000))
 
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString(currentLocale.value, {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
