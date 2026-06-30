@@ -129,7 +129,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const { songs } = useLocale()
-const locale = computed(() => songs.value.musicLoginModal)
+const locale = computed(() => songs.value?.musicLoginModal || {})
 
 const emit = defineEmits<{
   (e: 'close'): void

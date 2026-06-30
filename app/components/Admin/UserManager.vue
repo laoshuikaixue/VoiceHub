@@ -1511,7 +1511,13 @@ const getPlainLocaleText = (value, fallback = '') => {
   const text = formatLocaleMessage(value, [])
   return typeof text === 'string' && text ? text : fallback
 }
-const getRoleName = (role) => locale.value?.roles?.[role] || role
+const roleLocaleAliases = {
+  USER: 'user',
+  SONG_ADMIN: 'songAdmin',
+  ADMIN: 'admin',
+  SUPER_ADMIN: 'superAdmin'
+}
+const getRoleName = (role) => locale.value?.roles?.[role] || locale.value?.roles?.[roleLocaleAliases[role]] || role
 const getStatusName = (status) => locale.value?.statuses?.[status] || status
 const getUnknownDetail = () => locale.value?.detail?.unknown || ''
 const getErrorDetail = (error) => {
@@ -1553,10 +1559,10 @@ const currentSort = computed({
 })
 
 const allRoles = computed(() => [
-  { name: 'USER', displayName: getRoleName('user') },
-  { name: 'SONG_ADMIN', displayName: getRoleName('songAdmin') },
-  { name: 'ADMIN', displayName: getRoleName('admin') },
-  { name: 'SUPER_ADMIN', displayName: getRoleName('superAdmin') }
+  { name: 'USER', displayName: getRoleName('USER') },
+  { name: 'SONG_ADMIN', displayName: getRoleName('SONG_ADMIN') },
+  { name: 'ADMIN', displayName: getRoleName('ADMIN') },
+  { name: 'SUPER_ADMIN', displayName: getRoleName('SUPER_ADMIN') }
 ])
 
 // 筛选选项
@@ -1722,10 +1728,10 @@ const getRoleClass = (role) => {
 
 const getRoleDisplayName = (role) => {
   const names = {
-    USER: getRoleName('user'),
-    ADMIN: getRoleName('admin'),
-    SONG_ADMIN: getRoleName('songAdmin'),
-    SUPER_ADMIN: getRoleName('superAdmin')
+    USER: getRoleName('USER'),
+    ADMIN: getRoleName('ADMIN'),
+    SONG_ADMIN: getRoleName('SONG_ADMIN'),
+    SUPER_ADMIN: getRoleName('SUPER_ADMIN')
   }
   return names[role] || role
 }
@@ -1944,10 +1950,10 @@ const saveUser = async () => {
     if (isRoleUpdate && permissions.isSuperAdmin) {
       try {
         const roleNames = {
-          USER: getRoleName('user'),
-          SONG_ADMIN: getRoleName('songAdmin'),
-          ADMIN: getRoleName('admin'),
-          SUPER_ADMIN: getRoleName('superAdmin')
+          USER: getRoleName('USER'),
+          SONG_ADMIN: getRoleName('SONG_ADMIN'),
+          ADMIN: getRoleName('ADMIN'),
+          SUPER_ADMIN: getRoleName('SUPER_ADMIN')
         }
 
         const permissionNotification = locale.value?.permissionNotification || {}

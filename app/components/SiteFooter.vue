@@ -29,7 +29,7 @@
       </span>
       <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
       <span v-else class="footer-item">© {{ currentYear }} {{ copyrightOwner }}</span>
-      <span class="footer-item">{{ common.workerIn }} {{ responseTime }}ms</span>
+      <span class="footer-item">{{ common?.workerIn || 'Worker in' }} {{ responseTime }}ms</span>
       <span class="footer-item">
         <a class="voicehub-link" :href="repoUrl" rel="noopener noreferrer" target="_blank">
           {{ systemName }} v{{ systemVersion }}

@@ -453,7 +453,10 @@ const formatLocale = (value, fallback = '', ...args) => {
   }
   return value || fallback
 }
-const generatedAtText = ref('')
+const generatedAtText = computed(() => {
+  const nowText = new Date().toLocaleString(currentLocale.value)
+  return formatLocale(locale.value?.generatedAt, nowText, nowText)
+})
 const remarkText = computed(() => {
   const remark = settings.remark || ''
   return formatLocale(locale.value?.remarkPrefix, remark, remark)
@@ -1718,8 +1721,6 @@ const saveSettings = () => {
 
 // 生命周期
 onMounted(async () => {
-  const nowText = new Date().toLocaleString(currentLocale.value)
-  generatedAtText.value = formatLocale(locale.value?.generatedAt, nowText, nowText)
   await fetchCurrentSemester()
   settings.value.currentSemester = currentSemester.value?.name
   loadSavedSettings()

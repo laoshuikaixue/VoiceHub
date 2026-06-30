@@ -46,13 +46,13 @@
                 </p>
                 <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-zinc-600">
                   <span v-if="albumInfo && albumInfo.size">
-                    {{ callLocale('songCount', '', albumInfo.size) }}
+                    {{ callLocale('songCount', `${albumInfo.size} 首`, albumInfo.size) }}
                   </span>
                   <span v-if="albumInfo && albumInfo.publishTime">
-                    {{ callLocale('publishTime', '', formatDate(albumInfo.publishTime)) }}
+                    {{ callLocale('publishTime', `发行时间: ${formatDate(albumInfo.publishTime)}`, formatDate(albumInfo.publishTime)) }}
                   </span>
                   <span v-if="albumInfo && albumInfo.company">
-                    {{ callLocale('company', '', albumInfo.company) }}
+                    {{ callLocale('company', `唱片公司: ${albumInfo.company}`, albumInfo.company) }}
                   </span>
                 </div>
                 <!-- 专辑描述 -->

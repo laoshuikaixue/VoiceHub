@@ -40,7 +40,7 @@
               date.weekday
             }}</span>
             <span class="text-lg font-black leading-none my-0.5">{{ date.day }}</span>
-                  <span class="text-[9px] font-bold opacity-60">{{ callLocale('monthLabel', '', date.month) }}</span>
+                  <span class="text-[9px] font-bold opacity-60">{{ callLocale('monthLabel', `${date.month}月`, date.month) }}</span>
           </button>
         </div>
 
@@ -404,7 +404,7 @@
                         v-if="song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        {{ callLocale('preferredPlayTime', '', getPlayTimeName(song.preferredPlayTimeId)) }}
+                        {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -727,7 +727,7 @@
                         v-if="schedule.song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        {{ callLocale('preferredPlayTime', '', getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
+                        {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(schedule.song.preferredPlayTimeId)}`, getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -2105,9 +2105,9 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${start} - ${end}`
   } else if (playTime.startTime) {
-    return callLocale('playTimeStart', start, start)
+    return callLocale('playTimeStart', `${start} 开始`, start)
   } else if (playTime.endTime) {
-    return callLocale('playTimeEnd', end, end)
+    return callLocale('playTimeEnd', `${end} 结束`, end)
   }
 
   return locale.value.allDay
@@ -2138,7 +2138,7 @@ const loadSemesters = async () => {
     // 添加当前学期（如果存在）
     if (semesterService.currentSemester.value) {
       semesterList.push({
-        id: semesterService.currentSemester.value.id || 'all',
+        id: semesterService.currentSemester.value.id || 'current',
         name: semesterService.currentSemester.value.name,
         isCurrent: true
       })
@@ -2164,7 +2164,7 @@ const loadSemesters = async () => {
 
     // 默认选择当前学期（如果存在），否则选择"全部"
     if (semesterService.currentSemester.value) {
-      selectedSemester.value = semesterService.currentSemester.value.id || 'all'
+      selectedSemester.value = semesterService.currentSemester.value.id || 'current'
     } else if (semesterList.length > 0) {
       selectedSemester.value = semesterList[0].id
     }

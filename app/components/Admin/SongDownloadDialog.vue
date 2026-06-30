@@ -1336,7 +1336,7 @@ const buildMergedFilename = (selectedSongsList, ext, customFilenameValue) => {
     }
   } else {
     const dateStr = new Date().toLocaleDateString('sv-SE')
-    filename = getLocaleText('mergedFilename', filename, dateStr, selectedSongsList.length, ext)
+    filename = getLocaleText('mergedFilename', `排期合并_${dateStr}_${selectedSongsList.length}首.${ext}`, dateStr, selectedSongsList.length, ext)
   }
   return filename
 }

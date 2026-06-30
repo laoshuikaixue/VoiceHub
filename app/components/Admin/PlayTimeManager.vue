@@ -322,7 +322,7 @@
               </div>
               <div class="text-center space-y-2 px-4">
                 <h4 class="text-lg font-bold text-zinc-100">
-                  {{ typeof locale.deleteConfirmTitle === 'function' ? locale.deleteConfirmTitle(playTimeToDelete?.name || '') : (locale.deleteConfirmTitle || '').replace('{0}', playTimeToDelete?.name || '') }}
+                  {{ deleteConfirmTitleText }}
                 </h4>
                 <p class="text-xs text-zinc-500 leading-relaxed">
                   {{ locale.deleteConfirmDesc }}
@@ -400,6 +400,12 @@ const formSubmitting = ref(false)
 const deleteInProgress = ref(false)
 const formError = ref('')
 const enablePlayTimeSelection = ref(false)
+const deleteConfirmTitleText = computed(() => {
+  const title = locale.value.deleteConfirmTitle
+  const name = playTimeToDelete.value?.name || ''
+  if (typeof title === 'function') return title(name)
+  return (title || '').replace('{0}', name)
+})
 
 // 表单数据
 const formData = reactive({

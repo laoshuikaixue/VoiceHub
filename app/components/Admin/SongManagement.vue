@@ -2174,7 +2174,7 @@ const { semesters, fetchSemesters, semesterUpdateEvent } = useSemesters()
 
 watch(semesterUpdateEvent, async () => {
   await fetchSemesters()
-  availableSemesters.value = semesters.value || []
+  availableSemesters.value = [{ id: 'all', name: locale.value.allSemesters }, ...(semesters.value || [])]
 })
 
 onMounted(async () => {
@@ -2186,8 +2186,7 @@ onMounted(async () => {
   await fetchSemesters()
   await fetchCurrentSemester()
 
-  availableSemesters.value = semesters.value || []
-  availableSemesters.value.unshift({ id: 'all', name: locale.value.allSemesters })
+  availableSemesters.value = [{ id: 'all', name: locale.value.allSemesters }, ...(semesters.value || [])]
 
   if (currentSemester.value) {
     selectedSemester.value = currentSemester.value.id

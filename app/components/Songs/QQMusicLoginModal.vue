@@ -127,7 +127,7 @@ import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 const { songs } = useLocale()
-const locale = computed(() => songs.value.musicLoginModal)
+const locale = computed(() => songs.value?.musicLoginModal || {})
 
 const props = defineProps({
   show: {

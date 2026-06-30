@@ -815,7 +815,7 @@ const getNestedText = (section, key, ...args) => {
       args[index] !== undefined ? String(args[index]) : match
     )
   }
-  return message || ''
+  return message || key
 }
 const excelColumnKeys = computed(() => ({
   username: locale.value?.template?.headers?.username,

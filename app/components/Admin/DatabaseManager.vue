@@ -446,9 +446,10 @@ const auth = useAuth()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager || {})
 const defaultTableOptions = [
-  { label: '歌曲表', value: 'songs' },
-  { label: '排期表', value: 'schedules' },
-  { label: '用户表', value: 'users' }
+  { label: '重置所有表', value: 'all' },
+  { label: '歌曲表', value: 'Song' },
+  { label: '排期表', value: 'Schedule' },
+  { label: '用户表', value: 'User' }
 ]
 const getMessage = (key) => locale.value?.messages?.[key] || ''
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
