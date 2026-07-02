@@ -28,7 +28,7 @@
                 <Icon name="mic" :size="24" />
               </div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
-                {{ radioName }} - 节目列表
+                {{ formatLocale(locale.programListTitle, radioName) }}
               </h3>
             </div>
             <button
@@ -46,7 +46,7 @@
               class="flex flex-col items-center justify-center py-20 text-zinc-500"
             >
               <Icon name="refresh" :size="48" class="animate-spin mb-4 text-blue-500" />
-              <p class="font-black uppercase tracking-widest text-[10px]">加载节目中...</p>
+              <p class="font-black uppercase tracking-widest text-[10px]">{{ locale.loadingPrograms }}</p>
             </div>
 
             <div
@@ -63,7 +63,7 @@
                 class="px-8 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
                 @click="fetchPrograms(false)"
               >
-                重试
+                {{ locale.retry }}
               </button>
             </div>
 
@@ -76,7 +76,7 @@
               >
                 <Icon name="mic" :size="32" class="opacity-20" />
               </div>
-              <p class="text-sm font-bold uppercase tracking-widest">暂无节目</p>
+              <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noPrograms }}</p>
             </div>
 
             <div v-else class="program-list space-y-3">
@@ -137,26 +137,26 @@
                     v-if="songsLoadingForSimilar"
                     class="text-[10px] font-black text-zinc-600 animate-pulse uppercase tracking-widest"
                   >
-                    处理中...
+                    {{ locale.processing }}
                   </div>
                   <div v-else-if="getSimilarSong(program)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(program)?.played"
                       class="px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-wider"
                     >
-                      已播放
+                      {{ locale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(program)?.scheduled"
                       class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
                     >
-                      已排期
+                      {{ locale.scheduled }}
                     </span>
                     <span
                       v-else
                       class="px-2 py-0.5 rounded-md bg-zinc-700/50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
                     >
-                      已存在
+                      {{ locale.existing }}
                     </span>
 
                     <div class="flex gap-2">
@@ -166,7 +166,7 @@
                         class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
                         @click.stop="selectProgram(program)"
                       >
-                        {{ submitting && selectedProgramId === program.id ? '...' : '继续投稿' }}
+                        {{ submitting && selectedProgramId === program.id ? '...' : locale.continueSubmit }}
                       </button>
                       <button
                         v-else
@@ -184,7 +184,7 @@
                         "
                         @click.stop="handleLikeFromProgram(getSimilarSong(program))"
                       >
-                        {{ getSimilarSong(program)?.voted ? '已点赞' : '点赞' }}
+                        {{ getSimilarSong(program)?.voted ? locale.liked : locale.like }}
                       </button>
                     </div>
                   </div>
@@ -194,7 +194,7 @@
                     class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                     @click="selectProgram(program)"
                   >
-                    {{ submitting && selectedProgramId === program.id ? '提交中...' : '选择投稿' }}
+                    {{ submitting && selectedProgramId === program.id ? locale.submitLoading : locale.selectSubmit }}
                   </button>
                 </div>
               </div>
@@ -206,7 +206,7 @@
                   @click="loadMore"
                 >
                   <Icon v-if="loadingMore" name="loader" :size="16" class="animate-spin" />
-                  {{ loadingMore ? '加载中...' : '加载更多' }}
+                  {{ loadingMore ? locale.loadingMore : locale.loadMore }}
                 </button>
               </div>
             </div>
@@ -223,6 +223,18 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
+import { useLocale } from '~/utils/locale'
+const { songs: songsLocale } = useLocale()
+const locale = computed(() => songsLocale.value?.mediaModals || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
 
@@ -315,10 +327,10 @@ const fetchPrograms = async (isLoadMore = false) => {
       hasMore.value = result.more
       offset.value += result.programs.length
     } else {
-      error.value = result.error || '获取节目失败'
+      error.value = result.error || locale.value.fetchProgramsFailed
     }
   } catch (err) {
-    error.value = '网络请求失败'
+    error.value = locale.value.networkFailed
     console.error(err)
   } finally {
     loading.value = false
@@ -345,7 +357,7 @@ const createSongObject = (program) => {
   return {
     id: songId,
     title: program.name,
-    artist: program.dj?.nickname || '未知主播',
+    artist: program.dj?.nickname || locale.value.unknownDj,
     cover: program.coverUrl || program.cover,
     album: props.radioName, // 使用电台名作为专辑名
     duration: program.duration,
@@ -379,7 +391,9 @@ const handleLikeFromProgram = async (song) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
+      const message = song.played
+        ? (locale.value.playedCannotLike || '已播放的歌曲不能点赞')
+        : (locale.value.scheduledCannotLike || '已排期的歌曲不能点赞')
       window.$showNotification(message, 'warning')
     }
     return
@@ -453,7 +467,7 @@ const formatDuration = (ms) => {
 const formatCount = (count) => {
   if (!count) return '0'
   if (count > 10000) {
-    return (count / 10000).toFixed(1) + '万'
+    return (count / 10000).toFixed(1) + locale.value.tenThousand
   }
   return count
 }

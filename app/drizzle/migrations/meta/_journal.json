@@ -180,40 +180,61 @@
     {
       "idx": 25,
       "version": "7",
+      "when": 1777939201000,
+      "tag": "20260505000001_add_force_password_change_on_first_login",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1778284801000,
+      "tag": "20260509000001_change_force_password_change_default",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
       "when": 1778311885032,
       "tag": "20260509073125_add_captcha_settings",
       "breakpoints": true
     },
     {
-      "idx": 26,
+      "idx": 28,
       "version": "7",
       "when": 1778318043510,
       "tag": "20260509091403_add_turnstile_support",
       "breakpoints": true
     },
     {
-      "idx": 27,
+      "idx": 29,
       "version": "7",
       "when": 1779603809404,
       "tag": "20260524062329_add_instance_id_and_telemetry_toggle",
       "breakpoints": true
     },
     {
-      "idx": 28,
+      "idx": 30,
       "version": "7",
       "when": 1781481660000,
       "tag": "20260614000100_add_card_code_request_system",
       "breakpoints": true
     },
     {
-      "idx": 29,
+      "idx": 31,
+      "version": "7",
+      "when": 1781798400000,
+      "tag": "20260619000001_ensure_force_password_change_on_first_login",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
       "version": "7",
       "when": 1782432001000,
       "tag": "20260626000100_add_card_code_auto_delete",
       "breakpoints": true
     },
     {
-      "idx": 30,
+      "idx": 33,
       "version": "7",
       "when": 1782527721417,
       "tag": "20260627023521_add_card_code_foreign_key_indexes",

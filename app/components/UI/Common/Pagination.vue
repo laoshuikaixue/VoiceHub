@@ -2,8 +2,8 @@
   <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 pt-4">
     <!-- 分页信息 -->
     <div class="text-[10px] font-black text-zinc-700 uppercase tracking-[0.2em] order-2 sm:order-1">
-      第 {{ currentPage }} 页 · 共 {{ totalPages }} 页
-      <span v-if="totalItems !== null"> (共 {{ totalItems }} {{ itemName }})</span>
+      {{ formatLocale(locale.info, currentPage, totalPages) }}
+      <span v-if="totalItems !== null"> ({{ formatLocale(locale.totalItems, totalItems, displayItemName) }})</span>
     </div>
 
     <!-- 分页控制 -->
@@ -12,7 +12,7 @@
       <button
         :disabled="currentPage === 1"
         class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
-        title="首页"
+        :title="locale.first"
         @click="goToPage(1)"
       >
         <ChevronsLeft :size="18" />
@@ -22,7 +22,7 @@
       <button
         :disabled="currentPage === 1"
         class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
-        title="上一页"
+        :title="locale.prev"
         @click="goToPage(currentPage - 1)"
       >
         <ChevronLeft :size="18" />
@@ -49,7 +49,7 @@
       <button
         :disabled="currentPage === totalPages"
         class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
-        title="下一页"
+        :title="locale.next"
         @click="goToPage(currentPage + 1)"
       >
         <ChevronRight :size="18" />
@@ -59,7 +59,7 @@
       <button
         :disabled="currentPage === totalPages"
         class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
-        title="尾页"
+        :title="locale.last"
         @click="goToPage(totalPages)"
       >
         <ChevronsRight :size="18" />
@@ -72,7 +72,7 @@
             v-model="jumpPageInput"
             type="text"
             class="w-12 h-10 bg-zinc-950 border border-zinc-800 rounded-lg text-center text-xs font-black text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-all"
-            placeholder="页"
+            :placeholder="locale.pagePlaceholder"
             @keyup.enter="handleJump"
           >
         </div>
@@ -80,7 +80,7 @@
           class="ml-2 px-3 h-10 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
           @click="handleJump"
         >
-          跳转
+          {{ locale.jump }}
         </button>
       </div>
     </div>
@@ -95,6 +95,19 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
+
+const { ui } = useLocale()
+const locale = computed(() => ui.value?.pagination || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 
 const props = defineProps({
   currentPage: {
@@ -111,13 +124,14 @@ const props = defineProps({
   },
   itemName: {
     type: String,
-    default: '项'
+    default: ''
   }
 })
 
 const emit = defineEmits(['update:currentPage', 'change'])
 
 const jumpPageInput = ref('')
+const displayItemName = computed(() => props.itemName || locale.value.defaultItemName)
 
 // 计算要显示的页码
 const displayedPages = computed(() => {

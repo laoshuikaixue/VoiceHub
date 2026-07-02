@@ -8,7 +8,7 @@
       <input
         :value="searchQuery"
         type="text"
-        :placeholder="searchPlaceholder"
+        :placeholder="resolvedSearchPlaceholder"
         class="block w-full pl-11 pr-11 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-blue-600/5 transition-all"
         @input="$emit('update:searchQuery', $event.target.value)"
       >
@@ -45,7 +45,7 @@
             class="bg-transparent border-none text-[10px] font-bold text-zinc-300 focus:ring-0 px-2 py-1 w-28"
             @input="updateDateRange(filter.key, 'start', $event.target.value)"
           >
-          <span class="text-zinc-700 text-[10px] font-black uppercase">至</span>
+          <span class="text-zinc-700 text-[10px] font-black uppercase">{{ locale.to }}</span>
           <input
             type="date"
             :value="filterValues[filter.key]?.end || ''"
@@ -121,7 +121,7 @@
         @click="clearAllFilters"
       >
         <RotateCcw :size="14" />
-        <span>清除筛选</span>
+        <span>{{ locale.clearFilters }}</span>
       </button>
 
       <slot name="actions" />
@@ -133,10 +133,11 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Search, X, ChevronDown, RotateCcw } from '@lucide/vue'
 import CustomSelect from './CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   searchQuery: { type: String, default: '' },
-  searchPlaceholder: { type: String, default: '搜索...' },
+  searchPlaceholder: { type: String, default: '' },
   filters: { type: Array, default: () => [] },
   filterValues: { type: Object, default: () => ({}) },
   showActions: { type: Boolean, default: true }
@@ -146,6 +147,19 @@ const emit = defineEmits(['update:searchQuery', 'update:filterValues', 'filter-c
 
 const openDropdown = ref(null)
 const dropdownRef = ref(null)
+const { common } = useLocale()
+const locale = computed(() => common.value || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
+  return ''
+}
+const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder || '')
 
 const hasActiveFilters = computed(() => {
   return (
@@ -176,7 +190,7 @@ const updateSelectFilter = (filter, label) => {
 const getSelectValueLabel = (filter) => {
   const value = props.filterValues[filter.key]
   const option = filter.options.find((o) => o.value === value)
-  return option ? option.label : filter.placeholder || '请选择'
+  return option ? option.label : filter.placeholder || locale.value.selectPlaceholder
 }
 
 const updateDateRange = (key, type, value) => {
@@ -199,12 +213,12 @@ const toggleDropdown = (key) => {
 
 const getMultiSelectLabel = (filter) => {
   const selectedValues = props.filterValues[filter.key] || []
-  if (selectedValues.length === 0) return filter.placeholder || '请选择'
+  if (selectedValues.length === 0) return filter.placeholder || locale.value.selectPlaceholder
   if (selectedValues.length === 1) {
     const option = filter.options.find((opt) => opt.value === selectedValues[0])
     return option ? option.label : selectedValues[0]
   }
-  return `已选 ${selectedValues.length} 项`
+  return formatLocale(locale.value.selectedCount, selectedValues.length)
 }
 
 const clearAllFilters = () => {

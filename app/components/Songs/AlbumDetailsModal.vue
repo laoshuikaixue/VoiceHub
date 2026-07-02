@@ -26,7 +26,7 @@
                 <img
                   v-if="albumInfo && albumInfo.cover"
                   :src="convertToHttps(albumInfo.cover)"
-                  :alt="albumInfo && albumInfo.name ? albumInfo.name : '专辑'"
+                  :alt="albumInfo && albumInfo.name ? albumInfo.name : locale.albumFallback"
                   class="w-full h-full object-cover"
                   referrerpolicy="no-referrer"
                 >
@@ -39,27 +39,27 @@
               </div>
               <div class="min-w-0 flex-1">
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
-                  {{ albumInfo && albumInfo.name ? albumInfo.name : '专辑' }}
+                  {{ albumInfo && albumInfo.name ? albumInfo.name : locale.albumFallback }}
                 </h3>
                 <p class="text-xs font-bold text-zinc-400 mt-1 truncate">
-                  {{ albumInfo && albumInfo.artist ? albumInfo.artist : '未知艺术家' }}
+                  {{ albumInfo && albumInfo.artist ? albumInfo.artist : locale.unknownArtist }}
                 </p>
                 <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-zinc-600">
                   <span v-if="albumInfo && albumInfo.size">
-                    {{ albumInfo.size }} 首
+                    {{ callLocale('songCount', `${albumInfo.size} 首`, albumInfo.size) }}
                   </span>
                   <span v-if="albumInfo && albumInfo.publishTime">
-                    发行时间：{{ formatDate(albumInfo.publishTime) }}
+                    {{ callLocale('publishTime', `发行时间: ${formatDate(albumInfo.publishTime)}`, formatDate(albumInfo.publishTime)) }}
                   </span>
                   <span v-if="albumInfo && albumInfo.company">
-                    唱片公司：{{ albumInfo.company }}
+                    {{ callLocale('company', `唱片公司: ${albumInfo.company}`, albumInfo.company) }}
                   </span>
                 </div>
                 <!-- 专辑描述 -->
                 <p
                   v-if="albumInfo && albumInfo.description"
                   class="mt-2 text-[11px] text-zinc-500 leading-relaxed line-clamp-2 cursor-pointer hover:text-zinc-400 transition-colors"
-                  title="点击查看完整介绍"
+                  :title="locale.viewFullIntro"
                   @click="showDescModal = true"
                 >
                   {{ albumInfo.description }}
@@ -80,7 +80,7 @@
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="搜索专辑内歌曲..."
+                :placeholder="locale.searchPlaceholder"
                 class="w-full h-9 pl-9 pr-3 rounded-xl bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-800 transition-all"
               >
               <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
@@ -91,7 +91,7 @@
           <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center">
               <div class="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin mb-4" />
-              <p class="text-sm font-bold text-zinc-500 uppercase tracking-widest">加载中...</p>
+              <p class="text-sm font-bold text-zinc-500 uppercase tracking-widest">{{ locale.loading }}</p>
             </div>
           </div>
 
@@ -119,7 +119,7 @@
                 <Icon name="music" :size="32" class="opacity-20" />
               </div>
               <p class="text-sm font-bold uppercase tracking-widest">
-                {{ searchQuery ? '未找到匹配的歌曲' : '暂无歌曲' }}
+                {{ searchQuery ? locale.noMatches : locale.noSongs }}
               </p>
             </div>
 
@@ -175,7 +175,7 @@
                   <!-- 预听/暂停按钮 -->
                   <button
                     class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
-                    :title="isCurrentSong(song) && isPlaying ? '暂停' : '预听'"
+                    :title="isCurrentSong(song) && isPlaying ? locale.pause : locale.preview"
                     @click.stop="togglePlay(song)"
                   >
                     <Icon
@@ -189,7 +189,7 @@
                     <div
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
-                      已播放
+                      {{ requestLocale.played }}
                     </div>
                   </template>
 
@@ -198,7 +198,7 @@
                     <div
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
-                      已排期
+                      {{ requestLocale.scheduled }}
                     </div>
                   </template>
 
@@ -208,7 +208,7 @@
                       <div
                         class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                       >
-                        已投稿
+                        {{ locale.submitted }}
                       </div>
 
                       <!-- 点赞按钮（非自己投稿） -->
@@ -229,7 +229,7 @@
                             :size="12"
                             :class="song.status.voted ? 'fill-current' : ''"
                           />
-                          <span>{{ song.status.voted ? '已点赞' : '点赞' }}</span>
+                          <span>{{ song.status.voted ? requestLocale.liked : requestLocale.like }}</span>
                         </span>
                       </button>
                     </div>
@@ -242,8 +242,8 @@
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                       @click.stop="selectSong(song)"
                     >
-                      <span v-if="submitting && selectedSongId === song.songmid">提交中...</span>
-                      <span v-else>投稿</span>
+                      <span v-if="submitting && selectedSongId === song.songmid">{{ requestLocale.submitting }}</span>
+                      <span v-else>{{ locale.submit }}</span>
                     </button>
                   </template>
                 </div>
@@ -273,7 +273,7 @@
           @click.stop
         >
           <div class="flex items-center justify-between mb-4">
-            <h4 class="text-sm font-black text-zinc-100 uppercase tracking-widest">专辑简介</h4>
+            <h4 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.albumIntro }}</h4>
             <button
               class="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
               @click="showDescModal = false"
@@ -295,6 +295,7 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   show: Boolean,
@@ -323,6 +324,53 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit', 'play', 'vote'])
 
 const { getCurrentSong, getPlayingStatus, pauseSong } = useAudioPlayer()
+const { songs: songsLocale } = useLocale()
+const fallbackRequestLocale = {
+  played: 'Played',
+  scheduled: 'Scheduled',
+  liked: 'Liked',
+  like: 'Like',
+  submitting: 'Submitting...'
+}
+const fallbackAlbumModalLocale = {
+  albumFallback: 'Album',
+  unknownArtist: 'Unknown artist',
+  songCount: (count) => `${count} songs`,
+  publishTime: (date) => `Published: ${date}`,
+  company: (company) => `Label: ${company}`,
+  viewFullIntro: 'View full intro',
+  searchPlaceholder: 'Search songs in this album...',
+  loading: 'Loading...',
+  noMatches: 'No matching songs found',
+  noSongs: 'No songs',
+  pause: 'Pause',
+  preview: 'Preview',
+  submitted: 'Submitted',
+  submit: 'Submit',
+  albumIntro: 'Album Intro',
+  loadFailed: 'Load failed. Please try again later',
+  fetchFailed: 'Failed to fetch album details',
+  unsupportedPlatform: 'Unsupported platform',
+  tencentUnsupported: 'QQ Music album details are not supported yet'
+}
+const requestLocale = computed(() => ({
+  ...fallbackRequestLocale,
+  ...(songsLocale.value?.requestForm || {})
+}))
+const locale = computed(() => ({
+  ...fallbackAlbumModalLocale,
+  ...(requestLocale.value?.albumModal || {})
+}))
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
 const currentSong = getCurrentSong()
 const isPlaying = getPlayingStatus()
 
@@ -391,7 +439,7 @@ const loadAlbumDetails = async () => {
       if (response && response.album && Array.isArray(response.songs)) {
         // 转换为统一格式
         const album = response.album
-        const artistName = album.artist?.name || album.artists?.map(a => a?.name).filter(Boolean).join('/') || '未知艺术家'
+        const artistName = album.artist?.name || album.artists?.map(a => a?.name).filter(Boolean).join('/') || locale.value.unknownArtist
         
         albumInfo.value = {
           id: album.id,
@@ -405,7 +453,7 @@ const loadAlbumDetails = async () => {
         }
 
         songs.value = response.songs.map((item, i) => {
-          const singerName = item.ar?.map(a => a?.name).filter(Boolean).join('/') || '未知艺术家'
+          const singerName = item.ar?.map(a => a?.name).filter(Boolean).join('/') || locale.value.unknownArtist
           const durationMs = item.dt || 0
           return {
             songmid: item.id,
@@ -421,18 +469,18 @@ const loadAlbumDetails = async () => {
           }
         })
       } else {
-        throw new Error('获取专辑详情失败')
+        throw new Error(locale.value.fetchFailed)
       }
     } else if (props.platform === 'tencent') {
       // QQ音乐暂不支持，提示用户
-      error.value = 'QQ音乐专辑详情功能暂未实现'
+      error.value = locale.value.tencentUnsupported
     } else {
-      error.value = '不支持的平台'
+      error.value = locale.value.unsupportedPlatform
     }
   } catch (err) {
     if (err?.name === 'AbortError') return
     console.error('加载专辑详情失败:', err)
-    error.value = '加载失败，请稍后重试'
+    error.value = locale.value.loadFailed
   } finally {
     if (!signal.aborted) {
       loading.value = false

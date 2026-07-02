@@ -13,9 +13,9 @@
             <ArrowLeft :size="20" />
           </button>
           <div>
-            <h1 class="text-xl font-black text-zinc-100 tracking-tight">账号管理</h1>
+            <h1 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h1>
             <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">
-              Account Management
+              {{ locale.subtitle }}
             </p>
           </div>
         </div>
@@ -84,8 +84,8 @@
                 <LinkIcon :size="20" class="text-purple-500" />
               </div>
               <div>
-                <h2 class="text-base font-black text-zinc-100">第三方账号绑定</h2>
-                <p class="text-xs text-zinc-500 mt-0.5">绑定社交账号以便更快捷地登录系统</p>
+                <h2 class="text-base font-black text-zinc-100">{{ locale.oauthBinding }}</h2>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ locale.oauthBindingDesc }}</p>
               </div>
             </div>
             <AuthOAuthBindingCard />
@@ -99,8 +99,8 @@
                   <KeyRound :size="20" class="text-emerald-500" />
                 </div>
                 <div>
-                  <h2 class="text-base font-black text-zinc-100">个人 API Key</h2>
-                  <p class="text-xs text-zinc-500 mt-0.5">用于个人集成和投稿</p>
+                  <h2 class="text-base font-black text-zinc-100">{{ locale.personalApiKey.title }}</h2>
+                  <p class="text-xs text-zinc-500 mt-0.5">{{ locale.personalApiKey.desc }}</p>
                 </div>
               </div>
               <button
@@ -110,13 +110,13 @@
               >
                 <RefreshCw v-if="apiKeyCreating" :size="14" class="animate-spin" />
                 <Plus v-else :size="14" />
-                创建 API Key
+                {{ locale.personalApiKey.create }}
               </button>
             </div>
 
             <div v-if="apiKeyLoading" class="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500 text-center">
               <RefreshCw :size="16" class="animate-spin" />
-              <span>正在加载 API Key...</span>
+              <span>{{ locale.personalApiKey.loading }}</span>
             </div>
 
             <div
@@ -124,9 +124,9 @@
               class="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-5 py-8 text-center"
             >
               <KeyRound :size="28" class="mx-auto text-zinc-700 mb-3" />
-              <p class="text-sm font-bold text-zinc-300">还没有个人 API Key</p>
+              <p class="text-sm font-bold text-zinc-300">{{ locale.personalApiKey.emptyTitle }}</p>
               <p class="text-xs text-zinc-600 mt-2 leading-relaxed">
-                创建后可用于个人侧的集成与投稿。
+                {{ locale.personalApiKey.emptyDesc }}
               </p>
             </div>
 
@@ -147,7 +147,7 @@
                         {{ getApiKeyStatusLabel(key.status) }}
                       </span>
                     </div>
-                    <p class="text-xs text-zinc-500 mt-1">{{ key.description || '暂无描述' }}</p>
+                    <p class="text-xs text-zinc-500 mt-1">{{ key.description || locale.personalApiKey.noDescription }}</p>
                   </div>
                   <button
                     class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
@@ -156,25 +156,25 @@
                   >
                     <RefreshCw v-if="apiKeyDeletingId === key.id" :size="13" class="animate-spin" />
                     <Trash2 v-else :size="13" />
-                    删除
+                    {{ locale.personalApiKey.delete }}
                   </button>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Key 前缀</p>
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.keyPrefix }}</p>
                     <p class="font-mono text-xs text-blue-400">{{ key.keyPrefix }}...</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">创建时间</p>
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.createdAt }}</p>
                     <p class="text-xs text-zinc-400">{{ formatDate(key.createdAt) }}</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">最后使用</p>
-                    <p class="text-xs text-zinc-400">{{ key.lastUsedAt ? formatDate(key.lastUsedAt) : '从未使用' }}</p>
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.lastUsedAt }}</p>
+                    <p class="text-xs text-zinc-400">{{ key.lastUsedAt ? formatDate(key.lastUsedAt) : locale.personalApiKey.neverUsed }}</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">调用次数</p>
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.usageCount }}</p>
                     <button
                       class="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors disabled:cursor-default disabled:opacity-60"
                       @click="openPersonalApiKeyLogs(key)"
@@ -183,8 +183,8 @@
                     </button>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">过期时间</p>
-                    <p class="text-xs text-zinc-400">{{ key.expiresAt ? formatDate(key.expiresAt) : '永不过期' }}</p>
+                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.expiresAt }}</p>
+                    <p class="text-xs text-zinc-400">{{ key.expiresAt ? formatDate(key.expiresAt) : locale.personalApiKey.neverExpires }}</p>
                   </div>
                 </div>
               </div>
@@ -198,8 +198,8 @@
                 <Lock :size="20" class="text-blue-500" />
               </div>
               <div>
-                <h2 class="text-base font-black text-zinc-100">修改密码</h2>
-                <p class="text-xs text-zinc-500 mt-0.5">为了您的账号安全，建议定期更换高强度密码</p>
+                <h2 class="text-base font-black text-zinc-100">{{ locale.changePassword }}</h2>
+                <p class="text-xs text-zinc-500 mt-0.5">{{ locale.changePasswordDesc }}</p>
               </div>
             </div>
             <div class="max-w-md">
@@ -218,10 +218,10 @@
     <ConfirmDialog
       v-model:show="showDeleteConfirmDialog"
       type="danger"
-      title="删除个人 API Key"
+      :title="locale.personalApiKey.deleteTitle"
       :message="deleteConfirmMessage"
-      confirm-text="删除"
-      cancel-text="取消"
+      :confirm-text="locale.personalApiKey.delete"
+      :cancel-text="locale.personalApiKey.cancel"
       :loading="apiKeyDeletingId !== null"
       @confirm="confirmDeletePersonalApiKey"
       @cancel="cancelDeletePersonalApiKey"
@@ -236,8 +236,8 @@
           <div class="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
               <div>
-                <h3 class="text-lg font-black text-zinc-100">API Key 创建成功</h3>
-                <p class="text-xs text-zinc-500 mt-1">完整 Key 只会显示这一次</p>
+                <h3 class="text-lg font-black text-zinc-100">{{ locale.personalApiKey.createdTitle }}</h3>
+                <p class="text-xs text-zinc-500 mt-1">{{ locale.personalApiKey.createdDesc }}</p>
               </div>
               <button class="text-zinc-500 hover:text-zinc-200 transition-colors" @click="closeCreatedApiKey">
                 <X :size="20" />
@@ -248,12 +248,12 @@
               <div class="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-400">
                 <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
                 <p class="text-xs font-bold leading-relaxed">
-                  请现在复制并保存。关闭窗口后，VoiceHub 不会再次显示完整 Key。
+                  {{ locale.personalApiKey.copyWarning }}
                 </p>
               </div>
 
               <div class="space-y-2">
-                <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">完整 Key</p>
+                <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.fullKey }}</p>
                 <div class="flex items-stretch gap-2">
                   <div class="flex-1 min-w-0 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 font-mono text-xs text-blue-400 break-all select-all">
                     {{ createdApiKey.apiKey }}
@@ -275,7 +275,7 @@
                 class="w-full py-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all"
                 @click="closeCreatedApiKey"
               >
-                我已保存，关闭
+                {{ locale.personalApiKey.closeSaved }}
               </button>
             </div>
           </div>
@@ -292,9 +292,9 @@
           <div class="w-full max-w-4xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-zinc-800 flex items-start justify-between gap-4">
               <div>
-                <h3 class="text-lg font-black text-zinc-100">调用记录</h3>
+                <h3 class="text-lg font-black text-zinc-100">{{ locale.personalApiKey.logsTitle }}</h3>
                 <p class="text-xs text-zinc-500 mt-1">
-                  {{ selectedApiKeyForLogs?.name || '个人 API Key' }} · 共 {{ apiKeyLogsPagination.total }} 条
+                  {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
                 </p>
               </div>
               <button class="text-zinc-500 hover:text-zinc-200 transition-colors" @click="closePersonalApiKeyLogs">
@@ -305,12 +305,12 @@
             <div class="p-6">
               <div v-if="apiKeyLogsLoading" class="flex items-center justify-center gap-2 py-10 text-xs text-zinc-500">
                 <RefreshCw :size="16" class="animate-spin" />
-                <span>正在加载调用记录...</span>
+                <span>{{ locale.personalApiKey.loadingLogs }}</span>
               </div>
 
               <div v-else-if="apiKeyLogs.length === 0" class="py-10 text-center">
-                <p class="text-sm font-bold text-zinc-300">暂无调用记录</p>
-                <p class="text-xs text-zinc-600 mt-2">这个令牌还没有产生过 API 调用。</p>
+                <p class="text-sm font-bold text-zinc-300">{{ locale.personalApiKey.noLogs }}</p>
+                <p class="text-xs text-zinc-600 mt-2">{{ locale.personalApiKey.noLogsDesc }}</p>
               </div>
 
               <div v-else class="space-y-4">
@@ -319,13 +319,13 @@
                     <table class="min-w-full text-left">
                       <thead class="sticky top-0 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
                         <tr class="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                          <th class="px-4 py-3">时间</th>
-                          <th class="px-4 py-3">方法</th>
-                          <th class="px-4 py-3">接口</th>
-                          <th class="px-4 py-3">状态</th>
+                          <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.time }}</th>
+                          <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.method }}</th>
+                          <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.endpoint }}</th>
+                          <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.status }}</th>
                           <th class="px-4 py-3">IP</th>
-                          <th class="px-4 py-3">耗时</th>
-                          <th class="px-4 py-3">错误</th>
+                          <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.duration }}</th>
+                          <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.error }}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -346,7 +346,7 @@
                           <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ log.ipAddress }}</td>
                           <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ log.responseTimeMs }} ms</td>
                           <td class="px-4 py-3 text-xs text-zinc-500 break-all">
-                            {{ log.errorMessage || '无' }}
+                            {{ log.errorMessage || locale.personalApiKey.none }}
                           </td>
                         </tr>
                       </tbody>
@@ -356,7 +356,7 @@
 
                 <div class="flex items-center justify-between gap-3">
                   <p class="text-xs text-zinc-500">
-                    第 {{ apiKeyLogsPagination.page }} / {{ apiKeyLogsPagination.totalPages || 1 }} 页
+                    {{ locale.personalApiKey.pageInfo(apiKeyLogsPagination.page, apiKeyLogsPagination.totalPages || 1) }}
                   </p>
                   <div class="flex items-center gap-2">
                     <button
@@ -364,14 +364,14 @@
                       :disabled="apiKeyLogsPagination.page <= 1 || apiKeyLogsLoading"
                       @click="changePersonalApiKeyLogsPage(apiKeyLogsPagination.page - 1)"
                     >
-                      上一页
+                      {{ locale.personalApiKey.previousPage }}
                     </button>
                     <button
                       class="px-3 py-2 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40"
                       :disabled="apiKeyLogsPagination.page >= apiKeyLogsPagination.totalPages || apiKeyLogsLoading"
                       @click="changePersonalApiKeyLogsPage(apiKeyLogsPagination.page + 1)"
                     >
-                      下一页
+                      {{ locale.personalApiKey.nextPage }}
                     </button>
                   </div>
                 </div>
@@ -403,12 +403,33 @@ import {
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useLocale } from '~/utils/locale'
 
 const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { showToast } = useToast()
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
+const { currentLocale, pages } = useLocale()
+const locale = computed(() => pages.value?.account || {})
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getAccountText = (path, ...args) => {
+  const value = String(path).split('.').reduce((target, key) => target?.[key], locale.value?.personalApiKey)
+  return formatLocaleValue(value, ...args)
+}
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
 
 const hasOAuthProviders = computed(() => {
   return oauthProviders.value.length > 0
@@ -467,13 +488,7 @@ const userInitials = computed(() => {
 
 const roleName = computed(() => {
   const role = auth.user.value?.role
-  const map = {
-    ADMIN: '管理员',
-    SUPER_ADMIN: '超级管理员',
-    SONG_ADMIN: '审歌员',
-    USER: '普通用户'
-  }
-  return map[role] || role
+  return locale.value.roles[role] || role
 })
 
 const goBack = () => {
@@ -489,7 +504,7 @@ const loadPersonalApiKeys = async () => {
     }
   } catch (error) {
     console.error('加载个人 API Key 失败:', error)
-    showToast(error.data?.message || '加载个人 API Key 失败', 'error')
+    showToast(getErrorMessage(error) || getAccountText('loadFailed'), 'error')
   } finally {
     apiKeyLoading.value = false
   }
@@ -501,19 +516,19 @@ const createPersonalApiKey = async () => {
     const response = await $fetch('/api/user/api-keys', {
       method: 'POST',
       body: {
-        name: '个人 API Key',
-        description: '用于个人集成和投稿'
+        name: locale.value.personalApiKey.defaultName,
+        description: locale.value.personalApiKey.defaultDescription
       }
     })
 
     if (response.success) {
       createdApiKey.value = response.data
-      showToast('个人 API Key 创建成功', 'success')
+      showToast(getAccountText('createSuccess'), 'success')
       await loadPersonalApiKeys()
     }
   } catch (error) {
     console.error('创建个人 API Key 失败:', error)
-    showToast(error.data?.message || '创建个人 API Key 失败', 'error')
+    showToast(getErrorMessage(error) || getAccountText('createFailed'), 'error')
   } finally {
     apiKeyCreating.value = false
   }
@@ -538,12 +553,12 @@ const confirmDeletePersonalApiKey = async () => {
     })
 
     if (response.success) {
-      showToast('个人 API Key 已删除', 'success')
+      showToast(getAccountText('deleteSuccess'), 'success')
       await loadPersonalApiKeys()
     }
   } catch (error) {
     console.error('删除个人 API Key 失败:', error)
-    showToast(error.data?.message || '删除个人 API Key 失败', 'error')
+    showToast(getErrorMessage(error) || getAccountText('deleteFailed'), 'error')
   } finally {
     apiKeyDeletingId.value = null
     showDeleteConfirmDialog.value = false
@@ -559,22 +574,22 @@ const cancelDeletePersonalApiKey = () => {
 const deleteConfirmMessage = computed(() => {
   const key = pendingDeleteApiKey.value
   if (!key) {
-    return '确定要删除这个个人 API Key 吗？删除后相关集成将无法继续使用。'
+    return getAccountText('deleteMessageDefault')
   }
-  return `确定要删除个人 API Key “${key.name}”吗？删除后相关集成将无法继续使用。`
+  return getAccountText('deleteMessage', key.name)
 })
 
 const copyApiKey = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     apiKeyCopied.value = true
-    showToast('已复制到剪贴板', 'success')
+    showToast(getAccountText('copied'), 'success')
     setTimeout(() => {
       apiKeyCopied.value = false
     }, 2000)
   } catch (error) {
     console.error('复制 API Key 失败:', error)
-    showToast('复制失败，请手动选择 Key 复制', 'error')
+    showToast(getAccountText('copyFailed'), 'error')
   }
 }
 
@@ -623,7 +638,7 @@ const loadPersonalApiKeyLogs = async (page = 1) => {
     }
   } catch (error) {
     console.error('加载个人 API Key 调用记录失败:', error)
-    showToast(error.data?.message || '加载调用记录失败', 'error')
+    showToast(getErrorMessage(error) || getAccountText('logsFailed'), 'error')
     apiKeyLogs.value = []
   } finally {
     apiKeyLogsLoading.value = false
@@ -647,7 +662,7 @@ const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleString('zh-CN', {
+  return date.toLocaleString(currentLocale.value === 'en-US' ? 'en-US' : 'zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -658,9 +673,9 @@ const formatDate = (dateString) => {
 
 const getApiKeyStatusLabel = (status) => {
   const map = {
-    active: '可用',
-    inactive: '停用',
-    expired: '已过期'
+    active: getAccountText('status.active'),
+    inactive: getAccountText('status.inactive'),
+    expired: getAccountText('status.expired')
   }
   return map[status] || status
 }

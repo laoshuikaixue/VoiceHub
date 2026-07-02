@@ -348,6 +348,10 @@ export default defineNuxtConfig({
           })
   },
 
+  alias: {
+    '#shared': fileURLToPath(new URL('./shared', import.meta.url))
+  },
+
   // Vite 配置
   vite: {
     plugins: [wasm(), topLevelAwait()],

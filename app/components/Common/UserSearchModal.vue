@@ -27,7 +27,7 @@
               >
                 <Icon name="user" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h3>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
@@ -52,7 +52,7 @@
                 ref="searchInput"
                 v-model="searchQuery"
                 class="w-full pl-12 pr-12 py-4 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
-                placeholder="搜索用户名或姓名..."
+                :placeholder="locale.searchUsersPlaceholder"
                 type="text"
                 @input="handleSearch"
                 @keyup.enter="performSearch"
@@ -73,7 +73,7 @@
                 >
                   <Icon name="search" :size="32" class="opacity-20" />
                 </div>
-                <p class="text-sm font-bold uppercase tracking-widest">未找到匹配的用户</p>
+                <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noMatchingUsers }}</p>
               </div>
 
               <div
@@ -139,7 +139,7 @@
             <div class="flex items-center justify-between gap-4">
               <div class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
                 <span v-if="selectedUsers.length > 0" class="text-blue-500">
-                  已选择 {{ selectedUsers.length }} 人
+                  {{ formatLocale(locale.selectedUsers, selectedUsers.length) }}
                 </span>
               </div>
               <div class="flex gap-3">
@@ -147,14 +147,14 @@
                   class="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
                   @click="close"
                 >
-                  取消
+                  {{ locale.cancel }}
                 </button>
                 <button
                   :disabled="selectedUsers.length === 0"
                   class="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                   @click="confirm"
                 >
-                  确定
+                  {{ locale.confirm }}
                 </button>
               </div>
             </div>
@@ -166,8 +166,9 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
 
 // 简单的防抖函数实现
 function useDebounceFn(fn, delay) {
@@ -184,7 +185,7 @@ const props = defineProps({
   show: Boolean,
   title: {
     type: String,
-    default: '搜索用户'
+    default: ''
   },
   multiple: {
     type: Boolean,
@@ -204,6 +205,23 @@ const loading = ref(false)
 const hasSearched = ref(false)
 const selectedUsers = ref([])
 const searchInput = ref(null)
+const { common } = useLocale()
+const locale = computed(() => common.value || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
+      const argIndex = match === '{count}' ? 0 : Number(index)
+      return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    })
+  }
+  return ''
+}
+const resolvedTitle = computed(() => {
+  if (props.title) return props.title
+  const title = locale.value.searchUsers
+  return typeof title === 'function' ? title() : (title || '')
+})
 
 const close = () => {
   emit('update:show', false)

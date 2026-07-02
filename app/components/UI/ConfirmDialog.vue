@@ -29,7 +29,7 @@
 
             <!-- 文字内容 -->
             <div class="space-y-2 mb-8">
-              <h4 class="text-xl font-black text-zinc-100 tracking-tight">{{ title }}</h4>
+              <h4 class="text-xl font-black text-zinc-100 tracking-tight">{{ resolvedTitle }}</h4>
               <p class="text-sm text-zinc-500 leading-relaxed font-medium whitespace-pre-line break-all">
                 {{ message }}
               </p>
@@ -53,7 +53,7 @@
                 :disabled="loading"
                 @click="handleCancel"
               >
-                {{ cancelText }}
+                {{ resolvedCancelText }}
               </button>
               <button
                 class="flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -62,7 +62,7 @@
                 @click="handleConfirm"
               >
                 <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
-                {{ loading ? '处理中...' : confirmText }}
+                {{ loading ? locale.processing : resolvedConfirmText }}
               </button>
             </div>
           </div>
@@ -75,6 +75,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   show: {
@@ -83,7 +84,7 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: '确认操作'
+    default: ''
   },
   message: {
     type: String,
@@ -96,11 +97,11 @@ const props = defineProps({
   },
   confirmText: {
     type: String,
-    default: '确认'
+    default: ''
   },
   cancelText: {
     type: String,
-    default: '取消'
+    default: ''
   },
   loading: {
     type: Boolean,
@@ -127,6 +128,11 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'cancel', 'close', 'update:show'])
 
 const inputValue = ref('')
+const { common } = useLocale()
+const locale = computed(() => common.value || {})
+const resolvedTitle = computed(() => props.title || locale.value.confirmOperation || '')
+const resolvedConfirmText = computed(() => props.confirmText || locale.value.confirm || '')
+const resolvedCancelText = computed(() => props.cancelText || locale.value.cancel || '')
 
 watch(() => props.show, (newVal) => {
   if (newVal) {

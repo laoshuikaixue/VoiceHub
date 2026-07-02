@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db, eq, users, userIdentities, and, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { resolveRequirePasswordChange } from '../../utils/system-settings-helper'
 import {
   getAccountLockRemainingTime,
   getIPBlockRemainingTime,
@@ -208,6 +209,7 @@ export default defineEventHandler(async (event) => {
         lastLogin: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
+        forcePasswordChange: users.forcePasswordChange,
         status: users.status,
         email: users.email,
         emailVerified: users.emailVerified
@@ -324,6 +326,9 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login for ${user.username} processed in ${processingTime}ms`)
 
+    // 统一调用 resolveRequirePasswordChange，内部已包含短路优化逻辑
+    const requirePasswordChange = await resolveRequirePasswordChange(user)
+
     return {
       success: true,
       user: {
@@ -333,7 +338,12 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        needsPasswordChange: !user.passwordChangedAt
+        email: user.email,
+        emailVerified: user.emailVerified,
+        forcePasswordChange: user.forcePasswordChange,
+        passwordChangedAt: user.passwordChangedAt,
+        requirePasswordChange,
+        hasSetPassword: !!user.passwordChangedAt
       }
     }
   } catch (error: any) {

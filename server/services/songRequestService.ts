@@ -23,6 +23,14 @@ type SongRequestUser = {
   role: string
 }
 
+const createCardCodeError = (statusCode: number, code: string, message: string) =>
+  createError({
+    statusCode,
+    statusMessage: code,
+    message,
+    data: { code }
+  })
+
 const songRequestBodySchema = z.object({
   title: z.string().trim().min(1, '歌曲名称不能为空').max(200, '歌曲名称不能超过200个字符'),
   artist: z.string().trim().min(1, '艺术家不能为空').max(200, '艺术家不能超过200个字符'),
@@ -35,7 +43,7 @@ const songRequestBodySchema = z.object({
   submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
   preferredPlayTimeId: z.string().uuid('播出时段 ID 无效').optional().nullable(),
-  cardCode: z.string().trim().max(100, '点歌券不能超过100个字符').optional().nullable(),
+  cardCode: z.string().trim().max(100, 'CARD_CODE_TOO_LONG').optional().nullable(),
   collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
 })
 
@@ -43,6 +51,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
   const parsedBody = songRequestBodySchema.safeParse(body || {})
   if (!parsedBody.success) {
     const issues = parsedBody.error.issues || []
+    const cardCodeIssue = issues.find((issue) => String(issue.message).startsWith('CARD_CODE_'))
+    if (cardCodeIssue) {
+      throw createCardCodeError(400, cardCodeIssue.message, 'Invalid request card')
+    }
+
     throw createError({
       statusCode: 400,
       message: issues.length
@@ -215,7 +228,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
       const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
-        throw createError({ statusCode: 403, message: '本站点已启用仅点歌券投稿，请提供有效点歌券' })
+        throw createCardCodeError(
+          403,
+          'CARD_CODE_REQUIRED_FOR_SITE',
+          'This site requires a valid request card to submit songs'
+        )
       }
     }
 
@@ -223,7 +240,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests
     )
     if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
-      throw createError({ statusCode: 400, message: '点歌券投稿功能未启用' })
+      throw createCardCodeError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
     }
 
     let preferredPlayTime = null
@@ -271,7 +288,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
 
         const found = codeRows[0]
         if (!found || found.status !== 'AVAILABLE') {
-          throw createError({ statusCode: 400, message: '点歌券无效或已被使用' })
+          throw createCardCodeError(
+            400,
+            'CARD_CODE_INVALID_OR_USED',
+            'Request card is invalid or already used'
+          )
         }
 
         const lockResult = await tx
@@ -281,7 +302,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           .returning()
 
         if (lockResult.length === 0) {
-          throw createError({ statusCode: 400, message: '点歌券已被锁定或不可用' })
+          throw createCardCodeError(
+            400,
+            'CARD_CODE_LOCKED_OR_UNAVAILABLE',
+            'Request card is locked or unavailable'
+          )
         }
 
         providedCardCodeId = found.id

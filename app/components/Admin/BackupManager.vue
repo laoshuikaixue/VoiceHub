@@ -2,8 +2,8 @@
   <div class="backup-manager">
     <!-- 标题 -->
     <div class="header">
-      <h3>数据库备份</h3>
-      <p class="description">导出和导入数据库备份</p>
+      <h3>{{ locale.title }}</h3>
+      <p class="description">{{ locale.desc }}</p>
     </div>
 
     <!-- 主要功能区 -->
@@ -17,15 +17,15 @@
           </svg>
         </div>
         <div class="card-content">
-          <h4>导出备份</h4>
-          <p>创建数据库备份文件</p>
+          <h4>{{ locale.exportTitle }}</h4>
+          <p>{{ locale.exportDesc }}</p>
           <button
             :disabled="createLoading"
             class="action-btn primary"
             @click="showCreateModal = true"
           >
-            <span v-if="createLoading">导出中...</span>
-            <span v-else>开始导出</span>
+            <span v-if="createLoading">{{ locale.exporting }}</span>
+            <span v-else>{{ locale.startExport }}</span>
           </button>
         </div>
       </div>
@@ -39,15 +39,15 @@
           </svg>
         </div>
         <div class="card-content">
-          <h4>导入备份</h4>
-          <p>从备份文件恢复数据</p>
+          <h4>{{ locale.importTitle }}</h4>
+          <p>{{ locale.importDesc }}</p>
           <button
             :disabled="uploadLoading"
             class="action-btn secondary"
             @click="showUploadModal = true"
           >
-            <span v-if="uploadLoading">导入中...</span>
-            <span v-else>选择文件</span>
+            <span v-if="uploadLoading">{{ locale.importing }}</span>
+            <span v-else>{{ locale.chooseFile }}</span>
           </button>
         </div>
       </div>
@@ -57,7 +57,7 @@
     <div v-if="showCreateModal" class="modal-overlay" @click="showCreateModal = false">
       <div class="modal" @click.stop>
         <div class="modal-header">
-          <h3>创建数据库备份</h3>
+          <h3>{{ locale.createTitle }}</h3>
           <button class="close-btn" @click="showCreateModal = false">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <line x1="18" x2="6" y1="6" y2="18" />
@@ -67,33 +67,33 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>备份类型</label>
+            <label>{{ locale.backupType }}</label>
             <div class="radio-group">
               <label class="radio-option">
                 <input v-model="createForm.tables" type="radio" value="all" >
-                <span>完整备份（推荐）</span>
-                <small>备份所有数据表</small>
+                <span>{{ locale.fullBackup }}</span>
+                <small>{{ locale.fullBackupDesc }}</small>
               </label>
               <label class="radio-option">
                 <input v-model="createForm.tables" type="radio" value="users" >
-                <span>仅用户数据</span>
-                <small>只备份用户相关数据</small>
+                <span>{{ locale.userDataOnly }}</span>
+                <small>{{ locale.userDataOnlyDesc }}</small>
               </label>
             </div>
           </div>
           <div class="form-group">
             <label class="checkbox-option">
               <input v-model="createForm.includeSystemData" type="checkbox" >
-              <span>包含系统设置</span>
-              <small>包含系统配置和设置数据</small>
+              <span>{{ locale.includeSystemSettings }}</span>
+              <small>{{ locale.includeSystemSettingsDesc }}</small>
             </label>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="action-btn secondary" @click="showCreateModal = false">取消</button>
+          <button class="action-btn secondary" @click="showCreateModal = false">{{ locale.cancel }}</button>
           <button :disabled="createLoading" class="action-btn primary" @click="createBackup">
-            <span v-if="createLoading">创建中...</span>
-            <span v-else>创建备份</span>
+            <span v-if="createLoading">{{ locale.creating }}</span>
+            <span v-else>{{ locale.createBackup }}</span>
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@
     <div v-if="showUploadModal" class="modal-overlay" @click="showUploadModal = false">
       <div class="modal" @click.stop>
         <div class="modal-header">
-          <h3>导入备份文件</h3>
+          <h3>{{ locale.importFileTitle }}</h3>
           <button class="close-btn" @click="showUploadModal = false">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <line x1="18" x2="6" y1="6" y2="18" />
@@ -126,8 +126,8 @@
                 <polyline points="17,8 12,3 7,8" />
                 <line x1="12" x2="12" y1="3" y2="15" />
               </svg>
-              <h4>选择或拖拽备份文件</h4>
-              <p>支持 .json 格式的备份文件，最大 100MB</p>
+              <h4>{{ locale.uploadTitle }}</h4>
+              <p>{{ locale.uploadDesc }}</p>
               <input
                 ref="fileInput"
                 accept=".json,application/json"
@@ -161,17 +161,17 @@
           </div>
 
           <div class="form-group">
-            <label>恢复模式</label>
+            <label>{{ locale.restoreMode }}</label>
             <div class="radio-group">
               <label class="radio-option">
                 <input v-model="restoreForm.mode" type="radio" value="merge" >
-                <span>合并模式（推荐）</span>
-                <small>更新现有记录，添加新记录</small>
+                <span>{{ locale.mergeMode }}</span>
+                <small>{{ locale.mergeModeDesc }}</small>
               </label>
               <label class="radio-option">
                 <input v-model="restoreForm.mode" type="radio" value="replace" >
-                <span>替换模式</span>
-                <small>先清空数据，然后导入备份</small>
+                <span>{{ locale.replaceMode }}</span>
+                <small>{{ locale.replaceModeDesc }}</small>
               </label>
             </div>
           </div>
@@ -179,8 +179,8 @@
           <div v-if="restoreForm.mode === 'replace'" class="form-group">
             <label class="checkbox-option danger">
               <input v-model="restoreForm.clearExisting" type="checkbox" >
-              <span>我确认要清空现有数据</span>
-              <small>此操作不可逆，请谨慎操作</small>
+              <span>{{ locale.confirmClear }}</span>
+              <small>{{ locale.confirmClearDesc }}</small>
             </label>
           </div>
 
@@ -190,8 +190,8 @@
           >
             <label class="checkbox-option">
               <input v-model="restoreForm.overwriteSuperAdmin" type="checkbox" >
-              <span>覆盖备份中的超级管理员账号数据</span>
-              <small>关闭时将保留当前超级管理员及其第三方绑定、2FA相关数据</small>
+              <span>{{ locale.overwriteSuperAdmin }}</span>
+              <small>{{ locale.overwriteSuperAdminDesc }}</small>
             </label>
           </div>
 
@@ -204,13 +204,13 @@
               <line x1="12" x2="12.01" y1="17" y2="17" />
             </svg>
             <div>
-              <h4>注意</h4>
-              <p>导入备份将会影响现有数据，请确保您了解操作的后果。</p>
+              <h4>{{ locale.warningTitle }}</h4>
+              <p>{{ locale.warningDesc }}</p>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="action-btn secondary" @click="showUploadModal = false">取消</button>
+          <button class="action-btn secondary" @click="showUploadModal = false">{{ locale.cancel }}</button>
           <button
             :disabled="
               !selectedFile ||
@@ -220,8 +220,8 @@
             class="action-btn primary"
             @click="uploadFile"
           >
-            <span v-if="uploadLoading">导入中...</span>
-            <span v-else>开始导入</span>
+            <span v-if="uploadLoading">{{ locale.importing }}</span>
+            <span v-else>{{ locale.startImport }}</span>
           </button>
         </div>
       </div>
@@ -230,8 +230,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import { useLocale } from '~/utils/locale'
+
+const { admin } = useLocale()
+const locale = computed(() => admin.value?.backupManager || {})
+const getLocaleText = (key, ...args) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return message || ''
+}
 
 // 响应式数据
 const createLoading = ref(false)
@@ -305,14 +319,14 @@ const createBackup = async () => {
           // 显示成功消息
           const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
           if (window.$showNotification) {
-            window.$showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+            window.$showNotification(getLocaleText('downloaded', backup.filename, sizeText), 'success')
           }
 
           console.log('✅ 文件下载成功:', backup.filename)
         } catch (downloadError) {
           console.error('下载失败:', downloadError)
           if (window.$showNotification) {
-            window.$showNotification('文件下载失败: ' + downloadError.message, 'error')
+            window.$showNotification(getLocaleText('fileDownloadFailed', downloadError.message), 'error')
           }
         }
       } else if (backup.downloadMode === 'file' && backup.filename) {
@@ -348,20 +362,20 @@ const createBackup = async () => {
           // 显示成功消息
           const sizeText = backup.size ? ` (${formatFileSize(backup.size)})` : ''
           if (window.$showNotification) {
-            window.$showNotification(`备份文件已下载: ${backup.filename}${sizeText}`, 'success')
+            window.$showNotification(getLocaleText('downloaded', backup.filename, sizeText), 'success')
           }
 
           console.log('✅ 文件下载成功:', backup.filename)
         } catch (downloadError) {
           console.error('文件下载失败:', downloadError)
           if (window.$showNotification) {
-            window.$showNotification('文件下载失败: ' + downloadError.message, 'error')
+            window.$showNotification(getLocaleText('fileDownloadFailed', downloadError.message), 'error')
           }
         }
       } else {
         console.error('无效的下载模式或缺少数据')
         if (window.$showNotification) {
-          window.$showNotification('备份创建失败：无效的响应格式', 'error')
+          window.$showNotification(locale.value?.invalidResponse || '', 'error')
         }
         showCreateModal.value = false
         return
@@ -369,16 +383,16 @@ const createBackup = async () => {
     } else {
       console.error('服务器响应格式错误:', response)
       if (window.$showNotification) {
-        window.$showNotification('备份创建失败：服务器响应格式错误', 'error')
+        window.$showNotification(locale.value?.serverResponseInvalid || '', 'error')
       }
     }
 
     showCreateModal.value = false
   } catch (error) {
     console.error('创建备份失败:', error)
-    const errorMessage = error.data?.message || error.message || '未知错误'
+    const errorMessage = error.data?.message || error.message || locale.value?.unknownError || '未知错误'
     if (window.$showNotification) {
-      window.$showNotification('创建备份失败: ' + errorMessage, 'error')
+      window.$showNotification(getLocaleText('createFailed', errorMessage), 'error')
     }
   } finally {
     createLoading.value = false
@@ -399,7 +413,7 @@ const parseBackupSuperAdmin = async (file) => {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
     if (window.$showNotification) {
-      window.$showNotification('无法解析备份文件，请检查文件格式是否正确。', 'error')
+      window.$showNotification(locale.value?.parseFailed || '', 'error')
     }
     console.error('解析备份文件失败:', error)
   }
@@ -458,7 +472,7 @@ const uploadFile = async () => {
       // 显示成功通知
       if (window.$showNotification) {
         window.$showNotification(
-          `备份恢复成功！处理了 ${response.details?.tablesProcessed || 0} 个表，恢复了 ${response.details?.recordsRestored || 0} 条记录`,
+          getLocaleText('restoreSuccess', response.details?.tablesProcessed || 0, response.details?.recordsRestored || 0),
           'success'
         )
 
@@ -466,7 +480,7 @@ const uploadFile = async () => {
         if (response.details?.errors && response.details.errors.length > 0) {
           setTimeout(() => {
             window.$showNotification(
-              `恢复过程中发生了 ${response.details.errors.length} 个错误`,
+              getLocaleText('restoreWarning', response.details.errors.length),
               'warning'
             )
           }, 1000)
@@ -474,7 +488,7 @@ const uploadFile = async () => {
 
         // 显示即将重定向的通知
         setTimeout(() => {
-          window.$showNotification('数据库恢复完成，3秒后将返回首页重新登录', 'info')
+          window.$showNotification(locale.value?.restoreCompleteRedirect || '', 'info')
         }, 2000)
       }
 
@@ -493,13 +507,13 @@ const uploadFile = async () => {
       }, 5000)
     } else {
       if (window.$showNotification) {
-        window.$showNotification('备份导入失败: ' + (response.message || '未知错误'), 'error')
+        window.$showNotification(getLocaleText('importFailed', response.message || locale.value?.unknownError || '未知错误'), 'error')
       }
     }
   } catch (error) {
     console.error('导入备份失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('导入备份失败: ' + (error.data?.message || error.message), 'error')
+      window.$showNotification(getLocaleText('importFailed', error.data?.message || error.message), 'error')
     }
   } finally {
     uploadLoading.value = false

@@ -3,12 +3,12 @@
     class="backdrop-blur-md p-6 rounded-xl border border-white/10 bg-slate-800/70 shadow-2xl max-w-[400px] mx-auto text-zinc-100 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]"
   >
     <h3 class="mb-6 pb-2 border-b border-white/10 text-zinc-100 font-bold text-lg">
-      为歌曲 "{{ song?.title }}" 创建排期
+      {{ scheduleTitle }}
     </h3>
 
     <form @submit.prevent="handleSubmit">
       <div class="mb-4">
-        <label class="block mb-2 font-medium text-zinc-100" for="playDate">播放日期</label>
+        <label class="block mb-2 font-medium text-zinc-100" for="playDate">{{ locale.playDate }}</label>
         <input
           id="playDate"
           v-model="playDate"
@@ -23,8 +23,8 @@
         <CustomSelect
           v-model="playTimeId"
           :options="playTimeOptions"
-          label="播出时段"
-          placeholder="未指定"
+          :label="locale.playTime"
+          :placeholder="locale.unspecified"
           class-name="w-full"
         />
 
@@ -34,7 +34,7 @@
         >
           <div class="text-base">💡</div>
           <div>
-            用户期望的播出时段:
+            {{ locale.preferredPlayTime }}
             <span class="font-medium text-indigo-300">
               {{ song.preferredPlayTime.name }}
               <template v-if="song.preferredPlayTime.startTime || song.preferredPlayTime.endTime">
@@ -55,14 +55,14 @@
           type="button"
           @click="$emit('cancel')"
         >
-          取消
+          {{ commonLocale.cancel }}
         </button>
         <button
           :disabled="loading"
           class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500/50 disabled:cursor-not-allowed disabled:transform-none"
           type="submit"
         >
-          {{ loading ? '创建中...' : '创建排期' }}
+          {{ loading ? locale.creating : locale.create }}
         </button>
       </div>
     </form>
@@ -73,6 +73,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useSongs } from '~/composables/useSongs'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   song: {
@@ -92,10 +93,28 @@ const playTimeId = ref('')
 const error = ref('')
 const playTimes = ref([])
 const { playTimeEnabled } = useSongs()
+const { common } = useLocale()
+const commonLocale = computed(() => common.value || {})
+const locale = computed(() => useSafeLocale(common.value?.scheduleForm || {}))
+const scheduleTitle = computed(() => {
+  const title = locale.value?.title
+  if (typeof title === 'string') return title.replace(/{0}/g, props.song?.title || '')
+  if (typeof title === 'function') return title(props.song?.title || '')
+  return ''
+})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
 
 // 转换播出时段为 CustomSelect 选项格式
 const playTimeOptions = computed(() => {
-  const options = [{ label: '未指定', value: '' }]
+  const options = [{ label: locale.value.unspecified, value: '' }]
 
   if (playTimes.value && playTimes.value.length > 0) {
     playTimes.value.forEach((pt) => {
@@ -142,19 +161,19 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`
+    return formatLocale(locale.value.startAt, playTime.startTime) || playTime.startTime
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`
+    return formatLocale(locale.value.endAt, playTime.endTime) || playTime.endTime
   }
 
-  return '不限时间'
+  return locale.value.unlimited
 }
 
 const handleSubmit = () => {
   error.value = ''
 
   if (!playDate.value) {
-    error.value = '请选择播放日期'
+    error.value = locale.value.dateRequired
     return
   }
 

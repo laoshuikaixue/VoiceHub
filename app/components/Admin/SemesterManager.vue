@@ -3,9 +3,9 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">学期管理</h2>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
         <p class="text-xs text-zinc-500 mt-1">
-          定义系统的教学周期，点歌、排期及统计数据将基于当前活跃学期进行归档
+          {{ locale.desc }}
         </p>
       </div>
       <button
@@ -26,7 +26,7 @@
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        添加新学期
+        {{ locale.add }}
       </button>
     </div>
 
@@ -51,7 +51,7 @@
             />
           </svg>
           <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-            当前活跃学期
+            {{ locale.currentActive }}
           </h3>
         </div>
 
@@ -99,14 +99,14 @@
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                创建于 {{ formatDate(currentSemester.createdAt) }}
+                {{ getLocaleMessage('createdAt', formatDate(currentSemester.createdAt)) }}
               </div>
             </div>
             <div class="pt-4">
               <span
                 class="px-4 py-2 bg-white text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
               >
-                正在进行中
+                {{ locale.inProgress }}
               </span>
             </div>
           </div>
@@ -152,9 +152,9 @@
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <p class="text-sm font-bold text-zinc-600">未设置当前活跃学期</p>
+          <p class="text-sm font-bold text-zinc-600">{{ locale.noCurrent }}</p>
           <button class="text-xs text-blue-500 font-black hover:underline" @click="openModal">
-            立即创建
+            {{ locale.createNow }}
           </button>
         </div>
 
@@ -176,9 +176,9 @@
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <div class="space-y-1">
-            <p class="text-xs font-bold text-zinc-400">学期切换说明</p>
+            <p class="text-xs font-bold text-zinc-400">{{ locale.switchTitle }}</p>
             <p class="text-[11px] text-zinc-600 leading-relaxed">
-              切换学期后，前端点歌界面将清空旧排期。所有历史数据会自动归档至对应学期下，您仍可在数据中心进行查看。
+              {{ locale.switchDesc }}
             </p>
           </div>
         </div>
@@ -205,10 +205,10 @@
               <path d="M12 7v5l4 2" />
             </svg>
             <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-              学期历史记录
+              {{ locale.historyTitle }}
             </h3>
           </div>
-          <span class="text-[10px] font-black text-zinc-700">共 {{ semesters.length }} 条</span>
+          <span class="text-[10px] font-black text-zinc-700">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
         </div>
 
         <div class="space-y-4">
@@ -216,7 +216,7 @@
             v-if="loading && semesters.length === 0"
             class="text-center py-20 bg-zinc-900/10 border border-zinc-800 border-dashed rounded-[2rem]"
           >
-            <p class="text-xs font-bold text-zinc-600">加载中...</p>
+            <p class="text-xs font-bold text-zinc-600">{{ locale.loading }}</p>
           </div>
 
           <div
@@ -264,7 +264,7 @@
                   {{ sem.name }}
                 </h5>
                 <p class="text-[10px] text-zinc-600 font-medium uppercase tracking-widest mt-0.5">
-                  创建于 {{ formatDate(sem.createdAt) }}
+                  {{ getLocaleMessage('createdAt', formatDate(sem.createdAt)) }}
                 </p>
               </div>
             </div>
@@ -288,7 +288,7 @@
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
-                <span class="text-[10px] font-black uppercase tracking-widest">当前学期</span>
+                <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.currentSemester }}</span>
               </div>
               <button
                 v-else
@@ -310,13 +310,13 @@
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
-                设为当前
+                {{ locale.setCurrent }}
               </button>
 
               <button
                 :disabled="loading"
                 class="p-2.5 text-zinc-700 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="修改学期"
+                :title="locale.editSemester"
                 @click="openEditModal(sem)"
               >
                 <svg
@@ -338,7 +338,7 @@
                 v-if="!sem.isActive"
                 :disabled="loading"
                 class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="删除学期"
+                :title="locale.deleteSemester"
                 @click="deleteSemester(sem.id)"
               >
                 <svg
@@ -367,7 +367,7 @@
             v-if="semesters.length === 0 && !loading"
             class="text-center py-20 bg-zinc-900/10 border border-zinc-800 border-dashed rounded-[2rem]"
           >
-            <p class="text-xs font-bold text-zinc-600">暂无学期数据</p>
+            <p class="text-xs font-bold text-zinc-600">{{ locale.empty }}</p>
           </div>
         </div>
       </div>
@@ -385,7 +385,7 @@
         <div class="p-8 space-y-6">
           <div class="flex items-center justify-between">
             <h3 class="text-xl font-black text-white tracking-tight">
-              {{ isEditing ? '修改学期' : '添加新学期' }}
+              {{ isEditing ? locale.editSemester : locale.add }}
             </h3>
             <button
               class="p-2 text-zinc-500 hover:text-white transition-colors"
@@ -411,12 +411,12 @@
           <div class="space-y-6">
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >学期名称</label
+                >{{ locale.semesterName }}</label
               >
               <input
                 v-model="semesterForm.name"
                 type="text"
-                placeholder="例如: 2025学年第一学期"
+                :placeholder="locale.namePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 font-bold transition-all"
               >
             </div>
@@ -430,10 +430,10 @@
               <div>
                 <span
                   class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
-                  >设为当前活跃学期</span
+                  >{{ locale.setAsActive }}</span
                 >
                 <p class="text-[10px] text-zinc-600 font-medium">
-                  创建后将立即激活此学期，原学期将变为历史状态
+                  {{ locale.setAsActiveHint }}
                 </p>
               </div>
             </label>
@@ -456,7 +456,7 @@
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               <p class="text-[10px] text-zinc-500 leading-normal">
-                提示：请按照统一的命名规范设置学期名称，这有助于数据归档后的检索与分析。
+                {{ locale.namingTip }}
               </p>
             </div>
           </div>
@@ -467,14 +467,14 @@
             class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
             @click="closeModal"
           >
-            取消
+            {{ locale.cancel }}
           </button>
           <button
             :disabled="submitting || !semesterForm.name.trim()"
             class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-50 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
             @click="handleSubmit"
           >
-            {{ submitting ? (isEditing ? '保存中...' : '创建中...') : (isEditing ? '保存修改' : '创建学期') }}
+            {{ submitting ? (isEditing ? locale.saving : locale.creating) : (isEditing ? locale.saveChanges : locale.createSemester) }}
           </button>
         </div>
       </div>
@@ -484,10 +484,10 @@
     <ConfirmDialog
       :loading="loading"
       :show="showDeleteDialog"
-      cancel-text="取消"
-      confirm-text="确认删除"
+      :cancel-text="locale.cancel"
+      :confirm-text="locale.confirmDelete"
       :message="deleteMessage"
-      title="确认删除学期"
+      :title="locale.deleteDialogTitle"
       type="danger"
       @close="showDeleteDialog = false"
       @confirm="confirmDelete"
@@ -499,8 +499,27 @@
 import { onMounted, ref, computed } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => admin.value?.semesterManager || {})
+const formatString = (value, args) => {
+  if (typeof value !== 'string') return value
+  return value.replace(/{(\d+)}/g, (match, index) =>
+    args[index] !== undefined ? String(args[index]) : match
+  )
+}
+const getLocaleMessage = (key, ...args) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  return formatString(message, args) || ''
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  if (typeof message === 'function') return message(...args)
+  return formatString(message, args) || ''
+}
 
 const {
   semesters,
@@ -538,7 +557,7 @@ const sortedSemesters = computed(() => {
 
 // 删除确认信息
 const deleteMessage = computed(() => {
-  return `确定要彻底删除 "${deleteTargetName.value}" 吗？此操作将同步清除该学期下的所有点歌记录、排期数据和统计信息。数据一旦删除将无法找回。`
+  return getLocaleMessage('deleteMessage', deleteTargetName.value)
 })
 
 // 格式化日期
@@ -559,13 +578,13 @@ const setActive = async (semesterId) => {
     // 注意：这里需要重新获取error，因为useSemesters内部可能没有正确更新error的响应式引用
     // 或者直接依据success返回值判断
     if (success) {
-      showNotification('活跃学期设置成功！', 'success')
+      showNotification(getNestedMessage('messages', 'activeSet'), 'success')
     } else {
       // 如果setActiveSemester返回false，尝试直接显示一个通用错误，因为error可能为空
-      showNotification(error.value || '设置活跃学期失败，请稍后重试', 'error')
+      showNotification(error.value || getNestedMessage('errors', 'setActiveFailedRetry'), 'error')
     }
   } catch (err) {
-    showNotification(err.message || '设置失败', 'error')
+    showNotification(err.message || getNestedMessage('errors', 'setFailed'), 'error')
   }
 }
 
@@ -586,12 +605,12 @@ const confirmDelete = async () => {
   try {
     const success = await deleteSemesterAPI(deleteTargetId.value)
     if (success) {
-      showNotification('学期删除成功！', 'success')
+      showNotification(getNestedMessage('messages', 'deleted'), 'success')
     } else {
-      showNotification(error.value || '删除学期失败', 'error')
+      showNotification(error.value || getNestedMessage('errors', 'deleteFailed'), 'error')
     }
   } catch (err) {
-    showNotification(err.message || '删除失败', 'error')
+    showNotification(err.message || getNestedMessage('errors', 'deleteFailedShort'), 'error')
   }
 
   showDeleteDialog.value = false
@@ -605,7 +624,7 @@ const handleSubmit = async () => {
   if (!normalizedName) return
 
   if (isEditing.value && normalizedName === originalSemesterName.value) {
-    showNotification('学期名称未发生变化', 'info')
+    showNotification(getNestedMessage('messages', 'nameUnchanged'), 'info')
     closeModal()
     return
   }
@@ -618,10 +637,10 @@ const handleSubmit = async () => {
         name: normalizedName
       })
       if (success) {
-        showNotification('学期修改成功！', 'success')
+        showNotification(getNestedMessage('messages', 'updated'), 'success')
         closeModal()
       } else {
-        showNotification(error.value || '修改学期失败', 'error')
+        showNotification(error.value || getNestedMessage('errors', 'updateFailed'), 'error')
       }
     } else {
       // 创建学期
@@ -630,15 +649,18 @@ const handleSubmit = async () => {
         isActive: semesterForm.value.isActive
       })
       if (result) {
-        showNotification('学期创建成功！', 'success')
+        showNotification(getNestedMessage('messages', 'created'), 'success')
         closeModal()
       } else {
-        showNotification(error.value || '创建学期失败', 'error')
+        showNotification(error.value || getNestedMessage('errors', 'createFailed'), 'error')
       }
     }
   } catch (err) {
     console.error(isEditing.value ? '修改学期失败:' : '创建学期失败:', err)
-    showNotification(err.message || (isEditing.value ? '修改学期失败' : '创建学期失败'), 'error')
+    showNotification(
+      err.message || (isEditing.value ? getNestedMessage('errors', 'updateFailed') : getNestedMessage('errors', 'createFailed')),
+      'error'
+    )
   } finally {
     submitting.value = false
   }
@@ -662,20 +684,20 @@ const getRecommendedName = () => {
   const month = now.getMonth() + 1
 
   let academicYear = year
-  let term = '第一学期'
+  let term = locale.value?.terms?.first || '第一学期'
 
   if (month >= 3 && month <= 8) {
     academicYear = year - 1
-    term = '第二学期'
+    term = locale.value?.terms?.second || '第二学期'
   } else if (month <= 2) {
     academicYear = year - 1
-    term = '第一学期'
+    term = locale.value?.terms?.first || '第一学期'
   } else {
     academicYear = year
-    term = '第一学期'
+    term = locale.value?.terms?.first || '第一学期'
   }
 
-  return `${academicYear}学年${term}`
+  return getLocaleMessage('recommendedName', academicYear, term)
 }
 
 const openModal = () => {

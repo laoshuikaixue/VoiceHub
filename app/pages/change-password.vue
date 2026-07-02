@@ -10,16 +10,16 @@
           </div>
 
           <div v-if="isFirstLogin" class="welcome-message">
-            <h2>欢迎使用VoiceHub</h2>
-            <p>为了保障您的账号安全，请设置一个新的密码</p>
+            <h2>{{ locale.welcomeTitle }}</h2>
+            <p>{{ locale.welcomeDesc }}</p>
           </div>
           <div v-else class="security-message">
-            <h2>账号安全</h2>
-            <p>定期更新密码有助于保护您的账号安全</p>
+            <h2>{{ locale.securityTitle }}</h2>
+            <p>{{ locale.securityDesc }}</p>
           </div>
 
           <div class="security-tips">
-            <h3>密码安全建议</h3>
+            <h3>{{ locale.tipsTitle }}</h3>
             <div class="tip-list">
               <div class="tip-item">
                 <svg
@@ -31,7 +31,7 @@
                 >
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
-                <span>至少8个字符</span>
+                <span>{{ locale.tipMinLength }}</span>
               </div>
               <div class="tip-item">
                 <svg
@@ -43,7 +43,7 @@
                 >
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
-                <span>包含大小写字母</span>
+                <span>{{ locale.tipCase }}</span>
               </div>
               <div class="tip-item">
                 <svg
@@ -55,7 +55,7 @@
                 >
                   <polyline points="20,6 9,17 4,12" />
                 </svg>
-                <span>包含数字和特殊字符</span>
+                <span>{{ locale.tipSpecial }}</span>
               </div>
             </div>
           </div>
@@ -66,8 +66,8 @@
       <div class="form-section">
         <div class="form-container">
           <div class="form-header">
-            <h2>{{ isFirstLogin ? '设置新密码' : '修改密码' }}</h2>
-            <p>{{ isFirstLogin ? '请设置一个安全的密码' : '更新您的登录密码' }}</p>
+            <h2>{{ isFirstLogin ? locale.setNewPassword : locale.changePasswordTitle }}</h2>
+            <p>{{ isFirstLogin ? locale.setNewPasswordDesc : locale.updatePasswordDesc }}</p>
           </div>
 
           <ClientOnly>
@@ -75,12 +75,28 @@
           </ClientOnly>
 
           <div class="form-footer">
-            <NuxtLink class="back-link" to="/">
+            <!-- 普通修改密码场景：返回主页 -->
+            <NuxtLink v-if="!requirePasswordChange" class="back-link" to="/">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
-              返回主页
+              {{ locale.backToHome }}
             </NuxtLink>
+
+            <!-- 强制改密场景：提供"退出登录"入口，避免用户被困住 -->
+            <template v-else>
+              <p class="footer-hint">{{ locale.cannotComplete }}</p>
+              <div class="footer-actions">
+                <button class="logout-btn" type="button" @click="handleLogout">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" x2="9" y1="12" y2="12" />
+                  </svg>
+                  {{ locale.logout }}
+                </button>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -90,15 +106,28 @@
 
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import logo from '~~/public/images/logo.svg'
+import { useLocale } from '~/utils/locale'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
+const { changePassword: locale } = useLocale()
 
 const auth = useAuth()
 const router = useRouter()
 const isFirstLogin = ref(false)
+
+// 是否处于强制改密状态（首次登录 或 管理员触发强制改密）。
+// 用于在 UX 上为用户提供"退出登录 / 忘记密码"出口，避免在忘记旧密码时被困在页面上。
+const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
+
+const handleLogout = async () => {
+  if (!import.meta.client) return
+  const confirmed = window.confirm(locale.value.logoutConfirm)
+  if (!confirmed) return
+  await auth.logout()
+}
 
 // 未登录用户重定向到登录页
 onMounted(async () => {
@@ -110,14 +139,9 @@ onMounted(async () => {
     return
   }
 
-  // 检查是否需要修改密码（用于显示不同的UI提示）
-  if (import.meta.client) {
-    const userJson = localStorage.getItem('user')
-    if (userJson) {
-      const user = JSON.parse(userJson)
-      isFirstLogin.value = user.forcePasswordChange === true || !user.passwordChangedAt
-    }
-  }
+  // "首次登录"特指用户从未设置过密码（hasSetPassword=false），包含第三方登录后自愿设置初始密码的场景。
+  // 管理员对已有密码的用户强制改密时，仍需走常规改密流程（验证旧密码）。
+  isFirstLogin.value = auth.user.value ? !auth.user.value.hasSetPassword : false
 })
 </script>
 
@@ -316,6 +340,74 @@ onMounted(async () => {
 .back-link svg {
   width: 16px;
   height: 16px;
+}
+
+.footer-hint {
+  font-size: 13px;
+  color: #888888;
+  margin: 0 0 12px 0;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #cccccc;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.text-link:hover {
+  background: #1a1a1a;
+  color: #ffffff;
+  border-color: #3a3a3a;
+}
+
+.text-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.logout-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* 响应式设计 */

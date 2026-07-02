@@ -48,7 +48,7 @@
             <!-- 移动端返回顶部按钮 -->
             <button
               v-if="showBackToTop"
-              aria-label="返回顶部"
+              :aria-label="locale.backToTop"
               class="fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-50"
               @click="scrollToTop"
             >
@@ -195,9 +195,12 @@ import { useAuth } from '~/composables/useAuth'
 import logo from '~~/public/images/logo.svg'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useLocale } from '~/utils/locale'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.dashboard || {})
 
 // 导入组件
 
@@ -231,23 +234,7 @@ const permissions = usePermissions()
 
 // 方法
 const getPageTitle = () => {
-  const titles = {
-    overview: '数据概览',
-    songs: '歌曲管理',
-    schedule: '排期管理',
-    print: '打印排期',
-    'card-codes': '卡密管理',
-    users: '用户管理',
-    notifications: '通知管理',
-    'smtp-config': '邮件配置',
-    playtimes: '播出时段',
-    'request-times': '投稿管理',
-    semesters: '学期管理',
-    blacklist: '黑名单管理',
-    'site-config': '站点配置',
-    database: '数据库操作'
-  }
-  return titles[activeTab.value] || '管理后台'
+  return locale.value.tabs[activeTab.value] || locale.value.fallbackTitle
 }
 
 // 动态页面标题
@@ -256,7 +243,7 @@ const dynamicTitle = computed(() => {
   if (siteTitle && siteTitle.value) {
     return `${currentPageTitle} | ${siteTitle.value}`
   }
-  return `${currentPageTitle} | 校园广播站点歌系统`
+  return `${currentPageTitle} | ${locale.value.defaultSiteTitle}`
 })
 
 // 监听activeTab变化，更新页面标题
@@ -281,13 +268,7 @@ watch(
 )
 
 const getRoleDisplayName = (role) => {
-  const roleNames = {
-    USER: '普通用户',
-    SONG_ADMIN: '歌曲管理员',
-    ADMIN: '超级管理员',
-    SUPER_ADMIN: '超级管理员'
-  }
-  return roleNames[role] || role
+  return locale.value.roles[role] || role
 }
 
 const handleLogout = async () => {

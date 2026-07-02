@@ -3,7 +3,7 @@
     class="app-loading-screen"
     role="status"
     aria-live="polite"
-    :aria-label="LOADING_SCREEN_TEXT.ARIA_LABEL"
+    :aria-label="locale.ariaLabel"
   >
     <div class="top-progress-bar" :style="{ width: `${safeProgress}%` }" />
 
@@ -57,22 +57,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import WarpCanvas from './WarpCanvas.vue'
+import { useLocale } from '~/utils/locale'
 
-const LOADING_SCREEN_TEXT = {
-  ARIA_LABEL: 'VoiceHub 正在加载',
-  MESSAGE: '正在同步排期、歌曲和用户状态',
-  DEFAULT_PROGRESS: 8
-}
+const { auth } = useLocale()
+const locale = computed(() => auth.value?.appLoadingScreen || {})
+const DEFAULT_PROGRESS = 8
 
 const props = defineProps<{
   message?: string
   progress?: number
 }>()
 
-const displayMessage = computed(() => props.message || LOADING_SCREEN_TEXT.MESSAGE)
+const displayMessage = computed(() => props.message || locale.value.message)
 
 const safeProgress = computed(() => {
-  const normalized = Math.round(Number(props.progress ?? LOADING_SCREEN_TEXT.DEFAULT_PROGRESS) || 0)
+  const normalized = Math.round(Number(props.progress ?? DEFAULT_PROGRESS) || 0)
   return Math.min(100, Math.max(0, normalized))
 })
 

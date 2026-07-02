@@ -10,7 +10,7 @@
           @click="$emit('import-env')"
         >
           <Download :size="12" />
-          导入环境配置
+          {{ locale.importEnv }}
         </button>
         <div class="flex items-center gap-2">
           <span
@@ -19,7 +19,7 @@
               enabled ? 'text-green-500' : 'text-red-500'
             ]"
           >
-            {{ enabled ? '已启用' : '未启用' }}
+            {{ enabled ? locale.enabled : locale.disabled }}
           </span>
           <input
             :checked="enabled"
@@ -60,7 +60,7 @@
             class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
             @click="showSecret = !showSecret"
           >
-            {{ showSecret ? '隐藏' : '显示' }}
+            {{ showSecret ? locale.hide : locale.show }}
           </button>
         </div>
       </div>
@@ -71,8 +71,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Download } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   title: String,
@@ -94,6 +95,8 @@ const emit = defineEmits([
 ])
 
 const showSecret = ref(false)
+const { admin } = useLocale()
+const locale = computed(() => admin.value?.oauthConfig || {})
 
 const inputClass = 'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'

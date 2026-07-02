@@ -40,7 +40,7 @@
               date.weekday
             }}</span>
             <span class="text-lg font-black leading-none my-0.5">{{ date.day }}</span>
-            <span class="text-[9px] font-bold opacity-60">{{ date.month }}月</span>
+                  <span class="text-[9px] font-bold opacity-60">{{ callLocale('monthLabel', `${date.month}月`, date.month) }}</span>
           </button>
         </div>
 
@@ -65,7 +65,7 @@
           <!-- 定位到今天 -->
           <button
             class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
-            title="跳转到今天"
+            :title="locale.jumpToday"
             @click="scrollToToday"
           >
             <CircleDot class="w-5 h-5" />
@@ -74,7 +74,7 @@
           <!-- 手动日期选择按钮 -->
           <button
             class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
-            title="选择特定日期"
+            :title="locale.selectSpecificDate"
             @click="openManualDatePicker"
           >
             <CalendarIcon class="w-5 h-5" />
@@ -93,7 +93,7 @@
         @click.stop
       >
         <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">选择日期</h3>
+          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.selectDate }}</h3>
           <button
             class="text-zinc-500 hover:text-zinc-300 transition-colors"
             @click="showManualDatePicker = false"
@@ -112,13 +112,13 @@
               class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
               @click="showManualDatePicker = false"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider"
               @click="confirmManualDate"
             >
-              确认
+              {{ locale.confirm }}
             </button>
           </div>
         </div>
@@ -132,7 +132,7 @@
     >
       <CustomSelect
         :model-value="selectedPlayTime"
-        label="播出时段"
+        :label="locale.playTime"
         :options="playTimeOptions"
         class-name="w-full"
         @update:model-value="handlePlayTimeSelect"
@@ -141,7 +141,7 @@
 
     <!-- 加载状态 -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 min-h-[60vh]">
-      <LoadingState title="正在加载排期数据" message="请稍候..." />
+      <LoadingState :title="locale.loadingTitle" :message="locale.loadingMessage" />
     </div>
 
     <div v-else>
@@ -157,7 +157,7 @@
         >
           <ListMusic class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
-            >待排歌曲
+            >{{ locale.pendingSongs }}
             <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
               filteredUnscheduledSongs.length
             }}</span></span
@@ -172,7 +172,7 @@
         >
           <PlaySquare class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
-            >播放列表
+            >{{ locale.playlist }}
             <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
               localScheduledSongs.length
             }}</span></span
@@ -194,17 +194,13 @@
         >
           <div class="flex items-center justify-between px-1">
             <h3 class="hidden lg:block text-lg font-black tracking-tight text-zinc-100 uppercase">
-              待排歌曲
+              {{ locale.pendingSongs }}
             </h3>
             <div
               class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800"
             >
               <button
-                v-for="tab in [
-                  { id: 'normal', label: '普通投稿' },
-                  { id: 'replay', label: '重播申请' },
-                  { id: 'all', label: '所有' }
-                ]"
+                v-for="tab in scheduleTabs"
                 :key="tab.id"
                 :class="[
                   'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
@@ -227,7 +223,7 @@
             >
               <div class="flex items-center gap-2 text-zinc-400">
                 <Filter class="w-3.5 h-3.5" />
-                <span class="text-[11px] font-black uppercase tracking-widest">检索与筛选</span>
+                <span class="text-[11px] font-black uppercase tracking-widest">{{ locale.searchAndFilter }}</span>
               </div>
               <ChevronRight
                 :class="[
@@ -248,7 +244,7 @@
                 <input
                   v-model="searchQuery"
                   type="text"
-                  placeholder="搜索歌曲、艺术家..."
+                  :placeholder="locale.searchPlaceholder"
                   class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                 >
                 <button
@@ -262,21 +258,27 @@
               <div class="grid grid-cols-1 gap-2">
                 <CustomSelect
                   :model-value="selectedSemester"
-                  label="当前学期"
+                  :label="locale.currentSemester"
                   :options="availableSemesters"
                   label-key="name"
-                  value-key="name"
+                  value-key="id"
                   @update:model-value="handleSemesterSelect"
                 />
                 <CustomSelect
                   v-if="playTimeEnabled"
                   v-model="selectedFilterPlayTime"
-                  label="期望时段"
+                  :label="locale.preferredTime"
                   :options="filterPlayTimeOptions"
                 />
                 <div class="grid grid-cols-2 gap-2">
-                  <CustomSelect v-model="selectedGrade" label="年级" :options="availableGrades" />
-                  <CustomSelect v-model="songSortOption" label="排序" :options="sortOptions" />
+                  <CustomSelect
+                    v-model="selectedGrade"
+                    :label="locale.grade"
+                    :options="availableGrades"
+                    label-key="label"
+                    value-key="value"
+                  />
+                  <CustomSelect v-model="songSortOption" :label="locale.sort" :options="sortOptions" />
                 </div>
                 <button
                   class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
@@ -284,7 +286,7 @@
                   @click="showPlaylistFilterModal = true"
                 >
                   <ListMusic class="w-3.5 h-3.5" />
-                  <span>{{ isPlaylistFilterActive ? '已应用歌单过滤' : '歌单查重过滤' }}</span>
+                  <span>{{ isPlaylistFilterActive ? locale.playlistFilterApplied : locale.playlistFilter }}</span>
                 </button>
               </div>
             </div>
@@ -365,7 +367,7 @@
                       <button
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
-                        title="查看备注留言"
+                        :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
                         <MessageSquare :size="12" />
@@ -373,14 +375,14 @@
                       <span
                         v-if="song.cardCodeId"
                         class="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 whitespace-nowrap flex-shrink-0"
-                        title="点歌券待核销"
+                        :title="locale.cardPending"
                       >
-                        点歌券待核销
+                        {{ locale.cardPending }}
                       </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
                         class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
-                        title="查看备注留言"
+                        :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
                         {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
@@ -402,7 +404,7 @@
                         v-if="song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                        {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -423,14 +425,14 @@
                       class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
                       @click.stop="openReplayModal(song)"
                     >
-                      查看
+                      {{ locale.view }}
                     </button>
 
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
                       class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
-                      title="拒绝申请"
+                      :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
                       <CloseIcon class="w-3.5 h-3.5" />
@@ -461,11 +463,11 @@
               >
                 <div v-if="searchQuery" class="flex flex-col items-center">
                   <Search class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">未找到匹配的歌曲</p>
+                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.emptySearch }}</p>
                 </div>
                 <div v-else class="flex flex-col items-center">
                   <ListMusic class="w-8 h-8 mb-2 opacity-20" />
-                  <p class="text-[10px] font-black uppercase tracking-widest">暂无歌曲记录</p>
+                  <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.emptySongs }}</p>
                 </div>
               </div>
             </div>
@@ -475,7 +477,7 @@
               v-model:current-page="currentPage"
               :total-pages="totalPages"
               :total-items="allUnscheduledSongs.length"
-              item-name="首待排歌曲"
+              :item-name="locale.pendingSongItemName"
             />
           </div>
         </div>
@@ -491,7 +493,7 @@
           <div
             class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
           >
-            <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">播放顺序</h3>
+            <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">{{ locale.playOrder }}</h3>
             <div
               class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl"
             >
@@ -506,7 +508,7 @@
                   <Save class="w-3.5 h-3.5" />
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
-                    >保存草稿</span
+                    >{{ locale.saveDraft }}</span
                   >
                 </button>
                 <button
@@ -517,7 +519,7 @@
                   <Download class="w-3.5 h-3.5" />
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
-                    >下载歌曲</span
+                    >{{ locale.downloadSongs }}</span
                   >
                 </button>
                 <button
@@ -528,7 +530,7 @@
                   <CheckCircle2 class="w-3.5 h-3.5" />
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
-                    >全部已播放</span
+                    >{{ locale.markAllPlayed }}</span
                   >
                 </button>
                 <button
@@ -538,7 +540,7 @@
                   <ArrowRight class="w-3.5 h-3.5" />
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
-                    >迁移日期</span
+                    >{{ locale.moveDate }}</span
                   >
                 </button>
                 <button
@@ -549,7 +551,7 @@
                   <Trash2 class="w-3.5 h-3.5" />
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
-                    >清空列表</span
+                    >{{ locale.clearList }}</span
                   >
                 </button>
               </div>
@@ -559,14 +561,14 @@
                 class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="publishSchedule"
               >
-                <Send class="w-3 h-3" /> 发布排期
+                <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
               </button>
               <button
                 :disabled="!hasChanges"
                 class="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
               >
-                <FileBadge class="w-3.5 h-3.5" /> 保存并发布
+                <FileBadge class="w-3.5 h-3.5" /> {{ locale.saveAndPublish }}
               </button>
             </div>
           </div>
@@ -587,7 +589,7 @@
               class="flex flex-col items-center justify-center h-full py-12 text-zinc-800"
             >
               <PlaySquare class="w-8 h-8 mb-4 opacity-20" />
-              <p class="text-[10px] font-black uppercase tracking-widest">请从待排库中添加歌曲</p>
+              <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.addSongsHint }}</p>
             </div>
 
             <TransitionGroup class="space-y-2" name="schedule-list" tag="div">
@@ -616,7 +618,7 @@
                   <div
                     class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950/50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0"
                   >
-                    <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">POS</span>
+                    <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
                     <span class="text-sm text-zinc-300 leading-none">{{
                       index + 1 < 10 ? '0' + (index + 1) : index + 1
                     }}</span>
@@ -651,7 +653,7 @@
                       <button
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
                         class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
-                        title="查看备注留言"
+                        :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(schedule.song)"
                       >
                         <MessageSquare :size="12" />
@@ -659,7 +661,7 @@
                       <span
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
                         class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
-                        title="查看备注留言"
+                        :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(schedule.song)"
                       >
                         {{ schedule.song.submissionNote.length > 25 ? schedule.song.submissionNote.substring(0, 25) + '...' : schedule.song.submissionNote }}
@@ -668,23 +670,23 @@
                       <span
                         v-if="schedule.song.replayRequestCount > 0"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1"
-                        title="重播歌曲"
+                        :title="locale.replaySong"
                       >
                         <Icon name="repeat" :size="10" />
-                        重播
+                        {{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider"
-                        >草稿</span
+                        >{{ locale.draft }}</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
                       <span
                         v-if="schedule.song.cardCodeId"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
-                        title="点歌券待核销"
+                        :title="locale.cardPending"
                       >
-                        点歌券
+                        {{ locale.cardCode }}
                       </span>
                     </div>
                     <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
@@ -693,13 +695,13 @@
                       <span
                         v-if="schedule.song.replayRequestCount > 0"
                         :title="
-                          '重播申请人：' +
+                          (locale.replayApplicants || '重播申请人：') +
                           (schedule.song.replayRequesters || [])
                             .map((r) => r.displayName || r.name)
                             .join('、')
                         "
                       >
-                        申请人:
+                        {{ locale.applicant }}
                         {{
                           (schedule.song.replayRequesters || [])
                             .slice(0, 2)
@@ -707,7 +709,7 @@
                             .join('、')
                         }}{{
                           schedule.song.replayRequestCount > 2
-                            ? ' 等' + schedule.song.replayRequestCount + '人'
+                            ? locale.andMoreApplicants(schedule.song.replayRequestCount)
                             : ''
                         }}
                       </span>
@@ -725,7 +727,7 @@
                         v-if="schedule.song.preferredPlayTimeId"
                         class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
                       >
-                        期望: {{ getPlayTimeName(schedule.song.preferredPlayTimeId) }}
+                        {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(schedule.song.preferredPlayTimeId)}`, getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
                     </div>
                   </div>
@@ -734,7 +736,7 @@
                     <button
                       v-if="schedule.isDraft"
                       class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-colors"
-                      title="发布此草稿"
+                      :title="locale.publishThisDraft"
                       @click="publishSingleDraft(schedule)"
                     >
                       <Send class="w-3.5 h-3.5" />
@@ -800,7 +802,7 @@
             </button>
             <button
               class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
-              title="仅发布排期"
+              :title="locale.publishOnly"
               @click="publishSchedule"
             >
               <Send class="w-5 h-5" />
@@ -814,7 +816,7 @@
           class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           @click="saveSequence"
         >
-          <FileBadge class="w-4 h-4" /> 保存并发布
+          <FileBadge class="w-4 h-4" /> {{ locale.saveAndPublish }}
         </button>
       </div>
     </div>
@@ -828,7 +830,7 @@
     :show="showConfirmDialog"
     :title="confirmDialogTitle"
     :type="confirmDialogType"
-    cancel-text="取消"
+    :cancel-text="locale.cancel"
     @close="showConfirmDialog = false"
     @confirm="handleConfirm"
   />
@@ -849,7 +851,7 @@
       @click.stop
     >
       <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">迁移排期日期</h3>
+        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.moveDateTitle }}</h3>
         <button
           class="text-zinc-500 hover:text-zinc-300 transition-colors"
           @click="showMoveDateDialog = false"
@@ -858,7 +860,7 @@
         </button>
       </div>
       <div class="p-6 space-y-4">
-        <div class="text-xs text-zinc-500">当前日期：{{ selectedDate }}</div>
+          <div class="text-xs text-zinc-500">{{ locale.currentDate(selectedDate) }}</div>
         <input
           v-model="moveTargetDate"
           class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-purple-500 transition-colors"
@@ -869,13 +871,13 @@
             class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
             @click="showMoveDateDialog = false"
           >
-            取消
+          {{ locale.cancel }}
           </button>
           <button
             class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-900/20 transition-colors uppercase tracking-wider"
             @click="confirmMoveDate"
           >
-            下一步
+          {{ locale.nextStep }}
           </button>
         </div>
       </div>
@@ -894,7 +896,7 @@
     >
       <div class="flex items-center justify-between p-4 border-b border-zinc-800">
         <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">
-          {{ replayModalTitle }} - 重播申请详情
+        {{ locale.replayDetailTitle(replayModalTitle) }}
         </h3>
         <div class="flex items-center gap-3">
           <button
@@ -904,7 +906,7 @@
               closeReplayModal()
             "
           >
-            拒绝申请
+          {{ locale.rejectRequest }}
           </button>
           <button
             class="text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -943,7 +945,7 @@
           </div>
           <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-zinc-700">
             <Info class="w-6 h-6 mx-auto mb-2 opacity-20" />
-            <p class="text-xs font-bold uppercase tracking-widest">暂无详细申请记录</p>
+        <p class="text-xs font-bold uppercase tracking-widest">{{ locale.noReplayDetails }}</p>
           </div>
         </div>
       </div>
@@ -1008,9 +1010,68 @@ import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
+
+const { admin } = useLocale()
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const locale = computed(() => {
+  const base = admin.value?.scheduleManager || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    messages: { ...(base.messages || {}) },
+    errors: {
+      rejectReplayFailed: emptyText,
+      saveDraftFailed: emptyText,
+      publishScheduleFailed: emptyText,
+      publishDraftFailed: emptyText,
+      moveDateFailed: emptyText,
+      ...(base.errors || {})
+    },
+    confirmations: {
+      moveDateMessage: emptyText,
+      publishDraftMessage: emptyText,
+      ...(base.confirmations || {})
+    },
+    andMoreApplicants: base.andMoreApplicants || emptyText,
+    currentDate: base.currentDate || emptyText,
+    replayDetailTitle: base.replayDetailTitle || emptyText,
+    timeAgo: {
+      ...(base.timeAgo || {}),
+      never: base.timeAgo?.never || base.unknown || '',
+      justNow: base.timeAgo?.justNow || '',
+      minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value),
+      hours: (value) => formatLocaleValue(base.timeAgo?.hours, value),
+      days: (value) => formatLocaleValue(base.timeAgo?.days, value)
+    }
+  })
+})
+const callLocale = (path, fallback = '', ...args) => {
+  const value = path.split('.').reduce((target, key) => target?.[key], locale.value)
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
+const getThrownMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.data?.statusMessage || error?.message || error?.statusMessage || ''
+}
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
@@ -1072,10 +1133,15 @@ const loading = ref(false)
 const songSortOption = ref('votes-desc')
 const hasChanges = ref(false)
 const searchQuery = ref('')
-const selectedGrade = ref('全部')
+const selectedGrade = ref('')
 const activeTab = ref('normal')
 const mobileTab = ref('pending')
 const mobileFiltersOpen = ref(false)
+const scheduleTabs = computed(() => [
+  { id: 'normal', label: locale.value?.tabs?.normal || '普通投稿' },
+  { id: 'replay', label: locale.value?.tabs?.replay || '重播申请' },
+  { id: 'all', label: locale.value?.tabs?.all || '所有' }
+])
 
 // 歌单过滤状态
 const showPlaylistFilterModal = ref(false)
@@ -1097,7 +1163,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
   const cookie = getNeteaseCookie()
   
   const fetchPromises = playlistIds.map(async (id) => {
-    const playlistName = playlistNames[id] || `歌单 ${id}`
+  const playlistName = playlistNames[id] || callLocale('playlistName', `Playlist ${id}`, id)
     let trackIds = []
 
     // 优先使用从组件中传来的已经缓存的 trackIds
@@ -1141,7 +1207,7 @@ const showConfirmDialog = ref(false)
 const confirmDialogTitle = ref('')
 const confirmDialogMessage = ref('')
 const confirmDialogType = ref('warning')
-const confirmDialogConfirmText = ref('确认')
+const confirmDialogConfirmText = ref('')
 const confirmAction = ref(null)
 
 // 下载相关
@@ -1227,12 +1293,12 @@ const updateSubmissionNotePublic = async (isPublic) => {
     }
 
     if (window.$showNotification) {
-      window.$showNotification('备注留言可见性已更新', 'success')
+      window.$showNotification(locale.value.messages.remarkVisibilityUpdated, 'success')
     }
   } catch (error) {
     console.error('更新备注可见性失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('更新备注可见性失败', 'error')
+      window.$showNotification(locale.value.errors.remarkVisibilityUpdateFailed, 'error')
     }
     dialogData.isPublic = !isPublic
   } finally {
@@ -1302,8 +1368,8 @@ const selectedFilterPlayTime = ref('all')
 // 待排歌曲的播出时段筛选选项
 const filterPlayTimeOptions = computed(() => {
   const options = [
-    { label: '全部时段', value: 'all' },
-    { label: '未指定时段', value: 'none' }
+    { label: locale.value.allPlayTimes, value: 'all' },
+    { label: locale.value.unspecifiedPlayTime, value: 'none' }
   ]
   if (playTimes.value) {
     playTimes.value.forEach((pt) => {
@@ -1319,7 +1385,7 @@ const filterPlayTimeOptions = computed(() => {
 
 // 播出时段选项
 const playTimeOptions = computed(() => {
-  const options = [{ label: '未选择时段 (全天)', value: '' }]
+  const options = [{ label: locale.value.noPlayTimeAllDay, value: '' }]
   if (playTimes.value) {
     playTimes.value.forEach((pt) => {
       let label = pt.name
@@ -1333,12 +1399,12 @@ const playTimeOptions = computed(() => {
 })
 
 // 排序选项
-const sortOptions = [
-  { label: '最新投稿', value: 'time-desc' },
-  { label: '最早投稿', value: 'time-asc' },
-  { label: '热度最高', value: 'votes-desc' },
-  { label: '热度最低', value: 'votes-asc' }
-]
+const sortOptions = computed(() => [
+  { label: locale.value?.sortOptions?.newest || 'Newest', value: 'time-desc' },
+  { label: locale.value?.sortOptions?.oldest || 'Oldest', value: 'time-asc' },
+  { label: locale.value?.sortOptions?.hotDesc || 'Most votes', value: 'votes-desc' },
+  { label: locale.value?.sortOptions?.hotAsc || 'Fewest votes', value: 'votes-asc' }
+])
 
 // 学期相关
 const availableSemesters = ref([])
@@ -1385,7 +1451,7 @@ const availableDates = computed(() => {
     if (!parsedDate) continue
 
     const isToday = i === 0
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+    const weekdays = locale.value?.weekdays || ['日', '一', '二', '三', '四', '五', '六']
     const weekday = weekdays[new Date(Date.UTC(parsedDate.year, parsedDate.month - 1, parsedDate.day)).getUTCDay()]
 
     dates.push({
@@ -1402,7 +1468,7 @@ const availableDates = computed(() => {
 
 // 获取所有可选年级
 const availableGrades = computed(() => {
-  if (!songs.value) return ['全部']
+  if (!songs.value) return [{ label: locale.value.allGrades, value: '' }]
 
   const grades = new Set()
   songs.value.forEach((song) => {
@@ -1413,7 +1479,10 @@ const availableGrades = computed(() => {
 
   // 对年级进行简单排序
   const sortedGrades = Array.from(grades).sort()
-  return ['全部', ...sortedGrades]
+  return [
+    { label: locale.value.allGrades, value: '' },
+    ...sortedGrades.map((grade) => ({ label: grade, value: grade }))
+  ]
 })
 
 // 过滤未排期歌曲（所有）
@@ -1454,7 +1523,7 @@ const allUnscheduledSongs = computed(() => {
   // 年级过滤 (针对普通投稿和所有歌曲)
   if (
     (activeTab.value === 'normal' || activeTab.value === 'all') &&
-    selectedGrade.value !== '全部'
+    selectedGrade.value
   ) {
     unscheduledSongs = unscheduledSongs.filter(
       (song) => song.requesterGrade === selectedGrade.value
@@ -1523,14 +1592,16 @@ const isDesktop = ref(true)
 
 // 方法
 const formatDate = (dateString) => {
+  if (!dateString) return locale.value.timeAgo.never || ''
   const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return locale.value.timeAgo.never || ''
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  return `${Math.floor(diff / 86400000)}天前`
+  if (diff < 60000) return locale.value.timeAgo.justNow
+  if (diff < 3600000) return locale.value.timeAgo.minutes(Math.floor(diff / 60000))
+  if (diff < 86400000) return locale.value.timeAgo.hours(Math.floor(diff / 3600000))
+  return locale.value.timeAgo.days(Math.floor(diff / 86400000))
 }
 
 // 检查窗口大小
@@ -1697,7 +1768,7 @@ const handleBeforeUnload = (e) => {
 // 监听路由离开事件
 onBeforeRouteLeave((to, from, next) => {
   if (hasChanges.value) {
-    const answer = window.confirm('您有未保存的排期修改，确定要离开吗？')
+    const answer = window.confirm(locale.value.confirmations.leaveUnsaved)
     if (answer) {
       next()
     } else {
@@ -1713,7 +1784,7 @@ const handleDateSelect = (dateValue) => {
   if (selectedDate.value === dateValue) return
 
   if (hasChanges.value) {
-    if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+    if (!window.confirm(locale.value.confirmations.switchDateUnsaved)) {
       return
     }
   }
@@ -1725,7 +1796,7 @@ const handlePlayTimeSelect = (value) => {
   if (selectedPlayTime.value === value) return
 
   if (hasChanges.value) {
-    if (!window.confirm('您有未保存的排期修改，切换时段将丢失这些修改，确定要继续吗？')) {
+    if (!window.confirm(locale.value.confirmations.switchPlayTimeUnsaved)) {
       return
     }
   }
@@ -1737,7 +1808,7 @@ const handleSemesterSelect = async (value) => {
   if (selectedSemester.value === value) return
 
   if (hasChanges.value) {
-    if (!window.confirm('您有未保存的排期修改，切换学期将丢失这些修改，确定要继续吗？')) {
+    if (!window.confirm(locale.value.confirmations.switchSemesterUnsaved)) {
       return
     }
   }
@@ -1756,7 +1827,7 @@ onMounted(async () => {
   if (registerBeforeNavigate) {
     unregisterBeforeNavigate = registerBeforeNavigate(() => {
       if (hasChanges.value) {
-        return window.confirm('您有未保存的排期修改，切换页面将丢失这些修改，确定要继续吗？')
+        return window.confirm(locale.value.confirmations.switchPageUnsaved)
       }
       return true
     })
@@ -1863,7 +1934,7 @@ const confirmManualDate = () => {
     }
 
     if (hasChanges.value) {
-      if (!window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+      if (!window.confirm(locale.value.confirmations.switchDateUnsaved)) {
         return
       }
     }
@@ -1884,7 +1955,7 @@ const scrollToToday = () => {
   const isAlreadyToday = selectedDate.value === todayStr
 
   if (!isAlreadyToday) {
-    if (hasChanges.value && !window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+    if (hasChanges.value && !window.confirm(locale.value.confirmations.switchDateUnsaved)) {
       return
     }
     selectedDate.value = todayStr
@@ -1950,10 +2021,10 @@ const fetchReplayRequests = async () => {
 
 // 拒绝重播申请
 const rejectReplayRequest = async (songId) => {
-  confirmDialogTitle.value = '拒绝重播申请'
-  confirmDialogMessage.value = '确定要拒绝该重播申请吗？'
+  confirmDialogTitle.value = locale.value.confirmations.rejectReplayTitle
+  confirmDialogMessage.value = locale.value.confirmations.rejectReplayMessage
   confirmDialogType.value = 'warning'
-  confirmDialogConfirmText.value = '拒绝申请'
+  confirmDialogConfirmText.value = locale.value.rejectRequest
 
   confirmAction.value = async () => {
     try {
@@ -1966,12 +2037,12 @@ const rejectReplayRequest = async (songId) => {
       // 刷新申请列表
       await fetchReplayRequests()
       if (window.$showNotification) {
-        window.$showNotification('重播申请已拒绝', 'success')
+        window.$showNotification(locale.value.messages.replayRejected, 'success')
       }
     } catch (err) {
       console.error('拒绝申请失败', err)
       if (window.$showNotification) {
-        window.$showNotification('拒绝申请失败: ' + (err.data?.message || err.message), 'error')
+        window.$showNotification(callLocale('errors.rejectReplayFailed', '', getThrownMessage(err)), 'error')
       }
     }
   }
@@ -1984,7 +2055,8 @@ const loadData = async () => {
   loading.value = true
   try {
     // 使用选中的学期过滤歌曲，如果选择"全部"则不传递学期参数
-    const semester = selectedSemester.value === '全部' ? undefined : selectedSemester.value
+    const selectedSemesterOption = availableSemesters.value.find((item) => String(item.id) === String(selectedSemester.value))
+    const semester = selectedSemester.value === 'all' ? undefined : selectedSemesterOption?.name
 
     // 播放列表应该显示所有学期的排期，不受待排歌曲学期选择的影响
     // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
@@ -2033,12 +2105,12 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${start} - ${end}`
   } else if (playTime.startTime) {
-    return `${start} 开始`
+    return callLocale('playTimeStart', `${start} 开始`, start)
   } else if (playTime.endTime) {
-    return `${end} 结束`
+    return callLocale('playTimeEnd', `${end} 结束`, end)
   }
 
-  return '全天'
+  return locale.value.allDay
 }
 
 // 获取播出时段名称
@@ -2061,7 +2133,7 @@ const loadSemesters = async () => {
     await semesterService.fetchCurrentSemester()
 
     // 构建学期列表，包含"全部"选项和各个学期
-    const semesterList = [{ id: 'all', name: '全部', isCurrent: false }]
+  const semesterList = [{ id: 'all', name: locale.value.allSemesters, isCurrent: false }]
 
     // 添加当前学期（如果存在）
     if (semesterService.currentSemester.value) {
@@ -2092,9 +2164,9 @@ const loadSemesters = async () => {
 
     // 默认选择当前学期（如果存在），否则选择"全部"
     if (semesterService.currentSemester.value) {
-      selectedSemester.value = semesterService.currentSemester.value.name
+      selectedSemester.value = semesterService.currentSemester.value.id || 'current'
     } else if (semesterList.length > 0) {
-      selectedSemester.value = semesterList[0].name
+      selectedSemester.value = semesterList[0].id
     }
   } catch (error) {
     console.error('获取学期列表失败:', error)
@@ -2419,10 +2491,10 @@ const handleReturnToDraggable = async (event) => {
 const markAllAsPlayed = async () => {
   if (localScheduledSongs.value.length === 0) return
 
-  confirmDialogTitle.value = '标记全部已播'
-  confirmDialogMessage.value = '确定要将列表中的所有歌曲标记为已播放吗？'
+  confirmDialogTitle.value = locale.value.confirmations.markAllPlayedTitle
+  confirmDialogMessage.value = locale.value.confirmations.markAllPlayedMessage
   confirmDialogType.value = 'info'
-  confirmDialogConfirmText.value = '确认标记'
+  confirmDialogConfirmText.value = locale.value.confirmations.markAllPlayedConfirm
 
   confirmAction.value = async () => {
     loading.value = true
@@ -2436,7 +2508,7 @@ const markAllAsPlayed = async () => {
       })
 
       if (window.$showNotification) {
-        window.$showNotification('所有歌曲已标记为播放', 'success')
+        window.$showNotification(locale.value.messages.allMarkedPlayed, 'success')
       }
 
       // 重新加载数据
@@ -2444,7 +2516,7 @@ const markAllAsPlayed = async () => {
     } catch (err) {
       console.error('标记播放失败:', err)
       if (window.$showNotification) {
-        window.$showNotification('操作失败', 'error')
+        window.$showNotification(locale.value.errors.operationFailed, 'error')
       }
     } finally {
       loading.value = false
@@ -2458,10 +2530,10 @@ const markAllAsPlayed = async () => {
 const clearScheduleList = () => {
   if (localScheduledSongs.value.length === 0) return
 
-  confirmDialogTitle.value = '清空播放列表'
-  confirmDialogMessage.value = '确定要清空当前的播放顺序列表吗？未保存的修改将会丢失。'
+  confirmDialogTitle.value = locale.value.confirmations.clearListTitle
+  confirmDialogMessage.value = locale.value.confirmations.clearListMessage
   confirmDialogType.value = 'danger'
-  confirmDialogConfirmText.value = '确认清空'
+  confirmDialogConfirmText.value = locale.value.confirmations.clearListConfirm
 
   confirmAction.value = () => {
     localScheduledSongs.value.forEach(schedule => {
@@ -2472,7 +2544,7 @@ const clearScheduleList = () => {
     localScheduledSongs.value = []
     hasChanges.value = true
     if (window.$showNotification) {
-      window.$showNotification('播放列表已清空，请记得保存修改', 'success')
+      window.$showNotification(locale.value.messages.playlistCleared, 'success')
     }
   }
 
@@ -2491,7 +2563,7 @@ const saveSequence = async () => {
 const openMoveDateDialog = () => {
   if (hasChanges.value) {
     if (window.$showNotification) {
-      window.$showNotification('请先保存当前未发布修改后再执行迁移', 'warning')
+      window.$showNotification(locale.value.messages.saveBeforeMove, 'warning')
     }
     return
   }
@@ -2505,14 +2577,14 @@ const confirmMoveDate = async () => {
 
   if (!parseDateValue(targetDate)) {
     if (window.$showNotification) {
-      window.$showNotification('目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效', 'error')
+      window.$showNotification(locale.value.errors.invalidTargetDate, 'error')
     }
     return
   }
 
   if (targetDate === selectedDate.value) {
     if (window.$showNotification) {
-      window.$showNotification('目标日期不能与当前日期相同', 'warning')
+      window.$showNotification(locale.value.errors.sameTargetDate, 'warning')
     }
     return
   }
@@ -2525,15 +2597,15 @@ const confirmMoveDate = async () => {
 
   if (sourceSchedules.length === 0) {
     if (window.$showNotification) {
-      window.$showNotification('当前日期没有可迁移的歌曲', 'warning')
+      window.$showNotification(locale.value.errors.noMovableSongs, 'warning')
     }
     return
   }
 
-  confirmDialogTitle.value = '迁移排期日期'
-  confirmDialogMessage.value = `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`
+  confirmDialogTitle.value = locale.value.moveDateTitle
+  confirmDialogMessage.value = callLocale('confirmations.moveDateMessage', '', sourceDate, sourceSchedules.length, targetDate)
   confirmDialogType.value = 'warning'
-  confirmDialogConfirmText.value = '确认迁移'
+  confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
   showMoveDateDialog.value = false
 
   confirmAction.value = async () => {
@@ -2554,17 +2626,17 @@ const confirmMoveDate = async () => {
       if (window.$showNotification) {
         window.$showNotification(
           result?.movedCount > 0
-            ? `已迁移 ${result.movedCount} 首歌曲到 ${targetDate}`
-            : '当前日期没有可迁移的歌曲',
+            ? callLocale('messages.moveDateSuccess', '', result.movedCount, targetDate)
+            : locale.value.errors.noMovableSongs,
           result?.movedCount > 0 ? 'success' : 'warning'
         )
       }
     } catch (error) {
       console.error('迁移排期日期失败:', error)
       if (window.$showNotification) {
-        const backendMessage = error.data?.message || error.data?.statusMessage || error.message
+        const backendMessage = getThrownMessage(error)
         window.$showNotification(
-          '迁移失败: ' + (backendMessage || '未知错误'),
+          callLocale('errors.moveDateFailed', '', backendMessage || locale.value.unknown),
           'error'
         )
       }
@@ -2664,15 +2736,15 @@ const saveDraft = async () => {
 
     if (window.$showNotification) {
       if (localScheduledSongs.value.length > 0) {
-        window.$showNotification('排期草稿保存成功！', 'success')
+        window.$showNotification(locale.value.messages.draftSaved, 'success')
       } else {
-        window.$showNotification('所有草稿已删除！', 'success')
+        window.$showNotification(locale.value.messages.allDraftsDeleted, 'success')
       }
     }
   } catch (error) {
     console.error('保存草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('保存草稿失败: ' + (error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.saveDraftFailed', '', getThrownMessage(error)), 'error')
     }
   } finally {
     loading.value = false
@@ -2684,15 +2756,15 @@ const publishSchedule = async () => {
   try {
     // 如果列表为空，提示删除排期
     if (localScheduledSongs.value.length === 0) {
-      confirmDialogTitle.value = '删除排期'
-      confirmDialogMessage.value = '确定要删除当天的所有排期吗？此操作不可恢复。'
+      confirmDialogTitle.value = locale.value.confirmations.deleteScheduleTitle
+      confirmDialogMessage.value = locale.value.confirmations.deleteScheduleMessage
       confirmDialogType.value = 'danger'
-      confirmDialogConfirmText.value = '确认删除'
+      confirmDialogConfirmText.value = locale.value.confirmations.deleteScheduleConfirm
     } else {
-      confirmDialogTitle.value = '发布排期'
-      confirmDialogMessage.value = '确定要发布当前排期吗？发布后将立即公示并发送通知。'
+      confirmDialogTitle.value = locale.value.confirmations.publishScheduleTitle
+      confirmDialogMessage.value = locale.value.confirmations.publishScheduleMessage
       confirmDialogType.value = 'warning'
-      confirmDialogConfirmText.value = '发布排期'
+      confirmDialogConfirmText.value = locale.value.publishSchedule
     }
 
     confirmAction.value = async () => {
@@ -2734,15 +2806,15 @@ const publishScheduleConfirmed = async () => {
 
     if (window.$showNotification) {
       if (songsToPublish.length === 0) {
-        window.$showNotification('排期已删除！', 'success')
+        window.$showNotification(locale.value.messages.scheduleDeleted, 'success')
       } else {
-        window.$showNotification('排期发布成功，通知已发送！', 'success')
+        window.$showNotification(locale.value.messages.schedulePublished, 'success')
       }
     }
   } catch (error) {
     console.error('发布排期失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('发布排期失败: ' + (error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.publishScheduleFailed', '', getThrownMessage(error)), 'error')
     }
   } finally {
     loading.value = false
@@ -2752,10 +2824,10 @@ const publishScheduleConfirmed = async () => {
 // 发布单个草稿（需要确认）
 const publishSingleDraft = async (draft) => {
   try {
-    confirmDialogTitle.value = '发布草稿'
-    confirmDialogMessage.value = `确定要发布草稿《${draft.song.title}》吗？发布后将立即公示并发送通知。`
+    confirmDialogTitle.value = locale.value.confirmations.publishDraftTitle
+    confirmDialogMessage.value = callLocale('confirmations.publishDraftMessage', '', draft.song.title)
     confirmDialogType.value = 'warning'
-    confirmDialogConfirmText.value = '发布'
+    confirmDialogConfirmText.value = locale.value.publish
     confirmAction.value = async () => {
       await publishSingleDraftConfirmed(draft)
     }
@@ -2782,12 +2854,12 @@ const publishSingleDraftConfirmed = async (draft) => {
     updateLocalScheduledSongs()
 
     if (window.$showNotification) {
-      window.$showNotification(`草稿《${draft.song.title}》发布成功，通知已发送！`, 'success')
+      window.$showNotification(callLocale('messages.draftPublished', '', draft.song.title), 'success')
     }
   } catch (error) {
     console.error('发布单个草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('发布草稿失败: ' + (error.data?.message || error.message), 'error')
+      window.$showNotification(callLocale('errors.publishDraftFailed', '', getThrownMessage(error)), 'error')
     }
   } finally {
     loading.value = false

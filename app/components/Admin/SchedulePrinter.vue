@@ -3,8 +3,8 @@
     class="flex flex-col space-y-8 pb-12 lg:pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
   >
     <div class="flex flex-col space-y-2">
-      <h2 class="text-2xl font-bold tracking-tight text-zinc-100">打印排期</h2>
-      <p class="text-sm text-zinc-500">自定义打印设置，预览并导出排期表</p>
+      <h2 class="text-2xl font-bold tracking-tight text-zinc-100">{{ locale.title }}</h2>
+      <p class="text-sm text-zinc-500">{{ locale.desc }}</p>
     </div>
 
     <!-- 权限检查 -->
@@ -21,8 +21,8 @@
           <path d="m9 9 6 6" />
         </svg>
       </div>
-      <h3 class="text-lg font-bold text-zinc-100">权限不足</h3>
-      <p class="text-zinc-500 mt-2">您没有打印排期的权限，请联系管理员获取相应权限。</p>
+      <h3 class="text-lg font-bold text-zinc-100">{{ locale.noPermissionTitle }}</h3>
+      <p class="text-zinc-500 mt-2">{{ locale.noPermissionDesc }}</p>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-auto">
@@ -32,19 +32,19 @@
           class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
         >
           <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100 shrink-0">
-            <Layout class="w-4 h-4 text-blue-500" /> 打印设置
+            <Layout class="w-4 h-4 text-blue-500" /> {{ locale.settingsTitle }}
           </h3>
 
           <div class="space-y-5 pr-2">
             <!-- 纸张大小 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
-                >纸张大小</label
+                >{{ locale.paperSize }}</label
               >
               <CustomSelect
                 v-model="settings.paperSize"
                 :options="paperSizeOptions"
-                placeholder="选择纸张大小"
+                :placeholder="locale.selectPaperSize"
                 class-name="w-full"
               />
             </div>
@@ -52,7 +52,7 @@
             <!-- 页面方向 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
-                >页面方向</label
+                >{{ locale.orientation }}</label
               >
               <div class="grid grid-cols-2 gap-2">
                 <button
@@ -64,7 +64,7 @@
                   ]"
                   @click="settings.orientation = 'portrait'"
                 >
-                  纵向
+                  {{ locale.portrait }}
                 </button>
                 <button
                   :class="[
@@ -75,7 +75,7 @@
                   ]"
                   @click="settings.orientation = 'landscape'"
                 >
-                  横向
+                  {{ locale.landscape }}
                 </button>
               </div>
             </div>
@@ -83,7 +83,7 @@
             <!-- 排版样式 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
-                >排版样式</label
+                >{{ locale.layoutStyle }}</label
               >
               <div class="grid grid-cols-2 gap-2">
                 <button
@@ -95,7 +95,7 @@
                   ]"
                   @click="selectClassicLayout"
                 >
-                  经典列表
+                  {{ locale.classicList }}
                 </button>
                 <button
                   :class="[
@@ -106,7 +106,7 @@
                   ]"
                   @click="selectTableLayout"
                 >
-                  表格排布
+                  {{ locale.tableLayout }}
                 </button>
               </div>
             </div>
@@ -114,7 +114,7 @@
             <!-- 日期范围 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
-                >日期范围</label
+                >{{ locale.dateRange }}</label
               >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
@@ -150,7 +150,7 @@
             <!-- 显示内容 -->
             <div class="space-y-3">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
-                >显示内容</label
+                >{{ locale.displayContent }}</label
               >
               <div class="grid grid-cols-1 gap-2.5">
                 <label
@@ -202,7 +202,7 @@
                         ? 'text-zinc-200'
                         : 'text-zinc-500 group-hover:text-zinc-400'
                     ]"
-                    >学校Logo</span
+                    >{{ locale.schoolLogo }}</span
                   >
                 </label>
               </div>
@@ -211,11 +211,11 @@
             <!-- 备注 -->
             <div class="space-y-2">
               <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
-                >备注</label
+                >{{ locale.remark }}</label
               >
               <textarea
                 v-model="settings.remark"
-                placeholder="请输入备注信息（可选）"
+                :placeholder="locale.remarkPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500/50 transition-colors"
               />
             </div>
@@ -227,14 +227,14 @@
               class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all"
               @click="refreshPreview"
             >
-              <RefreshCw class="w-4 h-4" /> 刷新预览
+              <RefreshCw class="w-4 h-4" /> {{ locale.refreshPreview }}
             </button>
             <button
               :disabled="isPrinting"
               class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
               @click="printSchedule"
             >
-              <Printer class="w-4 h-4" /> {{ isPrinting ? '打印中...' : '打印' }}
+              <Printer class="w-4 h-4" /> {{ isPrinting ? locale.printing : locale.print }}
             </button>
             <div class="grid grid-cols-2 gap-2">
               <button
@@ -242,14 +242,14 @@
                 class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500/20 transition-all"
                 @click="exportPDF"
               >
-                <FileText class="w-3.5 h-3.5" /> {{ isExporting ? '导出中...' : '导出PDF' }}
+                <FileText class="w-3.5 h-3.5" /> {{ isExporting ? locale.exporting : locale.exportPdf }}
               </button>
               <button
                 :disabled="isExportingImage"
                 class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500/20 transition-all"
                 @click="exportImage"
               >
-                <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? '导出中...' : '导出长图' }}
+                <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? locale.exporting : locale.exportImage }}
               </button>
             </div>
           </div>
@@ -263,19 +263,19 @@
         >
           <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
-              <AlignLeft class="w-4.5 h-4.5 text-zinc-500" /> 预览区域
+              <AlignLeft class="w-4.5 h-4.5 text-zinc-500" /> {{ locale.previewArea }}
             </h3>
             <div class="flex items-center gap-2 text-xs font-bold">
-              <span class="text-zinc-400">{{ filteredSchedules.length }} 首歌曲</span>
+              <span class="text-zinc-400">{{ formatLocale(locale.songCount, '', filteredSchedules.length) }}</span>
               <span
                 v-if="schedules.length === 0"
                 class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20"
-                >无数据</span
+                >{{ locale.noData }}</span
               >
               <span
                 v-else-if="filteredSchedules.length === 0"
                 class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                >被过滤</span
+                >{{ locale.filtered }}</span
               >
             </div>
           </div>
@@ -303,12 +303,12 @@
                     <img
                       v-if="settings.showSchoolLogo && schoolLogoPrintUrl"
                       :src="schoolLogoPrintUrl"
-                      alt="学校Logo"
+                      :alt="locale.schoolLogo"
                       class="school-logo-print"
                     />
                     <div class="title-section">
                       <h1>{{ siteTitle }}</h1>
-                      <h2>广播排期表</h2>
+                      <h2>{{ locale.printTitle }}</h2>
                     </div>
                   </div>
                   <div class="date-info">
@@ -328,9 +328,9 @@
                         <line x1="3" x2="21" y1="10" y2="10" />
                       </svg>
                     </div>
-                    <h3>暂无排期数据</h3>
-                    <p v-if="schedules.length === 0">请先在"排期管理"中添加排期，然后再来打印。</p>
-                    <p v-else>当前日期范围内没有排期数据，请调整日期范围或检查排期设置。</p>
+                    <h3>{{ locale.emptyTitle }}</h3>
+                    <p v-if="schedules.length === 0">{{ locale.emptyNoSchedules }}</p>
+                    <p v-else>{{ locale.emptyFiltered }}</p>
                   </div>
 
                   <!-- 只有在非表格排布时才按日期分组 -->
@@ -343,7 +343,7 @@
                     >
                       <h3 class="group-title">
                         {{ formatDate(date) }}
-                        <span class="group-count">({{ dateGroup.allSchedules.length }}首)</span>
+                        <span class="group-count">({{ formatLocale(locale.countOnly, '', dateGroup.allSchedules.length) }})</span>
                       </h3>
 
                       <!-- 检查是否需要显示时段分组 -->
@@ -356,7 +356,7 @@
                           <h4 class="playtime-title">
                             {{ playTime }}
                             <span class="playtime-count"
-                              >({{ playTimeData.schedules.length }}首)</span
+                              >({{ formatLocale(locale.countOnly, '', playTimeData.schedules.length) }})</span
                             >
                           </h4>
 
@@ -397,12 +397,12 @@
                 <!-- 页面底部 -->
                 <div class="page-footer">
                   <div class="footer-left">
-                    <span>生成时间：{{ new Date().toLocaleString() }}</span>
-                    <span v-if="settings.remark" class="remark-text"
-                      >备注：{{ settings.remark }}</span
-                    >
+                    <span>{{ generatedAtText }}</span>
+                    <span v-if="settings.remark" class="remark-text">
+                      {{ remarkText }}
+                    </span>
                   </div>
-                  <span class="footer-right">Generated by VoiceHub | 广播管理系统</span>
+                  <span class="footer-right">{{ locale.footer }}</span>
                 </div>
               </div>
             </div>
@@ -432,6 +432,7 @@ import {
   RefreshCw
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
 
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
@@ -441,6 +442,25 @@ import logoPng from '~~/public/images/logo.png'
 // 学期管理
 import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
+const { admin, currentLocale } = useLocale()
+const locale = computed(() => admin.value?.schedulePrinter || {})
+const formatLocale = (value, fallback = '', ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
+const generatedAtText = computed(() => {
+  const nowText = new Date().toLocaleString(currentLocale.value)
+  return formatLocale(locale.value?.generatedAt, nowText, nowText)
+})
+const remarkText = computed(() => {
+  const remark = settings.remark || ''
+  return formatLocale(locale.value?.remarkPrefix, remark, remark)
+})
 
 // 权限检查
 const { canPrintSchedule } = usePermissions()
@@ -492,22 +512,22 @@ const paperSizeOptions = [
   { label: 'Legal (216×356mm)', value: 'Legal' }
 ]
 
-const dateRanges = [
-  { label: '今天', value: 'today' },
-  { label: '明天', value: 'tomorrow' },
-  { label: '本周', value: 'thisWeek' },
-  { label: '下周', value: 'nextWeek' }
-]
+const dateRanges = computed(() => [
+  { label: locale.value?.dateRanges?.today || 'Today', value: 'today' },
+  { label: locale.value?.dateRanges?.tomorrow || 'Tomorrow', value: 'tomorrow' },
+  { label: locale.value?.dateRanges?.thisWeek || 'This week', value: 'thisWeek' },
+  { label: locale.value?.dateRanges?.nextWeek || 'Next week', value: 'nextWeek' }
+])
 
-const contentOptions = [
-  { key: 'showCover', label: '歌曲封面' },
-  { key: 'showTitle', label: '歌曲名' },
-  { key: 'showArtist', label: '歌手' },
-  { key: 'showRequester', label: '投稿人' },
-  { key: 'showVotes', label: '热度' },
-  { key: 'showSequence', label: '播放顺序' },
-  { key: 'showPlayTime', label: '播出时段' }
-]
+const contentOptions = computed(() => [
+  { key: 'showCover', label: locale.value?.contentOptions?.cover || 'Cover' },
+  { key: 'showTitle', label: locale.value?.contentOptions?.title || 'Title' },
+  { key: 'showArtist', label: locale.value?.contentOptions?.artist || 'Artist' },
+  { key: 'showRequester', label: locale.value?.contentOptions?.requester || 'Requester' },
+  { key: 'showVotes', label: locale.value?.contentOptions?.votes || 'Votes' },
+  { key: 'showSequence', label: locale.value?.contentOptions?.sequence || 'Sequence' },
+  { key: 'showPlayTime', label: locale.value?.contentOptions?.playTime || 'Play time' }
+])
 
 const paperWidths = {
   A4: { portrait: 800, landscape: 1132 },
@@ -564,7 +584,7 @@ const formatDate = (dateStr) => {
       ? new Date(dateStr.replace(/-/g, '/'))
       : new Date(dateStr)
 
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString(currentLocale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

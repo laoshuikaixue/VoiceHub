@@ -4,23 +4,23 @@
     <div class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
         <div class="space-y-1">
-          <h2 class="text-3xl font-black text-zinc-100 tracking-tight">歌曲管理</h2>
+          <h2 class="text-3xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
           <div class="flex items-center gap-6 mt-4">
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >总计</span
+                >{{ locale.stats.total }}</span
               >
               <span class="text-sm font-bold text-zinc-300">{{ baseFilteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >已播放</span
+                >{{ locale.stats.played }}</span
               >
               <span class="text-sm font-bold text-emerald-500">{{ playedCount }}</span>
             </div>
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >待播放</span
+                >{{ locale.stats.pending }}</span
               >
               <span class="text-sm font-bold text-blue-500">{{ pendingCount }}</span>
             </div>
@@ -45,7 +45,7 @@
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="openDownloadDialog"
               >
-                <Download :size="14" class="text-emerald-500/70" /> 下载 ({{
+                <Download :size="14" class="text-emerald-500/70" /> {{ locale.actions.download }} ({{
                   selectedSongs.length
                 }})
               </button>
@@ -53,7 +53,7 @@
                 class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchDelete"
               >
-                <Trash2 :size="14" class="text-red-500/70" /> 删除 ({{ selectedSongs.length }})
+                <Trash2 :size="14" class="text-red-500/70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
               </button>
             </div>
           </Transition>
@@ -62,14 +62,14 @@
             class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-lg transition-all active:scale-95"
             @click="openAddSongModal"
           >
-            <Plus :size="16" /> 手动添加
+            <Plus :size="16" /> {{ locale.actions.addManual }}
           </button>
           <button
             :disabled="loading"
             class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 transition-all disabled:opacity-50"
             @click="refreshSongs(true)"
           >
-            <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> 刷新
+            <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> {{ locale.actions.refresh }}
           </button>
         </div>
       </div>
@@ -86,41 +86,41 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="搜索歌曲标题、艺术家或投稿人..."
+            :placeholder="locale.searchPlaceholder"
             class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
           >
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:flex lg:items-center gap-3 w-full lg:w-auto">
           <CustomSelect
             v-model="selectedSemester"
-            label="学期"
+            :label="locale.filters.semester"
             :options="availableSemesters"
             label-key="name"
-            value-key="name"
-            placeholder="选择学期"
+            value-key="id"
+            :placeholder="locale.filters.selectSemester"
             class-name="w-full lg:w-40"
           />
           <CustomSelect
             v-model="selectedPlayTime"
-            label="播出时段"
+            :label="locale.filters.playTime"
             :options="availablePlayTimes"
             label-key="name"
             value-key="id"
-            placeholder="选择时段"
+            :placeholder="locale.filters.selectPlayTime"
             class-name="w-full lg:w-40"
           />
           <CustomSelect
             v-model="statusFilter"
-            label="状态"
+            :label="locale.filters.status"
             :options="statusOptions"
-            placeholder="选择状态"
+            :placeholder="locale.filters.selectStatus"
             class-name="w-full lg:w-32"
           />
           <CustomSelect
             v-model="sortOption"
-            label="排序"
+            :label="locale.filters.sort"
             :options="sortOptions"
-            placeholder="选择排序"
+            :placeholder="locale.filters.selectSort"
             class-name="w-full lg:w-36 col-span-2 md:col-span-1"
           />
         </div>
@@ -140,7 +140,7 @@
           <div
             class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
           />
-          <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">正在加载...</span>
+          <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">{{ locale.loading }}</span>
         </div>
       </div>
 
@@ -157,25 +157,25 @@
           >
         </div>
         <div class="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-          歌曲信息
+          {{ locale.table.songInfo }}
         </div>
         <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-          投稿人
+          {{ locale.table.requester }}
         </div>
         <div
           class="col-span-1 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
         >
-          统计
+          {{ locale.table.stats }}
         </div>
         <div
           class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
         >
-          状态
+          {{ locale.table.status }}
         </div>
         <div
           class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right pr-4"
         >
-          操作
+          {{ locale.table.actions }}
         </div>
       </div>
 
@@ -191,9 +191,9 @@
             class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
             @change="toggleSelectAll"
           >
-          全选本页
+          {{ locale.table.selectPage }}
         </label>
-        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">已选择 {{ selectedSongs.length }} 项</span>
+        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">{{ getLocaleMessage('selectedItems', selectedSongs.length) }}</span>
       </div>
 
       <!-- 空状态 -->
@@ -202,7 +202,7 @@
         class="py-20 flex flex-col items-center justify-center text-zinc-500"
       >
         <Music :size="48" class="text-zinc-800 mb-4" />
-        <p class="text-sm font-bold">{{ searchQuery ? '没有找到匹配的歌曲' : '暂无歌曲数据' }}</p>
+        <p class="text-sm font-bold">{{ searchQuery ? locale.empty.search : locale.empty.default }}</p>
       </div>
 
       <!-- 列表内容 -->
@@ -267,7 +267,7 @@
                 <button
                   v-if="song.hasSubmissionNote && song.submissionNote"
                   class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all"
-                  title="查看备注留言"
+                  :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
                   <MessageSquare :size="12" />
@@ -275,7 +275,7 @@
                 <span
                   v-if="song.hasSubmissionNote && song.submissionNote"
                   class="ml-2 text-xs text-blue-400/80 truncate max-w-[200px] cursor-pointer hover:text-blue-400 transition-colors font-normal"
-                  title="查看备注留言"
+                  :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
                   {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
@@ -294,12 +294,12 @@
             <!-- Left side: Requester, Votes, Status -->
             <div class="flex items-center gap-3 lg:contents">
               <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
-                <span class="text-xs font-bold text-zinc-400 truncate max-w-[100px]">{{ song.requester || '未知' }}</span>
+                <span class="text-xs font-bold text-zinc-400 truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
                 <span v-if="song.user" class="text-[10px] font-bold text-zinc-600 truncate max-w-[100px]"
                   >@{{ song.user.username }}</span
                 >
                 <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-blue-500 mt-1">
-                  期望: {{ getPlayTimeName(song.preferredPlayTimeId) }}
+                  {{ getLocaleMessage('preferredPlayTime', getPlayTimeName(song.preferredPlayTimeId)) }}
                 </span>
                 <span
                   class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
@@ -345,7 +345,7 @@
             >
               <button
                 class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="编辑歌曲"
+                :title="locale.actions.edit"
                 @click="editSong(song)"
               >
                 <Edit2 :size="14" />
@@ -354,7 +354,7 @@
               <button
                 v-if="!song.played"
                 class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="标记为已播放"
+                :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
               >
                 <Check :size="14" />
@@ -362,7 +362,7 @@
               <button
                 v-else
                 class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="标记为未播放"
+                :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
               >
                 <RotateCcw :size="14" />
@@ -370,14 +370,14 @@
 
               <button
                 class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="驳回歌曲"
+                :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
                 class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
-                title="删除歌曲"
+                :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
               >
                 <Trash2 :size="14" />
@@ -393,7 +393,7 @@
       v-model:current-page="currentPage"
       :total-pages="totalPages"
       :total-items="filteredSongs.length"
-      item-name="首歌曲"
+      :item-name="locale.paginationItemName"
     />
 
     <!-- 移动端悬浮批量操作栏 -->
@@ -410,8 +410,8 @@
         class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-zinc-900/95 border border-zinc-800 rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
       >
         <div class="px-3 flex flex-col">
-          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">已选择</span>
-          <span class="text-sm font-bold text-blue-400">{{ selectedSongs.length }} 首歌曲</span>
+          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ locale.selected }}</span>
+          <span class="text-sm font-bold text-blue-400">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -419,14 +419,14 @@
             @click="openDownloadDialog"
           >
             <Download :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">下载</span>
+            <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
           </button>
           <button
             class="flex flex-col items-center justify-center w-14 h-12 bg-zinc-800 hover:bg-zinc-700 text-red-400 rounded-xl border border-zinc-700/50 transition-all active:scale-95"
             @click="batchDelete"
           >
             <Trash2 :size="16" class="mb-1" />
-            <span class="text-[9px] font-bold">删除</span>
+            <span class="text-[9px] font-bold">{{ locale.actions.delete }}</span>
           </button>
         </div>
       </div>
@@ -440,8 +440,8 @@
       :message="deleteDialogMessage"
       :loading="loading"
       type="danger"
-      confirm-text="确认删除"
-      cancel-text="取消"
+      :confirm-text="locale.dialog.confirmDelete"
+      :cancel-text="locale.dialog.cancel"
       @confirm="confirmDelete"
       @close="showDeleteDialog = false"
     />
@@ -474,7 +474,7 @@
           @click.stop
         >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-zinc-100">驳回歌曲</h3>
+            <h3 class="text-xl font-black text-zinc-100">{{ locale.rejectDialog.title }}</h3>
             <button
               class="text-zinc-500 hover:text-zinc-300 transition-colors"
               @click="cancelReject"
@@ -492,17 +492,17 @@
               </div>
               <div>
                 <h4 class="font-bold text-zinc-100 text-sm">{{ rejectSongInfo.title }}</h4>
-                <p class="text-xs text-zinc-500">投稿人: {{ rejectSongInfo.requester }}</p>
+                <p class="text-xs text-zinc-500">{{ locale.rejectDialog.requester(rejectSongInfo.requester) }}</p>
               </div>
             </div>
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >驳回原因</label
+                >{{ locale.rejectDialog.reason }}</label
               >
               <textarea
                 v-model="rejectReason"
-                placeholder="请输入驳回原因，将通过系统通知发送给投稿人..."
+                :placeholder="locale.rejectDialog.reasonPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-red-500/30 min-h-[120px] resize-none transition-all"
               />
             </div>
@@ -516,10 +516,10 @@
               <div>
                 <span
                   class="text-xs font-bold text-zinc-300 group-hover:text-red-400 transition-colors"
-                  >同时将此歌曲加入黑名单</span
+                  >{{ locale.rejectDialog.addToBlacklist }}</span
                 >
                 <p class="text-[10px] text-zinc-600 font-medium">
-                  加入黑名单后，该歌曲将无法再次被投稿
+                  {{ locale.rejectDialog.blacklistHint }}
                 </p>
               </div>
             </label>
@@ -530,14 +530,14 @@
               class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="cancelReject"
             >
-              取消
+              {{ locale.dialog.cancel }}
             </button>
             <button
               :disabled="rejectLoading"
               class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
               @click="confirmReject"
             >
-              {{ rejectLoading ? '处理中...' : '确认驳回' }}
+              {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
             </button>
           </div>
         </div>
@@ -573,7 +573,7 @@
         >
           <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
             <h3 class="text-xl font-black text-zinc-100">
-              {{ showEditModal ? '编辑歌曲' : '手动添加歌曲' }}
+              {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
             </h3>
             <button
               class="text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -587,39 +587,39 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >歌曲名称</label
+                  >{{ locale.editModal.titleLabel }}</label
                 >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.title"
                   type="text"
-                  placeholder="输入歌曲标题"
+                  :placeholder="locale.editModal.titlePlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
                 <input
                   v-else
                   v-model="addForm.title"
                   type="text"
-                  placeholder="输入歌曲标题"
+                  :placeholder="locale.editModal.titlePlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >歌手</label
+                  >{{ locale.editModal.artistLabel }}</label
                 >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.artist"
                   type="text"
-                  placeholder="输入歌手姓名"
+                  :placeholder="locale.editModal.artistPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
                 <input
                   v-else
                   v-model="addForm.artist"
                   type="text"
-                  placeholder="输入歌手姓名"
+                  :placeholder="locale.editModal.artistPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                 >
               </div>
@@ -627,7 +627,7 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >投稿人</label
+                >{{ locale.editModal.requester }}</label
               >
               <div class="relative user-search-container">
                 <div class="relative">
@@ -635,7 +635,7 @@
                     v-if="showEditModal"
                     v-model="editUserSearchQuery"
                     type="text"
-                    placeholder="搜索用户姓名或用户名"
+                    :placeholder="locale.editModal.userSearchPlaceholder"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                     @focus="showEditUserDropdown = true"
                     @input="searchEditUsers()"
@@ -644,7 +644,7 @@
                     v-else
                     v-model="userSearchQuery"
                     type="text"
-                    placeholder="搜索用户姓名或用户名"
+                    :placeholder="locale.editModal.userSearchPlaceholder"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                     @focus="showUserDropdown = true"
                     @input="searchUsers()"
@@ -697,7 +697,7 @@
                 class="flex items-center gap-2 mt-2 px-1"
               >
                 <span class="text-[10px] font-bold text-blue-500"
-                  >已选择: {{ (showEditModal ? selectedEditUser : selectedUser).name }}
+                  >{{ locale.editModal.selectedUser((showEditModal ? selectedEditUser : selectedUser).name) }}
                   <template v-if="(showEditModal ? selectedEditUser : selectedUser).username">
                     (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})
                   </template></span
@@ -713,7 +713,7 @@
 
             <div v-if="showEditModal" class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >联合投稿人</label
+                >{{ locale.editModal.collaborators }}</label
               >
               <div class="space-y-3 user-search-container">
                 <div
@@ -738,7 +738,7 @@
                   <input
                     v-model="editCollaboratorSearchQuery"
                     type="text"
-                    placeholder="搜索并添加联合投稿人"
+                    :placeholder="locale.editModal.collaboratorSearchPlaceholder"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
                     @focus="showEditCollaboratorDropdown = true"
                     @input="searchEditCollaborators()"
@@ -770,7 +770,7 @@
                   </div>
                 </div>
                 <p class="text-[10px] text-zinc-600 font-medium px-1">
-                  支持添加多个联合投稿人，保存后立即生效
+                  {{ locale.editModal.collaboratorHint }}
                 </p>
               </div>
             </div>
@@ -778,7 +778,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >学期</label
+                  >{{ locale.filters.semester }}</label
                 >
                 <CustomSelect
                   v-if="showEditModal"
@@ -786,7 +786,7 @@
                   :options="availableSemesters"
                   label-key="name"
                   value-key="name"
-                  placeholder="选择学期"
+                  :placeholder="locale.filters.selectSemester"
                 />
                 <CustomSelect
                   v-else
@@ -794,12 +794,12 @@
                   :options="availableSemesters"
                   label-key="name"
                   value-key="name"
-                  placeholder="选择学期"
+                  :placeholder="locale.filters.selectSemester"
                 />
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >期望时段 (可选)</label
+                  >{{ locale.editModal.preferredPlayTime }}</label
                 >
                 <CustomSelect
                   v-if="showEditModal"
@@ -807,7 +807,7 @@
                   :options="availablePlayTimes.filter(p => p.id !== 'all')"
                   label-key="name"
                   value-key="id"
-                  placeholder="选择期望播出时段"
+                  :placeholder="locale.editModal.selectPreferredPlayTime"
                 />
                 <CustomSelect
                   v-else
@@ -815,7 +815,7 @@
                   :options="availablePlayTimes.filter(p => p.id !== 'all')"
                   label-key="name"
                   value-key="id"
-                  placeholder="选择期望播出时段"
+                  :placeholder="locale.editModal.selectPreferredPlayTime"
                 />
               </div>
             </div>
@@ -824,7 +824,7 @@
             <div v-if="showEditModal" class="space-y-3">
               <div class="flex items-center justify-between gap-3 px-1">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                  >歌曲备注</label
+                  >{{ locale.editModal.submissionNote }}</label
                 >
                 <button
                   :disabled="!canClearEditSubmissionNote && !submissionNoteClearRequested"
@@ -840,13 +840,13 @@
                       : requestClearSubmissionNote()
                   "
                 >
-                  {{ submissionNoteClearRequested ? '撤销清空' : '清空备注' }}
+                  {{ submissionNoteClearRequested ? locale.editModal.cancelClearNote : locale.editModal.clearNote }}
                 </button>
               </div>
               <textarea
                 v-model="editForm.submissionNote"
                 :disabled="submissionNoteClearRequested"
-                placeholder="填写歌曲备注"
+                :placeholder="locale.editModal.submissionNotePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <label
@@ -863,10 +863,10 @@
                   <span
                     class="text-xs font-bold transition-colors"
                     :class="submissionNoteClearRequested ? 'text-zinc-500' : 'text-zinc-300 group-hover:text-blue-400'"
-                    >公开备注留言</span
+                    >{{ locale.editModal.publicNote }}</span
                   >
                   <p class="text-[10px] text-zinc-600 font-medium">
-                    公开后其他用户可以看到此备注留言
+                    {{ locale.editModal.publicNoteHint }}
                   </p>
                 </div>
               </label>
@@ -875,11 +875,11 @@
                 class="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"
               >
                 <div class="text-xs font-bold text-amber-300">
-                  保存后将清空当前备注，可填写理由并发送通知
+                  {{ locale.editModal.clearNoteHint }}
                 </div>
                 <textarea
                   v-model="submissionNoteClearReason"
-                  placeholder="可选：请输入清空备注的理由，例如：备注内容违规"
+                  :placeholder="locale.editModal.clearNoteReasonPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-amber-500/30 min-h-[96px] resize-none transition-all"
                 />
                 <label class="flex items-center gap-3 cursor-pointer group">
@@ -890,10 +890,10 @@
                   >
                   <div>
                     <span class="text-xs font-bold text-zinc-300 group-hover:text-amber-300 transition-colors"
-                      >清空后发送通知</span
+                      >{{ locale.editModal.notifyAfterClear }}</span
                     >
                     <p class="text-[10px] text-zinc-600 font-medium">
-                      将通知主投稿人和当前联合投稿人
+                      {{ locale.editModal.notifyAfterClearHint }}
                     </p>
                   </div>
                 </label>
@@ -902,45 +902,45 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >音乐平台 (可选)</label
+                  >{{ locale.editModal.musicPlatform }}</label
                 >
                 <CustomSelect
                   v-if="showEditModal"
                   v-model="editForm.musicPlatform"
                   :options="[
-                    { label: '网易云音乐', value: 'netease' },
-                    { label: 'QQ音乐', value: 'tencent' },
-                    { label: '哔哩哔哩', value: 'bilibili' }
+                    { label: locale.platforms.netease, value: 'netease' },
+                    { label: locale.platforms.tencent, value: 'tencent' },
+                    { label: locale.platforms.bilibili, value: 'bilibili' }
                   ]"
-                  placeholder="选择平台"
+                  :placeholder="locale.editModal.selectPlatform"
                 />
                 <CustomSelect
                   v-else
                   v-model="addForm.musicPlatform"
                   :options="[
-                    { label: '网易云音乐', value: 'netease' },
-                    { label: 'QQ音乐', value: 'tencent' },
-                    { label: '哔哩哔哩', value: 'bilibili' }
+                    { label: locale.platforms.netease, value: 'netease' },
+                    { label: locale.platforms.tencent, value: 'tencent' },
+                    { label: locale.platforms.bilibili, value: 'bilibili' }
                   ]"
-                  placeholder="选择平台"
+                  :placeholder="locale.editModal.selectPlatform"
                 />
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                  >音乐ID (可选)</label
+                  >{{ locale.editModal.musicId }}</label
                 >
                 <input
                   v-if="showEditModal"
                   v-model="editForm.musicId"
                   type="text"
-                  placeholder="输入平台唯一标识符"
+                  :placeholder="locale.editModal.musicIdPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
                 >
                 <input
                   v-else
                   v-model="addForm.musicId"
                   type="text"
-                  placeholder="输入平台唯一标识符"
+                  :placeholder="locale.editModal.musicIdPlaceholder"
                   class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
                 >
               </div>
@@ -948,7 +948,7 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >封面URL (可选)</label
+                >{{ locale.editModal.coverUrl }}</label
               >
               <input
                 v-if="showEditModal"
@@ -971,7 +971,7 @@
                 "
                 class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1"
               >
-                <Check :size="10" /> URL有效
+                <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
               <p
                 v-if="
@@ -987,7 +987,7 @@
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                >播放地址URL (可选)</label
+                >{{ locale.editModal.playUrl }}</label
               >
               <input
                 v-if="showEditModal"
@@ -1010,7 +1010,7 @@
                 "
                 class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1"
               >
-                <Check :size="10" /> URL有效
+                <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
               <p
                 v-if="
@@ -1030,7 +1030,7 @@
               class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"
             >
-              取消
+              {{ locale.dialog.cancel }}
             </button>
             <button
               :disabled="showEditModal ? editLoading : !canSubmitAddForm || addLoading"
@@ -1040,11 +1040,11 @@
               {{
                 showEditModal
                   ? editLoading
-                    ? '保存中...'
-                    : '保存更改'
+                    ? locale.editModal.saving
+                    : locale.editModal.saveChanges
                   : addLoading
-                    ? '添加中...'
-                    : '添加歌曲'
+                    ? locale.editModal.adding
+                    : locale.editModal.addSong
               }}
             </button>
           </div>
@@ -1087,6 +1087,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useSemesters } from '~/composables/useSemesters'
 import { useSongPlayer } from '~/composables/useSongPlayer'
+import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { validateUrl, convertToHttps } from '~/utils/url'
 import dayjs from 'dayjs'
@@ -1096,6 +1097,55 @@ dayjs.extend(customParseFormat)
 
 // 响应式数据
 const { showToast: showNotification } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => {
+  const base = admin.value?.songManagement || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    stats: { ...(base.stats || {}) },
+    actions: { ...(base.actions || {}) },
+    filters: { ...(base.filters || {}) },
+    table: { ...(base.table || {}) },
+    empty: { ...(base.empty || {}) },
+    dialog: { ...(base.dialog || {}) },
+    rejectDialog: {
+      requester: emptyText,
+      ...(base.rejectDialog || {})
+    },
+    editModal: {
+      selectedUser: emptyText,
+      ...(base.editModal || {})
+    },
+    timeAgo: {
+      ...(base.timeAgo || {}),
+      minutes: (value) => formatString(base.timeAgo?.minutes, [value]) || '',
+      hours: (value) => formatString(base.timeAgo?.hours, [value]) || '',
+      days: (value) => formatString(base.timeAgo?.days, [value]) || ''
+    }
+  })
+})
+const getErrorMessage = (error) => {
+  if (!error) return ''
+  if (typeof error === 'string') return error
+  return error?.data?.message || error?.message || error?.statusMessage || ''
+}
+const formatString = (value, args) => {
+  if (typeof value !== 'string') return value
+  return value.replace(/{(\d+)}/g, (match, index) =>
+    args[index] !== undefined ? String(args[index]) : match
+  )
+}
+const getLocaleMessage = (key, ...args) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  return formatString(message, args) || ''
+}
+const getNestedMessage = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  if (typeof message === 'function') return message(...args)
+  return formatString(message, args) || ''
+}
 const loading = ref(false)
 const searchQuery = ref('')
 const statusFilter = ref('all')
@@ -1110,28 +1160,32 @@ const { playSong } = useSongPlayer()
 // 学期相关
 const selectedSemester = ref('all')
 const availableSemesters = ref([])
+const selectedSemesterName = computed(() => {
+  if (!selectedSemester.value || selectedSemester.value === 'all') return ''
+  return availableSemesters.value.find((semester) => String(semester.id) === String(selectedSemester.value))?.name || ''
+})
 
 // 时段相关
 const selectedPlayTime = ref('all')
 const availablePlayTimes = ref([])
 
 // 选项配置
-const statusOptions = [
-  { label: '全部状态', value: 'all' },
-  { label: '待排期', value: 'pending' },
-  { label: '已排期', value: 'scheduled' },
-  { label: '已播放', value: 'played' },
-  { label: '有备注', value: 'has-note' }
-]
+const statusOptions = computed(() => [
+  { label: getNestedMessage('options', 'allStatus'), value: 'all' },
+  { label: getNestedMessage('options', 'pending'), value: 'pending' },
+  { label: getNestedMessage('options', 'scheduled'), value: 'scheduled' },
+  { label: getNestedMessage('options', 'played'), value: 'played' },
+  { label: getNestedMessage('options', 'hasNote'), value: 'has-note' }
+])
 
-const sortOptions = [
-  { label: '最新投稿', value: 'time-desc' },
-  { label: '最早投稿', value: 'time-asc' },
-  { label: '热度最高', value: 'votes-desc' },
-  { label: '热度最低', value: 'votes-asc' },
-  { label: '标题 A-Z', value: 'title-asc' },
-  { label: '标题 Z-A', value: 'title-desc' }
-]
+const sortOptions = computed(() => [
+  { label: getNestedMessage('options', 'newest'), value: 'time-desc' },
+  { label: getNestedMessage('options', 'oldest'), value: 'time-asc' },
+  { label: getNestedMessage('options', 'hotDesc'), value: 'votes-desc' },
+  { label: getNestedMessage('options', 'hotAsc'), value: 'votes-asc' },
+  { label: getNestedMessage('options', 'titleAsc'), value: 'title-asc' },
+  { label: getNestedMessage('options', 'titleDesc'), value: 'title-desc' }
+])
 
 // 删除对话框相关
 const showDeleteDialog = ref(false)
@@ -1263,7 +1317,7 @@ const baseFilteredSongs = computed(() => {
 
   // 学期过滤
   if (selectedSemester.value && selectedSemester.value !== 'all') {
-    filtered = filtered.filter((song) => song.semester === selectedSemester.value)
+    filtered = filtered.filter((song) => song.semester === selectedSemesterName.value)
   }
 
   // 时段过滤
@@ -1392,10 +1446,10 @@ const formatDate = (dateString) => {
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  return `${Math.floor(diff / 86400000)}天前`
+  if (diff < 60000) return getNestedMessage('timeAgo', 'justNow')
+  if (diff < 3600000) return getNestedMessage('timeAgo', 'minutes', Math.floor(diff / 60000))
+  if (diff < 86400000) return getNestedMessage('timeAgo', 'hours', Math.floor(diff / 3600000))
+  return getNestedMessage('timeAgo', 'days', Math.floor(diff / 86400000))
 }
 
 const getPlayTimeName = (playTimeId) => {
@@ -1407,23 +1461,23 @@ const getPlayTimeName = (playTimeId) => {
 }
 
 const getStatusText = (song) => {
-  if (song.played) return '已播放'
+  if (song.played) return getNestedMessage('options', 'played')
   if (song.scheduled) {
     // 如果有排期日期，在待播放后显示排期日期（月/日）
     if (song.scheduleDate) {
       // API返回的日期格式为 "YYYY/M/D H:mm:ss"（如 "2024/1/15 14:30:00"）
       const date = dayjs(song.scheduleDate, 'YYYY/M/D H:mm:ss')
       if (date.isValid()) {
-        return `待播放 (${date.format('M/D')})`
+        return getLocaleMessage('scheduledWithDate', date.format('M/D'))
       }
     }
-    return '待播放'
+    return getNestedMessage('options', 'scheduled')
   }
-  return '未排期'
+  return getNestedMessage('options', 'pending')
 }
 
 const getCollaboratorDisplayName = (user) => {
-  return user?.displayName || user?.name || user?.username || '未知用户'
+  return user?.displayName || user?.name || user?.username || getLocaleMessage('unknownUser')
 }
 
 const openSubmissionRemark = (song) => {
@@ -1459,12 +1513,12 @@ const updateSubmissionNotePublic = async (isPublic) => {
     }
 
     if (window.$showNotification) {
-      window.$showNotification('备注留言可见性已更新', 'success')
+      window.$showNotification(getNestedMessage('messages', 'remarkVisibilityUpdated'), 'success')
     }
   } catch (error) {
     console.error('更新备注可见性失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('更新备注可见性失败', 'error')
+      window.$showNotification(getNestedMessage('errors', 'remarkVisibilityUpdateFailed'), 'error')
     }
     dialogData.isPublic = !isPublic
   } finally {
@@ -1513,7 +1567,7 @@ const markAsPlayed = async (songId) => {
     await refreshSongs()
   } catch (error) {
       console.error('标记已播放失败:', error)
-      showNotification('标记失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
     }
 }
 
@@ -1523,7 +1577,7 @@ const markAsUnplayed = async (songId) => {
     await refreshSongs()
   } catch (error) {
       console.error('标记未播放失败:', error)
-      showNotification('标记失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      showNotification(getNestedMessage('errors', 'markFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
     }
 }
 
@@ -1531,8 +1585,8 @@ const deleteSong = async (songId) => {
   const song = songs.value.find((s) => s.id === songId)
   if (!song) return
 
-  deleteDialogTitle.value = '删除歌曲'
-  deleteDialogMessage.value = `确定要删除歌曲 "${song.title}" 吗？此操作不可撤销。`
+  deleteDialogTitle.value = getNestedMessage('dialog', 'deleteSongTitle')
+  deleteDialogMessage.value = getNestedMessage('dialog', 'deleteSongMessage', song.title)
   deleteAction.value = async () => {
     try {
       await adminService.deleteSong(songId)
@@ -1543,10 +1597,10 @@ const deleteSong = async (songId) => {
         selectedSongs.value.splice(index, 1)
       }
 
-      showNotification('歌曲删除成功', 'success')
+      showNotification(getNestedMessage('messages', 'deleteSuccess'), 'success')
     } catch (error) {
         console.error('删除歌曲失败:', error)
-        showNotification('删除失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+        showNotification(getNestedMessage('errors', 'deleteFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
       }
   }
   showDeleteDialog.value = true
@@ -1555,8 +1609,8 @@ const deleteSong = async (songId) => {
 const batchDelete = async () => {
   if (selectedSongs.value.length === 0) return
 
-  deleteDialogTitle.value = '批量删除歌曲'
-  deleteDialogMessage.value = `确定要删除选中的 ${selectedSongs.value.length} 首歌曲吗？此操作不可撤销。`
+  deleteDialogTitle.value = getNestedMessage('dialog', 'batchDeleteTitle')
+  deleteDialogMessage.value = getNestedMessage('dialog', 'batchDeleteMessage', selectedSongs.value.length)
   deleteAction.value = async () => {
     try {
       loading.value = true
@@ -1568,10 +1622,10 @@ const batchDelete = async () => {
       await refreshSongs()
       selectedSongs.value = []
 
-      showNotification('批量删除成功', 'success')
+      showNotification(getNestedMessage('messages', 'batchDeleteSuccess'), 'success')
     } catch (error) {
         console.error('批量删除失败:', error)
-        showNotification('批量删除失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+        showNotification(getNestedMessage('errors', 'batchDeleteFailed', error?.data?.message || error?.message || error?.statusMessage || getLocaleMessage('unknownError')), 'error')
       } finally {
       loading.value = false
     }
@@ -1602,7 +1656,7 @@ const openDownloadDialog = () => {
         title: song.title,
         artist: song.artist,
         musicPlatform: song.musicPlatform || 'unknown',
-        requester: song.requester || '未知',
+        requester: song.requester || getLocaleMessage('unknown'),
         musicId: song.musicId,
         playUrl: song.playUrl
       }
@@ -1635,7 +1689,7 @@ const rejectSong = (songId) => {
     id: song.id,
     title: song.title || '',
     artist: song.artist || '',
-    requester: song.requester || song.requester_name || '未知'
+    requester: song.requester || song.requester_name || getLocaleMessage('unknown')
   }
 
   rejectReason.value = ''
@@ -1646,7 +1700,7 @@ const rejectSong = (songId) => {
 // 确认驳回
 const confirmReject = async () => {
   if (!rejectReason.value.trim()) {
-    showNotification('请填写驳回原因', 'error')
+    showNotification(getNestedMessage('errors', 'rejectReasonRequired'), 'error')
     return
   }
 
@@ -1670,10 +1724,10 @@ const confirmReject = async () => {
 
     showRejectDialog.value = false
 
-    showNotification('歌曲驳回成功，已通知投稿人', 'success')
+    showNotification(getNestedMessage('messages', 'rejectSuccess'), 'success')
   } catch (error) {
     console.error('驳回歌曲失败:', error)
-    showNotification('驳回失败: ' + (error.data?.message || error.message), 'error')
+    showNotification(getNestedMessage('errors', 'rejectFailed', getErrorMessage(error)), 'error')
   } finally {
     rejectLoading.value = false
   }
@@ -1716,7 +1770,7 @@ const editSong = (song) => {
   if (song.requesterId || song.requester_id || song.requester_name || song.requester) {
     selectedEditUser.value = {
       id: song.requesterId || song.requester_id || song.requester,
-      name: song.requester_name || song.requester || '未知',
+      name: song.requester_name || song.requester || locale.value.unknown,
       username: song.requester_username || song.user?.username || song.requester?.username || ''
     }
     editUserSearchQuery.value = song.requester_name || song.requester || ''
@@ -1735,22 +1789,22 @@ const editSong = (song) => {
 
 const saveEditSong = async () => {
   if (!editForm.value.title || !editForm.value.artist) {
-    showNotification('请填写歌曲名称和歌手', 'error')
+    showNotification(getNestedMessage('errors', 'songInfoRequired'), 'error')
     return
   }
 
   if (editForm.value.cover && !editCoverValidation.value.valid) {
-    showNotification('请等待封面URL验证完成或修正无效的URL', 'error')
+    showNotification(getNestedMessage('errors', 'coverUrlInvalidOrPending'), 'error')
     return
   }
 
   if (editForm.value.playUrl && !editPlayUrlValidation.value.valid) {
-    showNotification('请等待播放URL验证完成或修正无效的URL', 'error')
+    showNotification(getNestedMessage('errors', 'playUrlInvalidOrPending'), 'error')
     return
   }
 
   if (editCoverValidation.value.validating || editPlayUrlValidation.value.validating) {
-    showNotification('正在验证URL，请稍候...', 'warning')
+    showNotification(getNestedMessage('messages', 'validatingUrl'), 'warning')
     return
   }
 
@@ -1778,15 +1832,11 @@ const saveEditSong = async () => {
     await refreshSongs()
     showEditModal.value = false
 
-    showNotification('歌曲信息更新成功', 'success')
+    showNotification(getNestedMessage('messages', 'updateSuccess'), 'success')
   } catch (error) {
     console.error('更新歌曲失败:', error)
-    let errorMessage = '更新失败'
-    if (error.data && error.data.message) {
-      errorMessage = error.data.message
-    } else if (error.message) {
-      errorMessage = error.message
-    }
+    let errorMessage = getNestedMessage('errors', 'updateFailed')
+    errorMessage = getErrorMessage(error) || errorMessage
     showNotification(errorMessage, 'error')
   } finally {
     editLoading.value = false
@@ -1841,7 +1891,7 @@ const openAddSongModal = () => {
     title: '',
     artist: '',
     requester: '',
-    semester: selectedSemester.value !== 'all' ? selectedSemester.value : '',
+    semester: selectedSemesterName.value,
     preferredPlayTimeId: selectedPlayTime.value !== 'all' && selectedPlayTime.value !== 'none' ? selectedPlayTime.value : 'none',
     musicPlatform: '',
     musicId: '',
@@ -1852,38 +1902,38 @@ const openAddSongModal = () => {
 
 const saveAddSong = async () => {
   if (!addForm.value.title || !addForm.value.artist) {
-    showNotification('请填写歌曲名称和歌手', 'error')
+    showNotification(getNestedMessage('errors', 'songInfoRequired'), 'error')
     return
   }
 
   if (!selectedUser.value || !addForm.value.requester) {
-    showNotification('请选择投稿人', 'error')
+    showNotification(getNestedMessage('errors', 'requesterRequired'), 'error')
     return
   }
 
   if (!addForm.value.semester) {
-    showNotification('请选择学期', 'error')
+    showNotification(getNestedMessage('errors', 'semesterRequired'), 'error')
     return
   }
 
   if (addForm.value.cover) {
     if (!addCoverValidation.value.valid) {
-      showNotification('歌曲封面URL无效，请检查后重试', 'error')
+      showNotification(getNestedMessage('errors', 'coverUrlInvalid'), 'error')
       return
     }
     if (addCoverValidation.value.validating) {
-      showNotification('正在验证封面URL，请稍候...', 'warning')
+      showNotification(getNestedMessage('messages', 'validatingCoverUrl'), 'warning')
       return
     }
   }
 
   if (addForm.value.playUrl) {
     if (!addPlayUrlValidation.value.valid) {
-      showNotification('播放地址URL无效，请检查后重试', 'error')
+      showNotification(getNestedMessage('errors', 'playUrlInvalid'), 'error')
       return
     }
     if (addPlayUrlValidation.value.validating) {
-      showNotification('正在验证播放地址URL，请稍候...', 'warning')
+      showNotification(getNestedMessage('messages', 'validatingPlayUrl'), 'warning')
       return
     }
   }
@@ -1919,15 +1969,11 @@ const saveAddSong = async () => {
     }
     clearSelectedUser()
 
-    showNotification('歌曲添加成功', 'success')
+    showNotification(getNestedMessage('messages', 'addSuccess'), 'success')
   } catch (error) {
     console.error('添加歌曲失败:', error)
-    let errorMessage = '添加失败'
-    if (error.data && error.data.message) {
-      errorMessage = error.data.message
-    } else if (error.message) {
-      errorMessage = error.message
-    }
+    let errorMessage = getNestedMessage('errors', 'addFailed')
+    errorMessage = getErrorMessage(error) || errorMessage
     showNotification(errorMessage, 'error')
   } finally {
     addLoading.value = false
@@ -2128,7 +2174,7 @@ const { semesters, fetchSemesters, semesterUpdateEvent } = useSemesters()
 
 watch(semesterUpdateEvent, async () => {
   await fetchSemesters()
-  availableSemesters.value = semesters.value || []
+  availableSemesters.value = [{ id: 'all', name: locale.value.allSemesters }, ...(semesters.value || [])]
 })
 
 onMounted(async () => {
@@ -2140,19 +2186,18 @@ onMounted(async () => {
   await fetchSemesters()
   await fetchCurrentSemester()
 
-  availableSemesters.value = semesters.value || []
-  availableSemesters.value.unshift({ id: 'all', name: '全部学期' })
+  availableSemesters.value = [{ id: 'all', name: locale.value.allSemesters }, ...(semesters.value || [])]
 
   if (currentSemester.value) {
-    selectedSemester.value = currentSemester.value.name
+    selectedSemester.value = currentSemester.value.id
   }
 
   const { fetchPlayTimes, playTimes, formatPlayTimeDisplay: formatter } = songsService
   formatPlayTimeDisplay = formatter
   await fetchPlayTimes()
   availablePlayTimes.value = [...(playTimes.value || [])]
-  availablePlayTimes.value.unshift({ id: 'none', name: '未指定时段' })
-  availablePlayTimes.value.unshift({ id: 'all', name: '全部时段' })
+  availablePlayTimes.value.unshift({ id: 'none', name: locale.value.unspecifiedPlayTime })
+  availablePlayTimes.value.unshift({ id: 'all', name: locale.value.allPlayTimes })
 
   document.addEventListener('click', handleClickOutside)
 

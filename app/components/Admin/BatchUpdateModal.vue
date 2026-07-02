@@ -25,10 +25,10 @@
               >
                 <Layers :size="20" />
               </div>
-              批量更新学生信息
+              {{ locale.title }}
             </h3>
             <p class="text-xs text-zinc-500 mt-1 ml-13">
-              快速调整学生年级、班级或通过 Excel 批量修改
+              {{ locale.desc }}
             </p>
           </div>
           <button
@@ -70,10 +70,10 @@
                 </div>
               </div>
               <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
-                >仅更新年级</span
+                >{{ locale.updateTypes.gradeOnly.title }}</span
               >
               <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
-                >批量更新选中学生的年级，保持班级不变</span
+                >{{ locale.updateTypes.gradeOnly.desc }}</span
               >
             </label>
 
@@ -105,10 +105,10 @@
                 </div>
               </div>
               <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
-                >Excel 批量更新</span
+                >{{ locale.updateTypes.excelBatch.title }}</span
               >
               <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
-                >通过 Excel 文件精确匹配并批量修改学生信息</span
+                >{{ locale.updateTypes.excelBatch.desc }}</span
               >
             </label>
 
@@ -140,10 +140,10 @@
                 </div>
               </div>
               <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
-                >设置账户状态</span
+                >{{ locale.updateTypes.statusBatch.title }}</span
               >
               <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
-                >批量设置选中学生的账户状态</span
+                >{{ locale.updateTypes.statusBatch.desc }}</span
               >
             </label>
           </div>
@@ -158,33 +158,33 @@
                 class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest"
               >
                 <Filter :size="14" class="text-purple-500" />
-                学生范围筛选
+                {{ locale.studentFilter.title }}
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >当前年级</label
+                    >{{ locale.studentFilter.currentGrade }}</label
                   >
                   <CustomSelect
                     v-model="gradeFilter"
                     :options="gradeOptions"
                     label-key="label"
                     value-key="value"
-                    placeholder="全部年级"
+                    :placeholder="locale.studentFilter.allGrades"
                     class-name="w-full"
                   />
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >当前班级</label
+                    >{{ locale.studentFilter.currentClass }}</label
                   >
                   <CustomSelect
                     v-model="classFilter"
                     :options="classOptions"
                     label-key="label"
                     value-key="value"
-                    placeholder="全部班级"
+                    :placeholder="locale.studentFilter.allClasses"
                     class-name="w-full"
                   />
                 </div>
@@ -193,13 +193,13 @@
               <div class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-                    >选择用户 ({{ selectedUserIds?.length || 0 }}/{{ filteredUsers?.length || 0 }})</label
+                    >{{ getNestedText('studentFilter', 'selectUsers', selectedUserIds?.length || 0, filteredUsers?.length || 0) }}</label
                   >
                   <button
                     class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
                     @click="toggleSelectAll"
                   >
-                    {{ isAllSelected ? '取消全选' : '选择当前全部' }}
+                    {{ isAllSelected ? locale.studentFilter.clearSelection : locale.studentFilter.selectAll }}
                   </button>
                 </div>
                 <div
@@ -209,7 +209,7 @@
                     v-if="filteredUsers?.length === 0"
                     class="py-10 text-center text-xs text-zinc-600 font-medium"
                   >
-                    没有匹配条件的用户
+                    {{ locale.studentFilter.noMatchedUsers }}
                   </div>
                   <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
                     <label
@@ -244,12 +244,12 @@
                 class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest"
               >
                 <Save :size="14" />
-                目标设置
+                {{ locale.gradeSettings.title }}
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >目标年级</label
+                    >{{ locale.gradeSettings.targetGrade }}</label
                   >
                   <div class="relative group">
                     <Calendar
@@ -259,7 +259,7 @@
                     <input
                       v-model="targetGrade"
                       type="text"
-                      placeholder="例如: 2025"
+                      :placeholder="locale.gradeSettings.targetGradePlaceholder"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200"
                     >
                   </div>
@@ -272,7 +272,7 @@
                     type="checkbox"
                     class="w-5 h-5 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
                   >
-                  <span class="text-xs font-bold text-zinc-300">保持原有班级不变</span>
+                  <span class="text-xs font-bold text-zinc-300">{{ locale.gradeSettings.keepClass }}</span>
                 </label>
               </div>
             </div>
@@ -281,28 +281,28 @@
             <div v-if="updateType === 'status-batch'" class="p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-6">
               <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
                 <Save :size="14" />
-                目标状态设置
+                {{ locale.statusSettings.title }}
               </div>
               <div class="grid grid-cols-1 gap-6">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">选择账户状态</label>
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.targetStatus }}</label>
                   <CustomSelect
                     v-model="targetStatus"
                     :options="statusOptions"
                     label-key="label"
                     value-key="value"
-                    placeholder="请选择目标状态"
+                    :placeholder="locale.statusSettings.targetStatusPlaceholder"
                     class-name="w-full"
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">变更原因说明</label>
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.reason }}</label>
                   <div class="relative group">
                     <MessageSquare class="absolute left-4 top-3 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
                     <textarea
                       v-model="statusReason"
                       rows="2"
-                      placeholder="例如: 2025届学生统一毕业"
+                      :placeholder="locale.statusSettings.reasonPlaceholder"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200 resize-none"
                     ></textarea>
                   </div>
@@ -353,11 +353,10 @@
                 </div>
                 <div class="text-center">
                   <p class="text-base font-black text-zinc-200 tracking-tight">
-                    拖拽 Excel 文件到此处
+                    {{ locale.excelUpload.dragTitle }}
                   </p>
                   <p class="text-xs text-zinc-500 mt-1">
-                    或 <span class="text-emerald-500 font-bold">点击选择文件</span> (支持 .xlsx /
-                    .xls)
+                    {{ locale.excelUpload.or }} <span class="text-emerald-500 font-bold">{{ locale.excelUpload.chooseFile }}</span> {{ locale.excelUpload.supportedFormats }}
                   </p>
                 </div>
               </div>
@@ -369,7 +368,7 @@
                 class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest"
               >
                 <Filter :size="12" />
-                匹配方式
+                {{ locale.matchType.title }}
               </div>
               <div class="flex gap-3">
                 <label
@@ -382,7 +381,7 @@
                 >
                   <input v-model="matchType" type="radio" value="username" class="sr-only" />
                   <span v-if="matchType === 'username'" class="w-2 h-2 rounded-full bg-blue-500" />
-                  按用户名匹配
+                  {{ locale.matchType.byUsername }}
                 </label>
                 <label
                   :class="[
@@ -394,15 +393,15 @@
                 >
                   <input v-model="matchType" type="radio" value="name" class="sr-only" />
                   <span v-if="matchType === 'name'" class="w-2 h-2 rounded-full bg-emerald-500" />
-                  按姓名匹配
+                  {{ locale.matchType.byName }}
                 </label>
               </div>
               <p class="text-[10px] text-zinc-600 leading-relaxed">
                 <template v-if="matchType === 'username'">
-                  通过<span class="text-blue-400 font-bold">用户名</span>精确定位账户，适用于学号不变的常规更新
+                  {{ locale.matchType.usernamePrefix }}<span class="text-blue-400 font-bold">{{ locale.fields.username }}</span>{{ locale.matchType.usernameSuffix }}
                 </template>
                 <template v-else>
-                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，<span class="text-emerald-400 font-bold">用户名</span>列将作为新学号，适用于人员流动后学号前移的场景
+                  {{ locale.matchType.namePrefix }}<span class="text-emerald-400 font-bold">{{ locale.fields.realName }}</span>{{ locale.matchType.nameMiddle }}<span class="text-emerald-400 font-bold">{{ locale.fields.username }}</span>{{ locale.matchType.nameSuffix }}
                 </template>
               </p>
             </div>
@@ -416,25 +415,25 @@
                   class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest"
                 >
                   <Info :size="12" />
-                  文件格式规范
+                  {{ locale.fileSpec.title }}
                 </div>
                 <ul class="text-[10px] text-zinc-600 space-y-1.5 font-medium leading-relaxed">
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
-                    第一行为表头：用户名、姓名、年级、班级、新用户名
+                    {{ locale.fileSpec.headerLine }}
                   </li>
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
                     <template v-if="matchType === 'username'">
-                      <span class="text-blue-400 font-bold">用户名</span> 列用于精确匹配现有账户
+                      <span class="text-blue-400 font-bold">{{ locale.fields.username }}</span> {{ locale.fileSpec.usernameColumn }}
                     </template>
                     <template v-else>
-                      <span class="text-emerald-400 font-bold">姓名</span> 列用于精确匹配现有账户
+                      <span class="text-emerald-400 font-bold">{{ locale.fields.name }}</span> {{ locale.fileSpec.nameColumn }}
                     </template>
                   </li>
                   <li class="flex items-start gap-2">
                     <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
-                    字段留空则保持原值不变，不进行覆盖更新
+                    {{ locale.fileSpec.blankKeepsOriginal }}
                   </li>
                 </ul>
               </div>
@@ -448,7 +447,7 @@
                   <Download :size="20" />
                 </div>
                 <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest"
-                  >获取模板文件</span
+                  >{{ locale.fileSpec.downloadTemplate }}</span
                 >
               </button>
             </div>
@@ -463,10 +462,10 @@
               >
                 <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
                   <AlertCircle :size="16" />
-                  需要处理的用户 ({{ blockerList.length }})
+                  {{ locale.preview.blockersTitle(blockerList.length) }}
                 </div>
                 <p class="text-[10px] text-amber-300/80 leading-relaxed">
-                  以下用户不在当前更新列表中，但占用了目标用户名。请先将其标记为退学或禁用后再更新。
+                  {{ locale.preview.blockersDesc }}
                 </p>
                 <div class="flex flex-wrap gap-2">
                   <span
@@ -480,7 +479,7 @@
               </div>
               <div class="flex items-center justify-between ml-1">
                 <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
-                  >数据预览 ({{ previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length }}/{{ excelPreviewData.length }}条)</label
+                  >{{ locale.preview.dataPreview(previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length, excelPreviewData.length) }}</label
                 >
                 <div class="flex items-center gap-4">
                   <button
@@ -493,7 +492,7 @@
                     @click="previewFilter = previewFilter === 'pending' ? 'all' : 'pending'"
                   >
                     <div class="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">待更新 ({{ previewCounts.pending }})</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">{{ locale.preview.pending(previewCounts.pending) }}</span>
                   </button>
                   <button
                     :class="[
@@ -505,7 +504,7 @@
                     @click="previewFilter = previewFilter === 'noChange' ? 'all' : 'noChange'"
                   >
                     <div class="w-2 h-2 rounded-full bg-zinc-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">无变更 ({{ previewCounts.noChange }})</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">{{ locale.preview.noChangeCount(previewCounts.noChange) }}</span>
                   </button>
                   <button
                     :class="[
@@ -517,7 +516,7 @@
                     @click="previewFilter = previewFilter === 'error' ? 'all' : 'error'"
                   >
                     <div class="w-2 h-2 rounded-full bg-red-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">错误 ({{ previewCounts.error }})</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">{{ locale.preview.errorCount(previewCounts.error) }}</span>
                   </button>
                 </div>
               </div>
@@ -529,11 +528,11 @@
                     >
                       <tr>
                         <th class="px-5 py-4 whitespace-nowrap">
-                          {{ matchType === 'username' ? '匹配用户' : '匹配姓名' }}
+                          {{ matchType === 'username' ? locale.preview.matchUser : locale.preview.matchName }}
                         </th>
-                        <th class="px-5 py-4 whitespace-nowrap">当前信息</th>
-                        <th class="px-5 py-4 whitespace-nowrap">更新后</th>
-                        <th class="px-5 py-4 whitespace-nowrap text-right">匹配状态</th>
+                        <th class="px-5 py-4 whitespace-nowrap">{{ locale.preview.currentInfo }}</th>
+                        <th class="px-5 py-4 whitespace-nowrap">{{ locale.preview.afterUpdate }}</th>
+                        <th class="px-5 py-4 whitespace-nowrap text-right">{{ locale.preview.matchStatus }}</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-zinc-900">
@@ -599,13 +598,13 @@
                             v-else-if="row.noChange"
                             class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase tracking-tighter border border-zinc-700/50"
                           >
-                            无变更
+                            {{ locale.preview.noChange }}
                           </span>
                           <span
                             v-else
                             class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase tracking-tighter border border-emerald-500/20"
                           >
-                            已就绪
+                            {{ locale.preview.ready }}
                           </span>
                         </td>
                       </tr>
@@ -616,7 +615,7 @@
                   v-if="filteredPreviewData.length > 10"
                   class="p-4 text-center border-t border-zinc-900 bg-zinc-900/20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
                 >
-                  以及另外 {{ filteredPreviewData.length - 10 }} 条记录已在队列中
+                  {{ locale.preview.moreQueued(filteredPreviewData.length - 10) }}
                 </div>
               </div>
             </div>
@@ -655,7 +654,7 @@
             class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
             @click="$emit('close')"
           >
-            取消操作
+            {{ locale.actions.cancel }}
           </button>
           <button
             :disabled="loading || !canUpdate"
@@ -671,7 +670,7 @@
           >
             <RefreshCw v-if="loading" class="animate-spin" :size="16" />
             <Save v-else :size="16" />
-            {{ loading ? '正在提交更新...' : '确认并开始更新' }}
+            {{ loading ? locale.actions.submitting : locale.actions.confirm }}
           </button>
         </div>
       </div>
@@ -683,6 +682,7 @@
 import { computed, ref, watch, nextTick } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useUserFilters } from '~/composables/useUserFilters'
+import { useLocale } from '~/utils/locale'
 import {
   Layers,
   X,
@@ -727,12 +727,6 @@ const keepClass = ref(true)
 const targetStatus = ref('')
 const statusReason = ref('')
 
-const statusOptions = [
-  { label: '正常访问', value: 'active' },
-  { label: '限制访问 (毕业生)', value: 'graduate' },
-  { label: '限制访问 (退学)', value: 'withdrawn' }
-]
-
 // Excel批量更新相关
 const isDragOver = ref(false)
 const excelPreviewData = ref([])
@@ -752,6 +746,90 @@ const updateCurrentBatch = ref(0)
 // 服务
 const auth = useAuth()
 const userFilters = useUserFilters()
+const { admin } = useLocale()
+const locale = computed(() => {
+  const base = admin.value?.userManager?.batchUpdateModal || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    updateTypes: {
+      gradeOnly: {},
+      excelBatch: {},
+      statusBatch: {},
+      ...(base.updateTypes || {})
+    },
+    fields: { ...(base.fields || {}) },
+    studentFilter: {
+      selectUsers: emptyText,
+      ...(base.studentFilter || {})
+    },
+    gradeSettings: { ...(base.gradeSettings || {}) },
+    statusSettings: { ...(base.statusSettings || {}) },
+    statusOptions: { ...(base.statusOptions || {}) },
+    excelUpload: { ...(base.excelUpload || {}) },
+    matchType: { ...(base.matchType || {}) },
+    fileSpec: { ...(base.fileSpec || {}) },
+    preview: {
+      blockersTitle: emptyText,
+      dataPreview: emptyText,
+      pending: emptyText,
+      noChangeCount: emptyText,
+      errorCount: emptyText,
+      moreQueued: emptyText,
+      ...(base.preview || {})
+    },
+    actions: { ...(base.actions || {}) },
+    template: {
+      headers: {},
+      ...(base.template || {})
+    },
+    progress: {
+      processing: emptyText,
+      completed: emptyText,
+      ...(base.progress || {})
+    },
+    messages: {
+      partialGradeSuccess: emptyText,
+      gradeSuccess: emptyText,
+      partialExcelSuccess: emptyText,
+      excelFailed: emptyText,
+      partialStatusSuccess: emptyText,
+      ...(base.messages || {})
+    },
+    errors: {
+      processExcelFailed: emptyText,
+      fieldRequired: emptyText,
+      duplicateTarget: emptyText,
+      usernameOccupied: emptyText,
+      batchUpdateFailed: emptyText,
+      updateFailedWithEtc: emptyText,
+      ...(base.errors || {})
+    }
+  })
+})
+const getNestedText = (section, key, ...args) => {
+  const message = locale.value?.[section]?.[key]
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return message || key
+}
+const excelColumnKeys = computed(() => ({
+  username: locale.value?.template?.headers?.username,
+  name: locale.value?.template?.headers?.name,
+  grade: locale.value?.template?.headers?.grade,
+  class: locale.value?.template?.headers?.class,
+  newUsername: locale.value?.template?.headers?.newUsername
+}))
+
+const statusOptions = computed(() => [
+  { label: locale.value?.statusOptions?.active || '', value: 'active' },
+  { label: locale.value?.statusOptions?.graduate || '', value: 'graduate' },
+  { label: locale.value?.statusOptions?.withdrawn || '', value: 'withdrawn' }
+])
 
 // 计算属性
 const computedUsers = computed(() => {
@@ -776,14 +854,14 @@ watch(() => gradeFilter.value, () => {
 
 const gradeOptions = computed(() => {
   return [
-    { label: '全部年级', value: '' },
+    { label: locale.value?.studentFilter?.allGrades || '全部年级', value: '' },
     ...availableGrades.value.map((g) => ({ label: g, value: g }))
   ]
 })
 
 const classOptions = computed(() => {
   return [
-    { label: '全部班级', value: '' },
+    { label: locale.value?.studentFilter?.allClasses || '全部班级', value: '' },
     ...availableClasses.value.map((c) => ({ label: c, value: c }))
   ]
 })
@@ -871,7 +949,6 @@ const processExcelFile = async (file) => {
 
     // 确保用户数据已加载（强制要求全量数据，防止使用单页 props.users 匹配导致误判）
     if (!userFilters.isLoaded.value) {
-      console.log('正在获取全量用户数据以解析Excel...')
       await fetchAllUsers()
       await nextTick()
     }
@@ -894,22 +971,22 @@ const processExcelFile = async (file) => {
         parseExcelData(jsonData)
       } catch (parseError) {
         console.error('解析Excel文件失败:', parseError)
-        error.value = 'Excel文件格式错误，请检查文件格式'
+        error.value = getNestedText('errors', 'invalidExcelFormat')
         loading.value = false
       }
     }
 
     reader.onerror = () => {
       console.error('读取文件失败')
-      error.value = '读取文件失败，请重试'
+      error.value = getNestedText('errors', 'readFileFailed')
       loading.value = false
     }
 
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件失败:', err)
-    const errorMessage = err && err.message ? err.message : '未知错误，请检查文件格式或网络连接'
-    error.value = '处理Excel文件失败: ' + errorMessage
+    const errorMessage = err && err.message ? err.message : getNestedText('errors', 'unknownExcelError')
+    error.value = getNestedText('errors', 'processExcelFailed', errorMessage)
     loading.value = false
   }
 }
@@ -935,16 +1012,33 @@ const parseExcelData = (jsonData) => {
     }
   })
 
+  const columnKeys = excelColumnKeys.value
+  const getRowValue = (row, key, fallbacks, defaultValue = '') => {
+    const resolvedKey = typeof key === 'function' ? key() : key
+    if (resolvedKey && row[resolvedKey] !== undefined) return row[resolvedKey]
+    for (const fallback of fallbacks) {
+      if (row[fallback] !== undefined) return row[fallback]
+    }
+    return defaultValue
+  }
+
   jsonData.forEach((row, index) => {
-    const username = (row['用户名'] || row['username'] || '').toString().trim()
-    const name = (row['姓名'] || row['name'] || '').toString().trim().toLowerCase()
-    const newGrade = row['年级'] || row['grade'] ? String(row['年级'] || row['grade']).trim() : ''
-    const newClass = row['班级'] || row['class'] ? String(row['班级'] || row['class']).trim() : ''
-    const explicitNewUsername = (row['新用户名'] || row['new_username'] || '').toString().trim()
+    if (!row || typeof row !== 'object') return
+
+    const rawUsername = getRowValue(row, columnKeys.username, ['用户名', 'username'])
+    const rawName = getRowValue(row, columnKeys.name, ['姓名', 'name'])
+    const rawGrade = getRowValue(row, columnKeys.grade, ['年级', 'grade'])
+    const rawClass = getRowValue(row, columnKeys.class, ['班级', 'class'])
+    const rawExplicitNewUsername = getRowValue(row, columnKeys.newUsername, ['新用户名', 'new_username'])
+    const username = rawUsername != null ? String(rawUsername).trim() : ''
+    const name = rawName != null ? String(rawName).trim().toLowerCase() : ''
+    const newGrade = rawGrade != null ? String(rawGrade).trim() : ''
+    const newClass = rawClass != null ? String(rawClass).trim() : ''
+    const explicitNewUsername = rawExplicitNewUsername != null ? String(rawExplicitNewUsername).trim() : ''
     const newUsername = explicitNewUsername || (matchType.value === 'name' ? username : '')
 
     const keyValue = matchType.value === 'username' ? username : name
-    const keyLabel = matchType.value === 'username' ? '用户名' : '姓名'
+    const keyLabel = matchType.value === 'username' ? getNestedText('fields', 'username') : getNestedText('fields', 'name')
 
     if (!keyValue) {
       previewData.push({
@@ -953,7 +1047,7 @@ const parseExcelData = (jsonData) => {
         newGrade: newGrade,
         newClass: newClass,
         newUsername: newUsername,
-        error: `${keyLabel}不能为空`
+        error: getNestedText('errors', 'fieldRequired', keyLabel)
       })
       return
     }
@@ -973,7 +1067,7 @@ const parseExcelData = (jsonData) => {
           newGrade: newGrade,
           newClass: newClass,
           newUsername: newUsername,
-          error: '存在多个同名用户，请切换至按用户名匹配'
+          error: getNestedText('errors', 'duplicateNames')
         })
         return
       }
@@ -987,7 +1081,7 @@ const parseExcelData = (jsonData) => {
         newGrade: newGrade,
         newClass: newClass,
         newUsername: newUsername,
-        error: '用户不存在'
+        error: getNestedText('errors', 'userNotFound')
       })
       return
     }
@@ -1048,8 +1142,9 @@ const parseExcelData = (jsonData) => {
     if (row.newUsername) {
       const previous = requestedUsernames.get(row.newUsername)
       if (previous) {
-        previous.error = `重复的更新目标：多行数据尝试更新为同一个用户名 ${row.newUsername}`
-        row.error = `重复的更新目标：多行数据尝试更新为同一个用户名 ${row.newUsername}`
+        const duplicateTargetMessage = getNestedText('errors', 'duplicateTarget', row.newUsername)
+        previous.error = duplicateTargetMessage
+        row.error = duplicateTargetMessage
         continue
       }
       requestedUsernames.set(row.newUsername, row)
@@ -1075,7 +1170,7 @@ const parseExcelData = (jsonData) => {
   for (const row of previewData) {
     if (row.error || row.noChange) continue
     if (row.usernameConflict) {
-      row.error = `用户名 ${row.newUsername} 被占用，请先处理 ${row.usernameConflict.name} 的账户`
+      row.error = getNestedText('errors', 'usernameOccupied', row.newUsername, row.usernameConflict.name)
     }
   }
 
@@ -1095,7 +1190,7 @@ const loadXLSX = async () => {
     script.onload = resolve
     script.onerror = (error) => {
       console.error('加载XLSX库失败:', error)
-      reject(new Error('无法加载Excel处理库，请检查网络连接'))
+      reject(new Error(getNestedText('errors', 'loadXlsxFailed')))
     }
     document.head.appendChild(script)
   })
@@ -1107,23 +1202,50 @@ const downloadTemplate = async () => {
       await loadXLSX()
     } catch (err) {
       if (window.$showNotification) {
-        window.$showNotification('Excel处理库加载失败，请刷新页面后重试', 'error')
+        window.$showNotification(getNestedText('errors', 'loadXlsxRetry'), 'error')
       } else {
-        alert('Excel处理库加载失败，请刷新页面后重试')
+        alert(getNestedText('errors', 'loadXlsxRetry'))
       }
       return
     }
   }
 
+  const templateHeaders = locale.value?.template?.headers || {}
+  const getHeaderText = (value, fallback) => {
+    if (typeof value === 'function') return value() || fallback
+    if (typeof value === 'string') return value || fallback
+    return fallback
+  }
+  const headers = {
+    username: getHeaderText(templateHeaders.username, 'username'),
+    name: getHeaderText(templateHeaders.name, 'name'),
+    grade: getHeaderText(templateHeaders.grade, 'grade'),
+    class: getHeaderText(templateHeaders.class, 'class'),
+    newUsername: getHeaderText(templateHeaders.newUsername, 'new_username')
+  }
   const templateData = [
-    { 用户名: 'student001', 姓名: '张三', 年级: '2025', 班级: '1班', 新用户名: 'new_student001' },
-    { 用户名: 'student002', 姓名: '李四', 年级: '2025', 班级: '2班', 新用户名: '' }
+    {
+      [headers.username]: 'student001',
+      [headers.name]: getNestedText('template', 'sampleName1'),
+      [headers.grade]: '2025',
+      [headers.class]: getNestedText('template', 'sampleClass1'),
+      [headers.newUsername]: 'new_student001'
+    },
+    {
+      [headers.username]: 'student002',
+      [headers.name]: getNestedText('template', 'sampleName2'),
+      [headers.grade]: '2025',
+      [headers.class]: getNestedText('template', 'sampleClass2'),
+      [headers.newUsername]: ''
+    }
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, '学生信息')
-  window.XLSX.writeFile(wb, '学生信息批量更新模板.xlsx')
+  const sheetName = getNestedText('template', 'sheetName')
+  const fileName = getNestedText('template', 'fileName')
+  window.XLSX.utils.book_append_sheet(wb, ws, sheetName && sheetName !== 'sheetName' ? sheetName : 'template')
+  window.XLSX.writeFile(wb, fileName && fileName !== 'fileName' ? fileName : 'batch-update-template.xlsx')
 }
 
 // 当匹配方式切换时，重新解析已上传的 Excel 数据
@@ -1165,7 +1287,7 @@ const performUpdate = async () => {
     }
   } catch (err) {
     console.error('批量更新失败:', err)
-    error.value = '批量更新失败: ' + (err?.data?.message || err?.message || err?.statusMessage || '未知错误')
+    error.value = getNestedText('errors', 'batchUpdateFailed', err?.data?.message || err?.message || err?.statusMessage || getNestedText('errors', 'unknownError'))
   } finally {
     loading.value = false
   }
@@ -1183,20 +1305,20 @@ const performGradeUpdate = async () => {
   })
 
   if (!response.success) {
-    throw new Error(response.message || '批量更新失败')
+    throw new Error(response.message || getNestedText('errors', 'batchUpdateGeneric'))
   }
 
   if (response.errors && response.errors.length > 0) {
     if (response.updated === 0) {
-      throw new Error(`更新失败: ${response.errors[0].error} 等`)
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', response.errors[0].error))
     } else {
       if (window.$showNotification) {
-        window.$showNotification(`部分更新成功，${response.failed} 个用户因权限或状态等原因跳过`, 'warning')
+        window.$showNotification(getNestedText('messages', 'partialGradeSuccess', response.failed), 'warning')
       }
     }
   } else {
     if (window.$showNotification) {
-      window.$showNotification(`成功更新 ${response.updated} 个用户的年级`, 'success')
+      window.$showNotification(getNestedText('messages', 'gradeSuccess', response.updated), 'success')
     }
   }
 }
@@ -1205,7 +1327,7 @@ const performExcelUpdate = async () => {
   const validUpdates = excelPreviewData.value.filter((row) => !row.error && !row.noChange && row.userId)
 
   if (validUpdates.length === 0) {
-    throw new Error('没有有效的更新数据')
+    throw new Error(getNestedText('errors', 'noValidUpdates'))
   }
 
   const targetSet = new Set(validUpdates.filter((r) => r.newUsername).map((r) => r.newUsername))
@@ -1228,7 +1350,7 @@ const performExcelUpdate = async () => {
   for (let i = 0; i < validUpdates.length; i += batchSize) {
     const batch = validUpdates.slice(i, i + batchSize)
     updateCurrentBatch.value = Math.floor(i / batchSize) + 1
-    updateProgressText.value = `正在更新：正在处理第 ${updateCurrentBatch.value} / ${updateTotalBatches.value} 批数据...`
+    updateProgressText.value = getNestedText('progress', 'processing', updateCurrentBatch.value, updateTotalBatches.value)
     updateProgress.value = Math.round((updateCurrentBatch.value / updateTotalBatches.value) * 100)
 
     const updates = batch.map((row) => ({
@@ -1246,14 +1368,14 @@ const performExcelUpdate = async () => {
       })
 
       if (!result?.success) {
-        throw new Error(result?.message || '批量更新请求失败')
+        throw new Error(result?.message || getNestedText('errors', 'batchRequestFailed'))
       }
 
       if (result.data?.summary) {
         totalUpdated += result.data.summary.success || 0
         totalFailed += result.data.summary.failed || 0
       } else {
-        throw new Error('批量更新接口返回格式异常')
+        throw new Error(getNestedText('errors', 'invalidBatchResponse'))
       }
     } catch (err) {
       console.error(`第 ${updateCurrentBatch.value} 批更新失败:`, err)
@@ -1263,8 +1385,8 @@ const performExcelUpdate = async () => {
 
   if (totalFailed > 0) {
     const partialMessage = totalUpdated > 0
-      ? `部分更新成功：成功 ${totalUpdated} 个，失败 ${totalFailed} 个，请检查后重试`
-      : `批量更新失败：${totalFailed} 个用户未能更新，请检查后重试`
+      ? getNestedText('messages', 'partialExcelSuccess', totalUpdated, totalFailed)
+      : getNestedText('messages', 'excelFailed', totalFailed)
     
     // 如果存在更新成功的数据，仍然需要通知父组件刷新列表
     if (totalUpdated > 0) {
@@ -1280,7 +1402,7 @@ const performExcelUpdate = async () => {
     }
   }
 
-  updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
+  updateProgressText.value = getNestedText('progress', 'completed', totalUpdated, totalFailed)
   updateProgress.value = 100
   
   if (totalUpdated > 0) {
@@ -1308,18 +1430,18 @@ const performStatusUpdate = async () => {
 
   if (!response.success) {
     if (response.errors && response.errors.length > 0) {
-      throw new Error(`更新失败: ${response.errors[0].error} 等`)
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', response.errors[0].error))
     }
-    throw new Error(response.message || '批量更新状态失败')
+    throw new Error(response.message || getNestedText('errors', 'statusUpdateFailed'))
   }
 
   if (response.errors && response.errors.length > 0) {
     if (window.$showNotification) {
-      window.$showNotification(`部分更新成功，${response.errors.length} 个用户因权限或状态等原因跳过`, 'warning')
+      window.$showNotification(getNestedText('messages', 'partialStatusSuccess', response.errors.length), 'warning')
     }
   } else {
     if (window.$showNotification) {
-      window.$showNotification(response.message || '批量更新状态成功', 'success')
+      window.$showNotification(response.message || getNestedText('messages', 'statusSuccess'), 'success')
     }
   }
 }

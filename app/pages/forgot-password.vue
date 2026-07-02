@@ -4,8 +4,8 @@
       <div class="auth-container">
       <div class="form-section">
         <div class="form-header">
-          <h1 class="form-title">找回密码</h1>
-          <p class="form-subtitle">请输入您的账号名和绑定的邮箱地址</p>
+          <h1 class="form-title">{{ locale.title }}</h1>
+          <p class="form-subtitle">{{ locale.subtitle }}</p>
           <div class="header-divider" />
         </div>
         
@@ -14,12 +14,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <p class="success-message">{{ successMessage }}</p>
-          <NuxtLink to="/login" class="back-link-btn">返回登录</NuxtLink>
+          <NuxtLink to="/login" class="back-link-btn">{{ locale.backLogin }}</NuxtLink>
         </div>
 
         <form v-else :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleSubmit">
           <div class="form-group" v-if="step === 1">
-            <label for="username">账号名</label>
+            <label for="username">{{ locale.username }}</label>
             <div class="input-wrapper">
               <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -29,7 +29,7 @@
                 id="username"
                 v-model="username"
                 :class="{ 'input-error': error }"
-                placeholder="请输入您的账号名"
+                :placeholder="locale.usernamePlaceholder"
                 required
                 type="text"
                 @input="error = ''"
@@ -38,9 +38,9 @@
           </div>
 
           <div class="form-group" v-if="step === 2">
-            <label for="email">验证邮箱</label>
+            <label for="email">{{ locale.verifyEmail }}</label>
             <p class="text-sm text-[var(--text-secondary)] mb-2">
-              系统检测到该账号绑定了邮箱：<strong class="text-[var(--primary)]">{{ maskedEmail }}</strong>
+              {{ locale.detectedEmailPrefix }}<strong class="text-[var(--primary)]">{{ maskedEmail }}</strong>
             </p>
             <div class="input-wrapper">
               <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -50,7 +50,7 @@
                 id="email"
                 v-model="email"
                 :class="{ 'input-error': error }"
-                placeholder="请补全完整的邮箱地址"
+                :placeholder="locale.emailPlaceholder"
                 required
                 type="email"
                 @input="error = ''"
@@ -74,15 +74,15 @@
                 <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
               </circle>
             </svg>
-            <span v-if="loading">{{ step === 1 ? '验证中...' : '发送中...' }}</span>
-            <span v-else>{{ step === 1 ? '下一步' : '发送重置邮件' }}</span>
+            <span v-if="loading">{{ step === 1 ? locale.verifying : locale.sending }}</span>
+            <span v-else>{{ step === 1 ? locale.nextStep : locale.sendResetEmail }}</span>
           </button>
           
           <div class="form-footer">
             <button v-if="step === 2" type="button" @click="step = 1; error = '';" class="back-link mr-4" style="background: none; border: none; cursor: pointer;">
-              上一步
+              {{ locale.previousStep }}
             </button>
-            <NuxtLink to="/login" class="back-link">返回登录</NuxtLink>
+            <NuxtLink to="/login" class="back-link">{{ locale.backLogin }}</NuxtLink>
           </div>
         </form>
       </div>
@@ -93,9 +93,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useLocale } from '~/utils/locale'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.forgotPassword || {})
 
 const username = ref('')
 const email = ref('')
@@ -106,8 +109,28 @@ const successMessage = ref('')
 const step = ref(1)
 const maskedEmail = ref('')
 
+const getLocalizedServerMessage = (message?: string) => {
+  if (!message) return locale.value.requestFailed
+
+  const serverMessages = locale.value.serverMessages
+  const rawMessages = serverMessages.raw
+  const rateLimitMatch = message.match(new RegExp(rawMessages.rateLimitedPattern))
+  if (rateLimitMatch) return serverMessages.rateLimited(rateLimitMatch[1])
+
+  const messageMap: Record<string, string> = {
+    [rawMessages.usernameMissing]: serverMessages.usernameMissing,
+    [rawMessages.userNotFound]: serverMessages.userNotFound,
+    [rawMessages.emailNotBound]: serverMessages.emailNotBound,
+    [rawMessages.emailRequiredFull]: serverMessages.emailRequiredFull,
+    [rawMessages.mailSentFull]: serverMessages.mailSentFull,
+    [rawMessages.systemError]: serverMessages.systemError
+  }
+
+  return messageMap[message] || message
+}
+
 useHead({
-  title: () => siteTitle.value ? `找回密码 | ${siteTitle.value}` : '找回密码'
+  title: () => siteTitle.value ? `${locale.value.title} | ${siteTitle.value}` : locale.value.title
 })
 
 onMounted(async () => {
@@ -117,12 +140,12 @@ onMounted(async () => {
 const handleSubmit = async () => {
   if (step.value === 1) {
     if (!username.value) {
-      error.value = '请输入账号名'
+      error.value = locale.value.usernameRequired
       return
     }
   } else if (step.value === 2) {
     if (!email.value) {
-      error.value = '请补全邮箱地址'
+      error.value = locale.value.emailRequired
       return
     }
   }
@@ -148,11 +171,11 @@ const handleSubmit = async () => {
       } else if (response.step === 3) {
         // 成功发送邮件
         success.value = true
-        successMessage.value = response.message || '重置邮件已发送'
+        successMessage.value = getLocalizedServerMessage(response.message) || locale.value.mailSent
       }
     }
   } catch (err) {
-    error.value = err.data?.message || err.message || '请求失败，请稍后重试'
+    error.value = getLocalizedServerMessage(err.data?.message || err.message)
   } finally {
     loading.value = false
   }

@@ -25,9 +25,9 @@
               >
                 <Icon name="alert-triangle" :size="20" />
               </div>
-              歌曲已存在
+              {{ locale.title }}
             </h3>
-            <p class="text-xs text-zinc-500 mt-1 ml-13">这首歌曲已经在列表中了，不能重复投稿</p>
+            <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.desc }}</p>
           </div>
           <button
             class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -39,7 +39,7 @@
 
         <div class="p-8 pt-4 space-y-6">
           <p class="text-sm text-zinc-400 leading-relaxed font-medium">
-            您可以为它点赞支持，或者尝试搜索其他歌曲！
+            {{ locale.tip }}
           </p>
 
           <!-- 歌曲卡片 -->
@@ -75,7 +75,7 @@
                   class="flex items-center gap-1.5 text-[10px] font-black text-red-500 uppercase tracking-widest"
                 >
                   <Icon name="heart" :size="12" class="fill-current" />
-                  {{ song.voteCount || 0 }} 票
+                  {{ getLocaleMessage('votes', song.voteCount || 0) }}
                 </div>
                 <div
                   :class="[
@@ -85,11 +85,11 @@
                       : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                   ]"
                 >
-                  {{ song.played ? '已播放' : '待播放' }}
+                  {{ song.played ? locale.played : locale.pending }}
                 </div>
               </div>
               <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest mt-2">
-                投稿者：{{ song.requester }}
+                {{ locale.requester }}{{ song.requester }}
               </p>
             </div>
           </div>
@@ -101,7 +101,7 @@
             class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest active:scale-95"
             @click="$emit('close')"
           >
-            返回重选
+            {{ locale.back }}
           </button>
           <button
             :disabled="liking || song.voted"
@@ -110,7 +110,7 @@
           >
             <Icon v-if="liking" name="loader" :size="16" class="animate-spin" />
             <Icon v-else name="heart" :size="16" :class="[song.voted ? 'fill-current' : '']" />
-            {{ song.voted ? '已点赞' : '立即点赞' }}
+            {{ song.voted ? locale.liked : locale.likeNow }}
           </button>
         </div>
       </div>
@@ -119,10 +119,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Song } from '~/types'
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
 
 interface Props {
   show: boolean
@@ -130,6 +131,18 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { songs } = useLocale()
+const locale = computed(() => songs.value?.duplicateSongModal || {})
+const getLocaleMessage = (key: string, ...args: unknown[]) => {
+  const message = locale.value?.[key]
+  if (typeof message === 'function') return message(...args)
+  if (typeof message === 'string') {
+    return message.replace(/{(\d+)}/g, (match, index) =>
+      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
+    )
+  }
+  return message || ''
+}
 
 const emit = defineEmits<{
   close: []

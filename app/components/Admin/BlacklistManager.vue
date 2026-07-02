@@ -6,10 +6,10 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
         <h2 class="text-2xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
-          歌曲黑名单管理
+          {{ locale.title }}
         </h2>
         <p class="text-xs text-zinc-500 mt-1 font-medium">
-          禁止特定歌曲或包含关键词的歌曲被点播，维护广播内容的健康与合规
+          {{ locale.desc }}
         </p>
       </div>
     </div>
@@ -17,12 +17,12 @@
     <!-- 添加黑名单项表单 -->
     <section class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-8 shadow-xl">
       <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-6 px-1">
-        添加黑名单项
+        {{ locale.addTitle }}
       </h3>
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-end">
         <div class="xl:col-span-2 space-y-2">
           <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-            >封禁类型</label
+            >{{ locale.type }}</label
           >
           <div class="flex p-1 bg-zinc-950 border border-zinc-800 rounded-lg">
             <button
@@ -30,27 +30,27 @@
               :class="newItem.type === 'SONG' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600'"
               @click="newItem.type = 'SONG'"
             >
-              <Music :size="12" /> 具体歌曲
+              <Music :size="12" /> {{ locale.song }}
             </button>
             <button
               class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="newItem.type === 'KEYWORD' ? 'bg-zinc-800 text-purple-400' : 'text-zinc-600'"
               @click="newItem.type = 'KEYWORD'"
             >
-              <Type :size="12" /> 关键词
+              <Type :size="12" /> {{ locale.keyword }}
             </button>
           </div>
         </div>
 
         <div class="xl:col-span-4 space-y-2">
           <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">
-            {{ newItem.type === 'SONG' ? '歌曲名称 - 艺术家' : '关键词内容' }}
+            {{ newItem.type === 'SONG' ? locale.songLabel : locale.keywordLabel }}
           </label>
           <input
             v-model="newItem.value"
             type="text"
             :placeholder="
-              newItem.type === 'SONG' ? '例如: 歌曲名 - 艺术家' : '例如: 敏感词、特定风格'
+              newItem.type === 'SONG' ? locale.songPlaceholder : locale.keywordPlaceholder
             "
             class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           >
@@ -58,12 +58,12 @@
 
         <div class="xl:col-span-4 space-y-2">
           <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-            >封禁原因 (可选)</label
+            >{{ locale.reason }}</label
           >
           <input
             v-model="newItem.reason"
             type="text"
-            placeholder="简述加入黑名单的原因"
+            :placeholder="locale.reasonPlaceholder"
             class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           >
         </div>
@@ -79,7 +79,7 @@
               v-else
               class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
             />
-            {{ loading ? '处理中...' : '添加到黑名单' }}
+            {{ loading ? locale.processing : locale.addButton }}
           </button>
         </div>
       </div>
@@ -94,18 +94,20 @@
         <input
           v-model="filters.search"
           type="text"
-          placeholder="在黑名单中搜索..."
+          :placeholder="locale.searchPlaceholder"
           class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           @input="debounceSearch"
         >
       </div>
       <div class="flex gap-3 w-full md:w-auto">
         <CustomSelect
-          label="类型筛选"
-          :value="typeFilterLabel"
-          :options="['全部类型', '具体歌曲', '关键词']"
+          :label="locale.typeFilter"
+          v-model="filters.type"
+          :options="typeOptions"
+          label-key="label"
+          value-key="value"
           class="flex-1 md:w-48"
-          @change="handleTypeFilterChange"
+          @change="() => { pagination.page = 1; loadBlacklist(); }"
         />
         <button
           class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all active:scale-95"
@@ -120,7 +122,7 @@
     <div class="space-y-4">
       <div class="flex items-center justify-between px-2">
         <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-          黑名单列表 ({{ pagination.total }} 项)
+          {{ locale.listTitle(pagination.total) }}
         </h4>
       </div>
 
@@ -162,7 +164,7 @@
                         : 'bg-purple-600/10 text-purple-400 border-purple-500/20'
                     ]"
                   >
-                    {{ item.type === 'SONG' ? '具体歌曲' : '关键词' }}
+                    {{ item.type === 'SONG' ? locale.song : locale.keyword }}
                   </span>
                   <h5 class="text-base font-black text-zinc-100 truncate tracking-tight">
                     {{ item.value }}
@@ -172,13 +174,13 @@
                 <div class="flex flex-wrap items-center gap-4">
                   <div class="flex items-center gap-2 text-zinc-500 font-bold text-[11px]">
                     <MessageSquare :size="12" class="text-zinc-700" />
-                    原因: {{ item.reason || '未填写原因' }}
+                    {{ locale.reasonPrefix }} {{ item.reason || locale.noReason }}
                   </div>
                   <div
                     class="flex items-center gap-2 text-zinc-600 font-bold text-[10px] uppercase tracking-tighter"
                   >
                     <Clock :size="11" class="text-zinc-800" />
-                    创建时间: {{ formatDate(item.createdAt) }}
+                    {{ locale.createdAt }} {{ formatDate(item.createdAt) }}
                   </div>
                 </div>
               </div>
@@ -198,7 +200,7 @@
                 @click="toggleItemStatus(item)"
               >
                 <Power :size="12" />
-                {{ item.isActive ? '禁用' : '启用' }}
+                {{ item.isActive ? locale.disable : locale.enable }}
               </button>
               <button
                 :disabled="loading"
@@ -219,7 +221,7 @@
           <div
             class="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin"
           />
-          <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">加载中...</p>
+          <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">{{ locale.loading }}</p>
         </div>
 
         <!-- 空状态 -->
@@ -233,9 +235,9 @@
             <Ban :size="32" />
           </div>
           <div class="space-y-1 px-4">
-            <h6 class="text-sm font-bold text-zinc-600">未找到匹配的黑名单项</h6>
+            <h6 class="text-sm font-bold text-zinc-600">{{ locale.emptyTitle }}</h6>
             <p class="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">
-              请尝试调整筛选条件或添加新项目
+              {{ locale.emptyDesc }}
             </p>
           </div>
         </div>
@@ -253,7 +255,7 @@
         <div
           class="px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-[11px] font-black text-zinc-400 uppercase tracking-widest"
         >
-          第 {{ pagination.page }} 页 / 共 {{ pagination.pages }} 页
+          {{ locale.pagination(pagination.page, pagination.pages) }}
         </div>
         <button
           :disabled="pagination.page >= pagination.pages || loading"
@@ -289,11 +291,9 @@
               <Trash2 :size="28" />
             </div>
             <div class="space-y-2">
-              <h4 class="text-lg font-bold text-zinc-100">确认从黑名单移除</h4>
+              <h4 class="text-lg font-bold text-zinc-100">{{ locale.removeTitle }}</h4>
               <p class="text-xs text-zinc-500 leading-relaxed">
-                确定要移除
-                <span class="text-zinc-300 font-bold">"{{ deleteTargetItem?.value }}"</span>
-                吗？移除后，该项目将恢复为正常状态。
+                {{ locale.removeMessage(deleteTargetItem?.value || '') }}
               </p>
             </div>
             <div class="flex gap-3 w-full pt-4">
@@ -301,14 +301,14 @@
                 class="flex-1 px-4 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest"
                 @click="showDeleteDialog = false"
               >
-                取消
+                {{ locale.cancel }}
               </button>
               <button
                 :disabled="loading"
                 class="flex-1 px-4 py-4 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
                 @click="confirmDelete"
               >
-                {{ loading ? '删除中...' : '确认移除' }}
+                {{ loading ? locale.deleting : locale.confirmRemove }}
               </button>
             </div>
           </div>
@@ -338,8 +338,34 @@ import {
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
+const { admin, currentLocale } = useLocale()
+const formatLocaleValue = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getErrorMessage = (err) => {
+  if (!err) return ''
+  if (typeof err === 'string') return err
+  return err?.data?.message || err?.message || err?.statusMessage || ''
+}
+const locale = computed(() => {
+  const base = admin.value?.blacklist || {}
+  return {
+    ...base,
+    listTitle: (total) => formatLocaleValue(base.listTitle, total),
+    pagination: (page, pages) => formatLocaleValue(base.pagination, page, pages),
+    removeMessage: (value) => formatLocaleValue(base.removeMessage, value),
+    statusSuccess: (statusText) => formatLocaleValue(base.statusSuccess, statusText)
+  }
+})
 
 const blacklist = ref([])
 const loading = ref(false)
@@ -368,11 +394,11 @@ const pagination = reactive({
   pages: 0
 })
 
-const typeFilterLabel = computed(() => {
-  if (filters.type === 'SONG') return '具体歌曲'
-  if (filters.type === 'KEYWORD') return '关键词'
-  return '全部类型'
-})
+const typeOptions = computed(() => [
+  { label: locale.value?.allTypes || 'All Types', value: '' },
+  { label: locale.value?.song || 'Song', value: 'SONG' },
+  { label: locale.value?.keyword || 'Keyword', value: 'KEYWORD' }
+])
 
 let searchTimeout = null
 
@@ -396,23 +422,16 @@ const loadBlacklist = async () => {
     blacklist.value = response.blacklist
     Object.assign(pagination, response.pagination)
   } catch (err) {
-    error.value = '获取黑名单失败'
+    const fetchFailed = locale.value?.fetchFailed || 'Failed to load blacklist'
+    error.value = fetchFailed
     console.error('获取黑名单失败:', err)
-    showNotification('获取黑名单失败: ' + (err.data?.message || err.message), 'error')
+    showNotification(`${fetchFailed}: ${getErrorMessage(err)}`, 'error')
   } finally {
     loading.value = false
   }
 }
 
 // 处理类型筛选变更
-const handleTypeFilterChange = (label) => {
-  if (label === '具体歌曲') filters.type = 'SONG'
-  else if (label === '关键词') filters.type = 'KEYWORD'
-  else filters.type = ''
-
-  pagination.page = 1
-  loadBlacklist()
-}
 
 // 添加黑名单项
 const addBlacklistItem = async () => {
@@ -433,7 +452,7 @@ const addBlacklistItem = async () => {
       ...useAuth().getAuthConfig()
     })
 
-    showNotification('黑名单项添加成功', 'success')
+    showNotification(locale.value.addSuccess, 'success')
 
     // 重置表单
     newItem.value = ''
@@ -443,9 +462,9 @@ const addBlacklistItem = async () => {
     pagination.page = 1
     await loadBlacklist()
   } catch (err) {
-    error.value = err.data?.message || '添加黑名单项失败'
+    error.value = getErrorMessage(err) || locale.value.addFailed
     console.error('添加黑名单项失败:', err)
-    showNotification('添加失败: ' + error.value, 'error')
+    showNotification((locale.value.addFailedPrefix || '添加失败: ') + error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -466,11 +485,11 @@ const toggleItemStatus = async (item) => {
     })
 
     item.isActive = !item.isActive
-    showNotification(`黑名单项已${item.isActive ? '启用' : '禁用'}`, 'success')
+    showNotification(locale.value.statusSuccess(item.isActive ? locale.value.enable : locale.value.disable), 'success')
   } catch (err) {
-    error.value = '更新状态失败'
+    error.value = locale.value.updateFailed
     console.error('更新状态失败:', err)
-    showNotification('更新状态失败', 'error')
+    showNotification(locale.value.updateFailed, 'error')
   } finally {
     loading.value = false
   }
@@ -495,12 +514,12 @@ const confirmDelete = async () => {
       ...useAuth().getAuthConfig()
     })
 
-    showNotification('黑名单项删除成功', 'success')
+    showNotification(locale.value.deleteSuccess, 'success')
     await loadBlacklist()
   } catch (err) {
-    error.value = '删除失败'
+    error.value = locale.value.deleteFailed
     console.error('删除失败:', err)
-    showNotification('删除失败: ' + err.message, 'error')
+    showNotification(`${locale.value.deleteFailed || '删除失败'}: ${getErrorMessage(err)}`, 'error')
   } finally {
     loading.value = false
     showDeleteDialog.value = false
@@ -526,7 +545,9 @@ const changePage = (page) => {
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleString('zh-CN', {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleString(currentLocale.value, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

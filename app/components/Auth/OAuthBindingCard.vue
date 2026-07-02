@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div v-if="loading" class="flex flex-col items-center justify-center py-12">
       <Loader2 :size="24" class="text-blue-500 animate-spin mb-3" />
-      <p class="text-zinc-500 text-xs font-medium">加载绑定状态...</p>
+      <p class="text-zinc-500 text-xs font-medium">{{ locale.loading }}</p>
     </div>
 
     <div v-else class="space-y-4">
@@ -21,7 +21,7 @@
             <span v-if="getIdentityByProvider(provider.key)" class="text-[11px] text-blue-500 font-medium mt-0.5">{{
               getIdentityByProvider(provider.key).providerUsername
             }}</span>
-            <span v-else class="text-[11px] text-zinc-500 mt-0.5">未绑定</span>
+            <span v-else class="text-[11px] text-zinc-500 mt-0.5">{{ locale.unbound }}</span>
           </div>
         </div>
 
@@ -31,7 +31,7 @@
           :disabled="actionLoading"
           @click="confirmUnbind(provider.key)"
         >
-          {{ actionLoading ? '处理中...' : '解绑' }}
+          {{ actionLoading ? locale.processing : locale.unbind }}
         </button>
         <button
           v-else
@@ -39,7 +39,7 @@
           :disabled="actionLoading"
           @click="handleBind(provider.key)"
         >
-          {{ actionLoading ? '跳转中...' : '立即绑定' }}
+          {{ actionLoading ? locale.redirecting : locale.bindNow }}
         </button>
       </div>
 
@@ -69,7 +69,7 @@
               />
             </div>
             <span class="text-[11px] text-zinc-500 mt-0.5"
-              >已绑定 {{ webauthnIdentities.length }} 个设备</span
+              >{{ locale.boundDevices }} {{ webauthnIdentities.length }} {{ locale.devices }}</span
             >
           </div>
         </div>
@@ -80,11 +80,11 @@
           :disabled="actionLoading"
           @click.stop="handleWebAuthnRegister"
         >
-          {{ actionLoading ? '处理中...' : '添加设备' }}
+          {{ actionLoading ? locale.processing : locale.addDevice }}
         </button>
         <div v-else-if="!isSecureContext" class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
           <AlertTriangle :size="12" />
-          <span class="text-[10px] font-medium">需要 HTTPS 环境</span>
+          <span class="text-[10px] font-medium">{{ locale.httpsRequired }}</span>
         </div>
       </div>
 
@@ -115,14 +115,14 @@
                   <button 
                     class="text-zinc-500 hover:text-zinc-300 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
                     @click.stop="startEditing(cred)"
-                    title="重命名"
+                    :title="locale.rename"
                   >
                     <Pencil :size="12" />
                   </button>
                 </div>
                 
                 <span class="text-[10px] text-zinc-600"
-                  >添加于 {{ new Date(cred.createdAt).toLocaleString('zh-CN', { 
+                  >{{ locale.addedAt }} {{ new Date(cred.createdAt).toLocaleString(currentLocale.value, {
                     year: 'numeric', 
                     month: '2-digit', 
                     day: '2-digit', 
@@ -140,7 +140,7 @@
                     class="text-zinc-400 hover:text-green-400 transition-colors p-1"
                     :disabled="isRenaming"
                     @click.stop="saveEditing(cred.id)"
-                    title="保存"
+                    :title="locale.save"
                   >
                     <Check :size="14" />
                   </button>
@@ -148,7 +148,7 @@
                     class="text-zinc-400 hover:text-zinc-200 transition-colors p-1"
                     :disabled="isRenaming"
                     @click.stop="cancelEditing"
-                    title="取消"
+                    :title="locale.cancel"
                   >
                     <X :size="14" />
                   </button>
@@ -158,7 +158,7 @@
                   class="text-xs text-rose-500 hover:text-rose-400 font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   @click="confirmUnbindWebAuthn(cred)"
                 >
-                  移除
+                  {{ locale.remove }}
                 </button>
               </div>
             </div>
@@ -187,9 +187,22 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser'
+import { useLocale } from '~/utils/locale'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
+const { auth, currentLocale } = useLocale()
+const locale = computed(() => auth.value?.oauthBindingCard || {})
+const callLocale = (key, fallback = '', ...args) => {
+  const value = locale.value?.[key]
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return value || fallback
+}
 const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
@@ -226,12 +239,12 @@ const cancelEditing = () => {
 
 const saveEditing = async (id: string) => {
   if (!editingName.value.trim()) {
-    showToast('设备名称不能为空', 'error')
+    showToast(locale.value.nameRequired, 'error')
     return
   }
   
   if (editingName.value.trim().length > 50) {
-    showToast('设备名称过长 (最大50个字符)', 'error')
+    showToast(locale.value.nameTooLong, 'error')
     return
   }
   
@@ -241,11 +254,11 @@ const saveEditing = async (id: string) => {
       method: 'POST',
       body: { id, name: editingName.value }
     })
-    showToast('设备名称修改成功', 'success')
+    showToast(locale.value.renameSuccess, 'success')
     await fetchIdentities()
     cancelEditing()
   } catch (e: any) {
-    showToast(e.data?.message || '修改失败', 'error')
+    showToast(e.data?.message || locale.value.renameFailed, 'error')
   } finally {
     isRenaming.value = false
   }
@@ -306,8 +319,8 @@ const confirmUnbind = (provider) => {
   const providerName = getProviderName(provider)
 
   confirmDialog.value = {
-    title: '解除绑定',
-    message: `确定要解除 ${providerName} 账号的绑定吗？解除后您将无法使用该账号登录。`,
+    title: locale.value.unbindTitle,
+    message: callLocale('unbindMessage', '', providerName),
     type: 'danger',
     loading: false,
     onConfirm: () => handleUnbind(provider),
@@ -320,8 +333,8 @@ const confirmUnbind = (provider) => {
 
 const confirmUnbindWebAuthn = (cred) => {
   confirmDialog.value = {
-    title: '移除 Passkey',
-    message: `确定要移除设备 "${cred.providerUsername}" 吗？移除后将无法使用该设备登录。`,
+    title: locale.value.removePasskeyTitle,
+    message: callLocale('removePasskeyMessage', '', cred.providerUsername),
     type: 'danger',
     loading: false,
     onConfirm: () => handleUnbind('webauthn', cred.id),
@@ -341,10 +354,10 @@ const handleUnbind = async (provider, id = null) => {
       body: { provider, id }
     })
     await fetchIdentities()
-    showToast('解除绑定成功', 'success')
+    showToast(locale.value.unbindSuccess, 'success')
     showConfirmDialog.value = false
   } catch (e) {
-    showToast(e.data?.message || '解绑失败', 'error')
+    showToast(e.data?.message || locale.value.unbindFailed, 'error')
   } finally {
     actionLoading.value = false
     confirmDialog.value.loading = false
@@ -353,7 +366,7 @@ const handleUnbind = async (provider, id = null) => {
 
 const handleWebAuthnRegister = async () => {
   if (!isWebAuthnSupported.value) {
-    showToast('您的浏览器不支持 Windows Hello / Passkey', 'error')
+    showToast(locale.value.browserNotSupported, 'error')
     return
   }
 
@@ -366,7 +379,7 @@ const handleWebAuthnRegister = async () => {
       attResp = await startRegistration(options)
     } catch (e) {
       if (e.name === 'NotAllowedError') {
-        throw new Error('用户取消了操作')
+        throw new Error(locale.value.userCancelled)
       }
       throw e
     }
@@ -379,13 +392,13 @@ const handleWebAuthnRegister = async () => {
       body: attResp
     })
     
-    showToast('设备添加成功', 'success')
+    showToast(locale.value.addDeviceSuccess, 'success')
     await fetchIdentities()
   } catch (e) {
     console.error('WebAuthn 注册错误:', e)
     const apiError = e as { data?: { message?: string }; message?: string }
     const err = e as Error
-    const message = apiError.data?.message || err.message || '添加设备失败'
+    const message = apiError.data?.message || err.message || locale.value.addDeviceFailed
     showToast(message, 'error')
   } finally {
     actionLoading.value = false
