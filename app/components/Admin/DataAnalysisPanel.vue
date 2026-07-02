@@ -629,15 +629,30 @@ const { fetchSemesters, semesters: availableSemesters, currentSemester } = useSe
 const { admin } = useLocale()
 const locale = computed(() => {
   const base = admin.value?.dataAnalysis || {}
-  const emptyText = () => ''
   return useSafeLocale({
     ...base,
-    countSongs: base.countSongs || emptyText,
-    userActivity: base.userActivity || emptyText,
-    andMoreUsers: base.andMoreUsers || emptyText,
-    onlineCount: base.onlineCount || emptyText,
-    messages: { ...(base.messages || {}) },
-    errors: { ...(base.errors || {}) }
+    countSongs: base.countSongs || ((count) => `${count}首`),
+    userActivity: base.userActivity || ((contributions, likes) => `${contributions}首投稿 · ${likes}次点赞`),
+    andMoreUsers: base.andMoreUsers || ((count) => `及其他 ${count} 位用户`),
+    onlineCount: base.onlineCount || ((count) => `${count} 在线`),
+    messages: {
+      updated: '数据已更新',
+      refreshSuccess: '数据刷新成功',
+      ...(base.messages || {})
+    },
+    errors: {
+      topSongs: '加载热门歌曲失败',
+      loadData: '加载数据失败，请稍后重试',
+      stats: '加载统计数据失败',
+      trends: '加载趋势数据失败',
+      activeUsers: '加载活跃用户失败',
+      userEngagement: '加载用户参与度失败',
+      semesterComparison: '加载学期对比失败',
+      init: '初始化失败，请刷新页面重试',
+      initNotify: '数据初始化失败',
+      retry: '重试失败',
+      ...(base.errors || {})
+    }
   })
 })
 

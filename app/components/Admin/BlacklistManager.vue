@@ -464,7 +464,7 @@ const addBlacklistItem = async () => {
   } catch (err) {
     error.value = getErrorMessage(err) || locale.value.addFailed
     console.error('添加黑名单项失败:', err)
-    showNotification(locale.value.addFailedPrefix + error.value, 'error')
+    showNotification((locale.value.addFailedPrefix || '添加失败: ') + error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -519,7 +519,7 @@ const confirmDelete = async () => {
   } catch (err) {
     error.value = locale.value.deleteFailed
     console.error('删除失败:', err)
-    showNotification(`${locale.value.deleteFailed}: ${getErrorMessage(err)}`, 'error')
+    showNotification(`${locale.value.deleteFailed || '删除失败'}: ${getErrorMessage(err)}`, 'error')
   } finally {
     loading.value = false
     showDeleteDialog.value = false

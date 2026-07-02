@@ -448,8 +448,15 @@ const locale = computed(() => admin.value?.databaseManager || {})
 const defaultTableOptions = [
   { label: '重置所有表', value: 'all' },
   { label: '歌曲表', value: 'Song' },
+  { label: '用户表', value: 'User' },
+  { label: '投票表', value: 'Vote' },
   { label: '排期表', value: 'Schedule' },
-  { label: '用户表', value: 'User' }
+  { label: '通知表', value: 'Notification' },
+  { label: '通知设置表', value: 'NotificationSettings' },
+  { label: '播放时段表', value: 'PlayTime' },
+  { label: '学期表', value: 'Semester' },
+  { label: '系统设置表', value: 'SystemSettings' },
+  { label: '歌曲黑名单表', value: 'SongBlacklist' }
 ]
 const getMessage = (key) => locale.value?.messages?.[key] || ''
 const getLogMessage = (key) => locale.value?.logs?.[key] || key

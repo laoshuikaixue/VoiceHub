@@ -215,7 +215,7 @@
                           <span
                             v-if="schedule.song.replayRequestCount > 0"
                             :title="
-                              locale.replayApplicants +
+                              (locale.replayApplicants || '重播申请人：') +
                               (schedule.song.replayRequesters || [])
                                 .map((r) => r.displayName || r.name)
                                 .join('、')
@@ -1139,7 +1139,7 @@ const handleImageError = (event, song) => {
 
 // 获取歌曲标题的第一个字符作为封面
 const getFirstChar = (title) => {
-  if (!title) return locale.value.unknown.slice(0, 1)
+  if (!title) return (locale.value.unknown || '音').slice(0, 1)
   return title.trim().charAt(0)
 }
 

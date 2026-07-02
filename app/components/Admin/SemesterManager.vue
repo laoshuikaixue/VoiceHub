@@ -684,17 +684,17 @@ const getRecommendedName = () => {
   const month = now.getMonth() + 1
 
   let academicYear = year
-  let term = locale.value?.terms?.first || ''
+  let term = locale.value?.terms?.first || '第一学期'
 
   if (month >= 3 && month <= 8) {
     academicYear = year - 1
-    term = locale.value?.terms?.second || term
+    term = locale.value?.terms?.second || '第二学期'
   } else if (month <= 2) {
     academicYear = year - 1
-    term = locale.value?.terms?.first || term
+    term = locale.value?.terms?.first || '第一学期'
   } else {
     academicYear = year
-    term = locale.value?.terms?.first || term
+    term = locale.value?.terms?.first || '第一学期'
   }
 
   return getLocaleMessage('recommendedName', academicYear, term)

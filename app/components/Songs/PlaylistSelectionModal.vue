@@ -516,7 +516,9 @@ const handleLike = async (song) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? requestLocale.value.playedCannotLike : requestLocale.value.scheduledCannotLike
+      const message = song.played
+        ? (requestLocale.value.playedCannotLike || '已播放的歌曲不能点赞')
+        : (requestLocale.value.scheduledCannotLike || '已排期的歌曲不能点赞')
       window.$showNotification(message, 'warning')
     }
     return

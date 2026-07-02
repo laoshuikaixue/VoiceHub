@@ -703,7 +703,7 @@ const exportCodes = async () => {
     showToast(selectedIds.value.length ? getNestedMessage('messages', 'exportSelectedSuccess') : getNestedMessage('messages', 'exportFilteredSuccess'), 'success')
   } catch (error) {
     console.error('导出点歌券失败', error)
-    showToast(getNestedMessage('messages', 'exportFailed'), 'error')
+    showToast(error?.message || getNestedMessage('messages', 'exportFailed'), 'error')
   } finally {
     exporting.value = false
   }
@@ -800,7 +800,7 @@ const createCodes = async () => {
     await fetchCodes()
   } catch (error) {
     console.error('创建点歌券失败', error)
-    showToast(getNestedMessage('messages', 'createFailed'), 'error')
+    showToast(error?.data?.message || error?.message || getNestedMessage('messages', 'createFailed'), 'error')
   } finally {
     saving.value = false
   }

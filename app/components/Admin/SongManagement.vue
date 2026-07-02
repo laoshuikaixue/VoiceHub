@@ -1162,7 +1162,7 @@ const selectedSemester = ref('all')
 const availableSemesters = ref([])
 const selectedSemesterName = computed(() => {
   if (!selectedSemester.value || selectedSemester.value === 'all') return ''
-  return availableSemesters.value.find((semester) => semester.id === selectedSemester.value)?.name || ''
+  return availableSemesters.value.find((semester) => String(semester.id) === String(selectedSemester.value))?.name || ''
 })
 
 // 时段相关

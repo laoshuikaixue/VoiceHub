@@ -1242,8 +1242,10 @@ const downloadTemplate = async () => {
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, getNestedText('template', 'sheetName') || 'template')
-  window.XLSX.writeFile(wb, getNestedText('template', 'fileName') || 'batch-update-template.xlsx')
+  const sheetName = getNestedText('template', 'sheetName')
+  const fileName = getNestedText('template', 'fileName')
+  window.XLSX.utils.book_append_sheet(wb, ws, sheetName && sheetName !== 'sheetName' ? sheetName : 'template')
+  window.XLSX.writeFile(wb, fileName && fileName !== 'fileName' ? fileName : 'batch-update-template.xlsx')
 }
 
 // 当匹配方式切换时，重新解析已上传的 Excel 数据

@@ -684,9 +684,9 @@
                           "
                           :title="
                             getSimilarSong(result)?.played
-                              ? locale.playedCannotLike
+                              ? (locale.playedCannotLike || '已播放的歌曲不能点赞')
                               : getSimilarSong(result)?.scheduled
-                                ? locale.scheduledCannotLike
+                                ? (locale.scheduledCannotLike || '已排期的歌曲不能点赞')
                                 : getSimilarSong(result)?.voted
                                   ? locale.liked
                                   : locale.like
@@ -2445,7 +2445,9 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? locale.value.playedCannotLike : locale.value.scheduledCannotLike
+      const message = song.played
+        ? (locale.value.playedCannotLike || '已播放的歌曲不能点赞')
+        : (locale.value.scheduledCannotLike || '已排期的歌曲不能点赞')
       window.$showNotification(message, 'warning')
     }
     return

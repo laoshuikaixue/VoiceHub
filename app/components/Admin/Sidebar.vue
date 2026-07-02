@@ -84,7 +84,7 @@
             v-else
             class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-zinc-400 font-bold border border-zinc-700 shrink-0"
           >
-            {{ (currentUser?.name || locale.avatarFallback).charAt(0) }}
+            {{ (currentUser?.name || locale.avatarFallback || '管').charAt(0) }}
           </div>
           <!-- 用户详细信息 -->
           <div class="flex-1 min-w-0">

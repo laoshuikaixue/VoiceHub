@@ -425,10 +425,17 @@ const formatTime = (dateString) => {
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return locale.value?.justNow || ''
-  if (diff < 3600000) return formatLocaleValue(locale.value?.minutesAgo, '', Math.floor(diff / 60000))
-  if (diff < 86400000) return formatLocaleValue(locale.value?.hoursAgo, '', Math.floor(diff / 3600000))
-  return formatLocaleValue(locale.value?.daysAgo, '', Math.floor(diff / 86400000))
+  if (diff < 60000) return locale.value?.justNow || '刚刚'
+  if (diff < 3600000) {
+    const minutes = Math.floor(diff / 60000)
+    return formatLocaleValue(locale.value?.minutesAgo, `${minutes}分钟前`, minutes)
+  }
+  if (diff < 86400000) {
+    const hours = Math.floor(diff / 3600000)
+    return formatLocaleValue(locale.value?.hoursAgo, `${hours}小时前`, hours)
+  }
+  const days = Math.floor(diff / 86400000)
+  return formatLocaleValue(locale.value?.daysAgo, `${days}天前`, days)
 }
 
 const navigateTo = (tab) => {

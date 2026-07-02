@@ -695,7 +695,7 @@
                       <span
                         v-if="schedule.song.replayRequestCount > 0"
                         :title="
-                          locale.replayApplicants +
+                          (locale.replayApplicants || '重播申请人：') +
                           (schedule.song.replayRequesters || [])
                             .map((r) => r.displayName || r.name)
                             .join('、')

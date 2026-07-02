@@ -122,7 +122,7 @@
                 </div>
                 
                 <span class="text-[10px] text-zinc-600"
-                  >{{ locale.addedAt }} {{ new Date(cred.createdAt).toLocaleString(currentLocale, {
+                  >{{ locale.addedAt }} {{ new Date(cred.createdAt).toLocaleString(currentLocale.value, {
                     year: 'numeric', 
                     month: '2-digit', 
                     day: '2-digit', 

@@ -281,7 +281,7 @@
                   class="flex-1 md:flex-none px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                   @click="close"
                 >
-                  {{ requestLocale.cancel }}
+                  {{ requestLocale.cancel || '取消' }}
                 </button>
                 <button
                   type="button"
@@ -291,7 +291,7 @@
                 >
                   <Icon v-if="importing" name="refresh" :size="16" class="animate-spin" />
                   <Icon v-else name="download" :size="16" />
-                  {{ importing ? locale.importing : locale.confirmImport }}
+                  {{ importing ? (locale.importing || '正在导入...') : (locale.confirmImport || '确认导入') }}
                 </button>
               </div>
             </div>
