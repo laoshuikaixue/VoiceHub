@@ -3,6 +3,12 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 
+const normalizeRequiredText = (value: unknown) => String(value || '').trim()
+const normalizeOptionalText = (value: unknown) => {
+  const normalized = String(value || '').trim()
+  return normalized || null
+}
+
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
   const user = event.context.user
@@ -14,9 +20,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
+  const normalizedName = normalizeRequiredText(body.name)
+  const normalizedUsername = normalizeRequiredText(body.username)
 
   // 验证必填字段
-  if (!body.name || !body.username || !body.password) {
+  if (!normalizedName || !normalizedUsername || !body.password) {
     throw createError({
       statusCode: 400,
       message: '姓名、用户名和密码不能为空'
@@ -28,7 +36,7 @@ export default defineEventHandler(async (event) => {
     const existingUserResult = await db
       .select()
       .from(users)
-      .where(eq(users.username, body.username))
+      .where(eq(users.username, normalizedUsername))
       .limit(1)
     const existingUser = existingUserResult[0]
 
@@ -79,13 +87,13 @@ export default defineEventHandler(async (event) => {
     const newUserResult = await db
       .insert(users)
       .values({
-        name: body.name,
-        username: body.username,
+        name: normalizedName,
+        username: normalizedUsername,
         password: hashedPassword,
         role: validRole,
         status: validStatus as 'active' | 'withdrawn' | 'graduate',
-        grade: body.grade,
-        class: body.class
+        grade: normalizeOptionalText(body.grade),
+        class: normalizeOptionalText(body.class)
       })
       .returning({
         id: users.id,

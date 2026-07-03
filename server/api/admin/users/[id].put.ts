@@ -4,6 +4,12 @@ import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { updateUserPassword } from '~~/server/services/userService'
 
+const normalizeRequiredText = (value: unknown) => String(value || '').trim()
+const normalizeOptionalText = (value: unknown) => {
+  const normalized = String(value || '').trim()
+  return normalized || null
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // 检查认证和权限
@@ -16,11 +22,21 @@ export default defineEventHandler(async (event) => {
     }
 
     const userId = getRouterParam(event, 'id')
+    const userIdNum = Number.parseInt(String(userId), 10)
+    if (!Number.isInteger(userIdNum) || userIdNum <= 0) {
+      throw createError({
+        statusCode: 400,
+        message: '无效的用户ID'
+      })
+    }
+
     const body = await readBody(event)
     const { name, username, password, role, grade, class: userClass, status } = body || {}
+    const normalizedName = normalizeRequiredText(name)
+    const normalizedUsername = normalizeRequiredText(username)
 
     // 验证必填字段
-    if (!name || !username) {
+    if (!normalizedName || !normalizedUsername) {
       throw createError({
         statusCode: 400,
         message: '姓名和用户名为必填项'
@@ -31,7 +47,7 @@ export default defineEventHandler(async (event) => {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.id, parseInt(userId)))
+      .where(eq(users.id, userIdNum))
       .limit(1)
 
     if (existingUser.length === 0) {
@@ -41,7 +57,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const targetUser = existingUser[0]
+    const targetUser = existingUser[0]!
 
     // 1. 禁止修改系统初始超级管理员 (ID: 1)
     if (targetUser.id === 1) {
@@ -70,11 +86,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户名是否被其他用户使用
-    if (username !== targetUser.username) {
+    if (normalizedUsername !== targetUser.username) {
       const duplicateUser = await db
         .select()
         .from(users)
-        .where(eq(users.username, username))
+        .where(eq(users.username, normalizedUsername))
         .limit(1)
 
       if (duplicateUser.length > 0) {
@@ -131,12 +147,12 @@ export default defineEventHandler(async (event) => {
 
     // 准备更新数据
     const updateData = {
-      name,
-      username,
+      name: normalizedName,
+      username: normalizedUsername,
       role: validRole,
-      grade,
-      class: userClass,
-      ...(status && status !== existingUser[0].status
+      grade: normalizeOptionalText(grade),
+      class: normalizeOptionalText(userClass),
+      ...(status && status !== targetUser.status
         ? {
             status,
             statusChangedAt: new Date(),
@@ -162,7 +178,7 @@ export default defineEventHandler(async (event) => {
     const updatedUser = await db
       .update(users)
       .set(updateData)
-      .where(eq(users.id, parseInt(userId)))
+      .where(eq(users.id, userIdNum))
       .returning({
         id: users.id,
         name: users.name,
@@ -181,10 +197,10 @@ export default defineEventHandler(async (event) => {
       })
 
     // 如果状态发生变更，记录到状态变更日志
-    if (status && status !== existingUser[0].status) {
+    if (status && status !== targetUser.status) {
       await db.insert(userStatusLogs).values({
         userId: targetUser.id,
-        oldStatus: existingUser[0].status,
+        oldStatus: targetUser.status,
         newStatus: status,
         reason: `管理员${user.name || user.username}修改用户状态`,
         operatorId: user.id
@@ -195,7 +211,7 @@ export default defineEventHandler(async (event) => {
     try {
       const { cache, userCache } = await import('~~/server/utils/cache-helpers')
       await cache.deletePattern('song:*')
-      await userCache.clearAuth(String(userId))
+      await userCache.clearAuth(String(userIdNum))
       console.log('[Cache] 歌曲和用户认证缓存已清除（用户更新）')
     } catch (cacheError) {
       console.warn('[Cache] 清除缓存失败:', cacheError)
@@ -203,10 +219,10 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      user: updatedUser[0],
+      user: updatedUser[0]!,
       message: '用户更新成功'
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('更新用户失败:', error)
 
     if (error.statusCode) {
