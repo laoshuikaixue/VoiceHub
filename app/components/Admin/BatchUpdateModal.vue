@@ -283,7 +283,18 @@
                 <Save :size="14" />
                 目标状态设置
               </div>
-              <div class="grid grid-cols-1 gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">前置账户状态</label>
+                  <CustomSelect
+                    v-model="sourceStatus"
+                    :options="sourceStatusOptions"
+                    label-key="label"
+                    value-key="value"
+                    placeholder="请选择前置状态"
+                    class-name="w-full"
+                  />
+                </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">选择账户状态</label>
                   <CustomSelect
@@ -295,7 +306,7 @@
                     class-name="w-full"
                   />
                 </div>
-                <div class="space-y-2">
+                <div class="space-y-2 md:col-span-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">变更原因说明</label>
                   <div class="relative group">
                     <MessageSquare class="absolute left-4 top-3 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
@@ -724,8 +735,16 @@ const targetGrade = ref('')
 const keepClass = ref(true)
 
 // 状态批量更新相关
+const sourceStatus = ref('')
 const targetStatus = ref('')
 const statusReason = ref('')
+
+const sourceStatusOptions = [
+  { label: '不限当前状态', value: '' },
+  { label: '仅正常访问', value: 'active' },
+  { label: '仅毕业生', value: 'graduate' },
+  { label: '仅退学', value: 'withdrawn' }
+]
 
 const statusOptions = [
   { label: '正常访问', value: 'active' },
@@ -1300,6 +1319,7 @@ const performStatusUpdate = async () => {
     method: 'PUT',
     body: {
       userIds: selectedUserIds.value,
+      sourceStatus: sourceStatus.value || undefined,
       status: targetStatus.value,
       reason: statusReason.value.trim()
     },
@@ -1342,6 +1362,7 @@ watch(
       rawExcelData.value = null
       blockerList.value = []
       previewFilter.value = 'all'
+      sourceStatus.value = ''
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''

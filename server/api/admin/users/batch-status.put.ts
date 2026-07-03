@@ -17,7 +17,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const { userIds, status, reason } = body
+    const { userIds, status, reason, sourceStatus } = body
+    const sourceStatusFilter = typeof sourceStatus === 'string' ? sourceStatus.trim() : ''
 
     // 验证必填字段
     if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -31,6 +32,13 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: '状态必须为 active, withdrawn 或 graduate'
+      })
+    }
+
+    if (sourceStatusFilter && !['active', 'withdrawn', 'graduate'].includes(sourceStatusFilter)) {
+      throw createError({
+        statusCode: 400,
+        message: '前置状态必须为 active, withdrawn 或 graduate'
       })
     }
 
@@ -94,6 +102,13 @@ export default defineEventHandler(async (event) => {
         errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
         continue
       }
+      if (sourceStatusFilter && u.status !== sourceStatusFilter) {
+        errors.push({
+          userId: u.id,
+          error: `前置状态不匹配：当前为${getStatusText(u.status)}，仅更新${getStatusText(sourceStatusFilter)}`
+        })
+        continue
+      }
       if (u.status === status) {
         errors.push({ userId: u.id, error: '用户状态无需变更' })
         continue
@@ -110,6 +125,7 @@ export default defineEventHandler(async (event) => {
           totalRequested: validUserIds.length,
           totalUpdated: 0,
           updatedUsers: [],
+          sourceStatus: sourceStatusFilter || null,
         }
       }
     }
@@ -169,6 +185,7 @@ export default defineEventHandler(async (event) => {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,
         updatedUsers: results,
+        sourceStatus: sourceStatusFilter || null,
         changedAt: currentTime,
         changedBy: user.name
       }
