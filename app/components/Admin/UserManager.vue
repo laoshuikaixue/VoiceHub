@@ -100,7 +100,7 @@
           <div>
             <h3 class="text-sm font-black text-zinc-100 tracking-tight">组织结构</h3>
             <p class="text-[10px] text-zinc-600 mt-1">
-              {{ treeVisibleUsers.length }} 位成员 · 按年级和班级统计
+              {{ treeUsers.length }} 位成员 · 按年级和班级统计
             </p>
           </div>
           <button
@@ -170,7 +170,9 @@
                   </button>
                   <button
                     class="tree-label"
-                    :class="isTreeFilterActive(grade.label, '') ? 'tree-label-active' : ''"
+                    :class="
+                      isTreeFilterActive(stage.label, grade.label, '') ? 'tree-label-active' : ''
+                    "
                     @click="applyTreeFilter(grade.label, '', stage.label)"
                   >
                     <span class="truncate">{{ grade.label }}</span>
@@ -188,7 +190,7 @@
                       <button
                         class="tree-label"
                         :class="
-                          isTreeFilterActive(grade.label, classNode.label)
+                          isTreeFilterActive(stage.label, grade.label, classNode.label)
                             ? 'tree-label-active'
                             : ''
                         "
@@ -1807,25 +1809,10 @@ const toUserFilterQuery = (value, unsetLabel) => {
   return value === unsetLabel ? UNSET_FILTER_VALUE : value
 }
 
-const treeVisibleUsers = computed(() => {
-  const keyword = searchQuery.value.trim().toLowerCase()
-
-  return treeUsers.value.filter((user) => {
-    if (roleFilter.value && user.role !== roleFilter.value) return false
-    if (statusFilter.value && user.status !== statusFilter.value) return false
-
-    if (!keyword) return true
-
-    return [user.name, user.username, user.grade, user.class]
-      .filter(Boolean)
-      .some((value) => value.toString().toLowerCase().includes(keyword))
-  })
-})
-
 const userTree = computed(() => {
   const stageMap = new Map()
 
-  for (const user of treeVisibleUsers.value) {
+  for (const user of treeUsers.value) {
     const stageLabel = getStageLabel(user)
     const gradeLabel = normalizeTreeValue(user.grade, UNSET_GRADE_LABEL)
     const classLabel = normalizeTreeValue(user.class, UNSET_CLASS_LABEL)
@@ -2176,8 +2163,12 @@ const expandDefaultTreeNodes = () => {
   expandedTreeNodes.value = next
 }
 
-const isTreeFilterActive = (grade, className) => {
-  return gradeFilter.value === grade && classFilter.value === className
+const isTreeFilterActive = (stageLabel, grade, className) => {
+  return (
+    treeFilterLabel.value === stageLabel &&
+    gradeFilter.value === grade &&
+    classFilter.value === className
+  )
 }
 
 const isStageFilterActive = (stageLabel) => {
