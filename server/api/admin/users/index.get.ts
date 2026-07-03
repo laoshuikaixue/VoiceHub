@@ -50,7 +50,10 @@ export default defineEventHandler(async (event) => {
 
     // 状态筛选
     if (status && typeof status === 'string' && status.trim()) {
-      whereConditions.push(eq(users.status, status.trim()))
+      const statusFilter = status.trim()
+      if (['active', 'withdrawn', 'graduate'].includes(statusFilter)) {
+        whereConditions.push(eq(users.status, statusFilter as 'active' | 'withdrawn' | 'graduate'))
+      }
     }
 
     // 搜索功能（姓名、用户名或IP地址）
@@ -74,7 +77,7 @@ export default defineEventHandler(async (event) => {
 
     // 获取总数
     const totalResult = await db.select({ count: count() }).from(users).where(whereClause)
-    const total = totalResult[0].count
+    const total = totalResult[0]?.count || 0
 
     // 排序逻辑
     let orderByClause
@@ -167,7 +170,7 @@ export default defineEventHandler(async (event) => {
         search: search || null
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取用户列表失败:', error)
     throw createError({
       statusCode: 500,

@@ -546,7 +546,6 @@
         :total-pages="totalPages"
         :total-items="totalUsers"
         item-name="个用户"
-        @change="loadUsers"
       />
       </div>
     </div>
