@@ -10,12 +10,18 @@ interface UserData {
   password: string
   role?: string
   status?: 'active' | 'withdrawn' | 'graduate'
-  grade?: string
-  class?: string
+  grade?: string | null
+  class?: string | null
 }
 
 interface ValidUserData extends UserData {
   index: number
+}
+
+const normalizeRequiredText = (value: unknown) => String(value || '').trim()
+const normalizeOptionalText = (value: unknown) => {
+  const normalized = String(value || '').trim()
+  return normalized || null
 }
 
 export default defineEventHandler(async (event) => {
@@ -50,14 +56,22 @@ export default defineEventHandler(async (event) => {
 
   for (let i = 0; i < body.users.length; i++) {
     const userData = body.users[i]
-    if (!userData.name || !userData.username || !userData.password) {
+    const normalizedUserData = {
+      ...userData,
+      name: normalizeRequiredText(userData.name),
+      username: normalizeRequiredText(userData.username),
+      grade: normalizeOptionalText(userData.grade),
+      class: normalizeOptionalText(userData.class)
+    }
+
+    if (!normalizedUserData.name || !normalizedUserData.username || !userData.password) {
       results.failed++
       results.errors.push({ index: i, username: userData.username, name: userData.name, reason: '缺少必填字段（姓名、账号或密码）' })
       continue
     }
     // 限制单次查询 inArray 的长度，如果需要的话。前端分批已经是 50，所以没问题
-    validUsers.push({ index: i, ...userData })
-    usernamesToQuery.push(userData.username)
+    validUsers.push({ index: i, ...normalizedUserData })
+    usernamesToQuery.push(normalizedUserData.username)
   }
 
   if (validUsers.length === 0) {

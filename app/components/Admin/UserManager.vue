@@ -1735,15 +1735,6 @@ const availableRoles = computed(() => {
   }
 })
 
-// 由于使用服务器端分页，这些计算属性简化了
-const filteredUsers = computed(() => {
-  return users.value
-})
-
-const paginatedUsers = computed(() => {
-  return users.value
-})
-
 const getUserDisplayName = (user) => {
   return user?.name || user?.username || '未命名用户'
 }

@@ -4,6 +4,12 @@ import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { updateUserPassword } from '~~/server/services/userService'
 
+const normalizeRequiredText = (value: unknown) => String(value || '').trim()
+const normalizeOptionalText = (value: unknown) => {
+  const normalized = String(value || '').trim()
+  return normalized || null
+}
+
 export default defineEventHandler(async (event) => {
   try {
     // 检查认证和权限
@@ -18,9 +24,11 @@ export default defineEventHandler(async (event) => {
     const userId = getRouterParam(event, 'id')
     const body = await readBody(event)
     const { name, username, password, role, grade, class: userClass, status } = body || {}
+    const normalizedName = normalizeRequiredText(name)
+    const normalizedUsername = normalizeRequiredText(username)
 
     // 验证必填字段
-    if (!name || !username) {
+    if (!normalizedName || !normalizedUsername) {
       throw createError({
         statusCode: 400,
         message: '姓名和用户名为必填项'
@@ -70,11 +78,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户名是否被其他用户使用
-    if (username !== targetUser.username) {
+    if (normalizedUsername !== targetUser.username) {
       const duplicateUser = await db
         .select()
         .from(users)
-        .where(eq(users.username, username))
+        .where(eq(users.username, normalizedUsername))
         .limit(1)
 
       if (duplicateUser.length > 0) {
@@ -131,11 +139,11 @@ export default defineEventHandler(async (event) => {
 
     // 准备更新数据
     const updateData = {
-      name,
-      username,
+      name: normalizedName,
+      username: normalizedUsername,
       role: validRole,
-      grade,
-      class: userClass,
+      grade: normalizeOptionalText(grade),
+      class: normalizeOptionalText(userClass),
       ...(status && status !== existingUser[0].status
         ? {
             status,
