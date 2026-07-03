@@ -92,8 +92,131 @@
       </div>
     </div>
 
-    <!-- 用户表格 -->
-    <div class="space-y-4">
+    <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4 items-start">
+      <section
+        class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl overflow-hidden shadow-lg min-w-0"
+      >
+        <div class="p-4 border-b border-zinc-800/60 flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-black text-zinc-100 tracking-tight">组织结构</h3>
+            <p class="text-[10px] text-zinc-600 mt-1">
+              {{ treeVisibleUsers.length }} 位成员 · 按年级和班级统计
+            </p>
+          </div>
+          <button
+            class="p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all"
+            title="刷新组织结构"
+            @click="loadUserTree"
+          >
+            <RefreshCw :size="14" :class="{ 'animate-spin': treeLoading }" />
+          </button>
+        </div>
+
+        <div
+          v-if="activeOrgFilterLabel"
+          class="mx-4 mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-between gap-3"
+        >
+          <div class="min-w-0">
+            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">当前范围</p>
+            <p class="text-xs font-bold text-zinc-200 truncate">{{ activeOrgFilterLabel }}</p>
+          </div>
+          <button
+            class="text-[10px] font-black text-blue-300 hover:text-white transition-colors shrink-0"
+            @click="clearTreeFilter"
+          >
+            清除
+          </button>
+        </div>
+
+        <div v-if="treeLoading" class="py-12 flex flex-col items-center justify-center text-zinc-600">
+          <RefreshCw :size="22" class="animate-spin mb-3" />
+          <span class="text-[10px] font-black uppercase tracking-widest">正在加载结构...</span>
+        </div>
+
+        <div
+          v-else-if="treeError"
+          class="m-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 leading-relaxed"
+        >
+          {{ treeError }}
+        </div>
+
+        <div v-else-if="userTree.length === 0" class="py-12 text-center text-xs text-zinc-600">
+          暂无可统计的用户
+        </div>
+
+        <div v-else class="p-3 max-h-[680px] overflow-y-auto custom-scrollbar">
+          <div v-for="stage in userTree" :key="stage.key" class="tree-group">
+            <div class="flex items-center gap-1">
+              <button class="tree-toggle" @click="toggleTreeNode(stage.key)">
+                <ChevronDown v-if="isTreeNodeExpanded(stage.key)" :size="13" />
+                <ChevronRight v-else :size="13" />
+              </button>
+              <button class="tree-label font-black text-zinc-200" @click="toggleTreeNode(stage.key)">
+                <span class="truncate">{{ stage.label }}</span>
+                <span class="tree-count">(共{{ stage.count }}人)</span>
+              </button>
+            </div>
+
+            <div v-if="isTreeNodeExpanded(stage.key)" class="tree-branch">
+              <div v-for="grade in stage.grades" :key="grade.key" class="tree-group">
+                <div class="flex items-center gap-1">
+                  <button class="tree-toggle" @click="toggleTreeNode(grade.key)">
+                    <ChevronDown v-if="isTreeNodeExpanded(grade.key)" :size="13" />
+                    <ChevronRight v-else :size="13" />
+                  </button>
+                  <button
+                    class="tree-label"
+                    :class="isTreeFilterActive(grade.label, '') ? 'tree-label-active' : ''"
+                    @click="applyTreeFilter(grade.label, '')"
+                  >
+                    <span class="truncate">{{ grade.label }}</span>
+                    <span class="tree-count">(共{{ grade.count }}人)</span>
+                  </button>
+                </div>
+
+                <div v-if="isTreeNodeExpanded(grade.key)" class="tree-branch">
+                  <div v-for="classNode in grade.classes" :key="classNode.key" class="tree-group">
+                    <div class="flex items-center gap-1">
+                      <button class="tree-toggle" @click="toggleTreeNode(classNode.key)">
+                        <ChevronDown v-if="isTreeNodeExpanded(classNode.key)" :size="13" />
+                        <ChevronRight v-else :size="13" />
+                      </button>
+                      <button
+                        class="tree-label"
+                        :class="
+                          isTreeFilterActive(grade.label, classNode.label)
+                            ? 'tree-label-active'
+                            : ''
+                        "
+                        @click="applyTreeFilter(grade.label, classNode.label)"
+                      >
+                        <span class="truncate">{{ classNode.label }}</span>
+                        <span class="tree-count">(共{{ classNode.count }}人)</span>
+                      </button>
+                    </div>
+
+                    <div v-if="isTreeNodeExpanded(classNode.key)" class="tree-users">
+                      <button
+                        v-for="treeUser in classNode.users"
+                        :key="treeUser.id"
+                        class="tree-user"
+                        @click="openTreeUser(treeUser)"
+                      >
+                        <User :size="12" class="text-zinc-600 shrink-0" />
+                        <span class="truncate text-zinc-300">{{ treeUser.name }}</span>
+                        <span class="truncate text-zinc-600 font-mono">@{{ treeUser.username }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 用户表格 -->
+      <div class="space-y-4 min-w-0">
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-zinc-500">
         <div
           class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
@@ -411,16 +534,16 @@
           </div>
         </div>
       </template>
+      <!-- 分页 -->
+      <Pagination
+        v-model:current-page="currentPage"
+        :total-pages="totalPages"
+        :total-items="totalUsers"
+        item-name="个用户"
+        @change="loadUsers"
+      />
+      </div>
     </div>
-
-    <!-- 分页 -->
-    <Pagination
-      v-model:current-page="currentPage"
-      :total-pages="totalPages"
-      :total-items="totalUsers"
-      item-name="个用户"
-      @change="loadUsers"
-    />
 
     <!-- 添加/编辑用户模态框 -->
     <Transition
@@ -1388,7 +1511,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import {
@@ -1451,12 +1574,18 @@ const users = ref([])
 const searchQuery = ref('')
 const roleFilter = ref('')
 const statusFilter = ref('')
+const gradeFilter = ref('')
+const classFilter = ref('')
 const sortBy = ref('id')
 const sortOrder = ref('asc')
 const currentPage = ref(1)
 const pageSize = ref(50)
 const totalUsers = ref(0)
 const totalPages = ref(1)
+const treeUsers = ref([])
+const treeLoading = ref(false)
+const treeError = ref('')
+const expandedTreeNodes = ref(new Set())
 
 const sortOptions = [
   { label: '默认排序 (ID)', value: 'id-asc' },
@@ -1605,9 +1734,156 @@ const paginatedUsers = computed(() => {
   return users.value
 })
 
+const normalizeTreeValue = (value, fallback) => {
+  const normalized = value?.toString().trim()
+  return normalized || fallback
+}
+
+const getStageLabel = (user) => {
+  if (user.status === 'graduate') return '毕业生'
+  if (user.status === 'withdrawn') return '离校用户'
+
+  const grade = normalizeTreeValue(user.grade, '未设置年级')
+  if (grade.startsWith('高')) return '高中'
+  if (grade.startsWith('初')) return '初中'
+  if (grade.startsWith('大')) return '大学'
+  if (['教师', '教职工'].includes(grade)) return '教职工'
+  return '其他'
+}
+
+const gradeSortWeight = (grade) => {
+  const order = {
+    初一: 1,
+    初二: 2,
+    初三: 3,
+    高一: 4,
+    高二: 5,
+    高三: 6,
+    大一: 7,
+    大二: 8,
+    大三: 9,
+    大四: 10,
+    教师: 98,
+    教职工: 99,
+    未设置年级: 100
+  }
+
+  return order[grade] ?? 50
+}
+
+const sortTreeLabels = (a, b) => {
+  const weightA = gradeSortWeight(a.label)
+  const weightB = gradeSortWeight(b.label)
+
+  if (weightA !== weightB) return weightA - weightB
+  return a.label.localeCompare(b.label, 'zh-CN', { numeric: true })
+}
+
+const treeVisibleUsers = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase()
+
+  return treeUsers.value.filter((user) => {
+    if (roleFilter.value && user.role !== roleFilter.value) return false
+    if (statusFilter.value && user.status !== statusFilter.value) return false
+
+    if (!keyword) return true
+
+    return [user.name, user.username, user.grade, user.class]
+      .filter(Boolean)
+      .some((value) => value.toString().toLowerCase().includes(keyword))
+  })
+})
+
+const userTree = computed(() => {
+  const stageMap = new Map()
+
+  for (const user of treeVisibleUsers.value) {
+    const stageLabel = getStageLabel(user)
+    const gradeLabel = normalizeTreeValue(user.grade, '未设置年级')
+    const classLabel = normalizeTreeValue(user.class, '未设置班级')
+    const stageKey = `stage:${stageLabel}`
+    const gradeKey = `${stageKey}:grade:${gradeLabel}`
+    const classKey = `${gradeKey}:class:${classLabel}`
+
+    if (!stageMap.has(stageKey)) {
+      stageMap.set(stageKey, {
+        key: stageKey,
+        label: stageLabel,
+        count: 0,
+        grades: new Map()
+      })
+    }
+
+    const stage = stageMap.get(stageKey)
+    stage.count += 1
+
+    if (!stage.grades.has(gradeKey)) {
+      stage.grades.set(gradeKey, {
+        key: gradeKey,
+        label: gradeLabel,
+        count: 0,
+        classes: new Map()
+      })
+    }
+
+    const grade = stage.grades.get(gradeKey)
+    grade.count += 1
+
+    if (!grade.classes.has(classKey)) {
+      grade.classes.set(classKey, {
+        key: classKey,
+        label: classLabel,
+        count: 0,
+        users: []
+      })
+    }
+
+    const classNode = grade.classes.get(classKey)
+    classNode.count += 1
+    classNode.users.push(user)
+  }
+
+  return Array.from(stageMap.values())
+    .map((stage) => ({
+      ...stage,
+      grades: Array.from(stage.grades.values())
+        .map((grade) => ({
+          ...grade,
+          classes: Array.from(grade.classes.values())
+            .map((classNode) => ({
+              ...classNode,
+              users: classNode.users.sort((a, b) =>
+                a.name.localeCompare(b.name, 'zh-CN', { numeric: true })
+              )
+            }))
+            .sort(sortTreeLabels)
+        }))
+        .sort(sortTreeLabels)
+    }))
+    .sort((a, b) => {
+      const stageOrder = ['初中', '高中', '大学', '教职工', '其他', '离校用户', '毕业生']
+      const indexA = stageOrder.indexOf(a.label)
+      const indexB = stageOrder.indexOf(b.label)
+      const weightA = indexA === -1 ? 50 : indexA
+      const weightB = indexB === -1 ? 50 : indexB
+
+      if (weightA !== weightB) return weightA - weightB
+      return a.label.localeCompare(b.label, 'zh-CN', { numeric: true })
+    })
+})
+
+const activeOrgFilterLabel = computed(() => {
+  if (gradeFilter.value && classFilter.value) {
+    return `${gradeFilter.value} / ${classFilter.value}`
+  }
+
+  if (gradeFilter.value) return gradeFilter.value
+  return ''
+})
+
 // 监听搜索和过滤条件变化
 watch(
-  [searchQuery, roleFilter, statusFilter, sortBy, sortOrder],
+  [searchQuery, roleFilter, statusFilter, gradeFilter, classFilter, sortBy, sortOrder],
   () => {
     currentPage.value = 1
     loadUsers(1, pageSize.value)
@@ -1753,6 +2029,7 @@ const closeBatchUpdateModal = () => {
 }
 
 const handleBatchUpdateSuccess = async () => {
+  await loadUserTree()
   await loadUsers()
 }
 
@@ -1773,6 +2050,7 @@ const confirmDelete = async () => {
       ...auth.getAuthConfig()
     })
 
+    await loadUserTree()
     await loadUsers()
     closeDeleteModal()
 
@@ -1810,6 +2088,67 @@ const closeResetPassword = () => {
   passwordForm.value = {
     password: '',
     confirmPassword: ''
+  }
+}
+
+const isTreeNodeExpanded = (key) => {
+  return expandedTreeNodes.value.has(key)
+}
+
+const toggleTreeNode = (key) => {
+  const next = new Set(expandedTreeNodes.value)
+
+  if (next.has(key)) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+
+  expandedTreeNodes.value = next
+}
+
+const expandDefaultTreeNodes = () => {
+  const next = new Set(expandedTreeNodes.value)
+
+  userTree.value.forEach((stage) => {
+    next.add(stage.key)
+    stage.grades.forEach((grade) => {
+      next.add(grade.key)
+    })
+  })
+
+  expandedTreeNodes.value = next
+}
+
+const isTreeFilterActive = (grade, className) => {
+  return gradeFilter.value === grade && classFilter.value === className
+}
+
+const applyTreeFilter = (grade, className = '') => {
+  gradeFilter.value = grade === '未设置年级' ? '' : grade
+  classFilter.value = className === '未设置班级' ? '' : className
+  searchQuery.value = ''
+}
+
+const clearTreeFilter = () => {
+  gradeFilter.value = ''
+  classFilter.value = ''
+}
+
+const openTreeUser = async (treeUser) => {
+  try {
+    const detail = await $fetch(`/api/admin/users/${treeUser.id}`, {
+      ...auth.getAuthConfig()
+    })
+
+    selectedUserDetail.value = detail
+    showUserDetailModal.value = true
+    loadStatusLogsPage(1)
+  } catch (error) {
+    console.error('加载用户详情失败:', error)
+    if (window.$showNotification) {
+      window.$showNotification('加载用户详情失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+    }
   }
 }
 
@@ -1893,6 +2232,7 @@ const saveUser = async () => {
       }
     }
 
+    await loadUserTree()
     await loadUsers()
     closeModal()
 
@@ -1958,6 +2298,8 @@ const loadUsers = async (page = 1, limit = 100) => {
         search: searchQuery.value || undefined,
         role: roleFilter.value || undefined,
         status: statusFilter.value || undefined,
+        grade: gradeFilter.value || undefined,
+        class: classFilter.value || undefined,
         sortBy: sortBy.value,
         sortOrder: sortOrder.value
       },
@@ -1985,6 +2327,25 @@ const loadUsers = async (page = 1, limit = 100) => {
       }
     } finally {
     loading.value = false
+  }
+}
+
+const loadUserTree = async () => {
+  treeLoading.value = true
+  treeError.value = ''
+
+  try {
+    const response = await $fetch('/api/admin/users/options', {
+      ...auth.getAuthConfig()
+    })
+
+    treeUsers.value = response.treeUsers || []
+    expandDefaultTreeNodes()
+  } catch (error) {
+    console.error('加载组织结构失败:', error)
+    treeError.value = error?.data?.message || error?.message || error?.statusMessage || '组织结构加载失败'
+  } finally {
+    treeLoading.value = false
   }
 }
 
@@ -2258,6 +2619,7 @@ const importUsers = async () => {
       }
     }
 
+    await loadUserTree()
     await loadUsers()
 
     if (totalCreated > 0 || totalFailed === 0) {
@@ -2328,6 +2690,7 @@ const formatStatusLogDate = (dateString) => {
 // 生命周期
 onMounted(async () => {
   console.log('UserManager 组件挂载')
+  await loadUserTree()
   await loadUsers(1, pageSize.value)
   // 预加载XLSX库
   loadXLSX()
@@ -2356,5 +2719,91 @@ onMounted(async () => {
 /* 确保模态框中的表格在移动端可以滚动 */
 .overflow-x-auto {
   -webkit-overflow-scrolling: touch;
+}
+
+.tree-group + .tree-group {
+  margin-top: 0.25rem;
+}
+
+.tree-branch {
+  margin-left: 1rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid rgba(63, 63, 70, 0.55);
+}
+
+.tree-toggle {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #71717a;
+  border-radius: 0.375rem;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.tree-toggle:hover {
+  color: #60a5fa;
+  background: rgba(39, 39, 42, 0.8);
+}
+
+.tree-label {
+  min-width: 0;
+  width: 100%;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  color: #a1a1aa;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: left;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.tree-label:hover {
+  color: #e4e4e7;
+  background: rgba(39, 39, 42, 0.7);
+}
+
+.tree-label-active {
+  color: #60a5fa;
+  background: rgba(37, 99, 235, 0.16);
+}
+
+.tree-count {
+  flex-shrink: 0;
+  color: #3f3f46;
+  font-size: 0.6875rem;
+  font-weight: 900;
+}
+
+.tree-users {
+  margin-left: 1.75rem;
+  padding: 0.25rem 0 0.35rem;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.tree-user {
+  min-width: 0;
+  width: 100%;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.tree-user:hover {
+  background: rgba(39, 39, 42, 0.7);
 }
 </style>

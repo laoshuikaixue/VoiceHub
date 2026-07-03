@@ -60,10 +60,24 @@ export default defineEventHandler(async (event) => {
       // 预先排好序，这里使用智能排序，以防班级中也混有复杂的文字逻辑
       .sort((a, b) => smartSort(a.class, b.class))
 
+    // 用户树需要全量轻字段，避免用分页列表推导时统计不完整
+    const treeUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        grade: users.grade,
+        class: users.class,
+        role: users.role,
+        status: users.status
+      })
+      .from(users)
+
     return {
       success: true,
       grades,
-      classes
+      classes,
+      treeUsers
     }
   } catch (error) {
     console.error('获取用户筛选选项失败:', error)
