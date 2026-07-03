@@ -151,7 +151,11 @@
                 <ChevronDown v-if="isTreeNodeExpanded(stage.key)" :size="13" />
                 <ChevronRight v-else :size="13" />
               </button>
-              <button class="tree-label font-black text-zinc-200" @click="toggleTreeNode(stage.key)">
+              <button
+                class="tree-label font-black text-zinc-200"
+                :class="isStageFilterActive(stage.label) ? 'tree-label-active' : ''"
+                @click="handleStageClick(stage)"
+              >
                 <span class="truncate">{{ stage.label }}</span>
                 <span class="tree-count">(共{{ stage.count }}人)</span>
               </button>
@@ -167,7 +171,7 @@
                   <button
                     class="tree-label"
                     :class="isTreeFilterActive(grade.label, '') ? 'tree-label-active' : ''"
-                    @click="applyTreeFilter(grade.label, '')"
+                    @click="applyTreeFilter(grade.label, '', stage.label)"
                   >
                     <span class="truncate">{{ grade.label }}</span>
                     <span class="tree-count">(共{{ grade.count }}人)</span>
@@ -188,7 +192,7 @@
                             ? 'tree-label-active'
                             : ''
                         "
-                        @click="applyTreeFilter(grade.label, classNode.label)"
+                        @click="applyTreeFilter(grade.label, classNode.label, stage.label)"
                       >
                         <span class="truncate">{{ classNode.label }}</span>
                         <span class="tree-count">(共{{ classNode.count }}人)</span>
@@ -203,7 +207,7 @@
                         @click="openTreeUser(treeUser)"
                       >
                         <User :size="12" class="text-zinc-600 shrink-0" />
-                        <span class="truncate text-zinc-300">{{ treeUser.name }}</span>
+                        <span class="truncate text-zinc-300">{{ getUserDisplayName(treeUser) }}</span>
                         <span class="truncate text-zinc-600 font-mono">@{{ treeUser.username }}</span>
                       </button>
                     </div>
@@ -275,10 +279,10 @@
                       v-else
                       class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-300 transition-colors border border-zinc-700/50"
                     >
-                      {{ user.name.charAt(0) }}
+                      {{ getUserInitial(user) }}
                     </div>
                     <div>
-                      <p class="font-black text-zinc-100">{{ user.name }}</p>
+                      <p class="font-black text-zinc-100">{{ getUserDisplayName(user) }}</p>
                       <p class="text-[10px] text-zinc-600 font-mono mt-0.5">
                         ID: {{ user.username }}
                       </p>
@@ -410,10 +414,10 @@
                   v-else
                   class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-black text-lg text-zinc-500 border border-zinc-700"
                 >
-                  {{ user.name.charAt(0) }}
+                  {{ getUserInitial(user) }}
                 </div>
                 <div>
-                  <h4 class="text-base font-black text-zinc-100">{{ user.name }}</h4>
+                  <h4 class="text-base font-black text-zinc-100">{{ getUserDisplayName(user) }}</h4>
                   <p class="text-xs text-zinc-500 font-mono">@{{ user.username }}</p>
                 </div>
               </div>
@@ -1586,6 +1590,10 @@ const treeUsers = ref([])
 const treeLoading = ref(false)
 const treeError = ref('')
 const expandedTreeNodes = ref(new Set())
+const treeFilterLabel = ref('')
+const UNSET_GRADE_LABEL = '未设置年级'
+const UNSET_CLASS_LABEL = '未设置班级'
+const UNSET_FILTER_VALUE = '__UNSET__'
 
 const sortOptions = [
   { label: '默认排序 (ID)', value: 'id-asc' },
@@ -1734,6 +1742,14 @@ const paginatedUsers = computed(() => {
   return users.value
 })
 
+const getUserDisplayName = (user) => {
+  return user?.name || user?.username || '未命名用户'
+}
+
+const getUserInitial = (user) => {
+  return getUserDisplayName(user).charAt(0)
+}
+
 const normalizeTreeValue = (value, fallback) => {
   const normalized = value?.toString().trim()
   return normalized || fallback
@@ -1743,7 +1759,7 @@ const getStageLabel = (user) => {
   if (user.status === 'graduate') return '毕业生'
   if (user.status === 'withdrawn') return '离校用户'
 
-  const grade = normalizeTreeValue(user.grade, '未设置年级')
+  const grade = normalizeTreeValue(user.grade, UNSET_GRADE_LABEL)
   if (grade.startsWith('高')) return '高中'
   if (grade.startsWith('初')) return '初中'
   if (grade.startsWith('大')) return '大学'
@@ -1765,7 +1781,7 @@ const gradeSortWeight = (grade) => {
     大四: 10,
     教师: 98,
     教职工: 99,
-    未设置年级: 100
+    [UNSET_GRADE_LABEL]: 100
   }
 
   return order[grade] ?? 50
@@ -1777,6 +1793,18 @@ const sortTreeLabels = (a, b) => {
 
   if (weightA !== weightB) return weightA - weightB
   return a.label.localeCompare(b.label, 'zh-CN', { numeric: true })
+}
+
+const getStageStatus = (stageLabel) => {
+  if (stageLabel === '毕业生') return 'graduate'
+  if (stageLabel === '离校用户') return 'withdrawn'
+  if (stageLabel) return 'active'
+  return ''
+}
+
+const toUserFilterQuery = (value, unsetLabel) => {
+  if (!value) return undefined
+  return value === unsetLabel ? UNSET_FILTER_VALUE : value
 }
 
 const treeVisibleUsers = computed(() => {
@@ -1799,8 +1827,8 @@ const userTree = computed(() => {
 
   for (const user of treeVisibleUsers.value) {
     const stageLabel = getStageLabel(user)
-    const gradeLabel = normalizeTreeValue(user.grade, '未设置年级')
-    const classLabel = normalizeTreeValue(user.class, '未设置班级')
+    const gradeLabel = normalizeTreeValue(user.grade, UNSET_GRADE_LABEL)
+    const classLabel = normalizeTreeValue(user.class, UNSET_CLASS_LABEL)
     const stageKey = `stage:${stageLabel}`
     const gradeKey = `${stageKey}:grade:${gradeLabel}`
     const classKey = `${gradeKey}:class:${classLabel}`
@@ -1853,7 +1881,9 @@ const userTree = computed(() => {
             .map((classNode) => ({
               ...classNode,
               users: classNode.users.sort((a, b) =>
-                a.name.localeCompare(b.name, 'zh-CN', { numeric: true })
+                getUserDisplayName(a).localeCompare(getUserDisplayName(b), 'zh-CN', {
+                  numeric: true
+                })
               )
             }))
             .sort(sortTreeLabels)
@@ -1873,27 +1903,55 @@ const userTree = computed(() => {
 })
 
 const activeOrgFilterLabel = computed(() => {
-  if (gradeFilter.value && classFilter.value) {
-    return `${gradeFilter.value} / ${classFilter.value}`
+  const scopeParts = []
+
+  if (treeFilterLabel.value) {
+    scopeParts.push(treeFilterLabel.value)
   }
 
-  if (gradeFilter.value) return gradeFilter.value
-  return ''
+  if (gradeFilter.value) {
+    scopeParts.push(gradeFilter.value)
+  }
+
+  if (gradeFilter.value && classFilter.value) {
+    scopeParts.push(classFilter.value)
+  }
+
+  return scopeParts.join(' / ')
 })
+
+let loadUsersDebounceTimer = null
 
 // 监听搜索和过滤条件变化
 watch(
   [searchQuery, roleFilter, statusFilter, gradeFilter, classFilter, sortBy, sortOrder],
   () => {
-    currentPage.value = 1
-    loadUsers(1, pageSize.value)
-  },
-  { debounce: 300 }
+    if (loadUsersDebounceTimer) {
+      clearTimeout(loadUsersDebounceTimer)
+    }
+
+    loadUsersDebounceTimer = setTimeout(() => {
+      if (currentPage.value !== 1) {
+        currentPage.value = 1
+      } else {
+        loadUsers(1, pageSize.value)
+      }
+    }, 300)
+  }
 )
 
 // 监听页码变化
 watch(currentPage, (newPage) => {
   loadUsers(newPage, pageSize.value)
+})
+
+watch(statusFilter, (newStatus) => {
+  if (!treeFilterLabel.value) return
+
+  const expectedStatus = getStageStatus(treeFilterLabel.value)
+  if (expectedStatus && newStatus !== expectedStatus) {
+    treeFilterLabel.value = ''
+  }
 })
 
 // 方法
@@ -2029,8 +2087,7 @@ const closeBatchUpdateModal = () => {
 }
 
 const handleBatchUpdateSuccess = async () => {
-  await loadUserTree()
-  await loadUsers()
+  await Promise.all([loadUserTree(), loadUsers()])
 }
 
 const closeDeleteModal = () => {
@@ -2050,8 +2107,7 @@ const confirmDelete = async () => {
       ...auth.getAuthConfig()
     })
 
-    await loadUserTree()
-    await loadUsers()
+    await Promise.all([loadUserTree(), loadUsers()])
     closeDeleteModal()
 
     if (window.$showNotification) {
@@ -2124,15 +2180,39 @@ const isTreeFilterActive = (grade, className) => {
   return gradeFilter.value === grade && classFilter.value === className
 }
 
-const applyTreeFilter = (grade, className = '') => {
-  gradeFilter.value = grade === '未设置年级' ? '' : grade
-  classFilter.value = className === '未设置班级' ? '' : className
+const isStageFilterActive = (stageLabel) => {
+  return treeFilterLabel.value === stageLabel && !gradeFilter.value && !classFilter.value
+}
+
+const handleStageClick = (stage) => {
+  if (stage.label === '离校用户' || stage.label === '毕业生') {
+    applyTreeFilter('', '', stage.label)
+    return
+  }
+
+  toggleTreeNode(stage.key)
+}
+
+const applyTreeFilter = (grade, className = '', stageLabel = '') => {
+  gradeFilter.value = grade
+  classFilter.value = className
+  treeFilterLabel.value = stageLabel
+
+  const nextStatus = getStageStatus(stageLabel)
+  if (nextStatus) {
+    statusFilter.value = nextStatus
+  }
+
   searchQuery.value = ''
 }
 
 const clearTreeFilter = () => {
   gradeFilter.value = ''
   classFilter.value = ''
+  if (treeFilterLabel.value) {
+    statusFilter.value = ''
+  }
+  treeFilterLabel.value = ''
 }
 
 const openTreeUser = async (treeUser) => {
@@ -2232,8 +2312,7 @@ const saveUser = async () => {
       }
     }
 
-    await loadUserTree()
-    await loadUsers()
+    await Promise.all([loadUserTree(), loadUsers()])
     closeModal()
 
     if (window.$showNotification) {
@@ -2298,8 +2377,8 @@ const loadUsers = async (page = 1, limit = 100) => {
         search: searchQuery.value || undefined,
         role: roleFilter.value || undefined,
         status: statusFilter.value || undefined,
-        grade: gradeFilter.value || undefined,
-        class: classFilter.value || undefined,
+        grade: toUserFilterQuery(gradeFilter.value, UNSET_GRADE_LABEL),
+        class: toUserFilterQuery(classFilter.value, UNSET_CLASS_LABEL),
         sortBy: sortBy.value,
         sortOrder: sortOrder.value
       },
@@ -2619,8 +2698,7 @@ const importUsers = async () => {
       }
     }
 
-    await loadUserTree()
-    await loadUsers()
+    await Promise.all([loadUserTree(), loadUsers()])
 
     if (totalCreated > 0 || totalFailed === 0) {
       importProgressText.value = `导入完成：成功导入 ${totalCreated} 个，失败 ${totalFailed} 个`
@@ -2690,8 +2768,7 @@ const formatStatusLogDate = (dateString) => {
 // 生命周期
 onMounted(async () => {
   console.log('UserManager 组件挂载')
-  await loadUserTree()
-  await loadUsers(1, pageSize.value)
+  await Promise.all([loadUserTree(), loadUsers(1, pageSize.value)])
   // 预加载XLSX库
   loadXLSX()
 })

@@ -1,7 +1,9 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { and, asc, desc, count, eq, ilike, or, sql } from 'drizzle-orm'
+import { and, asc, desc, count, eq, ilike, isNull, or, sql } from 'drizzle-orm'
+
+const UNSET_FILTER_VALUE = '__UNSET__'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -23,12 +25,22 @@ export default defineEventHandler(async (event) => {
 
     // 年级筛选
     if (grade && typeof grade === 'string' && grade.trim()) {
-      whereConditions.push(eq(users.grade, grade.trim()))
+      const gradeFilter = grade.trim()
+      whereConditions.push(
+        gradeFilter === UNSET_FILTER_VALUE
+          ? or(isNull(users.grade), eq(users.grade, ''))
+          : eq(users.grade, gradeFilter)
+      )
     }
 
     // 班级筛选
     if (className && typeof className === 'string' && className.trim()) {
-      whereConditions.push(eq(users.class, className.trim()))
+      const classFilter = className.trim()
+      whereConditions.push(
+        classFilter === UNSET_FILTER_VALUE
+          ? or(isNull(users.class), eq(users.class, ''))
+          : eq(users.class, classFilter)
+      )
     }
 
     // 角色筛选
