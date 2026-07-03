@@ -1517,7 +1517,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import {
@@ -1797,10 +1797,23 @@ const sortTreeLabels = (a, b) => {
   return a.label.localeCompare(b.label, 'zh-CN', { numeric: true })
 }
 
+const sortByLabel = (a, b) => {
+  return a.label.localeCompare(b.label, 'zh-CN', { numeric: true })
+}
+
 const getStageStatus = (stageLabel) => {
   if (stageLabel === '毕业生') return 'graduate'
   if (stageLabel === '离校用户') return 'withdrawn'
   if (stageLabel) return 'active'
+  return ''
+}
+
+const getStageLabelByStatus = (status) => {
+  if (status === 'graduate') return '毕业生'
+  if (status === 'withdrawn') return '离校用户'
+  if (status === 'active' && gradeFilter.value) {
+    return getStageLabel({ status: 'active', grade: gradeFilter.value })
+  }
   return ''
 }
 
@@ -1873,7 +1886,7 @@ const userTree = computed(() => {
                 })
               )
             }))
-            .sort(sortTreeLabels)
+            .sort(sortByLabel)
         }))
         .sort(sortTreeLabels)
     }))
@@ -1937,7 +1950,7 @@ watch(statusFilter, (newStatus) => {
 
   const expectedStatus = getStageStatus(treeFilterLabel.value)
   if (expectedStatus && newStatus !== expectedStatus) {
-    treeFilterLabel.value = ''
+    treeFilterLabel.value = getStageLabelByStatus(newStatus)
   }
 })
 
@@ -2762,6 +2775,12 @@ onMounted(async () => {
   await Promise.all([loadUserTree(), loadUsers(1, pageSize.value)])
   // 预加载XLSX库
   loadXLSX()
+})
+
+onBeforeUnmount(() => {
+  if (loadUsersDebounceTimer) {
+    clearTimeout(loadUsersDebounceTimer)
+  }
 })
 </script>
 
