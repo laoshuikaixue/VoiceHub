@@ -50,7 +50,7 @@
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
               ]"
             >
-              <input v-model="updateType" type="radio" value="grade-only" class="sr-only" >
+              <input v-model="updateType" type="radio" value="grade-only" class="sr-only" />
               <div class="flex items-center justify-between mb-3">
                 <div
                   :class="[
@@ -85,7 +85,7 @@
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
               ]"
             >
-              <input v-model="updateType" type="radio" value="excel-batch" class="sr-only" >
+              <input v-model="updateType" type="radio" value="excel-batch" class="sr-only" />
               <div class="flex items-center justify-between mb-3">
                 <div
                   :class="[
@@ -120,7 +120,7 @@
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
               ]"
             >
-              <input v-model="updateType" type="radio" value="status-batch" class="sr-only" >
+              <input v-model="updateType" type="radio" value="status-batch" class="sr-only" />
               <div class="flex items-center justify-between mb-3">
                 <div
                   :class="[
@@ -193,7 +193,9 @@
               <div class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
-                    >选择用户 ({{ selectedUserIds?.length || 0 }}/{{ filteredUsers?.length || 0 }})</label
+                    >选择用户 ({{ selectedUserIds?.length || 0 }}/{{
+                      filteredUsers?.length || 0
+                    }})</label
                   >
                   <button
                     class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
@@ -222,15 +224,13 @@
                         :value="user.id"
                         type="checkbox"
                         class="w-4 h-4 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
-                      >
+                      />
                       <div class="flex flex-col">
                         <span
                           class="text-xs font-bold text-zinc-200 group-hover:text-purple-400 transition-colors"
                           >{{ user.name }}</span
                         >
-                        <span class="text-[10px] text-zinc-600 font-mono">{{
-                          user.username
-                        }}</span>
+                        <span class="text-[10px] text-zinc-600 font-mono">{{ user.username }}</span>
                       </div>
                     </label>
                   </div>
@@ -239,7 +239,10 @@
             </div>
 
             <!-- 目标年级设置 -->
-            <div v-if="updateType === 'grade-only'" class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
+            <div
+              v-if="updateType === 'grade-only'"
+              class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6"
+            >
               <div
                 class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest"
               >
@@ -261,7 +264,7 @@
                       type="text"
                       placeholder="例如: 2025"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200"
-                    >
+                    />
                   </div>
                 </div>
                 <label
@@ -271,21 +274,41 @@
                     v-model="keepClass"
                     type="checkbox"
                     class="w-5 h-5 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
-                  >
+                  />
                   <span class="text-xs font-bold text-zinc-300">保持原有班级不变</span>
                 </label>
               </div>
             </div>
 
             <!-- 目标状态设置 -->
-            <div v-if="updateType === 'status-batch'" class="p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-6">
-              <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+            <div
+              v-if="updateType === 'status-batch'"
+              class="p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-6"
+            >
+              <div
+                class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest"
+              >
                 <Save :size="14" />
                 目标状态设置
               </div>
-              <div class="grid grid-cols-1 gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">选择账户状态</label>
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >前置账户状态</label
+                  >
+                  <CustomSelect
+                    v-model="sourceStatus"
+                    :options="sourceStatusOptions"
+                    label-key="label"
+                    value-key="value"
+                    placeholder="请选择前置状态"
+                    class-name="w-full"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >选择账户状态</label
+                  >
                   <CustomSelect
                     v-model="targetStatus"
                     :options="statusOptions"
@@ -295,10 +318,15 @@
                     class-name="w-full"
                   />
                 </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">变更原因说明</label>
+                <div class="space-y-2 md:col-span-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                    >变更原因说明</label
+                  >
                   <div class="relative group">
-                    <MessageSquare class="absolute left-4 top-3 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
+                    <MessageSquare
+                      class="absolute left-4 top-3 text-zinc-700 group-focus-within:text-amber-500 transition-colors"
+                      :size="16"
+                    />
                     <textarea
                       v-model="statusReason"
                       rows="2"
@@ -334,7 +362,7 @@
                 class="hidden"
                 type="file"
                 @change="handleFileSelect"
-              >
+              />
               <div
                 :class="[
                   'w-full py-12 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-4',
@@ -399,10 +427,14 @@
               </div>
               <p class="text-[10px] text-zinc-600 leading-relaxed">
                 <template v-if="matchType === 'username'">
-                  通过<span class="text-blue-400 font-bold">用户名</span>精确定位账户，适用于学号不变的常规更新
+                  通过<span class="text-blue-400 font-bold">用户名</span
+                  >精确定位账户，适用于学号不变的常规更新
                 </template>
                 <template v-else>
-                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，<span class="text-emerald-400 font-bold">用户名</span>列将作为新学号，适用于人员流动后学号前移的场景
+                  通过<span class="text-emerald-400 font-bold">真实姓名</span>定位账户，<span
+                    class="text-emerald-400 font-bold"
+                    >用户名</span
+                  >列将作为新学号，适用于人员流动后学号前移的场景
                 </template>
               </p>
             </div>
@@ -455,13 +487,14 @@
 
             <!-- 预览表格 -->
             <div v-if="excelPreviewData.length > 0" class="space-y-4">
-
               <!-- 外部阻断用户提示 -->
               <div
                 v-if="blockerList.length > 0"
                 class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
               >
-                <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+                <div
+                  class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest"
+                >
                   <AlertCircle :size="16" />
                   需要处理的用户 ({{ blockerList.length }})
                 </div>
@@ -480,7 +513,9 @@
               </div>
               <div class="flex items-center justify-between ml-1">
                 <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
-                  >数据预览 ({{ previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length }}/{{ excelPreviewData.length }}条)</label
+                  >数据预览 ({{
+                    previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length
+                  }}/{{ excelPreviewData.length }}条)</label
                 >
                 <div class="flex items-center gap-4">
                   <button
@@ -493,7 +528,9 @@
                     @click="previewFilter = previewFilter === 'pending' ? 'all' : 'pending'"
                   >
                     <div class="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">待更新 ({{ previewCounts.pending }})</span>
+                    <span class="text-[10px] text-zinc-500 font-bold"
+                      >待更新 ({{ previewCounts.pending }})</span
+                    >
                   </button>
                   <button
                     :class="[
@@ -505,7 +542,9 @@
                     @click="previewFilter = previewFilter === 'noChange' ? 'all' : 'noChange'"
                   >
                     <div class="w-2 h-2 rounded-full bg-zinc-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">无变更 ({{ previewCounts.noChange }})</span>
+                    <span class="text-[10px] text-zinc-500 font-bold"
+                      >无变更 ({{ previewCounts.noChange }})</span
+                    >
                   </button>
                   <button
                     :class="[
@@ -517,7 +556,9 @@
                     @click="previewFilter = previewFilter === 'error' ? 'all' : 'error'"
                   >
                     <div class="w-2 h-2 rounded-full bg-red-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">错误 ({{ previewCounts.error }})</span>
+                    <span class="text-[10px] text-zinc-500 font-bold"
+                      >错误 ({{ previewCounts.error }})</span
+                    >
                   </button>
                 </div>
               </div>
@@ -554,18 +595,24 @@
                               >{{ matchType === 'username' ? row.username : row.name }}</span
                             >
                             <span class="text-[10px] text-zinc-600 font-medium">{{
-                              matchType === 'username' ? (row.name || '-') : (row.username || '-')
+                              matchType === 'username' ? row.name || '-' : row.username || '-'
                             }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4">
                           <div class="flex flex-col">
                             <div class="flex items-center gap-1.5">
-                              <span class="text-xs font-bold text-zinc-200">{{ row.currentGrade || '-' }}</span>
+                              <span class="text-xs font-bold text-zinc-200">{{
+                                row.currentGrade || '-'
+                              }}</span>
                               <span class="text-[10px] text-zinc-700">/</span>
-                              <span class="text-xs font-bold text-zinc-200">{{ row.currentClass || '-' }}</span>
+                              <span class="text-xs font-bold text-zinc-200">{{
+                                row.currentClass || '-'
+                              }}</span>
                             </div>
-                            <span class="text-[10px] text-zinc-500 font-medium mt-0.5">{{ row.username }}</span>
+                            <span class="text-[10px] text-zinc-500 font-medium mt-0.5">{{
+                              row.username
+                            }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4">
@@ -575,16 +622,21 @@
                             </template>
                             <template v-else>
                               <div class="flex items-center gap-1.5">
-                                <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
+                                <span class="text-xs font-bold text-emerald-400">{{
+                                  row.newGrade || row.currentGrade || '-'
+                                }}</span>
                                 <span class="text-[10px] text-zinc-700">/</span>
-                                <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
+                                <span class="text-xs font-bold text-emerald-400">{{
+                                  row.newClass || row.currentClass || '-'
+                                }}</span>
                               </div>
                               <span
                                 :class="[
                                   'text-[10px] font-medium mt-0.5',
                                   row.newUsername ? 'text-emerald-400' : 'text-zinc-500'
                                 ]"
-                              >{{ row.newUsername || row.username }}</span>
+                                >{{ row.newUsername || row.username }}</span
+                              >
                             </template>
                           </div>
                         </td>
@@ -637,7 +689,9 @@
             class="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div class="flex items-center justify-between">
-              <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{ updateProgressText }}</span>
+              <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{
+                updateProgressText
+              }}</span>
               <span class="text-xs font-black text-emerald-400">{{ updateProgress }}%</span>
             </div>
             <div class="h-2 bg-zinc-900 rounded-full overflow-hidden">
@@ -724,8 +778,16 @@ const targetGrade = ref('')
 const keepClass = ref(true)
 
 // 状态批量更新相关
+const sourceStatus = ref('')
 const targetStatus = ref('')
 const statusReason = ref('')
+
+const sourceStatusOptions = [
+  { label: '不限当前状态', value: '' },
+  { label: '仅正常访问', value: 'active' },
+  { label: '仅毕业生', value: 'graduate' },
+  { label: '仅退学', value: 'withdrawn' }
+]
 
 const statusOptions = [
   { label: '正常访问', value: 'active' },
@@ -757,9 +819,7 @@ const userFilters = useUserFilters()
 const computedUsers = computed(() => {
   // 必须优先使用全量数据 allUsers，如果正在加载则等待加载完成。
   // 只有在尚未触发加载且需要临时展示时才 fallback 到 props.users。
-  return userFilters.isLoaded.value
-    ? userFilters.allUsers.value
-    : props.users || []
+  return userFilters.isLoaded.value ? userFilters.allUsers.value : props.users || []
 })
 
 const availableGrades = computed(() => {
@@ -770,9 +830,12 @@ const availableClasses = computed(() => {
   return userFilters.getAvailableClasses(computedUsers.value, gradeFilter.value)
 })
 
-watch(() => gradeFilter.value, () => {
-  classFilter.value = ''
-})
+watch(
+  () => gradeFilter.value,
+  () => {
+    classFilter.value = ''
+  }
+)
 
 const gradeOptions = computed(() => {
   return [
@@ -805,14 +868,17 @@ const filteredUsers = computed(() => {
 const isAllSelected = computed(() => {
   if (filteredUsers.value.length === 0) return false
   const selectedSet = new Set(selectedUserIds.value)
-  return filteredUsers.value.every(u => selectedSet.has(u.id))
+  return filteredUsers.value.every((u) => selectedSet.has(u.id))
 })
 
 const canUpdate = computed(() => {
   if (updateType.value === 'grade-only') {
     return selectedUserIds.value.length > 0 && targetGrade.value.trim()
   } else if (updateType.value === 'excel-batch') {
-    return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error && !row.noChange)
+    return (
+      excelPreviewData.value.length > 0 &&
+      excelPreviewData.value.some((row) => !row.error && !row.noChange)
+    )
   } else if (updateType.value === 'status-batch') {
     return selectedUserIds.value.length > 0 && targetStatus.value && statusReason.value.trim()
   }
@@ -821,7 +887,8 @@ const canUpdate = computed(() => {
 
 const filteredPreviewData = computed(() => {
   if (previewFilter.value === 'all') return excelPreviewData.value
-  if (previewFilter.value === 'pending') return excelPreviewData.value.filter((r) => !r.error && !r.noChange)
+  if (previewFilter.value === 'pending')
+    return excelPreviewData.value.filter((r) => !r.error && !r.noChange)
   if (previewFilter.value === 'noChange') return excelPreviewData.value.filter((r) => r.noChange)
   if (previewFilter.value === 'error') return excelPreviewData.value.filter((r) => r.error)
   return excelPreviewData.value
@@ -962,8 +1029,7 @@ const parseExcelData = (jsonData) => {
 
     if (matchType.value === 'username') {
       existingUser =
-        userMapByUsername.get(username) ||
-        userMapByUsername.get(username.toLowerCase())
+        userMapByUsername.get(username) || userMapByUsername.get(username.toLowerCase())
     } else {
       const match = userMapByName.get(name)
       if (match === 'AMBIGUOUS') {
@@ -996,9 +1062,12 @@ const parseExcelData = (jsonData) => {
     const finalNewClass = newClass || undefined
     const finalNewUsername = newUsername || undefined
 
-    const hasGradeChange = finalNewGrade !== undefined && finalNewGrade !== (existingUser.grade || '')
-    const hasClassChange = finalNewClass !== undefined && finalNewClass !== (existingUser.class || '')
-    const hasUsernameChange = finalNewUsername !== undefined && finalNewUsername !== existingUser.username
+    const hasGradeChange =
+      finalNewGrade !== undefined && finalNewGrade !== (existingUser.grade || '')
+    const hasClassChange =
+      finalNewClass !== undefined && finalNewClass !== (existingUser.class || '')
+    const hasUsernameChange =
+      finalNewUsername !== undefined && finalNewUsername !== existingUser.username
 
     if (!hasGradeChange && !hasClassChange && !hasUsernameChange) {
       previewData.push({
@@ -1165,7 +1234,8 @@ const performUpdate = async () => {
     }
   } catch (err) {
     console.error('批量更新失败:', err)
-    error.value = '批量更新失败: ' + (err?.data?.message || err?.message || err?.statusMessage || '未知错误')
+    error.value =
+      '批量更新失败: ' + (err?.data?.message || err?.message || err?.statusMessage || '未知错误')
   } finally {
     loading.value = false
   }
@@ -1191,7 +1261,10 @@ const performGradeUpdate = async () => {
       throw new Error(`更新失败: ${response.errors[0].error} 等`)
     } else {
       if (window.$showNotification) {
-        window.$showNotification(`部分更新成功，${response.failed} 个用户因权限或状态等原因跳过`, 'warning')
+        window.$showNotification(
+          `部分更新成功，${response.failed} 个用户因权限或状态等原因跳过`,
+          'warning'
+        )
       }
     }
   } else {
@@ -1202,7 +1275,9 @@ const performGradeUpdate = async () => {
 }
 
 const performExcelUpdate = async () => {
-  const validUpdates = excelPreviewData.value.filter((row) => !row.error && !row.noChange && row.userId)
+  const validUpdates = excelPreviewData.value.filter(
+    (row) => !row.error && !row.noChange && row.userId
+  )
 
   if (validUpdates.length === 0) {
     throw new Error('没有有效的更新数据')
@@ -1262,15 +1337,16 @@ const performExcelUpdate = async () => {
   }
 
   if (totalFailed > 0) {
-    const partialMessage = totalUpdated > 0
-      ? `部分更新成功：成功 ${totalUpdated} 个，失败 ${totalFailed} 个，请检查后重试`
-      : `批量更新失败：${totalFailed} 个用户未能更新，请检查后重试`
-    
+    const partialMessage =
+      totalUpdated > 0
+        ? `部分更新成功：成功 ${totalUpdated} 个，失败 ${totalFailed} 个，请检查后重试`
+        : `批量更新失败：${totalFailed} 个用户未能更新，请检查后重试`
+
     // 如果存在更新成功的数据，仍然需要通知父组件刷新列表
     if (totalUpdated > 0) {
       emit('update-success')
     }
-    
+
     // 返回结果给外层统一处理提示，而不是抛出异常打断外层流程
     return {
       success: false,
@@ -1282,11 +1358,11 @@ const performExcelUpdate = async () => {
 
   updateProgressText.value = `更新完成：成功 ${totalUpdated} 个，失败 ${totalFailed} 个`
   updateProgress.value = 100
-  
+
   if (totalUpdated > 0) {
     emit('update-success')
   }
-  
+
   return {
     success: true,
     totalUpdated,
@@ -1300,6 +1376,7 @@ const performStatusUpdate = async () => {
     method: 'PUT',
     body: {
       userIds: selectedUserIds.value,
+      sourceStatus: sourceStatus.value || undefined,
       status: targetStatus.value,
       reason: statusReason.value.trim()
     },
@@ -1315,7 +1392,10 @@ const performStatusUpdate = async () => {
 
   if (response.errors && response.errors.length > 0) {
     if (window.$showNotification) {
-      window.$showNotification(`部分更新成功，${response.errors.length} 个用户因权限或状态等原因跳过`, 'warning')
+      window.$showNotification(
+        `部分更新成功，${response.errors.length} 个用户因权限或状态等原因跳过`,
+        'warning'
+      )
     }
   } else {
     if (window.$showNotification) {
@@ -1342,6 +1422,7 @@ watch(
       rawExcelData.value = null
       blockerList.value = []
       previewFilter.value = 'all'
+      sourceStatus.value = ''
       targetStatus.value = ''
       statusReason.value = ''
       error.value = ''
