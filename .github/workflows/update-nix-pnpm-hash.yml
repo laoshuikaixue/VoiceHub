@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: 检出触发分支
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: ${{ env.CHECKOUT_REPOSITORY }}
           ref: ${{ env.TARGET_BRANCH }}
