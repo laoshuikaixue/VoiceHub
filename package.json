@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@applemusic-like-lyrics/core": "^0.5.1",
-    "@applemusic-like-lyrics/lyric": "^0.3.0",
+    "@applemusic-like-lyrics/lyric": "^0.4.1",
     "@applemusic-like-lyrics/vue": "^0.5.1",
     "@breezystack/lamejs": "^1.2.7",
     "@lucide/vue": "^1.23.0",
@@ -88,7 +88,7 @@
     "redis": "^5.12.1",
     "sass": "^1.101.0",
     "svg-captcha": "^1.4.0",
-    "tsx": "^4.22.5",
+    "tsx": "^4.23.0",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.6.0",
     "vue": "^3.5.39",
