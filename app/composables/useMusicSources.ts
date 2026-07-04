@@ -21,7 +21,17 @@ import { useLyricSettings } from './useLyricSettings'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
+const lyricProgressSubscribers = new Map<string, Set<LyricProgressCallback>>()
 const LYRIC_CACHE_TTL = 60 * 1000
+
+type LyricProgressStage = 'official' | 'qm' | 'amll' | 'upgrade' | 'meting'
+
+type LyricProgressPayload = {
+  stage: LyricProgressStage
+  data: LyricResultData
+}
+
+type LyricProgressCallback = (payload: LyricProgressPayload) => void
 
 type LyricUpgradeMeta = {
   title?: string
@@ -31,6 +41,8 @@ type LyricUpgradeMeta = {
   duration?: number
   /** false = 明确禁止跨平台升级（防止递归），undefined/true = 允许 */
   allowCrossPlatformUpgrade?: boolean
+  /** 用于歌词页先显示基础歌词，再切换到更高阶歌词 */
+  onProgress?: LyricProgressCallback
 }
 
 type LyricResultData = { lrc: string; trans?: string; yrc?: string; ttml?: string }
@@ -175,6 +187,50 @@ const getLyricCacheKey = (platform: string, id: number | string, meta?: LyricUpg
   // allowCrossPlatformUpgrade=false 与 undefined/true 的结果不同，需区分
   const upgradeFlag = meta?.allowCrossPlatformUpgrade === false ? '0' : '1'
   return `${platform}:${id}:${title}:${artist}:${album}:${upgradeFlag}`
+}
+
+const cloneLyricData = (data: LyricResultData): LyricResultData => ({
+  lrc: data.lrc || '',
+  trans: data.trans || '',
+  yrc: data.yrc || '',
+  ttml: data.ttml || ''
+})
+
+const subscribeLyricProgress = (
+  cacheKey: string,
+  callback?: LyricProgressCallback
+): (() => void) => {
+  if (!callback) return () => {}
+
+  let subscribers = lyricProgressSubscribers.get(cacheKey)
+  if (!subscribers) {
+    subscribers = new Set()
+    lyricProgressSubscribers.set(cacheKey, subscribers)
+  }
+  subscribers.add(callback)
+
+  return () => {
+    const currentSubscribers = lyricProgressSubscribers.get(cacheKey)
+    if (!currentSubscribers) return
+    currentSubscribers.delete(callback)
+    if (currentSubscribers.size === 0) {
+      lyricProgressSubscribers.delete(cacheKey)
+    }
+  }
+}
+
+const emitLyricProgress = (cacheKey: string, stage: LyricProgressStage, data: LyricResultData) => {
+  const subscribers = lyricProgressSubscribers.get(cacheKey)
+  if (!subscribers?.size) return
+
+  const payload = { stage, data: cloneLyricData(data) }
+  for (const callback of subscribers) {
+    try {
+      callback(payload)
+    } catch (error) {
+      console.warn('[getLyrics] 歌词进度回调失败:', error)
+    }
+  }
 }
 
 /**
@@ -352,10 +408,12 @@ export const useMusicSources = () => {
     error?: string
   }> => {
     const cacheKey = getLyricCacheKey(platform, id, meta)
+    const unsubscribeProgress = subscribeLyricProgress(cacheKey, meta?.onProgress)
+    const progressive = typeof meta?.onProgress === 'function'
 
     const cached = lyricCache.get(cacheKey)
     if (cached) {
-      return cached
+      return cached.finally(unsubscribeProgress)
     }
 
     const promise = (async () => {
@@ -367,6 +425,20 @@ export const useMusicSources = () => {
 
         const resultData: LyricResultData = { lrc: '', trans: '', yrc: '', ttml: '' }
         let hasResult = false
+        let lastProgressSignature = ''
+
+        const emitProgress = (stage: LyricProgressStage) => {
+          const signature = [
+            stage,
+            resultData.lrc?.length || 0,
+            resultData.trans?.length || 0,
+            resultData.yrc?.length || 0,
+            resultData.ttml?.length || 0
+          ].join(':')
+          if (signature === lastProgressSignature) return
+          lastProgressSignature = signature
+          emitLyricProgress(cacheKey, stage, resultData)
+        }
 
         const fetchOfficial = async () => {
           if (platform !== 'netease' || !neteaseSource) return
@@ -392,7 +464,10 @@ export const useMusicSources = () => {
               if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
             }
 
-            if (resultData.lrc || resultData.yrc) hasResult = true
+            if (resultData.lrc || resultData.yrc) {
+              hasResult = true
+              emitProgress('official')
+            }
           } catch (e: any) {
             console.warn('[getLyrics] NeteaseCloudMusicApi 获取失败:', e?.message || e)
           }
@@ -417,6 +492,7 @@ export const useMusicSources = () => {
             if (ttml && typeof ttml === 'string' && ttml.includes('<tt')) {
               resultData.ttml = ttml
               hasResult = true
+              emitProgress('amll')
             }
           } catch {
           }
@@ -451,6 +527,7 @@ export const useMusicSources = () => {
                 if (d.trans) resultData.trans = d.trans
                 if (d.qrc || d.lrc) {
                   hasResult = true
+                  emitProgress('qm')
                   return
                 }
               }
@@ -483,7 +560,10 @@ export const useMusicSources = () => {
               if (d.lrc) resultData.lrc = d.lrc
               if (d.trans) resultData.trans = d.trans
               if (d.yrc) resultData.yrc = d.yrc
-              if (d.lrc || d.yrc) hasResult = true
+              if (d.lrc || d.yrc) {
+                hasResult = true
+                emitProgress('qm')
+              }
             }
           } catch (e) {
             console.warn('[getLyrics] vkeys 获取失败:', e)
@@ -491,7 +571,35 @@ export const useMusicSources = () => {
         }
 
         const priority = settings.lyricPriority.value
-        if (priority === 'qm') {
+        if (progressive) {
+          if (platform === 'netease') {
+            let triedQM = false
+            const fetchQMOnce = async () => {
+              if (triedQM) return
+              triedQM = true
+              await fetchQM()
+            }
+
+            await fetchOfficial()
+            if (priority === 'qm' || (priority === 'auto' && settings.enableQQMusicLyric.value)) {
+              await fetchQMOnce()
+            }
+            if (priority !== 'official') {
+              await fetchAMLL()
+            }
+            if (!hasResult) {
+              await fetchQMOnce()
+            }
+          } else {
+            await fetchQM()
+            if (priority !== 'official') {
+              await fetchAMLL()
+            }
+            if (!hasResult) {
+              await fetchOfficial()
+            }
+          }
+        } else if (priority === 'qm') {
           await fetchAMLL()
           await fetchQM()
           if (!hasResult) await fetchOfficial()
@@ -520,6 +628,7 @@ export const useMusicSources = () => {
           const upgraded = await tryUpgradeLyric(platform, resultData, meta)
           if (upgraded) {
             hasResult = true
+            emitProgress('upgrade')
           }
         }
 
@@ -537,14 +646,14 @@ export const useMusicSources = () => {
                 headers: metingSource.headers
               })
               if (resp && typeof resp === 'string' && resp.trim()) {
+                resultData.lrc = resp
+                resultData.trans = ''
+                resultData.yrc = ''
+                resultData.ttml = ''
+                emitProgress('meting')
                 return {
                   success: true,
-                  data: {
-                    lrc: resp,
-                    trans: '',
-                    yrc: '',
-                    ttml: ''
-                  }
+                  data: cloneLyricData(resultData)
                 }
               }
             } catch (error: any) {
@@ -561,18 +670,21 @@ export const useMusicSources = () => {
         console.error('[getLyrics] 获取歌词失败:', error)
         return { success: false, error: error?.message || '未知错误' }
       }
-    })().then((res) => {
-      if (!res.success) {
-        lyricCache.delete(cacheKey)
-      }
-      return res
-    }).finally(() => {
-      setTimeout(() => {
-        if (lyricCache.get(cacheKey) === promise) {
+    })()
+      .then((res) => {
+        if (!res.success) {
           lyricCache.delete(cacheKey)
         }
-      }, LYRIC_CACHE_TTL)
-    })
+        return res
+      })
+      .finally(() => {
+        unsubscribeProgress()
+        setTimeout(() => {
+          if (lyricCache.get(cacheKey) === promise) {
+            lyricCache.delete(cacheKey)
+          }
+        }, LYRIC_CACHE_TTL)
+      })
 
     lyricCache.set(cacheKey, promise)
     return promise
@@ -1704,14 +1816,6 @@ export const useMusicSources = () => {
     data?: { lrc: string; trans?: string; yrc?: string; ttml?: string }
     error?: string
   }> => {
-    const cacheKey = getLyricCacheKey(platform, id, meta)
-
-    // 复用已缓存的请求结果
-    const cached = lyricCache.get(cacheKey)
-    if (cached) {
-      return cached
-    }
-
     return fetchLyricsWithoutUpgrade(platform, id, meta)
   }
 
