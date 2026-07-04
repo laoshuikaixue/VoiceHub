@@ -15,9 +15,12 @@ const needsCorsProxy = (url: string): boolean => {
     const u = new URL(url)
     const h = u.hostname.toLowerCase()
     return (
-      h.endsWith('.y.qq.com') || h === 'y.qq.com' ||
-      h.endsWith('.y.gtimg.cn') || h === 'y.gtimg.cn' ||
-      h.endsWith('.music.126.net') || h === 'music.126.net'
+      h.endsWith('.y.qq.com') ||
+      h === 'y.qq.com' ||
+      h.endsWith('.y.gtimg.cn') ||
+      h === 'y.gtimg.cn' ||
+      h.endsWith('.music.126.net') ||
+      h === 'music.126.net'
     )
   } catch {
     return false
@@ -90,9 +93,15 @@ export const useBackgroundRenderer = () => {
       return
     }
 
-    const shouldFlow = config.value.dynamic && !isMotionPaused.value
     renderer.setStaticMode(false)
-    renderer.setFlowSpeed(shouldFlow ? config.value.flowSpeed : 0)
+
+    if (!config.value.dynamic) {
+      renderer.setFlowSpeed(0)
+      renderer.pause()
+      return
+    }
+
+    renderer.setFlowSpeed(isMotionPaused.value ? 0 : config.value.flowSpeed)
     renderer.resume()
   }
 
@@ -179,6 +188,7 @@ export const useBackgroundRenderer = () => {
 
   const startRender = () => {
     isRendering.value = true
+    isMotionPaused.value = false
     syncRendererMotion()
   }
 
@@ -193,14 +203,14 @@ export const useBackgroundRenderer = () => {
   }
 
   const pauseRender = () => {
-    if (!backgroundRenderer.value) return
     isMotionPaused.value = true
+    if (!backgroundRenderer.value) return
     syncRendererMotion()
   }
 
   const resumeRender = () => {
-    if (!backgroundRenderer.value) return
     isMotionPaused.value = false
+    if (!backgroundRenderer.value) return
     syncRendererMotion()
   }
 

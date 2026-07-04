@@ -40,9 +40,11 @@ export const useLyricManager = () => {
 
   const applyLyricData = (
     track: any,
-    lyricData: { lrc?: string; trans?: string; yrc?: string; ttml?: string },
+    lyricData: { lrc?: string; trans?: string; yrc?: string; ttml?: string } | null | undefined,
     sourceLabel: string
   ) => {
+    if (!lyricData) return false
+
     const { lrc, trans, yrc, ttml } = lyricData
     console.log(
       `[LyricManager] ${sourceLabel} 获取结果: LRC=${!!lrc}, TRANS=${!!trans}, YRC=${!!yrc}, TTML=${!!ttml}`

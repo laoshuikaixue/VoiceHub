@@ -52,8 +52,7 @@ const convertLibraryLines = (lines: any[]): ParsedLyricLine[] => {
         words?.map((w) => w.content).join('') ||
         (typeof line?.content === 'string' ? line.content : '')
 
-      const time =
-        typeof line?.startTime === 'number' ? line.startTime : (line?.time ?? 0)
+      const time = typeof line?.startTime === 'number' ? line.startTime : (line?.time ?? 0)
 
       if (!content && (!words || words.length === 0)) return null
       return { time, content, words: words && words.length > 0 ? words : undefined }
@@ -69,9 +68,7 @@ const hasWordByWord = (lines: ParsedLyricLine[]): boolean =>
  * 尝试将单段文本解析为歌词行。
  * 优先级：TTML > QRC > YRC(JSON) > SmartLrc
  */
-const parseFlexibleLyrics = (
-  text: string
-): { lines: ParsedLyricLine[]; wordByWord: boolean } => {
+const parseFlexibleLyrics = (text: string): { lines: ParsedLyricLine[]; wordByWord: boolean } => {
   const raw = text?.trim()
   if (!raw) return { lines: [], wordByWord: false }
 
@@ -89,11 +86,7 @@ const parseFlexibleLyrics = (
     }
 
     // QRC（QQ 音乐 XML 格式）
-    if (
-      raw.includes('LyricContent="') ||
-      raw.includes('<lyric') ||
-      raw.includes('<LrcContent')
-    ) {
+    if (raw.includes('LyricContent="') || raw.includes('<lyric') || raw.includes('<LrcContent')) {
       try {
         const qrcLines = convertLibraryLines(parseQRCLyric(raw))
         if (qrcLines.length > 0) {
@@ -186,7 +179,9 @@ export const useLyrics = () => {
 
   // ─── 歌词获取 ────────────────────────────────────────────────
 
-  const applyLyricData = (lyricData: LyricData): boolean => {
+  const applyLyricData = (lyricData?: LyricData | null): boolean => {
+    if (!lyricData) return false
+
     // 主歌词：按优先级 ttml > yrc > lrc 解析
     const parsedMain = parseBestLyrics([lyricData.ttml, lyricData.yrc, lyricData.lrc])
     if (parsedMain.lines.length === 0) return false
