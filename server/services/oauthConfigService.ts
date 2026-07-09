@@ -1,6 +1,3 @@
-import { db } from '~/drizzle/db'
-import { systemSettings } from '~/drizzle/schema'
-
 export type OAuthProvider = 'github' | 'casdoor' | 'google' | 'oauth2'
 
 export const SUPPORTED_OAUTH_PROVIDERS: OAuthProvider[] = ['github', 'casdoor', 'google', 'oauth2']
@@ -34,6 +31,8 @@ const getSettings = async () => {
     // 缓存不可用时回退数据库
   }
 
+  const { db } = await import('~/drizzle/db')
+  const { systemSettings } = await import('~/drizzle/schema')
   const settingsResult = await db.select().from(systemSettings).limit(1)
   return settingsResult[0] || null
 }
