@@ -1,10 +1,8 @@
-export type OAuthProvider = 'github' | 'casdoor' | 'google' | 'oauth2'
+import { db } from '~/drizzle/db'
+import { systemSettings } from '~/drizzle/schema'
 
-export const SUPPORTED_OAUTH_PROVIDERS: OAuthProvider[] = ['github', 'casdoor', 'google', 'oauth2']
-
-export const isSupportedOAuthProvider = (provider: string): provider is OAuthProvider => {
-  return SUPPORTED_OAUTH_PROVIDERS.includes(provider as OAuthProvider)
-}
+export type { OAuthProvider } from '~~/server/utils/oauth-providers'
+export { SUPPORTED_OAUTH_PROVIDERS, isSupportedOAuthProvider } from '~~/server/utils/oauth-providers'
 
 export interface ProviderRuntimeConfig {
   clientId?: string
@@ -31,8 +29,6 @@ const getSettings = async () => {
     // 缓存不可用时回退数据库
   }
 
-  const { db } = await import('~/drizzle/db')
-  const { systemSettings } = await import('~/drizzle/schema')
   const settingsResult = await db.select().from(systemSettings).limit(1)
   return settingsResult[0] || null
 }
