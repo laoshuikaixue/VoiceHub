@@ -856,6 +856,7 @@ VoiceHub/
 │   │   ├── useMusicWebSocket.ts  # 音乐WebSocket hooks
 │   │   ├── useNotifications.ts # 通知功能hooks
 │   │   ├── usePermissions.ts   # 权限管理hooks
+│   │   ├── usePasswordStrength.ts # 密码强度检测hooks
 │   │   ├── useProgress.ts      # 进度管理hooks
 │   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
@@ -1179,15 +1180,20 @@ VoiceHub/
 │   │       │   └── meow.post.ts     # MeoW账号操作
 │   │       ├── search.get.ts        # 搜索用户
 │   │       └── social-accounts.get.ts # 获取社交账号
+│   ├── card-codes/         # 点歌券相关
+│   │   └── statuses.ts     # 点歌券状态枚举定义
 │   ├── config/             # 服务端配置
 │   │   └── constants.ts    # 风控阈值与时间窗口常量
 │   ├── error.ts            # 全局错误处理
 │   ├── middleware/         # 服务端中间件
+│   │   ├── 00.request-id.ts # 请求ID注入中间件
 │   │   ├── api-auth.ts     # API认证中间件
 │   │   ├── api-cors.ts     # API跨域中间件
 │   │   └── auth.ts         # 认证中间件
 │   ├── plugins/            # 服务端插件
-│   │   └── error-handler.ts # 错误处理插件
+│   │   ├── 00.sentry.ts    # Sentry错误追踪插件
+│   │   ├── error-handler.ts # 错误处理插件
+│   │   └── time-sync.ts    # 服务器时间同步插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
@@ -1195,44 +1201,49 @@ VoiceHub/
 │   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
+│   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── cache-helpers.ts # 缓存辅助工具
+│   │   ├── captcha.ts      # 图形验证码生成工具
+│   │   ├── captchaStore.ts # 验证码存储工具
 │   │   ├── card-code-delete-handler.ts # 点歌券删除开放API处理器
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
+│   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
 │   │   ├── log-manager.ts  # 日志管理工具
 │   │   ├── native_common.ts # 原生API通用工具
 │   │   ├── native_tx.ts    # 腾讯音乐原生API
 │   │   ├── native_wy.ts    # 网易云音乐原生API
-│   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
+│   │   ├── oauth-providers.ts # OAuth提供商类型与纯函数工具
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth.ts        # OAuth通用工具
-│   │   ├── apiKeyUtils.ts   # API Key生成、哈希与校验
-│   │   ├── ip-utils.ts      # IP地址工具
 │   │   ├── open-api-cache.ts # 开放API缓存
 │   │   ├── permissions.js  # 权限系统配置
+│   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
+│   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── redis.ts        # Redis连接和操作工具
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── serverTime.ts   # 服务器时间管理工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── twoFactorStore.ts # 双重认证存储工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
 │   │   └── webauthn-token.ts # WebAuthn令牌工具
-│   ├── workers/            # 服务端工作进程
-│   │   └── audioEncoderWorker.js # 音频编码工作进程
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
