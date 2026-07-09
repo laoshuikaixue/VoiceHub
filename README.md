@@ -1192,6 +1192,7 @@ VoiceHub/
 │   │   └── auth.ts         # 认证中间件
 │   ├── plugins/            # 服务端插件
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
+│   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   └── time-sync.ts    # 服务器时间同步插件
 │   ├── services/           # 业务服务层
