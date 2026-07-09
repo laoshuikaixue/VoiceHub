@@ -88,35 +88,5 @@ export default defineNitroPlugin(async (nitroApp) => {
     clearInterval(healthCheckInterval)
   })
 
-  // 数据库连接错误的特殊处理
-  // 注意: Drizzle 自动管理连接
-  // 我们将为数据库操作实现简单的重试机制
-  const originalExecute = db.execute
-  db.execute = new Proxy(originalExecute, {
-    apply: async (target, thisArg, argumentsList) => {
-      try {
-        return await target.apply(thisArg, argumentsList)
-      } catch (error) {
-        if (
-          error.message.includes('ECONNRESET') ||
-          error.message.includes('Connection terminated')
-        ) {
-          console.log('Query failed due to connection reset, attempting to retry...')
-
-          try {
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
-            // 重试查询
-            return await target.apply(thisArg, argumentsList)
-          } catch (retryError) {
-            console.error('Query retry failed:', retryError)
-            throw retryError
-          }
-        }
-        throw error
-      }
-    }
-  })
-
   console.log('Global error handler initialized')
 })
