@@ -121,10 +121,16 @@ const toastOperationTranslations = new Map<string, string>([
 
 const translateToastDetail = (detail: string) => exactToastTranslations.get(detail.trim()) || detail
 
-const translateToastMessage = (message: string, locale: string) => {
-  if (locale === 'zh-CN') return message
+const normalizeToastMessage = (message: unknown): string => {
+  if (typeof message === 'string') return message
+  return String(message ?? '')
+}
 
-  const normalized = message.trim()
+const translateToastMessage = (message: unknown, locale: string) => {
+  const normalizedMessage = normalizeToastMessage(message)
+  if (locale === 'zh-CN') return normalizedMessage
+
+  const normalized = normalizedMessage.trim()
   const withoutPunctuation = normalized.replace(/[。！]$/, '')
 
   const exactMatch = exactToastTranslations.get(normalized)
@@ -153,14 +159,14 @@ const translateToastMessage = (message: string, locale: string) => {
     if (match) return translate(match)
   }
 
-  return message
+  return normalizedMessage
 }
 
 export const useToast = () => {
   const { currentLocale } = useLocale()
 
   const showToast = (
-    message: string,
+    message: unknown,
     type: 'success' | 'error' | 'info' | 'warning' = 'info',
     duration = 3000
   ) => {
@@ -189,10 +195,10 @@ export const useToast = () => {
     }
   }
 
-  const success = (message: string, duration?: number) => showToast(message, 'success', duration)
-  const error = (message: string, duration?: number) => showToast(message, 'error', duration)
-  const info = (message: string, duration?: number) => showToast(message, 'info', duration)
-  const warning = (message: string, duration?: number) => showToast(message, 'warning', duration)
+  const success = (message: unknown, duration?: number) => showToast(message, 'success', duration)
+  const error = (message: unknown, duration?: number) => showToast(message, 'error', duration)
+  const info = (message: unknown, duration?: number) => showToast(message, 'info', duration)
+  const warning = (message: unknown, duration?: number) => showToast(message, 'warning', duration)
 
   return {
     toasts,

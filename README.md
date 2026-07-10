@@ -871,7 +871,10 @@ VoiceHub/
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
-│   │       ├── *.sql           # Drizzle 迁移脚本
+│   │       ├── 20260505000001_add_force_password_change_on_first_login.sql # 新增首次登录强制改密设置
+│   │       ├── 20260509000001_change_force_password_change_default.sql # 调整用户强制改密默认值
+│   │       ├── 20260619000001_ensure_force_password_change_on_first_login.sql # 兼容补齐首次登录强制改密设置
+│   │       ├── *.sql           # 其他 Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
 │   │   └── default.vue         # 默认布局模板
@@ -905,6 +908,10 @@ VoiceHub/
 │   └── utils/                 # 工具函数
 │       ├── core/              # 核心工具
 │       │   └── security.ts    # 安全相关工具
+│       ├── locale/            # 国际化语言资源
+│       │   ├── en-US.ts       # 英文语言包
+│       │   ├── index.ts       # 语言状态、切换及回退逻辑
+│       │   └── zh-CN.ts       # 简体中文语言包
 │       ├── lyric/             # 歌词处理工具
 │       │   ├── exclude.ts     # 歌词排除规则
 │       │   ├── lyricFormat.ts # 歌词格式化
@@ -912,6 +919,7 @@ VoiceHub/
 │       │   ├── lyricStripper.ts # 歌词清理
 │       │   ├── parseLrc.ts    # LRC格式解析
 │       │   └── qrc-parser.ts  # QRC格式解析
+│       ├── auth-constants.ts  # 客户端认证常量导出
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
 │       ├── lyricAdapter.ts    # 歌词适配器
@@ -1228,6 +1236,7 @@ VoiceHub/
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── system-settings-helper.ts # 系统设置缓存读取与强制改密判定
 │   │   ├── twoFactorStore.ts # 双重认证存储工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
@@ -1235,6 +1244,8 @@ VoiceHub/
 │   ├── workers/            # 服务端工作进程
 │   │   └── audioEncoderWorker.js # 音频编码工作进程
 │   └── tsconfig.json       # 服务端TypeScript配置
+├── shared/                # 客户端与服务端共享模块
+│   └── auth-constants.ts   # 管理员角色常量与判定函数
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
@@ -1251,6 +1262,7 @@ VoiceHub/
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖
+├── pnpm-workspace.yaml    # pnpm 工作区与依赖构建策略
 ├── README.md              # 项目说明文档
 ├── tsconfig.json          # TypeScript配置文件
 └── vercel.json            # Vercel部署配置
