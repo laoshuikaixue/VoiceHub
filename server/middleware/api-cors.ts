@@ -1,6 +1,7 @@
 export default defineEventHandler((event) => {
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
+  const method = getMethod(event)
   
   // 只处理特定的内部API路由，防止站外调用
   const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
@@ -24,12 +25,12 @@ export default defineEventHandler((event) => {
     const hostHeader = getHeader(event, 'host')
     
     if (hostHeader) {
-      configuredHost = hostHeader.split(',')[0].trim()
+      configuredHost = (hostHeader.split(',')[0] || '').trim()
       
       // 如果 x-forwarded-proto 存在，可以带上协议，使校验更精准
       const forwardedProto = getHeader(event, 'x-forwarded-proto')
       if (forwardedProto && !configuredHost.includes('://')) {
-        const proto = forwardedProto.split(',')[0].trim()
+        const proto = (forwardedProto.split(',')[0] || '').trim()
         configuredHost = `${proto}://${configuredHost}`
       }
     } else {
@@ -41,6 +42,7 @@ export default defineEventHandler((event) => {
   const origin = getHeader(event, 'origin')
   const referer = getHeader(event, 'referer')
   const secFetchSite = getHeader(event, 'sec-fetch-site')
+  const secFetchMode = getHeader(event, 'sec-fetch-mode')
   const sourceUrl = origin || referer
 
   if (sourceUrl) {
@@ -93,12 +95,12 @@ export default defineEventHandler((event) => {
         message: 'Bad Request: Origin或Referer头无效'
       })
     }
-  } else if (secFetchSite === 'same-origin') {
-    // 允许没有 Origin/Referer 但明确标记为同源的请求
+  } else if (isTrustedFetchMetadata(secFetchSite, secFetchMode, method)) {
+    // 浏览器隐私策略可能移除来源头，此时 Fetch Metadata 是更稳定的同源信号。
     return
   } else {
-    // 没有来源信息且非 same-origin 上下文 → 拦截（无法区分同站和跨站）
-    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'none'}`)
+    // 没有来源信息且缺少可信 Fetch Metadata 时，仍按站外请求处理。
+    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'missing'}`)
     throw createError({
       statusCode: 403,
       message: 'Forbidden: 访问此API必须提供Origin或Referer头'
@@ -112,11 +114,27 @@ export default defineEventHandler((event) => {
  */
 function getOriginFromHost(hostHeader: string | undefined, defaultProtocol: string): string | null {
   if (!hostHeader) return null
-  const firstHost = hostHeader.split(',')[0].trim()
+  const firstHost = (hostHeader.split(',')[0] || '').trim()
   try {
     const normalized = firstHost.includes('://') ? firstHost : `${defaultProtocol}//${firstHost}`
     return new URL(normalized).origin
   } catch {
     return null
   }
+}
+
+function isTrustedFetchMetadata(
+  secFetchSite: string | undefined,
+  secFetchMode: string | undefined,
+  method: string
+): boolean {
+  if (secFetchSite === 'same-origin') return true
+
+  if (secFetchSite === 'none') {
+    const safeMethod = method === 'GET' || method === 'HEAD'
+    const isNavigation = !secFetchMode || secFetchMode === 'navigate'
+    return safeMethod && isNavigation
+  }
+
+  return false
 }
