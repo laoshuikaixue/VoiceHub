@@ -450,8 +450,11 @@ const handleGradeChange = () => {
 
 // 安全获取重定向路径，防止开放重定向攻击
 const getSafeRedirect = () => {
-  const redirect = (route.query.redirect as string) || '/'
-  return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
+  const queryRedirect = route.query.redirect
+  // 防御重复 query 参数导致的数组类型
+  const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || '/'
+  // 仅允许同源相对路径，排除 // 和 \/ 绕过
+  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\') ? redirect : '/'
 }
 
 const handle2FASuccess = async () => {
@@ -549,9 +552,9 @@ const handleLogin = async () => {
     // 登录成功，刷新认证状态
     await auth.initAuth()
     if (auth.isAdmin.value) {
-      navigateTo('/dashboard')
+      return navigateTo('/dashboard')
     } else {
-      navigateTo(getSafeRedirect())
+      return navigateTo(getSafeRedirect())
     }
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
@@ -613,7 +616,7 @@ const handleRegisterOAuth = async () => {
     if (response.success) {
       // 账户创建成功，刷新认证状态
       await auth.initAuth()
-      await navigateTo(getSafeRedirect())
+      return navigateTo(getSafeRedirect())
     }
   } catch (err: any) {
     const apiError = err
@@ -645,7 +648,7 @@ const handleWebAuthnLogin = async () => {
     if (verification.success) {
       // 登录成功
       await auth.initAuth()
-      await navigateTo(verification.redirect || getSafeRedirect())
+      return navigateTo(verification.redirect || getSafeRedirect())
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)

@@ -742,7 +742,7 @@
                       </div>
                       <!-- 未登录：显示请先登录 -->
                       <button
-                        v-if="!user"
+                        v-else-if="!user"
                         class="select-btn login-btn"
                         @click.stop.prevent="handleLoginRedirect"
                       >
@@ -2313,6 +2313,8 @@ onMounted(async () => {
         if (savedTitle) {
           title.value = savedTitle
           if (savedPlatform) platform.value = savedPlatform
+          // 确保网易云登录状态就绪后再搜索，保障搜索结果完整性
+          await checkNeteaseLoginStatus()
           await handleSearch()
         }
       }

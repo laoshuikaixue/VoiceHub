@@ -1155,7 +1155,8 @@ onMounted(async () => {
   const bootStartedAt = Date.now()
 
   // 支持 ?tab= 查询参数，用于登录后跳回指定 tab
-  const tabFromQuery = route.query.tab
+  const queryTab = route.query.tab
+  const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
   if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
     activeTab.value = tabFromQuery
   }
