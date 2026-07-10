@@ -89,7 +89,7 @@ function loadMigrationJournalEntries() {
   return [...journal.entries].sort((a, b) => a.when - b.when)
 }
 
-async function seedLegacyMigrationRecords(sql) {
+async function seedMissingMigrationRecords(sql) {
   const entries = loadMigrationJournalEntries()
 
   await sql`CREATE TABLE IF NOT EXISTS public.__drizzle_migrations__ (
@@ -278,6 +278,28 @@ async function checkSchemaConsistency(sql) {
   return true
 }
 
+async function repairSchemaWithPush(sql) {
+  const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
+  if (
+    !safeExec(pushCommand, {
+      env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
+    })
+  ) {
+    err('数据库schema修复失败')
+    return false
+  }
+
+  if (!(await checkSchemaConsistency(sql))) {
+    err('push 后数据库schema仍不完整')
+    return false
+  }
+
+  // push 只同步结构，不会写入迁移表；补齐记录可避免后续 migrate 重放已存在的结构。
+  await seedMissingMigrationRecords(sql)
+  ok('强制同步完成，迁移记录已补齐')
+  return true
+}
+
 async function main() {
   log('🔄 数据库同步', 'cyan')
 
@@ -298,64 +320,48 @@ async function main() {
         err('数据库迁移失败')
         process.exit(1)
       }
+      if (!(await checkSchemaConsistency(sql))) {
+        err('空库迁移后数据库schema仍不完整')
+        process.exit(1)
+      }
       ok('空库迁移完成')
     } else {
-      log('🔁 检测到非空库，检查schema一致性...', 'cyan')
-
       const migrationRecordsExist = await hasMigrationRecords(sql)
-      let schemaConsistent = await checkSchemaConsistency(sql)
-
-      if (!schemaConsistent) {
-        warn('数据库schema不完整，尝试使用 push --force 进行修复...', 'cyan')
-        const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
-        if (
-          !safeExec(pushCommand, {
-            env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
-          })
-        ) {
-          err('数据库schema修复失败')
-          process.exit(1)
-        }
-        schemaConsistent = await checkSchemaConsistency(sql)
-        if (!schemaConsistent) {
-          err('push 后数据库schema仍不完整')
-          process.exit(1)
-        }
-        ok('schema修复成功')
-
-        if (!migrationRecordsExist) {
-          warn('检测到 legacy 数据库迁移记录为空，写入迁移基线记录以便后续版本继续 migrate。')
-          await seedLegacyMigrationRecords(sql)
-          ok('legacy 迁移基线记录写入完成')
-        }
-      } else if (!migrationRecordsExist) {
-        warn('检测到 legacy 数据库：schema 已存在，但迁移记录为空。跳过 migrate 以避免重放历史迁移。')
-        await seedLegacyMigrationRecords(sql)
-        ok('legacy schema 检查通过，迁移基线记录写入完成')
-      } else {
-        log('🔁 数据库schema一致，尝试执行 migrate 同步...', 'cyan')
-
+      if (migrationRecordsExist) {
+        // 正常数据库必须先应用待执行迁移，再检查最终结构；否则新增字段会被误判为schema损坏。
+        log('🔁 检测到迁移记录，先执行 migrate 同步...', 'cyan')
         const migrateSuccess = safeExec('pnpm run db:migrate', {
           env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
         })
 
-        if (migrateSuccess) {
+        const schemaConsistent = migrateSuccess && (await checkSchemaConsistency(sql))
+        if (migrateSuccess && schemaConsistent) {
           ok('migrate 同步成功')
         } else {
-          warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
+          if (migrateSuccess) {
+            warn('migrate 已执行，但数据库schema仍不完整。')
+          } else {
+            warn('migrate 同步失败，可能是由于数据库结构与迁移记录不一致。')
+          }
           log('🔄 尝试使用 push --force 进行强制同步...', 'cyan')
-
-          const pushCommand = 'pnpm exec drizzle-kit push --force --config=drizzle.config.ts'
-          if (
-            !safeExec(pushCommand, {
-              env: { ...NON_INTERACTIVE_ENV, DRIZZLE_KIT_NON_INTERACTIVE: 'true' }
-            })
-          ) {
-            err('数据库同步完全失败。请检查数据库连接或手动运行 pnpm exec drizzle-kit push 以解决歧义。')
+          if (!(await repairSchemaWithPush(sql))) {
+            err('数据库同步完全失败。请检查数据库连接或迁移文件。')
             process.exit(1)
           }
-          ok('强制同步 (push) 成功')
         }
+      } else {
+        warn('检测到 legacy 数据库迁移记录为空，检查schema并写入迁移基线。')
+        const schemaConsistent = await checkSchemaConsistency(sql)
+
+        if (!schemaConsistent) {
+          log('🔄 legacy schema不完整，尝试使用 push --force 进行同步...', 'cyan')
+          if (!(await repairSchemaWithPush(sql))) {
+            process.exit(1)
+          }
+        } else {
+          await seedMissingMigrationRecords(sql)
+        }
+        ok('legacy schema同步完成，迁移基线记录已写入')
       }
     }
   } finally {
