@@ -128,13 +128,15 @@ function isTrustedFetchMetadata(
   secFetchMode: string | undefined,
   method: string
 ): boolean {
+  const safeMethod = method === 'GET' || method === 'HEAD'
+
   if (secFetchSite === 'same-origin') return true
 
   if (secFetchSite === 'none') {
-    const safeMethod = method === 'GET' || method === 'HEAD'
     const isNavigation = !secFetchMode || secFetchMode === 'navigate'
     return safeMethod && isNavigation
   }
 
-  return false
+  // 兼容不发送 Fetch Metadata 的老浏览器、WebView 或反向代理；跨站请求有明确标记时仍会被拒绝。
+  return !secFetchSite && safeMethod
 }
