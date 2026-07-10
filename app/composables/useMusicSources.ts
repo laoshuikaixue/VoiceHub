@@ -88,6 +88,40 @@ const normalizeLyricMatchText = (value: string): string => {
 const bothContains = (a: string, b: string): boolean =>
   a.length > 0 && b.length > 0 && (a.includes(b) || b.includes(a))
 
+/** 拆分多歌手文本，避免同名歌曲只比较整串导致误判 */
+const splitLyricMatchArtists = (value?: string): string[] =>
+  String(value || '')
+    .split(/[、&＆;，,/|·・]+/g)
+    .map((artist) => normalizeLyricMatchText(artist))
+    .filter(Boolean)
+
+const matchLyricArtists = (
+  candidateArtist: string | undefined,
+  trackArtists: readonly string[]
+): { exact: boolean; contains: boolean } => {
+  if (!trackArtists.length) return { exact: false, contains: false }
+
+  const candFull = normalizeLyricMatchText(candidateArtist || '')
+  const candParts = splitLyricMatchArtists(candidateArtist)
+  if (!candFull) return { exact: false, contains: false }
+
+  const exact = trackArtists.some(
+    (artist) => candFull === artist || candParts.some((part) => part === artist)
+  )
+  if (exact) return { exact: true, contains: false }
+
+  const contains = trackArtists.some(
+    (artist) =>
+      artist.length >= 2 &&
+      (bothContains(candFull, artist) || candParts.some((part) => bothContains(part, artist)))
+  )
+
+  return { exact: false, contains }
+}
+
+const isDurationClose = (left?: number, right?: number, tolerance = 5000): boolean =>
+  typeof left === 'number' && typeof right === 'number' && Math.abs(left - right) <= tolerance
+
 /** 子串占长串的最低比例，过低视为巧合 */
 const NAME_CONTAIN_MIN_RATIO = 0.34
 
@@ -96,7 +130,8 @@ const NAME_CONTAIN_MIN_RATIO = 0.34
  *
  * 硬性条件（不满足直接跳过）：
  *  - title 全等，或双向 includes 且短串占长串比例 ≥ NAME_CONTAIN_MIN_RATIO
- *  - title 仅子串命中时，必须有 artist 交集佐证（防止巧合子串误匹配）
+ *  - 原歌曲有 artist 时，候选必须命中至少一个 artist（防止同名异歌手误匹配）
+ *  - title 仅子串命中时，必须有 artist 或接近时长佐证（防止巧合子串误匹配）
  *  - 双方都有 duration 时，差距不能超过 20s
  *
  * 打分规则（分越高越优先，须 ≥ MIN_SCORE）：
@@ -107,12 +142,14 @@ const NAME_CONTAIN_MIN_RATIO = 0.34
  */
 const MIN_SCORE = 4
 
-const pickBestLyricCandidate = <T extends { title?: string; artist?: string; album?: string; duration?: number }>(
+const pickBestLyricCandidate = <
+  T extends { title?: string; artist?: string; album?: string; duration?: number }
+>(
   candidates: T[],
   track: { title?: string; artist?: string; album?: string; duration?: number }
 ): T | null => {
   const trackTitle = normalizeLyricMatchText(track.title || '')
-  const trackArtist = normalizeLyricMatchText(track.artist || '')
+  const trackArtists = splitLyricMatchArtists(track.artist)
   const trackAlbum = normalizeLyricMatchText(track.album || '')
   const trackDuration = track.duration
 
@@ -121,7 +158,6 @@ const pickBestLyricCandidate = <T extends { title?: string; artist?: string; alb
 
   for (const candidate of candidates) {
     const candTitle = normalizeLyricMatchText(candidate.title || '')
-    const candArtist = normalizeLyricMatchText(candidate.artist || '')
     const candAlbum = normalizeLyricMatchText(candidate.album || '')
 
     // 硬性：title 必须匹配
@@ -140,21 +176,26 @@ const pickBestLyricCandidate = <T extends { title?: string; artist?: string; alb
       Math.abs(trackDuration - candidate.duration) > 20000
     ) continue
 
-    const artistExact = trackArtist.length > 0 && candArtist === trackArtist
-    const artistContains = !artistExact && bothContains(candArtist, trackArtist)
+    const artist = matchLyricArtists(candidate.artist, trackArtists)
 
-    // 硬性：title 仅子串命中时 artist 必须有交集
-    if (!titleExact && !artistExact && !artistContains) continue
+    // 硬性：原歌曲有歌手时，候选也必须命中歌手，避免同名异歌手歌词串台
+    if (trackArtists.length > 0 && !artist.exact && !artist.contains) continue
+
+    // 硬性：title 仅子串命中时，必须有歌手或时长佐证
+    if (
+      !titleExact &&
+      !artist.exact &&
+      !artist.contains &&
+      !isDurationClose(candidate.duration, trackDuration)
+    ) {
+      continue
+    }
 
     let score = titleExact ? 10 : 4
-    if (artistExact) score += 5
-    else if (artistContains) score += 2
+    if (artist.exact) score += 5
+    else if (artist.contains) score += 2
     if (trackAlbum && candAlbum === trackAlbum) score += 2
-    if (
-      typeof trackDuration === 'number' &&
-      typeof candidate.duration === 'number' &&
-      Math.abs(trackDuration - candidate.duration) <= 5000
-    ) score += 3
+    if (isDurationClose(candidate.duration, trackDuration)) score += 3
 
     if (score > bestScore) {
       bestScore = score
