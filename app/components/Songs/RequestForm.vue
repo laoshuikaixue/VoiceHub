@@ -3019,8 +3019,7 @@ const handleShowLogin = () => {
 }
 
 // 未登录时跳转登录页，保留搜索状态
-const handleLoginRedirect = () => {
-  const router = useRouter()
+const handleLoginRedirect = async () => {
   // 保存搜索状态到 sessionStorage
   if (title.value.trim()) {
     try {
@@ -3031,7 +3030,7 @@ const handleLoginRedirect = () => {
     } catch (e) { /* ignore */ }
   }
   // 带上 tab 参数，确保登录后回到投稿歌曲页
-  router.push(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
+  await navigateTo(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
 }
 
 // 提交选中的歌曲

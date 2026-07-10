@@ -448,12 +448,17 @@ const handleGradeChange = () => {
   studentClass.value = ''
 }
 
+// 安全获取重定向路径，防止开放重定向攻击
+const getSafeRedirect = () => {
+  const redirect = (route.query.redirect as string) || '/'
+  return redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/'
+}
+
 const handle2FASuccess = async () => {
   if (auth.isAdmin.value) {
     await navigateTo('/dashboard')
   } else {
-    const redirect = (route.query.redirect as string) || '/'
-    await navigateTo(redirect)
+    await navigateTo(getSafeRedirect())
   }
 }
 
@@ -546,8 +551,7 @@ const handleLogin = async () => {
     if (auth.isAdmin.value) {
       navigateTo('/dashboard')
     } else {
-      const redirect = (route.query.redirect as string) || '/'
-      navigateTo(redirect)
+      navigateTo(getSafeRedirect())
     }
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
@@ -609,8 +613,7 @@ const handleRegisterOAuth = async () => {
     if (response.success) {
       // 账户创建成功，刷新认证状态
       await auth.initAuth()
-      const redirect = (route.query.redirect as string) || '/'
-      await navigateTo(redirect)
+      await navigateTo(getSafeRedirect())
     }
   } catch (err: any) {
     const apiError = err
@@ -642,7 +645,7 @@ const handleWebAuthnLogin = async () => {
     if (verification.success) {
       // 登录成功
       await auth.initAuth()
-      await navigateTo(verification.redirect || (route.query.redirect as string) || '/')
+      await navigateTo(verification.redirect || getSafeRedirect())
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)
