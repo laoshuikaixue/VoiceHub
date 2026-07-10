@@ -204,6 +204,7 @@ async function checkSchemaConsistency(sql) {
       'enableSubmissionRemarks',
       'enableCardCodeRequests',
       'requireCardCodeForRequests',
+      'enableCardCodeLimitBypass',
       'captchaProvider',
       'turnstileSiteKey',
       'turnstileSecretKey',

@@ -127,7 +127,13 @@
         <div class="search-results-container">
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
-            v-if="user && submissionStatus && submissionStatus.limitEnabled"
+            v-if="
+              user &&
+              submissionStatus &&
+              (submissionStatus.limitEnabled ||
+                submissionStatus.timeLimitationEnabled ||
+                submissionStatus.submissionClosed)
+            "
             class="submission-status-horizontal"
           >
             <!-- 超级管理员提示 -->
@@ -204,6 +210,14 @@
                     Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
                   }}</span
                 >
+              </div>
+
+              <div
+                v-if="cardCodeLimitBypassActive"
+                class="status-item-horizontal"
+              >
+                <span class="status-label">点歌券：</span>
+                <span class="status-value">不占普通额度</span>
               </div>
             </div>
           </div>
@@ -1377,8 +1391,10 @@ const {
   enableReplayRequests,
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
+  enableSubmissionLimit,
   enableCardCodeRequests,
-  requireCardCodeForRequests
+  requireCardCodeForRequests,
+  enableCardCodeLimitBypass
 } = useSiteConfig()
 
 // 用户认证
@@ -1441,19 +1457,30 @@ const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
 
+const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
+const cardCodeLimitBypassActive = computed(
+  () => enableSubmissionLimit.value && cardCodeEnabled.value && enableCardCodeLimitBypass.value
+)
+
 const cardCodeFieldMeta = computed(() => ({
   required: requireCardCodeForRequests.value,
   helper: requireCardCodeForRequests.value
-    ? '开启强制点歌券后，提交点歌时必须填写有效点歌券。'
-    : '填写点歌券可用于抵扣或提交点歌。',
+    ? cardCodeLimitBypassActive.value
+      ? '提交点歌时必须填写有效点歌券；点歌券投稿不占普通额度。'
+      : '开启强制点歌券后，提交点歌时必须填写有效点歌券。'
+    : cardCodeLimitBypassActive.value
+      ? '使用有效点歌券可突破个人投稿限额，且不占普通额度。'
+      : '填写点歌券可用于抵扣或提交点歌。',
   placeholder: '请输入点歌券'
 }))
 
-const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
 const trimmedCardCode = computed(() => cardCode.value.trim())
 const cardCodeStatusText = computed(() => {
   if (cardCodeValidation.value.checking) return '正在验证点歌券...'
   if (trimmedCardCode.value) {
+    if (cardCodeValidation.value.valid && cardCodeLimitBypassActive.value) {
+      return '点歌券可用，不占普通额度'
+    }
     return cardCodeValidation.value.message || '已填写点歌券，提交前会验证'
   }
   return cardCodeFieldMeta.value.required ? '提交前需要添加有效点歌券' : '可选添加点歌券'
@@ -3772,7 +3799,7 @@ const checkSubmissionLimit = () => {
     return { canSubmit: true, message: '' }
   }
 
-  if (!submissionStatus.value || !submissionStatus.value.limitEnabled) {
+  if (!submissionStatus.value) {
     return { canSubmit: true, message: '' }
   }
 
@@ -3797,6 +3824,18 @@ const checkSubmissionLimit = () => {
         message: `当前时段投稿名额已满 (${accepted}/${expected})`
       }
     }
+  }
+
+  if (!submissionStatus.value.limitEnabled) {
+    return { canSubmit: true, message: '' }
+  }
+
+  if (
+    cardCodeLimitBypassActive.value &&
+    trimmedCardCode.value &&
+    cardCodeValidation.value.valid === true
+  ) {
+    return { canSubmit: true, message: '' }
   }
 
   const { dailyLimit, weeklyLimit, monthlyLimit, dailyUsed, weeklyUsed, monthlyUsed } =
