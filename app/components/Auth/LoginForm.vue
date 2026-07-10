@@ -452,7 +452,8 @@ const handle2FASuccess = async () => {
   if (auth.isAdmin.value) {
     await navigateTo('/dashboard')
   } else {
-    await navigateTo('/')
+    const redirect = (route.query.redirect as string) || '/'
+    await navigateTo(redirect)
   }
 }
 
@@ -545,7 +546,8 @@ const handleLogin = async () => {
     if (auth.isAdmin.value) {
       navigateTo('/dashboard')
     } else {
-      navigateTo('/')
+      const redirect = (route.query.redirect as string) || '/'
+      navigateTo(redirect)
     }
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
@@ -607,7 +609,8 @@ const handleRegisterOAuth = async () => {
     if (response.success) {
       // 账户创建成功，刷新认证状态
       await auth.initAuth()
-      await navigateTo('/')
+      const redirect = (route.query.redirect as string) || '/'
+      await navigateTo(redirect)
     }
   } catch (err: any) {
     const apiError = err
@@ -639,7 +642,7 @@ const handleWebAuthnLogin = async () => {
     if (verification.success) {
       // 登录成功
       await auth.initAuth()
-      await navigateTo(verification.redirect || '/')
+      await navigateTo(verification.redirect || (route.query.redirect as string) || '/')
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)

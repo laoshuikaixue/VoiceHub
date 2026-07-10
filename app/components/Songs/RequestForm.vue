@@ -125,6 +125,13 @@
 
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
+          <!-- 未登录提示 -->
+          <div v-if="!user" class="submission-status-horizontal login-required-notice">
+            <span class="notice-icon">🔒</span>
+            <span class="notice-text">注意，您尚未登录，不能投稿</span>
+            <button class="login-link-btn" type="button" @click="handleLoginRedirect">立即登录</button>
+          </div>
+
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
             v-if="user && submissionStatus && submissionStatus.limitEnabled"
@@ -733,6 +740,14 @@
                           }}
                         </button>
                       </div>
+                      <!-- 未登录：显示请先登录 -->
+                      <button
+                        v-if="!user"
+                        class="select-btn login-btn"
+                        @click.stop.prevent="handleLoginRedirect"
+                      >
+                        请先登录
+                      </button>
                       <button
                         v-else
                         :disabled="submitting"
@@ -755,7 +770,20 @@
 
                 <!-- 手动输入按钮 -->
                 <div class="no-results-action">
-                  <button class="manual-submit-btn" type="button" @click="showManualModal = true">
+                  <button
+                    v-if="!user"
+                    class="manual-submit-btn"
+                    type="button"
+                    @click="handleLoginRedirect"
+                  >
+                    请先登录后提交
+                  </button>
+                  <button
+                    v-else
+                    class="manual-submit-btn"
+                    type="button"
+                    @click="showManualModal = true"
+                  >
                     以上没有我想要的歌曲，手动输入提交
                   </button>
                 </div>
@@ -766,7 +794,20 @@
                 <div class="empty-icon">🔍</div>
                 <p class="empty-text">未找到相关歌曲</p>
                 <p class="empty-hint">试试其他关键词或切换平台</p>
-                <button class="manual-submit-btn" type="button" @click="showManualModal = true">
+                <button
+                  v-if="!user"
+                  class="manual-submit-btn"
+                  type="button"
+                  @click="handleLoginRedirect"
+                >
+                  请先登录后提交
+                </button>
+                <button
+                  v-else
+                  class="manual-submit-btn"
+                  type="button"
+                  @click="showManualModal = true"
+                >
                   手动输入提交
                 </button>
               </div>
@@ -2262,6 +2303,20 @@ onMounted(async () => {
     } catch (error) {
       console.error('加载歌曲列表失败:', error)
     }
+
+    // 恢复登录前的搜索状态
+    try {
+      const pendingSearch = sessionStorage.getItem('pending_search')
+      if (pendingSearch) {
+        const { title: savedTitle, platform: savedPlatform } = JSON.parse(pendingSearch)
+        sessionStorage.removeItem('pending_search')
+        if (savedTitle) {
+          title.value = savedTitle
+          if (savedPlatform) platform.value = savedPlatform
+          await handleSearch()
+        }
+      }
+    } catch (e) { /* ignore */ }
   }
   // 音源健康检查功能已移除
 })
@@ -2961,6 +3016,21 @@ const openUploadDialog = (result) => {
 const handleShowLogin = () => {
   showUploadDialog.value = false
   showLoginModal.value = true
+}
+
+// 未登录时跳转登录页，保留搜索状态
+const handleLoginRedirect = () => {
+  const router = useRouter()
+  // 保存搜索状态到 sessionStorage
+  if (title.value.trim()) {
+    try {
+      sessionStorage.setItem('pending_search', JSON.stringify({
+        title: title.value.trim(),
+        platform: platform.value
+      }))
+    } catch (e) { /* ignore */ }
+  }
+  router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
 }
 
 // 提交选中的歌曲
@@ -4301,6 +4371,45 @@ defineExpose({
   font-weight: 500;
   font-size: 13px;
   color: #ff6b6b;
+}
+
+/* 未登录提示样式 */
+.login-required-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.login-required-notice .notice-icon {
+  font-size: 14px;
+}
+
+.login-required-notice .notice-text {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #93c5fd;
+}
+
+.login-required-notice .login-link-btn {
+  font-family: 'MiSans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.login-required-notice .login-link-btn:hover {
+  background: rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
 }
 
 .status-content-horizontal {
