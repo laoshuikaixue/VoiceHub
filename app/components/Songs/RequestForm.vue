@@ -3030,7 +3030,8 @@ const handleLoginRedirect = () => {
       }))
     } catch (e) { /* ignore */ }
   }
-  router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+  // 带上 tab 参数，确保登录后回到投稿歌曲页
+  router.push(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
 }
 
 // 提交选中的歌曲
