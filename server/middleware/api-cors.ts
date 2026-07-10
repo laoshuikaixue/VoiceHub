@@ -128,7 +128,8 @@ function isTrustedFetchMetadata(
   secFetchMode: string | undefined,
   method: string
 ): boolean {
-  const safeMethod = method === 'GET' || method === 'HEAD'
+  const normalizedMethod = method.toUpperCase()
+  const safeMethod = normalizedMethod === 'GET' || normalizedMethod === 'HEAD'
 
   if (secFetchSite === 'same-origin') return true
 
