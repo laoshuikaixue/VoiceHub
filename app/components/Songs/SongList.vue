@@ -12,7 +12,7 @@
             class="mobile-search-input"
             placeholder="搜索点播记录..."
             type="text"
-          >
+          />
         </div>
 
         <div class="mobile-tabs">
@@ -86,7 +86,7 @@
               class="search-input"
               placeholder="输入想要搜索的歌曲"
               type="text"
-            >
+            />
             <span class="search-icon">🔍</span>
           </div>
 
@@ -198,7 +198,7 @@
                     class="cover-image"
                     referrerpolicy="no-referrer"
                     @error="handleImageError($event, song)"
-                  >
+                  />
                 </template>
                 <div v-else class="text-cover">
                   {{ getFirstChar(song.title) }}
@@ -307,7 +307,7 @@
                     class="like-button"
                     @click.stop="handleVote(song)"
                   >
-                    <img alt="点赞" class="like-icon" :src="thumbsUp" >
+                    <img alt="点赞" class="like-icon" :src="thumbsUp" />
                   </button>
                 </div>
               </div>
@@ -395,7 +395,12 @@
                 </div>
                 <div class="submission-note-meta">
                   <span class="song-title-tag">{{ submissionNoteDialog.songTitle }}</span>
-                  <span :class="['visibility-tag', submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private']">
+                  <span
+                    :class="[
+                      'visibility-tag',
+                      submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private'
+                    ]"
+                  >
                     {{ submissionNoteDialog.isPublic ? '公开备注' : '仅管理员可见' }}
                   </span>
                 </div>
@@ -1098,25 +1103,33 @@ const playSongWithUrlFetching = async (song) => {
 }
 
 // 切换歌曲播放/暂停
-const unlockMobileAudioPlayback = async () => {
+const unlockMobileAudioPlayback = () => {
   if (typeof document === 'undefined') return
 
   const audio = document.querySelector('audio')
-  if (!audio) return
+  if (!audio || audio.currentSrc) return
 
-  try {
-    const wasMuted = audio.muted
-    audio.muted = true
-    await audio.play()
-    audio.pause()
+  const wasMuted = audio.muted
+  audio.muted = true
+
+  // 空音频的 play Promise 可能一直等待 src，不能阻塞后续播放链接解析
+  const playPromise = audio.play()
+  if (playPromise) {
+    playPromise
+      .then(() => {
+        audio.muted = wasMuted
+      })
+      .catch((error) => {
+        audio.muted = wasMuted
+        console.debug('[SongList] 移动端音频解锁未完成:', error)
+      })
+  } else {
     audio.muted = wasMuted
-  } catch (error) {
-    console.debug('[SongList] 移动端音频解锁未完成:', error)
   }
 }
 
 const togglePlaySong = async (song) => {
-  await unlockMobileAudioPlayback()
+  unlockMobileAudioPlayback()
 
   // 检查是否为当前歌曲且正在播放
   if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
@@ -1129,10 +1142,7 @@ const togglePlaySong = async (song) => {
   if (audioPlayer.isCurrentSong(song.id) && !audioPlayer.getPlayingStatus().value) {
     // 检查当前全局歌曲是否有URL
     const currentGlobalSong = audioPlayer.getCurrentSong().value
-    if (
-      currentGlobalSong &&
-      (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))
-    ) {
+    if (currentGlobalSong && (currentGlobalSong.musicUrl || isBilibiliSong(currentGlobalSong))) {
       // 如果有URL或者是哔哩哔哩视频，直接恢复播放
       audioPlayer.playSong(currentGlobalSong)
     } else {
