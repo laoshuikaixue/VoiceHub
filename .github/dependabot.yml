@@ -83,6 +83,9 @@ updates:
       - 'dependencies'
       - 'automated'
       - 'chore'
+    ignore:
+      # 工作流依赖由人工维护，避免 GitHub Actions 自动更新
+      - dependency-name: '*'
     groups:
       gha-all:
         applies-to: version-updates
