@@ -1,4 +1,4 @@
-import { parseState, getRedirectUri } from '~~/server/utils/oauth'
+import { parseState, getRedirectUri, getSafeOAuthReturnPath } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
@@ -95,16 +95,18 @@ export default defineEventHandler(async (event) => {
   const providerUserId = userInfo.id
   const providerUsername = userInfo.username
 
-  return handleUserLoginOrBind(event, provider, providerUserId, providerUsername)
+  return handleUserLoginOrBind(event, provider, providerUserId, providerUsername, state.returnTo)
 })
 
 async function handleUserLoginOrBind(
   event: H3Event,
   provider: string,
   providerUserId: string,
-  providerUsername: string
+  providerUsername: string,
+  returnTo?: string
 ) {
   const isSecure = isSecureRequest(event)
+  const safeReturnTo = getSafeOAuthReturnPath(returnTo)
 
   // 4. 检查是否已登录（绑定模式）
   const authToken = getCookie(event, 'auth-token')
@@ -204,7 +206,7 @@ async function handleUserLoginOrBind(
       maxAge: 60 * 60 * 24 * 7,
       path: '/'
     })
-    return sendRedirect(event, '/')
+    return sendRedirect(event, safeReturnTo || '/')
   } else {
     // 绑定
     const bindingToken = generateBindingToken({
@@ -222,9 +224,10 @@ async function handleUserLoginOrBind(
       path: '/'
     })
 
+    const redirectQuery = safeReturnTo ? `&redirect=${encodeURIComponent(safeReturnTo)}` : ''
     return sendRedirect(
       event,
-      `/login?action=bind&provider=${provider}&username=${encodeURIComponent(providerUsername)}`
+      `/login?action=bind&provider=${provider}&username=${encodeURIComponent(providerUsername)}${redirectQuery}`
     )
   }
 }
