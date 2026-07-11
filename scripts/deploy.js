@@ -67,17 +67,63 @@ function safeExec(command, options = {}) {
   }
 }
 
-function execAsync(command, options = {}) {
+function execAsync(command, args = [], options = {}) {
   return new Promise((resolve) => {
-    const child = spawn(command, {
-      stdio: 'inherit',
-      shell: true,
-      ...options
-    })
+    const { signal, ...spawnOptions } = options
+    let abortHandler
+    let settled = false
+    const finish = (success) => {
+      if (settled) return
+      settled = true
+      if (signal && abortHandler) signal.removeEventListener('abort', abortHandler)
+      resolve(success)
+    }
+    let child
+    try {
+      child = spawn(command, args, {
+        stdio: 'inherit',
+        detached: Boolean(signal) && process.platform !== 'win32',
+        ...spawnOptions
+      })
+    } catch {
+      finish(false)
+      return
+    }
 
-    child.on('error', () => resolve(false))
-    child.on('exit', (code) => resolve(code === 0))
+    if (signal) {
+      abortHandler = () => {
+        if (child.exitCode !== null || child.signalCode !== null) return
+        if (process.platform === 'win32') {
+          const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
+            stdio: 'ignore',
+            windowsHide: true
+          })
+          killer.once('error', () => child.kill('SIGTERM'))
+          killer.once('exit', (code) => {
+            if (code !== 0 && child.exitCode === null) child.kill('SIGTERM')
+          })
+        } else {
+          try {
+            process.kill(-child.pid, 'SIGTERM')
+          } catch {
+            child.kill('SIGTERM')
+          }
+        }
+      }
+      signal.addEventListener('abort', abortHandler, { once: true })
+      if (signal.aborted) abortHandler()
+    }
+
+    child.once('error', () => finish(false))
+    child.once('exit', (code) => finish(code === 0))
   })
+}
+
+function settleTask(task) {
+  return task.then(
+    () => ({ success: true }),
+    (error) => ({ success: false, error })
+  )
 }
 
 async function syncDatabase() {
@@ -93,25 +139,32 @@ async function syncDatabase() {
     CI: 'true',
     NODE_ENV: 'production'
   }
-  if (!(await execAsync('node scripts/db-sync.js', { env: nonInteractiveEnv }))) {
+  if (!(await execAsync(process.execPath, ['scripts/db-sync.js'], { env: nonInteractiveEnv }))) {
     throw new Error('数据库同步失败，已终止部署以避免运行时schema不一致')
   }
   logSuccess('数据库同步成功')
 
   if (fileExists('scripts/create-admin.js')) {
     logStep('👤', '检查管理员账户...')
-    await execAsync('pnpm run create-admin', { env: nonInteractiveEnv })
+    if (
+      !(await execAsync('pnpm run create-admin', [], {
+        env: nonInteractiveEnv,
+        shell: true
+      }))
+    ) {
+      throw new Error('创建或检查管理员账户失败')
+    }
   }
 }
 
-async function buildApplication() {
+async function buildApplication(signal) {
   if (process.env.SKIP_BUILD === 'true') {
     logStep('🔨', '跳过应用构建 (SKIP_BUILD=true)...')
     return
   }
 
   logStep('🔨', '构建应用...')
-  if (!(await execAsync('node scripts/build.js', { env: process.env }))) {
+  if (!(await execAsync(process.execPath, ['scripts/build.js'], { env: process.env, signal }))) {
     throw new Error('应用构建失败')
   }
   logSuccess('应用构建完成')
@@ -198,11 +251,19 @@ async function deploy() {
     }
 
     // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
-    const tasks = await Promise.allSettled([syncDatabase(), buildApplication()])
-    const failedTask = tasks.find((task) => task.status === 'rejected')
-    if (failedTask) {
-      throw failedTask.reason
-    }
+    const buildController = new AbortController()
+    const databaseTask = syncDatabase().catch((error) => {
+      buildController.abort()
+      throw error
+    })
+
+    // 数据库失败时主动取消构建；构建失败时等待迁移安全结束，避免中断数据库事务。
+    const [databaseResult, buildResult] = await Promise.all([
+      settleTask(databaseTask),
+      settleTask(buildApplication(buildController.signal))
+    ])
+    if (!databaseResult.success) throw databaseResult.error
+    if (!buildResult.success) throw buildResult.error
 
     log('🎉 部署完成！', 'green')
   } catch (error) {

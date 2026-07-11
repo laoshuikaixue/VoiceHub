@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { spawn } from 'child_process'
 import { config } from 'dotenv'
 import path from 'path'
 
@@ -332,7 +332,48 @@ function printBuildEnvironment(rawNodeOptions) {
   log('')
 }
 
-function build() {
+function runNuxtBuild() {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (success) => {
+      if (settled) return
+      settled = true
+      resolve(success)
+    }
+    let child
+    try {
+      child = spawn(process.execPath, ['./node_modules/nuxt/bin/nuxt.mjs', 'build'], {
+        stdio: 'inherit',
+        env: process.env
+      })
+    } catch {
+      finish(false)
+      return
+    }
+    const forwardSignal = (signal) => {
+      if (child.exitCode === null && child.signalCode === null) child.kill(signal)
+    }
+    const onSigterm = () => forwardSignal('SIGTERM')
+    const onSigint = () => forwardSignal('SIGINT')
+    const cleanup = () => {
+      process.off('SIGTERM', onSigterm)
+      process.off('SIGINT', onSigint)
+    }
+
+    process.once('SIGTERM', onSigterm)
+    process.once('SIGINT', onSigint)
+    child.once('error', () => {
+      cleanup()
+      finish(false)
+    })
+    child.once('exit', (code) => {
+      cleanup()
+      finish(code === 0)
+    })
+  })
+}
+
+async function build() {
   const rawNodeOptions = process.env.NODE_OPTIONS
   normalizeBlankEnvironment()
   process.env.NODE_OPTIONS = resolveNodeOptions(rawNodeOptions)
@@ -341,13 +382,11 @@ function build() {
   if (process.argv.includes('--diagnostics-only')) return
 
   log('🔨 开始执行 Nuxt 构建...', 'cyan')
-  try {
-    execSync('pnpm exec nuxt build', { stdio: 'inherit', env: process.env })
-    log('✅ Nuxt 构建完成', 'green')
-  } catch {
-    log('❌ Nuxt 构建失败', 'yellow')
-    process.exit(1)
-  }
+  if (!(await runNuxtBuild())) throw new Error('Nuxt 构建失败')
+  log('✅ Nuxt 构建完成', 'green')
 }
 
-build()
+build().catch((error) => {
+  log(`❌ ${error.message}`, 'yellow')
+  process.exit(1)
+})
