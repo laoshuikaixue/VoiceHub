@@ -62,55 +62,20 @@ async function netlifyBuild() {
     process.env.NETLIFY = 'true'
     process.env.NITRO_PRESET = 'netlify'
 
-    // 2. 清理构建目录
-    logStep('🧹', '清理构建目录...')
-    if (fileExists('dist')) safeExec('rm -rf dist')
-    if (fileExists('.netlify')) safeExec('rm -rf .netlify')
-    if (fileExists('.nuxt')) safeExec('rm -rf .nuxt')
-    logSuccess('清理完成')
+    // Netlify 会在 build.command 前完成依赖安装，保留平台缓存可显著缩短后续部署。
+    logStep('📦', '使用 Netlify 已安装的依赖和构建缓存...')
 
-    // 3. 安装依赖
-    logStep('📦', '安装依赖...')
-    let installed = false
-    if (fileExists('node_modules')) {
-      safeExec('rm -rf node_modules')
-    }
-
-    if (fileExists('pnpm-lock.yaml')) {
-      if (safeExec('pnpm install --frozen-lockfile')) {
-        installed = true
-        logSuccess('依赖安装完成 (pnpm install --frozen-lockfile)')
-      } else {
-        logWarning('pnpm install --frozen-lockfile 安装失败，准备回退到 pnpm install...')
-      }
-    } else {
-      logWarning('未检测到 pnpm-lock.yaml，跳过冻结锁文件安装，直接使用 pnpm install...')
-    }
-
-    if (!installed) {
-      if (!safeExec('pnpm install')) {
-        throw new Error('依赖安装失败')
-      }
-      logSuccess('依赖安装完成 (pnpm install)')
-    }
-
-    // 验证 Drizzle 依赖
-    if (!safeExec('pnpm list drizzle-orm drizzle-kit')) {
-      if (!safeExec('pnpm add drizzle-orm drizzle-kit')) {
-        throw new Error('Drizzle 依赖安装失败')
-      }
-    }
-    // 4. 检查 Drizzle 配置
+    // 2. 检查 Drizzle 配置
     if (!fileExists('drizzle.config.ts') || !fileExists('app/drizzle/schema.ts')) {
       throw new Error('Drizzle 配置文件不完整')
     }
 
-    // 5. 确保迁移目录存在
+    // 3. 确保迁移目录存在
     if (!fileExists('app/drizzle/migrations')) {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 6. 数据库同步
+    // 4. 数据库同步
     if (process.env.DATABASE_URL) {
       logStep('�️', '同步数据库...')
       const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
@@ -129,14 +94,14 @@ async function netlifyBuild() {
       logWarning('未设置 DATABASE_URL')
     }
 
-    // 7. 构建应用
+    // 5. 构建应用
     logStep('🔨', '构建应用...')
     if (!safeExec('node scripts/build.js', { env: process.env })) {
       throw new Error('构建失败')
     }
     logSuccess('构建完成')
 
-    // 8. 验证构建输出
+    // 6. 验证构建输出
     const hasNetlifyFunctions = fileExists('.netlify/functions-internal/server')
     const hasOutputPublic = fileExists('.output/public')
 

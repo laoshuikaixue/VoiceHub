@@ -9,6 +9,51 @@ config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
 const BUILD_MEMORY_MB = 6144
 const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 const HIDDEN_VALUE = '[已隐藏]'
+const SUPPORTED_ENV_VARIABLES = [
+  'NODE_ENV',
+  'NODE_OPTIONS',
+  'NITRO_PRESET',
+  'VERCEL',
+  'VERCEL_ENV',
+  'NETLIFY',
+  'PREBUILT',
+  'SKIP_INSTALL',
+  'SKIP_BUILD',
+  'CI',
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'REDIS_URL',
+  'DEBUG_SQL',
+  'WEBAUTHN_RP_ID',
+  'WEBAUTHN_ORIGIN',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
+  'CASDOOR_CLIENT_ID',
+  'CASDOOR_CLIENT_SECRET',
+  'CASDOOR_ENDPOINT',
+  'CASDOOR_ORGANIZATION_NAME',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'OAUTH_REDIRECT_URI',
+  'OAUTH_STATE_SECRET',
+  'NUXT_PUBLIC_HOST',
+  'NUXT_PUBLIC_SITE_TITLE',
+  'NUXT_PUBLIC_SITE_DESCRIPTION',
+  'NUXT_PUBLIC_SITE_LOGO',
+  'NUXT_PUBLIC_SEO_CONFIG',
+  'SENTRY_DSN',
+  'SENTRY_ENVIRONMENT',
+  'SENTRY_RELEASE',
+  'SENTRY_TRACES_SAMPLE_RATE',
+  'NUXT_PUBLIC_SENTRY_DSN',
+  'NUXT_PUBLIC_SENTRY_ENVIRONMENT',
+  'NUXT_PUBLIC_SENTRY_RELEASE',
+  'NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE',
+  'NUXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE',
+  'NUXT_PUBLIC_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE',
+  'VERCEL_GIT_COMMIT_SHA',
+  'COMMIT_REF'
+]
 
 const colors = {
   reset: '\x1b[0m',
@@ -23,7 +68,16 @@ function log(message, color = 'reset') {
 }
 
 function isProvided(value) {
-  return typeof value === 'string' && value.length > 0
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+function normalizeBlankEnvironment() {
+  for (const name of SUPPORTED_ENV_VARIABLES) {
+    const value = process.env[name]
+    if (typeof value === 'string' && value.length > 0 && value.trim().length === 0) {
+      delete process.env[name]
+    }
+  }
 }
 
 function providedState(value) {
@@ -67,6 +121,14 @@ function resolveNitroPreset() {
   return `${process.env.NITRO_PRESET || 'node-server'}${process.env.NITRO_PRESET ? '' : '（默认值）'}`
 }
 
+function resolveNodeOptions(value) {
+  const options = isProvided(value) ? value.trim() : ''
+  const hasMemoryLimit = /(?:^|\s)--max[-_]old[-_]space[-_]size(?:=|\s|$)/.test(options)
+
+  if (hasMemoryLimit) return options
+  return options ? `${options} ${DEFAULT_NODE_OPTIONS}` : DEFAULT_NODE_OPTIONS
+}
+
 function resolveSeoConfig() {
   if (!isProvided(process.env.NUXT_PUBLIC_SEO_CONFIG)) {
     return { state: '未配置', result: '使用分项配置或默认值' }
@@ -86,7 +148,7 @@ function resolveSeoConfig() {
   }
 }
 
-function printBuildEnvironment() {
+function printBuildEnvironment(rawNodeOptions) {
   const backendTraces = numberInUnitInterval(process.env.SENTRY_TRACES_SAMPLE_RATE, 0.1)
   const frontendTraces = numberInUnitInterval(
     process.env.NUXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE || process.env.SENTRY_TRACES_SAMPLE_RATE,
@@ -108,13 +170,10 @@ function printBuildEnvironment() {
 
   log('\n构建与部署：', 'cyan')
   printItem('NODE_ENV', displayValue(process.env.NODE_ENV), process.env.NODE_ENV || '由 Nuxt 决定')
-  printItem(
-    'NODE_OPTIONS',
-    displayValue(process.env.NODE_OPTIONS),
-    process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
-  )
+  printItem('NODE_OPTIONS', displayValue(rawNodeOptions), process.env.NODE_OPTIONS)
   printItem('NITRO_PRESET', displayValue(process.env.NITRO_PRESET), resolveNitroPreset())
   printItem('VERCEL', displayValue(process.env.VERCEL), process.env.VERCEL ? '已检测' : '未检测')
+  printItem('VERCEL_ENV', displayValue(process.env.VERCEL_ENV), process.env.VERCEL_ENV || '未检测')
   printItem('NETLIFY', displayValue(process.env.NETLIFY), process.env.NETLIFY ? '已检测' : '未检测')
   printItem(
     'PREBUILT',
@@ -274,8 +333,10 @@ function printBuildEnvironment() {
 }
 
 function build() {
-  printBuildEnvironment()
-  process.env.NODE_OPTIONS ||= DEFAULT_NODE_OPTIONS
+  const rawNodeOptions = process.env.NODE_OPTIONS
+  normalizeBlankEnvironment()
+  process.env.NODE_OPTIONS = resolveNodeOptions(rawNodeOptions)
+  printBuildEnvironment(rawNodeOptions)
 
   if (process.argv.includes('--diagnostics-only')) return
 

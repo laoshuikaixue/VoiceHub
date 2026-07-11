@@ -14,6 +14,11 @@ if (process.env.PREBUILT === 'true') {
   process.env.SKIP_BUILD = 'true'
 }
 
+// Vercel 会在 buildCommand 前执行 installCommand，避免部署时重复安装全部依赖。
+if (process.env.VERCEL) {
+  process.env.SKIP_INSTALL = 'true'
+}
+
 // 颜色输出函数
 const colors = {
   reset: '\x1b[0m',
@@ -99,7 +104,8 @@ async function deploy() {
 
     // 1. 安装依赖
     if (process.env.SKIP_INSTALL === 'true') {
-      logStep('📦', '跳过依赖安装 (SKIP_INSTALL=true)...')
+      const reason = process.env.VERCEL ? 'Vercel 已完成依赖安装' : 'SKIP_INSTALL=true'
+      logStep('📦', `跳过依赖安装 (${reason})...`)
     } else {
       logStep('📦', '安装依赖...')
       let installed = false
