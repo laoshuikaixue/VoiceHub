@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { spawn } from 'child_process'
 import fs from 'fs'
 
 // 颜色输出
@@ -32,16 +32,45 @@ function logError(message) {
   log(`❌ ${message}`, 'red')
 }
 
-// 安全执行命令
-function safeExec(command, options = {}) {
-  try {
-    execSync(command, { stdio: 'inherit', ...options })
-    return true
-  } catch (error) {
-    logError(`命令执行失败: ${command}`)
-    logError(error.message)
-    return false
+function execAsync(command, options = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(command, {
+      stdio: 'inherit',
+      shell: true,
+      ...options
+    })
+
+    child.on('error', () => resolve(false))
+    child.on('exit', (code) => resolve(code === 0))
+  })
+}
+
+async function syncDatabase() {
+  if (!process.env.DATABASE_URL) {
+    logWarning('未设置 DATABASE_URL')
+    return
   }
+
+  logStep('🗄️', '同步数据库...')
+  const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
+  if (await execAsync('node scripts/db-sync.js', { env })) {
+    logSuccess('数据库同步成功')
+  } else {
+    logWarning('数据库同步失败')
+  }
+
+  if (fileExists('scripts/create-admin.js')) {
+    logStep('👤', '检查管理员账户...')
+    await execAsync('pnpm run create-admin', { env })
+  }
+}
+
+async function buildApplication() {
+  logStep('🔨', '构建应用...')
+  if (!(await execAsync('node scripts/build.js', { env: process.env }))) {
+    throw new Error('构建失败')
+  }
+  logSuccess('构建完成')
 }
 
 // 检查文件是否存在
@@ -75,33 +104,12 @@ async function netlifyBuild() {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 4. 数据库同步
-    if (process.env.DATABASE_URL) {
-      logStep('�️', '同步数据库...')
-      const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
-      if (safeExec('node scripts/db-sync.js', { env })) {
-        logSuccess('数据库同步成功')
-      } else {
-        logWarning('数据库同步失败')
-      }
+    // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
+    const tasks = await Promise.allSettled([syncDatabase(), buildApplication()])
+    const failedTask = tasks.find((task) => task.status === 'rejected')
+    if (failedTask) throw failedTask.reason
 
-      // 检查管理员账户
-      if (fileExists('scripts/create-admin.js')) {
-        logStep('👤', '检查管理员账户...')
-        safeExec('pnpm run create-admin', { env })
-      }
-    } else {
-      logWarning('未设置 DATABASE_URL')
-    }
-
-    // 5. 构建应用
-    logStep('🔨', '构建应用...')
-    if (!safeExec('node scripts/build.js', { env: process.env })) {
-      throw new Error('构建失败')
-    }
-    logSuccess('构建完成')
-
-    // 6. 验证构建输出
+    // 5. 验证构建输出
     const hasNetlifyFunctions = fileExists('.netlify/functions-internal/server')
     const hasOutputPublic = fileExists('.output/public')
 

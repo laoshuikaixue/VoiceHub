@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import { config } from 'dotenv'
 import path from 'path'
@@ -65,6 +65,56 @@ function safeExec(command, options = {}) {
   } catch {
     return false
   }
+}
+
+function execAsync(command, options = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(command, {
+      stdio: 'inherit',
+      shell: true,
+      ...options
+    })
+
+    child.on('error', () => resolve(false))
+    child.on('exit', (code) => resolve(code === 0))
+  })
+}
+
+async function syncDatabase() {
+  logStep('🗄️', '同步数据库...')
+  if (!process.env.DATABASE_URL) {
+    logWarning('未设置 DATABASE_URL，跳过数据库迁移')
+    return
+  }
+
+  const nonInteractiveEnv = {
+    ...process.env,
+    DRIZZLE_KIT_FORCE: 'true',
+    CI: 'true',
+    NODE_ENV: 'production'
+  }
+  if (!(await execAsync('node scripts/db-sync.js', { env: nonInteractiveEnv }))) {
+    throw new Error('数据库同步失败，已终止部署以避免运行时schema不一致')
+  }
+  logSuccess('数据库同步成功')
+
+  if (fileExists('scripts/create-admin.js')) {
+    logStep('👤', '检查管理员账户...')
+    await execAsync('pnpm run create-admin', { env: nonInteractiveEnv })
+  }
+}
+
+async function buildApplication() {
+  if (process.env.SKIP_BUILD === 'true') {
+    logStep('🔨', '跳过应用构建 (SKIP_BUILD=true)...')
+    return
+  }
+
+  logStep('🔨', '构建应用...')
+  if (!(await execAsync('node scripts/build.js', { env: process.env }))) {
+    throw new Error('应用构建失败')
+  }
+  logSuccess('应用构建完成')
 }
 
 // 检查环境变量
@@ -147,41 +197,11 @@ async function deploy() {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 3. 数据库同步
-    logStep('🗄️', '同步数据库...')
-    let dbSyncSuccess = false
-    if (process.env.DATABASE_URL) {
-      const nonInteractiveEnv = {
-        ...process.env,
-        DRIZZLE_KIT_FORCE: 'true',
-        CI: 'true',
-        NODE_ENV: 'production'
-      }
-      if (safeExec('node scripts/db-sync.js', { env: nonInteractiveEnv })) {
-        logSuccess('数据库同步成功')
-        dbSyncSuccess = true
-      } else {
-        throw new Error('数据库同步失败，已终止部署以避免运行时schema不一致')
-      }
-    } else {
-      logWarning('未设置 DATABASE_URL，跳过数据库迁移')
-    }
-
-    // 4. 创建管理员账户
-    if (fileExists('scripts/create-admin.js') && dbSyncSuccess) {
-      logStep('👤', '检查管理员账户...')
-      safeExec('pnpm run create-admin')
-    }
-
-    // 5. 构建应用
-    if (process.env.SKIP_BUILD === 'true') {
-      logStep('🔨', '跳过应用构建 (SKIP_BUILD=true)...')
-    } else {
-      logStep('🔨', '构建应用...')
-      if (!safeExec('node scripts/build.js', { env: process.env })) {
-        throw new Error('应用构建失败')
-      }
-      logSuccess('应用构建完成')
+    // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
+    const tasks = await Promise.allSettled([syncDatabase(), buildApplication()])
+    const failedTask = tasks.find((task) => task.status === 'rejected')
+    if (failedTask) {
+      throw failedTask.reason
     }
 
     log('🎉 部署完成！', 'green')
