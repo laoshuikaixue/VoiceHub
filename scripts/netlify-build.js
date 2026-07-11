@@ -11,8 +11,6 @@ const colors = {
   yellow: '\x1b[33m',
   cyan: '\x1b[36m'
 }
-const BUILD_MEMORY_MB = 6144
-const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`)
@@ -133,11 +131,7 @@ async function netlifyBuild() {
 
     // 7. 构建应用
     logStep('🔨', '构建应用...')
-    const buildEnv = {
-      ...process.env,
-      NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
-    }
-    if (!safeExec('pnpm exec nuxt build', { env: buildEnv })) {
+    if (!safeExec('node scripts/build.js', { env: process.env })) {
       throw new Error('构建失败')
     }
     logSuccess('构建完成')
