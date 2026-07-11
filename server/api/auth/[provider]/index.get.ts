@@ -1,4 +1,4 @@
-import { generateState, getRedirectUri } from '~~/server/utils/oauth'
+import { generateState, getRedirectUri, getSafeOAuthReturnPath } from '~~/server/utils/oauth'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import {
   getOAuthBaseConfig,
@@ -60,7 +60,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { state, csrf } = generateState(origin, provider, stateSecret)
+  const returnTo = getSafeOAuthReturnPath(getQuery(event).redirect)
+  const { state, csrf } = generateState(origin, provider, stateSecret, returnTo)
 
   // 在开发环境 (HTTP) 中，必须将 secure 设置为 false，否则浏览器会拒绝设置 cookie
   const isHttps = protocol === 'https'

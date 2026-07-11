@@ -810,17 +810,6 @@ onUnmounted(() => {
 const activeTab = ref('schedule') // 默认显示播出排期
 
 const tabOrder = ['schedule', 'songs', 'request', 'notification']
-watch(
-  () => route.query.tab,
-  (queryTab) => {
-    const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
-    if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
-      activeTab.value = tabFromQuery
-    }
-  },
-  { immediate: true }
-)
-
 const activeIndex = computed(() => {
   const index = tabOrder.indexOf(activeTab.value)
   return index === -1 ? 0 : index
@@ -1164,6 +1153,13 @@ if (import.meta.client) {
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   const bootStartedAt = Date.now()
+
+  // 支持 ?tab= 查询参数，用于登录后跳回指定 tab
+  const queryTab = route.query.tab
+  const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
+  if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
+    activeTab.value = tabFromQuery
+  }
 
   try {
     if (isFirstVisit) {
