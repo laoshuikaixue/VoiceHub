@@ -133,8 +133,13 @@ const getVersionMarkers = (value: string): string[] =>
     .map(({ key }) => key)
     .sort()
 
-const stripVersionMarkers = (value: string): string =>
-  VERSION_MARKERS.reduce((result, { pattern }) => result.replace(pattern, ''), value)
+const stripVersionMarkers = (value: string): string => {
+  const stripped = VERSION_MARKERS.reduce(
+    (result, { pattern }) => result.replace(pattern, ''),
+    value
+  ).trim()
+  return stripped || value
+}
 
 const isSameVersion = (left: string, right: string): boolean => {
   const leftMarkers = getVersionMarkers(left)
