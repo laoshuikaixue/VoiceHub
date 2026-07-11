@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.29.3",
   "type": "module",
   "scripts": {
-    "build": "node --max-old-space-size=6144 ./node_modules/nuxt/bin/nuxt.mjs build",
+    "build": "node scripts/build.js",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -25,7 +25,7 @@
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",
-    "postinstall": "nuxt prepare && node scripts/postinstall.js",
+    "postinstall": "node scripts/postinstall.js",
     "lint": "nuxt prepare && eslint .",
     "lint:fix": "nuxt prepare && eslint . --fix",
     "format": "prettier --write .",

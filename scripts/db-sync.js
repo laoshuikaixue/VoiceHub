@@ -47,7 +47,8 @@ function fileExists(p) {
 function ensureDrizzleFiles() {
   if (!fileExists('drizzle.config.ts')) throw new Error('Drizzle 配置文件不存在')
   if (!fileExists('app/drizzle/schema.ts')) throw new Error('Schema 文件不存在')
-  if (!fileExists('app/drizzle/migrations/meta/_journal.json')) throw new Error('Drizzle journal 文件不存在')
+  if (!fileExists('app/drizzle/migrations/meta/_journal.json'))
+    throw new Error('Drizzle journal 文件不存在')
 }
 
 function createSqlClient() {
@@ -371,9 +372,7 @@ async function main() {
   ok('数据库同步流程完成')
 }
 
-try {
-  main()
-} catch (e) {
+main().catch((e) => {
   err(`同步异常: ${e.message || e}`)
   process.exit(1)
-}
+})

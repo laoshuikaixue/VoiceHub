@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { spawn } from 'child_process'
 import fs from 'fs'
 
 // 颜色输出
@@ -11,8 +11,6 @@ const colors = {
   yellow: '\x1b[33m',
   cyan: '\x1b[36m'
 }
-const BUILD_MEMORY_MB = 6144
-const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`)
@@ -34,16 +32,92 @@ function logError(message) {
   log(`❌ ${message}`, 'red')
 }
 
-// 安全执行命令
-function safeExec(command, options = {}) {
-  try {
-    execSync(command, { stdio: 'inherit', ...options })
-    return true
-  } catch (error) {
-    logError(`命令执行失败: ${command}`)
-    logError(error.message)
-    return false
+function execAsync(command, args = [], options = {}) {
+  return new Promise((resolve) => {
+    const { signal, ...spawnOptions } = options
+    let abortHandler
+    let settled = false
+    const finish = (success) => {
+      if (settled) return
+      settled = true
+      if (signal && abortHandler) signal.removeEventListener('abort', abortHandler)
+      resolve(success)
+    }
+    let child
+    try {
+      child = spawn(command, args, {
+        stdio: 'inherit',
+        detached: Boolean(signal) && process.platform !== 'win32',
+        ...spawnOptions
+      })
+    } catch {
+      finish(false)
+      return
+    }
+
+    if (signal) {
+      abortHandler = () => {
+        if (child.exitCode !== null || child.signalCode !== null) return
+        if (process.platform === 'win32') {
+          const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
+            stdio: 'ignore',
+            windowsHide: true
+          })
+          killer.once('error', () => child.kill('SIGTERM'))
+          killer.once('exit', (code) => {
+            if (code !== 0 && child.exitCode === null) child.kill('SIGTERM')
+          })
+        } else {
+          try {
+            process.kill(-child.pid, 'SIGTERM')
+          } catch {
+            child.kill('SIGTERM')
+          }
+        }
+      }
+      signal.addEventListener('abort', abortHandler, { once: true })
+      if (signal.aborted) abortHandler()
+    }
+
+    child.once('error', () => finish(false))
+    child.once('exit', (code) => finish(code === 0))
+  })
+}
+
+function settleTask(task) {
+  return task.then(
+    () => ({ success: true }),
+    (error) => ({ success: false, error })
+  )
+}
+
+async function syncDatabase() {
+  if (!process.env.DATABASE_URL) {
+    logWarning('未设置 DATABASE_URL')
+    return
   }
+
+  logStep('🗄️', '同步数据库...')
+  const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
+  if (!(await execAsync(process.execPath, ['scripts/db-sync.js'], { env }))) {
+    throw new Error('数据库同步失败，已终止构建以避免运行时schema不一致')
+  }
+  logSuccess('数据库同步成功')
+
+  if (fileExists('scripts/create-admin.js')) {
+    logStep('👤', '检查管理员账户...')
+    if (!(await execAsync('pnpm run create-admin', [], { env, shell: true }))) {
+      throw new Error('创建或检查管理员账户失败')
+    }
+  }
+}
+
+async function buildApplication(signal) {
+  logStep('🔨', '构建应用...')
+  if (!(await execAsync(process.execPath, ['scripts/build.js'], { env: process.env, signal }))) {
+    throw new Error('构建失败')
+  }
+  logSuccess('构建完成')
 }
 
 // 检查文件是否存在
@@ -64,85 +138,35 @@ async function netlifyBuild() {
     process.env.NETLIFY = 'true'
     process.env.NITRO_PRESET = 'netlify'
 
-    // 2. 清理构建目录
-    logStep('🧹', '清理构建目录...')
-    if (fileExists('dist')) safeExec('rm -rf dist')
-    if (fileExists('.netlify')) safeExec('rm -rf .netlify')
-    if (fileExists('.nuxt')) safeExec('rm -rf .nuxt')
-    logSuccess('清理完成')
+    // Netlify 会在 build.command 前完成依赖安装，保留平台缓存可显著缩短后续部署。
+    logStep('📦', '使用 Netlify 已安装的依赖和构建缓存...')
 
-    // 3. 安装依赖
-    logStep('📦', '安装依赖...')
-    let installed = false
-    if (fileExists('node_modules')) {
-      safeExec('rm -rf node_modules')
-    }
-
-    if (fileExists('pnpm-lock.yaml')) {
-      if (safeExec('pnpm install --frozen-lockfile')) {
-        installed = true
-        logSuccess('依赖安装完成 (pnpm install --frozen-lockfile)')
-      } else {
-        logWarning('pnpm install --frozen-lockfile 安装失败，准备回退到 pnpm install...')
-      }
-    } else {
-      logWarning('未检测到 pnpm-lock.yaml，跳过冻结锁文件安装，直接使用 pnpm install...')
-    }
-
-    if (!installed) {
-      if (!safeExec('pnpm install')) {
-        throw new Error('依赖安装失败')
-      }
-      logSuccess('依赖安装完成 (pnpm install)')
-    }
-
-    // 验证 Drizzle 依赖
-    if (!safeExec('pnpm list drizzle-orm drizzle-kit')) {
-      if (!safeExec('pnpm add drizzle-orm drizzle-kit')) {
-        throw new Error('Drizzle 依赖安装失败')
-      }
-    }
-    // 4. 检查 Drizzle 配置
+    // 2. 检查 Drizzle 配置
     if (!fileExists('drizzle.config.ts') || !fileExists('app/drizzle/schema.ts')) {
       throw new Error('Drizzle 配置文件不完整')
     }
 
-    // 5. 确保迁移目录存在
+    // 3. 确保迁移目录存在
     if (!fileExists('app/drizzle/migrations')) {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 6. 数据库同步
-    if (process.env.DATABASE_URL) {
-      logStep('�️', '同步数据库...')
-      const env = { ...process.env, CI: 'true', DRIZZLE_KIT_FORCE: 'true', NODE_ENV: 'production' }
-      if (safeExec('node scripts/db-sync.js', { env })) {
-        logSuccess('数据库同步成功')
-      } else {
-        logWarning('数据库同步失败')
-      }
+    // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
+    const buildController = new AbortController()
+    const databaseTask = syncDatabase().catch((error) => {
+      buildController.abort()
+      throw error
+    })
 
-      // 检查管理员账户
-      if (fileExists('scripts/create-admin.js')) {
-        logStep('👤', '检查管理员账户...')
-        safeExec('pnpm run create-admin', { env })
-      }
-    } else {
-      logWarning('未设置 DATABASE_URL')
-    }
+    // 数据库失败时主动取消构建；构建失败时等待迁移安全结束，避免中断数据库事务。
+    const [databaseResult, buildResult] = await Promise.all([
+      settleTask(databaseTask),
+      settleTask(buildApplication(buildController.signal))
+    ])
+    if (!databaseResult.success) throw databaseResult.error
+    if (!buildResult.success) throw buildResult.error
 
-    // 7. 构建应用
-    logStep('🔨', '构建应用...')
-    const buildEnv = {
-      ...process.env,
-      NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
-    }
-    if (!safeExec('pnpm exec nuxt build', { env: buildEnv })) {
-      throw new Error('构建失败')
-    }
-    logSuccess('构建完成')
-
-    // 8. 验证构建输出
+    // 5. 验证构建输出
     const hasNetlifyFunctions = fileExists('.netlify/functions-internal/server')
     const hasOutputPublic = fileExists('.output/public')
 

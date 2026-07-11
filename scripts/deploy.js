@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import { config } from 'dotenv'
 import path from 'path'
@@ -14,6 +14,11 @@ if (process.env.PREBUILT === 'true') {
   process.env.SKIP_BUILD = 'true'
 }
 
+// Vercel 会在 buildCommand 前执行 installCommand，避免部署时重复安装全部依赖。
+if (process.env.VERCEL) {
+  process.env.SKIP_INSTALL = 'true'
+}
+
 // 颜色输出函数
 const colors = {
   reset: '\x1b[0m',
@@ -22,8 +27,6 @@ const colors = {
   yellow: '\x1b[33m',
   cyan: '\x1b[36m'
 }
-const BUILD_MEMORY_MB = 6144
-const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 
 function log(message, color = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`)
@@ -64,6 +67,109 @@ function safeExec(command, options = {}) {
   }
 }
 
+function execAsync(command, args = [], options = {}) {
+  return new Promise((resolve) => {
+    const { signal, ...spawnOptions } = options
+    let abortHandler
+    let settled = false
+    const finish = (success) => {
+      if (settled) return
+      settled = true
+      if (signal && abortHandler) signal.removeEventListener('abort', abortHandler)
+      resolve(success)
+    }
+    let child
+    try {
+      child = spawn(command, args, {
+        stdio: 'inherit',
+        detached: Boolean(signal) && process.platform !== 'win32',
+        ...spawnOptions
+      })
+    } catch {
+      finish(false)
+      return
+    }
+
+    if (signal) {
+      abortHandler = () => {
+        if (child.exitCode !== null || child.signalCode !== null) return
+        if (process.platform === 'win32') {
+          const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
+            stdio: 'ignore',
+            windowsHide: true
+          })
+          killer.once('error', () => child.kill('SIGTERM'))
+          killer.once('exit', (code) => {
+            if (code !== 0 && child.exitCode === null) child.kill('SIGTERM')
+          })
+        } else {
+          try {
+            process.kill(-child.pid, 'SIGTERM')
+          } catch {
+            child.kill('SIGTERM')
+          }
+        }
+      }
+      signal.addEventListener('abort', abortHandler, { once: true })
+      if (signal.aborted) abortHandler()
+    }
+
+    child.once('error', () => finish(false))
+    child.once('exit', (code) => finish(code === 0))
+  })
+}
+
+function settleTask(task) {
+  return task.then(
+    () => ({ success: true }),
+    (error) => ({ success: false, error })
+  )
+}
+
+async function syncDatabase() {
+  logStep('🗄️', '同步数据库...')
+  if (!process.env.DATABASE_URL) {
+    logWarning('未设置 DATABASE_URL，跳过数据库迁移')
+    return
+  }
+
+  const nonInteractiveEnv = {
+    ...process.env,
+    DRIZZLE_KIT_FORCE: 'true',
+    CI: 'true',
+    NODE_ENV: 'production'
+  }
+  if (!(await execAsync(process.execPath, ['scripts/db-sync.js'], { env: nonInteractiveEnv }))) {
+    throw new Error('数据库同步失败，已终止部署以避免运行时schema不一致')
+  }
+  logSuccess('数据库同步成功')
+
+  if (fileExists('scripts/create-admin.js')) {
+    logStep('👤', '检查管理员账户...')
+    if (
+      !(await execAsync('pnpm run create-admin', [], {
+        env: nonInteractiveEnv,
+        shell: true
+      }))
+    ) {
+      throw new Error('创建或检查管理员账户失败')
+    }
+  }
+}
+
+async function buildApplication(signal) {
+  if (process.env.SKIP_BUILD === 'true') {
+    logStep('🔨', '跳过应用构建 (SKIP_BUILD=true)...')
+    return
+  }
+
+  logStep('🔨', '构建应用...')
+  if (!(await execAsync(process.execPath, ['scripts/build.js'], { env: process.env, signal }))) {
+    throw new Error('应用构建失败')
+  }
+  logSuccess('应用构建完成')
+}
+
 // 检查环境变量
 function checkEnvironment() {
   logStep('🔍', '检查环境配置...')
@@ -101,7 +207,8 @@ async function deploy() {
 
     // 1. 安装依赖
     if (process.env.SKIP_INSTALL === 'true') {
-      logStep('📦', '跳过依赖安装 (SKIP_INSTALL=true)...')
+      const reason = process.env.VERCEL ? 'Vercel 已完成依赖安装' : 'SKIP_INSTALL=true'
+      logStep('📦', `跳过依赖安装 (${reason})...`)
     } else {
       logStep('📦', '安装依赖...')
       let installed = false
@@ -143,46 +250,20 @@ async function deploy() {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 3. 数据库同步
-    logStep('🗄️', '同步数据库...')
-    let dbSyncSuccess = false
-    if (process.env.DATABASE_URL) {
-      const nonInteractiveEnv = {
-        ...process.env,
-        DRIZZLE_KIT_FORCE: 'true',
-        CI: 'true',
-        NODE_ENV: 'production'
-      }
-      if (safeExec('node scripts/db-sync.js', { env: nonInteractiveEnv })) {
-        logSuccess('数据库同步成功')
-        dbSyncSuccess = true
-      } else {
-        throw new Error('数据库同步失败，已终止部署以避免运行时schema不一致')
-      }
-    } else {
-      logWarning('未设置 DATABASE_URL，跳过数据库迁移')
-    }
+    // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
+    const buildController = new AbortController()
+    const databaseTask = syncDatabase().catch((error) => {
+      buildController.abort()
+      throw error
+    })
 
-    // 4. 创建管理员账户
-    if (fileExists('scripts/create-admin.js') && dbSyncSuccess) {
-      logStep('👤', '检查管理员账户...')
-      safeExec('pnpm run create-admin')
-    }
-
-    // 5. 构建应用
-    if (process.env.SKIP_BUILD === 'true') {
-      logStep('🔨', '跳过应用构建 (SKIP_BUILD=true)...')
-    } else {
-      logStep('🔨', '构建应用...')
-      const buildEnv = {
-        ...process.env,
-        NODE_OPTIONS: process.env.NODE_OPTIONS || DEFAULT_NODE_OPTIONS
-      }
-      if (!safeExec('pnpm exec nuxt build', { env: buildEnv })) {
-        throw new Error('应用构建失败')
-      }
-      logSuccess('应用构建完成')
-    }
+    // 数据库失败时主动取消构建；构建失败时等待迁移安全结束，避免中断数据库事务。
+    const [databaseResult, buildResult] = await Promise.all([
+      settleTask(databaseTask),
+      settleTask(buildApplication(buildController.signal))
+    ])
+    if (!databaseResult.success) throw databaseResult.error
+    if (!buildResult.success) throw buildResult.error
 
     log('🎉 部署完成！', 'green')
   } catch (error) {
