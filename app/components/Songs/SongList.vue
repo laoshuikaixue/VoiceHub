@@ -1103,34 +1103,7 @@ const playSongWithUrlFetching = async (song) => {
 }
 
 // 切换歌曲播放/暂停
-const unlockMobileAudioPlayback = () => {
-  if (typeof document === 'undefined') return
-
-  const audio = document.querySelector('audio')
-  if (!audio || audio.currentSrc) return
-
-  const wasMuted = audio.muted
-  audio.muted = true
-
-  // 空音频的 play Promise 可能一直等待 src，不能阻塞后续播放链接解析
-  const playPromise = audio.play()
-  if (playPromise) {
-    playPromise
-      .then(() => {
-        audio.muted = wasMuted
-      })
-      .catch((error) => {
-        audio.muted = wasMuted
-        console.debug('[SongList] 移动端音频解锁未完成:', error)
-      })
-  } else {
-    audio.muted = wasMuted
-  }
-}
-
 const togglePlaySong = async (song) => {
-  unlockMobileAudioPlayback()
-
   // 检查是否为当前歌曲且正在播放
   if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
     // 如果正在播放，则暂停
