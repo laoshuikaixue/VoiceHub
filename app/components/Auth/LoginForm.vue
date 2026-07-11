@@ -449,20 +449,16 @@ const handleGradeChange = () => {
 }
 
 // 安全获取重定向路径，防止开放重定向攻击
-const getSafeRedirect = () => {
+const getSafeRedirect = (fallback = '/') => {
   const queryRedirect = route.query.redirect
   // 防御重复 query 参数导致的数组类型
-  const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || '/'
+  const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || fallback
   // 仅允许同源相对路径，排除 // 和 \/ 绕过
-  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\') ? redirect : '/'
+  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\') ? redirect : fallback
 }
 
 const handle2FASuccess = async () => {
-  if (auth.isAdmin.value) {
-    await navigateTo('/dashboard')
-  } else {
-    await navigateTo(getSafeRedirect())
-  }
+  await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
 }
 
 onMounted(async () => {
@@ -551,11 +547,7 @@ const handleLogin = async () => {
 
     // 登录成功，刷新认证状态
     await auth.initAuth()
-    if (auth.isAdmin.value) {
-      return navigateTo('/dashboard')
-    } else {
-      return navigateTo(getSafeRedirect())
-    }
+    return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
   } catch (err: any) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
@@ -648,7 +640,7 @@ const handleWebAuthnLogin = async () => {
     if (verification.success) {
       // 登录成功
       await auth.initAuth()
-      return navigateTo(verification.redirect || getSafeRedirect())
+      return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)
