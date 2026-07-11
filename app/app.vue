@@ -6,8 +6,8 @@
     <!-- 全局通知容器组件 -->
     <LazyUINotificationContainer ref="notificationContainer" />
 
-    <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
-    <LazyUIAudioPlayer
+    <!-- 播放器必须随应用初始化，否则首次播放时无法接收全局歌曲状态 -->
+    <AudioPlayer
       v-show="isPlayerVisible"
       :song="currentSong"
       :is-playlist-mode="isPlaylistMode"
@@ -27,6 +27,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
+import AudioPlayer from '~/components/UI/AudioPlayer.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
 import { useRoute } from 'vue-router'
