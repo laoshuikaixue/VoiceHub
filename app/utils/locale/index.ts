@@ -135,6 +135,7 @@ export function useLocale() {
     auth: withFallback('auth'),
     ui: withFallback('ui'),
     audioPlayer: withFallback('audioPlayer'),
+    composableErrors: withFallback('composableErrors'),
     songs: withFallback('songs'),
     admin: withFallback('admin'),
     yearReview: withFallback('yearReview')

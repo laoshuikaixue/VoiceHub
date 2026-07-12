@@ -960,6 +960,25 @@ export const pages = {
       dateLocale: 'en-US'
     }
   },
+  composableErrors: {
+    adminOnly: (action: string) => `Only administrators can ${action}`,
+    loginRequired: (action: string) => `Please log in to ${action}`,
+    failed: (action: string) => `Failed to ${action}`,
+    actions: {
+      createSchedule: 'create schedules', removeSchedule: 'remove schedules', updateScheduleSequence: 'update schedule order',
+      markPlayed: 'mark songs as played', sendNotification: 'send system notifications', getSystemSettings: 'get system settings',
+      updateSystemSettings: 'update system settings', getPlayTimes: 'get play times', createPlayTime: 'create play times',
+      updatePlayTime: 'update play times', deletePlayTime: 'delete play times', deleteSong: 'delete songs',
+      updateSong: 'update songs', addSong: 'add songs', updateNotificationSettings: 'update notification settings',
+      markNotification: 'mark notifications', markAllNotifications: 'mark all notifications', deleteNotification: 'delete notifications',
+      clearNotifications: 'clear notifications', getSemesters: 'get the semester list', getCurrentSemester: 'get the current semester', createSemester: 'create semesters',
+      setActiveSemester: 'set the active semester', updateSemester: 'update semesters', deleteSemester: 'delete semesters',
+      getSemesterOptions: 'get semester options'
+    },
+    lyrics: {
+      missingParams: 'Required parameters are missing', notFound: 'No lyrics were found', unavailable: 'No lyrics available', fetchFailed: 'Failed to load lyrics'
+    }
+  },
   audioPlayer: {
     autoplayBlocked: 'Autoplay was blocked by your browser. Use the play button to continue.',
     noPrevious: 'No previous song',

@@ -145,6 +145,8 @@ const parseBestLyrics = (
 
 export const useLyrics = () => {
   const audioPlayer = useAudioPlayer()
+  const { composableErrors } = useLocale()
+  const lyricMessages = computed(() => composableErrors.value.lyrics)
 
   const currentLyrics = ref<ParsedLyricLine[]>([])
   const translationLyrics = ref<ParsedLyricLine[]>([])
@@ -213,7 +215,7 @@ export const useLyrics = () => {
   ): Promise<void> => {
     if (!platform || !musicId) {
       console.error('[useLyrics] fetchLyrics 参数错误:', { platform, musicId })
-      error.value = '缺少必要参数'
+      error.value = lyricMessages.value.missingParams
       _resetState()
       return
     }
@@ -246,14 +248,14 @@ export const useLyrics = () => {
       if (token !== currentToken) return
 
       if (!result.success || !result.data) {
-        throw new Error(result.error || '未获取到歌词')
+        throw new Error(result.error || lyricMessages.value.notFound)
       }
 
       const lyricData = result.data
 
       const applied = applyLyricData(lyricData)
       if (!applied && !hasRenderedProgress) {
-        throw new Error('未获取到歌词')
+        throw new Error(lyricMessages.value.notFound)
       }
 
       const harmonyLyrics = getFormattedLyricsForHarmonyOS()
@@ -267,7 +269,7 @@ export const useLyrics = () => {
         return
       }
       console.error('[useLyrics] 获取歌词失败:', e?.message ?? e)
-      error.value = e?.message ?? '获取歌词失败'
+      error.value = e?.message ?? lyricMessages.value.fetchFailed
       _resetState()
       notifyHarmonyOSLyricsUpdate('')
     } finally {
@@ -332,14 +334,14 @@ export const useLyrics = () => {
   }
 
   const getFormattedLrcText = (): string => {
-    if (currentLyrics.value.length === 0) return '[00:00.00]暂无歌词'
+    if (currentLyrics.value.length === 0) return `[00:00.00]${lyricMessages.value.unavailable}`
     return currentLyrics.value
       .map((line) => `${_formatTime(line.time)}${line.content}`)
       .join('\r\n')
   }
 
   const getFormattedLyricsForHarmonyOS = (): string => {
-    if (currentLyrics.value.length === 0) return '[00:00.00]暂无歌词'
+    if (currentLyrics.value.length === 0) return `[00:00.00]${lyricMessages.value.unavailable}`
 
     const MAX_BYTES = 40960
     const encoder = new TextEncoder()

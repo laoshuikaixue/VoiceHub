@@ -971,6 +971,25 @@ export const pages = {
       dateLocale: 'zh-CN'
     }
   },
+  composableErrors: {
+    adminOnly: (action: string) => `只有管理员才能${action}`,
+    loginRequired: (action: string) => `需要登录才能${action}`,
+    failed: (action: string) => `${action}失败`,
+    actions: {
+      createSchedule: '创建排期', removeSchedule: '移除排期', updateScheduleSequence: '更新排期顺序',
+      markPlayed: '标记歌曲已播放', sendNotification: '发送系统通知', getSystemSettings: '获取系统设置',
+      updateSystemSettings: '更新系统设置', getPlayTimes: '获取播放时段', createPlayTime: '创建播放时段',
+      updatePlayTime: '更新播放时段', deletePlayTime: '删除播放时段', deleteSong: '删除歌曲',
+      updateSong: '更新歌曲', addSong: '添加歌曲', updateNotificationSettings: '更新通知设置',
+      markNotification: '标记通知', markAllNotifications: '标记所有通知', deleteNotification: '删除通知',
+      clearNotifications: '清空通知', getSemesters: '获取学期列表', getCurrentSemester: '获取当前学期', createSemester: '创建学期',
+      setActiveSemester: '设置活跃学期', updateSemester: '更新学期', deleteSemester: '删除学期',
+      getSemesterOptions: '获取学期选项'
+    },
+    lyrics: {
+      missingParams: '缺少必要参数', notFound: '未获取到歌词', unavailable: '暂无歌词', fetchFailed: '获取歌词失败'
+    }
+  },
   audioPlayer: {
     autoplayBlocked: '浏览器限制了自动播放，请点击播放器中的播放按钮继续播放',
     noPrevious: '没有上一首歌曲',
