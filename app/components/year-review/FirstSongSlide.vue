@@ -53,6 +53,8 @@
 </template>
 
 <script setup>
+import { useLocale } from '~/utils/locale'
+
 defineProps({
   data: Object,
   active: Boolean

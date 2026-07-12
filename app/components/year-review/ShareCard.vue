@@ -41,6 +41,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useLocale } from '~/utils/locale'
 
 defineProps({
   data: {

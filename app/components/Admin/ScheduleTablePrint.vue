@@ -97,6 +97,7 @@
 <script setup>
 import { computed } from 'vue'
 import { convertToHttps } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 const { admin } = useLocale()
 const locale = computed(() => admin.value.schedulePrinter)
 const formatVotes = (song) => song.replayRequestCount > 0

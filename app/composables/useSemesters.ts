@@ -1,4 +1,5 @@
 import { readonly, ref } from 'vue'
+import { useLocale } from '~/utils/locale'
 import type { Semester } from '~/types'
 
 // 全局事件总线用于学期更新通知

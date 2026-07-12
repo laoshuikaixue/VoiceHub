@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { useAuth } from './useAuth'
+import { useLocale } from '~/utils/locale'
 import type { PlayTime, SystemSettings } from '~/types'
 
 export const useAdmin = () => {

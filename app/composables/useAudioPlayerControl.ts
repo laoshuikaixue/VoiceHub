@@ -2,6 +2,7 @@ import { computed, nextTick, ref } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useLyrics } from '~/composables/useLyrics'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
+import { useLocale } from '~/utils/locale'
 
 // 单例状态
 const audioPlayer = ref<HTMLAudioElement | null>(null)

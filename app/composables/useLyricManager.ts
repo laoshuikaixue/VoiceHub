@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { useAudioPlayer } from './useAudioPlayer'
 import { useMusicSources } from './useMusicSources'
 import { useLyricSettings } from './useLyricSettings'
+import { useLocale } from '~/utils/locale'
 import {
   parseSmartLrc,
   alignLyrics,

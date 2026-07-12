@@ -77,6 +77,7 @@
 <script setup>
 import { defineProps } from 'vue'
 import { convertToHttps } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 const { admin } = useLocale()
 const locale = computed(() => admin.value.schedulePrinter)
 

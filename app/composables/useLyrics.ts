@@ -3,6 +3,7 @@ import { cleanTTMLTranslations, parseQRCLyric, parseSmartLrc } from '~/utils/lyr
 import { parseTTML, parseYrc } from '@applemusic-like-lyrics/lyric'
 import { useAudioPlayer } from './useAudioPlayer'
 import { useMusicSources } from './useMusicSources'
+import { useLocale } from '~/utils/locale'
 
 export interface ParsedLyricLine {
   time: number

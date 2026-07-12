@@ -4,6 +4,7 @@ import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useMusicWebSocket } from '~/composables/useMusicWebSocket'
 import { useAuth } from '~/composables/useAuth'
 import { useLyrics } from '~/composables/useLyrics'
+import { useLocale } from '~/utils/locale'
 
 export const useAudioPlayerSync = () => {
   const { audioPlayer: audioPlayerLocale } = useLocale()
