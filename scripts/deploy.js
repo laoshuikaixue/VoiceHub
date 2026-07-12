@@ -119,13 +119,6 @@ function execAsync(command, args = [], options = {}) {
   })
 }
 
-function settleTask(task) {
-  return task.then(
-    () => ({ success: true }),
-    (error) => ({ success: false, error })
-  )
-}
-
 async function syncDatabase() {
   logStep('🗄️', '同步数据库...')
   if (!process.env.DATABASE_URL) {
@@ -250,20 +243,10 @@ async function deploy() {
       fs.mkdirSync('app/drizzle/migrations', { recursive: true })
     }
 
-    // 数据库操作主要等待网络，与 CPU 密集的 Nuxt 构建并行可缩短 serverless 部署时间。
-    const buildController = new AbortController()
-    const databaseTask = syncDatabase().catch((error) => {
-      buildController.abort()
-      throw error
-    })
-
-    // 数据库失败时主动取消构建；构建失败时等待迁移安全结束，避免中断数据库事务。
-    const [databaseResult, buildResult] = await Promise.all([
-      settleTask(databaseTask),
-      settleTask(buildApplication(buildController.signal))
-    ])
-    if (!databaseResult.success) throw databaseResult.error
-    if (!buildResult.success) throw buildResult.error
+    // 部署平台通常限制内存和进程数，数据库工具与 Nuxt 并行会让构建被系统终止。
+    // 先完成应用构建，再执行迁移，避免构建失败时仍修改生产数据库。
+    await buildApplication()
+    await syncDatabase()
 
     log('🎉 部署完成！', 'green')
   } catch (error) {

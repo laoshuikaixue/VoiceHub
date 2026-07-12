@@ -362,13 +362,16 @@ function runNuxtBuild() {
 
     process.once('SIGTERM', onSigterm)
     process.once('SIGINT', onSigint)
-    child.once('error', () => {
+    child.once('error', (error) => {
       cleanup()
-      finish(false)
+      finish({ success: false, reason: error.message })
     })
-    child.once('exit', (code) => {
+    child.once('exit', (code, signal) => {
       cleanup()
-      finish(code === 0)
+      finish({
+        success: code === 0,
+        reason: signal ? `收到信号 ${signal}` : `退出码 ${code ?? '未知'}`
+      })
     })
   })
 }
@@ -382,7 +385,8 @@ async function build() {
   if (process.argv.includes('--diagnostics-only')) return
 
   log('🔨 开始执行 Nuxt 构建...', 'cyan')
-  if (!(await runNuxtBuild())) throw new Error('Nuxt 构建失败')
+  const result = await runNuxtBuild()
+  if (!result.success) throw new Error(`Nuxt 构建失败（${result.reason}）`)
   log('✅ Nuxt 构建完成', 'green')
 }
 
