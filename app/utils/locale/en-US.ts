@@ -1300,6 +1300,8 @@ export const pages = {
       chooseProgram: 'Choose Program',
       chooseSubmit: 'Submit',
       manualSubmitLong: 'Not finding the song? Submit manually',
+      loginRequiredToSubmit: 'Sign in to submit',
+      cardCodeBypassesLimit: 'Does not use regular quota',
       noResults: 'No songs found',
       noResultsHint: 'Try another keyword or platform',
       noMatchingSongs: 'No matching songs found',
@@ -2967,6 +2969,8 @@ export const admin = {
         keepClass: 'Keep original class unchanged'
       },
       statusSettings: {
+        sourceStatus: 'Current Account Status',
+        sourceStatusPlaceholder: 'Select current status',
         title: 'Target Status Settings',
         targetStatus: 'Select Account Status',
         targetStatusPlaceholder: 'Select target status',
@@ -2974,6 +2978,7 @@ export const admin = {
         reasonPlaceholder: 'e.g. Batch graduate class of 2025'
       },
       statusOptions: {
+        all: 'Any current status',
         active: 'Active Access',
         graduate: 'Restricted Access (Graduate)',
         withdrawn: 'Restricted Access (Withdrawn)'

@@ -411,6 +411,15 @@ const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
 
+// 只允许站内绝对路径，避免登录参数被用于开放重定向。
+const getSafeRedirect = (fallback = '/') => {
+  const queryRedirect = route.query.redirect
+  const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || fallback
+  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\')
+    ? redirect
+    : fallback
+}
+
 /**
  * 登录成功后的统一跳转逻辑。
  * 注意：app/middleware/auth.global.ts 已实现 requirePasswordChange 的强制拦截，
@@ -420,9 +429,9 @@ const redirectAfterLogin = async () => {
   if (auth.user.value?.requirePasswordChange) {
     await navigateTo('/change-password')
   } else if (auth.isAdmin.value) {
-    await navigateTo('/dashboard')
+    await navigateTo(getSafeRedirect('/dashboard'))
   } else {
-    await navigateTo('/')
+    await navigateTo(getSafeRedirect())
   }
 }
 
@@ -629,7 +638,7 @@ const handleRegisterOAuth = async () => {
     if (response.success) {
       // 账户创建成功后必须重新读取刚写入的 Cookie 登录态。
       await auth.initAuth({ force: true })
-      await navigateTo('/')
+      await navigateTo(getSafeRedirect())
     }
   } catch (err: any) {
     const apiError = err
@@ -661,7 +670,7 @@ const handleWebAuthnLogin = async () => {
     if (verification.success) {
       // 登录成功
       await auth.initAuth({ force: true })
-      await navigateTo(verification.redirect || '/')
+      await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)

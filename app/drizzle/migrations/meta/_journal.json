@@ -239,6 +239,20 @@
       "when": 1782527721417,
       "tag": "20260627023521_add_card_code_foreign_key_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1783690428462,
+      "tag": "20260710133348_add_card_code_limit_bypass",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1783814401000,
+      "tag": "20260712000001_ensure_force_password_change_after_latest",
+      "breakpoints": true
     }
   ]
 }

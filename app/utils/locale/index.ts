@@ -47,7 +47,9 @@ const resolveInitialLocale = (): Locale => {
   return FALLBACK_LOCALE
 }
 
-const currentLocaleState = ref<Locale>(resolveInitialLocale())
+// 首次客户端渲染必须与服务端保持一致，避免读取本地偏好后产生水合不匹配。
+// 用户偏好在应用挂载后由 initLocale() 恢复。
+const currentLocaleState = ref<Locale>(FALLBACK_LOCALE)
 
 const getCurrentLocale = () => currentLocaleState
 

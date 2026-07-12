@@ -13,7 +13,10 @@ import {
 import { and, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
-import { isLimitReached } from '~~/server/utils/submissionLimit'
+import {
+  isCardCodeLimitBypassActive,
+  isLimitReached
+} from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { z } from 'zod'
@@ -239,6 +242,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const isCardCodeEnabled = !!(
       systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests
     )
+    const excludeCardCodeRequestsFromLimit = isCardCodeLimitBypassActive(systemSettingsData)
     if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
       throw createCardCodeError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
     }
@@ -315,11 +319,23 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       if (
         systemSettingsData?.enableSubmissionLimit &&
         !isAdmin &&
+        !(excludeCardCodeRequestsFromLimit && providedCardCodeId) &&
         effectiveLimit &&
         effectiveLimit > 0 &&
         limitType
       ) {
-        if (await isLimitReached(tx as any, user.id, limitType, effectiveLimit)) {
+        // 同一用户的限额检查必须串行，否则并发请求可能读取到相同计数并同时越过上限。
+        await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, user.id))
+          .for('update')
+
+        if (
+          await isLimitReached(tx as any, user.id, limitType, effectiveLimit, {
+            excludeCardCodeRequests: excludeCardCodeRequestsFromLimit
+          })
+        ) {
           const labelMap: Record<string, string> = { daily: '每日', weekly: '每周', monthly: '每月' }
           const timeMap: Record<string, string> = { daily: '今日', weekly: '本周', monthly: '本月' }
 

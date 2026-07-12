@@ -111,9 +111,15 @@
 
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
+          <div v-if="!user" class="submission-status-horizontal login-required-notice">
+            <span class="notice-text">{{ locale.loginRequiredToSubmit }}</span>
+            <button class="login-link-btn" type="button" @click="handleLoginRedirect">
+              {{ locale.loginNow }}
+            </button>
+          </div>
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
-            v-if="user && submissionStatus && submissionStatus.limitEnabled"
+            v-if="user && submissionStatus && (submissionStatus.limitEnabled || submissionStatus.timeLimitationEnabled || submissionStatus.submissionClosed)"
             class="submission-status-horizontal"
           >
             <!-- 超级管理员提示 -->
@@ -190,6 +196,10 @@
                     Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
                   }}</span
                 >
+              </div>
+              <div v-if="cardCodeLimitBypassActive" class="status-item-horizontal">
+                <span class="status-label">{{ locale.cardCodeLabel }}</span>
+                <span class="status-value">{{ locale.cardCodeBypassesLimit }}</span>
               </div>
             </div>
           </div>
@@ -720,6 +730,13 @@
                         </button>
                       </div>
                       <button
+                        v-else-if="!user"
+                        class="select-btn login-btn"
+                        @click.stop.prevent="handleLoginRedirect"
+                      >
+                        {{ locale.loginRequiredToSubmit }}
+                      </button>
+                      <button
                         v-else
                         :disabled="submitting"
                         class="select-btn"
@@ -741,7 +758,10 @@
 
                 <!-- 手动输入按钮 -->
                 <div class="no-results-action">
-                  <button class="manual-submit-btn" type="button" @click="showManualModal = true">
+                  <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
+                    {{ locale.loginRequiredToSubmit }}
+                  </button>
+                  <button v-else class="manual-submit-btn" type="button" @click="showManualModal = true">
                     {{ locale.manualSubmitLong }}
                   </button>
                 </div>
@@ -752,7 +772,10 @@
                 <div class="empty-icon">🔍</div>
                 <p class="empty-text">{{ locale.noResults }}</p>
                 <p class="empty-hint">{{ locale.noResultsHint }}</p>
-                <button class="manual-submit-btn" type="button" @click="showManualModal = true">
+                <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
+                  {{ locale.loginRequiredToSubmit }}
+                </button>
+                <button v-else class="manual-submit-btn" type="button" @click="showManualModal = true">
                   {{ locale.manualSubmit }}
                 </button>
               </div>
@@ -1381,8 +1404,10 @@ const {
   enableReplayRequests,
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
+  enableSubmissionLimit,
   enableCardCodeRequests,
-  requireCardCodeForRequests
+  requireCardCodeForRequests,
+  enableCardCodeLimitBypass
 } = useSiteConfig()
 
 // 用户认证
@@ -1445,6 +1470,11 @@ const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
 
+const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
+const cardCodeLimitBypassActive = computed(
+  () => enableSubmissionLimit.value && cardCodeEnabled.value && enableCardCodeLimitBypass.value
+)
+
 const cardCodeFieldMeta = computed(() => ({
   required: requireCardCodeForRequests.value,
   helper: requireCardCodeForRequests.value
@@ -1453,7 +1483,6 @@ const cardCodeFieldMeta = computed(() => ({
   placeholder: locale.value.cardCodePlaceholder
 }))
 
-const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
 const trimmedCardCode = computed(() => cardCode.value.trim())
 const cardCodeStatusText = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
@@ -2990,6 +3019,20 @@ const handleShowLogin = () => {
   showLoginModal.value = true
 }
 
+const handleLoginRedirect = async () => {
+  if (title.value.trim()) {
+    try {
+      sessionStorage.setItem('pending_search', JSON.stringify({
+        title: title.value.trim(),
+        platform: platform.value
+      }))
+    } catch {
+      // 浏览器禁用会话存储时仍可继续登录。
+    }
+  }
+  await navigateTo(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
+}
+
 // 提交选中的歌曲
 const submitSong = async (result, options = {}) => {
   // 防止重复点击和重复提交
@@ -3799,7 +3842,7 @@ const checkSubmissionLimit = () => {
     return { canSubmit: true, message: '' }
   }
 
-  if (!submissionStatus.value || !submissionStatus.value.limitEnabled) {
+  if (!submissionStatus.value) {
     return { canSubmit: true, message: '' }
   }
 
@@ -3824,6 +3867,15 @@ const checkSubmissionLimit = () => {
         message: callLocale('notifications.periodQuotaFull', '', accepted, expected)
       }
     }
+  }
+
+
+  if (!submissionStatus.value.limitEnabled) {
+    return { canSubmit: true, message: '' }
+  }
+
+  if (cardCodeLimitBypassActive.value && trimmedCardCode.value && cardCodeValidation.value.valid === true) {
+    return { canSubmit: true, message: '' }
   }
 
   const { dailyLimit, weeklyLimit, monthlyLimit, dailyUsed, weeklyUsed, monthlyUsed } =

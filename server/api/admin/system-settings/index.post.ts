@@ -135,6 +135,16 @@ export default defineEventHandler(async (event) => {
       updateData.requireCardCodeForRequests = body.requireCardCodeForRequests
     }
 
+    if (body.enableCardCodeLimitBypass !== undefined) {
+      if (typeof body.enableCardCodeLimitBypass !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'enableCardCodeLimitBypass 必须是布尔值'
+        })
+      }
+      updateData.enableCardCodeLimitBypass = body.enableCardCodeLimitBypass
+    }
+
     if (body.dailySubmissionLimit !== undefined) {
       if (
         body.dailySubmissionLimit !== null &&

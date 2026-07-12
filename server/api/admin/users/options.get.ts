@@ -1,7 +1,6 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
-import { isNotNull } from 'drizzle-orm'
 
 // 智能排序函数
 const smartSort = (a: string, b: string) => {
@@ -33,37 +32,51 @@ export default defineEventHandler(async (event) => {
         message: '只有系统管理员可以访问此选项'
       })
     }
-    // 获取有年级的用户（用 distinct 去重）
-    const gradesData = await db
-      .selectDistinct({ grade: users.grade })
+    // 用户树需要全量轻字段，避免用分页列表推导时统计不完整
+    const treeUsers = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        grade: users.grade,
+        class: users.class,
+        role: users.role,
+        status: users.status
+      })
       .from(users)
-      .where(isNotNull(users.grade))
-    
-    // 获取有班级的用户（用 distinct 去重）
-    const classesData = await db
-      .selectDistinct({ grade: users.grade, class: users.class })
-      .from(users)
-      .where(isNotNull(users.class))
 
-    // 提取为简单的数组格式并按自然顺序排序
-    const grades = gradesData
-      .map(g => g.grade)
-      .filter((g): g is string => Boolean(g))
-      .sort(smartSort)
+    const gradesSet = new Set<string>()
+    const classesMap = new Map<string, { grade: string | null, class: string }>()
 
-    const classes = classesData
-      .filter(c => Boolean(c.class))
-      .map(c => ({
-        grade: c.grade,
-        class: c.class as string
-      }))
-      // 预先排好序，这里使用智能排序，以防班级中也混有复杂的文字逻辑
-      .sort((a, b) => smartSort(a.class, b.class))
+    for (const treeUser of treeUsers) {
+      const gradeValue = treeUser.grade?.trim() || ''
+      const classValue = treeUser.class?.trim() || ''
+
+      if (gradeValue) {
+        gradesSet.add(gradeValue)
+      }
+
+      if (classValue) {
+        const classKey = `${gradeValue}:${classValue}`
+        if (!classesMap.has(classKey)) {
+          classesMap.set(classKey, {
+            grade: gradeValue || null,
+            class: classValue
+          })
+        }
+      }
+    }
+
+    const grades = Array.from(gradesSet).sort(smartSort)
+    const classes = Array.from(classesMap.values()).sort((a, b) =>
+      a.class.localeCompare(b.class, 'zh-CN', { numeric: true })
+    )
 
     return {
       success: true,
       grades,
-      classes
+      classes,
+      treeUsers
     }
   } catch (error) {
     console.error('获取用户筛选选项失败:', error)

@@ -15,9 +15,12 @@ const needsCorsProxy = (url: string): boolean => {
     const u = new URL(url)
     const h = u.hostname.toLowerCase()
     return (
-      h.endsWith('.y.qq.com') || h === 'y.qq.com' ||
-      h.endsWith('.y.gtimg.cn') || h === 'y.gtimg.cn' ||
-      h.endsWith('.music.126.net') || h === 'music.126.net'
+      h.endsWith('.y.qq.com') ||
+      h === 'y.qq.com' ||
+      h.endsWith('.y.gtimg.cn') ||
+      h === 'y.gtimg.cn' ||
+      h.endsWith('.music.126.net') ||
+      h === 'music.126.net'
     )
   } catch {
     return false
@@ -57,6 +60,7 @@ export const useBackgroundRenderer = () => {
   const coverBlurElement = ref<HTMLElement | null>(null)
   const isInitialized = ref(false)
   const isRendering = ref(false)
+  const isMotionPaused = ref(false)
   const hasRenderError = ref(false)
   const currentCoverUrl = ref('')
   const loadedCoverUrl = ref('')
@@ -80,22 +84,39 @@ export const useBackgroundRenderer = () => {
     canvas.style.pointerEvents = 'none'
   }
 
+  const syncRendererMotion = () => {
+    const renderer = backgroundRenderer.value
+    if (!renderer) return
+
+    if (!isRendering.value) {
+      renderer.pause()
+      return
+    }
+
+    renderer.setStaticMode(false)
+
+    if (!config.value.dynamic) {
+      renderer.setFlowSpeed(0)
+      renderer.pause()
+      return
+    }
+
+    renderer.setFlowSpeed(isMotionPaused.value ? 0 : config.value.flowSpeed)
+    renderer.resume()
+  }
+
   const applyRendererState = async () => {
     const renderer = backgroundRenderer.value
     if (!renderer) return
 
     renderer.setFPS(config.value.fps ?? 30)
-    renderer.setFlowSpeed(config.value.flowSpeed)
     renderer.setRenderScale(config.value.renderScale ?? 0.5)
     renderer.setHasLyric(config.value.hasLyric ?? true)
-    renderer.setStaticMode(!config.value.dynamic)
 
     const cover = currentCoverUrl.value
     if (cover !== loadedCoverUrl.value) {
       try {
-        if (cover) {
-          await renderer.setAlbum(toProxiedUrl(cover), false)
-        }
+        await renderer.setAlbum(cover ? toProxiedUrl(cover) : '', false)
         if (currentCoverUrl.value === cover) {
           loadedCoverUrl.value = cover
           hasRenderError.value = false
@@ -108,11 +129,7 @@ export const useBackgroundRenderer = () => {
       }
     }
 
-    if (isRendering.value && config.value.dynamic) {
-      renderer.resume()
-    } else {
-      renderer.pause()
-    }
+    syncRendererMotion()
   }
 
   const initializeBackground = async (container: HTMLElement) => {
@@ -170,15 +187,9 @@ export const useBackgroundRenderer = () => {
   }
 
   const startRender = () => {
-    const renderer = backgroundRenderer.value
-    if (!renderer) return
-
     isRendering.value = true
-    renderer.setStaticMode(!config.value.dynamic)
-
-    if (config.value.dynamic) {
-      renderer.resume()
-    }
+    isMotionPaused.value = false
+    syncRendererMotion()
   }
 
   const stopRender = () => {
@@ -186,16 +197,21 @@ export const useBackgroundRenderer = () => {
     if (!renderer) return
 
     isRendering.value = false
+    isMotionPaused.value = false
+    renderer.setFlowSpeed(0)
     renderer.pause()
   }
 
   const pauseRender = () => {
-    backgroundRenderer.value?.pause()
+    isMotionPaused.value = true
+    if (!backgroundRenderer.value) return
+    syncRendererMotion()
   }
 
   const resumeRender = () => {
-    if (!config.value.dynamic) return
-    backgroundRenderer.value?.resume()
+    isMotionPaused.value = false
+    if (!backgroundRenderer.value) return
+    syncRendererMotion()
   }
 
   function dispose() {
@@ -213,6 +229,7 @@ export const useBackgroundRenderer = () => {
     backgroundRenderer.value = null
     isInitialized.value = false
     isRendering.value = false
+    isMotionPaused.value = false
     containerElement.value = null
     coverBlurElement.value = null
     currentCoverUrl.value = ''

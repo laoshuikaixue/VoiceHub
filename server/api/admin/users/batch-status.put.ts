@@ -17,7 +17,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const { userIds, status, reason } = body
+    const { userIds, status, reason, sourceStatus } = body
+    const sourceStatusFilter = typeof sourceStatus === 'string' ? sourceStatus.trim() : ''
 
     // 验证必填字段
     if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -34,6 +35,20 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    if (sourceStatusFilter && !['active', 'withdrawn', 'graduate'].includes(sourceStatusFilter)) {
+      throw createError({
+        statusCode: 400,
+        message: '前置状态必须为 active, withdrawn 或 graduate'
+      })
+    }
+
+    if (sourceStatusFilter === status) {
+      throw createError({
+        statusCode: 400,
+        message: '前置状态不能与目标状态相同'
+      })
+    }
+
     if (!reason || reason.trim().length === 0) {
       throw createError({
         statusCode: 400,
@@ -42,12 +57,16 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户ID格式
-    const validUserIds = [...new Set(userIds
-      .filter((id) => {
-        const numId = parseInt(id)
-        return !isNaN(numId) && numId > 0
-      })
-      .map((id) => parseInt(id)))]
+    const validUserIds = [
+      ...new Set(
+        userIds
+          .filter((id) => {
+            const numId = parseInt(id)
+            return !isNaN(numId) && numId > 0
+          })
+          .map((id) => parseInt(id))
+      )
+    ]
 
     if (validUserIds.length === 0) {
       throw createError({
@@ -68,15 +87,15 @@ export default defineEventHandler(async (event) => {
       .from(users)
       .where(inArray(users.id, validUserIds))
 
-    const existingUserIds = existingUsers.map(u => u.id)
-    const nonExistentUserIds = validUserIds.filter(id => !existingUserIds.includes(id))
+    const existingUserIds = existingUsers.map((u) => u.id)
+    const nonExistentUserIds = validUserIds.filter((id) => !existingUserIds.includes(id))
 
     // 筛选出状态需要变更的用户，并加入越权保护，同时记录失败原因
     const usersToUpdate = []
     const errors: Array<{ userId: number | string; error: string }> = []
 
     if (nonExistentUserIds.length > 0) {
-      nonExistentUserIds.forEach(id => {
+      nonExistentUserIds.forEach((id) => {
         errors.push({ userId: id, error: '用户不存在' })
       })
     }
@@ -92,6 +111,13 @@ export default defineEventHandler(async (event) => {
       }
       if (u.role === 'SUPER_ADMIN' && user.role !== 'SUPER_ADMIN') {
         errors.push({ userId: u.id, error: '权限不足：普通管理员无法修改超级管理员信息' })
+        continue
+      }
+      if (sourceStatusFilter && u.status !== sourceStatusFilter) {
+        errors.push({
+          userId: u.id,
+          error: `前置状态不匹配：当前为${getStatusText(u.status)}，仅更新${getStatusText(sourceStatusFilter)}`
+        })
         continue
       }
       if (u.status === status) {
@@ -110,6 +136,7 @@ export default defineEventHandler(async (event) => {
           totalRequested: validUserIds.length,
           totalUpdated: 0,
           updatedUsers: [],
+          sourceStatus: sourceStatusFilter || null
         }
       }
     }
@@ -169,6 +196,7 @@ export default defineEventHandler(async (event) => {
         totalRequested: validUserIds.length,
         totalUpdated: results.length,
         updatedUsers: results,
+        sourceStatus: sourceStatusFilter || null,
         changedAt: currentTime,
         changedBy: user.name
       }

@@ -10,7 +10,11 @@ import {
   requestTimes
 } from '~/drizzle/schema'
 import { and, eq, sql } from 'drizzle-orm'
-import { getTimeRange, type LimitType } from '~~/server/utils/submissionLimit'
+import {
+  getTimeRange,
+  isCardCodeLimitBypassActive,
+  type LimitType
+} from '~~/server/utils/submissionLimit'
 import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
 
 export default defineEventHandler(async (event) => {
@@ -119,26 +123,32 @@ export default defineEventHandler(async (event) => {
   // 获取系统设置以检查限制类型
   const settingsResult = await db.select().from(systemSettings).limit(1)
   const settings = settingsResult[0]
-  const dailyLimit = settings?.dailySubmissionLimit || 0
-  const weeklyLimit = settings?.weeklySubmissionLimit || 0
-  const monthlyLimit = settings?.monthlySubmissionLimit || 0
 
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false
 
-  const limitConfigs: { type: LimitType; value: number }[] = [
-    { type: 'daily', value: dailyLimit },
-    { type: 'weekly', value: weeklyLimit },
-    { type: 'monthly', value: monthlyLimit }
-  ]
+  const cardCodeDidNotUseOrdinaryQuota =
+    isCardCodeLimitBypassActive(settings) && !!song.cardCodeId
 
-  for (const { type, value } of limitConfigs) {
-    if (value > 0) {
-      const { start, end } = getTimeRange(type)
-      if (song.createdAt >= start && song.createdAt <= end) {
-        canReturnQuota = true
-        break
-      }
+  if (settings?.enableSubmissionLimit && !cardCodeDidNotUseOrdinaryQuota) {
+    let activeLimit: { type: LimitType; value: number | null } | null = null
+    if (settings.dailySubmissionLimit !== null && settings.dailySubmissionLimit !== undefined) {
+      activeLimit = { type: 'daily', value: settings.dailySubmissionLimit }
+    } else if (
+      settings.weeklySubmissionLimit !== null &&
+      settings.weeklySubmissionLimit !== undefined
+    ) {
+      activeLimit = { type: 'weekly', value: settings.weeklySubmissionLimit }
+    } else if (
+      settings.monthlySubmissionLimit !== null &&
+      settings.monthlySubmissionLimit !== undefined
+    ) {
+      activeLimit = { type: 'monthly', value: settings.monthlySubmissionLimit }
+    }
+
+    if (activeLimit?.value && activeLimit.value > 0) {
+      const { start, end } = getTimeRange(activeLimit.type)
+      canReturnQuota = song.createdAt >= start && song.createdAt <= end
     }
   }
 

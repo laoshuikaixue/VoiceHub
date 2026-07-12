@@ -17,11 +17,22 @@ import {
   type SourceStatus
 } from '~/utils/musicSources'
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
+import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { useLyricSettings } from './useLyricSettings'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
+const lyricProgressSubscribers = new Map<string, Set<LyricProgressCallback>>()
 const LYRIC_CACHE_TTL = 60 * 1000
+
+type LyricProgressStage = 'official' | 'qm' | 'amll' | 'upgrade' | 'meting'
+
+type LyricProgressPayload = {
+  stage: LyricProgressStage
+  data: LyricResultData
+}
+
+type LyricProgressCallback = (payload: LyricProgressPayload) => void
 
 type LyricUpgradeMeta = {
   title?: string
@@ -31,6 +42,8 @@ type LyricUpgradeMeta = {
   duration?: number
   /** false = 明确禁止跨平台升级（防止递归），undefined/true = 允许 */
   allowCrossPlatformUpgrade?: boolean
+  /** 用于歌词页先显示基础歌词，再切换到更高阶歌词 */
+  onProgress?: LyricProgressCallback
 }
 
 type LyricResultData = { lrc: string; trans?: string; yrc?: string; ttml?: string }
@@ -42,21 +55,13 @@ type LyricResultData = { lrc: string; trans?: string; yrc?: string; ttml?: strin
 const LYRIC_FORMAT_RANK: Record<string, number> = {
   ttml: 0,
   qrc: 1,
-  yrc: 1,  // yrc 与 qrc 同阶，都是逐字
+  yrc: 1, // yrc 与 qrc 同阶，都是逐字
   lrc: 2,
-  none: 3,
+  none: 3
 }
 
 /** 当前 LyricResultData 的最高阶格式 rank（数字越小越高阶） */
 const getCurrentRank = (data: LyricResultData): number => {
-  if (data.ttml) return LYRIC_FORMAT_RANK.ttml
-  if (data.yrc) return LYRIC_FORMAT_RANK.yrc
-  if (data.lrc) return LYRIC_FORMAT_RANK.lrc
-  return LYRIC_FORMAT_RANK.none
-}
-
-/** 候选数据的最高阶格式 rank */
-const getCandidateRank = (data: LyricResultData): number => {
   if (data.ttml) return LYRIC_FORMAT_RANK.ttml
   if (data.yrc) return LYRIC_FORMAT_RANK.yrc
   if (data.lrc) return LYRIC_FORMAT_RANK.lrc
@@ -76,6 +81,73 @@ const normalizeLyricMatchText = (value: string): string => {
 const bothContains = (a: string, b: string): boolean =>
   a.length > 0 && b.length > 0 && (a.includes(b) || b.includes(a))
 
+/** 拆分多歌手文本，避免同名歌曲只比较整串导致误判 */
+const splitLyricMatchArtists = (value?: string): string[] =>
+  String(value || '')
+    .split(/[、&＆;，,/|·・]+/g)
+    .map((artist) => normalizeLyricMatchText(artist))
+    .filter(Boolean)
+
+const matchLyricArtists = (
+  candidateArtist: string | undefined,
+  trackArtists: readonly string[]
+): { exact: boolean; contains: boolean } => {
+  if (!trackArtists.length) return { exact: false, contains: false }
+
+  const candFull = normalizeLyricMatchText(candidateArtist || '')
+  const candParts = splitLyricMatchArtists(candidateArtist)
+  if (!candFull) return { exact: false, contains: false }
+
+  const exact = trackArtists.some(
+    (artist) => candFull === artist || candParts.some((part) => part === artist)
+  )
+  if (exact) return { exact: true, contains: false }
+
+  const contains = trackArtists.some(
+    (artist) =>
+      artist.length >= 2 &&
+      (bothContains(candFull, artist) || candParts.some((part) => bothContains(part, artist)))
+  )
+
+  return { exact: false, contains }
+}
+
+const isDurationClose = (left?: number, right?: number, tolerance = 5000): boolean =>
+  typeof left === 'number' && typeof right === 'number' && Math.abs(left - right) <= tolerance
+
+const VERSION_MARKERS: Array<{ key: string; pattern: RegExp }> = [
+  { key: 'live', pattern: /\blive\b|现场/i },
+  { key: 'remix', pattern: /\bremix\b|混音/i },
+  { key: 'instrumental', pattern: /\binstrumental\b|伴奏/i },
+  { key: 'acoustic', pattern: /\bacoustic\b|不插电/i },
+  { key: 'cover', pattern: /\bcover\b|翻唱/i },
+  { key: 'demo', pattern: /\bdemo\b/i },
+  { key: 'remaster', pattern: /\bremaster(?:ed)?\b|重制/i },
+  { key: 'edit', pattern: /\bedit\b/i },
+  { key: 'new', pattern: /新版/i },
+  { key: 'old', pattern: /旧版/i }
+]
+
+const getVersionMarkers = (value: string): string[] =>
+  VERSION_MARKERS.filter(({ pattern }) => pattern.test(value))
+    .map(({ key }) => key)
+    .sort()
+
+const stripVersionMarkers = (value: string): string => {
+  const stripped = VERSION_MARKERS.reduce(
+    (result, { pattern }) => result.replace(pattern, ''),
+    value
+  ).trim()
+  return stripped || value
+}
+
+const isSameVersion = (left: string, right: string): boolean => {
+  const leftMarkers = getVersionMarkers(left)
+  const rightMarkers = getVersionMarkers(right)
+  if (leftMarkers.length === 0 && rightMarkers.length === 0) return true
+  return leftMarkers.join('|') === rightMarkers.join('|')
+}
+
 /** 子串占长串的最低比例，过低视为巧合 */
 const NAME_CONTAIN_MIN_RATIO = 0.34
 
@@ -84,8 +156,10 @@ const NAME_CONTAIN_MIN_RATIO = 0.34
  *
  * 硬性条件（不满足直接跳过）：
  *  - title 全等，或双向 includes 且短串占长串比例 ≥ NAME_CONTAIN_MIN_RATIO
- *  - title 仅子串命中时，必须有 artist 交集佐证（防止巧合子串误匹配）
- *  - 双方都有 duration 时，差距不能超过 20s
+ *  - 原歌曲有 artist 时，候选必须命中至少一个 artist（防止同名异歌手误匹配）
+ *  - title 仅子串命中时，必须有 artist 或接近时长佐证（防止巧合子串误匹配）
+ *  - 双方都有 duration 时，差距不能超过 max(8s, 曲长 × 4%)
+ *  - 标题中的现场、混音、伴奏等版本标记必须一致
  *
  * 打分规则（分越高越优先，须 ≥ MIN_SCORE）：
  *  - title 全等 +10，子串命中 +4
@@ -95,12 +169,14 @@ const NAME_CONTAIN_MIN_RATIO = 0.34
  */
 const MIN_SCORE = 4
 
-const pickBestLyricCandidate = <T extends { title?: string; artist?: string; album?: string; duration?: number }>(
+const pickBestLyricCandidate = <
+  T extends { title?: string; artist?: string; album?: string; duration?: number }
+>(
   candidates: T[],
   track: { title?: string; artist?: string; album?: string; duration?: number }
 ): T | null => {
-  const trackTitle = normalizeLyricMatchText(track.title || '')
-  const trackArtist = normalizeLyricMatchText(track.artist || '')
+  const trackTitle = normalizeLyricMatchText(stripVersionMarkers(track.title || ''))
+  const trackArtists = splitLyricMatchArtists(track.artist)
   const trackAlbum = normalizeLyricMatchText(track.album || '')
   const trackDuration = track.duration
 
@@ -108,9 +184,10 @@ const pickBestLyricCandidate = <T extends { title?: string; artist?: string; alb
   let bestScore = MIN_SCORE - 1
 
   for (const candidate of candidates) {
-    const candTitle = normalizeLyricMatchText(candidate.title || '')
-    const candArtist = normalizeLyricMatchText(candidate.artist || '')
+    const candTitle = normalizeLyricMatchText(stripVersionMarkers(candidate.title || ''))
     const candAlbum = normalizeLyricMatchText(candidate.album || '')
+
+    if (!isSameVersion(candidate.title || '', track.title || '')) continue
 
     // 硬性：title 必须匹配
     const titleExact = candTitle.length > 0 && candTitle === trackTitle
@@ -121,28 +198,34 @@ const pickBestLyricCandidate = <T extends { title?: string; artist?: string; alb
       if (shorter / longer < NAME_CONTAIN_MIN_RATIO) continue
     }
 
-    // 硬性：时长差距超过 20s 直接跳过
+    // 硬性：时长差距超过动态容差直接跳过
     if (
       typeof trackDuration === 'number' &&
       typeof candidate.duration === 'number' &&
-      Math.abs(trackDuration - candidate.duration) > 20000
-    ) continue
+      Math.abs(trackDuration - candidate.duration) > Math.max(8000, trackDuration * 0.04)
+    )
+      continue
 
-    const artistExact = trackArtist.length > 0 && candArtist === trackArtist
-    const artistContains = !artistExact && bothContains(candArtist, trackArtist)
+    const artist = matchLyricArtists(candidate.artist, trackArtists)
 
-    // 硬性：title 仅子串命中时 artist 必须有交集
-    if (!titleExact && !artistExact && !artistContains) continue
+    // 硬性：原歌曲有歌手时，候选也必须命中歌手，避免同名异歌手歌词串台
+    if (trackArtists.length > 0 && !artist.exact && !artist.contains) continue
+
+    // 硬性：title 仅子串命中时，必须有歌手或时长佐证
+    if (
+      !titleExact &&
+      !artist.exact &&
+      !artist.contains &&
+      !isDurationClose(candidate.duration, trackDuration)
+    ) {
+      continue
+    }
 
     let score = titleExact ? 10 : 4
-    if (artistExact) score += 5
-    else if (artistContains) score += 2
+    if (artist.exact) score += 5
+    else if (artist.contains) score += 2
     if (trackAlbum && candAlbum === trackAlbum) score += 2
-    if (
-      typeof trackDuration === 'number' &&
-      typeof candidate.duration === 'number' &&
-      Math.abs(trackDuration - candidate.duration) <= 5000
-    ) score += 3
+    if (isDurationClose(candidate.duration, trackDuration)) score += 3
 
     if (score > bestScore) {
       bestScore = score
@@ -174,7 +257,52 @@ const getLyricCacheKey = (platform: string, id: number | string, meta?: LyricUpg
   const album = normalizeLyricMatchText(meta?.album || '')
   // allowCrossPlatformUpgrade=false 与 undefined/true 的结果不同，需区分
   const upgradeFlag = meta?.allowCrossPlatformUpgrade === false ? '0' : '1'
-  return `${platform}:${id}:${title}:${artist}:${album}:${upgradeFlag}`
+  const durationBucket = meta?.duration ? Math.round(meta.duration / 5000) : 0
+  return `lyric-v2:${platform}:${id}:${title}:${artist}:${album}:${durationBucket}:${upgradeFlag}`
+}
+
+const cloneLyricData = (data: LyricResultData): LyricResultData => ({
+  lrc: data.lrc || '',
+  trans: data.trans || '',
+  yrc: data.yrc || '',
+  ttml: data.ttml || ''
+})
+
+const subscribeLyricProgress = (
+  cacheKey: string,
+  callback?: LyricProgressCallback
+): (() => void) => {
+  if (!callback) return () => {}
+
+  let subscribers = lyricProgressSubscribers.get(cacheKey)
+  if (!subscribers) {
+    subscribers = new Set()
+    lyricProgressSubscribers.set(cacheKey, subscribers)
+  }
+  subscribers.add(callback)
+
+  return () => {
+    const currentSubscribers = lyricProgressSubscribers.get(cacheKey)
+    if (!currentSubscribers) return
+    currentSubscribers.delete(callback)
+    if (currentSubscribers.size === 0) {
+      lyricProgressSubscribers.delete(cacheKey)
+    }
+  }
+}
+
+const emitLyricProgress = (cacheKey: string, stage: LyricProgressStage, data: LyricResultData) => {
+  const subscribers = lyricProgressSubscribers.get(cacheKey)
+  if (!subscribers?.size) return
+
+  const payload = { stage, data: cloneLyricData(data) }
+  for (const callback of subscribers) {
+    try {
+      callback(payload)
+    } catch (error) {
+      console.warn('[getLyrics] 歌词进度回调失败:', error)
+    }
+  }
 }
 
 /**
@@ -260,7 +388,13 @@ export const useMusicSources = () => {
     const queries = buildLyricUpgradeQueries(meta)
     if (queries.length === 0) return false
 
-    let matchedTrack: any = null
+    let matchedCandidates: Array<{
+      title: string
+      artist: string
+      album: string
+      duration?: number
+      _song: any
+    }> = []
 
     for (const keywords of queries) {
       try {
@@ -271,7 +405,11 @@ export const useMusicSources = () => {
           limit: 10
         })
 
-        if (!searchResult.success || !Array.isArray(searchResult.data) || !searchResult.data.length) {
+        if (
+          !searchResult.success ||
+          !Array.isArray(searchResult.data) ||
+          !searchResult.data.length
+        ) {
           continue
         }
 
@@ -285,7 +423,7 @@ export const useMusicSources = () => {
 
         const best = pickBestLyricCandidate(candidates, meta)
         if (best) {
-          matchedTrack = (best as any)._song
+          matchedCandidates = candidates
           break
         }
       } catch (error: any) {
@@ -293,50 +431,73 @@ export const useMusicSources = () => {
       }
     }
 
-    if (!matchedTrack?.musicId) return false
-
-    try {
-      const upgraded = await fetchLyricsWithoutUpgrade(
-        matchedTrack.musicPlatform || targetPlatform,
-        matchedTrack.musicId,
-        {
-          title: matchedTrack.title,
-          artist: matchedTrack.artist,
-          album: matchedTrack.album,
-          allowCrossPlatformUpgrade: false  // 防止无限递归
-        }
+    const rejectedIds = new Set<string>()
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const best = pickBestLyricCandidate(
+        matchedCandidates.filter((candidate) => {
+          const id = candidate._song?.musicId
+          return id && !rejectedIds.has(String(id))
+        }),
+        meta
       )
+      if (!best?._song?.musicId) return false
+      const matchedTrack = best._song
+      rejectedIds.add(String(matchedTrack.musicId))
 
-      if (!upgraded.success || !upgraded.data) return false
+      try {
+        const upgraded = await fetchLyricsWithoutUpgrade(
+          matchedTrack.musicPlatform || targetPlatform,
+          matchedTrack.musicId,
+          {
+            title: matchedTrack.title,
+            artist: matchedTrack.artist,
+            album: matchedTrack.album,
+            duration: best.duration,
+            allowCrossPlatformUpgrade: false
+          }
+        )
+        if (!upgraded.success || !upgraded.data) continue
 
-      const upgradedRank = getCandidateRank(upgraded.data)
+        const tryAccept = (
+          candidateData: { lrc?: string; yrc?: string; ttml?: string },
+          format: 'ttml' | 'yrc'
+        ) => {
+          const decision = evaluateLyricDataMatch(
+            { lrc: currentData.lrc, yrc: currentData.yrc },
+            candidateData,
+            meta.duration,
+            best.duration
+          )
+          console.info(
+            `[getLyrics] ${targetPlatform}:${matchedTrack.musicId} ${format} ${decision.status}/${decision.reason}`,
+            decision.metrics
+          )
+          return decision.status === 'accepted'
+        }
 
-      // TTML 需要开关许可
-      if (upgradedRank === LYRIC_FORMAT_RANK.ttml && !useLyricSettings().enableOnlineTTMLLyric.value) {
-        // TTML 被禁用，但如果有 yrc/qrc 也可以升级
-        if (upgraded.data.yrc && LYRIC_FORMAT_RANK.yrc < currentRank) {
+        if (
+          upgraded.data.ttml &&
+          useLyricSettings().enableOnlineTTMLLyric.value &&
+          LYRIC_FORMAT_RANK.ttml < currentRank &&
+          tryAccept({ ttml: upgraded.data.ttml }, 'ttml')
+        ) {
+          currentData.ttml = upgraded.data.ttml
+          if (upgraded.data.trans && !currentData.trans) currentData.trans = upgraded.data.trans
+          return true
+        }
+
+        if (
+          upgraded.data.yrc &&
+          LYRIC_FORMAT_RANK.yrc < currentRank &&
+          tryAccept({ yrc: upgraded.data.yrc }, 'yrc')
+        ) {
           currentData.yrc = upgraded.data.yrc
           if (upgraded.data.trans && !currentData.trans) currentData.trans = upgraded.data.trans
           return true
         }
-        return false
+      } catch (error: any) {
+        console.warn('[getLyrics] 跨平台升级获取失败:', error?.message || error)
       }
-
-      // 对侧格式必须比当前更高阶
-      if (upgradedRank >= currentRank) return false
-
-      if (upgraded.data.ttml) {
-        currentData.ttml = upgraded.data.ttml
-      } else if (upgraded.data.yrc) {
-        currentData.yrc = upgraded.data.yrc
-      }
-      // 补充翻译（如果当前没有）
-      if (upgraded.data.trans && !currentData.trans) {
-        currentData.trans = upgraded.data.trans
-      }
-      return true
-    } catch (error: any) {
-      console.warn('[getLyrics] 跨平台升级获取失败:', error?.message || error)
     }
 
     return false
@@ -352,10 +513,12 @@ export const useMusicSources = () => {
     error?: string
   }> => {
     const cacheKey = getLyricCacheKey(platform, id, meta)
+    const unsubscribeProgress = subscribeLyricProgress(cacheKey, meta?.onProgress)
+    const progressive = typeof meta?.onProgress === 'function'
 
     const cached = lyricCache.get(cacheKey)
     if (cached) {
-      return cached
+      return cached.finally(unsubscribeProgress)
     }
 
     const promise = (async () => {
@@ -367,6 +530,37 @@ export const useMusicSources = () => {
 
         const resultData: LyricResultData = { lrc: '', trans: '', yrc: '', ttml: '' }
         let hasResult = false
+        let lastProgressSignature = ''
+        let ttmlValidated = false
+
+        const emitProgress = (stage: LyricProgressStage) => {
+          const signature = [
+            stage,
+            resultData.lrc?.length || 0,
+            resultData.trans?.length || 0,
+            resultData.yrc?.length || 0,
+            resultData.ttml?.length || 0
+          ].join(':')
+          if (signature === lastProgressSignature) return
+          lastProgressSignature = signature
+          emitLyricProgress(cacheKey, stage, resultData)
+        }
+
+        const validateTtml = (ttml: string): boolean => {
+          if (!resultData.lrc && !resultData.yrc) return true
+          const decision = evaluateLyricDataMatch(
+            { lrc: resultData.lrc, yrc: resultData.yrc },
+            { ttml },
+            meta?.duration,
+            meta?.duration
+          )
+          console.info(
+            `[getLyrics] ${platform}:${id} ttml ${decision.status}/${decision.reason}`,
+            decision.metrics
+          )
+          ttmlValidated = decision.status === 'accepted'
+          return ttmlValidated
+        }
 
         const fetchOfficial = async () => {
           if (platform !== 'netease' || !neteaseSource) return
@@ -392,7 +586,10 @@ export const useMusicSources = () => {
               if (yr?.yrc?.lyric) resultData.yrc = yr.yrc.lyric
             }
 
-            if (resultData.lrc || resultData.yrc) hasResult = true
+            if (resultData.lrc || resultData.yrc) {
+              hasResult = true
+              emitProgress('official')
+            }
           } catch (e: any) {
             console.warn('[getLyrics] NeteaseCloudMusicApi 获取失败:', e?.message || e)
           }
@@ -415,11 +612,12 @@ export const useMusicSources = () => {
 
             const ttml = await $fetch(url, { responseType: 'text' })
             if (ttml && typeof ttml === 'string' && ttml.includes('<tt')) {
+              if ((resultData.lrc || resultData.yrc) && !validateTtml(ttml)) return
               resultData.ttml = ttml
               hasResult = true
+              if (!progressive || ttmlValidated) emitProgress('amll')
             }
-          } catch {
-          }
+          } catch {}
         }
 
         const fetchQM = async () => {
@@ -446,11 +644,12 @@ export const useMusicSources = () => {
               if (nativeResp?.success && nativeResp?.data) {
                 const d = nativeResp.data
                 // qrc 优先于 lrc，两者都写入，解析层按优先级选择
-                if (d.qrc) resultData.yrc = d.qrc   // 用 yrc 字段承载 QRC，解析器会识别 XML 格式
+                if (d.qrc) resultData.yrc = d.qrc // 用 yrc 字段承载 QRC，解析器会识别 XML 格式
                 if (d.lrc) resultData.lrc = d.lrc
                 if (d.trans) resultData.trans = d.trans
                 if (d.qrc || d.lrc) {
                   hasResult = true
+                  emitProgress('qm')
                   return
                 }
               }
@@ -483,7 +682,10 @@ export const useMusicSources = () => {
               if (d.lrc) resultData.lrc = d.lrc
               if (d.trans) resultData.trans = d.trans
               if (d.yrc) resultData.yrc = d.yrc
-              if (d.lrc || d.yrc) hasResult = true
+              if (d.lrc || d.yrc) {
+                hasResult = true
+                emitProgress('qm')
+              }
             }
           } catch (e) {
             console.warn('[getLyrics] vkeys 获取失败:', e)
@@ -491,7 +693,35 @@ export const useMusicSources = () => {
         }
 
         const priority = settings.lyricPriority.value
-        if (priority === 'qm') {
+        if (progressive) {
+          if (platform === 'netease') {
+            let triedQM = false
+            const fetchQMOnce = async () => {
+              if (triedQM) return
+              triedQM = true
+              await fetchQM()
+            }
+
+            await fetchOfficial()
+            if (priority === 'qm' || (priority === 'auto' && settings.enableQQMusicLyric.value)) {
+              await fetchQMOnce()
+            }
+            if (priority !== 'official') {
+              await fetchAMLL()
+            }
+            if (!hasResult) {
+              await fetchQMOnce()
+            }
+          } else {
+            await fetchQM()
+            if (priority !== 'official') {
+              await fetchAMLL()
+            }
+            if (!hasResult) {
+              await fetchOfficial()
+            }
+          }
+        } else if (priority === 'qm') {
           await fetchAMLL()
           await fetchQM()
           if (!hasResult) await fetchOfficial()
@@ -515,11 +745,20 @@ export const useMusicSources = () => {
           await fetchOfficial()
         }
 
+        if (resultData.ttml && (resultData.lrc || resultData.yrc) && !ttmlValidated) {
+          if (!validateTtml(resultData.ttml)) {
+            resultData.ttml = ''
+          } else if (progressive) {
+            emitProgress('amll')
+          }
+        }
+
         // 跨平台升级：当前无 TTML 时尝试（有 yrc 也可升级到 ttml，有 lrc 可升级到 yrc/ttml）
         if (!resultData.ttml && (resultData.lrc || resultData.yrc || resultData.trans)) {
           const upgraded = await tryUpgradeLyric(platform, resultData, meta)
           if (upgraded) {
             hasResult = true
+            emitProgress('upgrade')
           }
         }
 
@@ -537,14 +776,14 @@ export const useMusicSources = () => {
                 headers: metingSource.headers
               })
               if (resp && typeof resp === 'string' && resp.trim()) {
+                resultData.lrc = resp
+                resultData.trans = ''
+                resultData.yrc = ''
+                resultData.ttml = ''
+                emitProgress('meting')
                 return {
                   success: true,
-                  data: {
-                    lrc: resp,
-                    trans: '',
-                    yrc: '',
-                    ttml: ''
-                  }
+                  data: cloneLyricData(resultData)
                 }
               }
             } catch (error: any) {
@@ -561,18 +800,21 @@ export const useMusicSources = () => {
         console.error('[getLyrics] 获取歌词失败:', error)
         return { success: false, error: error?.message || '未知错误' }
       }
-    })().then((res) => {
-      if (!res.success) {
-        lyricCache.delete(cacheKey)
-      }
-      return res
-    }).finally(() => {
-      setTimeout(() => {
-        if (lyricCache.get(cacheKey) === promise) {
+    })()
+      .then((res) => {
+        if (!res.success) {
           lyricCache.delete(cacheKey)
         }
-      }, LYRIC_CACHE_TTL)
-    })
+        return res
+      })
+      .finally(() => {
+        unsubscribeProgress()
+        setTimeout(() => {
+          if (lyricCache.get(cacheKey) === promise) {
+            lyricCache.delete(cacheKey)
+          }
+        }, LYRIC_CACHE_TTL)
+      })
 
     lyricCache.set(cacheKey, promise)
     return promise
@@ -794,9 +1036,10 @@ export const useMusicSources = () => {
         params.type !== 1009
       ) {
         try {
-          const reason = platform === 'tencent'
-            ? '[searchSongs] QQ音乐平台，优先尝试 Native Music 搜索...'
-            : '[searchSongs] 服务器位于国内，优先尝试 Native Music 搜索...'
+          const reason =
+            platform === 'tencent'
+              ? '[searchSongs] QQ音乐平台，优先尝试 Native Music 搜索...'
+              : '[searchSongs] 服务器位于国内，优先尝试 Native Music 搜索...'
           console.log(reason)
           const result = await searchNativeMusic(params)
           if (result && result.length > 0) {
@@ -988,11 +1231,12 @@ export const useMusicSources = () => {
         return data.data.map((item: any) => ({
           id: item.id,
           title: item.name,
-          artist: typeof item.artists === 'string'
-            ? item.artists
-            : (Array.isArray(item.artists)
-              ? item.artists.map((a: any) => a.name || a).join('/')
-              : (item.artist_string || '未知艺术家')),
+          artist:
+            typeof item.artists === 'string'
+              ? item.artists
+              : Array.isArray(item.artists)
+                ? item.artists.map((a: any) => a.name || a).join('/')
+                : item.artist_string || '未知艺术家',
           cover: item.picUrl,
           album: item.album,
           albumId: item.albumId,
@@ -1181,27 +1425,35 @@ export const useMusicSources = () => {
           throw new Error(`API响应错误: ${response.message || '未知错误'}`)
         }
         const data = response.data
-        const lastLine = (data.lyric || '').split('\n').filter((l: string) => l.trim()).pop() || ''
+        const lastLine =
+          (data.lyric || '')
+            .split('\n')
+            .filter((l: string) => l.trim())
+            .pop() || ''
         const match = lastLine.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/)
         let durationMs = 0
         if (match) {
-          durationMs = (parseInt(match[1], 10) * 60 + parseInt(match[2], 10)) * 1000 + parseInt(match[3].padEnd(3, '0'), 10)
+          durationMs =
+            (parseInt(match[1], 10) * 60 + parseInt(match[2], 10)) * 1000 +
+            parseInt(match[3].padEnd(3, '0'), 10)
         }
-        return [{
-          id: data.id,
-          title: data.name,
-          artist: data.ar_name || '未知艺术家',
-          cover: data.pic,
-          album: data.al_name,
-          duration: durationMs,
-          musicPlatform: 'netease',
-          musicId: data.id?.toString(),
-          sourceInfo: {
-            source: 'netease-rrvenn',
-            originalId: data.id?.toString(),
-            fetchedAt: new Date()
+        return [
+          {
+            id: data.id,
+            title: data.name,
+            artist: data.ar_name || '未知艺术家',
+            cover: data.pic,
+            album: data.al_name,
+            duration: durationMs,
+            musicPlatform: 'netease',
+            musicId: data.id?.toString(),
+            sourceInfo: {
+              source: 'netease-rrvenn',
+              originalId: data.id?.toString(),
+              fetchedAt: new Date()
+            }
           }
-        }]
+        ]
       }
     } else {
       // 网易云备用API
@@ -1449,8 +1701,7 @@ export const useMusicSources = () => {
                 const { useAudioQuality } = await import('./useAudioQuality')
                 const { getQuality } = useAudioQuality()
                 neteaseQuality = Number(getQuality('netease'))
-              } catch (error) {
-              }
+              } catch (error) {}
             }
 
             if (neteaseQuality === null || Number.isNaN(neteaseQuality)) {
@@ -1646,7 +1897,7 @@ export const useMusicSources = () => {
               id: idParam,
               level: level,
               // 如果用户已登录（有cookie），默认不启用 unblock（false），否则启用（true）
-              unblock: options?.unblock ?? (!cookie)
+              unblock: options?.unblock ?? !cookie
             }
             if (cookie) {
               params.cookie = cookie
@@ -1704,14 +1955,6 @@ export const useMusicSources = () => {
     data?: { lrc: string; trans?: string; yrc?: string; ttml?: string }
     error?: string
   }> => {
-    const cacheKey = getLyricCacheKey(platform, id, meta)
-
-    // 复用已缓存的请求结果
-    const cached = lyricCache.get(cacheKey)
-    if (cached) {
-      return cached
-    }
-
     return fetchLyricsWithoutUpgrade(platform, id, meta)
   }
 

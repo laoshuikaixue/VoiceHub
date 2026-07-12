@@ -206,6 +206,32 @@
           </div>
 
           <div
+            :class="[
+              'flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl transition-opacity',
+              !formData.enableSubmissionLimit ||
+              (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
+                ? 'opacity-50'
+                : ''
+            ]"
+          >
+            <div class="pr-4">
+              <p class="text-xs font-bold text-zinc-200">允许点歌券突破投稿限额</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">
+                开启后，有效点歌券投稿不占普通额度，并可在日、周或月额度用完后继续投稿
+              </p>
+            </div>
+            <input
+              v-model="formData.enableCardCodeLimitBypass"
+              type="checkbox"
+              :disabled="
+                !formData.enableSubmissionLimit ||
+                (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
+              "
+              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+            >
+          </div>
+
+          <div
             class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
           >
             <div>
@@ -546,6 +572,7 @@ const formData = ref({
   // 点歌券点歌设置
   enableCardCodeRequests: false,
   requireCardCodeForRequests: false,
+  enableCardCodeLimitBypass: false,
   dailySubmissionLimit: 5,
   weeklySubmissionLimit: null,
   monthlySubmissionLimit: null,
@@ -757,6 +784,7 @@ const loadConfig = async () => {
       // 点歌券点歌设置
       enableCardCodeRequests: !!data.enableCardCodeRequests,
       requireCardCodeForRequests: !!data.requireCardCodeForRequests,
+      enableCardCodeLimitBypass: !!data.enableCardCodeLimitBypass,
       dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
       weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,

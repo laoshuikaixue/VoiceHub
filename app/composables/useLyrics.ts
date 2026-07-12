@@ -52,8 +52,7 @@ const convertLibraryLines = (lines: any[]): ParsedLyricLine[] => {
         words?.map((w) => w.content).join('') ||
         (typeof line?.content === 'string' ? line.content : '')
 
-      const time =
-        typeof line?.startTime === 'number' ? line.startTime : (line?.time ?? 0)
+      const time = typeof line?.startTime === 'number' ? line.startTime : (line?.time ?? 0)
 
       if (!content && (!words || words.length === 0)) return null
       return { time, content, words: words && words.length > 0 ? words : undefined }
@@ -69,9 +68,7 @@ const hasWordByWord = (lines: ParsedLyricLine[]): boolean =>
  * 尝试将单段文本解析为歌词行。
  * 优先级：TTML > QRC > YRC(JSON) > SmartLrc
  */
-const parseFlexibleLyrics = (
-  text: string
-): { lines: ParsedLyricLine[]; wordByWord: boolean } => {
+const parseFlexibleLyrics = (text: string): { lines: ParsedLyricLine[]; wordByWord: boolean } => {
   const raw = text?.trim()
   if (!raw) return { lines: [], wordByWord: false }
 
@@ -89,11 +86,7 @@ const parseFlexibleLyrics = (
     }
 
     // QRC（QQ 音乐 XML 格式）
-    if (
-      raw.includes('LyricContent="') ||
-      raw.includes('<lyric') ||
-      raw.includes('<LrcContent')
-    ) {
+    if (raw.includes('LyricContent="') || raw.includes('<lyric') || raw.includes('<LrcContent')) {
       try {
         const qrcLines = convertLibraryLines(parseQRCLyric(raw))
         if (qrcLines.length > 0) {
@@ -186,6 +179,33 @@ export const useLyrics = () => {
 
   // ─── 歌词获取 ────────────────────────────────────────────────
 
+  const applyLyricData = (lyricData?: LyricData | null): boolean => {
+    if (!lyricData) return false
+
+    // 主歌词：按优先级 ttml > yrc > lrc 解析
+    const parsedMain = parseBestLyrics([lyricData.ttml, lyricData.yrc, lyricData.lrc])
+    if (parsedMain.lines.length === 0) return false
+
+    currentLyrics.value = parsedMain.lines
+    wordByWordLyrics.value = parsedMain.wordByWord ? parsedMain.lines : []
+    showWordByWord.value = parsedMain.wordByWord
+
+    translationLyrics.value = []
+    showTranslation.value = false
+
+    // 翻译歌词
+    if (lyricData.trans) {
+      const parsedTrans = parseBestLyrics([lyricData.trans])
+      if (parsedTrans.lines.length > 0) {
+        translationLyrics.value = parsedTrans.lines
+        showTranslation.value = true
+      }
+    }
+
+    error.value = null
+    return true
+  }
+
   const fetchLyrics = async (
     platform: string,
     musicId: string,
@@ -202,6 +222,7 @@ export const useLyrics = () => {
     isLoading.value = true
     error.value = null
     _resetState()
+    let hasRenderedProgress = false
 
     try {
       const { getLyrics } = useMusicSources()
@@ -210,7 +231,16 @@ export const useLyrics = () => {
         title: meta?.title ?? currentSong?.title ?? '',
         artist: meta?.artist ?? currentSong?.artist ?? '',
         album: meta?.album ?? currentSong?.album ?? '',
-        duration: currentSong?.duration
+        duration: currentSong?.duration,
+        onProgress: ({ data }) => {
+          if (token !== currentToken) return
+          const applied = applyLyricData(data)
+          if (!applied) return
+
+          hasRenderedProgress = true
+          isLoading.value = false
+          notifyHarmonyOSLyricsUpdate(getFormattedLyricsForHarmonyOS())
+        }
       })
 
       if (token !== currentToken) return
@@ -221,19 +251,9 @@ export const useLyrics = () => {
 
       const lyricData = result.data
 
-      // 主歌词：按优先级 ttml > yrc > lrc 解析
-      const parsedMain = parseBestLyrics([lyricData.ttml, lyricData.yrc, lyricData.lrc])
-      currentLyrics.value = parsedMain.lines
-      wordByWordLyrics.value = parsedMain.wordByWord ? parsedMain.lines : []
-      showWordByWord.value = parsedMain.wordByWord
-
-      // 翻译歌词
-      if (lyricData.trans) {
-        const parsedTrans = parseBestLyrics([lyricData.trans])
-        if (parsedTrans.lines.length > 0) {
-          translationLyrics.value = parsedTrans.lines
-          showTranslation.value = true
-        }
+      const applied = applyLyricData(lyricData)
+      if (!applied && !hasRenderedProgress) {
+        throw new Error('未获取到歌词')
       }
 
       const harmonyLyrics = getFormattedLyricsForHarmonyOS()
@@ -242,6 +262,10 @@ export const useLyrics = () => {
       error.value = null
     } catch (e: any) {
       if (token !== currentToken) return
+      if (hasRenderedProgress) {
+        error.value = null
+        return
+      }
       console.error('[useLyrics] 获取歌词失败:', e?.message ?? e)
       error.value = e?.message ?? '获取歌词失败'
       _resetState()

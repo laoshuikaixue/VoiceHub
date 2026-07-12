@@ -667,7 +667,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import logo from '~~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
@@ -682,6 +682,7 @@ import { useLocale } from '~/utils/locale'
 // 获取运行时配�?
 const config = useRuntimeConfig()
 const router = useRouter()
+const route = useRoute()
 const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
 const locale = computed(() => pages.value?.home || {})
 const formatLocaleValue = (value, ...args) => {
@@ -1176,6 +1177,12 @@ if (import.meta.client) {
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   const bootStartedAt = Date.now()
+
+  const queryTab = route.query.tab
+  const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
+  if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
+    activeTab.value = tabFromQuery
+  }
 
   try {
     if (isFirstVisit) {

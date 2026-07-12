@@ -4,6 +4,7 @@ export default defineEventHandler((event) => {
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
   const requestProtocol = `${getSafeRequestProtocol(event)}:`
+  const method = getMethod(event)
   
   // 只处理特定的内部API路由，防止站外调用
   const isProtectedApi = pathname.startsWith('/api/api-enhanced/netease') || 
@@ -27,12 +28,12 @@ export default defineEventHandler((event) => {
     const hostHeader = getHeader(event, 'host')
     
     if (hostHeader) {
-      configuredHost = hostHeader.split(',')[0].trim()
+      configuredHost = (hostHeader.split(',')[0] || '').trim()
       
       // 如果 x-forwarded-proto 存在，可以带上协议，使校验更精准
       const forwardedProto = getHeader(event, 'x-forwarded-proto')
       if (forwardedProto && !configuredHost.includes('://')) {
-        const proto = forwardedProto.split(',')[0].trim()
+        const proto = (forwardedProto.split(',')[0] || '').trim()
         configuredHost = `${proto}://${configuredHost}`
       }
     } else {
@@ -44,6 +45,7 @@ export default defineEventHandler((event) => {
   const origin = getHeader(event, 'origin')
   const referer = getHeader(event, 'referer')
   const secFetchSite = getHeader(event, 'sec-fetch-site')
+  const secFetchMode = getHeader(event, 'sec-fetch-mode')
   const sourceUrl = origin || referer
 
   if (sourceUrl) {
@@ -99,7 +101,7 @@ export default defineEventHandler((event) => {
         message: 'Bad Request: Origin或Referer头无效'
       })
     }
-  } else if (secFetchSite === 'same-origin') {
+  } else if (isTrustedFetchMetadata(secFetchSite, secFetchMode, method)) {
     // 允许没有 Origin/Referer 但明确标记为同源的请求
     return
   } else {
@@ -121,7 +123,7 @@ function getOriginFromHost(
   defaultProtocol: string
 ): { origin: string, hostname: string, port: string, protocol: string, hasExplicitPort: boolean } | null {
   if (!hostHeader) return null
-  const firstHost = hostHeader.split(',')[0].trim()
+  const firstHost = (hostHeader.split(',')[0] || '').trim()
   try {
     const normalized = firstHost.includes('://') ? firstHost : `${defaultProtocol}//${firstHost}`
     const url = new URL(normalized)
@@ -148,4 +150,21 @@ function isSameRequestHost(
   }
 
   return sourceOrigin.port === hostOrigin.port
+}
+
+function isTrustedFetchMetadata(
+  secFetchSite: string | undefined,
+  secFetchMode: string | undefined,
+  method: string
+): boolean {
+  const normalizedMethod = method.toUpperCase()
+  const safeMethod = normalizedMethod === 'GET' || normalizedMethod === 'HEAD'
+
+  if (secFetchSite === 'same-origin') return true
+  if (secFetchSite === 'none') {
+    return safeMethod && (!secFetchMode || secFetchMode === 'navigate')
+  }
+
+  // 老浏览器和部分 WebView 不发送 Fetch Metadata，仅允许无来源头的只读请求。
+  return !secFetchSite && safeMethod
 }

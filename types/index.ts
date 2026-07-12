@@ -159,6 +159,7 @@ export interface SystemSettings {
   enableSubmissionRemarks?: boolean
   enableCardCodeRequests?: boolean
   requireCardCodeForRequests?: boolean
+  enableCardCodeLimitBypass?: boolean
 }
 
 export interface RequestTime {

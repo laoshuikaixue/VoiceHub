@@ -874,6 +874,7 @@ VoiceHub/
 │   │       ├── 20260505000001_add_force_password_change_on_first_login.sql # 新增首次登录强制改密设置
 │   │       ├── 20260509000001_change_force_password_change_default.sql # 调整用户强制改密默认值
 │   │       ├── 20260619000001_ensure_force_password_change_on_first_login.sql # 兼容补齐首次登录强制改密设置
+│   │       ├── 20260712000001_ensure_force_password_change_after_latest.sql # 为已升级实例补执行强制改密字段迁移
 │   │       ├── *.sql           # 其他 Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件

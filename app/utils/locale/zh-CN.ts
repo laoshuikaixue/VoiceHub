@@ -1311,6 +1311,8 @@ export const pages = {
       chooseProgram: '选择节目',
       chooseSubmit: '选择投稿',
       manualSubmitLong: '以上没有我想要的歌曲，手动输入提交',
+      loginRequiredToSubmit: '请先登录后提交',
+      cardCodeBypassesLimit: '不占普通额度',
       noResults: '未找到相关歌曲',
       noResultsHint: '试试其他关键词或切换平台',
       noMatchingSongs: '没有找到匹配的歌曲',
@@ -2978,6 +2980,8 @@ export const admin = {
         keepClass: '保持原有班级不变'
       },
       statusSettings: {
+        sourceStatus: '前置账户状态',
+        sourceStatusPlaceholder: '请选择前置状态',
         title: '目标状态设置',
         targetStatus: '选择账户状态',
         targetStatusPlaceholder: '请选择目标状态',
@@ -2985,6 +2989,7 @@ export const admin = {
         reasonPlaceholder: '例如: 2025届学生统一毕业'
       },
       statusOptions: {
+        all: '不限当前状态',
         active: '正常访问',
         graduate: '限制访问 (毕业生)',
         withdrawn: '限制访问 (退学)'

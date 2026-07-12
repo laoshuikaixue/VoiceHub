@@ -10,12 +10,18 @@ interface UserData {
   password: string
   role?: string
   status?: 'active' | 'withdrawn' | 'graduate'
-  grade?: string
-  class?: string
+  grade?: string | null
+  class?: string | null
 }
 
 interface ValidUserData extends UserData {
   index: number
+}
+
+const normalizeRequiredText = (value: unknown) => String(value || '').trim()
+const normalizeOptionalText = (value: unknown) => {
+  const normalized = String(value || '').trim()
+  return normalized || null
 }
 
 export default defineEventHandler(async (event) => {
@@ -47,17 +53,39 @@ export default defineEventHandler(async (event) => {
   // 1. 预处理数据：过滤必填字段，提取要查询的用户名
   const validUsers: ValidUserData[] = []
   const usernamesToQuery: string[] = []
+  const usernamesInBatch = new Set<string>()
 
   for (let i = 0; i < body.users.length; i++) {
     const userData = body.users[i]
-    if (!userData.name || !userData.username || !userData.password) {
+    const normalizedUserData = {
+      ...userData,
+      name: normalizeRequiredText(userData.name),
+      username: normalizeRequiredText(userData.username),
+      grade: normalizeOptionalText(userData.grade),
+      class: normalizeOptionalText(userData.class)
+    }
+
+    if (!normalizedUserData.name || !normalizedUserData.username || !userData.password) {
       results.failed++
       results.errors.push({ index: i, username: userData.username, name: userData.name, reason: '缺少必填字段（姓名、账号或密码）' })
       continue
     }
+
+    if (usernamesInBatch.has(normalizedUserData.username)) {
+      results.failed++
+      results.errors.push({
+        index: i,
+        username: normalizedUserData.username,
+        name: normalizedUserData.name,
+        reason: '批处理中存在重复的账号'
+      })
+      continue
+    }
+
+    usernamesInBatch.add(normalizedUserData.username)
     // 限制单次查询 inArray 的长度，如果需要的话。前端分批已经是 50，所以没问题
-    validUsers.push({ index: i, ...userData })
-    usernamesToQuery.push(userData.username)
+    validUsers.push({ index: i, ...normalizedUserData })
+    usernamesToQuery.push(normalizedUserData.username)
   }
 
   if (validUsers.length === 0) {
@@ -126,7 +154,7 @@ export default defineEventHandler(async (event) => {
       return {
         name: userData.name,
         username: userData.username,
-        password: hashedPasswords[idx],
+        password: hashedPasswords[idx]!,
         role: validRole,
         status: validStatus as 'active' | 'withdrawn' | 'graduate',
         grade: userData.grade,

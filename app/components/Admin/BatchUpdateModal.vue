@@ -283,7 +283,18 @@
                 <Save :size="14" />
                 {{ locale.statusSettings.title }}
               </div>
-              <div class="grid grid-cols-1 gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.sourceStatus }}</label>
+                  <CustomSelect
+                    v-model="sourceStatus"
+                    :options="sourceStatusOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="locale.statusSettings.sourceStatusPlaceholder"
+                    class-name="w-full"
+                  />
+                </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.targetStatus }}</label>
                   <CustomSelect
@@ -724,6 +735,7 @@ const targetGrade = ref('')
 const keepClass = ref(true)
 
 // 状态批量更新相关
+const sourceStatus = ref('')
 const targetStatus = ref('')
 const statusReason = ref('')
 
@@ -829,6 +841,10 @@ const statusOptions = computed(() => [
   { label: locale.value?.statusOptions?.active || '', value: 'active' },
   { label: locale.value?.statusOptions?.graduate || '', value: 'graduate' },
   { label: locale.value?.statusOptions?.withdrawn || '', value: 'withdrawn' }
+])
+const sourceStatusOptions = computed(() => [
+  { label: locale.value?.statusOptions?.all || '', value: '' },
+  ...statusOptions.value
 ])
 
 // 计算属性
@@ -1422,6 +1438,7 @@ const performStatusUpdate = async () => {
     method: 'PUT',
     body: {
       userIds: selectedUserIds.value,
+      sourceStatus: sourceStatus.value || undefined,
       status: targetStatus.value,
       reason: statusReason.value.trim()
     },

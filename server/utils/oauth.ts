@@ -7,6 +7,14 @@ export interface OAuthState {
   csrf: string
   timestamp: number
   provider?: string
+  returnTo?: string
+}
+
+export const getSafeOAuthReturnPath = (value: unknown): string | undefined => {
+  const path = Array.isArray(value) ? value[0] : value
+  return typeof path === 'string' && path.startsWith('/') && !path.startsWith('//') && !path.startsWith('/\\')
+    ? path
+    : undefined
 }
 
 const normalizePort = (url: URL): string => {
@@ -20,7 +28,8 @@ const normalizePort = (url: URL): string => {
 export const generateState = (
   targetOrigin: string,
   provider?: string,
-  secretKey?: string
+  secretKey?: string,
+  returnTo?: string
 ): { state: string; csrf: string } => {
   if (!secretKey) {
     throw createError({
@@ -34,7 +43,8 @@ export const generateState = (
     target: targetOrigin,
     csrf,
     timestamp: Date.now(),
-    provider
+    provider,
+    returnTo: getSafeOAuthReturnPath(returnTo)
   }
   const json = JSON.stringify(payload)
   const state = CryptoJS.AES.encrypt(json, secretKey).toString()
@@ -154,6 +164,7 @@ export const parseState = (
       return null
     }
 
+    payload.returnTo = getSafeOAuthReturnPath(payload.returnTo)
     return payload
   } catch (e) {
     console.error('Failed to parse OAuth state', e)
