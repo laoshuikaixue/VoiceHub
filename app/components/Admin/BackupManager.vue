@@ -507,7 +507,7 @@ const uploadFile = async () => {
       }, 5000)
     } else {
       if (window.$showNotification) {
-        window.$showNotification(getLocaleText('importFailed', response.message || locale.value?.unknownError || '未知错误'), 'error')
+        window.$showNotification(getLocaleText('importFailed', response.message || locale.value.unknownError), 'error')
       }
     }
   } catch (error) {

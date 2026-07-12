@@ -4,23 +4,23 @@
 
     <Transition name="entry" appear>
       <div v-show="active" class="content">
-        <div class="label">音乐足迹</div>
+        <div class="label">{{ yearReview.musicJourney }}</div>
 
-        <p class="text-intro">这一年，你一共发起了</p>
+        <p class="text-intro">{{ yearReview.totalRequestsIntro }}</p>
 
         <div class="number-container">
           <span class="big-number">{{ data.totalRequests.toLocaleString() }}</span>
-          <span class="suffix">次点歌</span>
+          <span class="suffix">{{ yearReview.requestCount }}</span>
         </div>
 
         <div class="sub-stats">
           <div v-if="data.playedRequests > 0" class="sub-content">
             <p class="text-base">
-              其中有 <span class="highlight-green">{{ data.playedRequests }}</span> 首
+              {{ yearReview.playedSummary(data.playedRequests) }}
             </p>
-            <p class="text-sub">在广播站被播出，传递给了更多人</p>
+            <p class="text-sub">{{ yearReview.playedDesc }}</p>
           </div>
-          <p v-else class="text-sub">期待你的歌曲早日被播出</p>
+          <p v-else class="text-sub">{{ yearReview.pendingPlayedDesc }}</p>
         </div>
       </div>
     </Transition>
@@ -32,6 +32,7 @@ defineProps({
   data: Object,
   active: Boolean
 })
+const { yearReview } = useLocale()
 </script>
 
 <style scoped>

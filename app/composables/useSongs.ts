@@ -19,6 +19,7 @@ export const useSongs = () => {
   const playTimeEnabled = ref(false)
   const songCount = ref(0)
   const requestFormLocale = computed(() => songsLocale.value?.requestForm)
+  const actionLocale = computed(() => songsLocale.value.actions)
 
   const getCardCodeErrorCode = (err: any) =>
     err?.data?.data?.code || err?.data?.code || err?.statusMessage || err?.data?.statusMessage
@@ -277,7 +278,7 @@ export const useSongs = () => {
     cardCode?: string | null
   }) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能点歌', 'error')
+      showNotification(actionLocale.value.loginRequest, 'error')
       return null
     }
 
@@ -317,7 +318,7 @@ export const useSongs = () => {
   // 投票
   const voteSong = async (songId: number | { id: number; unvote?: boolean }) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能投票', 'error')
+      showNotification(actionLocale.value.loginVote, 'error')
       return null
     }
 
@@ -333,7 +334,7 @@ export const useSongs = () => {
       const targetSong = songs.value.find((s) => s.id === actualSongId)
 
       if (!isUnvote && targetSong && targetSong.voted) {
-        showNotification('您已经为这首歌投过票了', 'info')
+        showNotification(actionLocale.value.alreadyVoted, 'info')
         loading.value = false
         return null
       }
@@ -357,12 +358,12 @@ export const useSongs = () => {
             // 取消投票
             targetSong.voted = false
             targetSong.voteCount = Math.max(0, (targetSong.voteCount || 1) - 1)
-            showNotification(`已取消对歌曲《${targetSong.title}》的投票`, 'success')
+            showNotification(actionLocale.value.voteCancelled(targetSong.title), 'success')
           } else {
             // 正常投票
             targetSong.voted = true
             targetSong.voteCount = (targetSong.voteCount || 0) + 1
-            showNotification(`为歌曲《${targetSong.title}》投票成功！`, 'success')
+            showNotification(actionLocale.value.voteSucceeded(targetSong.title), 'success')
           }
         }
 
@@ -373,7 +374,7 @@ export const useSongs = () => {
 
         // 如果是已投票错误，只显示通知，不抛出异常
         if (errorMsg.includes('已经为这首歌投过票')) {
-          showNotification('您已经为这首歌投过票了', 'info')
+          showNotification(actionLocale.value.alreadyVoted, 'info')
 
           // 如果API返回已投票错误，也更新本地状态
           if (targetSong && !targetSong.voted) {
@@ -399,7 +400,7 @@ export const useSongs = () => {
   // 撤回歌曲（只能撤回自己的投稿）
   const withdrawSong = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能撤回歌曲', 'error')
+      showNotification(actionLocale.value.loginWithdraw, 'error')
       return null
     }
 
@@ -457,7 +458,7 @@ export const useSongs = () => {
   // 删除歌曲（管理员专用）
   const deleteSong = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能删除歌曲', 'error')
+      showNotification(actionLocale.value.loginDelete, 'error')
       return null
     }
 
@@ -477,7 +478,7 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
 
-      showNotification('歌曲已成功删除！', 'success')
+      showNotification(actionLocale.value.deleteSucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '删除歌曲失败'
@@ -492,7 +493,7 @@ export const useSongs = () => {
   // 标记歌曲为已播放（管理员专用）
   const markPlayed = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能标记歌曲', 'error')
+      showNotification(actionLocale.value.loginMarkPlayed, 'error')
       return null
     }
 
@@ -512,7 +513,7 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
 
-      showNotification('歌曲已成功标记为已播放！', 'success')
+      showNotification(actionLocale.value.markPlayedSucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '标记歌曲失败'
@@ -527,7 +528,7 @@ export const useSongs = () => {
   // 撤回歌曲已播放状态（管理员专用）
   const unmarkPlayed = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能撤回歌曲已播放状态', 'error')
+      showNotification(actionLocale.value.loginUnmarkPlayed, 'error')
       return null
     }
 
@@ -547,7 +548,7 @@ export const useSongs = () => {
       // 更新歌曲列表
       await fetchSongs()
 
-      showNotification('歌曲已成功撤回已播放状态！', 'success')
+      showNotification(actionLocale.value.unmarkPlayedSucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '撤回歌曲已播放状态失败'
@@ -562,7 +563,7 @@ export const useSongs = () => {
   // 申请重播
   const requestReplay = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能申请重播', 'error')
+      showNotification(actionLocale.value.loginRequestReplay, 'error')
       return null
     }
 
@@ -583,12 +584,12 @@ export const useSongs = () => {
         songs.value[songIndex].replayRequested = true
       }
 
-      showNotification('申请重播成功', 'success')
+      showNotification(actionLocale.value.replaySucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '申请重播失败'
       if (errorMsg.includes('已经申请')) {
-        showNotification('您已经申请过重播这首歌了', 'info')
+        showNotification(actionLocale.value.replayAlreadyRequested, 'info')
       } else {
         showNotification(errorMsg, 'error')
       }
@@ -605,7 +606,7 @@ export const useSongs = () => {
   const withdrawReplay = async (songId: number) => {
     const { user } = useAuth()
     if (!user.value) {
-      showNotification('需要登录才能取消重播申请', 'error')
+      showNotification(actionLocale.value.loginCancelReplay, 'error')
       return null
     }
 
@@ -626,7 +627,7 @@ export const useSongs = () => {
         songs.value[songIndex].replayRequested = false
       }
 
-      showNotification('已取消重播申请', 'success')
+      showNotification(actionLocale.value.replayCancelled, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '取消重播申请失败'

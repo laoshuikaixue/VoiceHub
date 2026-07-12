@@ -7,7 +7,7 @@
     <Transition name="entry" appear>
       <div v-show="active" class="content">
         <div class="year-bg">{{ data.year }}</div>
-        <div class="sub-title">年度点歌报告</div>
+        <div class="sub-title">{{ yearReview.reportTitle }}</div>
         <h1 class="main-title">VoiceHub</h1>
       </div>
     </Transition>
@@ -19,6 +19,7 @@ defineProps({
   data: Object,
   active: Boolean
 })
+const { yearReview } = useLocale()
 </script>
 
 <style scoped>

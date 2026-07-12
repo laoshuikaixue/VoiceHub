@@ -594,7 +594,7 @@ const formatDate = (dateStr) => {
 
 const formatDateRange = () => {
   if (!settings.value.startDate && !settings.value.endDate) {
-    return '全部排期'
+    return locale.value.allSchedules
   }
 
   // 如果开始和结束日期相同，只显示一个日期
@@ -606,13 +606,13 @@ const formatDateRange = () => {
     return formatDate(settings.value.startDate)
   }
 
-  const start = settings.value.startDate ? formatDate(settings.value.startDate) : '开始'
-  const end = settings.value.endDate ? formatDate(settings.value.endDate) : '结束'
+  const start = settings.value.startDate ? formatDate(settings.value.startDate) : locale.value.rangeStart
+  const end = settings.value.endDate ? formatDate(settings.value.endDate) : locale.value.rangeEnd
 
   // 如果日期范围较长，使用双行显示
   const fullRange = `${start} - ${end}`
   if (fullRange.length > 20) {
-    return `${start}\n至 ${end}`
+    return locale.value.rangeTo(start, end)
   }
 
   return fullRange
@@ -666,7 +666,7 @@ const setDateRange = (type) => {
 
 // 格式化播出时段显示文本
 const formatPlayTimeDisplay = (playTime) => {
-  if (!playTime) return '未指定时段'
+  if (!playTime) return locale.value.unspecifiedPlayTime
 
   let displayText = playTime.name
 
@@ -674,9 +674,9 @@ const formatPlayTimeDisplay = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     displayText += ` (${playTime.startTime}-${playTime.endTime})`
   } else if (playTime.startTime) {
-    displayText += ` (${playTime.startTime}开始)`
+    displayText = locale.value.playTimeStarts(displayText, playTime.startTime)
   } else if (playTime.endTime) {
-    displayText += ` (${playTime.endTime}结束)`
+    displayText = locale.value.playTimeEnds(displayText, playTime.endTime)
   }
 
   return displayText
@@ -786,7 +786,7 @@ const hasMultiplePlayTimes = (dateGroup) => {
   // 如果有多个时段，显示分组
   if (playTimeKeys.length > 1) return true
   // 如果只有一个时段且不是"未指定时段"，显示分组
-  if (playTimeKeys.length === 1 && playTimeKeys[0] !== '未指定时段') return true
+  if (playTimeKeys.length === 1 && playTimeKeys[0] !== locale.value.unspecifiedPlayTime) return true
   // 其他情况不显示分组
   return false
 }
@@ -805,13 +805,13 @@ const loadSchedules = async () => {
     // 如果没有数据，显示提示
     if (schedules.value.length === 0) {
       if (window.$showNotification) {
-        window.$showNotification('当前没有排期数据，请先在排期管理中添加排期', 'info')
+        window.$showNotification(locale.value.noSchedulesNotice, 'info')
       }
     }
   } catch (error) {
     console.error('加载排期失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('加载排期失败: ' + error.message, 'error')
+      window.$showNotification(locale.value.loadFailed(error.message), 'error')
     }
   } finally {
     loading.value = false
@@ -821,7 +821,7 @@ const loadSchedules = async () => {
 const refreshPreview = async () => {
   await loadSchedules()
   if (window.$showNotification) {
-    window.$showNotification('预览已刷新', 'success')
+    window.$showNotification(locale.value.previewRefreshed, 'success')
   }
 }
 
@@ -831,16 +831,16 @@ const printSchedule = async () => {
   isPrinting.value = true
   try {
     if (window.$showNotification) {
-      window.$showNotification('正在准备打印...', 'info')
+      window.$showNotification(locale.value.preparingPrint, 'info')
     }
 
     // 复用PDF导出逻辑，但用于打印
     await exportPDFForPrint()
   } catch (error) {
     console.error('打印失败:', error)
-    const errorMsg = error?.message || (typeof error === 'string' ? error : '未知错误')
+    const errorMsg = error?.message || (typeof error === 'string' ? error : locale.value.unknownError)
     if (window.$showNotification) {
-      window.$showNotification('打印失败: ' + errorMsg, 'error')
+      window.$showNotification(locale.value.printFailed(errorMsg), 'error')
     }
   } finally {
     // 延迟重置状态，给用户足够的时间看到"打印中"状态
@@ -853,7 +853,7 @@ const printSchedule = async () => {
 // 统一的PDF生成函数（支持打印和下载）
 // 采用DOM分页策略，避免长图渲染导致的内存溢出和卡死
 const exportPDFForPrint = async (action = 'print') => {
-  if (!previewContent.value) throw new Error('预览内容未找到')
+  if (!previewContent.value) throw new Error(locale.value.previewNotFound)
 
   const originalPrintPage = previewContent.value.querySelector('.print-page')
   if (!originalPrintPage) throw new Error('打印页面元素未找到')
@@ -1264,7 +1264,7 @@ const exportPDFForPrint = async (action = 'print') => {
       const filename = `广播排期表_${formatDateRange().replace(/\n/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
       pdf.save(filename)
       if (window.$showNotification) {
-        window.$showNotification('PDF导出成功', 'success')
+        window.$showNotification(locale.value.pdfExported, 'success')
       }
     }
   } finally {
@@ -1583,7 +1583,7 @@ const exportSplitImages = async (printPage) => {
   }
 
   if (window.$showNotification) {
-    window.$showNotification(`已完成分段导出，共 ${sortedMonths.length} 张图片`, 'success')
+    window.$showNotification(locale.value.segmentedExport(sortedMonths.length), 'success')
   }
 }
 
@@ -1593,7 +1593,7 @@ const exportPDF = async () => {
   isExporting.value = true
   try {
     if (window.$showNotification) {
-      window.$showNotification('正在准备PDF...', 'info')
+      window.$showNotification(locale.value.preparingPdf, 'info')
     }
 
     // 复用 DOM 分页逻辑导出 PDF，避免长图导致内存溢出
@@ -1601,7 +1601,7 @@ const exportPDF = async () => {
   } catch (error) {
     console.error('导出PDF失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('导出PDF失败: ' + error.message, 'error')
+      window.$showNotification(locale.value.pdfExportFailed(error.message), 'error')
     }
   } finally {
     isExporting.value = false
@@ -1613,7 +1613,7 @@ const exportImage = async () => {
 
   if (!previewContent.value) {
     if (window.$showNotification) {
-      window.$showNotification('预览内容未找到', 'error')
+      window.$showNotification(locale.value.previewNotFound, 'error')
     }
     return
   }
@@ -1648,7 +1648,7 @@ const exportImage = async () => {
 
     if (fullHeight > MAX_HEIGHT) {
       if (window.$showNotification) {
-        window.$showNotification('排期内容过长，将自动分段导出', 'info')
+        window.$showNotification(locale.value.autoSegmenting, 'info')
       }
       await exportSplitImages(printPage)
     } else {
@@ -1659,12 +1659,12 @@ const exportImage = async () => {
     }
 
     if (window.$showNotification) {
-      window.$showNotification('图片导出成功', 'success')
+      window.$showNotification(locale.value.imageExported, 'success')
     }
   } catch (error) {
     console.error('导出长图失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('导出长图失败: ' + error.message, 'error')
+      window.$showNotification(locale.value.imageExportFailed(error.message), 'error')
     }
   } finally {
     isExportingImage.value = false

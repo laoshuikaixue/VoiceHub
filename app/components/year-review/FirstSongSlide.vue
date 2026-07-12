@@ -9,9 +9,9 @@
 
     <Transition name="entry" appear>
       <div v-show="active" class="content">
-        <span class="badge">初次相遇</span>
+        <span class="badge">{{ yearReview.firstSongBadge }}</span>
 
-        <p class="text-intro">这一年，你点的<span class="highlight">第一首歌</span>是</p>
+        <p class="text-intro">{{ yearReview.firstSongIntro }}</p>
 
         <div class="vinyl-container">
           <div class="vinyl-record">
@@ -57,10 +57,11 @@ defineProps({
   data: Object,
   active: Boolean
 })
+const { yearReview } = useLocale()
 
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)
-  return `${date.getMonth() + 1}月${date.getDate()}日`
+  return yearReview.value.date(date.getMonth() + 1, date.getDate())
 }
 </script>
 

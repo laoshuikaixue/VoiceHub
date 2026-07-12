@@ -195,7 +195,7 @@ const sendEmailCode = async () => {
       }
     })
 
-    showToast(locale.value.codeSent || '验证码已发送', 'success')
+    showToast(locale.value.codeSent, 'success')
     emailSent.value = true
     cooldown.value = 60
     timer = setInterval(() => {
