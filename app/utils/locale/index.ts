@@ -134,7 +134,9 @@ export function useLocale() {
     pages: withFallback('pages'),
     auth: withFallback('auth'),
     ui: withFallback('ui'),
+    audioPlayer: withFallback('audioPlayer'),
     songs: withFallback('songs'),
-    admin: withFallback('admin')
+    admin: withFallback('admin'),
+    yearReview: withFallback('yearReview')
   }
 }
