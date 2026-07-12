@@ -165,7 +165,7 @@ export const user = pgTable("User", {
 	lastLogin: timestamp({ mode: 'string' }),
 	lastLoginIp: text(),
 	passwordChangedAt: timestamp({ mode: 'string' }),
-	forcePasswordChange: boolean().default(true).notNull(),
+	forcePasswordChange: boolean().default(false).notNull(),
 	meowNickname: text(),
 	meowBoundAt: timestamp({ mode: 'string' }),
 	status: userStatus().default('active').notNull(),
