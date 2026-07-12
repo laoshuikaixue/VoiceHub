@@ -1132,8 +1132,6 @@ const getCurrentDate = () => {
 // RequestForm组件引用
 const requestFormRef = ref(null)
 
-// 旧的showNotification函数已移除，使用全局通知系统
-
 // 更新歌曲数量统计（优化版本，避免重复请求�?
 const updateSongCounts = async (semester = null) => {
   try {
@@ -1660,8 +1658,6 @@ const checkPasswordChangeRequired = async (user = null) => {
     console.error('??????????', error)
   }
 }
-
-// 旧的showToast函数已移除，使用全局通知系统
 
 // 添加未读通知计数
 // 之前已声明了unreadNotificationCount，这里对其进行增�?

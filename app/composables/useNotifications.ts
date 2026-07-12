@@ -2,15 +2,6 @@ import { computed, ref } from 'vue'
 import { useAuth } from './useAuth'
 import type { Notification, NotificationSettings } from '~/types'
 
-interface PaginationInfo {
-  currentPage: number
-  totalPages: number
-  totalCount: number
-  limit: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
-}
-
 export const useNotifications = () => {
   const { getAuthConfig, isAuthenticated } = useAuth()
   const { composableErrors } = useLocale()
