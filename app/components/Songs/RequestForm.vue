@@ -112,7 +112,8 @@
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
           <div v-if="!user" class="submission-status-horizontal login-required-notice">
-            <span class="notice-text">{{ locale.loginRequiredToSubmit }}</span>
+            <Lock class="notice-icon" :size="14" />
+            <span class="notice-text">{{ locale.loginRequiredNotice }}</span>
             <button class="login-link-btn" type="button" @click="handleLoginRedirect">
               {{ locale.loginNow }}
             </button>
@@ -694,9 +695,9 @@
                           "
                           :title="
                             getSimilarSong(result)?.played
-                              ? (locale.playedCannotLike || '已播放的歌曲不能点赞')
+                              ? locale.playedCannotLike
                               : getSimilarSong(result)?.scheduled
-                                ? (locale.scheduledCannotLike || '已排期的歌曲不能点赞')
+                                ? locale.scheduledCannotLike
                                 : getSimilarSong(result)?.voted
                                   ? locale.liked
                                   : locale.like
@@ -1478,8 +1479,12 @@ const cardCodeLimitBypassActive = computed(
 const cardCodeFieldMeta = computed(() => ({
   required: requireCardCodeForRequests.value,
   helper: requireCardCodeForRequests.value
-    ? locale.value.cardCodeRequiredHelper
-    : locale.value.cardCodeOptionalHelper,
+    ? cardCodeLimitBypassActive.value
+      ? locale.value.cardCodeRequiredBypassHelper
+      : locale.value.cardCodeRequiredHelper
+    : cardCodeLimitBypassActive.value
+      ? locale.value.cardCodeOptionalBypassHelper
+      : locale.value.cardCodeOptionalHelper,
   placeholder: locale.value.cardCodePlaceholder
 }))
 
@@ -1487,6 +1492,9 @@ const trimmedCardCode = computed(() => cardCode.value.trim())
 const cardCodeStatusText = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
   if (trimmedCardCode.value) {
+    if (cardCodeValidation.value.valid && cardCodeLimitBypassActive.value) {
+      return locale.value.cardCodeAvailableBypass
+    }
     return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
   }
   return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredStatus : locale.value.cardCodeOptionalStatus
@@ -2316,6 +2324,22 @@ onMounted(async () => {
     } catch (error) {
       console.error('加载歌曲列表失败:', error)
     }
+
+    try {
+      const pendingSearch = sessionStorage.getItem('pending_search')
+      if (pendingSearch) {
+        const saved = JSON.parse(pendingSearch)
+        sessionStorage.removeItem('pending_search')
+        if (saved.title) {
+          title.value = saved.title
+          if (saved.platform) platform.value = saved.platform
+          await checkNeteaseLoginStatus()
+          await handleSearch()
+        }
+      }
+    } catch {
+      // 浏览器禁用会话存储时不影响页面初始化。
+    }
   }
   // 音源健康检查功能已移除
 })
@@ -2475,8 +2499,8 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
       const message = song.played
-        ? (locale.value.playedCannotLike || '已播放的歌曲不能点赞')
-        : (locale.value.scheduledCannotLike || '已排期的歌曲不能点赞')
+        ? locale.value.playedCannotLike
+        : locale.value.scheduledCannotLike
       window.$showNotification(message, 'warning')
     }
     return
@@ -4338,6 +4362,43 @@ defineExpose({
 }
 
 /* 横向投稿状态样式 */
+.login-required-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.login-required-notice .notice-icon {
+  flex-shrink: 0;
+  color: #60a5fa;
+}
+
+.login-required-notice .notice-text {
+  color: #93c5fd;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.login-required-notice .login-link-btn {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.login-required-notice .login-link-btn:hover {
+  background: rgba(59, 130, 246, 0.35);
+  color: #bfdbfe;
+}
+
 .submission-status-horizontal {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;

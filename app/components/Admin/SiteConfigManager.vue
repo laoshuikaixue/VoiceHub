@@ -215,9 +215,9 @@
             ]"
           >
             <div class="pr-4">
-              <p class="text-xs font-bold text-zinc-200">允许点歌券突破投稿限额</p>
+              <p class="text-xs font-bold text-zinc-200">{{ locale.enableCardCodeLimitBypass }}</p>
               <p class="text-[10px] text-zinc-500 mt-0.5">
-                开启后，有效点歌券投稿不占普通额度，并可在日、周或月额度用完后继续投稿
+                {{ locale.enableCardCodeLimitBypassDesc }}
               </p>
             </div>
             <input
@@ -829,7 +829,7 @@ const loadConfig = async () => {
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
     console.error('Failed to load site config:', error)
-    showNotification(locale.value?.loadFailed || '加载配置失败', 'error')
+    showNotification(locale.value?.loadFailed || '', 'error')
   } finally {
     loading.value = false
   }
@@ -841,7 +841,7 @@ const saveConfig = async () => {
     saving.value = true
     const configToSave = {
       ...formData.value,
-      siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || '校园广播站点歌系统',
+      siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || '',
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
         (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value,
@@ -862,7 +862,7 @@ const saveConfig = async () => {
     })
 
     if (!response.ok) {
-      let message = locale.value?.saveFailed || '保存失败'
+      let message = locale.value?.saveFailed || ''
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
@@ -876,7 +876,7 @@ const saveConfig = async () => {
           return null
         }
 
-        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '保存失败')
+        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }
@@ -887,14 +887,14 @@ const saveConfig = async () => {
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
-    showNotification(locale.value?.saveSuccess || '配置已保存', 'success')
+    showNotification(locale.value?.saveSuccess || '', 'success')
 
     setTimeout(() => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
     console.error('Failed to save site config:', error)
-    let message = locale.value?.saveFailedRetry || '保存失败，请重试'
+    let message = locale.value?.saveFailedRetry || ''
     if (error?.message) {
       message = getLocalizedServerMessage(error.message)
     }
