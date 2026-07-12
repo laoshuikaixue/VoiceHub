@@ -2831,6 +2831,29 @@ export const admin = {
     emptySearch: '没有找到匹配的用户',
     empty: '暂无用户数据',
     itemName: '个用户',
+    organization: {
+      title: '组织结构',
+      subtitle: (total: number) => `${total} 位成员 · 按年级和班级统计`,
+      refresh: '刷新组织结构',
+      currentScope: '当前范围',
+      clear: '清除',
+      loading: '正在加载结构...',
+      empty: '暂无可统计的用户',
+      count: (total: number) => `(共${total}人)`,
+      unnamedUser: '未命名用户',
+      unsetGrade: '未设置年级',
+      unsetClass: '未设置班级',
+      stages: {
+        junior: '初中',
+        senior: '高中',
+        university: '大学',
+        staff: '教职工',
+        other: '其他',
+        withdrawn: '离校用户',
+        graduate: '毕业生'
+      },
+      loadFailed: '组织结构加载失败'
+    },
     table: {
       userDetails: '用户详情',
       role: '角色权限',
@@ -2925,6 +2948,8 @@ export const admin = {
       sampleName: '张三',
       sampleGrade: '高一',
       sampleClass: '1班',
+      templateSheetName: '用户导入模板',
+      templateFileName: '用户批量导入模板.xlsx',
       supportedRoles: '支持的角色：',
       supportedRolesFull: 'USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）',
       supportedRolesLimited: 'USER（普通用户）、SONG_ADMIN（歌曲管理员）',
@@ -3156,6 +3181,7 @@ export const admin = {
       updateSuccess: '用户更新成功',
       createSuccess: '用户创建成功',
       resetSuccess: '密码重置成功',
+      detailLoadFailed: (message: string) => `加载用户详情失败：${message}`,
       loadFailed: (message: string) => `加载用户失败: ${message}`,
       excelLoadFailed: 'Excel处理库加载失败，请刷新页面后重试'
     },

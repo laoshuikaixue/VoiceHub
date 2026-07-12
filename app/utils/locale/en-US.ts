@@ -2820,6 +2820,29 @@ export const admin = {
     emptySearch: 'No matching users found',
     empty: 'No user data',
     itemName: 'users',
+    organization: {
+      title: 'Organization',
+      subtitle: (total: number) => `${total} members · Grouped by grade and class`,
+      refresh: 'Refresh organization',
+      currentScope: 'Current Scope',
+      clear: 'Clear',
+      loading: 'Loading organization...',
+      empty: 'No users available for statistics',
+      count: (total: number) => `(${total})`,
+      unnamedUser: 'Unnamed user',
+      unsetGrade: 'Grade not set',
+      unsetClass: 'Class not set',
+      stages: {
+        junior: 'Junior High',
+        senior: 'Senior High',
+        university: 'University',
+        staff: 'Faculty and Staff',
+        other: 'Other',
+        withdrawn: 'Former Students',
+        graduate: 'Graduates'
+      },
+      loadFailed: 'Failed to load organization'
+    },
     table: {
       userDetails: 'User Details',
       role: 'Role',
@@ -2914,6 +2937,8 @@ export const admin = {
       sampleName: 'Alex',
       sampleGrade: 'Grade 10',
       sampleClass: 'Class 1',
+      templateSheetName: 'User Import Template',
+      templateFileName: 'user-import-template.xlsx',
       supportedRoles: 'Supported roles:',
       supportedRolesFull: 'USER (User), ADMIN (Admin), SONG_ADMIN (Song Admin), SUPER_ADMIN (Super Admin)',
       supportedRolesLimited: 'USER (User), SONG_ADMIN (Song Admin)',
@@ -3145,6 +3170,7 @@ export const admin = {
       updateSuccess: 'User updated successfully',
       createSuccess: 'User created successfully',
       resetSuccess: 'Password reset successfully',
+      detailLoadFailed: (message: string) => `Failed to load user details: ${message}`,
       loadFailed: (message: string) => `Failed to load users: ${message}`,
       excelLoadFailed: 'Failed to load the Excel processing library. Refresh the page and try again.'
     },

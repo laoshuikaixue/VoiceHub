@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">用户管理</h2>
-        <p class="text-xs text-zinc-500 mt-1">系统共有 {{ totalUsers }} 位成员 · 权限与账户管理</p>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-zinc-500 mt-1">{{ formatMessage(locale.subtitle, totalUsers) }}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
@@ -12,21 +12,21 @@
           @click="showAddModal = true"
         >
           <UserPlus :size="14" />
-          添加
+          {{ locale.add }}
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
           @click="showImportModal = true"
         >
           <FileSpreadsheet class="text-emerald-500" :size="14" />
-          导入
+          {{ locale.import }}
         </button>
         <button
           class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-black rounded-lg transition-all uppercase tracking-widest"
           @click="showBatchUpdateModal = true"
         >
           <Layers class="text-purple-500" :size="14" />
-          更新
+          {{ locale.update }}
         </button>
       </div>
     </div>
@@ -43,7 +43,7 @@
         <input
           v-model="searchQuery"
           class="w-full bg-zinc-950 border border-zinc-800/80 rounded-lg pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-          placeholder="通过姓名或学号搜索..."
+          :placeholder="locale.searchPlaceholder"
           type="text"
         >
       </div>
@@ -54,8 +54,8 @@
         <CustomSelect
           v-model="roleFilter"
           :options="roleFilterOptions"
-          label="角色"
-          placeholder="全部角色"
+          :label="locale.role"
+          :placeholder="locale.allRoles"
           label-key="displayName"
           value-key="name"
           class-name="flex-1 lg:w-40 min-w-[120px]"
@@ -65,8 +65,8 @@
         <CustomSelect
           v-model="statusFilter"
           :options="statusFilterOptions"
-          label="状态"
-          placeholder="全部状态"
+          :label="locale.status"
+          :placeholder="locale.allStatus"
           label-key="label"
           value-key="value"
           class-name="flex-1 lg:w-32 min-w-[100px]"
@@ -76,8 +76,8 @@
         <CustomSelect
           v-model="currentSort"
           :options="sortOptions"
-          label="排序"
-          placeholder="排序方式"
+          :label="locale.sort"
+          :placeholder="locale.sortPlaceholder"
           label-key="label"
           value-key="value"
           class-name="flex-1 lg:w-40 min-w-[140px]"
@@ -98,14 +98,14 @@
       >
         <div class="p-4 border-b border-zinc-800/60 flex items-center justify-between gap-3">
           <div>
-            <h3 class="text-sm font-black text-zinc-100 tracking-tight">组织结构</h3>
+            <h3 class="text-sm font-black text-zinc-100 tracking-tight">{{ locale.organization.title }}</h3>
             <p class="text-[10px] text-zinc-600 mt-1">
-              {{ treeUsers.length }} 位成员 · 按年级和班级统计
+              {{ formatMessage(locale.organization.subtitle, treeUsers.length) }}
             </p>
           </div>
           <button
             class="p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all"
-            title="刷新组织结构"
+            :title="locale.organization.refresh"
             @click="loadUserTree"
           >
             <RefreshCw :size="14" :class="{ 'animate-spin': treeLoading }" />
@@ -117,20 +117,20 @@
           class="mx-4 mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-between gap-3"
         >
           <div class="min-w-0">
-            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">当前范围</p>
+            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">{{ locale.organization.currentScope }}</p>
             <p class="text-xs font-bold text-zinc-200 truncate">{{ activeOrgFilterLabel }}</p>
           </div>
           <button
             class="text-[10px] font-black text-blue-300 hover:text-white transition-colors shrink-0"
             @click="clearTreeFilter"
           >
-            清除
+            {{ locale.organization.clear }}
           </button>
         </div>
 
         <div v-if="treeLoading" class="py-12 flex flex-col items-center justify-center text-zinc-600">
           <RefreshCw :size="22" class="animate-spin mb-3" />
-          <span class="text-[10px] font-black uppercase tracking-widest">正在加载结构...</span>
+          <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.organization.loading }}</span>
         </div>
 
         <div
@@ -141,7 +141,7 @@
         </div>
 
         <div v-else-if="userTree.length === 0" class="py-12 text-center text-xs text-zinc-600">
-          暂无可统计的用户
+          {{ locale.organization.empty }}
         </div>
 
         <div v-else class="p-3 max-h-[680px] overflow-y-auto custom-scrollbar">
@@ -157,7 +157,7 @@
                 @click="handleStageClick(stage)"
               >
                 <span class="truncate">{{ stage.label }}</span>
-                <span class="tree-count">(共{{ stage.count }}人)</span>
+                <span class="tree-count">{{ formatMessage(locale.organization.count, stage.count) }}</span>
               </button>
             </div>
 
@@ -176,7 +176,7 @@
                     @click="applyTreeFilter(grade.label, '', stage.label)"
                   >
                     <span class="truncate">{{ grade.label }}</span>
-                    <span class="tree-count">(共{{ grade.count }}人)</span>
+                    <span class="tree-count">{{ formatMessage(locale.organization.count, grade.count) }}</span>
                   </button>
                 </div>
 
@@ -197,7 +197,7 @@
                         @click="applyTreeFilter(grade.label, classNode.label, stage.label)"
                       >
                         <span class="truncate">{{ classNode.label }}</span>
-                        <span class="tree-count">(共{{ classNode.count }}人)</span>
+                        <span class="tree-count">{{ formatMessage(locale.organization.count, classNode.count) }}</span>
                       </button>
                     </div>
 
@@ -227,7 +227,7 @@
         <div
           class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
         />
-        <div class="text-xs font-black uppercase tracking-widest">正在加载用户...</div>
+        <div class="text-xs font-black uppercase tracking-widest">{{ locale.loading }}</div>
       </div>
 
       <div
@@ -240,7 +240,7 @@
           <Search :size="32" />
         </div>
         <div class="text-sm font-black text-zinc-500 uppercase tracking-widest">
-          {{ searchQuery ? '没有找到匹配的用户' : '暂无用户数据' }}
+          {{ searchQuery ? locale.emptySearch : locale.empty }}
         </div>
       </div>
 
@@ -254,12 +254,12 @@
               <tr
                 class="bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
               >
-                <th class="px-6 py-5 text-left">用户详情</th>
-                <th class="px-6 py-5 text-left">角色权限</th>
-                <th class="px-6 py-5 text-left">账户状态</th>
-                <th class="px-6 py-5 text-center">所在班级</th>
-                <th class="px-6 py-5 text-left">最后交互</th>
-                <th class="px-6 py-5 text-right pr-10">操作</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.userDetails }}</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.role }}</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.status }}</th>
+                <th class="px-6 py-5 text-center">{{ locale.table.class }}</th>
+                <th class="px-6 py-5 text-left">{{ locale.table.lastActivity }}</th>
+                <th class="px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-zinc-800/40">
@@ -295,22 +295,22 @@
                   <span
                     v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
-                    >超级管理员</span
+                    >{{ getRoleName('SUPER_ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
-                    >管理员</span
+                    >{{ getRoleName('ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理员</span
+                    >{{ getRoleName('SONG_ADMIN') }}</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >普通用户</span
+                    >{{ getRoleName('USER') }}</span
                   >
                 </td>
                 <td class="px-6 py-5">
@@ -321,28 +321,28 @@
                     <div
                       class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                     />
-                    正常
+                    {{ getStatusName('active') }}
                   </div>
                   <div
                     v-else-if="user.status === 'withdrawn'"
                     class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
-                    退学
+                    {{ getStatusName('withdrawn') }}
                   </div>
                   <div
                     v-else-if="user.status === 'graduate'"
                     class="flex items-center gap-1.5 text-amber-500 font-black uppercase text-[10px] tracking-widest"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    毕业
+                    {{ getStatusName('graduate') }}
                   </div>
                   <div
                     v-else
                     class="flex items-center gap-1.5 text-zinc-500 font-black uppercase text-[10px] tracking-widest"
                   >
                     <div class="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                    禁用
+                    {{ getStatusName('disabled') }}
                   </div>
                 </td>
                 <td class="px-6 py-5 text-center font-bold text-zinc-500">
@@ -361,14 +361,14 @@
                     <button
                       :disabled="isSelf(user)"
                       class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-blue-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
-                      title="编辑用户"
+                      :title="locale.actions.editUser"
                       @click="editUser(user)"
                     >
                       <Edit2 :size="13" />
                     </button>
                     <button
                       class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-purple-400 transition-colors action-btn"
-                      title="查看歌曲"
+                      :title="locale.actions.viewSongs"
                       @click="viewUserSongs(user)"
                     >
                       <Music :size="13" />
@@ -376,7 +376,7 @@
                     <button
                       :disabled="isSelf(user)"
                       class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-amber-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
-                      title="重置密码"
+                      :title="locale.actions.resetPassword"
                       @click="resetPassword(user)"
                     >
                       <Lock :size="13" />
@@ -384,7 +384,7 @@
                     <button
                       :disabled="isSelf(user)"
                       class="p-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed action-btn"
-                      title="删除用户"
+                      :title="locale.actions.deleteUser"
                       @click="confirmDeleteUser(user)"
                     >
                       <Trash2 :size="13" />
@@ -431,64 +431,64 @@
                   <div
                     class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                   />
-                  正常
+                  {{ getStatusName('active') }}
                 </div>
                 <div
                   v-else-if="user.status === 'withdrawn'"
                   class="flex items-center gap-1.5 text-red-500 font-black uppercase text-[10px] tracking-widest"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-red-500" />
-                  退学
+                  {{ getStatusName('withdrawn') }}
                 </div>
                 <div
                   v-else-if="user.status === 'graduate'"
                   class="flex items-center gap-1.5 text-amber-500 font-black uppercase text-[10px] tracking-widest"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  毕业
+                  {{ getStatusName('graduate') }}
                 </div>
                 <div
                   v-else
                   class="flex items-center gap-1.5 text-zinc-500 font-black uppercase text-[10px] tracking-widest"
                 >
                   <div class="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-                  禁用
+                  {{ getStatusName('disabled') }}
                 </div>
-                <p class="text-[10px] font-black text-zinc-700 uppercase mt-1">账户状态</p>
+                <p class="text-[10px] font-black text-zinc-700 uppercase mt-1">{{ locale.mobile.accountStatus }}</p>
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4 py-4 border-y border-zinc-800/50">
               <div class="space-y-1">
                 <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
-                  角色/等级
+                  {{ locale.mobile.roleLevel }}
                 </p>
                 <div>
                   <span
                     v-if="user.role === 'SUPER_ADMIN'"
                     class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
-                    >超级管理员</span
+                    >{{ getRoleName('SUPER_ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'ADMIN'"
                     class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
-                    >管理员</span
+                    >{{ getRoleName('ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
                     class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
-                    >歌曲管理员</span
+                    >{{ getRoleName('SONG_ADMIN') }}</span
                   >
                   <span
                     v-else
                     class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
-                    >普通用户</span
+                    >{{ getRoleName('USER') }}</span
                   >
                 </div>
               </div>
               <div class="space-y-1 text-right">
                 <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
-                  所在班级
+                  {{ locale.mobile.class }}
                 </p>
                 <p class="text-xs font-bold text-zinc-300">
                   {{ user.grade || '-' }} {{ user.class || '-' }}
@@ -496,13 +496,13 @@
               </div>
               <div class="space-y-1">
                 <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
-                  最近活动
+                  {{ locale.mobile.recentActivity }}
                 </p>
                 <p class="text-xs font-bold text-zinc-400">{{ formatDate(user.lastLogin) }}</p>
               </div>
               <div class="space-y-1 text-right">
                 <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
-                  最后登录IP
+                  {{ locale.mobile.lastLoginIp }}
                 </p>
                 <p class="text-[11px] font-mono text-zinc-600">{{ user.lastLoginIp || '-' }}</p>
               </div>
@@ -514,20 +514,20 @@
                 class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-blue-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                 @click="editUser(user)"
               >
-                <Edit2 :size="12" /> 编辑
+                <Edit2 :size="12" /> {{ locale.actions.edit }}
               </button>
               <button
                 class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-purple-600 active:text-white transition-colors action-btn"
                 @click="viewUserSongs(user)"
               >
-                <Music :size="12" /> 记录
+                <Music :size="12" /> {{ locale.actions.records }}
               </button>
               <button
                 :disabled="isSelf(user)"
                 class="flex-1 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest active:bg-amber-600 active:text-white transition-colors disabled:opacity-20 action-btn"
                 @click="resetPassword(user)"
               >
-                <Lock :size="12" /> 重置
+                <Lock :size="12" /> {{ locale.actions.reset }}
               </button>
               <button
                 :disabled="isSelf(user)"
@@ -545,7 +545,7 @@
         v-model:current-page="currentPage"
         :total-pages="totalPages"
         :total-items="totalUsers"
-        item-name="个用户"
+        :item-name="locale.itemName"
       />
       </div>
     </div>
@@ -577,9 +577,9 @@
                     <UserPlus v-if="!editingUser" :size="20" />
                     <Edit2 v-else :size="20" />
                   </div>
-                  {{ editingUser ? '编辑用户信息' : '创建新用户' }}
+                  {{ editingUser ? locale.form.editTitle : locale.form.createTitle }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">请填写以下账户详细信息以继续</p>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.form.desc }}</p>
               </div>
               <button
                 class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -593,7 +593,7 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >姓名</label
+                    >{{ locale.form.name }}</label
                   >
                   <div class="relative group">
                     <User
@@ -603,14 +603,14 @@
                     <input
                       v-model="userForm.name"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                      placeholder="请输入真实姓名"
+                      :placeholder="locale.form.namePlaceholder"
                       type="text"
                     >
                   </div>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >用户名/学号</label
+                    >{{ locale.form.username }}</label
                   >
                   <div class="relative group">
                     <AtSign
@@ -620,7 +620,7 @@
                     <input
                       v-model="userForm.username"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                      placeholder="登录唯一标识"
+                      :placeholder="locale.form.usernamePlaceholder"
                       type="text"
                     >
                   </div>
@@ -629,7 +629,7 @@
 
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">
-                  {{ editingUser ? '新密码 (留空则不修改)' : '初始密码' }}
+                  {{ editingUser ? locale.form.newPassword : locale.form.initialPassword }}
                 </label>
                 <div class="relative group">
                   <Lock
@@ -639,7 +639,7 @@
                   <input
                     v-model="userForm.password"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                    placeholder="设置安全访问密码"
+                    :placeholder="locale.form.passwordPlaceholder"
                     type="password"
                   >
                 </div>
@@ -648,26 +648,26 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >角色权限</label
+                    >{{ locale.form.role }}</label
                   >
                   <CustomSelect
                     v-model="userForm.role"
                     :options="availableRoles"
                     label-key="displayName"
                     value-key="name"
-                    placeholder="请选择角色"
+                    :placeholder="locale.form.rolePlaceholder"
                   />
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >账户状态</label
+                    >{{ locale.form.status }}</label
                   >
                   <CustomSelect
                     v-model="userForm.status"
                     :options="userStatusOptions"
                     label-key="label"
                     value-key="value"
-                    placeholder="请选择状态"
+                    :placeholder="locale.form.statusPlaceholder"
                   />
                 </div>
               </div>
@@ -675,7 +675,7 @@
               <div class="grid grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >年级</label
+                    >{{ locale.form.grade }}</label
                   >
                   <div class="relative group">
                     <Calendar
@@ -685,14 +685,14 @@
                     <input
                       v-model="userForm.grade"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                      placeholder="例如: 2024"
+                      :placeholder="locale.form.gradePlaceholder"
                       type="text"
                     >
                   </div>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >班级</label
+                    >{{ locale.form.class }}</label
                   >
                   <div class="relative group">
                     <Briefcase
@@ -702,7 +702,7 @@
                     <input
                       v-model="userForm.class"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                      placeholder="例如: 1班"
+                      :placeholder="locale.form.classPlaceholder"
                       type="text"
                     >
                   </div>
@@ -723,7 +723,7 @@
                 class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                 @click="closeModal"
               >
-                取消操作
+                {{ locale.form.cancel }}
               </button>
               <button
                 :disabled="saving"
@@ -732,7 +732,7 @@
               >
                 <Save v-if="!saving" :size="16" />
                 <RefreshCw v-else class="animate-spin" :size="16" />
-                {{ saving ? '正在保存...' : editingUser ? '更新用户信息' : '确认创建用户' }}
+                {{ saving ? locale.form.saving : editingUser ? locale.form.update : locale.form.create }}
               </button>
             </div>
           </div>
@@ -763,16 +763,17 @@
             >
               <Lock :size="32" />
             </div>
-            <h3 class="text-xl font-black text-zinc-100 tracking-tight">重置访问密码</h3>
+            <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.resetPasswordModal.title }}</h3>
             <p class="text-xs text-zinc-500 mt-2 mb-8">
-              正在为
-              <span class="text-zinc-200 font-bold">{{ resetPasswordUser.name }}</span> 修改登录凭据
+              {{ locale.resetPasswordModal.descPrefix }}
+              <span class="text-zinc-200 font-bold">{{ resetPasswordUser.name }}</span>
+              {{ locale.resetPasswordModal.descSuffix }}
             </p>
 
             <div class="space-y-4 text-left">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                  >新密码</label
+                  >{{ locale.resetPasswordModal.newPassword }}</label
                 >
                 <div class="relative group">
                   <Key
@@ -782,14 +783,14 @@
                   <input
                     v-model="passwordForm.password"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200"
-                    placeholder="设置高强度新密码"
+                    :placeholder="locale.resetPasswordModal.newPasswordPlaceholder"
                     type="password"
                   >
                 </div>
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                  >确认新密码</label
+                  >{{ locale.resetPasswordModal.confirmPassword }}</label
                 >
                 <div class="relative group">
                   <Key
@@ -799,7 +800,7 @@
                   <input
                     v-model="passwordForm.confirmPassword"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200"
-                    placeholder="请再次输入以确认"
+                    :placeholder="locale.resetPasswordModal.confirmPasswordPlaceholder"
                     type="password"
                   >
                 </div>
@@ -819,7 +820,7 @@
                 class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                 @click="closeResetPassword"
               >
-                取消
+                {{ locale.resetPasswordModal.cancel }}
               </button>
               <button
                 :disabled="resetting"
@@ -828,7 +829,7 @@
               >
                 <Save v-if="!resetting" :size="16" />
                 <RefreshCw v-else class="animate-spin" :size="16" />
-                {{ resetting ? '正在重置...' : '确认重置密码' }}
+                {{ resetting ? locale.resetPasswordModal.resetting : locale.resetPasswordModal.confirm }}
               </button>
             </div>
           </div>
@@ -862,10 +863,10 @@
                   >
                     <FileSpreadsheet :size="20" />
                   </div>
-                  批量导入用户
+                  {{ locale.importModal.title }}
                 </h3>
                 <p class="text-xs text-zinc-500 mt-1 ml-13">
-                  支持 .xlsx 格式文件，请按模板要求上传
+                  {{ locale.importModal.desc }}
                 </p>
               </div>
               <button
@@ -880,33 +881,33 @@
               <div class="p-5 bg-zinc-950/50 border border-zinc-800/50 rounded-3xl space-y-4">
                 <div class="flex items-center gap-2 text-zinc-300 font-bold text-sm mb-2">
                   <Info :size="16" class="text-blue-400" />
-                  导入说明
+                  {{ locale.importModal.instructionsTitle }}
                 </div>
                 <p class="text-xs text-zinc-500 leading-relaxed">
-                  请上传Excel格式文件 (.xlsx)，系统会自动解析数据。
-                  注意：第一行可以是标题行（会自动跳过），角色字段必须匹配系统定义的角色。
+                  {{ locale.importModal.instructionsLine1 }}
+                  {{ locale.importModal.instructionsLine2 }}
                 </p>
 
                 <div class="overflow-hidden rounded-2xl border border-zinc-800/80">
                   <table class="w-full text-[10px] text-left">
                     <thead class="bg-zinc-900 text-zinc-400 uppercase tracking-tighter">
                       <tr>
-                        <th class="px-3 py-2 border-b border-zinc-800">姓名</th>
-                        <th class="px-3 py-2 border-b border-zinc-800">用户名</th>
-                        <th class="px-3 py-2 border-b border-zinc-800">密码</th>
-                        <th class="px-3 py-2 border-b border-zinc-800">角色</th>
-                        <th class="px-3 py-2 border-b border-zinc-800">年级</th>
-                        <th class="px-3 py-2 border-b border-zinc-800">班级</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">{{ locale.importModal.sampleHeaders.name }}</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">{{ locale.importModal.sampleHeaders.username }}</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">{{ locale.importModal.sampleHeaders.password }}</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">{{ locale.importModal.sampleHeaders.role }}</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">{{ locale.importModal.sampleHeaders.grade }}</th>
+                        <th class="px-3 py-2 border-b border-zinc-800">{{ locale.importModal.sampleHeaders.class }}</th>
                       </tr>
                     </thead>
                     <tbody class="text-zinc-500">
                       <tr class="border-b border-zinc-900/50">
-                        <td class="px-3 py-2">张三</td>
+                        <td class="px-3 py-2">{{ locale.importModal.sampleName }}</td>
                         <td class="px-3 py-2">zhangsan</td>
                         <td class="px-3 py-2">******</td>
                         <td class="px-3 py-2">USER</td>
-                        <td class="px-3 py-2">高一</td>
-                        <td class="px-3 py-2">1班</td>
+                        <td class="px-3 py-2">{{ locale.importModal.sampleGrade }}</td>
+                        <td class="px-3 py-2">{{ locale.importModal.sampleClass }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -916,11 +917,11 @@
                   <div
                     class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed flex-1"
                   >
-                    <strong>支持的角色：</strong>
+                    <strong>{{ locale.importModal.supportedRoles }}</strong>
                     <span v-if="isSuperAdmin"
-                      >USER（普通用户）、ADMIN（管理员）、SONG_ADMIN（歌曲管理员）、SUPER_ADMIN（超级管理员）</span
+                      >{{ locale.importModal.supportedRolesFull }}</span
                     >
-                    <span v-else>USER（普通用户）、SONG_ADMIN（歌曲管理员）</span>
+                    <span v-else>{{ locale.importModal.supportedRolesLimited }}</span>
                   </div>
                   <button
                     class="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex items-center gap-2 group shrink-0"
@@ -931,7 +932,7 @@
                       class="text-emerald-500 group-hover:scale-110 transition-transform"
                     />
                     <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest"
-                      >下载模板</span
+                      >{{ locale.importModal.downloadTemplate }}</span
                     >
                   </button>
                 </div>
@@ -939,7 +940,7 @@
 
               <div class="space-y-3">
                 <label class="block text-xs font-black text-zinc-400 uppercase tracking-widest ml-1"
-                  >选择数据文件</label
+                  >{{ locale.importModal.chooseFile }}</label
                 >
                 <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
                   <input
@@ -959,8 +960,8 @@
                       <Upload :size="24" />
                     </div>
                     <div class="text-center">
-                      <p class="text-sm font-bold text-zinc-300">点击或拖拽上传 Excel 文件</p>
-                      <p class="text-xs text-zinc-500 mt-1">仅支持 .xlsx 格式</p>
+                      <p class="text-sm font-bold text-zinc-300">{{ locale.importModal.uploadTitle }}</p>
+                      <p class="text-xs text-zinc-500 mt-1">{{ locale.importModal.uploadHint }}</p>
                     </div>
                   </div>
                 </div>
@@ -994,17 +995,17 @@
               <div v-if="previewData.length > 0" class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
                   <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
-                    >预览数据 ({{ previewData.length }}条记录)</label
+                    >{{ formatMessage(locale.importModal.previewData, previewData.length) }}</label
                   >
                 </div>
                 <div class="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/30">
                   <table class="w-full text-xs text-left">
                     <thead class="bg-zinc-900/50 text-zinc-500">
                       <tr>
-                        <th class="px-4 py-3 font-medium">姓名</th>
-                        <th class="px-4 py-3 font-medium">账号</th>
-                        <th class="px-4 py-3 font-medium">角色</th>
-                        <th class="px-4 py-3 font-medium">年级/班级</th>
+                        <th class="px-4 py-3 font-medium">{{ locale.importModal.sampleHeaders.name }}</th>
+                        <th class="px-4 py-3 font-medium">{{ locale.importModal.account }}</th>
+                        <th class="px-4 py-3 font-medium">{{ locale.importModal.sampleHeaders.role }}</th>
+                        <th class="px-4 py-3 font-medium">{{ locale.importModal.gradeClass }}</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-zinc-900">
@@ -1031,7 +1032,7 @@
                     v-if="previewData.length > 5"
                     class="p-3 text-center border-t border-zinc-900 text-[10px] text-zinc-500 font-medium"
                   >
-                    以及另外 {{ previewData.length - 5 }} 条记录...
+                    {{ formatMessage(locale.importModal.moreRecords, previewData.length - 5) }}
                   </div>
                 </div>
               </div>
@@ -1042,7 +1043,7 @@
                 class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                 @click="closeImportModal"
               >
-                取消
+                {{ locale.importModal.cancel }}
               </button>
               <button
                 :disabled="importLoading || previewData.length === 0"
@@ -1051,7 +1052,7 @@
               >
                 <Save v-if="!importLoading" :size="16" />
                 <RefreshCw v-else class="animate-spin" :size="16" />
-                {{ importLoading ? '正在导入...' : '确认开始导入' }}
+                {{ importLoading ? locale.importModal.importing : locale.importModal.confirm }}
               </button>
             </div>
           </div>
@@ -1062,10 +1063,10 @@
     <!-- 删除确认对话框 -->
     <ConfirmDialog
       :show="showDeleteModal"
-      title="确认删除用户"
-      :message="`确定要删除用户 &quot;${deletingUser?.name}&quot; 吗？此操作将永久移除该账户，不可撤销。`"
+      :title="locale.deleteDialog.title"
+      :message="formatMessage(locale.deleteDialog.message, deletingUser?.name || '')"
       type="danger"
-      confirm-text="确认删除"
+      :confirm-text="locale.deleteDialog.confirm"
       :loading="deleting"
       @confirm="confirmDelete"
       @close="closeDeleteModal"
@@ -1113,9 +1114,9 @@
                   >
                     <User :size="20" />
                   </div>
-                  用户详细信息
+                  {{ locale.detail.title }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">查看完整的账户资料与操作记录</p>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.detail.desc }}</p>
               </div>
               <button
                 class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -1135,24 +1136,24 @@
                   class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1"
                 >
                   <Info :size="14" class="text-blue-500" />
-                  基本信息
+                  {{ locale.detail.basicInfo }}
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                      用户 ID
+                      {{ locale.detail.userId }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.id }}</div>
                   </div>
                   <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                      姓名
+                      {{ locale.detail.name }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.name }}</div>
                   </div>
                   <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                      用户名
+                      {{ locale.detail.username }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">
                       {{ selectedUserDetail.username }}
@@ -1160,7 +1161,7 @@
                   </div>
                   <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                      角色权限
+                      {{ locale.detail.role }}
                     </div>
                     <div>
                       <span
@@ -1175,18 +1176,18 @@
                   </div>
                   <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                      年级
+                      {{ locale.detail.grade }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">
-                      {{ selectedUserDetail.grade || '未设置' }}
+                      {{ selectedUserDetail.grade || locale.detail.unset }}
                     </div>
                   </div>
                   <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                      班级
+                      {{ locale.detail.class }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">
-                      {{ selectedUserDetail.class || '未设置' }}
+                      {{ selectedUserDetail.class || locale.detail.unset }}
                     </div>
                   </div>
                 </div>
@@ -1198,7 +1199,7 @@
                   class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1"
                 >
                   <Shield :size="14" class="text-emerald-500" />
-                  账户状态
+                  {{ locale.detail.status }}
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div
@@ -1206,7 +1207,7 @@
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                        密码状态
+                        {{ locale.detail.passwordStatus }}
                       </div>
                       <div
                         class="text-sm font-bold truncate"
@@ -1220,8 +1221,8 @@
                         {{
                           !selectedUserDetail.forcePasswordChange &&
                           selectedUserDetail.passwordChangedAt
-                            ? '密码已修改'
-                            : '需要修改密码'
+                            ? locale.detail.passwordChanged
+                            : locale.detail.requirePasswordChange
                         }}
                       </div>
                     </div>
@@ -1249,19 +1250,19 @@
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                        MeoW 账号绑定
+                        {{ locale.detail.meowBinding }}
                       </div>
                       <div
                         class="text-sm font-bold truncate"
                         :class="
                           selectedUserDetail.meowNickname ? 'text-emerald-500' : 'text-zinc-500'
                         "
-                        :title="selectedUserDetail.meowNickname ? `已绑定: ${selectedUserDetail.meowNickname}` : '未绑定'"
+                        :title="selectedUserDetail.meowNickname ? formatMessage(locale.detail.bound, selectedUserDetail.meowNickname) : locale.detail.unbound"
                       >
                         {{
                           selectedUserDetail.meowNickname
-                            ? `已绑定: ${selectedUserDetail.meowNickname}`
-                            : '未绑定'
+                            ? formatMessage(locale.detail.bound, selectedUserDetail.meowNickname)
+                            : locale.detail.unbound
                         }}
                       </div>
                     </div>
@@ -1283,19 +1284,19 @@
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                        邮箱绑定
+                        {{ locale.detail.emailBinding }}
                       </div>
                       <div
                         class="text-sm font-bold truncate"
                         :class="
                           selectedUserDetail.email ? (selectedUserDetail.emailVerified ? 'text-emerald-500' : 'text-amber-500') : 'text-zinc-500'
                         "
-                        :title="selectedUserDetail.email ? `${selectedUserDetail.email} ${selectedUserDetail.emailVerified ? '(已验证)' : '(未验证)'}` : '未绑定'"
+                        :title="selectedUserDetail.email ? `${selectedUserDetail.email} (${selectedUserDetail.emailVerified ? locale.detail.verified : locale.detail.unverified})` : locale.detail.unbound"
                       >
                         {{
                           selectedUserDetail.email
-                            ? `${selectedUserDetail.email} ${selectedUserDetail.emailVerified ? '(已验证)' : '(未验证)'}`
-                            : '未绑定'
+                            ? `${selectedUserDetail.email} (${selectedUserDetail.emailVerified ? locale.detail.verified : locale.detail.unverified})`
+                            : locale.detail.unbound
                         }}
                       </div>
                     </div>
@@ -1317,19 +1318,19 @@
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
-                        OAuth 账号绑定
+                        {{ locale.detail.oauthBinding }}
                       </div>
                       <div
                         class="text-sm font-bold truncate capitalize"
                         :class="
                           selectedUserDetail.identities?.length > 0 ? 'text-emerald-500' : 'text-zinc-500'
                         "
-                        :title="selectedUserDetail.identities?.length > 0 ? `已绑定: ${selectedUserDetail.identities.map(id => id.provider).join(', ')}` : '未绑定'"
+                        :title="selectedUserDetail.identities?.length > 0 ? formatMessage(locale.detail.bound, selectedUserDetail.identities.map(id => id.provider).join(', ')) : locale.detail.unbound"
                       >
                         {{
                           selectedUserDetail.identities?.length > 0
-                            ? `已绑定: ${selectedUserDetail.identities.map(id => id.provider).join(', ')}`
-                            : '未绑定'
+                            ? formatMessage(locale.detail.bound, selectedUserDetail.identities.map(id => id.provider).join(', '))
+                            : locale.detail.unbound
                         }}
                       </div>
                     </div>
@@ -1354,13 +1355,13 @@
                     class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1"
                   >
                     <Clock :size="14" class="text-purple-500" />
-                    登录信息
+                    {{ locale.detail.loginInfo }}
                   </div>
                   <div class="space-y-3">
                     <div
                       class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
                     >
-                      <span class="text-zinc-500">最后登录</span>
+                      <span class="text-zinc-500">{{ locale.detail.lastLogin }}</span>
                       <span class="text-zinc-300 font-medium">{{
                         formatDate(selectedUserDetail.lastLogin)
                       }}</span>
@@ -1368,9 +1369,9 @@
                     <div
                       class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
                     >
-                      <span class="text-zinc-500">登录 IP</span>
+                      <span class="text-zinc-500">{{ locale.detail.loginIp }}</span>
                       <span class="text-zinc-300 font-medium">{{
-                        selectedUserDetail.lastLoginIp || '未知'
+                        selectedUserDetail.lastLoginIp || locale.detail.unknown
                       }}</span>
                     </div>
                   </div>
@@ -1380,13 +1381,13 @@
                     class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest ml-1"
                   >
                     <Calendar :size="14" class="text-amber-500" />
-                    时间记录
+                    {{ locale.detail.timeRecords }}
                   </div>
                   <div class="space-y-3">
                     <div
                       class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
                     >
-                      <span class="text-zinc-500">创建时间</span>
+                      <span class="text-zinc-500">{{ locale.detail.createdAt }}</span>
                       <span class="text-zinc-300 font-medium">{{
                         formatDate(selectedUserDetail.createdAt)
                       }}</span>
@@ -1394,7 +1395,7 @@
                     <div
                       class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
                     >
-                      <span class="text-zinc-500">最近更新</span>
+                      <span class="text-zinc-500">{{ locale.detail.updatedAt }}</span>
                       <span class="text-zinc-300 font-medium">{{
                         formatDate(selectedUserDetail.updatedAt)
                       }}</span>
@@ -1410,7 +1411,7 @@
                     class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest"
                   >
                     <History :size="14" class="text-emerald-500" />
-                    状态变更日志
+                    {{ locale.detail.statusLogs }}
                   </div>
                 </div>
 
@@ -1420,7 +1421,7 @@
                 >
                   <RefreshCw :size="24" class="animate-spin" />
                   <span class="text-[10px] font-black uppercase tracking-widest"
-                    >正在加载记录...</span
+                    >{{ locale.detail.loadingLogs }}</span
                   >
                 </div>
 
@@ -1428,7 +1429,7 @@
                   v-else-if="statusLogs.length === 0"
                   class="py-12 text-center bg-zinc-950/30 border border-zinc-800/50 rounded-3xl"
                 >
-                  <p class="text-xs text-zinc-600">暂无状态变更记录</p>
+                  <p class="text-xs text-zinc-600">{{ locale.detail.noLogs }}</p>
                 </div>
 
                 <div v-else class="space-y-4">
@@ -1450,7 +1451,7 @@
                                 getStatusClass(log.oldStatus)
                               ]"
                             >
-                              {{ log.oldStatusDisplay || '初始' }}
+                              {{ log.oldStatusDisplay || locale.detail.initial }}
                             </span>
                             <ArrowRight :size="12" class="text-zinc-700" />
                             <span
@@ -1471,7 +1472,7 @@
                           v-if="log.reason"
                           class="text-xs text-zinc-400 bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-800/30 leading-relaxed"
                         >
-                          <span class="text-zinc-600 font-bold mr-1">原因:</span>
+                          <span class="text-zinc-600 font-bold mr-1">{{ locale.detail.reason }}</span>
                           {{ log.reason }}
                         </div>
 
@@ -1481,9 +1482,9 @@
                           >
                             <User :size="8" />
                           </div>
-                          <span class="text-zinc-500">操作者:</span>
+                          <span class="text-zinc-500">{{ locale.detail.operator }}</span>
                           <span class="text-zinc-300 font-bold">{{
-                            log.operator?.name || '系统'
+                            log.operator?.name || locale.detail.system
                           }}</span>
                         </div>
                       </div>
@@ -1505,7 +1506,7 @@
                 class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                 @click="closeUserDetailModal"
               >
-                关闭窗口
+                {{ locale.actions.close }}
               </button>
             </div>
           </div>
@@ -1572,6 +1573,26 @@ import Pagination from '~/components/UI/Common/Pagination.vue'
 import UserSongsModal from '~/components/Admin/UserSongsModal.vue'
 import BatchUpdateModal from '~/components/Admin/BatchUpdateModal.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { useLocale } from '~/utils/locale'
+
+const { admin, currentLocale } = useLocale()
+const locale = computed(() => admin.value?.userManager || {})
+const formatMessage = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[index] !== undefined ? String(args[index]) : match
+    )
+  }
+  return ''
+}
+const getRoleName = (role) => {
+  const aliases = { USER: 'user', SONG_ADMIN: 'songAdmin', ADMIN: 'admin', SUPER_ADMIN: 'superAdmin' }
+  return locale.value?.roles?.[aliases[role]] || role
+}
+const getStatusName = (status) => locale.value?.statuses?.[status] || status
+const getErrorDetail = (error) =>
+  error?.data?.message || error?.message || error?.statusMessage || locale.value?.detail?.unknown || ''
 
 // 响应式数据
 const loading = ref(false)
@@ -1592,19 +1613,19 @@ const treeLoading = ref(false)
 const treeError = ref('')
 const expandedTreeNodes = ref(new Set())
 const treeFilterLabel = ref('')
-const UNSET_GRADE_LABEL = '未设置年级'
-const UNSET_CLASS_LABEL = '未设置班级'
 const UNSET_FILTER_VALUE = '__UNSET__'
+const unsetGradeLabel = computed(() => locale.value?.organization?.unsetGrade || '')
+const unsetClassLabel = computed(() => locale.value?.organization?.unsetClass || '')
 
-const sortOptions = [
-  { label: '默认排序 (ID)', value: 'id-asc' },
-  { label: '名称 (A-Z)', value: 'name-asc' },
-  { label: '名称 (Z-A)', value: 'name-desc' },
-  { label: '最近登录', value: 'lastLogin-desc' },
-  { label: '最早登录', value: 'lastLogin-asc' },
-  { label: '最近注册', value: 'createdAt-desc' },
-  { label: '最早注册', value: 'createdAt-asc' }
-]
+const sortOptions = computed(() => [
+  { label: locale.value?.sortOptions?.default || '', value: 'id-asc' },
+  { label: locale.value?.sortOptions?.nameAsc || '', value: 'name-asc' },
+  { label: locale.value?.sortOptions?.nameDesc || '', value: 'name-desc' },
+  { label: locale.value?.sortOptions?.lastLoginDesc || '', value: 'lastLogin-desc' },
+  { label: locale.value?.sortOptions?.lastLoginAsc || '', value: 'lastLogin-asc' },
+  { label: locale.value?.sortOptions?.createdAtDesc || '', value: 'createdAt-desc' },
+  { label: locale.value?.sortOptions?.createdAtAsc || '', value: 'createdAt-asc' }
+])
 
 const currentSort = computed({
   get: () => `${sortBy.value}-${sortOrder.value}`,
@@ -1616,28 +1637,28 @@ const currentSort = computed({
 })
 
 // 硬编码角色定义
-const allRoles = [
-  { name: 'USER', displayName: '普通用户' },
-  { name: 'SONG_ADMIN', displayName: '歌曲管理员' },
-  { name: 'ADMIN', displayName: '管理员' },
-  { name: 'SUPER_ADMIN', displayName: '超级管理员' }
-]
+const allRoles = computed(() => [
+  { name: 'USER', displayName: getRoleName('USER') },
+  { name: 'SONG_ADMIN', displayName: getRoleName('SONG_ADMIN') },
+  { name: 'ADMIN', displayName: getRoleName('ADMIN') },
+  { name: 'SUPER_ADMIN', displayName: getRoleName('SUPER_ADMIN') }
+])
 
 // 筛选选项
-const roleFilterOptions = computed(() => [{ name: '', displayName: '全部角色' }, ...allRoles])
+const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '' }, ...allRoles.value])
 
-const statusFilterOptions = [
-  { label: '全部状态', value: '' },
-  { label: '正常', value: 'active' },
-  { label: '退学', value: 'withdrawn' },
-  { label: '毕业生', value: 'graduate' }
-]
+const statusFilterOptions = computed(() => [
+  { label: locale.value?.allStatus || '', value: '' },
+  { label: getStatusName('active'), value: 'active' },
+  { label: getStatusName('withdrawn'), value: 'withdrawn' },
+  { label: getStatusName('graduate'), value: 'graduate' }
+])
 
-const userStatusOptions = [
-  { label: '正常访问', value: 'active' },
-  { label: '限制访问 (退学)', value: 'withdrawn' },
-  { label: '限制访问 (毕业生)', value: 'graduate' }
-]
+const userStatusOptions = computed(() => [
+  { label: getStatusName('activeAccess'), value: 'active' },
+  { label: getStatusName('withdrawnAccess'), value: 'withdrawn' },
+  { label: getStatusName('graduateAccess'), value: 'graduate' }
+])
 
 // 模态框状态
 const showAddModal = ref(false)
@@ -1727,7 +1748,7 @@ const isSuperAdmin = computed(() => {
 const availableRoles = computed(() => {
   if (isSuperAdmin.value) {
     // 超级管理员可以分配除自己以外的所有角色
-    return allRoles.filter((role) => role.name !== 'SUPER_ADMIN')
+    return allRoles.value.filter((role) => role.name !== 'SUPER_ADMIN')
   } else {
     // 其他角色不能分配角色，返回空数组
     return []
@@ -1735,7 +1756,7 @@ const availableRoles = computed(() => {
 })
 
 const getUserDisplayName = (user) => {
-  return user?.name || user?.username || '未命名用户'
+  return user?.name || user?.username || locale.value?.organization?.unnamedUser || ''
 }
 
 const getUserInitial = (user) => {
@@ -1748,15 +1769,16 @@ const normalizeTreeValue = (value, fallback) => {
 }
 
 const getStageLabel = (user) => {
-  if (user.status === 'graduate') return '毕业生'
-  if (user.status === 'withdrawn') return '离校用户'
+  const stages = locale.value?.organization?.stages || {}
+  if (user.status === 'graduate') return stages.graduate || ''
+  if (user.status === 'withdrawn') return stages.withdrawn || ''
 
-  const grade = normalizeTreeValue(user.grade, UNSET_GRADE_LABEL)
-  if (grade.startsWith('高')) return '高中'
-  if (grade.startsWith('初')) return '初中'
-  if (grade.startsWith('大')) return '大学'
-  if (['教师', '教职工'].includes(grade)) return '教职工'
-  return '其他'
+  const grade = normalizeTreeValue(user.grade, unsetGradeLabel.value)
+  if (grade.startsWith('高')) return stages.senior || ''
+  if (grade.startsWith('初')) return stages.junior || ''
+  if (grade.startsWith('大')) return stages.university || ''
+  if (['教师', '教职工'].includes(grade)) return stages.staff || ''
+  return stages.other || ''
 }
 
 const gradeSortWeight = (grade) => {
@@ -1773,7 +1795,7 @@ const gradeSortWeight = (grade) => {
     大四: 10,
     教师: 98,
     教职工: 99,
-    [UNSET_GRADE_LABEL]: 100
+    [unsetGradeLabel.value]: 100
   }
 
   return order[grade] ?? 50
@@ -1792,15 +1814,15 @@ const sortByLabel = (a, b) => {
 }
 
 const getStageStatus = (stageLabel) => {
-  if (stageLabel === '毕业生') return 'graduate'
-  if (stageLabel === '离校用户') return 'withdrawn'
+  if (stageLabel === locale.value?.organization?.stages?.graduate) return 'graduate'
+  if (stageLabel === locale.value?.organization?.stages?.withdrawn) return 'withdrawn'
   if (stageLabel) return 'active'
   return ''
 }
 
 const getStageLabelByStatus = (status) => {
-  if (status === 'graduate') return '毕业生'
-  if (status === 'withdrawn') return '离校用户'
+  if (status === 'graduate') return locale.value?.organization?.stages?.graduate || ''
+  if (status === 'withdrawn') return locale.value?.organization?.stages?.withdrawn || ''
   if (status === 'active' && gradeFilter.value) {
     return getStageLabel({ status: 'active', grade: gradeFilter.value })
   }
@@ -1817,8 +1839,8 @@ const userTree = computed(() => {
 
   for (const user of treeUsers.value) {
     const stageLabel = getStageLabel(user)
-    const gradeLabel = normalizeTreeValue(user.grade, UNSET_GRADE_LABEL)
-    const classLabel = normalizeTreeValue(user.class, UNSET_CLASS_LABEL)
+    const gradeLabel = normalizeTreeValue(user.grade, unsetGradeLabel.value)
+    const classLabel = normalizeTreeValue(user.class, unsetClassLabel.value)
     const stageKey = `stage:${stageLabel}`
     const gradeKey = `${stageKey}:grade:${gradeLabel}`
     const classKey = `${gradeKey}:class:${classLabel}`
@@ -1881,7 +1903,8 @@ const userTree = computed(() => {
         .sort(sortTreeLabels)
     }))
     .sort((a, b) => {
-      const stageOrder = ['初中', '高中', '大学', '教职工', '其他', '离校用户', '毕业生']
+      const stages = locale.value?.organization?.stages || {}
+      const stageOrder = [stages.junior, stages.senior, stages.university, stages.staff, stages.other, stages.withdrawn, stages.graduate]
       const indexA = stageOrder.indexOf(a.label)
       const indexB = stageOrder.indexOf(b.label)
       const weightA = indexA === -1 ? 50 : indexA
@@ -1946,17 +1969,18 @@ watch(statusFilter, (newStatus) => {
 
 // 方法
 const formatDate = (dateString) => {
-  if (!dateString) return '从未登录'
+  const timeLocale = locale.value?.time || {}
+  if (!dateString) return timeLocale.never || ''
   const date = new Date(dateString)
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  if (diff < 86400000 * 7) return `${Math.floor(diff / 86400000)}天前`
+  if (diff < 60000) return timeLocale.justNow || ''
+  if (diff < 3600000) return formatMessage(timeLocale.minutesAgo, Math.floor(diff / 60000))
+  if (diff < 86400000) return formatMessage(timeLocale.hoursAgo, Math.floor(diff / 3600000))
+  if (diff < 86400000 * 7) return formatMessage(timeLocale.daysAgo, Math.floor(diff / 86400000))
 
-  return date.toLocaleDateString('zh-CN')
+  return date.toLocaleDateString(currentLocale.value)
 }
 
 const getRoleClass = (role) => {
@@ -1970,13 +1994,7 @@ const getRoleClass = (role) => {
 }
 
 const getRoleDisplayName = (role) => {
-  const names = {
-    USER: '普通用户',
-    ADMIN: '管理员',
-    SONG_ADMIN: '歌曲管理员',
-    SUPER_ADMIN: '超级管理员'
-  }
-  return names[role] || role
+  return getRoleName(role)
 }
 
 const getStatusClass = (status) => {
@@ -1989,19 +2007,14 @@ const getStatusClass = (status) => {
 }
 
 const getStatusDisplayName = (status) => {
-  const names = {
-    active: '正常',
-    withdrawn: '退学',
-    graduate: '毕业生'
-  }
-  return names[status] || '正常'
+  return getStatusName(status) || getStatusName('active')
 }
 
 const editUser = (user) => {
   // 禁止编辑自身
   if (isSelf(user)) {
     if (window.$showNotification) {
-      window.$showNotification('禁止在用户管理中修改自己的账户', 'warning')
+      window.$showNotification(locale.value.notifications.selfEditForbidden, 'warning')
     }
     return
   }
@@ -2021,7 +2034,7 @@ const resetPassword = (user) => {
   // 禁止重置自身密码
   if (isSelf(user)) {
     if (window.$showNotification) {
-      window.$showNotification('禁止在用户管理中重置自己的密码', 'warning')
+      window.$showNotification(locale.value.notifications.selfResetForbidden, 'warning')
     }
     return
   }
@@ -2036,7 +2049,7 @@ const confirmDeleteUser = (user) => {
   // 禁止删除自身
   if (isSelf(user)) {
     if (window.$showNotification) {
-      window.$showNotification('不能删除自己的账户', 'warning')
+      window.$showNotification(locale.value.notifications.selfDeleteForbidden, 'warning')
     }
     return
   }
@@ -2101,12 +2114,12 @@ const confirmDelete = async () => {
     closeDeleteModal()
 
     if (window.$showNotification) {
-      window.$showNotification('用户删除成功', 'success')
+      window.$showNotification(locale.value.notifications.deleteSuccess, 'success')
     }
   } catch (error) {
       console.error('删除用户失败:', error)
       if (window.$showNotification) {
-        window.$showNotification('删除用户失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+        window.$showNotification(formatMessage(locale.value.notifications.deleteFailed, getErrorDetail(error)), 'error')
       }
     } finally {
     deleting.value = false
@@ -2179,7 +2192,10 @@ const isStageFilterActive = (stageLabel) => {
 }
 
 const handleStageClick = (stage) => {
-  if (stage.label === '离校用户' || stage.label === '毕业生') {
+  if (
+    stage.label === locale.value?.organization?.stages?.withdrawn ||
+    stage.label === locale.value?.organization?.stages?.graduate
+  ) {
     applyTreeFilter('', '', stage.label)
     return
   }
@@ -2221,7 +2237,7 @@ const openTreeUser = async (treeUser) => {
   } catch (error) {
     console.error('加载用户详情失败:', error)
     if (window.$showNotification) {
-      window.$showNotification('加载用户详情失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+      window.$showNotification(formatMessage(locale.value.notifications.detailLoadFailed, getErrorDetail(error)), 'error')
     }
   }
 }
@@ -2229,16 +2245,16 @@ const openTreeUser = async (treeUser) => {
 const saveUser = async () => {
   // 保护：禁止保存针对自身的更改
   if (editingUser.value && isSelf(editingUser.value)) {
-    formError.value = '禁止在用户管理中修改自己的账户'
+    formError.value = locale.value.notifications.selfEditForbidden
     return
   }
   if (!userForm.value.name || !userForm.value.username) {
-    formError.value = '请填写必要信息'
+    formError.value = locale.value.errors.requiredInfo
     return
   }
 
   if (!editingUser.value && !userForm.value.password) {
-    formError.value = '请输入密码'
+    formError.value = locale.value.errors.passwordRequired
     return
   }
 
@@ -2281,20 +2297,17 @@ const saveUser = async () => {
     // 如果是权限更新且当前用户是超级管理员，发送通知
     if (isRoleUpdate && permissions.isSuperAdmin) {
       try {
-        const roleNames = {
-          USER: '普通用户',
-          SONG_ADMIN: '歌曲管理员',
-          ADMIN: '管理员',
-          SUPER_ADMIN: '超级管理员'
-        }
-
-        const notificationMessage = `您的账户权限已由超级管理员更新：${roleNames[oldRole]} → ${roleNames[newRole]}`
+        const notificationMessage = formatMessage(
+          locale.value.permissionNotification.message,
+          getRoleName(oldRole),
+          getRoleName(newRole)
+        )
 
         await $fetch('/api/admin/notifications/send', {
           method: 'POST',
           body: {
             userId: editingUser.value.id,
-            title: '权限变更通知',
+            title: locale.value.permissionNotification.title,
             message: notificationMessage,
             type: 'system'
           },
@@ -2310,11 +2323,14 @@ const saveUser = async () => {
     closeModal()
 
     if (window.$showNotification) {
-      window.$showNotification(editingUser.value ? '用户更新成功' : '用户创建成功', 'success')
+      window.$showNotification(
+        editingUser.value ? locale.value.notifications.updateSuccess : locale.value.notifications.createSuccess,
+        'success'
+      )
     }
   } catch (error) {
       console.error('保存用户失败:', error)
-      formError.value = error?.data?.message || error?.message || error?.statusMessage || '保存失败'
+      formError.value = getErrorDetail(error) || locale.value.errors.saveFailed
     } finally {
     saving.value = false
   }
@@ -2323,16 +2339,16 @@ const saveUser = async () => {
 const confirmResetPassword = async () => {
   // 保护：禁止重置自身密码
   if (resetPasswordUser.value && isSelf(resetPasswordUser.value)) {
-    passwordError.value = '禁止在用户管理中重置自己的密码'
+    passwordError.value = locale.value.notifications.selfResetForbidden
     return
   }
   if (!passwordForm.value.password) {
-    passwordError.value = '请输入新密码'
+    passwordError.value = locale.value.errors.newPasswordRequired
     return
   }
 
   if (passwordForm.value.password !== passwordForm.value.confirmPassword) {
-    passwordError.value = '两次输入的密码不一致'
+    passwordError.value = locale.value.errors.passwordMismatch
     return
   }
 
@@ -2351,11 +2367,11 @@ const confirmResetPassword = async () => {
     closeResetPassword()
 
     if (window.$showNotification) {
-      window.$showNotification('密码重置成功', 'success')
+      window.$showNotification(locale.value.notifications.resetSuccess, 'success')
     }
   } catch (error) {
       console.error('重置密码失败:', error)
-      passwordError.value = error?.data?.message || error?.message || error?.statusMessage || '重置失败'
+      passwordError.value = getErrorDetail(error) || locale.value.errors.resetFailed
     } finally {
     resetting.value = false
   }
@@ -2371,8 +2387,8 @@ const loadUsers = async (page = 1, limit = 100) => {
         search: searchQuery.value || undefined,
         role: roleFilter.value || undefined,
         status: statusFilter.value || undefined,
-        grade: toUserFilterQuery(gradeFilter.value, UNSET_GRADE_LABEL),
-        class: toUserFilterQuery(classFilter.value, UNSET_CLASS_LABEL),
+        grade: toUserFilterQuery(gradeFilter.value, unsetGradeLabel.value),
+        class: toUserFilterQuery(classFilter.value, unsetClassLabel.value),
         sortBy: sortBy.value,
         sortOrder: sortOrder.value
       },
@@ -2396,7 +2412,7 @@ const loadUsers = async (page = 1, limit = 100) => {
   } catch (error) {
       console.error('加载用户失败:', error)
       if (window.$showNotification) {
-        window.$showNotification('加载用户失败: ' + (error?.data?.message || error?.message || error?.statusMessage || '未知错误'), 'error')
+        window.$showNotification(formatMessage(locale.value.notifications.loadFailed, getErrorDetail(error)), 'error')
       }
     } finally {
     loading.value = false
@@ -2416,7 +2432,7 @@ const loadUserTree = async () => {
     expandDefaultTreeNodes()
   } catch (error) {
     console.error('加载组织结构失败:', error)
-    treeError.value = error?.data?.message || error?.message || error?.statusMessage || '组织结构加载失败'
+    treeError.value = getErrorDetail(error) || locale.value.organization.loadFailed
   } finally {
     treeLoading.value = false
   }
@@ -2478,7 +2494,7 @@ const loadXLSX = async () => {
       }
 
       if (!loaded) {
-        throw new Error('所有XLSX库源加载失败')
+        throw new Error(locale.value.errors.xlsxLoadFailed)
       }
     } catch (err) {
       console.error('加载XLSX库失败:', err)
@@ -2501,7 +2517,7 @@ const handleFileUpload = async (event) => {
     await loadXLSX()
 
     if (!window.XLSX) {
-      importError.value = '无法加载Excel处理库，请刷新页面重试'
+      importError.value = locale.value.errors.xlsxLoadFailed
       return
     }
   }
@@ -2536,7 +2552,8 @@ const handleFileUpload = async (event) => {
             'password',
             'role',
             'grade',
-            'class'
+            'class',
+            ...Object.values(locale.value.importModal.sampleHeaders || {})
           ]
           const isHeaderRow = firstRow.some(
             (cell) =>
@@ -2589,25 +2606,25 @@ const handleFileUpload = async (event) => {
         }
 
         if (userData.length === 0) {
-          importError.value = '未找到有效数据'
+          importError.value = locale.value.errors.noValidData
           return
         }
 
         previewData.value = userData
       } catch (err) {
         console.error('解析Excel出错:', err)
-        importError.value = '解析Excel文件失败: ' + (err.message || '未知错误')
+        importError.value = formatMessage(locale.value.errors.parseExcelFailed, getErrorDetail(err))
       }
     }
 
     reader.onerror = () => {
-      importError.value = '读取文件失败'
+      importError.value = locale.value.errors.readFileFailed
     }
 
     reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error('处理Excel文件错误:', err)
-    importError.value = '处理Excel文件失败: ' + (err.message || '未知错误')
+    importError.value = formatMessage(locale.value.errors.processExcelFailed, getErrorDetail(err))
   }
 }
 
@@ -2617,28 +2634,35 @@ const downloadImportTemplate = async () => {
     await loadXLSX()
     if (!window.XLSX) {
       if (window.$showNotification) {
-        window.$showNotification('Excel处理库加载失败，请刷新页面后重试', 'error')
+        window.$showNotification(locale.value.notifications.excelLoadFailed, 'error')
       }
       return
     }
   }
 
+  const headers = locale.value.importModal.sampleHeaders
   const templateData = [
-    { 姓名: '张三', 用户名: 'zhangsan', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '1班' },
-    { 姓名: '李四', 用户名: 'lisi', 密码: '123456', 角色: 'USER', 年级: '高一', 班级: '2班' }
+    {
+      [headers.name]: locale.value.importModal.sampleName,
+      [headers.username]: 'zhangsan',
+      [headers.password]: '123456',
+      [headers.role]: 'USER',
+      [headers.grade]: locale.value.importModal.sampleGrade,
+      [headers.class]: locale.value.importModal.sampleClass
+    }
   ]
 
   const ws = window.XLSX.utils.json_to_sheet(templateData)
   const wb = window.XLSX.utils.book_new()
-  window.XLSX.utils.book_append_sheet(wb, ws, '用户导入模板')
-  window.XLSX.writeFile(wb, '用户批量导入模板.xlsx')
+  window.XLSX.utils.book_append_sheet(wb, ws, locale.value.importModal.templateSheetName)
+  window.XLSX.writeFile(wb, locale.value.importModal.templateFileName)
 }
 
 // 格式化导入错误的辅助函数
 const formatImportErrors = (errors) => {
   return errors.map(e => {
     const namePart = e.name || e.username ? ` (${e.name || e.username})` : ''
-    return `第${e.rowNum || '?'}行${namePart}: ${e.reason}`
+    return formatMessage(locale.value.importProgress.rowError, e.rowNum || '?', namePart, e.reason)
   }).join('\n')
 }
 
@@ -2663,7 +2687,7 @@ const importUsers = async () => {
       const batch = dataToImport.slice(i, i + batchSize)
       const currentBatch = Math.floor(i / batchSize) + 1
 
-      importProgressText.value = `正在导入：正在处理第 ${currentBatch} / ${totalBatches} 批数据...`
+      importProgressText.value = formatMessage(locale.value.importProgress.processingBatch, currentBatch, totalBatches)
       importProgress.value = Math.round((currentBatch / totalBatches) * 100)
 
       try {
@@ -2688,18 +2712,18 @@ const importUsers = async () => {
       } catch (batchErr) {
         console.error(`第 ${currentBatch} 批导入失败:`, batchErr)
         totalFailed += batch.length
-        allErrors.push({ reason: `第 ${currentBatch} 批请求失败: ${batchErr.message}` })
+        allErrors.push({ reason: formatMessage(locale.value.importProgress.batchFailed, currentBatch, getErrorDetail(batchErr)) })
       }
     }
 
     await Promise.all([loadUserTree(), loadUsers()])
 
     if (totalCreated > 0 || totalFailed === 0) {
-      importProgressText.value = `导入完成：成功导入 ${totalCreated} 个，失败 ${totalFailed} 个`
+      importProgressText.value = formatMessage(locale.value.importProgress.complete, totalCreated, totalFailed)
       importProgress.value = 100
       
       if (allErrors.length > 0) {
-        importError.value = '部分导入失败原因：\n' + formatImportErrors(allErrors)
+        importError.value = formatMessage(locale.value.errors.partialImportFailed, formatImportErrors(allErrors))
       }
       previewData.value = []
 
@@ -2709,11 +2733,11 @@ const importUsers = async () => {
         }
       }, 3000)
     } else {
-      importError.value = '导入失败，请检查数据格式后重试。\n失败原因：\n' + formatImportErrors(allErrors)
+      importError.value = formatMessage(locale.value.errors.importFailedWithReasons, formatImportErrors(allErrors))
       importProgressText.value = ''
     }
   } catch (err) {
-    importError.value = `导入过程中发生错误 (已成功导入 ${totalCreated} 个): ${err.message || '未知错误'}`
+    importError.value = formatMessage(locale.value.errors.importRuntimeFailed, totalCreated, getErrorDetail(err))
     importProgressText.value = ''
     console.error('导入用户出错:', err)
   } finally {
@@ -2747,14 +2771,14 @@ const loadStatusLogsPage = async (page) => {
     }
   } catch (error) {
       console.error('加载状态日志失败:', error)
-      statusLogsError.value = error?.data?.message || error?.message || error?.statusMessage || '加载状态日志失败'
+      statusLogsError.value = getErrorDetail(error) || locale.value.errors.statusLogsFailed
     } finally {
     statusLogsLoading.value = false
   }
 }
 
 const formatStatusLogDate = (dateString) => {
-  if (!dateString) return '未知时间'
+  if (!dateString) return locale.value.time.unknown
   const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
 }
