@@ -25,7 +25,7 @@
   - **OAuth 账户系统**：支持通过 GitHub、Casdoor 等 OAuth 提供商快速创建和登录账户
     - **直接创建账户**：用户通过 OAuth 认证后可创建新账户，但仍需设置本地用户名和密码
     - **账户绑定**：已有账户的用户可将 OAuth 身份绑定到现有账户，实现多平台统一登录
-    - **WebAuthn 支持**：支持 Windows Hello、生物识别和硬件安全密钥（如 YubiKey）登录
+    - **WebAuthn 支持**：支持 HarmonyOS Passkey、Windows Hello、生物识别和硬件安全密钥（如 YubiKey）登录
     - **双因素认证（2FA）**：支持 TOTP 和邮箱验证，增强账户安全性
   - **网易云音乐登录**：支持扫码登录，登录后可搜索个人歌单、收藏及播客电台内容
     - **一键添加到歌单**：登录后支持将排期中的网易云音乐歌曲一键添加到个人歌单
@@ -51,7 +51,7 @@
 - **账户安全**：
   - bcrypt 密码加密
   - 双因素认证（TOTP、邮箱验证）
-  - WebAuthn 支持（生物识别、硬件密钥）
+  - WebAuthn 支持（HarmonyOS Passkey、生物识别、硬件密钥）
   - 账户锁定和风险控制
 - **身份关联**：支持将多个 OAuth 身份绑定到同一账户，实现统一登录
 - **黑名单管理**：支持歌曲和艺术家黑名单，自动过滤不当内容
@@ -926,6 +926,7 @@ VoiceHub/
 │       ├── oauth-register.ts  # OAuth注册工具
 │       ├── oauth.ts           # OAuth工具
 │       ├── timeUtils.ts       # 时间工具
+│       ├── webauthn.js        # WebAuthn浏览器兼容工具
 │       └── url.ts             # URL处理工具
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
