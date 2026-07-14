@@ -39,7 +39,7 @@
               inherit (finalAttrs) pname version src;
               inherit pnpm;
               fetcherVersion = 4;
-              hash = "sha256-b1VVLpkargRq/mrCrGhbHlPyXy7eKVba2SDMnspfNWc=";
+              hash = "sha256-wloIw2MktyFq7h2fe2oaJ5wyl7PeBcjuE45mbNt12Yo=";
             };
 
             nativeBuildInputs = [
