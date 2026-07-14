@@ -626,7 +626,10 @@ const handleWebAuthnLogin = async () => {
   
   try {
     // 1. 获取登录选项
-    const options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
+    const options = await $fetch('/api/auth/webauthn/login/options', {
+      method: 'POST',
+      body: { username: username.value.trim() }
+    })
     // 2. 调用浏览器 WebAuthn API
     const credential = await startWebAuthnAuthentication(options)
     // 3. 验证登录
