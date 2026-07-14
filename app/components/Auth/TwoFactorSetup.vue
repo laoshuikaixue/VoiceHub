@@ -104,9 +104,9 @@
     <UIConfirmDialog
       :show="showDisableConfirm"
       title="关闭双重认证"
-      content="关闭后，您的账户将不再受到双重认证保护。为确保安全，请输入您的登录密码以确认。"
+      message="关闭后，您的账户将不再受到双重认证保护。为确保安全，请输入您的登录密码以确认。"
       confirm-text="验证并关闭"
-      confirm-type="danger"
+      type="danger"
       :show-input="true"
       input-placeholder="请输入当前登录密码"
       input-type="password"
@@ -116,14 +116,17 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 import { ShieldCheck, X, Copy, Loader2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 
-const props = defineProps<{
-  initialEnabled?: boolean
-}>()
+const props = defineProps({
+  initialEnabled: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const isEnabled = ref(props.initialEnabled || false)
 const showSetup = ref(false)
@@ -155,7 +158,7 @@ const startSetup = async () => {
       showSetup.value = true
       verificationCode.value = ''
     }
-  } catch (err: any) {
+  } catch (err) {
     showToast(err.data?.message || err.message || '获取验证码失败', 'error')
   } finally {
     loading.value = false
@@ -196,7 +199,7 @@ const enable2FA = async () => {
     showToast('双重认证已开启', 'success')
     isEnabled.value = true
     cancelSetup()
-  } catch (err: any) {
+  } catch (err) {
     showToast(err.data?.message || err.message || '验证失败', 'error')
   } finally {
     loading.value = false
@@ -207,7 +210,7 @@ const confirmDisable = () => {
   showDisableConfirm.value = true
 }
 
-const disable2FA = async (password: string) => {
+const disable2FA = async (password) => {
   if (!password) {
     showToast('请输入密码', 'warning')
     return
@@ -225,7 +228,7 @@ const disable2FA = async (password: string) => {
     showToast('双重认证已关闭', 'success')
     isEnabled.value = false
     showDisableConfirm.value = false
-  } catch (err: any) {
+  } catch (err) {
     showToast(err.data?.message || err.message || '关闭失败', 'error')
   } finally {
     loading.value = false

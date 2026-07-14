@@ -60,7 +60,7 @@
           </div>
           <div class="flex flex-col">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-zinc-200">Windows Hello / Passkey</span>
+              <span class="text-sm font-bold text-zinc-200">Passkey</span>
               <ChevronDown 
                 v-if="webauthnIdentities.length > 0"
                 :size="14" 
@@ -180,13 +180,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X, AlertTriangle } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
-import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser'
+import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
+import { startWebAuthnRegistration } from '~/utils/webauthn'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
@@ -197,25 +198,18 @@ const isWebAuthnSupported = ref(false)
 const isSecureContext = ref(true)
 
 // 编辑相关
-const editingId = ref<string | null>(null)
+const editingId = ref(null)
 const editingName = ref('')
 const isRenaming = ref(false)
-const editInput = ref<HTMLInputElement | null>(null)
+const editInput = ref(null)
 
-interface WebAuthnCredential {
-  id: string
-  providerUsername: string
-  createdAt: string
-  [key: string]: any
-}
-
-const startEditing = async (cred: WebAuthnCredential) => {
+const startEditing = async (cred) => {
   editingId.value = cred.id
   editingName.value = cred.providerUsername
   // 聚焦输入框
   await nextTick()
   if (editInput.value) {
-    (editInput.value as HTMLInputElement)?.focus()
+    editInput.value?.focus()
   }
 }
 
@@ -224,7 +218,7 @@ const cancelEditing = () => {
   editingName.value = ''
 }
 
-const saveEditing = async (id: string) => {
+const saveEditing = async (id) => {
   if (!editingName.value.trim()) {
     showToast('设备名称不能为空', 'error')
     return
@@ -244,7 +238,7 @@ const saveEditing = async (id: string) => {
     showToast('设备名称修改成功', 'success')
     await fetchIdentities()
     cancelEditing()
-  } catch (e: any) {
+  } catch (e) {
     showToast(e.data?.message || '修改失败', 'error')
   } finally {
     isRenaming.value = false
@@ -275,13 +269,12 @@ const itemClass =
 
 const enabledProviders = computed(() => oauthProviders.value || [])
 
-const getProviderName = (provider: string) => {
-  const matched = enabledProviders.value.find((item: any) => item.key === provider)
+const getProviderName = (provider) => {
+  const matched = enabledProviders.value.find(item => item.key === provider)
   return matched?.name || getProviderDisplayName(provider)
 }
 
-const getIdentityByProvider = (provider: string) =>
-  identities.value.find((item: any) => item.provider === provider)
+const getIdentityByProvider = (provider) => identities.value.find(item => item.provider === provider)
 
 const webauthnIdentities = computed(() => identities.value.filter((i) => i.provider === 'webauthn'))
 
@@ -353,23 +346,14 @@ const handleUnbind = async (provider, id = null) => {
 
 const handleWebAuthnRegister = async () => {
   if (!isWebAuthnSupported.value) {
-    showToast('您的浏览器不支持 Windows Hello / Passkey', 'error')
+    showToast('您的浏览器不支持 Passkey', 'error')
     return
   }
 
   actionLoading.value = true
   try {
     const options = await $fetch('/api/auth/webauthn/register/options')
-    
-    let attResp
-    try {
-      attResp = await startRegistration(options)
-    } catch (e) {
-      if (e.name === 'NotAllowedError') {
-        throw new Error('用户取消了操作')
-      }
-      throw e
-    }
+    const attResp = await startWebAuthnRegistration(options)
 
     // 提示用户输入设备名称（可选，这里先用默认的）
     // attResp.label = 'Windows Hello' 
@@ -383,8 +367,8 @@ const handleWebAuthnRegister = async () => {
     await fetchIdentities()
   } catch (e) {
     console.error('WebAuthn 注册错误:', e)
-    const apiError = e as { data?: { message?: string }; message?: string }
-    const err = e as Error
+    const apiError = e
+    const err = e
     const message = apiError.data?.message || err.message || '添加设备失败'
     showToast(message, 'error')
   } finally {
