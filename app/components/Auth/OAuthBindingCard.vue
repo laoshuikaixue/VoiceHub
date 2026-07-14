@@ -353,16 +353,7 @@ const handleWebAuthnRegister = async () => {
   actionLoading.value = true
   try {
     const options = await $fetch('/api/auth/webauthn/register/options')
-    
-    let attResp
-    try {
-      attResp = await startWebAuthnRegistration(options)
-    } catch (e) {
-      if (e.name === 'NotAllowedError') {
-        throw new Error('用户取消了操作')
-      }
-      throw e
-    }
+    const attResp = await startWebAuthnRegistration(options)
 
     // 提示用户输入设备名称（可选，这里先用默认的）
     // attResp.label = 'Windows Hello' 

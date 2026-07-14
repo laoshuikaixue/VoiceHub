@@ -1,9 +1,35 @@
 import { base64URLStringToBuffer, bufferToBase64URLString } from '@simplewebauthn/browser'
 
-const toCredentialDescriptor = (descriptor) => ({
-  ...descriptor,
-  id: base64URLStringToBuffer(descriptor.id)
+const toCredentialDescriptor = ({ id, type }) => ({
+  id: base64URLStringToBuffer(id),
+  type
 })
+
+const normalizeRegistrationError = (error) => {
+  let message
+
+  switch (error?.name) {
+    case 'NotAllowedError':
+      message = '系统未能创建 Passkey，请确认已启用锁屏密码、生物识别和系统凭据服务后重试'
+      break
+    case 'InvalidStateError':
+      message = '该 Passkey 已在当前账号中注册'
+      break
+    case 'NotSupportedError':
+      message = '当前设备不支持服务器提供的 Passkey 加密算法'
+      break
+    case 'SecurityError':
+      message = 'Passkey 的域名或安全上下文配置无效'
+      break
+    default:
+      return error
+  }
+
+  const normalizedError = new Error(message)
+  normalizedError.name = error.name
+  normalizedError.cause = error
+  return normalizedError
+}
 
 const readClientExtensionResults = (credential) => {
   try {
@@ -68,7 +94,22 @@ export const startWebAuthnRegistration = async (optionsJSON) => {
     throw new Error('当前浏览器不支持创建 Passkey')
   }
 
-  const { challenge, user, excludeCredentials, hints, ...remainingOptions } = optionsJSON
+  const {
+    challenge,
+    user,
+    excludeCredentials,
+    hints,
+    extensions,
+    authenticatorSelection,
+    ...remainingOptions
+  } = optionsJSON
+  const compatibleExtensions = { ...extensions }
+  const compatibleAuthenticatorSelection = { ...authenticatorSelection }
+
+  // 这些提示不参与服务端验证，部分鸿蒙凭据桥会因不认识它们而拒绝整个请求。
+  delete compatibleExtensions.credProps
+  delete compatibleAuthenticatorSelection.residentKey
+
   const publicKey = {
     ...remainingOptions,
     challenge: base64URLStringToBuffer(challenge),
@@ -76,6 +117,13 @@ export const startWebAuthnRegistration = async (optionsJSON) => {
       ...user,
       id: base64URLStringToBuffer(user.id)
     }
+  }
+
+  if (Object.keys(compatibleExtensions).length) {
+    publicKey.extensions = compatibleExtensions
+  }
+  if (Object.keys(compatibleAuthenticatorSelection).length) {
+    publicKey.authenticatorSelection = compatibleAuthenticatorSelection
   }
 
   if (excludeCredentials?.length) {
@@ -86,7 +134,12 @@ export const startWebAuthnRegistration = async (optionsJSON) => {
   }
 
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，绑定按钮本身已阻止重复提交。
-  const credential = await navigator.credentials.create({ publicKey })
+  let credential
+  try {
+    credential = await navigator.credentials.create({ publicKey })
+  } catch (error) {
+    throw normalizeRegistrationError(error)
+  }
   if (!credential?.response) {
     throw new Error('Passkey 创建未完成')
   }
