@@ -5,6 +5,11 @@ const toCredentialDescriptor = ({ id, type }) => ({
   type
 })
 
+const toAuthenticationCredentialDescriptor = ({ id, type, transports }) => ({
+  ...toCredentialDescriptor({ id, type }),
+  ...(transports?.length ? { transports } : {})
+})
+
 const normalizeRegistrationError = (error) => {
   let message
 
@@ -75,7 +80,7 @@ export const startWebAuthnAuthentication = async (optionsJSON) => {
   }
 
   if (allowCredentials?.length) {
-    publicKey.allowCredentials = allowCredentials.map(toCredentialDescriptor)
+    publicKey.allowCredentials = allowCredentials.map(toAuthenticationCredentialDescriptor)
   }
 
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，登录按钮本身已阻止重复提交。
