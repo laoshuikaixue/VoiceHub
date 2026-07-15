@@ -104,9 +104,9 @@
     <UIConfirmDialog
       :show="showDisableConfirm"
       :title="locale.disableTitle"
-      :content="locale.disableContent"
+      :message="locale.disableContent"
       :confirm-text="locale.verifyAndDisable"
-      confirm-type="danger"
+      type="danger"
       :show-input="true"
       :input-placeholder="locale.passwordPlaceholder"
       input-type="password"
@@ -116,15 +116,18 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, ref } from 'vue'
 import { ShieldCheck, X, Copy, Loader2 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 
-const props = defineProps<{
-  initialEnabled?: boolean
-}>()
+const props = defineProps({
+  initialEnabled: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const isEnabled = ref(props.initialEnabled || false)
 const showSetup = ref(false)
@@ -158,7 +161,7 @@ const startSetup = async () => {
       showSetup.value = true
       verificationCode.value = ''
     }
-  } catch (err: any) {
+  } catch (err) {
     showToast(err.data?.message || err.message || locale.value.fetchFailed, 'error')
   } finally {
     loading.value = false
@@ -199,7 +202,7 @@ const enable2FA = async () => {
     showToast(locale.value.enabled, 'success')
     isEnabled.value = true
     cancelSetup()
-  } catch (err: any) {
+  } catch (err) {
     showToast(err.data?.message || err.message || locale.value.verifyFailed, 'error')
   } finally {
     loading.value = false
@@ -210,7 +213,7 @@ const confirmDisable = () => {
   showDisableConfirm.value = true
 }
 
-const disable2FA = async (password: string) => {
+const disable2FA = async (password) => {
   if (!password) {
     showToast(locale.value.passwordRequired, 'warning')
     return
@@ -228,7 +231,7 @@ const disable2FA = async (password: string) => {
     showToast(locale.value.disabled, 'success')
     isEnabled.value = false
     showDisableConfirm.value = false
-  } catch (err: any) {
+  } catch (err) {
     showToast(err.data?.message || err.message || locale.value.disableFailed, 'error')
   } finally {
     loading.value = false

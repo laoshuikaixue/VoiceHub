@@ -330,13 +330,14 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
-import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
+import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
+import { signalUnknownWebAuthnCredential, startWebAuthnAuthentication } from '~/utils/webauthn'
 import { Fingerprint } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -361,16 +362,16 @@ const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
 const providerUsername = computed(() => route.query.username || '')
 const providerName = computed(() => {
-  const provider = (route.query.provider as string) || 'third-party'
+  const provider = route.query.provider || 'third-party'
   return getProviderDisplayName(provider)
 })
 // 图形验证码与Turnstile相关
 const isGraphicCaptchaRequired = ref(false)
 const captchaId = ref('')
 const captchaInput = ref('')
-const captchaRef = ref<{ refreshCaptcha: () => void } | null>(null)
+const captchaRef = ref(null)
 const turnstileToken = ref('')
-const turnstileRef = ref<{ reset: () => void } | null>(null)
+const turnstileRef = ref(null)
 
 const showCaptcha = computed(() => {
   // 如果后端明确要求显示验证码，则优先显示
@@ -399,10 +400,10 @@ const showConfirmPassword = ref(false)
 const isWebAuthnSupported = ref(false)
 const classOptionsLoading = ref(false)
 const classOptionsLoaded = ref(false)
-const classOptions = ref<{ grade: string, class: string }[]>([])
+const classOptions = ref([])
 const show2FA = ref(false)
 const userId2FA = ref(0)
-const methods2FA = ref<string[]>([])
+const methods2FA = ref([])
 const tempToken2FA = ref('')
 const maskedEmail2FA = ref('')
 const showCreateMode = ref(false)
@@ -463,10 +464,7 @@ const fetchClassOptions = async () => {
 
   classOptionsLoading.value = true
   try {
-    const response = await $fetch<{
-      success: boolean
-      classes: { grade: string, class: string }[]
-    }>('/api/auth/oauth-register-options')
+    const response = await $fetch('/api/auth/oauth-register-options')
 
     if (response.success) {
       classOptions.value = response.classes || []
@@ -540,7 +538,7 @@ const handleLogin = async () => {
   loading.value = true
 
   // 构建请求体，包含验证码信息
-  const requestBody: any = {
+  const requestBody = {
     username: username.value,
     password: password.value,
   }
@@ -578,7 +576,7 @@ const handleLogin = async () => {
     // 登录成功后刷新一次全局认证态，确保管理员角色在路由守卫执行前已同步。
     await auth.initAuth({ force: true })
     await redirectAfterLogin()
-  } catch (err: any) {
+  } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
     error.value = err.data?.message || err.message || 
@@ -640,7 +638,7 @@ const handleRegisterOAuth = async () => {
       await auth.initAuth({ force: true })
       await navigateTo(getSafeRedirect())
     }
-  } catch (err: any) {
+  } catch (err) {
     const apiError = err
     error.value = apiError.data?.message || apiError.message || apiError.statusMessage || locale.value.registerFailed
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
@@ -655,12 +653,14 @@ const handleRegisterOAuth = async () => {
 const handleWebAuthnLogin = async () => {
   loading.value = true
   error.value = ''
+  let options
+  let credential
   
   try {
     // 1. 获取登录选项
-    const options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
+    options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
     // 2. 调用浏览器 WebAuthn API
-    const credential = await startAuthentication(options)
+    credential = await startWebAuthnAuthentication(options)
     // 3. 验证登录
     const verification = await $fetch('/api/auth/webauthn/login/verify', {
       method: 'POST',
@@ -674,8 +674,21 @@ const handleWebAuthnLogin = async () => {
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)
-    const apiError = e as { data?: { message?: string }, message?: string, statusMessage?: string }
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || locale.value.passkeyFailed
+    const apiError = e
+    const message =
+      apiError.data?.message || apiError.message || apiError.statusMessage || locale.value.passkeyFailed
+
+    if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
+      const signaled = await signalUnknownWebAuthnCredential({
+        credentialId: credential.id,
+        rpId: options.rpId
+      })
+      error.value = signaled
+        ? locale.value.passkeyCleanupNotified
+        : locale.value.passkeyCleanupRequired
+    } else {
+      error.value = message
+    }
   } finally {
     loading.value = false
   }
