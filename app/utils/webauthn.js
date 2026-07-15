@@ -5,6 +5,11 @@ const toCredentialDescriptor = ({ id, type }) => ({
   type
 })
 
+const toAuthenticationCredentialDescriptor = ({ id, type, transports }) => ({
+  ...toCredentialDescriptor({ id, type }),
+  ...(transports?.length ? { transports } : {})
+})
+
 const normalizeRegistrationError = (error) => {
   let message
 
@@ -25,6 +30,18 @@ const normalizeRegistrationError = (error) => {
       return error
   }
 
+  const normalizedError = new Error(message)
+  normalizedError.name = error.name
+  normalizedError.cause = error
+  return normalizedError
+}
+
+const normalizeAuthenticationError = (error, hasExplicitCredentials) => {
+  if (error?.name !== 'NotAllowedError') return error
+
+  const message = hasExplicitCredentials
+    ? '未找到该账号可用的 Passkey，或系统未能完成验证'
+    : '未找到可用的 Passkey。鸿蒙设备请先输入账号名后重试'
   const normalizedError = new Error(message)
   normalizedError.name = error.name
   normalizedError.cause = error
@@ -63,11 +80,16 @@ export const startWebAuthnAuthentication = async (optionsJSON) => {
   }
 
   if (allowCredentials?.length) {
-    publicKey.allowCredentials = allowCredentials.map(toCredentialDescriptor)
+    publicKey.allowCredentials = allowCredentials.map(toAuthenticationCredentialDescriptor)
   }
 
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，登录按钮本身已阻止重复提交。
-  const credential = await navigator.credentials.get({ publicKey })
+  let credential
+  try {
+    credential = await navigator.credentials.get({ publicKey })
+  } catch (error) {
+    throw normalizeAuthenticationError(error, Boolean(allowCredentials?.length))
+  }
   if (!credential?.response) {
     throw new Error('Passkey 认证未完成')
   }
