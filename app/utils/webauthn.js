@@ -31,18 +31,6 @@ const normalizeRegistrationError = (error) => {
   return normalizedError
 }
 
-const normalizeAuthenticationError = (error, hasExplicitCredentials) => {
-  if (error?.name !== 'NotAllowedError') return error
-
-  const message = hasExplicitCredentials
-    ? '未找到该账号可用的 Passkey，或系统未能完成验证'
-    : '未找到可用的 Passkey。鸿蒙设备请先输入账号名后重试'
-  const normalizedError = new Error(message)
-  normalizedError.name = error.name
-  normalizedError.cause = error
-  return normalizedError
-}
-
 const readClientExtensionResults = (credential) => {
   try {
     return credential.getClientExtensionResults?.() || {}
@@ -63,6 +51,25 @@ const readOptionalResponseValue = (response, methodName) => {
   }
 }
 
+export const signalUnknownWebAuthnCredential = async ({ credentialId, rpId }) => {
+  const signalUnknownCredential = window.PublicKeyCredential?.signalUnknownCredential
+  if (!credentialId || !rpId || typeof signalUnknownCredential !== 'function') {
+    return false
+  }
+
+  try {
+    await signalUnknownCredential.call(window.PublicKeyCredential, {
+      credentialId,
+      rpId
+    })
+    return true
+  } catch (error) {
+    // 设备可能只实现基础 WebAuthn，清理失败不能影响服务端解绑结果。
+    console.warn('通知系统清理失效 Passkey 失败:', error)
+    return false
+  }
+}
+
 export const startWebAuthnAuthentication = async (optionsJSON) => {
   if (!navigator.credentials?.get) {
     throw new Error('当前浏览器不支持 Passkey 登录')
@@ -79,12 +86,7 @@ export const startWebAuthnAuthentication = async (optionsJSON) => {
   }
 
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，登录按钮本身已阻止重复提交。
-  let credential
-  try {
-    credential = await navigator.credentials.get({ publicKey })
-  } catch (error) {
-    throw normalizeAuthenticationError(error, Boolean(allowCredentials?.length))
-  }
+  const credential = await navigator.credentials.get({ publicKey })
   if (!credential?.response) {
     throw new Error('Passkey 认证未完成')
   }

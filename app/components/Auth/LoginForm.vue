@@ -337,7 +337,7 @@ import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
-import { startWebAuthnAuthentication } from '~/utils/webauthn'
+import { signalUnknownWebAuthnCredential, startWebAuthnAuthentication } from '~/utils/webauthn'
 import { Fingerprint } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -623,15 +623,14 @@ const handleRegisterOAuth = async () => {
 const handleWebAuthnLogin = async () => {
   loading.value = true
   error.value = ''
+  let options
+  let credential
   
   try {
     // 1. 获取登录选项
-    const options = await $fetch('/api/auth/webauthn/login/options', {
-      method: 'POST',
-      body: { username: username.value.trim() }
-    })
+    options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
     // 2. 调用浏览器 WebAuthn API
-    const credential = await startWebAuthnAuthentication(options)
+    credential = await startWebAuthnAuthentication(options)
     // 3. 验证登录
     const verification = await $fetch('/api/auth/webauthn/login/verify', {
       method: 'POST',
@@ -646,7 +645,20 @@ const handleWebAuthnLogin = async () => {
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)
     const apiError = e
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || 'Passkey 登录失败'
+    const message =
+      apiError.data?.message || apiError.message || apiError.statusMessage || 'Passkey 登录失败'
+
+    if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
+      const signaled = await signalUnknownWebAuthnCredential({
+        credentialId: credential.id,
+        rpId: options.rpId
+      })
+      error.value = signaled
+        ? '该 Passkey 已失效，系统已收到清理通知，请重新添加'
+        : '该 Passkey 已从 VoiceHub 删除，请先在设备密码保险箱中删除后重新添加'
+    } else {
+      error.value = message
+    }
   } finally {
     loading.value = false
   }
