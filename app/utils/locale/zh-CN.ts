@@ -112,7 +112,11 @@ export const siteConfig = {
     saveFailed: '保存配置失败:'
   },
   serverMessages: {
+    oauthRedirectCallbackInvalid: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback',
+    oauthRedirectUrlInvalid: 'oauthRedirectUri 不是合法 URL，示例：https://yourdomain.com/api/auth/[provider]/callback',
     raw: {
+      oauthRedirectCallbackInvalid: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback',
+      oauthRedirectUrlInvalid: 'oauthRedirectUri 不是合法URL，示例：https://yourdomain.com/api/auth/[provider]/callback',
       unauthorized: '未授权访问',
       adminOnly: '只有管理员才能更新系统设置',
       captchaProviderInvalid: 'captchaProvider 必须是 graphic 或 turnstile',
@@ -137,6 +141,8 @@ export const siteConfig = {
       customOAuthAuthorizeUrlLabel: '授权端点 URL',
       customOAuthTokenUrlLabel: 'Token 端点 URL',
       customOAuthUserInfoUrlLabel: '用户信息端点 URL',
+      customOAuthClientIdLabel: 'Client ID',
+      customOAuthClientSecretLabel: 'Client Secret',
       customOAuthUserIdFieldLabel: '用户 ID 字段名'
     },
     unauthorized: '未授权访问',
@@ -164,6 +170,8 @@ export const siteConfig = {
       customOAuthAuthorizeUrl: '授权端点 URL',
       customOAuthTokenUrl: 'Token 端点 URL',
       customOAuthUserInfoUrl: '用户信息端点 URL',
+      customOAuthClientId: 'Client ID',
+      customOAuthClientSecret: 'Client Secret',
       customOAuthUserIdField: '用户 ID 字段名'
     }
   }

@@ -668,6 +668,8 @@ const getLocalizedServerMessage = (message) => {
   const rawMessages = serverMessages.raw
   if (!rawMessages) return message
   const exactMessageMap = {
+    [rawMessages.oauthRedirectCallbackInvalid]: serverMessages.oauthRedirectCallbackInvalid,
+    [rawMessages.oauthRedirectUrlInvalid]: serverMessages.oauthRedirectUrlInvalid,
     [rawMessages.unauthorized]: serverMessages.unauthorized,
     [rawMessages.adminOnly]: serverMessages.adminOnly,
     [rawMessages.captchaProviderInvalid]: serverMessages.captchaProviderInvalid,
@@ -693,10 +695,14 @@ const getLocalizedServerMessage = (message) => {
     [rawMessages.customOAuthAuthorizeUrlLabel]: fields.customOAuthAuthorizeUrl,
     [rawMessages.customOAuthTokenUrlLabel]: fields.customOAuthTokenUrl,
     [rawMessages.customOAuthUserInfoUrlLabel]: fields.customOAuthUserInfoUrl,
+    [rawMessages.customOAuthClientIdLabel]: fields.customOAuthClientId,
+    [rawMessages.customOAuthClientSecretLabel]: fields.customOAuthClientSecret,
     [rawMessages.customOAuthUserIdFieldLabel]: fields.customOAuthUserIdField,
     customOAuthAuthorizeUrl: fields.customOAuthAuthorizeUrl,
     customOAuthTokenUrl: fields.customOAuthTokenUrl,
     customOAuthUserInfoUrl: fields.customOAuthUserInfoUrl,
+    customOAuthClientId: fields.customOAuthClientId,
+    customOAuthClientSecret: fields.customOAuthClientSecret,
     customOAuthUserIdField: fields.customOAuthUserIdField
   }
 
