@@ -204,6 +204,10 @@ const callLocale = (key, fallback = '', ...args) => {
   }
   return value || fallback
 }
+const getWebAuthnErrorMessage = (apiError, fallback) => {
+  const localizedMessage = apiError?.code ? locale.value?.[apiError.code] : ''
+  return localizedMessage || apiError?.data?.message || fallback
+}
 const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)
@@ -388,9 +392,7 @@ const handleWebAuthnRegister = async () => {
     await fetchIdentities()
   } catch (e) {
     console.error('WebAuthn 注册错误:', e)
-    const apiError = e
-    const err = e
-    const message = apiError.data?.message || err.message || locale.value.addDeviceFailed
+    const message = getWebAuthnErrorMessage(e, locale.value.addDeviceFailed)
     showToast(message, 'error')
   } finally {
     actionLoading.value = false

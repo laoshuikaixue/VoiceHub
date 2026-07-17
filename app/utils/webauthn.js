@@ -5,29 +5,50 @@ const toCredentialDescriptor = ({ id, type }) => ({
   type
 })
 
+const createWebAuthnError = (code, cause) => {
+  const error = new Error(code)
+  error.code = code
+  error.cause = cause
+  return error
+}
+
+const normalizeAuthenticationError = (error) => {
+  switch (error?.name) {
+    case 'NotAllowedError':
+    case 'AbortError':
+      return createWebAuthnError('passkeyOperationUnavailable', error)
+    case 'NotSupportedError':
+      return createWebAuthnError('passkeyLoginUnsupported', error)
+    case 'SecurityError':
+      return createWebAuthnError('passkeySecurityInvalid', error)
+    default:
+      return createWebAuthnError('passkeyFailed', error)
+  }
+}
+
 const normalizeRegistrationError = (error) => {
-  let message
+  let code
 
   switch (error?.name) {
     case 'NotAllowedError':
-      message = '系统未能创建 Passkey，请确认已启用锁屏密码、生物识别和系统凭据服务后重试'
+    case 'AbortError':
+      code = 'passkeyOperationUnavailable'
       break
     case 'InvalidStateError':
-      message = '该 Passkey 已在当前账号中注册'
+      code = 'passkeyAlreadyRegistered'
       break
     case 'NotSupportedError':
-      message = '当前设备不支持服务器提供的 Passkey 加密算法'
+      code = 'passkeyAlgorithmUnsupported'
       break
     case 'SecurityError':
-      message = 'Passkey 的域名或安全上下文配置无效'
+      code = 'passkeySecurityInvalid'
       break
     default:
-      return error
+      code = 'addDeviceFailed'
   }
 
-  const normalizedError = new Error(message)
+  const normalizedError = createWebAuthnError(code, error)
   normalizedError.name = error.name
-  normalizedError.cause = error
   return normalizedError
 }
 
@@ -72,7 +93,7 @@ export const signalUnknownWebAuthnCredential = async ({ credentialId, rpId }) =>
 
 export const startWebAuthnAuthentication = async (optionsJSON) => {
   if (!navigator.credentials?.get) {
-    throw new Error('当前浏览器不支持 Passkey 登录')
+    throw createWebAuthnError('passkeyLoginUnsupported')
   }
 
   const { challenge, allowCredentials, ...remainingOptions } = optionsJSON
@@ -86,9 +107,14 @@ export const startWebAuthnAuthentication = async (optionsJSON) => {
   }
 
   // 部分鸿蒙版本的 WebAuthn 桥接会拒绝 AbortSignal，登录按钮本身已阻止重复提交。
-  const credential = await navigator.credentials.get({ publicKey })
+  let credential
+  try {
+    credential = await navigator.credentials.get({ publicKey })
+  } catch (error) {
+    throw normalizeAuthenticationError(error)
+  }
   if (!credential?.response) {
-    throw new Error('Passkey 认证未完成')
+    throw createWebAuthnError('passkeyAuthenticationIncomplete')
   }
 
   const response = credential.response
@@ -110,7 +136,7 @@ export const startWebAuthnAuthentication = async (optionsJSON) => {
 
 export const startWebAuthnRegistration = async (optionsJSON) => {
   if (!navigator.credentials?.create) {
-    throw new Error('当前浏览器不支持创建 Passkey')
+    throw createWebAuthnError('passkeyRegistrationUnsupported')
   }
 
   const {
@@ -160,7 +186,7 @@ export const startWebAuthnRegistration = async (optionsJSON) => {
     throw normalizeRegistrationError(error)
   }
   if (!credential?.response) {
-    throw new Error('Passkey 创建未完成')
+    throw createWebAuthnError('passkeyCreationIncomplete')
   }
 
   const response = credential.response

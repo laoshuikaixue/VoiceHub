@@ -358,6 +358,11 @@ const formatLocale = (value, ...args) => {
   return ''
 }
 
+const getWebAuthnErrorMessage = (apiError, fallback) => {
+  const localizedMessage = apiError?.code ? locale.value?.[apiError.code] : ''
+  return localizedMessage || apiError?.data?.message || fallback
+}
+
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
 const providerUsername = computed(() => route.query.username || '')
@@ -670,13 +675,12 @@ const handleWebAuthnLogin = async () => {
     if (verification.success) {
       // 登录成功
       await auth.initAuth({ force: true })
-      await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+      await redirectAfterLogin()
     }
   } catch (e) {
     console.error('WebAuthn 登录错误:', e)
     const apiError = e
-    const message =
-      apiError.data?.message || apiError.message || apiError.statusMessage || locale.value.passkeyFailed
+    const message = getWebAuthnErrorMessage(apiError, locale.value.passkeyFailed)
 
     if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
       const signaled = await signalUnknownWebAuthnCredential({
