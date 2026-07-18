@@ -904,6 +904,14 @@ input[type='number'] {
   border-radius: 8px;
   overflow-x: auto;
 }
+/* 代码块内的 code 元素重置内联样式 */
+.guidelines-preview :deep(pre code) {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: pre;
+}
 .guidelines-preview :deep(table) {
   width: 100%;
   border-collapse: collapse;

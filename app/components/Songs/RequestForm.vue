@@ -4077,7 +4077,6 @@ defineExpose({
 }
 
 .guidelines-content {
-  white-space: pre-line;
   overflow-wrap: anywhere;
   line-height: 1.7;
 }
@@ -4124,6 +4123,14 @@ defineExpose({
   padding: 0.75em 1em;
   border-radius: 8px;
   overflow-x: auto;
+}
+/* 代码块内的 code 元素重置内联样式 */
+.guidelines-content :deep(pre code) {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: pre;
 }
 .guidelines-content :deep(table) {
   width: 100%;

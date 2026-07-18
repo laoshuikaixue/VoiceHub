@@ -579,7 +579,7 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50 whitespace-pre-line"
+                  class="guidelines-rendered text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
                   v-html="renderedGuidelines"
                 />
                 <div
@@ -3684,6 +3684,14 @@ if (
   padding: 0.75em 1em;
   border-radius: 8px;
   overflow-x: auto;
+}
+/* 代码块内的 code 元素重置内联样式 */
+.guidelines-rendered :deep(pre code) {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: pre;
 }
 .guidelines-rendered :deep(table) {
   width: 100%;
