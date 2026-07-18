@@ -3,9 +3,7 @@
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content-desktop">
-        <div v-if="submissionGuidelines" class="guidelines-content">
-          {{ submissionGuidelines }}
-        </div>
+        <div v-if="submissionGuidelines" class="guidelines-content" v-html="renderedGuidelines" />
         <div v-else class="default-guidelines">
           <p>1. 投稿时无需加入书名号</p>
           <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
@@ -29,9 +27,7 @@
         投稿须知
       </h3>
       <div class="rules-content">
-        <div v-if="submissionGuidelines" class="guidelines-content">
-          {{ submissionGuidelines }}
-        </div>
+        <div v-if="submissionGuidelines" class="guidelines-content" v-html="renderedGuidelines" />
         <div v-else class="default-guidelines">
           <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
           <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
@@ -1404,7 +1400,7 @@ import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
-
+import { renderMarkdown } from '~/utils/markdown'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1437,6 +1433,9 @@ const {
   requireCardCodeForRequests,
   enableCardCodeLimitBypass
 } = useSiteConfig()
+
+// 将投稿须知 Markdown 渲染为安全 HTML
+const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 // 用户认证
 const auth = useAuth()
@@ -4080,6 +4079,76 @@ defineExpose({
 .guidelines-content {
   white-space: pre-line;
   overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+/* Markdown 富文本元素样式 */
+.guidelines-content :deep(h1),
+.guidelines-content :deep(h2),
+.guidelines-content :deep(h3),
+.guidelines-content :deep(h4) {
+  font-weight: 700;
+  margin: 0.8em 0 0.4em;
+  color: #fff;
+}
+.guidelines-content :deep(h1) { font-size: 1.3em; }
+.guidelines-content :deep(h2) { font-size: 1.15em; }
+.guidelines-content :deep(h3) { font-size: 1.05em; }
+.guidelines-content :deep(p) { margin-bottom: 0.5em; }
+.guidelines-content :deep(ul),
+.guidelines-content :deep(ol) {
+  padding-left: 1.5em;
+  margin-bottom: 0.5em;
+}
+.guidelines-content :deep(li) { margin-bottom: 0.25em; }
+.guidelines-content :deep(a) {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+.guidelines-content :deep(strong) {
+  font-weight: 700;
+  color: #fff;
+}
+.guidelines-content :deep(em) { font-style: italic; }
+.guidelines-content :deep(code) {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.guidelines-content :deep(pre) {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75em 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.guidelines-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+.guidelines-content :deep(th),
+.guidelines-content :deep(td) {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4em 0.8em;
+  text-align: left;
+}
+.guidelines-content :deep(hr) {
+  border-color: rgba(255, 255, 255, 0.1);
+  margin: 0.8em 0;
+}
+.guidelines-content :deep(blockquote) {
+  border-left: 3px solid #3b82f6;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+.guidelines-content :deep(img) {
+  max-width: 100%;
+  border-radius: 8px;
+}
+.guidelines-content :deep(del) {
+  text-decoration: line-through;
+  opacity: 0.6;
 }
 
 /* 移动端样式 */
