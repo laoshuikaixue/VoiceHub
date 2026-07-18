@@ -116,9 +116,6 @@ importers:
       deep-freeze:
         specifier: ^0.0.1
         version: 0.0.1
-      dompurify:
-        specifier: ^3.4.12
-        version: 3.4.12
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -11711,6 +11708,7 @@ snapshots:
   dompurify@3.4.12:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
+    optional: true
 
   domutils@3.2.2:
     dependencies:
