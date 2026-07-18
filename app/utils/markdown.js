@@ -14,6 +14,14 @@ marked.use({
   }
 })
 
+// xss 白名单：默认白名单 + GFM 任务列表的 <input type="checkbox">
+const xssOptions = {
+  whiteList: {
+    ...xss.whiteList,
+    input: ['type', 'checked', 'disabled']
+  }
+}
+
 /**
  * 将 Markdown 文本渲染为安全 HTML
  * 两层防护：marked 禁用原始 HTML + xss 清洗（禁 script、on* 事件、javascript: 协议）
@@ -24,5 +32,5 @@ marked.use({
 export function renderMarkdown(text) {
   if (!text || typeof text !== 'string') return ''
   const rawHtml = marked.parse(text)
-  return xss(rawHtml)
+  return xss(rawHtml, xssOptions)
 }
