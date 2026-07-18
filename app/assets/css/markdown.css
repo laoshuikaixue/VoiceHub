@@ -32,16 +32,6 @@
 .markdown-body ol { list-style-type: decimal; }
 .markdown-body li { margin-bottom: 0.25em; }
 
-/* GFM 任务列表：移除圆点，适配暗色主题 */
-.markdown-body li:has(input[type='checkbox']) {
-  list-style: none;
-}
-.markdown-body input[type='checkbox'] {
-  accent-color: #3b82f6;
-  margin-right: 0.4em;
-  vertical-align: middle;
-}
-
 .markdown-body a {
   color: #3b82f6;
   text-decoration: underline;
