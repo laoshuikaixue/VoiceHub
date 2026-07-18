@@ -19,8 +19,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '缺少 Credential ID' })
   }
 
+  // Challenge 只能使用一次，避免失败响应被重复提交。
+  clearWebAuthnChallenge(event)
+
   const identity = await db.query.userIdentities.findFirst({
-    where: and(eq(userIdentities.provider, 'webauthn'), eq(userIdentities.providerUserId, credentialID)),
+    where: and(
+      eq(userIdentities.provider, 'webauthn'),
+      eq(userIdentities.providerUserId, credentialID)
+    ),
     with: { user: true }
   })
 
@@ -36,6 +42,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // 解析存储的凭证数据
+  if (!identity.providerUsername) {
+    throw createError({ statusCode: 500, message: '凭证数据缺失' })
+  }
+
   let credentialData
   try {
     credentialData = JSON.parse(identity.providerUsername)
@@ -44,13 +54,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const { publicKey, counter } = credentialData
-  
+
   // 验证公钥存在
   if (!publicKey) {
-     throw createError({ statusCode: 500, message: '凭证数据缺失 publicKey' })
+    throw createError({ statusCode: 500, message: '凭证数据缺失 publicKey' })
   }
 
   const { rpID, origin } = getWebAuthnConfig(event)
+  if (!rpID) {
+    throw createError({ statusCode: 500, message: 'WebAuthn RP ID 配置无效' })
+  }
 
   // 构造 WebAuthn 凭证对象
   const credential = {
@@ -66,22 +79,19 @@ export default defineEventHandler(async (event) => {
       expectedChallenge: challengeData.challenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
-      credential
+      credential,
+      requireUserVerification: true
     })
 
     if (verification.verified) {
-      const newCounter = verification.authenticationInfo.newCounter
-      const currentCounter = Number(counter || 0)
-
-      // 防重放攻击：检查计数器是否递增
-      if (currentCounter > 0 && newCounter <= currentCounter) {
-        console.error('WebAuthn 计数器未递增:', { currentCounter, newCounter, credentialID })
-        throw createError({ statusCode: 400, message: '认证无效：凭证计数器未递增' })
-      }
-
+      const { newCounter, credentialDeviceType, credentialBackedUp } =
+        verification.authenticationInfo
       credentialData.counter = newCounter
-      
-      await db.update(userIdentities)
+      credentialData.credentialDeviceType = credentialDeviceType
+      credentialData.credentialBackedUp = credentialBackedUp
+
+      await db
+        .update(userIdentities)
         .set({ providerUsername: JSON.stringify(credentialData) })
         .where(eq(userIdentities.id, identity.id))
 
@@ -95,7 +105,6 @@ export default defineEventHandler(async (event) => {
         path: '/'
       })
 
-      clearWebAuthnChallenge(event)
       return { success: true, redirect: '/' }
     } else {
       throw createError({ statusCode: 400, message: '验证失败' })
