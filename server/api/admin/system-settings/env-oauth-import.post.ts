@@ -59,6 +59,25 @@ export default defineEventHandler(async (event) => {
     updateData.googleOAuthEnabled = true
     updateData.googleClientId = process.env.GOOGLE_CLIENT_ID
     updateData.googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+  } else if (provider === 'aggregate') {
+    const appId = process.env.AGGREGATE_OAUTH_APP_ID?.trim()
+    const appKey = process.env.AGGREGATE_OAUTH_APP_KEY?.trim()
+    if (!appId || !appKey) {
+      throw createError({ statusCode: 400, message: '未检测到完整的聚合登陆环境配置' })
+    }
+    const loginType = process.env.AGGREGATE_OAUTH_LOGIN_TYPE?.trim() || 'qq'
+    const supportedAggregateLoginTypes = ['qq', 'wx', 'alipay', 'douyin', 'google', 'twitter', 'feishu']
+    const endpoint = process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
+    try {
+      new URL(endpoint)
+    } catch {
+      throw createError({ statusCode: 400, message: 'AGGREGATE_OAUTH_ENDPOINT 必须是合法的 URL' })
+    }
+    updateData.aggregateOAuthEnabled = true
+    updateData.aggregateOAuthAppId = appId
+    updateData.aggregateOAuthAppKey = appKey
+    updateData.aggregateOAuthLoginType = supportedAggregateLoginTypes.includes(loginType) ? loginType : 'qq'
+    updateData.aggregateOAuthEndpoint = endpoint
   } else {
     throw createError({ statusCode: 400, message: '不支持的导入类型' })
   }

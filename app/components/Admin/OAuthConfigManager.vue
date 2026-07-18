@@ -90,6 +90,8 @@
       :client-id-placeholder="provider.clientIdPlaceholder"
       :client-secret-label="provider.clientSecretLabel"
       :client-secret-placeholder="provider.clientSecretPlaceholder"
+      :doc-url="provider.docUrl"
+      :doc-label="provider.docLabel"
       @import-env="importEnvData(provider.id)"
     >
       <template #before-fields v-if="provider.id === 'casdoor'">
@@ -112,6 +114,34 @@
             placeholder="输入组织名称"
             :class="inputClass"
           >
+        </div>
+      </template>
+      <template #after-fields v-else-if="provider.id === 'aggregate'">
+        <div>
+          <label :class="labelClass">登录方式</label>
+          <select
+            v-model="formData.aggregateOAuthLoginType"
+            :class="inputClass"
+          >
+            <option
+              v-for="type in aggregateLoginTypes"
+              :key="type.value"
+              :value="type.value"
+            >
+              {{ type.label }}
+            </option>
+          </select>
+          <p class="text-[10px] text-zinc-600 px-1 mt-2">对应聚合登陆接口的 type 参数。</p>
+        </div>
+        <div>
+          <label :class="labelClass">接口地址</label>
+          <input
+            v-model="formData.aggregateOAuthEndpoint"
+            type="url"
+            placeholder="https://a.idcfx.net/connect.php"
+            :class="inputClass"
+          >
+          <p class="text-[10px] text-zinc-600 px-1 mt-2">兼容彩虹聚合登录协议的服务端 connect.php 地址。</p>
         </div>
       </template>
     </AdminProviderConfigSection>
@@ -320,7 +350,8 @@ const envData = ref({
   hasBaseConfig: false,
   hasGithubConfig: false,
   hasCasdoorConfig: false,
-  hasGoogleConfig: false
+  hasGoogleConfig: false,
+  hasAggregateConfig: false
 })
 
 const oauthProviders = computed(() => [
@@ -359,8 +390,32 @@ const oauthProviders = computed(() => [
     clientIdPlaceholder: '输入 Google Client ID（xxx.apps.googleusercontent.com）',
     clientSecretLabel: 'Google Client Secret',
     clientSecretPlaceholder: '输入 Google Client Secret',
+  },
+  {
+    id: 'aggregate',
+    title: '聚合登陆',
+    hasEnvConfig: envData.value.hasAggregateConfig,
+    enabledKey: 'aggregateOAuthEnabled',
+    clientIdKey: 'aggregateOAuthAppId',
+    clientSecretKey: 'aggregateOAuthAppKey',
+    clientIdLabel: 'AppID',
+    clientIdPlaceholder: '输入聚合登陆 AppID',
+    clientSecretLabel: 'AppKey',
+    clientSecretPlaceholder: '输入聚合登陆 AppKey',
+    docUrl: 'https://a.idcfx.net/doc.php#',
+    docLabel: '查看聚合登陆开发文档'
   }
 ])
+
+const aggregateLoginTypes = [
+  { value: 'qq', label: 'QQ' },
+  { value: 'wx', label: '微信' },
+  { value: 'alipay', label: '支付宝' },
+  { value: 'douyin', label: '抖音' },
+  { value: 'google', label: '谷歌' },
+  { value: 'twitter', label: 'Twitter' },
+  { value: 'feishu', label: '飞书' }
+]
 
 const fetchEnvData = async () => {
   try {

@@ -17,6 +17,21 @@ const firstStringValue = (values: any[]): string | undefined => {
   return undefined
 }
 
+const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
+
+const normalizeAggregateEndpoint = (endpoint?: string): string => {
+  const value = endpoint?.trim() || DEFAULT_AGGREGATE_OAUTH_ENDPOINT
+  try {
+    const url = new URL(value)
+    url.search = ''
+    url.hash = ''
+    url.pathname = url.pathname.replace(/\/$/, '')
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    throw createError({ statusCode: 500, message: '聚合登陆接口地址配置错误' })
+  }
+}
+
 export interface OAuthUserInfo {
   id: string
   username: string
@@ -29,7 +44,7 @@ export interface OAuthStrategy {
   /**
    * 获取授权跳转 URL
    */
-  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig): string
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig): string | Promise<string>
 
   /**
    * 使用 code 换取 access_token
@@ -260,6 +275,108 @@ const googleStrategy: OAuthStrategy = {
   }
 }
 
+const aggregateOAuthStrategy: OAuthStrategy = {
+  async getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
+    const appid = config?.clientId
+    const appkey = config?.clientSecret
+    const loginType = config?.loginType?.trim() || 'qq'
+    const endpoint = normalizeAggregateEndpoint(config?.endpoint)
+
+    if (!appid || !appkey) {
+      throw createError({ statusCode: 500, message: '聚合登陆配置缺失' })
+    }
+
+    const callbackUrl = new URL(redirectUri)
+    callbackUrl.searchParams.set('state', state)
+
+    const params = new URLSearchParams({
+      act: 'login',
+      appid,
+      appkey,
+      type: loginType,
+      redirect_uri: callbackUrl.toString()
+    })
+
+    let loginResponse: any
+    try {
+      loginResponse = await $fetch<any>(`${endpoint}?${params.toString()}`, {
+        headers: { Accept: 'application/json' }
+      })
+    } catch (e: any) {
+      console.error('聚合登陆 authorize url failed', e?.message || e)
+      throw createError({ statusCode: 502, message: '聚合登陆授权地址获取失败' })
+    }
+
+    if (loginResponse?.code !== 0 || !loginResponse?.url) {
+      throw createError({
+        statusCode: 502,
+        message: loginResponse?.msg || '聚合登陆授权地址获取失败'
+      })
+    }
+
+    return loginResponse.url
+  },
+
+  async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {
+    const appid = config?.clientId
+    const appkey = config?.clientSecret
+    const loginType = config?.loginType?.trim() || 'qq'
+    const endpoint = normalizeAggregateEndpoint(config?.endpoint)
+
+    if (!appid || !appkey) {
+      throw createError({ statusCode: 500, message: '聚合登陆配置缺失' })
+    }
+
+    const params = new URLSearchParams({
+      act: 'callback',
+      appid,
+      appkey,
+      type: loginType,
+      code
+    })
+
+    try {
+      const tokenResponse = await $fetch<any>(`${endpoint}?${params.toString()}`, {
+        headers: { Accept: 'application/json' }
+      })
+
+      if (tokenResponse?.code !== 0) {
+        throw new Error(tokenResponse?.msg || '授权失败，请重试')
+      }
+
+      if (!tokenResponse?.social_uid) {
+        throw new Error('聚合登陆响应缺少用户唯一标识')
+      }
+
+      return Buffer.from(JSON.stringify(tokenResponse), 'utf8').toString('base64url')
+    } catch (e: any) {
+      console.error('聚合登陆 callback failed', e.message || e)
+      const errorMessage = e?.data?.msg || e?.data?.message || e?.message || '令牌请求失败'
+      throw new Error(errorMessage)
+    }
+  },
+
+  async getUserInfo(accessToken: string) {
+    try {
+      const userInfo = JSON.parse(Buffer.from(accessToken, 'base64url').toString('utf8'))
+      const id = firstStringValue([userInfo.social_uid])
+      if (!id) {
+        throw new Error('用户信息中缺少 social_uid')
+      }
+
+      return {
+        id,
+        username: firstStringValue([userInfo.nickname, userInfo.social_uid]) || id,
+        name: firstStringValue([userInfo.nickname]),
+        avatar: firstStringValue([userInfo.faceimg])
+      }
+    } catch (e: any) {
+      console.error('聚合登陆 user info failed', e)
+      throw new Error(e?.message || '获取用户信息失败')
+    }
+  }
+}
+
 const customOAuth2Strategy: OAuthStrategy = {
   getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
     const authorizeUrl = config?.authorizeUrl
@@ -382,7 +499,8 @@ const strategies: Record<string, OAuthStrategy> = {
   github: githubStrategy,
   casdoor: casdoorStrategy,
   google: googleStrategy,
-  oauth2: customOAuth2Strategy
+  oauth2: customOAuth2Strategy,
+  aggregate: aggregateOAuthStrategy
 }
 
 export const getOAuthStrategy = (provider: string): OAuthStrategy => {

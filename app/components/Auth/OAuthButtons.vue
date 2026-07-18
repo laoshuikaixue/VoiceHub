@@ -17,6 +17,7 @@
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
         <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" />
         <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" />
+        <KeyRound v-else-if="provider.key === 'aggregate'" :size="18" />
         <Shield v-else :size="18" />
       </button>
     </div>
@@ -24,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { Shield } from '@lucide/vue'
+import { KeyRound, Shield } from '@lucide/vue'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const route = useRoute()
@@ -51,6 +52,9 @@ const providerButtonClass = (key: string) => {
   }
   if (key === 'google') {
     return `${baseClass} hover:bg-white hover:text-black hover:border-[#dadce0]`
+  }
+  if (key === 'aggregate') {
+    return `${baseClass} hover:bg-[#7c3aed] hover:text-white hover:border-[#7c3aed]`
   }
   if (key === 'oauth2') {
     return `${baseClass} hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e]`

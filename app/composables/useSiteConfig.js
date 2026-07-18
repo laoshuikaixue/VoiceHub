@@ -29,6 +29,7 @@ const siteConfig = ref({
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
+  aggregateOAuthEnabled: false,
   customOAuthEnabled: false,
   customOAuthDisplayName: ''
 })
@@ -79,6 +80,7 @@ export const useSiteConfig = () => {
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
+        aggregateOAuthEnabled: false,
         customOAuthEnabled: false,
         customOAuthDisplayName: ''
       }
@@ -122,6 +124,7 @@ export const useSiteConfig = () => {
     github: !!siteConfig.value.githubOAuthEnabled,
     casdoor: !!siteConfig.value.casdoorOAuthEnabled,
     google: !!siteConfig.value.googleOAuthEnabled,
+    aggregate: !!siteConfig.value.aggregateOAuthEnabled,
     oauth2: !!siteConfig.value.customOAuthEnabled
   }))
 
@@ -135,6 +138,9 @@ export const useSiteConfig = () => {
     }
     if (siteConfig.value.googleOAuthEnabled) {
       providers.push({ key: 'google', name: 'Google' })
+    }
+    if (siteConfig.value.aggregateOAuthEnabled) {
+      providers.push({ key: 'aggregate', name: '聚合登陆' })
     }
     if (siteConfig.value.customOAuthEnabled) {
       providers.push({

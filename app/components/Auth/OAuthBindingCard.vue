@@ -182,7 +182,7 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
-import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X, AlertTriangle } from '@lucide/vue'
+import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X, AlertTriangle, KeyRound } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'

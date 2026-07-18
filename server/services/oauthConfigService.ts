@@ -18,6 +18,7 @@ export interface ProviderRuntimeConfig {
   nameField?: string
   emailField?: string
   avatarField?: string
+  loginType?: string
 }
 
 const getSettings = async () => {
@@ -41,6 +42,7 @@ export const isOAuthProviderEnabled = async (provider: OAuthProvider): Promise<b
   if (provider === 'casdoor') return !!settings.casdoorOAuthEnabled
   if (provider === 'google') return !!settings.googleOAuthEnabled
   if (provider === 'oauth2') return !!settings.customOAuthEnabled
+  if (provider === 'aggregate') return !!settings.aggregateOAuthEnabled
 
   return false
 }
@@ -82,6 +84,15 @@ export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise
     }
   }
 
+  if (provider === 'aggregate') {
+    return {
+      clientId: settings.aggregateOAuthAppId || undefined,
+      clientSecret: settings.aggregateOAuthAppKey || undefined,
+      loginType: settings.aggregateOAuthLoginType || undefined,
+      endpoint: settings.aggregateOAuthEndpoint || undefined
+    }
+  }
+
   return {
     clientId: settings.googleClientId || undefined,
     clientSecret: settings.googleClientSecret || undefined
@@ -90,7 +101,10 @@ export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise
 
 export const getOAuthProviderDisplayName = async (provider: OAuthProvider): Promise<string> => {
   if (provider !== 'oauth2') {
-    return provider === 'github' ? 'GitHub' : provider === 'casdoor' ? 'Casdoor' : 'Google'
+    if (provider === 'github') return 'GitHub'
+    if (provider === 'casdoor') return 'Casdoor'
+    if (provider === 'google') return 'Google'
+    if (provider === 'aggregate') return '聚合登陆'
   }
 
   const settings = await getSettings()

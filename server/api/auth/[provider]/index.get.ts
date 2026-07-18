@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 第三方 OAuth2' })
+    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2' })
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
     // 注意：不设置 domain，让浏览器使用当前 host
   })
   
-  const url = strategy.getAuthorizeUrl(redirectUri, state, providerConfig)
+  const url = await strategy.getAuthorizeUrl(redirectUri, state, providerConfig)
 
   return sendRedirect(event, url)
 })

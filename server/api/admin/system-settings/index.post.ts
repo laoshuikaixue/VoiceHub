@@ -402,6 +402,10 @@ export default defineEventHandler(async (event) => {
         : settings?.casdoorOAuthEnabled ?? false
     const nextGoogleOAuthEnabled =
       body.googleOAuthEnabled !== undefined ? body.googleOAuthEnabled : settings?.googleOAuthEnabled ?? false
+    const nextAggregateOAuthEnabled =
+      body.aggregateOAuthEnabled !== undefined
+        ? body.aggregateOAuthEnabled
+        : settings?.aggregateOAuthEnabled ?? false
     const nextCustomOAuthEnabled =
       body.customOAuthEnabled !== undefined ? body.customOAuthEnabled : settings?.customOAuthEnabled ?? false
 
@@ -409,6 +413,7 @@ export default defineEventHandler(async (event) => {
       nextGithubOAuthEnabled ||
       nextCasdoorOAuthEnabled ||
       nextGoogleOAuthEnabled ||
+      nextAggregateOAuthEnabled ||
       nextCustomOAuthEnabled
     ) {
       if (!nextOauthRedirectUri || !nextOauthStateSecret) {
@@ -506,6 +511,69 @@ export default defineEventHandler(async (event) => {
 
     if (body.googleClientSecret !== undefined && body.googleClientSecret !== SECRET_FIELD_MASK) {
       updateData.googleClientSecret = body.googleClientSecret
+    }
+
+    // 聚合登陆
+    const supportedAggregateLoginTypes = ['qq', 'wx', 'alipay', 'douyin', 'google', 'twitter', 'feishu']
+    const normalizeOptionalText = (value: any) => (typeof value === 'string' ? value.trim() : value)
+    const nextAggregateAppId =
+      body.aggregateOAuthAppId !== undefined
+        ? normalizeOptionalText(body.aggregateOAuthAppId)
+        : settings?.aggregateOAuthAppId
+    const nextAggregateAppKey =
+      body.aggregateOAuthAppKey !== undefined && body.aggregateOAuthAppKey !== SECRET_FIELD_MASK
+        ? normalizeOptionalText(body.aggregateOAuthAppKey)
+        : settings?.aggregateOAuthAppKey
+    const nextAggregateEndpoint =
+      body.aggregateOAuthEndpoint !== undefined
+        ? normalizeOptionalText(body.aggregateOAuthEndpoint)
+        : settings?.aggregateOAuthEndpoint || 'https://a.idcfx.net/connect.php'
+
+    if (body.aggregateOAuthEnabled !== undefined) {
+      if (typeof body.aggregateOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'aggregateOAuthEnabled 必须是布尔值'
+        })
+      }
+      updateData.aggregateOAuthEnabled = body.aggregateOAuthEnabled
+    }
+
+    if (nextAggregateOAuthEnabled && !nextAggregateAppId) {
+      throw createError({ statusCode: 400, message: '启用聚合登陆时必须提供 AppID' })
+    }
+    if (nextAggregateOAuthEnabled && !nextAggregateAppKey) {
+      throw createError({ statusCode: 400, message: '启用聚合登陆时必须提供 AppKey' })
+    }
+    if (nextAggregateOAuthEnabled && !nextAggregateEndpoint) {
+      throw createError({ statusCode: 400, message: '启用聚合登陆时必须提供接口地址' })
+    }
+
+    if (body.aggregateOAuthAppId !== undefined) {
+      updateData.aggregateOAuthAppId = nextAggregateAppId || null
+    }
+
+    if (body.aggregateOAuthAppKey !== undefined && body.aggregateOAuthAppKey !== SECRET_FIELD_MASK) {
+      updateData.aggregateOAuthAppKey = nextAggregateAppKey || null
+    }
+
+    if (body.aggregateOAuthLoginType !== undefined) {
+      const loginType = normalizeOptionalText(body.aggregateOAuthLoginType)
+      if (loginType && !supportedAggregateLoginTypes.includes(loginType)) {
+        throw createError({ statusCode: 400, message: 'aggregateOAuthLoginType 不是支持的聚合登陆方式' })
+      }
+      updateData.aggregateOAuthLoginType = loginType || 'qq'
+    }
+
+    if (body.aggregateOAuthEndpoint !== undefined) {
+      if (nextAggregateEndpoint) {
+        try {
+          new URL(nextAggregateEndpoint)
+        } catch {
+          throw createError({ statusCode: 400, message: 'aggregateOAuthEndpoint 必须是合法的 URL' })
+        }
+      }
+      updateData.aggregateOAuthEndpoint = nextAggregateEndpoint || 'https://a.idcfx.net/connect.php'
     }
 
     // Custom OAuth2

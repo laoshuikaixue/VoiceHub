@@ -20,6 +20,7 @@ export default defineEventHandler((event) => {
     hasBaseConfig: !!(process.env.OAUTH_REDIRECT_URI || process.env.OAUTH_STATE_SECRET),
     hasGithubConfig: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
     hasCasdoorConfig: !!(process.env.CASDOOR_ENDPOINT && process.env.CASDOOR_CLIENT_ID && process.env.CASDOOR_CLIENT_SECRET),
-    hasGoogleConfig: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
+    hasGoogleConfig: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    hasAggregateConfig: !!(process.env.AGGREGATE_OAUTH_APP_ID && process.env.AGGREGATE_OAUTH_APP_KEY)
   }
 })
