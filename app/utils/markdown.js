@@ -1,5 +1,5 @@
 import { marked } from 'marked'
-import sanitizeHtml from 'sanitize-html'
+import xss from 'xss'
 
 // 配置 marked：支持 GFM（表格、任务列表等），换行自动转 <br>
 marked.use({
@@ -16,7 +16,7 @@ marked.use({
 
 /**
  * 将 Markdown 文本渲染为安全 HTML
- * 两层防护：marked 禁用原始 HTML + sanitize-html 清洗（禁 script、on* 事件、javascript: 协议）
+ * 两层防护：marked 禁用原始 HTML + xss 清洗（禁 script、on* 事件、javascript: 协议）
  *
  * @param {string} text Markdown 文本
  * @returns {string} 安全的 HTML 字符串
@@ -24,5 +24,5 @@ marked.use({
 export function renderMarkdown(text) {
   if (!text || typeof text !== 'string') return ''
   const rawHtml = marked.parse(text)
-  return sanitizeHtml(rawHtml)
+  return xss(rawHtml)
 }
