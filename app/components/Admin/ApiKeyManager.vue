@@ -652,7 +652,16 @@ const getErrorMessage = (error) => {
   if (typeof error === 'string') return error
   return error?.data?.message || error?.message || error?.statusMessage || ''
 }
-const getExpiresOptionText = (key) => formatLocaleValue(locale.value?.expiresOptions?.[key])
+const expiresOptionFallbacks = {
+  never: '永不过期',
+  threeDays: '3天后过期',
+  sevenDays: '7天后过期',
+  thirtyDays: '30天后过期',
+  sixtyDays: '60天后过期',
+  ninetyDays: '90天后过期'
+}
+const getExpiresOptionText = (key) =>
+  formatLocaleValue(locale.value?.expiresOptions?.[key]) || expiresOptionFallbacks[key] || key
 const getPermissionOptionText = (key, field) => formatLocaleValue(locale.value?.permissionOptions?.[key]?.[field])
 const getDeleteTitle = (name) => getLocaleText('deleteMessage', name)
 

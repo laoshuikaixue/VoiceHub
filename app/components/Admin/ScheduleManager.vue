@@ -269,6 +269,8 @@
                   v-model="selectedFilterPlayTime"
                   :label="locale.preferredTime"
                   :options="filterPlayTimeOptions"
+                  label-key="label"
+                  value-key="value"
                 />
                 <div class="grid grid-cols-2 gap-2">
                   <CustomSelect
@@ -1027,43 +1029,45 @@ const formatLocaleValue = (value, ...args) => {
 }
 const locale = computed(() => {
   const base = admin.value?.scheduleManager || {}
-  const emptyText = () => ''
   return useSafeLocale({
     ...base,
     messages: { ...(base.messages || {}) },
     errors: {
-      rejectReplayFailed: emptyText,
-      saveDraftFailed: emptyText,
-      publishScheduleFailed: emptyText,
-      publishDraftFailed: emptyText,
-      moveDateFailed: emptyText,
+      rejectReplayFailed: (message) => `拒绝申请失败: ${message || '未知错误'}`,
+      saveDraftFailed: (message) => `保存草稿失败: ${message || '未知错误'}`,
+      publishScheduleFailed: (message) => `发布排期失败: ${message || '未知错误'}`,
+      publishDraftFailed: (message) => `发布草稿失败: ${message || '未知错误'}`,
+      moveDateFailed: (message) => `迁移失败: ${message || '未知错误'}`,
       ...(base.errors || {})
     },
     confirmations: {
-      moveDateMessage: emptyText,
-      publishDraftMessage: emptyText,
+      moveDateMessage: (sourceDate, count, targetDate) =>
+        `确定将 ${sourceDate} 的所有 ${count} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
+      publishDraftMessage: (title) =>
+        `确定要发布草稿《${title}》吗？发布后将立即公示并发送通知。`,
       ...(base.confirmations || {})
     },
-    andMoreApplicants: base.andMoreApplicants || emptyText,
-    currentDate: base.currentDate || emptyText,
-    replayDetailTitle: base.replayDetailTitle || emptyText,
+    andMoreApplicants: base.andMoreApplicants || ((count) => ` 等${count}人`),
+    currentDate: base.currentDate || ((date) => `当前日期：${date}`),
+    replayDetailTitle: base.replayDetailTitle || ((title) => `${title} - 重播申请详情`),
     timeAgo: {
       ...(base.timeAgo || {}),
-      never: base.timeAgo?.never || base.unknown || '',
-      justNow: base.timeAgo?.justNow || '',
-      minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value),
-      hours: (value) => formatLocaleValue(base.timeAgo?.hours, value),
-      days: (value) => formatLocaleValue(base.timeAgo?.days, value)
+      never: base.timeAgo?.never || base.unknown || '从未',
+      justNow: base.timeAgo?.justNow || '刚刚',
+      minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value) || `${value} 分钟前`,
+      hours: (value) => formatLocaleValue(base.timeAgo?.hours, value) || `${value} 小时前`,
+      days: (value) => formatLocaleValue(base.timeAgo?.days, value) || `${value} 天前`
     }
   })
 })
 const callLocale = (path, fallback = '', ...args) => {
   const value = path.split('.').reduce((target, key) => target?.[key], locale.value)
-  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'function') return value(...args) || fallback
   if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
+    const formatted = value.replace(/{(\d+)}/g, (match, index) =>
       args[index] !== undefined ? String(args[index]) : match
     )
+    return formatted || fallback
   }
   return value || fallback
 }
@@ -2042,7 +2046,11 @@ const rejectReplayRequest = async (songId) => {
     } catch (err) {
       console.error('拒绝申请失败', err)
       if (window.$showNotification) {
-        window.$showNotification(callLocale('errors.rejectReplayFailed', '', getThrownMessage(err)), 'error')
+        const message = getThrownMessage(err) || '未知错误'
+        window.$showNotification(
+          callLocale('errors.rejectReplayFailed', `拒绝申请失败: ${message}`, message),
+          'error'
+        )
       }
     }
   }
@@ -2577,7 +2585,10 @@ const confirmMoveDate = async () => {
 
   if (!parseDateValue(targetDate)) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.invalidTargetDate, 'error')
+      window.$showNotification(
+        callLocale('errors.invalidTargetDate', '目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效'),
+        'error'
+      )
     }
     return
   }
@@ -2603,7 +2614,13 @@ const confirmMoveDate = async () => {
   }
 
   confirmDialogTitle.value = locale.value.moveDateTitle
-  confirmDialogMessage.value = callLocale('confirmations.moveDateMessage', '', sourceDate, sourceSchedules.length, targetDate)
+  confirmDialogMessage.value = callLocale(
+    'confirmations.moveDateMessage',
+    `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
+    sourceDate,
+    sourceSchedules.length,
+    targetDate
+  )
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = locale.value.confirmations.moveDateConfirm
   showMoveDateDialog.value = false
@@ -2626,7 +2643,12 @@ const confirmMoveDate = async () => {
       if (window.$showNotification) {
         window.$showNotification(
           result?.movedCount > 0
-            ? callLocale('messages.moveDateSuccess', '', result.movedCount, targetDate)
+            ? callLocale(
+                'messages.moveDateSuccess',
+                `已迁移 ${result.movedCount} 首歌曲到 ${targetDate}`,
+                result.movedCount,
+                targetDate
+              )
             : locale.value.errors.noMovableSongs,
           result?.movedCount > 0 ? 'success' : 'warning'
         )
@@ -2634,9 +2656,10 @@ const confirmMoveDate = async () => {
     } catch (error) {
       console.error('迁移排期日期失败:', error)
       if (window.$showNotification) {
-        const backendMessage = getThrownMessage(error)
+        const backendMessage =
+          getThrownMessage(error) || formatLocaleValue(locale.value?.unknown) || '未知错误'
         window.$showNotification(
-          callLocale('errors.moveDateFailed', '', backendMessage || locale.value.unknown),
+          callLocale('errors.moveDateFailed', `迁移失败: ${backendMessage}`, backendMessage),
           'error'
         )
       }
@@ -2744,7 +2767,11 @@ const saveDraft = async () => {
   } catch (error) {
     console.error('保存草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('errors.saveDraftFailed', '', getThrownMessage(error)), 'error')
+      const message = getThrownMessage(error) || '未知错误'
+      window.$showNotification(
+        callLocale('errors.saveDraftFailed', `保存草稿失败: ${message}`, message),
+        'error'
+      )
     }
   } finally {
     loading.value = false
@@ -2814,7 +2841,11 @@ const publishScheduleConfirmed = async () => {
   } catch (error) {
     console.error('发布排期失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('errors.publishScheduleFailed', '', getThrownMessage(error)), 'error')
+      const message = getThrownMessage(error) || '未知错误'
+      window.$showNotification(
+        callLocale('errors.publishScheduleFailed', `发布排期失败: ${message}`, message),
+        'error'
+      )
     }
   } finally {
     loading.value = false
@@ -2825,7 +2856,11 @@ const publishScheduleConfirmed = async () => {
 const publishSingleDraft = async (draft) => {
   try {
     confirmDialogTitle.value = locale.value.confirmations.publishDraftTitle
-    confirmDialogMessage.value = callLocale('confirmations.publishDraftMessage', '', draft.song.title)
+    confirmDialogMessage.value = callLocale(
+      'confirmations.publishDraftMessage',
+      `确定要发布草稿《${draft.song.title}》吗？发布后将立即公示并发送通知。`,
+      draft.song.title
+    )
     confirmDialogType.value = 'warning'
     confirmDialogConfirmText.value = locale.value.publish
     confirmAction.value = async () => {
@@ -2854,12 +2889,23 @@ const publishSingleDraftConfirmed = async (draft) => {
     updateLocalScheduledSongs()
 
     if (window.$showNotification) {
-      window.$showNotification(callLocale('messages.draftPublished', '', draft.song.title), 'success')
+      window.$showNotification(
+        callLocale(
+          'messages.draftPublished',
+          `草稿《${draft.song.title}》发布成功，通知已发送！`,
+          draft.song.title
+        ),
+        'success'
+      )
     }
   } catch (error) {
     console.error('发布单个草稿失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(callLocale('errors.publishDraftFailed', '', getThrownMessage(error)), 'error')
+      const message = getThrownMessage(error) || '未知错误'
+      window.$showNotification(
+        callLocale('errors.publishDraftFailed', `发布草稿失败: ${message}`, message),
+        'error'
+      )
     }
   } finally {
     loading.value = false

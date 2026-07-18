@@ -318,9 +318,9 @@
             class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
           >
             <option value="">{{ locale.allSources }}</option>
-            <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual }}</option>
-            <option value="SCHEDULE_AUTO">{{ locale.sources?.scheduleAuto }}</option>
-            <option value="SCHEDULE_REMOVE">{{ locale.sources?.scheduleRemove }}</option>
+            <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual || '手动核销' }}</option>
+            <option value="SCHEDULE_AUTO">{{ locale.sources?.scheduleAuto || '排期自动' }}</option>
+            <option value="SCHEDULE_REMOVE">{{ locale.sources?.scheduleRemove || '移除排期' }}</option>
           </select>
         </div>
         <div>
