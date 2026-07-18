@@ -17,7 +17,6 @@
 .markdown-body h1 { font-size: 1.3em; }
 .markdown-body h2 { font-size: 1.15em; }
 .markdown-body h3 { font-size: 1.05em; }
-.markdown-body h4 { font-size: 1em; }
 
 .markdown-body p { margin-bottom: 0.5em; }
 
@@ -100,7 +99,6 @@
 
 .markdown-body img {
   max-width: 100%;
-  height: auto;
   border-radius: 8px;
 }
 

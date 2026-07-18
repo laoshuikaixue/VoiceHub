@@ -563,7 +563,7 @@ const saveSuccess = ref(false)
 const editMode = ref('edit') // 投稿须知编辑/预览模式
 
 // 投稿须知 Markdown 预览
-const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
+const renderedPreview = computed(() => renderMarkdown(formData.value?.submissionGuidelines))
 
 // 样式类常量
 const inputClass =
@@ -573,7 +573,7 @@ const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
-3. **禁止投递含有违规内容的歌曲**
+3. 禁止投递含有违规内容的歌曲
 4. 点播的歌曲将由管理员进行审核
 5. 审核通过后将安排在播放时段播出
 6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
