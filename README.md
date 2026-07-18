@@ -1296,12 +1296,13 @@ VoiceHub/
 #### 配置目录 (app/)
 
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
+  - **`markdown.css`**: 投稿须知 Markdown 富文本共享样式
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
 - **`app/middleware/`**: 中间件，处理路由和认证
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
   - **`lyric/`**: 歌词处理工具集
-  - **`markdown.js`**: Markdown 安全渲染工具（marked + DOMPurify）
+  - **`markdown.js`**: Markdown 安全渲染工具（marked + isomorphic-dompurify）
 
 #### 服务端目录 (server/)
 

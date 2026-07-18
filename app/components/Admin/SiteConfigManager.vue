@@ -527,7 +527,7 @@
         />
         <div
           v-else
-          class="guidelines-preview w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-300 leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
+          class="guidelines-preview markdown-body w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-300 leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
           v-html="renderedPreview"
         />
       </section>
@@ -563,7 +563,7 @@ const saveSuccess = ref(false)
 const editMode = ref('edit') // 投稿须知编辑/预览模式
 
 // 投稿须知 Markdown 预览
-const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
+const renderedPreview = computed(() => renderMarkdown(formData.value?.submissionGuidelines))
 
 // 样式类常量
 const inputClass =
@@ -856,94 +856,5 @@ input::-webkit-inner-spin-button {
 
 input[type='number'] {
   -moz-appearance: textfield;
-}
-
-/* 投稿须知 Markdown 预览样式 */
-.guidelines-preview {
-  line-height: 1.7;
-}
-.guidelines-preview :deep(h1),
-.guidelines-preview :deep(h2),
-.guidelines-preview :deep(h3),
-.guidelines-preview :deep(h4) {
-  font-weight: 700;
-  margin: 0.8em 0 0.4em;
-  color: #e4e4e7;
-}
-.guidelines-preview :deep(h1) { font-size: 1.3em; }
-.guidelines-preview :deep(h2) { font-size: 1.15em; }
-.guidelines-preview :deep(h3) { font-size: 1.05em; }
-.guidelines-preview :deep(p) { margin-bottom: 0.5em; }
-.guidelines-preview :deep(ul),
-.guidelines-preview :deep(ol) {
-  padding-left: 1.5em;
-  margin-bottom: 0.5em;
-  list-style-position: outside;
-}
-.guidelines-preview :deep(ul) { list-style-type: disc; }
-.guidelines-preview :deep(ol) { list-style-type: decimal; }
-.guidelines-preview :deep(li) { margin-bottom: 0.25em; }
-.guidelines-preview :deep(a) {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-.guidelines-preview :deep(strong) {
-  font-weight: 700;
-  color: #e4e4e7;
-}
-.guidelines-preview :deep(em) { font-style: italic; }
-.guidelines-preview :deep(code) {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.15em 0.4em;
-  border-radius: 4px;
-  font-size: 0.9em;
-}
-.guidelines-preview :deep(pre) {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.75em 1em;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-/* 代码块内的 code 元素重置内联样式 */
-.guidelines-preview :deep(pre code) {
-  background: none;
-  padding: 0;
-  border-radius: 0;
-  font-size: inherit;
-  white-space: pre;
-}
-.guidelines-preview :deep(table) {
-  width: 100%;
-  border-collapse: collapse;
-}
-.guidelines-preview :deep(th),
-.guidelines-preview :deep(td) {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.4em 0.8em;
-}
-/* marked 通过 align 属性指定对齐，CSS 需显式支持 */
-.guidelines-preview :deep(th[align='left']),
-.guidelines-preview :deep(td[align='left']) { text-align: left; }
-.guidelines-preview :deep(th[align='center']),
-.guidelines-preview :deep(td[align='center']) { text-align: center; }
-.guidelines-preview :deep(th[align='right']),
-.guidelines-preview :deep(td[align='right']) { text-align: right; }
-.guidelines-preview :deep(hr) {
-  border-color: rgba(255, 255, 255, 0.08);
-  margin: 0.8em 0;
-}
-.guidelines-preview :deep(blockquote) {
-  border-left: 3px solid #3b82f6;
-  padding-left: 1em;
-  margin: 0.5em 0;
-  color: rgba(255, 255, 255, 0.5);
-}
-.guidelines-preview :deep(img) {
-  max-width: 100%;
-  border-radius: 8px;
-}
-.guidelines-preview :deep(del) {
-  text-decoration: line-through;
-  opacity: 0.6;
 }
 </style>

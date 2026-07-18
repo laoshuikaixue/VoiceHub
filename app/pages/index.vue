@@ -579,7 +579,7 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
                   v-html="renderedGuidelines"
                 />
                 <div
@@ -3637,94 +3637,5 @@ if (
 .login-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
-}
-
-/* 规则弹窗 Markdown 富文本样式 */
-.guidelines-rendered {
-  line-height: 1.7;
-}
-.guidelines-rendered :deep(h1),
-.guidelines-rendered :deep(h2),
-.guidelines-rendered :deep(h3),
-.guidelines-rendered :deep(h4) {
-  font-weight: 700;
-  margin: 0.8em 0 0.4em;
-  color: #e4e4e7;
-}
-.guidelines-rendered :deep(h1) { font-size: 1.3em; }
-.guidelines-rendered :deep(h2) { font-size: 1.15em; }
-.guidelines-rendered :deep(h3) { font-size: 1.05em; }
-.guidelines-rendered :deep(p) { margin-bottom: 0.5em; }
-.guidelines-rendered :deep(ul),
-.guidelines-rendered :deep(ol) {
-  padding-left: 1.5em;
-  margin-bottom: 0.5em;
-  list-style-position: outside;
-}
-.guidelines-rendered :deep(ul) { list-style-type: disc; }
-.guidelines-rendered :deep(ol) { list-style-type: decimal; }
-.guidelines-rendered :deep(li) { margin-bottom: 0.25em; }
-.guidelines-rendered :deep(a) {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-.guidelines-rendered :deep(strong) {
-  font-weight: 700;
-  color: #e4e4e7;
-}
-.guidelines-rendered :deep(em) { font-style: italic; }
-.guidelines-rendered :deep(code) {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.15em 0.4em;
-  border-radius: 4px;
-  font-size: 0.9em;
-}
-.guidelines-rendered :deep(pre) {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.75em 1em;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-/* 代码块内的 code 元素重置内联样式 */
-.guidelines-rendered :deep(pre code) {
-  background: none;
-  padding: 0;
-  border-radius: 0;
-  font-size: inherit;
-  white-space: pre;
-}
-.guidelines-rendered :deep(table) {
-  width: 100%;
-  border-collapse: collapse;
-}
-.guidelines-rendered :deep(th),
-.guidelines-rendered :deep(td) {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.4em 0.8em;
-}
-/* marked 通过 align 属性指定对齐，CSS 需显式支持 */
-.guidelines-rendered :deep(th[align='left']),
-.guidelines-rendered :deep(td[align='left']) { text-align: left; }
-.guidelines-rendered :deep(th[align='center']),
-.guidelines-rendered :deep(td[align='center']) { text-align: center; }
-.guidelines-rendered :deep(th[align='right']),
-.guidelines-rendered :deep(td[align='right']) { text-align: right; }
-.guidelines-rendered :deep(hr) {
-  border-color: rgba(255, 255, 255, 0.08);
-  margin: 0.8em 0;
-}
-.guidelines-rendered :deep(blockquote) {
-  border-left: 3px solid #3b82f6;
-  padding-left: 1em;
-  margin: 0.5em 0;
-  color: rgba(255, 255, 255, 0.5);
-}
-.guidelines-rendered :deep(img) {
-  max-width: 100%;
-  border-radius: 8px;
-}
-.guidelines-rendered :deep(del) {
-  text-decoration: line-through;
-  opacity: 0.6;
 }
 </style>

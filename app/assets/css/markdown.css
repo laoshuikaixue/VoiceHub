@@ -1,0 +1,108 @@
+/* 投稿须知 Markdown 富文本共享样式 */
+/* 使用 .markdown-body 类名，在投稿页面、规则弹窗、后台预览中复用 */
+
+.markdown-body {
+  line-height: 1.7;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-weight: 700;
+  margin: 0.8em 0 0.4em;
+  color: #e4e4e7;
+}
+
+.markdown-body h1 { font-size: 1.3em; }
+.markdown-body h2 { font-size: 1.15em; }
+.markdown-body h3 { font-size: 1.05em; }
+
+.markdown-body p { margin-bottom: 0.5em; }
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.5em;
+  list-style-position: outside;
+}
+
+.markdown-body ul { list-style-type: disc; }
+.markdown-body ol { list-style-type: decimal; }
+.markdown-body li { margin-bottom: 0.25em; }
+
+.markdown-body a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 700;
+  color: #e4e4e7;
+}
+
+.markdown-body em { font-style: italic; }
+
+.markdown-body code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.markdown-body pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75em 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+/* 代码块内的 code 重置内联样式 */
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: pre;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.4em 0.8em;
+}
+
+/* marked 通过 align 属性指定对齐，CSS 需显式支持 */
+.markdown-body th[align='left'],
+.markdown-body td[align='left'] { text-align: left; }
+.markdown-body th[align='center'],
+.markdown-body td[align='center'] { text-align: center; }
+.markdown-body th[align='right'],
+.markdown-body td[align='right'] { text-align: right; }
+
+.markdown-body hr {
+  border-color: rgba(255, 255, 255, 0.08);
+  margin: 0.8em 0;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid #3b82f6;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.markdown-body del {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
