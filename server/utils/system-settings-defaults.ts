@@ -29,6 +29,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 卡密点歌相关
   enableCardCodeRequests: false,
   requireCardCodeForRequests: false,
+  enableCardCodeLimitBypass: false,
   enableRequestTimeLimitation: false,
   forceBlockAllRequests: false,
   smtpEnabled: false,
@@ -69,6 +70,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'enableSubmissionRemarks',
   'enableCardCodeRequests',
   'requireCardCodeForRequests',
+  'enableCardCodeLimitBypass',
   'enableRequestTimeLimitation',
   'forceBlockAllRequests',
   'smtpEnabled',

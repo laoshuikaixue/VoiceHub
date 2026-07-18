@@ -644,7 +644,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 import logo from '~~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
@@ -658,6 +658,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 // 获取运行时配置
 const config = useRuntimeConfig()
 const router = useRouter()
+const route = useRoute()
 
 // 站点配置
 const {
@@ -1152,6 +1153,13 @@ if (import.meta.client) {
 // 在组件挂载后初始化认证和歌曲（只会在客户端执行）
 onMounted(async () => {
   const bootStartedAt = Date.now()
+
+  // 支持 ?tab= 查询参数，用于登录后跳回指定 tab
+  const queryTab = route.query.tab
+  const tabFromQuery = Array.isArray(queryTab) ? queryTab[0] : queryTab
+  if (tabFromQuery && tabOrder.includes(tabFromQuery)) {
+    activeTab.value = tabFromQuery
+  }
 
   try {
     if (isFirstVisit) {

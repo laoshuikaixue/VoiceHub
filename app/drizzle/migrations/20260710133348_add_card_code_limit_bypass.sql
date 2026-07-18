@@ -1,0 +1,1 @@
+ALTER TABLE "SystemSettings" ADD COLUMN "enableCardCodeLimitBypass" boolean DEFAULT false NOT NULL;

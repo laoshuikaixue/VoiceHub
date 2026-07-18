@@ -27,6 +27,7 @@
 import { Shield } from '@lucide/vue'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
+const route = useRoute()
 
 onMounted(async () => {
   await refreshSiteConfig()
@@ -59,7 +60,14 @@ const providerButtonClass = (key: string) => {
 }
 
 const loginWith = (provider: string) => {
+  const queryRedirect = route.query.redirect
+  const redirect = Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect
+  const safeRedirect =
+    redirect?.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\')
+      ? redirect
+      : null
+  const redirectQuery = safeRedirect ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''
   // 外部导航到 API 端点
-  navigateTo(`/api/auth/${provider}`, { external: true })
+  navigateTo(`/api/auth/${provider}${redirectQuery}`, { external: true })
 }
 </script>

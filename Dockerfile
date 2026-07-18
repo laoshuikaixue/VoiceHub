@@ -13,12 +13,13 @@ FROM builder-${TARGETARCH} AS builder
 
 WORKDIR /app
 
-# 复制依赖文件和 scripts 目录
+# 依赖安装阶段只复制 postinstall 所需脚本，避免其他脚本变更使依赖缓存失效
 COPY package.json pnpm-lock.yaml ./
-COPY scripts ./scripts
+COPY scripts/postinstall.js ./scripts/postinstall.js
 
 # 安装所有依赖
 RUN set -eux; \
+    export CI=true; \
     npm install -g pnpm@10.29.3; \
     pnpm config set fetch-retries 5; \
     pnpm config set fetch-retry-mintimeout 20000; \
