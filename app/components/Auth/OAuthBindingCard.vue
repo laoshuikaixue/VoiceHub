@@ -188,6 +188,7 @@ import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import {
+  getWebAuthnErrorMessage,
   signalUnknownWebAuthnCredential,
   startWebAuthnRegistration
 } from '~/utils/webauthn'
@@ -206,10 +207,6 @@ const callLocale = (key, fallback = '', ...args) => {
     )
   }
   return value || fallback
-}
-const getWebAuthnErrorMessage = (apiError, fallback) => {
-  const localizedMessage = apiError?.code ? locale.value?.[apiError.code] : ''
-  return localizedMessage || apiError?.data?.message || fallback
 }
 const identities = ref([])
 const loading = ref(true)
@@ -395,7 +392,7 @@ const handleWebAuthnRegister = async () => {
     await fetchIdentities()
   } catch (e) {
     console.error('WebAuthn 注册错误:', e)
-    const message = getWebAuthnErrorMessage(e, locale.value.addDeviceFailed)
+    const message = getWebAuthnErrorMessage(e, locale.value, locale.value.addDeviceFailed)
     showToast(message, 'error')
   } finally {
     actionLoading.value = false

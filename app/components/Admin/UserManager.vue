@@ -1592,7 +1592,7 @@ const getRoleName = (role) => {
 }
 const getStatusName = (status) => locale.value?.statuses?.[status] || status
 const getErrorDetail = (error) =>
-  error?.data?.message || error?.message || error?.statusMessage || locale.value?.detail?.unknown || ''
+  error?.data?.message || error?.message || error?.statusMessage || locale.value?.detail?.unknown || '未知错误'
 
 // 响应式数据
 const loading = ref(false)
@@ -1614,17 +1614,17 @@ const treeError = ref('')
 const expandedTreeNodes = ref(new Set())
 const treeFilterLabel = ref('')
 const UNSET_FILTER_VALUE = '__UNSET__'
-const unsetGradeLabel = computed(() => locale.value?.organization?.unsetGrade || '')
-const unsetClassLabel = computed(() => locale.value?.organization?.unsetClass || '')
+const unsetGradeLabel = computed(() => locale.value?.organization?.unsetGrade || '未设置年级')
+const unsetClassLabel = computed(() => locale.value?.organization?.unsetClass || '未设置班级')
 
 const sortOptions = computed(() => [
-  { label: locale.value?.sortOptions?.default || '', value: 'id-asc' },
-  { label: locale.value?.sortOptions?.nameAsc || '', value: 'name-asc' },
-  { label: locale.value?.sortOptions?.nameDesc || '', value: 'name-desc' },
-  { label: locale.value?.sortOptions?.lastLoginDesc || '', value: 'lastLogin-desc' },
-  { label: locale.value?.sortOptions?.lastLoginAsc || '', value: 'lastLogin-asc' },
-  { label: locale.value?.sortOptions?.createdAtDesc || '', value: 'createdAt-desc' },
-  { label: locale.value?.sortOptions?.createdAtAsc || '', value: 'createdAt-asc' }
+  { label: locale.value?.sortOptions?.default || '默认排序', value: 'id-asc' },
+  { label: locale.value?.sortOptions?.nameAsc || '姓名升序', value: 'name-asc' },
+  { label: locale.value?.sortOptions?.nameDesc || '姓名降序', value: 'name-desc' },
+  { label: locale.value?.sortOptions?.lastLoginDesc || '最近登录优先', value: 'lastLogin-desc' },
+  { label: locale.value?.sortOptions?.lastLoginAsc || '最早登录优先', value: 'lastLogin-asc' },
+  { label: locale.value?.sortOptions?.createdAtDesc || '最新创建优先', value: 'createdAt-desc' },
+  { label: locale.value?.sortOptions?.createdAtAsc || '最早创建优先', value: 'createdAt-asc' }
 ])
 
 const currentSort = computed({
@@ -1645,10 +1645,10 @@ const allRoles = computed(() => [
 ])
 
 // 筛选选项
-const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '' }, ...allRoles.value])
+const roleFilterOptions = computed(() => [{ name: '', displayName: locale.value?.allRoles || '全部角色' }, ...allRoles.value])
 
 const statusFilterOptions = computed(() => [
-  { label: locale.value?.allStatus || '', value: '' },
+  { label: locale.value?.allStatus || '全部状态', value: '' },
   { label: getStatusName('active'), value: 'active' },
   { label: getStatusName('withdrawn'), value: 'withdrawn' },
   { label: getStatusName('graduate'), value: 'graduate' }
@@ -1756,7 +1756,7 @@ const availableRoles = computed(() => {
 })
 
 const getUserDisplayName = (user) => {
-  return user?.name || user?.username || locale.value?.organization?.unnamedUser || ''
+  return user?.name || user?.username || locale.value?.organization?.unnamedUser || '未命名用户'
 }
 
 const getUserInitial = (user) => {
@@ -1821,8 +1821,8 @@ const getStageStatus = (stageLabel) => {
 }
 
 const getStageLabelByStatus = (status) => {
-  if (status === 'graduate') return locale.value?.organization?.stages?.graduate || ''
-  if (status === 'withdrawn') return locale.value?.organization?.stages?.withdrawn || ''
+  if (status === 'graduate') return locale.value?.organization?.stages?.graduate || '已毕业'
+  if (status === 'withdrawn') return locale.value?.organization?.stages?.withdrawn || '已退学'
   if (status === 'active' && gradeFilter.value) {
     return getStageLabel({ status: 'active', grade: gradeFilter.value })
   }

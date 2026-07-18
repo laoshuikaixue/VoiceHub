@@ -6,7 +6,6 @@ import {
   songCollaborators,
   songReplayRequests,
   songs,
-  systemSettings,
   users,
   votes
 } from '~/drizzle/schema'
@@ -15,6 +14,7 @@ import { cacheService } from '~~/server/services/cacheService'
 import { formatDateTime } from '~/utils/timeUtils'
 import { maskSongsInfo, MaskableSong, MaskableUser } from '~~/server/utils/studentMask'
 import crypto from 'crypto'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 interface SongResponse {
   id: number
@@ -79,11 +79,7 @@ export default defineEventHandler(async (event) => {
     })
 
     // 获取系统设置
-    const systemSettingsData = await db
-      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
-      .from(systemSettings)
-      .limit(1)
-      .then((result) => result[0])
+    const systemSettingsData = await getSystemSettingsCached()
     const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
 
     // 构建缓存键

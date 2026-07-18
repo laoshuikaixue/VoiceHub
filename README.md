@@ -1198,12 +1198,13 @@ VoiceHub/
 │   │   ├── api-cors.ts     # API跨域中间件
 │   │   └── auth.ts         # 认证中间件
 │   ├── plugins/            # 服务端插件
-│   │   └── error-handler.ts # 错误处理插件
+│   │   ├── error-handler.ts # 错误处理插件
+│   │   └── system-settings-cache.ts # 系统设置启动预热插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
-│   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
+│   │   ├── cacheService.ts # 缓存服务（Redis与进程内存缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── securityService.ts # 安全服务
@@ -1211,6 +1212,7 @@ VoiceHub/
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── auth-route-policy.ts # 认证路由与强制改密访问策略
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── cache-helpers.ts # 缓存辅助工具
@@ -1248,6 +1250,9 @@ VoiceHub/
 │   └── tsconfig.json       # 服务端TypeScript配置
 ├── shared/                # 客户端与服务端共享模块
 │   └── auth-constants.ts   # 管理员角色常量与判定函数
+├── tests/                 # 单元测试
+│   └── server/            # 服务端单元测试
+│       └── auth-route-policy.test.ts # 强制改密路由策略测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义

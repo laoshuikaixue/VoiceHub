@@ -1592,9 +1592,9 @@ const isDesktop = ref(true)
 
 // 方法
 const formatDate = (dateString) => {
-  if (!dateString) return locale.value.timeAgo.never || ''
+  if (!dateString) return locale.value?.timeAgo?.never || '从未'
   const date = new Date(dateString)
-  if (Number.isNaN(date.getTime())) return locale.value.timeAgo.never || ''
+  if (Number.isNaN(date.getTime())) return locale.value?.timeAgo?.never || '从未'
   const now = getSyncedDate()
   const diff = now - date
 

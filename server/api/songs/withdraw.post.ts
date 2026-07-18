@@ -3,7 +3,6 @@ import { cacheService } from '~~/server/services/cacheService'
 import {
   schedules,
   songs,
-  systemSettings,
   votes,
   songCollaborators,
   collaborationLogs,
@@ -16,6 +15,7 @@ import {
   type LimitType
 } from '~~/server/utils/submissionLimit'
 import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeLifecycleService'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -121,8 +121,7 @@ export default defineEventHandler(async (event) => {
 
   // 如果是主投稿人撤回（删除歌曲）
   // 获取系统设置以检查限制类型
-  const settingsResult = await db.select().from(systemSettings).limit(1)
-  const settings = settingsResult[0]
+  const settings = await getSystemSettingsCached()
 
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false

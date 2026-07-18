@@ -2906,6 +2906,8 @@ export const admin = {
       { label: '重置所有表 (All)', value: 'all' },
       { label: '歌曲表 (Song)', value: 'Song' },
       { label: '用户表 (User)', value: 'User' },
+      { label: '用户身份表 (UserIdentity)', value: 'UserIdentity' },
+      { label: '用户状态日志表 (UserStatusLog)', value: 'UserStatusLog' },
       { label: '投票表 (Vote)', value: 'Vote' },
       { label: '排期表 (Schedule)', value: 'Schedule' },
       { label: '通知表 (Notification)', value: 'Notification' },
@@ -2913,7 +2915,10 @@ export const admin = {
       { label: '播放时段表 (PlayTime)', value: 'PlayTime' },
       { label: '学期表 (Semester)', value: 'Semester' },
       { label: '系统设置表 (SystemSettings)', value: 'SystemSettings' },
-      { label: '歌曲黑名单表 (SongBlacklist)', value: 'SongBlacklist' }
+      { label: '歌曲黑名单表 (SongBlacklist)', value: 'SongBlacklist' },
+      { label: '歌曲重播申请表 (SongReplayRequest)', value: 'SongReplayRequest' },
+      { label: '投稿时段表 (RequestTime)', value: 'RequestTime' },
+      { label: '邮件模板表 (EmailTemplate)', value: 'EmailTemplate' }
     ],
     progress: {
       readingFile: '正在读取文件...',

@@ -1,4 +1,5 @@
-import { and, db, eq, songs, systemSettings, songReplayRequests, semesters } from '~/drizzle/db'
+import { and, db, eq, songs, songReplayRequests, semesters } from '~/drizzle/db'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 1. 检查用户认证
@@ -16,8 +17,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 3. 检查系统设置
-  const settingsResult = await db.select().from(systemSettings).limit(1)
-  const settings = settingsResult[0]
+  const settings = await getSystemSettingsCached()
   if (!settings?.enableReplayRequests) {
     throw createError({ statusCode: 403, message: '重播申请功能未开启' })
   }

@@ -210,7 +210,7 @@ import { Server, Save, Check, Send, CheckCircle, XCircle, RotateCw } from '@luci
 const { showToast: showNotification } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.smtpManager || {})
-const getLocaleMessage = (key) => locale.value?.[key] || ''
+const getLocaleMessage = (key) => locale.value?.[key] || `SMTP 配置：${key}`
 const getOptionText = (value, fallback) => {
   if (typeof value === 'function') return value() || fallback
   if (typeof value === 'string') return value || fallback

@@ -159,7 +159,7 @@ const formatLocale = (value, ...args) => {
   }
   return ''
 }
-const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value.searchPlaceholder || '')
+const resolvedSearchPlaceholder = computed(() => props.searchPlaceholder || locale.value?.searchPlaceholder || '搜索...')
 
 const hasActiveFilters = computed(() => {
   return (

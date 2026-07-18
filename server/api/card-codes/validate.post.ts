@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
-import { cardCodes, systemSettings } from '~/drizzle/schema'
+import { cardCodes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 const createCardCodeError = (statusCode: number, code: string, message: string) =>
   createError({
@@ -23,8 +24,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
-  const settingsRows = await db.select().from(systemSettings).limit(1)
-  const settings = settingsRows[0]
+  const settings = await getSystemSettingsCached()
   const enabled = !!(settings?.enableCardCodeRequests || settings?.requireCardCodeForRequests)
   if (!enabled && !isAdmin) {
     throw createCardCodeError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')

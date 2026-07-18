@@ -342,7 +342,11 @@ import {
   browserSupportsWebAuthnAutofill,
   WebAuthnAbortService
 } from '@simplewebauthn/browser'
-import { signalUnknownWebAuthnCredential, startWebAuthnAuthentication } from '~/utils/webauthn'
+import {
+  getWebAuthnErrorMessage,
+  signalUnknownWebAuthnCredential,
+  startWebAuthnAuthentication
+} from '~/utils/webauthn'
 import { Fingerprint } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -361,11 +365,6 @@ const formatLocale = (value, ...args) => {
     )
   }
   return ''
-}
-
-const getWebAuthnErrorMessage = (apiError, fallback) => {
-  const localizedMessage = apiError?.code ? locale.value?.[apiError.code] : ''
-  return localizedMessage || apiError?.data?.message || fallback
 }
 
 const route = useRoute()
@@ -689,7 +688,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
     if (!showErrors && !credential) return
 
     console.error('WebAuthn 登录错误:', e)
-    const message = getWebAuthnErrorMessage(e, locale.value.passkeyFailed)
+    const message = getWebAuthnErrorMessage(e, locale.value, locale.value.passkeyFailed)
 
     if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
       const signaled = await signalUnknownWebAuthnCredential({
@@ -700,7 +699,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
         ? locale.value.passkeyCleanupNotified
         : locale.value.passkeyCleanupRequired
     } else {
-      error.value = getWebAuthnErrorMessage(e, 'Passkey 登录失败')
+      error.value = message
     }
   }
 }

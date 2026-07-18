@@ -1224,7 +1224,7 @@ const reloadPlaylists = async () => {
     } else {
       if (window.$showNotification) {
         const text = message
-          ? callLocale('playlistLoadFailedWithMessage', locale.value.playlistLoadFailed || '', message)
+          ? callLocale('playlistLoadFailedWithMessage', locale.value?.playlistLoadFailed || '播放列表加载失败', message)
           : locale.value.playlistLoadFailed
         window.$showNotification(text, 'error')
       }
@@ -1262,7 +1262,7 @@ const handleCreatePlaylist = async () => {
     } else {
       if (window.$showNotification) {
         const text = message
-          ? callLocale('playlistCreateFailedWithMessage', locale.value.playlistCreateFailed || '', message)
+          ? callLocale('playlistCreateFailedWithMessage', locale.value?.playlistCreateFailed || '播放列表创建失败', message)
           : locale.value.playlistCreateFailed
         window.$showNotification(text, 'error')
       }
@@ -1307,7 +1307,7 @@ const handleDeletePlaylist = async () => {
         } else {
           if (window.$showNotification) {
             const text = message
-              ? callLocale('playlistDeleteFailedWithMessage', locale.value.playlistDeleteFailed || '', message)
+              ? callLocale('playlistDeleteFailedWithMessage', locale.value?.playlistDeleteFailed || '播放列表删除失败', message)
               : locale.value.playlistDeleteFailed
             window.$showNotification(text, 'error')
           }
@@ -1403,7 +1403,7 @@ const handleAddSongsToPlaylist = async () => {
     } else {
       if (window.$showNotification) {
         const text = message
-          ? callLocale('playlistAddFailedWithMessage', locale.value.playlistAddFailed || '', message)
+          ? callLocale('playlistAddFailedWithMessage', locale.value?.playlistAddFailed || '添加到播放列表失败', message)
           : locale.value.playlistAddFailed
         window.$showNotification(text, 'error')
       }

@@ -7,7 +7,6 @@ import {
   songCollaborators,
   songReplayRequests,
   songs,
-  systemSettings,
   users,
   votes
 } from '~/drizzle/schema'
@@ -18,6 +17,7 @@ import { formatDateTime } from '~/utils/timeUtils'
 import { maskPublicScheduleData, PublicScheduleItem } from '../../utils/studentMask'
 
 import { verifyUserAuth } from '../../utils/auth'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -50,11 +50,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取系统设置
-    const systemSettingsData = await db
-      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
-      .from(systemSettings)
-      .limit(1)
-      .then((result) => result[0])
+    const systemSettingsData = await getSystemSettingsCached()
     const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
 
     // 初始化缓存服务

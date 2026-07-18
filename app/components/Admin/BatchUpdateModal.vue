@@ -838,12 +838,12 @@ const excelColumnKeys = computed(() => ({
 }))
 
 const statusOptions = computed(() => [
-  { label: locale.value?.statusOptions?.active || '', value: 'active' },
-  { label: locale.value?.statusOptions?.graduate || '', value: 'graduate' },
-  { label: locale.value?.statusOptions?.withdrawn || '', value: 'withdrawn' }
+  { label: locale.value?.statusOptions?.active || '在校', value: 'active' },
+  { label: locale.value?.statusOptions?.graduate || '已毕业', value: 'graduate' },
+  { label: locale.value?.statusOptions?.withdrawn || '已退学', value: 'withdrawn' }
 ])
 const sourceStatusOptions = computed(() => [
-  { label: locale.value?.statusOptions?.all || '', value: '' },
+  { label: locale.value?.statusOptions?.all || '全部状态', value: '' },
   ...statusOptions.value
 ])
 

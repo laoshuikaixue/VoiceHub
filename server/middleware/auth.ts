@@ -5,18 +5,12 @@ import { isUserBlocked, getUserBlockRemainingTime } from '../services/securitySe
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
 import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
+import {
+  isAllowedDuringPasswordChange,
+  isPublicApiPath,
+  shouldBypassPublicApiAuthentication
+} from '../utils/auth-route-policy'
 import { isAdminRole } from '#shared/auth-constants'
-
-// 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
-// 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
-// 不会到达此处的强制改密拦截逻辑，因此无需在此白名单中重复。
-// 不应使用宽泛的前缀匹配（如 /api/auth/2fa/），以防未来新增的 2FA 管理接口被意外放行。
-const PASSWORD_CHANGE_ALLOWED_PATHS = [
-  '/api/auth/verify',
-  '/api/auth/logout',
-  '/api/auth/change-password',
-  '/api/auth/set-initial-password'
-]
 
 // 仅对"页面 HTML 渲染请求"做软认证：排除 Nuxt 内部路径、构建产物、静态资源等
 const NON_PAGE_PREFIXES = [
@@ -73,40 +67,6 @@ export default defineEventHandler(async (event) => {
     return
   }
 
-  // 公共API路径
-  const publicApiPaths = [
-    '/api/auth/login',
-    '/api/auth/bind', // 账号绑定
-    '/api/auth/oauth-register',
-    '/api/auth/2fa/verify',
-    '/api/auth/2fa/send-email',
-    '/api/auth/forgot-password', // 找回密码
-    '/api/auth/reset-password', // 重置密码
-    '/api/auth/captcha', // 图形验证码
-    '/api/semesters/current',
-    '/api/play-times',
-    '/api/schedules/public',
-    '/api/songs/count',
-    '/api/songs/public',
-    '/api/site-config',
-    '/api/proxy/', // 代理API路径，用于图片代理等功能
-    '/api/bilibili/', // 哔哩哔哩相关API
-    '/api/api-enhanced/', // 网易云音乐API代理路径
-    '/api/native-api/', // Native Music 集成API
-    '/api/system/location', // 系统位置检测API
-    '/api/open/', // 开放API路径，由api-auth中间件处理认证
-    '/api/auth/webauthn/login', // WebAuthn 登录接口
-    '/api/music/resolve-url', // 音乐播放链接解析
-    '/api/music/state', // 音乐状态同步
-    '/api/music/websocket', // WebSocket 连接
-    '/api/sys/time' // 服务器时间同步
-  ]
-
-  // 公共路径跳过认证检查。页面请求始终走软认证流程，让 SSR 能拿到登录态。
-  if (isApiRequest && publicApiPaths.some((path) => pathname.startsWith(path))) {
-    return
-  }
-
   // 动态判断 OAuth 路径
   // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
   // 但排除已知的受保护/特定 Auth 端点
@@ -134,6 +94,11 @@ export default defineEventHandler(async (event) => {
   if (!token) {
     token = getCookie(event, 'auth-token') || null
   }
+
+  const isPublicApi = isApiRequest && isPublicApiPath(pathname)
+
+  // 公共接口仅在匿名访问时直接放行；携带登录态时继续检查强制改密状态。
+  if (isApiRequest && shouldBypassPublicApiAuthentication(pathname, Boolean(token))) return
 
   // 可选认证接口缺少 token 时按访客放行，由 handler 根据 event.context.user 自行降级。
   // 受保护路由缺少 token 时返回 401；页面 SSR 请求按未登录访客静默放行。
@@ -292,9 +257,7 @@ export default defineEventHandler(async (event) => {
 
     // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
     // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口。
-    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
-
-    if (!isAllowedDuringPasswordChange && requirePasswordChange) {
+    if (!isAllowedDuringPasswordChange(pathname) && requirePasswordChange) {
       return sendError(
         event,
         createError({
@@ -321,6 +284,12 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     // 页面 SSR：token 解析异常时静默放行（按访客处理），避免 SSR 直接 500
     if (isPageRequest) return
+
+    // 公共接口携带过期或损坏的登录态时仍按匿名请求处理，避免破坏其公共可用性。
+    if (isPublicApi) {
+      delete event.context.user
+      return
+    }
 
     // 处理JWT验证错误
     return sendError(

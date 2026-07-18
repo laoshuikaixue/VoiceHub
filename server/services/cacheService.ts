@@ -29,6 +29,8 @@ const refreshLocks = new Map<string, Promise<any>>()
 class CacheService {
   // 单例实例
   private static instance: CacheService | null = null
+  private systemSettingsMemoryCache: any | null = null
+  private systemSettingsMemoryExpiresAt = 0
 
   // 获取单例实例
   static getInstance(): CacheService {
@@ -318,12 +320,23 @@ class CacheService {
 
   // 获取系统设置缓存
   async getSystemSettings(): Promise<any | null> {
+    if (this.systemSettingsMemoryCache && Date.now() < this.systemSettingsMemoryExpiresAt) {
+      return this.systemSettingsMemoryCache
+    }
+
     const key = this.generateKey('system', 'settings')
-    return await this.getCache<any>(key)
+    const cached = await this.getCache<any>(key)
+    if (cached) {
+      this.systemSettingsMemoryCache = cached
+      this.systemSettingsMemoryExpiresAt = Date.now() + CACHE_TTL.SYSTEM_SETTINGS * 1000
+    }
+    return cached
   }
 
   // 设置系统设置缓存
   async setSystemSettings(settings: any): Promise<void> {
+    this.systemSettingsMemoryCache = settings
+    this.systemSettingsMemoryExpiresAt = Date.now() + CACHE_TTL.SYSTEM_SETTINGS * 1000
     const key = this.generateKey('system', 'settings')
     await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
     if (isRedisReady()) {
@@ -333,6 +346,8 @@ class CacheService {
 
   // 清除系统设置缓存
   async clearSystemSettingsCache(): Promise<void> {
+    this.systemSettingsMemoryCache = null
+    this.systemSettingsMemoryExpiresAt = 0
     const pattern = this.generateKey('system', '*')
     await this.deleteCachePattern(pattern)
     console.log('[Cache] 系统设置缓存已清除')

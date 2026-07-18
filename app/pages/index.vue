@@ -1058,7 +1058,7 @@ const formatNotificationTime = (timeString) => {
 
   // 小于1分钟
   if (diff < 60000) {
-    return locale.value.time.justNow || ''
+    return locale.value?.time?.justNow || '刚刚'
   }
 
   // 小于1小时
@@ -1124,7 +1124,7 @@ const getCurrentDate = () => {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   const date = now.getDate()
-  const weekDay = (locale.value.time.weekdays || [])[now.getDay()] || ''
+  const weekDay = (locale.value?.time?.weekdays || ['周日', '周一', '周二', '周三', '周四', '周五', '周六'])[now.getDay()] || '今日'
 
   return formatLocaleValue(locale.value.time.dateFormat, year, month, date, weekDay)
 }
