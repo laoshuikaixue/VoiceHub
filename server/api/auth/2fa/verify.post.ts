@@ -6,7 +6,6 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { delStore, getStore, incrStore } from '~~/server/utils/captchaStore'
-import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 import otplib from 'otplib'
 
 const { authenticator } = otplib
@@ -176,9 +175,6 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'pre-auth-token')
   deleteCookie(event, 'binding-token')
 
-  // 2FA 登录必须与普通登录使用同一判定，避免遗漏全局首次登录改密设置。
-  const requirePasswordChange = await resolveRequirePasswordChange(user)
-
   return {
       success: true,
       user: {
@@ -188,12 +184,7 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        email: user.email,
-        emailVerified: user.emailVerified,
-        forcePasswordChange: user.forcePasswordChange,
-        passwordChangedAt: user.passwordChangedAt,
-        requirePasswordChange,
-        hasSetPassword: !!user.passwordChangedAt,
+        needsPasswordChange: !user.passwordChangedAt,
         has2FA: true
       }
   }

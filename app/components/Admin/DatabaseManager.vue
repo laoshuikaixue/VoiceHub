@@ -216,9 +216,9 @@
                     restoreForm.mode === 'merge' ? 'text-emerald-400' : 'text-zinc-500'
                   ]"
                 >
-                  {{ locale.restoreModes.merge.title }}
+                  {{ locale.restoreModes?.merge?.title ?? '合并恢复' }}
                 </h6>
-                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes.merge.desc }}</p>
+                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}</p>
               </button>
               <button
                 :class="[
@@ -235,9 +235,9 @@
                     restoreForm.mode === 'replace' ? 'text-emerald-400' : 'text-zinc-500'
                   ]"
                 >
-                  {{ locale.restoreModes.replace.title }}
+                  {{ locale.restoreModes?.replace?.title ?? '覆盖恢复' }}
                 </h6>
-                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes.replace.desc }}</p>
+                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}</p>
               </button>
             </div>
           </div>
@@ -458,7 +458,7 @@ const defaultTableOptions = [
   { label: '系统设置表', value: 'SystemSettings' },
   { label: '歌曲黑名单表', value: 'SongBlacklist' }
 ]
-const getMessage = (key) => locale.value?.messages?.[key] || ''
+const getMessage = (key) => locale.value?.messages?.[key] ?? `数据库操作：${key}`
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 const formatString = (value, args) => {
   if (typeof value !== 'string') return value
@@ -474,7 +474,7 @@ const getErrorMessage = (key, ...args) => {
 const getProgressMessage = (key, ...args) => {
   const message = locale.value?.progress?.[key]
   if (typeof message === 'function') return message(...args)
-  return formatString(message, args) || ''
+  return formatString(message, args) || `数据库操作进行中：${key}`
 }
 
 // 状态
@@ -493,35 +493,35 @@ const CONFIRM_CODE = 'CONFIRM-DATABASE-RESET-OPERATION'
 const cards = computed(() => [
   {
     id: 'backup',
-    title: locale.value?.cards?.backup?.title || '',
-    desc: locale.value?.cards?.backup?.desc || '',
+    title: locale.value?.cards?.backup?.title ?? '备份数据库',
+    desc: locale.value?.cards?.backup?.desc ?? '导出系统数据备份文件',
     icon: Download,
     color: 'blue',
-    btnText: locale.value?.cards?.backup?.button || ''
+    btnText: locale.value?.cards?.backup?.button ?? '创建备份'
   },
   {
     id: 'restore',
-    title: locale.value?.cards?.restore?.title || '',
-    desc: locale.value?.cards?.restore?.desc || '',
+    title: locale.value?.cards?.restore?.title ?? '恢复数据库',
+    desc: locale.value?.cards?.restore?.desc ?? '从备份文件恢复系统数据',
     icon: Upload,
     color: 'emerald',
-    btnText: locale.value?.cards?.restore?.button || ''
+    btnText: locale.value?.cards?.restore?.button ?? '恢复备份'
   },
   {
     id: 'reset-seq',
-    title: locale.value?.cards?.resetSeq?.title || '',
-    desc: locale.value?.cards?.resetSeq?.desc || '',
+    title: locale.value?.cards?.resetSeq?.title ?? '修复数据序列',
+    desc: locale.value?.cards?.resetSeq?.desc ?? '修复数据表自增序列',
     icon: RotateCw,
     color: 'amber',
-    btnText: locale.value?.cards?.resetSeq?.button || ''
+    btnText: locale.value?.cards?.resetSeq?.button ?? '修复序列'
   },
   {
     id: 'reset-db',
-    title: locale.value?.cards?.resetDb?.title || '',
-    desc: locale.value?.cards?.resetDb?.desc || '',
+    title: locale.value?.cards?.resetDb?.title ?? '重置数据库',
+    desc: locale.value?.cards?.resetDb?.desc ?? '清空除管理员外的系统数据',
     icon: Trash2,
     color: 'rose',
-    btnText: locale.value?.cards?.resetDb?.button || '',
+    btnText: locale.value?.cards?.resetDb?.button ?? '重置数据库',
     isDanger: true
   }
 ])
@@ -530,18 +530,18 @@ const cards = computed(() => [
 const backupOptions = computed(() => [
   {
     key: 'includeSongs',
-    label: locale.value?.backupOptions?.songs?.label || '',
-    desc: locale.value?.backupOptions?.songs?.desc || ''
+    label: locale.value?.backupOptions?.songs?.label ?? '歌曲与排期数据',
+    desc: locale.value?.backupOptions?.songs?.desc ?? '包含歌曲、投稿及排期数据'
   },
   {
     key: 'includeSystemData',
-    label: locale.value?.backupOptions?.system?.label || '',
-    desc: locale.value?.backupOptions?.system?.desc || ''
+    label: locale.value?.backupOptions?.system?.label ?? '系统配置',
+    desc: locale.value?.backupOptions?.system?.desc ?? '包含站点设置和全局参数'
   },
   {
     key: 'includeUsers',
-    label: locale.value?.backupOptions?.users?.label || '',
-    desc: locale.value?.backupOptions?.users?.desc || ''
+    label: locale.value?.backupOptions?.users?.label ?? '用户账户',
+    desc: locale.value?.backupOptions?.users?.desc ?? '包含用户账户和权限数据'
   }
 ])
 

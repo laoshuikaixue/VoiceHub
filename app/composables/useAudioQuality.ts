@@ -111,7 +111,7 @@ export function useAudioQuality() {
     return (QUALITY_OPTIONS[platform] || []).map((option) => ({
       ...option,
       label: locale.value?.options?.[option.key]?.label || option.key,
-      description: locale.value?.options?.[option.key]?.description || ''
+      description: locale.value?.options?.[option.key]?.description || '使用推荐音质设置'
     }))
   }
 

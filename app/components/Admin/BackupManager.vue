@@ -375,7 +375,7 @@ const createBackup = async () => {
       } else {
         console.error('无效的下载模式或缺少数据')
         if (window.$showNotification) {
-          window.$showNotification(locale.value?.invalidResponse || '', 'error')
+          window.$showNotification(locale.value?.invalidResponse || '服务器返回了无效响应', 'error')
         }
         showCreateModal.value = false
         return
@@ -383,7 +383,7 @@ const createBackup = async () => {
     } else {
       console.error('服务器响应格式错误:', response)
       if (window.$showNotification) {
-        window.$showNotification(locale.value?.serverResponseInvalid || '', 'error')
+        window.$showNotification(locale.value?.serverResponseInvalid || '服务器响应格式无效', 'error')
       }
     }
 
@@ -413,7 +413,7 @@ const parseBackupSuperAdmin = async (file) => {
     hasSuperAdminInBackup.value = false
     restoreForm.value.overwriteSuperAdmin = false
     if (window.$showNotification) {
-      window.$showNotification(locale.value?.parseFailed || '', 'error')
+      window.$showNotification(locale.value?.parseFailed || '备份文件解析失败', 'error')
     }
     console.error('解析备份文件失败:', error)
   }
@@ -488,7 +488,7 @@ const uploadFile = async () => {
 
         // 显示即将重定向的通知
         setTimeout(() => {
-          window.$showNotification(locale.value?.restoreCompleteRedirect || '', 'info')
+          window.$showNotification(locale.value?.restoreCompleteRedirect || '恢复完成，即将刷新页面', 'info')
         }, 2000)
       }
 

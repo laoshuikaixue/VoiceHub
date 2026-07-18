@@ -1,7 +1,6 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
-import { isAdminRole } from '~/utils/auth-constants'
 
 interface LoginResponse {
   success: boolean
@@ -18,8 +17,6 @@ export const useAuth = () => {
   const isAuthenticated = useState<boolean>('isAuthenticated', () => false)
   const isAdmin = useState<boolean>('isAdmin', () => false)
   const loading = useState<boolean>('loading', () => false)
-  // 客户端是否已完成一次认证状态探测，避免未登录访客每次路由切换都重复请求 /api/auth/verify
-  const authChecked = useState<boolean>('authChecked', () => false)
 
   const clearAuthState = () => {
     user.value = null
@@ -32,31 +29,18 @@ export const useAuth = () => {
     token.value = 'cookie-based'
     user.value = loggedInUser
     isAuthenticated.value = true
-    isAdmin.value = isAdminRole(loggedInUser.role)
+    isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
   }
 
-  /** 设置完整 profile（login / verify2FA 返回的完整用户数据） */
-  const setFullAuthState = (loggedInUser: User) => {
-    setAuthState({ ...loggedInUser, _isFullProfile: true })
-  }
-
-  const initAuth = async (options: { force?: boolean } = {}) => {
-    const force = options.force === true
-
+  const initAuth = async () => {
     // 客户端执行
     if (typeof window === 'undefined' || import.meta.server) {
       return null
     }
 
-    // 若 SSR 中间件仅写入了"部分用户视图"（缺 has2FA / avatar 等需要 identities 关联查询的字段），
-    // 客户端 hydration 后需主动请求 verify 接口补全完整字段；否则直接复用已有状态避免重复请求。
-    if (!force && isAuthenticated.value && user.value && user.value._isFullProfile) {
+    // 如果已认证，直接返回缓存的用户信息
+    if (isAuthenticated.value && user.value) {
       return user.value
-    }
-
-    // 已探测过且确认未登录，则不再重复请求 verify（未登录访客在公共页面间切换时尤为关键）
-    if (!force && authChecked.value && !isAuthenticated.value) {
-      return null
     }
 
     try {
@@ -67,11 +51,11 @@ export const useAuth = () => {
       })
 
       if (data && data.user) {
-        user.value = { ...data.user, _isFullProfile: true }
+        user.value = data.user
         isAuthenticated.value = true
-        isAdmin.value = isAdminRole(data.user.role)
+        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
         token.value = 'cookie-based'
-        return user.value
+        return data.user
       } else {
         clearAuthState()
         return null
@@ -89,9 +73,6 @@ export const useAuth = () => {
         clearAuthState()
       }
       return null
-    } finally {
-      // 无论成功或失败，标记已完成一次探测，避免未登录访客重复请求 verify
-      authChecked.value = true
     }
   }
 
@@ -107,7 +88,7 @@ export const useAuth = () => {
       }
 
       if (response.user) {
-        setFullAuthState(response.user)
+        setAuthState(response.user)
         return response
       }
     }
@@ -122,7 +103,7 @@ export const useAuth = () => {
     })
 
     if (response.success && response.user) {
-      setFullAuthState(response.user)
+      setAuthState(response.user)
       return response
     }
     throw new Error('验证失败')
@@ -131,15 +112,10 @@ export const useAuth = () => {
   const changePassword = async (currentPassword: string, newPassword: string) => {
     loading.value = true
     try {
-      const res = await $fetch<{ passwordChangedAt?: string }>('/api/auth/change-password', {
+      await $fetch('/api/auth/change-password', {
         method: 'POST',
         body: { currentPassword, newPassword }
       })
-      // 改密成功后立即清除强制改密标志，避免前端中间件继续拦截
-      if (user.value) {
-        user.value.requirePasswordChange = false
-        user.value.passwordChangedAt = res.passwordChangedAt
-      }
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
       if (error.data && error.data.message) {
@@ -161,14 +137,12 @@ export const useAuth = () => {
   const setInitialPassword = async (newPassword: string) => {
     loading.value = true
     try {
-      const res = await $fetch<{ passwordChangedAt?: string }>('/api/auth/set-initial-password', {
+      await $fetch('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword }
       })
       if (user.value) {
-        user.value.requirePasswordChange = false
-        user.value.hasSetPassword = true
-        user.value.passwordChangedAt = res.passwordChangedAt
+        user.value.needsPasswordChange = false
       }
     } finally {
       loading.value = false
@@ -178,7 +152,9 @@ export const useAuth = () => {
   const refreshUser = async () => {
     const data = await $fetch<{ user: User }>('/api/auth/verify')
     if (data && data.user) {
-      setFullAuthState(data.user)
+      user.value = data.user
+      isAuthenticated.value = true
+      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
     }
   }
 
@@ -233,8 +209,6 @@ export const useAuth = () => {
     setInitialPassword,
     refreshUser,
     initAuth,
-    setAuthState,
-    clearAuthState,
     getToken,
     getAuthConfig
   }

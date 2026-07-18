@@ -342,7 +342,11 @@ import {
   browserSupportsWebAuthnAutofill,
   WebAuthnAbortService
 } from '@simplewebauthn/browser'
-import { signalUnknownWebAuthnCredential, startWebAuthnAuthentication } from '~/utils/webauthn'
+import {
+  getWebAuthnErrorMessage,
+  signalUnknownWebAuthnCredential,
+  startWebAuthnAuthentication
+} from '~/utils/webauthn'
 import { Fingerprint } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -361,11 +365,6 @@ const formatLocale = (value, ...args) => {
     )
   }
   return ''
-}
-
-const getWebAuthnErrorMessage = (apiError, fallback) => {
-  const localizedMessage = apiError?.code ? locale.value?.[apiError.code] : ''
-  return localizedMessage || apiError?.data?.message || fallback
 }
 
 const route = useRoute()
@@ -431,21 +430,6 @@ const getSafeRedirect = (fallback = '/') => {
     : fallback
 }
 
-/**
- * 登录成功后的统一跳转逻辑。
- * 注意：app/middleware/auth.global.ts 已实现 requirePasswordChange 的强制拦截，
- * 此处显式判断仅为避免一次额外的中间件重定向跳转，保持用户体验流畅。
- */
-const redirectAfterLogin = async () => {
-  if (auth.user.value?.requirePasswordChange) {
-    await navigateTo('/change-password')
-  } else if (auth.isAdmin.value) {
-    await navigateTo(getSafeRedirect('/dashboard'))
-  } else {
-    await navigateTo(getSafeRedirect())
-  }
-}
-
 const gradeOptions = computed(() => {
   return [...new Set(classOptions.value.map(item => item.grade))]
 })
@@ -493,9 +477,7 @@ const handleGradeChange = () => {
 }
 
 const handle2FASuccess = async () => {
-  // verify2FA 内部已通过 setAuthState 更新了全局 user 状态（含 requirePasswordChange），
-  // 无需再发起 /api/auth/verify 请求，直接根据现有状态跳转即可
-  await redirectAfterLogin()
+  await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
 }
 
 onMounted(async () => {
@@ -583,10 +565,9 @@ const handleLogin = async () => {
       return
     }
 
-    // 当前表单需要根据登录/绑定接口动态切换 URL，不能直接复用 auth.login()。
-    // 登录成功后刷新一次全局认证态，确保管理员角色在路由守卫执行前已同步。
-    await auth.initAuth({ force: true })
-    await redirectAfterLogin()
+    // 登录成功，刷新认证状态
+    await auth.initAuth()
+    return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
@@ -645,9 +626,9 @@ const handleRegisterOAuth = async () => {
     })
 
     if (response.success) {
-      // 账户创建成功后必须重新读取刚写入的 Cookie 登录态。
-      await auth.initAuth({ force: true })
-      await navigateTo(getSafeRedirect())
+      // 账户创建成功，刷新认证状态
+      await auth.initAuth()
+      return navigateTo(getSafeRedirect())
     }
   } catch (err) {
     const apiError = err
@@ -681,15 +662,15 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
 
     if (verification.success) {
       // 登录成功
-      await auth.initAuth({ force: true })
-      await redirectAfterLogin()
+      await auth.initAuth()
+      return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
     }
   } catch (e) {
     if (isWebAuthnCeremonyAborted(e)) return
     if (!showErrors && !credential) return
 
     console.error('WebAuthn 登录错误:', e)
-    const message = getWebAuthnErrorMessage(e, locale.value.passkeyFailed)
+    const message = getWebAuthnErrorMessage(e, locale.value, locale.value.passkeyFailed)
 
     if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
       const signaled = await signalUnknownWebAuthnCredential({
@@ -700,7 +681,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
         ? locale.value.passkeyCleanupNotified
         : locale.value.passkeyCleanupRequired
     } else {
-      error.value = getWebAuthnErrorMessage(e, 'Passkey 登录失败')
+      error.value = message
     }
   }
 }

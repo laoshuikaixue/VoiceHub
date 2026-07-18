@@ -102,7 +102,7 @@ const dropdownRef = ref(null)
 const dropdownStyle = ref({})
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
-const resolvedPlaceholder = computed(() => props.placeholder || locale.value.selectPlaceholder || '')
+const resolvedPlaceholder = computed(() => props.placeholder || locale.value?.selectPlaceholder || '请选择')
 
 // 统一获取当前值
 const currentValue = computed(() => {

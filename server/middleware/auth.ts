@@ -4,55 +4,6 @@ import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
-import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
-import { isAdminRole } from '#shared/auth-constants'
-
-// 强制改密期间允许访问的 API 白名单（仅与登录态维护和改密流程相关的最小集合）
-// 注意：/api/auth/2fa/verify 和 /api/auth/2fa/send-email 已在 publicApiPaths 中，
-// 不会到达此处的强制改密拦截逻辑，因此无需在此白名单中重复。
-// 不应使用宽泛的前缀匹配（如 /api/auth/2fa/），以防未来新增的 2FA 管理接口被意外放行。
-const PASSWORD_CHANGE_ALLOWED_PATHS = [
-  '/api/auth/verify',
-  '/api/auth/logout',
-  '/api/auth/change-password',
-  '/api/auth/set-initial-password'
-]
-
-// 仅对"页面 HTML 渲染请求"做软认证：排除 Nuxt 内部路径、构建产物、静态资源等
-const NON_PAGE_PREFIXES = [
-  '/_nuxt',
-  '/__nuxt',
-  '/_payload',
-  '/_ipx',
-  '/_loading',
-  '/favicon',
-  '/images/',
-  '/audio-match/',
-  '/robots.txt'
-]
-
-const isPageRenderRequest = (pathname: string): boolean => {
-  if (pathname.startsWith('/api/')) return false
-  if (NON_PAGE_PREFIXES.some((p) => pathname.startsWith(p))) return false
-  // 仅匹配已知静态资源后缀，避免含点号的路由（如 /user/name.surname）被误判
-  if (/\.(?:js|mjs|cjs|css|map|json|ico|png|jpe?g|gif|svg|webp|avif|woff2?|ttf|otf|eot|wasm|mp3|mp4|webm)$/i.test(pathname)) {
-    return false
-  }
-  return true
-}
-
-const OPTIONAL_AUTH_API_ROUTES = [
-  { method: 'GET', path: '/api/request-times' },
-  { method: 'GET', path: '/api/songs' },
-  { method: 'POST', path: '/api/blacklist/check' },
-  { method: 'GET', path: '/api/system/instance' },
-  { method: 'POST', path: '/api/system/reconnect' },
-  { method: 'GET', path: '/api/system/status' }
-]
-
-const isOptionalAuthApiRequest = (method: string | undefined, pathname: string): boolean => {
-  return OPTIONAL_AUTH_API_ROUTES.some((route) => route.method === method && route.path === pathname)
-}
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -63,13 +14,8 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
   const pathname = url.pathname
 
-  const isApiRequest = pathname.startsWith('/api/')
-  const isPageRequest = !isApiRequest && isPageRenderRequest(pathname)
-  const requestMethod = event.node.req.method || 'GET'
-  const isOptionalAuthApi = isApiRequest && isOptionalAuthApiRequest(requestMethod, pathname)
-
-  // 既非 API 也非 SSR 页面请求（静态资源、HMR 等）→ 直接放行
-  if (!isApiRequest && !isPageRequest) {
+  // 跳过非API路由
+  if (!pathname.startsWith('/api/')) {
     return
   }
 
@@ -102,15 +48,15 @@ export default defineEventHandler(async (event) => {
     '/api/sys/time' // 服务器时间同步
   ]
 
-  // 公共路径跳过认证检查。页面请求始终走软认证流程，让 SSR 能拿到登录态。
-  if (isApiRequest && publicApiPaths.some((path) => pathname.startsWith(path))) {
+  // 公共路径跳过认证检查
+  if (publicApiPaths.some((path) => pathname.startsWith(path))) {
     return
   }
 
   // 动态判断 OAuth 路径
   // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
   // 但排除已知的受保护/特定 Auth 端点
-  if (isApiRequest && pathname.startsWith('/api/auth/')) {
+  if (pathname.startsWith('/api/auth/')) {
     const segments = pathname.split('/')
     const provider = segments[3]
     const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
@@ -135,11 +81,8 @@ export default defineEventHandler(async (event) => {
     token = getCookie(event, 'auth-token') || null
   }
 
-  // 可选认证接口缺少 token 时按访客放行，由 handler 根据 event.context.user 自行降级。
-  // 受保护路由缺少 token 时返回 401；页面 SSR 请求按未登录访客静默放行。
+  // 受保护路由缺少token时返回401错误
   if (!token) {
-    if (isPageRequest || isOptionalAuthApi) return
-
     return sendError(
       event,
       createError({
@@ -154,8 +97,6 @@ export default defineEventHandler(async (event) => {
     const { valid, payload, newToken } = JWTEnhanced.verifyAndRefresh(token)
 
     if (!valid || !payload) {
-      // 页面 SSR 请求：token 无效不是错误，按未登录访客处理
-      if (isPageRequest) return
       throw new Error('Token无效')
     }
 
@@ -181,10 +122,7 @@ export default defineEventHandler(async (event) => {
         class: users.class,
         role: users.role,
         status: users.status,
-        passwordChangedAt: users.passwordChangedAt,
-        forcePasswordChange: users.forcePasswordChange,
-        email: users.email,
-        emailVerified: users.emailVerified
+        passwordChangedAt: users.passwordChangedAt
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -202,9 +140,6 @@ export default defineEventHandler(async (event) => {
         maxAge: 0,
         path: '/'
       })
-
-      // 页面 SSR 请求：清除失效 cookie 后按未登录访客处理，避免页面渲染因 401 中断
-      if (isPageRequest) return
 
       const errorMessage = !user
         ? '用户不存在，请重新登录'
@@ -236,9 +171,6 @@ export default defineEventHandler(async (event) => {
           path: '/'
         })
 
-        // 页面 SSR：旧 token 在密码改后失效，按访客处理
-        if (isPageRequest) return
-
         return sendError(
           event,
           createError({
@@ -250,25 +182,10 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 计算强制改密状态并附加到上下文
-    // 这样 verify.get.ts、前端 SSR 中间件等下游消费者无需重复计算。
-    const requirePasswordChange = await resolveRequirePasswordChange(user)
-    const hasSetPassword = !!user.passwordChangedAt
+    event.context.user = user
 
     if (isUserBlocked(user.id)) {
       delete event.context.user
-      if (isPageRequest) {
-        const isSecure = isSecureRequest(event)
-        setCookie(event, 'auth-token', '', {
-          httpOnly: true,
-          secure: isSecure,
-          sameSite: 'lax',
-          maxAge: 0,
-          path: '/'
-        })
-        return
-      }
-
       const remaining = getUserBlockRemainingTime(user.id)
       return sendError(
         event,
@@ -279,36 +196,10 @@ export default defineEventHandler(async (event) => {
       )
     }
 
-    event.context.user = {
-      ...user,
-      requirePasswordChange,
-      hasSetPassword
-    }
-
-    // 页面 SSR 请求只负责软认证和上下文注入。管理员页面重定向由前端全局中间件处理。
-    if (isPageRequest) {
-      return
-    }
-
-    // 强制改密拦截：未完成改密前，禁止访问除白名单外的所有 API
-    // 这是后端硬性校验，防止技术用户绕过前端中间件直接调用接口。
-    const isAllowedDuringPasswordChange = PASSWORD_CHANGE_ALLOWED_PATHS.includes(pathname)
-
-    if (!isAllowedDuringPasswordChange && requirePasswordChange) {
-      return sendError(
-        event,
-        createError({
-          statusCode: 403,
-          message: '请先完成密码修改后再访问其他功能',
-          data: { requirePasswordChange: true }
-        })
-      )
-    }
-
     // 检查管理员专用路由
     if (
       pathname.startsWith('/api/admin') &&
-      !isAdminRole(user.role)
+      !['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role)
     ) {
       return sendError(
         event,
@@ -319,9 +210,6 @@ export default defineEventHandler(async (event) => {
       )
     }
   } catch (error: any) {
-    // 页面 SSR：token 解析异常时静默放行（按访客处理），避免 SSR 直接 500
-    if (isPageRequest) return
-
     // 处理JWT验证错误
     return sendError(
       event,

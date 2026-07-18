@@ -66,8 +66,6 @@ export const siteConfig = {
   turnstileSecretKey: 'Secret Key',
   turnstileSecretKeyPlaceholder: 'Enter the Turnstile Secret Key (leave blank to keep unchanged)',
   turnstileSecretKeyDesc: 'When Turnstile is enabled, all users must pass verification on each login.',
-  forcePasswordChange: 'Force Password Change on First Login',
-  forcePasswordChangeDesc: 'When enabled, users who have never changed their password must update it before using the system.',
   showBlacklistKeywords: 'Show Exact Blacklist Keywords',
   showBlacklistKeywordsDesc: 'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
   hideStudentInfo: 'Hide Student Details',
@@ -180,10 +178,7 @@ export const changePassword = {
   setNewPasswordDesc: 'Create a secure password',
   updatePasswordDesc: 'Update your login password',
   backToHome: 'Back to Home',
-  cannotComplete: 'Unable to change your password?',
-  forgotPassword: 'Forgot password',
-  logout: 'Log Out',
-  logoutConfirm: 'Are you sure you want to log out? You will need to sign in again to continue.'
+  backToHome: 'Back to Home'
 } as const
 
 export const common = {

@@ -30,22 +30,6 @@ const normalizeAuthenticationError = (error) => {
   }
 }
 
-export const getWebAuthnErrorMessage = (error, fallback = 'Passkey 操作失败') => {
-  switch (error?.cause?.name || error?.name) {
-    case 'NotAllowedError':
-    case 'AbortError':
-      return 'Passkey 操作未完成，可能已取消、没有可用凭据或系统未允许本次操作'
-    case 'InvalidStateError':
-      return '该 Passkey 已经注册'
-    case 'NotSupportedError':
-      return '当前设备不支持服务器提供的 Passkey 加密算法'
-    case 'SecurityError':
-      return 'Passkey 的域名或安全上下文配置无效'
-    default:
-      return error?.data?.message || error?.message || error?.statusMessage || fallback
-  }
-}
-
 const normalizeRegistrationError = (error) => {
   let code
 
@@ -70,6 +54,11 @@ const normalizeRegistrationError = (error) => {
   const normalizedError = createWebAuthnError(code, error)
   normalizedError.name = error.name
   return normalizedError
+}
+
+export const getWebAuthnErrorMessage = (error, messages, fallback) => {
+  const localizedMessage = error?.code ? messages?.[error.code] : ''
+  return localizedMessage || error?.data?.message || error?.statusMessage || fallback
 }
 
 const readClientExtensionResults = (credential) => {

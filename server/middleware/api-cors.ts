@@ -1,9 +1,6 @@
-import { getSafeRequestProtocol } from '~~/server/utils/request-utils'
-
 export default defineEventHandler((event) => {
   const requestUrl = getRequestURL(event)
   const pathname = requestUrl.pathname
-  const requestProtocol = `${getSafeRequestProtocol(event)}:`
   const method = getMethod(event)
   
   // 只处理特定的内部API路由，防止站外调用
@@ -61,8 +58,8 @@ export default defineEventHandler((event) => {
         }
       }
 
-      const sourceOrigin = normalizeOrigin(sourceUrl, requestProtocol)
-      const trustedOrigin = normalizeOrigin(configuredHost, requestProtocol)
+      const sourceOrigin = normalizeOrigin(sourceUrl, requestUrl.protocol)
+      const trustedOrigin = normalizeOrigin(configuredHost, requestUrl.protocol)
       const isLocalhost = (h: string) => h === 'localhost' || h === '127.0.0.1' || h === '[::1]'
       const isSameLoopbackOrigin =
         isLocalhost(sourceOrigin.hostname) &&
@@ -71,13 +68,10 @@ export default defineEventHandler((event) => {
         sourceOrigin.port === trustedOrigin.port
 
       // 额外检查：来源是否与当前请求的 Host 头一致（覆盖域名 / IP 直连场景）
-      // 代理环境可能丢失外部协议，但 Host 头仍能作为当前部署域名的信任锚点。
+      // Host 头不会被前端 JS 伪造，因此 sourceOrigin.origin === hostOrigin 是有效的第二信任锚点
       const requestHost = getHeader(event, 'host')
-      const hostOrigin = getOriginFromHost(requestHost, requestProtocol)
-      const matchesRequestHost = hostOrigin && (
-        sourceOrigin.origin === hostOrigin.origin ||
-        isSameRequestHost(sourceOrigin, hostOrigin)
-      )
+      const hostOrigin = getOriginFromHost(requestHost, requestUrl.protocol)
+      const matchesRequestHost = hostOrigin && sourceOrigin.origin === hostOrigin
 
       if (sourceOrigin.origin !== trustedOrigin.origin && !isSameLoopbackOrigin && !matchesRequestHost) {
         console.warn(`[CORS Middleware] 拦截跨域请求: 来源 ${sourceOrigin.origin}, 期望 ${trustedOrigin.origin}, 路径 ${pathname}`)
@@ -102,11 +96,11 @@ export default defineEventHandler((event) => {
       })
     }
   } else if (isTrustedFetchMetadata(secFetchSite, secFetchMode, method)) {
-    // 允许没有 Origin/Referer 但明确标记为同源的请求
+    // 浏览器隐私策略可能移除来源头，此时 Fetch Metadata 是更稳定的同源信号。
     return
   } else {
-    // 没有来源信息且非 same-origin 上下文 → 拦截（无法区分同站和跨站）
-    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'none'}`)
+    // 没有来源信息且缺少可信 Fetch Metadata 时，仍按站外请求处理。
+    console.warn(`[CORS Middleware] 拦截无Origin/Referer头的请求: 路径 ${pathname}, sec-fetch-site: ${secFetchSite || 'missing'}`)
     throw createError({
       statusCode: 403,
       message: 'Forbidden: 访问此API必须提供Origin或Referer头'
@@ -118,38 +112,15 @@ export default defineEventHandler((event) => {
  * 从 Host 头提取 origin
  * 仅使用标准 Host 头（不可被前端 JS 伪造），不信任 X-Forwarded-Host
  */
-function getOriginFromHost(
-  hostHeader: string | undefined,
-  defaultProtocol: string
-): { origin: string, hostname: string, port: string, protocol: string, hasExplicitPort: boolean } | null {
+function getOriginFromHost(hostHeader: string | undefined, defaultProtocol: string): string | null {
   if (!hostHeader) return null
   const firstHost = (hostHeader.split(',')[0] || '').trim()
   try {
     const normalized = firstHost.includes('://') ? firstHost : `${defaultProtocol}//${firstHost}`
-    const url = new URL(normalized)
-    return {
-      origin: url.origin,
-      protocol: url.protocol,
-      hostname: url.hostname,
-      port: url.port || (url.protocol === 'https:' ? '443' : '80'),
-      hasExplicitPort: Boolean(url.port)
-    }
+    return new URL(normalized).origin
   } catch {
     return null
   }
-}
-
-function isSameRequestHost(
-  sourceOrigin: { hostname: string, port: string },
-  hostOrigin: { hostname: string, port: string, hasExplicitPort: boolean }
-): boolean {
-  if (sourceOrigin.hostname !== hostOrigin.hostname) return false
-
-  if (!hostOrigin.hasExplicitPort) {
-    return sourceOrigin.port === '80' || sourceOrigin.port === '443'
-  }
-
-  return sourceOrigin.port === hostOrigin.port
 }
 
 function isTrustedFetchMetadata(
@@ -161,10 +132,12 @@ function isTrustedFetchMetadata(
   const safeMethod = normalizedMethod === 'GET' || normalizedMethod === 'HEAD'
 
   if (secFetchSite === 'same-origin') return true
+
   if (secFetchSite === 'none') {
-    return safeMethod && (!secFetchMode || secFetchMode === 'navigate')
+    const isNavigation = !secFetchMode || secFetchMode === 'navigate'
+    return safeMethod && isNavigation
   }
 
-  // 老浏览器和部分 WebView 不发送 Fetch Metadata，仅允许无来源头的只读请求。
+  // 兼容不发送 Fetch Metadata 的老浏览器、WebView 或反向代理；跨站请求有明确标记时仍会被拒绝。
   return !secFetchSite && safeMethod
 }

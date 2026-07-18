@@ -417,25 +417,6 @@
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
-                  id="force-password-change"
-                  v-model="formData.forcePasswordChangeOnFirstLogin"
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
-              </div>
-              <label for="force-password-change" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">{{ locale.forcePasswordChange }}</p>
-                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  {{ locale.forcePasswordChangeDesc }}
-                </p>
-              </label>
-            </div>
-          </div>
-              
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
-            <div class="flex items-start gap-4">
-              <div class="shrink-0 pt-0.5">
-                <input
                   id="show-keywords"
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
@@ -553,7 +534,7 @@ const inputClass =
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
 const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
 
-const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '')
+const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '请遵守校园广播站投稿规范。')
 
 const formData = ref({
   siteTitle: '',
@@ -578,7 +559,6 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
-  forcePasswordChangeOnFirstLogin: true,
   telemetryEnabled: true,
   captchaEnabled: false,
   captchaProvider: 'graphic',
@@ -656,11 +636,11 @@ const currentLimitLabel = computed(() => {
         ? locale.value?.weeklyLimitLabel
         : locale.value?.monthlyLimitLabel
 
-  return `${locale.value?.limitLabelPrefix || ''}${limitTypeLabel || ''}${locale.value?.limitLabelSuffix || ''}`
+  return `${locale.value?.limitLabelPrefix || '当前启用：'}${limitTypeLabel || '未设置限额'}${locale.value?.limitLabelSuffix || '投稿限制'}`
 })
 
 const getLocalizedServerMessage = (message) => {
-  if (!message) return locale.value?.saveFailed || ''
+  if (!message) return locale.value?.saveFailed || '系统设置保存失败'
   if (typeof message !== 'string') return String(message)
 
   const serverMessages = locale.value?.serverMessages
@@ -796,7 +776,6 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
-      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin !== false,
       telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,
       captchaProvider: data.captchaProvider || 'graphic',
@@ -835,7 +814,7 @@ const loadConfig = async () => {
     originalData.value = JSON.parse(JSON.stringify(formData.value))
   } catch (error) {
     console.error('Failed to load site config:', error)
-    showNotification(locale.value?.loadFailed || '', 'error')
+    showNotification(locale.value?.loadFailed || '系统设置加载失败', 'error')
   } finally {
     loading.value = false
   }
@@ -847,7 +826,7 @@ const saveConfig = async () => {
     saving.value = true
     const configToSave = {
       ...formData.value,
-      siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || '',
+      siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || 'VoiceHub',
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
         (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value,
@@ -868,7 +847,7 @@ const saveConfig = async () => {
     })
 
     if (!response.ok) {
-      let message = locale.value?.saveFailed || ''
+      let message = locale.value?.saveFailed || '系统设置保存失败'
       try {
         const errorData = await response.json()
         console.error('Site config API error response:', errorData)
@@ -882,7 +861,7 @@ const saveConfig = async () => {
           return null
         }
 
-        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '')
+        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '系统设置保存失败')
       } catch (parseError) {
         console.error('Failed to parse site config API error:', parseError)
       }
@@ -893,14 +872,14 @@ const saveConfig = async () => {
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
     localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
-    showNotification(locale.value?.saveSuccess || '', 'success')
+    showNotification(locale.value?.saveSuccess || '系统设置已保存', 'success')
 
     setTimeout(() => {
       saveSuccess.value = false
     }, 3000)
   } catch (error) {
     console.error('Failed to save site config:', error)
-    let message = locale.value?.saveFailedRetry || ''
+    let message = locale.value?.saveFailedRetry || '系统设置保存失败，请稍后重试'
     if (error?.message) {
       message = getLocalizedServerMessage(error.message)
     }

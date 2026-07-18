@@ -75,8 +75,6 @@ export const siteConfig = {
   turnstileSecretKey: 'Secret Key (Secret)',
   turnstileSecretKeyPlaceholder: '在此输入 Turnstile 的 Secret Key (留空表示不修改)',
   turnstileSecretKeyDesc: '开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。',
-  forcePasswordChange: '首次登录强制改密',
-  forcePasswordChangeDesc: '开启后，未修改过密码的用户在登录时将被强制跳转至改密页面，完成修改后方可使用系统。',
   showBlacklistKeywords: '显示黑名单具体关键词',
   showBlacklistKeywordsDesc: '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
   hideStudentInfo: '隐藏学生详细信息',
@@ -191,10 +189,7 @@ export const changePassword = {
   setNewPasswordDesc: '请设置一个安全的密码',
   updatePasswordDesc: '更新您的登录密码',
   backToHome: '返回主页',
-  cannotComplete: '无法完成密码修改？',
-  forgotPassword: '忘记密码',
-  logout: '退出登录',
-  logoutConfirm: '确定要退出登录吗？退出后需要重新登录才能继续操作。'
+  backToHome: '返回主页'
 } as const
 
 export const common = {

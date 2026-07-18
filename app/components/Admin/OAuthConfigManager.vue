@@ -387,7 +387,7 @@ const importEnvData = async (provider) => {
     }
   } catch (e) {
     console.error(getLogMessage('importEnvFailed'), e)
-    showToast(locale.value?.importFailed || '', 'error')
+    showToast(locale.value?.importFailed || 'OAuth 配置导入失败', 'error')
   }
 }
 
