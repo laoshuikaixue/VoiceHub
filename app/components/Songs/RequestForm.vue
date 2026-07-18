@@ -4099,7 +4099,10 @@ defineExpose({
 .guidelines-content :deep(ol) {
   padding-left: 1.5em;
   margin-bottom: 0.5em;
+  list-style-position: outside;
 }
+.guidelines-content :deep(ul) { list-style-type: disc; }
+.guidelines-content :deep(ol) { list-style-type: decimal; }
 .guidelines-content :deep(li) { margin-bottom: 0.25em; }
 .guidelines-content :deep(a) {
   color: #3b82f6;

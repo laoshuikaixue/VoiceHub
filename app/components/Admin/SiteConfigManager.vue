@@ -859,6 +859,9 @@ input[type='number'] {
 }
 
 /* 投稿须知 Markdown 预览样式 */
+.guidelines-preview {
+  line-height: 1.7;
+}
 .guidelines-preview :deep(h1),
 .guidelines-preview :deep(h2),
 .guidelines-preview :deep(h3),
@@ -875,7 +878,10 @@ input[type='number'] {
 .guidelines-preview :deep(ol) {
   padding-left: 1.5em;
   margin-bottom: 0.5em;
+  list-style-position: outside;
 }
+.guidelines-preview :deep(ul) { list-style-type: disc; }
+.guidelines-preview :deep(ol) { list-style-type: decimal; }
 .guidelines-preview :deep(li) { margin-bottom: 0.25em; }
 .guidelines-preview :deep(a) {
   color: #3b82f6;

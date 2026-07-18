@@ -3640,6 +3640,9 @@ if (
 }
 
 /* 规则弹窗 Markdown 富文本样式 */
+.guidelines-rendered {
+  line-height: 1.7;
+}
 .guidelines-rendered :deep(h1),
 .guidelines-rendered :deep(h2),
 .guidelines-rendered :deep(h3),
@@ -3656,7 +3659,10 @@ if (
 .guidelines-rendered :deep(ol) {
   padding-left: 1.5em;
   margin-bottom: 0.5em;
+  list-style-position: outside;
 }
+.guidelines-rendered :deep(ul) { list-style-type: disc; }
+.guidelines-rendered :deep(ol) { list-style-type: decimal; }
 .guidelines-rendered :deep(li) { margin-bottom: 0.25em; }
 .guidelines-rendered :deep(a) {
   color: #3b82f6;
