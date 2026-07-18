@@ -3701,8 +3701,14 @@ if (
 .guidelines-rendered :deep(td) {
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.4em 0.8em;
-  text-align: left;
 }
+/* marked 通过 align 属性指定对齐，CSS 需显式支持 */
+.guidelines-rendered :deep(th[align='left']),
+.guidelines-rendered :deep(td[align='left']) { text-align: left; }
+.guidelines-rendered :deep(th[align='center']),
+.guidelines-rendered :deep(td[align='center']) { text-align: center; }
+.guidelines-rendered :deep(th[align='right']),
+.guidelines-rendered :deep(td[align='right']) { text-align: right; }
 .guidelines-rendered :deep(hr) {
   border-color: rgba(255, 255, 255, 0.08);
   margin: 0.8em 0;

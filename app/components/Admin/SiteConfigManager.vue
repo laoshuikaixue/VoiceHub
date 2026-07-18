@@ -920,8 +920,14 @@ input[type='number'] {
 .guidelines-preview :deep(td) {
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.4em 0.8em;
-  text-align: left;
 }
+/* marked 通过 align 属性指定对齐，CSS 需显式支持 */
+.guidelines-preview :deep(th[align='left']),
+.guidelines-preview :deep(td[align='left']) { text-align: left; }
+.guidelines-preview :deep(th[align='center']),
+.guidelines-preview :deep(td[align='center']) { text-align: center; }
+.guidelines-preview :deep(th[align='right']),
+.guidelines-preview :deep(td[align='right']) { text-align: right; }
 .guidelines-preview :deep(hr) {
   border-color: rgba(255, 255, 255, 0.08);
   margin: 0.8em 0;
