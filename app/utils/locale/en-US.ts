@@ -2890,6 +2890,8 @@ export const admin = {
       { label: 'Reset All Tables (All)', value: 'all' },
       { label: 'Song Table (Song)', value: 'Song' },
       { label: 'User Table (User)', value: 'User' },
+      { label: 'User Identity Table (UserIdentity)', value: 'UserIdentity' },
+      { label: 'User Status Log Table (UserStatusLog)', value: 'UserStatusLog' },
       { label: 'Vote Table (Vote)', value: 'Vote' },
       { label: 'Schedule Table (Schedule)', value: 'Schedule' },
       { label: 'Notification Table (Notification)', value: 'Notification' },
@@ -2897,7 +2899,10 @@ export const admin = {
       { label: 'Play Time Table (PlayTime)', value: 'PlayTime' },
       { label: 'Semester Table (Semester)', value: 'Semester' },
       { label: 'System Settings Table (SystemSettings)', value: 'SystemSettings' },
-      { label: 'Song Blacklist Table (SongBlacklist)', value: 'SongBlacklist' }
+      { label: 'Song Blacklist Table (SongBlacklist)', value: 'SongBlacklist' },
+      { label: 'Song Replay Request Table (SongReplayRequest)', value: 'SongReplayRequest' },
+      { label: 'Request Time Table (RequestTime)', value: 'RequestTime' },
+      { label: 'Email Template Table (EmailTemplate)', value: 'EmailTemplate' }
     ],
     progress: {
       readingFile: 'Reading file...',

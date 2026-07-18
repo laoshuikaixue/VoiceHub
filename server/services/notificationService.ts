@@ -6,7 +6,6 @@ import {
   schedules,
   songCollaborators,
   songs,
-  systemSettings,
   users,
   votes
 } from '~/drizzle/schema'
@@ -14,6 +13,7 @@ import { and, eq, gte, inArray } from 'drizzle-orm'
 import { sendBatchMeowNotifications, sendMeowNotificationToUser } from './meowNotificationService'
 import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtpService'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 /**
  * 创建联合投稿邀请通知
@@ -126,8 +126,7 @@ export async function createSongSelectedNotification(
 ) {
   try {
     // 获取系统设置，检查是否启用播出时段功能
-    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-    const systemConfig = systemSettingsResult[0]
+    const systemConfig = await getSystemSettingsCached()
     const isPlayTimeEnabled = systemConfig?.enablePlayTimeSelection || false
 
     // 获取排期对应的播出时段

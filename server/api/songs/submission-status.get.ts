@@ -1,8 +1,9 @@
 import { db } from '~/drizzle/db'
-import { requestTimes, systemSettings } from '~/drizzle/schema'
+import { requestTimes } from '~/drizzle/schema'
 import { and, eq, gt, lte } from 'drizzle-orm'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSubmissionCount, isCardCodeLimitBypassActive } from '~~/server/utils/submissionLimit'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -17,8 +18,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 获取系统设置
-    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-    const systemSettingsData = systemSettingsResult[0]
+    const systemSettingsData = await getSystemSettingsCached()
 
     // 超级管理员和管理员不受投稿限制
     const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'

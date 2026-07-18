@@ -11,6 +11,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
+    "test": "node --experimental-strip-types --test tests/server/auth-route-policy.test.ts",
     "db:migrate": "pnpm exec drizzle-kit migrate",
     "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
     "db:push": "pnpm exec drizzle-kit push --force",

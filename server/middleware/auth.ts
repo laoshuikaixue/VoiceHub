@@ -53,6 +53,8 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+=======
+>>>>>>> c9160603ee20d16717478c0b29a1768c96caee31
   // 动态判断 OAuth 路径
   // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
   // 但排除已知的受保护/特定 Auth 端点
@@ -196,6 +198,7 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+>>>>>>> c9160603ee20d16717478c0b29a1768c96caee31
     // 检查管理员专用路由
     if (
       pathname.startsWith('/api/admin') &&

@@ -1209,7 +1209,7 @@ VoiceHub/
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
-│   │   ├── cacheService.ts # 缓存服务（Redis缓存管理）
+│   │   ├── cacheService.ts # 缓存服务（Redis与进程内存缓存管理）
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务

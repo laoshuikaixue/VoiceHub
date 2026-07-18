@@ -25,6 +25,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
+import { CacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -161,6 +162,7 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('✅ 现有数据已清空')
+    await CacheService.getInstance().clearSystemSettingsCache()
     return {
       success: true,
       message: '数据已清空',

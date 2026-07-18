@@ -7,7 +7,6 @@ import {
   cardCodes,
   songCollaborators,
   songs,
-  systemSettings,
   users
 } from '~/drizzle/db'
 import { and, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
@@ -19,6 +18,7 @@ import {
 } from '~~/server/utils/submissionLimit'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { z } from 'zod'
 
 type SongRequestUser = {
@@ -160,8 +160,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-    const systemSettingsData = systemSettingsResult[0]
+    const systemSettingsData = await getSystemSettingsCached()
     const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
 
     if (systemSettingsData?.forceBlockAllRequests && !isAdmin) {

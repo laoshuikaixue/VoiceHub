@@ -2422,7 +2422,7 @@ export default defineEventHandler(async (event) => {
     // 清除所有缓存
     try {
       const cacheService = CacheService.getInstance()
-      await cacheService.clearAllCaches()
+      await cacheService.clearAllCache()
       console.log('数据恢复后缓存已清除')
     } catch (cacheError) {
       console.warn('清除缓存失败:', cacheError)
