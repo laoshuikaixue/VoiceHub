@@ -37,7 +37,7 @@ const songRequestBodySchema = z.object({
   playUrl: z.string().trim().max(2000, '播放链接不能超过2000个字符').optional().nullable(),
   submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
-  preferredPlayTimeId: z.coerce.number().int().gt(0, '播出时段 ID 无效').optional().nullable(),
+  preferredPlayTimeId: z.number().int().gt(0, '播出时段 ID 无效').optional().nullable(),
   cardCode: z.string().trim().max(100, '点歌券不能超过100个字符').optional().nullable(),
   collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
 })
