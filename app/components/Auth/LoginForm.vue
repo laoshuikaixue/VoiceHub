@@ -55,6 +55,7 @@
             id="username"
             v-model="username"
             :class="{ 'input-error': error }"
+            :autocomplete="!isBindMode && !showCreateMode ? 'username webauthn' : 'username'"
             :placeholder="showCreateMode ? locale.usernamePattern : locale.usernamePlaceholder"
             required
             type="text"
@@ -331,12 +332,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
-import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
+import {
+  browserSupportsWebAuthn,
+  browserSupportsWebAuthnAutofill,
+  WebAuthnAbortService
+} from '@simplewebauthn/browser'
 import { signalUnknownWebAuthnCredential, startWebAuthnAuthentication } from '~/utils/webauthn'
 import { Fingerprint } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
@@ -494,21 +499,22 @@ const handle2FASuccess = async () => {
 }
 
 onMounted(async () => {
+  const isApiSupported = browserSupportsWebAuthn()
+  isWebAuthnSupported.value = isApiSupported
+
+  // Conditional UI 应尽早启动，让支持的浏览器通过账号输入框原生推荐 Passkey。
+  if (isApiSupported && !isBindMode.value) {
+    void startConditionalWebAuthnLogin()
+  }
+
   await fetchSiteConfig()
   if (isBindMode.value) {
     await fetchClassOptions()
   }
+})
 
-  const isApiSupported = browserSupportsWebAuthn()
-  if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
-    try {
-      await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-    } catch (e) {
-      console.warn('WebAuthn 平台认证器检查失败:', e)
-    }
-  }
-  // 兼容外部安全密钥（如 YubiKey），即使没有内置平台认证器也允许尝试
-  isWebAuthnSupported.value = isApiSupported
+onUnmounted(() => {
+  WebAuthnAbortService.cancelCeremony()
 })
 
 watch(showCreateMode, async (enabled) => {
@@ -655,17 +661,18 @@ const handleRegisterOAuth = async () => {
   }
 }
 
-const handleWebAuthnLogin = async () => {
-  loading.value = true
-  error.value = ''
+const isWebAuthnCeremonyAborted = (webAuthnError) =>
+  webAuthnError?.code === 'ERROR_CEREMONY_ABORTED' || webAuthnError?.name === 'AbortError'
+
+const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true } = {}) => {
   let options
   let credential
-  
+
   try {
     // 1. 获取登录选项
     options = await $fetch('/api/auth/webauthn/login/options', { method: 'POST' })
     // 2. 调用浏览器 WebAuthn API
-    credential = await startWebAuthnAuthentication(options)
+    credential = await startWebAuthnAuthentication(options, useBrowserAutofill)
     // 3. 验证登录
     const verification = await $fetch('/api/auth/webauthn/login/verify', {
       method: 'POST',
@@ -678,9 +685,11 @@ const handleWebAuthnLogin = async () => {
       await redirectAfterLogin()
     }
   } catch (e) {
+    if (isWebAuthnCeremonyAborted(e)) return
+    if (!showErrors && !credential) return
+
     console.error('WebAuthn 登录错误:', e)
-    const apiError = e
-    const message = getWebAuthnErrorMessage(apiError, locale.value.passkeyFailed)
+    const message = getWebAuthnErrorMessage(e, locale.value.passkeyFailed)
 
     if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
       const signaled = await signalUnknownWebAuthnCredential({
@@ -691,8 +700,27 @@ const handleWebAuthnLogin = async () => {
         ? locale.value.passkeyCleanupNotified
         : locale.value.passkeyCleanupRequired
     } else {
-      error.value = message
+      error.value = getWebAuthnErrorMessage(e, 'Passkey 登录失败')
     }
+  }
+}
+
+const startConditionalWebAuthnLogin = async () => {
+  try {
+    if (await browserSupportsWebAuthnAutofill()) {
+      await runWebAuthnLogin({ useBrowserAutofill: true, showErrors: false })
+    }
+  } catch (e) {
+    console.warn('Passkey 自动填充初始化失败:', e)
+  }
+}
+
+const handleWebAuthnLogin = async () => {
+  loading.value = true
+  error.value = ''
+
+  try {
+    await runWebAuthnLogin()
   } finally {
     loading.value = false
   }

@@ -187,7 +187,10 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
-import { signalUnknownWebAuthnCredential, startWebAuthnRegistration } from '~/utils/webauthn'
+import {
+  signalUnknownWebAuthnCredential,
+  startWebAuthnRegistration
+} from '~/utils/webauthn'
 import { useLocale } from '~/utils/locale'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()

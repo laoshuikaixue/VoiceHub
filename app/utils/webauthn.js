@@ -1,4 +1,8 @@
-import { base64URLStringToBuffer, bufferToBase64URLString } from '@simplewebauthn/browser'
+import {
+  base64URLStringToBuffer,
+  bufferToBase64URLString,
+  startAuthentication
+} from '@simplewebauthn/browser'
 
 const toCredentialDescriptor = ({ id, type }) => ({
   id: base64URLStringToBuffer(id),
@@ -23,6 +27,22 @@ const normalizeAuthenticationError = (error) => {
       return createWebAuthnError('passkeySecurityInvalid', error)
     default:
       return createWebAuthnError('passkeyFailed', error)
+  }
+}
+
+export const getWebAuthnErrorMessage = (error, fallback = 'Passkey 操作失败') => {
+  switch (error?.cause?.name || error?.name) {
+    case 'NotAllowedError':
+    case 'AbortError':
+      return 'Passkey 操作未完成，可能已取消、没有可用凭据或系统未允许本次操作'
+    case 'InvalidStateError':
+      return '该 Passkey 已经注册'
+    case 'NotSupportedError':
+      return '当前设备不支持服务器提供的 Passkey 加密算法'
+    case 'SecurityError':
+      return 'Passkey 的域名或安全上下文配置无效'
+    default:
+      return error?.data?.message || error?.message || error?.statusMessage || fallback
   }
 }
 
@@ -73,6 +93,8 @@ const readOptionalResponseValue = (response, methodName) => {
 }
 
 export const signalUnknownWebAuthnCredential = async ({ credentialId, rpId }) => {
+  if (typeof window === 'undefined') return false
+
   const signalUnknownCredential = window.PublicKeyCredential?.signalUnknownCredential
   if (!credentialId || !rpId || typeof signalUnknownCredential !== 'function') {
     return false
@@ -91,7 +113,11 @@ export const signalUnknownWebAuthnCredential = async ({ credentialId, rpId }) =>
   }
 }
 
-export const startWebAuthnAuthentication = async (optionsJSON) => {
+export const startWebAuthnAuthentication = async (optionsJSON, useBrowserAutofill = false) => {
+  if (useBrowserAutofill) {
+    return startAuthentication({ optionsJSON, useBrowserAutofill: true })
+  }
+
   if (!navigator.credentials?.get) {
     throw createWebAuthnError('passkeyLoginUnsupported')
   }
