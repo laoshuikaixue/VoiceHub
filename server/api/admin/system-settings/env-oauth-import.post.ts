@@ -44,7 +44,11 @@ export default defineEventHandler(async (event) => {
     updateData.githubClientId = process.env.GITHUB_CLIENT_ID
     updateData.githubClientSecret = process.env.GITHUB_CLIENT_SECRET
   } else if (provider === 'casdoor') {
-    if (!process.env.CASDOOR_ENDPOINT || !process.env.CASDOOR_CLIENT_ID || !process.env.CASDOOR_CLIENT_SECRET) {
+    if (
+      !process.env.CASDOOR_ENDPOINT ||
+      !process.env.CASDOOR_CLIENT_ID ||
+      !process.env.CASDOOR_CLIENT_SECRET
+    ) {
       throw createError({ statusCode: 400, message: '未检测到完整的 Casdoor 环境配置' })
     }
     updateData.casdoorOAuthEnabled = true
@@ -65,9 +69,18 @@ export default defineEventHandler(async (event) => {
     if (!appId || !appKey) {
       throw createError({ statusCode: 400, message: '未检测到完整的聚合登陆环境配置' })
     }
-    const loginType = process.env.AGGREGATE_OAUTH_LOGIN_TYPE?.trim() || 'qq'
-    const supportedAggregateLoginTypes = ['qq', 'wx', 'alipay', 'douyin', 'google', 'twitter', 'feishu']
-    const endpoint = process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
+    const loginType = process.env.AGGREGATE_OAUTH_LOGIN_TYPE?.trim().toLowerCase() || 'qq'
+    const supportedAggregateLoginTypes = [
+      'qq',
+      'wx',
+      'alipay',
+      'douyin',
+      'google',
+      'twitter',
+      'feishu'
+    ]
+    const endpoint =
+      process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
     try {
       new URL(endpoint)
     } catch {
@@ -76,7 +89,9 @@ export default defineEventHandler(async (event) => {
     updateData.aggregateOAuthEnabled = true
     updateData.aggregateOAuthAppId = appId
     updateData.aggregateOAuthAppKey = appKey
-    updateData.aggregateOAuthLoginType = supportedAggregateLoginTypes.includes(loginType) ? loginType : 'qq'
+    updateData.aggregateOAuthLoginType = supportedAggregateLoginTypes.includes(loginType)
+      ? loginType
+      : 'qq'
     updateData.aggregateOAuthEndpoint = endpoint
   } else {
     throw createError({ statusCode: 400, message: '不支持的导入类型' })

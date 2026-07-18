@@ -18,15 +18,19 @@ import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
   const query = getQuery(event)
-  const code = query.code as string
-  const stateStr = query.state as string
+  // OAuth 回调参数参与身份与 CSRF 校验，拒绝重复参数可避免上下游解析结果不一致。
+  const code = typeof query.code === 'string' ? query.code : undefined
+  const stateStr = typeof query.state === 'string' ? query.state : undefined
 
   if (!provider) {
     throw createError({ statusCode: 400, message: 'Missing provider' })
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2' })
+    throw createError({
+      statusCode: 400,
+      message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
+    })
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -43,7 +47,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. 验证 State
   const csrfCookie = getCookie(event, 'oauth_csrf')
-  
+
   if (!csrfCookie) {
     throw createError({
       statusCode: 400,

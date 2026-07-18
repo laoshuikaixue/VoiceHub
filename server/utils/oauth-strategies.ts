@@ -44,7 +44,11 @@ export interface OAuthStrategy {
   /**
    * 获取授权跳转 URL
    */
-  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig): string | Promise<string>
+  getAuthorizeUrl(
+    redirectUri: string,
+    state: string,
+    config?: ProviderRuntimeConfig
+  ): string | Promise<string>
 
   /**
    * 使用 code 换取 access_token
@@ -286,15 +290,13 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       throw createError({ statusCode: 500, message: '聚合登陆配置缺失' })
     }
 
-    const callbackUrl = new URL(redirectUri)
-    callbackUrl.searchParams.set('state', state)
-
     const params = new URLSearchParams({
       act: 'login',
       appid,
       appkey,
       type: loginType,
-      redirect_uri: callbackUrl.toString()
+      redirect_uri: redirectUri,
+      state
     })
 
     let loginResponse: any
@@ -303,7 +305,10 @@ const aggregateOAuthStrategy: OAuthStrategy = {
         headers: { Accept: 'application/json' }
       })
     } catch (e: any) {
-      console.error('聚合登陆 authorize url failed', e?.message || e)
+      // AppKey 位于协议规定的查询串中，避免记录可能包含完整请求 URL 的 FetchError。
+      console.error('聚合登陆授权地址请求失败', {
+        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown'
+      })
       throw createError({ statusCode: 502, message: '聚合登陆授权地址获取失败' })
     }
 
@@ -335,25 +340,28 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       code
     })
 
+    let tokenResponse: any
     try {
-      const tokenResponse = await $fetch<any>(`${endpoint}?${params.toString()}`, {
+      tokenResponse = await $fetch<any>(`${endpoint}?${params.toString()}`, {
         headers: { Accept: 'application/json' }
       })
-
-      if (tokenResponse?.code !== 0) {
-        throw new Error(tokenResponse?.msg || '授权失败，请重试')
-      }
-
-      if (!tokenResponse?.social_uid) {
-        throw new Error('聚合登陆响应缺少用户唯一标识')
-      }
-
-      return Buffer.from(JSON.stringify(tokenResponse), 'utf8').toString('base64url')
     } catch (e: any) {
-      console.error('聚合登陆 callback failed', e.message || e)
-      const errorMessage = e?.data?.msg || e?.data?.message || e?.message || '令牌请求失败'
-      throw new Error(errorMessage)
+      // AppKey 位于协议规定的查询串中，避免记录或继续抛出完整请求 URL。
+      console.error('聚合登陆回调请求失败', {
+        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown'
+      })
+      throw new Error('令牌请求失败')
     }
+
+    if (tokenResponse?.code !== 0) {
+      throw new Error(tokenResponse?.msg || '授权失败，请重试')
+    }
+
+    if (!tokenResponse?.social_uid) {
+      throw new Error('聚合登陆响应缺少用户唯一标识')
+    }
+
+    return Buffer.from(JSON.stringify(tokenResponse), 'utf8').toString('base64url')
   },
 
   async getUserInfo(accessToken: string) {
@@ -426,7 +434,9 @@ const customOAuth2Strategy: OAuthStrategy = {
       })
 
       if (tokenResponse?.error) {
-        throw new Error(tokenResponse.error_description || tokenResponse.error || '授权失败，请重试')
+        throw new Error(
+          tokenResponse.error_description || tokenResponse.error || '授权失败，请重试'
+        )
       }
 
       if (!tokenResponse?.access_token) {
