@@ -188,7 +188,6 @@ export const changePassword = {
   changePasswordTitle: '修改密码',
   setNewPasswordDesc: '请设置一个安全的密码',
   updatePasswordDesc: '更新您的登录密码',
-  backToHome: '返回主页',
   backToHome: '返回主页'
 } as const
 

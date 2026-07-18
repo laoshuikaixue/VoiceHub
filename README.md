@@ -1204,6 +1204,7 @@ VoiceHub/
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
+│   │   ├── system-settings-cache.ts # 系统设置缓存预热插件
 │   │   └── time-sync.ts    # 服务器时间同步插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
@@ -1250,6 +1251,7 @@ VoiceHub/
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── system-settings-helper.ts # 系统设置缓存读取工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── twoFactorStore.ts # 双重认证存储工具
 │   │   ├── user.ts         # 用户相关工具函数
@@ -1274,6 +1276,7 @@ VoiceHub/
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖
+├── pnpm-workspace.yaml    # pnpm 依赖构建许可配置
 ├── README.md              # 项目说明文档
 ├── tsconfig.json          # TypeScript配置文件
 └── vercel.json            # Vercel部署配置

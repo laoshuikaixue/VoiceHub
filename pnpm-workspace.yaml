@@ -1,5 +1,7 @@
 allowBuilds:
+  '@applemusic-like-lyrics/core': true
   '@applemusic-like-lyrics/lyric': true
+  '@applemusic-like-lyrics/vue': true
   '@parcel/watcher': true
   '@swc/core': true
   core-js: true

@@ -177,7 +177,6 @@ export const changePassword = {
   changePasswordTitle: 'Change Password',
   setNewPasswordDesc: 'Create a secure password',
   updatePasswordDesc: 'Update your login password',
-  backToHome: 'Back to Home',
   backToHome: 'Back to Home'
 } as const
 

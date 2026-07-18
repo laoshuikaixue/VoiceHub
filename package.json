@@ -104,20 +104,9 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
+    "@nuxt/kit": "4.4.8",
     "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^9.39.5",
     "prettier": "^3.9.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@applemusic-like-lyrics/core",
-      "@applemusic-like-lyrics/lyric",
-      "@applemusic-like-lyrics/vue",
-      "@parcel/watcher",
-      "@swc/core",
-      "core-js",
-      "esbuild",
-      "unrs-resolver"
-    ]
   }
 }
