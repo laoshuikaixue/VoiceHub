@@ -187,7 +187,11 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
-import { signalUnknownWebAuthnCredential, startWebAuthnRegistration } from '~/utils/webauthn'
+import {
+  getWebAuthnErrorMessage,
+  signalUnknownWebAuthnCredential,
+  startWebAuthnRegistration
+} from '~/utils/webauthn'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
@@ -375,10 +379,7 @@ const handleWebAuthnRegister = async () => {
     await fetchIdentities()
   } catch (e) {
     console.error('WebAuthn 注册错误:', e)
-    const apiError = e
-    const err = e
-    const message = apiError.data?.message || err.message || '添加设备失败'
-    showToast(message, 'error')
+    showToast(getWebAuthnErrorMessage(e, '添加设备失败'), 'error')
   } finally {
     actionLoading.value = false
   }
