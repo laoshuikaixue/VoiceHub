@@ -19,6 +19,9 @@ export async function consumePasswordRateLimit(
 ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
   const now = new Date()
   const resetAt = new Date(now.getTime() + PASSWORD_RATE_WINDOW_SECONDS * 1000)
+  // 原生 SQL 不经过 Drizzle 的 timestamp 编码器，必须传入字符串以兼容 postgres-js。
+  const nowValue = now.toISOString()
+  const resetAtValue = resetAt.toISOString()
   const keys = [`user:${action}:${userId}`, `ip:${action}:${ipAddress}`]
 
   const counts = await db.transaction(async (tx) => {
@@ -26,14 +29,14 @@ export async function consumePasswordRateLimit(
     for (const key of keys) {
       const result = await tx.execute(sql`
         INSERT INTO "PasswordRateLimit" ("key", "count", "resetAt")
-        VALUES (${key}, 1, ${resetAt})
+        VALUES (${key}, 1, ${resetAtValue})
         ON CONFLICT ("key") DO UPDATE SET
           "count" = CASE
-            WHEN "PasswordRateLimit"."resetAt" <= ${now} THEN 1
+            WHEN "PasswordRateLimit"."resetAt" <= ${nowValue} THEN 1
             ELSE "PasswordRateLimit"."count" + 1
           END,
           "resetAt" = CASE
-            WHEN "PasswordRateLimit"."resetAt" <= ${now} THEN ${resetAt}
+            WHEN "PasswordRateLimit"."resetAt" <= ${nowValue} THEN ${resetAtValue}
             ELSE "PasswordRateLimit"."resetAt"
           END
         RETURNING "count"
@@ -43,7 +46,7 @@ export async function consumePasswordRateLimit(
 
     // 惰性清理过期键，避免攻击者通过大量伪造 IP 使限流表无限增长。
     if (Math.random() < 0.02) {
-      await tx.execute(sql`DELETE FROM "PasswordRateLimit" WHERE "resetAt" <= ${now}`)
+      await tx.execute(sql`DELETE FROM "PasswordRateLimit" WHERE "resetAt" <= ${nowValue}`)
     }
 
     return values

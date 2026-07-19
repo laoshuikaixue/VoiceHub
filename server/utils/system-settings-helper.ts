@@ -29,7 +29,7 @@ export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
   const settings = await getSystemSettingsCached()
   return settings && typeof settings.forcePasswordChangeOnFirstLogin === 'boolean'
     ? settings.forcePasswordChangeOnFirstLogin
-    : true
+    : false
 }
 
 export function computeRequirePasswordChange(

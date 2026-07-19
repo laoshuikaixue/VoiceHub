@@ -1,6 +1,8 @@
 <template>
-  <div class="auth-layout">
-    <div class="auth-container">
+  <div class="auth-layout min-h-screen w-full items-center justify-center bg-[#0a0a0a] p-5">
+    <div
+      class="auth-container grid min-h-[600px] w-full max-w-[1200px] grid-cols-1 overflow-hidden lg:grid-cols-2"
+    >
       <!-- 左侧信息区域 -->
       <div class="info-section">
         <div class="info-content">
@@ -63,16 +65,18 @@
       </div>
 
       <!-- 右侧表单区域 -->
-      <div class="form-section">
-        <div class="form-container">
+      <div class="form-section flex items-center justify-center">
+        <div class="form-container w-full max-w-[400px]">
           <div class="form-header">
             <h2>{{ isFirstLogin ? '设置新密码' : '修改密码' }}</h2>
             <p>{{ isFirstLogin ? '请设置一个安全的密码' : '更新您的登录密码' }}</p>
           </div>
 
-          <ClientOnly>
-            <ChangePasswordForm :is-first-login="isFirstLogin" />
-          </ClientOnly>
+          <div class="password-form-shell">
+            <ClientOnly>
+              <ChangePasswordForm :is-first-login="isFirstLogin" />
+            </ClientOnly>
+          </div>
 
           <div class="form-footer">
             <NuxtLink v-if="!requirePasswordChange" class="back-link" to="/">
@@ -270,6 +274,11 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.password-form-shell {
+  width: 100%;
+  min-width: 0;
 }
 
 .form-header {

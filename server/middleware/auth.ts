@@ -6,8 +6,8 @@ import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
 import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
 import {
-  isAllowedDuringPasswordChange,
   isPublicApiPath,
+  shouldBlockDuringPasswordChange,
   shouldBypassPublicApiAuthentication
 } from '../utils/auth-route-policy'
 
@@ -53,7 +53,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // 公共接口只有匿名访问时才绕过认证；携带登录态必须继续检查强制改密状态。
-  const isPublicApi = isPublicApiPath(pathname) || isOAuthProviderRoute
+  // OAuth 路由只有匿名启动/回调时公开；携带登录态时仍必须经过强制改密门控。
+  const isPublicApi = isPublicApiPath(pathname)
   if (
     shouldBypassPublicApiAuthentication(pathname, Boolean(token)) ||
     (isOAuthProviderRoute && !token)
@@ -187,7 +188,13 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const requirePasswordChange = await resolveRequirePasswordChange(user)
+    let requirePasswordChange = false
+    try {
+      requirePasswordChange = await resolveRequirePasswordChange(user)
+    } catch (error) {
+      // 配置依赖故障时放行核心请求，避免缓存或数据库抖动造成全站重定向雪崩。
+      console.error('[Auth] 读取强制改密策略失败，按放行策略降级:', error)
+    }
     if (isUserBlocked(user.id)) {
       delete event.context.user
       const remaining = getUserBlockRemainingTime(user.id)
@@ -207,7 +214,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 认证完成前只允许维持登录态和完成改密所需的接口。
-    if (!isAllowedDuringPasswordChange(pathname) && requirePasswordChange) {
+    if (shouldBlockDuringPasswordChange(pathname, requirePasswordChange)) {
       return sendError(
         event,
         createError({

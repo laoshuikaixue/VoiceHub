@@ -1,5 +1,8 @@
 import { defineEventHandler, getQuery } from 'h3'
-import jwt from 'jsonwebtoken'
+import { db, users } from '~/drizzle/db'
+import { eq } from 'drizzle-orm'
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()
@@ -112,15 +115,36 @@ export default defineEventHandler(async (event) => {
   let userId: number | null = null
   if (token) {
     try {
-      if (process.env.JWT_SECRET) {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: number }
-        userId = decoded.userId
+      const decoded = JWTEnhanced.verifyToken(token)
+      const userResult = await db
+        .select({
+          id: users.id,
+          status: users.status,
+          passwordChangedAt: users.passwordChangedAt,
+          forcePasswordChange: users.forcePasswordChange,
+          tokenVersion: users.tokenVersion
+        })
+        .from(users)
+        .where(eq(users.id, decoded.userId))
+        .limit(1)
+      const user = userResult[0]
+
+      if (!user || user.status !== 'active' || (decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+        throw createError({ statusCode: 401, message: '登录状态无效，请重新登录' })
       }
+
+      if (await resolveRequirePasswordChange(user)) {
+        throw createError({ statusCode: 403, message: '请先完成密码修改' })
+      }
+
+      userId = user.id
     } catch (error) {
-      console.warn('Invalid token for music WebSocket connection, proceeding as anonymous:', error)
-      // 不抛出错误，允许匿名连接
+      if (error && typeof error === 'object' && 'statusCode' in error) {
+        throw error
+      }
+      console.warn('音乐 SSE 连接令牌无效:', error)
+      throw createError({ statusCode: 401, message: '登录状态无效，请重新登录' })
     }
-  } else {
   }
 
   // 生成连接ID

@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   isAllowedDuringPasswordChange,
   isPublicApiPath,
+  shouldBlockDuringPasswordChange,
   shouldBypassPublicApiAuthentication
 } from '../../server/utils/auth-route-policy.ts'
 
@@ -29,4 +30,21 @@ test('强制改密期间只放行必要的认证接口', () => {
   assert.equal(isAllowedDuringPasswordChange('/api/site-config'), true)
   assert.equal(isAllowedDuringPasswordChange('/api/songs/public'), false)
   assert.equal(isAllowedDuringPasswordChange('/api/admin/system-settings'), false)
+})
+
+test('公共 API 路径匹配不会接受相似但未注册的路径', () => {
+  assert.equal(isPublicApiPath('/api/auth/loginX'), false)
+  assert.equal(isPublicApiPath('/api/site-config.evil'), false)
+  assert.equal(isPublicApiPath('/api/site-config/extra'), false)
+  assert.equal(isPublicApiPath('/api/auth/webauthn/login/options'), true)
+  assert.equal(isAllowedDuringPasswordChange('/api/auth/change-passwordX'), false)
+})
+
+test('强制改密门控放行公共 API，但不放行已有会话发起的 OAuth 路由', () => {
+  assert.equal(shouldBlockDuringPasswordChange('/api/site-config', true), false)
+  assert.equal(shouldBlockDuringPasswordChange('/api/sys/time', true), false)
+  assert.equal(shouldBlockDuringPasswordChange('/api/auth/github', true), true)
+  assert.equal(shouldBlockDuringPasswordChange('/api/auth/github/callback', true), true)
+  assert.equal(shouldBlockDuringPasswordChange('/api/admin/users', true), true)
+  assert.equal(shouldBlockDuringPasswordChange('/api/admin/users', false), false)
 })
