@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
     if (!loginType || !providerConfig.loginTypes?.includes(loginType)) {
       throw createError({ statusCode: 400, message: '聚合登录方式未启用或已变更' })
     }
-    if (callbackLoginType && callbackLoginType !== loginType) {
+    if (callbackLoginType !== loginType) {
       throw createError({ statusCode: 400, message: '聚合登录回调类型与 state 不匹配' })
     }
     providerConfig.loginType = loginType

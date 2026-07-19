@@ -1,5 +1,6 @@
 import { createError } from 'h3'
 import type { ProviderRuntimeConfig } from '~~/server/services/oauthConfigService'
+import { isSafeAggregateOAuthUrl } from '~~/server/utils/oauth-providers'
 
 const getObjectByPath = (source: any, path?: string): any => {
   if (!source || !path) return undefined
@@ -23,6 +24,9 @@ const normalizeAggregateEndpoint = (endpoint?: string): string => {
   const value = endpoint?.trim() || DEFAULT_AGGREGATE_OAUTH_ENDPOINT
   try {
     const url = new URL(value)
+    if (!isSafeAggregateOAuthUrl(url.toString())) {
+      throw new Error('unsupported protocol')
+    }
     url.search = ''
     url.hash = ''
     url.pathname = url.pathname.replace(/\/$/, '')
@@ -319,7 +323,15 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       })
     }
 
-    return loginResponse.url
+    try {
+      const authorizeUrl = new URL(loginResponse.url)
+      if (!isSafeAggregateOAuthUrl(authorizeUrl.toString())) {
+        throw new Error('unsupported protocol')
+      }
+      return authorizeUrl.toString()
+    } catch {
+      throw createError({ statusCode: 502, message: '聚合登陆返回了无效的授权地址' })
+    }
   },
 
   async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {

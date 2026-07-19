@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { normalizeAggregateOAuthLoginTypes } from '~~/server/utils/oauth-providers'
+import { getAggregateOAuthLoginTypesOrDefault } from '~~/server/utils/oauth-providers'
 
 export type { OAuthProvider } from '~~/server/utils/oauth-providers'
 export {
@@ -92,11 +92,11 @@ export const getProviderRuntimeConfig = async (
   }
 
   if (provider === 'aggregate') {
-    const loginTypes = normalizeAggregateOAuthLoginTypes(settings.aggregateOAuthLoginType)
+    const loginTypes = getAggregateOAuthLoginTypesOrDefault(settings.aggregateOAuthLoginType)
     return {
       clientId: settings.aggregateOAuthAppId || undefined,
       clientSecret: settings.aggregateOAuthAppKey || undefined,
-      loginTypes: loginTypes.length > 0 ? loginTypes : ['qq'],
+      loginTypes,
       endpoint: settings.aggregateOAuthEndpoint || undefined
     }
   }

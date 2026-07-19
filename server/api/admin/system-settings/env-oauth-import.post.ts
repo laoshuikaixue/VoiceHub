@@ -3,7 +3,10 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
 import { maskSystemSettingsSecrets } from './secretMask'
-import { normalizeAggregateOAuthLoginTypes } from '~~/server/utils/oauth-providers'
+import {
+  getAggregateOAuthLoginTypesOrDefault,
+  isSafeAggregateOAuthUrl
+} from '~~/server/utils/oauth-providers'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -70,18 +73,22 @@ export default defineEventHandler(async (event) => {
     if (!appId || !appKey) {
       throw createError({ statusCode: 400, message: '未检测到完整的聚合登陆环境配置' })
     }
-    const loginTypes = normalizeAggregateOAuthLoginTypes(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
+    const loginTypes = getAggregateOAuthLoginTypesOrDefault(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
+    if (loginTypes.length === 0) {
+      throw createError({ statusCode: 400, message: '未检测到受支持的聚合登录方式' })
+    }
     const endpoint =
       process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
-    try {
-      new URL(endpoint)
-    } catch {
-      throw createError({ statusCode: 400, message: 'AGGREGATE_OAUTH_ENDPOINT 必须是合法的 URL' })
+    if (!isSafeAggregateOAuthUrl(endpoint)) {
+      throw createError({
+        statusCode: 400,
+        message: 'AGGREGATE_OAUTH_ENDPOINT 公网地址必须使用 HTTPS，内网地址可使用 HTTP'
+      })
     }
     updateData.aggregateOAuthEnabled = true
     updateData.aggregateOAuthAppId = appId
     updateData.aggregateOAuthAppKey = appKey
-    updateData.aggregateOAuthLoginType = JSON.stringify(loginTypes.length > 0 ? loginTypes : ['qq'])
+    updateData.aggregateOAuthLoginType = JSON.stringify(loginTypes)
     updateData.aggregateOAuthEndpoint = endpoint
   } else {
     throw createError({ statusCode: 400, message: '不支持的导入类型' })

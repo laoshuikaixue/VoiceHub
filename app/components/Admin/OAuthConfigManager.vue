@@ -155,7 +155,7 @@
             :class="inputClass"
           />
           <p class="text-[10px] text-zinc-600 px-1 mt-2">
-            兼容彩虹聚合登录协议的服务端 connect.php 地址。
+            兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。
           </p>
         </div>
       </template>
@@ -345,7 +345,10 @@ import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import { AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS } from '~/utils/oauth'
+import {
+  AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS,
+  getAggregateOAuthLoginTypesOrDefault
+} from '~/utils/oauth'
 
 const props = defineProps({
   modelValue: {
@@ -451,9 +454,15 @@ const importEnvData = async (provider) => {
       method: 'POST',
       body: { provider }
     })
+    const importedData = { ...data }
+    if (provider === 'aggregate') {
+      importedData.aggregateOAuthLoginType = getAggregateOAuthLoginTypesOrDefault(
+        data.aggregateOAuthLoginType
+      )
+    }
     formData.value = {
       ...formData.value,
-      ...data
+      ...importedData
     }
   } catch (e) {
     console.error('导入环境配置失败:', e)

@@ -3,7 +3,11 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
-import { normalizeAggregateOAuthLoginTypes } from '~~/server/utils/oauth-providers'
+import {
+  getAggregateOAuthLoginTypesOrDefault,
+  isSafeAggregateOAuthUrl,
+  normalizeAggregateOAuthLoginTypes
+} from '~~/server/utils/oauth-providers'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -539,15 +543,13 @@ export default defineEventHandler(async (event) => {
 
     // 聚合登陆
     const normalizeOptionalText = (value: any) => (typeof value === 'string' ? value.trim() : value)
-    const storedAggregateLoginTypes = normalizeAggregateOAuthLoginTypes(
+    const storedAggregateLoginTypes = getAggregateOAuthLoginTypesOrDefault(
       settings?.aggregateOAuthLoginType
     )
     const nextAggregateLoginTypes =
       body.aggregateOAuthLoginType !== undefined
         ? normalizeAggregateOAuthLoginTypes(body.aggregateOAuthLoginType)
-        : storedAggregateLoginTypes.length > 0
-          ? storedAggregateLoginTypes
-          : ['qq']
+        : storedAggregateLoginTypes
     const nextAggregateAppId =
       body.aggregateOAuthAppId !== undefined
         ? normalizeOptionalText(body.aggregateOAuthAppId)
@@ -601,10 +603,11 @@ export default defineEventHandler(async (event) => {
 
     if (body.aggregateOAuthEndpoint !== undefined) {
       if (nextAggregateEndpoint) {
-        try {
-          new URL(nextAggregateEndpoint)
-        } catch {
-          throw createError({ statusCode: 400, message: 'aggregateOAuthEndpoint 必须是合法的 URL' })
+        if (!isSafeAggregateOAuthUrl(nextAggregateEndpoint)) {
+          throw createError({
+            statusCode: 400,
+            message: 'aggregateOAuthEndpoint 公网地址必须使用 HTTPS，内网地址可使用 HTTP'
+          })
         }
       }
       updateData.aggregateOAuthEndpoint = nextAggregateEndpoint || 'https://a.idcfx.net/connect.php'

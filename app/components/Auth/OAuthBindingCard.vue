@@ -14,7 +14,12 @@
             <AuthProvidersGitHubIcon v-if="provider.key === 'github'" class="w-5 h-5" />
             <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" class="w-5 h-5" />
             <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" class="w-5 h-5" />
-            <KeyRound v-else-if="provider.routeProvider === 'aggregate'" :size="20" />
+            <Icon
+              v-else-if="provider.routeProvider === 'aggregate'"
+              :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"
+              :size="20"
+              :class="aggregateIconClass(provider.loginType)"
+            />
             <Shield v-else :size="20" />
           </div>
           <div class="flex flex-col">
@@ -204,12 +209,11 @@ import {
   Pencil,
   Check,
   X,
-  AlertTriangle,
-  KeyRound
+  AlertTriangle
 } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
-import { getProviderDisplayName } from '~/utils/oauth'
+import { getAggregateOAuthLoginTypeIcon, getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { signalUnknownWebAuthnCredential, startWebAuthnRegistration } from '~/utils/webauthn'
 
@@ -290,6 +294,16 @@ const confirmDialog = ref({
 // 样式类
 const itemClass =
   'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group'
+
+const aggregateIconClass = (loginType) => {
+  const classes = {
+    qq: 'text-[#12b7f5]',
+    wx: 'text-[#07c160]',
+    alipay: 'text-[#1677ff]',
+    douyin: 'text-[#25f4ee]'
+  }
+  return classes[loginType] || 'text-zinc-100'
+}
 
 const enabledProviders = computed(() => oauthProviders.value || [])
 

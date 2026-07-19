@@ -1,5 +1,5 @@
 import { computed, ref, readonly } from 'vue'
-import { getAggregateOAuthLoginTypeName, normalizeAggregateOAuthLoginTypes } from '~/utils/oauth'
+import { getAggregateOAuthLoginTypeName, getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -145,8 +145,9 @@ export const useSiteConfig = () => {
       providers.push({ key: 'google', name: 'Google' })
     }
     if (siteConfig.value.aggregateOAuthEnabled) {
-      const loginTypes = normalizeAggregateOAuthLoginTypes(siteConfig.value.aggregateOAuthLoginType)
-      const enabledLoginTypes = loginTypes.length > 0 ? loginTypes : ['qq']
+      const enabledLoginTypes = getAggregateOAuthLoginTypesOrDefault(
+        siteConfig.value.aggregateOAuthLoginType
+      )
       enabledLoginTypes.forEach((loginType) => {
         providers.push({
           key: `aggregate:${loginType}`,

@@ -543,7 +543,7 @@ import {
   AlertCircle
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
-import { normalizeAggregateOAuthLoginTypes } from '~/utils/oauth'
+import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -724,10 +724,7 @@ const loadConfig = async () => {
       aggregateOAuthEnabled: !!data.aggregateOAuthEnabled,
       aggregateOAuthAppId: data.aggregateOAuthAppId || '',
       aggregateOAuthAppKey: data.aggregateOAuthAppKey || '',
-      aggregateOAuthLoginType: (() => {
-        const loginTypes = normalizeAggregateOAuthLoginTypes(data.aggregateOAuthLoginType)
-        return loginTypes.length > 0 ? loginTypes : ['qq']
-      })(),
+      aggregateOAuthLoginType: getAggregateOAuthLoginTypesOrDefault(data.aggregateOAuthLoginType),
       aggregateOAuthEndpoint: data.aggregateOAuthEndpoint || 'https://a.idcfx.net/connect.php',
       customOAuthEnabled: !!data.customOAuthEnabled,
       customOAuthDisplayName: data.customOAuthDisplayName || '',

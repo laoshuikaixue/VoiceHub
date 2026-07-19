@@ -2,11 +2,15 @@ export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
   { value: 'qq', label: 'QQ' },
   { value: 'wx', label: '微信' },
   { value: 'alipay', label: '支付宝' },
-  { value: 'douyin', label: '抖音' },
-  { value: 'google', label: '谷歌' },
-  { value: 'twitter', label: 'Twitter' },
-  { value: 'feishu', label: '飞书' }
+  { value: 'douyin', label: '抖音' }
 ] as const
+
+const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
+  qq: 'oauth-qq',
+  wx: 'oauth-wechat',
+  alipay: 'oauth-alipay',
+  douyin: 'oauth-douyin'
+}
 
 export const normalizeAggregateOAuthLoginTypes = (value: unknown): string[] => {
   let values: unknown[] = []
@@ -34,11 +38,23 @@ export const normalizeAggregateOAuthLoginTypes = (value: unknown): string[] => {
   ]
 }
 
+export const getAggregateOAuthLoginTypesOrDefault = (value: unknown): string[] => {
+  const normalized = normalizeAggregateOAuthLoginTypes(value)
+  const hasConfiguredValue =
+    (Array.isArray(value) && value.length > 0) ||
+    (typeof value === 'string' && value.trim().length > 0)
+  return normalized.length > 0 || hasConfiguredValue ? normalized : ['qq']
+}
+
 export const getAggregateOAuthLoginTypeName = (loginType: string): string => {
   return (
     AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS.find((item) => item.value === loginType)?.label ||
     loginType.toUpperCase()
   )
+}
+
+export const getAggregateOAuthLoginTypeIcon = (loginType: string): string => {
+  return AGGREGATE_OAUTH_LOGIN_TYPE_ICONS[loginType] || 'user'
 }
 
 export const getProviderDisplayName = (provider: string): string => {

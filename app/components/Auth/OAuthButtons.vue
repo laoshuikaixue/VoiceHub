@@ -17,7 +17,11 @@
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
         <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" />
         <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" />
-        <KeyRound v-else-if="provider.routeProvider === 'aggregate'" :size="18" />
+        <Icon
+          v-else-if="provider.routeProvider === 'aggregate'"
+          :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"
+          :size="20"
+        />
         <Shield v-else :size="18" />
       </button>
     </div>
@@ -25,7 +29,8 @@
 </template>
 
 <script setup>
-import { KeyRound, Shield } from '@lucide/vue'
+import { Shield } from '@lucide/vue'
+import { getAggregateOAuthLoginTypeIcon } from '~/utils/oauth'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const route = useRoute()
@@ -55,7 +60,13 @@ const providerButtonClass = (provider) => {
     return `${baseClass} hover:bg-white hover:text-black hover:border-[#dadce0]`
   }
   if (key === 'aggregate') {
-    return `${baseClass} hover:bg-[#7c3aed] hover:text-white hover:border-[#7c3aed]`
+    const aggregateClasses = {
+      qq: 'hover:bg-[#12b7f5] hover:text-white hover:border-[#12b7f5]',
+      wx: 'hover:bg-[#07c160] hover:text-white hover:border-[#07c160]',
+      alipay: 'hover:bg-[#1677ff] hover:text-white hover:border-[#1677ff]',
+      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]'
+    }
+    return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }
   if (key === 'oauth2') {
     return `${baseClass} hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e]`
