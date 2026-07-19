@@ -728,6 +728,7 @@ VoiceHub/
 │   │       ├── components.css      # 组件样式
 │   │       ├── lyric-player.module.css  # 歌词播放器样式
 │   │       ├── main.css           # 主样式文件
+│   │       ├── markdown.css       # Markdown样式
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
@@ -919,6 +920,7 @@ VoiceHub/
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
 │       ├── lyricAdapter.ts    # 歌词适配器
+│       ├── markdown.ts        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
@@ -1296,13 +1298,11 @@ VoiceHub/
 #### 配置目录 (app/)
 
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
-  - **`markdown.css`**: 投稿须知 Markdown 富文本共享样式
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
 - **`app/middleware/`**: 中间件，处理路由和认证
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
   - **`lyric/`**: 歌词处理工具集
-  - **`markdown.js`**: Markdown 安全渲染工具（marked + xss）
 
 #### 服务端目录 (server/)
 

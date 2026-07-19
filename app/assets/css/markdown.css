@@ -1,5 +1,4 @@
 /* 投稿须知 Markdown 富文本共享样式 */
-/* 使用 .markdown-body 类名，在投稿页面、规则弹窗、后台预览中复用 */
 
 .markdown-body {
   line-height: 1.7;
