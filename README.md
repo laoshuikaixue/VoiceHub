@@ -923,7 +923,7 @@ VoiceHub/
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
 │       ├── lyricAdapter.ts    # 歌词适配器
-│       ├── markdown.ts        # Markdown工具
+│       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
