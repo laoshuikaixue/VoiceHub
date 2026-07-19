@@ -209,8 +209,9 @@ export const parseState = (
 
     payload.returnTo = getSafeOAuthReturnPath(payload.returnTo)
     return payload
-  } catch (e) {
-    console.error('Failed to parse OAuth state', e)
+  } catch {
+    // 解密失败通常来自密钥不一致或客户端状态损坏，不应作为服务端异常上报。
+    console.warn('OAuth state 解密失败：state 已损坏、被截断或 OAuth State 密钥不一致')
     return null
   }
 }

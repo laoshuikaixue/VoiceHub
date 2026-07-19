@@ -20,7 +20,7 @@
         <Icon
           v-else-if="provider.routeProvider === 'aggregate'"
           :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"
-          :size="20"
+          :size="26"
         />
         <Shield v-else :size="18" />
       </button>

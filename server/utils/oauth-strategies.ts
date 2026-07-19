@@ -319,7 +319,10 @@ const aggregateOAuthStrategy: OAuthStrategy = {
     if (loginResponse?.code !== 0 || !loginResponse?.url) {
       throw createError({
         statusCode: 502,
-        message: loginResponse?.msg || '聚合登陆授权地址获取失败'
+        message: '聚合登陆授权地址获取失败',
+        data: {
+          providerMessage: typeof loginResponse?.msg === 'string' ? loginResponse.msg : undefined
+        }
       })
     }
 
