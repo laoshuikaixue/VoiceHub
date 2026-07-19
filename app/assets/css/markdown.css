@@ -108,3 +108,12 @@
   text-decoration: line-through;
   opacity: 0.6;
 }
+
+/* 任务列表：移除圆点 + 主题色勾选框 */
+.markdown-body li:has(input[type='checkbox']) {
+  list-style-type: none;
+}
+
+.markdown-body input[type='checkbox'] {
+  accent-color: #3b82f6;
+}
