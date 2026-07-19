@@ -1302,7 +1302,7 @@ VoiceHub/
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
   - **`lyric/`**: 歌词处理工具集
-  - **`markdown.js`**: Markdown 安全渲染工具（marked + isomorphic-dompurify）
+  - **`markdown.js`**: Markdown 安全渲染工具（marked + xss）
 
 #### 服务端目录 (server/)
 
