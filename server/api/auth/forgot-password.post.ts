@@ -95,7 +95,8 @@ export default defineEventHandler(async (event) => {
         '重置密码',
         `<p>您好，您请求了重置密码。</p><p>请点击下方按钮重置密码（链接在15分钟内有效）。</p><p style="color:#888">如果您没有请求重置密码，请忽略此邮件。</p>`,
         resetLink,
-        clientIP
+        clientIP,
+        true
       )
 
       event.waitUntil(
