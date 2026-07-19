@@ -14,6 +14,7 @@ const HTML_ESCAPE_MAP: Record<string, string> = {
 }
 
 const TRUSTED_HTML_TEMPLATE_KEYS = new Set(['contentBlock'])
+const EMAIL_REQUEST_SOURCE_LABEL = 'This email was requested from:'
 
 const escapeHtml = (value: unknown): string => {
   return String(value).replace(/[&<>"']/g, (character) => HTML_ESCAPE_MAP[character])
@@ -309,17 +310,17 @@ export class SmtpService {
       throw new Error('SMTP配置未初始化或无效')
     }
 
-    // 如果提供了IP地址，在邮件内容中添加IP信息
+    // 兼容直接调用 sendMail 的邮件；模板已渲染来源 IP 时不重复追加
     let finalHtml = htmlContent
-    if (ipAddress) {
-      const formattedIP = formatIPForEmail(ipAddress)
-      // 在邮件末尾添加IP信息
+    if (ipAddress && !htmlContent.includes(EMAIL_REQUEST_SOURCE_LABEL)) {
+      const formattedIP = escapeHtml(formatIPForEmail(ipAddress))
       finalHtml = htmlContent.replace(
         /(<p[^>]*style="[^"]*text-align: center[^"]*"[^>]*>.*?此邮件由系统自动发送，请勿回复。.*?<\/p>)/s,
-        `$1`.replace(
-          '此邮件由系统自动发送，请勿回复。',
-          `此邮件由系统自动发送，请勿回复。<br><br>This email was requested from: ${formattedIP}`
-        )
+        (footer) =>
+          footer.replace(
+            '此邮件由系统自动发送，请勿回复。',
+            `此邮件由系统自动发送，请勿回复。<br><br>${EMAIL_REQUEST_SOURCE_LABEL} <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${formattedIP}</span>`
+          )
       )
     }
 

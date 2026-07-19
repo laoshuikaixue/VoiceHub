@@ -3,7 +3,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
-import { getClientIP } from '~~/server/utils/ip-utils'
+import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
 import { checkRateLimit } from '~~/server/utils/rateLimiter'
 
 export default defineEventHandler(async (event) => {
@@ -95,7 +95,7 @@ export default defineEventHandler(async (event) => {
         '重置密码',
         `<p>您好，您请求了重置密码。</p><p>请点击下方按钮重置密码（链接在15分钟内有效）。</p><p style="color:#888">如果您没有请求重置密码，请忽略此邮件。</p>`,
         resetLink,
-        clientIP,
+        formatIPForEmail(clientIP),
         true
       )
 
