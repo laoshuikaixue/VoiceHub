@@ -109,11 +109,38 @@
   opacity: 0.6;
 }
 
-/* 任务列表：移除圆点 + 主题色勾选框 */
+/* 任务列表：移除圆点 + 自定义勾选框 */
 .markdown-body li:has(input[type='checkbox']) {
   list-style-type: none;
 }
 
 .markdown-body input[type='checkbox'] {
-  accent-color: #3b82f6;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1em;
+  height: 1em;
+  margin: 0 0.35em 0 0;
+  border: 1.5px solid #52525b;
+  border-radius: 3px;
+  background: transparent;
+  vertical-align: middle;
+  position: relative;
+  cursor: default;
+}
+
+.markdown-body input[type='checkbox']:checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.markdown-body input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  width: 4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
 }
