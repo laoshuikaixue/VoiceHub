@@ -30,6 +30,7 @@
 
 <script setup>
 import { Shield } from '@lucide/vue'
+import Icon from '~/components/UI/Icon.vue'
 import { getAggregateOAuthLoginTypeIcon } from '~/utils/oauth'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()

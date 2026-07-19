@@ -117,7 +117,7 @@ function resolveAggregateLoginType(value) {
   let values
   try {
     const parsed = JSON.parse(value)
-    values = Array.isArray(parsed) ? parsed : [value]
+    values = Array.isArray(parsed) ? parsed : [parsed]
   } catch {
     values = value.split(',')
   }

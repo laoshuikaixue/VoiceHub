@@ -212,6 +212,7 @@ import {
   AlertTriangle
 } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import Icon from '~/components/UI/Icon.vue'
 import { useToast } from '~/composables/useToast'
 import { getAggregateOAuthLoginTypeIcon, getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'

@@ -75,7 +75,7 @@ export const normalizeAggregateOAuthLoginTypes = (value: unknown): AggregateOAut
     const normalized = value.trim()
     try {
       const parsed = JSON.parse(normalized)
-      values = Array.isArray(parsed) ? parsed : [normalized]
+      values = Array.isArray(parsed) ? parsed : [parsed]
     } catch {
       values = normalized.split(',')
     }
