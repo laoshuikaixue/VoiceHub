@@ -510,16 +510,48 @@
       <section
         class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
       >
-        <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
-        >
-          <FileText :size="16" class="text-emerald-500" /> 投稿须知
-        </h3>
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+          <h3
+            class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
+          >
+            <FileText :size="16" class="text-emerald-500" /> 投稿须知
+          </h3>
+          <div class="flex gap-1 bg-zinc-950 rounded-lg p-1">
+            <button
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                editMode === 'edit'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              ]"
+              @click="editMode = 'edit'"
+            >
+              编辑
+            </button>
+            <button
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                editMode === 'preview'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              ]"
+              @click="editMode = 'preview'"
+            >
+              预览
+            </button>
+          </div>
+        </div>
         <textarea
+          v-if="editMode === 'edit'"
           v-model="formData.submissionGuidelines"
           :rows="6"
-          placeholder="请输入投稿须知内容"
+          placeholder="请输入投稿须知内容（支持 Markdown 格式）"
           :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
+        />
+        <div
+          v-else
+          class="guidelines-preview markdown-body w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-300 leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
+          v-html="renderedPreview"
         />
       </section>
 
@@ -543,6 +575,7 @@ import {
   AlertCircle
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
+import { renderMarkdown } from '~/utils/markdown'
 import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
@@ -551,6 +584,10 @@ const { showToast: showNotification } = useToast()
 const loading = ref(true)
 const saving = ref(false)
 const saveSuccess = ref(false)
+const editMode = ref('edit') // 投稿须知编辑/预览模式
+
+// 投稿须知 Markdown 预览
+const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
 
 // 样式类常量
 const inputClass =

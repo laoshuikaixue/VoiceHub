@@ -731,6 +731,7 @@ VoiceHub/
 │   │       ├── components.css      # 组件样式
 │   │       ├── lyric-player.module.css  # 歌词播放器样式
 │   │       ├── main.css           # 主样式文件
+│   │       ├── markdown.css       # Markdown样式
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
@@ -922,6 +923,7 @@ VoiceHub/
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
 │       ├── lyricAdapter.ts    # 歌词适配器
+│       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤

@@ -579,10 +579,9 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50 whitespace-pre-line"
-                >
-                  {{ submissionGuidelines }}
-                </div>
+                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  v-html="renderedGuidelines"
+                />
                 <div
                   v-else
                   class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
@@ -653,6 +652,7 @@ import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 
 // 获取运行时配置
@@ -669,6 +669,9 @@ const {
   schoolLogoHomeUrl,
   initSiteConfig
 } = useSiteConfig()
+
+// 将投稿须知 Markdown 渲染为安全 HTML
+const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 const auth = useAuth()
 
