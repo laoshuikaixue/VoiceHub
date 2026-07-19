@@ -1,24 +1,21 @@
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import xss from 'xss'
 
-// 配置 marked：支持 GFM（表格、任务列表等），换行自动转 <br>
-marked.use({
+// 创建独立的 marked 实例，避免全局污染和 HMR 重复注册
+const markedInstance = new Marked({
   gfm: true,
-  breaks: true
-})
-
-// 禁止原始 HTML 渲染，从源头防止 XSS
-marked.use({
+  breaks: true,
   renderer: {
     html() { return '<!-- raw HTML blocked -->' }
   }
 })
 
-// xss 白名单：默认白名单 + GFM 任务列表的 <input type="checkbox">
+// xss 白名单：默认白名单 + GFM 任务列表 checkbox + code 类名（为语法高亮预留）
 const xssOptions = {
   whiteList: {
     ...xss.whiteList,
-    input: ['type', 'checked', 'disabled']
+    input: ['type', 'checked', 'disabled'],
+    code: ['class']
   }
 }
 
@@ -31,6 +28,6 @@ const xssOptions = {
  */
 export function renderMarkdown(text) {
   if (!text || typeof text !== 'string') return ''
-  const rawHtml = marked.parse(text)
+  const rawHtml = markedInstance.parse(text)
   return xss(rawHtml, xssOptions)
 }
