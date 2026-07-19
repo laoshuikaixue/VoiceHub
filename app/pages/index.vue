@@ -14,12 +14,12 @@
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" :src="logo" >
+            <img alt="VoiceHub Logo" class="logo-image" :src="logo" />
           </NuxtLink>
           <!-- 横线和学校logo -->
-          <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
+          <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider-container">
             <div class="logo-divider" />
-            <img :src="proxiedSchoolLogoUrl" alt="学校Logo" class="school-logo" >
+            <img :src="schoolLogoHomeDisplayUrl" alt="学校Logo" class="school-logo" />
           </div>
         </div>
 
@@ -39,7 +39,7 @@
                   :src="user.avatar"
                   class="user-avatar"
                   @error="avatarError = true"
-                >
+                />
                 <div v-else class="user-avatar-placeholder">
                   {{ user?.name?.[0] || 'U' }}
                 </div>
@@ -666,7 +666,7 @@ const {
   description: siteDescription,
   guidelines: submissionGuidelines,
   icp: icpNumber,
-  schoolLogoHomeUrl,
+  schoolLogoHomeDisplayUrl,
   initSiteConfig
 } = useSiteConfig()
 
@@ -1295,23 +1295,6 @@ const filteredSongs = computed(() => {
 })
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
-
-// 处理学校logo的HTTP/HTTPS代理
-const proxiedSchoolLogoUrl = computed(() => {
-  if (!schoolLogoHomeUrl.value || !schoolLogoHomeUrl.value.trim()) {
-    return ''
-  }
-
-  const logoUrl = schoolLogoHomeUrl.value.trim()
-
-  // 如果是HTTP链接，通过代理访问
-  if (logoUrl.startsWith('http://')) {
-    return `/api/proxy/image?url=${encodeURIComponent(logoUrl)}`
-  }
-
-  // HTTPS链接或相对路径直接返回
-  return logoUrl
-})
 
 // 处理投稿请求
 const handleRequest = async (songData) => {

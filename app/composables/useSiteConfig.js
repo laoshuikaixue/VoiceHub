@@ -39,6 +39,18 @@ const siteConfig = ref({
 const isLoaded = ref(false)
 const isLoading = ref(false)
 
+const getImageDisplayUrl = (url) => {
+  const normalizedUrl = typeof url === 'string' ? url.trim() : ''
+  if (!normalizedUrl) return ''
+
+  // HTTP 图片通过同源代理加载，避免在 HTTPS 页面中被浏览器按混合内容拦截
+  if (/^http:\/\//i.test(normalizedUrl)) {
+    return `/api/proxy/image?url=${encodeURIComponent(normalizedUrl)}`
+  }
+
+  return normalizedUrl
+}
+
 export const useSiteConfig = () => {
   // 获取站点配置
   const fetchSiteConfig = async () => {
@@ -98,6 +110,8 @@ export const useSiteConfig = () => {
   const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
   const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
   const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
+  const schoolLogoHomeDisplayUrl = computed(() => getImageDisplayUrl(schoolLogoHomeUrl.value))
+  const schoolLogoPrintDisplayUrl = computed(() => getImageDisplayUrl(schoolLogoPrintUrl.value))
   const description = computed(
     () => siteConfig.value.siteDescription || '校园广播站点歌系统 - 让你的声音被听见'
   )
@@ -187,6 +201,8 @@ export const useSiteConfig = () => {
     logoUrl,
     schoolLogoHomeUrl,
     schoolLogoPrintUrl,
+    schoolLogoHomeDisplayUrl,
+    schoolLogoPrintDisplayUrl,
     description,
     guidelines,
     icp,
