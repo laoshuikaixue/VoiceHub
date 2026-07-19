@@ -187,7 +187,11 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'
 import { getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
-import { startWebAuthnRegistration } from '~/utils/webauthn'
+import {
+  getWebAuthnErrorMessage,
+  signalUnknownWebAuthnCredential,
+  startWebAuthnRegistration
+} from '~/utils/webauthn'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
@@ -314,7 +318,7 @@ const confirmUnbind = (provider) => {
 const confirmUnbindWebAuthn = (cred) => {
   confirmDialog.value = {
     title: '移除 Passkey',
-    message: `确定要移除设备 "${cred.providerUsername}" 吗？移除后将无法使用该设备登录。`,
+    message: `确定要移除设备 "${cred.providerUsername}" 吗？VoiceHub 会尝试通知当前设备同步删除；若系统不支持，仍需在密码保险箱中手动删除。`,
     type: 'danger',
     loading: false,
     onConfirm: () => handleUnbind('webauthn', cred.id),
@@ -329,12 +333,20 @@ const handleUnbind = async (provider, id = null) => {
   confirmDialog.value.loading = true
   actionLoading.value = true
   try {
-    await $fetch('/api/auth/unbind', {
+    const result = await $fetch('/api/auth/unbind', {
       method: 'POST',
       body: { provider, id }
     })
+    const cleanupResults = await Promise.all(
+      (result.passkeyCleanup || []).map(signalUnknownWebAuthnCredential)
+    )
     await fetchIdentities()
-    showToast('解除绑定成功', 'success')
+    const deviceCleanupSucceeded = cleanupResults.length > 0 && cleanupResults.every(Boolean)
+    if (provider === 'webauthn' && !deviceCleanupSucceeded) {
+      showToast('已从 VoiceHub 移除，请同时在设备密码保险箱中删除对应 Passkey', 'warning', 6000)
+    } else {
+      showToast('解除绑定成功', 'success')
+    }
     showConfirmDialog.value = false
   } catch (e) {
     showToast(e.data?.message || '解绑失败', 'error')
@@ -367,10 +379,7 @@ const handleWebAuthnRegister = async () => {
     await fetchIdentities()
   } catch (e) {
     console.error('WebAuthn 注册错误:', e)
-    const apiError = e
-    const err = e
-    const message = apiError.data?.message || err.message || '添加设备失败'
-    showToast(message, 'error')
+    showToast(getWebAuthnErrorMessage(e, '添加设备失败'), 'error')
   } finally {
     actionLoading.value = false
   }
