@@ -1,4 +1,5 @@
 import { computed, ref, readonly } from 'vue'
+import { getAggregateOAuthLoginTypeName, getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -29,6 +30,8 @@ const siteConfig = ref({
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
+  aggregateOAuthEnabled: false,
+  aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
   customOAuthDisplayName: ''
 })
@@ -79,6 +82,8 @@ export const useSiteConfig = () => {
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
+        aggregateOAuthEnabled: false,
+        aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
         customOAuthDisplayName: ''
       }
@@ -109,7 +114,9 @@ export const useSiteConfig = () => {
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
-  const requireCardCodeForRequests = computed(() => siteConfig.value.requireCardCodeForRequests === true)
+  const requireCardCodeForRequests = computed(
+    () => siteConfig.value.requireCardCodeForRequests === true
+  )
   const enableCardCodeLimitBypass = computed(
     () => siteConfig.value.enableCardCodeLimitBypass === true
   )
@@ -122,6 +129,7 @@ export const useSiteConfig = () => {
     github: !!siteConfig.value.githubOAuthEnabled,
     casdoor: !!siteConfig.value.casdoorOAuthEnabled,
     google: !!siteConfig.value.googleOAuthEnabled,
+    aggregate: !!siteConfig.value.aggregateOAuthEnabled,
     oauth2: !!siteConfig.value.customOAuthEnabled
   }))
 
@@ -135,6 +143,19 @@ export const useSiteConfig = () => {
     }
     if (siteConfig.value.googleOAuthEnabled) {
       providers.push({ key: 'google', name: 'Google' })
+    }
+    if (siteConfig.value.aggregateOAuthEnabled) {
+      const enabledLoginTypes = getAggregateOAuthLoginTypesOrDefault(
+        siteConfig.value.aggregateOAuthLoginType
+      )
+      enabledLoginTypes.forEach((loginType) => {
+        providers.push({
+          key: `aggregate:${loginType}`,
+          routeProvider: 'aggregate',
+          loginType,
+          name: `${getAggregateOAuthLoginTypeName(loginType)} 登录`
+        })
+      })
     }
     if (siteConfig.value.customOAuthEnabled) {
       providers.push({

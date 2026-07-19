@@ -680,6 +680,8 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录：
 
+OAuth 运行时配置统一保存在管理员后台数据库中；环境变量仅用于兼容旧部署和后台一键导入，导入后以后台保存值为准。
+
 1. **在管理员后台配置**：
 
 - 导航到系统设置 > OAuth 配置
@@ -690,6 +692,7 @@ VoiceHub 实现了细粒度的权限控制系统：
   - GitHub：Client ID / Secret
   - Casdoor：Server URL / Client ID / Secret / Organization Name
   - Google：Client ID / Secret
+  - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝、抖音
   - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
 2. **OAuth 提供商配置**：

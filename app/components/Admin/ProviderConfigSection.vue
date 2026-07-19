@@ -3,6 +3,15 @@
     <div class="flex items-center justify-between">
       <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ title }}</h4>
       <div class="flex items-center gap-4">
+        <a
+          v-if="docUrl"
+          :href="docUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+        >
+          {{ docLabel || '查看文档' }}
+        </a>
         <button
           v-if="hasEnvConfig"
           type="button"
@@ -84,6 +93,8 @@ const props = defineProps({
   clientIdPlaceholder: String,
   clientSecretLabel: String,
   clientSecretPlaceholder: String,
+  docUrl: String,
+  docLabel: String,
 })
 
 const emit = defineEmits([
