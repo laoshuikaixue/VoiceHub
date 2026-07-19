@@ -1,4 +1,9 @@
-import { generateState, getRedirectUri, getSafeOAuthReturnPath } from '~~/server/utils/oauth'
+import {
+  generateCompactOAuthState,
+  generateState,
+  getRedirectUri,
+  getSafeOAuthReturnPath
+} from '~~/server/utils/oauth'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import {
   getOAuthBaseConfig,
@@ -15,7 +20,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2' })
+    throw createError({
+      statusCode: 400,
+      message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
+    })
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -23,8 +31,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: 'OAuth provider is disabled' })
   }
 
+  const query = getQuery(event)
   const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
   const providerConfig = await getProviderRuntimeConfig(provider)
+  let aggregateLoginType: string | undefined
+
+  if (provider === 'aggregate') {
+    aggregateLoginType =
+      typeof query.type === 'string' ? query.type.trim().toLowerCase() : undefined
+    if (!aggregateLoginType || !providerConfig.loginTypes?.includes(aggregateLoginType)) {
+      throw createError({ statusCode: 400, message: '未启用或不支持的聚合登录方式' })
+    }
+    providerConfig.loginType = aggregateLoginType
+  }
 
   const strategy = getOAuthStrategy(provider)
 
@@ -42,12 +61,18 @@ export default defineEventHandler(async (event) => {
     const redirectUrl = new URL(redirectUri)
     // 只有当配置的不是专门的 broker 回调时，才进行严格的源站一致性校验
     // 通常 Broker 的回调是根目录下的 /callback 或者是单独的 auth 域名
-    const isBrokerPattern = /(?:\/api)?\/auth\/[^/]+\/callback\/?$|\/callback\/?$/.test(redirectUrl.pathname)
-    
-    if (!isBrokerPattern && (redirectUrl.host !== host || redirectUrl.protocol !== `${protocol}:`)) {
+    const isBrokerPattern = /(?:\/api)?\/auth\/[^/]+\/callback\/?$|\/callback\/?$/.test(
+      redirectUrl.pathname
+    )
+
+    if (
+      !isBrokerPattern &&
+      (redirectUrl.host !== host || redirectUrl.protocol !== `${protocol}:`)
+    ) {
       throw createError({
         statusCode: 400,
-        message: 'OAuth 回调地址与当前请求源站不一致，请在管理员后台将 OAuth 重定向 URI 配置为当前站点域名'
+        message:
+          'OAuth 回调地址与当前请求源站不一致，请在管理员后台将 OAuth 重定向 URI 配置为当前站点域名'
       })
     }
   } catch (error: any) {
@@ -60,12 +85,12 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const returnTo = getSafeOAuthReturnPath(getQuery(event).redirect)
-  const { state, csrf } = generateState(origin, provider, stateSecret, returnTo)
+  const returnTo = getSafeOAuthReturnPath(query.redirect)
+  const { state, csrf } = generateState(origin, provider, stateSecret, returnTo, aggregateLoginType)
 
   // 在开发环境 (HTTP) 中，必须将 secure 设置为 false，否则浏览器会拒绝设置 cookie
   const isHttps = protocol === 'https'
-  
+
   // 为了兼容不同的部署环境（本地、Docker、Codespaces等），
   // 不指定domain，让浏览器自动使用当前请求的host
   setCookie(event, 'oauth_csrf', csrf, {
@@ -76,8 +101,22 @@ export default defineEventHandler(async (event) => {
     path: '/'
     // 注意：不设置 domain，让浏览器使用当前 host
   })
-  
-  const url = await strategy.getAuthorizeUrl(redirectUri, state, providerConfig)
+
+  let authorizeState = state
+  if (provider === 'aggregate') {
+    authorizeState = generateCompactOAuthState(origin, stateSecret)
+    const aggregateCookieOptions = {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: 'lax' as const,
+      maxAge: 60 * 10,
+      path: '/'
+    }
+    setCookie(event, 'oauth_full_state', state, aggregateCookieOptions)
+    setCookie(event, 'oauth_compact_state', authorizeState, aggregateCookieOptions)
+  }
+
+  const url = await strategy.getAuthorizeUrl(redirectUri, authorizeState, providerConfig)
 
   return sendRedirect(event, url)
 })

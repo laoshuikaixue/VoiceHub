@@ -6,6 +6,14 @@
       <Shield :size="16" class="text-green-500" /> OAuth 第三方登录配置
     </h3>
 
+    <div class="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
+      <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
+      <p class="text-[10px] text-zinc-500 leading-relaxed">
+        OAuth
+        运行时配置已经迁移到后台数据库。环境变量仅用于兼容旧部署和一键导入，导入后仍以此页面保存的配置为准。
+      </p>
+    </div>
+
     <!-- 基础配置 -->
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
@@ -21,10 +29,14 @@
         </button>
       </div>
 
-      <div class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+      <div
+        class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"
+      >
         <div>
           <label :class="labelClass">允许第三方注册</label>
-          <p class="text-[10px] text-zinc-600 mt-1">开启后，允许用户通过 OAuth 创建新账号；关闭时，仅允许绑定已有账号</p>
+          <p class="text-[10px] text-zinc-600 mt-1">
+            开启后，允许用户通过 OAuth 创建新账号；关闭时，仅允许绑定已有账号
+          </p>
         </div>
         <div class="flex items-center gap-2">
           <span
@@ -39,33 +51,38 @@
             v-model="formData.allowOAuthRegistration"
             type="checkbox"
             class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+          />
         </div>
       </div>
 
       <div>
         <label :class="labelClass">OAuth 重定向 URI</label>
         <p class="text-[10px] text-zinc-600 px-1 mb-2">
-          例: <code class="bg-zinc-950 px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
+          例:
+          <code class="bg-zinc-950 px-2 py-1 rounded"
+            >https://yourdomain.com/api/auth/[provider]/callback</code
+          >
         </p>
         <input
           v-model="formData.oauthRedirectUri"
           type="text"
           placeholder="https://yourdomain.com/api/auth/[provider]/callback"
           :class="inputClass"
-        >
+        />
       </div>
 
       <div>
         <label :class="labelClass">OAuth State 密钥</label>
-        <p class="text-[10px] text-zinc-600 px-1 mb-2">用于加密/解密 OAuth 状态参数，建议使用强随机字符串</p>
+        <p class="text-[10px] text-zinc-600 px-1 mb-2">
+          用于加密/解密 OAuth 状态参数，建议使用强随机字符串
+        </p>
         <div class="flex gap-2">
           <input
             v-model="formData.oauthStateSecret"
             :type="showSecrets.state ? 'text' : 'password'"
             placeholder="输入强随机字符串"
             :class="inputClass"
-          >
+          />
           <button
             type="button"
             class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
@@ -102,7 +119,7 @@
             type="text"
             placeholder="https://casdoor.example.com"
             :class="inputClass"
-          >
+          />
         </div>
       </template>
       <template #after-fields v-if="provider.id === 'casdoor'">
@@ -113,25 +130,21 @@
             type="text"
             placeholder="输入组织名称"
             :class="inputClass"
-          >
+          />
         </div>
       </template>
       <template #after-fields v-else-if="provider.id === 'aggregate'">
         <div>
-          <label :class="labelClass">登录方式</label>
-          <select
+          <CustomSelect
             v-model="formData.aggregateOAuthLoginType"
-            :class="inputClass"
-          >
-            <option
-              v-for="type in aggregateLoginTypes"
-              :key="type.value"
-              :value="type.value"
-            >
-              {{ type.label }}
-            </option>
-          </select>
-          <p class="text-[10px] text-zinc-600 px-1 mt-2">对应聚合登陆接口的 type 参数。</p>
+            label="登录方式"
+            :options="aggregateLoginTypes"
+            placeholder="请选择至少一种登录方式"
+            multiple
+          />
+          <p class="text-[10px] text-zinc-600 px-1 mt-2">
+            可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。
+          </p>
         </div>
         <div>
           <label :class="labelClass">接口地址</label>
@@ -140,8 +153,10 @@
             type="url"
             placeholder="https://a.idcfx.net/connect.php"
             :class="inputClass"
-          >
-          <p class="text-[10px] text-zinc-600 px-1 mt-2">兼容彩虹聚合登录协议的服务端 connect.php 地址。</p>
+          />
+          <p class="text-[10px] text-zinc-600 px-1 mt-2">
+            兼容彩虹聚合登录协议的服务端 connect.php 地址。
+          </p>
         </div>
       </template>
     </AdminProviderConfigSection>
@@ -163,7 +178,7 @@
             v-model="formData.customOAuthEnabled"
             type="checkbox"
             class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+          />
         </div>
       </div>
 
@@ -175,7 +190,7 @@
             type="text"
             placeholder="例如：校园统一认证"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -185,7 +200,7 @@
             type="text"
             placeholder="https://oauth.example.com/authorize"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -195,7 +210,7 @@
             type="text"
             placeholder="https://oauth.example.com/token"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -205,7 +220,7 @@
             type="text"
             placeholder="https://oauth.example.com/userinfo"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -215,7 +230,7 @@
             type="text"
             placeholder="openid profile email"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -225,7 +240,7 @@
             type="text"
             placeholder="输入 Client ID"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -236,7 +251,7 @@
               :type="showSecrets.custom ? 'text' : 'password'"
               :placeholder="showSecrets.custom ? '输入 Client Secret' : '••••••••••••••••'"
               :class="inputClass"
-            >
+            />
             <button
               type="button"
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
@@ -255,7 +270,7 @@
               type="text"
               placeholder="sub"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div>
@@ -265,7 +280,7 @@
               type="text"
               placeholder="preferred_username"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div>
@@ -275,7 +290,7 @@
               type="text"
               placeholder="name"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div>
@@ -285,7 +300,7 @@
               type="text"
               placeholder="email"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div class="md:col-span-2">
@@ -295,20 +310,30 @@
               type="text"
               placeholder="picture"
               :class="inputClass"
-            >
+            />
           </div>
         </div>
       </div>
     </div>
 
     <!-- 信息提示 -->
-    <div class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3">
+    <div
+      class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
+    >
       <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
         <p>
-          在 Vercel 等平台进行多环境部署时，GitHub OAuth App 等提供商通常只能配置单一的回调地址。为了解决这个问题，项目可以使用 
-          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-blue-500 hover:underline">VoiceHub-Auth-Broker</a> 
-          中间件作为统一的回调入口。该中间件能根据 <code>state</code> 参数动态转发回调请求到正确的部署环境，从而实现单个 OAuth App 支持无限个预览/生产环境。详情请参考该项目文档。
+          在 Vercel 等平台进行多环境部署时，GitHub OAuth App
+          等提供商通常只能配置单一的回调地址。为了解决这个问题，项目可以使用
+          <a
+            href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker"
+            target="_blank"
+            class="text-blue-500 hover:underline"
+            >VoiceHub-Auth-Broker</a
+          >
+          中间件作为统一的回调入口。该中间件能根据
+          <code>state</code> 参数动态转发回调请求到正确的部署环境，从而实现单个 OAuth App
+          支持无限个预览/生产环境。详情请参考该项目文档。
         </p>
       </div>
     </div>
@@ -319,6 +344,8 @@
 import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS } from '~/utils/oauth'
 
 const props = defineProps({
   modelValue: {
@@ -365,7 +392,7 @@ const oauthProviders = computed(() => [
     clientIdLabel: 'GitHub Client ID',
     clientIdPlaceholder: '输入 GitHub Client ID',
     clientSecretLabel: 'GitHub Client Secret',
-    clientSecretPlaceholder: '输入 GitHub Client Secret',
+    clientSecretPlaceholder: '输入 GitHub Client Secret'
   },
   {
     id: 'casdoor',
@@ -377,7 +404,7 @@ const oauthProviders = computed(() => [
     clientIdLabel: 'Casdoor Client ID',
     clientIdPlaceholder: '输入 Client ID',
     clientSecretLabel: 'Casdoor Client Secret',
-    clientSecretPlaceholder: '输入 Client Secret',
+    clientSecretPlaceholder: '输入 Client Secret'
   },
   {
     id: 'google',
@@ -389,7 +416,7 @@ const oauthProviders = computed(() => [
     clientIdLabel: 'Google Client ID',
     clientIdPlaceholder: '输入 Google Client ID（xxx.apps.googleusercontent.com）',
     clientSecretLabel: 'Google Client Secret',
-    clientSecretPlaceholder: '输入 Google Client Secret',
+    clientSecretPlaceholder: '输入 Google Client Secret'
   },
   {
     id: 'aggregate',
@@ -407,15 +434,7 @@ const oauthProviders = computed(() => [
   }
 ])
 
-const aggregateLoginTypes = [
-  { value: 'qq', label: 'QQ' },
-  { value: 'wx', label: '微信' },
-  { value: 'alipay', label: '支付宝' },
-  { value: 'douyin', label: '抖音' },
-  { value: 'google', label: '谷歌' },
-  { value: 'twitter', label: 'Twitter' },
-  { value: 'feishu', label: '飞书' }
-]
+const aggregateLoginTypes = [...AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS]
 
 const fetchEnvData = async () => {
   try {

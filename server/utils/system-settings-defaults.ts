@@ -79,6 +79,7 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'casdoorOAuthEnabled',
   'googleOAuthEnabled',
   'aggregateOAuthEnabled',
+  'aggregateOAuthLoginType',
   'customOAuthEnabled',
   'customOAuthDisplayName',
   'captchaEnabled',

@@ -1,4 +1,53 @@
+export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
+  { value: 'qq', label: 'QQ' },
+  { value: 'wx', label: '微信' },
+  { value: 'alipay', label: '支付宝' },
+  { value: 'douyin', label: '抖音' },
+  { value: 'google', label: '谷歌' },
+  { value: 'twitter', label: 'Twitter' },
+  { value: 'feishu', label: '飞书' }
+] as const
+
+export const normalizeAggregateOAuthLoginTypes = (value: unknown): string[] => {
+  let values: unknown[] = []
+
+  if (Array.isArray(value)) {
+    values = value
+  } else if (typeof value === 'string' && value.trim()) {
+    const normalized = value.trim()
+    try {
+      const parsed = JSON.parse(normalized)
+      values = Array.isArray(parsed) ? parsed : [normalized]
+    } catch {
+      values = normalized.split(',')
+    }
+  }
+
+  const supported = new Set<string>(AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS.map((item) => item.value))
+  return [
+    ...new Set(
+      values
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim().toLowerCase())
+        .filter((item) => supported.has(item))
+    )
+  ]
+}
+
+export const getAggregateOAuthLoginTypeName = (loginType: string): string => {
+  return (
+    AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS.find((item) => item.value === loginType)?.label ||
+    loginType.toUpperCase()
+  )
+}
+
 export const getProviderDisplayName = (provider: string): string => {
+  const normalizedProvider = provider.toLowerCase()
+  if (normalizedProvider.startsWith('aggregate:')) {
+    const loginType = normalizedProvider.slice('aggregate:'.length)
+    return `${getAggregateOAuthLoginTypeName(loginType)} 登录`
+  }
+
   const map: Record<string, string> = {
     github: 'GitHub',
     casdoor: 'Casdoor',
@@ -6,5 +55,5 @@ export const getProviderDisplayName = (provider: string): string => {
     oauth2: '第三方 OAuth',
     aggregate: '聚合登陆'
   }
-  return map[provider.toLowerCase()] || provider.charAt(0).toUpperCase() + provider.slice(1)
+  return map[normalizedProvider] || provider.charAt(0).toUpperCase() + provider.slice(1)
 }

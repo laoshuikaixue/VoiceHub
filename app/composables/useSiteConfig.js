@@ -1,4 +1,5 @@
 import { computed, ref, readonly } from 'vue'
+import { getAggregateOAuthLoginTypeName, normalizeAggregateOAuthLoginTypes } from '~/utils/oauth'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -30,6 +31,7 @@ const siteConfig = ref({
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
   aggregateOAuthEnabled: false,
+  aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
   customOAuthDisplayName: ''
 })
@@ -81,6 +83,7 @@ export const useSiteConfig = () => {
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
         aggregateOAuthEnabled: false,
+        aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
         customOAuthDisplayName: ''
       }
@@ -111,7 +114,9 @@ export const useSiteConfig = () => {
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
-  const requireCardCodeForRequests = computed(() => siteConfig.value.requireCardCodeForRequests === true)
+  const requireCardCodeForRequests = computed(
+    () => siteConfig.value.requireCardCodeForRequests === true
+  )
   const enableCardCodeLimitBypass = computed(
     () => siteConfig.value.enableCardCodeLimitBypass === true
   )
@@ -140,7 +145,16 @@ export const useSiteConfig = () => {
       providers.push({ key: 'google', name: 'Google' })
     }
     if (siteConfig.value.aggregateOAuthEnabled) {
-      providers.push({ key: 'aggregate', name: '聚合登陆' })
+      const loginTypes = normalizeAggregateOAuthLoginTypes(siteConfig.value.aggregateOAuthLoginType)
+      const enabledLoginTypes = loginTypes.length > 0 ? loginTypes : ['qq']
+      enabledLoginTypes.forEach((loginType) => {
+        providers.push({
+          key: `aggregate:${loginType}`,
+          routeProvider: 'aggregate',
+          loginType,
+          name: `${getAggregateOAuthLoginTypeName(loginType)} 登录`
+        })
+      })
     }
     if (siteConfig.value.customOAuthEnabled) {
       providers.push({

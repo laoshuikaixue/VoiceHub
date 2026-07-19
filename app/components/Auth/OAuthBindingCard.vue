@@ -14,7 +14,7 @@
             <AuthProvidersGitHubIcon v-if="provider.key === 'github'" class="w-5 h-5" />
             <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" class="w-5 h-5" />
             <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" class="w-5 h-5" />
-            <KeyRound v-else-if="provider.key === 'aggregate'" :size="20" />
+            <KeyRound v-else-if="provider.routeProvider === 'aggregate'" :size="20" />
             <Shield v-else :size="20" />
           </div>
           <div class="flex flex-col">
@@ -42,7 +42,7 @@
           v-else
           class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
-          @click="handleBind(provider.key)"
+          @click="handleBind(provider)"
         >
           {{ actionLoading ? '跳转中...' : '立即绑定' }}
         </button>
@@ -317,7 +317,13 @@ const fetchIdentities = async () => {
 const handleBind = (provider) => {
   actionLoading.value = true
   // 绑定也是通过 OAuth 流程，最终回调时会自动识别已登录状态并执行绑定
-  navigateTo(`/api/auth/${provider}`, { external: true })
+  const routeProvider = provider.routeProvider || provider.key
+  const query = new URLSearchParams()
+  if (provider.loginType) query.set('type', provider.loginType)
+  const queryString = query.toString()
+  navigateTo(`/api/auth/${routeProvider}${queryString ? `?${queryString}` : ''}`, {
+    external: true
+  })
 }
 
 const confirmUnbind = (provider) => {

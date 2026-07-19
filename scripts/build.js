@@ -122,9 +122,23 @@ function hiddenValue(value) {
 
 function resolveAggregateLoginType(value) {
   if (!isProvided(value)) return 'qq（默认值）'
-  const normalized = value.trim().toLowerCase()
-  return SUPPORTED_AGGREGATE_LOGIN_TYPES.includes(normalized)
-    ? normalized
+  let values
+  try {
+    const parsed = JSON.parse(value)
+    values = Array.isArray(parsed) ? parsed : [value]
+  } catch {
+    values = value.split(',')
+  }
+  const normalized = [
+    ...new Set(
+      values
+        .filter((item) => typeof item === 'string')
+        .map((item) => item.trim().toLowerCase())
+        .filter((item) => SUPPORTED_AGGREGATE_LOGIN_TYPES.includes(item))
+    )
+  ]
+  return normalized.length > 0
+    ? normalized.join(', ')
     : `无效值 ${JSON.stringify(value)}，导入时回退到 qq`
 }
 
@@ -237,7 +251,7 @@ function printBuildEnvironment(rawNodeOptions) {
     providedState(process.env.WEBAUTHN_ORIGIN)
   )
 
-  log('\nOAuth：', 'cyan')
+  log('\nOAuth 环境变量（仅用于后台导入）：', 'cyan')
   printItem(
     'GitHub CLIENT_ID',
     hiddenValue(process.env.GITHUB_CLIENT_ID),

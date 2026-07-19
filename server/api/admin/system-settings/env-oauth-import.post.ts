@@ -3,6 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
 import { maskSystemSettingsSecrets } from './secretMask'
+import { normalizeAggregateOAuthLoginTypes } from '~~/server/utils/oauth-providers'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -69,16 +70,7 @@ export default defineEventHandler(async (event) => {
     if (!appId || !appKey) {
       throw createError({ statusCode: 400, message: '未检测到完整的聚合登陆环境配置' })
     }
-    const loginType = process.env.AGGREGATE_OAUTH_LOGIN_TYPE?.trim().toLowerCase() || 'qq'
-    const supportedAggregateLoginTypes = [
-      'qq',
-      'wx',
-      'alipay',
-      'douyin',
-      'google',
-      'twitter',
-      'feishu'
-    ]
+    const loginTypes = normalizeAggregateOAuthLoginTypes(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
     const endpoint =
       process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
     try {
@@ -89,9 +81,7 @@ export default defineEventHandler(async (event) => {
     updateData.aggregateOAuthEnabled = true
     updateData.aggregateOAuthAppId = appId
     updateData.aggregateOAuthAppKey = appKey
-    updateData.aggregateOAuthLoginType = supportedAggregateLoginTypes.includes(loginType)
-      ? loginType
-      : 'qq'
+    updateData.aggregateOAuthLoginType = JSON.stringify(loginTypes.length > 0 ? loginTypes : ['qq'])
     updateData.aggregateOAuthEndpoint = endpoint
   } else {
     throw createError({ statusCode: 400, message: '不支持的导入类型' })

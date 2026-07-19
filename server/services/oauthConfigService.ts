@@ -1,8 +1,12 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
+import { normalizeAggregateOAuthLoginTypes } from '~~/server/utils/oauth-providers'
 
 export type { OAuthProvider } from '~~/server/utils/oauth-providers'
-export { SUPPORTED_OAUTH_PROVIDERS, isSupportedOAuthProvider } from '~~/server/utils/oauth-providers'
+export {
+  SUPPORTED_OAUTH_PROVIDERS,
+  isSupportedOAuthProvider
+} from '~~/server/utils/oauth-providers'
 
 export interface ProviderRuntimeConfig {
   clientId?: string
@@ -19,6 +23,7 @@ export interface ProviderRuntimeConfig {
   emailField?: string
   avatarField?: string
   loginType?: string
+  loginTypes?: string[]
 }
 
 const getSettings = async () => {
@@ -47,7 +52,9 @@ export const isOAuthProviderEnabled = async (provider: OAuthProvider): Promise<b
   return false
 }
 
-export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise<ProviderRuntimeConfig> => {
+export const getProviderRuntimeConfig = async (
+  provider: OAuthProvider
+): Promise<ProviderRuntimeConfig> => {
   const settings = await getSettings()
 
   if (!settings) return {}
@@ -85,10 +92,11 @@ export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise
   }
 
   if (provider === 'aggregate') {
+    const loginTypes = normalizeAggregateOAuthLoginTypes(settings.aggregateOAuthLoginType)
     return {
       clientId: settings.aggregateOAuthAppId || undefined,
       clientSecret: settings.aggregateOAuthAppKey || undefined,
-      loginType: settings.aggregateOAuthLoginType || undefined,
+      loginTypes: loginTypes.length > 0 ? loginTypes : ['qq'],
       endpoint: settings.aggregateOAuthEndpoint || undefined
     }
   }
@@ -111,7 +119,10 @@ export const getOAuthProviderDisplayName = async (provider: OAuthProvider): Prom
   return settings?.customOAuthDisplayName || '第三方 OAuth'
 }
 
-export const getOAuthBaseConfig = async (): Promise<{ stateSecret?: string; redirectUriTemplate?: string }> => {
+export const getOAuthBaseConfig = async (): Promise<{
+  stateSecret?: string
+  redirectUriTemplate?: string
+}> => {
   const settings = await getSettings()
   if (!settings) {
     return {
