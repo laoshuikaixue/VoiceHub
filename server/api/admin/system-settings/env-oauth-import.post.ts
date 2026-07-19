@@ -3,6 +3,10 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
 import { maskSystemSettingsSecrets } from './secretMask'
+import {
+  getAggregateOAuthLoginTypesOrDefault,
+  isSafeAggregateOAuthUrl
+} from '~~/server/utils/oauth-providers'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -44,7 +48,11 @@ export default defineEventHandler(async (event) => {
     updateData.githubClientId = process.env.GITHUB_CLIENT_ID
     updateData.githubClientSecret = process.env.GITHUB_CLIENT_SECRET
   } else if (provider === 'casdoor') {
-    if (!process.env.CASDOOR_ENDPOINT || !process.env.CASDOOR_CLIENT_ID || !process.env.CASDOOR_CLIENT_SECRET) {
+    if (
+      !process.env.CASDOOR_ENDPOINT ||
+      !process.env.CASDOOR_CLIENT_ID ||
+      !process.env.CASDOOR_CLIENT_SECRET
+    ) {
       throw createError({ statusCode: 400, message: '未检测到完整的 Casdoor 环境配置' })
     }
     updateData.casdoorOAuthEnabled = true
@@ -59,6 +67,29 @@ export default defineEventHandler(async (event) => {
     updateData.googleOAuthEnabled = true
     updateData.googleClientId = process.env.GOOGLE_CLIENT_ID
     updateData.googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+  } else if (provider === 'aggregate') {
+    const appId = process.env.AGGREGATE_OAUTH_APP_ID?.trim()
+    const appKey = process.env.AGGREGATE_OAUTH_APP_KEY?.trim()
+    if (!appId || !appKey) {
+      throw createError({ statusCode: 400, message: '未检测到完整的聚合登陆环境配置' })
+    }
+    const loginTypes = getAggregateOAuthLoginTypesOrDefault(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
+    if (loginTypes.length === 0) {
+      throw createError({ statusCode: 400, message: '未检测到受支持的聚合登录方式' })
+    }
+    const endpoint =
+      process.env.AGGREGATE_OAUTH_ENDPOINT?.trim() || 'https://a.idcfx.net/connect.php'
+    if (!isSafeAggregateOAuthUrl(endpoint)) {
+      throw createError({
+        statusCode: 400,
+        message: 'AGGREGATE_OAUTH_ENDPOINT 公网地址必须使用 HTTPS，内网地址可使用 HTTP'
+      })
+    }
+    updateData.aggregateOAuthEnabled = true
+    updateData.aggregateOAuthAppId = appId
+    updateData.aggregateOAuthAppKey = appKey
+    updateData.aggregateOAuthLoginType = JSON.stringify(loginTypes)
+    updateData.aggregateOAuthEndpoint = endpoint
   } else {
     throw createError({ statusCode: 400, message: '不支持的导入类型' })
   }

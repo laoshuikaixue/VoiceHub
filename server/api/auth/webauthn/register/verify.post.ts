@@ -3,12 +3,12 @@ import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/we
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, userIdentities } from '~/drizzle/db'
 
-const VALID_TRANSPORTS = ['internal', 'hybrid', 'usb', 'nfc', 'ble']
+const VALID_TRANSPORTS = ['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb']
 
 function sanitizeTransports(transports: unknown): string[] {
   if (!Array.isArray(transports)) return []
-  return transports.filter((t): t is string => 
-    typeof t === 'string' && VALID_TRANSPORTS.includes(t)
+  return transports.filter(
+    (t): t is string => typeof t === 'string' && VALID_TRANSPORTS.includes(t)
   )
 }
 
@@ -25,6 +25,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Challenge 已失效或不匹配' })
   }
 
+  // Challenge 只能使用一次，验证失败后也必须重新生成。
+  clearWebAuthnChallenge(event)
+
   const { rpID, origin } = getWebAuthnConfig(event)
 
   try {
@@ -33,11 +36,12 @@ export default defineEventHandler(async (event) => {
       expectedChallenge: challengeData.challenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
+      requireUserVerification: true
     })
 
     if (verification.verified && verification.registrationInfo) {
-      const { credential } = verification.registrationInfo
-      
+      const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo
+
       // 提取凭证数据
       const { id: credentialID, publicKey: credentialPublicKey, counter, transports } = credential
 
@@ -58,7 +62,9 @@ export default defineEventHandler(async (event) => {
         label: body.label || 'WebAuthn 设备',
         publicKey: publicKeyBase64,
         counter: Number(counter),
-        transports: sanitizeTransports(transports)
+        transports: sanitizeTransports(transports),
+        credentialDeviceType,
+        credentialBackedUp
       }
 
       // 存储到数据库
@@ -70,7 +76,6 @@ export default defineEventHandler(async (event) => {
         createdAt: new Date()
       })
 
-      clearWebAuthnChallenge(event)
       return { success: true }
     } else {
       throw createError({ statusCode: 400, message: '验证失败' })

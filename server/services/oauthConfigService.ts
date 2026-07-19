@@ -1,8 +1,12 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
+import { getAggregateOAuthLoginTypesOrDefault } from '~~/server/utils/oauth-providers'
 
 export type { OAuthProvider } from '~~/server/utils/oauth-providers'
-export { SUPPORTED_OAUTH_PROVIDERS, isSupportedOAuthProvider } from '~~/server/utils/oauth-providers'
+export {
+  SUPPORTED_OAUTH_PROVIDERS,
+  isSupportedOAuthProvider
+} from '~~/server/utils/oauth-providers'
 
 export interface ProviderRuntimeConfig {
   clientId?: string
@@ -18,6 +22,8 @@ export interface ProviderRuntimeConfig {
   nameField?: string
   emailField?: string
   avatarField?: string
+  loginType?: string
+  loginTypes?: string[]
 }
 
 const getSettings = async () => {
@@ -41,11 +47,14 @@ export const isOAuthProviderEnabled = async (provider: OAuthProvider): Promise<b
   if (provider === 'casdoor') return !!settings.casdoorOAuthEnabled
   if (provider === 'google') return !!settings.googleOAuthEnabled
   if (provider === 'oauth2') return !!settings.customOAuthEnabled
+  if (provider === 'aggregate') return !!settings.aggregateOAuthEnabled
 
   return false
 }
 
-export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise<ProviderRuntimeConfig> => {
+export const getProviderRuntimeConfig = async (
+  provider: OAuthProvider
+): Promise<ProviderRuntimeConfig> => {
   const settings = await getSettings()
 
   if (!settings) return {}
@@ -82,6 +91,16 @@ export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise
     }
   }
 
+  if (provider === 'aggregate') {
+    const loginTypes = getAggregateOAuthLoginTypesOrDefault(settings.aggregateOAuthLoginType)
+    return {
+      clientId: settings.aggregateOAuthAppId || undefined,
+      clientSecret: settings.aggregateOAuthAppKey || undefined,
+      loginTypes,
+      endpoint: settings.aggregateOAuthEndpoint || undefined
+    }
+  }
+
   return {
     clientId: settings.googleClientId || undefined,
     clientSecret: settings.googleClientSecret || undefined
@@ -90,14 +109,20 @@ export const getProviderRuntimeConfig = async (provider: OAuthProvider): Promise
 
 export const getOAuthProviderDisplayName = async (provider: OAuthProvider): Promise<string> => {
   if (provider !== 'oauth2') {
-    return provider === 'github' ? 'GitHub' : provider === 'casdoor' ? 'Casdoor' : 'Google'
+    if (provider === 'github') return 'GitHub'
+    if (provider === 'casdoor') return 'Casdoor'
+    if (provider === 'google') return 'Google'
+    if (provider === 'aggregate') return '聚合登陆'
   }
 
   const settings = await getSettings()
   return settings?.customOAuthDisplayName || '第三方 OAuth'
 }
 
-export const getOAuthBaseConfig = async (): Promise<{ stateSecret?: string; redirectUriTemplate?: string }> => {
+export const getOAuthBaseConfig = async (): Promise<{
+  stateSecret?: string
+  redirectUriTemplate?: string
+}> => {
   const settings = await getSettings()
   if (!settings) {
     return {

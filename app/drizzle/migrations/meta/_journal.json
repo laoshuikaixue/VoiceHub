@@ -225,6 +225,13 @@
       "when": 1783690428462,
       "tag": "20260710133348_add_card_code_limit_bypass",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1784419260000,
+      "tag": "20260718000100_add_aggregate_oauth_provider",
+      "breakpoints": true
     }
   ]
 }

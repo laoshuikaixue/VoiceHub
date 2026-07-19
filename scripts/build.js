@@ -9,6 +9,7 @@ config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
 const BUILD_MEMORY_MB = 6144
 const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 const HIDDEN_VALUE = '[已隐藏]'
+const SUPPORTED_AGGREGATE_LOGIN_TYPES = ['qq', 'wx', 'alipay', 'douyin']
 const SUPPORTED_ENV_VARIABLES = [
   'NODE_ENV',
   'NODE_OPTIONS',
@@ -34,6 +35,10 @@ const SUPPORTED_ENV_VARIABLES = [
   'CASDOOR_ORGANIZATION_NAME',
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
+  'AGGREGATE_OAUTH_APP_ID',
+  'AGGREGATE_OAUTH_APP_KEY',
+  'AGGREGATE_OAUTH_LOGIN_TYPE',
+  'AGGREGATE_OAUTH_ENDPOINT',
   'OAUTH_REDIRECT_URI',
   'OAUTH_STATE_SECRET',
   'NUXT_PUBLIC_HOST',
@@ -105,6 +110,28 @@ function displayValue(value, fallback = '未配置') {
 
 function hiddenValue(value) {
   return isProvided(value) ? HIDDEN_VALUE : '未配置'
+}
+
+function resolveAggregateLoginType(value) {
+  if (!isProvided(value)) return 'qq（默认值）'
+  let values
+  try {
+    const parsed = JSON.parse(value)
+    values = Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    values = value.split(',')
+  }
+  const normalized = [
+    ...new Set(
+      values
+        .filter((item) => typeof item === 'string')
+        .map((item) => item.trim().toLowerCase())
+        .filter((item) => SUPPORTED_AGGREGATE_LOGIN_TYPES.includes(item))
+    )
+  ]
+  return normalized.length > 0
+    ? normalized.join(', ')
+    : `无效值 ${JSON.stringify(value)}，导入时回退到 qq`
 }
 
 function printItem(name, rawState, result) {
@@ -216,7 +243,7 @@ function printBuildEnvironment(rawNodeOptions) {
     providedState(process.env.WEBAUTHN_ORIGIN)
   )
 
-  log('\nOAuth：', 'cyan')
+  log('\nOAuth 环境变量（仅用于后台导入）：', 'cyan')
   printItem(
     'GitHub CLIENT_ID',
     hiddenValue(process.env.GITHUB_CLIENT_ID),
@@ -235,6 +262,22 @@ function printBuildEnvironment(rawNodeOptions) {
     isProvided(process.env.GOOGLE_CLIENT_ID) ? 'OAuth 启用' : 'OAuth 停用'
   )
   printSensitiveItem('Google CLIENT_SECRET', process.env.GOOGLE_CLIENT_SECRET)
+  printItem(
+    '聚合登陆 APP_ID',
+    hiddenValue(process.env.AGGREGATE_OAUTH_APP_ID),
+    isProvided(process.env.AGGREGATE_OAUTH_APP_ID) ? 'OAuth 启用' : 'OAuth 停用'
+  )
+  printSensitiveItem('聚合登陆 APP_KEY', process.env.AGGREGATE_OAUTH_APP_KEY)
+  printItem(
+    'AGGREGATE_OAUTH_LOGIN_TYPE',
+    displayValue(process.env.AGGREGATE_OAUTH_LOGIN_TYPE),
+    resolveAggregateLoginType(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
+  )
+  printItem(
+    'AGGREGATE_OAUTH_ENDPOINT',
+    displayValue(process.env.AGGREGATE_OAUTH_ENDPOINT),
+    process.env.AGGREGATE_OAUTH_ENDPOINT || 'https://a.idcfx.net/connect.php（默认值）'
+  )
   printItem(
     'CASDOOR_ENDPOINT',
     displayValue(process.env.CASDOOR_ENDPOINT),
