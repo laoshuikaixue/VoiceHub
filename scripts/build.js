@@ -112,8 +112,8 @@ function hiddenValue(value) {
   return isProvided(value) ? HIDDEN_VALUE : '未配置'
 }
 
-function resolveAggregateLoginType(value) {
-  if (!isProvided(value)) return 'qq（默认值）'
+function resolveAggregateLoginTypeState(value) {
+  if (!isProvided(value)) return '使用 qq（默认值）'
   let values
   try {
     const parsed = JSON.parse(value)
@@ -130,8 +130,8 @@ function resolveAggregateLoginType(value) {
     )
   ]
   return normalized.length > 0
-    ? normalized.join(', ')
-    : `无效值 ${JSON.stringify(value)}，导入时回退到 qq`
+    ? '配置有效（具体值已隐藏）'
+    : '未识别到受支持的登录方式，导入时回退到 qq'
 }
 
 function printItem(name, rawState, result) {
@@ -268,15 +268,17 @@ function printBuildEnvironment(rawNodeOptions) {
     isProvided(process.env.AGGREGATE_OAUTH_APP_ID) ? 'OAuth 启用' : 'OAuth 停用'
   )
   printSensitiveItem('聚合登陆 APP_KEY', process.env.AGGREGATE_OAUTH_APP_KEY)
-  printItem(
+  printSensitiveItem(
     'AGGREGATE_OAUTH_LOGIN_TYPE',
-    displayValue(process.env.AGGREGATE_OAUTH_LOGIN_TYPE),
-    resolveAggregateLoginType(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
+    process.env.AGGREGATE_OAUTH_LOGIN_TYPE,
+    resolveAggregateLoginTypeState(process.env.AGGREGATE_OAUTH_LOGIN_TYPE)
   )
-  printItem(
+  printSensitiveItem(
     'AGGREGATE_OAUTH_ENDPOINT',
-    displayValue(process.env.AGGREGATE_OAUTH_ENDPOINT),
-    process.env.AGGREGATE_OAUTH_ENDPOINT || 'https://a.idcfx.net/connect.php（默认值）'
+    process.env.AGGREGATE_OAUTH_ENDPOINT,
+    isProvided(process.env.AGGREGATE_OAUTH_ENDPOINT)
+      ? '使用自定义接口地址（值已隐藏）'
+      : '使用默认接口地址'
   )
   printItem(
     'CASDOOR_ENDPOINT',
