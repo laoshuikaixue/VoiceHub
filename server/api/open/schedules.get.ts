@@ -14,9 +14,6 @@ export default defineEventHandler(async (event) => {
     const apiKey = event.context.apiKey
 
     console.log(`[Schedules API] 接收到请求，API Key context: ${apiKey ? '存在' : '不存在'}`)
-    if (apiKey) {
-      console.log(`[Schedules API] API Key ID: ${apiKey.id}, 名称: ${apiKey.name}`)
-    }
 
     // API认证中间件已经验证了权限，这里只需要确保有API Key信息
     if (!apiKey) {
