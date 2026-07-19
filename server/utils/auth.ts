@@ -70,7 +70,8 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
         username: users.username,
         name: users.name,
         role: users.role,
-        passwordChangedAt: users.passwordChangedAt
+        passwordChangedAt: users.passwordChangedAt,
+        tokenVersion: users.tokenVersion
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -85,7 +86,14 @@ export async function verifyAdminAuth(event: any): Promise<AuthResult> {
       }
     }
 
-    // 检查token是否在密码修改之前签发（强制旧token失效）
+    if ((decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+      return {
+        success: false,
+        message: '登录状态已失效，请重新登录'
+      }
+    }
+
+    // 兼容迁移前签发的令牌，继续检查密码修改时间。
     if (user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {
@@ -204,7 +212,8 @@ export async function verifyUserAuth(event: any): Promise<AuthResult> {
         username: users.username,
         name: users.name,
         role: users.role,
-        passwordChangedAt: users.passwordChangedAt
+        passwordChangedAt: users.passwordChangedAt,
+        tokenVersion: users.tokenVersion
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -219,7 +228,14 @@ export async function verifyUserAuth(event: any): Promise<AuthResult> {
       }
     }
 
-    // 检查token是否在密码修改之前签发（强制旧token失效）
+    if ((decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+      return {
+        success: false,
+        message: '登录状态已失效，请重新登录'
+      }
+    }
+
+    // 兼容迁移前签发的令牌，继续检查密码修改时间。
     if (user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {

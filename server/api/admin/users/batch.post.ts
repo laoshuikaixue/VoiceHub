@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import { validatePasswordPolicy } from '~/utils/password-policy'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq, inArray } from 'drizzle-orm'
@@ -112,6 +113,13 @@ export default defineEventHandler(async (event) => {
   // 3. 过滤掉已存在的用户
   const usersToInsertData: ValidUserData[] = []
   for (const userData of validUsers) {
+    const passwordError = validatePasswordPolicy(userData.password)
+    if (passwordError) {
+      results.failed++
+      results.errors.push({ index: userData.index, username: userData.username, name: userData.name, reason: passwordError })
+      continue
+    }
+
     if (existingUsernames.has(userData.username)) {
       results.failed++
       results.errors.push({ index: userData.index, username: userData.username, name: userData.name, reason: '账号已存在' })

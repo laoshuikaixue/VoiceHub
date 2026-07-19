@@ -5,6 +5,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { updateUserPassword } from '~~/server/services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkRateLimit } from '~~/server/utils/rateLimiter'
+import { validatePasswordPolicy } from '~/utils/password-policy'
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)
@@ -28,8 +29,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '参数不完整' })
   }
 
-  if (newPassword.length < 8) {
-    throw createError({ statusCode: 400, message: '密码长度不能少于8个字符' })
+  const policyError = validatePasswordPolicy(newPassword)
+  if (policyError) {
+    throw createError({ statusCode: 400, message: policyError })
   }
 
   try {

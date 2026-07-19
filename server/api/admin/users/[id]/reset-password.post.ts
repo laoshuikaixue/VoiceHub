@@ -1,4 +1,5 @@
 import { updateUserPassword } from '~~/server/services/userService'
+import { validatePasswordPolicy } from '~/utils/password-policy'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -28,6 +29,11 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       message: '新密码不能为空'
     })
+  }
+
+  const passwordError = validatePasswordPolicy(body.newPassword)
+  if (passwordError) {
+    throw createError({ statusCode: 400, message: passwordError })
   }
 
   try {

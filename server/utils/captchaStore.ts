@@ -25,10 +25,8 @@ async function getRedis() {
   if (redisClient !== undefined) return redisClient
   try {
     const redisModule = await import('~~/server/utils/redis')
-    redisClient = redisModule.useRedis()
-    if (redisClient) {
-      await redisClient.ping()
-    }
+    await redisModule.connectRedis()
+    redisClient = redisModule.getRedisClient()
   } catch {
     redisClient = null
   }
@@ -73,9 +71,10 @@ export async function incrStore(key: string, ttlSeconds: number): Promise<number
   if (redis) {
     // 使用 MULTI 事务确保 incr 和 expire 的原子性，避免内存泄漏
     const results = await redis.multi().incr(key).expire(key, ttlSeconds).exec()
-    if (results && results[0]) {
-      const [, val] = results[0] as [Error | null, any]
-      return Number(val)
+    if (results && results.length > 0) {
+      const firstResult = results[0] as any
+      const value = Array.isArray(firstResult) ? firstResult[1] : firstResult
+      return Number(value) || 1
     }
     return 1
   }

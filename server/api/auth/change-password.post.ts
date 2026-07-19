@@ -7,6 +7,13 @@ import { updateUserPassword } from '../../services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { validatePasswordPolicy } from '~/utils/password-policy'
+import {
+  PASSWORD_AUDIT_ACTIONS,
+  consumePasswordRateLimit,
+  getPasswordAuditContext,
+  recordPasswordAudit
+} from '~~/server/services/passwordSecurityService'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
@@ -18,6 +25,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const auditAction = PASSWORD_AUDIT_ACTIONS.CHANGE_PASSWORD
+  const clientIp = getClientIP(event)
+
   const body = await readBody(event)
   if (
     typeof body.currentPassword !== 'string' ||
@@ -25,16 +35,27 @@ export default defineEventHandler(async (event) => {
     typeof body.newPassword !== 'string' ||
     !body.newPassword
   ) {
+    await recordPasswordAudit(event, user.id, auditAction, false, '缺少当前密码或新密码')
     throw createError({
       statusCode: 400,
       message: '当前密码和新密码都是必需的'
     })
   }
 
-  if (body.newPassword.length < 8) {
-    throw createError({ statusCode: 400, message: '新密码长度至少为8位' })
+  const rateLimit = await consumePasswordRateLimit(user.id, clientIp, auditAction, 10)
+  if (!rateLimit.allowed) {
+    await recordPasswordAudit(event, user.id, auditAction, false, '操作频率超过限制')
+    setResponseHeader(event, 'Retry-After', String(rateLimit.retryAfterSeconds))
+    throw createError({ statusCode: 429, message: '密码修改尝试过于频繁，请10分钟后再试' })
   }
 
+  const policyError = validatePasswordPolicy(body.newPassword)
+  if (policyError) {
+    await recordPasswordAudit(event, user.id, auditAction, false, policyError)
+    throw createError({ statusCode: 400, message: policyError })
+  }
+
+  let passwordUpdated = false
   try {
     // 查询用户详细信息
     const userDetailsResult = await db
@@ -57,11 +78,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证当前密码
+    if (!userDetails.password) {
+      throw createError({ statusCode: 400, message: '当前账号尚未设置密码，请使用初始密码设置功能' })
+    }
+
     const isPasswordValid = await bcrypt.compare(body.currentPassword, userDetails.password)
 
     if (!isPasswordValid) {
       // 记录安全事件
-      const clientIp = getClientIP(event)
       await recordLoginFailure(userDetails.username, clientIp)
 
       throw createError({
@@ -80,10 +104,16 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新密码
-    const { passwordChangedAt } = await updateUserPassword(user.id, body.newPassword)
+    const { passwordChangedAt, tokenVersion } = await updateUserPassword(
+      user.id,
+      body.newPassword,
+      false,
+      { action: auditAction, ...getPasswordAuditContext(event) }
+    )
+    passwordUpdated = true
 
     // 密码变更会让旧令牌失效，因此为当前已验证会话立即换发令牌。
-    const newToken = JWTEnhanced.generateToken(user.id, user.role)
+    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),
@@ -93,7 +123,6 @@ export default defineEventHandler(async (event) => {
     })
 
     // 记录成功的密码修改
-    const clientIp = getClientIP(event)
     await recordLoginSuccess(userDetails.username, clientIp)
 
     return {
@@ -102,6 +131,16 @@ export default defineEventHandler(async (event) => {
       passwordChangedAt
     }
   } catch (error: any) {
+    if (!passwordUpdated) {
+      await recordPasswordAudit(
+        event,
+        user.id,
+        auditAction,
+        false,
+        error.message || '密码修改失败'
+      )
+    }
+
     // 已格式化的错误直接抛出
     if (error.statusCode) {
       throw error

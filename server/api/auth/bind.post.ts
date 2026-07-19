@@ -161,7 +161,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(users.id, user.id))
 
   // 登录
-  const token = JWTEnhanced.generateToken(user.id, user.role)
+  const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
   const isSecure = isSecureRequest(event)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,

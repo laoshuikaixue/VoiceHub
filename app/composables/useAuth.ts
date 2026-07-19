@@ -122,6 +122,7 @@ export const useAuth = () => {
         user.value.passwordChangedAt = response.passwordChangedAt || null
         user.value.hasSetPassword = true
       }
+      await refreshUser()
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
       if (error.data && error.data.message) {
@@ -153,6 +154,7 @@ export const useAuth = () => {
         user.value.passwordChangedAt = response.passwordChangedAt || null
         user.value.hasSetPassword = true
       }
+      await refreshUser()
     } finally {
       loading.value = false
     }
@@ -164,6 +166,7 @@ export const useAuth = () => {
       user.value = data.user
       isAuthenticated.value = true
       isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
+      token.value = 'cookie-based'
     }
   }
 

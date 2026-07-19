@@ -161,7 +161,7 @@ export default defineEventHandler(async (event) => {
     .catch((err) => console.error('Error updating user login info:', err))
 
   // 生成Token
-  const authToken = JWTEnhanced.generateToken(user.id, user.role)
+  const authToken = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
 
   const isSecure = isSecureRequest(event)
 

@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { updateUserPassword } from '~~/server/services/userService'
+import { validatePasswordPolicy } from '~/utils/password-policy'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -164,10 +165,11 @@ export default defineEventHandler(async (event) => {
     // 如果提供了密码，则使用统一服务更新密码
     if (password) {
       const trimmedPassword = String(password).trim()
-      if (trimmedPassword.length < 6) {
+      const passwordError = validatePasswordPolicy(trimmedPassword)
+      if (passwordError) {
         throw createError({
           statusCode: 400,
-          message: '密码长度不能少于 6 位'
+          message: passwordError
         })
       }
 

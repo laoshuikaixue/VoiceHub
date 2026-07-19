@@ -239,6 +239,13 @@
       "when": 1784419201000,
       "tag": "20260719000002_restore_pending_password_change",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1784419202000,
+      "tag": "20260719000003_harden_password_security",
+      "breakpoints": true
     }
   ]
 }

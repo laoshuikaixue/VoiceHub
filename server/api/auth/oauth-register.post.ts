@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
           lastLogin: now,
           forcePasswordChange: false
         })
-        .returning({ id: users.id }))[0]
+        .returning({ id: users.id, tokenVersion: users.tokenVersion }))[0]
 
       if (!insertedUser) {
         throw new Error('Failed to create user')
@@ -124,7 +124,7 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, 'binding-token')
 
     // 生成JWT令牌
-    const token = JWTEnhanced.generateToken(result.id, 'USER')
+    const token = JWTEnhanced.generateToken(result.id, 'USER', result.tokenVersion)
 
     // 自动判断是否需要secure
     const isSecure = isSecureRequest(event)

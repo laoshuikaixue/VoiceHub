@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { validatePasswordPolicy } from '~/utils/password-policy'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -29,6 +30,11 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       message: '姓名、用户名和密码不能为空'
     })
+  }
+
+  const passwordError = validatePasswordPolicy(body.password)
+  if (passwordError) {
+    throw createError({ statusCode: 400, message: passwordError })
   }
 
   try {

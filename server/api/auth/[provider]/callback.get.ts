@@ -198,7 +198,11 @@ async function handleUserLoginOrBind(
       })
       .where(eq(users.id, user.id))
 
-    const token = JWTEnhanced.generateToken(existingIdentity.user.id, existingIdentity.user.role)
+    const token = JWTEnhanced.generateToken(
+      existingIdentity.user.id,
+      existingIdentity.user.role,
+      existingIdentity.user.tokenVersion
+    )
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: isSecure,

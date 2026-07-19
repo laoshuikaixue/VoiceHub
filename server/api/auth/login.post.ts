@@ -210,6 +210,7 @@ export default defineEventHandler(async (event) => {
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
         forcePasswordChange: users.forcePasswordChange,
+        tokenVersion: users.tokenVersion,
         status: users.status,
         email: users.email,
         emailVerified: users.emailVerified
@@ -307,7 +308,7 @@ export default defineEventHandler(async (event) => {
       .catch((err) => console.error('Error updating user login info:', err))
 
     // 生成JWT
-    const token = JWTEnhanced.generateToken(user.id, user.role)
+    const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
 
     // 自动判断是否需要secure
     const isSecure =

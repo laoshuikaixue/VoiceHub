@@ -193,6 +193,7 @@ import {
   AlertCircle,
   Loader2
 } from '@lucide/vue'
+import { validatePasswordPolicy } from '~/utils/password-policy'
 
 // 组件属性
 const props = defineProps({
@@ -264,6 +265,8 @@ const passwordStrength = computed(() => {
   }
 })
 
+const passwordPolicyError = computed(() => validatePasswordPolicy(newPassword.value))
+
 // 表单验证
 const isFormValid = computed(() => {
   if (props.isFirstLogin) {
@@ -271,7 +274,7 @@ const isFormValid = computed(() => {
       newPassword.value &&
       confirmPassword.value &&
       newPassword.value === confirmPassword.value &&
-      newPassword.value.length >= 8
+      !passwordPolicyError.value
     )
   } else {
     return (
@@ -279,17 +282,13 @@ const isFormValid = computed(() => {
       newPassword.value &&
       confirmPassword.value &&
       newPassword.value === confirmPassword.value &&
-      newPassword.value.length >= 8
+      !passwordPolicyError.value
     )
   }
 })
 
 const validatePassword = () => {
-  if (newPassword.value && newPassword.value.length < 8) {
-    error.value = '密码长度至少为8位'
-  } else {
-    error.value = ''
-  }
+  error.value = newPassword.value ? passwordPolicyError.value || '' : ''
 }
 
 const handleChangePassword = async () => {
@@ -298,8 +297,8 @@ const handleChangePassword = async () => {
     return
   }
 
-  if (newPassword.value.length < 8) {
-    error.value = '新密码长度至少为8位'
+  if (passwordPolicyError.value) {
+    error.value = passwordPolicyError.value
     return
   }
 
@@ -319,13 +318,10 @@ const handleChangePassword = async () => {
 
       // 密码设置完成后跳转
       setTimeout(async () => {
-        // 更新用户状态
-        await auth.refreshUser()
-
         if (auth.isAdmin.value) {
-          router.push('/dashboard')
+          router.replace('/dashboard')
         } else {
-          router.push('/')
+          router.replace('/')
         }
       }, 2000)
     } else {
@@ -338,9 +334,9 @@ const handleChangePassword = async () => {
       confirmPassword.value = ''
 
       // 密码修改后登出
-      setTimeout(() => {
-        auth.logout()
-        router.push('/login')
+      setTimeout(async () => {
+        await auth.logout(false)
+        await router.replace('/login')
       }, 2000)
     }
   } catch (err) {

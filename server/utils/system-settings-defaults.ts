@@ -32,7 +32,7 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enableCardCodeLimitBypass: false,
   enableRequestTimeLimitation: false,
   forceBlockAllRequests: false,
-  forcePasswordChangeOnFirstLogin: true,
+  forcePasswordChangeOnFirstLogin: false,
   smtpEnabled: false,
   smtpHost: null,
   smtpPort: 587,

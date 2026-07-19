@@ -1,3 +1,5 @@
+import { validatePasswordPolicy } from './password-policy'
+
 export const OAUTH_REGISTER_USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/
 
 export const validateOAuthRegisterCredentials = (
@@ -13,8 +15,9 @@ export const validateOAuthRegisterCredentials = (
     return '用户名仅可包含英文、数字、下划线和连字符'
   }
 
-  if (password.length < 8) {
-    return '密码长度至少为8个字符'
+  const passwordError = validatePasswordPolicy(password)
+  if (passwordError) {
+    return passwordError
   }
 
   if (password !== confirmPassword) {

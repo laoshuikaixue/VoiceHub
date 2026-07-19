@@ -104,6 +104,7 @@ export default defineEventHandler(async (event) => {
         status: users.status,
         passwordChangedAt: users.passwordChangedAt,
         forcePasswordChange: users.forcePasswordChange,
+        tokenVersion: users.tokenVersion,
         email: users.email,
         emailVerified: users.emailVerified
       })
@@ -141,7 +142,28 @@ export default defineEventHandler(async (event) => {
       )
     }
 
-    // 检查token是否在密码修改之前签发（强制旧token失效）
+    // 用户级版本号可以可靠撤销同一秒内签发的旧令牌。
+    if ((decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+      const isSecure = isSecureRequest(event)
+      setCookie(event, 'auth-token', '', {
+        httpOnly: true,
+        secure: isSecure,
+        sameSite: 'lax',
+        maxAge: 0,
+        path: '/'
+      })
+
+      return sendError(
+        event,
+        createError({
+          statusCode: 401,
+          message: '登录状态已失效，请重新登录',
+          data: { invalidToken: true, passwordChanged: true }
+        })
+      )
+    }
+
+    // 兼容迁移前签发的令牌，继续检查密码修改时间。
     if (user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {

@@ -6,6 +6,7 @@ export interface JWTPayload {
   userId: number
   role: string
   jti: string // JWT ID，用于唯一标识token
+  tokenVersion?: number
   iat?: number
   exp?: number
 }
@@ -41,7 +42,7 @@ export class JWTEnhanced {
   /**
    * 生成JWT token
    */
-  static generateToken(userId: number, role: string): string {
+  static generateToken(userId: number, role: string, tokenVersion = 0): string {
     if (!this.JWT_SECRET) {
       throw new Error('JWT_SECRET environment variable is not set')
     }
@@ -53,7 +54,8 @@ export class JWTEnhanced {
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
       userId,
       role,
-      jti
+      jti,
+      tokenVersion
     }
 
     // 生成token
@@ -154,7 +156,7 @@ export class JWTEnhanced {
     const decoded = this.verifyToken(oldToken)
 
     // 使用原有的用户信息生成新token
-    return this.generateToken(decoded.userId, decoded.role)
+    return this.generateToken(decoded.userId, decoded.role, decoded.tokenVersion ?? 0)
   }
 
   /**

@@ -5,31 +5,44 @@ import { eq } from 'drizzle-orm'
 import { updateUserPassword } from '~~/server/services/userService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { validatePasswordPolicy } from '~/utils/password-policy'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import {
+  PASSWORD_AUDIT_ACTIONS,
+  consumePasswordRateLimit,
+  getPasswordAuditContext,
+  recordPasswordAudit
+} from '~~/server/services/passwordSecurityService'
 
 export default defineEventHandler(async (event) => {
+  const user = event.context.user
+  if (!user) {
+    throw createError({ statusCode: 401, message: '未授权' })
+  }
+
+  const auditAction = PASSWORD_AUDIT_ACTIONS.INITIAL_PASSWORD
+  const body = await readBody(event)
+  if (typeof body.newPassword !== 'string' || !body.newPassword) {
+    await recordPasswordAudit(event, user.id, auditAction, false, '新密码为空')
+    throw createError({ statusCode: 400, message: '新密码不能为空' })
+  }
+
+  const clientIp = getClientIP(event)
+  const rateLimit = await consumePasswordRateLimit(user.id, clientIp, auditAction, 5)
+  if (!rateLimit.allowed) {
+    await recordPasswordAudit(event, user.id, auditAction, false, '操作频率超过限制')
+    setResponseHeader(event, 'Retry-After', String(rateLimit.retryAfterSeconds))
+    throw createError({ statusCode: 429, message: '初始密码设置尝试过于频繁，请10分钟后再试' })
+  }
+
+  const policyError = validatePasswordPolicy(body.newPassword)
+  if (policyError) {
+    await recordPasswordAudit(event, user.id, auditAction, false, policyError)
+    throw createError({ statusCode: 400, message: policyError })
+  }
+
+  let passwordUpdated = false
   try {
-    // 检查认证
-    const user = event.context.user
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权'
-      })
-    }
-
-    const body = await readBody(event)
-    if (typeof body.newPassword !== 'string' || !body.newPassword) {
-      throw createError({
-        statusCode: 400,
-        message: '新密码不能为空'
-      })
-    }
-
-    if (body.newPassword.length < 8) {
-      throw createError({ statusCode: 400, message: '新密码长度至少为8位' })
-    }
-
-    // 获取用户信息
     const currentUserResult = await db
       .select({
         password: users.password,
@@ -59,9 +72,15 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '新密码不能与当前密码相同' })
     }
 
-    const { passwordChangedAt } = await updateUserPassword(user.id, body.newPassword)
+    const { passwordChangedAt, tokenVersion } = await updateUserPassword(
+      user.id,
+      body.newPassword,
+      false,
+      { action: auditAction, ...getPasswordAuditContext(event) }
+    )
+    passwordUpdated = true
 
-    const newToken = JWTEnhanced.generateToken(user.id, user.role)
+    const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion)
     setCookie(event, 'auth-token', newToken, {
       httpOnly: true,
       secure: isSecureRequest(event),
@@ -76,9 +95,17 @@ export default defineEventHandler(async (event) => {
       passwordChangedAt
     }
   } catch (error: any) {
-    throw createError({
-      statusCode: error.statusCode || 500,
-      message: error.message || '初始密码设置失败'
-    })
+    if (!passwordUpdated) {
+      await recordPasswordAudit(
+        event,
+        user.id,
+        auditAction,
+        false,
+        error.message || '初始密码设置失败'
+      )
+    }
+
+    if (error.statusCode) throw error
+    throw createError({ statusCode: 500, message: error.message || '初始密码设置失败' })
   }
 })
