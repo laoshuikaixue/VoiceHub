@@ -1,5 +1,6 @@
 import { Marked } from 'marked'
-import { filterXSS, whiteList } from 'xss'
+import xssPkg from 'xss'
+const { filterXSS, whiteList } = xssPkg
 
 // 创建独立的 marked 实例，避免全局污染和 HMR 重复注册
 const markedInstance = new Marked({
