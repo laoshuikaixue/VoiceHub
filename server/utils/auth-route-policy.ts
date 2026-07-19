@@ -4,7 +4,8 @@ export const PASSWORD_CHANGE_ALLOWED_PATHS = [
   '/api/auth/change-password',
   '/api/auth/set-initial-password',
   '/api/auth/2fa/verify',
-  '/api/auth/2fa/send-email'
+  '/api/auth/2fa/send-email',
+  '/api/site-config'
 ] as const
 
 export const PUBLIC_API_PATH_PREFIXES = [

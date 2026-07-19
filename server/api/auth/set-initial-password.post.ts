@@ -54,7 +54,8 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    if (await bcrypt.compare(body.newPassword, currentUser.password)) {
+    // OAuth 账号可能没有可用于比对的旧密码，不能把 null 传给 bcrypt。
+    if (currentUser.password && await bcrypt.compare(body.newPassword, currentUser.password)) {
       throw createError({ statusCode: 400, message: '新密码不能与当前密码相同' })
     }
 

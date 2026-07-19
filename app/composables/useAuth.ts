@@ -32,14 +32,14 @@ export const useAuth = () => {
     isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
   }
 
-  const initAuth = async () => {
+  const initAuth = async (forceRefresh = false) => {
     // 客户端执行
     if (typeof window === 'undefined' || import.meta.server) {
       return null
     }
 
     // 如果已认证，直接返回缓存的用户信息
-    if (isAuthenticated.value && user.value) {
+    if (!forceRefresh && isAuthenticated.value && user.value) {
       return user.value
     }
 

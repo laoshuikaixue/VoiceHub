@@ -320,7 +320,11 @@ class CacheService {
 
   // 获取系统设置缓存
   async getSystemSettings(): Promise<any | null> {
-    if (this.systemSettingsMemoryCache && Date.now() < this.systemSettingsMemoryExpiresAt) {
+    if (
+      !isRedisReady() &&
+      this.systemSettingsMemoryCache &&
+      Date.now() < this.systemSettingsMemoryExpiresAt
+    ) {
       return this.systemSettingsMemoryCache
     }
 

@@ -5,8 +5,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const publicRoutes = ['/login', '/', '/auth/error', '/forgot-password', '/reset-password']
 
   // 客户端初始化认证状态
-  if (import.meta.client && !isAuthenticated.value) {
-    await initAuth()
+  if (import.meta.client) {
+    await initAuth(isAuthenticated.value)
   }
 
   // 强制改密优先于公共页面判断，避免用户通过首页或直接输入地址绕过改密页。

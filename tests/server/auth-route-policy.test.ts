@@ -26,6 +26,7 @@ test('强制改密期间只放行必要的认证接口', () => {
   assert.equal(isAllowedDuringPasswordChange('/api/auth/change-password'), true)
   assert.equal(isAllowedDuringPasswordChange('/api/auth/set-initial-password'), true)
   assert.equal(isAllowedDuringPasswordChange('/api/auth/logout'), true)
+  assert.equal(isAllowedDuringPasswordChange('/api/site-config'), true)
   assert.equal(isAllowedDuringPasswordChange('/api/songs/public'), false)
   assert.equal(isAllowedDuringPasswordChange('/api/admin/system-settings'), false)
 })

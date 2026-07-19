@@ -28,7 +28,8 @@ export default defineEventHandler(async (event) => {
   // 动态判断 OAuth 路径
   // 允许 /api/auth/[provider] 和 /api/auth/[provider]/callback
   // 但排除已知的受保护/特定 Auth 端点
-  if (pathname.startsWith('/api/auth/')) {
+  const isOAuthProviderRoute = (() => {
+    if (!pathname.startsWith('/api/auth/')) return false
     const segments = pathname.split('/')
     const provider = segments[3]
     const isProviderIndexPath = segments.length === 4 && isSupportedOAuthProvider(provider || '')
@@ -37,10 +38,8 @@ export default defineEventHandler(async (event) => {
       segments[4] === 'callback' &&
       isSupportedOAuthProvider(provider || '')
 
-    if (isProviderIndexPath || isProviderCallbackPath) {
-      return
-    }
-  }
+    return isProviderIndexPath || isProviderCallbackPath
+  })()
 
   // 从请求头或cookie获取token
   let token: string | null = null
@@ -54,8 +53,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // 公共接口只有匿名访问时才绕过认证；携带登录态必须继续检查强制改密状态。
-  const isPublicApi = isPublicApiPath(pathname)
-  if (shouldBypassPublicApiAuthentication(pathname, Boolean(token))) {
+  const isPublicApi = isPublicApiPath(pathname) || isOAuthProviderRoute
+  if (
+    shouldBypassPublicApiAuthentication(pathname, Boolean(token)) ||
+    (isOAuthProviderRoute && !token)
+  ) {
     return
   }
 

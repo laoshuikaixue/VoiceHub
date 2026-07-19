@@ -875,6 +875,7 @@ VoiceHub/
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
 │   │       ├── 20260719000001_add_first_login_password_change.sql # 首次登录强制改密迁移
+│   │       ├── 20260719000002_restore_pending_password_change.sql # 恢复待改密账户状态迁移
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
