@@ -246,6 +246,20 @@
       "when": 1784419202000,
       "tag": "20260719000003_harden_password_security",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1784419260000,
+      "tag": "20260718000100_add_aggregate_oauth_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1784419261000,
+      "tag": "20260719000004_reconcile_password_security_after_main",
+      "breakpoints": true
     }
   ]
 }

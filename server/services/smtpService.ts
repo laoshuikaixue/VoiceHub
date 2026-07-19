@@ -5,6 +5,41 @@ import { and, eq, isNotNull } from 'drizzle-orm'
 import { getSiteTitle } from '~~/server/utils/siteUtils'
 import { formatIPForEmail } from '~~/server/utils/ip-utils'
 
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+}
+
+const TRUSTED_HTML_TEMPLATE_KEYS = new Set(['contentBlock'])
+const EMAIL_REQUEST_SOURCE_LABEL = 'This email was requested from:'
+
+const escapeHtml = (value: unknown): string => {
+  return String(value).replace(/[&<>"']/g, (character) => HTML_ESCAPE_MAP[character])
+}
+
+const normalizeEmailActionUrl = (value: unknown): string | undefined => {
+  if (typeof value !== 'string' || !value.trim()) return undefined
+
+  try {
+    const url = new URL(value.trim())
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined
+    if (url.username || url.password) return undefined
+    return url.href
+  } catch {
+    return undefined
+  }
+}
+
+const normalizeEmailSubject = (value: unknown): string => {
+  return String(value ?? '')
+    .replaceAll('\r', ' ')
+    .replaceAll('\n', ' ')
+    .trim()
+}
+
 /**
  * SMTP邮件服务
  */
@@ -159,11 +194,15 @@ export class SmtpService {
 
     for (const [key, config] of Object.entries(this.builtinTemplates)) {
       const contentBlock = this.contentBlocks[config.contentType] || ''
-      const html = this.renderString(this.baseTemplate, {
-        contentBlock,
-        headerSubtitle: config.headerSubtitle,
-        actionText: config.actionText || '查看详情'
-      })
+      const html = this.renderString(
+        this.baseTemplate,
+        {
+          contentBlock,
+          headerSubtitle: config.headerSubtitle,
+          actionText: config.actionText || '查看详情'
+        },
+        { rawKeys: TRUSTED_HTML_TEMPLATE_KEYS }
+      )
 
       templates[key] = {
         name: config.name,
@@ -222,7 +261,7 @@ export class SmtpService {
 
       // 根据端口和安全设置调整配置
       const isDevelopment = process.env.NODE_ENV === 'development'
-      
+
       if (port === 587 && !secure) {
         // STARTTLS - 端口587通常使用STARTTLS
         transporterConfig.requireTLS = true
@@ -271,17 +310,17 @@ export class SmtpService {
       throw new Error('SMTP配置未初始化或无效')
     }
 
-    // 如果提供了IP地址，在邮件内容中添加IP信息
+    // 兼容直接调用 sendMail 的邮件；模板已渲染来源 IP 时不重复追加
     let finalHtml = htmlContent
-    if (ipAddress) {
-      const formattedIP = formatIPForEmail(ipAddress)
-      // 在邮件末尾添加IP信息
+    if (ipAddress && !htmlContent.includes(EMAIL_REQUEST_SOURCE_LABEL)) {
+      const formattedIP = escapeHtml(formatIPForEmail(ipAddress))
       finalHtml = htmlContent.replace(
         /(<p[^>]*style="[^"]*text-align: center[^"]*"[^>]*>.*?此邮件由系统自动发送，请勿回复。.*?<\/p>)/s,
-        `$1`.replace(
-          '此邮件由系统自动发送，请勿回复。',
-          `此邮件由系统自动发送，请勿回复。<br><br>This email was requested from: ${formattedIP}`
-        )
+        (footer) =>
+          footer.replace(
+            '此邮件由系统自动发送，请勿回复。',
+            `此邮件由系统自动发送，请勿回复。<br><br>${EMAIL_REQUEST_SOURCE_LABEL} <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${formattedIP}</span>`
+          )
       )
     }
 
@@ -373,14 +412,18 @@ export class SmtpService {
         headerSubtitle: builtin.headerSubtitle,
         actionText: builtin.actionText || '查看详情'
       }
-      html = this.renderString(this.baseTemplate, templateData)
+      html = this.renderString(this.baseTemplate, templateData, {
+        rawKeys: TRUSTED_HTML_TEMPLATE_KEYS
+      })
     } else {
       mergedData = await this.prepareTemplateData(data)
       html = this.renderString(html, mergedData)
     }
 
     return {
-      subject: this.renderString(subject, mergedData),
+      subject: normalizeEmailSubject(
+        this.renderString(subject, mergedData, { escapeValues: false })
+      ),
       html
     }
   }
@@ -414,7 +457,9 @@ export class SmtpService {
           data.actionUrl,
           formattedIP
         )
-        const fallbackSubject = `${data.title || data.fallbackTitle || '通知'} | ${mergedData.siteTitle}通知推送`
+        const fallbackSubject = normalizeEmailSubject(
+          `${data.title || data.fallbackTitle || '通知'} | ${mergedData.siteTitle}通知推送`
+        )
         return await this.sendMail(to, fallbackSubject, fallbackHtml, undefined, ipAddress)
       }
       return await this.sendMail(to, subject, html, undefined, ipAddress)
@@ -465,12 +510,13 @@ export class SmtpService {
     try {
       const formattedIP = ipAddress ? formatIPForEmail(ipAddress) : undefined
       const templateData = await this.prepareTemplateData({ ipAddress: formattedIP })
-      const subject = `测试邮件 | ${templateData.siteTitle}通知推送`
+      const subject = normalizeEmailSubject(`测试邮件 | ${templateData.siteTitle}通知推送`)
       const htmlContent = this.generateEmailTemplate(
         '测试邮件',
         '这是一封来自校园广播站系统的测试邮件。<br>如果您收到这封邮件，说明SMTP配置已经正确设置。',
         undefined,
-        formattedIP
+        formattedIP,
+        true
       )
 
       const success = await this.sendMail(to, subject, htmlContent, undefined, ipAddress)
@@ -494,27 +540,34 @@ export class SmtpService {
     title: string,
     content: string,
     actionUrl?: string,
-    formattedIP?: string
+    formattedIP?: string,
+    trustedHtmlContent = false
   ): string {
+    const safeFromName = escapeHtml(this.smtpConfig?.fromName || '校园广播站')
+    const safeTitle = escapeHtml(title)
+    const safeContent = trustedHtmlContent ? content : escapeHtml(content)
+    const safeActionUrl = normalizeEmailActionUrl(actionUrl)
+    const safeFormattedIP = formattedIP ? escapeHtml(formattedIP) : ''
+
     return `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px;">
         <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #333; margin: 0;">${this.smtpConfig?.fromName || '校园广播站'}</h1>
+            <h1 style="color: #333; margin: 0;">${safeFromName}</h1>
             <p style="color: #666; margin: 5px 0 0 0;">通知推送</p>
           </div>
           
-          <h2 style="color: #333; margin-bottom: 20px;">${title}</h2>
+          <h2 style="color: #333; margin-bottom: 20px;">${safeTitle}</h2>
           
-          <div style="color: #555; line-height: 1.6; margin-bottom: 30px;">
-            ${content}
+          <div style="color: #555; line-height: 1.6; margin-bottom: 30px; white-space: pre-wrap;">
+            ${safeContent}
           </div>
           
           ${
-            actionUrl
+            safeActionUrl
               ? `
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${actionUrl}" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">查看详情</a>
+              <a href="${escapeHtml(safeActionUrl)}" style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px;">查看详情</a>
             </div>
           `
               : ''
@@ -524,7 +577,7 @@ export class SmtpService {
           
           <p style="color: #666; font-size: 12px; text-align: center;">
             此邮件由系统自动发送，请勿回复。<br>
-            如有疑问，请联系管理员。${formattedIP ? `<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${formattedIP}</span>` : ''}
+            如有疑问，请联系管理员。${safeFormattedIP ? `<br><br>This email was requested from: <span style="font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; color: #333; text-decoration: none; pointer-events: none;">${safeFormattedIP}</span>` : ''}
           </p>
         </div>
       </div>
@@ -544,7 +597,11 @@ export class SmtpService {
   /**
    * 基本占位符渲染：用 {{var}} 替换，支持 {{#if var}}...{{/if}} 嵌套条件
    */
-  private renderString(tpl: string, data: Record<string, any>): string {
+  private renderString(
+    tpl: string,
+    data: Record<string, any>,
+    options: { escapeValues?: boolean; rawKeys?: ReadonlySet<string> } = {}
+  ): string {
     // 递归处理嵌套的 if 块
     const processIfBlocks = (template: string): string => {
       let hasChanges = true
@@ -574,7 +631,11 @@ export class SmtpService {
     // 处理变量
     tpl = tpl.replace(/\{\{\s*([a-zA-Z0-9_\.]+)\s*\}\}/g, (_, key) => {
       const v = key.split('.').reduce((acc: any, k: string) => (acc ? acc[k] : undefined), data)
-      return v == null ? '' : String(v)
+      if (v == null) return ''
+
+      const renderedValue = String(v)
+      if (options.escapeValues === false || options.rawKeys?.has(key)) return renderedValue
+      return escapeHtml(renderedValue)
     })
 
     return tpl
@@ -585,7 +646,12 @@ export class SmtpService {
    */
   private async prepareTemplateData(data: Record<string, any>): Promise<Record<string, any>> {
     const siteTitle = await getSiteTitle()
-    return { fromName: this.smtpConfig?.fromName || '校园广播站', siteTitle, ...data }
+    return {
+      ...data,
+      fromName: this.smtpConfig?.fromName || '校园广播站',
+      siteTitle,
+      actionUrl: normalizeEmailActionUrl(data.actionUrl)
+    }
   }
 }
 

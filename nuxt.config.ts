@@ -92,7 +92,8 @@ export default defineNuxtConfig({
     '~/assets/css/transitions.css',
     '~/assets/css/mobile-admin.css',
     '~/assets/css/print-fix.css',
-    '~/assets/css/sf-pro-icons.css'
+    '~/assets/css/sf-pro-icons.css',
+    '~/assets/css/markdown.css'
   ],
 
   // 配置运行时配置
@@ -362,6 +363,8 @@ export default defineNuxtConfig({
     },
     build: {
       target: 'esnext',
+      // Vite 8 默认使用 Lightning CSS，会把连续声明中的标准毛玻璃属性误判为重复项
+      cssMinify: 'esbuild',
       sourcemap: false,
       rollupOptions: {
         output: {

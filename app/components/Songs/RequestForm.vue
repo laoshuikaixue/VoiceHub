@@ -3,9 +3,7 @@
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content-desktop">
-        <div v-if="submissionGuidelines" class="guidelines-content">
-          {{ submissionGuidelines }}
-        </div>
+        <div v-if="submissionGuidelines" class="guidelines-content markdown-body" v-html="renderedGuidelines" />
         <div v-else class="default-guidelines">
           <p>1. 投稿时无需加入书名号</p>
           <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
@@ -29,9 +27,7 @@
         投稿须知
       </h3>
       <div class="rules-content">
-        <div v-if="submissionGuidelines" class="guidelines-content">
-          {{ submissionGuidelines }}
-        </div>
+        <div v-if="submissionGuidelines" class="guidelines-content markdown-body" v-html="renderedGuidelines" />
         <div v-else class="default-guidelines">
           <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
           <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
@@ -1404,7 +1400,7 @@ import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
-
+import { renderMarkdown } from '~/utils/markdown'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1437,6 +1433,9 @@ const {
   requireCardCodeForRequests,
   enableCardCodeLimitBypass
 } = useSiteConfig()
+
+// 将投稿须知 Markdown 渲染为安全 HTML
+const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 // 用户认证
 const auth = useAuth()
@@ -4078,7 +4077,6 @@ defineExpose({
 }
 
 .guidelines-content {
-  white-space: pre-line;
   overflow-wrap: anywhere;
 }
 

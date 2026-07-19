@@ -56,7 +56,7 @@
               type="text"
               placeholder="请输入站点标题"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">备案号 (ICP)</label>
@@ -65,7 +65,7 @@
               type="text"
               placeholder="请输入备案号"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">公安联网备案号</label>
@@ -74,7 +74,7 @@
               type="text"
               placeholder="请输入公安备案号 (如：陕公网安备 61011302001964 号)"
               :class="inputClass"
-            >
+            />
           </div>
           <div class="pt-2">
             <div
@@ -88,7 +88,7 @@
                 v-model="formData.showBeianIcon"
                 type="checkbox"
                 class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-              >
+              />
             </div>
           </div>
           <div>
@@ -118,7 +118,7 @@
               type="text"
               placeholder="请输入Logo图片URL"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">首页学校 Logo URL (大尺寸)</label>
@@ -127,7 +127,7 @@
               type="text"
               placeholder="请输入首页学校Logo URL"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">打印排期 Logo URL (小尺寸)</label>
@@ -136,7 +136,7 @@
               type="text"
               placeholder="请输入打印页学校Logo URL"
               :class="inputClass"
-            >
+            />
           </div>
         </div>
       </section>
@@ -160,7 +160,7 @@
               v-model="formData.enableCollaborativeSubmission"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -168,13 +168,15 @@
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">启用投稿备注留言</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户在投稿时附加公开或仅管理员可见的备注</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">
+                允许用户在投稿时附加公开或仅管理员可见的备注
+              </p>
             </div>
             <input
               v-model="formData.enableSubmissionRemarks"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -182,13 +184,15 @@
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">启用点歌券点歌</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">允许用户使用点歌券在投稿时抵扣或提交点歌</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">
+                允许用户使用点歌券在投稿时抵扣或提交点歌
+              </p>
             </div>
             <input
               v-model="formData.enableCardCodeRequests"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -196,13 +200,15 @@
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">强制使用点歌券投稿</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">开启后，所有用户提交点歌时必须填写有效点歌券</p>
+              <p class="text-[10px] text-zinc-500 mt-0.5">
+                开启后，所有用户提交点歌时必须填写有效点歌券
+              </p>
             </div>
             <input
               v-model="formData.requireCardCodeForRequests"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -228,7 +234,7 @@
                 (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
               "
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
-            >
+            />
           </div>
 
           <div
@@ -242,7 +248,7 @@
               v-model="formData.enableReplayRequests"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div class="space-y-4">
@@ -257,7 +263,7 @@
                 v-model="formData.enableSubmissionLimit"
                 type="checkbox"
                 class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-              >
+              />
             </div>
 
             <div v-if="formData.enableSubmissionLimit" class="space-y-4">
@@ -299,7 +305,13 @@
 
               <div>
                 <label :class="labelClass"
-                  >{{ activeLimitTab === 'daily' ? '单日' : (activeLimitTab === 'weekly' ? '单周' : '单月') }}投稿上限</label
+                  >{{
+                    activeLimitTab === 'daily'
+                      ? '单日'
+                      : activeLimitTab === 'weekly'
+                        ? '单周'
+                        : '单月'
+                  }}投稿上限</label
                 >
                 <div class="relative">
                   <input
@@ -307,7 +319,7 @@
                     type="number"
                     min="0"
                     :class="inputClass"
-                  >
+                  />
                   <span
                     class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-700 uppercase"
                     >首 / 人</span
@@ -335,7 +347,7 @@
                   v-model="formData.captchaEnabled"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <div class="flex-1 space-y-4">
                 <label for="captcha-enabled" class="cursor-pointer block">
@@ -356,7 +368,7 @@
                           type="radio"
                           value="graphic"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                        >
+                        />
                         <span class="text-sm text-zinc-300">图形验证码</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
@@ -365,7 +377,7 @@
                           type="radio"
                           value="turnstile"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                        >
+                        />
                         <span class="text-sm text-zinc-300">Cloudflare Turnstile</span>
                       </label>
                     </div>
@@ -373,14 +385,16 @@
 
                   <!-- 图形验证码配置 -->
                   <div v-if="formData.captchaProvider === 'graphic'">
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">触发阈值（失败次数）</label>
+                    <label class="block text-xs font-bold text-zinc-400 mb-2"
+                      >触发阈值（失败次数）</label
+                    >
                     <input
                       v-model.number="formData.captchaMaxFailures"
                       type="number"
                       min="1"
                       placeholder="例如: 3"
                       class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                    >
+                    />
                     <p class="text-[10px] text-zinc-500 mt-1">
                       连续密码错误达到此次数后，后续登录必须输入验证码。建议设置为 3-5 次。
                     </p>
@@ -389,22 +403,26 @@
                   <!-- Turnstile 配置 -->
                   <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-4">
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">Site Key (Sitekey)</label>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2"
+                        >Site Key (Sitekey)</label
+                      >
                       <input
                         v-model="formData.turnstileSiteKey"
                         type="text"
                         placeholder="在此输入 Turnstile 的 Site Key"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                      >
+                      />
                     </div>
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">Secret Key (Secret)</label>
+                      <label class="block text-xs font-bold text-zinc-400 mb-2"
+                        >Secret Key (Secret)</label
+                      >
                       <input
                         v-model="formData.turnstileSecretKey"
                         type="password"
                         placeholder="在此输入 Turnstile 的 Secret Key (留空表示不修改)"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                      >
+                      />
                       <p class="text-[10px] text-zinc-500 mt-1">
                         开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。
                       </p>
@@ -442,7 +460,7 @@
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <label for="show-keywords" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">显示黑名单具体关键词</p>
@@ -461,7 +479,7 @@
                   v-model="formData.hideStudentInfo"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <label for="hide-students" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">隐藏学生详细信息</p>
@@ -480,12 +498,17 @@
                   v-model="formData.telemetryEnabled"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <label for="telemetry-enabled" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">启用错误追踪与遥测</p>
                 <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  默认开启。开启后，系统会向 Sentry 发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例 ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。<strong class="text-zinc-400">不会收集任何个人身份信息、用户数据或业务内容</strong>。
+                  默认开启。开启后，系统会向 Sentry
+                  发送前后端错误事件和实例在线事件（仅包含技术错误信息、实例
+                  ID、请求路径和运行时环境），用于统计实例数量并定位部署问题。<strong
+                    class="text-zinc-400"
+                    >不会收集任何个人身份信息、用户数据或业务内容</strong
+                  >。
                 </p>
               </label>
             </div>
@@ -506,16 +529,48 @@
       <section
         class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
       >
-        <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
-        >
-          <FileText :size="16" class="text-emerald-500" /> 投稿须知
-        </h3>
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+          <h3
+            class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
+          >
+            <FileText :size="16" class="text-emerald-500" /> 投稿须知
+          </h3>
+          <div class="flex gap-1 bg-zinc-950 rounded-lg p-1">
+            <button
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                editMode === 'edit'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              ]"
+              @click="editMode = 'edit'"
+            >
+              编辑
+            </button>
+            <button
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                editMode === 'preview'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              ]"
+              @click="editMode = 'preview'"
+            >
+              预览
+            </button>
+          </div>
+        </div>
         <textarea
+          v-if="editMode === 'edit'"
           v-model="formData.submissionGuidelines"
           :rows="6"
-          placeholder="请输入投稿须知内容"
+          placeholder="请输入投稿须知内容（支持 Markdown 格式）"
           :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
+        />
+        <div
+          v-else
+          class="guidelines-preview markdown-body w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-300 leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
+          v-html="renderedPreview"
         />
       </section>
 
@@ -539,6 +594,8 @@ import {
   AlertCircle
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
+import { renderMarkdown } from '~/utils/markdown'
+import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -546,6 +603,10 @@ const { showToast: showNotification } = useToast()
 const loading = ref(true)
 const saving = ref(false)
 const saveSuccess = ref(false)
+const editMode = ref('edit') // 投稿须知编辑/预览模式
+
+// 投稿须知 Markdown 预览
+const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
 
 // 样式类常量
 const inputClass =
@@ -606,6 +667,11 @@ const formData = ref({
   googleOAuthEnabled: false,
   googleClientId: '',
   googleClientSecret: '',
+  aggregateOAuthEnabled: false,
+  aggregateOAuthAppId: '',
+  aggregateOAuthAppKey: '',
+  aggregateOAuthLoginType: ['qq'],
+  aggregateOAuthEndpoint: 'https://a.idcfx.net/connect.php',
   customOAuthEnabled: false,
   customOAuthDisplayName: '',
   customOAuthAuthorizeUrl: '',
@@ -713,6 +779,11 @@ const loadConfig = async () => {
       googleOAuthEnabled: !!data.googleOAuthEnabled,
       googleClientId: data.googleClientId || '',
       googleClientSecret: data.googleClientSecret || '',
+      aggregateOAuthEnabled: !!data.aggregateOAuthEnabled,
+      aggregateOAuthAppId: data.aggregateOAuthAppId || '',
+      aggregateOAuthAppKey: data.aggregateOAuthAppKey || '',
+      aggregateOAuthLoginType: getAggregateOAuthLoginTypesOrDefault(data.aggregateOAuthLoginType),
+      aggregateOAuthEndpoint: data.aggregateOAuthEndpoint || 'https://a.idcfx.net/connect.php',
       customOAuthEnabled: !!data.customOAuthEnabled,
       customOAuthDisplayName: data.customOAuthDisplayName || '',
       customOAuthAuthorizeUrl: data.customOAuthAuthorizeUrl || '',
@@ -788,7 +859,10 @@ const saveConfig = async () => {
     saveSuccess.value = true
     formData.value = { ...configToSave }
     originalData.value = JSON.parse(JSON.stringify(formData.value))
-    localStorage.setItem('voicehub.telemetryEnabled', configToSave.telemetryEnabled ? 'true' : 'false')
+    localStorage.setItem(
+      'voicehub.telemetryEnabled',
+      configToSave.telemetryEnabled ? 'true' : 'false'
+    )
     showNotification('配置保存成功！', 'success')
 
     setTimeout(() => {

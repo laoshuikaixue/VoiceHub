@@ -199,6 +199,12 @@ export const systemSettings = pgTable('SystemSettings', {
   googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
   googleClientId: text('googleClientId'),
   googleClientSecret: text('googleClientSecret'),
+  // 聚合登陆
+  aggregateOAuthEnabled: boolean('aggregateOAuthEnabled').default(false).notNull(),
+  aggregateOAuthAppId: text('aggregateOAuthAppId'),
+  aggregateOAuthAppKey: text('aggregateOAuthAppKey'),
+  aggregateOAuthLoginType: text('aggregateOAuthLoginType').default('qq'),
+  aggregateOAuthEndpoint: text('aggregateOAuthEndpoint').default('https://a.idcfx.net/connect.php'),
   // Custom OAuth2
   customOAuthEnabled: boolean('customOAuthEnabled').default(false).notNull(),
   customOAuthDisplayName: text('customOAuthDisplayName'),

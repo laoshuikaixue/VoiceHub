@@ -26,11 +26,7 @@
           <!-- 封面 -->
           <div
             class="cover-container clickable"
-            @click.stop="
-              isBilibiliSong(activeSong)
-                ? openBilibiliVideo()
-                : toggleLyrics()
-            "
+            @click.stop="isBilibiliSong(activeSong) ? openBilibiliVideo() : toggleLyrics()"
           >
             <template v-if="activeSong && activeSong.cover && !coverError">
               <img
@@ -39,12 +35,12 @@
                 class="player-cover"
                 referrerpolicy="no-referrer"
                 @error="handleImageError"
-              >
+              />
             </template>
             <div v-else class="text-cover">
               {{ getFirstChar(activeSong?.title || '') }}
             </div>
-            
+
             <!-- 悬浮展开提示遮罩 -->
             <div class="cover-hover-overlay">
               <Icon :name="isBilibiliSong(activeSong) ? 'video' : 'maximize-2'" size="18" />
@@ -475,11 +471,7 @@ const resetNeteaseScrobbleState = () => {
 
 const getScrobblePlaybackIdentity = (song) => {
   if (!song) return null
-  return [
-    song.musicPlatform || '',
-    song.musicId || '',
-    song.id || ''
-  ].join(':')
+  return [song.musicPlatform || '', song.musicId || '', song.id || ''].join(':')
 }
 
 watch(
@@ -498,11 +490,7 @@ watch(
 const getCurrentFailedSource = () => {
   const song = activeSong.value
   const audioSrc = audioPlayer.value?.currentSrc || audioPlayer.value?.src || song?.musicUrl
-  return (
-    song?.sourceInfo?.playSource ||
-    getCachedMusicUrlSource(audioSrc) ||
-    null
-  )
+  return song?.sourceInfo?.playSource || getCachedMusicUrlSource(audioSrc) || null
 }
 
 const buildFallbackResolveOptions = (song, excludeSources) => {
@@ -692,7 +680,9 @@ const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded =
   try {
     const playTime = Math.max(
       1,
-      Math.round(Math.min(currentTimeValue, normalizeSongDurationSeconds(durationValue) || currentTimeValue))
+      Math.round(
+        Math.min(currentTimeValue, normalizeSongDurationSeconds(durationValue) || currentTimeValue)
+      )
     )
 
     const result = await scrobbleSong(
@@ -820,7 +810,10 @@ const handleDurationChange = async () => {
   if (!audioPlayer.value || isFallbackHandling.value) return
 
   if (
-    isInvalidTencentAudio(audioPlayer.value.duration, audioPlayer.value.currentSrc || audioPlayer.value.src)
+    isInvalidTencentAudio(
+      audioPlayer.value.duration,
+      audioPlayer.value.currentSrc || audioPlayer.value.src
+    )
   ) {
     const switchedSource = await trySwitchPlaybackSource()
     if (switchedSource) return
@@ -832,7 +825,10 @@ const handleLoaded = async () => {
 
   if (
     !isFallbackHandling.value &&
-    isInvalidTencentAudio(audioPlayer.value.duration, audioPlayer.value.currentSrc || audioPlayer.value.src)
+    isInvalidTencentAudio(
+      audioPlayer.value.duration,
+      audioPlayer.value.currentSrc || audioPlayer.value.src
+    )
   ) {
     const switchedSource = await trySwitchPlaybackSource()
     if (switchedSource) {
@@ -929,7 +925,12 @@ const handleLoaded = async () => {
 const handleError = async (error) => {
   // 忽略主动清空 src 或关闭播放器导致的错误
   const audioEl = audioPlayer.value
-  if (!audioEl || !audioEl.src || audioEl.src === window.location.href || audioEl.src === window.location.origin + '/') {
+  if (
+    !audioEl ||
+    !audioEl.src ||
+    audioEl.src === window.location.href ||
+    audioEl.src === window.location.origin + '/'
+  ) {
     return
   }
 
@@ -1649,8 +1650,8 @@ onMounted(async () => {
 
   // 暴露播放器实例到全局（鸿蒙环境）
   if (sync.isHarmonyOS()) {
-    window.voiceHubPlayerInstance = window.voiceHubPlayerInstance || {};
-    
+    window.voiceHubPlayerInstance = window.voiceHubPlayerInstance || {}
+
     // 使用 Object.assign 避免覆盖可能已存在的方法，但要确保 setPlayMode 被添加
     Object.assign(window.voiceHubPlayerInstance, {
       play: () => control.play(),
@@ -1661,23 +1662,25 @@ onMounted(async () => {
       getDuration: () => control.duration.value,
       isPlaying: () => control.isPlaying.value,
       setPlayMode: (mode) => {
-        let targetMode = 'off';
+        let targetMode = 'off'
         if (typeof mode === 'number') {
           // HarmonyOS: 0=SEQUENCE, 1=SINGLE, 2=LIST, 3=SHUFFLE
-          if (mode === 1) targetMode = 'loopOne';
-          else if (mode === 2) targetMode = 'order'; // LIST -> order
-          else if (mode === 3) targetMode = 'order'; // SHUFFLE -> order
-          else targetMode = 'off'; // SEQUENCE -> off
+          if (mode === 1) targetMode = 'loopOne'
+          else if (mode === 2)
+            targetMode = 'order' // LIST -> order
+          else if (mode === 3)
+            targetMode = 'order' // SHUFFLE -> order
+          else targetMode = 'off' // SEQUENCE -> off
         } else if (typeof mode === 'string') {
           // 假设传入的字符串模式已经是合法的内部模式
-          targetMode = mode;
+          targetMode = mode
         }
-        control.setPlayMode(targetMode);
-        
+        control.setPlayMode(targetMode)
+
         // 立即通知状态更新
-        sync.notifyPlaylistState();
+        sync.notifyPlaylistState()
       }
-    });
+    })
   }
 
   // 等待子组件挂载完成
@@ -2097,9 +2100,8 @@ const getFirstChar = (text) => {
   flex-direction: column;
   align-items: flex-start;
   border-radius: 22px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
-    rgba(128, 128, 128, 0.25);
+  /* 不支持毛玻璃时使用深色背景，避免只剩低透明度底色 */
+  background: rgba(20, 20, 25, 0.85);
   padding: 10px 7px 10px 13px;
   width: 400px;
   height: 165px;
@@ -2157,7 +2159,9 @@ const getFirstChar = (text) => {
 
 .cover-container.clickable {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .cover-container.clickable:hover {
@@ -2922,16 +2926,12 @@ const getFirstChar = (text) => {
   -webkit-backdrop-filter: blur(50px);
 }
 
-/* 毛玻璃效果增强 */
-@supports (backdrop-filter: blur(50px)) {
-  .global-audio-player {
-    background: rgba(128, 128, 128, 0.25);
-  }
-}
-
-@supports not (backdrop-filter: blur(50px)) {
-  .global-audio-player {
-    background: rgba(128, 128, 128, 0.8);
+/* 浏览器支持标准或 WebKit 毛玻璃属性时启用 Liquid Glass 背景 */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .music-widget {
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
+      rgba(128, 128, 128, 0.25);
   }
 }
 </style>

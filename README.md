@@ -680,6 +680,8 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 系统支持通过 OAuth 提供商（如 GitHub、Casdoor、Google 等）快速创建账户和登录：
 
+OAuth 运行时配置统一保存在管理员后台数据库中；环境变量仅用于兼容旧部署和后台一键导入，导入后以后台保存值为准。
+
 1. **在管理员后台配置**：
 
 - 导航到系统设置 > OAuth 配置
@@ -690,6 +692,7 @@ VoiceHub 实现了细粒度的权限控制系统：
   - GitHub：Client ID / Secret
   - Casdoor：Server URL / Client ID / Secret / Organization Name
   - Google：Client ID / Secret
+  - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝、抖音
   - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
 2. **OAuth 提供商配置**：
@@ -728,6 +731,7 @@ VoiceHub/
 │   │       ├── components.css      # 组件样式
 │   │       ├── lyric-player.module.css  # 歌词播放器样式
 │   │       ├── main.css           # 主样式文件
+│   │       ├── markdown.css       # Markdown样式
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
@@ -877,6 +881,7 @@ VoiceHub/
 │   │       ├── 20260719000001_add_first_login_password_change.sql # 首次登录强制改密迁移
 │   │       ├── 20260719000002_restore_pending_password_change.sql # 恢复待改密账户状态迁移
 │   │       ├── 20260719000003_harden_password_security.sql # 会话版本与密码安全迁移
+│   │       ├── 20260719000004_reconcile_password_security_after_main.sql # 主分支汇合后的密码安全补偿迁移
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
@@ -922,6 +927,7 @@ VoiceHub/
 │       ├── bilibiliSource.ts  # 哔哩哔哩音源
 │       ├── debounce.ts       # 防抖工具
 │       ├── lyricAdapter.ts    # 歌词适配器
+│       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤

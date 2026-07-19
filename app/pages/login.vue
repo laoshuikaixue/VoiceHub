@@ -4,14 +4,14 @@
       <div class="form-section">
         <div class="form-header">
           <div class="logo-row">
-            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center" >
-            <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider" />
+            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center" />
+            <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider" />
             <img
-              v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()"
-              :src="schoolLogoHomeUrl"
+              v-if="schoolLogoHomeDisplayUrl"
+              :src="schoolLogoHomeDisplayUrl"
               alt="学校Logo"
               class="school-logo"
-            >
+            />
           </div>
           <h1 class="form-title">{{ siteTitle ? siteTitle + ' | VoiceHub' : 'VoiceHub' }}</h1>
           <div class="header-divider" />
@@ -32,7 +32,13 @@ import LoginForm from '~/components/Auth/LoginForm.vue'
 import logo from '~~/public/images/logo.svg'
 
 // 使用站点配置
-const { siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber } = useSiteConfig()
+const {
+  siteTitle,
+  initSiteConfig,
+  logoUrl,
+  schoolLogoHomeDisplayUrl,
+  icp: icpNumber
+} = useSiteConfig()
 // 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value

@@ -61,6 +61,21 @@ export interface ValidationResult {
   error?: string
 }
 
+const normalizeBilibiliWebUrl = (value: string): string | null => {
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    if (url.username || url.password) return null
+
+    const hostname = url.hostname.toLowerCase().replace(/\.$/, '')
+    if (hostname !== 'bilibili.com' && !hostname.endsWith('.bilibili.com')) return null
+
+    return url.href
+  } catch {
+    return null
+  }
+}
+
 export const validateUrls = async (urls: UrlValidationItem[]): Promise<ValidationResult[]> => {
   const results: ValidationResult[] = []
 
@@ -90,9 +105,10 @@ export const getBilibiliUrl = (song: {
 }): string => {
   if (!song) return '#'
 
-  // 优先使用 playUrl，如果它已经是 Bilibili 链接
-  if (song.playUrl && song.playUrl.includes('bilibili.com')) {
-    return song.playUrl
+  // 优先使用 playUrl，但必须确认它确实属于 Bilibili 域名
+  if (song.playUrl) {
+    const bilibiliUrl = normalizeBilibiliWebUrl(song.playUrl)
+    if (bilibiliUrl) return bilibiliUrl
   }
 
   if (song.musicId) {
@@ -163,4 +179,3 @@ export const getNeteaseCookie = (): string | undefined => {
   }
   return undefined
 }
-

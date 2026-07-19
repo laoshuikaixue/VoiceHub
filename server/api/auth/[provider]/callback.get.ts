@@ -18,15 +18,21 @@ import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
   const query = getQuery(event)
-  const code = query.code as string
-  const stateStr = query.state as string
+  // OAuth 回调参数参与身份与 CSRF 校验，拒绝重复参数可避免上下游解析结果不一致。
+  const code = typeof query.code === 'string' ? query.code : undefined
+  const stateStr = typeof query.state === 'string' ? query.state : undefined
+  const callbackLoginType =
+    typeof query.type === 'string' ? query.type.trim().toLowerCase() : undefined
 
   if (!provider) {
     throw createError({ statusCode: 400, message: 'Missing provider' })
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 第三方 OAuth2' })
+    throw createError({
+      statusCode: 400,
+      message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
+    })
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -43,7 +49,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. 验证 State
   const csrfCookie = getCookie(event, 'oauth_csrf')
-  
+
   if (!csrfCookie) {
     throw createError({
       statusCode: 400,
@@ -56,14 +62,42 @@ export default defineEventHandler(async (event) => {
 
   const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
   const providerConfig = await getProviderRuntimeConfig(provider)
+  let stateToVerify = stateStr
 
-  const state = parseState(stateStr, origin, csrfCookie, stateSecret)
+  if (provider === 'aggregate') {
+    const storedFullState = getCookie(event, 'oauth_full_state')
+    const storedCompactState = getCookie(event, 'oauth_compact_state')
+    if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
+      throw createError({ statusCode: 400, message: '聚合登录状态无效或已过期' })
+    }
+    stateToVerify = storedFullState
+  }
+
+  const state = parseState(stateToVerify, origin, csrfCookie, stateSecret)
   if (!state) {
     throw createError({ statusCode: 400, message: 'Invalid or expired state' })
+  }
+  if (state.provider && state.provider !== provider) {
+    throw createError({ statusCode: 400, message: 'OAuth provider 与 state 不匹配' })
+  }
+
+  let identityProvider = provider
+  if (provider === 'aggregate') {
+    const loginType = state.loginType?.trim().toLowerCase()
+    if (!loginType || !providerConfig.loginTypes?.includes(loginType)) {
+      throw createError({ statusCode: 400, message: '聚合登录方式未启用或已变更' })
+    }
+    if (callbackLoginType !== loginType) {
+      throw createError({ statusCode: 400, message: '聚合登录回调类型与 state 不匹配' })
+    }
+    providerConfig.loginType = loginType
+    identityProvider = `aggregate:${loginType}`
   }
 
   // 清除 CSRF cookie
   deleteCookie(event, 'oauth_csrf')
+  deleteCookie(event, 'oauth_full_state')
+  deleteCookie(event, 'oauth_compact_state')
 
   const strategy = getOAuthStrategy(provider)
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
@@ -95,7 +129,13 @@ export default defineEventHandler(async (event) => {
   const providerUserId = userInfo.id
   const providerUsername = userInfo.username
 
-  return handleUserLoginOrBind(event, provider, providerUserId, providerUsername, state.returnTo)
+  return handleUserLoginOrBind(
+    event,
+    identityProvider,
+    providerUserId,
+    providerUsername,
+    state.returnTo
+  )
 })
 
 async function handleUserLoginOrBind(
@@ -231,7 +271,7 @@ async function handleUserLoginOrBind(
     const redirectQuery = safeReturnTo ? `&redirect=${encodeURIComponent(safeReturnTo)}` : ''
     return sendRedirect(
       event,
-      `/login?action=bind&provider=${provider}&username=${encodeURIComponent(providerUsername)}${redirectQuery}`
+      `/login?action=bind&provider=${encodeURIComponent(provider)}&username=${encodeURIComponent(providerUsername)}${redirectQuery}`
     )
   }
 }
