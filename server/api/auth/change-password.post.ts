@@ -5,6 +5,8 @@ import { eq } from 'drizzle-orm'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 import { updateUserPassword } from '../../services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
@@ -17,11 +19,20 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  if (!body.currentPassword || !body.newPassword) {
+  if (
+    typeof body.currentPassword !== 'string' ||
+    !body.currentPassword ||
+    typeof body.newPassword !== 'string' ||
+    !body.newPassword
+  ) {
     throw createError({
       statusCode: 400,
       message: '当前密码和新密码都是必需的'
     })
+  }
+
+  if (body.newPassword.length < 8) {
+    throw createError({ statusCode: 400, message: '新密码长度至少为8位' })
   }
 
   try {
@@ -69,7 +80,17 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新密码
-    await updateUserPassword(user.id, body.newPassword)
+    const { passwordChangedAt } = await updateUserPassword(user.id, body.newPassword)
+
+    // 密码变更会让旧令牌失效，因此为当前已验证会话立即换发令牌。
+    const newToken = JWTEnhanced.generateToken(user.id, user.role)
+    setCookie(event, 'auth-token', newToken, {
+      httpOnly: true,
+      secure: isSecureRequest(event),
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/'
+    })
 
     // 记录成功的密码修改
     const clientIp = getClientIP(event)
@@ -77,7 +98,8 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: '密码修改成功'
+      message: '密码修改成功',
+      passwordChangedAt
     }
   } catch (error: any) {
     // 已格式化的错误直接抛出

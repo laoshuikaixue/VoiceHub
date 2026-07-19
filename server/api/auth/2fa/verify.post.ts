@@ -7,6 +7,7 @@ import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { delStore, getStore, incrStore } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
+import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
@@ -175,6 +176,8 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'pre-auth-token')
   deleteCookie(event, 'binding-token')
 
+  const requirePasswordChange = await resolveRequirePasswordChange(user)
+
   return {
       success: true,
       user: {
@@ -184,7 +187,12 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        needsPasswordChange: !user.passwordChangedAt,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        forcePasswordChange: user.forcePasswordChange,
+        passwordChangedAt: user.passwordChangedAt,
+        requirePasswordChange,
+        hasSetPassword: !!user.passwordChangedAt,
         has2FA: true
       }
   }

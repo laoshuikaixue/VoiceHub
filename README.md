@@ -874,6 +874,7 @@ VoiceHub/
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
+│   │       ├── 20260719000001_add_first_login_password_change.sql # 首次登录强制改密迁移
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
@@ -1199,7 +1200,8 @@ VoiceHub/
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
-│   │   └── time-sync.ts    # 服务器时间同步插件
+│   │   ├── time-sync.ts    # 服务器时间同步插件
+│   │   └── system-settings-cache.ts # 系统设置缓存预热插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
@@ -1245,6 +1247,8 @@ VoiceHub/
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── system-settings-helper.ts # 系统设置缓存读取与强制改密判定
+│   │   ├── auth-route-policy.ts # 认证路由访问策略
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── twoFactorStore.ts # 双重认证存储工具
 │   │   ├── user.ts         # 用户相关工具函数
@@ -1256,6 +1260,9 @@ VoiceHub/
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
+├── tests/                 # 自动化测试
+│   └── server/
+│       └── auth-route-policy.test.ts # 强制改密路由策略测试
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件

@@ -75,12 +75,16 @@
           </ClientOnly>
 
           <div class="form-footer">
-            <NuxtLink class="back-link" to="/">
+            <NuxtLink v-if="!requirePasswordChange" class="back-link" to="/">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
               返回主页
             </NuxtLink>
+            <button v-else class="back-link logout-link" type="button" @click="handleLogout">
+              <Icon name="logout" :size="16" />
+              退出登录
+            </button>
           </div>
         </div>
       </div>
@@ -90,7 +94,7 @@
 
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import logo from '~~/public/images/logo.svg'
 
 // 使用站点配置
@@ -99,6 +103,11 @@ const { siteTitle, initSiteConfig } = useSiteConfig()
 const auth = useAuth()
 const router = useRouter()
 const isFirstLogin = ref(false)
+const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
+
+const handleLogout = async () => {
+  await auth.logout()
+}
 
 // 未登录用户重定向到登录页
 onMounted(async () => {
@@ -110,14 +119,8 @@ onMounted(async () => {
     return
   }
 
-  // 检查是否需要修改密码（用于显示不同的UI提示）
-  if (import.meta.client) {
-    const userJson = localStorage.getItem('user')
-    if (userJson) {
-      const user = JSON.parse(userJson)
-      isFirstLogin.value = user.forcePasswordChange === true || !user.passwordChangedAt
-    }
-  }
+  // 只有从未设置过密码的账号才走免输入旧密码的初始设置流程。
+  isFirstLogin.value = !auth.user.value?.hasSetPassword
 })
 </script>
 

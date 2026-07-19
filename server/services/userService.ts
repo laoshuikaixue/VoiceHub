@@ -15,16 +15,17 @@ export async function updateUserPassword(
   userId: number,
   newPassword: string,
   forceReset: boolean = false
-): Promise<void> {
+): Promise<{ passwordChangedAt: Date }> {
   // 1. 加密新密码
   const hashedNewPassword = await bcrypt.hash(newPassword, 12)
 
   // 2. 更新数据库
+  const passwordChangedAt = getBeijingTime()
   await db
     .update(users)
     .set({
       password: hashedNewPassword,
-      passwordChangedAt: forceReset ? null : getBeijingTime(),
+      passwordChangedAt,
       forcePasswordChange: forceReset
     })
     .where(eq(users.id, userId))
@@ -37,4 +38,6 @@ export async function updateUserPassword(
   } catch (cacheError) {
     console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
   }
+
+  return { passwordChangedAt }
 }

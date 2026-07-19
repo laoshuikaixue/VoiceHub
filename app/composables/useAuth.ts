@@ -112,10 +112,16 @@ export const useAuth = () => {
   const changePassword = async (currentPassword: string, newPassword: string) => {
     loading.value = true
     try {
-      await $fetch('/api/auth/change-password', {
+      const response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/change-password', {
         method: 'POST',
         body: { currentPassword, newPassword }
       })
+      if (user.value) {
+        user.value.requirePasswordChange = false
+        user.value.forcePasswordChange = false
+        user.value.passwordChangedAt = response.passwordChangedAt || null
+        user.value.hasSetPassword = true
+      }
     } catch (error: any) {
       // 处理 FetchError，提取错误信息（优先使用 message）
       if (error.data && error.data.message) {
@@ -137,12 +143,15 @@ export const useAuth = () => {
   const setInitialPassword = async (newPassword: string) => {
     loading.value = true
     try {
-      await $fetch('/api/auth/set-initial-password', {
+      const response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword }
       })
       if (user.value) {
-        user.value.needsPasswordChange = false
+        user.value.requirePasswordChange = false
+        user.value.forcePasswordChange = false
+        user.value.passwordChangedAt = response.passwordChangedAt || null
+        user.value.hasSetPassword = true
       }
     } finally {
       loading.value = false

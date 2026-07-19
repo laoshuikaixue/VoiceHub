@@ -2,7 +2,9 @@ import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
+import { updateUserPassword } from '~~/server/services/userService'
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { isSecureRequest } from '~~/server/utils/request-utils'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,15 +18,26 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    if (!body.newPassword) {
+    if (typeof body.newPassword !== 'string' || !body.newPassword) {
       throw createError({
         statusCode: 400,
         message: '新密码不能为空'
       })
     }
 
+    if (body.newPassword.length < 8) {
+      throw createError({ statusCode: 400, message: '新密码长度至少为8位' })
+    }
+
     // 获取用户信息
-    const currentUserResult = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
+    const currentUserResult = await db
+      .select({
+        password: users.password,
+        passwordChangedAt: users.passwordChangedAt
+      })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1)
     const currentUser = currentUserResult[0]
     if (!currentUser) {
       throw createError({
@@ -41,22 +54,25 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 加密新密码
-    const hashedPassword = await bcrypt.hash(body.newPassword, 10)
+    if (await bcrypt.compare(body.newPassword, currentUser.password)) {
+      throw createError({ statusCode: 400, message: '新密码不能与当前密码相同' })
+    }
 
-    // 更新密码
-    await db
-      .update(users)
-      .set({
-        password: hashedPassword,
-        passwordChangedAt: getBeijingTime(),
-        forcePasswordChange: false
-      })
-      .where(eq(users.id, user.id))
+    const { passwordChangedAt } = await updateUserPassword(user.id, body.newPassword)
+
+    const newToken = JWTEnhanced.generateToken(user.id, user.role)
+    setCookie(event, 'auth-token', newToken, {
+      httpOnly: true,
+      secure: isSecureRequest(event),
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/'
+    })
 
     return {
       success: true,
-      message: '初始密码设置成功'
+      message: '初始密码设置成功',
+      passwordChangedAt
     }
   } catch (error: any) {
     throw createError({

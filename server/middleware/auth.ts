@@ -4,6 +4,12 @@ import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
 import { isSecureRequest } from '../utils/request-utils'
+import { resolveRequirePasswordChange } from '../utils/system-settings-helper'
+import {
+  isAllowedDuringPasswordChange,
+  isPublicApiPath,
+  shouldBypassPublicApiAuthentication
+} from '../utils/auth-route-policy'
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -16,40 +22,6 @@ export default defineEventHandler(async (event) => {
 
   // 跳过非API路由
   if (!pathname.startsWith('/api/')) {
-    return
-  }
-
-  // 公共API路径
-  const publicApiPaths = [
-    '/api/auth/login',
-    '/api/auth/bind', // 账号绑定
-    '/api/auth/oauth-register',
-    '/api/auth/2fa/verify',
-    '/api/auth/2fa/send-email',
-    '/api/auth/forgot-password', // 找回密码
-    '/api/auth/reset-password', // 重置密码
-    '/api/auth/captcha', // 图形验证码
-    '/api/semesters/current',
-    '/api/play-times',
-    '/api/schedules/public',
-    '/api/songs/count',
-    '/api/songs/public',
-    '/api/site-config',
-    '/api/proxy/', // 代理API路径，用于图片代理等功能
-    '/api/bilibili/', // 哔哩哔哩相关API
-    '/api/api-enhanced/', // 网易云音乐API代理路径
-    '/api/native-api/', // Native Music 集成API
-    '/api/system/location', // 系统位置检测API
-    '/api/open/', // 开放API路径，由api-auth中间件处理认证
-    '/api/auth/webauthn/login', // WebAuthn 登录接口
-    '/api/music/resolve-url', // 音乐播放链接解析
-    '/api/music/state', // 音乐状态同步
-    '/api/music/websocket', // WebSocket 连接
-    '/api/sys/time' // 服务器时间同步
-  ]
-
-  // 公共路径跳过认证检查
-  if (publicApiPaths.some((path) => pathname.startsWith(path))) {
     return
   }
 
@@ -79,6 +51,12 @@ export default defineEventHandler(async (event) => {
 
   if (!token) {
     token = getCookie(event, 'auth-token') || null
+  }
+
+  // 公共接口只有匿名访问时才绕过认证；携带登录态必须继续检查强制改密状态。
+  const isPublicApi = isPublicApiPath(pathname)
+  if (shouldBypassPublicApiAuthentication(pathname, Boolean(token))) {
+    return
   }
 
   // 受保护路由缺少token时返回401错误
@@ -122,7 +100,10 @@ export default defineEventHandler(async (event) => {
         class: users.class,
         role: users.role,
         status: users.status,
-        passwordChangedAt: users.passwordChangedAt
+        passwordChangedAt: users.passwordChangedAt,
+        forcePasswordChange: users.forcePasswordChange,
+        email: users.email,
+        emailVerified: users.emailVerified
       })
       .from(users)
       .where(eq(users.id, decoded.userId))
@@ -182,8 +163,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    event.context.user = user
-
+    const requirePasswordChange = await resolveRequirePasswordChange(user)
     if (isUserBlocked(user.id)) {
       delete event.context.user
       const remaining = getUserBlockRemainingTime(user.id)
@@ -192,6 +172,24 @@ export default defineEventHandler(async (event) => {
         createError({
           statusCode: 401,
           message: `账户处于风险控制期，请在 ${remaining} 分钟后重试`
+        })
+      )
+    }
+
+    event.context.user = {
+      ...user,
+      requirePasswordChange,
+      hasSetPassword: !!user.passwordChangedAt
+    }
+
+    // 认证完成前只允许维持登录态和完成改密所需的接口。
+    if (!isAllowedDuringPasswordChange(pathname) && requirePasswordChange) {
+      return sendError(
+        event,
+        createError({
+          statusCode: 403,
+          message: '请先完成密码修改后再访问其他功能',
+          data: { requirePasswordChange: true }
         })
       )
     }
@@ -210,6 +208,12 @@ export default defineEventHandler(async (event) => {
       )
     }
   } catch (error: any) {
+    // 携带失效登录态访问公共接口时仍按匿名请求处理，避免破坏公共功能。
+    if (isPublicApi) {
+      delete event.context.user
+      return
+    }
+
     // 处理JWT验证错误
     return sendError(
       event,

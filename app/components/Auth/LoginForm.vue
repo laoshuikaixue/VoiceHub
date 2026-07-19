@@ -464,8 +464,15 @@ const getSafeRedirect = (fallback = '/') => {
   return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\') ? redirect : fallback
 }
 
+const redirectAfterLogin = async () => {
+  if (auth.user.value?.requirePasswordChange) {
+    return navigateTo('/change-password')
+  }
+  return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+}
+
 const handle2FASuccess = async () => {
-  await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+  await redirectAfterLogin()
 }
 
 onMounted(async () => {
@@ -555,7 +562,7 @@ const handleLogin = async () => {
 
     // 登录成功，刷新认证状态
     await auth.initAuth()
-    return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+    return redirectAfterLogin()
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
@@ -616,7 +623,7 @@ const handleRegisterOAuth = async () => {
     if (response.success) {
       // 账户创建成功，刷新认证状态
       await auth.initAuth()
-      return navigateTo(getSafeRedirect())
+      return redirectAfterLogin()
     }
   } catch (err) {
     const apiError = err
@@ -651,7 +658,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
     if (verification.success) {
       // 登录成功
       await auth.initAuth()
-      return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+      return redirectAfterLogin()
     }
   } catch (e) {
     if (isWebAuthnCeremonyAborted(e)) return
