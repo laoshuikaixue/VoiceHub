@@ -1,10 +1,10 @@
 <template>
-  <div class="auth-layout min-h-screen w-full items-center justify-center bg-[#0a0a0a] p-5">
+  <div class="auth-layout flex min-h-screen w-full items-center justify-center bg-[#0a0a0a] p-5">
     <div
       class="auth-container grid min-h-[600px] w-full max-w-[1200px] grid-cols-1 overflow-hidden lg:grid-cols-2"
     >
       <!-- 左侧信息区域 -->
-      <div class="info-section">
+      <div class="info-section flex items-center justify-center">
         <div class="info-content">
           <div class="logo-section">
             <img alt="VoiceHub Logo" class="brand-logo" :src="logo" >
@@ -66,7 +66,7 @@
 
       <!-- 右侧表单区域 -->
       <div class="form-section flex items-center justify-center">
-        <div class="form-container w-full max-w-[400px]">
+        <div class="form-container flex w-full max-w-[400px] flex-col items-center">
           <div class="form-header">
             <h2>{{ isFirstLogin ? '设置新密码' : '修改密码' }}</h2>
             <p>{{ isFirstLogin ? '请设置一个安全的密码' : '更新您的登录密码' }}</p>
@@ -86,7 +86,7 @@
               返回主页
             </NuxtLink>
             <button v-else class="back-link logout-link" type="button" @click="handleLogout">
-              <Icon name="logout" :size="16" />
+              <Icon class="shrink-0" name="logout" :size="16" aria-hidden="true" />
               退出登录
             </button>
           </div>
@@ -98,7 +98,8 @@
 
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import { computed, ref } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
+import { computed } from 'vue'
 import logo from '~~/public/images/logo.svg'
 
 // 使用站点配置
@@ -106,7 +107,10 @@ const { siteTitle, initSiteConfig } = useSiteConfig()
 
 const auth = useAuth()
 const router = useRouter()
-const isFirstLogin = ref(false)
+const isFirstLogin = computed(() => {
+  const currentUser = auth.user.value
+  return currentUser ? !currentUser.hasSetPassword : false
+})
 const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
 
 const handleLogout = async () => {
@@ -122,9 +126,6 @@ onMounted(async () => {
     router.push('/login')
     return
   }
-
-  // 只有从未设置过密码的账号才走免输入旧密码的初始设置流程。
-  isFirstLogin.value = !auth.user.value?.hasSetPassword
 })
 </script>
 

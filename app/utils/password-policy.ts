@@ -19,11 +19,7 @@ export const PASSWORD_MIN_LENGTH = 8
 export const PASSWORD_MAX_LENGTH = 128
 
 function getUtf8ByteLength(value: string): number {
-  if (typeof TextEncoder !== 'undefined') {
-    return new TextEncoder().encode(value).length
-  }
-
-  return unescape(encodeURIComponent(value)).length
+  return new TextEncoder().encode(value).length
 }
 
 export function validatePasswordPolicy(password: unknown): string | null {

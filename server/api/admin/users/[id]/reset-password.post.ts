@@ -1,5 +1,4 @@
 import { updateUserPassword } from '~~/server/services/userService'
-import { validatePasswordPolicy } from '~/utils/password-policy'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -23,17 +22,13 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
+  const newPassword = typeof body.newPassword === 'string' ? body.newPassword : ''
 
-  if (!body.newPassword) {
+  if (!newPassword) {
     throw createError({
       statusCode: 400,
       message: '新密码不能为空'
     })
-  }
-
-  const passwordError = validatePasswordPolicy(body.newPassword)
-  if (passwordError) {
-    throw createError({ statusCode: 400, message: passwordError })
   }
 
   try {
@@ -46,7 +41,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // 使用统一服务重置密码 (forceReset = true)
-    await updateUserPassword(id, body.newPassword, true)
+    await updateUserPassword(id, newPassword, true)
 
     return {
       success: true,
@@ -54,6 +49,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('重置密码失败:', error)
+    if (error && typeof error === 'object' && 'statusCode' in error) throw error
     throw createError({
       statusCode: 500,
       message: '重置密码失败'

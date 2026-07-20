@@ -28,12 +28,12 @@ export default defineEventHandler(async (event) => {
   const auditAction = PASSWORD_AUDIT_ACTIONS.CHANGE_PASSWORD
   const clientIp = getClientIP(event)
 
-  const body = await readBody(event)
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : ''
+  const newPassword = typeof body?.newPassword === 'string' ? body.newPassword : ''
   if (
-    typeof body.currentPassword !== 'string' ||
-    !body.currentPassword ||
-    typeof body.newPassword !== 'string' ||
-    !body.newPassword
+    !currentPassword ||
+    !newPassword
   ) {
     await recordPasswordAudit(event, user.id, auditAction, false, '缺少当前密码或新密码')
     throw createError({
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 429, message: '密码修改尝试过于频繁，请10分钟后再试' })
   }
 
-  const policyError = validatePasswordPolicy(body.newPassword)
+  const policyError = validatePasswordPolicy(newPassword)
   if (policyError) {
     await recordPasswordAudit(event, user.id, auditAction, false, policyError)
     throw createError({ statusCode: 400, message: policyError })
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '当前账号尚未设置密码，请使用初始密码设置功能' })
     }
 
-    const isPasswordValid = await bcrypt.compare(body.currentPassword, userDetails.password)
+    const isPasswordValid = await bcrypt.compare(currentPassword, userDetails.password)
 
     if (!isPasswordValid) {
       // 记录安全事件
@@ -95,7 +95,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查新密码是否与当前密码相同
-    const isSamePassword = await bcrypt.compare(body.newPassword, userDetails.password)
+    const isSamePassword = await bcrypt.compare(newPassword, userDetails.password)
     if (isSamePassword) {
       throw createError({
         statusCode: 400,
@@ -106,7 +106,7 @@ export default defineEventHandler(async (event) => {
     // 更新密码
     const { passwordChangedAt, tokenVersion } = await updateUserPassword(
       user.id,
-      body.newPassword,
+      newPassword,
       false,
       { action: auditAction, ...getPasswordAuditContext(event) }
     )

@@ -22,8 +22,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const auditAction = PASSWORD_AUDIT_ACTIONS.INITIAL_PASSWORD
-  const body = await readBody(event)
-  if (typeof body.newPassword !== 'string' || !body.newPassword) {
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const newPassword = typeof body?.newPassword === 'string' ? body.newPassword : ''
+  if (!newPassword) {
     await recordPasswordAudit(event, user.id, auditAction, false, '新密码为空')
     throw createError({ statusCode: 400, message: '新密码不能为空' })
   }
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 429, message: '初始密码设置尝试过于频繁，请10分钟后再试' })
   }
 
-  const policyError = validatePasswordPolicy(body.newPassword)
+  const policyError = validatePasswordPolicy(newPassword)
   if (policyError) {
     await recordPasswordAudit(event, user.id, auditAction, false, policyError)
     throw createError({ statusCode: 400, message: policyError })
@@ -76,13 +77,13 @@ export default defineEventHandler(async (event) => {
     }
 
     // OAuth 账号可能没有可用于比对的旧密码，不能把 null 传给 bcrypt。
-    if (currentUser.password && await bcrypt.compare(body.newPassword, currentUser.password)) {
+    if (currentUser.password && await bcrypt.compare(newPassword, currentUser.password)) {
       throw createError({ statusCode: 400, message: '新密码不能与当前密码相同' })
     }
 
     const { passwordChangedAt, tokenVersion } = await updateUserPassword(
       user.id,
-      body.newPassword,
+      newPassword,
       false,
       { action: auditAction, ...getPasswordAuditContext(event) }
     )
