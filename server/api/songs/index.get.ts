@@ -172,10 +172,15 @@ export default defineEventHandler(async (event) => {
           u.name,
           u.grade,
           u.class,
+          COALESCE(unc.name_count, 1) AS name_count,
+          COALESCE(ugc.grade_count, 1) AS grade_count,
           rr.created_at,
           ROW_NUMBER() OVER (PARTITION BY rr.song_id ORDER BY rr.created_at DESC) AS position
         FROM song_replay_requests rr
         INNER JOIN "User" u ON u.id = rr.user_id
+        LEFT JOIN user_name_counts unc ON unc.name = u.name
+        LEFT JOIN user_grade_counts ugc
+          ON ugc.name = u.name AND ugc.grade IS NOT DISTINCT FROM u.grade
         WHERE rr.status = 'PENDING'
       ),
       replay_requesters AS (
@@ -187,6 +192,8 @@ export default defineEventHandler(async (event) => {
               'name', name,
               'grade', grade,
               'class', class,
+              'nameCount', name_count,
+              'gradeCount', grade_count,
               'createdAt', created_at
             )
             ORDER BY created_at DESC
@@ -276,7 +283,13 @@ export default defineEventHandler(async (event) => {
         ? row.replayRequesters.map((requester: any) => ({
             id: requester.id,
             name: requester.name || '未知用户',
-            displayName: requester.name || '未知用户',
+            displayName: formatDisplayName(
+              requester,
+              Number(requester.nameCount),
+              Number(requester.gradeCount)
+            ),
+            grade: requester.grade,
+            class: requester.class,
             createdAt: requester.createdAt
           }))
         : []
