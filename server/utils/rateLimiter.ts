@@ -8,8 +8,13 @@ interface RateLimitRecord {
   resetTime: number
 }
 
+type RedisClientGetter = (typeof import('./redis'))['getRedisClient']
+
 const MAX_STORE_SIZE = 10000 // 最大允许存储的IP记录数
+const REDIS_ERROR_LOG_INTERVAL_MS = 60 * 1000
 const store = new Map<string, RateLimitRecord>()
+let getRedisClientFn: RedisClientGetter | null = null
+let lastRedisErrorLogTime = 0
 const DISTRIBUTED_RATE_LIMIT_SCRIPT = `
 local count = redis.call('INCR', KEYS[1])
 local ttl = redis.call('PTTL', KEYS[1])
@@ -68,8 +73,12 @@ export async function checkDistributedRateLimit(
   windowMs: number
 ): Promise<{ isAllowed: boolean; remaining: number; resetTime: number }> {
   try {
-    const { getRedisClient } = await import('./redis')
-    const client = getRedisClient()
+    if (!getRedisClientFn) {
+      const redisModule = await import('./redis')
+      getRedisClientFn = redisModule.getRedisClient
+    }
+
+    const client = getRedisClientFn()
 
     if (client) {
       const redisKey = `rate_limit:${key}`
@@ -94,7 +103,11 @@ export async function checkDistributedRateLimit(
       }
     }
   } catch (error) {
-    console.error('[RateLimit] Redis 限流失败，已回退到内存限流', error)
+    const now = Date.now()
+    if (now - lastRedisErrorLogTime >= REDIS_ERROR_LOG_INTERVAL_MS) {
+      console.error('[RateLimit] Redis 限流失败，已回退到内存限流', error)
+      lastRedisErrorLogTime = now
+    }
   }
 
   return checkRateLimit(key, limit, windowMs)
