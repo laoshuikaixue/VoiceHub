@@ -882,6 +882,7 @@ VoiceHub/
 │   │       ├── 20260719000002_restore_pending_password_change.sql # 恢复待改密账户状态迁移
 │   │       ├── 20260719000003_harden_password_security.sql # 会话版本与密码安全迁移
 │   │       ├── 20260719000004_reconcile_password_security_after_main.sql # 主分支汇合后的密码安全补偿迁移
+│   │       ├── 20260720000001_restore_ambiguous_password_change_flags.sql # 恢复来源不明的待改密标记
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
@@ -1259,6 +1260,7 @@ VoiceHub/
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
 │   │   ├── system-settings-helper.ts # 系统设置缓存读取与强制改密判定
 │   │   ├── auth-route-policy.ts # 认证路由访问策略
+│   │   ├── initial-password-policy.ts # 初始密码设置权限策略
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── twoFactorStore.ts # 双重认证存储工具
 │   │   ├── user.ts         # 用户相关工具函数
@@ -1273,6 +1275,7 @@ VoiceHub/
 ├── tests/                 # 自动化测试
 │   └── server/
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── initial-password-policy.test.ts # 初始密码设置权限策略测试
 │       └── password-policy.test.ts # 密码策略测试
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置

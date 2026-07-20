@@ -11,18 +11,22 @@ interface LoginResponse {
   tempToken?: string // 预认证临时令牌
 }
 
+const AUTH_STATE_TTL_MS = 30 * 1000
+
 export const useAuth = () => {
   const user = useState<User | null>('user', () => null)
   const token = useState<string | null>('token', () => null)
   const isAuthenticated = useState<boolean>('isAuthenticated', () => false)
   const isAdmin = useState<boolean>('isAdmin', () => false)
   const loading = useState<boolean>('loading', () => false)
+  const lastAuthVerifiedAt = useState<number>('lastAuthVerifiedAt', () => 0)
 
   const clearAuthState = () => {
     user.value = null
     token.value = null
     isAuthenticated.value = false
     isAdmin.value = false
+    lastAuthVerifiedAt.value = 0
   }
 
   const setAuthState = (loggedInUser: User) => {
@@ -30,6 +34,7 @@ export const useAuth = () => {
     user.value = loggedInUser
     isAuthenticated.value = true
     isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(loggedInUser.role)
+    lastAuthVerifiedAt.value = Date.now()
   }
 
   const initAuth = async (forceRefresh = false) => {
@@ -38,8 +43,13 @@ export const useAuth = () => {
       return null
     }
 
-    // 如果已认证，直接返回缓存的用户信息
-    if (!forceRefresh && isAuthenticated.value && user.value) {
+    // 短时间内复用认证结果，避免每次客户端导航都串行查询数据库。
+    if (
+      !forceRefresh &&
+      isAuthenticated.value &&
+      user.value &&
+      Date.now() - lastAuthVerifiedAt.value < AUTH_STATE_TTL_MS
+    ) {
       return user.value
     }
 
@@ -55,6 +65,7 @@ export const useAuth = () => {
         isAuthenticated.value = true
         isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
         token.value = 'cookie-based'
+        lastAuthVerifiedAt.value = Date.now()
         return data.user
       } else {
         clearAuthState()
@@ -71,6 +82,9 @@ export const useAuth = () => {
       } else if (!hadAuth && error.statusCode === 401) {
         // 未登录状态下的 401，仅确保状态清理，不跳转
         clearAuthState()
+      } else if (hadAuth) {
+        // 临时网络故障时短暂保留现有状态，避免每次导航重复冲击认证接口。
+        lastAuthVerifiedAt.value = Date.now()
       }
       return null
     }
@@ -167,6 +181,7 @@ export const useAuth = () => {
       isAuthenticated.value = true
       isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
       token.value = 'cookie-based'
+      lastAuthVerifiedAt.value = Date.now()
     }
   }
 

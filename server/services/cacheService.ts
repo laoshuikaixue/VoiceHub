@@ -319,9 +319,11 @@ class CacheService {
   }
 
   // 获取系统设置缓存
-  async getSystemSettings(): Promise<any | null> {
+  async getSystemSettings(options: { allowMemoryFallback?: boolean } = {}): Promise<any | null> {
+    const allowMemoryFallback = options.allowMemoryFallback !== false
     if (
       !isRedisReady() &&
+      allowMemoryFallback &&
       this.systemSettingsMemoryCache &&
       Date.now() < this.systemSettingsMemoryExpiresAt
     ) {

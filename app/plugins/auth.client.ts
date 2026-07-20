@@ -8,6 +8,24 @@ export default defineNuxtPlugin((nuxtApp) => {
   // 立即设置请求拦截器，确保在任何API调用之前生效
   const originalFetch = window.fetch
   const errorHandler = useErrorHandler()
+  const auth = useAuth()
+  const router = useRouter()
+
+  const handlePasswordChangeRequired = async (errorData: any) => {
+    const requirePasswordChange =
+      errorData?.data?.requirePasswordChange === true || errorData?.requirePasswordChange === true
+
+    if (!requirePasswordChange) return false
+
+    if (auth.user.value) {
+      auth.user.value.requirePasswordChange = true
+    }
+
+    if (window.location.pathname !== '/change-password') {
+      await router.replace('/change-password')
+    }
+    return true
+  }
 
   // 拦截window.fetch
   window.fetch = async function (input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -21,6 +39,14 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const response = await originalFetch(input, init)
+
+    if (response.status === 403 && isVoiceHubApi(input)) {
+      try {
+        await handlePasswordChangeRequired(await response.clone().json())
+      } catch {
+        // 非强制改密的 403 保持原有响应处理。
+      }
+    }
 
     // 检查是否为401错误，并且该请求属于VoiceHub API
     if (response.status === 401 && isVoiceHubApi(input)) {
@@ -47,7 +73,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // 初始化认证状态
   nuxtApp.hook('app:created', async () => {
-    const auth = useAuth()
     await auth.initAuth()
 
     // 拦截$fetch请求，确保cookie会被发送
@@ -64,6 +89,10 @@ export default defineNuxtPlugin((nuxtApp) => {
         try {
           return await originalUseFetch(request, options)
         } catch (error: any) {
+          if ((error?.status === 403 || error?.statusCode === 403) && isVoiceHubApi(request)) {
+            await handlePasswordChangeRequired(error?.data)
+          }
+
           // 检查是否为401错误，并且该请求属于VoiceHub API
           if ((error?.status === 401 || error?.statusCode === 401) && isVoiceHubApi(request)) {
             const currentPath = window.location.pathname

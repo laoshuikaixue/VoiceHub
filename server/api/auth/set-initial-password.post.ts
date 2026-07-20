@@ -7,6 +7,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { validatePasswordPolicy } from '~/utils/password-policy'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { canSetInitialPassword } from '~~/server/utils/initial-password-policy'
 import {
   PASSWORD_AUDIT_ACTIONS,
   consumePasswordRateLimit,
@@ -59,11 +60,18 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 检查是否需要设置初始密码
+    // 已完成初始设置的账号必须通过需要旧密码的修改流程。
     if (currentUser.passwordChangedAt) {
       throw createError({
         statusCode: 400,
         message: '您已经设置过密码，请使用修改密码功能'
+      })
+    }
+
+    if (!canSetInitialPassword(user, currentUser)) {
+      throw createError({
+        statusCode: 403,
+        message: '当前账号不需要设置初始密码，请使用修改密码功能'
       })
     }
 

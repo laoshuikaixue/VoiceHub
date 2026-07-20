@@ -6,7 +6,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // 客户端初始化认证状态
   if (import.meta.client) {
-    await initAuth(isAuthenticated.value)
+    await initAuth()
   }
 
   // 强制改密优先于公共页面判断，避免用户通过首页或直接输入地址绕过改密页。

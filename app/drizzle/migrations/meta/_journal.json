@@ -260,6 +260,13 @@
       "when": 1784419261000,
       "tag": "20260719000004_reconcile_password_security_after_main",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1784505600000,
+      "tag": "20260720000001_restore_ambiguous_password_change_flags",
+      "breakpoints": true
     }
   ]
 }
