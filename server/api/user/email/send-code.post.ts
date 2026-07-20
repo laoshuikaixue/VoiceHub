@@ -4,10 +4,11 @@ import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { delStore, hashStateCode, setStore } from '~~/server/utils/captchaStore'
+import { delStoreIfValue, hashStateCode, setStore } from '~~/server/utils/captchaStore'
+import { randomInt } from 'node:crypto'
 
 function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return randomInt(100000, 1000000).toString()
 }
 
 export async function sendEmailVerificationCode(
@@ -19,15 +20,12 @@ export async function sendEmailVerificationCode(
   const code = generateCode()
   const expiresAt = getServerTimestamp() + 5 * 60 * 1000
   const stateKey = `email-verify:${userId}`
-  await setStore(
-    stateKey,
-    JSON.stringify({
-      email,
-      codeHash: hashStateCode(stateKey, code),
-      expiresAt
-    }),
-    5 * 60
-  )
+  const storedValue = JSON.stringify({
+    email,
+    codeHash: hashStateCode(stateKey, code),
+    expiresAt
+  })
+  await setStore(stateKey, storedValue, 5 * 60)
 
   const smtp = SmtpService.getInstance()
   await smtp.initializeSmtpConfig()
@@ -45,11 +43,11 @@ export async function sendEmailVerificationCode(
       ipAddress
     )
   } catch (error) {
-    await delStore(stateKey)
+    await delStoreIfValue(stateKey, storedValue)
     throw error
   }
   if (!sent) {
-    await delStore(stateKey)
+    await delStoreIfValue(stateKey, storedValue)
     throw createError({ statusCode: 500, message: '验证码发送失败，请稍后重试' })
   }
 }
@@ -74,7 +72,8 @@ export default defineEventHandler(async (event) => {
 
   // 确认邮箱未被其他用户占用
   const existing = await db.select().from(users).where(eq(users.email, emailRaw)).limit(1)
-  if (existing.length > 0 && existing[0].id !== user.id) {
+  const existingUser = existing[0]
+  if (existingUser && existingUser.id !== user.id) {
     throw createError({ statusCode: 400, message: '该邮箱已被其他用户绑定' })
   }
 

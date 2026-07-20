@@ -1,7 +1,12 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
-import { maskSongsInfo, type MaskableSong } from '~~/server/utils/studentMask'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
+import {
+  maskSongsInfo,
+  stripAnonymousSongIdentifiers,
+  type MaskableSong
+} from '~~/server/utils/studentMask'
 
 interface SongResponse extends MaskableSong {
   id: number
@@ -56,7 +61,7 @@ const formatDisplayName = (
 const calculateReplayCooldown = (status?: string | null, updatedAt?: Date | string | null) => {
   if (status !== 'REJECTED' || !updatedAt) return undefined
   const cooldownMs = 24 * 60 * 60 * 1000
-  const remainingMs = cooldownMs - (Date.now() - new Date(updatedAt).getTime())
+  const remainingMs = cooldownMs - (getServerTimestamp() - new Date(updatedAt).getTime())
   return remainingMs > 0 ? Math.ceil(remainingMs / (60 * 60 * 1000)) : 0
 }
 
@@ -368,6 +373,9 @@ export default defineEventHandler(async (event) => {
 
     if (shouldHideStudentInfo && !isAdmin) {
       maskSongsInfo(formattedSongs)
+    }
+    if (!user) {
+      formattedSongs.forEach(stripAnonymousSongIdentifiers)
     }
 
     return {

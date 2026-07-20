@@ -44,16 +44,16 @@ export function maskSongInfo(song: MaskableSong) {
   if (song.requester) {
     song.requester = maskStudentName(song.requester)
   }
-  
+
   // 隐藏主投稿人年级和班级
   if (song.requesterGrade !== undefined) song.requesterGrade = null
   if (song.requesterClass !== undefined) song.requesterClass = null
-  
+
   // 批量脱敏联合投稿人
   if (song.collaborators && Array.isArray(song.collaborators)) {
     song.collaborators.forEach(maskUserInfo)
   }
-  
+
   // 批量脱敏重播申请人
   if (song.replayRequesters && Array.isArray(song.replayRequesters)) {
     song.replayRequesters.forEach(maskUserInfo)
@@ -81,9 +81,24 @@ export interface PublicScheduleItem {
  * @param data 排期数据列表
  */
 export function maskPublicScheduleData(data: PublicScheduleItem[]) {
-  data.forEach(item => {
+  data.forEach((item) => {
     if (item.song) {
       maskSongInfo(item.song)
     }
+  })
+}
+
+/** 移除匿名响应中的内部用户和点歌券标识，避免通过 ID 关联被脱敏的数据。 */
+export function stripAnonymousSongIdentifiers(song: MaskableSong) {
+  delete song.requesterId
+  delete song.cardCodeId
+
+  song.collaborators?.forEach((user) => delete user.id)
+  song.replayRequesters?.forEach((user) => delete user.id)
+}
+
+export function stripAnonymousSongIdentifiersFromSchedules(data: PublicScheduleItem[]) {
+  data.forEach((item) => {
+    if (item.song) stripAnonymousSongIdentifiers(item.song)
   })
 }

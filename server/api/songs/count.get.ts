@@ -8,13 +8,9 @@ export default defineEventHandler(async (event) => {
   const semester = query.semester as string
 
   try {
-    let countQuery = db.select({ count: count() }).from(songs)
-
-    if (semester) {
-      countQuery = countQuery.where(eq(songs.semester, semester))
-    }
-
-    const result = await countQuery
+    const result = semester
+      ? await db.select({ count: count() }).from(songs).where(eq(songs.semester, semester))
+      : await db.select({ count: count() }).from(songs)
     const totalCount = result[0]?.count || 0
 
     return {

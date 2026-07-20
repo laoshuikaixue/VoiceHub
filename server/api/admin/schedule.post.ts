@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const schedule = await db.transaction(async (tx) => {
+    const transactionResult = await db.transaction(async (tx) => {
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1
 
@@ -115,7 +115,9 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      // 只有在非草稿模式下才创建通知和更新重播状态
+      let shouldNotify = false
+
+      // 只有在非草稿模式下才更新重播状态
       if (!isDraft) {
         // 检查该歌曲是否已经有其他已发布的排期
         const existingPublished = await tx
@@ -131,13 +133,8 @@ export default defineEventHandler(async (event) => {
           .limit(1)
 
         // 如果之前没有正式发布过，才发送通知和更新重播状态
-        if (existingPublished.length === 0) {
-          await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
-            title: schedule.song.title,
-            artist: schedule.song.artist,
-            playDate: schedule.playDate
-          })
-
+        shouldNotify = existingPublished.length === 0
+        if (shouldNotify) {
           await tx
             .update(songReplayRequests)
             .set({
@@ -161,14 +158,36 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      return schedule
+      return { schedule, shouldNotify }
     })
+
+    let notificationSent = true
+    if (transactionResult.shouldNotify) {
+      try {
+        await createSongSelectedNotification(song.requesterId, song.id, {
+          title: song.title,
+          artist: song.artist,
+          playDate: transactionResult.schedule.playDate
+        })
+      } catch (notificationError) {
+        notificationSent = false
+        console.error('排期已创建，但发送歌曲入选通知失败:', notificationError)
+      }
+    }
+
+    const schedule = transactionResult.schedule
 
     return {
       ...schedule,
       isDraft: isDraft,
       publishedAt: isDraft ? null : schedule.publishedAt,
-      message: isDraft ? '排期草稿保存成功' : '排期创建成功，通知已发送'
+      message: isDraft
+        ? '排期草稿保存成功'
+        : transactionResult.shouldNotify
+          ? notificationSent
+            ? '排期创建成功，通知已发送'
+            : '排期创建成功，但通知发送失败'
+          : '排期创建成功'
     }
   } catch (error: any) {
     console.error('创建排期失败:', error)

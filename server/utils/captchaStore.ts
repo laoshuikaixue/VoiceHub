@@ -18,6 +18,7 @@ export class RedisStateUnavailableError extends Error {
 }
 
 const memoryStore = new Map<string, MemoryRecord>()
+const MAX_MEMORY_STORE_SIZE = 10000
 const keyOf = (key: string) => buildRedisKey('state', key)
 
 const cleanupMemoryStore = () => {
@@ -25,6 +26,14 @@ const cleanupMemoryStore = () => {
   for (const [key, record] of memoryStore.entries()) {
     if (now >= record.expiresAt) memoryStore.delete(key)
   }
+}
+
+const ensureMemoryStoreCapacity = (key: string) => {
+  cleanupMemoryStore()
+  if (memoryStore.has(key) || memoryStore.size < MAX_MEMORY_STORE_SIZE) return
+
+  const oldestKey = memoryStore.keys().next().value
+  if (oldestKey !== undefined) memoryStore.delete(oldestKey)
 }
 
 const requireRedis = async () => {
@@ -77,7 +86,7 @@ export async function setStore(key: string, value: string, ttlSeconds: number) {
     return
   }
 
-  cleanupMemoryStore()
+  ensureMemoryStoreCapacity(key)
   memoryStore.set(key, {
     value,
     expiresAt: getServerTimestamp() + Math.max(1, ttlSeconds) * 1000
@@ -115,7 +124,7 @@ export async function incrStore(key: string, ttlSeconds: number): Promise<number
     return Number(result)
   }
 
-  cleanupMemoryStore()
+  ensureMemoryStoreCapacity(key)
   const existing = memoryStore.get(key)
   const current = Number(existing?.value || 0) + 1
   memoryStore.set(key, {

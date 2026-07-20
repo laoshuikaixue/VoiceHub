@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { inArray, and, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
@@ -37,6 +37,22 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const scheduleItems: Array<{ songId: number; sequence: number }> = (body.songs as any[]).map(
+    (item: any, index: number) => {
+      const songId = Number(item?.songId)
+      const sequence = Number(item?.sequence)
+      if (
+        !Number.isInteger(songId) ||
+        songId <= 0 ||
+        !Number.isInteger(sequence) ||
+        sequence <= 0
+      ) {
+        throw createError({ statusCode: 400, message: `第 ${index + 1} 条排期数据无效` })
+      }
+      return { songId, sequence }
+    }
+  )
+
   const clientIP = getClientIP(event)
   const startTime = Date.now()
 
@@ -51,7 +67,7 @@ export default defineEventHandler(async (event) => {
     const playTimeId = body.playTimeId ? parseInt(body.playTimeId) : null
 
     // 获取所有涉及的歌曲详情（用于通知）
-    const songIds = body.songs.map((s: any) => s.songId)
+    const songIds = scheduleItems.map((item) => item.songId)
     if (songIds.length === 0) {
       // 如果列表为空，说明是清空排期，直接执行删除逻辑即可
     }
@@ -60,6 +76,13 @@ export default defineEventHandler(async (event) => {
       songIds.length > 0 ? await db.select().from(songs).where(inArray(songs.id, songIds)) : []
 
     const songMap = new Map(songDetails.map((s: any) => [s.id, s]))
+    const missingSongIds = Array.from(new Set(songIds)).filter((songId) => !songMap.has(songId))
+    if (missingSongIds.length > 0) {
+      throw createError({
+        statusCode: 404,
+        message: `歌曲不存在：${missingSongIds.join(', ')}`
+      })
+    }
 
     // 需要发送通知的列表
     const notificationsToSend: Array<{
@@ -81,7 +104,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // 2. 查找全库内已发布的排期（用于避免重复发送通知）
-      const newSongIds = new Set(body.songs.map((s: any) => s.songId))
+      const newSongIds = new Set<number>(scheduleItems.map((item) => item.songId))
       const newSongIdsArray = Array.from(newSongIds)
 
       const globalExistingPublished =
@@ -166,12 +189,8 @@ export default defineEventHandler(async (event) => {
       // 4. 插入新的排期并处理通知
       const publishedAt = getServerDate()
 
-      for (const item of body.songs) {
-        const song = songMap.get(item.songId)
-        if (!song) {
-          console.warn(`找不到歌曲 ID: ${item.songId}，跳过排期`)
-          continue
-        }
+      for (const item of scheduleItems) {
+        const song = songMap.get(item.songId)!
 
         // 插入排期
         await tx.insert(schedules).values({
@@ -196,6 +215,7 @@ export default defineEventHandler(async (event) => {
               playDate: playDate
             }
           })
+          existingPublishedSongIds.add(item.songId)
 
           // 更新重播申请状态
           await tx
@@ -215,21 +235,21 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    // 异步发送通知（不阻塞响应）
-    Promise.allSettled(
-      notificationsToSend.map((n) =>
-        createSongSelectedNotification(n.requesterId, n.songId, n.songInfo)
+    // 由运行时托管后台通知，避免 Serverless 在响应结束后中止任务。
+    if (notificationsToSend.length > 0) {
+      event.waitUntil(
+        Promise.allSettled(
+          notificationsToSend.map((n) =>
+            createSongSelectedNotification(n.requesterId, n.songId, n.songInfo)
+          )
+        ).then((results) => {
+          const successCount = results.filter((r) => r.status === 'fulfilled').length
+          console.log(
+            `[Notification] 批量发布通知发送完成: ${successCount}/${notificationsToSend.length} 成功`
+          )
+        })
       )
-    )
-      .then((results) => {
-        const successCount = results.filter((r) => r.status === 'fulfilled').length
-        console.log(
-          `[Notification] 批量发布通知发送完成: ${successCount}/${notificationsToSend.length} 成功`
-        )
-      })
-      .catch((err) => {
-        console.error('[Notification] 批量发送通知时发生未捕获错误:', err)
-      })
+    }
 
     console.log(`[Performance] 批量发布排期耗时: ${Date.now() - startTime}ms`)
 
@@ -246,7 +266,7 @@ export default defineEventHandler(async (event) => {
     })
 
     throw createError({
-      statusCode: 500,
+      statusCode: error.statusCode || 500,
       message: error.message || '发布排期失败'
     })
   }

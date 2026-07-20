@@ -130,9 +130,8 @@ export default defineEventHandler(async (event) => {
           .orderBy(desc(schedules.sequence))
           .limit(1)
 
-        if (sameDaySchedules.length > 0) {
-          sequence = (sameDaySchedules[0].sequence || 0) + 1
-        }
+        const latestSchedule = sameDaySchedules[0]
+        if (latestSchedule) sequence = (latestSchedule.sequence || 0) + 1
       }
 
       // 解析输入的日期字符串，确保日期正确

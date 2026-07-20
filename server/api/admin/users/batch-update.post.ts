@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     if (!validationResult.success) {
       throw createError({
         statusCode: 400,
-        message: '请求参数无效: ' + validationResult.error.errors.map((e) => e.message).join(', ')
+        message: '请求参数无效: ' + validationResult.error.issues.map((e) => e.message).join(', ')
       })
     }
 

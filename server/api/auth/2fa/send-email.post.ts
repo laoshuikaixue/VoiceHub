@@ -2,7 +2,7 @@ import { db, users, eq } from '~/drizzle/db'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
-  delStore,
+  delStoreIfValue,
   getStore,
   hashStateCode,
   parseStoreJson,
@@ -82,18 +82,13 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const code = randomInt(100000, 999999).toString()
+  const code = randomInt(100000, 1000000).toString()
   const expiresAt = now + 5 * 60 * 1000
-  await setStore(
-    stateKey,
-    JSON.stringify({
-      codeHash: hashStateCode(stateKey, code),
-      expiresAt,
-      issuedAt: now,
-      attempts: 0
-    }),
-    5 * 60
-  )
+  const storedValue = JSON.stringify({
+    codeHash: hashStateCode(stateKey, code),
+    expiresAt
+  })
+  await setStore(stateKey, storedValue, 5 * 60)
 
   const clientIP = getClientIP(event)
 
@@ -116,12 +111,12 @@ export default defineEventHandler(async (event) => {
       clientIP
     )
   } catch (error) {
-    await delStore(stateKey)
+    await delStoreIfValue(stateKey, storedValue)
     throw error
   }
 
   if (!sent) {
-    await delStore(stateKey)
+    await delStoreIfValue(stateKey, storedValue)
     throw createError({ statusCode: 500, message: '验证码发送失败' })
   }
 

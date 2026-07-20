@@ -1,7 +1,11 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
-import { maskPublicScheduleData, type PublicScheduleItem } from '../../utils/studentMask'
+import {
+  maskPublicScheduleData,
+  stripAnonymousSongIdentifiersFromSchedules,
+  type PublicScheduleItem
+} from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
 
 const formatDisplayName = (
@@ -271,6 +275,9 @@ export default defineEventHandler(async (event) => {
 
     if (!user || (shouldHideStudentInfo && !isAdmin)) {
       maskPublicScheduleData(formattedSchedules)
+    }
+    if (!user) {
+      stripAnonymousSongIdentifiersFromSchedules(formattedSchedules)
     }
 
     return formattedSchedules

@@ -11,7 +11,6 @@ import {
   getStore,
   incrStore,
   parseStoreJson,
-  setStore,
   verifyStateCode
 } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
@@ -65,27 +64,29 @@ export default defineEventHandler(async (event) => {
   const totpIpFailureKey = `2fa_totp_ip:${clientIp}`
 
   if (type === 'totp') {
-    const userFailureCount = Number((await getStore(totpUserFailureKey)) || 0)
-    const ipFailureCount = Number((await getStore(totpIpFailureKey)) || 0)
-
-    if (userFailureCount >= TOTP_FAILURE_LIMIT || ipFailureCount >= TOTP_FAILURE_LIMIT) {
-      throw createError({
-        statusCode: 429,
-        message: '动态验证码错误次数过多，请在 5 分钟后重试'
-      })
-    }
-
     const identity = await db.query.userIdentities.findFirst({
       where: and(eq(userIdentities.userId, targetUserId), eq(userIdentities.provider, 'totp'))
     })
     if (!identity) {
       throw createError({ statusCode: 400, message: '未开启TOTP验证' })
     }
+
+    // 先原子占用一次验证额度，防止并发请求同时绕过失败次数限制。
+    const [userFailureCount, ipFailureCount] = await Promise.all([
+      incrStore(totpUserFailureKey, TOTP_FAILURE_WINDOW_SECONDS),
+      incrStore(totpIpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
+    ])
+
+    if (userFailureCount > TOTP_FAILURE_LIMIT || ipFailureCount > TOTP_FAILURE_LIMIT) {
+      throw createError({
+        statusCode: 429,
+        message: '动态验证码错误次数过多，请在 5 分钟后重试'
+      })
+    }
+
     verified = authenticator.check(code, identity.providerUserId)
 
     if (!verified) {
-      await incrStore(totpUserFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
-      await incrStore(totpIpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
       throw createError({ statusCode: 400, message: '动态验证码错误' })
     }
 
@@ -97,29 +98,26 @@ export default defineEventHandler(async (event) => {
     const stored = parseStoreJson<{
       codeHash: string
       expiresAt: number
-      attempts: number
     }>(storedRaw)
 
-    if (
-      !stored ||
-      typeof stored.codeHash !== 'string' ||
-      !Number.isFinite(stored.expiresAt) ||
-      !Number.isInteger(stored.attempts) ||
-      stored.attempts < 0
-    ) {
-      if (storedRaw) await delStore(stateKey)
+    if (!stored || typeof stored.codeHash !== 'string' || !Number.isFinite(stored.expiresAt)) {
+      if (storedRaw) await delStoreIfValue(stateKey, storedRaw)
       throw createError({ statusCode: 400, message: '验证码已过期或不存在' })
     }
 
     const now = getServerTimestamp()
     if (stored.expiresAt <= now) {
-      await delStore(stateKey)
+      await delStoreIfValue(stateKey, storedRaw!)
       throw createError({ statusCode: 400, message: '验证码已过期' })
     }
 
-    // 检查尝试次数
-    if (stored.attempts >= 5) {
-      await delStore(stateKey)
+    const remainingTtl = Math.max(1, Math.ceil((stored.expiresAt - now) / 1000))
+    const attemptKey = `${stateKey}:attempts:${stored.codeHash}`
+    const attemptCount = await incrStore(attemptKey, remainingTtl)
+
+    if (attemptCount > 5) {
+      await delStoreIfValue(stateKey, storedRaw!)
+      await delStore(attemptKey)
       throw createError({ statusCode: 400, message: '验证尝试次数过多，请重新获取' })
     }
 
@@ -127,15 +125,17 @@ export default defineEventHandler(async (event) => {
       if (!(await delStoreIfValue(stateKey, storedRaw!))) {
         throw createError({ statusCode: 400, message: '验证码已使用，请重新获取' })
       }
+      await delStore(attemptKey)
       verified = true
     } else {
-      // 增加尝试次数
-      stored.attempts++
-      const remainingTtl = Math.max(1, Math.ceil((stored.expiresAt - now) / 1000))
-      await setStore(stateKey, JSON.stringify(stored), remainingTtl)
+      if (attemptCount >= 5) {
+        await delStoreIfValue(stateKey, storedRaw!)
+        await delStore(attemptKey)
+        throw createError({ statusCode: 400, message: '验证尝试次数过多，请重新获取' })
+      }
       throw createError({
         statusCode: 400,
-        message: `验证码错误，剩余尝试次数：${5 - stored.attempts}`
+        message: `验证码错误，剩余尝试次数：${5 - attemptCount}`
       })
     }
   } else {

@@ -5,6 +5,7 @@ import { SmtpService } from '~~/server/services/smtpService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)
@@ -14,7 +15,7 @@ export default defineEventHandler(async (event) => {
   const limitResult = await checkDistributedRateLimit(rateLimitKey, 5, 60 * 60 * 1000)
 
   if (!limitResult.isAllowed) {
-    const waitMinutes = Math.ceil((limitResult.resetTime - Date.now()) / 60000)
+    const waitMinutes = Math.ceil((limitResult.resetTime - getServerTimestamp()) / 60000)
     throw createError({
       statusCode: 429,
       message: `操作过于频繁，请等待 ${waitMinutes} 分钟后再试`

@@ -14,7 +14,11 @@ export default defineEventHandler(async (event) => {
         .values(SYSTEM_SETTINGS_DEFAULTS)
         .returning()
 
-      settings = newSettings[0]
+      settings = newSettings[0] || null
+    }
+
+    if (!settings) {
+      throw new Error('系统设置初始化失败')
     }
 
     // Ensure instance ID is set after defaults are applied and merge into settings

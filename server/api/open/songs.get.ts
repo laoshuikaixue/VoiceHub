@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
       .from(songs)
       .leftJoin(users, eq(songs.requesterId, users.id))
       .where(whereCondition)
-    const total = totalResult[0].count
+    const total = totalResult[0]?.count || 0
 
     // 获取歌曲数据
     const songsData = await db
@@ -73,6 +73,7 @@ export default defineEventHandler(async (event) => {
         createdAt: songs.createdAt,
         updatedAt: songs.updatedAt,
         cover: songs.cover,
+        playUrl: songs.playUrl,
         musicPlatform: songs.musicPlatform,
         musicId: songs.musicId,
         preferredPlayTimeId: songs.preferredPlayTimeId,

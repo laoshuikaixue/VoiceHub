@@ -16,6 +16,8 @@ export const useSongs = () => {
   const playTimes = ref<PlayTime[]>([])
   const playTimeEnabled = ref(false)
   const songCount = ref(0)
+  let songsRequestVersion = 0
+  let publicSchedulesRequestVersion = 0
 
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -71,6 +73,7 @@ export const useSongs = () => {
 
   // 获取歌曲列表
   const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
+    const requestVersion = ++songsRequestVersion
     if (!silent) {
       loading.value = true
     }
@@ -101,6 +104,7 @@ export const useSongs = () => {
         : await dedup.dedupedRequest('songs', request, requestParams)
 
       if (
+        requestVersion !== songsRequestVersion ||
         (user.value?.id ?? null) !== requestUserId ||
         (user.value?.role ?? '') !== (requestParams.role || '')
       )
@@ -114,9 +118,11 @@ export const useSongs = () => {
         console.warn('API返回的数据格式不正确:', response)
       }
     } catch (err: any) {
-      error.value = err.message || '获取歌曲列表失败'
+      if (requestVersion === songsRequestVersion) {
+        error.value = err.message || '获取歌曲列表失败'
+      }
     } finally {
-      if (!silent) {
+      if (!silent && requestVersion === songsRequestVersion) {
         loading.value = false
       }
     }
@@ -166,6 +172,7 @@ export const useSongs = () => {
 
   // 获取公共排期（无需登录）
   const fetchPublicSchedules = async (silent = false, semester?: string, forceRefresh = false) => {
+    const requestVersion = ++publicSchedulesRequestVersion
     if (!silent) {
       loading.value = true
     }
@@ -196,6 +203,7 @@ export const useSongs = () => {
         : await dedup.dedupedRequest('public-schedules', request, requestParams)
 
       if (
+        requestVersion !== publicSchedulesRequestVersion ||
         (user.value?.id ?? null) !== requestUserId ||
         (user.value?.role ?? '') !== (requestParams.role || '')
       )
@@ -230,9 +238,11 @@ export const useSongs = () => {
       // 直接从排期数据中提取歌曲信息，避免重复请求
       publicSongs.value = extractSongsFromSchedules(processedData)
     } catch (err: any) {
-      error.value = err.message || '获取排期失败'
+      if (requestVersion === publicSchedulesRequestVersion) {
+        error.value = err.message || '获取排期失败'
+      }
     } finally {
-      if (!silent) {
+      if (!silent && requestVersion === publicSchedulesRequestVersion) {
         loading.value = false
       }
     }
@@ -661,10 +671,12 @@ export const useSongs = () => {
   })
 
   const clearPrivateSongs = () => {
+    songsRequestVersion++
     songs.value = []
   }
 
   const clearPublicSongs = () => {
+    publicSchedulesRequestVersion++
     publicSongs.value = []
     publicSchedules.value = []
   }

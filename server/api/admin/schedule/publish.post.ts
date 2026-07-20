@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 使用事务包装更新排期和重播申请状态操作，保证原子性
-    const publishedSchedule = await db.transaction(async (tx) => {
+    const publishResult = await db.transaction(async (tx) => {
       // 更新草稿为已发布状态
       const publishedAt = new Date(getBeijingTimestamp())
 
@@ -82,16 +82,13 @@ export default defineEventHandler(async (event) => {
           publishedAt: publishedAt,
           updatedAt: publishedAt
         })
-        .where(eq(schedules.id, body.scheduleId))
+        .where(and(eq(schedules.id, body.scheduleId), eq(schedules.isDraft, true)))
         .returning()
 
       const schedule = publishResult[0]
 
       if (!schedule) {
-        throw createError({
-          statusCode: 500,
-          message: '发布排期失败'
-        })
+        throw createError({ statusCode: 409, message: '排期已发布或状态已变化，请刷新后重试' })
       }
 
       // 检查该歌曲是否已经有其他已发布的排期
@@ -107,15 +104,9 @@ export default defineEventHandler(async (event) => {
         )
         .limit(1)
 
-      // 如果之前没有正式发布过，才发送通知和更新重播状态
-      if (existingPublished.length === 0) {
-        // 发布后发送通知
-        await createSongSelectedNotification(draft.song.requesterId, draft.song.id, {
-          title: draft.song.title,
-          artist: draft.song.artist,
-          playDate: draft.playDate
-        })
-
+      const shouldNotify = existingPublished.length === 0
+      // 如果之前没有正式发布过，只更新重播状态；通知在事务提交后发送。
+      if (shouldNotify) {
         // 将该歌曲的所有待处理重播申请标记为已完成
         const updatedRequests = await tx
           .update(songReplayRequests)
@@ -145,8 +136,24 @@ export default defineEventHandler(async (event) => {
         at: publishedAt
       })
 
-      return schedule
+      return { schedule, shouldNotify }
     })
+
+    let notificationSent = true
+    if (publishResult.shouldNotify) {
+      try {
+        await createSongSelectedNotification(draft.song.requesterId, draft.song.id, {
+          title: draft.song.title,
+          artist: draft.song.artist,
+          playDate: publishResult.schedule.playDate
+        })
+      } catch (notificationError) {
+        notificationSent = false
+        console.error('排期已发布，但发送歌曲入选通知失败:', notificationError)
+      }
+    }
+
+    const publishedSchedule = publishResult.schedule
 
     return {
       ...draft,
@@ -154,7 +161,11 @@ export default defineEventHandler(async (event) => {
       song: draft.song,
       isDraft: false,
       publishedAt: publishedSchedule.publishedAt,
-      message: '排期发布成功，通知已发送'
+      message: publishResult.shouldNotify
+        ? notificationSent
+          ? '排期发布成功，通知已发送'
+          : '排期发布成功，但通知发送失败'
+        : '排期发布成功'
     }
   } catch (error: any) {
     console.error('发布排期失败:', error)
