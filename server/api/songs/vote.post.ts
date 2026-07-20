@@ -149,7 +149,7 @@ export default defineEventHandler(async (event) => {
       // 正常投票逻辑
       if (existingVote) {
         throw createError({
-          statusCode: 400,
+          statusCode: 409,
           message: '你已经为这首歌投过票了'
         })
       }
@@ -197,7 +197,7 @@ export default defineEventHandler(async (event) => {
       throw error
     } else if (error.code === '23505') {
       throw createError({
-        statusCode: 400,
+        statusCode: 409,
         message: '你已经为这首歌投过票了'
       })
     } else {
