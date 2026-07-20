@@ -9,6 +9,7 @@ import {
   delStoreIfValue,
   getStore,
   hashStateCode,
+  parseStoreJson,
   setStore,
   verifyStateCode
 } from '~~/server/utils/captchaStore'
@@ -37,8 +38,21 @@ export default defineEventHandler(async (event) => {
     if (action === 'verify_and_bind' && verificationCode) {
       const stateKey = `meow-bind:${userId}`
       const storedRaw = await getStore(stateKey)
-      const storedData = storedRaw ? JSON.parse(storedRaw) : null
-      if (!storedData) {
+      const storedData = parseStoreJson<{
+        meowId: string
+        codeHash: string
+        expiresAt: number
+        attempts: number
+      }>(storedRaw)
+      if (
+        !storedData ||
+        typeof storedData.meowId !== 'string' ||
+        typeof storedData.codeHash !== 'string' ||
+        !Number.isFinite(storedData.expiresAt) ||
+        !Number.isInteger(storedData.attempts) ||
+        storedData.attempts < 0
+      ) {
+        if (storedRaw) await delStore(stateKey)
         throw createError({
           statusCode: 400,
           message: '验证码已过期，请重新发送'

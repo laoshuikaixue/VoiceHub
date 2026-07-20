@@ -10,6 +10,7 @@ import {
   delStoreIfValue,
   getStore,
   incrStore,
+  parseStoreJson,
   setStore,
   verifyStateCode
 } from '~~/server/utils/captchaStore'
@@ -93,9 +94,20 @@ export default defineEventHandler(async (event) => {
   } else if (type === 'email') {
     const stateKey = `2fa-email:${targetUserId}`
     const storedRaw = await getStore(stateKey)
-    const stored = storedRaw ? JSON.parse(storedRaw) : null
+    const stored = parseStoreJson<{
+      codeHash: string
+      expiresAt: number
+      attempts: number
+    }>(storedRaw)
 
-    if (!stored) {
+    if (
+      !stored ||
+      typeof stored.codeHash !== 'string' ||
+      !Number.isFinite(stored.expiresAt) ||
+      !Number.isInteger(stored.attempts) ||
+      stored.attempts < 0
+    ) {
+      if (storedRaw) await delStore(stateKey)
       throw createError({ statusCode: 400, message: '验证码已过期或不存在' })
     }
 

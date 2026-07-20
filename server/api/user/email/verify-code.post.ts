@@ -2,7 +2,13 @@ import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
-import { delStore, delStoreIfValue, getStore, verifyStateCode } from '~~/server/utils/captchaStore'
+import {
+  delStore,
+  delStoreIfValue,
+  getStore,
+  parseStoreJson,
+  verifyStateCode
+} from '~~/server/utils/captchaStore'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
@@ -24,8 +30,14 @@ export default defineEventHandler(async (event) => {
 
   const stateKey = `email-verify:${user.id}`
   const recordRaw = await getStore(stateKey)
-  const record = recordRaw ? JSON.parse(recordRaw) : null
-  if (!record || record.email !== email) {
+  const record = parseStoreJson<{ email: string; codeHash: string; expiresAt: number }>(recordRaw)
+  if (
+    !record ||
+    record.email !== email ||
+    typeof record.codeHash !== 'string' ||
+    !Number.isFinite(record.expiresAt)
+  ) {
+    if (recordRaw) await delStore(stateKey)
     throw createError({ statusCode: 400, message: '请先发送验证码' })
   }
   if (getServerTimestamp() > record.expiresAt) {

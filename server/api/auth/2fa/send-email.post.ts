@@ -1,7 +1,13 @@
 import { db, users, eq } from '~/drizzle/db'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
-import { delStore, getStore, hashStateCode, setStore } from '~~/server/utils/captchaStore'
+import {
+  delStore,
+  getStore,
+  hashStateCode,
+  parseStoreJson,
+  setStore
+} from '~~/server/utils/captchaStore'
 
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
@@ -59,9 +65,9 @@ export default defineEventHandler(async (event) => {
   // 检查是否在冷却时间内
   const stateKey = `2fa-email:${userId}`
   const existingRaw = await getStore(stateKey)
-  const existingCode = existingRaw ? JSON.parse(existingRaw) : null
+  const existingCode = parseStoreJson<{ expiresAt: number }>(existingRaw)
   const now = getServerTimestamp()
-  if (existingCode && existingCode.expiresAt > now) {
+  if (existingCode && Number.isFinite(existingCode.expiresAt) && existingCode.expiresAt > now) {
     // 5 * 60 * 1000 = 300000ms
     const totalDuration = 5 * 60 * 1000
     const timePassed = totalDuration - (existingCode.expiresAt - now)

@@ -162,6 +162,19 @@ export async function delStoreIfValue(key: string, expectedValue: string): Promi
   return true
 }
 
+/** 安全解析短期状态 JSON，拒绝旧明文、数组和损坏数据。 */
+export function parseStoreJson<T extends object>(value: string | null): T | null {
+  if (!value) return null
+
+  try {
+    const parsed = JSON.parse(value)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return parsed as T
+  } catch {
+    return null
+  }
+}
+
 const getCodeSecret = () => {
   const secret = process.env.JWT_SECRET?.trim()
   if (!secret) throw new Error('JWT_SECRET environment variable is not set')
