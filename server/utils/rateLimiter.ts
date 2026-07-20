@@ -10,6 +10,15 @@ interface RateLimitRecord {
 
 const MAX_STORE_SIZE = 10000 // 最大允许存储的IP记录数
 const store = new Map<string, RateLimitRecord>()
+const DISTRIBUTED_RATE_LIMIT_SCRIPT = `
+local count = redis.call('INCR', KEYS[1])
+local ttl = redis.call('PTTL', KEYS[1])
+if count == 1 or ttl < 0 then
+  redis.call('PEXPIRE', KEYS[1], ARGV[1])
+  ttl = tonumber(ARGV[1])
+end
+return { count, ttl }
+`
 
 /**
  * 检查并增加限流计数
@@ -64,12 +73,18 @@ export async function checkDistributedRateLimit(
 
     if (client) {
       const redisKey = `rate_limit:${key}`
-      const count = await client.incr(redisKey)
-      let ttl = await client.pTTL(redisKey)
+      const result = await client.eval(DISTRIBUTED_RATE_LIMIT_SCRIPT, {
+        keys: [redisKey],
+        arguments: [String(windowMs)]
+      })
+      if (!Array.isArray(result) || result.length < 2) {
+        throw new Error('Redis 限流脚本返回了无效结果')
+      }
 
-      if (count === 1 || ttl < 0) {
-        await client.pExpire(redisKey, windowMs)
-        ttl = windowMs
+      const count = Number(result[0])
+      const ttl = Math.max(0, Number(result[1]))
+      if (!Number.isFinite(count) || !Number.isFinite(ttl)) {
+        throw new Error('Redis 限流脚本返回了无效计数')
       }
 
       return {
