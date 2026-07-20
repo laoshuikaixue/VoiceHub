@@ -4,7 +4,7 @@ import { getGlobalDedup } from './useRequestDedup'
 import type { PlayTime, Schedule, Song } from '~/types'
 
 export const useSongs = () => {
-  const { isAuthenticated, user, getAuthConfig, isAdmin } = useAuth()
+  const { isAuthenticated, user, getAuthConfig } = useAuth()
   const dedup = getGlobalDedup()
 
   const songs = ref<Song[]>([])
@@ -16,6 +16,8 @@ export const useSongs = () => {
   const playTimes = ref<PlayTime[]>([])
   const playTimeEnabled = ref(false)
   const songCount = ref(0)
+  let songsRequestVersion = 0
+  let publicSchedulesRequestVersion = 0
 
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -70,41 +72,43 @@ export const useSongs = () => {
   }
 
   // 获取歌曲列表
-  const fetchSongs = async (
-    silent = false,
-    semester?: string,
-    forceRefresh = false,
-    bypassCache = false
-  ) => {
+  const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
+    const requestVersion = ++songsRequestVersion
     if (!silent) {
       loading.value = true
     }
     error.value = ''
 
     try {
-      const requestParams = semester ? { semester } : undefined
+      const requestUserId = user.value?.id ?? null
+      const requestParams = {
+        semester: semester || '',
+        audience: requestUserId ? `user:${requestUserId}` : 'guest',
+        role: user.value?.role || ''
+      }
+      const request = async () => {
+        // 构建URL参数
+        const params = new URLSearchParams()
+        if (semester) {
+          params.append('semester', semester)
+        }
+        const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
-      const response = await dedup.dedupedRequest(
-        'songs',
-        async () => {
-          // 构建URL参数
-          const params = new URLSearchParams()
-          if (semester) {
-            params.append('semester', semester)
-          }
-          // 只有当 bypassCache 为 true 时才添加 bypass_cache 参数
-          if (bypassCache) {
-            params.append('bypass_cache', 'true')
-          }
-          const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
+        // API请求
+        return await $fetch(url, {
+          ...getAuthConfig()
+        })
+      }
+      const response = forceRefresh
+        ? await request()
+        : await dedup.dedupedRequest('songs', request, requestParams)
 
-          // API请求
-          return await $fetch(url, {
-            ...getAuthConfig()
-          })
-        },
-        requestParams
+      if (
+        requestVersion !== songsRequestVersion ||
+        (user.value?.id ?? null) !== requestUserId ||
+        (user.value?.role ?? '') !== (requestParams.role || '')
       )
+        return
 
       // 正确解析API返回的数据结构
       if (response && response.success && response.data && Array.isArray(response.data.songs)) {
@@ -114,9 +118,11 @@ export const useSongs = () => {
         console.warn('API返回的数据格式不正确:', response)
       }
     } catch (err: any) {
-      error.value = err.message || '获取歌曲列表失败'
+      if (requestVersion === songsRequestVersion) {
+        error.value = err.message || '获取歌曲列表失败'
+      }
     } finally {
-      if (!silent) {
+      if (!silent && requestVersion === songsRequestVersion) {
         loading.value = false
       }
     }
@@ -165,41 +171,43 @@ export const useSongs = () => {
   }
 
   // 获取公共排期（无需登录）
-  const fetchPublicSchedules = async (
-    silent = false,
-    semester?: string,
-    forceRefresh = false,
-    bypassCache = false
-  ) => {
+  const fetchPublicSchedules = async (silent = false, semester?: string, forceRefresh = false) => {
+    const requestVersion = ++publicSchedulesRequestVersion
     if (!silent) {
       loading.value = true
     }
     error.value = ''
 
     try {
-      const requestParams = semester ? { semester } : undefined
+      const requestUserId = user.value?.id ?? null
+      const requestParams = {
+        semester: semester || '',
+        audience: requestUserId ? `user:${requestUserId}` : 'guest',
+        role: user.value?.role || ''
+      }
+      const request = async () => {
+        // 构建URL参数
+        const params = new URLSearchParams()
+        if (semester) {
+          params.append('semester', semester)
+        }
+        const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
 
-      const data = await dedup.dedupedRequest(
-        'public-schedules',
-        async () => {
-          // 构建URL参数
-          const params = new URLSearchParams()
-          if (semester) {
-            params.append('semester', semester)
-          }
-          // 只有当 bypassCache 为 true 时才添加 bypass_cache 参数
-          if (bypassCache) {
-            params.append('bypass_cache', 'true')
-          }
-          const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
+        const response = await $fetch(url, {
+          ...getAuthConfig()
+        })
+        return response
+      }
+      const data = forceRefresh
+        ? await request()
+        : await dedup.dedupedRequest('public-schedules', request, requestParams)
 
-          const response = await $fetch(url, {
-            ...getAuthConfig()
-          })
-          return response
-        },
-        requestParams
+      if (
+        requestVersion !== publicSchedulesRequestVersion ||
+        (user.value?.id ?? null) !== requestUserId ||
+        (user.value?.role ?? '') !== (requestParams.role || '')
       )
+        return
 
       // 确保每个排期的歌曲都有played属性，并处理null/undefined转换
       const processedData = data.map((schedule: any) => {
@@ -230,9 +238,11 @@ export const useSongs = () => {
       // 直接从排期数据中提取歌曲信息，避免重复请求
       publicSongs.value = extractSongsFromSchedules(processedData)
     } catch (err: any) {
-      error.value = err.message || '获取排期失败'
+      if (requestVersion === publicSchedulesRequestVersion) {
+        error.value = err.message || '获取排期失败'
+      }
     } finally {
-      if (!silent) {
+      if (!silent && requestVersion === publicSchedulesRequestVersion) {
         loading.value = false
       }
     }
@@ -273,8 +283,8 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       return data
     } catch (err: any) {
@@ -344,6 +354,8 @@ export const useSongs = () => {
           }
         }
 
+        await fetchSongs(true, undefined, true)
+
         return data
       } catch (fetchErr: any) {
         // 处理API返回的错误
@@ -398,8 +410,8 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       // 显示成功通知
       let message = ''
@@ -452,8 +464,8 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       showNotification('歌曲已成功删除！', 'success')
       return data
@@ -487,8 +499,8 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       showNotification('歌曲已成功标记为已播放！', 'success')
       return data
@@ -522,8 +534,8 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       showNotification('歌曲已成功撤回已播放状态！', 'success')
       return data
@@ -560,6 +572,8 @@ export const useSongs = () => {
       if (songIndex !== -1) {
         songs.value[songIndex].replayRequested = true
       }
+
+      await fetchSongs(true, undefined, true)
 
       showNotification('申请重播成功', 'success')
       return data
@@ -603,6 +617,8 @@ export const useSongs = () => {
       if (songIndex !== -1) {
         songs.value[songIndex].replayRequested = false
       }
+
+      await fetchSongs(true, undefined, true)
 
       showNotification('已取消重播申请', 'success')
       return data
@@ -651,12 +667,19 @@ export const useSongs = () => {
 
   // 所有可见的歌曲（登录用户看到的 + 公共歌曲）
   const visibleSongs = computed(() => {
-    if (songs.value && songs.value.length > 0) {
-      return songs.value
-    } else {
-      return publicSongs.value
-    }
+    return isAuthenticated.value ? songs.value : publicSongs.value
   })
+
+  const clearPrivateSongs = () => {
+    songsRequestVersion++
+    songs.value = []
+  }
+
+  const clearPublicSongs = () => {
+    publicSchedulesRequestVersion++
+    publicSongs.value = []
+    publicSchedules.value = []
+  }
 
   // 根据播放时间段过滤歌曲排期
   const filterSchedulesByPlayTime = (schedules: Schedule[], playTimeId: number | null) => {
@@ -700,13 +723,16 @@ export const useSongs = () => {
     return displayText
   }
 
-  // 获取歌曲总数（缓存版本）
+  // 获取歌曲总数
   const fetchSongCount = async (forceRefresh = false) => {
     try {
-      const response = await dedup.dedupedRequest('song-count', async () => {
+      const request = async () => {
         const response = await $fetch('/api/songs/count')
         return response
-      })
+      }
+      const response = forceRefresh
+        ? await request()
+        : await dedup.dedupedRequest('song-count', request)
 
       // 正确解析API返回的数据结构
       if (response && typeof response.count === 'number') {
@@ -749,6 +775,8 @@ export const useSongs = () => {
     fetchPublicSchedules,
     fetchPlayTimes,
     fetchSongCount,
+    clearPrivateSongs,
+    clearPublicSongs,
     refreshSongsSilent,
     refreshSchedulesSilent,
     requestSong,

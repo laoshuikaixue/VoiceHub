@@ -92,20 +92,6 @@ export const LOG_CONSTANTS = {
   ROTATION_INTERVAL: 24 * 60 * 60 * 1000 // 24小时轮转间隔
 } as const
 
-// 缓存相关常量
-export const CACHE_CONSTANTS = {
-  DEFAULT_TTL: 180, // 3分钟
-  LONG_TTL: 3600, // 1小时
-  SHORT_TTL: 60, // 1分钟
-  MAX_RESPONSE_BODY_LENGTH: 10000, // 最大响应体长度
-  CACHE_KEY_PREFIX: {
-    OPEN_API: 'open:',
-    SONGS: 'songs:',
-    SCHEDULES: 'schedules:',
-    USERS: 'users:'
-  }
-} as const
-
 // 通知设置默认值常量
 export const NOTIFICATION_DEFAULTS = {
   ENABLED: true,

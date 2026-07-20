@@ -1,7 +1,6 @@
 import { db } from '~/drizzle/db'
 import { semesters, songs } from '~/drizzle/schema'
 import { eq, and, ne } from 'drizzle-orm'
-import { cacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -46,7 +45,7 @@ export default defineEventHandler(async (event) => {
     .from(semesters)
     .where(eq(semesters.id, semesterId))
     .limit(1)
-  
+
   if (currentSemesterResult.length === 0) {
     throw createError({
       statusCode: 404,
@@ -58,12 +57,7 @@ export default defineEventHandler(async (event) => {
   const existingSemesterResult = await db
     .select()
     .from(semesters)
-    .where(
-      and(
-        eq(semesters.name, nextName),
-        ne(semesters.id, semesterId)
-      )
-    )
+    .where(and(eq(semesters.name, nextName), ne(semesters.id, semesterId)))
     .limit(1)
 
   if (existingSemesterResult.length > 0) {
@@ -89,20 +83,11 @@ export default defineEventHandler(async (event) => {
 
     if (updateResult.length > 0) {
       // 同步更新歌曲表中的学期名称引用
-      await tx
-        .update(songs)
-        .set({ semester: nextName })
-        .where(eq(songs.semester, oldName))
+      await tx.update(songs).set({ semester: nextName }).where(eq(songs.semester, oldName))
     }
 
     return updateResult[0]
   })
-
-  await Promise.all([
-    cacheService.clearSongsCache(),
-    cacheService.clearSchedulesCache(),
-    cacheService.clearStatsCache()
-  ])
 
   return result
 })

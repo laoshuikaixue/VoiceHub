@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { db } from '~/drizzle/db'
-import { CacheService } from '~~/server/services/cacheService'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { and, eq, inArray, ne } from 'drizzle-orm'
 
@@ -47,8 +46,7 @@ export default defineEventHandler(async (event) => {
     if (!validationResult.success) {
       throw createError({
         statusCode: 400,
-        message:
-          '请求参数无效: ' + validationResult.error.errors.map((e) => e.message).join(', ')
+        message: '请求参数无效: ' + validationResult.error.issues.map((e) => e.message).join(', ')
       })
     }
 
@@ -83,7 +81,7 @@ export default defineEventHandler(async (event) => {
     // 执行批量更新
     const updateResults = []
     const errors = []
-    const userMap = new Map(existingUsers.map(u => [u.id, u]))
+    const userMap = new Map(existingUsers.map((u) => [u.id, u]))
 
     for (const update of updates) {
       try {
@@ -164,7 +162,7 @@ export default defineEventHandler(async (event) => {
         }
 
         let updatedUser
-        
+
         // 使用事务确保更新和日志记录的原子性
         await db.transaction(async (tx) => {
           // 更新用户信息
@@ -225,17 +223,6 @@ export default defineEventHandler(async (event) => {
     // 如果有部分失败，调整消息
     if (errors.length > 0) {
       response.message = `批量更新部分完成，成功更新 ${updateResults.length} 个用户，${errors.length} 个用户更新失败`
-    }
-
-    // 如果有用户更新成功，清除相关缓存
-    if (updateResults.length > 0) {
-      try {
-        const cacheService = CacheService.getInstance()
-        await cacheService.clearSongsCache()
-        console.log('批量用户更新后缓存清除成功')
-      } catch (cacheError) {
-        console.error('批量用户更新后缓存清除失败:', cacheError)
-      }
     }
 
     return response

@@ -1,7 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes } from '~/drizzle/schema'
-import { CacheService } from '../../../services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -18,14 +17,6 @@ export default defineEventHandler(async (event) => {
   const limit = parseInt(query.limit as string) || 20
 
   try {
-    // 尝试从缓存获取数据
-    const cacheService = CacheService.getInstance()
-    const cachedStats = await cacheService.getActiveUsersStats(semester, limit)
-    if (cachedStats) {
-      console.log('[Cache] 活跃用户统计数据缓存命中')
-      return cachedStats
-    }
-
     // 构建查询条件 - 如果没有指定学期或学期为'all'，查询所有用户
     let songWhere = {}
     if (semester && semester !== 'all') {
@@ -68,9 +59,6 @@ export default defineEventHandler(async (event) => {
     // 如果没有活跃用户，返回空数组
     if (activeUsers.length === 0) {
       const emptyResult = []
-      // 缓存空结果
-      await cacheService.setActiveUsersStats(semester, limit, emptyResult)
-      console.log('[Cache] 活跃用户统计数据已缓存（空结果）')
       return emptyResult
     }
 
@@ -95,10 +83,6 @@ export default defineEventHandler(async (event) => {
 
     // 按活跃度分数降序排列并限制数量
     const sortedUsers = userStats.sort((a, b) => b.activityScore - a.activityScore).slice(0, limit)
-
-    // 缓存结果
-    await cacheService.setActiveUsersStats(semester, limit, sortedUsers)
-    console.log('[Cache] 活跃用户统计数据已缓存')
 
     return sortedUsers
   } catch (error) {

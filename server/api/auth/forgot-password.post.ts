@@ -4,20 +4,21 @@ import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
-import { checkRateLimit } from '~~/server/utils/rateLimiter'
+import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)
-  
+
   // IP 级别限流：每小时最多 5 次请求
   const rateLimitKey = `forgot_password_ip:${clientIP}`
-  const limitResult = checkRateLimit(rateLimitKey, 5, 60 * 60 * 1000)
-  
+  const limitResult = await checkDistributedRateLimit(rateLimitKey, 5, 60 * 60 * 1000)
+
   if (!limitResult.isAllowed) {
-    const waitMinutes = Math.ceil((limitResult.resetTime - Date.now()) / 60000)
-    throw createError({ 
-      statusCode: 429, 
-      message: `操作过于频繁，请等待 ${waitMinutes} 分钟后再试` 
+    const waitMinutes = Math.ceil((limitResult.resetTime - getServerTimestamp()) / 60000)
+    throw createError({
+      statusCode: 429,
+      message: `操作过于频繁，请等待 ${waitMinutes} 分钟后再试`
     })
   }
 
@@ -38,9 +39,12 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, message: '找不到该账号名，请检查是否拼写错误' })
       }
       if (!user.email) {
-        throw createError({ statusCode: 400, message: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。' })
+        throw createError({
+          statusCode: 400,
+          message: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。'
+        })
       }
-      
+
       // 生成掩码邮箱 (例如: a***b@gmail.com)
       const emailParts = user.email.split('@')
       const name = emailParts[0]
@@ -52,12 +56,12 @@ export default defineEventHandler(async (event) => {
         maskedName = name.substring(0, 1) + '*'
       }
       const maskedEmail = `${maskedName}@${domain}`
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         step: 2,
         maskedEmail,
-        message: '请输入完整的邮箱地址以验证身份' 
+        message: '请输入完整的邮箱地址以验证身份'
       }
     }
 
@@ -74,10 +78,14 @@ export default defineEventHandler(async (event) => {
       // 修复 Host Header Injection 风险，优先使用环境变量中配置的主机名
       const config = useRuntimeConfig()
       let resetLink = ''
-      
+
       if (config.public.host) {
         // 如果配置了主机名，则直接使用
-        const protocol = config.public.host.startsWith('http') ? '' : (process.env.NODE_ENV === 'production' ? 'https://' : 'http://')
+        const protocol = config.public.host.startsWith('http')
+          ? ''
+          : process.env.NODE_ENV === 'production'
+            ? 'https://'
+            : 'http://'
         resetLink = `${protocol}${config.public.host}/reset-password?token=${token}`
       } else {
         // 降级回退：使用安全的请求头获取方式
@@ -87,7 +95,7 @@ export default defineEventHandler(async (event) => {
       }
 
       const smtp = SmtpService.getInstance()
-      
+
       // 确保SMTP配置已初始化
       await smtp.initializeSmtpConfig()
 
@@ -100,15 +108,17 @@ export default defineEventHandler(async (event) => {
       )
 
       event.waitUntil(
-        smtp.sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
-          .catch(err => console.error('发送重置密码邮件失败:', err))
+        smtp
+          .sendMail(user.email, '重置密码 | VoiceHub', htmlContent, undefined, clientIP)
+          .catch((err) => console.error('发送重置密码邮件失败:', err))
       )
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       step: 3,
-      message: '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。' 
+      message:
+        '如果账号名和邮箱匹配，重置密码链接已发送至您的邮箱。请查收并按照邮件中的说明重置密码。'
     }
   } catch (error: any) {
     if (error.statusCode) {

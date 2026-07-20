@@ -112,12 +112,5 @@ export default defineEventHandler(async (event) => {
     settings = updated[0]
   }
 
-  try {
-    const { CacheService } = await import('~~/server/services/cacheService')
-    await CacheService.getInstance().clearSystemSettingsCache()
-  } catch (e) {
-    console.warn('清除系统设置缓存失败:', e)
-  }
-
   return maskSystemSettingsSecrets(settings)
 })
