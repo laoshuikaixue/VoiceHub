@@ -109,7 +109,7 @@ const auth = useAuth()
 const router = useRouter()
 const isFirstLogin = computed(() => {
   const currentUser = auth.user.value
-  return currentUser ? !currentUser.hasSetPassword : false
+  return currentUser?.needsInitialPasswordSetup === true
 })
 const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
 

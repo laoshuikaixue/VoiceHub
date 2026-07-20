@@ -267,6 +267,13 @@
       "when": 1784505600000,
       "tag": "20260720000001_restore_ambiguous_password_change_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1784505601000,
+      "tag": "20260720000002_clear_ambiguous_password_change_flags",
+      "breakpoints": true
     }
   ]
 }

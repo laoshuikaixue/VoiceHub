@@ -7,10 +7,27 @@ interface StoredPasswordState {
   passwordChangedAt?: Date | string | null
 }
 
+export interface PasswordSetupState {
+  hasSetPassword: boolean
+  needsInitialPasswordSetup: boolean
+}
+
+export function getPasswordSetupState(
+  storedPassword: StoredPasswordState,
+  requirePasswordChange: boolean
+): PasswordSetupState {
+  const hasSetPassword = !!storedPassword.password
+  return {
+    hasSetPassword,
+    needsInitialPasswordSetup:
+      !storedPassword.passwordChangedAt && (requirePasswordChange || !hasSetPassword)
+  }
+}
+
 export function canSetInitialPassword(
   user: InitialPasswordUserState,
   storedPassword: StoredPasswordState
 ): boolean {
-  if (storedPassword.passwordChangedAt) return false
-  return !!user.requirePasswordChange || !storedPassword.password
+  return getPasswordSetupState(storedPassword, !!user.requirePasswordChange)
+    .needsInitialPasswordSetup
 }

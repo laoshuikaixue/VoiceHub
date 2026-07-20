@@ -135,4 +135,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       }
     }
   })
+}, {
+  name: 'auth-client',
+  enforce: 'pre'
 })

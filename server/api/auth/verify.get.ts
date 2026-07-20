@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
     passwordChangedAt: authUser.passwordChangedAt,
     requirePasswordChange: authUser.requirePasswordChange,
     hasSetPassword: authUser.hasSetPassword,
+    needsInitialPasswordSetup: authUser.needsInitialPasswordSetup,
     has2FA: identities.some((identity) => identity.provider === 'totp'),
     avatar: githubIdentity?.providerUsername
       ? `https://github.com/${githubIdentity.providerUsername}.png`

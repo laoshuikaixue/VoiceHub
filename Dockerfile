@@ -1,15 +1,9 @@
 # ==========================================
 # 第一阶段：构建阶段
 # ==========================================
-# 预定义各架构的构建镜像
-FROM node:24-alpine AS builder-amd64
-FROM node:24-alpine AS builder-arm64
-FROM node:20-alpine AS builder-arm
-FROM node:24-trixie-slim AS builder-s390x
-FROM node:24-trixie-slim AS builder-ppc64le
-
-# 根据 TARGETARCH 选择对应的构建镜像
-FROM builder-${TARGETARCH} AS builder
+# Nuxt/Vite 使用原生构建器。始终在 CI runner 的原生平台编译，避免 QEMU
+# 执行 Rolldown 时崩溃；生成的 Nitro 输出不包含目标架构原生二进制。
+FROM --platform=$BUILDPLATFORM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -54,14 +48,19 @@ FROM runtime-${TARGETARCH} AS runtime
 USER root
 WORKDIR /app
 
-# 安装 pnpm
-RUN npm install -g pnpm@10.29.3
+# 运行依赖必须在目标平台安装，不能从构建平台复制 node_modules。
+COPY package.json pnpm-lock.yaml ./
+COPY scripts/postinstall.js ./scripts/postinstall.js
+RUN set -eux; \
+    export CI=true; \
+    npm install -g pnpm@10.29.3; \
+    pnpm config set fetch-retries 5; \
+    pnpm config set fetch-retry-mintimeout 20000; \
+    pnpm config set fetch-retry-maxtimeout 120000; \
+    pnpm install --prod --frozen-lockfile
 
 # 从构建阶段复制必要文件
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-lock.yaml ./
 COPY --from=builder /app/drizzle.config.ts ./
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/app/drizzle ./app/drizzle
 COPY --from=builder /app/scripts ./scripts

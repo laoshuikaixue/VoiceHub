@@ -1,67 +1,95 @@
-export const PASSWORD_CHANGE_ALLOWED_PATHS = [
-  '/api/auth/verify',
-  '/api/auth/logout',
-  '/api/auth/change-password',
-  '/api/auth/set-initial-password',
-  '/api/auth/2fa/verify',
-  '/api/auth/2fa/send-email',
-  '/api/site-config'
-] as const
+type HttpMethod = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
-export const PUBLIC_API_EXACT_PATHS = [
-  '/api/auth/login',
-  '/api/auth/bind',
-  '/api/auth/oauth-register',
-  '/api/auth/2fa/verify',
-  '/api/auth/2fa/send-email',
-  '/api/auth/forgot-password',
-  '/api/auth/reset-password',
-  '/api/auth/captcha',
-  '/api/semesters/current',
-  '/api/play-times',
-  '/api/schedules/public',
-  '/api/songs/count',
-  '/api/songs/public',
-  '/api/site-config',
-  '/api/system/location',
-  '/api/auth/webauthn/login',
-  '/api/music/resolve-url',
-  '/api/music/state',
-  '/api/music/websocket',
-  '/api/sys/time'
-] as const
+interface RoutePolicy {
+  path: string
+  methods: readonly HttpMethod[]
+}
 
-export const PUBLIC_API_PATH_PREFIXES = [
-  '/api/proxy/',
-  '/api/bilibili/',
-  '/api/api-enhanced/',
-  '/api/native-api/',
-  '/api/open/',
-  '/api/auth/webauthn/login/'
-] as const
+const GET_METHODS = ['GET', 'HEAD'] as const
+const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'] as const
 
-export function isPublicApiPath(pathname: string): boolean {
+export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/auth/verify', methods: GET_METHODS },
+  { path: '/api/auth/logout', methods: ['POST'] },
+  { path: '/api/auth/change-password', methods: ['POST'] },
+  { path: '/api/auth/set-initial-password', methods: ['POST'] },
+  { path: '/api/auth/2fa/verify', methods: ['POST'] },
+  { path: '/api/auth/2fa/send-email', methods: ['POST'] },
+  { path: '/api/site-config', methods: GET_METHODS }
+]
+
+export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/auth/login', methods: ['POST'] },
+  { path: '/api/auth/bind', methods: ['POST'] },
+  { path: '/api/auth/oauth-register', methods: ['POST'] },
+  { path: '/api/auth/2fa/verify', methods: ['POST'] },
+  { path: '/api/auth/2fa/send-email', methods: ['POST'] },
+  { path: '/api/auth/forgot-password', methods: ['POST'] },
+  { path: '/api/auth/reset-password', methods: ['POST'] },
+  { path: '/api/auth/captcha', methods: GET_METHODS },
+  { path: '/api/semesters/current', methods: GET_METHODS },
+  { path: '/api/play-times', methods: GET_METHODS },
+  { path: '/api/schedules/public', methods: GET_METHODS },
+  { path: '/api/songs/count', methods: GET_METHODS },
+  { path: '/api/songs/public', methods: GET_METHODS },
+  { path: '/api/site-config', methods: GET_METHODS },
+  { path: '/api/system/location', methods: GET_METHODS },
+  { path: '/api/auth/webauthn/login', methods: ['POST'] },
+  { path: '/api/music/resolve-url', methods: ['POST'] },
+  { path: '/api/music/websocket', methods: GET_METHODS },
+  { path: '/api/sys/time', methods: GET_METHODS }
+]
+
+export const PUBLIC_API_PREFIX_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/proxy/', methods: GET_METHODS },
+  { path: '/api/bilibili/', methods: GET_METHODS },
+  { path: '/api/api-enhanced/', methods: [...GET_METHODS, ...WRITE_METHODS] },
+  { path: '/api/native-api/', methods: [...GET_METHODS, 'POST'] },
+  { path: '/api/open/', methods: [...GET_METHODS, ...WRITE_METHODS] },
+  { path: '/api/auth/webauthn/login/', methods: ['POST'] }
+]
+
+function normalizeMethod(method: string): HttpMethod | '' {
+  return method.toUpperCase() as HttpMethod
+}
+
+function matchesMethod(policy: RoutePolicy, method: string): boolean {
+  return policy.methods.includes(normalizeMethod(method) as HttpMethod)
+}
+
+export function isPublicApiPath(pathname: string, method: string): boolean {
   return (
-    PUBLIC_API_EXACT_PATHS.some((path) => pathname === path) ||
-    PUBLIC_API_PATH_PREFIXES.some((path) => pathname.startsWith(path))
+    PUBLIC_API_EXACT_ROUTES.some(
+      (policy) => pathname === policy.path && matchesMethod(policy, method)
+    ) ||
+    PUBLIC_API_PREFIX_ROUTES.some(
+      (policy) => pathname.startsWith(policy.path) && matchesMethod(policy, method)
+    )
   )
 }
 
-export function isAllowedDuringPasswordChange(pathname: string): boolean {
-  return PASSWORD_CHANGE_ALLOWED_PATHS.some((path) => pathname === path)
+export function isAllowedDuringPasswordChange(pathname: string, method: string): boolean {
+  return PASSWORD_CHANGE_ALLOWED_ROUTES.some(
+    (policy) => pathname === policy.path && matchesMethod(policy, method)
+  )
 }
 
 export function shouldBlockDuringPasswordChange(
   pathname: string,
+  method: string,
   requirePasswordChange: boolean
 ): boolean {
   return (
     requirePasswordChange &&
-    !isPublicApiPath(pathname) &&
-    !isAllowedDuringPasswordChange(pathname)
+    !isPublicApiPath(pathname, method) &&
+    !isAllowedDuringPasswordChange(pathname, method)
   )
 }
 
-export function shouldBypassPublicApiAuthentication(pathname: string, hasToken: boolean): boolean {
-  return isPublicApiPath(pathname) && !hasToken
+export function shouldBypassPublicApiAuthentication(
+  pathname: string,
+  method: string,
+  hasToken: boolean
+): boolean {
+  return isPublicApiPath(pathname, method) && !hasToken
 }

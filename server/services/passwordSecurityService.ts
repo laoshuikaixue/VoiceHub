@@ -22,8 +22,8 @@ export async function consumePasswordRateLimit(
   const resetAt = new Date(now.getTime() + PASSWORD_RATE_WINDOW_SECONDS * 1000)
   const keys = [`user:${action}:${userId}`, `ip:${action}:${ipAddress}`]
 
-  const counts = await db.transaction(async (tx) => {
-    const values: number[] = []
+  const buckets = await db.transaction(async (tx) => {
+    const values: Array<{ count: number; resetAt: Date }> = []
     for (const key of keys) {
       const [result] = await tx
         .insert(passwordRateLimits)
@@ -41,9 +41,15 @@ export async function consumePasswordRateLimit(
             END`
           }
         })
-        .returning({ count: passwordRateLimits.count })
+        .returning({
+          count: passwordRateLimits.count,
+          resetAt: passwordRateLimits.resetAt
+        })
 
-      values.push(result?.count ?? 1)
+      values.push({
+        count: result?.count ?? 1,
+        resetAt: result?.resetAt ?? resetAt
+      })
     }
 
     // 惰性清理过期键，避免攻击者通过大量伪造 IP 使限流表无限增长。
@@ -54,11 +60,23 @@ export async function consumePasswordRateLimit(
     return values
   })
 
-  const [userCount, ipCount] = counts
+  const [userBucket, ipBucket] = buckets
+  const exceededBuckets = [
+    userBucket && userBucket.count > limit ? userBucket : null,
+    ipBucket && ipBucket.count > limit * 3 ? ipBucket : null
+  ].filter((bucket): bucket is { count: number; resetAt: Date } => !!bucket)
+  const retryAfterSeconds = exceededBuckets.length
+    ? Math.max(
+        1,
+        ...exceededBuckets.map((bucket) =>
+          Math.ceil((new Date(bucket.resetAt).getTime() - now.getTime()) / 1000)
+        )
+      )
+    : 0
 
   return {
-    allowed: userCount <= limit && ipCount <= limit * 3,
-    retryAfterSeconds: PASSWORD_RATE_WINDOW_SECONDS
+    allowed: exceededBuckets.length === 0,
+    retryAfterSeconds
   }
 }
 

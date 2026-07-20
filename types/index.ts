@@ -11,6 +11,7 @@ export interface User {
   passwordChangedAt?: Date | string | null
   requirePasswordChange?: boolean
   hasSetPassword?: boolean
+  needsInitialPasswordSetup?: boolean
   avatar?: string | null
   has2FA?: boolean
   email?: string | null

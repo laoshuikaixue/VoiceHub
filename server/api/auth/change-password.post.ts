@@ -46,7 +46,11 @@ export default defineEventHandler(async (event) => {
   if (!rateLimit.allowed) {
     await recordPasswordAudit(event, user.id, auditAction, false, '操作频率超过限制')
     setResponseHeader(event, 'Retry-After', String(rateLimit.retryAfterSeconds))
-    throw createError({ statusCode: 429, message: '密码修改尝试过于频繁，请10分钟后再试' })
+    const retryAfterMinutes = Math.max(1, Math.ceil(rateLimit.retryAfterSeconds / 60))
+    throw createError({
+      statusCode: 429,
+      message: `密码修改尝试过于频繁，请 ${retryAfterMinutes} 分钟后再试`
+    })
   }
 
   const policyError = validatePasswordPolicy(newPassword)

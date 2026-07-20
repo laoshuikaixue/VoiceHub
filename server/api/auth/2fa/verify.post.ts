@@ -8,6 +8,7 @@ import { isSecureRequest } from '~~/server/utils/request-utils'
 import { delStore, getStore, incrStore } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
@@ -177,6 +178,7 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'binding-token')
 
   const requirePasswordChange = await resolveRequirePasswordChange(user)
+  const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
 
   return {
       success: true,
@@ -192,7 +194,7 @@ export default defineEventHandler(async (event) => {
         forcePasswordChange: user.forcePasswordChange,
         passwordChangedAt: user.passwordChangedAt,
         requirePasswordChange,
-        hasSetPassword: !!user.passwordChangedAt,
+        ...passwordSetupState,
         has2FA: true
       }
   }

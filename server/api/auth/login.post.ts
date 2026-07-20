@@ -18,6 +18,7 @@ import { CacheService } from '~~/server/services/cacheService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
@@ -328,6 +329,7 @@ export default defineEventHandler(async (event) => {
     console.log(`Login for ${user.username} processed in ${processingTime}ms`)
 
     const requirePasswordChange = await resolveRequirePasswordChange(user)
+    const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
 
     return {
       success: true,
@@ -343,7 +345,7 @@ export default defineEventHandler(async (event) => {
         forcePasswordChange: user.forcePasswordChange,
         passwordChangedAt: user.passwordChangedAt,
         requirePasswordChange,
-        hasSetPassword: !!user.passwordChangedAt
+        ...passwordSetupState
       }
     }
   } catch (error: any) {

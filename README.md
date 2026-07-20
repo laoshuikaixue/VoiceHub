@@ -883,6 +883,7 @@ VoiceHub/
 │   │       ├── 20260719000003_harden_password_security.sql # 会话版本与密码安全迁移
 │   │       ├── 20260719000004_reconcile_password_security_after_main.sql # 主分支汇合后的密码安全补偿迁移
 │   │       ├── 20260720000001_restore_ambiguous_password_change_flags.sql # 恢复来源不明的待改密标记
+│   │       ├── 20260720000002_clear_ambiguous_password_change_flags.sql # 清理来源不明的待改密标记
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件

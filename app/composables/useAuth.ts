@@ -135,6 +135,7 @@ export const useAuth = () => {
         user.value.forcePasswordChange = false
         user.value.passwordChangedAt = response.passwordChangedAt || null
         user.value.hasSetPassword = true
+        user.value.needsInitialPasswordSetup = false
       }
       await refreshUser()
     } catch (error: any) {
@@ -167,6 +168,7 @@ export const useAuth = () => {
         user.value.forcePasswordChange = false
         user.value.passwordChangedAt = response.passwordChangedAt || null
         user.value.hasSetPassword = true
+        user.value.needsInitialPasswordSetup = false
       }
       await refreshUser()
     } finally {

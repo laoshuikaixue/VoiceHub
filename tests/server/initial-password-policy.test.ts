@@ -1,6 +1,49 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { canSetInitialPassword } from '../../server/utils/initial-password-policy.ts'
+import {
+  canSetInitialPassword,
+  getPasswordSetupState
+} from '../../server/utils/initial-password-policy.ts'
+
+test('历史有密码用户应进入普通改密流程', () => {
+  assert.deepEqual(
+    getPasswordSetupState(
+      { password: 'existing-hash', passwordChangedAt: null },
+      false
+    ),
+    { hasSetPassword: true, needsInitialPasswordSetup: false }
+  )
+})
+
+test('首次强制改密用户应进入初始设置流程', () => {
+  assert.deepEqual(
+    getPasswordSetupState(
+      { password: 'temporary-hash', passwordChangedAt: null },
+      true
+    ),
+    { hasSetPassword: true, needsInitialPasswordSetup: true }
+  )
+})
+
+test('无密码 OAuth 用户应进入初始设置流程', () => {
+  assert.deepEqual(
+    getPasswordSetupState(
+      { password: null, passwordChangedAt: null },
+      false
+    ),
+    { hasSetPassword: false, needsInitialPasswordSetup: true }
+  )
+})
+
+test('已完成密码设置的用户应进入普通改密流程', () => {
+  assert.deepEqual(
+    getPasswordSetupState(
+      { password: 'existing-hash', passwordChangedAt: new Date() },
+      true
+    ),
+    { hasSetPassword: true, needsInitialPasswordSetup: false }
+  )
+})
 
 test('强制改密账号可以设置初始密码', () => {
   assert.equal(

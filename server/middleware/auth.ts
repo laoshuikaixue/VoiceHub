@@ -1,5 +1,6 @@
 import { JWTEnhanced } from '../utils/jwt-enhanced'
-import { db, users } from '~/drizzle/db'
+import { db } from '~/drizzle/db'
+import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { isUserBlocked, getUserBlockRemainingTime } from '../services/securityService'
 import { isSupportedOAuthProvider } from '../services/oauthConfigService'
@@ -10,6 +11,7 @@ import {
   shouldBlockDuringPasswordChange,
   shouldBypassPublicApiAuthentication
 } from '../utils/auth-route-policy'
+import { getPasswordSetupState } from '../utils/initial-password-policy'
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -19,6 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const url = getRequestURL(event)
   const pathname = url.pathname
+  const method = event.method.toUpperCase()
 
   // 跳过非API路由
   if (!pathname.startsWith('/api/')) {
@@ -38,7 +41,7 @@ export default defineEventHandler(async (event) => {
       segments[4] === 'callback' &&
       isSupportedOAuthProvider(provider || '')
 
-    return isProviderIndexPath || isProviderCallbackPath
+    return method === 'GET' && (isProviderIndexPath || isProviderCallbackPath)
   })()
 
   // 从请求头或cookie获取token
@@ -54,9 +57,9 @@ export default defineEventHandler(async (event) => {
 
   // 公共接口只有匿名访问时才绕过认证；携带登录态必须继续检查强制改密状态。
   // OAuth 路由只有匿名启动/回调时公开；携带登录态时仍必须经过强制改密门控。
-  const isPublicApi = isPublicApiPath(pathname)
+  const isPublicApi = isPublicApiPath(pathname, method)
   if (
-    shouldBypassPublicApiAuthentication(pathname, Boolean(token)) ||
+    shouldBypassPublicApiAuthentication(pathname, method, Boolean(token)) ||
     (isOAuthProviderRoute && !token)
   ) {
     return
@@ -103,6 +106,7 @@ export default defineEventHandler(async (event) => {
         class: users.class,
         role: users.role,
         status: users.status,
+        password: users.password,
         passwordChangedAt: users.passwordChangedAt,
         forcePasswordChange: users.forcePasswordChange,
         tokenVersion: users.tokenVersion,
@@ -207,14 +211,26 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+    const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
     event.context.user = {
-      ...user,
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      grade: user.grade,
+      class: user.class,
+      role: user.role,
+      status: user.status,
+      passwordChangedAt: user.passwordChangedAt,
+      forcePasswordChange: user.forcePasswordChange,
+      tokenVersion: user.tokenVersion,
+      email: user.email,
+      emailVerified: user.emailVerified,
       requirePasswordChange,
-      hasSetPassword: !!user.passwordChangedAt
+      ...passwordSetupState
     }
 
     // 认证完成前只允许维持登录态和完成改密所需的接口。
-    if (shouldBlockDuringPasswordChange(pathname, requirePasswordChange)) {
+    if (shouldBlockDuringPasswordChange(pathname, method, requirePasswordChange)) {
       return sendError(
         event,
         createError({
