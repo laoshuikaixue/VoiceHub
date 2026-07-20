@@ -18,7 +18,11 @@ const store = new Map<string, RateLimitRecord>()
  * @param windowMs 时间窗口大小（毫秒）
  * @returns { isAllowed: boolean, remaining: number, resetTime: number }
  */
-export function checkRateLimit(key: string, limit: number, windowMs: number): { isAllowed: boolean, remaining: number, resetTime: number } {
+export function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+): { isAllowed: boolean; remaining: number; resetTime: number } {
   const now = getServerTimestamp()
   let record = store.get(key)
 
@@ -46,6 +50,42 @@ export function checkRateLimit(key: string, limit: number, windowMs: number): { 
 }
 
 /**
+ * 优先使用 Redis 执行跨实例限流，Redis 不可用时回退到当前进程内存。
+ * 适用于需要在多实例或 Serverless 环境中保持一致计数的敏感接口。
+ */
+export async function checkDistributedRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<{ isAllowed: boolean; remaining: number; resetTime: number }> {
+  try {
+    const { getRedisClient } = await import('./redis')
+    const client = getRedisClient()
+
+    if (client) {
+      const redisKey = `rate_limit:${key}`
+      const count = await client.incr(redisKey)
+      let ttl = await client.pTTL(redisKey)
+
+      if (count === 1 || ttl < 0) {
+        await client.pExpire(redisKey, windowMs)
+        ttl = windowMs
+      }
+
+      return {
+        isAllowed: count <= limit,
+        remaining: Math.max(0, limit - count),
+        resetTime: getServerTimestamp() + ttl
+      }
+    }
+  } catch (error) {
+    console.error('[RateLimit] Redis 限流失败，已回退到内存限流', error)
+  }
+
+  return checkRateLimit(key, limit, windowMs)
+}
+
+/**
  * 清理过期的限流记录
  * @param force 如果为 true，在没有过期数据时也会强制删除最旧的记录
  */
@@ -65,7 +105,7 @@ export function cleanupRateLimits(force = false) {
   if (force && deletedCount === 0 && store.size > 0) {
     const itemsToDelete = Math.ceil(MAX_STORE_SIZE * 0.1)
     const keys = store.keys()
-    
+
     for (let i = 0; i < itemsToDelete; i++) {
       const key = keys.next().value
       if (key !== undefined) {

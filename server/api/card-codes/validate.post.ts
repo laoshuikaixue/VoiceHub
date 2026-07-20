@@ -1,12 +1,66 @@
 import { db } from '~/drizzle/db'
 import { cardCodes, systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import type { H3Event } from 'h3'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
+
+const USER_BURST_LIMIT = 5
+const USER_BURST_WINDOW_MS = 60 * 1000
+const USER_HOURLY_LIMIT = 20
+const USER_HOURLY_WINDOW_MS = 60 * 60 * 1000
+const IP_HOURLY_LIMIT = 100
+const IP_HOURLY_WINDOW_MS = 60 * 60 * 1000
+
+const enforceValidationRateLimit = async (event: H3Event, userId: number) => {
+  const clientIP = getClientIP(event)
+  const checks = [
+    checkDistributedRateLimit(
+      `card_code_validate_user_burst:${userId}`,
+      USER_BURST_LIMIT,
+      USER_BURST_WINDOW_MS
+    ),
+    checkDistributedRateLimit(
+      `card_code_validate_user_hourly:${userId}`,
+      USER_HOURLY_LIMIT,
+      USER_HOURLY_WINDOW_MS
+    )
+  ]
+
+  if (clientIP !== 'unknown') {
+    checks.push(
+      checkDistributedRateLimit(
+        `card_code_validate_ip_hourly:${clientIP}`,
+        IP_HOURLY_LIMIT,
+        IP_HOURLY_WINDOW_MS
+      )
+    )
+  }
+
+  const blockedChecks = (await Promise.all(checks)).filter((result) => !result.isAllowed)
+  if (!blockedChecks.length) return
+
+  const resetTime = Math.max(...blockedChecks.map((result) => result.resetTime))
+  const retryAfterSeconds = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000))
+  const waitText =
+    retryAfterSeconds >= 60
+      ? `${Math.ceil(retryAfterSeconds / 60)} 分钟`
+      : `${retryAfterSeconds} 秒`
+
+  setResponseHeader(event, 'Retry-After', String(retryAfterSeconds))
+  throw createError({
+    statusCode: 429,
+    message: `点歌券验证请求过于频繁，请等待 ${waitText} 后再试`
+  })
+}
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
     throw createError({ statusCode: 401, message: '需要登录才能验证点歌券' })
   }
+
+  await enforceValidationRateLimit(event, user.id)
 
   const body = (await readBody(event)) || {}
   const code = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
