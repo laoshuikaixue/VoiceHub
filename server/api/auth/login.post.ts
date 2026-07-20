@@ -26,14 +26,14 @@ import { type SystemSettings } from '~/drizzle/schema'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-  
+
   try {
     const body = await readBody(event)
     const clientIp = getClientIP(event)
-    
+
     let captchaId = ''
     let captchaInput = ''
-    
+
     if (!body.username || !body.password) {
       throw createError({
         statusCode: 400,
@@ -87,17 +87,20 @@ export default defineEventHandler(async (event) => {
       // 尝试从缓存获取，如果失败再从数据库获取
       const cacheService = CacheService.getInstance()
       let settings = await cacheService.getSystemSettings()
-      
+
       if (!settings) {
-        const configRow = await db.select()
+        const configRow = await db
+          .select()
           .from(systemSettings)
           .limit(1)
-          .then(r => r[0])
-          
+          .then((r) => r[0])
+
         if (configRow) {
           settings = configRow as SystemSettings
           // 异步更新缓存，不阻塞登录
-          cacheService.setSystemSettings(settings).catch(e => console.warn('缓存系统配置失败:', e))
+          cacheService
+            .setSystemSettings(settings)
+            .catch((e) => console.warn('缓存系统配置失败:', e))
         }
       }
 
@@ -113,7 +116,7 @@ export default defineEventHandler(async (event) => {
       // 查询异常（如表不存在）时默认关闭验证码，保证登录可用
       console.warn('读取验证码配置失败，已暂时禁用:', e)
     }
-    
+
     // 图形验证码检查
     let needCaptcha = false
     if (captchaEnabled) {
@@ -129,7 +132,7 @@ export default defineEventHandler(async (event) => {
     if (needCaptcha) {
       if (captchaProvider === 'turnstile') {
         const turnstileToken = body.turnstileToken
-        
+
         if (!turnstileSecretKey) {
           console.error('Turnstile is enabled but secret key is missing!')
           throw createError({
@@ -145,7 +148,7 @@ export default defineEventHandler(async (event) => {
             data: { captchaRequired: true, captchaProvider: 'turnstile' }
           })
         }
-        
+
         const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
         const formData = new URLSearchParams()
         formData.append('secret', turnstileSecretKey)
@@ -185,7 +188,7 @@ export default defineEventHandler(async (event) => {
             data: { captchaRequired: true, captchaProvider: 'graphic' }
           })
         }
-        
+
         const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
         if (!isValid) {
           throw createError({
@@ -196,7 +199,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-    
+
     // 查找用户
     const userResult = await db
       .select({
@@ -241,7 +244,7 @@ export default defineEventHandler(async (event) => {
         message: '用户名或密码错误'
       })
     }
-    
+
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
       throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
@@ -258,11 +261,15 @@ export default defineEventHandler(async (event) => {
 
     if (totpIdentity) {
       // 生成预认证临时令牌
-      const tempToken = JWTEnhanced.sign({
-        userId: user.id,
-        type: 'pre-auth',
-        scope: '2fa_pending'
-      }, { expiresIn: '5m' }) // 动态构建验证方式列表
+      const tempToken = JWTEnhanced.sign(
+        {
+          userId: user.id,
+          tokenVersion: user.tokenVersion,
+          type: 'pre-auth',
+          scope: '2fa_pending'
+        },
+        { expiresIn: '5m' }
+      ) // 动态构建验证方式列表
       const methods = ['totp']
       let maskedEmail = ''
       if (user.email && user.emailVerified) {
@@ -270,9 +277,7 @@ export default defineEventHandler(async (event) => {
         // 生成脱敏邮箱提示
         const [local, domain] = user.email.split('@')
         if (local && domain) {
-          maskedEmail = local.length <= 2
-            ? `***@${domain}`
-            : `${local.slice(0, 2)}****@${domain}`
+          maskedEmail = local.length <= 2 ? `***@${domain}` : `${local.slice(0, 2)}****@${domain}`
         }
       }
       return {

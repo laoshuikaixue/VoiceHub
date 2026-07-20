@@ -93,3 +93,7 @@ export function shouldBypassPublicApiAuthentication(
 ): boolean {
   return isPublicApiPath(pathname, method) && !hasToken
 }
+
+export function canBindOAuthIdentity(requirePasswordChange: boolean): boolean {
+  return !requirePasswordChange
+}

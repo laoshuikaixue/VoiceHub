@@ -31,10 +31,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<Record<string, unknown> | null>(event)
   const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : ''
   const newPassword = typeof body?.newPassword === 'string' ? body.newPassword : ''
-  if (
-    !currentPassword ||
-    !newPassword
-  ) {
+  if (!currentPassword || !newPassword) {
     await recordPasswordAudit(event, user.id, auditAction, false, '缺少当前密码或新密码')
     throw createError({
       statusCode: 400,
@@ -66,7 +63,8 @@ export default defineEventHandler(async (event) => {
       .select({
         id: users.id,
         username: users.username,
-        password: users.password
+        password: users.password,
+        tokenVersion: users.tokenVersion
       })
       .from(users)
       .where(eq(users.id, user.id))
@@ -83,7 +81,10 @@ export default defineEventHandler(async (event) => {
 
     // 验证当前密码
     if (!userDetails.password) {
-      throw createError({ statusCode: 400, message: '当前账号尚未设置密码，请使用初始密码设置功能' })
+      throw createError({
+        statusCode: 400,
+        message: '当前账号尚未设置密码，请使用初始密码设置功能'
+      })
     }
 
     const isPasswordValid = await bcrypt.compare(currentPassword, userDetails.password)
@@ -108,12 +109,10 @@ export default defineEventHandler(async (event) => {
     }
 
     // 更新密码
-    const { passwordChangedAt, tokenVersion } = await updateUserPassword(
-      user.id,
-      newPassword,
-      false,
-      { action: auditAction, ...getPasswordAuditContext(event) }
-    )
+    const { passwordChangedAt, tokenVersion } = await updateUserPassword(user.id, newPassword, {
+      expectedTokenVersion: userDetails.tokenVersion,
+      auditContext: { action: auditAction, ...getPasswordAuditContext(event) }
+    })
     passwordUpdated = true
 
     // 密码变更会让旧令牌失效，因此为当前已验证会话立即换发令牌。
@@ -136,13 +135,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     if (!passwordUpdated) {
-      await recordPasswordAudit(
-        event,
-        user.id,
-        auditAction,
-        false,
-        error.message || '密码修改失败'
-      )
+      await recordPasswordAudit(event, user.id, auditAction, false, error.message || '密码修改失败')
     }
 
     // 已格式化的错误直接抛出

@@ -11,6 +11,7 @@ export const PASSWORD_AUDIT_ACTIONS = {
 } as const
 
 const PASSWORD_RATE_WINDOW_SECONDS = 10 * 60
+const PASSWORD_IP_LIMIT_MULTIPLIER = 20
 
 export async function consumePasswordRateLimit(
   userId: number,
@@ -25,6 +26,8 @@ export async function consumePasswordRateLimit(
   const buckets = await db.transaction(async (tx) => {
     const values: Array<{ count: number; resetAt: Date }> = []
     for (const key of keys) {
+      // 使用 Node 统一生成的时间，并通过时间列编码器传入 SQL，避免数据库时区影响比较结果。
+      const comparisonNow = sql.param(now, passwordRateLimits.resetAt)
       const [result] = await tx
         .insert(passwordRateLimits)
         .values({ key, count: 1, resetAt })
@@ -32,11 +35,11 @@ export async function consumePasswordRateLimit(
           target: passwordRateLimits.key,
           set: {
             count: sql<number>`CASE
-              WHEN ${passwordRateLimits.resetAt} <= CURRENT_TIMESTAMP THEN 1
+              WHEN ${passwordRateLimits.resetAt} <= ${comparisonNow} THEN 1
               ELSE ${passwordRateLimits.count} + 1
             END`,
             resetAt: sql<Date>`CASE
-              WHEN ${passwordRateLimits.resetAt} <= CURRENT_TIMESTAMP THEN excluded."resetAt"
+              WHEN ${passwordRateLimits.resetAt} <= ${comparisonNow} THEN excluded."resetAt"
               ELSE ${passwordRateLimits.resetAt}
             END`
           }
@@ -63,7 +66,7 @@ export async function consumePasswordRateLimit(
   const [userBucket, ipBucket] = buckets
   const exceededBuckets = [
     userBucket && userBucket.count > limit ? userBucket : null,
-    ipBucket && ipBucket.count > limit * 3 ? ipBucket : null
+    ipBucket && ipBucket.count > limit * PASSWORD_IP_LIMIT_MULTIPLIER ? ipBucket : null
   ].filter((bucket): bucket is { count: number; resetAt: Date } => !!bucket)
   const retryAfterSeconds = exceededBuckets.length
     ? Math.max(
@@ -85,11 +88,13 @@ export async function recordPasswordAudit(
   userId: number,
   action: string,
   success: boolean,
-  failureReason?: string
+  failureReason?: string,
+  actorId?: number | null
 ): Promise<void> {
   try {
     await db.insert(passwordAuditLogs).values({
       userId,
+      actorId: actorId ?? null,
       action,
       success,
       ipAddress: getClientIP(event),

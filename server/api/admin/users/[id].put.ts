@@ -3,6 +3,10 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { updateUserPassword } from '~~/server/services/userService'
+import {
+  PASSWORD_AUDIT_ACTIONS,
+  getPasswordAuditContext
+} from '~~/server/services/passwordSecurityService'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -44,11 +48,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户是否存在
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userIdNum))
-      .limit(1)
+    const existingUser = await db.select().from(users).where(eq(users.id, userIdNum)).limit(1)
 
     if (existingUser.length === 0) {
       throw createError({
@@ -168,7 +168,14 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: '新密码不能为空' })
       }
 
-      await updateUserPassword(targetUser.id, trimmedPassword, true)
+      await updateUserPassword(targetUser.id, trimmedPassword, {
+        forceReset: true,
+        auditContext: {
+          action: PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD,
+          actorId: user.id,
+          ...getPasswordAuditContext(event)
+        }
+      })
     }
 
     // 更新用户其他信息

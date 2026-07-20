@@ -17,6 +17,8 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
+import { CacheService } from '~~/server/services/cacheService'
+import { userCache } from '~~/server/utils/cache-helpers'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -412,7 +414,11 @@ export default defineEventHandler(async (event) => {
               })
               if (existing) {
                 restoredCardCode = (
-                  await tx.update(cardCodes).set(cardCodeData).where(eq(cardCodes.id, existing.id)).returning()
+                  await tx
+                    .update(cardCodes)
+                    .set(cardCodeData)
+                    .where(eq(cardCodes.id, existing.id))
+                    .returning()
                 )[0]
                 stats.updated++
               } else {
@@ -425,12 +431,19 @@ export default defineEventHandler(async (event) => {
               })
               if (existing) {
                 restoredCardCode = (
-                  await tx.update(cardCodes).set(cardCodeData).where(eq(cardCodes.id, record.id)).returning()
+                  await tx
+                    .update(cardCodes)
+                    .set(cardCodeData)
+                    .where(eq(cardCodes.id, record.id))
+                    .returning()
                 )[0]
                 stats.updated++
               } else {
                 restoredCardCode = (
-                  await tx.insert(cardCodes).values({ ...cardCodeData, id: record.id }).returning()
+                  await tx
+                    .insert(cardCodes)
+                    .values({ ...cardCodeData, id: record.id })
+                    .returning()
                 )[0]
                 stats.created++
               }
@@ -1096,7 +1109,10 @@ export default defineEventHandler(async (event) => {
                 where: eq(cardCodeRedeemLogs.id, record.id)
               })
               if (existing) {
-                await tx.update(cardCodeRedeemLogs).set(logData).where(eq(cardCodeRedeemLogs.id, record.id))
+                await tx
+                  .update(cardCodeRedeemLogs)
+                  .set(logData)
+                  .where(eq(cardCodeRedeemLogs.id, record.id))
                 stats.updated++
               } else {
                 await tx.insert(cardCodeRedeemLogs).values({ ...logData, id: record.id })
@@ -1158,6 +1174,15 @@ export default defineEventHandler(async (event) => {
       console.error(`处理记录失败 (${tableName}):`, error)
       stats.errors++
       stats.warnings.push(`记录处理失败: ${error.message}`)
+    }
+  }
+
+  if (tableName === 'systemSettings') {
+    try {
+      await CacheService.getInstance().clearSystemSettingsCache()
+      await userCache.clearAllAuth()
+    } catch (cacheError) {
+      console.warn('分块恢复系统设置后清理缓存失败:', cacheError)
     }
   }
 

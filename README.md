@@ -879,11 +879,12 @@ VoiceHub/
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
 │   │       ├── 20260719000001_add_first_login_password_change.sql # 首次登录强制改密迁移
-│   │       ├── 20260719000002_restore_pending_password_change.sql # 恢复待改密账户状态迁移
+│   │       ├── 20260719000002_restore_pending_password_change.sql # 待改密状态兼容占位迁移
 │   │       ├── 20260719000003_harden_password_security.sql # 会话版本与密码安全迁移
 │   │       ├── 20260719000004_reconcile_password_security_after_main.sql # 主分支汇合后的密码安全补偿迁移
-│   │       ├── 20260720000001_restore_ambiguous_password_change_flags.sql # 恢复来源不明的待改密标记
-│   │       ├── 20260720000002_clear_ambiguous_password_change_flags.sql # 清理来源不明的待改密标记
+│   │       ├── 20260720000001_restore_ambiguous_password_change_flags.sql # 来源不明标记兼容占位迁移
+│   │       ├── 20260720000002_clear_ambiguous_password_change_flags.sql # 待改密标记保护占位迁移
+│   │       ├── 20260720100252_finalize_password_security.sql # 密码审计时区与兼容性补偿迁移
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
@@ -1277,7 +1278,8 @@ VoiceHub/
 │   └── server/
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── initial-password-policy.test.ts # 初始密码设置权限策略测试
-│       └── password-policy.test.ts # 密码策略测试
+│       ├── password-policy.test.ts # 密码策略测试
+│       └── token-version-policy.test.ts # 预认证令牌版本失效测试
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件

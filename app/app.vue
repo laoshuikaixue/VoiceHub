@@ -17,7 +17,12 @@
     />
 
     <main class="main-content">
-      <div :key="route.path" :data-route="pageViewRouteName" class="page-view">
+      <div
+        :key="route.path"
+        :class="{ 'page-view--password-change': route.path === '/change-password' }"
+        :data-route="pageViewRouteName"
+        class="page-view"
+      >
         <NuxtPage />
       </div>
     </main>
@@ -49,6 +54,7 @@ const notificationContainer = ref(null)
 const audioPlayer = useAudioPlayer()
 const currentSong = ref(null)
 const isPlayerVisible = ref(false) // 控制播放器显示/隐藏
+const shouldHidePlayer = computed(() => route.path === '/change-password')
 
 // 判断是否为播放列表模式
 // 投稿页面、搜索预览等场景不是播放列表模式，不应该自动跳过
@@ -65,7 +71,12 @@ const isPlaylistMode = computed(() => {
 // 监听路由变化，控制播放器显示/隐藏
 watch(
   () => route.path,
-  (newPath) => {
+  () => {
+    if (shouldHidePlayer.value) {
+      isPlayerVisible.value = false
+      return
+    }
+
     // 其他页面，如果有当前歌曲则显示播放器
     if (currentSong.value) {
       isPlayerVisible.value = true
@@ -81,7 +92,7 @@ watch(
     if (newSong) {
       currentSong.value = newSong
       // 显示播放器
-      isPlayerVisible.value = true
+      isPlayerVisible.value = !shouldHidePlayer.value
     } else {
       // 当没有歌曲时，不立即隐藏播放器，而是让动画完成
       currentSong.value = null

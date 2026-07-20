@@ -17,8 +17,20 @@
 }
 
 .page-view {
+  width: 100%;
+  min-width: 0;
   animation: page-view-enter 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform, opacity, filter;
+}
+
+/* 改密页从首页重定向进入时保持稳定的视口布局，不参与页面位移动画。 */
+.page-view--password-change {
+  min-height: 100dvh;
+  animation: none !important;
+  opacity: 1;
+  transform: none !important;
+  filter: none !important;
+  will-change: auto;
 }
 
 .page-view[data-route='index'] {

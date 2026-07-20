@@ -7,7 +7,7 @@
       <div class="info-section flex items-center justify-center">
         <div class="info-content">
           <div class="logo-section">
-            <img alt="VoiceHub Logo" class="brand-logo" :src="logo" >
+            <img alt="VoiceHub Logo" class="brand-logo" :src="logo" />
             <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
           </div>
 
@@ -131,12 +131,16 @@ onMounted(async () => {
 
 <style scoped>
 .auth-layout {
+  width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #0a0a0a;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .auth-container {
@@ -149,6 +153,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 600px;
+  margin: auto;
 }
 
 .info-section {
@@ -344,6 +349,7 @@ onMounted(async () => {
 
   .form-section {
     padding: 40px 30px;
+    order: -1;
   }
 
   .brand-title {

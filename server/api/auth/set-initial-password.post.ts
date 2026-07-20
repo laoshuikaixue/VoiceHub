@@ -52,7 +52,8 @@ export default defineEventHandler(async (event) => {
     const currentUserResult = await db
       .select({
         password: users.password,
-        passwordChangedAt: users.passwordChangedAt
+        passwordChangedAt: users.passwordChangedAt,
+        tokenVersion: users.tokenVersion
       })
       .from(users)
       .where(eq(users.id, user.id))
@@ -81,16 +82,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // OAuth 账号可能没有可用于比对的旧密码，不能把 null 传给 bcrypt。
-    if (currentUser.password && await bcrypt.compare(newPassword, currentUser.password)) {
+    if (currentUser.password && (await bcrypt.compare(newPassword, currentUser.password))) {
       throw createError({ statusCode: 400, message: '新密码不能与当前密码相同' })
     }
 
-    const { passwordChangedAt, tokenVersion } = await updateUserPassword(
-      user.id,
-      newPassword,
-      false,
-      { action: auditAction, ...getPasswordAuditContext(event) }
-    )
+    const { passwordChangedAt, tokenVersion } = await updateUserPassword(user.id, newPassword, {
+      expectedTokenVersion: currentUser.tokenVersion,
+      auditContext: { action: auditAction, ...getPasswordAuditContext(event) }
+    })
     passwordUpdated = true
 
     const newToken = JWTEnhanced.generateToken(user.id, user.role, tokenVersion)

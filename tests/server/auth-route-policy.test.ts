@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  canBindOAuthIdentity,
   isAllowedDuringPasswordChange,
   isPublicApiPath,
   shouldBlockDuringPasswordChange,
@@ -48,7 +49,7 @@ test('公共 API 只放行已注册的 HTTP 方法', () => {
   assert.equal(isPublicApiPath('/api/music/state', 'POST'), false)
 })
 
-test('强制改密门控放行公共 API，但阻止业务写入和 OAuth 绑定', () => {
+test('强制改密门控放行公共 API，但阻止业务写入和 OAuth provider 路由', () => {
   assert.equal(shouldBlockDuringPasswordChange('/api/site-config', 'GET', true), false)
   assert.equal(shouldBlockDuringPasswordChange('/api/sys/time', 'GET', true), false)
   assert.equal(shouldBlockDuringPasswordChange('/api/music/state', 'POST', true), true)
@@ -56,4 +57,9 @@ test('强制改密门控放行公共 API，但阻止业务写入和 OAuth 绑定
   assert.equal(shouldBlockDuringPasswordChange('/api/auth/github/callback', 'GET', true), true)
   assert.equal(shouldBlockDuringPasswordChange('/api/admin/users', 'GET', true), true)
   assert.equal(shouldBlockDuringPasswordChange('/api/admin/users', 'GET', false), false)
+})
+
+test('强制改密状态禁止持久化 OAuth 身份绑定', () => {
+  assert.equal(canBindOAuthIdentity(true), false)
+  assert.equal(canBindOAuthIdentity(false), true)
 })

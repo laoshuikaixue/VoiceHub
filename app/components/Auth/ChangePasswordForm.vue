@@ -23,13 +23,15 @@
                 : 'border-zinc-800 focus:border-blue-500/30'
             ]"
             :type="showCurrentPassword ? 'text' : 'password'"
+            autocomplete="current-password"
             placeholder="请输入当前密码"
             required
             @input="error = ''"
-          >
+          />
           <button
             class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
             type="button"
+            :aria-label="showCurrentPassword ? '隐藏当前密码' : '显示当前密码'"
             @click="showCurrentPassword = !showCurrentPassword"
           >
             <Eye v-if="!showCurrentPassword" :size="18" />
@@ -60,16 +62,15 @@
                 : 'border-zinc-800 focus:border-blue-500/30'
             ]"
             :type="showNewPassword ? 'text' : 'password'"
+            autocomplete="new-password"
             placeholder="请输入新密码"
             required
-            @input="
-              error = '';
-              validatePassword()
-            "
-          >
+            @input="handleNewPasswordInput"
+          />
           <button
             class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
             type="button"
+            :aria-label="showNewPassword ? '隐藏新密码' : '显示新密码'"
             @click="showNewPassword = !showNewPassword"
           >
             <Eye v-if="!showNewPassword" :size="18" />
@@ -122,13 +123,15 @@
                 : 'border-zinc-800 focus:border-blue-500/30'
             ]"
             :type="showConfirmPassword ? 'text' : 'password'"
+            autocomplete="new-password"
             placeholder="请再次输入新密码"
             required
             @input="error = ''"
-          >
+          />
           <button
             class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
             type="button"
+            :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'"
             @click="showConfirmPassword = !showConfirmPassword"
           >
             <Eye v-if="!showConfirmPassword" :size="18" />
@@ -155,6 +158,7 @@
       <!-- 状态消息 -->
       <div
         v-if="error"
+        aria-live="polite"
         class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3"
       >
         <AlertCircle :size="16" class="text-rose-500 shrink-0" />
@@ -163,6 +167,7 @@
 
       <div
         v-if="success"
+        aria-live="polite"
         class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3"
       >
         <CheckCircle2 :size="16" class="text-emerald-500 shrink-0" />
@@ -182,7 +187,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import {
   Lock,
   KeyRound,
@@ -212,6 +217,16 @@ const confirmPassword = ref('')
 const error = ref('')
 const success = ref('')
 const loading = ref(false)
+let redirectTimer = null
+
+const scheduleRedirect = (callback) => {
+  if (redirectTimer) clearTimeout(redirectTimer)
+  redirectTimer = setTimeout(callback, 2000)
+}
+
+onBeforeUnmount(() => {
+  if (redirectTimer) clearTimeout(redirectTimer)
+})
 
 // 样式类
 const inputClass =
@@ -291,6 +306,11 @@ const validatePassword = () => {
   error.value = newPassword.value ? passwordPolicyError.value || '' : ''
 }
 
+const handleNewPasswordInput = () => {
+  error.value = ''
+  validatePassword()
+}
+
 const handleChangePassword = async () => {
   if (newPassword.value !== confirmPassword.value) {
     error.value = '新密码和确认密码不匹配'
@@ -317,13 +337,13 @@ const handleChangePassword = async () => {
       confirmPassword.value = ''
 
       // 密码设置完成后跳转
-      setTimeout(async () => {
+      scheduleRedirect(async () => {
         if (auth.isAdmin.value) {
           router.replace('/dashboard')
         } else {
           router.replace('/')
         }
-      }, 2000)
+      })
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
       success.value = '密码修改成功！请重新登录'
@@ -334,10 +354,10 @@ const handleChangePassword = async () => {
       confirmPassword.value = ''
 
       // 密码修改后登出
-      setTimeout(async () => {
+      scheduleRedirect(async () => {
         await auth.logout(false)
         await router.replace('/login')
-      }, 2000)
+      })
     }
   } catch (err) {
     // 提取错误信息，支持多种错误格式（优先使用 message）

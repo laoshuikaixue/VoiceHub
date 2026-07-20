@@ -19,6 +19,17 @@ export class JWTEnhanced {
   private static readonly TOKEN_EXPIRES = '7d' // 7天有效期
   private static readonly REFRESH_THRESHOLD = 24 * 60 * 60 // 24小时（秒），剩余时间少于此值时自动续期
 
+  static hasCurrentTokenVersion(
+    payload: { tokenVersion?: unknown } | null | undefined,
+    currentTokenVersion: number
+  ): boolean {
+    return (
+      typeof payload?.tokenVersion === 'number' &&
+      Number.isInteger(payload.tokenVersion) &&
+      payload.tokenVersion === currentTokenVersion
+    )
+  }
+
   /**
    * 通用签名方法
    */

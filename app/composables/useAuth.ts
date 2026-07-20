@@ -73,12 +73,12 @@ export const useAuth = () => {
       }
     } catch (error: any) {
       const hadAuth = isAuthenticated.value
-      
+
       // 只有当之前是已认证状态，且接口明确返回401（Token无效/过期），才进行清理和跳转
       if (hadAuth && error.statusCode === 401) {
-         clearAuthState()
-         // Token失效，重定向到登录页
-         await navigateTo('/login?error=SessionExpired')
+        clearAuthState()
+        // Token失效，重定向到登录页
+        await navigateTo('/login?error=SessionExpired')
       } else if (!hadAuth && error.statusCode === 401) {
         // 未登录状态下的 401，仅确保状态清理，不跳转
         clearAuthState()
@@ -110,7 +110,12 @@ export const useAuth = () => {
     throw new Error('登录响应格式错误')
   }
 
-  const verify2FA = async (userId: number, code: string, type: 'totp' | 'email', tempToken?: string) => {
+  const verify2FA = async (
+    userId: number,
+    code: string,
+    type: 'totp' | 'email',
+    tempToken?: string
+  ) => {
     const response = await $fetch<{ success: boolean; user: User }>('/api/auth/2fa/verify', {
       method: 'POST',
       body: { userId, code, type, token: tempToken }
@@ -125,20 +130,14 @@ export const useAuth = () => {
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
     loading.value = true
+    let response: { passwordChangedAt?: string }
     try {
-      const response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/change-password', {
+      response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/change-password', {
         method: 'POST',
         body: { currentPassword, newPassword }
       })
-      if (user.value) {
-        user.value.requirePasswordChange = false
-        user.value.forcePasswordChange = false
-        user.value.passwordChangedAt = response.passwordChangedAt || null
-        user.value.hasSetPassword = true
-        user.value.needsInitialPasswordSetup = false
-      }
-      await refreshUser()
     } catch (error: any) {
+      loading.value = false
       // 处理 FetchError，提取错误信息（优先使用 message）
       if (error.data && error.data.message) {
         throw new Error(error.data.message)
@@ -151,6 +150,20 @@ export const useAuth = () => {
       } else {
         throw new Error('密码修改失败，请重试')
       }
+    }
+
+    if (user.value) {
+      user.value.requirePasswordChange = false
+      user.value.forcePasswordChange = false
+      user.value.passwordChangedAt = response.passwordChangedAt || null
+      user.value.hasSetPassword = true
+      user.value.needsInitialPasswordSetup = false
+    }
+
+    try {
+      await refreshUser()
+    } catch (refreshError) {
+      console.warn('密码修改成功，但刷新用户状态失败:', refreshError)
     } finally {
       loading.value = false
     }
@@ -158,19 +171,29 @@ export const useAuth = () => {
 
   const setInitialPassword = async (newPassword: string) => {
     loading.value = true
+    let response: { passwordChangedAt?: string }
     try {
-      const response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/set-initial-password', {
+      response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword }
       })
-      if (user.value) {
-        user.value.requirePasswordChange = false
-        user.value.forcePasswordChange = false
-        user.value.passwordChangedAt = response.passwordChangedAt || null
-        user.value.hasSetPassword = true
-        user.value.needsInitialPasswordSetup = false
-      }
+    } catch (error) {
+      loading.value = false
+      throw error
+    }
+
+    if (user.value) {
+      user.value.requirePasswordChange = false
+      user.value.forcePasswordChange = false
+      user.value.passwordChangedAt = response.passwordChangedAt || null
+      user.value.hasSetPassword = true
+      user.value.needsInitialPasswordSetup = false
+    }
+
+    try {
       await refreshUser()
+    } catch (refreshError) {
+      console.warn('初始密码设置成功，但刷新用户状态失败:', refreshError)
     } finally {
       loading.value = false
     }
@@ -195,7 +218,7 @@ export const useAuth = () => {
     }
 
     clearAuthState()
-    
+
     // 清理 admin 相关全局状态
     try {
       const { resetUserFilters } = useUserFilters()

@@ -761,6 +761,16 @@ export default defineEventHandler(async (event) => {
       console.log('[Cache] 系统设置缓存已更新（更新系统设置）')
     } catch (cacheError) {
       console.warn('更新系统设置缓存失败:', cacheError)
+      try {
+        const { CacheService } = await import('~~/server/services/cacheService')
+        await CacheService.getInstance().clearSystemSettingsCache()
+      } catch (clearError) {
+        console.error('清理旧系统设置缓存失败:', clearError)
+      }
+      throw createError({
+        statusCode: 503,
+        message: '系统设置已保存，但缓存同步失败，请稍后重试'
+      })
     }
 
     if (body.forcePasswordChangeOnFirstLogin !== undefined) {

@@ -1,10 +1,7 @@
 ALTER TABLE "SystemSettings"
-ADD COLUMN IF NOT EXISTS "forcePasswordChangeOnFirstLogin" boolean DEFAULT true NOT NULL;
+ADD COLUMN IF NOT EXISTS "forcePasswordChangeOnFirstLogin" boolean DEFAULT false NOT NULL;
 
 ALTER TABLE "User"
 ALTER COLUMN "forcePasswordChange" SET DEFAULT false;
 
-UPDATE "User"
-SET "forcePasswordChange" = false
-WHERE "forcePasswordChange" = true
-  AND "passwordChangedAt" IS NULL;
+-- forcePasswordChange 可能来自管理员重置，迁移不得改写现有用户状态。

@@ -726,9 +726,15 @@ export default defineEventHandler(async (event) => {
                         cardCodeData.lockedBy = await mapUserId('lockedBy')
                         cardCodeData.redeemedBy = await mapUserId('redeemedBy')
                         cardCodeData.lockedAt = record.lockedAt ? new Date(record.lockedAt) : null
-                        cardCodeData.redeemedAt = record.redeemedAt ? new Date(record.redeemedAt) : null
-                        cardCodeData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()
-                        cardCodeData.updatedAt = record.updatedAt ? new Date(record.updatedAt) : new Date()
+                        cardCodeData.redeemedAt = record.redeemedAt
+                          ? new Date(record.redeemedAt)
+                          : null
+                        cardCodeData.createdAt = record.createdAt
+                          ? new Date(record.createdAt)
+                          : new Date()
+                        cardCodeData.updatedAt = record.updatedAt
+                          ? new Date(record.updatedAt)
+                          : new Date()
 
                         let restoredCardCode
                         if (mode === 'merge') {
@@ -747,7 +753,9 @@ export default defineEventHandler(async (event) => {
                                 .returning()
                             )[0]
                           } else {
-                            restoredCardCode = (await tx.insert(cardCodes).values(cardCodeData).returning())[0]
+                            restoredCardCode = (
+                              await tx.insert(cardCodes).values(cardCodeData).returning()
+                            )[0]
                           }
                         } else {
                           const existingCardCodeWithId = await tx
@@ -766,7 +774,10 @@ export default defineEventHandler(async (event) => {
                             )[0]
                           } else {
                             restoredCardCode = (
-                              await tx.insert(cardCodes).values({ ...cardCodeData, id: record.id }).returning()
+                              await tx
+                                .insert(cardCodes)
+                                .values({ ...cardCodeData, id: record.id })
+                                .returning()
                             )[0]
                           }
                         }
@@ -1754,7 +1765,9 @@ export default defineEventHandler(async (event) => {
                               .where(eq(users.id, record.redeemedBy))
                               .limit(1)
                             if (userExists.length === 0) {
-                              console.warn(`点歌券日志的操作用户ID ${record.redeemedBy} 不存在，跳过此记录`)
+                              console.warn(
+                                `点歌券日志的操作用户ID ${record.redeemedBy} 不存在，跳过此记录`
+                              )
                               return
                             }
                           }
@@ -1809,7 +1822,9 @@ export default defineEventHandler(async (event) => {
                               .set(logData)
                               .where(eq(cardCodeRedeemLogs.id, record.id))
                           } else {
-                            await tx.insert(cardCodeRedeemLogs).values({ ...logData, id: record.id })
+                            await tx
+                              .insert(cardCodeRedeemLogs)
+                              .values({ ...logData, id: record.id })
                           }
                         }
                         break
@@ -2428,7 +2443,9 @@ export default defineEventHandler(async (event) => {
     // 清除所有缓存
     try {
       const cacheService = CacheService.getInstance()
-      await cacheService.clearAllCaches()
+      await cacheService.clearAllCache()
+      const { userCache } = await import('~~/server/utils/cache-helpers')
+      await userCache.clearAllAuth()
       console.log('数据恢复后缓存已清除')
     } catch (cacheError) {
       console.warn('清除缓存失败:', cacheError)

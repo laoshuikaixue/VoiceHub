@@ -340,14 +340,24 @@ class CacheService {
   }
 
   // 设置系统设置缓存
-  async setSystemSettings(settings: any): Promise<void> {
+  async setSystemSettings(settings: any): Promise<boolean> {
+    const key = this.generateKey('system', 'settings')
+    const redisWasReady = isRedisReady()
+    const stored = await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
+    if (redisWasReady && !stored) {
+      this.systemSettingsMemoryCache = null
+      this.systemSettingsMemoryExpiresAt = 0
+      // 删除旧值，避免调用方误以为新设置已经在集群中生效。
+      await this.deleteCache(key)
+      throw new Error('Redis 系统设置缓存写入失败')
+    }
+
     this.systemSettingsMemoryCache = settings
     this.systemSettingsMemoryExpiresAt = Date.now() + CACHE_TTL.SYSTEM_SETTINGS * 1000
-    const key = this.generateKey('system', 'settings')
-    await this.setCache(key, settings, CACHE_TTL.SYSTEM_SETTINGS)
     if (isRedisReady()) {
       console.log(`[Cache] 系统设置已缓存: ${key}`)
     }
+    return stored
   }
 
   // 清除系统设置缓存

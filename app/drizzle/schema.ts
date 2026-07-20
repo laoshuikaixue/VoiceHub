@@ -351,12 +351,13 @@ export const userIdentities = pgTable('UserIdentity', {
 export const passwordAuditLogs = pgTable('PasswordAuditLog', {
   id: serial('id').primaryKey(),
   userId: integer('userId').notNull(),
+  actorId: integer('actorId'),
   action: text('action').notNull(),
   success: boolean('success').notNull(),
   ipAddress: text('ipAddress'),
   userAgent: text('userAgent'),
   failureReason: text('failureReason'),
-  createdAt: timestamp('createdAt').defaultNow().notNull()
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
 }, (table) => ({
   userCreatedIdx: index('PasswordAuditLog_user_created_idx').on(table.userId, table.createdAt)
 }));
@@ -364,7 +365,7 @@ export const passwordAuditLogs = pgTable('PasswordAuditLog', {
 export const passwordRateLimits = pgTable('PasswordRateLimit', {
   key: text('key').primaryKey(),
   count: integer('count').notNull(),
-  resetAt: timestamp('resetAt').notNull()
+  resetAt: timestamp('resetAt', { withTimezone: true }).notNull()
 }, (table) => ({
   resetIdx: index('PasswordRateLimit_reset_idx').on(table.resetAt)
 }));
