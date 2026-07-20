@@ -14,13 +14,23 @@
             <AuthProvidersGitHubIcon v-if="provider.key === 'github'" class="w-5 h-5" />
             <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" class="w-5 h-5" />
             <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" class="w-5 h-5" />
+            <Icon
+              v-else-if="provider.routeProvider === 'aggregate'"
+              :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"
+              :size="23"
+              :class="aggregateIconClass(provider.loginType)"
+            />
             <Shield v-else :size="20" />
           </div>
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">{{ provider.name || getProviderDisplayName(provider.key) }}</span>
-            <span v-if="getIdentityByProvider(provider.key)" class="text-[11px] text-blue-500 font-medium mt-0.5">{{
-              getIdentityByProvider(provider.key).providerUsername
+            <span class="text-sm font-bold text-zinc-200">{{
+              provider.name || getProviderDisplayName(provider.key)
             }}</span>
+            <span
+              v-if="getIdentityByProvider(provider.key)"
+              class="text-[11px] text-blue-500 font-medium mt-0.5"
+              >{{ getIdentityByProvider(provider.key).providerUsername }}</span
+            >
             <span v-else class="text-[11px] text-zinc-500 mt-0.5">{{ locale.unbound }}</span>
           </div>
         </div>
@@ -37,19 +47,19 @@
           v-else
           class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
-          @click="handleBind(provider.key)"
+          @click="handleBind(provider)"
         >
           {{ actionLoading ? locale.redirecting : locale.bindNow }}
         </button>
       </div>
 
       <!-- WebAuthn / Passkey -->
-      <div 
+      <div
         v-if="isWebAuthnSupported || webauthnIdentities.length > 0 || !isSecureContext"
         :class="[
-          itemClass, 
+          itemClass,
           webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900/70' : ''
-        ]" 
+        ]"
         @click="toggleWebAuthnList"
       >
         <div class="flex items-center gap-4">
@@ -61,9 +71,9 @@
           <div class="flex flex-col">
             <div class="flex items-center gap-2">
               <span class="text-sm font-bold text-zinc-200">Passkey</span>
-              <ChevronDown 
+              <ChevronDown
                 v-if="webauthnIdentities.length > 0"
-                :size="14" 
+                :size="14"
                 class="text-zinc-500 transition-transform duration-300"
                 :class="{ 'rotate-180': isWebAuthnExpanded }"
               />
@@ -82,7 +92,10 @@
         >
           {{ actionLoading ? locale.processing : locale.addDevice }}
         </button>
-        <div v-else-if="!isSecureContext" class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20">
+        <div
+          v-else-if="!isSecureContext"
+          class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20"
+        >
           <AlertTriangle :size="12" />
           <span class="text-[10px] font-medium">{{ locale.httpsRequired }}</span>
         </div>
@@ -90,7 +103,10 @@
 
       <!-- WebAuthn 设备列表 -->
       <Transition name="expand">
-        <div v-if="isWebAuthnExpanded && webauthnIdentities.length > 0" class="pl-16 -mt-2 overflow-hidden">
+        <div
+          v-if="isWebAuthnExpanded && webauthnIdentities.length > 0"
+          class="pl-16 -mt-2 overflow-hidden"
+        >
           <div class="space-y-2 pt-2">
             <div
               v-for="cred in webauthnIdentities"
@@ -112,7 +128,7 @@
                 </div>
                 <div v-else class="flex items-center gap-2 mb-0.5">
                   <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
-                  <button 
+                  <button
                     class="text-zinc-500 hover:text-zinc-300 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
                     @click.stop="startEditing(cred)"
                     :title="locale.rename"
@@ -120,7 +136,7 @@
                     <Pencil :size="12" />
                   </button>
                 </div>
-                
+
                 <span class="text-[10px] text-zinc-600"
                   >{{ locale.addedAt }} {{ new Date(cred.createdAt).toLocaleString(currentLocale.value, {
                     year: 'numeric', 
@@ -182,10 +198,20 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
-import { Loader2, Shield, Fingerprint, ChevronDown, Pencil, Check, X, AlertTriangle } from '@lucide/vue'
+import {
+  Loader2,
+  Shield,
+  Fingerprint,
+  ChevronDown,
+  Pencil,
+  Check,
+  X,
+  AlertTriangle
+} from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import Icon from '~/components/UI/Icon.vue'
 import { useToast } from '~/composables/useToast'
-import { getProviderDisplayName } from '~/utils/oauth'
+import { getAggregateOAuthLoginTypeIcon, getProviderDisplayName } from '~/utils/oauth'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import {
   getWebAuthnErrorMessage,
@@ -240,12 +266,12 @@ const saveEditing = async (id) => {
     showToast(locale.value.nameRequired, 'error')
     return
   }
-  
+
   if (editingName.value.trim().length > 50) {
     showToast(locale.value.nameTooLong, 'error')
     return
   }
-  
+
   isRenaming.value = true
   try {
     await $fetch('/api/auth/webauthn/rename', {
@@ -284,14 +310,25 @@ const confirmDialog = ref({
 const itemClass =
   'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group'
 
+const aggregateIconClass = (loginType) => {
+  const classes = {
+    qq: 'text-[#12b7f5]',
+    wx: 'text-[#07c160]',
+    alipay: 'text-[#1677ff]',
+    douyin: 'text-[#25f4ee]'
+  }
+  return classes[loginType] || 'text-zinc-100'
+}
+
 const enabledProviders = computed(() => oauthProviders.value || [])
 
 const getProviderName = (provider) => {
-  const matched = enabledProviders.value.find(item => item.key === provider)
+  const matched = enabledProviders.value.find((item) => item.key === provider)
   return matched?.name || getProviderDisplayName(provider)
 }
 
-const getIdentityByProvider = (provider) => identities.value.find(item => item.provider === provider)
+const getIdentityByProvider = (provider) =>
+  identities.value.find((item) => item.provider === provider)
 
 const webauthnIdentities = computed(() => identities.value.filter((i) => i.provider === 'webauthn'))
 
@@ -309,7 +346,13 @@ const fetchIdentities = async () => {
 const handleBind = (provider) => {
   actionLoading.value = true
   // 绑定也是通过 OAuth 流程，最终回调时会自动识别已登录状态并执行绑定
-  navigateTo(`/api/auth/${provider}`, { external: true })
+  const routeProvider = provider.routeProvider || provider.key
+  const query = new URLSearchParams()
+  if (provider.loginType) query.set('type', provider.loginType)
+  const queryString = query.toString()
+  navigateTo(`/api/auth/${routeProvider}${queryString ? `?${queryString}` : ''}`, {
+    external: true
+  })
 }
 
 const confirmUnbind = (provider) => {
@@ -381,13 +424,12 @@ const handleWebAuthnRegister = async () => {
     const attResp = await startWebAuthnRegistration(options)
 
     // 提示用户输入设备名称（可选，这里先用默认的）
-    // attResp.label = 'Windows Hello' 
-    
+    // attResp.label = 'Windows Hello'
+
     await $fetch('/api/auth/webauthn/register/verify', {
       method: 'POST',
       body: attResp
     })
-    
     showToast(locale.value.addDeviceSuccess, 'success')
     await fetchIdentities()
   } catch (e) {
@@ -402,7 +444,7 @@ const handleWebAuthnRegister = async () => {
 onMounted(async () => {
   await refreshSiteConfig()
   fetchIdentities()
-  
+
   isSecureContext.value = window.isSecureContext
 
   const isApiSupported = browserSupportsWebAuthn()
@@ -410,7 +452,8 @@ onMounted(async () => {
 
   if (isApiSupported && window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable) {
     try {
-      isPlatformAuthenticatorAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+      isPlatformAuthenticatorAvailable =
+        await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
     } catch (e) {
       console.warn('WebAuthn 平台认证器检查失败:', e)
     }

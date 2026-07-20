@@ -14,12 +14,12 @@
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" :src="logo" >
+            <img alt="VoiceHub Logo" class="logo-image" :src="logo" />
           </NuxtLink>
           <!-- 横线和学校logo -->
-          <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider-container">
+          <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider-container">
             <div class="logo-divider" />
-            <img :src="proxiedSchoolLogoUrl" :alt="locale.schoolLogoAlt" class="school-logo" >
+            <img :src="schoolLogoHomeDisplayUrl" :alt="locale.schoolLogoAlt" class="school-logo" />
           </div>
         </div>
 
@@ -602,10 +602,9 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50 whitespace-pre-line"
-                >
-                  {{ submissionGuidelines }}
-                </div>
+                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  v-html="renderedGuidelines"
+                />
                 <div
                   v-else
                   class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
@@ -676,6 +675,7 @@ import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
@@ -708,9 +708,12 @@ const {
   description: siteDescription,
   guidelines: submissionGuidelines,
   icp: icpNumber,
-  schoolLogoHomeUrl,
+  schoolLogoHomeDisplayUrl,
   initSiteConfig
 } = useSiteConfig()
+
+// 将投稿须知 Markdown 渲染为安全 HTML
+const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 const auth = useAuth()
 
@@ -1313,23 +1316,6 @@ const filteredSongs = computed(() => {
 })
 const loading = computed(() => songs?.loading?.value || false)
 const error = computed(() => songs?.error?.value || '')
-
-// 处理学校logo的HTTP/HTTPS代理
-const proxiedSchoolLogoUrl = computed(() => {
-  if (!schoolLogoHomeUrl.value || !schoolLogoHomeUrl.value.trim()) {
-    return ''
-  }
-
-  const logoUrl = schoolLogoHomeUrl.value.trim()
-
-  // 如果是HTTP链接，通过代理访问
-  if (logoUrl.startsWith('http://')) {
-    return `/api/proxy/image?url=${encodeURIComponent(logoUrl)}`
-  }
-
-  // HTTPS链接或相对路径直接返�?
-  return logoUrl
-})
 
 // 处理投稿请求
 const handleRequest = async (songData) => {

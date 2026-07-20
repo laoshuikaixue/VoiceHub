@@ -3,9 +3,7 @@
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">{{ locale.guidelinesTitle }}</h2>
       <div class="rules-content-desktop">
-        <div v-if="submissionGuidelines" class="guidelines-content">
-          {{ submissionGuidelines }}
-        </div>
+        <div v-if="submissionGuidelines" class="guidelines-content markdown-body" v-html="renderedGuidelines" />
         <div v-else class="default-guidelines">
           <p v-for="(rule, index) in locale.defaultGuidelines" :key="`desktop-rule-${index}`">
             {{ index + 1 }}. {{ rule }}
@@ -21,9 +19,7 @@
         {{ locale.guidelinesTitle }}
       </h3>
       <div class="rules-content">
-        <div v-if="submissionGuidelines" class="guidelines-content">
-          {{ submissionGuidelines }}
-        </div>
+        <div v-if="submissionGuidelines" class="guidelines-content markdown-body" v-html="renderedGuidelines" />
         <div v-else class="default-guidelines">
           <div
             v-for="(rule, index) in locale.mobileDefaultGuidelines"
@@ -1360,7 +1356,7 @@ import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
-
+import { renderMarkdown } from '~/utils/markdown'
 import ImportSongsModal from './ImportSongsModal.vue'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import QQMusicLoginModal from './QQMusicLoginModal.vue'
@@ -1410,6 +1406,9 @@ const {
   requireCardCodeForRequests,
   enableCardCodeLimitBypass
 } = useSiteConfig()
+
+// 将投稿须知 Markdown 渲染为安全 HTML
+const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 // 用户认证
 const auth = useAuth()
@@ -4070,7 +4069,6 @@ defineExpose({
 }
 
 .guidelines-content {
-  white-space: pre-line;
   overflow-wrap: anywhere;
 }
 

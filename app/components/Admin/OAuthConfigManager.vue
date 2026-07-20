@@ -6,6 +6,16 @@
       <Shield :size="16" class="text-green-500" /> {{ locale.title }}
     </h3>
 
+    <div class="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
+      <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
+      <p class="text-[10px] text-zinc-500 leading-relaxed">
+        {{
+          locale.runtimeConfigNotice ||
+          'OAuth 运行时配置已迁移到后台。环境变量仅用于兼容旧部署和一键导入，导入后以此页面保存的配置为准。'
+        }}
+      </p>
+    </div>
+
     <!-- 基础配置 -->
     <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
       <div class="flex items-center justify-between">
@@ -21,7 +31,9 @@
         </button>
       </div>
 
-      <div class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50">
+      <div
+        class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"
+      >
         <div>
           <label :class="labelClass">{{ locale.allowRegistration }}</label>
           <p class="text-[10px] text-zinc-600 mt-1">{{ locale.allowRegistrationDesc }}</p>
@@ -39,7 +51,7 @@
             v-model="formData.allowOAuthRegistration"
             type="checkbox"
             class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+          />
         </div>
       </div>
 
@@ -53,7 +65,7 @@
           type="text"
           placeholder="https://yourdomain.com/api/auth/[provider]/callback"
           :class="inputClass"
-        >
+        />
       </div>
 
       <div>
@@ -65,7 +77,7 @@
             :type="showSecrets.state ? 'text' : 'password'"
             :placeholder="locale.stateSecretPlaceholder"
             :class="inputClass"
-          >
+          />
           <button
             type="button"
             class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
@@ -90,6 +102,8 @@
       :client-id-placeholder="provider.clientIdPlaceholder"
       :client-secret-label="provider.clientSecretLabel"
       :client-secret-placeholder="provider.clientSecretPlaceholder"
+      :doc-url="provider.docUrl"
+      :doc-label="provider.docLabel"
       @import-env="importEnvData(provider.id)"
     >
       <template #before-fields v-if="provider.id === 'casdoor'">
@@ -100,7 +114,7 @@
             type="text"
             placeholder="https://casdoor.example.com"
             :class="inputClass"
-          >
+          />
         </div>
       </template>
       <template #after-fields v-if="provider.id === 'casdoor'">
@@ -111,7 +125,39 @@
             type="text"
             :placeholder="locale.organizationPlaceholder"
             :class="inputClass"
-          >
+          />
+        </div>
+      </template>
+      <template #after-fields v-else-if="provider.id === 'aggregate'">
+        <div>
+          <CustomSelect
+            v-model="formData.aggregateOAuthLoginType"
+            :label="locale.aggregateLoginTypeLabel || '登录方式'"
+            :options="aggregateLoginTypes"
+            :placeholder="locale.aggregateLoginTypePlaceholder || '请选择至少一种登录方式'"
+            multiple
+          />
+          <p class="text-[10px] text-zinc-600 px-1 mt-2">
+            {{
+              locale.aggregateLoginTypeDesc ||
+              '可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。'
+            }}
+          </p>
+        </div>
+        <div>
+          <label :class="labelClass">{{ locale.aggregateEndpointLabel || '接口地址' }}</label>
+          <input
+            v-model="formData.aggregateOAuthEndpoint"
+            type="url"
+            placeholder="https://a.idcfx.net/connect.php"
+            :class="inputClass"
+          />
+          <p class="text-[10px] text-zinc-600 px-1 mt-2">
+            {{
+              locale.aggregateEndpointDesc ||
+              '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。'
+            }}
+          </p>
         </div>
       </template>
     </AdminProviderConfigSection>
@@ -133,7 +179,7 @@
             v-model="formData.customOAuthEnabled"
             type="checkbox"
             class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
-          >
+          />
         </div>
       </div>
 
@@ -145,7 +191,7 @@
             type="text"
             :placeholder="locale.displayNamePlaceholder"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -155,7 +201,7 @@
             type="text"
             placeholder="https://oauth.example.com/authorize"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -165,7 +211,7 @@
             type="text"
             placeholder="https://oauth.example.com/token"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -175,7 +221,7 @@
             type="text"
             placeholder="https://oauth.example.com/userinfo"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -185,7 +231,7 @@
             type="text"
             placeholder="openid profile email"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -195,7 +241,7 @@
             type="text"
             :placeholder="locale.clientIdPlaceholder"
             :class="inputClass"
-          >
+          />
         </div>
 
         <div>
@@ -206,7 +252,7 @@
               :type="showSecrets.custom ? 'text' : 'password'"
               :placeholder="showSecrets.custom ? locale.clientSecretPlaceholder : '••••••••••••••••'"
               :class="inputClass"
-            >
+            />
             <button
               type="button"
               class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
@@ -225,7 +271,7 @@
               type="text"
               placeholder="sub"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div>
@@ -235,7 +281,7 @@
               type="text"
               placeholder="preferred_username"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div>
@@ -245,7 +291,7 @@
               type="text"
               placeholder="name"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div>
@@ -255,7 +301,7 @@
               type="text"
               placeholder="email"
               :class="inputClass"
-            >
+            />
           </div>
 
           <div class="md:col-span-2">
@@ -265,14 +311,16 @@
               type="text"
               placeholder="picture"
               :class="inputClass"
-            >
+            />
           </div>
         </div>
       </div>
     </div>
 
     <!-- 信息提示 -->
-    <div class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3">
+    <div
+      class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
+    >
       <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
         <p>
@@ -290,6 +338,11 @@ import { computed, ref, onMounted } from 'vue'
 import { AlertCircle, Shield, Download } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import {
+  AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS,
+  getAggregateOAuthLoginTypesOrDefault
+} from '~/utils/oauth'
 
 const props = defineProps({
   modelValue: {
@@ -324,7 +377,8 @@ const envData = ref({
   hasBaseConfig: false,
   hasGithubConfig: false,
   hasCasdoorConfig: false,
-  hasGoogleConfig: false
+  hasGoogleConfig: false,
+  hasAggregateConfig: false
 })
 
 const oauthProviders = computed(() => [
@@ -363,8 +417,30 @@ const oauthProviders = computed(() => [
     clientIdPlaceholder: locale.value?.googleClientIdPlaceholder || 'Enter Google Client ID',
     clientSecretLabel: locale.value?.googleClientSecret || 'Google Client Secret',
     clientSecretPlaceholder: locale.value?.googleClientSecretPlaceholder || 'Enter Google Client Secret',
+  },
+  {
+    id: 'aggregate',
+    title: locale.value?.aggregateTitle || '聚合登录',
+    hasEnvConfig: envData.value.hasAggregateConfig,
+    enabledKey: 'aggregateOAuthEnabled',
+    clientIdKey: 'aggregateOAuthAppId',
+    clientSecretKey: 'aggregateOAuthAppKey',
+    clientIdLabel: 'AppID',
+    clientIdPlaceholder: locale.value?.aggregateClientIdPlaceholder || '输入聚合登录 AppID',
+    clientSecretLabel: 'AppKey',
+    clientSecretPlaceholder:
+      locale.value?.aggregateClientSecretPlaceholder || '输入聚合登录 AppKey',
+    docUrl: 'https://a.idcfx.net/doc.php#',
+    docLabel: locale.value?.aggregateDocLabel || '查看聚合登录开发文档'
   }
 ])
+
+const aggregateLoginTypes = computed(() =>
+  AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS.map((option) => ({
+    ...option,
+    label: locale.value?.aggregateLoginTypes?.[option.value] || option.label
+  }))
+)
 
 const fetchEnvData = async () => {
   try {
@@ -381,9 +457,15 @@ const importEnvData = async (provider) => {
       method: 'POST',
       body: { provider }
     })
+    const importedData = { ...data }
+    if (provider === 'aggregate') {
+      importedData.aggregateOAuthLoginType = getAggregateOAuthLoginTypesOrDefault(
+        data.aggregateOAuthLoginType
+      )
+    }
     formData.value = {
       ...formData.value,
-      ...data
+      ...importedData
     }
   } catch (e) {
     console.error(getLogMessage('importEnvFailed'), e)

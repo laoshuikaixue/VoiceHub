@@ -7,19 +7,20 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - **前端**: Nuxt 4 (Vue 3), Tailwind CSS
 - **图标**: 自定义 `Icon.vue` 组件（内联 SVG），辅以 `@lucide/vue`
 - **后端**: Nuxt Server API (Nitro)
-- **数据库**: PostgreSQL (Neon), Drizzle ORM
+- **数据库**: PostgreSQL, Drizzle ORM
 - **语言**: 后端 TypeScript, Vue SFC 用纯 JavaScript（无 `lang="ts"`）
 
 ## 2. 规范
 
 ### 2.1. 语言
-注释、文档、Git 信息均用简体中文。注释写"为什么"，不写"如何"。
+注释、文档、Git 信息均用简体中文。注释中禁止写思考过程等无用内容，只需关键部分。
 
 ### 2.2. Vue 组件
 - 统一 `<script setup>`（纯 JS，不加 `lang="ts"`，禁止类型注解）
 - API 调用用 `useFetch` 或 `$fetch`，需错误处理
 - 模态框用 `<Teleport to="body">`
 - 图标用 `<Icon name="..." />`，name 需在 `Icon.vue` 中有定义
+- 下拉选择统一复用 `~/components/UI/Common/CustomSelect.vue`；多选使用其 `multiple` 模式，禁止为普通业务配置新增原生 `<select>`
 - 状态管理用 Composables，不用 Pinia
 
 ### 2.3. 后端

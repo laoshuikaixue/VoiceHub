@@ -76,7 +76,9 @@ export const siteConfig = {
   configWarning: 'Site configuration takes effect immediately after saving. Review the impact before changing key business rules such as request limits.',
 
   submissionGuidelines: 'Submission Guidelines',
-  guidelinesPlaceholder: 'Enter submission guidelines',
+  guidelinesPlaceholder: 'Enter submission guidelines (Markdown supported)',
+  guidelinesEdit: 'Edit',
+  guidelinesPreview: 'Preview',
   defaultSiteTitle: 'Campus Radio Request System',
   defaultSubmissionGuidelines: `1. Do not include book-title brackets when submitting.
 2. Songs of all genres except DJ tracks are accepted, including songs in minority languages.
@@ -737,7 +739,15 @@ export const pages = {
     oauthButtons: {
       divider: 'Or sign in with a third-party account',
       loginWith: (providerName: string) => `Sign in with ${providerName}`,
-      customOAuthProvider: 'Third-Party OAuth'
+      customOAuthProvider: 'Third-Party OAuth',
+      aggregateOAuthProvider: 'Aggregate OAuth',
+      aggregateProviderName: (providerName: string) => `${providerName} Sign-In`,
+      aggregateLoginTypes: {
+        qq: 'QQ',
+        wx: 'WeChat',
+        alipay: 'Alipay',
+        douyin: 'Douyin'
+      }
     },
     changePasswordForm: {
       currentPassword: 'Current Password',
@@ -2311,6 +2321,7 @@ export const admin = {
   },
   oauthConfig: {
     title: 'OAuth Third-Party Login Configuration',
+    runtimeConfigNotice: 'OAuth runtime configuration is managed in the admin panel. Environment variables are retained only for legacy deployments and one-click import; imported values must still be saved here.',
     baseSettings: 'Basic Settings',
     importEnv: 'Import Environment Configuration',
     allowRegistration: 'Allow Third-Party Registration',
@@ -2353,6 +2364,21 @@ export const admin = {
     githubClientSecretPlaceholder: 'Enter GitHub Client Secret',
     googleClientIdPlaceholder: 'Enter Google Client ID (xxx.apps.googleusercontent.com)',
     googleClientSecretPlaceholder: 'Enter Google Client Secret',
+    aggregateTitle: 'Aggregate OAuth',
+    aggregateLoginTypeLabel: 'Login Methods',
+    aggregateLoginTypePlaceholder: 'Select at least one login method',
+    aggregateLoginTypeDesc: 'Multiple aggregate login platforms can be enabled. Each platform is treated as an independent identity for sign-in and account binding.',
+    aggregateEndpointLabel: 'Endpoint URL',
+    aggregateEndpointDesc: 'The connect.php endpoint for a compatible aggregate OAuth service. Use HTTPS on public networks; HTTP is acceptable only on trusted private networks.',
+    aggregateClientIdPlaceholder: 'Enter aggregate OAuth AppID',
+    aggregateClientSecretPlaceholder: 'Enter aggregate OAuth AppKey',
+    aggregateDocLabel: 'View aggregate OAuth documentation',
+    aggregateLoginTypes: {
+      qq: 'QQ',
+      wx: 'WeChat',
+      alipay: 'Alipay',
+      douyin: 'Douyin'
+    },
     userIdField: 'User ID Field',
     usernameField: 'Username Field',
     nameField: 'Name Field',

@@ -44,6 +44,7 @@
             <button
               v-for="option in normalizedOptions"
               :key="option.value"
+              type="button"
               class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="[
                 isSelected(option)
@@ -69,8 +70,8 @@ import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   label: String,
-  modelValue: [String, Number, Object],
-  value: [String, Number, Object],
+  modelValue: [String, Number, Object, Array],
+  value: [String, Number, Object, Array],
   options: {
     type: Array,
     required: true
@@ -89,6 +90,10 @@ const props = defineProps({
     default: ''
   },
   disabled: {
+    type: Boolean,
+    default: false
+  },
+  multiple: {
     type: Boolean,
     default: false
   }
@@ -126,6 +131,14 @@ const normalizedOptions = computed(() => {
 
 // 获取当前显示标签
 const displayLabel = computed(() => {
+  if (props.multiple) {
+    const selectedValues = Array.isArray(currentValue.value) ? currentValue.value : []
+    const labels = normalizedOptions.value
+      .filter((option) => selectedValues.includes(option.value))
+      .map((option) => option.label)
+    return labels.length > 0 ? labels.join('、') : props.placeholder
+  }
+
   const selected = normalizedOptions.value.find((opt) => opt.value === currentValue.value)
   return selected
     ? selected.label
@@ -135,6 +148,9 @@ const displayLabel = computed(() => {
 })
 
 const isSelected = (option) => {
+  if (props.multiple) {
+    return Array.isArray(currentValue.value) && currentValue.value.includes(option.value)
+  }
   return option.value === currentValue.value
 }
 
@@ -143,7 +159,7 @@ const updatePosition = () => {
 
   const rect = containerRef.value.getBoundingClientRect()
   const dropdownHeight = dropdownRef.value.offsetHeight || 200 // 预估高度
-  
+
   const windowHeight = window.innerHeight
   const spaceBelow = windowHeight - rect.bottom
   const spaceAbove = rect.top
@@ -182,6 +198,20 @@ const toggleDropdown = async () => {
 }
 
 const selectOption = (option) => {
+  if (props.multiple) {
+    const selectedValues = Array.isArray(currentValue.value) ? [...currentValue.value] : []
+    const existingIndex = selectedValues.indexOf(option.value)
+    if (existingIndex >= 0) {
+      selectedValues.splice(existingIndex, 1)
+    } else {
+      selectedValues.push(option.value)
+    }
+    emit('update:modelValue', selectedValues)
+    emit('update:value', selectedValues)
+    emit('change', selectedValues)
+    return
+  }
+
   emit('update:modelValue', option.value)
   emit('update:value', option.value)
   emit('change', option.value)

@@ -167,7 +167,7 @@ export default defineEventHandler(async (event) => {
                     : 'active'
               }
             } catch (keyError) {
-              console.error('处理API Key数据失败:', keyError, key)
+              console.error('处理API Key数据失败:', keyError)
               return null
             }
           })

@@ -86,7 +86,9 @@ export const siteConfig = {
 
   // 投稿须知
   submissionGuidelines: '投稿须知',
-  guidelinesPlaceholder: '请输入投稿须知内容',
+  guidelinesPlaceholder: '请输入投稿须知内容（支持 Markdown 格式）',
+  guidelinesEdit: '编辑',
+  guidelinesPreview: '预览',
   defaultSiteTitle: '校园广播站点歌系统',
   defaultSubmissionGuidelines: `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -748,7 +750,15 @@ export const pages = {
     oauthButtons: {
       divider: '或使用第三方账号登录',
       loginWith: (providerName: string) => `使用 ${providerName} 登录`,
-      customOAuthProvider: '第三方 OAuth'
+      customOAuthProvider: '第三方 OAuth',
+      aggregateOAuthProvider: '聚合登录',
+      aggregateProviderName: (providerName: string) => `${providerName} 登录`,
+      aggregateLoginTypes: {
+        qq: 'QQ',
+        wx: '微信',
+        alipay: '支付宝',
+        douyin: '抖音'
+      }
     },
     changePasswordForm: {
       currentPassword: '当前密码',
@@ -2322,6 +2332,7 @@ export const admin = {
   },
   oauthConfig: {
     title: 'OAuth 第三方登录配置',
+    runtimeConfigNotice: 'OAuth 运行时配置已迁移到后台。环境变量仅用于兼容旧部署和一键导入，导入后以此页面保存的配置为准。',
     baseSettings: '基础设置',
     importEnv: '导入环境配置',
     allowRegistration: '允许第三方注册',
@@ -2364,6 +2375,21 @@ export const admin = {
     githubClientSecretPlaceholder: '输入 GitHub Client Secret',
     googleClientIdPlaceholder: '输入 Google Client ID（xxx.apps.googleusercontent.com）',
     googleClientSecretPlaceholder: '输入 Google Client Secret',
+    aggregateTitle: '聚合登录',
+    aggregateLoginTypeLabel: '登录方式',
+    aggregateLoginTypePlaceholder: '请选择至少一种登录方式',
+    aggregateLoginTypeDesc: '可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。',
+    aggregateEndpointLabel: '接口地址',
+    aggregateEndpointDesc: '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。',
+    aggregateClientIdPlaceholder: '输入聚合登录 AppID',
+    aggregateClientSecretPlaceholder: '输入聚合登录 AppKey',
+    aggregateDocLabel: '查看聚合登录开发文档',
+    aggregateLoginTypes: {
+      qq: 'QQ',
+      wx: '微信',
+      alipay: '支付宝',
+      douyin: '抖音'
+    },
     userIdField: '用户 ID 字段',
     usernameField: '用户名字段',
     nameField: '昵称字段',

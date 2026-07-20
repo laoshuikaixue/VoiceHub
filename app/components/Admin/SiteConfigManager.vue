@@ -56,7 +56,7 @@
               type="text"
               :placeholder="locale.siteTitlePlaceholder"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">{{ locale.icpNumber }}</label>
@@ -65,7 +65,7 @@
               type="text"
               :placeholder="locale.icpPlaceholder"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">{{ locale.gonganNumber }}</label>
@@ -74,7 +74,7 @@
               type="text"
               :placeholder="locale.gonganPlaceholder"
               :class="inputClass"
-            >
+            />
           </div>
           <div class="pt-2">
             <div
@@ -88,7 +88,7 @@
                 v-model="formData.showBeianIcon"
                 type="checkbox"
                 class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-              >
+              />
             </div>
           </div>
           <div>
@@ -118,7 +118,7 @@
               type="text"
               :placeholder="locale.siteLogoPlaceholder"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">{{ locale.schoolLogoHome }}</label>
@@ -127,7 +127,7 @@
               type="text"
               :placeholder="locale.schoolLogoHomePlaceholder"
               :class="inputClass"
-            >
+            />
           </div>
           <div>
             <label :class="labelClass">{{ locale.schoolLogoPrint }}</label>
@@ -136,7 +136,7 @@
               type="text"
               :placeholder="locale.schoolLogoPrintPlaceholder"
               :class="inputClass"
-            >
+            />
           </div>
         </div>
       </section>
@@ -160,7 +160,7 @@
               v-model="formData.enableCollaborativeSubmission"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -174,7 +174,7 @@
               v-model="formData.enableSubmissionRemarks"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -188,7 +188,7 @@
               v-model="formData.enableCardCodeRequests"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -202,7 +202,7 @@
               v-model="formData.requireCardCodeForRequests"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div
@@ -228,7 +228,7 @@
                 (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
               "
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
-            >
+            />
           </div>
 
           <div
@@ -242,7 +242,7 @@
               v-model="formData.enableReplayRequests"
               type="checkbox"
               class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-            >
+            />
           </div>
 
           <div class="space-y-4">
@@ -257,7 +257,7 @@
                 v-model="formData.enableSubmissionLimit"
                 type="checkbox"
                 class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-              >
+              />
             </div>
 
             <div v-if="formData.enableSubmissionLimit" class="space-y-4">
@@ -305,7 +305,7 @@
                     type="number"
                     min="0"
                     :class="inputClass"
-                  >
+                  />
                   <span
                     class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-700 uppercase"
                     >{{ locale.limitUnit }}</span
@@ -333,7 +333,7 @@
                   v-model="formData.captchaEnabled"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <div class="flex-1 space-y-4">
                 <label for="captcha-enabled" class="cursor-pointer block">
@@ -354,7 +354,7 @@
                           type="radio"
                           value="graphic"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                        >
+                        />
                         <span class="text-sm text-zinc-300">{{ locale.captchaGraphic }}</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
@@ -363,7 +363,7 @@
                           type="radio"
                           value="turnstile"
                           class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                        >
+                        />
                         <span class="text-sm text-zinc-300">{{ locale.captchaTurnstile }}</span>
                       </label>
                     </div>
@@ -378,7 +378,7 @@
                       min="1"
                       :placeholder="locale.captchaMaxFailuresPlaceholder"
                       class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                    >
+                    />
                     <p class="text-[10px] text-zinc-500 mt-1">
                       {{ locale.captchaMaxFailuresDesc }}
                     </p>
@@ -393,7 +393,7 @@
                         type="text"
                         :placeholder="locale.turnstileSiteKeyPlaceholder"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                      >
+                      />
                     </div>
                     <div>
                       <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSecretKey }}</label>
@@ -402,7 +402,7 @@
                         type="password"
                         :placeholder="locale.turnstileSecretKeyPlaceholder"
                         class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                      >
+                      />
                       <p class="text-[10px] text-zinc-500 mt-1">
                         {{ locale.turnstileSecretKeyDesc }}
                       </p>
@@ -421,7 +421,7 @@
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <label for="show-keywords" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">{{ locale.showBlacklistKeywords }}</p>
@@ -440,7 +440,7 @@
                   v-model="formData.hideStudentInfo"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <label for="hide-students" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">{{ locale.hideStudentInfo }}</p>
@@ -459,7 +459,7 @@
                   v-model="formData.telemetryEnabled"
                   type="checkbox"
                   class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
-                >
+                />
               </div>
               <label for="telemetry-enabled" class="cursor-pointer">
                 <p class="text-xs font-bold text-zinc-200">{{ locale.telemetryEnabled }}</p>
@@ -485,16 +485,48 @@
       <section
         class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
       >
-        <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
-        >
-          <FileText :size="16" class="text-emerald-500" /> {{ locale.submissionGuidelines }}
-        </h3>
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+          <h3
+            class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
+          >
+            <FileText :size="16" class="text-emerald-500" /> {{ locale.submissionGuidelines }}
+          </h3>
+          <div class="flex gap-1 bg-zinc-950 rounded-lg p-1">
+            <button
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                editMode === 'edit'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              ]"
+              @click="editMode = 'edit'"
+            >
+              {{ locale.guidelinesEdit }}
+            </button>
+            <button
+              :class="[
+                'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
+                editMode === 'preview'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              ]"
+              @click="editMode = 'preview'"
+            >
+              {{ locale.guidelinesPreview }}
+            </button>
+          </div>
+        </div>
         <textarea
+          v-if="editMode === 'edit'"
           v-model="formData.submissionGuidelines"
           :rows="6"
           :placeholder="locale.guidelinesPlaceholder"
           :class="[inputClass, 'font-mono text-xs leading-relaxed min-h-[150px]']"
+        />
+        <div
+          v-else
+          class="guidelines-preview markdown-body w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-300 leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
+          v-html="renderedPreview"
         />
       </section>
 
@@ -519,6 +551,8 @@ import {
 } from '@lucide/vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
+import { renderMarkdown } from '~/utils/markdown'
+import { getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
 import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
@@ -527,6 +561,10 @@ const { siteConfig: locale } = useLocale()
 const loading = ref(true)
 const saving = ref(false)
 const saveSuccess = ref(false)
+const editMode = ref('edit') // 投稿须知编辑/预览模式
+
+// 投稿须知 Markdown 预览
+const renderedPreview = computed(() => renderMarkdown(formData.value.submissionGuidelines))
 
 // 样式类常量
 const inputClass =
@@ -579,6 +617,11 @@ const formData = ref({
   googleOAuthEnabled: false,
   googleClientId: '',
   googleClientSecret: '',
+  aggregateOAuthEnabled: false,
+  aggregateOAuthAppId: '',
+  aggregateOAuthAppKey: '',
+  aggregateOAuthLoginType: ['qq'],
+  aggregateOAuthEndpoint: 'https://a.idcfx.net/connect.php',
   customOAuthEnabled: false,
   customOAuthDisplayName: '',
   customOAuthAuthorizeUrl: '',
@@ -796,6 +839,11 @@ const loadConfig = async () => {
       googleOAuthEnabled: !!data.googleOAuthEnabled,
       googleClientId: data.googleClientId || '',
       googleClientSecret: data.googleClientSecret || '',
+      aggregateOAuthEnabled: !!data.aggregateOAuthEnabled,
+      aggregateOAuthAppId: data.aggregateOAuthAppId || '',
+      aggregateOAuthAppKey: data.aggregateOAuthAppKey || '',
+      aggregateOAuthLoginType: getAggregateOAuthLoginTypesOrDefault(data.aggregateOAuthLoginType),
+      aggregateOAuthEndpoint: data.aggregateOAuthEndpoint || 'https://a.idcfx.net/connect.php',
       customOAuthEnabled: !!data.customOAuthEnabled,
       customOAuthDisplayName: data.customOAuthDisplayName || '',
       customOAuthAuthorizeUrl: data.customOAuthAuthorizeUrl || '',
