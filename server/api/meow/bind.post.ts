@@ -3,6 +3,7 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import {
   delStore,
   delStoreIfValue,
@@ -51,7 +52,8 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      if (Date.now() > storedData.expiresAt) {
+      const now = getServerTimestamp()
+      if (now > storedData.expiresAt) {
         await delStore(stateKey)
         throw createError({
           statusCode: 400,
@@ -65,7 +67,7 @@ export default defineEventHandler(async (event) => {
           await delStore(stateKey)
           throw createError({ statusCode: 400, message: '验证码错误次数过多，请重新发送' })
         }
-        const remainingTtl = Math.max(1, Math.ceil((storedData.expiresAt - Date.now()) / 1000))
+        const remainingTtl = Math.max(1, Math.ceil((storedData.expiresAt - now) / 1000))
         await setStore(stateKey, JSON.stringify(storedData), remainingTtl)
         throw createError({
           statusCode: 400,
@@ -138,7 +140,7 @@ export default defineEventHandler(async (event) => {
 
       // 生成验证码
       const code = generateVerificationCode()
-      const expiresAt = Date.now() + 5 * 60 * 1000 // 5分钟过期
+      const expiresAt = getServerTimestamp() + 5 * 60 * 1000 // 5分钟过期
       const stateKey = `meow-bind:${userId}`
 
       // 存储验证码

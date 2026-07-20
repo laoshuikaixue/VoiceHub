@@ -1,6 +1,7 @@
 import { db, userIdentities, eq, and, users } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { isSecureRequest } from '~~/server/utils/request-utils'
@@ -98,7 +99,8 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '验证码已过期或不存在' })
     }
 
-    if (stored.expiresAt <= Date.now()) {
+    const now = getServerTimestamp()
+    if (stored.expiresAt <= now) {
       await delStore(stateKey)
       throw createError({ statusCode: 400, message: '验证码已过期' })
     }
@@ -117,7 +119,7 @@ export default defineEventHandler(async (event) => {
     } else {
       // 增加尝试次数
       stored.attempts++
-      const remainingTtl = Math.max(1, Math.ceil((stored.expiresAt - Date.now()) / 1000))
+      const remainingTtl = Math.max(1, Math.ceil((stored.expiresAt - now) / 1000))
       await setStore(stateKey, JSON.stringify(stored), remainingTtl)
       throw createError({
         statusCode: 400,

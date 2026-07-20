@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { delStore, delStoreIfValue, getStore, verifyStateCode } from '~~/server/utils/captchaStore'
 
 export default defineEventHandler(async (event) => {
@@ -27,7 +28,7 @@ export default defineEventHandler(async (event) => {
   if (!record || record.email !== email) {
     throw createError({ statusCode: 400, message: '请先发送验证码' })
   }
-  if (Date.now() > record.expiresAt) {
+  if (getServerTimestamp() > record.expiresAt) {
     await delStore(stateKey)
     throw createError({ statusCode: 400, message: '验证码已过期，请重新发送' })
   }

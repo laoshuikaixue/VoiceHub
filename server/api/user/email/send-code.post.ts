@@ -3,6 +3,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { delStore, hashStateCode, setStore } from '~~/server/utils/captchaStore'
 
 function generateCode(): string {
@@ -16,7 +17,7 @@ export async function sendEmailVerificationCode(
   ipAddress?: string
 ) {
   const code = generateCode()
-  const expiresAt = Date.now() + 5 * 60 * 1000
+  const expiresAt = getServerTimestamp() + 5 * 60 * 1000
   const stateKey = `email-verify:${userId}`
   await setStore(
     stateKey,
