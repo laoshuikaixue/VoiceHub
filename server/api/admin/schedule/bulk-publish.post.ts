@@ -2,7 +2,6 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { inArray, and, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification } from '~~/server/services/notificationService'
-import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   redeemCardCodeForSchedule,
@@ -84,18 +83,14 @@ export default defineEventHandler(async (event) => {
       // 2. 查找全库内已发布的排期（用于避免重复发送通知）
       const newSongIds = new Set(body.songs.map((s: any) => s.songId))
       const newSongIdsArray = Array.from(newSongIds)
-      
-      const globalExistingPublished = newSongIdsArray.length > 0 
-        ? await tx
-            .select({ songId: schedules.songId })
-            .from(schedules)
-            .where(
-              and(
-                eq(schedules.isDraft, false),
-                inArray(schedules.songId, newSongIdsArray)
-              )
-            )
-        : []
+
+      const globalExistingPublished =
+        newSongIdsArray.length > 0
+          ? await tx
+              .select({ songId: schedules.songId })
+              .from(schedules)
+              .where(and(eq(schedules.isDraft, false), inArray(schedules.songId, newSongIdsArray)))
+          : []
 
       const existingPublishedSongIds = new Set(globalExistingPublished.map((s) => s.songId))
 
@@ -111,26 +106,21 @@ export default defineEventHandler(async (event) => {
 
       // 3. 删除该时间段内的所有排期（包括草稿和已发布）
       await tx.delete(schedules).where(and(...whereConditions))
-      
+
       // 记录本次删除了哪些歌的排期，如果新排期里没有它们，并且全局也没别的正式排期了，需要恢复 PENDING
       const deletedSongIds = new Set(
         schedulesToDelete.filter((s) => !s.isDraft).map((s) => s.songId)
       )
-      const songsToRestore = Array.from(deletedSongIds).filter(id => !newSongIds.has(id))
+      const songsToRestore = Array.from(deletedSongIds).filter((id) => !newSongIds.has(id))
 
       if (songsToRestore.length > 0) {
         const otherPublished = await tx
           .select({ songId: schedules.songId })
           .from(schedules)
-          .where(
-            and(
-              eq(schedules.isDraft, false),
-              inArray(schedules.songId, songsToRestore)
-            )
-          )
+          .where(and(eq(schedules.isDraft, false), inArray(schedules.songId, songsToRestore)))
 
-        const songsWithOtherSchedules = new Set(otherPublished.map(s => s.songId))
-        const finalRestoreIds = songsToRestore.filter(id => !songsWithOtherSchedules.has(id))
+        const songsWithOtherSchedules = new Set(otherPublished.map((s) => s.songId))
+        const finalRestoreIds = songsToRestore.filter((id) => !songsWithOtherSchedules.has(id))
 
         if (finalRestoreIds.length > 0) {
           const finalRestoreIdSet = new Set(finalRestoreIds)
@@ -153,7 +143,9 @@ export default defineEventHandler(async (event) => {
             })
             if (
               !restoreResult.changed &&
-              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(String(restoreResult.reason || ''))
+              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(
+                String(restoreResult.reason || '')
+              )
             ) {
               throw createError({ statusCode: 409, message: '点歌券返还失败，发布排期已终止' })
             }
@@ -222,15 +214,6 @@ export default defineEventHandler(async (event) => {
         })
       }
     })
-
-    // 事务成功提交后，清除缓存
-    try {
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache()
-      console.log(`[Cache] 排期缓存和歌曲列表缓存已清除（批量发布排期）`)
-    } catch (cacheError) {
-      console.error('[Cache] 清除缓存失败:', cacheError)
-    }
 
     // 异步发送通知（不阻塞响应）
     Promise.allSettled(

@@ -1,7 +1,6 @@
 import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
-import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
 // 输入验证函数
@@ -167,16 +166,6 @@ export default defineEventHandler(async (event) => {
         }
       }
     })
-
-    // 清除相关缓存（在事务外执行，避免影响事务性能）
-    try {
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache()
-      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（保存草稿）')
-    } catch (cacheError) {
-      console.error('[Cache] 清除缓存失败:', cacheError)
-      // 缓存清除失败不应该影响主要操作的成功
-    }
 
     const responseData = {
       ...result.schedule,

@@ -1,343 +1,176 @@
-import { createError, defineEventHandler, getCookie, getHeader, getQuery } from 'h3'
-import jwt from 'jsonwebtoken'
-import { db } from '~/drizzle/db'
-import {
-  playTimes,
-  schedules,
-  songCollaborators,
-  songReplayRequests,
-  songs,
-  systemSettings,
-  users,
-  votes
-} from '~/drizzle/schema'
-import { and, count, desc, eq, inArray } from 'drizzle-orm'
-import { cacheService } from '~~/server/services/cacheService'
-import { executeRedisCommand, isRedisReady } from '../../utils/redis'
+import { createError, defineEventHandler, getQuery } from 'h3'
+import { client } from '~/drizzle/db'
 import { formatDateTime } from '~/utils/timeUtils'
-import { maskPublicScheduleData, PublicScheduleItem } from '../../utils/studentMask'
-
+import { maskPublicScheduleData, type PublicScheduleItem } from '../../utils/studentMask'
 import { verifyUserAuth } from '../../utils/auth'
+
+const formatDisplayName = (
+  user: { name?: string | null; grade?: string | null; class?: string | null },
+  nameCount = 1,
+  gradeCount = 1
+) => {
+  if (!user?.name) return '未知用户'
+  if (nameCount <= 1 || !user.grade) return user.name
+  if (gradeCount > 1 && user.class) return `${user.name}（${user.grade} ${user.class}）`
+  return `${user.name}（${user.grade}）`
+}
 
 export default defineEventHandler(async (event) => {
   try {
-    // 获取查询参数
     const query = getQuery(event)
-    const semester = query.semester as string
-    const bypassCache = query.bypass_cache === 'true'
+    const semester = String(query.semester || '').trim()
 
-    // 检查用户是否已登录并获取角色
     const authResult = await verifyUserAuth(event)
-    const isLoggedIn = authResult.success
-    const isAdmin =
-      isLoggedIn && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(authResult.user?.role)
     const user = authResult.success ? authResult.user : null
+    const isAdmin = Boolean(user && ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(user.role))
 
-    // 根据用户权限动态过滤投稿备注字段
-    const filterSubmissionNotes = (schedules: any[]) => {
-      if (!schedules) return
-      schedules.forEach((schedule) => {
-        if (!schedule?.song) return
-        const isRequester = Boolean(user && schedule.song.requesterId === user.id)
-        const canView = !!schedule.song.submissionNotePublic || (user && (isAdmin || isRequester))
-        if (!canView) {
-          schedule.song.submissionNote = null
-          schedule.song.hasSubmissionNote = false
-        } else {
-          schedule.song.hasSubmissionNote = !!schedule.song.submissionNote
-        }
-      })
-    }
+    const params: any[] = []
+    const semesterCondition = semester ? 'AND s.semester = $1' : ''
+    if (semester) params.push(semester)
 
-    // 获取系统设置
-    const systemSettingsData = await db
-      .select({ hideStudentInfo: systemSettings.hideStudentInfo })
-      .from(systemSettings)
-      .limit(1)
-      .then((result) => result[0])
-    const shouldHideStudentInfo = systemSettingsData?.hideStudentInfo ?? true
+    const schedulesQuery = `
+      WITH
+      user_name_counts AS (
+        SELECT name, COUNT(*)::int AS name_count
+        FROM "User"
+        WHERE name IS NOT NULL
+        GROUP BY name
+      ),
+      user_grade_counts AS (
+        SELECT name, grade, COUNT(*)::int AS grade_count
+        FROM "User"
+        WHERE name IS NOT NULL
+        GROUP BY name, grade
+      ),
+      vote_counts AS (
+        SELECT "songId", COUNT(*)::int AS vote_count
+        FROM "Vote"
+        GROUP BY "songId"
+      ),
+      accepted_collaborators AS (
+        SELECT
+          sc.song_id,
+          jsonb_agg(
+            jsonb_build_object(
+              'id', u.id,
+              'name', u.name,
+              'grade', u.grade,
+              'class', u.class,
+              'nameCount', COALESCE(unc.name_count, 1),
+              'gradeCount', COALESCE(ugc.grade_count, 1)
+            )
+            ORDER BY sc.created_at
+          ) AS collaborators
+        FROM song_collaborators sc
+        INNER JOIN "User" u ON u.id = sc.user_id
+        LEFT JOIN user_name_counts unc ON unc.name = u.name
+        LEFT JOIN user_grade_counts ugc
+          ON ugc.name = u.name AND ugc.grade IS NOT DISTINCT FROM u.grade
+        WHERE sc.status = 'ACCEPTED'
+        GROUP BY sc.song_id
+      ),
+      replay_counts AS (
+        SELECT song_id, COUNT(*)::int AS replay_count
+        FROM song_replay_requests
+        WHERE status IN ('PENDING', 'FULFILLED')
+        GROUP BY song_id
+      ),
+      ranked_replay_requesters AS (
+        SELECT
+          rr.song_id,
+          u.id,
+          u.name,
+          u.grade,
+          u.class,
+          COALESCE(unc.name_count, 1) AS name_count,
+          COALESCE(ugc.grade_count, 1) AS grade_count,
+          rr.status,
+          rr.created_at,
+          ROW_NUMBER() OVER (PARTITION BY rr.song_id ORDER BY rr.created_at DESC) AS position
+        FROM song_replay_requests rr
+        INNER JOIN "User" u ON u.id = rr.user_id
+        LEFT JOIN user_name_counts unc ON unc.name = u.name
+        LEFT JOIN user_grade_counts ugc
+          ON ugc.name = u.name AND ugc.grade IS NOT DISTINCT FROM u.grade
+        WHERE rr.status IN ('PENDING', 'FULFILLED')
+      ),
+      replay_requesters AS (
+        SELECT
+          song_id,
+          jsonb_agg(
+            jsonb_build_object(
+              'id', id,
+              'name', name,
+              'grade', grade,
+              'class', class,
+              'nameCount', name_count,
+              'gradeCount', grade_count,
+              'status', status,
+              'createdAt', created_at
+            )
+            ORDER BY created_at DESC
+          ) FILTER (WHERE position <= 5) AS requesters
+        FROM ranked_replay_requesters
+        GROUP BY song_id
+      )
+      SELECT
+        sch.id,
+        sch."playDate",
+        sch.sequence,
+        sch.played AS "schedulePlayed",
+        sch."playTimeId",
+        s.id AS "songId",
+        s.title,
+        s.artist,
+        s.played AS "songPlayed",
+        s.cover,
+        s."musicPlatform",
+        s."musicId",
+        s."playUrl",
+        s.semester,
+        s."requesterId",
+        s."createdAt",
+        s."submissionNote",
+        s."submissionNotePublic",
+        u.name AS "requesterName",
+        u.grade AS "requesterGrade",
+        u.class AS "requesterClass",
+        COALESCE(unc.name_count, 1) AS "requesterNameCount",
+        COALESCE(ugc.grade_count, 1) AS "requesterGradeCount",
+        pt.id AS "playTimeRecordId",
+        pt.name AS "playTimeName",
+        pt."startTime" AS "playTimeStart",
+        pt."endTime" AS "playTimeEnd",
+        pt.enabled AS "playTimeEnabled",
+        COALESCE(vc.vote_count, 0) AS "voteCount",
+        COALESCE(ac.collaborators, '[]'::jsonb) AS collaborators,
+        COALESCE(rc.replay_count, 0) AS "replayRequestCount",
+        COALESCE(rr.requesters, '[]'::jsonb) AS "replayRequesters",
+        COALESCE(
+          (SELECT "hideStudentInfo" FROM "SystemSettings" LIMIT 1),
+          true
+        ) AS "hideStudentInfo"
+      FROM "Schedule" sch
+      INNER JOIN "Song" s ON s.id = sch."songId"
+      LEFT JOIN "User" u ON u.id = s."requesterId"
+      LEFT JOIN user_name_counts unc ON unc.name = u.name
+      LEFT JOIN user_grade_counts ugc
+        ON ugc.name = u.name AND ugc.grade IS NOT DISTINCT FROM u.grade
+      LEFT JOIN "PlayTime" pt ON pt.id = sch."playTimeId"
+      LEFT JOIN vote_counts vc ON vc."songId" = s.id
+      LEFT JOIN accepted_collaborators ac ON ac.song_id = s.id
+      LEFT JOIN replay_counts rc ON rc.song_id = s.id
+      LEFT JOIN replay_requesters rr ON rr.song_id = s.id
+      WHERE sch."isDraft" = false
+      ${semesterCondition}
+      ORDER BY sch."playDate", sch.sequence
+    `
 
-    // 初始化缓存服务
+    const rows = await client.unsafe(schedulesQuery, params)
+    const shouldHideStudentInfo = rows[0]?.hideStudentInfo ?? true
 
-    // 获取当前日期，使用UTC时间
-    const now = new Date()
-    const today = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0)
-    )
-
-    // 构建缓存键
-    const cacheKey = semester ? `public_schedules:${semester}` : 'public_schedules:all'
-
-    // 如果不绕过缓存，优先从Redis缓存获取排期数据
-    if (!bypassCache && isRedisReady()) {
-      const cachedData = await executeRedisCommand(async () => {
-        const client = (await import('../../utils/redis')).getRedisClient()
-        if (!client) return null
-
-        const data = await client.get(cacheKey)
-        if (data) {
-          const parsedData = JSON.parse(data) as PublicScheduleItem[]
-          console.log(`[Cache] 公共排期Redis缓存命中: ${cacheKey}，数量: ${parsedData.length}`)
-          // 深拷贝数据以避免修改缓存的原始数据
-          const resultData = JSON.parse(JSON.stringify(parsedData)) as PublicScheduleItem[]
-          // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
-          if (shouldHideStudentInfo && !isAdmin) {
-            maskPublicScheduleData(resultData)
-          }
-          return resultData
-        }
-
-        return null
-      })
-
-      if (cachedData) {
-        filterSubmissionNotes(cachedData)
-        return cachedData
-      }
-    }
-
-    // 如果不绕过缓存，Redis缓存未命中，尝试从CacheService获取（CacheService缓存所有学期数据）
-    let cachedSchedules = null
-    if (!bypassCache) {
-      cachedSchedules = await cacheService.getSchedulesList()
-    }
-
-    if (cachedSchedules && cachedSchedules.length > 0) {
-      console.log(`[Cache] CacheService排期缓存命中（所有学期），数量: ${cachedSchedules.length}`)
-      // 如果指定了学期，过滤数据
-      let filteredSchedules = cachedSchedules
-      if (semester) {
-        filteredSchedules = cachedSchedules.filter((s) => s.song?.semester === semester)
-        console.log(`[Cache] 过滤学期 ${semester} 后的数量: ${filteredSchedules.length}`)
-      }
-
-      // 将过滤后的数据缓存到Redis（缓存完整数据，不进行模糊化）
-      if (isRedisReady()) {
-        await executeRedisCommand(async () => {
-          const client = (await import('../../utils/redis')).getRedisClient()
-          if (!client) return
-
-          await client.set(cacheKey, JSON.stringify(filteredSchedules))
-          console.log(
-            `[Cache] 排期数据设置Redis缓存: ${cacheKey}，数量: ${filteredSchedules.length}`
-          )
-        })
-      }
-
-      // 深拷贝数据以避免修改缓存的原始数据
-      const resultData = JSON.parse(JSON.stringify(filteredSchedules)) as PublicScheduleItem[]
-      // 过滤投稿备注权限
-      filterSubmissionNotes(resultData)
-      // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
-      if (shouldHideStudentInfo && !isAdmin) {
-        maskPublicScheduleData(resultData)
-      }
-
-      return resultData
-    }
-
-    // 获取排期的歌曲，包含播放时段信息（查询所有学期的数据）
-    const schedulesData = await db
-      .select({
-        id: schedules.id,
-        playDate: schedules.playDate,
-        sequence: schedules.sequence,
-        played: schedules.played,
-        playTimeId: schedules.playTimeId,
-        song: {
-          id: songs.id,
-          title: songs.title,
-          artist: songs.artist,
-          played: songs.played,
-          cover: songs.cover,
-          musicPlatform: songs.musicPlatform,
-          musicId: songs.musicId,
-          playUrl: songs.playUrl,
-          semester: songs.semester,
-          requesterId: songs.requesterId,
-          createdAt: songs.createdAt,
-          submissionNote: songs.submissionNote,
-          submissionNotePublic: songs.submissionNotePublic
-        },
-        requester: {
-          name: users.name,
-          grade: users.grade,
-          class: users.class
-        },
-        playTime: {
-          id: playTimes.id,
-          name: playTimes.name,
-          startTime: playTimes.startTime,
-          endTime: playTimes.endTime,
-          enabled: playTimes.enabled
-        }
-      })
-      .from(schedules)
-      .leftJoin(songs, eq(schedules.songId, songs.id))
-      .leftJoin(users, eq(songs.requesterId, users.id))
-      .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-      .where(eq(schedules.isDraft, false)) // 只查询已发布的排期
-      .orderBy(schedules.playDate)
-
-    // 获取每首歌的投票数
-    const voteCountsQuery = await db
-      .select({
-        songId: votes.songId,
-        count: count(votes.id)
-      })
-      .from(votes)
-      .groupBy(votes.songId)
-
-    const voteCounts = new Map(voteCountsQuery.map((v) => [v.songId, v.count]))
-
-    // 获取所有用户的姓名列表，用于检测同名用户
-    const allUsers = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        grade: users.grade,
-        class: users.class
-      })
-      .from(users)
-
-    // 创建姓名到用户数组的映射
-    const nameToUsers = new Map()
-    allUsers.forEach((user) => {
-      if (user.name) {
-        if (!nameToUsers.has(user.name)) {
-          nameToUsers.set(user.name, [])
-        }
-        nameToUsers.get(user.name).push(user)
-      }
-    })
-
-    // 获取联合投稿人信息
-    const songIds = schedulesData.map((s) => s.song.id)
-    const collaboratorsMap = new Map()
-
-    if (songIds.length > 0) {
-      const collaboratorsData = await db
-        .select({
-          songId: songCollaborators.songId,
-          status: songCollaborators.status,
-          user: {
-            id: users.id,
-            name: users.name,
-            grade: users.grade,
-            class: users.class
-          }
-        })
-        .from(songCollaborators)
-        .leftJoin(users, eq(songCollaborators.userId, users.id))
-        .where(
-          and(
-            inArray(songCollaborators.songId, songIds),
-            eq(songCollaborators.status, 'ACCEPTED') // 只展示已接受的
-          )
-        )
-
-      collaboratorsData.forEach((c) => {
-        if (!collaboratorsMap.has(c.songId)) {
-          collaboratorsMap.set(c.songId, [])
-        }
-        if (c.user) {
-          collaboratorsMap.get(c.songId).push(c.user)
-        }
-      })
-    }
-
-    // 获取重播申请信息
-    const replayRequestCountsMap = new Map()
-    const replayRequestersMap = new Map()
-
-    if (songIds.length > 0) {
-      // 获取每首歌的重播申请数量（统计 PENDING 和 FULFILLED 状态）
-      // FULFILLED 表示已经被排期，PENDING 表示等待排期
-      const replayCountsData = await db
-        .select({
-          songId: songReplayRequests.songId,
-          count: count(songReplayRequests.id)
-        })
-        .from(songReplayRequests)
-        .where(
-          and(
-            inArray(songReplayRequests.songId, songIds),
-            // 查询 PENDING 或 FULFILLED 状态的申请
-            // PENDING: 等待排期，FULFILLED: 已排期但可能还未播放
-            inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
-          )
-        )
-        .groupBy(songReplayRequests.songId)
-
-      replayCountsData.forEach((r) => {
-        replayRequestCountsMap.set(r.songId, r.count)
-      })
-
-      // 获取重播申请人列表（前5个，包括 PENDING 和 FULFILLED）
-      const replayRequestersData = await db
-        .select({
-          songId: songReplayRequests.songId,
-          user: {
-            id: users.id,
-            name: users.name,
-            grade: users.grade,
-            class: users.class
-          },
-          status: songReplayRequests.status,
-          createdAt: songReplayRequests.createdAt
-        })
-        .from(songReplayRequests)
-        .innerJoin(users, eq(songReplayRequests.userId, users.id))
-        .where(
-          and(
-            inArray(songReplayRequests.songId, songIds),
-            inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
-          )
-        )
-        .orderBy(desc(songReplayRequests.createdAt))
-
-      replayRequestersData.forEach((r) => {
-        if (!replayRequestersMap.has(r.songId)) {
-          replayRequestersMap.set(r.songId, [])
-        }
-        // 只保留前5个
-        if (replayRequestersMap.get(r.songId).length < 5) {
-          replayRequestersMap.get(r.songId).push({
-            id: r.user.id,
-            name: r.user.name || '未知用户',
-            grade: r.user.grade,
-            class: r.user.class,
-            status: r.status
-          })
-        }
-      })
-    }
-
-    // 辅助函数：格式化显示名称
-    const formatDisplayName = (userObj: any) => {
-      if (!userObj || !userObj.name) return '未知用户'
-      let displayName = userObj.name
-
-      const sameNameUsers = nameToUsers.get(displayName)
-      if (sameNameUsers && sameNameUsers.length > 1) {
-        if (userObj.grade) {
-          const sameGradeUsers = sameNameUsers.filter((u: any) => u.grade === userObj.grade)
-          if (sameGradeUsers.length > 1 && userObj.class) {
-            displayName = `${displayName}（${userObj.grade} ${userObj.class}）`
-          } else {
-            displayName = `${displayName}（${userObj.grade}）`
-          }
-        }
-      }
-      return displayName
-    }
-
-    // 转换数据格式
-    const formattedSchedules = schedulesData.map((schedule) => {
-      // 获取原始日期，并确保使用UTC时间
-      const originalDate = new Date(schedule.playDate)
-
-      // 创建一个新的日期对象，保留原始日期的年月日，但使用UTC时间
+    const formattedSchedules = rows.map((row: any) => {
+      const originalDate = new Date(row.playDate)
       const dateOnly = new Date(
         Date.UTC(
           originalDate.getUTCFullYear(),
@@ -350,124 +183,100 @@ export default defineEventHandler(async (event) => {
         )
       )
 
-      // 处理投稿人姓名
-      const requesterName = formatDisplayName(schedule.requester)
+      const collaborators = Array.isArray(row.collaborators)
+        ? row.collaborators.map((collaborator: any) => ({
+            id: collaborator.id,
+            name: collaborator.name,
+            displayName: formatDisplayName(
+              collaborator,
+              Number(collaborator.nameCount),
+              Number(collaborator.gradeCount)
+            ),
+            grade: collaborator.grade,
+            class: collaborator.class
+          }))
+        : []
 
-      // 处理联合投稿人
-      const collaborators = collaboratorsMap.get(schedule.song.id) || []
-      const formattedCollaborators = collaborators.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        displayName: formatDisplayName(c),
-        grade: c.grade,
-        class: c.class
-      }))
+      const replayRequesters = Array.isArray(row.replayRequesters)
+        ? row.replayRequesters.map((requester: any) => ({
+            id: requester.id,
+            name: requester.name || '未知用户',
+            displayName: formatDisplayName(
+              requester,
+              Number(requester.nameCount),
+              Number(requester.gradeCount)
+            ),
+            grade: requester.grade,
+            class: requester.class,
+            status: requester.status
+          }))
+        : []
 
-      // 获取重播申请信息
-      const replayRequestCount = replayRequestCountsMap.get(schedule.song.id) || 0
-      const replayRequesters = replayRequestersMap.get(schedule.song.id) || []
-      const formattedReplayRequesters = replayRequesters.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        displayName: formatDisplayName(r),
-        grade: r.grade,
-        class: r.class,
-        status: r.status
-      }))
-
-      // 判断是否为重播：有重播申请（PENDING 或 FULFILLED）
-      const isReplaySong = replayRequestCount > 0
-
-      // 注意：这里不进行模糊化处理，保持完整数据用于缓存
-      // 模糊化处理将在最终返回时进行
+      const isRequester = Boolean(user && Number(row.requesterId) === user.id)
+      const canViewSubmissionNote =
+        Boolean(row.submissionNote) &&
+        (row.submissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
+      const replayRequestCount = Number(row.replayRequestCount || 0)
 
       return {
-        id: schedule.id,
-        playDate: dateOnly.toISOString().split('T')[0], // 转换为YYYY-MM-DD格式字符串
-        sequence: schedule.sequence || 1,
-        played: schedule.played || false,
-        playTimeId: schedule.playTimeId, // 添加播放时段ID
-        playTime: schedule.playTime
+        id: Number(row.id),
+        playDate: dateOnly.toISOString().split('T')[0],
+        sequence: Number(row.sequence || 1),
+        played: row.schedulePlayed === true,
+        playTimeId: row.playTimeId ? Number(row.playTimeId) : null,
+        playTime: row.playTimeRecordId
           ? {
-              id: schedule.playTime.id,
-              name: schedule.playTime.name,
-              startTime: schedule.playTime.startTime,
-              endTime: schedule.playTime.endTime,
-              enabled: schedule.playTime.enabled
+              id: Number(row.playTimeRecordId),
+              name: row.playTimeName,
+              startTime: row.playTimeStart,
+              endTime: row.playTimeEnd,
+              enabled: row.playTimeEnabled === true
             }
-          : null, // 添加播放时段信息
+          : null,
         song: {
-          id: schedule.song.id,
-          title: schedule.song.title,
-          artist: schedule.song.artist,
-          requester: requesterName,
-          requesterGrade: schedule.requester?.grade || null,
-          requesterClass: schedule.requester?.class || null,
-          collaborators: formattedCollaborators, // 添加联合投稿人
-          voteCount: voteCounts.get(schedule.song.id) || 0,
-          played: schedule.song.played || false,
-          cover: schedule.song.cover || null,
+          id: Number(row.songId),
+          title: row.title,
+          artist: row.artist,
+          requester: formatDisplayName(
+            {
+              name: row.requesterName,
+              grade: row.requesterGrade,
+              class: row.requesterClass
+            },
+            Number(row.requesterNameCount),
+            Number(row.requesterGradeCount)
+          ),
+          requesterGrade: row.requesterGrade || null,
+          requesterClass: row.requesterClass || null,
+          collaborators,
+          voteCount: Number(row.voteCount || 0),
+          played: row.songPlayed === true,
+          cover: row.cover || null,
           cardCodeId: null,
-          musicPlatform: schedule.song.musicPlatform || null,
-          musicId: schedule.song.musicId || null,
-          playUrl: schedule.song.playUrl || null,
-          semester: schedule.song.semester || null,
-          requestedAt: schedule.song.createdAt ? formatDateTime(schedule.song.createdAt) : null,
-          hasSubmissionNote: !!schedule.song?.submissionNote,
-          submissionNote: schedule.song?.submissionNote || null,
-          submissionNotePublic: schedule.song?.submissionNotePublic === true,
-          requesterId: schedule.song?.requesterId || null,
-          // 重播申请信息
-          replayRequestCount: isReplaySong ? replayRequestCount : 0,
-          replayRequesters: isReplaySong ? formattedReplayRequesters : [],
-          isReplay: isReplaySong // 只有已播放过且有重播申请的才标记为重播
+          musicPlatform: row.musicPlatform || null,
+          musicId: row.musicId || null,
+          playUrl: row.playUrl || null,
+          semester: row.semester || null,
+          requestedAt: row.createdAt ? formatDateTime(row.createdAt) : null,
+          hasSubmissionNote: canViewSubmissionNote,
+          submissionNote: canViewSubmissionNote ? row.submissionNote : null,
+          submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
+          requesterId: row.requesterId ? Number(row.requesterId) : null,
+          replayRequestCount,
+          replayRequesters,
+          isReplay: replayRequestCount > 0
         }
       }
-    })
+    }) as PublicScheduleItem[]
 
-    const allSchedulesResult = formattedSchedules
-
-    // 始终缓存所有学期的数据到CacheService
-    if (allSchedulesResult && allSchedulesResult.length > 0) {
-      await cacheService.setSchedulesList(allSchedulesResult)
-      console.log(
-        `[Cache] 公共排期设置CacheService缓存（所有学期），数量: ${allSchedulesResult.length}`
-      )
+    if (!user || (shouldHideStudentInfo && !isAdmin)) {
+      maskPublicScheduleData(formattedSchedules)
     }
 
-    // 准备要返回和缓存的数据
-    let finalResult = allSchedulesResult
-    if (semester && allSchedulesResult) {
-      finalResult = allSchedulesResult.filter((s) => s.song?.semester === semester)
-    }
-
-    // 缓存结果到Redis（如果可用）- 根据请求参数缓存相应数据
-    if (finalResult && isRedisReady()) {
-      await executeRedisCommand(async () => {
-        const client = (await import('../../utils/redis')).getRedisClient()
-        if (!client) return
-
-        await client.set(cacheKey, JSON.stringify(finalResult))
-        console.log(`[Cache] 排期数据设置Redis缓存: ${cacheKey}，数量: ${finalResult.length}`)
-      })
-    }
-
-    // 深拷贝数据以避免修改缓存的原始数据
-    const resultToReturn = JSON.parse(
-      JSON.stringify(finalResult || allSchedulesResult)
-    ) as PublicScheduleItem[]
-
-    // 过滤投稿备注权限
-    filterSubmissionNotes(resultToReturn)
-
-    // 如果需要隐藏学生信息且用户不是管理员，则对排期数据进行脱敏
-    if (shouldHideStudentInfo && !isAdmin && resultToReturn) {
-      maskPublicScheduleData(resultToReturn)
-    }
-
-    return resultToReturn
+    return formattedSchedules
   } catch (error: any) {
     console.error('获取公共排期失败:', error)
+    if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
       message: error.message || '获取排期数据失败'

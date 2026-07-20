@@ -1,6 +1,5 @@
 import { db, eq } from '~/drizzle/db'
 import { schedules } from '~/drizzle/schema'
-import { cacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 验证用户认证和权限
@@ -32,15 +31,6 @@ export default defineEventHandler(async (event) => {
           .where(eq(schedules.id, Number(item.id)))
       })
     )
-
-    // 清除排期相关缓存
-    try {
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache()
-      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（更新排期顺序）')
-    } catch (cacheError) {
-      console.error('[Cache] 清除缓存失败:', cacheError)
-    }
 
     return {
       success: true,

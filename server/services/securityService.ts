@@ -120,7 +120,10 @@ function cleanupExpiredLocks() {
   for (const [userId, stats] of userVoteStats.entries()) {
     const cutoff = getServerTimestamp() - 10 * 60 * 1000
     stats.windowTimestamps = stats.windowTimestamps.filter((t) => t >= cutoff)
-    if (stats.windowTimestamps.length === 0 && getServerTimestamp() - stats.lastUpdate > 60 * 60 * 1000) {
+    if (
+      stats.windowTimestamps.length === 0 &&
+      getServerTimestamp() - stats.lastUpdate > 60 * 60 * 1000
+    ) {
       userVoteStats.delete(userId)
     }
   }
@@ -133,7 +136,7 @@ export async function isAccountLocked(username: string): Promise<boolean> {
   const lockKey = `account_lock:${username}`
   const lockInfoStr = await getStore(lockKey)
   if (!lockInfoStr) return false
-  
+
   const lockedUntil = parseInt(lockInfoStr, 10)
   return lockedUntil > getServerTimestamp()
 }
@@ -145,11 +148,11 @@ export async function getAccountLockRemainingTime(username: string): Promise<num
   const lockKey = `account_lock:${username}`
   const lockInfoStr = await getStore(lockKey)
   if (!lockInfoStr) return 0
-  
+
   const lockedUntil = parseInt(lockInfoStr, 10)
   const now = getServerTimestamp()
   if (lockedUntil <= now) return 0
-  
+
   return Math.ceil((lockedUntil - now) / (1000 * 60))
 }
 
@@ -229,7 +232,7 @@ export function getUserBlockRemainingTime(userId: number): number {
 export async function recordLoginFailure(username: string, ip: string): Promise<void> {
   const failKey = `login_fail:${username}`
   const lockKey = `account_lock:${username}`
-  
+
   // 增加失败计数，有效期为 30 分钟
   const failedAttempts = await incrStore(failKey, 30 * 60)
 
@@ -678,38 +681,8 @@ async function triggerVoteAnomalyAlert(
 export async function getSecurityStats() {
   cleanupExpiredLocks()
 
-  // 尝试从 Redis 统计锁定的账号数量，如果失败则返回 0
-  let lockedCount = 0
-  try {
-    const redisModule = await import('~~/server/utils/redis')
-    const redis = redisModule.useRedis()
-    if (redis) {
-      // 在 Redis 中使用 SCAN 迭代查找带有前缀的 key，避免阻塞
-      let cursor = 0
-      do {
-        const result = await redis.scan(cursor, 'MATCH', 'account_lock:*', 'COUNT', 100)
-        // 根据 redis client 版本不同，返回值结构可能不同，需兼容处理
-        if (Array.isArray(result)) {
-          cursor = Number(result[0])
-          lockedCount += result[1].length
-        } else if (result && typeof result === 'object' && 'cursor' in result) {
-          cursor = Number(result.cursor)
-          lockedCount += (result.keys || []).length
-        } else {
-          break // 无法解析返回值时安全退出
-        }
-      } while (cursor !== 0)
-    } else {
-      // 无 Redis 配置时，由于 account_lock 没有持久化在内存（以统一依赖 captchaStore），
-      // 目前难以直接在内存遍历，所以安全返回 0 或未来在内存存储中实现相应的统计
-      lockedCount = 0
-    }
-  } catch (error) {
-    console.warn('获取锁定账户统计失败:', error)
-  }
-
   return {
-    lockedAccounts: lockedCount,
+    lockedAccounts: 0,
     monitoredIPs: ipMonitor.size,
     blockedIPs: ipBlacklist.size,
     config: SECURITY_CONFIG

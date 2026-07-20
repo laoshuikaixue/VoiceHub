@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { emailVerificationCodes } from './send-code.post'
+import { delStore, delStoreIfValue, getStore, verifyStateCode } from '~~/server/utils/captchaStore'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
@@ -21,22 +21,26 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: '邮箱与验证码不能为空' })
   }
 
-  const record = emailVerificationCodes.get(email)
-  if (!record || record.userId !== user.id) {
+  const stateKey = `email-verify:${user.id}`
+  const recordRaw = await getStore(stateKey)
+  const record = recordRaw ? JSON.parse(recordRaw) : null
+  if (!record || record.email !== email) {
     throw createError({ statusCode: 400, message: '请先发送验证码' })
   }
   if (Date.now() > record.expiresAt) {
-    emailVerificationCodes.delete(email)
+    await delStore(stateKey)
     throw createError({ statusCode: 400, message: '验证码已过期，请重新发送' })
   }
-  if (record.code !== code) {
+  if (!verifyStateCode(stateKey, code, record.codeHash)) {
     throw createError({ statusCode: 400, message: '验证码错误' })
+  }
+
+  if (!(await delStoreIfValue(stateKey, recordRaw!))) {
+    throw createError({ statusCode: 400, message: '验证码已使用，请重新发送' })
   }
 
   // 验证通过：设置邮箱为已验证
   await db.update(users).set({ emailVerified: true }).where(eq(users.id, user.id))
-
-  emailVerificationCodes.delete(email)
 
   return { success: true, message: '邮箱验证成功' }
 })

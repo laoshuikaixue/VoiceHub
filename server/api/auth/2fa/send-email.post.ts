@@ -1,7 +1,7 @@
 import { db, users, eq } from '~/drizzle/db'
-import { twoFactorCodes } from '~~/server/utils/twoFactorStore'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { delStore, getStore, hashStateCode, setStore } from '~~/server/utils/captchaStore'
 
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
@@ -30,11 +30,12 @@ export default defineEventHandler(async (event) => {
 
   // 校验 userId 是否匹配
   if (!reqUserId || Number(reqUserId) !== userId) {
-     throw createError({ statusCode: 403, message: '非法操作：用户ID不匹配' })
+    throw createError({ statusCode: 403, message: '非法操作：用户ID不匹配' })
   }
 
   // 获取用户邮箱
-  const userResult = await db.select({
+  const userResult = await db
+    .select({
       id: users.id,
       email: users.email,
       emailVerified: users.emailVerified,
@@ -56,49 +57,65 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查是否在冷却时间内
-  const existingCode = twoFactorCodes.get(userId)
+  const stateKey = `2fa-email:${userId}`
+  const existingRaw = await getStore(stateKey)
+  const existingCode = existingRaw ? JSON.parse(existingRaw) : null
   const now = getServerTimestamp()
   if (existingCode && existingCode.expiresAt > now) {
     // 5 * 60 * 1000 = 300000ms
     const totalDuration = 5 * 60 * 1000
     const timePassed = totalDuration - (existingCode.expiresAt - now)
-    
-    if (timePassed < 60 * 1000) { // 60秒冷却
+
+    if (timePassed < 60 * 1000) {
+      // 60秒冷却
       const remainingSeconds = Math.ceil((60000 - timePassed) / 1000)
-      throw createError({ 
-        statusCode: 429, 
-        message: `操作过于频繁，请等待 ${remainingSeconds} 秒后再试` 
+      throw createError({
+        statusCode: 429,
+        message: `操作过于频繁，请等待 ${remainingSeconds} 秒后再试`
       })
     }
   }
 
   const code = randomInt(100000, 999999).toString()
-  twoFactorCodes.set(userId, { 
-    code, 
-    expiresAt: now + 5 * 60 * 1000,
-    attempts: 0 
-  })
+  const expiresAt = now + 5 * 60 * 1000
+  await setStore(
+    stateKey,
+    JSON.stringify({
+      codeHash: hashStateCode(stateKey, code),
+      expiresAt,
+      issuedAt: now,
+      attempts: 0
+    }),
+    5 * 60
+  )
 
   const clientIP = getClientIP(event)
 
   // 发送邮件
   const smtp = SmtpService.getInstance()
   await smtp.initializeSmtpConfig()
-  
-  const sent = await smtp.renderAndSend(
-    user.email,
-    'verification.code',
-    {
-      name: user.name || '用户',
-      email: user.email,
-      code,
-      expiresInMinutes: 5,
-      action: '登录验证'
-    },
-    clientIP
-  )
+
+  let sent = false
+  try {
+    sent = await smtp.renderAndSend(
+      user.email,
+      'verification.code',
+      {
+        name: user.name || '用户',
+        email: user.email,
+        code,
+        expiresInMinutes: 5,
+        action: '登录验证'
+      },
+      clientIP
+    )
+  } catch (error) {
+    await delStore(stateKey)
+    throw error
+  }
 
   if (!sent) {
+    await delStore(stateKey)
     throw createError({ statusCode: 500, message: '验证码发送失败' })
   }
 

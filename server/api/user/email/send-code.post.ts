@@ -3,12 +3,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
-
-// 简易验证码存储（如需分布式/重启持久，建议迁移到Redis）
-const emailVerificationCodes = new Map<
-  string,
-  { code: string; userId: number; expiresAt: number }
->()
+import { delStore, hashStateCode, setStore } from '~~/server/utils/captchaStore'
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -22,22 +17,38 @@ export async function sendEmailVerificationCode(
 ) {
   const code = generateCode()
   const expiresAt = Date.now() + 5 * 60 * 1000
-  emailVerificationCodes.set(email, { code, userId, expiresAt })
+  const stateKey = `email-verify:${userId}`
+  await setStore(
+    stateKey,
+    JSON.stringify({
+      email,
+      codeHash: hashStateCode(stateKey, code),
+      expiresAt
+    }),
+    5 * 60
+  )
 
   const smtp = SmtpService.getInstance()
   await smtp.initializeSmtpConfig()
-  const sent = await smtp.renderAndSend(
-    email,
-    'verification.code',
-    {
-      name: name || '用户',
+  let sent = false
+  try {
+    sent = await smtp.renderAndSend(
       email,
-      code,
-      expiresInMinutes: 5
-    },
-    ipAddress
-  )
+      'verification.code',
+      {
+        name: name || '用户',
+        email,
+        code,
+        expiresInMinutes: 5
+      },
+      ipAddress
+    )
+  } catch (error) {
+    await delStore(stateKey)
+    throw error
+  }
   if (!sent) {
+    await delStore(stateKey)
     throw createError({ statusCode: 500, message: '验证码发送失败，请稍后重试' })
   }
 }
@@ -77,5 +88,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true, message: '验证码已发送，请查收邮箱' }
 })
-
-export { emailVerificationCodes }

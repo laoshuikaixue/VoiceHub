@@ -1,8 +1,7 @@
 import { db } from '~/drizzle/db'
-import { playTimes, schedules, songs, users, votes, songReplayRequests } from '~/drizzle/schema'
-import { and, asc, count, desc, eq, gte, lte, ne } from 'drizzle-orm'
+import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { and, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification } from '../../services/notificationService'
-import { cacheService } from '~~/server/services/cacheService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 import { getServerDate } from '~~/server/utils/serverTime'
 
@@ -49,7 +48,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    await db.transaction(async (tx) => {
+    const schedule = await db.transaction(async (tx) => {
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1
 
@@ -75,9 +74,8 @@ export default defineEventHandler(async (event) => {
           .orderBy(desc(schedules.sequence))
           .limit(1)
 
-        if (sameDaySchedules.length > 0) {
-          sequence = (sameDaySchedules[0].sequence || 0) + 1
-        }
+        const latestSchedule = sameDaySchedules[0]
+        if (latestSchedule) sequence = (latestSchedule.sequence || 0) + 1
       }
 
       // 解析输入的日期字符串，确保日期正确
@@ -101,8 +99,13 @@ export default defineEventHandler(async (event) => {
         })
         .returning()
 
+      const createdSchedule = scheduleResult[0]
+      if (!createdSchedule) {
+        throw createError({ statusCode: 500, message: '创建排期失败' })
+      }
+
       const schedule = {
-        ...scheduleResult[0],
+        ...createdSchedule,
         song: {
           id: song.id,
           title: song.title,
@@ -122,26 +125,25 @@ export default defineEventHandler(async (event) => {
             and(
               eq(schedules.songId, schedule.song.id),
               eq(schedules.isDraft, false),
-              ne(schedules.id, scheduleResult[0].id)
+              ne(schedules.id, createdSchedule.id)
             )
           )
           .limit(1)
 
         // 如果之前没有正式发布过，才发送通知和更新重播状态
         if (existingPublished.length === 0) {
-          await createSongSelectedNotification(
-            schedule.song.requesterId,
-            schedule.song.id,
-            {
-              title: schedule.song.title,
-              artist: schedule.song.artist,
-              playDate: schedule.playDate
-            }
-          )
+          await createSongSelectedNotification(schedule.song.requesterId, schedule.song.id, {
+            title: schedule.song.title,
+            artist: schedule.song.artist,
+            playDate: schedule.playDate
+          })
 
           await tx
             .update(songReplayRequests)
-            .set({ status: 'FULFILLED', updatedAt: scheduleResult[0].publishedAt || getServerDate() })
+            .set({
+              status: 'FULFILLED',
+              updatedAt: createdSchedule.publishedAt || getServerDate()
+            })
             .where(
               and(
                 eq(songReplayRequests.songId, schedule.song.id),
@@ -155,160 +157,12 @@ export default defineEventHandler(async (event) => {
           songId: schedule.song.id,
           cardCodeId: schedule.song.cardCodeId,
           operatorId: user.id,
-          at: scheduleResult[0].publishedAt || getServerDate()
+          at: createdSchedule.publishedAt || getServerDate()
         })
       }
+
+      return schedule
     })
-
-    // 清除相关缓存
-    try {
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache() // 清除歌曲列表缓存，确保scheduled状态更新
-      console.log(`[Cache] 排期缓存和歌曲列表缓存已清除（${isDraft ? '保存草稿' : '创建排期'}）`)
-    } catch (cacheError) {
-      console.error('[Cache] 清除缓存失败:', cacheError)
-    }
-
-    // 重新缓存完整的排期列表
-    try {
-      // 获取所有已发布排期数据
-      const schedulesData = await db
-        .select({
-          id: schedules.id,
-          playDate: schedules.playDate,
-          sequence: schedules.sequence,
-          played: schedules.played,
-          playTimeId: schedules.playTimeId,
-          songId: schedules.songId,
-          songTitle: songs.title,
-          songArtist: songs.artist,
-          songRequesterId: songs.requesterId,
-          songPlayed: songs.played,
-          songCover: songs.cover,
-          songMusicPlatform: songs.musicPlatform,
-          songMusicId: songs.musicId,
-          songPlayUrl: songs.playUrl,
-          songSemester: songs.semester,
-          requesterName: users.name,
-          requesterGrade: users.grade,
-          requesterClass: users.class,
-          playTimeName: playTimes.name,
-          playTimeStartTime: playTimes.startTime,
-          playTimeEndTime: playTimes.endTime,
-          playTimeEnabled: playTimes.enabled
-        })
-        .from(schedules)
-        .innerJoin(songs, eq(schedules.songId, songs.id))
-        .innerJoin(users, eq(songs.requesterId, users.id))
-        .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-        .where(eq(schedules.isDraft, false))
-        .orderBy(asc(schedules.playDate))
-
-      // 获取所有用户的姓名列表，用于检测同名用户
-      const allUsers = await db
-        .select({
-          id: users.id,
-          name: users.name,
-          grade: users.grade,
-          class: users.class
-        })
-        .from(users)
-
-      // 创建姓名到用户数组的映射
-      const nameToUsers = new Map()
-      allUsers.forEach((user) => {
-        if (user.name) {
-          if (!nameToUsers.has(user.name)) {
-            nameToUsers.set(user.name, [])
-          }
-          nameToUsers.get(user.name).push(user)
-        }
-      })
-
-      // 获取每首歌的投票数
-      const songIds = schedulesData.map((s) => s.songId)
-      const voteCounts = await Promise.all(
-        songIds.map(async (songId) => {
-          const voteCountResult = await db
-            .select({ count: count() })
-            .from(votes)
-            .where(eq(votes.songId, songId))
-          return { songId, count: voteCountResult[0].count }
-        })
-      )
-
-      const voteCountMap = new Map(voteCounts.map((v) => [v.songId, v.count]))
-
-      // 转换数据格式
-      const formattedSchedules = schedulesData.map((schedule) => {
-        const dateOnly = schedule.playDate
-
-        // 处理投稿人姓名，如果是同名用户则添加后缀
-        let requesterName = schedule.requesterName || '未知用户'
-
-        const sameNameUsers = nameToUsers.get(requesterName)
-        if (sameNameUsers && sameNameUsers.length > 1) {
-          if (schedule.requesterGrade) {
-            const sameGradeUsers = sameNameUsers.filter(
-              (u: {
-                id: number
-                name: string | null
-                grade: string | null
-                class: string | null
-              }) => u.grade === schedule.requesterGrade
-            )
-
-            if (sameGradeUsers.length > 1 && schedule.requesterClass) {
-              requesterName = `${requesterName}（${schedule.requesterGrade} ${schedule.requesterClass}）`
-            } else {
-              requesterName = `${requesterName}（${schedule.requesterGrade}）`
-            }
-          }
-        }
-
-        return {
-          id: schedule.id,
-          playDate: dateOnly.toISOString().split('T')[0],
-          sequence: schedule.sequence || 1,
-          played: schedule.played || false,
-          playTimeId: schedule.playTimeId,
-          playTime: schedule.playTimeName
-            ? {
-                id: schedule.playTimeId,
-                name: schedule.playTimeName,
-                startTime: schedule.playTimeStartTime,
-                endTime: schedule.playTimeEndTime,
-                enabled: schedule.playTimeEnabled
-              }
-            : null,
-          song: {
-            id: schedule.songId,
-            title: schedule.songTitle,
-            artist: schedule.songArtist,
-            requester: requesterName,
-            voteCount: voteCountMap.get(schedule.songId) || 0,
-            played: schedule.songPlayed || false,
-            cover: schedule.songCover || null,
-            musicPlatform: schedule.songMusicPlatform || null,
-            musicId: schedule.songMusicId || null,
-            playUrl: schedule.songPlayUrl || null,
-            semester: schedule.songSemester || null
-          }
-        }
-      })
-
-      const completeSchedules = formattedSchedules
-
-      // 重新缓存完整的排期列表
-      if (completeSchedules && completeSchedules.length > 0) {
-        await cacheService.setSchedulesList(completeSchedules)
-        console.log(`[Cache] 完整排期列表已重新缓存，数量: ${completeSchedules.length}`)
-      } else {
-        console.log('[Cache] 没有排期数据需要缓存')
-      }
-    } catch (cacheError) {
-      console.warn('[Cache] 重新缓存完整排期列表失败，但不影响排期创建:', cacheError)
-    }
 
     return {
       ...schedule,
@@ -318,6 +172,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error: any) {
     console.error('创建排期失败:', error)
+    if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
       message: error.message || '创建排期失败'

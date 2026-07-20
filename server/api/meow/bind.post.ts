@@ -3,14 +3,19 @@ import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
+import {
+  delStore,
+  delStoreIfValue,
+  getStore,
+  hashStateCode,
+  setStore,
+  verifyStateCode
+} from '~~/server/utils/captchaStore'
 
 // 生成6位数字验证码
 function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
-
-// 验证码存储（生产环境应使用Redis等持久化存储）
-const verificationCodes = new Map<string, { code: string; userId: number; expiresAt: number }>()
 
 export default defineEventHandler(async (event) => {
   try {
@@ -29,7 +34,9 @@ export default defineEventHandler(async (event) => {
 
     // 如果是验证并绑定操作
     if (action === 'verify_and_bind' && verificationCode) {
-      const storedData = verificationCodes.get(meowId)
+      const stateKey = `meow-bind:${userId}`
+      const storedRaw = await getStore(stateKey)
+      const storedData = storedRaw ? JSON.parse(storedRaw) : null
       if (!storedData) {
         throw createError({
           statusCode: 400,
@@ -37,7 +44,7 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      if (storedData.userId !== userId) {
+      if (storedData.meowId !== meowId) {
         throw createError({
           statusCode: 400,
           message: '验证码不匹配'
@@ -45,18 +52,29 @@ export default defineEventHandler(async (event) => {
       }
 
       if (Date.now() > storedData.expiresAt) {
-        verificationCodes.delete(meowId)
+        await delStore(stateKey)
         throw createError({
           statusCode: 400,
           message: '验证码已过期，请重新发送'
         })
       }
 
-      if (storedData.code !== verificationCode) {
+      if (!verifyStateCode(stateKey, String(verificationCode), storedData.codeHash)) {
+        storedData.attempts = Number(storedData.attempts || 0) + 1
+        if (storedData.attempts >= 5) {
+          await delStore(stateKey)
+          throw createError({ statusCode: 400, message: '验证码错误次数过多，请重新发送' })
+        }
+        const remainingTtl = Math.max(1, Math.ceil((storedData.expiresAt - Date.now()) / 1000))
+        await setStore(stateKey, JSON.stringify(storedData), remainingTtl)
         throw createError({
           statusCode: 400,
           message: '验证码错误'
         })
+      }
+
+      if (!(await delStoreIfValue(stateKey, storedRaw!))) {
+        throw createError({ statusCode: 400, message: '验证码已使用，请重新发送' })
       }
 
       // 验证通过，绑定账号
@@ -67,9 +85,6 @@ export default defineEventHandler(async (event) => {
           meowBoundAt: new Date()
         })
         .where(eq(users.id, userId))
-
-      // 清除验证码
-      verificationCodes.delete(meowId)
 
       return {
         success: true,
@@ -124,13 +139,19 @@ export default defineEventHandler(async (event) => {
       // 生成验证码
       const code = generateVerificationCode()
       const expiresAt = Date.now() + 5 * 60 * 1000 // 5分钟过期
+      const stateKey = `meow-bind:${userId}`
 
       // 存储验证码
-      verificationCodes.set(meowId, {
-        code,
-        userId,
-        expiresAt
-      })
+      await setStore(
+        stateKey,
+        JSON.stringify({
+          meowId,
+          codeHash: hashStateCode(stateKey, code),
+          expiresAt,
+          attempts: 0
+        }),
+        5 * 60
+      )
 
       // 发送验证码到 MeoW
       const message = `VoiceHub 账号绑定验证码：${code}（5分钟内有效）`
@@ -164,7 +185,7 @@ export default defineEventHandler(async (event) => {
         }
       } catch (error) {
         // 清除验证码
-        verificationCodes.delete(meowId)
+        await delStore(stateKey)
 
         console.error('发送 MeoW 验证码失败:', error)
         throw createError({
@@ -179,7 +200,7 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       message: '无效的操作'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('MeoW 绑定失败:', error)
 
     if (error.statusCode) {

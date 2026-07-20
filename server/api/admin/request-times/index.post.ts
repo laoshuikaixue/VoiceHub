@@ -83,15 +83,6 @@ export default defineEventHandler(async (event) => {
       .returning()
     const newRequestTime = newRequestTimeResult[0]
 
-    try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('schedules:*')
-      await cache.deletePattern('requestTimes:*')
-      console.log('[Cache] 排期和播放时间缓存已清除（创建播放时间）')
-    } catch (cacheError) {
-      console.warn('清除缓存失败:', cacheError)
-    }
-
     return newRequestTime
   } catch (error: any) {
     console.error('创建投稿开放时段失败:', error)

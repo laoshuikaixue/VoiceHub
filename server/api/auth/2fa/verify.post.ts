@@ -1,11 +1,17 @@
 import { db, userIdentities, eq, and, users } from '~/drizzle/db'
-import { twoFactorCodes } from '~~/server/utils/twoFactorStore'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { isSecureRequest } from '~~/server/utils/request-utils'
-import { delStore, getStore, incrStore } from '~~/server/utils/captchaStore'
+import {
+  delStore,
+  delStoreIfValue,
+  getStore,
+  incrStore,
+  setStore,
+  verifyStateCode
+} from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
 
 const { authenticator } = otplib
@@ -46,7 +52,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({ statusCode: 404, message: '用户不存在' })
   }
-  
+
   if (user.status !== 'active') {
     throw createError({ statusCode: 403, message: '账号已被禁用或限制访问' })
   }
@@ -74,7 +80,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '未开启TOTP验证' })
     }
     verified = authenticator.check(code, identity.providerUserId)
-    
+
     if (!verified) {
       await incrStore(totpUserFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
       await incrStore(totpIpFailureKey, TOTP_FAILURE_WINDOW_SECONDS)
@@ -84,31 +90,39 @@ export default defineEventHandler(async (event) => {
     await delStore(totpUserFailureKey)
     await delStore(totpIpFailureKey)
   } else if (type === 'email') {
-    const stored = twoFactorCodes.get(targetUserId)
-    
+    const stateKey = `2fa-email:${targetUserId}`
+    const storedRaw = await getStore(stateKey)
+    const stored = storedRaw ? JSON.parse(storedRaw) : null
+
     if (!stored) {
       throw createError({ statusCode: 400, message: '验证码已过期或不存在' })
     }
 
     if (stored.expiresAt <= Date.now()) {
-      twoFactorCodes.delete(targetUserId)
+      await delStore(stateKey)
       throw createError({ statusCode: 400, message: '验证码已过期' })
     }
 
     // 检查尝试次数
     if (stored.attempts >= 5) {
-      twoFactorCodes.delete(targetUserId)
+      await delStore(stateKey)
       throw createError({ statusCode: 400, message: '验证尝试次数过多，请重新获取' })
     }
 
-    if (stored.code === code) {
+    if (verifyStateCode(stateKey, String(code), stored.codeHash)) {
+      if (!(await delStoreIfValue(stateKey, storedRaw!))) {
+        throw createError({ statusCode: 400, message: '验证码已使用，请重新获取' })
+      }
       verified = true
-      twoFactorCodes.delete(targetUserId) // 验证成功后删除
     } else {
       // 增加尝试次数
       stored.attempts++
-      twoFactorCodes.set(targetUserId, stored)
-      throw createError({ statusCode: 400, message: `验证码错误，剩余尝试次数：${5 - stored.attempts}` })
+      const remainingTtl = Math.max(1, Math.ceil((stored.expiresAt - Date.now()) / 1000))
+      await setStore(stateKey, JSON.stringify(stored), remainingTtl)
+      throw createError({
+        statusCode: 400,
+        message: `验证码错误，剩余尝试次数：${5 - stored.attempts}`
+      })
     }
   } else {
     throw createError({ statusCode: 400, message: '不支持的验证类型' })
@@ -150,8 +164,9 @@ export default defineEventHandler(async (event) => {
       }
     })
   }
-  
-  await db.update(users)
+
+  await db
+    .update(users)
     .set({
       lastLogin: getBeijingTime(),
       lastLoginIp: clientIp
@@ -165,27 +180,27 @@ export default defineEventHandler(async (event) => {
   const isSecure = isSecureRequest(event)
 
   setCookie(event, 'auth-token', authToken, {
-      httpOnly: true,
-      secure: isSecure,
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/'
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/'
   })
 
   deleteCookie(event, 'pre-auth-token')
   deleteCookie(event, 'binding-token')
 
   return {
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        grade: user.grade,
-        class: user.class,
-        role: user.role,
-        needsPasswordChange: !user.passwordChangedAt,
-        has2FA: true
-      }
+    success: true,
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      grade: user.grade,
+      class: user.class,
+      role: user.role,
+      needsPasswordChange: !user.passwordChangedAt,
+      has2FA: true
+    }
   }
 })
