@@ -273,7 +273,7 @@ export default defineEventHandler(async (event) => {
       }
     }) as PublicScheduleItem[]
 
-    if (!user || (shouldHideStudentInfo && !isAdmin)) {
+    if (shouldHideStudentInfo && !isAdmin) {
       maskPublicScheduleData(formattedSchedules)
     }
     if (!user) {
