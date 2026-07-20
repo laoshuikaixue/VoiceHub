@@ -17,12 +17,7 @@
     />
 
     <main class="main-content">
-      <div
-        :key="route.path"
-        :class="{ 'page-view--password-change': route.path === '/change-password' }"
-        :data-route="pageViewRouteName"
-        class="page-view"
-      >
+      <div :key="route.path" :data-route="pageViewRouteName" class="page-view">
         <NuxtPage />
       </div>
     </main>

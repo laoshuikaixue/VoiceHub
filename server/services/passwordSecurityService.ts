@@ -22,12 +22,12 @@ export async function consumePasswordRateLimit(
   const now = new Date()
   const resetAt = new Date(now.getTime() + PASSWORD_RATE_WINDOW_SECONDS * 1000)
   const keys = [`user:${action}:${userId}`, `ip:${action}:${ipAddress}`]
+  const comparisonNow = sql.param(now, passwordRateLimits.resetAt)
 
   const buckets = await db.transaction(async (tx) => {
     const values: Array<{ count: number; resetAt: Date }> = []
     for (const key of keys) {
       // 使用 Node 统一生成的时间，并通过时间列编码器传入 SQL，避免数据库时区影响比较结果。
-      const comparisonNow = sql.param(now, passwordRateLimits.resetAt)
       const [result] = await tx
         .insert(passwordRateLimits)
         .values({ key, count: 1, resetAt })

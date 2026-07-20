@@ -23,16 +23,6 @@
   will-change: transform, opacity, filter;
 }
 
-/* 改密页从首页重定向进入时保持稳定的视口布局，不参与页面位移动画。 */
-.page-view--password-change {
-  min-height: 100dvh;
-  animation: none !important;
-  opacity: 1;
-  transform: none !important;
-  filter: none !important;
-  will-change: auto;
-}
-
 .page-view[data-route='index'] {
   animation-duration: 0.75s;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -41,9 +31,11 @@
 
 /* 强制改密页必须立即稳定居中，避免路由重定向时出现位移。 */
 .page-view[data-route='change-password'] {
-  min-height: 100vh;
-  animation: none;
-  transform: none;
+  min-height: 100dvh;
+  animation: none !important;
+  opacity: 1;
+  transform: none !important;
+  filter: none !important;
   will-change: auto;
 }
 

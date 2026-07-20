@@ -1,14 +1,12 @@
 <template>
-  <div class="auth-layout flex min-h-screen w-full items-center justify-center bg-[#0a0a0a] p-5">
-    <div
-      class="auth-container grid min-h-[600px] w-full max-w-[1200px] grid-cols-1 overflow-hidden lg:grid-cols-2"
-    >
+  <div class="auth-layout">
+    <div class="auth-container">
       <!-- 左侧信息区域 -->
-      <div class="info-section flex items-center justify-center">
+      <div class="info-section">
         <div class="info-content">
           <div class="logo-section">
             <img alt="VoiceHub Logo" class="brand-logo" :src="logo" />
-            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
+            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle }}</h1>
           </div>
 
           <div v-if="isFirstLogin" class="welcome-message">
@@ -65,8 +63,8 @@
       </div>
 
       <!-- 右侧表单区域 -->
-      <div class="form-section flex items-center justify-center">
-        <div class="form-container flex w-full max-w-[400px] flex-col items-center">
+      <div class="form-section">
+        <div class="form-container">
           <div class="form-header">
             <h2>{{ isFirstLogin ? '设置新密码' : '修改密码' }}</h2>
             <p>{{ isFirstLogin ? '请设置一个安全的密码' : '更新您的登录密码' }}</p>
@@ -85,7 +83,7 @@
               </svg>
               返回主页
             </NuxtLink>
-            <button v-else class="back-link logout-link" type="button" @click="handleLogout">
+            <button v-else class="back-link logout-link" type="button" @click="auth.logout()">
               <Icon class="shrink-0" name="logout" :size="16" aria-hidden="true" />
               退出登录
             </button>
@@ -112,10 +110,6 @@ const isFirstLogin = computed(() => {
   return currentUser?.needsInitialPasswordSetup === true
 })
 const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
-
-const handleLogout = async () => {
-  await auth.logout()
-}
 
 // 未登录用户重定向到登录页
 onMounted(async () => {

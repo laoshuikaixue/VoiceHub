@@ -49,12 +49,8 @@ export const PUBLIC_API_PREFIX_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/auth/webauthn/login/', methods: ['POST'] }
 ]
 
-function normalizeMethod(method: string): HttpMethod | '' {
-  return method.toUpperCase() as HttpMethod
-}
-
 function matchesMethod(policy: RoutePolicy, method: string): boolean {
-  return policy.methods.includes(normalizeMethod(method) as HttpMethod)
+  return policy.methods.includes(method.toUpperCase() as HttpMethod)
 }
 
 export function isPublicApiPath(pathname: string, method: string): boolean {

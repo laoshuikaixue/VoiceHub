@@ -284,31 +284,23 @@ const passwordPolicyError = computed(() => validatePasswordPolicy(newPassword.va
 
 // 表单验证
 const isFormValid = computed(() => {
-  if (props.isFirstLogin) {
-    return (
-      newPassword.value &&
-      confirmPassword.value &&
-      newPassword.value === confirmPassword.value &&
-      !passwordPolicyError.value
-    )
-  } else {
-    return (
-      currentPassword.value &&
-      newPassword.value &&
-      confirmPassword.value &&
-      newPassword.value === confirmPassword.value &&
-      !passwordPolicyError.value
-    )
-  }
+  return Boolean(
+    (props.isFirstLogin || currentPassword.value) &&
+    newPassword.value &&
+    confirmPassword.value &&
+    newPassword.value === confirmPassword.value &&
+    !passwordPolicyError.value
+  )
 })
 
-const validatePassword = () => {
+const handleNewPasswordInput = () => {
   error.value = newPassword.value ? passwordPolicyError.value || '' : ''
 }
 
-const handleNewPasswordInput = () => {
-  error.value = ''
-  validatePassword()
+const resetForm = () => {
+  currentPassword.value = ''
+  newPassword.value = ''
+  confirmPassword.value = ''
 }
 
 const handleChangePassword = async () => {
@@ -331,10 +323,7 @@ const handleChangePassword = async () => {
       await auth.setInitialPassword(newPassword.value)
       success.value = '密码设置成功！正在跳转...'
 
-      // 清空表单
-      currentPassword.value = ''
-      newPassword.value = ''
-      confirmPassword.value = ''
+      resetForm()
 
       // 密码设置完成后跳转
       scheduleRedirect(async () => {
@@ -348,10 +337,7 @@ const handleChangePassword = async () => {
       await auth.changePassword(currentPassword.value, newPassword.value)
       success.value = '密码修改成功！请重新登录'
 
-      // 清空表单
-      currentPassword.value = ''
-      newPassword.value = ''
-      confirmPassword.value = ''
+      resetForm()
 
       // 密码修改后登出
       scheduleRedirect(async () => {
@@ -360,18 +346,12 @@ const handleChangePassword = async () => {
       })
     }
   } catch (err) {
-    // 提取错误信息，支持多种错误格式（优先使用 message）
-    if (err.data && err.data.message) {
-      error.value = err.data.message
-    } else if (err.data && err.data.statusMessage) {
-      error.value = err.data.statusMessage
-    } else if (err.message) {
-      error.value = err.message
-    } else if (err.statusMessage) {
-      error.value = err.statusMessage
-    } else {
-      error.value = '操作失败，请重试'
-    }
+    error.value =
+      err?.data?.message ||
+      err?.data?.statusMessage ||
+      err?.message ||
+      err?.statusMessage ||
+      '操作失败，请重试'
   } finally {
     loading.value = false
   }

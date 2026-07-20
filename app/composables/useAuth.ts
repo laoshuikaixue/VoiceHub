@@ -11,6 +11,10 @@ interface LoginResponse {
   tempToken?: string // 预认证临时令牌
 }
 
+interface PasswordChangeResponse {
+  passwordChangedAt?: string
+}
+
 const AUTH_STATE_TTL_MS = 30 * 1000
 
 export const useAuth = () => {
@@ -61,11 +65,7 @@ export const useAuth = () => {
       })
 
       if (data && data.user) {
-        user.value = data.user
-        isAuthenticated.value = true
-        isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
-        token.value = 'cookie-based'
-        lastAuthVerifiedAt.value = Date.now()
+        setAuthState(data.user)
         return data.user
       } else {
         clearAuthState()
@@ -128,30 +128,19 @@ export const useAuth = () => {
     throw new Error('验证失败')
   }
 
-  const changePassword = async (currentPassword: string, newPassword: string) => {
-    loading.value = true
-    let response: { passwordChangedAt?: string }
-    try {
-      response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/change-password', {
-        method: 'POST',
-        body: { currentPassword, newPassword }
-      })
-    } catch (error: any) {
-      loading.value = false
-      // 处理 FetchError，提取错误信息（优先使用 message）
-      if (error.data && error.data.message) {
-        throw new Error(error.data.message)
-      } else if (error.data && error.data.statusMessage) {
-        throw new Error(error.data.statusMessage)
-      } else if (error.message) {
-        throw new Error(error.message)
-      } else if (error.statusMessage) {
-        throw new Error(error.statusMessage)
-      } else {
-        throw new Error('密码修改失败，请重试')
-      }
+  const refreshUser = async () => {
+    const data = await $fetch<{ user: User }>('/api/auth/verify')
+    if (data?.user) {
+      setAuthState(data.user)
+      return data.user
     }
+    return null
+  }
 
+  const syncPasswordChangeState = async (
+    response: PasswordChangeResponse,
+    refreshFailureMessage: string
+  ) => {
     if (user.value) {
       user.value.requirePasswordChange = false
       user.value.forcePasswordChange = false
@@ -162,8 +151,27 @@ export const useAuth = () => {
 
     try {
       await refreshUser()
-    } catch (refreshError) {
-      console.warn('密码修改成功，但刷新用户状态失败:', refreshError)
+    } catch (error) {
+      console.warn(refreshFailureMessage, error)
+    }
+  }
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    loading.value = true
+    try {
+      const response = await $fetch<PasswordChangeResponse>('/api/auth/change-password', {
+        method: 'POST',
+        body: { currentPassword, newPassword }
+      })
+      await syncPasswordChangeState(response, '密码修改成功，但刷新用户状态失败:')
+    } catch (error: any) {
+      throw new Error(
+        error?.data?.message ||
+          error?.data?.statusMessage ||
+          error?.message ||
+          error?.statusMessage ||
+          '密码修改失败，请重试'
+      )
     } finally {
       loading.value = false
     }
@@ -171,42 +179,14 @@ export const useAuth = () => {
 
   const setInitialPassword = async (newPassword: string) => {
     loading.value = true
-    let response: { passwordChangedAt?: string }
     try {
-      response = await $fetch<{ passwordChangedAt?: string }>('/api/auth/set-initial-password', {
+      const response = await $fetch<PasswordChangeResponse>('/api/auth/set-initial-password', {
         method: 'POST',
         body: { newPassword }
       })
-    } catch (error) {
-      loading.value = false
-      throw error
-    }
-
-    if (user.value) {
-      user.value.requirePasswordChange = false
-      user.value.forcePasswordChange = false
-      user.value.passwordChangedAt = response.passwordChangedAt || null
-      user.value.hasSetPassword = true
-      user.value.needsInitialPasswordSetup = false
-    }
-
-    try {
-      await refreshUser()
-    } catch (refreshError) {
-      console.warn('初始密码设置成功，但刷新用户状态失败:', refreshError)
+      await syncPasswordChangeState(response, '初始密码设置成功，但刷新用户状态失败:')
     } finally {
       loading.value = false
-    }
-  }
-
-  const refreshUser = async () => {
-    const data = await $fetch<{ user: User }>('/api/auth/verify')
-    if (data && data.user) {
-      user.value = data.user
-      isAuthenticated.value = true
-      isAdmin.value = ['ADMIN', 'SUPER_ADMIN', 'SONG_ADMIN'].includes(data.user.role)
-      token.value = 'cookie-based'
-      lastAuthVerifiedAt.value = Date.now()
     }
   }
 

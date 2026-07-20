@@ -1,4 +1,5 @@
 import { JWTEnhanced } from '../utils/jwt-enhanced'
+import type { H3Event } from 'h3'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -12,6 +13,16 @@ import {
   shouldBypassPublicApiAuthentication
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
+
+function clearAuthCookie(event: H3Event) {
+  setCookie(event, 'auth-token', '', {
+    httpOnly: true,
+    secure: isSecureRequest(event),
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/'
+  })
+}
 
 export default defineEventHandler(async (event) => {
   // 清除用户上下文
@@ -121,21 +132,14 @@ export default defineEventHandler(async (event) => {
 
     // 用户不存在或状态异常时token无效
     if (!user || user.status !== 'active') {
-      const isSecure = isSecureRequest(event)
-      setCookie(event, 'auth-token', '', {
-        httpOnly: true,
-        secure: isSecure,
-        sameSite: 'lax',
-        maxAge: 0,
-        path: '/'
-      })
-      
-      const errorMessage = !user 
-        ? '用户不存在，请重新登录' 
-        : user.status === 'withdrawn' 
-          ? '该账号已退学，限制访问' 
-          : user.status === 'graduate' 
-            ? '该账号已毕业，限制访问' 
+      clearAuthCookie(event)
+
+      const errorMessage = !user
+        ? '用户不存在，请重新登录'
+        : user.status === 'withdrawn'
+          ? '该账号已退学，限制访问'
+          : user.status === 'graduate'
+            ? '该账号已毕业，限制访问'
             : '该账号已被禁用'
 
       return sendError(
@@ -149,14 +153,7 @@ export default defineEventHandler(async (event) => {
 
     // 用户级版本号可以可靠撤销同一秒内签发的旧令牌。
     if ((decoded.tokenVersion ?? 0) !== user.tokenVersion) {
-      const isSecure = isSecureRequest(event)
-      setCookie(event, 'auth-token', '', {
-        httpOnly: true,
-        secure: isSecure,
-        sameSite: 'lax',
-        maxAge: 0,
-        path: '/'
-      })
+      clearAuthCookie(event)
 
       return sendError(
         event,
@@ -172,14 +169,7 @@ export default defineEventHandler(async (event) => {
     if (user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {
-        const isSecure = isSecureRequest(event)
-        setCookie(event, 'auth-token', '', {
-          httpOnly: true,
-          secure: isSecure,
-          sameSite: 'lax',
-          maxAge: 0,
-          path: '/'
-        })
+        clearAuthCookie(event)
 
         return sendError(
           event,
