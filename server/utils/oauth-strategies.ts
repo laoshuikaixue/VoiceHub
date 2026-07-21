@@ -34,10 +34,7 @@ const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
     ? `聚合登陆授权地址获取失败：${providerMessage}`
     : '聚合登陆授权地址获取失败'
 
-const getAggregateTokenErrorMessage = (providerMessage?: string): string =>
-  providerMessage ? `聚合登陆访问令牌获取失败：${providerMessage}` : '聚合登陆访问令牌获取失败'
-
-const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://u.beichenwl.cn/connect.php'
+const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
 
 const normalizeAggregateEndpoint = (endpoint?: string): string => {
   const value = endpoint?.trim() || DEFAULT_AGGREGATE_OAUTH_ENDPOINT
@@ -383,31 +380,19 @@ const aggregateOAuthStrategy: OAuthStrategy = {
         headers: { Accept: 'application/json' }
       })
     } catch (e: any) {
-      const providerMessage = getAggregateProviderMessage(e?.data || e?.response?._data)
       // AppKey 位于协议规定的查询串中，避免记录或继续抛出完整请求 URL。
       console.error('聚合登陆回调请求失败', {
-        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown',
-        providerMessage
+        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown'
       })
-      throw createError({
-        statusCode: 502,
-        message: getAggregateTokenErrorMessage(providerMessage)
-      })
+      throw new Error('令牌请求失败')
     }
 
     if (tokenResponse?.code !== 0) {
-      const providerMessage = getAggregateProviderMessage(tokenResponse)
-      throw createError({
-        statusCode: 502,
-        message: getAggregateTokenErrorMessage(providerMessage)
-      })
+      throw new Error(tokenResponse?.msg || '授权失败，请重试')
     }
 
     if (!tokenResponse?.social_uid) {
-      throw createError({
-        statusCode: 502,
-        message: '聚合登陆访问令牌获取失败：响应缺少用户唯一标识'
-      })
+      throw new Error('聚合登陆响应缺少用户唯一标识')
     }
 
     return Buffer.from(JSON.stringify(tokenResponse), 'utf8').toString('base64url')

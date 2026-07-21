@@ -362,7 +362,7 @@ export const systemSettings = pgTable("SystemSettings", {
 	aggregateOauthAppId: text("aggregateOAuthAppId"),
 	aggregateOauthAppKey: text("aggregateOAuthAppKey"),
 	aggregateOauthLoginType: text("aggregateOAuthLoginType").default('qq'),
-	aggregateOauthEndpoint: text("aggregateOAuthEndpoint").default('https://u.beichenwl.cn/connect.php'),
+	aggregateOauthEndpoint: text("aggregateOAuthEndpoint").default('https://a.idcfx.net/connect.php'),
 	showBeianIcon: boolean().default(false).notNull(),
 	allowOauthRegistration: boolean().default(false).notNull(),
 	captchaEnabled: boolean().default(false).notNull(),

@@ -9,7 +9,6 @@ export const AGGREGATE_OAUTH_LOGIN_TYPES = [
   'douyin',
   'huawei',
   'xiaomi',
-  'microsoft',
   'gitee',
   'bilibili',
   'appleid',

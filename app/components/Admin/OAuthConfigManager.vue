@@ -151,7 +151,7 @@
           <input
             v-model="formData.aggregateOAuthEndpoint"
             type="url"
-            placeholder="https://u.beichenwl.cn/connect.php"
+            placeholder="https://a.idcfx.net/connect.php"
             :class="inputClass"
           />
           <p class="text-[10px] text-zinc-600 px-1 mt-2">
@@ -432,7 +432,7 @@ const oauthProviders = computed(() => [
     clientIdPlaceholder: '输入聚合登陆 AppID',
     clientSecretLabel: 'AppKey',
     clientSecretPlaceholder: '输入聚合登陆 AppKey',
-    docUrl: 'https://u.beichenwl.cn/doc.php#',
+    docUrl: 'https://a.idcfx.net/doc.php#',
     docLabel: '查看聚合登陆开发文档'
   }
 ])

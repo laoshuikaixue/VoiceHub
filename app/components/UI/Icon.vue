@@ -91,14 +91,6 @@
       />
     </g>
 
-    <!-- Microsoft 四色窗格依据 Simple Icons 的品牌几何拆分 -->
-    <g v-else-if="name === 'oauth-microsoft'" stroke="none">
-      <path fill="#f25022" d="M0 0h11.408v11.408H0Z" />
-      <path fill="#7fba00" d="M12.594 0H24v11.408H12.594Z" />
-      <path fill="#00a4ef" d="M0 12.594h11.408V24H0Z" />
-      <path fill="#ffb900" d="M12.594 12.594H24V24H12.594Z" />
-    </g>
-
     <!-- Gitee 品牌路径来源：Simple Icons（CC0） -->
     <g v-else-if="name === 'oauth-gitee'" fill="currentColor" stroke="none">
       <path

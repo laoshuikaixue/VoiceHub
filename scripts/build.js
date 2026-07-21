@@ -18,7 +18,6 @@ const SUPPORTED_AGGREGATE_LOGIN_TYPES = [
   'douyin',
   'huawei',
   'xiaomi',
-  'microsoft',
   'gitee',
   'bilibili',
   'appleid',
