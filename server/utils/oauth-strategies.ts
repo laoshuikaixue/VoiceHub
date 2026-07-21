@@ -34,7 +34,7 @@ const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
     ? `聚合登陆授权地址获取失败：${providerMessage}`
     : '聚合登陆授权地址获取失败'
 
-const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
+const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://u.beichenwl.cn/connect.php'
 
 const normalizeAggregateEndpoint = (endpoint?: string): string => {
   const value = endpoint?.trim() || DEFAULT_AGGREGATE_OAUTH_ENDPOINT

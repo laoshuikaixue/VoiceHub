@@ -71,9 +71,6 @@ const providerButtonClass = (provider) => {
       huawei: 'hover:bg-[#cf0a2c] hover:text-white hover:border-[#cf0a2c]',
       xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
       microsoft: 'hover:bg-white hover:text-black hover:border-[#737373]',
-      feishu: 'hover:bg-[#3370ff] hover:text-white hover:border-[#3370ff]',
-      wework: 'hover:bg-[#2e88ff] hover:text-white hover:border-[#2e88ff]',
-      dingtalk: 'hover:bg-[#0089ff] hover:text-white hover:border-[#0089ff]',
       gitee: 'hover:bg-[#c71d23] hover:text-white hover:border-[#c71d23]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`

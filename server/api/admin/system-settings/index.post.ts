@@ -561,7 +561,7 @@ export default defineEventHandler(async (event) => {
     const nextAggregateEndpoint =
       body.aggregateOAuthEndpoint !== undefined
         ? normalizeOptionalText(body.aggregateOAuthEndpoint)
-        : settings?.aggregateOAuthEndpoint || 'https://a.idcfx.net/connect.php'
+        : settings?.aggregateOAuthEndpoint || 'https://u.beichenwl.cn/connect.php'
 
     if (body.aggregateOAuthEnabled !== undefined) {
       if (typeof body.aggregateOAuthEnabled !== 'boolean') {
@@ -610,7 +610,7 @@ export default defineEventHandler(async (event) => {
           })
         }
       }
-      updateData.aggregateOAuthEndpoint = nextAggregateEndpoint || 'https://a.idcfx.net/connect.php'
+      updateData.aggregateOAuthEndpoint = nextAggregateEndpoint || 'https://u.beichenwl.cn/connect.php'
     }
 
     // Custom OAuth2

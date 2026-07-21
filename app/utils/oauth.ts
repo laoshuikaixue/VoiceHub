@@ -8,9 +8,6 @@ export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
   { value: 'huawei', label: '华为' },
   { value: 'xiaomi', label: '小米' },
   { value: 'microsoft', label: 'Microsoft' },
-  { value: 'feishu', label: '飞书' },
-  { value: 'wework', label: '企业微信' },
-  { value: 'dingtalk', label: '钉钉' },
   { value: 'gitee', label: 'Gitee' }
 ] as const
 
@@ -24,9 +21,6 @@ const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
   huawei: 'oauth-huawei',
   xiaomi: 'oauth-xiaomi',
   microsoft: 'oauth-microsoft',
-  feishu: 'oauth-feishu',
-  wework: 'oauth-wecom',
-  dingtalk: 'oauth-dingtalk',
   gitee: 'oauth-gitee'
 }
 

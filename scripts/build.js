@@ -19,9 +19,6 @@ const SUPPORTED_AGGREGATE_LOGIN_TYPES = [
   'huawei',
   'xiaomi',
   'microsoft',
-  'feishu',
-  'wework',
-  'dingtalk',
   'gitee'
 ]
 const SUPPORTED_ENV_VARIABLES = [

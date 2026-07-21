@@ -311,9 +311,6 @@ const aggregateIconClass = (loginType) => {
     huawei: 'text-[#cf0a2c]',
     xiaomi: 'text-[#ff6900]',
     microsoft: 'text-[#737373]',
-    feishu: 'text-[#3370ff]',
-    wework: 'text-[#2e88ff]',
-    dingtalk: 'text-[#0089ff]',
     gitee: 'text-[#c71d23]'
   }
   return classes[loginType] || 'text-zinc-100'
