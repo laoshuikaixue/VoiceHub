@@ -1,6 +1,5 @@
 import CryptoJS from 'crypto-js'
 import { createHmac, randomBytes } from 'node:crypto'
-import { createError } from 'h3'
 
 export interface OAuthState {
   target: string
@@ -38,10 +37,18 @@ export const decodeOAuthStateCookie = (state: string): string => {
   if (!state.startsWith(OAUTH_STATE_COOKIE_PREFIX)) {
     return state
   }
+
+  const encodedState = state.slice(OAUTH_STATE_COOKIE_PREFIX.length)
+  if (!encodedState || !/^[A-Za-z0-9_-]+$/.test(encodedState)) {
+    return ''
+  }
+
   try {
-    return Buffer.from(state.slice(OAUTH_STATE_COOKIE_PREFIX.length), 'base64url').toString(
-      'base64'
-    )
+    const decodedState = Buffer.from(encodedState, 'base64url')
+    if (decodedState.toString('base64url') !== encodedState) {
+      return ''
+    }
+    return decodedState.toString('base64')
   } catch {
     return ''
   }

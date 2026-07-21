@@ -343,7 +343,6 @@ onMounted(async () => {
 
   .form-section {
     padding: 40px 30px;
-    order: -1;
   }
 
   .brand-title {
