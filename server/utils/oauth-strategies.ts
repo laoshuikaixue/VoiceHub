@@ -19,20 +19,19 @@ const firstStringValue = (values: any[]): string | undefined => {
 }
 
 const getAggregateProviderMessage = (value: any): string | undefined => {
-  const message = firstStringValue([value?.msg, value?.message, value?.error_description])
+  const message = firstStringValue([value, value?.msg, value?.message, value?.error_description])
   if (!message) return undefined
 
   return message
-    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
     .replace(/\b(app(?:id|key)|client_(?:id|secret))\s*[:=]\s*[^\s,;]+/gi, '$1=[已隐藏]')
     .trim()
     .slice(0, 200)
 }
 
 const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
-  providerMessage
-    ? `聚合登陆授权地址获取失败：${providerMessage}`
-    : '聚合登陆授权地址获取失败'
+  providerMessage ? `聚合登陆授权地址获取失败：${providerMessage}` : '聚合登陆授权地址获取失败'
 
 const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
 
