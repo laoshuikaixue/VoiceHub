@@ -229,15 +229,64 @@
     {
       "idx": 32,
       "version": "7",
-      "when": 1784419260000,
-      "tag": "20260718000100_add_aggregate_oauth_provider",
+      "when": 1784419200000,
+      "tag": "20260719000001_add_first_login_password_change",
       "breakpoints": true
     },
     {
       "idx": 33,
       "version": "7",
+      "when": 1784419201000,
+      "tag": "20260719000002_restore_pending_password_change",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1784419202000,
+      "tag": "20260719000003_harden_password_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1784419260000,
+      "tag": "20260718000100_add_aggregate_oauth_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1784419261000,
+      "tag": "20260719000004_reconcile_password_security_after_main",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1784505600000,
+      "tag": "20260720000001_restore_ambiguous_password_change_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1784505601000,
+      "tag": "20260720000002_clear_ambiguous_password_change_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
       "when": 1784530957225,
       "tag": "20260720070237_minimize-redis-add-song-query-indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1784541772702,
+      "tag": "20260720100252_finalize_password_security",
       "breakpoints": true
     }
   ]

@@ -5,7 +5,7 @@ import {
   getSafeOAuthReturnPath
 } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, users, userIdentities } from '~/drizzle/db'
+import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
@@ -19,6 +19,8 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import type { H3Event } from 'h3'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
+import { computeRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
@@ -185,27 +187,115 @@ async function handleUserLoginOrBind(
         // 已经被其他用户绑定
         return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
       }
-    } else {
-      const currentUserRecord = await db.query.users.findFirst({
-        where: eq(users.id, currentUser.userId)
-      })
+    }
 
-      if (!currentUserRecord || currentUserRecord.status !== 'active') {
+    let bindingResult:
+      | 'success'
+      | 'already-bound'
+      | 'bound-to-other'
+      | 'invalid-session'
+      | 'inactive'
+      | 'password-change-required'
+
+    try {
+      bindingResult = await db.transaction(async (tx) => {
+        const [currentUserRecord] = await tx
+          .select({
+            status: users.status,
+            tokenVersion: users.tokenVersion,
+            forcePasswordChange: users.forcePasswordChange,
+            passwordChangedAt: users.passwordChangedAt
+          })
+          .from(users)
+          .where(eq(users.id, currentUser.userId))
+          .for('update')
+
+        if (
+          !currentUserRecord ||
+          !JWTEnhanced.hasCurrentTokenVersion(currentUser, currentUserRecord.tokenVersion)
+        ) {
+          return 'invalid-session'
+        }
+
+        if (currentUserRecord.status !== 'active') {
+          return 'inactive'
+        }
+
+        const [currentSettings] = await tx
+          .select({
+            forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin
+          })
+          .from(systemSettings)
+          .limit(1)
+          .for('share')
+        const requirePasswordChange = computeRequirePasswordChange(
+          currentUserRecord,
+          currentSettings?.forcePasswordChangeOnFirstLogin ?? false
+        )
+
+        if (!canBindOAuthIdentity(requirePasswordChange)) {
+          return 'password-change-required'
+        }
+
+        const identity = await tx.query.userIdentities.findFirst({
+          where: (t, { eq, and }) =>
+            and(eq(t.provider, provider), eq(t.providerUserId, providerUserId))
+        })
+
+        if (identity) {
+          return identity.userId === currentUser.userId ? 'already-bound' : 'bound-to-other'
+        }
+
+        await tx.insert(userIdentities).values({
+          userId: currentUser.userId,
+          provider,
+          providerUserId,
+          providerUsername,
+          createdAt: new Date()
+        })
+        return 'success'
+      })
+    } catch (error: any) {
+      if (error?.code !== '23505') {
+        console.error('[OAuth] 绑定第三方账号失败:', error)
         return sendRedirect(
           event,
-          '/account?error=' + encodeURIComponent('当前账号状态异常，暂时无法绑定第三方账号')
+          '/account?error=' + encodeURIComponent('绑定第三方账号失败，请稍后重试')
         )
       }
 
-      await db.insert(userIdentities).values({
-        userId: currentUser.userId,
-        provider: provider,
-        providerUserId: providerUserId,
-        providerUsername: providerUsername,
-        createdAt: new Date()
+      const concurrentIdentity = await db.query.userIdentities.findFirst({
+        where: (t, { eq, and }) =>
+          and(eq(t.provider, provider), eq(t.providerUserId, providerUserId))
       })
+      bindingResult =
+        concurrentIdentity?.userId === currentUser.userId ? 'already-bound' : 'bound-to-other'
+    }
+
+    if (bindingResult === 'success') {
       return sendRedirect(event, '/account?message=' + encodeURIComponent('绑定成功'))
     }
+    if (bindingResult === 'already-bound') {
+      return sendRedirect(event, '/account?message=' + encodeURIComponent('账号已绑定'))
+    }
+    if (bindingResult === 'bound-to-other') {
+      return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
+    }
+    if (bindingResult === 'password-change-required') {
+      return sendRedirect(
+        event,
+        '/change-password?error=' + encodeURIComponent('请先完成密码修改后再绑定第三方账号')
+      )
+    }
+    if (bindingResult === 'invalid-session') {
+      deleteCookie(event, 'auth-token')
+      return sendRedirect(event, '/login?error=' + encodeURIComponent('会话已失效，请重新登录'))
+    }
+
+    return sendRedirect(
+      event,
+      '/account?error=' + encodeURIComponent('当前账号状态异常，暂时无法绑定第三方账号')
+    )
   }
 
   // 未登录，则是登录或新绑定流程
@@ -246,7 +336,11 @@ async function handleUserLoginOrBind(
       })
       .where(eq(users.id, user.id))
 
-    const token = JWTEnhanced.generateToken(existingIdentity.user.id, existingIdentity.user.role)
+    const token = JWTEnhanced.generateToken(
+      existingIdentity.user.id,
+      existingIdentity.user.role,
+      existingIdentity.user.tokenVersion
+    )
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: isSecure,

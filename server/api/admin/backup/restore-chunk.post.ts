@@ -412,7 +412,11 @@ export default defineEventHandler(async (event) => {
               })
               if (existing) {
                 restoredCardCode = (
-                  await tx.update(cardCodes).set(cardCodeData).where(eq(cardCodes.id, existing.id)).returning()
+                  await tx
+                    .update(cardCodes)
+                    .set(cardCodeData)
+                    .where(eq(cardCodes.id, existing.id))
+                    .returning()
                 )[0]
                 stats.updated++
               } else {
@@ -425,12 +429,19 @@ export default defineEventHandler(async (event) => {
               })
               if (existing) {
                 restoredCardCode = (
-                  await tx.update(cardCodes).set(cardCodeData).where(eq(cardCodes.id, record.id)).returning()
+                  await tx
+                    .update(cardCodes)
+                    .set(cardCodeData)
+                    .where(eq(cardCodes.id, record.id))
+                    .returning()
                 )[0]
                 stats.updated++
               } else {
                 restoredCardCode = (
-                  await tx.insert(cardCodes).values({ ...cardCodeData, id: record.id }).returning()
+                  await tx
+                    .insert(cardCodes)
+                    .values({ ...cardCodeData, id: record.id })
+                    .returning()
                 )[0]
                 stats.created++
               }
@@ -701,6 +712,7 @@ export default defineEventHandler(async (event) => {
               'enableRequestTimeLimitation',
               'requestTimeLimitation',
               'forceBlockAllRequests',
+              'forcePasswordChangeOnFirstLogin',
               'smtpEnabled',
               'smtpHost',
               'smtpPort',
@@ -1095,7 +1107,10 @@ export default defineEventHandler(async (event) => {
                 where: eq(cardCodeRedeemLogs.id, record.id)
               })
               if (existing) {
-                await tx.update(cardCodeRedeemLogs).set(logData).where(eq(cardCodeRedeemLogs.id, record.id))
+                await tx
+                  .update(cardCodeRedeemLogs)
+                  .set(logData)
+                  .where(eq(cardCodeRedeemLogs.id, record.id))
                 stats.updated++
               } else {
                 await tx.insert(cardCodeRedeemLogs).values({ ...logData, id: record.id })

@@ -14,7 +14,10 @@ import { randomInt } from 'crypto'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
-  const { userId: reqUserId, token: rawToken, email } = await readBody(event)
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const reqUserId = body?.userId
+  const rawToken = typeof body?.token === 'string' ? body.token : ''
+  const email = typeof body?.email === 'string' ? body.email : ''
   const token = rawToken || getCookie(event, 'pre-auth-token')
 
   // 必须提供预认证令牌
@@ -23,12 +26,14 @@ export default defineEventHandler(async (event) => {
   }
 
   let userId: number
+  let preAuthPayload: { tokenVersion?: unknown } | null = null
   try {
     const decoded = JWTEnhanced.verify(token) as any
     if (decoded.type !== 'pre-auth' || decoded.scope !== '2fa_pending') {
       throw new Error('无效的预认证令牌')
     }
     userId = decoded.userId
+    preAuthPayload = decoded
   } catch (e) {
     deleteCookie(event, 'pre-auth-token')
     throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
@@ -45,7 +50,8 @@ export default defineEventHandler(async (event) => {
       id: users.id,
       email: users.email,
       emailVerified: users.emailVerified,
-      name: users.name
+      name: users.name,
+      tokenVersion: users.tokenVersion
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -55,6 +61,12 @@ export default defineEventHandler(async (event) => {
   // 增加 emailVerified 校验
   if (!user || !user.email || !user.emailVerified) {
     throw createError({ statusCode: 400, message: '用户不存在或未绑定邮箱' })
+  }
+
+  if (!JWTEnhanced.hasCurrentTokenVersion(preAuthPayload, user.tokenVersion)) {
+    deleteCookie(event, 'pre-auth-token')
+    deleteCookie(event, 'binding-token')
+    throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
   }
 
   // 校验用户输入的邮箱是否匹配

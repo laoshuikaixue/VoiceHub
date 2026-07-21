@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { db, eq, users, userIdentities } from '~/drizzle/db'
+import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import {
@@ -13,10 +13,16 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { and } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import {
+  computeRequirePasswordChange,
+  resolveRequirePasswordChange
+} from '~~/server/utils/system-settings-helper'
+import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { username, password } = body
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const username = typeof body?.username === 'string' ? body.username : ''
+  const password = typeof body?.password === 'string' ? body.password : ''
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
@@ -47,7 +53,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '用户名或密码错误' })
   }
 
-  const valid = await bcrypt.compare(password, user.password)
+  const valid = !!user.password && (await bcrypt.compare(password, user.password))
   if (!valid) {
     await recordLoginFailure(username, clientIp)
     throw createError({ statusCode: 401, message: '用户名或密码错误' })
@@ -67,7 +73,20 @@ export default defineEventHandler(async (event) => {
 
   if (isUserBlocked(user.id)) {
     const remaining = getUserBlockRemainingTime(user.id)
-    throw createError({ statusCode: 423, message: `账户处于风险控制期，请在 ${remaining} 分钟后重试` })
+    throw createError({
+      statusCode: 423,
+      message: `账户处于风险控制期，请在 ${remaining} 分钟后重试`
+    })
+  }
+
+  if (!canBindOAuthIdentity(await resolveRequirePasswordChange(user))) {
+    deleteCookie(event, 'binding-token')
+    deleteCookie(event, 'pre-auth-token')
+    throw createError({
+      statusCode: 403,
+      message: '请先完成密码修改后再绑定第三方账号',
+      data: { requirePasswordChange: true }
+    })
   }
 
   const totpIdentity = await db.query.userIdentities.findFirst({
@@ -78,6 +97,7 @@ export default defineEventHandler(async (event) => {
     const tempToken = JWTEnhanced.sign(
       {
         userId: user.id,
+        tokenVersion: user.tokenVersion,
         type: 'pre-auth',
         scope: '2fa_pending'
       },
@@ -116,6 +136,44 @@ export default defineEventHandler(async (event) => {
   // 绑定
   try {
     await db.transaction(async (tx) => {
+      const [currentUser] = await tx
+        .select({
+          tokenVersion: users.tokenVersion,
+          forcePasswordChange: users.forcePasswordChange,
+          passwordChangedAt: users.passwordChangedAt
+        })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .for('update')
+
+      if (!currentUser || currentUser.tokenVersion !== user.tokenVersion) {
+        deleteCookie(event, 'binding-token')
+        deleteCookie(event, 'pre-auth-token')
+        throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
+      }
+
+      const [currentSettings] = await tx
+        .select({
+          forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin
+        })
+        .from(systemSettings)
+        .limit(1)
+        .for('share')
+      const requirePasswordChange = computeRequirePasswordChange(
+        currentUser,
+        currentSettings?.forcePasswordChangeOnFirstLogin ?? false
+      )
+
+      if (!canBindOAuthIdentity(requirePasswordChange)) {
+        deleteCookie(event, 'binding-token')
+        deleteCookie(event, 'pre-auth-token')
+        throw createError({
+          statusCode: 403,
+          message: '请先完成密码修改后再绑定第三方账号',
+          data: { requirePasswordChange: true }
+        })
+      }
+
       const existing = await tx.query.userIdentities.findFirst({
         where: (t, { eq, and }) =>
           and(eq(t.provider, payload.provider), eq(t.providerUserId, payload.providerUserId))
@@ -161,7 +219,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(users.id, user.id))
 
   // 登录
-  const token = JWTEnhanced.generateToken(user.id, user.role)
+  const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
   const isSecure = isSecureRequest(event)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,

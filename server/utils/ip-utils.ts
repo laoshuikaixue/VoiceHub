@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import { getHeaders } from 'h3'
+import { isIP } from 'node:net'
 
 /**
  * 获取客户端IP地址
@@ -54,13 +55,8 @@ export function getClientIP(event: H3Event): string {
  * @returns 是否为有效IP
  */
 function isValidIP(ip: string): boolean {
-  // 简单的IP格式验证
-  const ipv4Regex =
-    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
-  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/
-
-  // 基本格式验证
-  if (!ipv4Regex.test(ip) && !ipv6Regex.test(ip)) {
+  // Node 原生解析器支持压缩 IPv6，避免大量合法地址被归入 unknown 共享限流桶。
+  if (isIP(ip) === 0) {
     return false
   }
 

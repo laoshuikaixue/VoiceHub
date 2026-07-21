@@ -64,7 +64,12 @@ export default defineEventHandler(async (event) => {
       class: normalizeOptionalText(userData.class)
     }
 
-    if (!normalizedUserData.name || !normalizedUserData.username || !userData.password) {
+    if (
+      !normalizedUserData.name ||
+      !normalizedUserData.username ||
+      typeof userData.password !== 'string' ||
+      !userData.password
+    ) {
       results.failed++
       results.errors.push({
         index: i,

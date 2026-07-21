@@ -106,6 +106,7 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
+    "@nuxt/kit": "4.5.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^9.39.5",
     "prettier": "^3.9.5"

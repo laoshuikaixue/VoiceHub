@@ -16,6 +16,8 @@ import {
 } from '../../services/securityService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
@@ -196,6 +198,8 @@ export default defineEventHandler(async (event) => {
         lastLogin: users.lastLogin,
         lastLoginIp: users.lastLoginIp,
         passwordChangedAt: users.passwordChangedAt,
+        forcePasswordChange: users.forcePasswordChange,
+        tokenVersion: users.tokenVersion,
         status: users.status,
         email: users.email,
         emailVerified: users.emailVerified
@@ -245,6 +249,7 @@ export default defineEventHandler(async (event) => {
       const tempToken = JWTEnhanced.sign(
         {
           userId: user.id,
+          tokenVersion: user.tokenVersion,
           type: 'pre-auth',
           scope: '2fa_pending'
         },
@@ -294,7 +299,7 @@ export default defineEventHandler(async (event) => {
       .catch((err) => console.error('Error updating user login info:', err))
 
     // 生成JWT
-    const token = JWTEnhanced.generateToken(user.id, user.role)
+    const token = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
 
     // 自动判断是否需要secure
     const isSecure =
@@ -313,6 +318,9 @@ export default defineEventHandler(async (event) => {
     const processingTime = Date.now() - startTime
     console.log(`Login for ${user.username} processed in ${processingTime}ms`)
 
+    const requirePasswordChange = await resolveRequirePasswordChange(user)
+    const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+
     return {
       success: true,
       user: {
@@ -322,7 +330,12 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
-        needsPasswordChange: !user.passwordChangedAt
+        email: user.email,
+        emailVerified: user.emailVerified,
+        forcePasswordChange: user.forcePasswordChange,
+        passwordChangedAt: user.passwordChangedAt,
+        requirePasswordChange,
+        ...passwordSetupState
       }
     }
   } catch (error: any) {

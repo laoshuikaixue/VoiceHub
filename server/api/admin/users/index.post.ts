@@ -22,9 +22,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const normalizedName = normalizeRequiredText(body.name)
   const normalizedUsername = normalizeRequiredText(body.username)
+  const initialPassword = typeof body.password === 'string' ? body.password : ''
 
   // 验证必填字段
-  if (!normalizedName || !normalizedUsername || !body.password) {
+  if (!normalizedName || !normalizedUsername || !initialPassword) {
     throw createError({
       statusCode: 400,
       message: '姓名、用户名和密码不能为空'
@@ -48,7 +49,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 加密密码
-    const hashedPassword = await bcrypt.hash(body.password, 10)
+    const hashedPassword = await bcrypt.hash(initialPassword, 10)
 
     // 角色权限控制
     let validRole = 'USER'

@@ -894,6 +894,13 @@ VoiceHub/
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
+│   │       ├── 20260719000001_add_first_login_password_change.sql # 首次登录强制改密迁移
+│   │       ├── 20260719000002_restore_pending_password_change.sql # 待改密状态兼容占位迁移
+│   │       ├── 20260719000003_harden_password_security.sql # 会话版本与密码安全迁移
+│   │       ├── 20260719000004_reconcile_password_security_after_main.sql # 主分支汇合后的密码安全补偿迁移
+│   │       ├── 20260720000001_restore_ambiguous_password_change_flags.sql # 来源不明标记兼容占位迁移
+│   │       ├── 20260720000002_clear_ambiguous_password_change_flags.sql # 待改密标记保护占位迁移
+│   │       ├── 20260720100252_finalize_password_security.sql # 密码审计时区与兼容性补偿迁移
 │   │       ├── *.sql           # Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照
 │   ├── layouts/               # 布局组件
@@ -945,6 +952,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
+│       ├── password-policy.ts  # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
 │       ├── timeUtils.ts       # 时间工具
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
@@ -1229,6 +1237,7 @@ VoiceHub/
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
+│   │   ├── passwordSecurityService.ts # 密码限流与审计服务
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
@@ -1264,6 +1273,9 @@ VoiceHub/
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── system-settings-helper.ts # 系统设置缓存读取与强制改密判定
+│   │   ├── auth-route-policy.ts # 认证路由访问策略
+│   │   ├── initial-password-policy.ts # 初始密码设置权限策略
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
@@ -1275,6 +1287,12 @@ VoiceHub/
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
+├── tests/                 # 自动化测试
+│   └── server/
+│       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── initial-password-policy.test.ts # 初始密码设置权限策略测试
+│       ├── password-policy.test.ts # 密码策略测试
+│       └── token-version-policy.test.ts # 预认证令牌版本失效测试
 ├── .env.example           # 环境变量示例文件
 ├── .gitignore             # Git忽略文件配置
 ├── .vercelignore          # Vercel部署忽略文件

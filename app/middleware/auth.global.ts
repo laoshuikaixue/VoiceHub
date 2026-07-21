@@ -1,12 +1,22 @@
 import { useAuth } from '~/composables/useAuth'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { isAuthenticated, initAuth } = useAuth()
+  const { isAuthenticated, initAuth, user } = useAuth()
   const publicRoutes = ['/login', '/', '/auth/error', '/forgot-password', '/reset-password']
 
   // 客户端初始化认证状态
-  if (import.meta.client && !isAuthenticated.value) {
+  if (import.meta.client) {
     await initAuth()
+  }
+
+  // 强制改密优先于公共页面判断，避免用户通过首页或直接输入地址绕过改密页。
+  const passwordChangeRoutes = ['/change-password', '/login', '/forgot-password', '/reset-password']
+  if (
+    isAuthenticated.value &&
+    user.value?.requirePasswordChange &&
+    !passwordChangeRoutes.includes(to.path)
+  ) {
+    return navigateTo('/change-password')
   }
 
   // 公共页面跳过认证

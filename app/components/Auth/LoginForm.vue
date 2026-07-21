@@ -2,7 +2,9 @@
   <div class="login-form">
     <div class="form-header">
       <h2>{{ getFormTitle }}</h2>
-      <p v-if="isBindMode && !showCreateMode">即将绑定 {{ providerName }} 账号: {{ providerUsername }}</p>
+      <p v-if="isBindMode && !showCreateMode">
+        即将绑定 {{ providerName }} 账号: {{ providerUsername }}
+      </p>
       <p v-else-if="isBindMode && showCreateMode">通过 {{ providerName }} 创建新账户</p>
       <p v-else>登录您的VoiceHub账户</p>
     </div>
@@ -56,11 +58,13 @@
             v-model="username"
             :class="{ 'input-error': error }"
             :autocomplete="!isBindMode && !showCreateMode ? 'username webauthn' : 'username'"
-            :placeholder="showCreateMode ? '3-30个字符，可使用英文、数字、下划线、连字符' : '请输入账号名'"
+            :placeholder="
+              showCreateMode ? '3-30个字符，可使用英文、数字、下划线、连字符' : '请输入账号名'
+            "
             required
             type="text"
             @input="error = ''"
-          >
+          />
         </div>
         <p v-if="showCreateMode" class="hint-text">用户名不能重复，注册后无法修改</p>
       </div>
@@ -89,7 +93,7 @@
             required
             type="text"
             @input="error = ''"
-          >
+          />
         </div>
       </div>
 
@@ -116,15 +120,26 @@
           />
         </div>
         <p class="hint-text">
-          {{ gradeOptions.length > 0 ? '可选，只能选择系统内已有用户的年级和班级' : '暂无可选年级班级，可直接跳过' }}
+          {{
+            gradeOptions.length > 0
+              ? '可选，只能选择系统内已有用户的年级和班级'
+              : '暂无可选年级班级，可直接跳过'
+          }}
         </p>
       </div>
 
       <!-- 密码字段 -->
       <div class="form-group">
         <div class="flex justify-between items-center w-full mb-2">
-          <label for="password" style="margin-bottom: 0;">{{ showCreateMode ? '设置密码' : '密码' }}</label>
-          <NuxtLink v-if="!showCreateMode && !isBindMode && smtpEnabled" to="/forgot-password" class="text-xs text-[var(--primary)] hover:opacity-80 transition-opacity" style="line-height: 1;">
+          <label for="password" style="margin-bottom: 0">{{
+            showCreateMode ? '设置密码' : '密码'
+          }}</label>
+          <NuxtLink
+            v-if="!showCreateMode && !isBindMode && smtpEnabled"
+            to="/forgot-password"
+            class="text-xs text-[var(--primary)] hover:opacity-80 transition-opacity"
+            style="line-height: 1"
+          >
             忘记密码？
           </NuxtLink>
         </div>
@@ -148,7 +163,7 @@
             :placeholder="showCreateMode ? '至少8个字符' : '请输入密码'"
             required
             @input="error = ''"
-          >
+          />
           <button class="password-toggle" type="button" @click="showPassword = !showPassword">
             <svg
               v-if="showPassword"
@@ -168,7 +183,7 @@
             </svg>
           </button>
         </div>
-        
+
         <!-- 密码强度指示器 -->
         <div v-if="showCreateMode && password" class="px-1 pt-1 space-y-2 mt-1">
           <div class="h-1 w-full bg-[var(--input-border)] rounded-full overflow-hidden">
@@ -179,7 +194,8 @@
             />
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]"
+            <span
+              class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]"
               >密码强度</span
             >
             <span
@@ -215,8 +231,12 @@
             placeholder="请再次输入密码"
             required
             @input="error = ''"
+          />
+          <button
+            class="password-toggle"
+            type="button"
+            @click="showConfirmPassword = !showConfirmPassword"
           >
-          <button class="password-toggle" type="button" @click="showConfirmPassword = !showConfirmPassword">
             <svg
               v-if="showConfirmPassword"
               fill="none"
@@ -243,14 +263,14 @@
           ref="turnstileRef"
           v-model="turnstileToken"
         />
-        <CaptchaInput 
+        <CaptchaInput
           v-else
           ref="captchaRef"
-          v-model="captchaInput" 
-          @update:captchaId="captchaId = $event" 
+          v-model="captchaInput"
+          @update:captchaId="captchaId = $event"
         />
       </div>
-      
+
       <div v-if="error" class="error-container">
         <svg
           class="error-icon"
@@ -302,12 +322,7 @@
       <div class="divider">
         <span>或</span>
       </div>
-      <button 
-        type="button" 
-        class="webauthn-btn" 
-        :disabled="loading" 
-        @click="handleWebAuthnLogin"
-      >
+      <button type="button" class="webauthn-btn" :disabled="loading" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>使用 Passkey 登录</span>
       </button>
@@ -353,7 +368,8 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
 
-const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
+const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } =
+  useSiteConfig()
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -410,26 +426,24 @@ const passwordStrength = usePasswordStrength(password)
 const auth = useAuth()
 
 const gradeOptions = computed(() => {
-  return [...new Set(classOptions.value.map(item => item.grade))]
+  return [...new Set(classOptions.value.map((item) => item.grade))]
 })
 
 const gradeSelectOptions = computed(() => {
   return [
     { label: '不填写', value: '' },
-    ...gradeOptions.value.map(option => ({ label: option, value: option }))
+    ...gradeOptions.value.map((option) => ({ label: option, value: option }))
   ]
 })
 
 const availableClassOptions = computed(() => {
   if (!grade.value) return []
 
-  return classOptions.value
-    .filter(item => item.grade === grade.value)
-    .map(item => item.class)
+  return classOptions.value.filter((item) => item.grade === grade.value).map((item) => item.class)
 })
 
 const classSelectOptions = computed(() => {
-  return availableClassOptions.value.map(option => ({ label: option, value: option }))
+  return availableClassOptions.value.map((option) => ({ label: option, value: option }))
 })
 
 const fetchClassOptions = async () => {
@@ -461,11 +475,20 @@ const getSafeRedirect = (fallback = '/') => {
   // 防御重复 query 参数导致的数组类型
   const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || fallback
   // 仅允许同源相对路径，排除 // 和 \/ 绕过
-  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\') ? redirect : fallback
+  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\')
+    ? redirect
+    : fallback
+}
+
+const redirectAfterLogin = async () => {
+  if (auth.user.value?.requirePasswordChange) {
+    return navigateTo('/change-password')
+  }
+  return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
 }
 
 const handle2FASuccess = async () => {
-  await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+  await redirectAfterLogin()
 }
 
 onMounted(async () => {
@@ -521,7 +544,7 @@ const handleLogin = async () => {
   // 构建请求体，包含验证码信息
   const requestBody = {
     username: username.value,
-    password: password.value,
+    password: password.value
   }
   if (showCaptcha.value) {
     if (captchaProvider.value === 'turnstile') {
@@ -534,10 +557,8 @@ const handleLogin = async () => {
 
   try {
     // 根据模式选择接口
-    const url = isBindMode.value && !showCreateMode.value
-      ? '/api/auth/bind'
-      : '/api/auth/login'
-    
+    const url = isBindMode.value && !showCreateMode.value ? '/api/auth/bind' : '/api/auth/login'
+
     const response = await $fetch(url, {
       method: 'POST',
       body: requestBody
@@ -554,12 +575,14 @@ const handleLogin = async () => {
     }
 
     // 登录成功，刷新认证状态
-    await auth.initAuth()
-    return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+    await auth.initAuth(true)
+    return redirectAfterLogin()
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
-    error.value = err.data?.message || err.message || 
+    error.value =
+      err.data?.message ||
+      err.message ||
       (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
 
     // 如果后端要求验证码，则显示验证码区域（针对图形验证码）
@@ -575,7 +598,7 @@ const handleLogin = async () => {
         captchaRef.value?.refreshCaptcha?.()
       }
     }
-    
+
     // 仅凭据错误（401）时清空密码字段（避免验证码错误时误清）
     if (err.statusCode === 401) {
       password.value = ''
@@ -615,12 +638,13 @@ const handleRegisterOAuth = async () => {
 
     if (response.success) {
       // 账户创建成功，刷新认证状态
-      await auth.initAuth()
-      return navigateTo(getSafeRedirect())
+      await auth.initAuth(true)
+      return redirectAfterLogin()
     }
   } catch (err) {
     const apiError = err
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
+    error.value =
+      apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
     if (apiError.statusCode === 409) {
       username.value = ''
@@ -650,16 +674,15 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
 
     if (verification.success) {
       // 登录成功
-      await auth.initAuth()
-      return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+      await auth.initAuth(true)
+      return redirectAfterLogin()
     }
   } catch (e) {
     if (isWebAuthnCeremonyAborted(e)) return
     if (!showErrors && !credential) return
 
     console.error('WebAuthn 登录错误:', e)
-    const message =
-      e.data?.message || e.message || e.statusMessage || 'Passkey 登录失败'
+    const message = e.data?.message || e.message || e.statusMessage || 'Passkey 登录失败'
 
     if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
       const signaled = await signalUnknownWebAuthnCredential({

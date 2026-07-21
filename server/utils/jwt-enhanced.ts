@@ -6,6 +6,7 @@ export interface JWTPayload {
   userId: number
   role: string
   jti: string // JWT ID，用于唯一标识token
+  tokenVersion?: number
   iat?: number
   exp?: number
 }
@@ -17,6 +18,17 @@ export class JWTEnhanced {
   private static readonly JWT_SECRET = process.env.JWT_SECRET as string
   private static readonly TOKEN_EXPIRES = '7d' // 7天有效期
   private static readonly REFRESH_THRESHOLD = 24 * 60 * 60 // 24小时（秒），剩余时间少于此值时自动续期
+
+  static hasCurrentTokenVersion(
+    payload: { tokenVersion?: unknown } | null | undefined,
+    currentTokenVersion: number
+  ): boolean {
+    return (
+      typeof payload?.tokenVersion === 'number' &&
+      Number.isInteger(payload.tokenVersion) &&
+      payload.tokenVersion === currentTokenVersion
+    )
+  }
 
   /**
    * 通用签名方法
@@ -41,7 +53,7 @@ export class JWTEnhanced {
   /**
    * 生成JWT token
    */
-  static generateToken(userId: number, role: string): string {
+  static generateToken(userId: number, role: string, tokenVersion = 0): string {
     if (!this.JWT_SECRET) {
       throw new Error('JWT_SECRET environment variable is not set')
     }
@@ -53,7 +65,8 @@ export class JWTEnhanced {
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
       userId,
       role,
-      jti
+      jti,
+      tokenVersion
     }
 
     // 生成token
@@ -154,7 +167,7 @@ export class JWTEnhanced {
     const decoded = this.verifyToken(oldToken)
 
     // 使用原有的用户信息生成新token
-    return this.generateToken(decoded.userId, decoded.role)
+    return this.generateToken(decoded.userId, decoded.role, decoded.tokenVersion ?? 0)
   }
 
   /**

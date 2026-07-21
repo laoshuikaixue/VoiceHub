@@ -5,8 +5,8 @@
       <div class="info-section">
         <div class="info-content">
           <div class="logo-section">
-            <img alt="VoiceHub Logo" class="brand-logo" :src="logo" >
-            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle || 'VoiceHub' }}</h1>
+            <img alt="VoiceHub Logo" class="brand-logo" :src="logo" />
+            <h1 v-if="siteTitle" class="brand-title">{{ siteTitle }}</h1>
           </div>
 
           <div v-if="isFirstLogin" class="welcome-message">
@@ -70,17 +70,23 @@
             <p>{{ isFirstLogin ? '请设置一个安全的密码' : '更新您的登录密码' }}</p>
           </div>
 
-          <ClientOnly>
-            <ChangePasswordForm :is-first-login="isFirstLogin" />
-          </ClientOnly>
+          <div class="password-form-shell">
+            <ClientOnly>
+              <ChangePasswordForm :is-first-login="isFirstLogin" />
+            </ClientOnly>
+          </div>
 
           <div class="form-footer">
-            <NuxtLink class="back-link" to="/">
+            <NuxtLink v-if="!requirePasswordChange" class="back-link" to="/">
               <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
               返回主页
             </NuxtLink>
+            <button v-else class="back-link logout-link" type="button" @click="auth.logout()">
+              <Icon class="shrink-0" name="logout" :size="16" aria-hidden="true" />
+              退出登录
+            </button>
           </div>
         </div>
       </div>
@@ -90,7 +96,8 @@
 
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
-import { ref } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
+import { computed } from 'vue'
 import logo from '~~/public/images/logo.svg'
 
 // 使用站点配置
@@ -98,7 +105,11 @@ const { siteTitle, initSiteConfig } = useSiteConfig()
 
 const auth = useAuth()
 const router = useRouter()
-const isFirstLogin = ref(false)
+const isFirstLogin = computed(() => {
+  const currentUser = auth.user.value
+  return currentUser?.needsInitialPasswordSetup === true
+})
+const requirePasswordChange = computed(() => !!auth.user.value?.requirePasswordChange)
 
 // 未登录用户重定向到登录页
 onMounted(async () => {
@@ -109,26 +120,21 @@ onMounted(async () => {
     router.push('/login')
     return
   }
-
-  // 检查是否需要修改密码（用于显示不同的UI提示）
-  if (import.meta.client) {
-    const userJson = localStorage.getItem('user')
-    if (userJson) {
-      const user = JSON.parse(userJson)
-      isFirstLogin.value = user.forcePasswordChange === true || !user.passwordChangedAt
-    }
-  }
 })
 </script>
 
 <style scoped>
 .auth-layout {
+  width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #0a0a0a;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .auth-container {
@@ -141,6 +147,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 600px;
+  margin: auto;
 }
 
 .info-section {
@@ -267,6 +274,11 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.password-form-shell {
+  width: 100%;
+  min-width: 0;
 }
 
 .form-header {

@@ -17,6 +17,8 @@
 }
 
 .page-view {
+  width: 100%;
+  min-width: 0;
   animation: page-view-enter 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   will-change: transform, opacity, filter;
 }
@@ -25,6 +27,16 @@
   animation-duration: 0.75s;
   animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   animation-name: page-view-index-enter;
+}
+
+/* 强制改密页必须立即稳定居中，避免路由重定向时出现位移。 */
+.page-view[data-route='change-password'] {
+  min-height: 100dvh;
+  animation: none !important;
+  opacity: 1;
+  transform: none !important;
+  filter: none !important;
+  will-change: auto;
 }
 
 @keyframes page-view-enter {

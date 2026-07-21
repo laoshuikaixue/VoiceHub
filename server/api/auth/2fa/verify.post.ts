@@ -1,4 +1,4 @@
-import { db, userIdentities, eq, and, users } from '~/drizzle/db'
+import { db, userIdentities, eq, and, users, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
@@ -14,15 +14,23 @@ import {
   verifyStateCode
 } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
+import {
+  computeRequirePasswordChange,
+  resolveRequirePasswordChange
+} from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
 const TOTP_FAILURE_WINDOW_SECONDS = 5 * 60
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { code, type } = body
-  const token = body.token || getCookie(event, 'pre-auth-token')
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const code = typeof body?.code === 'string' ? body.code : ''
+  const type = typeof body?.type === 'string' ? body.type : ''
+  const bodyToken = typeof body?.token === 'string' ? body.token : ''
+  const token = bodyToken || getCookie(event, 'pre-auth-token')
 
   if (!code || !type) {
     throw createError({ statusCode: 400, message: '缺少必要参数' })
@@ -30,6 +38,7 @@ export default defineEventHandler(async (event) => {
 
   // 验证预认证临时令牌
   let targetUserId: number
+  let preAuthPayload: { tokenVersion?: unknown } | null = null
 
   if (token) {
     try {
@@ -38,6 +47,7 @@ export default defineEventHandler(async (event) => {
         throw new Error('无效的预认证令牌')
       }
       targetUserId = decoded.userId
+      preAuthPayload = decoded
     } catch (e) {
       deleteCookie(event, 'pre-auth-token')
       throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
@@ -52,6 +62,12 @@ export default defineEventHandler(async (event) => {
   const user = userResult[0]
   if (!user) {
     throw createError({ statusCode: 404, message: '用户不存在' })
+  }
+
+  if (!JWTEnhanced.hasCurrentTokenVersion(preAuthPayload, user.tokenVersion)) {
+    deleteCookie(event, 'pre-auth-token')
+    deleteCookie(event, 'binding-token')
+    throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
   }
 
   if (user.status !== 'active') {
@@ -155,6 +171,47 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.transaction(async (tx) => {
+      const [currentUser] = await tx
+        .select({
+          tokenVersion: users.tokenVersion,
+          forcePasswordChange: users.forcePasswordChange,
+          passwordChangedAt: users.passwordChangedAt
+        })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .for('update')
+
+      if (
+        !currentUser ||
+        !JWTEnhanced.hasCurrentTokenVersion(preAuthPayload, currentUser.tokenVersion)
+      ) {
+        deleteCookie(event, 'binding-token')
+        deleteCookie(event, 'pre-auth-token')
+        throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
+      }
+
+      const [currentSettings] = await tx
+        .select({
+          forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin
+        })
+        .from(systemSettings)
+        .limit(1)
+        .for('share')
+      const requirePasswordChange = computeRequirePasswordChange(
+        currentUser,
+        currentSettings?.forcePasswordChangeOnFirstLogin ?? false
+      )
+
+      if (!canBindOAuthIdentity(requirePasswordChange)) {
+        deleteCookie(event, 'binding-token')
+        deleteCookie(event, 'pre-auth-token')
+        throw createError({
+          statusCode: 403,
+          message: '请先完成密码修改后再绑定第三方账号',
+          data: { requirePasswordChange: true }
+        })
+      }
+
       const existing = await tx.query.userIdentities.findFirst({
         where: (t, { eq, and }) =>
           and(
@@ -189,7 +246,7 @@ export default defineEventHandler(async (event) => {
     .catch((err) => console.error('Error updating user login info:', err))
 
   // 生成Token
-  const authToken = JWTEnhanced.generateToken(user.id, user.role)
+  const authToken = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
 
   const isSecure = isSecureRequest(event)
 
@@ -204,6 +261,9 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'pre-auth-token')
   deleteCookie(event, 'binding-token')
 
+  const requirePasswordChange = await resolveRequirePasswordChange(user)
+  const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+
   return {
     success: true,
     user: {
@@ -213,7 +273,12 @@ export default defineEventHandler(async (event) => {
       grade: user.grade,
       class: user.class,
       role: user.role,
-      needsPasswordChange: !user.passwordChangedAt,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      forcePasswordChange: user.forcePasswordChange,
+      passwordChangedAt: user.passwordChangedAt,
+      requirePasswordChange,
+      ...passwordSetupState,
       has2FA: true
     }
   }

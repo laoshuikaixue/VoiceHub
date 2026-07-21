@@ -1,73 +1,67 @@
+import type { User } from '~~/types/index'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 export default defineEventHandler(async (event) => {
-  try {
-    const authUser = event.context.user
-    if (!authUser) {
-      throw createError({
-        statusCode: 401,
-        message: '未提供认证令牌'
-      })
-    }
+  const authUser = event.context.user
+  if (!authUser) {
+    throw createError({ statusCode: 401, message: '未提供认证令牌' })
+  }
 
-    const userId = authUser.id
-
-    // 用户资料始终从数据库获取，避免权限和绑定状态缓存过期。
-    const userResult = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      columns: {
-        id: true,
-        username: true,
-        name: true,
-        grade: true,
-        class: true,
-        role: true,
-        forcePasswordChange: true,
-        passwordChangedAt: true
-      },
-      with: {
-        identities: {
-          columns: {
-            provider: true,
-            providerUsername: true
-          }
+  // 用户资料始终从数据库获取，避免权限、绑定和强制改密状态过期。
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.id, authUser.id),
+    columns: {
+      id: true,
+      username: true,
+      name: true,
+      grade: true,
+      class: true,
+      role: true,
+      email: true,
+      emailVerified: true,
+      password: true,
+      forcePasswordChange: true,
+      passwordChangedAt: true
+    },
+    with: {
+      identities: {
+        columns: {
+          provider: true,
+          providerUsername: true
         }
       }
-    })
-
-    const dbUser = userResult || null
-
-    if (!dbUser) {
-      throw createError({
-        statusCode: 401,
-        message: '用户不存在'
-      })
     }
+  })
 
-    // 构建返回的用户对象，只包含需要的字段
-    const githubIdentity = dbUser.identities?.find((id: any) => id.provider === 'github')
-    const user = {
-      id: dbUser.id,
-      username: dbUser.username,
-      name: dbUser.name,
-      grade: dbUser.grade,
-      class: dbUser.class,
-      role: dbUser.role,
-      requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt,
-      has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
-      // 动态生成 GitHub 头像 URL
-      avatar: githubIdentity?.providerUsername
-        ? `https://github.com/${githubIdentity.providerUsername}.png`
-        : null
-    }
-
-    return {
-      user,
-      valid: true
-    }
-  } catch (error) {
-    throw error
+  if (!dbUser) {
+    throw createError({ statusCode: 401, message: '用户不存在' })
   }
+
+  const requirePasswordChange = await resolveRequirePasswordChange(dbUser)
+  const passwordSetupState = getPasswordSetupState(dbUser, requirePasswordChange)
+  const githubIdentity = dbUser.identities.find((identity) => identity.provider === 'github')
+  const user = {
+    id: dbUser.id,
+    username: dbUser.username,
+    name: dbUser.name,
+    grade: dbUser.grade,
+    class: dbUser.class,
+    role: dbUser.role,
+    email: dbUser.email,
+    emailVerified: dbUser.emailVerified,
+    forcePasswordChange: dbUser.forcePasswordChange,
+    passwordChangedAt: dbUser.passwordChangedAt,
+    requirePasswordChange,
+    ...passwordSetupState,
+    has2FA: dbUser.identities.some((identity) => identity.provider === 'totp'),
+    avatar: githubIdentity?.providerUsername
+      ? `https://github.com/${githubIdentity.providerUsername}.png`
+      : null
+  } as User
+
+  return { user, valid: true }
 })
