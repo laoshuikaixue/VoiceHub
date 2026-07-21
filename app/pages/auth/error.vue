@@ -22,7 +22,7 @@
 
         <!-- 错误标题与信息 -->
         <div class="space-y-3">
-          <h1 class="text-2xl font-black text-zinc-100 tracking-tight">身份验证失败</h1>
+          <h1 class="text-2xl font-black text-zinc-100 tracking-tight">{{ errorTitle }}</h1>
           <p class="text-sm text-zinc-500 leading-relaxed">{{ errorMessage }}</p>
         </div>
 
@@ -46,7 +46,7 @@
             class="flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
           >
             <LogIn :size="18" />
-            重新尝试登录
+            {{ primaryActionLabel }}
           </NuxtLink>
           <NuxtLink
             to="/"
@@ -72,10 +72,23 @@ import { ShieldAlert, X, LogIn, Home } from '@lucide/vue'
 
 const route = useRoute()
 
-const errorCode = computed(() => route.query.code)
-const errorMessage = computed(
-  () => route.query.message || '在尝试使用第三方账号登录时发生未知错误，请重试'
+const errorCode = computed(() => {
+  const code = Array.isArray(route.query.code) ? route.query.code[0] : route.query.code
+  return typeof code === 'string' ? code : ''
+})
+const isAggregateLoginUnavailable = computed(
+  () => errorCode.value === 'AGGREGATE_LOGIN_UNAVAILABLE'
 )
+const errorTitle = computed(() =>
+  isAggregateLoginUnavailable.value ? '当前登录方式暂不可用' : '身份验证失败'
+)
+const primaryActionLabel = computed(() =>
+  isAggregateLoginUnavailable.value ? '选择其他登录方式' : '重新尝试登录'
+)
+const errorMessage = computed(() => {
+  const message = Array.isArray(route.query.message) ? route.query.message[0] : route.query.message
+  return typeof message === 'string' ? message : '在尝试使用第三方账号登录时发生未知错误，请重试'
+})
 
 definePageMeta({
   layout: 'default'

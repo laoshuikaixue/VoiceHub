@@ -143,7 +143,7 @@
             multiple
           />
           <p class="text-[10px] text-zinc-600 px-1 mt-2">
-            可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。
+            请选择当前聚合登录服务已接入并开通的登录方式；启用服务商尚未支持的平台会导致授权失败。每种登录方式会独立记录账号绑定关系。
           </p>
         </div>
         <div>
@@ -429,9 +429,9 @@ const oauthProviders = computed(() => [
     clientIdKey: 'aggregateOAuthAppId',
     clientSecretKey: 'aggregateOAuthAppKey',
     clientIdLabel: 'AppID',
-    clientIdPlaceholder: '输入聚合登陆 AppID',
+    clientIdPlaceholder: '输入聚合登录服务商提供的 AppID',
     clientSecretLabel: 'AppKey',
-    clientSecretPlaceholder: '输入聚合登陆 AppKey',
+    clientSecretPlaceholder: '输入聚合登录服务商提供的 AppKey',
     docUrl: 'https://a.idcfx.net/doc.php#',
     docLabel: '查看聚合登陆开发文档'
   }

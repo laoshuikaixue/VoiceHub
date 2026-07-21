@@ -55,20 +55,14 @@ export default defineEventHandler(async (event) => {
 
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
-  // 状态 Cookie 是 host-only Cookie，回调地址必须与发起授权的源站完全一致。
+  // 代理平台可能重写服务端可见的 Host，因此这里只校验回调地址格式。
+  // 回调请求仍会通过 state、CSRF 和 host-only Cookie 完成来源验证。
   try {
     const redirectUrl = new URL(redirectUri)
-    if (redirectUrl.origin !== origin) {
-      throw createError({
-        statusCode: 400,
-        message:
-          'OAuth 回调地址与当前请求源站不一致，请在管理员后台将 OAuth 重定向 URI 配置为当前站点域名'
-      })
+    if (!['http:', 'https:'].includes(redirectUrl.protocol)) {
+      throw new Error('unsupported protocol')
     }
-  } catch (error: any) {
-    if (error?.statusCode) {
-      throw error
-    }
+  } catch {
     throw createError({
       statusCode: 400,
       message: 'OAuth 重定向 URI 配置无效，请在管理员后台检查配置'
@@ -104,7 +98,26 @@ export default defineEventHandler(async (event) => {
     setCookie(event, stateCookieNames.compactState, authorizeState, stateCookieOptions)
   }
 
-  const url = await strategy.getAuthorizeUrl(redirectUri, authorizeState, providerConfig)
+  let url: string
+  try {
+    url = await strategy.getAuthorizeUrl(redirectUri, authorizeState, providerConfig)
+  } catch (error: any) {
+    if (provider !== 'aggregate') throw error
+
+    deleteCookie(event, stateCookieNames.csrf, { path: '/' })
+    deleteCookie(event, stateCookieNames.fullState, { path: '/' })
+    deleteCookie(event, stateCookieNames.compactState, { path: '/' })
+    console.error('聚合登录方式暂不可用', {
+      loginType: aggregateLoginType,
+      statusCode: error?.statusCode || 500
+    })
+    return sendRedirect(
+      event,
+      `/auth/error?code=AGGREGATE_LOGIN_UNAVAILABLE&message=${encodeURIComponent(
+        '当前登录方式暂不可用，可能尚未在聚合登录服务中开通。请尝试其他登录方式或联系管理员。'
+      )}`
+    )
+  }
 
   return sendRedirect(event, url)
 })

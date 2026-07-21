@@ -124,10 +124,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // 清除 CSRF cookie
-  deleteCookie(event, activeStateCookieNames.csrf)
+  deleteCookie(event, activeStateCookieNames.csrf, { path: '/' })
   if (provider === 'aggregate') {
-    deleteCookie(event, activeStateCookieNames.fullState)
-    deleteCookie(event, activeStateCookieNames.compactState)
+    deleteCookie(event, activeStateCookieNames.fullState, { path: '/' })
+    deleteCookie(event, activeStateCookieNames.compactState, { path: '/' })
   }
 
   const strategy = getOAuthStrategy(provider)
