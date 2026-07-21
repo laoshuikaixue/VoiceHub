@@ -305,7 +305,10 @@ const aggregateIconClass = (loginType) => {
     qq: 'text-[#12b7f5]',
     wx: 'text-[#07c160]',
     alipay: 'text-[#1677ff]',
-    douyin: 'text-[#25f4ee]'
+    douyin: 'text-[#25f4ee]',
+    huawei: 'text-[#cf0a2c]',
+    xiaomi: 'text-[#ff6900]',
+    feishu: 'text-[#3370ff]'
   }
   return classes[loginType] || 'text-zinc-100'
 }

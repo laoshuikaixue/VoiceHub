@@ -1,6 +1,14 @@
 export type OAuthProvider = 'github' | 'casdoor' | 'google' | 'oauth2' | 'aggregate'
 
-export const AGGREGATE_OAUTH_LOGIN_TYPES = ['qq', 'wx', 'alipay', 'douyin'] as const
+export const AGGREGATE_OAUTH_LOGIN_TYPES = [
+  'qq',
+  'wx',
+  'alipay',
+  'douyin',
+  'huawei',
+  'xiaomi',
+  'feishu'
+] as const
 
 export type AggregateOAuthLoginType = (typeof AGGREGATE_OAUTH_LOGIN_TYPES)[number]
 

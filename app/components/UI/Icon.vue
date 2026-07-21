@@ -65,6 +65,27 @@
       />
     </g>
 
+    <g v-else-if="name === 'oauth-huawei'" fill="currentColor" stroke="none">
+      <path d="M11.2 11.4C8.3 9.4 6.8 6 7.7 2.4c2.8.8 4.5 4.4 3.5 9Z" />
+      <path d="M12.8 11.4c2.9-2 4.4-5.4 3.5-9-2.8.8-4.5 4.4-3.5 9Z" />
+      <path d="M9.7 12.4C6.3 11.2 3.9 8.5 3.8 5c3 .1 5.6 3.1 5.9 7.4Z" />
+      <path d="M14.3 12.4c3.4-1.2 5.8-3.9 5.9-7.4-3 .1-5.6 3.1-5.9 7.4Z" />
+      <path d="M4.8 10.1c2.6.7 4.8 2.5 6 5.1H6.4c-2.2 0-4-1.8-4-4 0-.6.1-1.1.3-1.6.7.1 1.4.3 2.1.5ZM19.2 10.1c-2.6.7-4.8 2.5-6 5.1h4.4c2.2 0 4-1.8 4-4 0-.6-.1-1.1-.3-1.6-.7.1-1.4.3-2.1.5Z" />
+      <path d="M7.3 17h9.4l-1.3 2H8.6l-1.3-2Z" />
+    </g>
+
+    <g v-else-if="name === 'oauth-xiaomi'">
+      <rect x="3" y="4" width="18" height="16" rx="4" />
+      <path d="M7 15V9h6a4 4 0 0 1 4 4v2M12 9v6" />
+    </g>
+
+    <g v-else-if="name === 'oauth-feishu'" fill="currentColor" stroke="none">
+      <path d="M4 4h7l4 4-3 3-8-7Z" />
+      <path d="M20 4h-5l-3 3 3 3 5-6Z" />
+      <path d="M4 20h7l4-4-3-3-8 7Z" />
+      <path d="M20 20h-5l-3-3 3-3 5 6Z" />
+    </g>
+
     <!-- 播放图标 -->
     <g v-else-if="name === 'play'" fill="currentColor" stroke="none" stroke-width="0">
       <path

@@ -65,7 +65,10 @@ const providerButtonClass = (provider) => {
       qq: 'hover:bg-[#12b7f5] hover:text-white hover:border-[#12b7f5]',
       wx: 'hover:bg-[#07c160] hover:text-white hover:border-[#07c160]',
       alipay: 'hover:bg-[#1677ff] hover:text-white hover:border-[#1677ff]',
-      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]'
+      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]',
+      huawei: 'hover:bg-[#cf0a2c] hover:text-white hover:border-[#cf0a2c]',
+      xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
+      feishu: 'hover:bg-[#3370ff] hover:text-white hover:border-[#3370ff]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }
