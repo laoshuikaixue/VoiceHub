@@ -1,7 +1,6 @@
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
-import { cacheService } from '~~/server/services/cacheService'
 import { createSystemNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -108,14 +107,6 @@ export default defineEventHandler(async (event) => {
       Promise.allSettled(notificationsToSend).catch((error) => {
         console.error('[Notification] 发送排期迁移通知失败:', error)
       })
-    }
-
-    try {
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache()
-      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（迁移排期日期）')
-    } catch (cacheError) {
-      console.error('[Cache] 清除缓存失败:', cacheError)
     }
 
     return {

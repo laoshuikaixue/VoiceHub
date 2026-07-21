@@ -278,6 +278,13 @@
     {
       "idx": 39,
       "version": "7",
+      "when": 1784530957225,
+      "tag": "20260720070237_minimize-redis-add-song-query-indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
       "when": 1784541772702,
       "tag": "20260720100252_finalize_password_security",
       "breakpoints": true

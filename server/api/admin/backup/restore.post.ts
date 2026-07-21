@@ -26,7 +26,6 @@ import {
 } from '~/drizzle/schema'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { CacheService } from '../../../services/cacheService'
 import { SmtpService } from '../../../services/smtpService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
@@ -2438,19 +2437,6 @@ export default defineEventHandler(async (event) => {
       console.warn(`⚠️ 发生了 ${restoreResults.details.errors.length} 个错误`)
       restoreResults.success = false
       restoreResults.message = '数据恢复完成，但存在错误'
-    }
-
-    // 清除所有缓存
-    try {
-      const cacheService = CacheService.getInstance()
-      await cacheService.clearAllCache()
-      const { userCache } = await import('~~/server/utils/cache-helpers')
-      await userCache.clearAllAuth()
-      console.log('数据恢复后缓存已清除')
-    } catch (cacheError) {
-      console.warn('清除缓存失败:', cacheError)
-      restoreResults.details.warnings = restoreResults.details.warnings || []
-      restoreResults.details.warnings.push('清除缓存失败')
     }
 
     try {

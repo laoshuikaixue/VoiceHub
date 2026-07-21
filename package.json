@@ -25,6 +25,7 @@
     "vercel-build": "node scripts/deploy.js",
     "netlify-build": "node scripts/netlify-build.js",
     "check-deploy": "node scripts/check-deploy.js",
+    "redis:scan-legacy": "node scripts/redis-scan-legacy.js",
     "postinstall": "node scripts/postinstall.js",
     "lint": "nuxt prepare && eslint .",
     "lint:fix": "nuxt prepare && eslint . --fix",

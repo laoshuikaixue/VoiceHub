@@ -4,7 +4,8 @@ import { eq } from 'drizzle-orm'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { updateUserPassword } from '~~/server/services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
-import { checkRateLimit } from '~~/server/utils/rateLimiter'
+import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { validatePasswordPolicy } from '~/utils/password-policy'
 import {
   PASSWORD_AUDIT_ACTIONS,
@@ -17,10 +18,10 @@ export default defineEventHandler(async (event) => {
 
   // IP 级别限流：每小时最多 10 次密码重置尝试
   const rateLimitKey = `reset_password_ip:${clientIP}`
-  const limitResult = checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000)
+  const limitResult = await checkDistributedRateLimit(rateLimitKey, 10, 60 * 60 * 1000)
 
   if (!limitResult.isAllowed) {
-    const waitMinutes = Math.ceil((limitResult.resetTime - Date.now()) / 60000)
+    const waitMinutes = Math.ceil((limitResult.resetTime - getServerTimestamp()) / 60000)
     throw createError({
       statusCode: 429,
       message: `重置密码尝试次数过多，请等待 ${waitMinutes} 分钟后再试`

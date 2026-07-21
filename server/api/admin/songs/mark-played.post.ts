@@ -1,6 +1,5 @@
 import { db } from '~/drizzle/db'
 import { createSongPlayedNotification } from '~~/server/services/notificationService'
-import { CacheService } from '~~/server/services/cacheService'
 import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
@@ -44,10 +43,12 @@ export default defineEventHandler(async (event) => {
 
   const validatedData = validatedDataResult.data
 
-  const songIds = Array.from(new Set([
-    ...(validatedData.songId !== undefined ? [validatedData.songId] : []),
-    ...(validatedData.songIds || [])
-  ]))
+  const songIds = Array.from(
+    new Set([
+      ...(validatedData.songId !== undefined ? [validatedData.songId] : []),
+      ...(validatedData.songIds || [])
+    ])
+  )
 
   if (songIds.length === 0) {
     throw createError({
@@ -74,7 +75,7 @@ export default defineEventHandler(async (event) => {
       .where(condition)
       .returning({ id: songs.id })
 
-    const updatedSongIds = updatedSongsResult.map(s => s.id)
+    const updatedSongIds = updatedSongsResult.map((s) => s.id)
 
     if (updatedSongIds.length > 0) {
       const targetStatus = !isUnmark ? 'PENDING' : 'FULFILLED'
@@ -87,7 +88,10 @@ export default defineEventHandler(async (event) => {
           updatedAt: new Date()
         })
         .where(
-          and(inArray(songReplayRequests.songId, updatedSongIds), eq(songReplayRequests.status, targetStatus))
+          and(
+            inArray(songReplayRequests.songId, updatedSongIds),
+            eq(songReplayRequests.status, targetStatus)
+          )
         )
         .returning({ id: songReplayRequests.id })
 
@@ -102,25 +106,16 @@ export default defineEventHandler(async (event) => {
     return { updatedSongsResult, updatedSongIds }
   })
 
-  // 清理缓存
-  if (updatedSongIds.length > 0) {
-    try {
-      const cacheService = CacheService.getInstance()
-      await cacheService.clearSongsCache()
-      await cacheService.clearSchedulesCache()
-    } catch (error) {
-      console.error('清除缓存失败:', error)
-    }
-  }
-
   // 异步发送通知
   if (!isUnmark && updatedSongIds.length > 0) {
     event.waitUntil(
-      Promise.allSettled(updatedSongIds.map(songId =>
-        createSongPlayedNotification(songId).catch((err) => {
-          console.error(`发送歌曲(${songId})已播放通知失败:`, err)
-        })
-      ))
+      Promise.allSettled(
+        updatedSongIds.map((songId) =>
+          createSongPlayedNotification(songId).catch((err) => {
+            console.error(`发送歌曲(${songId})已播放通知失败:`, err)
+          })
+        )
+      )
     )
   }
 

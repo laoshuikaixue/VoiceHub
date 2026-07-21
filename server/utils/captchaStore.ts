@@ -1,111 +1,201 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
+import type { RedisClientType } from 'redis'
+import { buildRedisKey, getRedisClient, isRedisConfigured } from './redis'
 import { getServerTimestamp } from './serverTime'
 
-/**
- * 验证码与风控计数器统一存储适配器
- * - 优先 Redis
- * - Redis 不可用时回退到内存 Map（适合 Docker 单进程，Serverless 冷启动也可接受）
- */
-let redisClient: any = undefined
-const memoryStore = new Map<string, { value: string; expiresAt: number }>()
+interface MemoryRecord {
+  value: string
+  expiresAt: number
+}
 
-// 定期清理过期的内存数据，防止无 Redis 环境下的内存泄漏
-const timer = setInterval(() => {
+export class RedisStateUnavailableError extends Error {
+  statusCode = 503
+
+  constructor() {
+    super('分布式短期状态服务暂不可用，请稍后重试')
+    this.name = 'RedisStateUnavailableError'
+  }
+}
+
+const memoryStore = new Map<string, MemoryRecord>()
+const MAX_MEMORY_STORE_SIZE = 10000
+const keyOf = (key: string) => buildRedisKey('state', key)
+
+const cleanupMemoryStore = () => {
   const now = getServerTimestamp()
-  for (const [key, item] of memoryStore.entries()) {
-    if (now > item.expiresAt) {
-      memoryStore.delete(key)
-    }
+  for (const [key, record] of memoryStore.entries()) {
+    if (now >= record.expiresAt) memoryStore.delete(key)
   }
-}, 60 * 1000) // 每分钟清理一次
-if (timer.unref) {
-  timer.unref()
 }
 
-async function getRedis() {
-  if (redisClient !== undefined) return redisClient
+const ensureMemoryStoreCapacity = (key: string) => {
+  cleanupMemoryStore()
+  if (memoryStore.has(key) || memoryStore.size < MAX_MEMORY_STORE_SIZE) return
+
+  const oldestKey = memoryStore.keys().next().value
+  if (oldestKey !== undefined) memoryStore.delete(oldestKey)
+}
+
+const requireRedis = async () => {
+  const redis = await getRedisClient()
+  if (!redis) throw new RedisStateUnavailableError()
+  return redis
+}
+
+const executeRedisState = async <T>(
+  operation: (redis: RedisClientType) => Promise<T>
+): Promise<T> => {
   try {
-    const redisModule = await import('~~/server/utils/redis')
-    await redisModule.connectRedis()
-    redisClient = redisModule.getRedisClient()
-  } catch {
-    redisClient = null
+    const redis = await requireRedis()
+    return await operation(redis)
+  } catch (error) {
+    if (error instanceof RedisStateUnavailableError) throw error
+    throw new RedisStateUnavailableError()
   }
-  return redisClient
 }
 
-/** 设置键值，ttlSeconds 过期秒数 */
+const INCREMENT_WITH_EXPIRY_SCRIPT = `
+local value = redis.call('INCR', KEYS[1])
+if value == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+return value
+`
+
+const GET_AND_DELETE_SCRIPT = `
+local value = redis.call('GET', KEYS[1])
+if value then redis.call('DEL', KEYS[1]) end
+return value
+`
+
+const COMPARE_AND_DELETE_SCRIPT = `
+local value = redis.call('GET', KEYS[1])
+if value and value == ARGV[1] then
+  redis.call('DEL', KEYS[1])
+  return 1
+end
+return 0
+`
+
+/** 设置短期状态。配置 Redis 后，Redis 故障不会悄悄切换到另一份内存状态。 */
 export async function setStore(key: string, value: string, ttlSeconds: number) {
-  const redis = await getRedis()
-  if (redis) {
-    await redis.set(key, value, 'EX', ttlSeconds)
-  } else {
-    memoryStore.set(key, { value, expiresAt: getServerTimestamp() + ttlSeconds * 1000 })
+  if (isRedisConfigured()) {
+    await executeRedisState((redis) =>
+      redis.set(keyOf(key), value, { EX: Math.max(1, Math.floor(ttlSeconds)) })
+    )
+    return
   }
+
+  ensureMemoryStoreCapacity(key)
+  memoryStore.set(key, {
+    value,
+    expiresAt: getServerTimestamp() + Math.max(1, ttlSeconds) * 1000
+  })
 }
 
-/** 获取键值，过期返回 null */
 export async function getStore(key: string): Promise<string | null> {
-  const redis = await getRedis()
-  if (redis) {
-    return await redis.get(key)
+  if (isRedisConfigured()) {
+    return await executeRedisState((redis) => redis.get(keyOf(key)))
   }
-  const item = memoryStore.get(key)
-  if (item && getServerTimestamp() < item.expiresAt) return item.value
-  memoryStore.delete(key)
-  return null
+
+  cleanupMemoryStore()
+  const record = memoryStore.get(key)
+  return record ? record.value : null
 }
 
-/** 删除键 */
 export async function delStore(key: string) {
-  const redis = await getRedis()
-  if (redis) {
-    await redis.del(key)
-  } else {
-    memoryStore.delete(key)
+  if (isRedisConfigured()) {
+    await executeRedisState((redis) => redis.del(keyOf(key)))
+    return
   }
-}
 
-/** 递增键值（用于失败计数），返回递增后的值 */
-export async function incrStore(key: string, ttlSeconds: number): Promise<number> {
-  const redis = await getRedis()
-  if (redis) {
-    // 使用 MULTI 事务确保 incr 和 expire 的原子性，避免内存泄漏
-    const results = await redis.multi().incr(key).expire(key, ttlSeconds).exec()
-    if (results && results.length > 0) {
-      const firstResult = results[0] as any
-      const value = Array.isArray(firstResult) ? firstResult[1] : firstResult
-      return Number(value) || 1
-    }
-    return 1
-  }
-  const item = memoryStore.get(key)
-  const newVal = (item ? parseInt(item.value) + 1 : 1).toString()
-  memoryStore.set(key, { value: newVal, expiresAt: getServerTimestamp() + ttlSeconds * 1000 })
-  return parseInt(newVal)
-}
-
-/** 删除键并返回被删除值（用于验证码一次使用） */
-export async function getAndDelStore(key: string): Promise<string | null> {
-  const redis = await getRedis()
-  if (redis) {
-    try {
-      // 优先尝试使用 Redis 6.2+ 引入的 GETDEL 命令实现原子操作
-      return await redis.getdel(key)
-    } catch (e) {
-      // 如果使用的 Redis 版本较旧不支持 GETDEL，回退为使用 MULTI 事务
-      const results = await redis.multi().get(key).del(key).exec()
-      // ioredis 的 exec 返回结构通常是 [[error, result], [error, result]]
-      if (results && results[0]) {
-        const [, val] = results[0] as [Error | null, any]
-        return val as string | null
-      }
-      return null
-    }
-  }
-  
-  // 无 Redis 环境，回退到内存 Map
-  const item = memoryStore.get(key)
   memoryStore.delete(key)
-  if (item && getServerTimestamp() < item.expiresAt) return item.value
-  return null
+}
+
+/** 递增键值并仅在第一次递增时设置过期时间。 */
+export async function incrStore(key: string, ttlSeconds: number): Promise<number> {
+  if (isRedisConfigured()) {
+    const result = await executeRedisState((redis) =>
+      redis.eval(INCREMENT_WITH_EXPIRY_SCRIPT, {
+        keys: [keyOf(key)],
+        arguments: [String(Math.max(1, Math.floor(ttlSeconds)))]
+      })
+    )
+    return Number(result)
+  }
+
+  ensureMemoryStoreCapacity(key)
+  const existing = memoryStore.get(key)
+  const current = Number(existing?.value || 0) + 1
+  memoryStore.set(key, {
+    value: String(current),
+    expiresAt: existing?.expiresAt ?? getServerTimestamp() + Math.max(1, ttlSeconds) * 1000
+  })
+  return current
+}
+
+/** 原子读取并删除键，用于一次性验证码。 */
+export async function getAndDelStore(key: string): Promise<string | null> {
+  if (isRedisConfigured()) {
+    const result = await executeRedisState((redis) =>
+      redis.eval(GET_AND_DELETE_SCRIPT, {
+        keys: [keyOf(key)],
+        arguments: []
+      })
+    )
+    return result === null ? null : String(result)
+  }
+
+  cleanupMemoryStore()
+  const record = memoryStore.get(key)
+  memoryStore.delete(key)
+  return record ? record.value : null
+}
+
+/** 仅当值未被其他请求改变时删除，用于防止一次性验证码并发重复消费。 */
+export async function delStoreIfValue(key: string, expectedValue: string): Promise<boolean> {
+  if (isRedisConfigured()) {
+    const result = await executeRedisState((redis) =>
+      redis.eval(COMPARE_AND_DELETE_SCRIPT, {
+        keys: [keyOf(key)],
+        arguments: [expectedValue]
+      })
+    )
+    return Number(result) === 1
+  }
+
+  cleanupMemoryStore()
+  const record = memoryStore.get(key)
+  if (!record || record.value !== expectedValue) return false
+  memoryStore.delete(key)
+  return true
+}
+
+/** 安全解析短期状态 JSON，拒绝旧明文、数组和损坏数据。 */
+export function parseStoreJson<T extends object>(value: string | null): T | null {
+  if (!value) return null
+
+  try {
+    const parsed = JSON.parse(value)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return parsed as T
+  } catch {
+    return null
+  }
+}
+
+const getCodeSecret = () => {
+  const secret = process.env.JWT_SECRET?.trim()
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set')
+  return secret
+}
+
+export function hashStateCode(scope: string, code: string) {
+  return createHmac('sha256', getCodeSecret()).update(`${scope}:${code}`).digest('hex')
+}
+
+export function verifyStateCode(scope: string, code: string, expectedHash: string) {
+  const actual = Buffer.from(hashStateCode(scope, code), 'utf8')
+  const expected = Buffer.from(expectedHash, 'utf8')
+  return actual.length === expected.length && timingSafeEqual(actual, expected)
 }

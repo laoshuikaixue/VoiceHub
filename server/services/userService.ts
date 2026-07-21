@@ -21,7 +21,7 @@ interface UpdateUserPasswordOptions {
 
 /**
  * 更新用户密码
- * 包含：加密密码、更新密码修改时间、清除用户缓存
+ * 包含：加密密码、更新密码修改时间
  * @param userId 用户ID
  * @param newPassword 新密码
  * @param options 密码更新选项，可用 tokenVersion 做并发条件更新
@@ -77,15 +77,6 @@ export async function updateUserPassword(
 
     return updatedUser
   })
-
-  // 3. 清除用户认证缓存
-  try {
-    const { userCache } = await import('~~/server/utils/cache-helpers')
-    await userCache.clearAuth(String(userId))
-    console.log(`[Cache] 用户认证缓存已清除（密码修改）: ${userId}`)
-  } catch (cacheError) {
-    console.warn('[Cache] 清除用户认证缓存失败:', cacheError)
-  }
 
   return {
     passwordChangedAt: updated.passwordChangedAt || passwordChangedAt,

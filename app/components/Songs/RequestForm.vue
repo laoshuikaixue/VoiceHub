@@ -3,7 +3,11 @@
     <div class="rules-section desktop-only-rules">
       <h2 class="section-title">投稿须知</h2>
       <div class="rules-content-desktop">
-        <div v-if="submissionGuidelines" class="guidelines-content markdown-body" v-html="renderedGuidelines" />
+        <div
+          v-if="submissionGuidelines"
+          class="guidelines-content markdown-body"
+          v-html="renderedGuidelines"
+        />
         <div v-else class="default-guidelines">
           <p>1. 投稿时无需加入书名号</p>
           <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
@@ -27,7 +31,11 @@
         投稿须知
       </h3>
       <div class="rules-content">
-        <div v-if="submissionGuidelines" class="guidelines-content markdown-body" v-html="renderedGuidelines" />
+        <div
+          v-if="submissionGuidelines"
+          class="guidelines-content markdown-body"
+          v-html="renderedGuidelines"
+        />
         <div v-else class="default-guidelines">
           <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
           <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
@@ -61,7 +69,7 @@
                 placeholder="请输入歌曲名称"
                 required
                 type="text"
-              >
+              />
               <button
                 :disabled="loading || searching || !title.trim()"
                 class="search-button"
@@ -125,7 +133,9 @@
           <div v-if="!user" class="submission-status-horizontal login-required-notice">
             <span class="notice-icon">🔒</span>
             <span class="notice-text">注意，您尚未登录，不能投稿</span>
-            <button class="login-link-btn" type="button" @click="handleLoginRedirect">立即登录</button>
+            <button class="login-link-btn" type="button" @click="handleLoginRedirect">
+              立即登录
+            </button>
           </div>
 
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
@@ -215,10 +225,7 @@
                 >
               </div>
 
-              <div
-                v-if="cardCodeLimitBypassActive"
-                class="status-item-horizontal"
-              >
+              <div v-if="cardCodeLimitBypassActive" class="status-item-horizontal">
                 <span class="status-label">点歌券：</span>
                 <span class="status-value">不占普通额度</span>
               </div>
@@ -286,16 +293,16 @@
                       :src="convertToHttps(neteaseUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    >
+                    />
                     <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio" > 单曲
+                      <input v-model="searchType" :value="1" type="radio" /> 单曲
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio" > 播客
+                      <input v-model="searchType" :value="1009" type="radio" /> 播客
                     </label>
                   </div>
 
@@ -366,7 +373,7 @@
                       :src="convertToHttps(qqMusicUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    >
+                    />
                     <div v-else class="qq-user-avatar">
                       <Icon :size="14" name="music" />
                     </div>
@@ -437,7 +444,15 @@
                       >
                         <Icon
                           :size="12"
-                          :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? (cardCodeValidation.valid === false ? 'close' : 'check') : 'plus'"
+                          :name="
+                            cardCodeValidation.checking
+                              ? 'loader'
+                              : trimmedCardCode
+                                ? cardCodeValidation.valid === false
+                                  ? 'close'
+                                  : 'check'
+                                : 'plus'
+                          "
                         />
                         <span>{{ mobileCardCodeLabel }}</span>
                       </button>
@@ -446,7 +461,7 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-                        >
+                        />
                         <span class="custom-checkbox-box">
                           <svg
                             class="custom-checkbox-icon"
@@ -559,7 +574,15 @@
                   <span class="flex min-w-0 items-center gap-2">
                     <Icon
                       :size="14"
-                      :name="cardCodeValidation.checking ? 'loader' : trimmedCardCode ? (cardCodeValidation.valid === false ? 'close' : 'check') : 'plus'"
+                      :name="
+                        cardCodeValidation.checking
+                          ? 'loader'
+                          : trimmedCardCode
+                            ? cardCodeValidation.valid === false
+                              ? 'close'
+                              : 'check'
+                            : 'plus'
+                      "
                     />
                     <span class="truncate">{{ cardCodeStatusText }}</span>
                   </span>
@@ -592,7 +615,7 @@
                         alt="封面"
                         class="cover-img"
                         referrerpolicy="no-referrer"
-                      >
+                      />
                       <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
                           <Icon name="play" :size="20" class="play-icon" />
@@ -825,7 +848,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon" >
+                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon" />
                 </div>
               </div>
             </Transition>
@@ -995,7 +1018,7 @@
                 class="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 placeholder-zinc-600 transition-all focus:border-yellow-400/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
-              >
+              />
               <p
                 :class="[
                   'mt-2 px-1 text-[11px]',
@@ -1143,7 +1166,7 @@
                           v-if="match.cover"
                           :src="match.cover"
                           class="w-full h-full object-cover"
-                        >
+                        />
                         <Music v-else class="w-5 h-5 text-zinc-500" />
                         <div
                           class="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
@@ -1223,7 +1246,7 @@
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
-                    >
+                    />
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                       <Lock class="w-4 h-4 text-zinc-600" />
                     </div>
@@ -1244,7 +1267,7 @@
                     placeholder="请输入歌手名称"
                     required
                     type="text"
-                  >
+                  />
                 </div>
 
                 <!-- 歌曲封面地址 -->
@@ -1266,7 +1289,7 @@
                       ]"
                       placeholder="请输入歌曲封面图片URL"
                       type="url"
-                    >
+                    />
                     <div
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1315,7 +1338,7 @@
                       ]"
                       placeholder="请输入歌曲播放URL"
                       type="url"
-                    >
+                    />
                     <div
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1378,7 +1401,7 @@
       style="display: none"
       type="file"
       @change="handleImportData"
-    >
+    />
   </div>
 </template>
 
@@ -1497,7 +1520,9 @@ const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
 
-const cardCodeEnabled = computed(() => enableCardCodeRequests.value || requireCardCodeForRequests.value)
+const cardCodeEnabled = computed(
+  () => enableCardCodeRequests.value || requireCardCodeForRequests.value
+)
 const cardCodeLimitBypassActive = computed(
   () => enableSubmissionLimit.value && cardCodeEnabled.value && enableCardCodeLimitBypass.value
 )
@@ -2073,7 +2098,7 @@ const handleImportSuccess = async () => {
   // showImportSongsModal.value = false
   // 刷新歌曲列表以便检查相似歌曲
   try {
-    await songService.fetchSongs(true, currentSemester.value?.name, false, true)
+    await songService.fetchSongs(true, currentSemester.value?.name, true)
   } catch (error) {
     console.error('刷新歌曲列表失败:', error)
   }
@@ -2344,7 +2369,9 @@ onMounted(async () => {
           await handleSearch()
         }
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
   // 音源健康检查功能已移除
 })
@@ -2583,11 +2610,12 @@ const handleSearch = async () => {
       limit: 20,
       signal: signal, // 传递AbortSignal
       type: requestPlatform === 'netease' ? requestSearchType : 1,
-      cookie: requestPlatform === 'netease'
-        ? neteaseCookie.value
-        : requestPlatform === 'tencent'
-          ? qqMusicCookie.value
-          : undefined
+      cookie:
+        requestPlatform === 'netease'
+          ? neteaseCookie.value
+          : requestPlatform === 'tencent'
+            ? qqMusicCookie.value
+            : undefined
     }
 
     console.log('开始多音源搜索:', searchParams)
@@ -3051,11 +3079,16 @@ const handleLoginRedirect = async () => {
   // 保存搜索状态到 sessionStorage
   if (title.value.trim()) {
     try {
-      sessionStorage.setItem('pending_search', JSON.stringify({
-        title: title.value.trim(),
-        platform: platform.value
-      }))
-    } catch (e) { /* ignore */ }
+      sessionStorage.setItem(
+        'pending_search',
+        JSON.stringify({
+          title: title.value.trim(),
+          platform: platform.value
+        })
+      )
+    } catch (e) {
+      /* ignore */
+    }
   }
   // 带上 tab 参数，确保登录后回到投稿歌曲页
   await navigateTo(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
@@ -3242,10 +3275,10 @@ const submitSong = async (result, options = {}) => {
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
-      // 如果用户填写了点歌券，传递给后端
-      if (cardCode.value && cardCode.value.trim()) {
-        songData.cardCode = cardCode.value.trim()
-      }
+    // 如果用户填写了点歌券，传递给后端
+    if (cardCode.value && cardCode.value.trim()) {
+      songData.cardCode = cardCode.value.trim()
+    }
 
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)

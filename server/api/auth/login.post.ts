@@ -14,7 +14,6 @@ import {
   //导入失败计数查询函数
   getLoginFailureCount
 } from '../../services/securityService'
-import { CacheService } from '~~/server/services/cacheService'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
@@ -84,25 +83,11 @@ export default defineEventHandler(async (event) => {
     let turnstileSecretKey = ''
     let captchaMaxFailures = 3
     try {
-      // 尝试从缓存获取，如果失败再从数据库获取
-      const cacheService = CacheService.getInstance()
-      let settings = await cacheService.getSystemSettings()
-
-      if (!settings) {
-        const configRow = await db
-          .select()
-          .from(systemSettings)
-          .limit(1)
-          .then((r) => r[0])
-
-        if (configRow) {
-          settings = configRow as SystemSettings
-          // 异步更新缓存，不阻塞登录
-          cacheService
-            .setSystemSettings(settings)
-            .catch((e) => console.warn('缓存系统配置失败:', e))
-        }
-      }
+      const settings = await db
+        .select()
+        .from(systemSettings)
+        .limit(1)
+        .then((rows) => rows[0] as SystemSettings | undefined)
 
       if (settings?.captchaEnabled) {
         captchaEnabled = true

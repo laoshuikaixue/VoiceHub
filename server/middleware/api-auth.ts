@@ -7,11 +7,19 @@ import {
   API_KEY_CONSTANTS,
   HTTP_STATUS
 } from '~~/server/config/constants'
-import { openApiCache } from '~~/server/utils/open-api-cache'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getIPBlockRemainingTime, isIPBlocked } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { verifyApiKey } from '~~/server/utils/apiKeyUtils'
+
+const truncateResponseBody = (responseBody: any, maxLength = 10000) => {
+  try {
+    const json = JSON.stringify(responseBody)
+    return json.length <= maxLength ? json : `${json.slice(0, maxLength)}...`
+  } catch {
+    return String(responseBody).slice(0, maxLength)
+  }
+}
 
 /**
  * 记录API访问日志
@@ -39,7 +47,7 @@ async function logApiAccess(
       statusCode,
       responseTimeMs,
       requestBody,
-      responseBody: responseBody ? openApiCache.truncateResponseBody(responseBody) : undefined,
+      responseBody: responseBody ? truncateResponseBody(responseBody) : undefined,
       errorMessage
     })
   } catch (error) {
@@ -332,7 +340,8 @@ function getRequiredPermission(pathname: string, method: string): string | null 
     if (
       normalizedPathname === '/api/open/card-codes/delete' ||
       normalizedPathname.startsWith('/api/open/card-codes/delete/')
-    ) return 'card-codes:delete'
+    )
+      return 'card-codes:delete'
     if (method === 'GET') return 'card-codes:read'
     if (method === 'DELETE') return 'card-codes:delete'
     return 'card-codes:write'

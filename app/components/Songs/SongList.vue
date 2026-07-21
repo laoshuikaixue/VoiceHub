@@ -271,7 +271,7 @@
                       重播申请 ({{ song.replayRequestCount || 0 }})：{{
                         song.replayRequesters
                           ? song.replayRequesters
-                              .map((r) => r.name)
+                              .map((r) => r.displayName || r.name || '未知用户')
                               .slice(0, 3)
                               .join(', ') + (song.replayRequesters.length > 3 ? '...' : '')
                           : ''

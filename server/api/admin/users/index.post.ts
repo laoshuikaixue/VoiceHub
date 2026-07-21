@@ -109,16 +109,6 @@ export default defineEventHandler(async (event) => {
       })
     const newUser = newUserResult[0]
 
-    // 清除相关缓存
-    try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('songs:*')
-      await cache.deletePattern('stats:*')
-      console.log('[Cache] 歌曲和统计缓存已清除（用户创建）')
-    } catch (cacheError) {
-      console.warn('[Cache] 清除缓存失败:', cacheError)
-    }
-
     return {
       success: true,
       user: newUser,

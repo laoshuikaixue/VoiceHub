@@ -1,8 +1,9 @@
 import type { User } from '~~/types/index'
 import { db } from '~/drizzle/db'
-import { userIdentities } from '~/drizzle/schema'
+import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
-import { userCache } from '~~/server/utils/cache-helpers'
+import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 export default defineEventHandler(async (event) => {
   const authUser = event.context.user
@@ -10,42 +11,53 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '未提供认证令牌' })
   }
 
-  const userId = authUser.id
-  let identities: Array<{ provider: string; providerUsername: string | null }> = []
-  const cached = (await userCache.getAuth(String(userId))) as {
-    identities?: Array<{ provider: string; providerUsername: string | null }>
-  } | null
+  // 用户资料始终从数据库获取，避免权限、绑定和强制改密状态过期。
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.id, authUser.id),
+    columns: {
+      id: true,
+      username: true,
+      name: true,
+      grade: true,
+      class: true,
+      role: true,
+      email: true,
+      emailVerified: true,
+      password: true,
+      forcePasswordChange: true,
+      passwordChangedAt: true
+    },
+    with: {
+      identities: {
+        columns: {
+          provider: true,
+          providerUsername: true
+        }
+      }
+    }
+  })
 
-  if (cached?.identities) {
-    identities = cached.identities
-  } else {
-    identities = await db
-      .select({
-        provider: userIdentities.provider,
-        providerUsername: userIdentities.providerUsername
-      })
-      .from(userIdentities)
-      .where(eq(userIdentities.userId, userId))
-
-    await userCache.setAuth(String(userId), { ...authUser, identities })
+  if (!dbUser) {
+    throw createError({ statusCode: 401, message: '用户不存在' })
   }
 
-  const githubIdentity = identities.find((identity) => identity.provider === 'github')
+  const requirePasswordChange = await resolveRequirePasswordChange(dbUser)
+  const passwordSetupState = getPasswordSetupState(dbUser, requirePasswordChange)
+  const githubIdentity = dbUser.identities.find((identity) => identity.provider === 'github')
   const user = {
-    id: authUser.id,
-    username: authUser.username,
-    name: authUser.name,
-    grade: authUser.grade,
-    class: authUser.class,
-    role: authUser.role,
-    email: authUser.email,
-    emailVerified: authUser.emailVerified,
-    forcePasswordChange: authUser.forcePasswordChange,
-    passwordChangedAt: authUser.passwordChangedAt,
-    requirePasswordChange: authUser.requirePasswordChange,
-    hasSetPassword: authUser.hasSetPassword,
-    needsInitialPasswordSetup: authUser.needsInitialPasswordSetup,
-    has2FA: identities.some((identity) => identity.provider === 'totp'),
+    id: dbUser.id,
+    username: dbUser.username,
+    name: dbUser.name,
+    grade: dbUser.grade,
+    class: dbUser.class,
+    role: dbUser.role,
+    email: dbUser.email,
+    emailVerified: dbUser.emailVerified,
+    forcePasswordChange: dbUser.forcePasswordChange,
+    passwordChangedAt: dbUser.passwordChangedAt,
+    requirePasswordChange,
+    ...passwordSetupState,
+    has2FA: dbUser.identities.some((identity) => identity.provider === 'totp'),
     avatar: githubIdentity?.providerUsername
       ? `https://github.com/${githubIdentity.providerUsername}.png`
       : null

@@ -754,35 +754,6 @@ export default defineEventHandler(async (event) => {
       settings = updatedSettingsResult[0]
     }
 
-    // 直接写入新设置，避免保存后出现短暂的缓存空窗。
-    try {
-      const { CacheService } = await import('~~/server/services/cacheService')
-      await CacheService.getInstance().setSystemSettings(settings)
-      console.log('[Cache] 系统设置缓存已更新（更新系统设置）')
-    } catch (cacheError) {
-      console.warn('更新系统设置缓存失败:', cacheError)
-      try {
-        const { CacheService } = await import('~~/server/services/cacheService')
-        await CacheService.getInstance().clearSystemSettingsCache()
-      } catch (clearError) {
-        console.error('清理旧系统设置缓存失败:', clearError)
-      }
-      throw createError({
-        statusCode: 503,
-        message: '系统设置已保存，但缓存同步失败，请稍后重试'
-      })
-    }
-
-    if (body.forcePasswordChangeOnFirstLogin !== undefined) {
-      try {
-        const { userCache } = await import('~~/server/utils/cache-helpers')
-        await userCache.clearAllAuth()
-        console.log('[Cache] 用户认证缓存已清除（强制改密设置变更）')
-      } catch (cacheError) {
-        console.warn('清除用户认证缓存失败:', cacheError)
-      }
-    }
-
     if (updateData.telemetryEnabled !== undefined) {
       try {
         const { setTelemetryEnabledCache } = await import('~~/server/utils/telemetry')

@@ -1,5 +1,4 @@
 import { db, eq, ne, schedules, songs, songReplayRequests, and } from '~/drizzle/db'
-import { cacheService } from '~~/server/services/cacheService'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
 import { getServerDate } from '~~/server/utils/serverTime'
 
@@ -88,7 +87,9 @@ export default defineEventHandler(async (event) => {
             })
             if (
               !restoreResult.changed &&
-              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(String(restoreResult.reason || ''))
+              ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(
+                String(restoreResult.reason || '')
+              )
             ) {
               throw createError({ statusCode: 409, message: '点歌券返还失败，移除排期已终止' })
             }
@@ -119,15 +120,6 @@ export default defineEventHandler(async (event) => {
 
       return deletedSchedule
     })
-
-    // 清除相关缓存
-    try {
-      await cacheService.clearSchedulesCache()
-      await cacheService.clearSongsCache() // 清除歌曲列表缓存，确保scheduled状态更新
-      console.log('[Cache] 排期缓存和歌曲列表缓存已清除（移除排期）')
-    } catch (cacheError) {
-      console.error('[Cache] 清除缓存失败:', cacheError)
-    }
 
     return {
       success: true,

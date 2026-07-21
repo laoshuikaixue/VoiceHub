@@ -1,7 +1,13 @@
 import { db, users, eq } from '~/drizzle/db'
-import { twoFactorCodes } from '~~/server/utils/twoFactorStore'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import {
+  delStoreIfValue,
+  getStore,
+  hashStateCode,
+  parseStoreJson,
+  setStore
+} from '~~/server/utils/captchaStore'
 
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
@@ -69,9 +75,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // 检查是否在冷却时间内
-  const existingCode = twoFactorCodes.get(userId)
+  const stateKey = `2fa-email:${userId}`
+  const existingRaw = await getStore(stateKey)
+  const existingCode = parseStoreJson<{ expiresAt: number }>(existingRaw)
   const now = getServerTimestamp()
-  if (existingCode && existingCode.expiresAt > now) {
+  if (existingCode && Number.isFinite(existingCode.expiresAt) && existingCode.expiresAt > now) {
     // 5 * 60 * 1000 = 300000ms
     const totalDuration = 5 * 60 * 1000
     const timePassed = totalDuration - (existingCode.expiresAt - now)
@@ -86,12 +94,13 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const code = randomInt(100000, 999999).toString()
-  twoFactorCodes.set(userId, {
-    code,
-    expiresAt: now + 5 * 60 * 1000,
-    attempts: 0
+  const code = randomInt(100000, 1000000).toString()
+  const expiresAt = now + 5 * 60 * 1000
+  const storedValue = JSON.stringify({
+    codeHash: hashStateCode(stateKey, code),
+    expiresAt
   })
+  await setStore(stateKey, storedValue, 5 * 60)
 
   const clientIP = getClientIP(event)
 
@@ -99,20 +108,27 @@ export default defineEventHandler(async (event) => {
   const smtp = SmtpService.getInstance()
   await smtp.initializeSmtpConfig()
 
-  const sent = await smtp.renderAndSend(
-    user.email,
-    'verification.code',
-    {
-      name: user.name || '用户',
-      email: user.email,
-      code,
-      expiresInMinutes: 5,
-      action: '登录验证'
-    },
-    clientIP
-  )
+  let sent = false
+  try {
+    sent = await smtp.renderAndSend(
+      user.email,
+      'verification.code',
+      {
+        name: user.name || '用户',
+        email: user.email,
+        code,
+        expiresInMinutes: 5,
+        action: '登录验证'
+      },
+      clientIP
+    )
+  } catch (error) {
+    await delStoreIfValue(stateKey, storedValue)
+    throw error
+  }
 
   if (!sent) {
+    await delStoreIfValue(stateKey, storedValue)
     throw createError({ statusCode: 500, message: '验证码发送失败' })
   }
 

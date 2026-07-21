@@ -230,7 +230,7 @@
                       alt="cover"
                       class="w-full h-full object-cover"
                       loading="lazy"
-                    >
+                    />
                   </div>
 
                   <div class="flex-1 min-w-0">
@@ -402,8 +402,7 @@ const loadSongs = async () => {
     const res = await $fetch('/api/songs', {
       params: {
         semester: selectedSemester.value,
-        scope: 'mine',
-        bypass_cache: 'true' // 确保获取最新数据
+        scope: 'mine'
       }
     })
 

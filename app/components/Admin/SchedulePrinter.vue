@@ -776,8 +776,7 @@ const hasMultiplePlayTimes = (dateGroup) => {
 const loadSchedules = async () => {
   loading.value = true
   try {
-    // 添加 bypass_cache=true 参数，确保获取最新的排期数据
-    const data = await $fetch('/api/songs/public?bypass_cache=true', {
+    const data = await $fetch('/api/songs/public', {
       ...getAuthConfig()
     })
     // API直接返回排期数组，不是包装在schedules属性中

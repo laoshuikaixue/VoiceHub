@@ -211,16 +211,6 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 清除相关缓存
-    try {
-      const { cache, userCache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('song:*')
-      await userCache.clearAuth(String(userIdNum))
-      console.log('[Cache] 歌曲和用户认证缓存已清除（用户更新）')
-    } catch (cacheError) {
-      console.warn('[Cache] 清除缓存失败:', cacheError)
-    }
-
     return {
       success: true,
       user: updatedUser[0]!,
