@@ -1,7 +1,6 @@
 import { db } from '~/drizzle/db'
 import { songs, users, songCollaborators, collaborationLogs } from '~/drizzle/schema'
 import { eq, or } from 'drizzle-orm'
-import { cacheService } from '~~/server/services/cacheService'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 
 export default defineEventHandler(async (event) => {
@@ -42,7 +41,17 @@ export default defineEventHandler(async (event) => {
 
     // 获取请求体
     const body = await readBody(event)
-    const { title, artist, requester, semester, musicPlatform, musicId, cover, playUrl, preferredPlayTimeId } = body
+    const {
+      title,
+      artist,
+      requester,
+      semester,
+      musicPlatform,
+      musicId,
+      cover,
+      playUrl,
+      preferredPlayTimeId
+    } = body
     const ipAddress =
       (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
 
@@ -66,11 +75,12 @@ export default defineEventHandler(async (event) => {
 
     const updateData: Partial<typeof songs.$inferInsert> = {
       title: title.trim(),
-      artist: artist.trim(),
+      artist: artist.trim()
     }
 
     if (body.semester !== undefined) updateData.semester = body.semester || null
-    if (body.preferredPlayTimeId !== undefined) updateData.preferredPlayTimeId = body.preferredPlayTimeId || null
+    if (body.preferredPlayTimeId !== undefined)
+      updateData.preferredPlayTimeId = body.preferredPlayTimeId || null
     if (body.musicPlatform !== undefined) updateData.musicPlatform = body.musicPlatform || null
     if (body.musicId !== undefined) updateData.musicId = body.musicId || null
     if (body.cover !== undefined) updateData.cover = body.cover || null
@@ -113,7 +123,9 @@ export default defineEventHandler(async (event) => {
 
     const shouldClearSubmissionNote = body.clearSubmissionNote === true
     const submissionNoteClearReason =
-      typeof body.submissionNoteClearReason === 'string' ? body.submissionNoteClearReason.trim() : ''
+      typeof body.submissionNoteClearReason === 'string'
+        ? body.submissionNoteClearReason.trim()
+        : ''
     const shouldNotifySubmissionNoteClear = body.notifyOnSubmissionNoteClear === true
 
     if (shouldClearSubmissionNote) {
@@ -200,7 +212,11 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    if (shouldClearSubmissionNote && existingSong.submissionNote && shouldNotifySubmissionNoteClear) {
+    if (
+      shouldClearSubmissionNote &&
+      existingSong.submissionNote &&
+      shouldNotifySubmissionNoteClear
+    ) {
       const latestCollaborators = await db
         .select({
           userId: songCollaborators.userId
@@ -248,14 +264,6 @@ export default defineEventHandler(async (event) => {
       .leftJoin(users, eq(songs.requesterId, users.id))
       .where(eq(songs.id, songId))
       .limit(1)
-
-    // 清除歌曲相关缓存
-    try {
-      await cacheService.clearSongsCache()
-      console.log('[Cache] 歌曲缓存已清除（更新歌曲）')
-    } catch (cacheError) {
-      console.error('[Cache] 清除歌曲缓存失败:', cacheError)
-    }
 
     return {
       success: true,

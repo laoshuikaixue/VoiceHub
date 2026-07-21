@@ -28,6 +28,23 @@ const normalizePort = (url: URL): string => {
   return ''
 }
 
+const OAUTH_STATE_COOKIE_PREFIX = 'b64url:'
+
+// AES state 是标准 Base64，Cookie 中只需转换为 URL 安全格式以避免 +、/、= 被改写。
+export const encodeOAuthStateCookie = (state: string): string =>
+  `${OAUTH_STATE_COOKIE_PREFIX}${Buffer.from(state, 'base64').toString('base64url')}`
+
+export const decodeOAuthStateCookie = (state: string): string => {
+  if (!state.startsWith(OAUTH_STATE_COOKIE_PREFIX)) {
+    return state
+  }
+  try {
+    return Buffer.from(state.slice(OAUTH_STATE_COOKIE_PREFIX.length), 'base64url').toString('base64')
+  } catch {
+    return ''
+  }
+}
+
 // 生成 OAuth 状态参数
 export const generateState = (
   targetOrigin: string,

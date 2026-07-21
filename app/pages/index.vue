@@ -1066,14 +1066,19 @@ watch(activeTab, (newTab) => {
 })
 
 watch(
-  () => auth?.isAuthenticated?.value,
-  async (newAuthState, oldAuthState) => {
-    if (newAuthState && !oldAuthState) {
+  () => [auth?.isAuthenticated?.value || false, user.value?.id ?? null, user.value?.role || ''],
+  async ([newAuthState, newUserId, newRole], [oldAuthState, oldUserId, oldRole] = []) => {
+    const identityChanged = newUserId !== oldUserId || newRole !== oldRole
+
+    if (newAuthState && (!oldAuthState || identityChanged)) {
       hasInitializedAuthData.value = true
+      songs.clearPrivateSongs()
+      songs.clearPublicSongs()
       await Promise.allSettled([
         loadNotifications(),
         fetchNotificationSettings(),
-        songs.fetchSongs()
+        songs.fetchSongs(),
+        songs.fetchPublicSchedules()
       ])
       await updateSongCounts()
       return
@@ -1081,6 +1086,8 @@ watch(
 
     if (!newAuthState && oldAuthState) {
       hasInitializedAuthData.value = false
+      songs.clearPrivateSongs()
+      songs.clearPublicSongs()
       await Promise.allSettled([songs.fetchSongCount(), songs.fetchPublicSchedules()])
       unreadNotificationCount.value = 0
       await updateSongCounts()

@@ -84,16 +84,6 @@ export default defineEventHandler(async (event) => {
       .returning()
     const newPlayTime = newPlayTimeResult[0]
 
-    // 清除相关缓存
-    try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('schedules:*')
-      await cache.deletePattern('playtimes:*')
-      console.log('[Cache] 排期和播放时间缓存已清除（创建播放时间）')
-    } catch (cacheError) {
-      console.warn('清除缓存失败:', cacheError)
-    }
-
     return newPlayTime
   } catch (error: any) {
     console.error('创建播出时段失败:', error)

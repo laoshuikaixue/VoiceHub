@@ -1,7 +1,6 @@
 import { asc } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { CacheService } from '../services/cacheService'
 import { SYSTEM_SETTINGS_DEFAULTS } from './system-settings-defaults'
 import { getServerTimestamp } from './serverTime'
 
@@ -12,15 +11,6 @@ let pendingTelemetryEnabledPromise: Promise<boolean> | null = null
 const TELEMETRY_CACHE_TTL_MS = 5 * 60 * 1000
 
 const readTelemetryEnabled = async (): Promise<boolean> => {
-  try {
-    const cachedSettings = await CacheService.getInstance().getSystemSettings()
-    if (cachedSettings && typeof cachedSettings.telemetryEnabled === 'boolean') {
-      return cachedSettings.telemetryEnabled
-    }
-  } catch (error) {
-    console.warn('[Telemetry] Failed to read telemetry setting from cache:', error)
-  }
-
   const settingsResult = await db
     .select({ telemetryEnabled: systemSettings.telemetryEnabled })
     .from(systemSettings)

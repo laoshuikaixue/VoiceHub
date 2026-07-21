@@ -1,7 +1,6 @@
 import { db } from '~/drizzle/db'
 import { songs, users } from '~/drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
-import { cacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,7 +31,17 @@ export default defineEventHandler(async (event) => {
 
     // 获取请求体
     const body = await readBody(event)
-    const { title, artist, requester, semester, musicPlatform, musicId, cover, playUrl, preferredPlayTimeId } = body
+    const {
+      title,
+      artist,
+      requester,
+      semester,
+      musicPlatform,
+      musicId,
+      cover,
+      playUrl,
+      preferredPlayTimeId
+    } = body
 
     // 验证必填字段
     if (!title || !artist) {
@@ -124,14 +133,6 @@ export default defineEventHandler(async (event) => {
     const songWithRequester = {
       ...newSong,
       requester: requesterInfo
-    }
-
-    // 清除歌曲相关缓存
-    try {
-      await cacheService.clearSongsCache()
-      console.log('[Cache] 歌曲缓存已清除（添加歌曲）')
-    } catch (error) {
-      console.error('清除歌曲缓存失败:', error)
     }
 
     return {

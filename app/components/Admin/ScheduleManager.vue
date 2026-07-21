@@ -22,7 +22,7 @@
         <div
           ref="dateSelector"
           class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 overscroll-x-contain"
-          style="overscroll-behavior-x: contain; touch-action: pan-x;"
+          style="overscroll-behavior-x: contain; touch-action: pan-x"
         >
           <button
             v-for="date in availableDates"
@@ -106,7 +106,7 @@
             v-model="manualSelectedDate"
             class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
             type="date"
-          >
+          />
           <div class="flex gap-3">
             <button
               class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
@@ -250,7 +250,7 @@
                   type="text"
                   placeholder="搜索歌曲、艺术家..."
                   class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
-                >
+                />
                 <button
                   v-if="searchQuery"
                   class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
@@ -280,7 +280,9 @@
                 </div>
                 <button
                   class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
-                  :class="{ 'border-blue-500/50 text-blue-400 bg-blue-500/10': isPlaylistFilterActive }"
+                  :class="{
+                    'border-blue-500/50 text-blue-400 bg-blue-500/10': isPlaylistFilterActive
+                  }"
                   @click="showPlaylistFilterModal = true"
                 >
                   <ListMusic class="w-3.5 h-3.5" />
@@ -304,7 +306,9 @@
                 :key="song.id"
                 :class="[
                   'draggable-song relative group rounded-xl p-3 transition-all select-none',
-                  song.cardCodeId ? 'bg-amber-500/5 border border-amber-500/30' : 'bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700'
+                  song.cardCodeId
+                    ? 'bg-amber-500/5 border border-amber-500/30'
+                    : 'bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700'
                 ]"
                 draggable="true"
                 @dragend="dragEnd"
@@ -327,7 +331,7 @@
                       referrerpolicy="no-referrer"
                       loading="lazy"
                       alt=""
-                    >
+                    />
                     <div
                       v-else
                       class="w-full h-full flex items-center justify-center text-zinc-600"
@@ -338,7 +342,9 @@
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div class="flex items-center gap-2 min-w-0">
-                      <h4 class="font-bold text-zinc-100 text-sm truncate flex items-center gap-2 min-w-0">
+                      <h4
+                        class="font-bold text-zinc-100 text-sm truncate flex items-center gap-2 min-w-0"
+                      >
                         <span
                           v-if="isBilibiliSong(song)"
                           class="text-zinc-100 flex items-center gap-1 text-left truncate"
@@ -346,10 +352,10 @@
                           <span class="truncate">{{ song.title }}</span>
                         </span>
                         <span v-else class="truncate">{{ song.title }}</span>
-                        
+
                         <!-- 歌单来源标签 -->
-                        <span 
-                          v-if="isPlaylistFilterActive && playlistNamesMap[song.musicId]" 
+                        <span
+                          v-if="isPlaylistFilterActive && playlistNamesMap[song.musicId]"
                           class="flex items-center gap-1 flex-shrink-0"
                         >
                           <span
@@ -383,17 +389,17 @@
                         title="查看备注留言"
                         @click.stop="openSubmissionRemark(song)"
                       >
-                        {{ song.submissionNote.length > 25 ? song.submissionNote.substring(0, 25) + '...' : song.submissionNote }}
+                        {{
+                          song.submissionNote.length > 25
+                            ? song.submissionNote.substring(0, 25) + '...'
+                            : song.submissionNote
+                        }}
                       </span>
                     </div>
                     <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
                     <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
-                      <span
-                        v-if="song.requesterGrade || song.grade"
-                        class="text-zinc-600"
-                        >|</span
-                      >
+                      <span v-if="song.requesterGrade || song.grade" class="text-zinc-600">|</span>
                       <span v-if="song.requesterGrade || song.grade">
                         {{ song.requesterGrade || song.grade }}
                         {{ song.requesterClass || song.class }}
@@ -598,7 +604,9 @@
                   'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
                   schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '',
-                  schedule.song && schedule.song.cardCodeId ? 'border-amber-500/30 bg-amber-500/5' : ''
+                  schedule.song && schedule.song.cardCodeId
+                    ? 'border-amber-500/30 bg-amber-500/5'
+                    : ''
                 ]"
                 :data-schedule-id="schedule.id"
                 draggable="true"
@@ -634,7 +642,7 @@
                       referrerpolicy="no-referrer"
                       loading="lazy"
                       alt=""
-                    >
+                    />
                     <div
                       v-else
                       class="w-full h-full flex items-center justify-center text-zinc-600"
@@ -662,7 +670,11 @@
                         title="查看备注留言"
                         @click.stop="openSubmissionRemark(schedule.song)"
                       >
-                        {{ schedule.song.submissionNote.length > 25 ? schedule.song.submissionNote.substring(0, 25) + '...' : schedule.song.submissionNote }}
+                        {{
+                          schedule.song.submissionNote.length > 25
+                            ? schedule.song.submissionNote.substring(0, 25) + '...'
+                            : schedule.song.submissionNote
+                        }}
                       </span>
                       <!-- 重播标识 -->
                       <span
@@ -863,7 +875,7 @@
           v-model="moveTargetDate"
           class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-purple-500 transition-colors"
           type="date"
-        >
+        />
         <div class="flex gap-3">
           <button
             class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
@@ -899,10 +911,7 @@
         <div class="flex items-center gap-3">
           <button
             class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
-            @click="
-              rejectReplayRequest(replayModalSongId);
-              closeReplayModal()
-            "
+            @click="(rejectReplayRequest(replayModalSongId), closeReplayModal())"
           >
             拒绝申请
           </button>
@@ -1095,7 +1104,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
   const newTrackIds = new Set()
   const newNamesMap = {}
   const cookie = getNeteaseCookie()
-  
+
   const fetchPromises = playlistIds.map(async (id) => {
     const playlistName = playlistNames[id] || `歌单 ${id}`
     let trackIds = []
@@ -1107,7 +1116,13 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
       // 缓存中没有则重新请求
       try {
         const res = await getPlaylistDetail(id, cookie)
-        if (res && res.code === 200 && res.body && res.body.playlist && res.body.playlist.trackIds) {
+        if (
+          res &&
+          res.code === 200 &&
+          res.body &&
+          res.body.playlist &&
+          res.body.playlist.trackIds
+        ) {
           trackIds = res.body.playlist.trackIds.map((t) => t.id.toString())
         }
       } catch (err) {
@@ -1116,7 +1131,7 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
     }
 
     // 存入集合并建立映射关系
-    trackIds.forEach(t => {
+    trackIds.forEach((t) => {
       newTrackIds.add(t)
       if (!newNamesMap[t]) {
         newNamesMap[t] = []
@@ -1126,9 +1141,9 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
       }
     })
   })
-  
+
   await Promise.all(fetchPromises)
-  
+
   playlistFilterTrackIds.value = newTrackIds
   playlistNamesMap.value = newNamesMap
 }
@@ -1210,18 +1225,22 @@ const updateSubmissionNotePublic = async (isPublic) => {
     })
 
     if (songsService && songsService.songs && songsService.songs.value) {
-      const songIndex = songsService.songs.value.findIndex(s => s.id === dialogData.songId)
+      const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
       if (songIndex !== -1) {
         songsService.songs.value[songIndex].submissionNotePublic = isPublic
       }
     }
 
-    const localScheduledIndex = localScheduledSongs.value.findIndex(s => s.song && s.song.id === dialogData.songId)
+    const localScheduledIndex = localScheduledSongs.value.findIndex(
+      (s) => s.song && s.song.id === dialogData.songId
+    )
     if (localScheduledIndex !== -1) {
       localScheduledSongs.value[localScheduledIndex].song.submissionNotePublic = isPublic
     }
 
-    const publicScheduleIndex = publicSchedules.value.findIndex(s => s.song && s.song.id === dialogData.songId)
+    const publicScheduleIndex = publicSchedules.value.findIndex(
+      (s) => s.song && s.song.id === dialogData.songId
+    )
     if (publicScheduleIndex !== -1) {
       publicSchedules.value[publicScheduleIndex].song.submissionNotePublic = isPublic
     }
@@ -1386,7 +1405,10 @@ const availableDates = computed(() => {
 
     const isToday = i === 0
     const weekdays = ['日', '一', '二', '三', '四', '五', '六']
-    const weekday = weekdays[new Date(Date.UTC(parsedDate.year, parsedDate.month - 1, parsedDate.day)).getUTCDay()]
+    const weekday =
+      weekdays[
+        new Date(Date.UTC(parsedDate.year, parsedDate.month - 1, parsedDate.day)).getUTCDay()
+      ]
 
     dates.push({
       value: dateStr,
@@ -1594,10 +1616,10 @@ const handleDateSelectorWheel = (event) => {
     if (targetScrollLeft === null) {
       targetScrollLeft = dateSelector.value.scrollLeft
     }
-    
+
     const scrollAmount = event.deltaY > 0 ? 150 : -150
     targetScrollLeft += scrollAmount
-    
+
     const maxScroll = dateSelector.value.scrollWidth - dateSelector.value.clientWidth
     targetScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScroll))
 
@@ -1616,8 +1638,9 @@ const scrollDates = (direction) => {
     targetScrollLeft = currentScroll
   }
 
-  targetScrollLeft = direction === 'right' ? targetScrollLeft + scrollAmount : targetScrollLeft - scrollAmount
-  
+  targetScrollLeft =
+    direction === 'right' ? targetScrollLeft + scrollAmount : targetScrollLeft - scrollAmount
+
   const maxScroll = dateSelector.value.scrollWidth - dateSelector.value.clientWidth
   targetScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScroll))
 
@@ -1657,20 +1680,19 @@ const updateScrollButtonState = () => {
     if (currentScrollLeft < 50) {
       const oldScrollWidth = currentScrollWidth
       dateRange.value.start -= 14
-      
+
       await nextTick()
-      
+
       const newScrollWidth = dateSelector.value.scrollWidth
-      
+
       const delta = newScrollWidth - oldScrollWidth
       dateSelector.value.scrollLeft = currentScrollLeft + delta
-      
+
       // 补偿正在进行的平滑滚动动画目标，避免跳跃或回弹
       if (targetScrollLeft !== null) {
         targetScrollLeft += delta
       }
-    }
-    else if (currentScrollWidth - currentScrollLeft - currentClientWidth < 50) {
+    } else if (currentScrollWidth - currentScrollLeft - currentClientWidth < 50) {
       dateRange.value.end += 14
     }
   }, 150)
@@ -1809,12 +1831,13 @@ const scrollToDateElement = (behavior = 'smooth') => {
       const listRect = dateSelector.value.getBoundingClientRect()
       const elRect = el.getBoundingClientRect()
       const scrollLeft = dateSelector.value.scrollLeft
-      
-      let target = scrollLeft + (elRect.left - listRect.left) - (listRect.width / 2) + (elRect.width / 2)
-      
+
+      let target =
+        scrollLeft + (elRect.left - listRect.left) - listRect.width / 2 + elRect.width / 2
+
       const maxScroll = dateSelector.value.scrollWidth - dateSelector.value.clientWidth
       target = Math.max(0, Math.min(target, maxScroll))
-      
+
       targetScrollLeft = target
       smoothScrollTo(dateSelector.value, target, 400)
     } else {
@@ -1884,7 +1907,10 @@ const scrollToToday = () => {
   const isAlreadyToday = selectedDate.value === todayStr
 
   if (!isAlreadyToday) {
-    if (hasChanges.value && !window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')) {
+    if (
+      hasChanges.value &&
+      !window.confirm('您有未保存的排期修改，切换日期将丢失这些修改，确定要继续吗？')
+    ) {
       return
     }
     selectedDate.value = todayStr
@@ -1990,8 +2016,8 @@ const loadData = async () => {
     // 因为在界面上我们是按日期（selectedDate）来过滤显示排期的
     // 并行加载数据
     await Promise.all([
-      songsService.fetchSongs(false, semester, false, true),
-      songsService.fetchPublicSchedules(false, undefined, false, true),
+      songsService.fetchSongs(false, semester, true),
+      songsService.fetchPublicSchedules(false, undefined, true),
       loadPlayTimes(),
       loadDrafts(), // 加载草稿列表
       fetchReplayRequests() // 加载重播申请
@@ -2464,7 +2490,7 @@ const clearScheduleList = () => {
   confirmDialogConfirmText.value = '确认清空'
 
   confirmAction.value = () => {
-    localScheduledSongs.value.forEach(schedule => {
+    localScheduledSongs.value.forEach((schedule) => {
       if (schedule.song) {
         scheduledSongIds.value.delete(schedule.song.id)
       }
@@ -2563,10 +2589,7 @@ const confirmMoveDate = async () => {
       console.error('迁移排期日期失败:', error)
       if (window.$showNotification) {
         const backendMessage = error.data?.message || error.data?.statusMessage || error.message
-        window.$showNotification(
-          '迁移失败: ' + (backendMessage || '未知错误'),
-          'error'
-        )
+        window.$showNotification('迁移失败: ' + (backendMessage || '未知错误'), 'error')
       }
     } finally {
       loading.value = false

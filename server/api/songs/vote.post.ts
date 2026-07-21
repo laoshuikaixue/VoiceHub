@@ -8,7 +8,6 @@ import {
   recordSongVote,
   recordUserVoteActivity
 } from '~~/server/services/securityService'
-import { cacheService } from '~~/server/services/cacheService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
 export default defineEventHandler(async (event) => {
@@ -136,15 +135,6 @@ export default defineEventHandler(async (event) => {
 
       const voteCount = voteCountResult[0].count
 
-      // 清除统计缓存和歌曲缓存
-      try {
-        await cacheService.clearStatsCache()
-        await cacheService.clearSongsCache()
-        console.log('[Cache] 统计缓存和歌曲缓存已清除（取消投票）')
-      } catch (cacheError) {
-        console.error('[Cache] 缓存清除失败（取消投票）:', cacheError)
-      }
-
       return {
         success: true,
         message: '取消投票成功',
@@ -159,7 +149,7 @@ export default defineEventHandler(async (event) => {
       // 正常投票逻辑
       if (existingVote) {
         throw createError({
-          statusCode: 400,
+          statusCode: 409,
           message: '你已经为这首歌投过票了'
         })
       }
@@ -191,15 +181,6 @@ export default defineEventHandler(async (event) => {
       const protectedTriggered = recordSongVote(body.songId, clientIP, user.id)
       recordUserVoteActivity(user.id, song.title)
 
-      // 清除统计缓存和歌曲缓存
-      try {
-        await cacheService.clearStatsCache()
-        await cacheService.clearSongsCache()
-        console.log('[Cache] 统计缓存和歌曲缓存已清除（投票）')
-      } catch (cacheError) {
-        console.error('[Cache] 缓存清除失败（投票）:', cacheError)
-      }
-
       return {
         success: true,
         message: '投票成功',
@@ -214,6 +195,11 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     if (error.statusCode) {
       throw error
+    } else if (error.code === '23505') {
+      throw createError({
+        statusCode: 409,
+        message: '你已经为这首歌投过票了'
+      })
     } else {
       throw createError({
         statusCode: 500,

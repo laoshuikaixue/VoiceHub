@@ -1,4 +1,9 @@
-import { parseState, getRedirectUri, getSafeOAuthReturnPath } from '~~/server/utils/oauth'
+import {
+  decodeOAuthStateCookie,
+  parseState,
+  getRedirectUri,
+  getSafeOAuthReturnPath
+} from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
@@ -70,7 +75,10 @@ export default defineEventHandler(async (event) => {
     if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
       throw createError({ statusCode: 400, message: '聚合登录状态无效或已过期' })
     }
-    stateToVerify = storedFullState
+    stateToVerify = decodeOAuthStateCookie(storedFullState)
+    if (!stateToVerify) {
+      throw createError({ statusCode: 400, message: '聚合登录状态无效或已过期' })
+    }
   }
 
   const state = parseState(stateToVerify, origin, csrfCookie, stateSecret)
