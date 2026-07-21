@@ -4,10 +4,16 @@ export const AGGREGATE_OAUTH_LOGIN_TYPES = [
   'qq',
   'wx',
   'alipay',
+  'sina',
+  'baidu',
   'douyin',
   'huawei',
   'xiaomi',
-  'feishu'
+  'microsoft',
+  'feishu',
+  'wework',
+  'dingtalk',
+  'gitee'
 ] as const
 
 export type AggregateOAuthLoginType = (typeof AGGREGATE_OAUTH_LOGIN_TYPES)[number]
