@@ -8,7 +8,10 @@ export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
   { value: 'huawei', label: '华为' },
   { value: 'xiaomi', label: '小米' },
   { value: 'microsoft', label: 'Microsoft' },
-  { value: 'gitee', label: 'Gitee' }
+  { value: 'gitee', label: 'Gitee' },
+  { value: 'bilibili', label: '哔哩哔哩' },
+  { value: 'appleid', label: 'Apple' },
+  { value: 'kuaishou', label: '快手' }
 ] as const
 
 const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
@@ -21,7 +24,10 @@ const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
   huawei: 'oauth-huawei',
   xiaomi: 'oauth-xiaomi',
   microsoft: 'oauth-microsoft',
-  gitee: 'oauth-gitee'
+  gitee: 'oauth-gitee',
+  bilibili: 'oauth-bilibili',
+  appleid: 'oauth-apple',
+  kuaishou: 'oauth-kuaishou'
 }
 
 export const normalizeAggregateOAuthLoginTypes = (value: unknown): string[] => {

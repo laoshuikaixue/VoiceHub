@@ -19,7 +19,10 @@ const SUPPORTED_AGGREGATE_LOGIN_TYPES = [
   'huawei',
   'xiaomi',
   'microsoft',
-  'gitee'
+  'gitee',
+  'bilibili',
+  'appleid',
+  'kuaishou'
 ]
 const SUPPORTED_ENV_VARIABLES = [
   'NODE_ENV',
