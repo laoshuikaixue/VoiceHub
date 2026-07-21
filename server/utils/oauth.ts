@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js'
-import { createHmac, randomBytes } from 'node:crypto'
+import { createHash, createHmac, randomBytes } from 'node:crypto'
 import { createError } from 'h3'
 
 export interface OAuthState {
@@ -30,6 +30,29 @@ const normalizePort = (url: URL): string => {
 
 const OAUTH_STATE_COOKIE_PREFIX = 'b64url:'
 
+export interface OAuthStateCookieNames {
+  csrf: string
+  fullState: string
+  compactState: string
+}
+
+export const LEGACY_OAUTH_STATE_COOKIE_NAMES: OAuthStateCookieNames = {
+  csrf: 'oauth_csrf',
+  fullState: 'oauth_full_state',
+  compactState: 'oauth_compact_state'
+}
+
+export const getOAuthStateCookieNames = (compactState?: string): OAuthStateCookieNames => {
+  if (!compactState) return LEGACY_OAUTH_STATE_COOKIE_NAMES
+
+  const suffix = createHash('sha256').update(compactState).digest('hex').slice(0, 24)
+  return {
+    csrf: `oauth_csrf_${suffix}`,
+    fullState: `oauth_full_state_${suffix}`,
+    compactState: `oauth_compact_state_${suffix}`
+  }
+}
+
 // AES state 是标准 Base64，Cookie 中只需转换为 URL 安全格式以避免 +、/、= 被改写。
 export const encodeOAuthStateCookie = (state: string): string =>
   `${OAUTH_STATE_COOKIE_PREFIX}${Buffer.from(state, 'base64').toString('base64url')}`
@@ -39,7 +62,9 @@ export const decodeOAuthStateCookie = (state: string): string => {
     return state
   }
   try {
-    return Buffer.from(state.slice(OAUTH_STATE_COOKIE_PREFIX.length), 'base64url').toString('base64')
+    return Buffer.from(state.slice(OAUTH_STATE_COOKIE_PREFIX.length), 'base64url').toString(
+      'base64'
+    )
   } catch {
     return ''
   }

@@ -2,6 +2,7 @@ import {
   encodeOAuthStateCookie,
   generateCompactOAuthState,
   generateState,
+  getOAuthStateCookieNames,
   getRedirectUri,
   getSafeOAuthReturnPath
 } from '~~/server/utils/oauth'
@@ -51,25 +52,13 @@ export default defineEventHandler(async (event) => {
   // 获取 Origin
   const origin = getRequestOrigin(event)
   const protocol = getSafeRequestProtocol(event)
-  const host = getRequestHeaders(event)['host'] || getRequestURL(event).host
 
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
-  // CSRF Cookie 绑定在当前 host 上，若回调地址源站不一致会导致回调时拿不到 Cookie
-  // 如果使用了 Broker，回调地址的源站可能不同，此时我们允许跳过严格的主机校验，
-  // 但仍然需要确保协议和 host 能正确写入 state 以便回调时验证。
+  // 状态 Cookie 是 host-only Cookie，回调地址必须与发起授权的源站完全一致。
   try {
     const redirectUrl = new URL(redirectUri)
-    // 只有当配置的不是专门的 broker 回调时，才进行严格的源站一致性校验
-    // 通常 Broker 的回调是根目录下的 /callback 或者是单独的 auth 域名
-    const isBrokerPattern = /(?:\/api)?\/auth\/[^/]+\/callback\/?$|\/callback\/?$/.test(
-      redirectUrl.pathname
-    )
-
-    if (
-      !isBrokerPattern &&
-      (redirectUrl.host !== host || redirectUrl.protocol !== `${protocol}:`)
-    ) {
+    if (redirectUrl.origin !== origin) {
       throw createError({
         statusCode: 400,
         message:
@@ -92,29 +81,27 @@ export default defineEventHandler(async (event) => {
   // 在开发环境 (HTTP) 中，必须将 secure 设置为 false，否则浏览器会拒绝设置 cookie
   const isHttps = protocol === 'https'
 
-  // 为了兼容不同的部署环境（本地、Docker、Codespaces等），
-  // 不指定domain，让浏览器自动使用当前请求的host
-  setCookie(event, 'oauth_csrf', csrf, {
-    httpOnly: true,
-    secure: isHttps,
-    sameSite: 'lax',
-    maxAge: 60 * 10, // 10分钟
-    path: '/'
-    // 注意：不设置 domain，让浏览器使用当前 host
-  })
-
   let authorizeState = state
   if (provider === 'aggregate') {
     authorizeState = generateCompactOAuthState(stateSecret)
-    const aggregateCookieOptions = {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: 'lax' as const,
-      maxAge: 60 * 10,
-      path: '/'
-    }
-    setCookie(event, 'oauth_full_state', encodeOAuthStateCookie(state), aggregateCookieOptions)
-    setCookie(event, 'oauth_compact_state', authorizeState, aggregateCookieOptions)
+  }
+  const stateCookieNames = getOAuthStateCookieNames(
+    provider === 'aggregate' ? authorizeState : undefined
+  )
+  const stateCookieOptions = {
+    httpOnly: true,
+    secure: isHttps,
+    sameSite: 'lax' as const,
+    maxAge: 60 * 10,
+    path: '/'
+  }
+
+  // 不指定 domain，让每个授权流程的 Cookie 绑定到当前 host 和独立 state。
+  setCookie(event, stateCookieNames.csrf, csrf, stateCookieOptions)
+
+  if (provider === 'aggregate') {
+    setCookie(event, stateCookieNames.fullState, encodeOAuthStateCookie(state), stateCookieOptions)
+    setCookie(event, stateCookieNames.compactState, authorizeState, stateCookieOptions)
   }
 
   const url = await strategy.getAuthorizeUrl(redirectUri, authorizeState, providerConfig)
