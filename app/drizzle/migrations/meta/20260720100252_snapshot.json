@@ -1,6 +1,6 @@
 {
-  "id": "6768cddb-916b-4f39-af07-697209b8e9a3",
-  "prevId": "02d1226c-1a29-4830-a564-721b79898593",
+  "id": "2ef54088-eabe-451f-ae85-9eb1cfc33372",
+  "prevId": "a902f1ce-466d-4a48-9343-71b93dacbdf4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1075,7 +1075,56 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "schedule_published_song_idx": {
+          "name": "schedule_published_song_idx",
+          "columns": [
+            {
+              "expression": "isDraft",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "songId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "playDate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "schedule_published_date_idx": {
+          "name": "schedule_published_date_idx",
+          "columns": [
+            {
+              "expression": "isDraft",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "playDate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -1240,7 +1289,50 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "song_collaborators_song_status_idx": {
+          "name": "song_collaborators_song_status_idx",
+          "columns": [
+            {
+              "expression": "song_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "song_collaborators_user_status_idx": {
+          "name": "song_collaborators_user_status_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -1293,7 +1385,35 @@
           "default": "'PENDING'"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "song_replay_requests_user_status_song_idx": {
+          "name": "song_replay_requests_user_status_song_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "song_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -1434,6 +1554,42 @@
           "columns": [
             {
               "expression": "cardCodeId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "song_semester_created_at_idx": {
+          "name": "song_semester_created_at_idx",
+          "columns": [
+            {
+              "expression": "semester",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "createdAt",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "song_requester_id_idx": {
+          "name": "song_requester_id_idx",
+          "columns": [
+            {
+              "expression": "requesterId",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -2277,10 +2433,41 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "vote_user_song_idx": {
+          "name": "vote_user_song_idx",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "songId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "vote_song_user_unique": {
+          "name": "vote_song_user_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "songId",
+            "userId"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

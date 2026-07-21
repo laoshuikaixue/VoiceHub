@@ -17,8 +17,6 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
-import { CacheService } from '~~/server/services/cacheService'
-import { userCache } from '~~/server/utils/cache-helpers'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -1174,15 +1172,6 @@ export default defineEventHandler(async (event) => {
       console.error(`处理记录失败 (${tableName}):`, error)
       stats.errors++
       stats.warnings.push(`记录处理失败: ${error.message}`)
-    }
-  }
-
-  if (tableName === 'systemSettings') {
-    try {
-      await CacheService.getInstance().clearSystemSettingsCache()
-      await userCache.clearAllAuth()
-    } catch (cacheError) {
-      console.warn('分块恢复系统设置后清理缓存失败:', cacheError)
     }
   }
 

@@ -1229,8 +1229,7 @@ VoiceHub/
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
-│   │   ├── time-sync.ts    # 服务器时间同步插件
-│   │   └── system-settings-cache.ts # 系统设置缓存预热插件
+│   │   └── time-sync.ts    # 服务器时间同步插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
