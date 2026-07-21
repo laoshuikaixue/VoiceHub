@@ -104,7 +104,7 @@ export default defineEventHandler(async (event) => {
 
   let authorizeState = state
   if (provider === 'aggregate') {
-    authorizeState = generateCompactOAuthState(origin, stateSecret)
+    authorizeState = generateCompactOAuthState(stateSecret)
     const aggregateCookieOptions = {
       httpOnly: true,
       secure: isHttps,

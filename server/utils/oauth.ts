@@ -57,31 +57,21 @@ export const generateState = (
   return { state, csrf }
 }
 
-// 聚合登录服务会把 state 截断为 100 字符，因此 Broker 只接收可验签的短路由信息。
-export const generateCompactOAuthState = (targetOrigin: string, secretKey?: string): string => {
+// 聚合登录服务会把 state 截断为 100 字符，因此这里只传递固定长度的一次性签名随机值。
+// 完整状态保存在 HttpOnly Cookie 中，回调时仍会校验 Origin、CSRF 和过期时间。
+export const generateCompactOAuthState = (secretKey?: string): string => {
   if (!secretKey) {
     throw createError({ statusCode: 500, message: 'OAuth State 密钥未配置' })
   }
 
-  const target = new URL(targetOrigin).origin
-  const encodedTarget = Buffer.from(target, 'utf8').toString('base64url')
-  const nonce = randomBytes(8).toString('base64url')
-  const payload = `v1.${encodedTarget}.${nonce}`
+  const nonce = randomBytes(16).toString('base64url')
+  const payload = `v2.${nonce}`
   const signature = createHmac('sha256', secretKey)
     .update(payload)
     .digest()
-    .subarray(0, 12)
+    .subarray(0, 16)
     .toString('base64url')
-  const state = `${payload}.${signature}`
-
-  if (state.length > 100) {
-    throw createError({
-      statusCode: 400,
-      message: '当前站点地址过长，无法兼容聚合登录的 state 长度限制'
-    })
-  }
-
-  return state
+  return `${payload}.${signature}`
 }
 
 // 解析 OAuth 状态参数
