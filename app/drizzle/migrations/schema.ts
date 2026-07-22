@@ -173,6 +173,7 @@ export const user = pgTable("User", {
 	statusChangedBy: integer(),
 	email: text(),
 	emailVerified: boolean().default(false),
+	emailVerifiedAt: timestamp({ mode: 'string' }),
 });
 
 export const emailTemplate = pgTable("EmailTemplate", {
