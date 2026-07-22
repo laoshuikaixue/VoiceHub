@@ -11,7 +11,6 @@ export const AGGREGATE_OAUTH_LOGIN_TYPES = [
   'xiaomi',
   'gitee',
   'bilibili',
-  'appleid',
   'kuaishou'
 ] as const
 

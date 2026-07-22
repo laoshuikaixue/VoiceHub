@@ -312,7 +312,6 @@ const aggregateIconClass = (loginType) => {
     xiaomi: 'text-[#ff6900]',
     gitee: 'text-[#c71d23]',
     bilibili: 'text-[#00a1d6]',
-    appleid: 'text-white',
     kuaishou: 'text-[#ff4906]'
   }
   return classes[loginType] || 'text-zinc-100'

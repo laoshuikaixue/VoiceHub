@@ -20,7 +20,6 @@ const SUPPORTED_AGGREGATE_LOGIN_TYPES = [
   'xiaomi',
   'gitee',
   'bilibili',
-  'appleid',
   'kuaishou'
 ]
 const SUPPORTED_ENV_VARIABLES = [

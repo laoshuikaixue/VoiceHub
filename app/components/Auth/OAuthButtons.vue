@@ -72,7 +72,6 @@ const providerButtonClass = (provider) => {
       xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
       gitee: 'hover:bg-[#c71d23] hover:text-white hover:border-[#c71d23]',
       bilibili: 'hover:bg-[#00a1d6] hover:text-white hover:border-[#00a1d6]',
-      appleid: 'hover:bg-white hover:text-black hover:border-white',
       kuaishou: 'hover:bg-[#ff4906] hover:text-white hover:border-[#ff4906]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`

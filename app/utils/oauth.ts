@@ -9,7 +9,6 @@ export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
   { value: 'xiaomi', label: '小米' },
   { value: 'gitee', label: 'Gitee' },
   { value: 'bilibili', label: '哔哩哔哩' },
-  { value: 'appleid', label: 'Apple' },
   { value: 'kuaishou', label: '快手' }
 ] as const
 
@@ -24,7 +23,6 @@ const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
   xiaomi: 'oauth-xiaomi',
   gitee: 'oauth-gitee',
   bilibili: 'oauth-bilibili',
-  appleid: 'oauth-apple',
   kuaishou: 'oauth-kuaishou'
 }
 
