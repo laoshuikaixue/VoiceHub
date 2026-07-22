@@ -19,6 +19,7 @@ const SUPPORTED_AGGREGATE_LOGIN_TYPES = [
   'huawei',
   'xiaomi',
   'gitee',
+  'gitea',
   'bilibili',
   'kuaishou'
 ]

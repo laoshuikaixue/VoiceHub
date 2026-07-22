@@ -98,6 +98,13 @@
       />
     </g>
 
+    <!-- Gitea 品牌图标 -->
+    <g v-else-if="name === 'oauth-gitea'" fill="currentColor" stroke="none">
+      <path
+        d="M21.08 10.08H7.24a2.76 2.76 0 0 0 0 5.52h7.11a2.76 2.76 0 0 1 0 5.52H9.79a7.79 7.79 0 1 1 7.79-7.79v-.49h3.5a3.5 3.5 0 0 1 0 7h-1.13a9.95 9.95 0 1 1-1.2-13.93 9.95 9.95 0 0 1 2.33 3.17Z"
+      />
+    </g>
+
     <!-- 哔哩哔哩、快手品牌路径来源：Simple Icons（CC0） -->
     <g v-else-if="name === 'oauth-bilibili'" fill="currentColor" stroke="none">
       <path

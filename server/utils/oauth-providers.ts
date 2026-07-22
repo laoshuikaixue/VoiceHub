@@ -10,6 +10,7 @@ export const AGGREGATE_OAUTH_LOGIN_TYPES = [
   'huawei',
   'xiaomi',
   'gitee',
+  'gitea',
   'bilibili',
   'kuaishou'
 ] as const
