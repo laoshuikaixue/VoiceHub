@@ -1,1 +1,0 @@
-ALTER TABLE "Semester" DROP CONSTRAINT "Semester_name_unique";

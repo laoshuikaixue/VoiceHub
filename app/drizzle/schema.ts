@@ -26,6 +26,7 @@ export const users = pgTable('User', {
   password: text('password').notNull(),
   email: text('email'),
   emailVerified: boolean('emailVerified').default(false),
+  emailVerifiedAt: timestamp('emailVerifiedAt'),
   lastLogin: timestamp('lastLogin'),
   lastLoginIp: text('lastLoginIp'),
   passwordChangedAt: timestamp('passwordChangedAt'),
