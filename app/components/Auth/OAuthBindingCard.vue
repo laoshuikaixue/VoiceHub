@@ -311,7 +311,7 @@ const aggregateIconClass = (loginType) => {
     huawei: 'text-[#cf0a2c]',
     xiaomi: 'text-[#ff6900]',
     gitee: 'text-[#c71d23]',
-    gitea: 'text-zinc-100',
+    gitea: 'text-zinc-100 [--gitea-cutout:#18181b]',
     bilibili: 'text-[#00a1d6]',
     kuaishou: 'text-[#ff4906]'
   }

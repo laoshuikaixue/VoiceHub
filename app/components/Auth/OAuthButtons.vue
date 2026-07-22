@@ -71,7 +71,8 @@ const providerButtonClass = (provider) => {
       huawei: 'hover:bg-[#cf0a2c] hover:text-white hover:border-[#cf0a2c]',
       xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
       gitee: 'hover:bg-[#c71d23] hover:text-white hover:border-[#c71d23]',
-      gitea: 'hover:bg-white hover:text-black hover:border-white',
+      gitea:
+        '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:#fff] hover:bg-white hover:text-black hover:border-white',
       bilibili: 'hover:bg-[#00a1d6] hover:text-white hover:border-[#00a1d6]',
       kuaishou: 'hover:bg-[#ff4906] hover:text-white hover:border-[#ff4906]'
     }
