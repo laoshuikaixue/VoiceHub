@@ -33,6 +33,9 @@ const getAggregateProviderMessage = (value: any): string | undefined => {
 const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
   providerMessage ? `聚合登陆授权地址获取失败：${providerMessage}` : '聚合登陆授权地址获取失败'
 
+const isAggregateSuccessCode = (value: unknown): boolean =>
+  value === 0 || (typeof value === 'string' && value.trim() === '0')
+
 const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
 
 const normalizeAggregateEndpoint = (endpoint?: string): string => {
@@ -336,7 +339,7 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       })
     }
 
-    if (loginResponse?.code !== 0 || !loginResponse?.url) {
+    if (!isAggregateSuccessCode(loginResponse?.code) || !loginResponse?.url) {
       const providerMessage = getAggregateProviderMessage(loginResponse)
       throw createError({
         statusCode: 502,
@@ -386,8 +389,8 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       throw new Error('令牌请求失败')
     }
 
-    if (tokenResponse?.code !== 0) {
-      throw new Error(tokenResponse?.msg || '授权失败，请重试')
+    if (!isAggregateSuccessCode(tokenResponse?.code)) {
+      throw new Error(getAggregateProviderMessage(tokenResponse) || '授权失败，请重试')
     }
 
     if (!tokenResponse?.social_uid) {

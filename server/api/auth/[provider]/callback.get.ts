@@ -139,9 +139,13 @@ export default defineEventHandler(async (event) => {
     accessToken = await strategy.exchangeToken(code, redirectUri, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} token exchange failed:`, e.message)
+    const errorMessage =
+      provider === 'aggregate' && typeof e?.message === 'string' && e.message.trim()
+        ? `聚合登录授权失败：${e.message.trim()}`
+        : '授权失败，无法获取访问令牌'
     return sendRedirect(
       event,
-      `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent('授权失败，无法获取访问令牌')}`
+      `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent(errorMessage)}`
     )
   }
 
