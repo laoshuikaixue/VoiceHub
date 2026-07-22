@@ -65,7 +65,16 @@ const providerButtonClass = (provider) => {
       qq: 'hover:bg-[#12b7f5] hover:text-white hover:border-[#12b7f5]',
       wx: 'hover:bg-[#07c160] hover:text-white hover:border-[#07c160]',
       alipay: 'hover:bg-[#1677ff] hover:text-white hover:border-[#1677ff]',
-      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]'
+      sina: 'hover:bg-[#e6162d] hover:text-white hover:border-[#e6162d]',
+      baidu: 'hover:bg-[#2932e1] hover:text-white hover:border-[#2932e1]',
+      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]',
+      huawei: 'hover:bg-[#cf0a2c] hover:text-white hover:border-[#cf0a2c]',
+      xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
+      gitee: 'hover:bg-[#c71d23] hover:text-white hover:border-[#c71d23]',
+      gitea:
+        '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:#fff] hover:bg-white hover:text-black hover:border-white',
+      bilibili: 'hover:bg-[#00a1d6] hover:text-white hover:border-[#00a1d6]',
+      kuaishou: 'hover:bg-[#ff4906] hover:text-white hover:border-[#ff4906]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }

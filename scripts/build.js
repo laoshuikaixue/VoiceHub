@@ -9,7 +9,20 @@ config({ path: path.resolve(process.cwd(), '.env'), quiet: true })
 const BUILD_MEMORY_MB = 6144
 const DEFAULT_NODE_OPTIONS = `--max-old-space-size=${BUILD_MEMORY_MB}`
 const HIDDEN_VALUE = '[已隐藏]'
-const SUPPORTED_AGGREGATE_LOGIN_TYPES = ['qq', 'wx', 'alipay', 'douyin']
+const SUPPORTED_AGGREGATE_LOGIN_TYPES = [
+  'qq',
+  'wx',
+  'alipay',
+  'sina',
+  'baidu',
+  'douyin',
+  'huawei',
+  'xiaomi',
+  'gitee',
+  'gitea',
+  'bilibili',
+  'kuaishou'
+]
 const SUPPORTED_ENV_VARIABLES = [
   'NODE_ENV',
   'NODE_OPTIONS',

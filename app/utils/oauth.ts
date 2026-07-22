@@ -2,14 +2,30 @@ export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
   { value: 'qq', label: 'QQ' },
   { value: 'wx', label: '微信' },
   { value: 'alipay', label: '支付宝' },
-  { value: 'douyin', label: '抖音' }
+  { value: 'sina', label: '微博' },
+  { value: 'baidu', label: '百度' },
+  { value: 'douyin', label: '抖音' },
+  { value: 'huawei', label: '华为' },
+  { value: 'xiaomi', label: '小米' },
+  { value: 'gitee', label: 'Gitee' },
+  { value: 'gitea', label: 'Gitea' },
+  { value: 'bilibili', label: '哔哩哔哩' },
+  { value: 'kuaishou', label: '快手' }
 ] as const
 
 const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
   qq: 'oauth-qq',
   wx: 'oauth-wechat',
   alipay: 'oauth-alipay',
-  douyin: 'oauth-douyin'
+  sina: 'oauth-sina-weibo',
+  baidu: 'oauth-baidu',
+  douyin: 'oauth-douyin',
+  huawei: 'oauth-huawei',
+  xiaomi: 'oauth-xiaomi',
+  gitee: 'oauth-gitee',
+  gitea: 'oauth-gitea',
+  bilibili: 'oauth-bilibili',
+  kuaishou: 'oauth-kuaishou'
 }
 
 export const normalizeAggregateOAuthLoginTypes = (value: unknown): string[] => {

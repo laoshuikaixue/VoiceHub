@@ -305,7 +305,15 @@ const aggregateIconClass = (loginType) => {
     qq: 'text-[#12b7f5]',
     wx: 'text-[#07c160]',
     alipay: 'text-[#1677ff]',
-    douyin: 'text-[#25f4ee]'
+    sina: 'text-[#e6162d]',
+    baidu: 'text-[#2932e1]',
+    douyin: 'text-[#25f4ee]',
+    huawei: 'text-[#cf0a2c]',
+    xiaomi: 'text-[#ff6900]',
+    gitee: 'text-[#c71d23]',
+    gitea: 'text-zinc-100 [--gitea-cutout:#18181b]',
+    bilibili: 'text-[#00a1d6]',
+    kuaishou: 'text-[#ff4906]'
   }
   return classes[loginType] || 'text-zinc-100'
 }

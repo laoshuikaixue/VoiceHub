@@ -1,5 +1,7 @@
 import {
   decodeOAuthStateCookie,
+  getOAuthStateCookieNames,
+  LEGACY_OAUTH_STATE_COOKIE_NAMES,
   parseState,
   getRedirectUri,
   getSafeOAuthReturnPath
@@ -20,14 +22,17 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import type { H3Event } from 'h3'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
 
+const getSingleQueryValue = (value: unknown): string | undefined => {
+  return typeof value === 'string' ? value : undefined
+}
+
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
   const query = getQuery(event)
   // OAuth 回调参数参与身份与 CSRF 校验，拒绝重复参数可避免上下游解析结果不一致。
-  const code = typeof query.code === 'string' ? query.code : undefined
-  const stateStr = typeof query.state === 'string' ? query.state : undefined
-  const callbackLoginType =
-    typeof query.type === 'string' ? query.type.trim().toLowerCase() : undefined
+  const code = getSingleQueryValue(query.code)
+  const stateStr = getSingleQueryValue(query.state)
+  const callbackLoginType = getSingleQueryValue(query.type)?.trim().toLowerCase()
 
   if (!provider) {
     throw createError({ statusCode: 400, message: 'Missing provider' })
@@ -48,12 +53,30 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  if (!code || !stateStr) {
-    throw createError({ statusCode: 400, message: 'Missing code or state' })
+  if (!code) {
+    throw createError({ statusCode: 400, message: 'OAuth 回调缺少或包含冲突的 code 参数' })
+  }
+  if (!stateStr) {
+    throw createError({
+      statusCode: 400,
+      message: 'OAuth 回调缺少或包含冲突的 state 参数，无法完成安全验证'
+    })
   }
 
   // 1. 验证 State
-  const csrfCookie = getCookie(event, 'oauth_csrf')
+  const stateCookieNames = getOAuthStateCookieNames(provider === 'aggregate' ? stateStr : undefined)
+  let activeStateCookieNames = stateCookieNames
+  let csrfCookie = getCookie(event, activeStateCookieNames.csrf)
+  let storedFullState = getCookie(event, activeStateCookieNames.fullState)
+  let storedCompactState = getCookie(event, activeStateCookieNames.compactState)
+
+  // 兼容升级前已经发起、仍在十分钟有效期内的登录流程。
+  if (provider === 'aggregate' && (!csrfCookie || !storedFullState || !storedCompactState)) {
+    activeStateCookieNames = LEGACY_OAUTH_STATE_COOKIE_NAMES
+    csrfCookie = getCookie(event, activeStateCookieNames.csrf)
+    storedFullState = getCookie(event, activeStateCookieNames.fullState)
+    storedCompactState = getCookie(event, activeStateCookieNames.compactState)
+  }
 
   if (!csrfCookie) {
     throw createError({
@@ -70,8 +93,6 @@ export default defineEventHandler(async (event) => {
   let stateToVerify = stateStr
 
   if (provider === 'aggregate') {
-    const storedFullState = getCookie(event, 'oauth_full_state')
-    const storedCompactState = getCookie(event, 'oauth_compact_state')
     if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
       throw createError({ statusCode: 400, message: '聚合登录状态无效或已过期' })
     }
@@ -103,9 +124,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // 清除 CSRF cookie
-  deleteCookie(event, 'oauth_csrf')
-  deleteCookie(event, 'oauth_full_state')
-  deleteCookie(event, 'oauth_compact_state')
+  deleteCookie(event, activeStateCookieNames.csrf, { path: '/' })
+  if (provider === 'aggregate') {
+    deleteCookie(event, activeStateCookieNames.fullState, { path: '/' })
+    deleteCookie(event, activeStateCookieNames.compactState, { path: '/' })
+  }
 
   const strategy = getOAuthStrategy(provider)
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
@@ -116,9 +139,13 @@ export default defineEventHandler(async (event) => {
     accessToken = await strategy.exchangeToken(code, redirectUri, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} token exchange failed:`, e.message)
+    const errorMessage =
+      provider === 'aggregate' && typeof e?.message === 'string' && e.message.trim()
+        ? `聚合登录授权失败：${e.message.trim()}`
+        : '授权失败，无法获取访问令牌'
     return sendRedirect(
       event,
-      `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent('授权失败，无法获取访问令牌')}`
+      `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent(errorMessage)}`
     )
   }
 

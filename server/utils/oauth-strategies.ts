@@ -18,6 +18,24 @@ const firstStringValue = (values: any[]): string | undefined => {
   return undefined
 }
 
+const getAggregateProviderMessage = (value: any): string | undefined => {
+  const message = firstStringValue([value, value?.msg, value?.message, value?.error_description])
+  if (!message) return undefined
+
+  return message
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\b(app(?:id|key)|client_(?:id|secret))\s*[:=]\s*[^\s,;]+/gi, '$1=[已隐藏]')
+    .trim()
+    .slice(0, 200)
+}
+
+const getAggregateAuthorizeErrorMessage = (providerMessage?: string): string =>
+  providerMessage ? `聚合登陆授权地址获取失败：${providerMessage}` : '聚合登陆授权地址获取失败'
+
+const isAggregateSuccessCode = (value: unknown): boolean =>
+  value === 0 || (typeof value === 'string' && value.trim() === '0')
+
 const DEFAULT_AGGREGATE_OAUTH_ENDPOINT = 'https://a.idcfx.net/connect.php'
 
 const normalizeAggregateEndpoint = (endpoint?: string): string => {
@@ -309,20 +327,23 @@ const aggregateOAuthStrategy: OAuthStrategy = {
         headers: { Accept: 'application/json' }
       })
     } catch (e: any) {
+      const providerMessage = getAggregateProviderMessage(e?.data || e?.response?._data)
       // AppKey 位于协议规定的查询串中，避免记录可能包含完整请求 URL 的 FetchError。
       console.error('聚合登陆授权地址请求失败', {
-        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown'
+        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown',
+        providerMessage
       })
-      throw createError({ statusCode: 502, message: '聚合登陆授权地址获取失败' })
-    }
-
-    if (loginResponse?.code !== 0 || !loginResponse?.url) {
       throw createError({
         statusCode: 502,
-        message: '聚合登陆授权地址获取失败',
-        data: {
-          providerMessage: typeof loginResponse?.msg === 'string' ? loginResponse.msg : undefined
-        }
+        message: getAggregateAuthorizeErrorMessage(providerMessage)
+      })
+    }
+
+    if (!isAggregateSuccessCode(loginResponse?.code) || !loginResponse?.url) {
+      const providerMessage = getAggregateProviderMessage(loginResponse)
+      throw createError({
+        statusCode: 502,
+        message: getAggregateAuthorizeErrorMessage(providerMessage)
       })
     }
 
@@ -368,8 +389,8 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       throw new Error('令牌请求失败')
     }
 
-    if (tokenResponse?.code !== 0) {
-      throw new Error(tokenResponse?.msg || '授权失败，请重试')
+    if (!isAggregateSuccessCode(tokenResponse?.code)) {
+      throw new Error(getAggregateProviderMessage(tokenResponse) || '授权失败，请重试')
     }
 
     if (!tokenResponse?.social_uid) {

@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js'
-import { createHmac, randomBytes } from 'node:crypto'
+import { createHash, createHmac, randomBytes } from 'node:crypto'
 import { createError } from 'h3'
 
 export interface OAuthState {
@@ -30,6 +30,29 @@ const normalizePort = (url: URL): string => {
 
 const OAUTH_STATE_COOKIE_PREFIX = 'b64url:'
 
+export interface OAuthStateCookieNames {
+  csrf: string
+  fullState: string
+  compactState: string
+}
+
+export const LEGACY_OAUTH_STATE_COOKIE_NAMES: OAuthStateCookieNames = {
+  csrf: 'oauth_csrf',
+  fullState: 'oauth_full_state',
+  compactState: 'oauth_compact_state'
+}
+
+export const getOAuthStateCookieNames = (compactState?: string): OAuthStateCookieNames => {
+  if (!compactState) return LEGACY_OAUTH_STATE_COOKIE_NAMES
+
+  const suffix = createHash('sha256').update(compactState).digest('hex').slice(0, 24)
+  return {
+    csrf: `oauth_csrf_${suffix}`,
+    fullState: `oauth_full_state_${suffix}`,
+    compactState: `oauth_compact_state_${suffix}`
+  }
+}
+
 // AES state 是标准 Base64，Cookie 中只需转换为 URL 安全格式以避免 +、/、= 被改写。
 export const encodeOAuthStateCookie = (state: string): string =>
   `${OAUTH_STATE_COOKIE_PREFIX}${Buffer.from(state, 'base64').toString('base64url')}`
@@ -39,7 +62,9 @@ export const decodeOAuthStateCookie = (state: string): string => {
     return state
   }
   try {
-    return Buffer.from(state.slice(OAUTH_STATE_COOKIE_PREFIX.length), 'base64url').toString('base64')
+    return Buffer.from(state.slice(OAUTH_STATE_COOKIE_PREFIX.length), 'base64url').toString(
+      'base64'
+    )
   } catch {
     return ''
   }
@@ -74,31 +99,21 @@ export const generateState = (
   return { state, csrf }
 }
 
-// 聚合登录服务会把 state 截断为 100 字符，因此 Broker 只接收可验签的短路由信息。
-export const generateCompactOAuthState = (targetOrigin: string, secretKey?: string): string => {
+// 聚合登录服务会把 state 截断为 100 字符，因此这里只传递固定长度的一次性签名随机值。
+// 完整状态保存在 HttpOnly Cookie 中，回调时仍会校验 Origin、CSRF 和过期时间。
+export const generateCompactOAuthState = (secretKey?: string): string => {
   if (!secretKey) {
     throw createError({ statusCode: 500, message: 'OAuth State 密钥未配置' })
   }
 
-  const target = new URL(targetOrigin).origin
-  const encodedTarget = Buffer.from(target, 'utf8').toString('base64url')
-  const nonce = randomBytes(8).toString('base64url')
-  const payload = `v1.${encodedTarget}.${nonce}`
+  const nonce = randomBytes(16).toString('base64url')
+  const payload = `v2.${nonce}`
   const signature = createHmac('sha256', secretKey)
     .update(payload)
     .digest()
-    .subarray(0, 12)
+    .subarray(0, 16)
     .toString('base64url')
-  const state = `${payload}.${signature}`
-
-  if (state.length > 100) {
-    throw createError({
-      statusCode: 400,
-      message: '当前站点地址过长，无法兼容聚合登录的 state 长度限制'
-    })
-  }
-
-  return state
+  return `${payload}.${signature}`
 }
 
 // 解析 OAuth 状态参数
