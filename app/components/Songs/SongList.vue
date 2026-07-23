@@ -327,28 +327,6 @@
               >
                 {{ locale.withdraw }}
               </button>
-
-              <!-- 申请/取消重播按钮 -->
-              <template v-if="song.played && isAuthenticated">
-                <button
-                  v-if="shouldShowCancelButton(song)"
-                  :disabled="actionInProgress"
-                  class="withdraw-button replay-cancel-btn"
-                  :title="locale.cancelReplayTitle"
-                  @click.stop="handleCancelReplay(song)"
-                >
-                  {{ locale.cancelReplay }}
-                </button>
-                <button
-                  v-else-if="enableReplayRequests && shouldShowRequestButton(song)"
-                  :disabled="isReplayButtonDisabled(song)"
-                  class="withdraw-button replay-request-btn"
-                  :title="getReplayButtonTitle(song)"
-                  @click.stop="handleRequestReplay(song)"
-                >
-                  {{ getReplayButtonText(song) }}
-                </button>
-              </template>
             </div>
           </div>
         </TransitionGroup>
@@ -417,7 +395,6 @@ import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSemesters } from '~/composables/useSemesters'
 import { useSongs } from '~/composables/useSongs'
-import { useSiteConfig } from '~/composables/useSiteConfig'
 import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
@@ -451,14 +428,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits([
-  'vote',
-  'withdraw',
-  'cancelReplay',
-  'requestReplay',
-  'refresh',
-  'semester-change'
-])
+const emit = defineEmits(['vote', 'withdraw', 'refresh', 'semester-change'])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const { currentLocale, songs: songsLocale } = useLocale()
@@ -478,7 +448,6 @@ const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const searchQuery = ref('') // 搜索查询
 const activeTab = ref('all') // 默认显示全部投稿
 const auth = useAuth()
-const { enableReplayRequests } = useSiteConfig()
 const isAuthenticated = computed(() => auth && auth.isAuthenticated && auth.isAuthenticated.value)
 
 // 焦点状态管理
@@ -909,128 +878,6 @@ const handleWithdraw = (song) => {
   }
 }
 
-const handleCancelReplay = (song) => {
-  confirmDialog.value = {
-    show: true,
-    title: locale.value.cancelReplayConfirmTitle,
-    message: callLocale('cancelReplayMessage', '', song.title),
-    type: 'warning',
-    action: 'cancelReplay',
-    data: song
-  }
-}
-
-const handleRequestReplay = (song) => {
-  confirmDialog.value = {
-    show: true,
-    title: locale.value.requestReplayTitle,
-    message: callLocale('requestReplayMessage', '', song.title),
-    type: 'info',
-    action: 'requestReplay',
-    data: song
-  }
-}
-
-// 获取重播按钮文本
-const getReplayButtonText = (song) => {
-  if (actionInProgress.value) return locale.value.processing
-  if (!song) return locale.value.requestReplay
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return locale.value.notCurrentSemester
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    // 如果在冷却期内
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return callLocale('replayRejectedCooldown', '', song.replayRequestCooldownRemaining)
-    }
-    // 冷却期已过
-    return locale.value.requestReplay
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return locale.value.replayed
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return locale.value.cancelReplay
-  }
-
-  return locale.value.requestReplay
-}
-
-// 获取重播按钮标题（tooltip）
-const getReplayButtonTitle = (song) => {
-  if (!song) return locale.value.requestReplay
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return locale.value.onlyCurrentSemesterReplay
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return callLocale('replayRejectedTooltip', '', song.replayRequestCooldownRemaining)
-    }
-    return locale.value.requestReplay
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return locale.value.alreadyReplayed
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return locale.value.cancelReplayTitle
-  }
-
-  return locale.value.requestReplay
-}
-
-// 检查重播按钮是否应该禁用
-const isReplayButtonDisabled = (song) => {
-  if (actionInProgress.value || !song) return true
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return true
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    // 如果在冷却期内，禁用按钮
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return true
-    }
-    // 冷却期已过，允许重新申请
-    return false
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return true
-  }
-
-  // PENDING 状态时不禁用，因为可以撤回
-  return false
-}
-
-// 判断是否应该显示撤回按钮
-const shouldShowCancelButton = (song) => {
-  return song.replayRequested && song.replayRequestStatus === 'PENDING'
-}
-
-// 判断是否应该显示申请按钮
-const shouldShowRequestButton = (song) => {
-  // 如果是 PENDING 状态，显示撤回按钮而不是申请按钮
-  if (song.replayRequested && song.replayRequestStatus === 'PENDING') {
-    return false
-  }
-  // 其他情况显示申请按钮
-  return true
-}
 
 // 处理刷新按钮点击
 const handleRefresh = () => {
@@ -2347,16 +2194,6 @@ const vRipple = {
   margin-left: auto;
 }
 
-.replay-cancel-btn {
-  background: linear-gradient(180deg, #0b5afe 0%, #3d7fff 100%);
-  min-width: 75px;
-}
-
-.replay-request-btn {
-  background: linear-gradient(180deg, #0b5afe 0%, #3d7fff 100%);
-  min-width: 75px;
-}
-
 .withdraw-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -2766,13 +2603,6 @@ button:disabled {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.8);
-  }
-
-  .withdraw-button.replay-cancel-btn,
-  .withdraw-button.replay-request-btn {
-    background: var(--primary-light);
-    color: var(--primary);
-    border-color: var(--primary-border);
   }
 
   /* 加载和空状态 */
