@@ -660,6 +660,14 @@
                         class="similar-song-info"
                       >
                         <span class="similar-text">所有剧集已存在</span>
+                        <button
+                          v-if="canResubmitBilibiliEpisodes(result)"
+                          :disabled="submitting"
+                          class="select-btn"
+                          @click.stop.prevent="submitSong(result)"
+                        >
+                          选择剧集
+                        </button>
                       </div>
                       <div
                         v-else-if="
@@ -699,25 +707,14 @@
                         >
                         <span v-else class="similar-text">歌曲已存在</span>
 
-                        <!-- 超级管理员对已播放的相似歌曲：显示继续投稿 -->
+                        <!-- 已播放且允许重播申请：按普通投稿流程继续投稿 -->
                         <button
-                          v-if="getSimilarSong(result)?.played && isSuperAdmin"
+                          v-if="getSimilarSong(result)?.played && (isSuperAdmin || enableReplayRequests)"
                           :disabled="submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { forceResubmit: true })"
                         >
-                          继续投稿
-                        </button>
-
-                        <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
-                        <button
-                          v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
-                          :disabled="isReplayButtonDisabled(getSimilarSong(result))"
-                          :title="getReplayButtonTitle(getSimilarSong(result))"
-                          class="replay-btn"
-                          @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
-                        >
-                          {{ getReplayButtonText(getSimilarSong(result)) }}
+                          {{ isSuperAdmin ? '继续投稿' : '选择投稿' }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -1491,7 +1488,6 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
-const requestingReplay = ref(false)
 
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
@@ -3388,6 +3384,16 @@ const getBilibiliEpisodeStatus = (result) => {
   }
 }
 
+const canResubmitBilibiliEpisodes = (result) => {
+  if (isSuperAdmin.value) return true
+  if (!enableReplayRequests.value) return false
+
+  const episodeStatus = getBilibiliEpisodeStatus(result)
+  if (!episodeStatus || episodeStatus.submittedEpisodes.length === 0) return false
+
+  return episodeStatus.submittedEpisodes.every((song) => song.played)
+}
+
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60
@@ -3726,127 +3732,6 @@ const handleManualSubmit = async () => {
   } finally {
     submitting.value = false
   }
-}
-
-// 申请重播
-const handleRequestReplay = async (song) => {
-  if (requestingReplay.value || !song) return
-
-  // 如果已经申请过，不执行
-  if (song.replayRequested) {
-    if (window.$showNotification) {
-      window.$showNotification('该歌曲已申请过重播', 'info')
-    }
-    return
-  }
-
-  requestingReplay.value = true
-  try {
-    await songService.requestReplay(song.id)
-    // 刷新歌曲状态
-    setTimeout(() => {
-      songService.refreshSongsSilent().catch(console.error)
-    }, 500)
-    if (window.$showNotification) {
-      window.$showNotification('申请重播成功', 'success')
-    }
-  } catch (err) {
-    console.error('申请重播失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('申请重播失败: ' + err.message, 'error')
-    }
-  } finally {
-    requestingReplay.value = false
-  }
-}
-
-// 获取重播按钮文本
-const getReplayButtonText = (song) => {
-  if (requestingReplay.value) return '申请中...'
-  if (!song) return '申请重播'
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '非本学期'
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    // 如果在冷却期内
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
-    }
-    // 冷却期已过
-    return '申请重播'
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return '已重播'
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '已申请重播'
-  }
-
-  return '申请重播'
-}
-
-// 获取重播按钮标题（tooltip）
-const getReplayButtonTitle = (song) => {
-  if (!song) return '申请重播'
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '只能申请重播当前学期的歌曲'
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
-    }
-    return '申请重播'
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return '该歌曲已重播'
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '该歌曲已申请过重播'
-  }
-
-  return '申请重播'
-}
-
-// 检查重播按钮是否应该禁用
-const isReplayButtonDisabled = (song) => {
-  if (requestingReplay.value || !song) return true
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return true
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    // 如果在冷却期内，禁用按钮
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return true
-    }
-    // 冷却期已过，允许重新申请
-    return false
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return true
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return true
-  }
-
-  return false
 }
 
 // 重置表单

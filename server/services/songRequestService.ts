@@ -72,6 +72,12 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
 
     const currentSemester = await getCurrentSemesterName()
 
+    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
+    const systemSettingsData = systemSettingsResult[0]
+    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    const isSuperAdmin = user.role === 'SUPER_ADMIN'
+    const allowPlayedDuplicateRequest = Boolean(systemSettingsData?.enableReplayRequests)
+
     const isBilibili =
       requestBody.musicPlatform === 'bilibili' ||
       String(requestBody.musicId || '').startsWith('BV') ||
@@ -105,9 +111,8 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         )
 
       if (existingSongs.length > 0) {
-        const isSuperAdmin = user.role === 'SUPER_ADMIN'
         const hasUnplayedDuplicate = existingSongs.some((s) => !s.played)
-        if (!isSuperAdmin || hasUnplayedDuplicate) {
+        if (hasUnplayedDuplicate || (!isSuperAdmin && !allowPlayedDuplicateRequest)) {
           throw createError({
             statusCode: 400,
             message: `《${requestBody.title}》已经在列表中，不能重复投稿`
@@ -133,9 +138,8 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       })
 
       if (matchingSongs.length > 0) {
-        const isSuperAdmin = user.role === 'SUPER_ADMIN'
         const hasUnplayedDuplicate = matchingSongs.some((s) => !s.played)
-        if (!isSuperAdmin || hasUnplayedDuplicate) {
+        if (hasUnplayedDuplicate || (!isSuperAdmin && !allowPlayedDuplicateRequest)) {
           throw createError({
             statusCode: 400,
             message: `《${requestBody.title}》已经在列表中，不能重复投稿`
@@ -143,10 +147,6 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         }
       }
     }
-
-    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-    const systemSettingsData = systemSettingsResult[0]
-    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
 
     if (systemSettingsData?.forceBlockAllRequests && !isAdmin) {
       throw createError({
