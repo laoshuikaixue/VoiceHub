@@ -582,21 +582,8 @@ const locale = computed(() => {
     selectedSongsCount: base.selectedSongsCount || emptyText
   })
 })
-const formatLocale = (value, fallback = '', ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return value || fallback
-}
+const { format: formatLocale } = useLocaleText(locale)
 const getLocaleText = (key, fallback = '', ...args) => formatLocale(locale.value?.[key], fallback, ...args)
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
-}
 
 const mergeSongs = ref(false)
 const convertAudioFormat = ref(false)

@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/security'
 import { useLocale } from '~/utils/locale'
 import packageJson from '~~/package.json'
@@ -61,7 +61,7 @@ import packageJson from '~~/package.json'
 // 使用 useSiteConfig composable 获取配置
 const { siteTitle, icp: icpNumber, gonganNumber, showBeianIcon } = useSiteConfig()
 const config = useRuntimeConfig()
-const { common, currentLocale, initLocale } = useLocale()
+const { common } = useLocale()
 
 // 自动生成公安联网备案链接
 const gonganLink = computed(() => {
@@ -83,19 +83,7 @@ const currentYear = getSyncedDate().getFullYear()
 
 const responseTime = ref(0)
 
-watch(
-  currentLocale,
-  (locale) => {
-    if (import.meta.client) {
-      document.documentElement.lang = locale
-    }
-  },
-  { immediate: true }
-)
-
 onMounted(() => {
-  initLocale()
-
   if (typeof window !== 'undefined' && window.performance) {
     // 使用 requestAnimationFrame 确保在渲染后计算
     requestAnimationFrame(() => {

@@ -383,11 +383,6 @@ const locale = computed(() => {
     deleteConfirmTitle: base.deleteConfirmTitle || emptyText
   })
 })
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
-}
 
 const playTimes = ref<PlayTime[]>([])
 const loading = ref(false)

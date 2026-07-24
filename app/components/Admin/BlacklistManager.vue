@@ -342,20 +342,6 @@ import { useLocale } from '~/utils/locale'
 
 const { showToast: showNotification } = useToast()
 const { admin, currentLocale } = useLocale()
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
-const getErrorMessage = (err) => {
-  if (!err) return ''
-  if (typeof err === 'string') return err
-  return err?.data?.message || err?.message || err?.statusMessage || ''
-}
 const locale = computed(() => {
   const base = admin.value?.blacklist || {}
   return {

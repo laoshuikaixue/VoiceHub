@@ -706,21 +706,7 @@ const router = useRouter()
 const route = useRoute()
 const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
 const locale = computed(() => pages.value?.home || {})
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 const getHomeText = (section, key, ...args) => formatLocaleValue(locale.value?.[section]?.[key], ...args)
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
-}
 const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
 
 // 站点配置

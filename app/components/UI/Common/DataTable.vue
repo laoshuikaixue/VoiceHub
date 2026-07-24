@@ -253,16 +253,6 @@ const props = defineProps({
 const emit = defineEmits(['update:selectedRows', 'row-click', 'refresh', 'clear-selection'])
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
-const formatLocale = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
-      const argIndex = match === '{count}' ? 0 : Number(index)
-      return args[argIndex] !== undefined ? String(args[argIndex]) : match
-    })
-  }
-  return ''
-}
 const resolvedLoadingText = computed(() => props.loadingText || locale.value.loadingData)
 
 const totalColumns = computed(() => {

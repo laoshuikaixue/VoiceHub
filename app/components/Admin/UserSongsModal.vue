@@ -283,15 +283,6 @@ const locale = computed(() => {
     statuses: { ...(base.statuses || {}) }
   }
 })
-const formatLocale = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 
 // Computed
 const semesterOptions = computed(() => {

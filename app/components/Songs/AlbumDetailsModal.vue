@@ -361,16 +361,7 @@ const locale = computed(() => ({
   ...fallbackAlbumModalLocale,
   ...(requestLocale.value?.albumModal || {})
 }))
-const callLocale = (key, fallback = '', ...args) => {
-  const value = locale.value?.[key]
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return value || fallback
-}
+const { t: callLocale } = useLocaleText(locale)
 const currentSong = getCurrentSong()
 const isPlaying = getPlayingStatus()
 

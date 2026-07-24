@@ -6,14 +6,8 @@ import { setResponseHeader, type H3Event } from 'h3'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { createApiError } from '~~/server/utils/apiError'
 
-const createCardCodeError = (statusCode: number, code: string, message: string) =>
-  createError({
-    statusCode,
-    statusMessage: code,
-    message,
-    data: { code }
-  })
 const USER_BURST_LIMIT = 5
 const USER_BURST_WINDOW_MS = 60 * 1000
 const USER_HOURLY_LIMIT = 20
@@ -71,7 +65,7 @@ const enforceValidationRateLimit = async (event: H3Event, userId: number) => {
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createCardCodeError(401, 'CARD_CODE_AUTH_REQUIRED', 'Sign in to validate request card')
+    throw createApiError(401, 'CARD_CODE_AUTH_REQUIRED', 'Sign in to validate request card')
   }
 
   await enforceValidationRateLimit(event, user.id)
@@ -79,14 +73,14 @@ export default defineEventHandler(async (event) => {
   const body = (await readBody(event)) || {}
   const code = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
   if (!code) {
-    throw createCardCodeError(400, 'CARD_CODE_REQUIRED', 'Request card is required')
+    throw createApiError(400, 'CARD_CODE_REQUIRED', 'Request card is required')
   }
 
   const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
   const settings = await getSystemSettingsCached()
   const enabled = !!(settings?.enableCardCodeRequests || settings?.requireCardCodeForRequests)
   if (!enabled && !isAdmin) {
-    throw createCardCodeError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
+    throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
   }
 
   const rows = await db
@@ -100,7 +94,7 @@ export default defineEventHandler(async (event) => {
 
   const found = rows[0]
   if (!found || found.status !== 'AVAILABLE') {
-    throw createCardCodeError(400, 'CARD_CODE_INVALID_OR_USED', 'Request card is invalid or already used')
+    throw createApiError(400, 'CARD_CODE_INVALID_OR_USED', 'Request card is invalid or already used')
   }
 
   return {

@@ -122,15 +122,6 @@ const totalVotes = ref(0)
 const { common, currentLocale } = useLocale()
 const commonLocale = computed(() => common.value || {})
 const locale = computed(() => common.value?.votersModal || {})
-const formatLocale = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 
 // 方法
 const closeModal = () => {

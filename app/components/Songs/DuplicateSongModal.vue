@@ -133,16 +133,7 @@ interface Props {
 const props = defineProps<Props>()
 const { songs } = useLocale()
 const locale = computed(() => songs.value?.duplicateSongModal || {})
-const getLocaleMessage = (key: string, ...args: unknown[]) => {
-  const message = locale.value?.[key]
-  if (typeof message === 'function') return message(...args)
-  if (typeof message === 'string') {
-    return message.replace(/{(\d+)}/g, (match, index) =>
-      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
-    )
-  }
-  return message || ''
-}
+const { msg: getLocaleMessage } = useLocaleText(locale)
 
 const emit = defineEmits<{
   close: []

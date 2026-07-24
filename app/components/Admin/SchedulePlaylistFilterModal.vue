@@ -189,15 +189,6 @@ interface CustomPlaylist {
 const { admin } = useLocale()
 const scheduleLocale = computed(() => admin.value?.scheduleManager || {})
 const locale = computed(() => scheduleLocale.value?.playlistFilterModal || {})
-const formatLocaleValue = (value: unknown, ...args: string[]) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
-    )
-  }
-  return ''
-}
 
 const defaultPlaylists = ref([
   { id: '19723756', coverImgUrl: '', trackIds: [] as string[] },

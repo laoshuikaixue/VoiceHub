@@ -109,25 +109,8 @@ const successMessage = ref('')
 const step = ref(1)
 const maskedEmail = ref('')
 
-const getLocalizedServerMessage = (message?: string) => {
-  if (!message) return locale.value.requestFailed
-
-  const serverMessages = locale.value.serverMessages
-  const rawMessages = serverMessages.raw
-  const rateLimitMatch = message.match(new RegExp(rawMessages.rateLimitedPattern))
-  if (rateLimitMatch) return serverMessages.rateLimited(rateLimitMatch[1])
-
-  const messageMap: Record<string, string> = {
-    [rawMessages.usernameMissing]: serverMessages.usernameMissing,
-    [rawMessages.userNotFound]: serverMessages.userNotFound,
-    [rawMessages.emailNotBound]: serverMessages.emailNotBound,
-    [rawMessages.emailRequiredFull]: serverMessages.emailRequiredFull,
-    [rawMessages.mailSentFull]: serverMessages.mailSentFull,
-    [rawMessages.systemError]: serverMessages.systemError
-  }
-
-  return messageMap[message] || message
-}
+// 服务端错误统一通过错误码本地化，成功文案直接取本地化整句
+const { localize: localizeServerError } = useServerErrors()
 
 useHead({
   title: () => siteTitle.value ? `${locale.value.title} | ${siteTitle.value}` : locale.value.title
@@ -171,11 +154,11 @@ const handleSubmit = async () => {
       } else if (response.step === 3) {
         // 成功发送邮件
         success.value = true
-        successMessage.value = getLocalizedServerMessage(response.message) || locale.value.mailSent
+        successMessage.value = locale.value.serverMessages?.mailSentFull || locale.value.mailSent
       }
     }
   } catch (err) {
-    error.value = getLocalizedServerMessage(err.data?.message || err.message)
+    error.value = localizeServerError(err, locale.value.requestFailed)
   } finally {
     loading.value = false
   }

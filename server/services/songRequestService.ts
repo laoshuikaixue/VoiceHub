@@ -11,6 +11,7 @@ import {
 } from '~/drizzle/db'
 import { and, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
 import { createError } from 'h3'
+import { createApiError } from '~~/server/utils/apiError'
 import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import {
   isCardCodeLimitBypassActive,
@@ -25,14 +26,6 @@ type SongRequestUser = {
   id: number
   role: string
 }
-
-const createCardCodeError = (statusCode: number, code: string, message: string) =>
-  createError({
-    statusCode,
-    statusMessage: code,
-    message,
-    data: { code }
-  })
 
 const songRequestBodySchema = z.object({
   title: z.string().trim().min(1, '歌曲名称不能为空').max(200, '歌曲名称不能超过200个字符'),
@@ -59,7 +52,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const issues = parsedBody.error.issues || []
     const cardCodeIssue = issues.find((issue) => String(issue.message).startsWith('CARD_CODE_'))
     if (cardCodeIssue) {
-      throw createCardCodeError(400, cardCodeIssue.message, 'Invalid request card')
+      throw createApiError(400, cardCodeIssue.message, 'Invalid request card')
     }
 
     throw createError({
@@ -233,7 +226,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
       const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
       if (!providedCardCode) {
-        throw createCardCodeError(
+        throw createApiError(
           403,
           'CARD_CODE_REQUIRED_FOR_SITE',
           'This site requires a valid request card to submit songs'
@@ -246,7 +239,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     )
     const excludeCardCodeRequestsFromLimit = isCardCodeLimitBypassActive(systemSettingsData)
     if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
-      throw createCardCodeError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
+      throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
     }
 
     let preferredPlayTime = null
@@ -294,7 +287,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
 
         const found = codeRows[0]
         if (!found || found.status !== 'AVAILABLE') {
-          throw createCardCodeError(
+          throw createApiError(
             400,
             'CARD_CODE_INVALID_OR_USED',
             'Request card is invalid or already used'
@@ -308,7 +301,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           .returning()
 
         if (lockResult.length === 0) {
-          throw createCardCodeError(
+          throw createApiError(
             400,
             'CARD_CODE_LOCKED_OR_UNAVAILABLE',
             'Request card is locked or unavailable'

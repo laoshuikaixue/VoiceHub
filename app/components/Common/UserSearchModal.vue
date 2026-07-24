@@ -207,16 +207,6 @@ const selectedUsers = ref([])
 const searchInput = ref(null)
 const { common } = useLocale()
 const locale = computed(() => common.value || {})
-const formatLocale = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
-      const argIndex = match === '{count}' ? 0 : Number(index)
-      return args[argIndex] !== undefined ? String(args[argIndex]) : match
-    })
-  }
-  return ''
-}
 const resolvedTitle = computed(() => {
   if (props.title) return props.title
   const title = locale.value.searchUsers

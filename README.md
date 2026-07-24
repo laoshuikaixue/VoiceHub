@@ -870,6 +870,7 @@ VoiceHub/
 │   │   ├── useBackgroundRenderer.ts # 背景渲染hooks
 │   │   ├── useBilibiliPreview.ts # Bilibili视频预览hooks
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
+│   │   ├── useLocaleText.ts   # i18n 文案访问与服务端错误码本地化hooks
 │   │   ├── useLyricManager.ts  # 歌词管理hooks
 │   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   │   ├── useLyrics.ts        # 歌词功能hooks
@@ -917,6 +918,7 @@ VoiceHub/
 │   ├── plugins/               # Nuxt插件
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
+│   │   ├── locale.ts           # 语言初始化与SSR同步插件
 │   │   └── time-sync.client.ts # 客户端时间同步插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
@@ -1239,6 +1241,7 @@ VoiceHub/
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具

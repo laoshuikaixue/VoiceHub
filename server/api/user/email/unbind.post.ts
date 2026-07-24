@@ -1,24 +1,19 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查请求方法
   if (getMethod(event) !== 'POST') {
-    throw createError({
-      statusCode: 405,
-      message: '方法不被允许'
-    })
+    throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', '方法不被允许')
   }
 
   // 检查用户认证
   const user = event.context.user
 
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权访问'
-    })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   try {
@@ -39,9 +34,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('解绑邮箱失败:', error)
 
-    throw createError({
-      statusCode: 500,
-      message: '解绑邮箱失败'
-    })
+    throw createApiError(500, 'USER_EMAIL_UNBIND_FAILED', '解绑邮箱失败')
   }
 })

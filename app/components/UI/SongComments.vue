@@ -140,15 +140,6 @@ const locale = computed(() => {
     hoursAgo: base.hoursAgo || emptyText
   })
 })
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 
 const comments = ref<NeteaseComment[]>([])
 const hotComments = ref<NeteaseComment[]>([])

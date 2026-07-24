@@ -224,16 +224,7 @@ const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
 const { auth, currentLocale } = useLocale()
 const locale = computed(() => auth.value?.oauthBindingCard || {})
-const callLocale = (key, fallback = '', ...args) => {
-  const value = locale.value?.[key]
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return value || fallback
-}
+const { t: callLocale } = useLocaleText(locale)
 const identities = ref([])
 const loading = ref(true)
 const actionLoading = ref(false)

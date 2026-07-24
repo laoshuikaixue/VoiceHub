@@ -2,15 +2,13 @@ import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, votes } from '~/drizzle/schema'
 import { and, asc, count, desc, eq, gte, lt, sql } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查用户是否登录
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '请先登录'
-    })
+    throw createApiError(401, 'AUTH_LOGIN_REQUIRED', '请先登录')
   }
 
   const userId = user.id
@@ -160,9 +158,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('Error fetching year review:', error)
-    throw createError({
-      statusCode: 500,
-      message: '获取年度总结失败'
-    })
+    throw createApiError(500, 'USER_YEAR_REVIEW_FETCH_FAILED', '获取年度总结失败')
   }
 })

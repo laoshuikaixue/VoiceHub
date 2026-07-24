@@ -236,16 +236,7 @@ import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.backupManager || {})
-const getLocaleText = (key, ...args) => {
-  const message = locale.value?.[key]
-  if (typeof message === 'function') return message(...args)
-  if (typeof message === 'string') {
-    return message.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return message || ''
-}
+const { msg: getLocaleText } = useLocaleText(locale)
 
 // 响应式数据
 const createLoading = ref(false)

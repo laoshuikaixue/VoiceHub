@@ -1,16 +1,14 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { createApiError } from '~~/server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '请先登录'
-    })
+    throw createApiError(401, 'AUTH_LOGIN_REQUIRED', '请先登录')
   }
 
   try {
@@ -56,9 +54,6 @@ export default defineEventHandler(async (event) => {
       data: items
     }
   } catch (error: any) {
-    throw createError({
-      statusCode: 500,
-      message: `获取个人集成令牌失败：${error.message}`
-    })
+    throw createApiError(500, 'USER_API_KEY_FETCH_FAILED_DETAIL', `获取个人集成令牌失败：${error.message}`, { params: [error.message] })
   }
 })

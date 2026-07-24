@@ -20,6 +20,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
 import { type SystemSettings } from '~/drizzle/schema'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -32,18 +33,12 @@ export default defineEventHandler(async (event) => {
     let captchaInput = ''
 
     if (!body.username || !body.password) {
-      throw createError({
-        statusCode: 400,
-        message: '用户名和密码不能为空'
-      })
+      throw createApiError(400, 'AUTH_USERNAME_PASSWORD_REQUIRED', '用户名和密码不能为空')
     }
 
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET environment variable is not set')
-      throw createError({
-        statusCode: 500,
-        message: '服务器配置错误'
-      })
+      throw createApiError(500, 'AUTH_SERVER_CONFIG_ERROR', '服务器配置错误')
     }
 
     // 数据库连接检查 - 使用简单的查询测试连接
@@ -51,28 +46,19 @@ export default defineEventHandler(async (event) => {
       await db.select().from(users).limit(1)
     } catch (error) {
       console.error('Database connection error:', error)
-      throw createError({
-        statusCode: 503,
-        message: '数据库服务暂时不可用'
-      })
+      throw createApiError(503, 'AUTH_DATABASE_UNAVAILABLE', '数据库服务暂时不可用')
     }
 
     // 检查IP是否被限制
     if (isIPBlocked(clientIp)) {
       const remainingTime = getIPBlockRemainingTime(clientIp)
-      throw createError({
-        statusCode: 423,
-        message: `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`
-      })
+      throw createApiError(423, 'AUTH_IP_BLOCKED_RETRY_MINUTES', `您的IP地址已被限制访问，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
     }
 
     // 检查账户是否被锁定
     if (await isAccountLocked(body.username)) {
       const remainingTime = await getAccountLockRemainingTime(body.username)
-      throw createError({
-        statusCode: 423,
-        message: `账户已被锁定，请在 ${remainingTime} 分钟后重试`
-      })
+      throw createApiError(423, 'AUTH_ACCOUNT_LOCKED_MINUTES', `账户已被锁定，请在 ${remainingTime} 分钟后重试`, { params: [remainingTime] })
     }
 
     // 读取全局配置：是否启用图形验证码
@@ -118,18 +104,11 @@ export default defineEventHandler(async (event) => {
 
         if (!turnstileSecretKey) {
           console.error('Turnstile is enabled but secret key is missing!')
-          throw createError({
-            statusCode: 500,
-            message: '验证码服务配置错误，请联系管理员'
-          })
+          throw createApiError(500, 'AUTH_CODE_SERVICE_CONFIG_ERROR', '验证码服务配置错误，请联系管理员')
         }
 
         if (!turnstileToken) {
-          throw createError({
-            statusCode: 400,
-            message: '请完成人机验证',
-            data: { captchaRequired: true, captchaProvider: 'turnstile' }
-          })
+          throw createApiError(400, 'AUTH_CAPTCHA_REQUIRED', '请完成人机验证', { captchaRequired: true, captchaProvider: 'turnstile' })
         }
 
         const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
@@ -147,38 +126,23 @@ export default defineEventHandler(async (event) => {
 
           if (!result.success) {
             console.error('Turnstile verification failed:', result['error-codes'])
-            throw createError({
-              statusCode: 400,
-              message: '人机验证失败或已过期，请重试',
-              data: { captchaRequired: true, captchaProvider: 'turnstile' }
-            })
+            throw createApiError(400, 'AUTH_CAPTCHA_FAILED_OR_EXPIRED', '人机验证失败或已过期，请重试', { captchaRequired: true, captchaProvider: 'turnstile' })
           }
         } catch (err: any) {
           if (err.statusCode === 400) throw err
           console.error('Turnstile verification error:', err)
-          throw createError({
-            statusCode: 500,
-            message: '人机验证服务暂时不可用'
-          })
+          throw createApiError(500, 'AUTH_CAPTCHA_SERVICE_UNAVAILABLE', '人机验证服务暂时不可用')
         }
       } else {
         captchaId = body.captchaId
         captchaInput = body.captchaInput
         if (!captchaId || !captchaInput) {
-          throw createError({
-            statusCode: 400,
-            message: '请完成图形验证码',
-            data: { captchaRequired: true, captchaProvider: 'graphic' }
-          })
+          throw createApiError(400, 'AUTH_IMAGE_CAPTCHA_REQUIRED', '请完成图形验证码', { captchaRequired: true, captchaProvider: 'graphic' })
         }
 
         const isValid = await verifyAndConsumeCaptcha(captchaId, captchaInput)
         if (!isValid) {
-          throw createError({
-            statusCode: 400,
-            message: '验证码错误或已过期，请重新输入',
-            data: { captchaRequired: true, captchaProvider: 'graphic' }
-          })
+          throw createApiError(400, 'AUTH_CODE_INVALID_OR_EXPIRED', '验证码错误或已过期，请重新输入', { captchaRequired: true, captchaProvider: 'graphic' })
         }
       }
     }
@@ -209,10 +173,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       // 记录登录失败（用户不存在）
       await recordLoginFailure(body.username, clientIp)
-      throw createError({
-        statusCode: 401,
-        message: '用户名或密码错误'
-      })
+      throw createApiError(401, 'AUTH_INVALID_CREDENTIALS', '用户名或密码错误')
     }
 
     // 验证密码
@@ -220,19 +181,16 @@ export default defineEventHandler(async (event) => {
     if (!isPasswordValid) {
       // 记录登录失败（密码错误）
       await recordLoginFailure(body.username, clientIp)
-      throw createError({
-        statusCode: 401,
-        message: '用户名或密码错误'
-      })
+      throw createApiError(401, 'AUTH_INVALID_CREDENTIALS', '用户名或密码错误')
     }
 
     // 检查用户状态 (移到2FA之前，防止已退学用户进行2FA验证)
     if (user.status === 'withdrawn') {
-      throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
+      throw createApiError(403, 'AUTH_ACCOUNT_WITHDRAWN', '该账号已退学，限制访问')
     } else if (user.status === 'graduate') {
-      throw createError({ statusCode: 403, message: '该账号已毕业，限制访问' })
+      throw createApiError(403, 'AUTH_ACCOUNT_GRADUATED', '该账号已毕业，限制访问')
     } else if (user.status === 'banned') {
-      throw createError({ statusCode: 403, message: '该账号已被封禁' })
+      throw createApiError(403, 'AUTH_ACCOUNT_BANNED', '该账号已被封禁')
     }
 
     // 检查是否开启2FA
@@ -277,10 +235,7 @@ export default defineEventHandler(async (event) => {
       blockUser(user.id)
       const ipRemain = getIPBlockRemainingTime(clientIp)
       const userRemain = getUserBlockRemainingTime(user.id)
-      throw createError({
-        statusCode: 423,
-        message: `检测到同一账号短期多IP登录，当前IP限制 ${ipRemain} 分钟，账户保护 ${userRemain} 分钟`
-      })
+      throw createApiError(423, 'AUTH_MULTI_IP_PROTECTION', `检测到同一账号短期多IP登录，当前IP限制 ${ipRemain} 分钟，账户保护 ${userRemain} 分钟`, { params: [ipRemain, userRemain] })
     }
 
     // 更新登录信息
@@ -333,9 +288,6 @@ export default defineEventHandler(async (event) => {
       throw error
     }
 
-    throw createError({
-      statusCode: 500,
-      message: '登录过程中发生未知错误'
-    })
+    throw createApiError(500, 'AUTH_LOGIN_UNKNOWN_ERROR', '登录过程中发生未知错误')
   }
 })

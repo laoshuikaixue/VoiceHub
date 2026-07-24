@@ -472,16 +472,7 @@ const locale = computed(() => {
     replayRequest: base.replayRequest || emptyText
   })
 })
-const callLocale = (key, fallback = '', ...args) => {
-  const value = locale.value?.[key]
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return value || fallback
-}
+const { t: callLocale } = useLocaleText(locale)
 const sortBy = ref('popularity')
 const sortOrder = ref('desc') // 'desc' for newest first, 'asc' for oldest first
 const searchQuery = ref('') // 搜索查询

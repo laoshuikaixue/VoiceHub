@@ -127,16 +127,7 @@ const emit = defineEmits<{
 const { showToast } = useToast()
 const { auth } = useLocale()
 const locale = computed(() => auth.value?.twoFactorVerify || {})
-const formatLocaleValue = (value, fallback = '', ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
-      const argIndex = match === '{count}' ? 0 : Number(index)
-      return args[argIndex] !== undefined ? String(args[argIndex]) : match
-    })
-  }
-  return value || fallback
-}
+const { format: formatLocaleValue } = useLocaleText(locale)
 const resendButtonText = computed(() => {
   if (cooldown.value > 0) {
     return formatLocaleValue(locale.value.resendCountdown, '', cooldown.value)

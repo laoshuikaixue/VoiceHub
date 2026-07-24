@@ -190,20 +190,6 @@ const uploadProgress = ref(0)
 const uploadStatus = ref('')
 const uploadMessage = ref('')
 const isLoggedIn = ref(false)
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
-}
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 const getLocaleText = (key, ...args) => formatLocaleValue(locale.value?.[key], ...args)
 
 // 检查登录状态

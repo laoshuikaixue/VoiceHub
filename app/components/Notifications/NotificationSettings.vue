@@ -144,15 +144,6 @@ import { useLocale } from '~/utils/locale'
 const notificationsService = useNotifications()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.notificationSettings || {})
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 const loading = computed(() => notificationsService.loading.value)
 const error = computed(() => notificationsService.error.value)
 const settings = computed(() => notificationsService.settings.value)

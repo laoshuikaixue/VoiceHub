@@ -29,13 +29,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
-import { useLocale } from '~/utils/locale'
 import { useRoute } from 'vue-router'
 
 // 获取运行时配置
 const config = useRuntimeConfig()
 const route = useRoute()
-const { initLocale } = useLocale()
 const pageViewRouteName = computed(() => {
   if (typeof route.name === 'string' && route.name) {
     return route.name
@@ -196,9 +194,6 @@ const setupHarmonyOSListeners = () => {
 
 // 在组件挂载后初始化认证（只会在客户端执行）
 onMounted(async () => {
-  // 水合完成后再恢复本地语言偏好，确保客户端首次渲染与 SSR 内容一致。
-  initLocale()
-
   auth = useAuth()
   isAuthenticated = auth.isAuthenticated.value
 

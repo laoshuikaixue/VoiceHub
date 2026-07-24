@@ -4,19 +4,20 @@ import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, eq, and, userIdentities } from '~/drizzle/db'
 import { createError, defineEventHandler, setCookie } from 'h3'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const challengeData = getWebAuthnChallenge(event)
 
   if (!challengeData) {
-    throw createError({ statusCode: 400, message: 'Challenge 已失效' })
+    throw createApiError(400, 'AUTH_CHALLENGE_EXPIRED', 'Challenge 已失效')
   }
 
   // 通过 credentialID 查找对应的用户身份
   const credentialID = body.id
   if (!credentialID) {
-    throw createError({ statusCode: 400, message: '缺少 Credential ID' })
+    throw createApiError(400, 'AUTH_MISSING_CREDENTIAL_ID', '缺少 Credential ID')
   }
 
   // Challenge 只能使用一次，避免失败响应被重复提交。
@@ -31,38 +32,38 @@ export default defineEventHandler(async (event) => {
   })
 
   if (!identity) {
-    throw createError({ statusCode: 400, message: '未找到该 Passkey 关联的账号' })
+    throw createApiError(400, 'AUTH_PASSKEY_ACCOUNT_NOT_FOUND', '未找到该 Passkey 关联的账号')
   }
 
   const user = identity.user
 
   // 检查用户账号状态
   if (!user || user.status !== 'active') {
-    throw createError({ statusCode: 403, message: '该账号不可用或已限制访问' })
+    throw createApiError(403, 'AUTH_ACCOUNT_UNAVAILABLE_OR_RESTRICTED', '该账号不可用或已限制访问')
   }
 
   // 解析存储的凭证数据
   if (!identity.providerUsername) {
-    throw createError({ statusCode: 500, message: '凭证数据缺失' })
+    throw createApiError(500, 'AUTH_CREDENTIAL_MISSING', '凭证数据缺失')
   }
 
   let credentialData
   try {
     credentialData = JSON.parse(identity.providerUsername)
   } catch {
-    throw createError({ statusCode: 500, message: '凭证数据损坏' })
+    throw createApiError(500, 'AUTH_CREDENTIAL_CORRUPTED', '凭证数据损坏')
   }
 
   const { publicKey, counter } = credentialData
 
   // 验证公钥存在
   if (!publicKey) {
-    throw createError({ statusCode: 500, message: '凭证数据缺失 publicKey' })
+    throw createApiError(500, 'AUTH_CREDENTIAL_MISSING_PUBLICKEY', '凭证数据缺失 publicKey')
   }
 
   const { rpID, origin } = getWebAuthnConfig(event)
   if (!rpID) {
-    throw createError({ statusCode: 500, message: 'WebAuthn RP ID 配置无效' })
+    throw createApiError(500, 'AUTH_WEBAUTHN_RP_ID_INVALID', 'WebAuthn RP ID 配置无效')
   }
 
   // 构造 WebAuthn 凭证对象
@@ -107,7 +108,7 @@ export default defineEventHandler(async (event) => {
 
       return { success: true, redirect: '/' }
     } else {
-      throw createError({ statusCode: 400, message: '验证失败' })
+      throw createApiError(400, 'AUTH_VERIFICATION_FAILED', '验证失败')
     }
   } catch (error) {
     console.error('WebAuthn 登录验证失败:', error)

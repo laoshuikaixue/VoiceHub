@@ -445,15 +445,7 @@ import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.schedulePrinter || {})
-const formatLocale = (value, fallback = '', ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return value || fallback
-}
+const { format: formatLocale } = useLocaleText(locale)
 const generatedAtText = computed(() => {
   const nowText = new Date().toLocaleString(currentLocale.value)
   return formatLocale(locale.value?.generatedAt, nowText, nowText)

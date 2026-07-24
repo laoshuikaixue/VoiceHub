@@ -447,22 +447,7 @@ const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.notificationSender || {})
-const formatString = (value, args) => {
-  if (typeof value !== 'string') return value
-  return value.replace(/{(\d+)}/g, (match, index) =>
-    args[index] !== undefined ? String(args[index]) : match
-  )
-}
-const getLocaleMessage = (key, ...args) => {
-  const message = locale.value?.[key]
-  if (typeof message === 'function') return message(...args)
-  return formatString(message, args) || ''
-}
-const getNestedMessage = (section, key, ...args) => {
-  const message = locale.value?.[section]?.[key]
-  if (typeof message === 'function') return message(...args)
-  return formatString(message, args) || ''
-}
+const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
 
 onMounted(() => {
   userFilters.fetchOptions()

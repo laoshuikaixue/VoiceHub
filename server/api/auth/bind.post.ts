@@ -13,6 +13,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { and } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -20,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
-    throw createError({ statusCode: 400, message: '绑定会话已过期，请重新通过第三方登录发起' })
+    throw createApiError(400, 'AUTH_BINDING_SESSION_EXPIRED', '绑定会话已过期，请重新通过第三方登录发起')
   }
 
   let payload
@@ -28,14 +29,14 @@ export default defineEventHandler(async (event) => {
     payload = verifyBindingToken(bindingToken)
   } catch (e) {
     deleteCookie(event, 'binding-token')
-    throw createError({ statusCode: 400, message: '无效的绑定令牌' })
+    throw createApiError(400, 'AUTH_INVALID_BINDING_TOKEN', '无效的绑定令牌')
   }
 
   const clientIp = getClientIP(event)
 
   // 验证用户凭据
   if (await isAccountLocked(username)) {
-    throw createError({ statusCode: 423, message: '账户已被锁定，请稍后重试' })
+    throw createApiError(423, 'AUTH_ACCOUNT_LOCKED', '账户已被锁定，请稍后重试')
   }
 
   const user = await db.query.users.findFirst({
@@ -44,30 +45,30 @@ export default defineEventHandler(async (event) => {
 
   if (!user) {
     await recordLoginFailure(username, clientIp)
-    throw createError({ statusCode: 401, message: '用户名或密码错误' })
+    throw createApiError(401, 'AUTH_INVALID_CREDENTIALS', '用户名或密码错误')
   }
 
   const valid = await bcrypt.compare(password, user.password)
   if (!valid) {
     await recordLoginFailure(username, clientIp)
-    throw createError({ statusCode: 401, message: '用户名或密码错误' })
+    throw createApiError(401, 'AUTH_INVALID_CREDENTIALS', '用户名或密码错误')
   }
 
   if (user.status === 'withdrawn') {
-    throw createError({ statusCode: 403, message: '该账号已退学，限制访问' })
+    throw createApiError(403, 'AUTH_ACCOUNT_WITHDRAWN', '该账号已退学，限制访问')
   }
 
   if (user.status === 'graduate') {
-    throw createError({ statusCode: 403, message: '该账号已毕业，限制访问' })
+    throw createApiError(403, 'AUTH_ACCOUNT_GRADUATED', '该账号已毕业，限制访问')
   }
 
   if (user.status !== 'active') {
-    throw createError({ statusCode: 403, message: '该账号当前不可用' })
+    throw createApiError(403, 'AUTH_ACCOUNT_CURRENTLY_UNAVAILABLE', '该账号当前不可用')
   }
 
   if (isUserBlocked(user.id)) {
     const remaining = getUserBlockRemainingTime(user.id)
-    throw createError({ statusCode: 423, message: `账户处于风险控制期，请在 ${remaining} 分钟后重试` })
+    throw createApiError(423, 'AUTH_ACCOUNT_RISK_CONTROL', `账户处于风险控制期，请在 ${remaining} 分钟后重试`, { params: [remaining] })
   }
 
   const totpIdentity = await db.query.userIdentities.findFirst({
@@ -123,7 +124,7 @@ export default defineEventHandler(async (event) => {
 
       if (existing) {
         if (existing.userId !== user.id) {
-          throw createError({ statusCode: 409, message: '该第三方账号已被其他用户绑定' })
+          throw createApiError(409, 'AUTH_OAUTH_BOUND_OTHER_USER', '该第三方账号已被其他用户绑定')
         }
         return
       }

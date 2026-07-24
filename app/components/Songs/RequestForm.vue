@@ -1402,21 +1402,8 @@ const props = defineProps({
 const emit = defineEmits(['request', 'vote'])
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
-}
-const callLocale = (key, fallback = '', ...args) => {
-  const value = String(key).split('.').reduce((target, part) => target?.[part], locale.value)
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return value || fallback
-}
+const { t: callLocale } = useLocaleText(locale)
+const { localize: localizeServerError } = useServerErrors()
 
 // 站点配置
 const {
@@ -1539,28 +1526,6 @@ const cardCodeModalHint = computed(() => {
   return locale.value.cardCodeSaveHint
 })
 
-const cardCodeMessageMap = computed(() => ({
-  CARD_CODE_AVAILABLE: locale.value.cardCodeAvailable,
-  CARD_CODE_AUTH_REQUIRED: locale.value.cardCodeAuthRequired,
-  CARD_CODE_REQUIRED: locale.value.cardCodeRequiredWarning,
-  CARD_CODE_DISABLED: locale.value.cardCodeDisabled,
-  CARD_CODE_INVALID_OR_USED: locale.value.cardCodeInvalidOrUsed,
-  CARD_CODE_LOCKED_OR_UNAVAILABLE: locale.value.cardCodeLockedOrUnavailable,
-  CARD_CODE_REQUIRED_FOR_SITE: locale.value.cardCodeRequiredForSite,
-  CARD_CODE_TOO_LONG: locale.value.cardCodeTooLong
-}))
-
-const getLocalizedCardCodeMessage = (code, fallback) => {
-  if (code && cardCodeMessageMap.value[code]) {
-    return cardCodeMessageMap.value[code]
-  }
-
-  return fallback || locale.value.cardCodeValidateFailed
-}
-
-const getCardCodeErrorCode = (err) =>
-  err?.data?.data?.code || err?.data?.code || err?.statusMessage || err?.data?.statusMessage
-
 const resetCardCodeValidation = () => {
   cardCodeValidation.value = {
     checking: false,
@@ -1608,11 +1573,11 @@ const validateCardCode = async (code) => {
     cardCodeValidation.value = {
       checking: false,
       valid: true,
-      message: getLocalizedCardCodeMessage(response?.code, locale.value.cardCodeAvailable)
+      message: locale.value.cardCodeAvailable
     }
     return true
   } catch (err) {
-    const message = getLocalizedCardCodeMessage(getCardCodeErrorCode(err))
+    const message = localizeServerError(err, locale.value.cardCodeValidateFailed)
     cardCodeValidation.value = {
       checking: false,
       valid: false,

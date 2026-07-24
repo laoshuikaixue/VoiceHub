@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { useAuth } from './useAuth'
+import { useServerErrors } from './useLocaleText'
 import { getGlobalDedup } from './useRequestDedup'
 import { useLocale } from '~/utils/locale'
 import type { PlayTime, Schedule, Song } from '~/types'
@@ -7,6 +8,7 @@ import type { PlayTime, Schedule, Song } from '~/types'
 export const useSongs = () => {
   const { isAuthenticated, user, getAuthConfig } = useAuth()
   const { songs: songsLocale } = useLocale()
+  const { localize: localizeServerError } = useServerErrors()
   const dedup = getGlobalDedup()
 
   const songs = ref<Song[]>([])
@@ -20,24 +22,6 @@ export const useSongs = () => {
   const songCount = ref(0)
   const requestFormLocale = computed(() => songsLocale.value?.requestForm)
   const actionLocale = computed(() => songsLocale.value.actions)
-
-  const getCardCodeErrorCode = (err: any) =>
-    err?.data?.data?.code || err?.data?.code || err?.statusMessage || err?.data?.statusMessage
-
-  const getLocalizedCardCodeError = (code: string | undefined) => {
-    const locale = requestFormLocale.value
-    const messageMap: Record<string, string | undefined> = {
-      CARD_CODE_AUTH_REQUIRED: locale?.cardCodeAuthRequired,
-      CARD_CODE_REQUIRED: locale?.cardCodeRequiredWarning,
-      CARD_CODE_DISABLED: locale?.cardCodeDisabled,
-      CARD_CODE_INVALID_OR_USED: locale?.cardCodeInvalidOrUsed,
-      CARD_CODE_LOCKED_OR_UNAVAILABLE: locale?.cardCodeLockedOrUnavailable,
-      CARD_CODE_REQUIRED_FOR_SITE: locale?.cardCodeRequiredForSite,
-      CARD_CODE_TOO_LONG: locale?.cardCodeTooLong
-    }
-
-    return code ? messageMap[code] : ''
-  }
 
   let songsRequestVersion = 0
   let publicSchedulesRequestVersion = 0
@@ -311,8 +295,7 @@ export const useSongs = () => {
 
       return data
     } catch (err: any) {
-      const cardCodeErrorMsg = getLocalizedCardCodeError(getCardCodeErrorCode(err))
-      const errorMsg = cardCodeErrorMsg || err.data?.message || err.message || '点歌失败'
+      const errorMsg = localizeServerError(err) || '点歌失败'
       // 如果是重复投稿错误，只显示通知而不设置全局错误
       if (errorMsg.includes('已经在列表中') || errorMsg.includes('不能重复投稿')) {
         showNotification(errorMsg, 'info')

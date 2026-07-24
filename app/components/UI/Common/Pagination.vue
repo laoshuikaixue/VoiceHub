@@ -99,15 +99,6 @@ import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
 const locale = computed(() => ui.value?.pagination || {})
-const formatLocale = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 
 const props = defineProps({
   currentPage: {

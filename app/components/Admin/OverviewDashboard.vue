@@ -221,16 +221,7 @@ const emit = defineEmits(['navigate'])
 const { success: showSuccess, error: showError } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.overview || {}))
-const formatLocaleValue = (value, fallback = '', ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}|{count}/g, (match, index) => {
-      const argIndex = match === '{count}' ? 0 : Number(index)
-      return args[argIndex] !== undefined ? String(args[argIndex]) : match
-    })
-  }
-  return value || fallback
-}
+const { format: formatLocaleValue } = useLocaleText(locale)
 
 const systemVersion = ref(packageJson.version)
 const stats = ref({

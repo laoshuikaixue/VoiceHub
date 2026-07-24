@@ -1,5 +1,4 @@
 import { computed, ref } from 'vue'
-import * as enUS from './en-US'
 import * as zhCN from './zh-CN'
 
 export const supportedLocales = [
@@ -23,17 +22,46 @@ type LocaleSectionKey = keyof LocaleMessages
 type LegacyNestedSectionKey = 'auth' | 'ui' | 'songs'
 
 const LOCALE_STORAGE_KEY = 'voicehub.locale'
-const FALLBACK_LOCALE: Locale = 'zh-CN'
+export const LOCALE_COOKIE_KEY = 'voicehub.locale'
+export const FALLBACK_LOCALE: Locale = 'zh-CN'
 
-const messages: Record<Locale, LocaleMessages> = {
-  'zh-CN': zhCN,
-  'en-US': enUS
-}
-
-const isSupportedLocale = (locale: string | null | undefined): locale is Locale =>
+export const isSupportedLocale = (locale: string | null | undefined): locale is Locale =>
   supportedLocales.some((item) => item.code === locale)
 
-const resolveInitialLocale = (): Locale => {
+// 词典按需加载：中文作为兜底与合并基底静态内置，其余语言在被激活时才动态加载，
+// 避免默认语言用户下载不需要的语言包。
+const zhMessages = zhCN as unknown as LocaleMessages
+
+const localeLoaders: Record<Locale, () => Promise<LocaleMessages>> = {
+  'zh-CN': () => Promise.resolve(zhMessages),
+  'en-US': () => import('./en-US').then((module) => module as unknown as LocaleMessages)
+}
+
+// 已加载词典缓存。词典内容不可变，可在服务端跨请求安全共享（只做追加）。
+const loadedMessages = ref<Partial<Record<Locale, LocaleMessages>>>({
+  'zh-CN': zhMessages
+})
+const loadingPromises: Partial<Record<Locale, Promise<LocaleMessages>>> = {}
+
+export function isLocaleMessagesLoaded(locale: Locale): boolean {
+  return Boolean(loadedMessages.value[locale])
+}
+
+export async function loadLocaleMessages(locale: Locale): Promise<void> {
+  if (!isSupportedLocale(locale) || loadedMessages.value[locale]) return
+
+  if (!loadingPromises[locale]) {
+    loadingPromises[locale] = localeLoaders[locale]().then((module) => {
+      loadedMessages.value = { ...loadedMessages.value, [locale]: module }
+      return module
+    })
+  }
+
+  await loadingPromises[locale]
+}
+
+// 客户端语言解析：本地存储（历史偏好迁移）→ 浏览器语言 → 兜底。
+export function resolveClientInitialLocale(): Locale {
   if (!import.meta.client) return FALLBACK_LOCALE
 
   const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY)
@@ -47,11 +75,27 @@ const resolveInitialLocale = (): Locale => {
   return FALLBACK_LOCALE
 }
 
-// 首次客户端渲染必须与服务端保持一致，避免读取本地偏好后产生水合不匹配。
-// 用户偏好在应用挂载后由 initLocale() 恢复。
-const currentLocaleState = ref<Locale>(FALLBACK_LOCALE)
+// 服务端语言解析：根据 Accept-Language 头选择最合适的受支持语言。
+export function resolveLocaleFromAcceptLanguage(header?: string | null): Locale {
+  if (!header) return FALLBACK_LOCALE
 
-const getCurrentLocale = () => currentLocaleState
+  const languages = header
+    .split(',')
+    .map((part) => part.trim().split(';')[0]?.toLowerCase())
+    .filter((value): value is string => Boolean(value))
+
+  for (const language of languages) {
+    if (isSupportedLocale(language)) return language
+    if (language.startsWith('zh')) return 'zh-CN'
+    if (language.startsWith('en')) return 'en-US'
+  }
+
+  return FALLBACK_LOCALE
+}
+
+// 当前语言使用 useState 存储：SSR 下每个请求相互隔离，客户端首屏自动水合，
+// 从根本上避免模块级 ref 造成的跨请求语言串扰。
+const getCurrentLocale = () => useState<Locale>('voicehub-locale', () => FALLBACK_LOCALE)
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Object.prototype.toString.call(value) === '[object Object]'
@@ -97,26 +141,27 @@ const getLocaleSection = <Key extends LocaleSectionKey>(
   return section
 }
 
-export function initLocale() {
-  if (!import.meta.client) return
-  setLocale(resolveInitialLocale())
-}
-
 export function setLocale(locale: Locale) {
   if (!isSupportedLocale(locale)) return
 
   const currentLocale = getCurrentLocale()
   currentLocale.value = locale
+  // 触发目标语言词典的按需加载；加载完成后相关 computed 会自动更新。
+  void loadLocaleMessages(locale)
+
   if (import.meta.client) {
-    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
-    document.documentElement.lang = locale
+    try {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+    } catch {
+      // 忽略隐私模式等场景下的持久化失败
+    }
   }
 }
 
 export function useLocale() {
   const currentLocale = getCurrentLocale()
-  const currentMessages = computed(() => messages[currentLocale.value] ?? messages[FALLBACK_LOCALE])
-  const fallbackMessages = messages[FALLBACK_LOCALE]
+  const currentMessages = computed(() => loadedMessages.value[currentLocale.value] ?? zhMessages)
+  const fallbackMessages = zhMessages
   const withFallback = <Key extends keyof LocaleMessages>(key: Key) =>
     computed(() => mergeLocaleFallback(
       getLocaleSection(fallbackMessages, key),
@@ -126,8 +171,8 @@ export function useLocale() {
   return {
     currentLocale,
     supportedLocales,
-    initLocale,
     setLocale,
+    loadLocaleMessages,
     siteConfig: withFallback('siteConfig'),
     changePassword: withFallback('changePassword'),
     common: withFallback('common'),
@@ -138,6 +183,7 @@ export function useLocale() {
     composableErrors: withFallback('composableErrors'),
     songs: withFallback('songs'),
     admin: withFallback('admin'),
-    yearReview: withFallback('yearReview')
+    yearReview: withFallback('yearReview'),
+    serverErrors: withFallback('serverErrors')
   }
 }

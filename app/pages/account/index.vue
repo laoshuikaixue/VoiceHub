@@ -412,23 +412,9 @@ const { showToast } = useToast()
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const { currentLocale, pages } = useLocale()
 const locale = computed(() => pages.value?.account || {})
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 const getAccountText = (path, ...args) => {
   const value = String(path).split('.').reduce((target, key) => target?.[key], locale.value?.personalApiKey)
   return formatLocaleValue(value, ...args)
-}
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
 }
 
 const hasOAuthProviders = computed(() => {

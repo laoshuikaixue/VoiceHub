@@ -533,21 +533,7 @@ const locale = computed(() => {
     deleteConfirmTitle: base.deleteConfirmTitle || emptyText
   })
 })
-const formatLocale = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 const getErrorMessage = (key, ...args) => formatLocale(locale.value?.errors?.[key], ...args)
-const getThrownMessage = (err) => {
-  if (!err) return ''
-  if (typeof err === 'string') return err
-  return err?.data?.message || err?.message || err?.statusMessage || ''
-}
 
 const requestTimes = ref<RequestTime[]>([])
 const loading = ref(false)

@@ -628,30 +628,7 @@ import { useLocale } from '~/utils/locale'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
-const getLocaleText = (key, ...args) => {
-  const message = locale.value?.[key]
-  if (typeof message === 'function') return message(...args)
-  if (typeof message === 'string') {
-    return message.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return message || ''
-}
-const formatLocaleValue = (message, ...args) => {
-  if (typeof message === 'function') return message(...args)
-  if (typeof message === 'string') {
-    return message.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
-const getErrorMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.message || error?.statusMessage || ''
-}
+const { msg: getLocaleText } = useLocaleText(locale)
 const expiresOptionFallbacks = {
   never: '永不过期',
   threeDays: '3天后过期',

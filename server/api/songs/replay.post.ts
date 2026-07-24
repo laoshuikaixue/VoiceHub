@@ -1,11 +1,12 @@
 import { and, db, eq, songs, songReplayRequests, semesters } from '~/drizzle/db'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 1. 检查用户认证
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '需要登录才能申请重播' })
+    throw createApiError(401, 'SONG_LOGIN_REQUIRED_REPLAY', '需要登录才能申请重播')
   }
 
   // 2. 读取请求体
@@ -13,23 +14,23 @@ export default defineEventHandler(async (event) => {
   const { songId } = body
 
   if (!songId) {
-    throw createError({ statusCode: 400, message: '歌曲ID不能为空' })
+    throw createApiError(400, 'SONG_ID_REQUIRED', '歌曲ID不能为空')
   }
 
   // 3. 检查系统设置
   const settings = await getSystemSettingsCached()
   if (!settings?.enableReplayRequests) {
-    throw createError({ statusCode: 403, message: '重播申请功能未开启' })
+    throw createApiError(403, 'SONG_REPLAY_DISABLED', '重播申请功能未开启')
   }
 
   // 4. 检查歌曲和学期
   const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
   const song = songResult[0]
   if (!song) {
-    throw createError({ statusCode: 404, message: '歌曲不存在' })
+    throw createApiError(404, 'SONG_NOT_FOUND', '歌曲不存在')
   }
   if (!song.played) {
-    throw createError({ statusCode: 400, message: '该歌曲尚未播放，无法申请重播' })
+    throw createApiError(400, 'SONG_NOT_PLAYED_NO_REPLAY', '该歌曲尚未播放，无法申请重播')
   }
 
   // 获取当前学期
@@ -43,10 +44,10 @@ export default defineEventHandler(async (event) => {
   // 验证学期
   if (currentSemester) {
     if (song.semester !== currentSemester.name) {
-      throw createError({ statusCode: 400, message: '只能申请重播当前学期的歌曲' })
+      throw createApiError(400, 'SONG_REPLAY_CURRENT_SEMESTER_ONLY', '只能申请重播当前学期的歌曲')
     }
   } else {
-    throw createError({ statusCode: 400, message: '当前没有活跃学期，无法申请重播' })
+    throw createApiError(400, 'SONG_NO_ACTIVE_SEMESTER_REPLAY', '当前没有活跃学期，无法申请重播')
   }
 
   // 5. 检查是否重复申请和冷却期
@@ -66,10 +67,7 @@ export default defineEventHandler(async (event) => {
 
       if (timeSinceUpdate < cooldownTime) {
         const remainingHours = Math.ceil((cooldownTime - timeSinceUpdate) / (60 * 60 * 1000))
-        throw createError({
-          statusCode: 429,
-          message: `您的重播申请被拒绝后需要等待 ${remainingHours} 小时才能重新申请`
-        })
+        throw createApiError(429, 'SONG_REPLAY_REJECTED_WAIT_HOURS', `您的重播申请被拒绝后需要等待 ${remainingHours} 小时才能重新申请`, { params: [remainingHours] })
       }
 
       // 冷却期已过，更新状态为 PENDING
@@ -84,7 +82,7 @@ export default defineEventHandler(async (event) => {
 
       return { success: true, message: '重新申请重播成功' }
     } else {
-      throw createError({ statusCode: 400, message: '您已经申请过重播该歌曲' })
+      throw createApiError(400, 'SONG_REPLAY_ALREADY_REQUESTED', '您已经申请过重播该歌曲')
     }
   }
 
@@ -98,7 +96,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     // 处理唯一约束冲突
     if (error.code === '23505') {
-      throw createError({ statusCode: 400, message: '您已经申请过重播该歌曲' })
+      throw createApiError(400, 'SONG_REPLAY_ALREADY_REQUESTED', '您已经申请过重播该歌曲')
     }
     throw error
   }

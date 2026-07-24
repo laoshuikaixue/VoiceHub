@@ -2,6 +2,7 @@ import { apiKeyPermissions, apiKeys, apiLogs, db } from '~/drizzle/db'
 import { and, count, desc, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
+import { createApiError } from '~~/server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 const apiKeyIdSchema = z.string().uuid('无效的令牌 ID')
@@ -9,18 +10,12 @@ const apiKeyIdSchema = z.string().uuid('无效的令牌 ID')
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '请先登录'
-    })
+    throw createApiError(401, 'AUTH_LOGIN_REQUIRED', '请先登录')
   }
 
   const apiKeyIdRaw = getRouterParam(event, 'id')
   if (!apiKeyIdRaw) {
-    throw createError({
-      statusCode: 400,
-      message: '令牌 ID 不能为空'
-    })
+    throw createApiError(400, 'USER_API_KEY_ID_REQUIRED', '令牌 ID 不能为空')
   }
 
   const parsedApiKeyId = apiKeyIdSchema.safeParse(apiKeyIdRaw)
@@ -69,10 +64,7 @@ export default defineEventHandler(async (event) => {
 
     const apiKey = apiKeyResult[0]
     if (!apiKey) {
-      throw createError({
-        statusCode: 404,
-        message: '个人集成令牌不存在'
-      })
+      throw createApiError(404, 'USER_API_KEY_NOT_FOUND', '个人集成令牌不存在')
     }
 
     const logs = await db
@@ -124,9 +116,6 @@ export default defineEventHandler(async (event) => {
       throw error
     }
 
-    throw createError({
-      statusCode: 500,
-      message: `获取个人集成令牌日志失败：${error.message}`
-    })
+    throw createApiError(500, 'USER_API_KEY_LOGS_FETCH_FAILED_DETAIL', `获取个人集成令牌日志失败：${error.message}`, { params: [error.message] })
   }
 })

@@ -1027,15 +1027,6 @@ import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
-const formatLocaleValue = (value, ...args) => {
-  if (typeof value === 'function') return value(...args)
-  if (typeof value === 'string') {
-    return value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-  }
-  return ''
-}
 const locale = computed(() => {
   const base = admin.value?.scheduleManager || {}
   return useSafeLocale({
@@ -1069,22 +1060,7 @@ const locale = computed(() => {
     }
   })
 })
-const callLocale = (path, fallback = '', ...args) => {
-  const value = path.split('.').reduce((target, key) => target?.[key], locale.value)
-  if (typeof value === 'function') return value(...args) || fallback
-  if (typeof value === 'string') {
-    const formatted = value.replace(/{(\d+)}/g, (match, index) =>
-      args[index] !== undefined ? String(args[index]) : match
-    )
-    return formatted || fallback
-  }
-  return value || fallback
-}
-const getThrownMessage = (error) => {
-  if (!error) return ''
-  if (typeof error === 'string') return error
-  return error?.data?.message || error?.data?.statusMessage || error?.message || error?.statusMessage || ''
-}
+const { t: callLocale } = useLocaleText(locale)
 
 const getTodayDateValue = () => getBeijingTimeISOString().slice(0, 10)
 
