@@ -27,20 +27,41 @@
         <div class="user-section">
           <ClientOnly>
             <div class="user-actions-row">
-              <div class="language-switcher-inline" :aria-label="common.language">
+              <div class="language-switcher">
                 <button
-                  v-for="localeOption in supportedLocales"
-                  :key="localeOption.code"
                   type="button"
-                  :class="[
-                    'language-switcher-chip',
-                    currentLocale === localeOption.code ? 'is-active' : ''
-                  ]"
-                  :aria-pressed="currentLocale === localeOption.code"
-                  @click="setLocale(localeOption.code)"
+                  class="language-switcher-trigger"
+                  :class="{ 'is-open': showLanguageMenu }"
+                  :aria-label="common.language"
+                  :aria-expanded="showLanguageMenu"
+                  aria-haspopup="listbox"
+                  @click="toggleLanguageMenu"
                 >
-                  {{ localeOption.code === 'zh-CN' ? 'ZH' : 'EN' }}
+                  <Icon name="translate" :size="19" />
                 </button>
+
+                <Transition name="dropdown-fade">
+                  <div v-if="showLanguageMenu" class="language-dropdown" role="listbox">
+                    <button
+                      v-for="localeOption in supportedLocales"
+                      :key="localeOption.code"
+                      type="button"
+                      role="option"
+                      class="language-option"
+                      :class="{ 'is-active': currentLocale === localeOption.code }"
+                      :aria-selected="currentLocale === localeOption.code"
+                      @click="selectLocale(localeOption.code)"
+                    >
+                      <span class="language-option-label">{{ localeOption.label }}</span>
+                      <Icon
+                        v-if="currentLocale === localeOption.code"
+                        name="check"
+                        :size="16"
+                        color="#0b5afe"
+                      />
+                    </button>
+                  </div>
+                </Transition>
               </div>
 
               <div v-if="isClientAuthenticated" class="user-info">
@@ -747,6 +768,7 @@ const isRequestOpen = ref(true)
 const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
+const showLanguageMenu = ref(false)
 const avatarError = ref(false)
 
 const BOOT_PROGRESS = {
@@ -807,6 +829,16 @@ const toggleUserActions = (event) => {
   showUserActions.value = !showUserActions.value
 }
 
+const toggleLanguageMenu = (event) => {
+  event.stopPropagation()
+  showLanguageMenu.value = !showLanguageMenu.value
+}
+
+const selectLocale = (code) => {
+  setLocale(code)
+  showLanguageMenu.value = false
+}
+
 // 监听用户头像变化，重置错误状�?
 watch(
   () => user.value?.avatar,
@@ -822,6 +854,12 @@ const handleClickOutside = (event) => {
     const avatar = document.querySelector('.user-avatar-wrapper')
     if (dropdown && !dropdown.contains(event.target) && !avatar.contains(event.target)) {
       showUserActions.value = false
+    }
+  }
+  if (showLanguageMenu.value) {
+    const switcher = document.querySelector('.language-switcher')
+    if (switcher && !switcher.contains(event.target)) {
+      showLanguageMenu.value = false
     }
   }
 }
@@ -1795,45 +1833,87 @@ if (
   gap: 10px;
 }
 
-.language-switcher-inline {
+.language-switcher {
+  position: relative;
+  display: inline-flex;
+}
+
+.language-switcher-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-}
-
-.language-switcher-chip {
-  min-width: 34px;
-  height: 26px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
   cursor: pointer;
   transition:
     background 0.2s ease,
     color 0.2s ease,
-    transform 0.2s ease;
+    border-color 0.2s ease;
 }
 
-.language-switcher-chip:hover,
-.language-switcher-chip:focus-visible {
+.language-switcher-trigger:hover,
+.language-switcher-trigger:focus-visible,
+.language-switcher-trigger.is-open {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.language-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 200;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.language-option:hover,
+.language-option:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
   outline: none;
 }
 
-.language-switcher-chip.is-active {
-  background: #0b5afe;
+.language-option.is-active {
   color: #ffffff;
+}
+
+.language-option.is-active .language-option-label {
+  font-weight: 600;
 }
 
 .user-details-desktop {
@@ -2892,6 +2972,22 @@ if (
     top: calc(100% + 10px);
     min-width: 140px;
     padding: 6px;
+  }
+
+  .language-switcher-trigger {
+    width: 32px;
+    height: 32px;
+  }
+
+  .language-dropdown {
+    top: calc(100% + 10px);
+    min-width: 140px;
+    padding: 6px;
+  }
+
+  .language-option {
+    padding: 8px 10px;
+    font-size: 13px;
   }
 
   .action-item {
