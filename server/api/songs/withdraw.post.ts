@@ -1,5 +1,4 @@
 import { db } from '~/drizzle/db'
-import { cacheService } from '~~/server/services/cacheService'
 import {
   schedules,
   songs,
@@ -66,7 +65,11 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  if (!isRequester && !isCollaborator && !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (
+    !isRequester &&
+    !isCollaborator &&
+    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+  ) {
     throw createError({
       statusCode: 403,
       message: '只能撤回自己的投稿或退出联合投稿'
@@ -97,7 +100,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // 如果是联合投稿人撤回（退出）
-  if (isCollaborator && !isRequester && !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+  if (
+    isCollaborator &&
+    !isRequester &&
+    !['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)
+  ) {
     await db.delete(songCollaborators).where(eq(songCollaborators.id, collaboratorRecord.id))
 
     // 记录日志
@@ -108,9 +115,6 @@ export default defineEventHandler(async (event) => {
       ipAddress:
         (event.node.req.headers['x-forwarded-for'] as string) || event.node.req.socket.remoteAddress
     })
-
-    // 清除歌曲列表缓存
-    await cacheService.clearSongsCache()
 
     return {
       message: '已成功退出联合投稿',
@@ -126,8 +130,7 @@ export default defineEventHandler(async (event) => {
   // 检查撤销的歌曲是否在当前限制期间内（用于返还配额）
   let canReturnQuota = false
 
-  const cardCodeDidNotUseOrdinaryQuota =
-    isCardCodeLimitBypassActive(settings) && !!song.cardCodeId
+  const cardCodeDidNotUseOrdinaryQuota = isCardCodeLimitBypassActive(settings) && !!song.cardCodeId
 
   if (settings?.enableSubmissionLimit && !cardCodeDidNotUseOrdinaryQuota) {
     let activeLimit: { type: LimitType; value: number | null } | null = null
@@ -186,12 +189,11 @@ export default defineEventHandler(async (event) => {
     })
   } catch (txErr: any) {
     console.error('撤回事务失败:', txErr)
-    throw createError({ statusCode: txErr.statusCode || 500, message: txErr.message || '撤回歌曲失败，请稍后重试' })
+    throw createError({
+      statusCode: txErr.statusCode || 500,
+      message: txErr.message || '撤回歌曲失败，请稍后重试'
+    })
   }
-
-  // 清除歌曲列表缓存
-  await cacheService.clearSongsCache()
-  console.log('[Cache] 歌曲缓存已清除（撤回歌曲）')
 
   return {
     message: canReturnQuota ? '歌曲已成功撤回，投稿配额已返还' : '歌曲已成功撤回',

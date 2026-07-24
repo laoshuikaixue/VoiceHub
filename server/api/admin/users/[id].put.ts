@@ -44,11 +44,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 检查用户是否存在
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userIdNum))
-      .limit(1)
+    const existingUser = await db.select().from(users).where(eq(users.id, userIdNum)).limit(1)
 
     if (existingUser.length === 0) {
       throw createError({
@@ -205,16 +201,6 @@ export default defineEventHandler(async (event) => {
         reason: `管理员${user.name || user.username}修改用户状态`,
         operatorId: user.id
       })
-    }
-
-    // 清除相关缓存
-    try {
-      const { cache, userCache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('song:*')
-      await userCache.clearAuth(String(userIdNum))
-      console.log('[Cache] 歌曲和用户认证缓存已清除（用户更新）')
-    } catch (cacheError) {
-      console.warn('[Cache] 清除缓存失败:', cacheError)
     }
 
     return {

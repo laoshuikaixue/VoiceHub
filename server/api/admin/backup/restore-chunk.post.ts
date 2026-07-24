@@ -17,7 +17,6 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
-import { CacheService } from '~~/server/services/cacheService'
 
 export default defineEventHandler(async (event) => {
   // 验证管理员权限
@@ -1159,10 +1158,6 @@ export default defineEventHandler(async (event) => {
       stats.errors++
       stats.warnings.push(`记录处理失败: ${error.message}`)
     }
-  }
-
-  if (tableName === 'systemSettings') {
-    await CacheService.getInstance().clearSystemSettingsCache()
   }
 
   return {

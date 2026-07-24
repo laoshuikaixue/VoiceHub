@@ -1038,7 +1038,13 @@ export const pages = {
       replaySucceeded: 'Replay requested successfully',
       replayAlreadyRequested: 'You have already requested a replay for this song',
       loginCancelReplay: 'Please log in to cancel a replay request',
-      replayCancelled: 'Replay request cancelled'
+      replayCancelled: 'Replay request cancelled',
+      leaveCollaborationSucceeded: (title: string) =>
+        `You have left the collaboration on "${title}"`,
+      withdrawSucceeded: (title: string) => `Withdrew your submission of "${title}"`,
+      withdrawSucceededQuota: (title: string) =>
+        `Withdrew your submission of "${title}"; your submission quota has been refunded`,
+      fallbackSongTitle: 'this song'
     },
     duplicateSongModal: {
       title: 'Song Already Exists',
@@ -1241,6 +1247,7 @@ export const pages = {
       unknownSong: 'Unknown Song',
       unknownArtist: 'Unknown Artist',
       unknownTime: 'Unknown Time',
+      unknownUser: 'Unknown User',
       textCoverFallback: '♪',
       like: 'Like',
       inactiveSemester: 'Inactive semester',

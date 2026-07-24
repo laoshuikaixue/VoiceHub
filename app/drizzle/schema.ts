@@ -70,7 +70,9 @@ export const songs = pgTable('Song', {
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
 }, (table) => [
-  index('song_card_code_id_idx').on(table.cardCodeId)
+  index('song_card_code_id_idx').on(table.cardCodeId),
+  index('song_semester_created_at_idx').on(table.semester, table.createdAt),
+  index('song_requester_id_idx').on(table.requesterId)
 ]);
 
 // 投票表
@@ -79,7 +81,10 @@ export const votes = pgTable('Vote', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   songId: integer('songId').notNull(),
   userId: integer('userId').notNull(),
-});
+}, (table) => [
+  unique('vote_song_user_unique').on(table.songId, table.userId),
+  index('vote_user_song_idx').on(table.userId, table.songId)
+]);
 
 // 排期表
 export const schedules = pgTable('Schedule', {
@@ -94,7 +99,10 @@ export const schedules = pgTable('Schedule', {
   // 草稿支持字段
   isDraft: boolean('isDraft').default(false).notNull(),
   publishedAt: timestamp('publishedAt'),
-});
+}, (table) => [
+  index('schedule_published_song_idx').on(table.isDraft, table.songId, table.playDate),
+  index('schedule_published_date_idx').on(table.isDraft, table.playDate)
+]);
 
 // 通知表
 export const notifications = pgTable('Notification', {
@@ -310,7 +318,10 @@ export const songCollaborators = pgTable('song_collaborators', {
     status: collaboratorStatusEnum('status').default('PENDING').notNull(),
     createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
-});
+}, (table) => [
+    index('song_collaborators_song_status_idx').on(table.songId, table.status),
+    index('song_collaborators_user_status_idx').on(table.userId, table.status)
+]);
 
 // 联合投稿审计日志表
 export const collaborationLogs = pgTable('collaboration_logs', {
@@ -330,9 +341,10 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
   status: replayRequestStatusEnum('status').default('PENDING').notNull(),
-}, (t) => ({
-  unq: unique().on(t.songId, t.userId),
-}));
+}, (table) => [
+  unique('song_replay_requests_song_id_user_id_unique').on(table.songId, table.userId),
+  index('song_replay_requests_user_status_song_idx').on(table.userId, table.status, table.songId)
+]);
 
 // 第三方身份关联表
 export const userIdentities = pgTable('UserIdentity', {

@@ -1049,7 +1049,11 @@ export const pages = {
       replaySucceeded: '申请重播成功',
       replayAlreadyRequested: '您已经申请过重播这首歌了',
       loginCancelReplay: '需要登录才能取消重播申请',
-      replayCancelled: '已取消重播申请'
+      replayCancelled: '已取消重播申请',
+      leaveCollaborationSucceeded: (title: string) => `已成功退出歌曲《${title}》的联合投稿`,
+      withdrawSucceeded: (title: string) => `已成功撤回《${title}》的投稿`,
+      withdrawSucceededQuota: (title: string) => `已成功撤回《${title}》的投稿，投稿配额已返还`,
+      fallbackSongTitle: '歌曲'
     },
     duplicateSongModal: {
       title: '歌曲已存在',
@@ -1252,6 +1256,7 @@ export const pages = {
       unknownSong: '未知歌曲',
       unknownArtist: '未知歌手',
       unknownTime: '未知时间',
+      unknownUser: '未知用户',
       textCoverFallback: '音',
       like: '点赞',
       inactiveSemester: '非活跃学期',

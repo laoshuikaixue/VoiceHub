@@ -1,4 +1,5 @@
 import {
+  encodeOAuthStateCookie,
   generateCompactOAuthState,
   generateState,
   getRedirectUri,
@@ -112,7 +113,7 @@ export default defineEventHandler(async (event) => {
       maxAge: 60 * 10,
       path: '/'
     }
-    setCookie(event, 'oauth_full_state', state, aggregateCookieOptions)
+    setCookie(event, 'oauth_full_state', encodeOAuthStateCookie(state), aggregateCookieOptions)
     setCookie(event, 'oauth_compact_state', authorizeState, aggregateCookieOptions)
   }
 

@@ -177,17 +177,6 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    // 清除相关缓存
-    try {
-      const { cache } = await import('~~/server/utils/cache-helpers')
-      for (const userId of usersToUpdate.map((u) => u.id)) {
-        await cache.delete(`auth:user:${userId}`)
-      }
-      console.log('[Cache] 批量用户认证缓存已清除（状态更新）')
-    } catch (cacheError) {
-      console.warn('[Cache] 清除缓存失败:', cacheError)
-    }
-
     return {
       success: true,
       message: `成功更新 ${results.length} 个用户的状态为${getStatusText(status)}`,

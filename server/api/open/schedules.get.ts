@@ -3,10 +3,6 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songCollaborators, songs, users } from '~/drizzle/schema'
 import { and, asc, desc, eq, gte, inArray, like, lt, or, sql } from 'drizzle-orm'
 import { formatDateTime } from '~/utils/timeUtils'
-import { openApiCache } from '~~/server/utils/open-api-cache'
-import { CACHE_CONSTANTS } from '~~/server/config/constants'
-import { cacheService } from '~~/server/services/cacheService'
-import { executeRedisCommand, isRedisReady } from '~~/server/utils/redis'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,112 +28,6 @@ export default defineEventHandler(async (event) => {
     const limit = Math.min(parseInt(query.limit as string) || 20, 100) // 最大100条
     const sortBy = (query.sortBy as string) || 'playDate'
     const sortOrder = (query.sortOrder as string) || 'asc'
-
-    // 优先从普通API缓存获取数据
-
-    // 尝试从CacheService获取排期数据
-    const cachedSchedules = await cacheService.getSchedulesList()
-
-    if (cachedSchedules) {
-      console.log(`[OpenAPI Cache] 使用普通API缓存数据，数量: ${cachedSchedules.length}`)
-
-      // 如果指定了学期，过滤数据
-      let filteredSchedules = cachedSchedules
-      if (semester) {
-        filteredSchedules = cachedSchedules.filter((s) => s.song?.semester === semester)
-      }
-
-      // 转换为开放API格式
-      const result = {
-        success: true,
-        data: {
-          schedules: filteredSchedules.map((schedule: any) => ({
-            id: schedule.id,
-            playDate: schedule.playDate,
-            sequence: schedule.sequence,
-            played: schedule.played,
-            song: {
-              id: schedule.song.id,
-              title: schedule.song.title,
-              artist: schedule.song.artist,
-              semester: schedule.song.semester,
-              cover: schedule.song.cover,
-              musicPlatform: schedule.song.musicPlatform,
-              musicId: schedule.song.musicId
-            },
-            playTime: schedule.playTime
-              ? {
-                  id: schedule.playTime.id,
-                  name: schedule.playTime.name,
-                  startTime: schedule.playTime.startTime,
-                  endTime: schedule.playTime.endTime,
-                  enabled: schedule.playTime.enabled
-                }
-              : null
-          })),
-          total: filteredSchedules.length,
-          semester: semester || null
-        }
-      }
-
-      return result
-    }
-
-    // 如果普通缓存没有数据，尝试从Redis获取公共排期缓存
-    if (isRedisReady()) {
-      const redisCacheKey = semester ? `public_schedules:${semester}` : 'public_schedules:all'
-      const redisData = await executeRedisCommand(async () => {
-        const client = (await import('~~/server/utils/redis')).getRedisClient()
-        if (!client) return null
-
-        const data = await client.get(redisCacheKey)
-        if (data) {
-          const parsedData = JSON.parse(data)
-          console.log(
-            `[OpenAPI Cache] 使用Redis公共排期缓存: ${redisCacheKey}，数量: ${parsedData.length}`
-          )
-          return parsedData
-        }
-        return null
-      })
-
-      if (redisData) {
-        // 转换为开放API格式
-        const result = {
-          success: true,
-          data: {
-            schedules: redisData.map((schedule: any) => ({
-              id: schedule.id,
-              playDate: schedule.playDate,
-              sequence: schedule.sequence,
-              played: schedule.played,
-              song: {
-                id: schedule.song.id,
-                title: schedule.song.title,
-                artist: schedule.song.artist,
-                semester: schedule.song.semester,
-                cover: schedule.song.cover,
-                musicPlatform: schedule.song.musicPlatform,
-                musicId: schedule.song.musicId
-              },
-              playTime: schedule.playTime
-                ? {
-                    id: schedule.playTime.id,
-                    name: schedule.playTime.name,
-                    startTime: schedule.playTime.startTime,
-                    endTime: schedule.playTime.endTime,
-                    enabled: schedule.playTime.enabled
-                  }
-                : null
-            })),
-            total: redisData.length,
-            semester: semester || null
-          }
-        }
-
-        return result
-      }
-    }
 
     // 构建查询条件
     const conditions = [
@@ -334,23 +224,6 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-
-    // 将查询结果缓存到CacheService中，供普通API和开放API共享
-    await cacheService.setSchedulesList(schedulesData)
-    console.log(`[OpenAPI Cache] 排期数据已缓存到CacheService，数量: ${schedulesData.length}`)
-
-    // 可选：也缓存到开放API专用缓存（保留原有逻辑，但优先级较低）
-    const cacheKey = openApiCache.generateKey('schedules', {
-      semester,
-      date,
-      playTimeId,
-      search,
-      page,
-      limit,
-      sortBy,
-      sortOrder
-    })
-    await openApiCache.set(cacheKey, result, CACHE_CONSTANTS.DEFAULT_TTL)
 
     return result
   } catch (error: any) {

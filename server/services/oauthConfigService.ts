@@ -27,14 +27,6 @@ export interface ProviderRuntimeConfig {
 }
 
 const getSettings = async () => {
-  try {
-    const { CacheService } = await import('~~/server/services/cacheService')
-    const cached = await CacheService.getInstance().getSystemSettings()
-    if (cached) return cached
-  } catch {
-    // 缓存不可用时回退数据库
-  }
-
   const settingsResult = await db.select().from(systemSettings).limit(1)
   return settingsResult[0] || null
 }
