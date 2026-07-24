@@ -557,7 +557,14 @@ export const useSongs = () => {
   }
 
   // 申请重播
-  const requestReplay = async (songId: number) => {
+  const requestReplay = async (
+    songId: number,
+    options: {
+      preferredPlayTimeId?: number | null
+      submissionNote?: string | null
+      submissionNotePublic?: boolean
+    } = {}
+  ) => {
     if (!isAuthenticated.value) {
       showNotification(actionLocale.value.loginRequestReplay, 'error')
       return null
@@ -570,7 +577,7 @@ export const useSongs = () => {
       const authConfig = getAuthConfig()
       const data = await $fetch('/api/songs/replay', {
         method: 'POST',
-        body: { songId },
+        body: { songId, ...options },
         ...authConfig
       })
 
