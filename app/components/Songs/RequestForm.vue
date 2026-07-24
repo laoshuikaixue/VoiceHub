@@ -660,6 +660,14 @@
                         class="similar-song-info"
                       >
                         <span class="similar-text">所有剧集已存在</span>
+                        <button
+                          v-if="canResubmitBilibiliEpisodes(result)"
+                          :disabled="submitting"
+                          class="select-btn"
+                          @click.stop.prevent="submitSong(result, { replayRequest: true })"
+                        >
+                          选择剧集
+                        </button>
                       </div>
                       <div
                         v-else-if="
@@ -684,13 +692,7 @@
                           v-if="getSimilarSong(result)?.played"
                           class="similar-text status-played"
                         >
-                          {{
-                            isSuperAdmin
-                              ? '歌曲已播放'
-                              : enableReplayRequests
-                                ? '歌曲已播放'
-                                : '歌曲已播放'
-                          }}
+                          歌曲已播放
                         </span>
                         <span
                           v-else-if="getSimilarSong(result)?.scheduled"
@@ -699,25 +701,14 @@
                         >
                         <span v-else class="similar-text">歌曲已存在</span>
 
-                        <!-- 超级管理员对已播放的相似歌曲：显示继续投稿 -->
+                        <!-- 已播放且允许重播申请：按普通投稿流程继续投稿 -->
                         <button
-                          v-if="getSimilarSong(result)?.played && isSuperAdmin"
+                          v-if="getSimilarSong(result)?.played && enableReplayRequests"
                           :disabled="submitting"
                           class="select-btn"
-                          @click.stop.prevent="submitSong(result, { forceResubmit: true })"
+                          @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
-                          继续投稿
-                        </button>
-
-                        <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
-                        <button
-                          v-else-if="getSimilarSong(result)?.played && enableReplayRequests"
-                          :disabled="isReplayButtonDisabled(getSimilarSong(result))"
-                          :title="getReplayButtonTitle(getSimilarSong(result))"
-                          class="replay-btn"
-                          @click.stop.prevent="handleRequestReplay(getSimilarSong(result))"
-                        >
-                          {{ getReplayButtonText(getSimilarSong(result)) }}
+                          选择投稿
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -898,6 +889,7 @@
       :episodes="bilibiliEpisodes"
       :submitted-episodes="getBilibiliEpisodeStatus(selectedBilibiliVideo)?.submittedEpisodes || []"
       :current-user-id="user?.id"
+      :allow-played-resubmit="enableReplayRequests"
       @close="showBilibiliEpisodesModal = false"
       @play="handleBilibiliEpisodePlay"
       @submit="handleBilibiliEpisodeSelect"
@@ -1463,7 +1455,6 @@ const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.va
 // 用户认证
 const auth = useAuth()
 const user = computed(() => auth.user.value)
-const isSuperAdmin = computed(() => user.value?.role === 'SUPER_ADMIN')
 
 // 学期管理
 const { fetchCurrentSemester, currentSemester, fetchSemesterOptions, semesters } = useSemesters()
@@ -1491,7 +1482,6 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
-const requestingReplay = ref(false)
 
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
@@ -1723,6 +1713,7 @@ const showManualModal = ref(false)
 const showBilibiliEpisodesModal = ref(false)
 const selectedBilibiliVideo = ref(null)
 const bilibiliEpisodes = ref([])
+const bilibiliEpisodeSubmitOptions = ref({})
 
 // 专辑详情相关
 const showAlbumDetailsModal = ref(false)
@@ -2540,6 +2531,7 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
   if (originalResult && isBilibiliMultiP(originalResult)) {
     selectedBilibiliVideo.value = originalResult
     bilibiliEpisodes.value = originalResult.pages
+    bilibiliEpisodeSubmitOptions.value = {}
     showBilibiliEpisodesModal.value = true
     return
   }
@@ -3125,29 +3117,18 @@ const submitSong = async (result, options = {}) => {
     console.log('打开 Bilibili 剧集列表:', result)
     selectedBilibiliVideo.value = result
     bilibiliEpisodes.value = result.pages
+    bilibiliEpisodeSubmitOptions.value = options.replayRequest === true ? { replayRequest: true } : {}
     showBilibiliEpisodesModal.value = true
     return
   }
 
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
 
-  if (!(await ensureCardCodeForSubmit())) {
-    return false
-  }
-
-  // 检查投稿限额
-  const limitCheck = checkSubmissionLimit()
-  if (!limitCheck.canSubmit) {
-    error.value = limitCheck.message
-    if (window.$showNotification) {
-      window.$showNotification(limitCheck.message, 'error')
-    }
-    return
-  }
-
   // 使用搜索结果中的数据
   const songTitle = result.song || result.title
   const songArtist = result.singer || result.artist
+
+  let replayTargetSong = null
 
   // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
   if (auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
@@ -3170,8 +3151,10 @@ const submitSong = async (result, options = {}) => {
       )
 
       if (existingSong) {
-        const allowOverride =
-          options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        if (options.replayRequest === true && existingSong.played) {
+          replayTargetSong = existingSong
+        }
+        const allowOverride = options.replayRequest === true && existingSong.played
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
@@ -3191,8 +3174,10 @@ const submitSong = async (result, options = {}) => {
       )
 
       if (existingSong) {
-        const allowOverride =
-          options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        if (options.replayRequest === true && existingSong.played) {
+          replayTargetSong = existingSong
+        }
+        const allowOverride = options.replayRequest === true && existingSong.played
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
@@ -3213,6 +3198,48 @@ const submitSong = async (result, options = {}) => {
   artist.value = songArtist
   selectedCover.value = result.cover || ''
   selectedUrl.value = result.url || result.file || ''
+
+  if (options.replayRequest === true) {
+    try {
+      if (!replayTargetSong) {
+        throw new Error('未找到可申请重播的原歌曲')
+      }
+
+      const replayResult = await songService.requestReplay(replayTargetSong.id, {
+        preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+        submissionNote: submissionNote.value.trim() || null,
+        submissionNotePublic: submissionNotePublic.value
+      })
+
+      if (!replayResult) return false
+      resetForm()
+      return true
+    } catch (err) {
+      error.value = err.message || '申请重播失败，请稍后重试'
+      if (window.$showNotification) {
+        window.$showNotification(error.value, 'error')
+      }
+      return false
+    } finally {
+      submitting.value = false
+    }
+  }
+
+  if (!(await ensureCardCodeForSubmit())) {
+    submitting.value = false
+    return false
+  }
+
+  // 检查投稿限额
+  const limitCheck = checkSubmissionLimit()
+  if (!limitCheck.canSubmit) {
+    error.value = limitCheck.message
+    if (window.$showNotification) {
+      window.$showNotification(limitCheck.message, 'error')
+    }
+    submitting.value = false
+    return
+  }
 
   // 管理员不受黑名单限制
   if (!auth.isAdmin.value) {
@@ -3388,14 +3415,27 @@ const getBilibiliEpisodeStatus = (result) => {
   }
 }
 
+const canResubmitBilibiliEpisodes = (result) => {
+  if (!enableReplayRequests.value) return false
+
+  const episodeStatus = getBilibiliEpisodeStatus(result)
+  if (!episodeStatus || episodeStatus.submittedEpisodes.length === 0) return false
+
+  return episodeStatus.submittedEpisodes.every((song) => song.played)
+}
+
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
-const handleBilibiliEpisodeSelect = async (episode) => {
+const handleBilibiliEpisodeSelect = async (payload) => {
   if (!selectedBilibiliVideo.value) return
+
+  const episode = payload?.episode || payload
+  const episodeStatus = payload?.status || null
+  const isReplayEpisode = episodeStatus?.played === true
 
   const episodeResult = {
     ...selectedBilibiliVideo.value,
@@ -3405,12 +3445,14 @@ const handleBilibiliEpisodeSelect = async (episode) => {
   }
 
   const success = await submitSong(episodeResult, {
+    ...(isReplayEpisode ? { replayRequest: true } : bilibiliEpisodeSubmitOptions.value),
     isBilibiliEpisode: true,
     episode: episode
   })
 
   if (success) {
     showBilibiliEpisodesModal.value = false
+    bilibiliEpisodeSubmitOptions.value = {}
     if (bilibiliModalRef.value && bilibiliModalRef.value.resetSubmissionState) {
       bilibiliModalRef.value.resetSubmissionState()
     }
@@ -3726,127 +3768,6 @@ const handleManualSubmit = async () => {
   } finally {
     submitting.value = false
   }
-}
-
-// 申请重播
-const handleRequestReplay = async (song) => {
-  if (requestingReplay.value || !song) return
-
-  // 如果已经申请过，不执行
-  if (song.replayRequested) {
-    if (window.$showNotification) {
-      window.$showNotification('该歌曲已申请过重播', 'info')
-    }
-    return
-  }
-
-  requestingReplay.value = true
-  try {
-    await songService.requestReplay(song.id)
-    // 刷新歌曲状态
-    setTimeout(() => {
-      songService.refreshSongsSilent().catch(console.error)
-    }, 500)
-    if (window.$showNotification) {
-      window.$showNotification('申请重播成功', 'success')
-    }
-  } catch (err) {
-    console.error('申请重播失败:', err)
-    if (window.$showNotification) {
-      window.$showNotification('申请重播失败: ' + err.message, 'error')
-    }
-  } finally {
-    requestingReplay.value = false
-  }
-}
-
-// 获取重播按钮文本
-const getReplayButtonText = (song) => {
-  if (requestingReplay.value) return '申请中...'
-  if (!song) return '申请重播'
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '非本学期'
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    // 如果在冷却期内
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
-    }
-    // 冷却期已过
-    return '申请重播'
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return '已重播'
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '已申请重播'
-  }
-
-  return '申请重播'
-}
-
-// 获取重播按钮标题（tooltip）
-const getReplayButtonTitle = (song) => {
-  if (!song) return '申请重播'
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '只能申请重播当前学期的歌曲'
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
-    }
-    return '申请重播'
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return '该歌曲已重播'
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '该歌曲已申请过重播'
-  }
-
-  return '申请重播'
-}
-
-// 检查重播按钮是否应该禁用
-const isReplayButtonDisabled = (song) => {
-  if (requestingReplay.value || !song) return true
-
-  // 检查学期
-  if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return true
-  }
-
-  // 检查重播申请状态
-  if (song.replayRequestStatus === 'REJECTED') {
-    // 如果在冷却期内，禁用按钮
-    if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return true
-    }
-    // 冷却期已过，允许重新申请
-    return false
-  }
-
-  if (song.replayRequestStatus === 'FULFILLED') {
-    return true
-  }
-
-  if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return true
-  }
-
-  return false
 }
 
 // 重置表单

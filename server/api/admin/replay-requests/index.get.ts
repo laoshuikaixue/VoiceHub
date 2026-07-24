@@ -111,7 +111,10 @@ export default defineEventHandler(async (event) => {
         class: users.class
       },
       createdAt: songReplayRequests.createdAt,
-      status: songReplayRequests.status
+      status: songReplayRequests.status,
+      preferredPlayTimeId: songReplayRequests.preferredPlayTimeId,
+      submissionNote: songReplayRequests.submissionNote,
+      submissionNotePublic: songReplayRequests.submissionNotePublic
     })
     .from(songReplayRequests)
     .innerJoin(users, eq(songReplayRequests.userId, users.id))
@@ -140,18 +143,30 @@ export default defineEventHandler(async (event) => {
       grade: d.user.grade,
       class: d.user.class,
       createdAt: d.createdAt,
-      status: d.status
+      status: d.status,
+      preferredPlayTimeId: d.preferredPlayTimeId,
+      submissionNote: d.submissionNote,
+      submissionNotePublic: d.submissionNotePublic
     })
   })
 
-  return requests.map((item) => ({
-    ...item.song,
-    requester: formatDisplayName(item.requester),
-    requesterGrade: item.requester?.grade,
-    requesterClass: item.requester?.class,
-    voteCount: item.requestCount,
-    requestCount: item.requestCount,
-    lastRequestedAt: item.lastRequestedAt,
-    requestDetails: detailsMap.get(item.song.id) || []
-  }))
+  return requests.map((item) => {
+    const requestDetails = detailsMap.get(item.song.id) || []
+    const latestRequest = requestDetails[0]
+
+    return {
+      ...item.song,
+      preferredPlayTimeId: latestRequest?.preferredPlayTimeId || null,
+      submissionNote: latestRequest?.submissionNote || null,
+      submissionNotePublic: latestRequest?.submissionNotePublic === true,
+      hasSubmissionNote: !!latestRequest?.submissionNote,
+      requester: formatDisplayName(item.requester),
+      requesterGrade: item.requester?.grade,
+      requesterClass: item.requester?.class,
+      voteCount: item.requestCount,
+      requestCount: item.requestCount,
+      lastRequestedAt: item.lastRequestedAt,
+      requestDetails
+    }
+  })
 })
