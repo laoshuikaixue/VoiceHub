@@ -12,6 +12,7 @@ import {
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { randomInt } from 'crypto'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const { userId: reqUserId, token: rawToken, email } = await readBody(event)
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
   // 必须提供预认证令牌
   if (!token) {
-    throw createError({ statusCode: 400, message: '缺少预认证令牌' })
+    throw createApiError(400, 'AUTH_MISSING_PRE_TOKEN', '缺少预认证令牌')
   }
 
   let userId: number
@@ -31,12 +32,12 @@ export default defineEventHandler(async (event) => {
     userId = decoded.userId
   } catch (e) {
     deleteCookie(event, 'pre-auth-token')
-    throw createError({ statusCode: 401, message: '会话已失效，请重新登录' })
+    throw createApiError(401, 'AUTH_SESSION_EXPIRED', '会话已失效，请重新登录')
   }
 
   // 校验 userId 是否匹配
   if (!reqUserId || Number(reqUserId) !== userId) {
-    throw createError({ statusCode: 403, message: '非法操作：用户ID不匹配' })
+    throw createApiError(403, 'AUTH_USER_ID_MISMATCH', '非法操作：用户ID不匹配')
   }
 
   // 获取用户邮箱
@@ -54,12 +55,12 @@ export default defineEventHandler(async (event) => {
   const user = userResult[0]
   // 增加 emailVerified 校验
   if (!user || !user.email || !user.emailVerified) {
-    throw createError({ statusCode: 400, message: '用户不存在或未绑定邮箱' })
+    throw createApiError(400, 'AUTH_USER_NOT_FOUND_OR_NO_EMAIL', '用户不存在或未绑定邮箱')
   }
 
   // 校验用户输入的邮箱是否匹配
   if (!email || email.trim().toLowerCase() !== user.email.toLowerCase()) {
-    throw createError({ statusCode: 400, message: '邮箱地址不匹配' })
+    throw createApiError(400, 'AUTH_EMAIL_MISMATCH', '邮箱地址不匹配')
   }
 
   // 检查是否在冷却时间内
@@ -75,10 +76,7 @@ export default defineEventHandler(async (event) => {
     if (timePassed < 60 * 1000) {
       // 60秒冷却
       const remainingSeconds = Math.ceil((60000 - timePassed) / 1000)
-      throw createError({
-        statusCode: 429,
-        message: `操作过于频繁，请等待 ${remainingSeconds} 秒后再试`
-      })
+      throw createApiError(429, 'AUTH_RATE_LIMITED_SECONDS', `操作过于频繁，请等待 ${remainingSeconds} 秒后再试`, { params: [remainingSeconds] })
     }
   }
 
@@ -117,7 +115,7 @@ export default defineEventHandler(async (event) => {
 
   if (!sent) {
     await delStoreIfValue(stateKey, storedValue)
-    throw createError({ statusCode: 500, message: '验证码发送失败' })
+    throw createApiError(500, 'AUTH_CODE_SEND_FAILED', '验证码发送失败')
   }
 
   return { success: true, message: '验证码已发送至您的邮箱' }

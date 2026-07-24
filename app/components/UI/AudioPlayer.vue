@@ -262,6 +262,7 @@ import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useMediaSession } from '~/composables/useMediaSession'
 import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
+import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import {
   getCachedMusicUrlSource,
@@ -271,6 +272,7 @@ import {
 
 // 添加 router 导入
 const router = useRouter()
+const { audioPlayer: audioPlayerLocale } = useLocale()
 
 const props = defineProps({
   song: {
@@ -437,7 +439,7 @@ const handleFallbackDialogConfirm = () => {
   const openedWindow = window.open(fallbackOpenDialogUrl.value, '_blank', 'noopener,noreferrer')
   if (!openedWindow) {
     if (window.$showNotification) {
-      window.$showNotification('浏览器拦截了新标签页，请允许弹窗后重试', 'warning')
+      window.$showNotification(audioPlayerLocale.value.popupBlocked, 'warning')
     }
     return
   }
@@ -451,7 +453,7 @@ const handleFallbackDialogConfirm = () => {
   fallbackOpenDialogUrl.value = ''
   isFallbackHandling.value = false
   if (window.$showNotification) {
-    window.$showNotification('已为你打开原始链接', 'success')
+    window.$showNotification(audioPlayerLocale.value.originalLinkOpened, 'success')
   }
 }
 
@@ -568,7 +570,7 @@ const trySwitchPlaybackSource = async () => {
     emit('songChange', updatedSong)
 
     if (window.$showNotification) {
-      window.$showNotification('当前播放链接无效，已切换备用音源', 'warning')
+      window.$showNotification(audioPlayerLocale.value.fallbackSource, 'warning')
     }
 
     await nextTick()
@@ -948,7 +950,7 @@ const handleError = async (error) => {
     if (consecutiveSkipCount.value >= MAX_CONSECUTIVE_SKIP) {
       console.log('[AudioPlayer] 连续多次跳过，停止自动跳过')
       if (window.$showNotification) {
-        window.$showNotification('连续多首歌曲播放失败，已停止自动播放', 'warning')
+        window.$showNotification(audioPlayerLocale.value.consecutiveFailures, 'warning')
       }
       stopPlaying()
       return
@@ -961,7 +963,7 @@ const handleError = async (error) => {
     if (props.isPlaylistMode && control.playMode.value !== 'off') {
       console.log('[AudioPlayer] 哔哩哔哩视频播放失败，处于列表播放模式，自动跳过')
       if (window.$showNotification) {
-        window.$showNotification('哔哩哔哩视频播放失败，自动跳过', 'warning')
+        window.$showNotification(audioPlayerLocale.value.bilibiliSkipped, 'warning')
       }
       handleNext()
       return
@@ -1237,13 +1239,13 @@ const cyclePlayMode = () => {
   const current = control.playMode.value
   if (current === 'order') {
     control.setPlayMode('loopOne')
-    if (window.$showNotification) window.$showNotification('已切换为单曲循环', 'info')
+    if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.loopOneEnabled, 'info')
   } else if (current === 'loopOne') {
     control.setPlayMode('off')
-    if (window.$showNotification) window.$showNotification('已切换为单曲播放', 'info')
+    if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.singleEnabled, 'info')
   } else {
     control.setPlayMode('order')
-    if (window.$showNotification) window.$showNotification('已切换为列表循环', 'info')
+    if (window.$showNotification) window.$showNotification(audioPlayerLocale.value.listLoopEnabled, 'info')
   }
 }
 

@@ -2,8 +2,8 @@
   <div class="max-w-[1400px] mx-auto space-y-8 pb-20">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">向用户发送通知</h2>
-        <p class="text-xs text-zinc-500 mt-1">即时推送系统公告、活动信息或重要提醒至指定群体</p>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-zinc-500 mt-1">{{ locale.desc }}</p>
       </div>
     </div>
 
@@ -15,12 +15,12 @@
             <!-- 标题 -->
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >通知标题</label
+                >{{ locale.notificationTitle }}</label
               >
               <input
                 v-model="form.title"
                 type="text"
-                placeholder="请输入通知标题"
+                :placeholder="locale.titlePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800"
               >
             </div>
@@ -28,11 +28,11 @@
             <!-- 内容 -->
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >通知内容</label
+                >{{ locale.notificationContent }}</label
               >
               <textarea
                 v-model="form.content"
-                placeholder="请输入通知详情内容..."
+                :placeholder="locale.contentPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800 min-h-[160px] resize-none"
               />
             </div>
@@ -40,7 +40,7 @@
             <!-- 范围选择 -->
             <div class="space-y-3 pt-4 border-t border-zinc-800/50">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >通知范围</label
+                >{{ locale.scope }}</label
               >
               <div class="flex flex-wrap gap-2">
                 <button
@@ -70,21 +70,21 @@
                 >
                   <Info class="text-blue-500 shrink-0" :size="18" />
                   <p class="text-[11px] font-bold text-zinc-400">
-                    将向系统中所有已注册的活跃用户发送此通知。
+                    {{ locale.allUsersHint }}
                   </p>
                 </div>
 
                 <div v-else-if="form.scope === 'GRADE'" key="grade" class="space-y-4">
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                      >选择年级</span
+                      >{{ locale.selectGrade }}</span
                     >
                     <CustomSelect
                       v-model="form.grade"
                       :options="gradeOptions"
                       label-key="label"
                       value-key="value"
-                      placeholder="请选择年级"
+                      :placeholder="locale.selectGradePlaceholder"
                       class-name="w-full md:w-64"
                     />
                   </div>
@@ -97,27 +97,27 @@
                 >
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                      >年级</span
+                      >{{ locale.grade }}</span
                     >
                     <CustomSelect
                       v-model="form.classGrade"
                       :options="gradeOptions"
                       label-key="label"
                       value-key="value"
-                      placeholder="请选择年级"
+                      :placeholder="locale.selectGradePlaceholder"
                       class-name="w-full"
                     />
                   </div>
                   <div class="space-y-1.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                      >班级</span
+                      >{{ locale.className }}</span
                     >
                     <CustomSelect
                       v-model="form.className"
                       :options="classOptionsForClassScope"
                       label-key="label"
                       value-key="value"
-                      placeholder="请选择班级"
+                      :placeholder="locale.selectClassPlaceholder"
                       class-name="w-full"
                       :disabled="!form.classGrade"
                     />
@@ -132,7 +132,7 @@
                         :options="gradeOptions"
                         label-key="label"
                         value-key="value"
-                        placeholder="请选择年级"
+                          :placeholder="locale.selectGradePlaceholder"
                         class-name="w-full"
                       />
                       <div class="flex gap-2">
@@ -141,7 +141,7 @@
                           :options="classOptionsForMultiClassScope"
                           label-key="label"
                           value-key="value"
-                          placeholder="请选择班级"
+                          :placeholder="locale.selectClassPlaceholder"
                           class-name="flex-1"
                           :disabled="!multiClassForm.grade"
                         />
@@ -150,7 +150,7 @@
                           class="px-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 font-bold rounded-xl text-xs transition-all"
                           @click="addClassToSelection"
                         >
-                          添加
+                          {{ locale.add }}
                         </button>
                       </div>
                     </div>
@@ -174,7 +174,7 @@
                     </div>
                     <div v-else class="text-center py-4">
                       <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
-                        未选择任何班级
+                        {{ locale.noClassSelected }}
                       </p>
                     </div>
                   </div>
@@ -195,7 +195,7 @@
                     <input
                       v-model="userSearchQuery"
                       type="text"
-                      placeholder="搜索并选择用户 (姓名、用户名或ID)..."
+                      :placeholder="locale.userSearchPlaceholder"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                       @input="onUserSearchInput"
                     >
@@ -208,7 +208,7 @@
                   >
                     <div class="px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/40">
                       <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >搜索结果 ({{ userSearchResults.length }})</span
+                        >{{ getLocaleMessage('searchResults', userSearchResults.length) }}</span
                       >
                     </div>
                     <div
@@ -239,7 +239,7 @@
                         class="px-3 py-1.5 bg-zinc-800 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 text-[10px] font-black rounded-lg transition-all uppercase"
                         @click="addUserToSelection(user)"
                       >
-                        {{ isUserSelected(user.id) ? '已选择' : '选择' }}
+                        {{ isUserSelected(user.id) ? locale.selected : locale.select }}
                       </button>
                     </div>
                   </div>
@@ -248,13 +248,13 @@
                   <div v-if="form.selectedUsers.length > 0" class="space-y-3">
                     <div class="flex items-center justify-between px-1">
                       <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >已选择用户 ({{ form.selectedUsers.length }})</span
+                        >{{ getLocaleMessage('selectedUsers', form.selectedUsers.length) }}</span
                       >
                       <button
                         class="text-[9px] font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors"
                         @click="clearAllSelectedUsers"
                       >
-                        清空全部
+                        {{ locale.clearAll }}
                       </button>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -280,7 +280,7 @@
                   </div>
                   <div v-else class="text-center py-4">
                     <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
-                      未选择任何用户
+                      {{ locale.noUsersSelected }}
                     </p>
                   </div>
                 </div>
@@ -319,7 +319,7 @@
             >
               <Loader2 v-if="loading" class="animate-spin" :size="16" />
               <Send v-else :size="16" />
-              {{ loading ? '发送中...' : '发送通知' }}
+              {{ loading ? locale.sending : locale.send }}
             </button>
           </div>
         </div>
@@ -333,7 +333,7 @@
           <h3
             class="text-sm font-black text-zinc-100 uppercase tracking-widest mb-6 flex items-center gap-2"
           >
-            <Eye :size="16" class="text-blue-500" /> 通知预览
+            <Eye :size="16" class="text-blue-500" /> {{ locale.previewTitle }}
           </h3>
 
           <div class="flex-1 flex flex-col items-center justify-center p-4">
@@ -352,11 +352,11 @@
                       <Bell :size="14" />
                     </div>
                     <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                      >VoiceHub 系统</span
+                      >{{ locale.previewSender }}</span
                     >
                   </div>
                   <span class="text-[9px] text-zinc-700 font-bold uppercase tracking-wider"
-                    >刚刚</span
+                    >{{ locale.justNow }}</span
                   >
                 </div>
 
@@ -367,7 +367,7 @@
                       form.title ? 'text-zinc-100' : 'text-zinc-800 italic'
                     ]"
                   >
-                    {{ form.title || '通知标题' }}
+                    {{ form.title || locale.previewTitlePlaceholder }}
                   </h4>
                   <p
                     :class="[
@@ -375,7 +375,7 @@
                       form.content ? 'text-zinc-400' : 'text-zinc-800 italic line-clamp-3'
                     ]"
                   >
-                    {{ form.content || '这里将显示通知的详细内容预览...' }}
+                    {{ form.content || locale.previewContentPlaceholder }}
                   </p>
                 </div>
 
@@ -383,7 +383,7 @@
                   <div class="flex items-center gap-1.5">
                     <Users :size="12" class="text-zinc-700" />
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-wider">
-                      发送范围: {{ scopeDescription }}
+                      {{ getLocaleMessage('previewScope', scopeDescription) }}
                     </span>
                   </div>
                   <button
@@ -406,7 +406,7 @@
               >
                 <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
                 <p class="text-[10px] font-bold text-zinc-500 leading-normal">
-                  预览图仅供参考布局，实际发送效果可能会根据用户设备显示语言和屏幕尺寸有所不同。
+                  {{ locale.previewHint }}
                 </p>
               </div>
             </div>
@@ -440,10 +440,14 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
+import { useLocale } from '~/utils/locale'
 
 const { isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
+const { admin } = useLocale()
+const locale = computed(() => admin.value?.notificationSender || {})
+const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
 
 onMounted(() => {
   userFilters.fetchOptions()
@@ -500,13 +504,13 @@ const showUserSearchResults = ref(false)
 const userSearchLoading = ref(false)
 let userSearchTimeout = null
 
-const targetOptions = [
-  { id: 'ALL', label: '全体用户', icon: Users },
-  { id: 'GRADE', label: '按年级选择', icon: GraduationCap },
-  { id: 'CLASS', label: '按班级选择', icon: LayoutGrid },
-  { id: 'MULTI_CLASS', label: '多班级选择', icon: Plus },
-  { id: 'SPECIFIC_USERS', label: '指定用户', icon: User }
-]
+const targetOptions = computed(() => [
+  { id: 'ALL', label: getNestedMessage('targets', 'all'), icon: Users },
+  { id: 'GRADE', label: getNestedMessage('targets', 'grade'), icon: GraduationCap },
+  { id: 'CLASS', label: getNestedMessage('targets', 'class'), icon: LayoutGrid },
+  { id: 'MULTI_CLASS', label: getNestedMessage('targets', 'multiClass'), icon: Plus },
+  { id: 'SPECIFIC_USERS', label: getNestedMessage('targets', 'specificUsers'), icon: User }
+])
 
 // 判断是否可以添加班级
 const canAddClass = computed(() => {
@@ -618,9 +622,9 @@ const clearAllSelectedUsers = () => {
 // 获取角色文本
 const getRoleText = (role) => {
   const roleMap = {
-    admin: '管理员',
-    teacher: '教师',
-    student: '学生'
+    admin: getNestedMessage('roles', 'admin'),
+    teacher: getNestedMessage('roles', 'teacher'),
+    student: getNestedMessage('roles', 'student')
   }
   return roleMap[role] || role
 }
@@ -654,21 +658,23 @@ const isFormValid = computed(() => {
 const scopeDescription = computed(() => {
   switch (form.value.scope) {
     case 'ALL':
-      return '全体用户'
+      return getNestedMessage('scopeDescriptions', 'all')
     case 'GRADE':
-      return form.value.grade ? `${form.value.grade}年级` : '请选择年级'
+      return form.value.grade
+        ? getNestedMessage('scopeDescriptions', 'grade', form.value.grade)
+        : getNestedMessage('scopeDescriptions', 'selectGrade')
     case 'CLASS':
       return form.value.classGrade && form.value.className
-        ? `${form.value.classGrade}年级${form.value.className}班`
-        : '请选择班级'
+        ? getNestedMessage('scopeDescriptions', 'class', form.value.classGrade, form.value.className)
+        : getNestedMessage('scopeDescriptions', 'selectClass')
     case 'MULTI_CLASS':
       return form.value.selectedClasses.length > 0
-        ? `${form.value.selectedClasses.length}个班级`
-        : '请选择班级'
+        ? getNestedMessage('scopeDescriptions', 'multiClass', form.value.selectedClasses.length)
+        : getNestedMessage('scopeDescriptions', 'selectClass')
     case 'SPECIFIC_USERS':
       return form.value.selectedUsers.length > 0
-        ? `已选择${form.value.selectedUsers.length}个用户`
-        : '请选择用户'
+        ? getNestedMessage('scopeDescriptions', 'specificUsers', form.value.selectedUsers.length)
+        : getNestedMessage('scopeDescriptions', 'selectUsers')
     default:
       return ''
   }
@@ -677,12 +683,12 @@ const scopeDescription = computed(() => {
 // 发送通知
 const sendNotification = async () => {
   if (!isAdmin.value) {
-    error.value = '只有管理员可以发送系统通知'
+    error.value = getNestedMessage('errors', 'adminOnly')
     return
   }
 
   if (!isFormValid.value) {
-    error.value = '请填写完整信息'
+    error.value = getNestedMessage('errors', 'incomplete')
     return
   }
 
@@ -715,7 +721,7 @@ const sendNotification = async () => {
     const result = await sendAdminNotification(notificationData)
 
     if (result && result.success) {
-      success.value = `成功发送通知给 ${result.sentCount} 名用户`
+      success.value = getNestedMessage('messages', 'sendSuccess', result.sentCount)
 
       // 3秒后自动隐藏成功提示
       setTimeout(() => {
@@ -744,10 +750,10 @@ const sendNotification = async () => {
       userSearchLoading.value = false
       clearTimeout(userSearchTimeout)
     } else {
-      throw new Error(result?.message || '发送通知失败')
+      throw new Error(result?.message || getNestedMessage('errors', 'sendFailed'))
     }
   } catch (err) {
-    error.value = err.message || '发送通知时发生错误'
+    error.value = err.message || getNestedMessage('errors', 'sendError')
     console.error('发送通知错误:', err)
 
     // 3秒后自动隐藏错误提示

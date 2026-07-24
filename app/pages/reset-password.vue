@@ -4,8 +4,8 @@
       <div class="auth-container">
       <div class="form-section">
         <div class="form-header">
-          <h1 class="form-title">重置密码</h1>
-          <p class="form-subtitle">请设置您的新密码</p>
+          <h1 class="form-title">{{ locale.title }}</h1>
+          <p class="form-subtitle">{{ locale.subtitle }}</p>
           <div class="header-divider" />
         </div>
         
@@ -14,7 +14,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <p class="success-message">{{ successMessage }}</p>
-          <NuxtLink to="/login" class="back-link-btn">去登录</NuxtLink>
+          <NuxtLink to="/login" class="back-link-btn">{{ locale.goLogin }}</NuxtLink>
         </div>
 
         <form v-else :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleSubmit">
@@ -24,12 +24,12 @@
               <line x1="12" x2="12" y1="8" y2="12" />
               <line x1="12" x2="12.01" y1="16" y2="16" />
             </svg>
-            <span class="error-message">重置链接无效或缺少Token，请重新获取邮件</span>
+            <span class="error-message">{{ locale.invalidTokenFull }}</span>
           </div>
 
           <!-- 密码字段 -->
           <div class="form-group">
-            <label for="password">新密码</label>
+            <label for="password">{{ locale.newPassword }}</label>
             <div class="input-wrapper">
               <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
@@ -41,7 +41,7 @@
                 v-model="password"
                 :class="{ 'input-error': error }"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="至少8个字符"
+                :placeholder="locale.passwordPlaceholder"
                 required
                 @input="error = ''"
               >
@@ -67,7 +67,7 @@
                 />
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]">密码强度</span>
+                <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]">{{ locale.passwordStrength }}</span>
                 <span class="text-[10px] font-black uppercase tracking-widest" :class="passwordStrength.textColorClass">
                   {{ passwordStrength.text }}
                 </span>
@@ -77,7 +77,7 @@
 
           <!-- 确认密码字段 -->
           <div class="form-group">
-            <label for="confirmPassword">确认新密码</label>
+            <label for="confirmPassword">{{ locale.confirmPassword }}</label>
             <div class="input-wrapper">
               <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
@@ -89,7 +89,7 @@
                 v-model="confirmPassword"
                 :class="{ 'input-error': error }"
                 :type="showConfirmPassword ? 'text' : 'password'"
-                placeholder="请再次输入新密码"
+                :placeholder="locale.confirmPasswordPlaceholder"
                 required
                 @input="error = ''"
               >
@@ -122,12 +122,12 @@
                 <animate attributeName="stroke-dashoffset" dur="2s" repeatCount="indefinite" values="0;-15.708;-31.416"/>
               </circle>
             </svg>
-            <span v-if="loading">重置中...</span>
-            <span v-else>确认重置</span>
+            <span v-if="loading">{{ locale.resetting }}</span>
+            <span v-else>{{ locale.submit }}</span>
           </button>
           
           <div class="form-footer">
-            <NuxtLink to="/login" class="back-link">返回登录</NuxtLink>
+            <NuxtLink to="/login" class="back-link">{{ locale.backLogin }}</NuxtLink>
           </div>
         </form>
       </div>
@@ -141,9 +141,12 @@
 import { ref, computed, onMounted } from 'vue'
 
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
+import { useLocale } from '~/utils/locale'
 
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const route = useRoute()
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.resetPassword || {})
 
 const token = computed(() => route.query.token || '')
 const password = ref('')
@@ -158,7 +161,7 @@ const successMessage = ref('')
 const passwordStrength = usePasswordStrength(password)
 
 useHead({
-  title: () => siteTitle.value ? `重置密码 | ${siteTitle.value}` : '重置密码'
+  title: () => siteTitle.value ? `${locale.value.title} | ${siteTitle.value}` : locale.value.title
 })
 
 onMounted(async () => {
@@ -167,17 +170,17 @@ onMounted(async () => {
 
 const handleSubmit = async () => {
   if (!token.value) {
-    error.value = '重置链接无效'
+    error.value = locale.value.invalidToken
     return
   }
 
   if (password.value !== confirmPassword.value) {
-    error.value = '两次输入的密码不一致'
+    error.value = locale.value.passwordMismatch
     return
   }
 
   if (password.value.length < 8) {
-    error.value = '密码长度不能少于8个字符'
+    error.value = locale.value.passwordTooShort
     return
   }
 
@@ -195,10 +198,10 @@ const handleSubmit = async () => {
 
     if (response.success) {
       success.value = true
-      successMessage.value = response.message || '密码重置成功'
+      successMessage.value = response.message || locale.value.success
     }
   } catch (err) {
-    error.value = err.data?.message || err.message || '重置失败，请重试'
+    error.value = err.data?.message || err.message || locale.value.failed
   } finally {
     loading.value = false
   }

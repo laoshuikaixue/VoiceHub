@@ -1,7 +1,7 @@
 <template>
   <div class="review-page">
     <Head>
-      <Title>我的年度回顾 - VoiceHub</Title>
+      <Title>{{ locale.pageTitle }}</Title>
       <Meta name="theme-color" content="#000000" />
       <Meta
         name="viewport"
@@ -12,17 +12,17 @@
     <!-- Loading State -->
     <div v-if="pending" class="state-screen loading">
       <div class="spinner" />
-      <p class="loading-text">正在生成您的年度回忆...</p>
+      <p class="loading-text">{{ locale.loading }}</p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="error" class="state-screen error">
       <div class="icon-warning">⚠️</div>
       <div class="text-center">
-        <h2 class="error-title">获取数据失败</h2>
-        <p class="error-desc">可能是网络出了点小差错</p>
+        <h2 class="error-title">{{ locale.errorTitle }}</h2>
+        <p class="error-desc">{{ locale.errorDesc }}</p>
       </div>
-      <button class="retry-btn" @click="refresh"><span>🔄</span> 重试</button>
+      <button class="retry-btn" @click="refresh"><span>🔄</span> {{ locale.retry }}</button>
     </div>
 
     <!-- Empty State -->
@@ -30,9 +30,9 @@
       <div class="empty-icon-circle">
         <span class="empty-icon">🎵</span>
       </div>
-      <h2 class="empty-title">今年还没有点歌记录哦</h2>
-      <p class="empty-desc">快去点一首喜欢的歌吧</p>
-      <NuxtLink to="/" class="home-btn">去点歌</NuxtLink>
+      <h2 class="empty-title">{{ locale.emptyTitle }}</h2>
+      <p class="empty-desc">{{ locale.emptyDesc }}</p>
+      <NuxtLink to="/" class="home-btn">{{ locale.goRequest }}</NuxtLink>
     </div>
 
     <!-- Main Content -->
@@ -68,7 +68,7 @@
       <!-- Scroll Hint -->
       <Transition name="fade">
         <div v-if="currentIndex === 0" class="scroll-hint">
-          <span>上滑开启</span>
+          <span>{{ locale.scrollHint }}</span>
           <svg
             class="animate-bounce"
             width="20"
@@ -95,9 +95,13 @@ import StatsSlide from '~/components/year-review/StatsSlide.vue'
 import ArtistSlide from '~/components/year-review/ArtistSlide.vue'
 import MiscSlide from '~/components/year-review/MiscSlide.vue'
 import OutroSlide from '~/components/year-review/OutroSlide.vue'
+import { useLocale } from '~/utils/locale'
 
 // 导入全局样式
 import '~/assets/css/year-review.css'
+
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.yearReview || {})
 
 const { data: responseData, pending, error, refresh } = await useFetch('/api/user/year-review')
 

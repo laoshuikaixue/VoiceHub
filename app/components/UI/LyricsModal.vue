@@ -107,9 +107,9 @@
               <div ref="pageOneInfoRef" class="song-info-container">
                 <div class="song-details">
                   <h1 class="song-title">
-                    {{ currentSong?.title || '未知歌曲' }}
+                    {{ currentSong?.title || locale.unknownSong }}
                   </h1>
-                  <p class="song-artist">{{ currentSong?.artist || '未知艺术家' }}</p>
+                  <p class="song-artist">{{ currentSong?.artist || locale.unknownArtist }}</p>
 
                   <!-- 音质标识 (歌手名下方) -->
                   <div
@@ -157,7 +157,7 @@
                   @click="activePanel = 'lyrics'"
                 >
                   <Icon name="lyrics" size="16" />
-                  <span>歌词</span>
+                  <span>{{ locale.lyrics }}</span>
                 </button>
                 <button
                   class="switcher-button"
@@ -165,7 +165,7 @@
                   @click="activePanel = 'comments'"
                 >
                   <Icon name="message-circle" size="16" />
-                  <span>评论</span>
+                  <span>{{ locale.comments }}</span>
                 </button>
               </div>
 
@@ -189,18 +189,18 @@
               <div v-if="activePanel === 'lyrics'" class="lyric-toolbar">
                 <Popover placement="top-end" :offset="12">
                   <template #trigger>
-                    <div class="toolbar-btn" title="歌词设置">
+                    <div class="toolbar-btn" :title="locale.settings">
                       <Icon name="settings" size="20" />
                     </div>
                   </template>
                   <template #content>
                     <div class="lyric-settings-content">
                       <div class="setting-item switch">
-                        <span class="label">AM 风格歌词</span>
+                        <span class="label">{{ locale.amStyleLyrics }}</span>
                         <input v-model="lyricSettings.useAMLyrics.value" type="checkbox" />
                       </div>
                       <div class="setting-item">
-                        <span class="label">字体大小</span>
+                        <span class="label">{{ locale.fontSize }}</span>
                         <div class="control">
                           <button @click="lyricSettings.lyricFontSize.value -= 2">-</button>
                           <span>{{ lyricSettings.lyricFontSize.value }}</span>
@@ -208,7 +208,7 @@
                         </div>
                       </div>
                       <div class="setting-item">
-                        <span class="label">歌词偏移 (ms)</span>
+                        <span class="label">{{ locale.lyricOffset }}</span>
                         <div class="control">
                           <button @click="lyricSettings.lyricOffset.value -= 100">-</button>
                           <span>{{ lyricSettings.lyricOffset.value }}</span>
@@ -216,15 +216,15 @@
                         </div>
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
-                        <span class="label">显示翻译</span>
+                        <span class="label">{{ locale.showTranslation }}</span>
                         <input v-model="lyricSettings.showTranslation.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
-                        <span class="label">显示罗马音</span>
+                        <span class="label">{{ locale.showRoma }}</span>
                         <input v-model="lyricSettings.showRoma.value" type="checkbox" />
                       </div>
                       <div v-if="!lyricSettings.useAMLyrics.value" class="setting-item switch">
-                        <span class="label">逐字歌词 (YRC)</span>
+                        <span class="label">{{ locale.showYrc }}</span>
                         <input v-model="lyricSettings.showYrc.value" type="checkbox" />
                       </div>
                     </div>
@@ -323,6 +323,7 @@ import DefaultLyric from '~/components/Player/PlayerLyric/DefaultLyric.vue'
 import Popover from '~/components/UI/Common/Popover.vue'
 import VolumeControl from '~/components/UI/AudioPlayer/VolumeControl.vue'
 import SongComments from '~/components/UI/SongComments.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   isVisible: {
@@ -337,6 +338,8 @@ const emit = defineEmits(['close'])
 const audioPlayer = useAudioPlayer()
 const audioPlayerControl = useAudioPlayerControl()
 const lyricSettings = useLyricSettings()
+const { ui } = useLocale()
+const locale = computed(() => ui.value?.lyricsModal || {})
 
 // 背景渲染器
 const backgroundRenderer = useBackgroundRenderer()
@@ -402,10 +405,10 @@ const canShowComments = computed(() => {
 
 const currentQualityText = computed(() => {
   const platform = currentSong.value?.musicPlatform
-  if (!platform) return '音质'
+  if (!platform) return locale.value.quality
   const quality = getQuality(platform)
   const label = getQualityLabel(platform, quality)
-  return label.replace(/音质|音乐/, '').trim() || '音质'
+  return label.replace(/音质|音乐|quality|music/gi, '').trim() || locale.value.quality
 })
 
 // 监听音质变化，强制更新显示
@@ -785,12 +788,12 @@ const playModeIcon = computed(() => {
 const playModeTitle = computed(() => {
   switch (audioPlayerControl.playMode.value) {
     case 'loopOne':
-      return '单曲循环'
+      return locale.value.playMode.loopOne
     case 'order':
-      return '列表循环'
+      return locale.value.playMode.order
     case 'off':
     default:
-      return '单曲播放'
+      return locale.value.playMode.off
   }
 })
 
@@ -798,13 +801,13 @@ const cyclePlayMode = () => {
   const current = audioPlayerControl.playMode.value
   if (current === 'order') {
     audioPlayerControl.setPlayMode('loopOne')
-    if (window.$showNotification) window.$showNotification('已切换为单曲循环', 'info')
+    if (window.$showNotification) window.$showNotification(locale.value.notifications.loopOne, 'info')
   } else if (current === 'loopOne') {
     audioPlayerControl.setPlayMode('off')
-    if (window.$showNotification) window.$showNotification('已切换为单曲播放', 'info')
+    if (window.$showNotification) window.$showNotification(locale.value.notifications.off, 'info')
   } else {
     audioPlayerControl.setPlayMode('order')
-    if (window.$showNotification) window.$showNotification('已切换为列表循环', 'info')
+    if (window.$showNotification) window.$showNotification(locale.value.notifications.order, 'info')
   }
 }
 

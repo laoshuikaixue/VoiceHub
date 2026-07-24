@@ -870,6 +870,7 @@ VoiceHub/
 │   │   ├── useBackgroundRenderer.ts # 背景渲染hooks
 │   │   ├── useBilibiliPreview.ts # Bilibili视频预览hooks
 │   │   ├── useErrorHandler.ts  # 错误处理hooks
+│   │   ├── useLocaleText.ts   # i18n 文案访问与服务端错误码本地化hooks
 │   │   ├── useLyricManager.ts  # 歌词管理hooks
 │   │   ├── useLyricPlayer.ts   # 类Apple Music风格歌词播放器hooks
 │   │   ├── useLyrics.ts        # 歌词功能hooks
@@ -883,6 +884,7 @@ VoiceHub/
 │   │   ├── useProgress.ts      # 进度管理hooks
 │   │   ├── useProgressEvents.ts # 进度事件hooks
 │   │   ├── useRequestDedup.ts  # 请求去重hooks
+│   │   ├── useSafeLocale.ts    # 安全 i18n 文本包装hooks
 │   │   ├── useSemesters.ts     # 学期管理hooks
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
@@ -916,6 +918,7 @@ VoiceHub/
 │   ├── plugins/               # Nuxt插件
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
+│   │   ├── locale.ts           # 语言初始化与SSR同步插件
 │   │   └── time-sync.client.ts # 客户端时间同步插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
@@ -928,6 +931,10 @@ VoiceHub/
 │   └── utils/                 # 工具函数
 │       ├── core/              # 核心工具
 │       │   └── security.ts    # 安全相关工具
+│       ├── locale/            # 国际化语言资源
+│       │   ├── en-US.ts       # 英文语言包
+│       │   ├── index.ts       # 语言状态、切换及回退逻辑
+│       │   └── zh-CN.ts       # 简体中文语言包
 │       ├── lyric/             # 歌词处理工具
 │       │   ├── exclude.ts     # 歌词排除规则
 │       │   ├── lyricFormat.ts # 歌词格式化
@@ -1234,6 +1241,7 @@ VoiceHub/
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── auth.ts         # 认证工具函数
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
@@ -1264,6 +1272,7 @@ VoiceHub/
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
+│   │   ├── system-settings-helper.ts # 系统设置缓存读取工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
@@ -1288,6 +1297,7 @@ VoiceHub/
 ├── netlify.toml           # Netlify部署配置
 ├── nuxt.config.ts         # Nuxt 4主配置文件
 ├── package.json           # Node.js项目配置和依赖
+├── pnpm-workspace.yaml    # pnpm 依赖构建许可配置
 ├── README.md              # 项目说明文档
 ├── tsconfig.json          # TypeScript配置文件
 └── vercel.json            # Vercel部署配置
@@ -1554,6 +1564,51 @@ psql -h localhost -U username -d database_name < backup.sql
 3. 应用迁移到数据库：`pnpm run db:migrate`
 4. 确保同时更新 `types/index.ts` 中的TypeScript类型定义
 5. 使用Drizzle Studio查看数据库：`pnpm run db:studio`
+
+### 国际化 (i18n)
+
+VoiceHub 内置一套无第三方依赖的手写国际化方案，支持 `zh-CN`（简体中文）与 `en-US`（English）两种语言。
+
+#### 架构概览
+
+- **词典文件**：`app/utils/locale/zh-CN.ts`、`app/utils/locale/en-US.ts`。两者结构必须完全一致（键对齐），值可为字符串、带 `{0}`/`{1}` 占位符的模板或格式化函数。
+- **运行时**：`app/utils/locale/index.ts` 提供 `useLocale()`、`setLocale()`、`loadLocaleMessages()` 等。
+  - 中文（`FALLBACK_LOCALE`）作为**兜底与合并基底静态内置**；其余语言在被激活时才**动态按需加载**，默认语言用户不会下载多余语言包。
+  - `mergeLocaleFallback` 保证非兜底语言缺失某键时自动回退中文，不会出现空文本。
+  - 当前语言用 `useState('voicehub-locale')` 存储，**SSR 下按请求隔离**，避免跨请求语言串扰。
+- **初始化插件**：`app/plugins/locale.ts`（服务端 + 客户端通用）。语言解析顺序为 `cookie` → `Accept-Language` / 浏览器语言 → 兜底；渲染前 `await` 目标语言词典以消除首屏闪烁与水合不匹配，并驱动 `<html lang>`。
+
+#### 组件中使用
+
+```js
+// 取带兜底的响应式文案分区
+const { pages, songs } = useLocale()
+const locale = computed(() => pages.value?.forgotPassword || {})
+
+// 键查找 + {0}/{count} 占位符替换（复用共享助手，勿自行实现）
+const { t } = useLocaleText(locale)
+t('title')
+```
+
+- 文案访问统一复用 `~/composables/useLocaleText.ts`（`t`/`msg`/`nested`/`format`）与 `~/composables/useSafeLocale.ts`，**禁止**在组件内重复实现 `callLocale`、`getNestedMessage` 等私有取值函数。
+- 新增文案键时，**必须同时在 `zh-CN.ts` 和 `en-US.ts` 添加**，保持键结构完全一致。
+
+#### 服务端错误码本地化
+
+服务端错误消息与语言解耦，通过「稳定错误码 + 客户端词典」实现本地化：
+
+1. 服务端抛错使用 `createApiError`（`server/utils/apiError.ts`）而非裸 `createError`：
+
+   ```ts
+   import { createApiError } from '~~/server/utils/apiError'
+   // createApiError(statusCode, code, message, data?)
+   throw createApiError(429, 'AUTH_RATE_LIMITED_MINUTES', '操作过于频繁，请等待 ${waitMinutes} 分钟后再试', { params: [waitMinutes] })
+   ```
+
+   - `code` 建议取自 `server/config/constants.ts` 的 `SERVER_ERROR_CODES`；同时写入 `statusMessage` 与 `data.code`。
+   - `message` 为默认兜底文案（词典未命中时展示），动态值用 `data.params` 承载。
+2. 客户端统一用 `useServerErrors().localize(err, fallback)` 展示错误：按 `err.data.code` 命中 `serverErrors` 词典，用 `data.params` 替换 `{0}`/`{1}`，未命中再回退服务端 `message`。
+3. 新增错误码需在**三处同步**：`SERVER_ERROR_CODES`、`zh-CN.ts` 的 `serverErrors`、`en-US.ts` 的 `serverErrors`（键完全对齐）。
 
 ### OAuth 平台扩展指南
 

@@ -1,7 +1,8 @@
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAudioPlayer } from './useAudioPlayer'
 import { useMusicSources } from './useMusicSources'
 import { useLyricSettings } from './useLyricSettings'
+import { useLocale } from '~/utils/locale'
 import {
   parseSmartLrc,
   alignLyrics,
@@ -15,6 +16,8 @@ import { parseTTML, parseYrc } from '@applemusic-like-lyrics/lyric'
 
 export const useLyricManager = () => {
   const audioPlayer = useAudioPlayer()
+  const { composableErrors } = useLocale()
+  const lyricMessages = computed(() => composableErrors.value.lyrics)
   const { getLyrics } = useMusicSources()
   const settings = useLyricSettings()
 
@@ -189,7 +192,7 @@ export const useLyricManager = () => {
       if (token !== currentToken) return
 
       if (!result.success || !result.data) {
-        throw new Error(result.error || '未找到歌词')
+        throw new Error(result.error || lyricMessages.value.notFound)
       }
 
       // 令牌二次校验（getLyrics 为异步，期间可能切歌）
@@ -197,7 +200,7 @@ export const useLyricManager = () => {
 
       const applied = applyLyricData(track, result.data, '最终')
       if (!applied && !hasRenderedProgress) {
-        error.value = '暂无歌词'
+        error.value = lyricMessages.value.unavailable
         lyrics.value = []
       }
     } catch (e: any) {
@@ -207,7 +210,7 @@ export const useLyricManager = () => {
         return
       }
       console.error('[LyricManager] 获取歌词失败:', e)
-      error.value = e.message || '获取歌词失败'
+      error.value = e.message || lyricMessages.value.fetchFailed
       lyrics.value = []
     } finally {
       // 只有当前令牌的请求才更新 loading 状态

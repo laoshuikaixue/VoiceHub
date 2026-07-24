@@ -1,14 +1,14 @@
 <template>
   <div class="flex flex-col gap-2">
-    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">验证码</label>
+    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ locale.label }}</label>
     <div class="flex gap-2 items-start">
       <!-- SVG 图片（可点击刷新） -->
       <div
         class="captcha-svg-container border border-gray-300 dark:border-gray-600 cursor-pointer"
-        title="点击刷新验证码"
+        :title="locale.refreshTitle"
         @click="refreshCaptcha"
       >
-        <img v-if="svgDataUrl" :src="svgDataUrl" alt="验证码" class="captcha-svg-image">
+        <img v-if="svgDataUrl" :src="svgDataUrl" :alt="locale.alt" class="captcha-svg-image">
       </div>
       <!-- 输入框 -->
       <input
@@ -16,7 +16,7 @@
         type="text"
         maxlength="4"
         autocomplete="off"
-        placeholder="请输入验证码"
+        :placeholder="locale.placeholder"
         class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
         @input="handleInput"
       >
@@ -26,14 +26,18 @@
         class="px-2 py-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
         @click="refreshCaptcha"
       >
-        换一张
+        {{ locale.refresh }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useLocale } from '~/utils/locale'
+
+const { auth } = useLocale()
+const locale = computed(() => auth.value?.captchaInput || {})
 
 const props = defineProps({
   modelValue: {
@@ -66,7 +70,7 @@ async function refreshCaptcha() {
     inputValue.value = ''
     emit('update:modelValue', '')
   } catch (e) {
-    console.error('获取验证码失败', e)
+    console.error(locale.value.loadFailed, e)
   }
 }
   

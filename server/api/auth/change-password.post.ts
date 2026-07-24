@@ -5,23 +5,18 @@ import { eq } from 'drizzle-orm'
 import { recordLoginFailure, recordLoginSuccess } from '../../services/securityService'
 import { updateUserPassword } from '../../services/userService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 验证用户身份
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未授权'
-    })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED', '未授权')
   }
 
   const body = await readBody(event)
   if (!body.currentPassword || !body.newPassword) {
-    throw createError({
-      statusCode: 400,
-      message: '当前密码和新密码都是必需的'
-    })
+    throw createApiError(400, 'AUTH_CURRENT_AND_NEW_PASSWORD_REQUIRED', '当前密码和新密码都是必需的')
   }
 
   try {
@@ -39,10 +34,7 @@ export default defineEventHandler(async (event) => {
     const userDetails = userDetailsResult[0]
 
     if (!userDetails) {
-      throw createError({
-        statusCode: 404,
-        message: '用户不存在'
-      })
+      throw createApiError(404, 'USER_NOT_FOUND', '用户不存在')
     }
 
     // 验证当前密码
@@ -53,19 +45,13 @@ export default defineEventHandler(async (event) => {
       const clientIp = getClientIP(event)
       await recordLoginFailure(userDetails.username, clientIp)
 
-      throw createError({
-        statusCode: 400,
-        message: '当前密码不正确'
-      })
+      throw createApiError(400, 'AUTH_CURRENT_PASSWORD_INCORRECT', '当前密码不正确')
     }
 
     // 检查新密码是否与当前密码相同
     const isSamePassword = await bcrypt.compare(body.newPassword, userDetails.password)
     if (isSamePassword) {
-      throw createError({
-        statusCode: 400,
-        message: '新密码不能与当前密码相同'
-      })
+      throw createApiError(400, 'AUTH_NEW_PASSWORD_SAME_AS_CURRENT', '新密码不能与当前密码相同')
     }
 
     // 更新密码

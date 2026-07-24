@@ -140,13 +140,13 @@ export default defineEventHandler(async (event) => {
         maxAge: 0,
         path: '/'
       })
-      
-      const errorMessage = !user 
-        ? '用户不存在，请重新登录' 
-        : user.status === 'withdrawn' 
-          ? '该账号已退学，限制访问' 
-          : user.status === 'graduate' 
-            ? '该账号已毕业，限制访问' 
+
+      const errorMessage = !user
+        ? '用户不存在，请重新登录'
+        : user.status === 'withdrawn'
+          ? '该账号已退学，限制访问'
+          : user.status === 'graduate'
+            ? '该账号已毕业，限制访问'
             : '该账号已被禁用'
 
       return sendError(

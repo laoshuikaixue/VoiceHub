@@ -2,9 +2,9 @@
   <div class="login-form">
     <div class="form-header">
       <h2>{{ getFormTitle }}</h2>
-      <p v-if="isBindMode && !showCreateMode">即将绑定 {{ providerName }} 账号: {{ providerUsername }}</p>
-      <p v-else-if="isBindMode && showCreateMode">通过 {{ providerName }} 创建新账户</p>
-      <p v-else>登录您的VoiceHub账户</p>
+      <p v-if="isBindMode && !showCreateMode">{{ formatLocale(locale.bindProvider, providerName, providerUsername) }}</p>
+      <p v-else-if="isBindMode && showCreateMode">{{ formatLocale(locale.createWithProvider, providerName) }}</p>
+      <p v-else>{{ locale.loginSubtitle }}</p>
     </div>
 
     <!-- OAuth 账号创建/绑定模式选择器 -->
@@ -17,7 +17,7 @@
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M11 16l-6-6m0 0l6-6m-6 6h12.5a4.5 4.5 0 010 9H11" />
         </svg>
-        绑定现有账户
+        {{ locale.bindExisting }}
       </button>
       <button
         :class="['mode-btn', { active: showCreateMode }]"
@@ -30,7 +30,7 @@
           <line x1="20" y1="8" x2="20" y2="14" />
           <line x1="23" y1="11" x2="17" y2="11" />
         </svg>
-        创建新账户
+        {{ locale.createAccount }}
       </button>
     </div>
 
@@ -38,7 +38,7 @@
       <!-- 用户名字段 - 所有模式都需要 -->
       <div class="form-group">
         <label for="username">
-          {{ showCreateMode ? '设置用户名' : '账号名' }}
+          {{ showCreateMode ? locale.setUsername : locale.accountName }}
         </label>
         <div class="input-wrapper">
           <svg
@@ -56,18 +56,18 @@
             v-model="username"
             :class="{ 'input-error': error }"
             :autocomplete="!isBindMode && !showCreateMode ? 'username webauthn' : 'username'"
-            :placeholder="showCreateMode ? '3-30个字符，可使用英文、数字、下划线、连字符' : '请输入账号名'"
+            :placeholder="showCreateMode ? locale.usernamePattern : locale.usernamePlaceholder"
             required
             type="text"
             @input="error = ''"
           >
         </div>
-        <p v-if="showCreateMode" class="hint-text">用户名不能重复，注册后无法修改</p>
+        <p v-if="showCreateMode" class="hint-text">{{ locale.usernameHint }}</p>
       </div>
 
       <!-- 姓名字段 - 仅创建模式 -->
       <div v-if="showCreateMode" class="form-group">
-        <label for="name">真实姓名</label>
+        <label for="name">{{ locale.realName }}</label>
         <div class="input-wrapper">
           <svg
             class="input-icon"
@@ -85,7 +85,7 @@
             id="name"
             v-model="name"
             :class="{ 'input-error': error }"
-            placeholder="请输入您的真实姓名"
+            :placeholder="locale.realNamePlaceholder"
             required
             type="text"
             @input="error = ''"
@@ -100,8 +100,8 @@
             v-model="grade"
             :options="gradeSelectOptions"
             :disabled="classOptionsLoading || gradeOptions.length === 0"
-            label="年级"
-            placeholder="不填写"
+            :label="locale.gradeLabel"
+            :placeholder="locale.optional"
             class-name="class-select"
             @change="handleGradeChange"
           />
@@ -109,23 +109,23 @@
             v-model="studentClass"
             :options="classSelectOptions"
             :disabled="classOptionsLoading || !grade || availableClassOptions.length === 0"
-            label="班级"
-            :placeholder="grade ? '请选择班级' : '先选择年级'"
+            :label="locale.classLabel"
+            :placeholder="grade ? locale.selectClass : locale.selectGradeFirst"
             class-name="class-select"
             @change="error = ''"
           />
         </div>
         <p class="hint-text">
-          {{ gradeOptions.length > 0 ? '可选，只能选择系统内已有用户的年级和班级' : '暂无可选年级班级，可直接跳过' }}
+          {{ gradeOptions.length > 0 ? locale.classHint : locale.noClassHint }}
         </p>
       </div>
 
       <!-- 密码字段 -->
       <div class="form-group">
         <div class="flex justify-between items-center w-full mb-2">
-          <label for="password" style="margin-bottom: 0;">{{ showCreateMode ? '设置密码' : '密码' }}</label>
+          <label for="password" style="margin-bottom: 0;">{{ showCreateMode ? locale.setPassword : locale.password }}</label>
           <NuxtLink v-if="!showCreateMode && !isBindMode && smtpEnabled" to="/forgot-password" class="text-xs text-[var(--primary)] hover:opacity-80 transition-opacity" style="line-height: 1;">
-            忘记密码？
+            {{ locale.forgotPassword }}
           </NuxtLink>
         </div>
         <div class="input-wrapper">
@@ -145,7 +145,7 @@
             v-model="password"
             :class="{ 'input-error': error }"
             :type="showPassword ? 'text' : 'password'"
-            :placeholder="showCreateMode ? '至少8个字符' : '请输入密码'"
+            :placeholder="showCreateMode ? locale.createPasswordPlaceholder : locale.passwordPlaceholder"
             required
             @input="error = ''"
           >
@@ -180,7 +180,7 @@
           </div>
           <div class="flex justify-between items-center">
             <span class="text-[10px] font-black uppercase tracking-widest text-[var(--text-tertiary)]"
-              >密码强度</span
+              >{{ locale.passwordStrength }}</span
             >
             <span
               class="text-[10px] font-black uppercase tracking-widest"
@@ -194,7 +194,7 @@
 
       <!-- 确认密码字段 - 仅在创建模式下显示 -->
       <div v-if="showCreateMode" class="form-group">
-        <label for="confirmPassword">确认密码</label>
+        <label for="confirmPassword">{{ locale.confirmPassword }}</label>
         <div class="input-wrapper">
           <svg
             class="input-icon"
@@ -212,7 +212,7 @@
             v-model="confirmPassword"
             :class="{ 'input-error': error }"
             :type="showConfirmPassword ? 'text' : 'password'"
-            placeholder="请再次输入密码"
+            :placeholder="locale.confirmPasswordPlaceholder"
             required
             @input="error = ''"
           >
@@ -293,14 +293,14 @@
             />
           </circle>
         </svg>
-        <span v-if="loading">{{ isBindMode ? '绑定中...' : '登录中...' }}</span>
-        <span v-else>{{ isBindMode ? '绑定并登录' : '登录' }}</span>
+        <span v-if="loading">{{ isBindMode ? locale.binding : locale.loggingIn }}</span>
+        <span v-else>{{ isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
     </form>
 
     <div v-if="!isBindMode && isWebAuthnSupported" class="webauthn-section">
       <div class="divider">
-        <span>或</span>
+        <span>{{ locale.or }}</span>
       </div>
       <button 
         type="button" 
@@ -309,14 +309,14 @@
         @click="handleWebAuthnLogin"
       >
         <Fingerprint :size="20" class="webauthn-icon" />
-        <span>使用 Passkey 登录</span>
+        <span>{{ locale.webauthn }}</span>
       </button>
     </div>
 
     <AuthOAuthButtons v-if="!isBindMode" />
 
     <div class="form-footer">
-      <p class="help-text">不同VoiceHub平台的账号不互通</p>
+      <p class="help-text">{{ locale.platformNote }}</p>
     </div>
 
     <AuthTwoFactorVerify
@@ -352,14 +352,18 @@ import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
+import { useLocale } from '~/utils/locale'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
+const { auth: authLocale } = useLocale()
+const locale = computed(() => authLocale.value?.loginForm || {})
+const { localize: localizeServerError } = useServerErrors()
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
 const providerUsername = computed(() => route.query.username || '')
 const providerName = computed(() => {
-  const provider = route.query.provider || '第三方'
+  const provider = route.query.provider || 'third-party'
   return getProviderDisplayName(provider)
 })
 // 图形验证码与Turnstile相关
@@ -379,9 +383,9 @@ const showCaptcha = computed(() => {
 })
 
 const getFormTitle = computed(() => {
-  if (!isBindMode.value) return '欢迎回来'
-  if (!showCreateMode.value) return '绑定账号'
-  return '创建新账户'
+  if (!isBindMode.value) return locale.value.welcomeBack
+  if (!showCreateMode.value) return locale.value.bindAccount
+  return locale.value.createNewAccount
 })
 
 const username = ref('')
@@ -409,13 +413,22 @@ const passwordStrength = usePasswordStrength(password)
 
 const auth = useAuth()
 
+// 只允许站内绝对路径，避免登录参数被用于开放重定向。
+const getSafeRedirect = (fallback = '/') => {
+  const queryRedirect = route.query.redirect
+  const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || fallback
+  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\')
+    ? redirect
+    : fallback
+}
+
 const gradeOptions = computed(() => {
   return [...new Set(classOptions.value.map(item => item.grade))]
 })
 
 const gradeSelectOptions = computed(() => {
   return [
-    { label: '不填写', value: '' },
+    { label: locale.value.optional, value: '' },
     ...gradeOptions.value.map(option => ({ label: option, value: option }))
   ]
 })
@@ -455,15 +468,6 @@ const handleGradeChange = () => {
   studentClass.value = ''
 }
 
-// 安全获取重定向路径，防止开放重定向攻击
-const getSafeRedirect = (fallback = '/') => {
-  const queryRedirect = route.query.redirect
-  // 防御重复 query 参数导致的数组类型
-  const redirect = (Array.isArray(queryRedirect) ? queryRedirect[0] : queryRedirect) || fallback
-  // 仅允许同源相对路径，排除 // 和 \/ 绕过
-  return redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\') ? redirect : fallback
-}
-
 const handle2FASuccess = async () => {
   await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
 }
@@ -498,18 +502,18 @@ watch(showCreateMode, async (enabled) => {
 
 const handleLogin = async () => {
   if (!username.value || !password.value) {
-    error.value = '请填写完整的登录信息'
+    error.value = locale.value.fullLoginInfo
     return
   }
 
   // 创建账户模式的验证
   if (isBindMode.value && showCreateMode.value) {
     if (!name.value || !confirmPassword.value) {
-      error.value = '请填写完整的注册信息'
+      error.value = locale.value.fullRegisterInfo
       return
     }
     if ((grade.value && !studentClass.value) || (!grade.value && studentClass.value)) {
-      error.value = '年级和班级需要同时选择，或全部留空'
+      error.value = locale.value.gradeClassRequired
       return
     }
     return handleRegisterOAuth()
@@ -559,8 +563,11 @@ const handleLogin = async () => {
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
-    error.value = err.data?.message || err.message || 
-      (isBindMode.value ? '绑定失败，请检查账号密码' : '登录失败，请检查账号密码')
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(
+      err,
+      isBindMode.value ? locale.value.bindFailed : locale.value.loginFailed
+    )
 
     // 如果后端要求验证码，则显示验证码区域（针对图形验证码）
     if (innerData?.captchaRequired) {
@@ -620,7 +627,8 @@ const handleRegisterOAuth = async () => {
     }
   } catch (err) {
     const apiError = err
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || '注册失败，请稍后重试'
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(apiError, locale.value.registerFailed)
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
     if (apiError.statusCode === 409) {
       username.value = ''
@@ -658,8 +666,7 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
     if (!showErrors && !credential) return
 
     console.error('WebAuthn 登录错误:', e)
-    const message =
-      e.data?.message || e.message || e.statusMessage || 'Passkey 登录失败'
+    const message = getWebAuthnErrorMessage(e, locale.value, locale.value.passkeyFailed)
 
     if (credential?.id && options?.rpId && message === '未找到该 Passkey 关联的账号') {
       const signaled = await signalUnknownWebAuthnCredential({
@@ -667,10 +674,10 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
         rpId: options.rpId
       })
       error.value = signaled
-        ? '该 Passkey 已失效，系统已收到清理通知，请重新添加'
-        : '该 Passkey 已从 VoiceHub 删除，请先在设备密码保险箱中删除后重新添加'
+        ? locale.value.passkeyCleanupNotified
+        : locale.value.passkeyCleanupRequired
     } else {
-      error.value = getWebAuthnErrorMessage(e, 'Passkey 登录失败')
+      error.value = message
     }
   }
 }

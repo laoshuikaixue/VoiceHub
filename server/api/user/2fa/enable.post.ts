@@ -1,22 +1,23 @@
 import otplib from 'otplib'
 const { authenticator } = otplib
 import { db, userIdentities, eq, and } from '~/drizzle/db'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
   const body = await readBody(event)
   const { token, secret } = body
 
   if (!token || !secret) {
-    throw createError({ statusCode: 400, message: '缺少验证码或密钥' })
+    throw createApiError(400, 'USER_MISSING_CODE_OR_SECRET', '缺少验证码或密钥')
   }
 
   const isValid = authenticator.check(token, secret)
   if (!isValid) {
-    throw createError({ statusCode: 400, message: '验证码错误' })
+    throw createApiError(400, 'USER_CODE_INVALID', '验证码错误')
   }
 
   // 检查是否已存在

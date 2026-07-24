@@ -1,7 +1,8 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { users, systemSettings } from '~/drizzle/schema'
+import { users } from '~/drizzle/schema'
 import { and, ilike, or, ne, eq } from 'drizzle-orm'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 验证用户登录
@@ -16,8 +17,8 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const { keyword } = query
 
-  const settings = await db.select().from(systemSettings).limit(1)
-  if (settings[0]?.enableCollaborativeSubmission === false) {
+  const settings = await getSystemSettingsCached()
+  if (settings?.enableCollaborativeSubmission === false) {
     throw createError({
       statusCode: 403,
       message: '联合投稿功能已关闭'

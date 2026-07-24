@@ -1,5 +1,5 @@
 import { computed, ref, readonly } from 'vue'
-import { getAggregateOAuthLoginTypeName, getAggregateOAuthLoginTypesOrDefault } from '~/utils/oauth'
+import { getAggregateOAuthLoginTypesOrDefault, getProviderDisplayName } from '~/utils/oauth'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -167,7 +167,7 @@ export const useSiteConfig = () => {
           key: `aggregate:${loginType}`,
           routeProvider: 'aggregate',
           loginType,
-          name: `${getAggregateOAuthLoginTypeName(loginType)} 登录`
+          name: getProviderDisplayName(`aggregate:${loginType}`)
         })
       })
     }

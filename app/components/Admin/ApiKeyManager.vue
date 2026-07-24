@@ -3,14 +3,14 @@
     <!-- 头部区域 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">API密钥管理</h2>
-        <p class="text-xs text-zinc-500 mt-1">管理开放API的访问密钥，控制第三方应用的访问权限</p>
+        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-zinc-500 mt-1">{{ locale.desc }}</p>
       </div>
       <button
         class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95"
         @click="openCreateModal"
       >
-        <Plus :size="14" /> 创建API密钥
+        <Plus :size="14" /> {{ locale.create }}
       </button>
     </div>
 
@@ -23,25 +23,27 @@
         <input
           v-model="filters.search"
           type="text"
-          placeholder="搜索API密钥名称或描述..."
+          :placeholder="locale.searchPlaceholder"
           class="w-full bg-zinc-950 border border-zinc-800/80 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
           @input="debouncedSearch"
         >
       </div>
       <div class="flex items-center gap-2 w-full lg:w-auto">
         <CustomSelect
-          v-model="statusFilterText"
-          label="状态"
-          :options="['全部状态', '活跃', '非活跃', '已过期']"
+          v-model="filters.status"
+          :label="locale.status"
+          :options="statusFilterOptions"
+          label-key="label"
+          value-key="value"
           class-name="flex-1 lg:w-40"
-          @change="handleStatusFilterChange"
+          @change="loadApiKeys"
         />
         <div class="relative flex-1 lg:w-48">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" :size="14" />
           <input
             v-model="filters.createdBy"
             type="text"
-            placeholder="创建者用户名"
+            :placeholder="locale.creatorPlaceholder"
             class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none text-zinc-400 placeholder:text-zinc-800"
             @input="debouncedSearch"
           >
@@ -61,7 +63,7 @@
       class="flex flex-col items-center justify-center py-20"
     >
       <div class="loading-spinner mb-4" />
-      <p class="text-zinc-500 text-xs">加载中...</p>
+      <p class="text-zinc-500 text-xs">{{ locale.loading }}</p>
     </div>
 
     <div
@@ -73,15 +75,15 @@
       >
         <Key :size="32" :stroke-width="1.5" />
       </div>
-      <h3 class="text-lg font-bold text-zinc-200">暂无API密钥</h3>
+      <h3 class="text-lg font-bold text-zinc-200">{{ locale.emptyTitle }}</h3>
       <p class="text-xs text-zinc-500 mt-2 max-w-xs leading-relaxed">
-        您还没有创建任何访问密钥。创建密钥后，您可以安全地将 VoiceHub 集成到第三方应用程序中。
+        {{ locale.emptyDesc }}
       </p>
       <button
         class="mt-8 flex items-center gap-2 px-6 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-2xl transition-all"
         @click="openCreateModal"
       >
-        <Plus :size="16" /> 创建您的第一个密钥
+        <Plus :size="16" /> {{ locale.createFirst }}
       </button>
     </div>
 
@@ -100,20 +102,20 @@
               <span
                 v-if="apiKey.status === 'active'"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20"
-                >活跃</span
+                >{{ locale.active }}</span
               >
               <span
                 v-else-if="apiKey.status === 'inactive'"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50"
-                >非活跃</span
+                >{{ locale.inactive }}</span
               >
               <span
                 v-else-if="apiKey.status === 'expired'"
                 class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20"
-                >已过期</span
+                >{{ locale.expired }}</span
               >
             </div>
-            <p class="text-xs text-zinc-500 font-medium">{{ apiKey.description || '暂无描述' }}</p>
+            <p class="text-xs text-zinc-500 font-medium">{{ apiKey.description || locale.noDescription }}</p>
           </div>
           <div
             class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all"
@@ -147,13 +149,13 @@
         <div class="mt-8 grid grid-cols-2 gap-4 border-t border-zinc-800/40 pt-6 relative z-10">
           <div class="space-y-0.5">
             <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-              >创建者</span
+              >{{ locale.creator }}</span
             >
-            <p class="text-xs font-bold text-zinc-400">{{ apiKey.creatorName || '未知' }}</p>
+            <p class="text-xs font-bold text-zinc-400">{{ apiKey.creatorName || locale.unknown }}</p>
           </div>
           <div class="space-y-0.5">
             <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-              >创建时间</span
+              >{{ locale.createdAt }}</span
             >
             <p class="text-xs font-bold text-zinc-400">
               {{ formatDate(apiKey.createdAt).split(' ')[0] }}
@@ -161,7 +163,7 @@
           </div>
           <div class="col-span-2 space-y-1">
             <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-              >权限列表</span
+              >{{ locale.permissions }}</span
             >
             <div class="flex flex-wrap gap-1.5">
               <span
@@ -187,7 +189,7 @@
       v-model:current-page="pagination.page"
       :total-pages="pagination.totalPages"
       :total-items="pagination.total"
-      item-name="个API密钥"
+      :item-name="locale.itemName"
       @change="loadApiKeys"
     />
 
@@ -209,7 +211,7 @@
         >
           <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">
-              {{ showCreateModal ? '创建API密钥' : '编辑API密钥' }}
+              {{ showCreateModal ? locale.create : locale.edit }}
             </h3>
             <button
               class="text-zinc-500 hover:text-zinc-200 transition-colors"
@@ -222,46 +224,39 @@
           <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >名称 *</label
+                >{{ locale.name }}</label
               >
               <input
                 v-model="form.name"
                 type="text"
-                placeholder="输入API密钥名称"
+                :placeholder="locale.namePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 placeholder:text-zinc-800"
               >
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >描述</label
+                >{{ locale.description }}</label
               >
               <textarea
                 v-model="form.description"
-                placeholder="输入API密钥描述 (可选)"
+                :placeholder="locale.descriptionPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 min-h-[80px] resize-none placeholder:text-zinc-800"
               />
             </div>
             <div class="space-y-1.5">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >过期时间</label
+                >{{ locale.expiresAt }}</label
               >
               <CustomSelect
                 v-model="expiresAtText"
-                :options="[
-                  '永不过期',
-                  '3天后过期',
-                  '7天后过期',
-                  '30天后过期',
-                  '60天后过期',
-                  '90天后过期'
-                ]"
+                :options="expiresAtOptions"
                 class-name="w-full"
                 @change="handleExpiresAtChange"
               />
             </div>
             <div class="space-y-3">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >权限设置 *</label
+                >{{ locale.permissionSettings }}</label
               >
               <div class="grid grid-cols-2 gap-2">
                 <label
@@ -303,7 +298,7 @@
               >
               <span
                 class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
-                >启用此API密钥</span
+                >{{ locale.enabled }}</span
               >
             </label>
           </div>
@@ -313,14 +308,14 @@
               class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="closeModals"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               :disabled="submitting"
               class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 transition-all"
               @click="showCreateModal ? createApiKey() : updateApiKey()"
             >
-              {{ submitting ? '保存中...' : showCreateModal ? '创建密钥' : '保存更改' }}
+              {{ submitting ? locale.saving : showCreateModal ? locale.createKey : locale.saveChanges }}
             </button>
           </div>
         </div>
@@ -332,7 +327,7 @@
         >
           <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">
-              API密钥创建成功
+              {{ locale.createSuccessTitle }}
             </h3>
             <button
               class="text-zinc-500 hover:text-zinc-200 transition-colors"
@@ -351,13 +346,13 @@
               >
                 <Check :size="24" :stroke-width="3" />
               </div>
-              <h4 class="text-lg font-black text-emerald-400">API密钥创建成功！</h4>
-              <p class="text-xs text-zinc-500 mt-2">请妥善保管以下API密钥，它只会显示这一次。</p>
+              <h4 class="text-lg font-black text-emerald-400">{{ locale.createSuccessHeading }}</h4>
+              <p class="text-xs text-zinc-500 mt-2">{{ locale.createSuccessDesc }}</p>
             </div>
 
             <div class="space-y-2">
               <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-0.5"
-                >完整API密钥</label
+                >{{ locale.fullKey }}</label
               >
               <div class="flex items-center gap-2">
                 <div
@@ -383,7 +378,7 @@
               >
                 <AlertTriangle :size="14" class="shrink-0" />
                 <p class="text-[10px] font-bold">
-                  请立即复制并保存此API密钥，关闭此窗口后将无法再次查看完整密钥
+                  {{ locale.copyWarning }}
                 </p>
               </div>
             </div>
@@ -394,7 +389,7 @@
               class="w-full py-2.5 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all"
               @click="closeModals"
             >
-              我已保存，关闭窗口
+              {{ locale.closeSaved }}
             </button>
           </div>
         </div>
@@ -405,7 +400,7 @@
           class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
         >
           <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
-            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">API密钥详情</h3>
+            <h3 class="text-lg font-black text-zinc-100 uppercase tracking-widest">{{ locale.details }}</h3>
             <button
               class="text-zinc-500 hover:text-zinc-200 transition-colors"
               @click="closeModals"
@@ -419,53 +414,53 @@
               <h5
                 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2"
               >
-                基本信息
+                {{ locale.basicInfo }}
               </h5>
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">名称:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.nameField }}</span>
                   <p class="text-xs font-bold text-zinc-200">{{ selectedApiKey.name }}</p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">状态:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.statusField }}</span>
                   <div>
                     <span
                       v-if="selectedApiKey.status === 'active'"
                       class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20"
-                      >活跃</span
+                      >{{ locale.active }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'inactive'"
                       class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50"
-                      >非活跃</span
+                      >{{ locale.inactive }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'expired'"
                       class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20"
-                      >已过期</span
+                      >{{ locale.expired }}</span
                     >
                   </div>
                 </div>
                 <div class="col-span-2 space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">描述:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.descField }}</span>
                   <p class="text-xs font-bold text-zinc-400 leading-relaxed">
-                    {{ selectedApiKey.description || '暂无描述' }}
+                    {{ selectedApiKey.description || locale.noDescription }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">创建者:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.creatorField }}</span>
                   <p class="text-xs font-bold text-zinc-200">
-                    {{ selectedApiKey.creatorName || '未知' }}
+                    {{ selectedApiKey.creatorName || locale.unknown }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">创建时间:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.createdAtField }}</span>
                   <p class="text-xs font-bold text-zinc-200">
                     {{ formatDate(selectedApiKey.createdAt) }}
                   </p>
                 </div>
                 <div v-if="selectedApiKey.expiresAt" class="space-y-1">
-                  <span class="text-[10px] text-zinc-600 font-bold">过期时间:</span>
+                  <span class="text-[10px] text-zinc-600 font-bold">{{ locale.expiresAtField }}</span>
                   <p
                     class="text-xs font-bold"
                     :class="selectedApiKey.isExpired ? 'text-red-400' : 'text-zinc-200'"
@@ -480,7 +475,7 @@
               <h5
                 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest border-b border-zinc-800 pb-2"
               >
-                使用统计
+                {{ locale.usageStats }}
               </h5>
               <div class="grid grid-cols-2 gap-4">
                 <div
@@ -488,7 +483,7 @@
                 >
                   <div class="space-y-0.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                      >总调用次数</span
+                      >{{ locale.totalCalls }}</span
                     >
                     <p class="text-xl font-black text-zinc-100">
                       {{ selectedApiKey.usageCount || 0 }}
@@ -505,13 +500,13 @@
                 >
                   <div class="space-y-0.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                      >最后使用时间</span
+                      >{{ locale.lastUsedAt }}</span
                     >
                     <p class="text-xs font-bold text-zinc-100">
                       {{
                         selectedApiKey.lastUsedAt
                           ? formatDate(selectedApiKey.lastUsedAt)
-                          : '从未核对'
+                          : locale.neverChecked
                       }}
                     </p>
                   </div>
@@ -527,7 +522,7 @@
             <section class="space-y-4">
               <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
                 <h5 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-                  最近调用日志
+                  {{ locale.recentLogs }}
                 </h5>
                 <Pagination
                   v-model:current-page="logsPagination.page"
@@ -542,7 +537,7 @@
                   class="flex flex-col items-center justify-center py-10 text-zinc-600 gap-2"
                 >
                   <RefreshCw :size="24" class="animate-spin" />
-                  <span class="text-[10px] font-bold">正在加载日志...</span>
+                  <span class="text-[10px] font-bold">{{ locale.loadingLogs }}</span>
                 </div>
                 <div
                   v-else-if="apiLogs.length === 0"
@@ -550,7 +545,7 @@
                 >
                   <History :size="24" class="text-zinc-800 mb-2" />
                   <span class="text-[10px] font-bold text-zinc-700 uppercase tracking-widest"
-                    >暂无调用记录</span
+                    >{{ locale.noLogs }}</span
                   >
                 </div>
                 <div
@@ -629,6 +624,23 @@ import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import { useLocale } from '~/utils/locale'
+
+const { admin, currentLocale } = useLocale()
+const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
+const { msg: getLocaleText } = useLocaleText(locale)
+const expiresOptionFallbacks = {
+  never: '永不过期',
+  threeDays: '3天后过期',
+  sevenDays: '7天后过期',
+  thirtyDays: '30天后过期',
+  sixtyDays: '60天后过期',
+  ninetyDays: '90天后过期'
+}
+const getExpiresOptionText = (key) =>
+  formatLocaleValue(locale.value?.expiresOptions?.[key]) || expiresOptionFallbacks[key] || key
+const getPermissionOptionText = (key, field) => formatLocaleValue(locale.value?.permissionOptions?.[key]?.[field])
+const getDeleteTitle = (name) => getLocaleText('deleteMessage', name)
 
 // 响应式数据
 const loading = ref(false)
@@ -647,8 +659,21 @@ const loadingEditId = ref(null)
 const loadingViewId = ref(null)
 
 // 文本映射
-const statusFilterText = ref('全部状态')
-const expiresAtText = ref('永不过期')
+const expiresAtText = ref('')
+const expiresAtOptions = computed(() => [
+  getExpiresOptionText('never'),
+  getExpiresOptionText('threeDays'),
+  getExpiresOptionText('sevenDays'),
+  getExpiresOptionText('thirtyDays'),
+  getExpiresOptionText('sixtyDays'),
+  getExpiresOptionText('ninetyDays')
+])
+const statusFilterOptions = computed(() => [
+  { label: getLocaleText('allStatus'), value: '' },
+  { label: getLocaleText('active'), value: 'active' },
+  { label: getLocaleText('inactive'), value: 'inactive' },
+  { label: getLocaleText('expired'), value: 'expired' }
+])
 
 const logsPagination = ref({
   page: 1,
@@ -660,11 +685,11 @@ const logsPagination = ref({
 // 确认对话框相关
 const showConfirmDialog = ref(false)
 const confirmDialogConfig = ref({
-  title: '确认删除',
+  title: getLocaleText('confirmDeleteTitle'),
   message: '',
   type: 'danger',
-  confirmText: '删除',
-  cancelText: '取消'
+  confirmText: getLocaleText('delete'),
+  cancelText: getLocaleText('cancel')
 })
 const pendingDeleteApiKey = ref(null)
 
@@ -692,63 +717,83 @@ const form = reactive({
   isActive: true
 })
 
+const formatExpiresAtText = (dateText) => getLocaleText('expiresAtText', dateText)
+
+const getExpiresAtText = () => {
+  if (form.expiresAt === 'keep' && selectedApiKey.value?.expiresAt) {
+    const date = new Date(selectedApiKey.value.expiresAt)
+    return formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
+  }
+
+  const expiresAtTextMap = {
+    '3d': getExpiresOptionText('threeDays'),
+    '7d': getExpiresOptionText('sevenDays'),
+    '30d': getExpiresOptionText('thirtyDays'),
+    '60d': getExpiresOptionText('sixtyDays'),
+    '90d': getExpiresOptionText('ninetyDays')
+  }
+  return expiresAtTextMap[form.expiresAt] || getExpiresOptionText('never')
+}
+
+watch(
+  [locale, () => form.expiresAt],
+  () => {
+    expiresAtText.value = getExpiresAtText()
+  },
+  { immediate: true }
+)
+
 // 可用权限列表
-const availablePermissions = [
+const availablePermissions = computed(() => [
   {
     value: 'schedules:read',
-    label: '排期查询',
-    description: '查看排期列表和详情'
+    label: getPermissionOptionText('scheduleRead', 'label'),
+    description: getPermissionOptionText('scheduleRead', 'description')
   },
   {
     value: 'songs:read',
-    label: '歌曲查询',
-    description: '查看歌曲列表和详情'
+    label: getPermissionOptionText('songsRead', 'label'),
+    description: getPermissionOptionText('songsRead', 'description')
   },
   {
     value: 'songs:request',
-    label: '歌曲投稿',
-    description: '代表令牌所属用户提交点歌'
+    label: getPermissionOptionText('songsRequest', 'label'),
+    description: getPermissionOptionText('songsRequest', 'description')
   },
   {
     value: 'songs:write',
-    label: '歌曲管理',
-    description: '更新歌曲状态'
+    label: getPermissionOptionText('songsWrite', 'label'),
+    description: getPermissionOptionText('songsWrite', 'description')
   },
   {
     value: 'card-codes:read',
-    label: '点歌券查询',
-    description: '查看点歌券列表和统计'
+    label: getPermissionOptionText('cardCodesRead', 'label'),
+    description: getPermissionOptionText('cardCodesRead', 'description')
   },
   {
     value: 'card-codes:write',
-    label: '点歌券管理',
-    description: '创建和更新点歌券'
+    label: getPermissionOptionText('cardCodesWrite', 'label'),
+    description: getPermissionOptionText('cardCodesWrite', 'description')
   },
   {
     value: 'card-codes:delete',
-    label: '点歌券删除',
-    description: '删除点歌券'
+    label: getPermissionOptionText('cardCodesDelete', 'label'),
+    description: getPermissionOptionText('cardCodesDelete', 'description')
   }
-]
+])
 
 // Toast通知
 const toast = useToast()
 
 // 方法
-const handleStatusFilterChange = (val) => {
-  const statusMap = { 活跃: 'active', 非活跃: 'inactive', 已过期: 'expired' }
-  filters.status = statusMap[val] || ''
-  loadApiKeys()
-}
-
 const handleExpiresAtChange = (val) => {
   const map = {
-    永不过期: '',
-    '3天后过期': '3d',
-    '7天后过期': '7d',
-    '30天后过期': '30d',
-    '60天后过期': '60d',
-    '90天后过期': '90d'
+    [getExpiresOptionText('never')]: '',
+    [getExpiresOptionText('threeDays')]: '3d',
+    [getExpiresOptionText('sevenDays')]: '7d',
+    [getExpiresOptionText('thirtyDays')]: '30d',
+    [getExpiresOptionText('sixtyDays')]: '60d',
+    [getExpiresOptionText('ninetyDays')]: '90d'
   }
   form.expiresAt = map[val] || ''
 }
@@ -782,7 +827,7 @@ const loadApiKeys = async () => {
     }
   } catch (error) {
     console.error('加载API密钥失败:', error)
-    toast.error('加载API密钥失败')
+    toast.error(getLocaleText('loadFailed'))
   } finally {
     loading.value = false
   }
@@ -794,8 +839,8 @@ const openCreateModal = () => {
 }
 
 const createApiKey = async () => {
-  if (!form.name) return toast.error('请输入密钥名称')
-  if (form.permissions.length === 0) return toast.error('请至少选择一个权限')
+  if (!form.name) return toast.error(getLocaleText('nameRequired'))
+  if (form.permissions.length === 0) return toast.error(getLocaleText('permissionRequired'))
 
   submitting.value = true
   try {
@@ -813,7 +858,7 @@ const createApiKey = async () => {
     })
 
     if (response.success) {
-      toast.success('API密钥创建成功')
+      toast.success(getLocaleText('createSuccessTitle'))
       newApiKey.value = response.data
       showCreateModal.value = false
       showSuccessModal.value = true
@@ -822,7 +867,7 @@ const createApiKey = async () => {
     }
   } catch (error) {
     console.error('创建API密钥失败:', error)
-    toast.error(error.data?.message || '创建API密钥失败')
+    toast.error(getErrorMessage(error) || getLocaleText('createFailed'))
   } finally {
     submitting.value = false
   }
@@ -830,8 +875,8 @@ const createApiKey = async () => {
 
 const updateApiKey = async () => {
   if (!selectedApiKey.value) return
-  if (!form.name) return toast.error('请输入密钥名称')
-  if (form.permissions.length === 0) return toast.error('请至少选择一个权限')
+  if (!form.name) return toast.error(getLocaleText('nameRequired'))
+  if (form.permissions.length === 0) return toast.error(getLocaleText('permissionRequired'))
 
   submitting.value = true
   try {
@@ -850,13 +895,13 @@ const updateApiKey = async () => {
     })
 
     if (response.success) {
-      toast.success('API密钥更新成功')
+      toast.success(getLocaleText('updateSuccess'))
       closeModals()
       await loadApiKeys()
     }
   } catch (error) {
     console.error('更新API密钥失败:', error)
-    toast.error(error.data?.message || '更新API密钥失败')
+    toast.error(getErrorMessage(error) || getLocaleText('updateFailed'))
   } finally {
     submitting.value = false
   }
@@ -865,11 +910,11 @@ const updateApiKey = async () => {
 const deleteApiKey = (apiKey) => {
   pendingDeleteApiKey.value = apiKey
   confirmDialogConfig.value = {
-    title: '确认删除',
-    message: `确定要删除API密钥 "${apiKey.name}" 吗？此操作不可撤销。`,
+    title: getLocaleText('confirmDeleteTitle'),
+    message: getDeleteTitle(apiKey.name),
     type: 'danger',
-    confirmText: '删除',
-    cancelText: '取消'
+    confirmText: getLocaleText('delete'),
+    cancelText: getLocaleText('cancel')
   }
   showConfirmDialog.value = true
 }
@@ -883,12 +928,12 @@ const confirmDelete = async () => {
     })
 
     if (response.success) {
-      toast.success('API密钥删除成功')
+      toast.success(getLocaleText('deleteSuccess'))
       await loadApiKeys()
     }
   } catch (error) {
     console.error('删除API密钥失败:', error)
-    toast.error(error.data?.message || '删除API密钥失败')
+    toast.error(getErrorMessage(error) || getLocaleText('deleteFailed'))
   } finally {
     showConfirmDialog.value = false
     pendingDeleteApiKey.value = null
@@ -912,7 +957,7 @@ const viewApiKey = async (apiKey) => {
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
-    toast.error('获取API密钥详情失败')
+    toast.error(getLocaleText('detailFailed'))
   } finally {
     loadingViewId.value = null
   }
@@ -931,10 +976,10 @@ const editApiKey = async (apiKey) => {
 
       if (response.data.expiresAt) {
         const date = new Date(response.data.expiresAt)
-        expiresAtText.value = `到期: ${date.toLocaleDateString()}`
+        expiresAtText.value = formatExpiresAtText(date.toLocaleDateString(currentLocale.value))
         form.expiresAt = 'keep'
       } else {
-        expiresAtText.value = '永不过期'
+        expiresAtText.value = getExpiresOptionText('never')
         form.expiresAt = ''
       }
 
@@ -945,7 +990,7 @@ const editApiKey = async (apiKey) => {
     }
   } catch (error) {
     console.error('获取API密钥详情失败:', error)
-    toast.error('获取API密钥详情失败')
+    toast.error(getLocaleText('detailFailed'))
   } finally {
     loadingEditId.value = null
   }
@@ -978,7 +1023,7 @@ const loadApiLogs = async (page = 1) => {
     }
   } catch (error) {
     console.error('获取API使用日志失败:', error)
-    toast.error('获取API使用日志失败')
+    toast.error(getLocaleText('logsFailed'))
     apiLogs.value = []
   } finally {
     loadingLogs.value = false
@@ -1019,14 +1064,16 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.expiresAt = ''
-  expiresAtText.value = '永不过期'
+  expiresAtText.value = getExpiresOptionText('never')
   form.permissions = []
   form.isActive = true
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleString('zh-CN', {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString(currentLocale.value, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -1040,11 +1087,11 @@ const copyToClipboard = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
     copied.value = true
-    toast.success('已复制到剪贴板')
+    toast.success(getLocaleText('copied'))
     setTimeout(() => (copied.value = false), 2000)
   } catch (error) {
     console.error('复制失败:', error)
-    toast.error('复制失败')
+    toast.error(getLocaleText('copyFailed'))
   }
 }
 

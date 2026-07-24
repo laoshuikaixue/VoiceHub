@@ -2,11 +2,13 @@ import { getMusicUrl } from '~/utils/musicUrl'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useAudioPlayer, type PlayableSong } from './useAudioPlayer'
 import { useToast } from './useToast'
+import { useLocale } from '~/utils/locale'
 import type { Song } from '~/types'
 
 export const useSongPlayer = () => {
   const audioPlayer = useAudioPlayer()
   const { showToast } = useToast()
+  const { audioPlayer: audioPlayerLocale } = useLocale()
 
   const playSong = async (song: Song | PlayableSong) => {
     // 如果是当前选中的歌曲
@@ -46,7 +48,7 @@ export const useSongPlayer = () => {
     } catch (error: any) {
       console.error('播放失败:', error)
       const errorMessage = error instanceof Error ? error.message : String(error)
-      showToast('播放失败: ' + errorMessage, 'error')
+      showToast(audioPlayerLocale.value.playFailed(errorMessage), 'error')
       
       // 即使获取 URL 失败，也应该调用 playSong 以触发播放器的错误处理和弹窗逻辑
       const playableSong: PlayableSong = {

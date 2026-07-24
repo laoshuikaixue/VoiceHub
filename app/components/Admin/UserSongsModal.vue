@@ -33,7 +33,7 @@
           <div
             class="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm"
           >
-            <h3 class="text-lg font-semibold text-white">用户歌曲信息</h3>
+            <h3 class="text-lg font-semibold text-white">{{ locale.title }}</h3>
             <button
               class="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
               @click="$emit('close')"
@@ -59,7 +59,7 @@
           <div class="flex-1 flex flex-col min-h-0 overflow-hidden bg-zinc-900">
             <!-- 加载状态 -->
             <div v-if="loading" class="flex-1 flex flex-col items-center justify-center">
-              <LoadingState message="加载数据中..." spinner-type="circle" />
+              <LoadingState :message="locale.loading" spinner-type="circle" />
             </div>
 
             <!-- 错误状态 -->
@@ -73,7 +73,7 @@
                 class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm font-medium"
                 @click="retryFetch"
               >
-                重试
+                {{ commonLocale.retry }}
               </button>
             </div>
 
@@ -139,9 +139,9 @@
                 >
                   <CustomSelect
                     v-model="selectedSemester"
-                    :options="[{ label: '全部学期', value: null }, ...semesterOptions]"
-                    label="学期过滤"
-                    placeholder="全部学期"
+                    :options="[{ label: locale.allSemesters, value: null }, ...semesterOptions]"
+                    :label="locale.semesterFilter"
+                    :placeholder="locale.allSemesters"
                     class-name="w-full sm:w-48"
                   />
                 </div>
@@ -154,7 +154,7 @@
                   class="flex flex-col items-center justify-center py-20 text-zinc-500"
                 >
                   <div class="text-5xl mb-4 opacity-50">{{ activeTabIcon }}</div>
-                  <p>没有找到相关记录</p>
+                  <p>{{ locale.empty }}</p>
                 </div>
 
                 <div
@@ -180,9 +180,9 @@
                       class="flex flex-wrap items-center gap-3 mt-3 sm:hidden text-xs text-zinc-500"
                     >
                       <span>{{ getMetaTime(song) }}</span>
-                      <span v-if="song.voteCount !== undefined">{{ song.voteCount }} 票</span>
+                      <span v-if="song.voteCount !== undefined">{{ formatLocale(locale.votes, song.voteCount) }}</span>
                       <span v-if="song.requestCount !== undefined"
-                        >{{ song.requestCount }} 人申请</span
+                        >{{ formatLocale(locale.requests, song.requestCount) }}</span
                       >
                     </div>
                   </div>
@@ -204,10 +204,10 @@
                       <span class="text-xs text-zinc-400">{{ getMetaTime(song) }}</span>
                       <div class="flex items-center gap-2">
                         <span v-if="song.voteCount !== undefined" class="text-xs text-zinc-500"
-                          >{{ song.voteCount }} 票</span
+                          >{{ formatLocale(locale.votes, song.voteCount) }}</span
                         >
                         <span v-if="song.requestCount !== undefined" class="text-xs text-zinc-500"
-                          >{{ song.requestCount }} 人申请</span
+                          >{{ formatLocale(locale.requests, song.requestCount) }}</span
                         >
                       </div>
                     </div>
@@ -226,7 +226,7 @@
                     v-if="song.requester"
                     class="sm:hidden pt-3 mt-1 border-t border-zinc-800/50 flex justify-between items-center text-xs"
                   >
-                    <span class="text-zinc-500">投稿人:</span>
+                    <span class="text-zinc-500">{{ locale.requester }}</span>
                     <span class="text-zinc-300">
                       {{ song.requester.name }}
                       <span class="text-zinc-500 ml-1">
@@ -249,6 +249,7 @@ import { ref, computed, watch } from 'vue'
 import { useSemesters } from '~/composables/useSemesters'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   show: {
@@ -272,6 +273,16 @@ const selectedSemester = ref(null)
 
 // Composables
 const { semesters, fetchSemesterOptions } = useSemesters()
+const { common, currentLocale } = useLocale()
+const commonLocale = computed(() => common.value || {})
+const locale = computed(() => {
+  const base = common.value?.userSongsModal || {}
+  return {
+    ...base,
+    tabs: { ...(base.tabs || {}) },
+    statuses: { ...(base.statuses || {}) }
+  }
+})
 
 // Computed
 const semesterOptions = computed(() => {
@@ -281,11 +292,11 @@ const semesterOptions = computed(() => {
   }))
 })
 
-const tabs = [
-  { id: 'submitted', label: '投稿歌曲' },
-  { id: 'voted', label: '投票歌曲' },
-  { id: 'replay', label: '重播申请' }
-]
+const tabs = computed(() => [
+  { id: 'submitted', label: locale.value.tabs.submitted },
+  { id: 'voted', label: locale.value.tabs.voted },
+  { id: 'replay', label: locale.value.tabs.replay }
+])
 
 const activeTabIcon = computed(() => {
   switch (activeTab.value) {
@@ -371,7 +382,7 @@ const fetchUserSongs = async () => {
     userSongs.value = songsResponse
   } catch (err) {
     console.error('获取用户歌曲信息失败:', err)
-    error.value = err.data?.message || '获取用户歌曲信息失败'
+    error.value = err.data?.message || locale.value.fetchFailed
   } finally {
     loading.value = false
   }
@@ -386,18 +397,25 @@ const handleOverlayClick = () => {
 }
 
 // Helpers
+const formatTimeAgo = (key, value) => {
+  const message = commonLocale.value?.time?.[key]
+  if (typeof message === 'function') return message(value)
+  if (typeof message === 'string') return message.replace(/{(\d+)}/g, (match, index) => index === '0' ? String(value) : match)
+  return ''
+}
+
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  if (diff < 86400000 * 7) return `${Math.floor(diff / 86400000)}天前`
+  if (diff < 60000) return commonLocale.value?.time?.justNow || ''
+  if (diff < 3600000) return formatTimeAgo('minutesAgo', Math.floor(diff / 60000))
+  if (diff < 86400000) return formatTimeAgo('hoursAgo', Math.floor(diff / 3600000))
+  if (diff < 86400000 * 7) return formatTimeAgo('daysAgo', Math.floor(diff / 86400000))
 
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString(currentLocale.value, {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -406,15 +424,15 @@ const formatDate = (dateString) => {
 
 const getMetaTime = (song) => {
   if (activeTab.value === 'submitted') return formatDate(song.createdAt)
-  if (activeTab.value === 'voted') return `${formatDate(song.votedAt)} 投票`
-  if (activeTab.value === 'replay') return `${formatDate(song.requestedAt)} 申请`
+  if (activeTab.value === 'voted') return `${formatDate(song.votedAt)} ${locale.value.voted}`
+  if (activeTab.value === 'replay') return `${formatDate(song.requestedAt)} ${locale.value.requested}`
   return ''
 }
 
 const getStatusText = (song) => {
-  if (song.played) return '已播放'
-  if (song.scheduled) return '已排期'
-  return '待排期'
+  if (song.played) return locale.value.statuses.played
+  if (song.scheduled) return locale.value.statuses.scheduled
+  return locale.value.statuses.pending
 }
 
 const getStatusClasses = (song) => {
