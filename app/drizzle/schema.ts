@@ -341,6 +341,9 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
   status: replayRequestStatusEnum('status').default('PENDING').notNull(),
+  preferredPlayTimeId: integer('preferred_play_time_id'),
+  submissionNote: text('submission_note'),
+  submissionNotePublic: boolean('submission_note_public').default(false).notNull(),
 }, (table) => [
   unique('song_replay_requests_song_id_user_id_unique').on(table.songId, table.userId),
   index('song_replay_requests_user_status_song_idx').on(table.userId, table.status, table.songId)

@@ -206,8 +206,6 @@
                   @refresh="refreshSongs"
                   @vote="handleVote"
                   @withdraw="handleWithdraw"
-                  @cancel-replay="handleCancelReplay"
-                  @request-replay="handleRequestReplay"
                   @semester-change="handleSemesterChange"
                 />
               </div>
@@ -1426,36 +1424,6 @@ const handleVote = async (song) => {
     }, 500)
   } catch (err) {
     // 不做任何处理，因为useSongs中已经处理了错误提示
-    console.log('API????useSongs???')
-  }
-}
-
-const handleCancelReplay = async (song) => {
-  if (!isClientAuthenticated.value) {
-    showNotification(getMessage('cancelReplayLogin'), 'error')
-    return
-  }
-
-  try {
-    if (!songs) return
-    await songs.withdrawReplay(song.id)
-    updateSongCounts()
-  } catch (err) {
-    console.log('API????useSongs???')
-  }
-}
-
-const handleRequestReplay = async (song) => {
-  if (!isClientAuthenticated.value) {
-    showNotification(getMessage('requestReplayLogin'), 'error')
-    return
-  }
-
-  try {
-    if (!songs) return
-    await songs.requestReplay(song.id)
-    updateSongCounts()
-  } catch (err) {
     console.log('API????useSongs???')
   }
 }
