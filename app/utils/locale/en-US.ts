@@ -1582,6 +1582,9 @@ export const pages = {
 export const auth = pages.auth
 export const ui = pages.ui
 export const songs = pages.songs
+export const yearReview = pages.yearReview
+export const composableErrors = pages.composableErrors
+export const audioPlayer = pages.audioPlayer
 
 export const admin = {
   sidebar: {

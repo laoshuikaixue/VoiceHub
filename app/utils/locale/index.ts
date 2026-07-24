@@ -93,9 +93,14 @@ export function resolveLocaleFromAcceptLanguage(header?: string | null): Locale 
   return FALLBACK_LOCALE
 }
 
-// 当前语言使用 useState 存储：SSR 下每个请求相互隔离，客户端首屏自动水合，
-// 从根本上避免模块级 ref 造成的跨请求语言串扰。
-const getCurrentLocale = () => useState<Locale>('voicehub-locale', () => FALLBACK_LOCALE)
+// 当前语言状态：
+// - 在 Nuxt 上下文内用 useState：SSR 下每个请求相互隔离，客户端首屏自动水合，避免模块级 ref 造成的跨请求串扰；
+// - 在 Nuxt 上下文外（如个别 composable 在模块加载期即被实例化）回退到模块级 ref，避免 useState 脱离 Nuxt 实例而报错。
+const fallbackLocaleRef = ref<Locale>(FALLBACK_LOCALE)
+const getCurrentLocale = () =>
+  tryUseNuxtApp()
+    ? useState<Locale>('voicehub-locale', () => fallbackLocaleRef.value)
+    : fallbackLocaleRef
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Object.prototype.toString.call(value) === '[object Object]'
@@ -150,6 +155,8 @@ export function setLocale(locale: Locale) {
   void loadLocaleMessages(locale)
 
   if (import.meta.client) {
+    // 同步模块级回退 ref，使在模块加载期实例化的单例（如共享歌词实例）也能响应语言切换。
+    fallbackLocaleRef.value = locale
     try {
       window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
     } catch {
