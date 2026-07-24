@@ -29,9 +29,9 @@
                   >
                     <Icon name="success" :size="20" />
                   </div>
-                  导入结果
+                  {{ locale.resultTitle }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">歌曲导入操作已完成</p>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.resultDesc }}</p>
               </div>
               <button
                 class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -47,7 +47,7 @@
                   class="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl flex flex-col items-center gap-2"
                 >
                   <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest"
-                    >成功导入</span
+                    >{{ locale.successCount }}</span
                   >
                   <span class="text-4xl font-black text-emerald-400">{{
                     importResult.success
@@ -57,7 +57,7 @@
                   class="p-6 bg-red-500/5 border border-red-500/20 rounded-3xl flex flex-col items-center gap-2"
                 >
                   <span class="text-[10px] font-black text-red-500 uppercase tracking-widest"
-                    >失败/跳过</span
+                    >{{ locale.failedCount }}</span
                   >
                   <span class="text-4xl font-black text-red-400">{{ importResult.failed }}</span>
                 </div>
@@ -68,7 +68,7 @@
                   class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
                 >
                   <Icon name="info" :size="12" />
-                  详细处理记录
+                  {{ locale.details }}
                 </div>
                 <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                   <div
@@ -85,7 +85,7 @@
                 class="flex flex-col items-center justify-center py-10 text-emerald-500/50"
               >
                 <Icon name="success" :size="48" class="mb-4" />
-                <p class="text-sm font-bold uppercase tracking-widest">全部歌曲导入成功！</p>
+                <p class="text-sm font-bold uppercase tracking-widest">{{ locale.allSuccess }}</p>
               </div>
             </div>
 
@@ -94,7 +94,7 @@
                 class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
                 @click="close"
               >
-                完成并返回
+                {{ locale.done }}
               </button>
             </div>
           </div>
@@ -109,9 +109,9 @@
                   >
                     <Icon name="download" :size="20" />
                   </div>
-                  从历史学期导入
+                  {{ locale.title }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">选择以往学期的歌曲并导入到当前学期</p>
+                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.desc }}</p>
               </div>
               <button
                 class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -125,14 +125,14 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >选择学期</label
+                    >{{ locale.selectSemester }}</label
                   >
                   <CustomSelect
                     v-model="selectedSemester"
                     :options="semesterList"
                     label-key="name"
                     value-key="name"
-                    placeholder="请选择目标学期"
+                    :placeholder="locale.semesterPlaceholder"
                     class="w-full"
                   />
                 </div>
@@ -162,7 +162,7 @@
                 class="flex flex-col items-center justify-center py-20 text-zinc-500"
               >
                 <Icon name="refresh" :size="32" class="animate-spin mb-4 text-blue-500" />
-                <div class="text-[10px] font-black uppercase tracking-widest">正在加载歌曲...</div>
+                <div class="text-[10px] font-black uppercase tracking-widest">{{ locale.loadingSongs }}</div>
               </div>
 
               <div
@@ -179,7 +179,7 @@
                   class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
                   @click="loadSongs"
                 >
-                  重试加载
+                  {{ locale.retry }}
                 </button>
               </div>
 
@@ -188,7 +188,7 @@
                 class="flex flex-col items-center justify-center py-20 text-zinc-600"
               >
                 <Icon name="list" :size="48" class="mb-4 opacity-20" />
-                <p class="text-sm font-bold uppercase tracking-widest">请先选择一个学期</p>
+                <p class="text-sm font-bold uppercase tracking-widest">{{ locale.selectSemesterFirst }}</p>
               </div>
 
               <div
@@ -196,7 +196,7 @@
                 class="flex flex-col items-center justify-center py-20 text-zinc-600"
               >
                 <Icon name="search" :size="48" class="mb-4 opacity-20" />
-                <p class="text-sm font-bold uppercase tracking-widest">没有找到符合条件的歌曲</p>
+                <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noSongs }}</p>
               </div>
 
               <div v-else class="grid grid-cols-1 gap-2">
@@ -252,7 +252,7 @@
                         : 'bg-zinc-800 text-zinc-500 border-zinc-700'
                     ]"
                   >
-                    {{ song.played ? '已收录' : '未收录' }}
+                    {{ song.played ? locale.collected : locale.notCollected }}
                   </div>
                 </div>
               </div>
@@ -267,11 +267,11 @@
                   class="text-[10px] font-black text-blue-500 hover:text-blue-400 uppercase tracking-widest transition-colors"
                   @click="toggleSelectAll"
                 >
-                  {{ isAllSelected ? '取消全选' : '选择当前全部' }}
+                  {{ isAllSelected ? locale.cancelSelectAll : locale.selectAll }}
                 </button>
                 <div class="h-4 w-px bg-zinc-800 hidden md:block" />
                 <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                  已选择 <span class="text-blue-500">{{ selectedSongIds.size }}</span> 首歌曲
+                  {{ formatLocale(locale.selectedSongs, selectedSongIds.size) }}
                 </span>
               </div>
 
@@ -281,7 +281,7 @@
                   class="flex-1 md:flex-none px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
                   @click="close"
                 >
-                  取消
+                  {{ requestLocale.cancel || '取消' }}
                 </button>
                 <button
                   type="button"
@@ -291,7 +291,7 @@
                 >
                   <Icon v-if="importing" name="refresh" :size="16" class="animate-spin" />
                   <Icon v-else name="download" :size="16" />
-                  {{ importing ? '正在导入...' : '确认导入' }}
+                  {{ importing ? (locale.importing || '正在导入...') : (locale.confirmImport || '确认导入') }}
                 </button>
               </div>
             </div>
@@ -307,12 +307,16 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { convertToHttps } from '~/utils/url'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   show: Boolean
 })
 
 const emit = defineEmits(['close', 'import-success'])
+const { songs: songsLocale } = useLocale()
+const requestLocale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => requestLocale.value?.importSongsModal || {})
 
 const semesterList = ref([])
 const selectedSemester = ref('')
@@ -327,9 +331,9 @@ const importResult = ref(null)
 
 const getFilterLabel = (type) => {
   const map = {
-    unplayed: '未被收录',
-    played: '被收录',
-    all: '全部'
+    unplayed: locale.value.unplayed,
+    played: locale.value.played,
+    all: locale.value.all
   }
   return map[type]
 }
@@ -384,7 +388,7 @@ const fetchSemesters = async () => {
     }
   } catch (e) {
     console.error('获取学期列表失败', e)
-    error.value = '加载学期列表失败'
+    error.value = locale.value.loadSemestersFailed
   } finally {
     loadingSemesters.value = false
   }
@@ -411,7 +415,7 @@ const loadSongs = async () => {
     }
   } catch (e) {
     console.error('获取歌曲失败', e)
-    error.value = '加载歌曲列表失败'
+    error.value = locale.value.loadSongsFailed
   } finally {
     loadingSongs.value = false
   }
@@ -446,7 +450,7 @@ const handleImport = async () => {
   } catch (e) {
     console.error('导入失败', e)
     if (window.$showNotification) {
-      window.$showNotification(e.message || '导入失败', 'error')
+      window.$showNotification(e.message || locale.value.importFailed, 'error')
     }
   } finally {
     importing.value = false

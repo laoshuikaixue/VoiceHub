@@ -1,8 +1,10 @@
+import { useLocale } from '~/utils/locale'
+
 export const AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS = [
   { value: 'qq', label: 'QQ' },
-  { value: 'wx', label: '微信' },
-  { value: 'alipay', label: '支付宝' },
-  { value: 'douyin', label: '抖音' }
+  { value: 'wx', label: 'WeChat' },
+  { value: 'alipay', label: 'Alipay' },
+  { value: 'douyin', label: 'Douyin' }
 ] as const
 
 const AGGREGATE_OAUTH_LOGIN_TYPE_ICONS: Record<string, string> = {
@@ -47,7 +49,10 @@ export const getAggregateOAuthLoginTypesOrDefault = (value: unknown): string[] =
 }
 
 export const getAggregateOAuthLoginTypeName = (loginType: string): string => {
+  const { auth } = useLocale()
+  const localizedName = auth.value?.oauthButtons?.aggregateLoginTypes?.[loginType]
   return (
+    localizedName ||
     AGGREGATE_OAUTH_LOGIN_TYPE_OPTIONS.find((item) => item.value === loginType)?.label ||
     loginType.toUpperCase()
   )
@@ -58,18 +63,21 @@ export const getAggregateOAuthLoginTypeIcon = (loginType: string): string => {
 }
 
 export const getProviderDisplayName = (provider: string): string => {
+  const { auth } = useLocale()
   const normalizedProvider = provider.toLowerCase()
   if (normalizedProvider.startsWith('aggregate:')) {
     const loginType = normalizedProvider.slice('aggregate:'.length)
-    return `${getAggregateOAuthLoginTypeName(loginType)} 登录`
+    const providerName = getAggregateOAuthLoginTypeName(loginType)
+    const formatter = auth.value?.oauthButtons?.aggregateProviderName
+    return typeof formatter === 'function' ? formatter(providerName) : `${providerName} 登录`
   }
 
   const map: Record<string, string> = {
     github: 'GitHub',
     casdoor: 'Casdoor',
     google: 'Google',
-    oauth2: '第三方 OAuth',
-    aggregate: '聚合登陆'
+    oauth2: auth.value?.oauthButtons?.customOAuthProvider || '第三方 OAuth',
+    aggregate: auth.value?.oauthButtons?.aggregateOAuthProvider || '聚合登录'
   }
   return map[normalizedProvider] || provider.charAt(0).toUpperCase() + provider.slice(1)
 }

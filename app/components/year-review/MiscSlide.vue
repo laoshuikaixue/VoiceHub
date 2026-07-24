@@ -5,18 +5,18 @@
     <Transition name="entry" appear>
       <div v-show="active" class="content">
         <div v-if="data.topPlatform" class="card platform-card">
-          <span class="label">常用平台</span>
+          <span class="label">{{ yearReview.commonPlatform }}</span>
           <span class="platform-value">{{ formatPlatform(data.topPlatform) }}</span>
         </div>
 
         <div class="grid-container">
           <div v-if="data.activeMonth" class="card active-card">
-            <span class="label">最活跃</span>
-            <span class="active-value">{{ data.activeMonth }}<span class="unit">月</span></span>
+            <span class="label">{{ yearReview.mostActive }}</span>
+            <span class="active-value">{{ yearReview.activeMonth(data.activeMonth) }}</span>
           </div>
 
           <div class="card votes-card">
-            <span class="label">投出票数</span>
+            <span class="label">{{ yearReview.votesCast }}</span>
             <span class="votes-value">{{ data.totalVotes }}</span>
           </div>
         </div>
@@ -26,21 +26,16 @@
 </template>
 
 <script setup>
+import { useLocale } from '~/utils/locale'
+
 defineProps({
   data: Object,
   active: Boolean
 })
+const { yearReview } = useLocale()
 
 const formatPlatform = (platform) => {
-  const map = {
-    netease: '网易云音乐',
-    bilibili: '哔哩哔哩',
-    qq: 'QQ音乐',
-    kugou: '酷狗音乐',
-    kuwo: '酷我音乐',
-    migu: '咪咕音乐',
-    tencent: 'QQ音乐'
-  }
+  const map = yearReview.value.platforms
   return map[platform] || platform
 }
 </script>

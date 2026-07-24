@@ -6,26 +6,29 @@
 
     <Transition name="entry" appear>
       <div v-show="active" class="content">
-        <div class="label">特别偏爱</div>
+        <div class="label">{{ yearReview.favoriteArtist }}</div>
 
-        <p class="text-intro">你的年度歌手是</p>
+        <p class="text-intro">{{ yearReview.topArtistIntro }}</p>
 
         <div class="artist-container">
           <div class="artist-bg-blur" />
           <h2 class="artist-name">{{ data.topArtist }}</h2>
         </div>
 
-        <p class="text-desc">Ta 的声音似乎特别吸引你，<br >陪伴了你无数个日夜。</p>
+        <p class="text-desc">{{ yearReview.artistDesc }}</p>
       </div>
     </Transition>
   </div>
 </template>
 
 <script setup>
+import { useLocale } from '~/utils/locale'
+
 defineProps({
   data: Object,
   active: Boolean
 })
+const { yearReview } = useLocale()
 </script>
 
 <style scoped>

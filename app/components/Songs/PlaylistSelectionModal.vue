@@ -32,7 +32,7 @@
               <h3
                 class="text-xl font-black text-zinc-100 tracking-tight truncate max-w-[300px] sm:max-w-md"
               >
-                {{ view === 'playlists' ? '选择歌单' : selectedPlaylist?.name || '歌单详情' }}
+                {{ view === 'playlists' ? locale.selectPlaylist : selectedPlaylist?.name || locale.playlistDetails }}
               </h3>
             </div>
             <button
@@ -50,7 +50,7 @@
               class="flex flex-col items-center justify-center py-20 text-zinc-500"
             >
               <Icon name="loader" :size="48" class="mb-4 animate-spin text-zinc-400" />
-              <p class="font-medium">处理中...</p>
+              <p class="font-medium">{{ locale.processing }}</p>
             </div>
 
             <div
@@ -67,7 +67,7 @@
                 class="px-8 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
                 @click="retry"
               >
-                重试
+                {{ locale.retry }}
               </button>
             </div>
 
@@ -82,7 +82,7 @@
                 >
                   <Icon name="music" :size="32" class="opacity-20" />
                 </div>
-                <p class="font-medium">暂无歌单</p>
+                <p class="font-medium">{{ locale.emptyPlaylists }}</p>
               </div>
 
               <div
@@ -109,7 +109,7 @@
                   <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
                     <span class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
-                      {{ playlist.trackCount }}首
+                      {{ callLocale('songCount', `${playlist.trackCount} 首`, playlist.trackCount) }}
                     </span>
                     <span class="flex items-center truncate">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
@@ -134,7 +134,7 @@
                 >
                   <Icon name="music" :size="32" class="opacity-20" />
                 </div>
-                <p class="font-medium">歌单为空</p>
+                <p class="font-medium">{{ locale.emptyPlaylist }}</p>
               </div>
 
               <div
@@ -185,26 +185,26 @@
                     v-if="songsLoadingForSimilar"
                     class="text-xs font-bold text-zinc-600 animate-pulse"
                   >
-                    处理中...
+                  {{ locale.processing }}
                   </div>
                   <div v-else-if="getSimilarSong(song)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(song)?.played"
                       class="px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-wider"
                     >
-                      已播放
+                  {{ requestLocale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(song)?.scheduled"
                       class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
                     >
-                      已排期
+                  {{ requestLocale.scheduled }}
                     </span>
                     <span
                       v-else
                       class="px-2 py-0.5 rounded-md bg-zinc-700/50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
                     >
-                      已存在
+                  {{ locale.exists }}
                     </span>
 
                     <div class="flex gap-2">
@@ -214,7 +214,7 @@
                         class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
                         @click.stop="selectSong(song)"
                       >
-                        {{ submitting && selectedSongId === song.id ? '...' : '继续投稿' }}
+                {{ submitting && selectedSongId === song.id ? '...' : requestLocale.continueSubmit }}
                       </button>
                       <button
                         v-else
@@ -232,7 +232,7 @@
                         "
                         @click.stop="handleLike(getSimilarSong(song))"
                       >
-                        {{ getSimilarSong(song)?.voted ? '已点赞' : '点赞' }}
+                {{ getSimilarSong(song)?.voted ? requestLocale.liked : requestLocale.like }}
                       </button>
                     </div>
                   </div>
@@ -242,7 +242,7 @@
                     class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
                     @click.stop="selectSong(song)"
                   >
-                    {{ submitting && selectedSongId === song.id ? '提交中...' : '选择投稿' }}
+                {{ submitting && selectedSongId === song.id ? requestLocale.submitting : requestLocale.chooseSubmit }}
                   </button>
                 </div>
               </div>
@@ -255,7 +255,7 @@
                   @click="loadMore"
                 >
                   <Icon v-if="moreLoading" name="loader" :size="16" class="animate-spin" />
-                  {{ moreLoading ? '加载中...' : '加载更多' }}
+              {{ moreLoading ? locale.loadingMore : locale.loadMore }}
                 </button>
               </div>
             </div>
@@ -274,12 +274,18 @@ import Icon from '../UI/Icon.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   show: Boolean,
   cookie: String,
   uid: [String, Number]
 })
+
+const { songs: songsLocale } = useLocale()
+const requestLocale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => requestLocale.value?.playlistModal || {})
+const { t: callLocale } = useLocaleText(locale)
 
 const emit = defineEmits(['close', 'submit', 'play'])
 
@@ -352,10 +358,10 @@ const fetchUserPlaylists = async () => {
     if (code === 200 && body && body.playlist) {
       playlists.value = body.playlist
     } else {
-      error.value = message || '获取歌单列表失败'
+      error.value = message || locale.value.fetchPlaylistsFailed
     }
   } catch (err) {
-    error.value = '网络请求失败'
+    error.value = locale.value.networkFailed
     console.error(err)
   } finally {
     loading.value = false
@@ -404,10 +410,10 @@ const fetchPlaylistSongs = async (playlistId, isLoadMore = false) => {
         hasMore.value = false
       }
     } else {
-      error.value = message || '获取歌单歌曲失败'
+      error.value = message || locale.value.fetchSongsFailed
     }
   } catch (err) {
-    error.value = '网络请求失败'
+    error.value = locale.value.networkFailed
     console.error(err)
   } finally {
     loading.value = false
@@ -501,7 +507,9 @@ const handleLike = async (song) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
+      const message = song.played
+        ? (requestLocale.value.playedCannotLike || '已播放的歌曲不能点赞')
+        : (requestLocale.value.scheduledCannotLike || '已排期的歌曲不能点赞')
       window.$showNotification(message, 'warning')
     }
     return

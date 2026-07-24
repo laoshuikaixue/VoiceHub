@@ -1,7 +1,7 @@
 <template>
   <div class="request-form">
     <div class="rules-section desktop-only-rules">
-      <h2 class="section-title">投稿须知</h2>
+      <h2 class="section-title">{{ locale.guidelinesTitle }}</h2>
       <div class="rules-content-desktop">
         <div
           v-if="submissionGuidelines"
@@ -9,17 +9,9 @@
           v-html="renderedGuidelines"
         />
         <div v-else class="default-guidelines">
-          <p>1. 投稿时无需加入书名号</p>
-          <p>2. 除DJ外，其他类型歌曲均接收（包括小语种）</p>
-          <p>3. 禁止投递含有违规内容的歌曲</p>
-          <p>4. 点播的歌曲将由管理员进行审核</p>
-          <p>5. 审核通过后将安排在播放时段播出</p>
-          <p>6. 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出</p>
-          <p>
-            7.
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。用户点歌时请确保遵守相关音乐平台的服务条款，尊重音乐作品版权。我们鼓励用户支持正版音乐，在官方平台购买和收听喜爱的音乐作品。
+          <p v-for="(rule, index) in locale.defaultGuidelines" :key="`desktop-rule-${index}`">
+            {{ index + 1 }}. {{ rule }}
           </p>
-          <p>8. 最终解释权归广播站所有</p>
         </div>
       </div>
     </div>
@@ -28,7 +20,7 @@
     <div class="rules-section mobile-only-rules">
       <h3 class="rules-title">
         <Icon :size="16" class="rules-icon" name="bell" />
-        投稿须知
+        {{ locale.guidelinesTitle }}
       </h3>
       <div class="rules-content">
         <div
@@ -37,19 +29,13 @@
           v-html="renderedGuidelines"
         />
         <div v-else class="default-guidelines">
-          <div class="rule-item"><span>1.</span> 投稿时无需加入书名号</div>
-          <div class="rule-item"><span>2.</span> 除DJ外，其他类型歌曲均接收（包括小语种）</div>
-          <div class="rule-item"><span>3.</span> 禁止投递含有违规内容的歌曲</div>
-          <div class="rule-item"><span>4.</span> 点播的歌曲将由管理员进行审核</div>
-          <div class="rule-item"><span>5.</span> 审核通过后将安排在播放时段播出</div>
-          <div class="rule-item">
-            <span>6.</span> 提交即表明我已阅读投稿须知并已知该歌曲有概率无法播出
+          <div
+            v-for="(rule, index) in locale.mobileDefaultGuidelines"
+            :key="`mobile-rule-${index}`"
+            class="rule-item"
+          >
+            <span>{{ index + 1 }}.</span> {{ rule }}
           </div>
-          <div class="rule-item">
-            <span>7.</span>
-            本系统仅提供音乐搜索和播放管理功能，不存储任何音乐文件。所有音乐内容均来自第三方音乐平台，版权归原平台及版权方所有。
-          </div>
-          <div class="rule-item"><span>8.</span> 最终解释权归广播站所有</div>
         </div>
       </div>
     </div>
@@ -60,13 +46,13 @@
         <div class="form-header-row">
           <!-- 歌曲搜索区域 -->
           <div class="search-section">
-            <div class="search-label">歌曲搜索</div>
+            <div class="search-label">{{ locale.searchLabel }}</div>
             <div class="search-input-group">
               <input
                 id="title"
                 v-model="title"
                 class="search-input"
-                placeholder="请输入歌曲名称"
+                :placeholder="locale.searchPlaceholder"
                 required
                 type="text"
               />
@@ -75,35 +61,35 @@
                 class="search-button"
                 type="submit"
               >
-                {{ loading || searching ? '处理中...' : '搜索' }}
+                {{ loading || searching ? locale.processing : locale.search }}
               </button>
               <button
                 :disabled="loading || searching"
-                aria-label="听歌识曲"
+                :aria-label="locale.audioMatch"
                 class="audio-match-btn"
-                title="听歌识曲"
+                :title="locale.audioMatch"
                 type="button"
                 @click="openAudioMatchModal"
               >
                 <Icon :size="16" name="mic" />
-                <span class="btn-text">识曲</span>
+                <span class="btn-text">{{ locale.audioMatchShort }}</span>
               </button>
             </div>
             <button
               v-if="showImportSemesterBtn"
               class="import-semester-btn"
               type="button"
-              title="从往期导入"
+              :title="locale.importFromPast"
               @click="showImportSongsModal = true"
             >
               <Icon :size="16" name="history" />
-              <span class="btn-text">从往期导入</span>
+              <span class="btn-text">{{ locale.importFromPast }}</span>
             </button>
           </div>
 
           <!-- 联合投稿人区域 -->
           <div v-if="user && enableCollaborativeSubmission" class="collaborators-section">
-            <div class="section-label">联合投稿</div>
+            <div class="section-label">{{ locale.collaborators }}</div>
             <div class="collaborators-list">
               <div v-for="user in collaborators" :key="user.id" class="collaborator-tag">
                 <span class="collaborator-name">{{ user.name }}</span>
@@ -121,7 +107,7 @@
                 @click="showUserSearchModal = true"
               >
                 <Icon :size="14" name="plus" />
-                添加
+                {{ locale.add }}
               </button>
             </div>
           </div>
@@ -129,24 +115,16 @@
 
         <!-- 搜索结果容器 -->
         <div class="search-results-container">
-          <!-- 未登录提示 -->
           <div v-if="!user" class="submission-status-horizontal login-required-notice">
-            <span class="notice-icon">🔒</span>
-            <span class="notice-text">注意，您尚未登录，不能投稿</span>
+            <Lock class="notice-icon" :size="14" />
+            <span class="notice-text">{{ locale.loginRequiredNotice }}</span>
             <button class="login-link-btn" type="button" @click="handleLoginRedirect">
-              立即登录
+              {{ locale.loginNow }}
             </button>
           </div>
-
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
-            v-if="
-              user &&
-              submissionStatus &&
-              (submissionStatus.limitEnabled ||
-                submissionStatus.timeLimitationEnabled ||
-                submissionStatus.submissionClosed)
-            "
+            v-if="user && submissionStatus && (submissionStatus.limitEnabled || submissionStatus.timeLimitationEnabled || submissionStatus.submissionClosed)"
             class="submission-status-horizontal"
           >
             <!-- 超级管理员提示 -->
@@ -155,7 +133,7 @@
               class="admin-notice-horizontal"
             >
               <span class="admin-icon">👑</span>
-              <span class="admin-text">您是管理员，不受投稿限制</span>
+              <span class="admin-text">{{ locale.adminUnlimited }}</span>
             </div>
 
             <!-- 投稿关闭提示 -->
@@ -164,8 +142,8 @@
               <span class="closed-text">
                 {{
                   submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod
-                    ? '当前不在投稿开放时段'
-                    : '投稿功能已关闭'
+                    ? locale.outsideRequestTime
+                    : locale.submissionClosed
                 }}
               </span>
             </div>
@@ -177,35 +155,35 @@
                 v-if="submissionStatus.timeLimitationEnabled && submissionStatus.currentTimePeriod"
                 class="status-item-horizontal"
               >
-                <span class="status-label">当前时段：</span>
+                <span class="status-label">{{ locale.currentPeriod }}</span>
                 <span class="status-value">{{ submissionStatus.currentTimePeriod.name }}</span>
                 <span
                   v-if="submissionStatus.currentTimePeriod.expected > 0"
                   class="status-remaining"
                 >
-                  (已接纳 {{ submissionStatus.currentTimePeriod.accepted }} /
+                  ({{ locale.accepted }} {{ submissionStatus.currentTimePeriod.accepted }} /
                   {{ submissionStatus.currentTimePeriod.expected }})
                 </span>
               </div>
 
               <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
-                <span class="status-label">今日投稿：</span>
+                <span class="status-label">{{ locale.todayRequests }}</span>
                 <span class="status-value"
                   >{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span
                 >
                 <span class="status-remaining"
-                  >剩余
+                  >{{ locale.remaining }}
                   {{ Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed) }}</span
                 >
               </div>
 
               <div v-if="submissionStatus.weeklyLimit" class="status-item-horizontal">
-                <span class="status-label">本周投稿：</span>
+                <span class="status-label">{{ locale.weeklyRequests }}</span>
                 <span class="status-value"
                   >{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span
                 >
                 <span class="status-remaining"
-                  >剩余
+                  >{{ locale.remaining }}
                   {{
                     Math.max(0, submissionStatus.weeklyLimit - submissionStatus.weeklyUsed)
                   }}</span
@@ -213,21 +191,20 @@
               </div>
 
               <div v-if="submissionStatus.monthlyLimit" class="status-item-horizontal">
-                <span class="status-label">本月投稿：</span>
+                <span class="status-label">{{ locale.monthlyRequests }}</span>
                 <span class="status-value"
                   >{{ submissionStatus.monthlyUsed }} / {{ submissionStatus.monthlyLimit }}</span
                 >
                 <span class="status-remaining"
-                  >剩余
+                  >{{ locale.remaining }}
                   {{
                     Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
                   }}</span
                 >
               </div>
-
               <div v-if="cardCodeLimitBypassActive" class="status-item-horizontal">
-                <span class="status-label">点歌券：</span>
-                <span class="status-value">不占普通额度</span>
+                <span class="status-label">{{ locale.cardCodeLabel }}</span>
+                <span class="status-value">{{ locale.cardCodeBypassesLimit }}</span>
               </div>
             </div>
           </div>
@@ -240,21 +217,21 @@
                 type="button"
                 @click="switchPlatform('netease')"
               >
-                网易云音乐
+                {{ locale.platforms.netease }}
               </button>
               <button
                 :class="['platform-btn', { active: platform === 'tencent' }]"
                 type="button"
                 @click="switchPlatform('tencent')"
               >
-                QQ音乐
+                {{ locale.platforms.tencent }}
               </button>
               <button
                 :class="['platform-btn', { active: platform === 'bilibili' }]"
                 type="button"
                 @click="switchPlatform('bilibili')"
               >
-                哔哩哔哩
+                {{ locale.platforms.bilibili }}
               </button>
             </div>
 
@@ -264,22 +241,22 @@
               <div v-if="checkingNeteaseLogin" class="netease-loading-state">
                 <div class="loading-content">
                   <div class="loading-spinner" />
-                  <span class="loading-text">刷新中</span>
+                  <span class="loading-text">{{ locale.refreshing }}</span>
                 </div>
               </div>
 
               <!-- 未登录状态 -->
               <div v-else-if="!isNeteaseLoggedIn" class="login-entry">
                 <div class="login-desc">
-                  <p class="login-title">登录网易云获取完整体验</p>
+                  <p class="login-title">{{ locale.neteaseLoginTitle }}</p>
                 </div>
                 <div class="login-actions">
                   <button class="login-btn" type="button" @click="showLoginModal = true">
-                    立即登录
+                    {{ locale.loginNow }}
                   </button>
                   <button class="import-btn" type="button" @click="handleImportClick">
                     <Icon :size="14" name="upload" />
-                    导入数据
+                    {{ locale.importData }}
                   </button>
                 </div>
               </div>
@@ -293,42 +270,42 @@
                       :src="convertToHttps(neteaseUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
-                    <span class="user-name">{{ neteaseUser?.nickname || '已登录' }}</span>
+                    >
+                    <span class="user-name">{{ neteaseUser?.nickname || locale.loggedIn }}</span>
                   </div>
 
                   <div class="search-type-switch">
                     <label :class="['radio-label', { active: searchType === 1 }]">
-                      <input v-model="searchType" :value="1" type="radio" /> 单曲
+                      <input v-model="searchType" :value="1" type="radio" > {{ locale.single }}
                     </label>
                     <label :class="['radio-label', { active: searchType === 1009 }]">
-                      <input v-model="searchType" :value="1009" type="radio" /> 播客
+                      <input v-model="searchType" :value="1009" type="radio" > {{ locale.podcast }}
                     </label>
                   </div>
 
                   <div class="user-actions-row">
                     <button
                       class="action-btn-compact"
-                      title="最近播放"
+                      :title="locale.recent"
                       type="button"
                       @click="showRecentSongsModal = true"
                     >
                       <Icon :size="14" name="history" />
-                      <span>最近</span>
+                      <span>{{ locale.recent }}</span>
                     </button>
                     <button
                       class="action-btn-compact"
-                      title="从歌单投稿"
+                      :title="locale.playlist"
                       type="button"
                       @click="showPlaylistModal = true"
                     >
                       <Icon :size="14" name="playlist" />
-                      <span>歌单</span>
+                      <span>{{ locale.playlist }}</span>
                     </button>
                     <button
                       class="action-btn-compact"
-                      aria-label="导出Cookie数据"
-                      title="导出Cookie数据"
+                      :aria-label="locale.exportCookie"
+                      :title="locale.exportCookie"
                       type="button"
                       @click="handleExportData"
                     >
@@ -336,8 +313,8 @@
                     </button>
                     <button
                       class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                      aria-label="退出登录"
-                      title="退出登录"
+                      :aria-label="locale.logout"
+                      :title="locale.logout"
                       type="button"
                       @click="handleLogoutNetease"
                     >
@@ -352,7 +329,7 @@
             <div v-if="platform === 'tencent'" class="netease-options">
               <div v-if="!isQQMusicLoggedIn" class="login-entry">
                 <div class="login-desc">
-                  <p class="login-title">登录 QQ 音乐提升播放稳定性</p>
+                  <p class="login-title">{{ locale.qqLoginTitle }}</p>
                 </div>
                 <div class="login-actions">
                   <button
@@ -360,7 +337,7 @@
                     type="button"
                     @click="showQQLoginModal = true"
                   >
-                    立即登录
+                    {{ locale.loginNow }}
                   </button>
                 </div>
               </div>
@@ -377,14 +354,14 @@
                     <div v-else class="qq-user-avatar">
                       <Icon :size="14" name="music" />
                     </div>
-                    <span class="user-name">{{ qqMusicUser?.nickname || 'QQ音乐已登录' }}</span>
+                    <span class="user-name">{{ qqMusicUser?.nickname || locale.qqLoggedIn }}</span>
                   </div>
 
                   <div class="user-actions-row">
                     <button
                       class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
-                      aria-label="退出 QQ 音乐登录"
-                      title="退出 QQ 音乐登录"
+                      :aria-label="locale.logoutQQ"
+                      :title="locale.logoutQQ"
                       type="button"
                       @click="handleLogoutQQMusic"
                     >
@@ -405,10 +382,10 @@
                   <CustomSelect
                     v-model="preferredPlayTimeId"
                     :options="formattedPlayTimes"
-                    label="期望播出时段"
+                    :label="locale.preferredPlayTime"
                     label-key="displayName"
                     value-key="id"
-                    placeholder="选择时段"
+                    :placeholder="locale.choosePlayTime"
                   />
                 </div>
               </div>
@@ -422,7 +399,7 @@
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <label for="submission-note" class="text-[12px] font-bold text-zinc-300"
-                      >投稿备注留言</label
+                      >{{ locale.submissionNote }}</label
                     >
                     <div class="flex items-center gap-2">
                       <button
@@ -478,7 +455,7 @@
                             />
                           </svg>
                         </span>
-                        <span class="custom-checkbox-text">公开给已登录用户</span>
+                        <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                       </label>
                     </div>
                   </div>
@@ -505,7 +482,7 @@
                   <div class="flex min-w-0 items-center gap-2">
                     <div class="min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-zinc-200">点歌券</span>
+                        <span class="text-xs font-black text-zinc-200">{{ locale.cardCode }}</span>
                         <span
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
@@ -514,7 +491,7 @@
                               : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
                           ]"
                         >
-                          {{ cardCodeFieldMeta.required ? '必填' : '可选' }}
+                          {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
                         </span>
                       </div>
                       <p
@@ -540,12 +517,12 @@
                       @click="openCardCodeModal"
                     >
                       <Icon :size="13" :name="trimmedCardCode ? 'edit' : 'plus'" />
-                      {{ trimmedCardCode ? '修改' : '添加' }}
+                      {{ trimmedCardCode ? locale.editCardCode : locale.addCardCode }}
                     </button>
                     <button
                       v-if="trimmedCardCode"
                       class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-500 transition-all hover:border-red-500/30 hover:text-red-300"
-                      title="清除点歌券"
+                      :title="locale.clearCardCode"
                       type="button"
                       @click="clearCardCode"
                     >
@@ -594,7 +571,7 @@
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
               <div class="loading-spinner" />
-              <p class="loading-text">处理中...</p>
+              <p class="loading-text">{{ locale.processing }}</p>
             </div>
 
             <!-- 搜索结果列表 -->
@@ -612,7 +589,7 @@
                     >
                       <img
                         :src="convertToHttps(result.cover)"
-                        alt="封面"
+                        :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
                       />
@@ -628,10 +605,10 @@
                       <p
                         v-if="result.album"
                         :class="['result-album', { 'clickable-album': isNeteaseAlbum(result) }]"
-                        :title="isNeteaseAlbum(result) ? '点击查看专辑详情' : result.album"
+                        :title="isNeteaseAlbum(result) ? locale.albumDetailsTitle : result.album"
                         @click.stop="isNeteaseAlbum(result) ? openAlbumDetails(result) : null"
                       >
-                        <span class="album-label">专辑：</span>
+                        <span class="album-label">{{ locale.album }}</span>
                         <span class="album-name">{{ result.album }}</span>
                         <Icon
                           v-if="isNeteaseAlbum(result)"
@@ -646,7 +623,7 @@
                       <button
                         v-if="isTencentSource(result)"
                         class="cloud-disk-btn"
-                        title="上传到网易云音乐云盘"
+                        :title="locale.uploadToNeteaseCloud"
                         @click.stop.prevent="openUploadDialog(result)"
                       >
                         <Icon name="cloud-upload" :size="18" />
@@ -659,7 +636,7 @@
                         "
                         class="similar-song-info"
                       >
-                        <span class="similar-text">所有剧集已存在</span>
+                        <span class="similar-text">{{ locale.allEpisodesSubmitted }}</span>
                       </div>
                       <div
                         v-else-if="
@@ -668,13 +645,13 @@
                         "
                         class="similar-song-info"
                       >
-                        <span class="similar-text">部分剧集已存在</span>
+                        <span class="similar-text">{{ locale.partialEpisodesSubmitted }}</span>
                         <button
                           :disabled="submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result)"
                         >
-                          选择剧集
+                          {{ locale.chooseEpisodes }}
                         </button>
                       </div>
                       <!-- 检查是否已存在相似歌曲 -->
@@ -686,18 +663,18 @@
                         >
                           {{
                             isSuperAdmin
-                              ? '歌曲已播放'
+                              ? locale.songPlayed
                               : enableReplayRequests
-                                ? '歌曲已播放'
-                                : '歌曲已播放'
+                                ? locale.songPlayed
+                                : locale.songPlayed
                           }}
                         </span>
                         <span
                           v-else-if="getSimilarSong(result)?.scheduled"
                           class="similar-text status-scheduled"
-                          >歌曲已排期</span
+                          >{{ locale.songScheduled }}</span
                         >
-                        <span v-else class="similar-text">歌曲已存在</span>
+                        <span v-else class="similar-text">{{ locale.songExists }}</span>
 
                         <!-- 超级管理员对已播放的相似歌曲：显示继续投稿 -->
                         <button
@@ -706,7 +683,7 @@
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { forceResubmit: true })"
                         >
-                          继续投稿
+                          {{ locale.continueSubmit }}
                         </button>
 
                         <!-- 开启重播申请且非管理员对已播放的相似歌曲：显示申请重播 -->
@@ -738,12 +715,12 @@
                           "
                           :title="
                             getSimilarSong(result)?.played
-                              ? '已播放的歌曲不能点赞'
+                              ? locale.playedCannotLike
                               : getSimilarSong(result)?.scheduled
-                                ? '已排期的歌曲不能点赞'
+                                ? locale.scheduledCannotLike
                                 : getSimilarSong(result)?.voted
-                                  ? '已点赞'
-                                  : '点赞'
+                                  ? locale.liked
+                                  : locale.like
                           "
                           class="like-btn"
                           @click.stop.prevent="
@@ -764,22 +741,21 @@
                           </svg>
                           {{
                             getSimilarSong(result)?.played
-                              ? '已播放'
+                              ? locale.played
                               : getSimilarSong(result)?.scheduled
-                                ? '已排期'
+                                ? locale.scheduled
                                 : getSimilarSong(result)?.voted
-                                  ? '已点赞'
-                                  : '点赞'
+                                  ? locale.liked
+                                  : locale.like
                           }}
                         </button>
                       </div>
-                      <!-- 未登录：显示请先登录 -->
                       <button
                         v-else-if="!user"
                         class="select-btn login-btn"
                         @click.stop.prevent="handleLoginRedirect"
                       >
-                        请先登录
+                        {{ locale.loginRequiredToSubmit }}
                       </button>
                       <button
                         v-else
@@ -789,12 +765,12 @@
                       >
                         {{
                           submitting
-                            ? '处理中...'
+                            ? locale.processing
                             : platform === 'netease' && searchType === 1009
-                              ? '选择节目'
+                              ? locale.chooseProgram
                               : isBilibiliMultiP(result)
-                                ? '选择剧集'
-                                : '选择投稿'
+                                ? locale.chooseEpisodes
+                                : locale.chooseSubmit
                         }}
                       </button>
                     </div>
@@ -803,21 +779,11 @@
 
                 <!-- 手动输入按钮 -->
                 <div class="no-results-action">
-                  <button
-                    v-if="!user"
-                    class="manual-submit-btn"
-                    type="button"
-                    @click="handleLoginRedirect"
-                  >
-                    请先登录后提交
+                  <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
+                    {{ locale.loginRequiredToSubmit }}
                   </button>
-                  <button
-                    v-else
-                    class="manual-submit-btn"
-                    type="button"
-                    @click="showManualModal = true"
-                  >
-                    以上没有我想要的歌曲，手动输入提交
+                  <button v-else class="manual-submit-btn" type="button" @click="showManualModal = true">
+                    {{ locale.manualSubmitLong }}
                   </button>
                 </div>
               </div>
@@ -825,30 +791,20 @@
               <!-- 空状态 -->
               <div v-else-if="!searching && hasSearched" key="empty" class="empty-state">
                 <div class="empty-icon">🔍</div>
-                <p class="empty-text">未找到相关歌曲</p>
-                <p class="empty-hint">试试其他关键词或切换平台</p>
-                <button
-                  v-if="!user"
-                  class="manual-submit-btn"
-                  type="button"
-                  @click="handleLoginRedirect"
-                >
-                  请先登录后提交
+                <p class="empty-text">{{ locale.noResults }}</p>
+                <p class="empty-hint">{{ locale.noResultsHint }}</p>
+                <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
+                  {{ locale.loginRequiredToSubmit }}
                 </button>
-                <button
-                  v-else
-                  class="manual-submit-btn"
-                  type="button"
-                  @click="showManualModal = true"
-                >
-                  手动输入提交
+                <button v-else class="manual-submit-btn" type="button" @click="showManualModal = true">
+                  {{ locale.manualSubmit }}
                 </button>
               </div>
 
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img alt="搜索歌曲" class="search-svg" :src="searchIcon" />
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="searchIcon" >
                 </div>
               </div>
             </Transition>
@@ -954,7 +910,7 @@
       v-model:show="showUserSearchModal"
       :exclude-ids="[user?.id, ...collaborators.map((u) => u.id)]"
       :multiple="true"
-      title="添加联合投稿人"
+      :title="locale.addCollaboratorTitle"
       @select="handleUserSelect"
     />
 
@@ -980,7 +936,7 @@
             <div class="flex items-center justify-between border-b border-zinc-800/70 px-5 py-4">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-zinc-100">点歌券</h3>
+                  <h3 class="text-base font-black text-zinc-100">{{ locale.cardCode }}</h3>
                   <span
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
@@ -989,7 +945,7 @@
                         : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
                     ]"
                   >
-                    {{ cardCodeFieldMeta.required ? '必填' : '可选' }}
+                    {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
                   </span>
                 </div>
                 <p class="mt-1 text-[11px] text-zinc-500">{{ cardCodeFieldMeta.helper }}</p>
@@ -1008,7 +964,7 @@
                 for="card-code-modal"
                 class="px-1 text-[10px] font-black uppercase tracking-widest text-zinc-600"
               >
-                券码
+                {{ locale.cardCodeLabel }}
               </label>
               <input
                 id="card-code-modal"
@@ -1041,7 +997,7 @@
                 type="button"
                 @click="closeCardCodeModal"
               >
-                取消
+                {{ locale.cancel }}
               </button>
               <button
                 v-if="trimmedCardCode"
@@ -1049,7 +1005,7 @@
                 type="button"
                 @click="clearCardCode"
               >
-                清除
+                {{ locale.clear }}
               </button>
               <button
                 :disabled="cardCodeValidation.checking"
@@ -1057,7 +1013,7 @@
                 type="button"
                 @click="saveCardCode"
               >
-                {{ cardCodeValidation.checking ? '验证中...' : '保存' }}
+                {{ cardCodeValidation.checking ? locale.validatingCardCode : locale.save }}
               </button>
             </div>
           </div>
@@ -1102,12 +1058,12 @@
                 />
               </div>
 
-              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">听歌识曲</h3>
+              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">{{ locale.audioMatch }}</h3>
 
               <p class="mt-2 text-sm text-zinc-400 max-w-[260px]">
                 {{
                   audioMatchStatus ||
-                  (audioMatchError ? audioMatchError : '靠近音源播放，录制 3 秒识别歌曲')
+                  (audioMatchError ? audioMatchError : locale.audioMatchHint)
                 }}
               </p>
 
@@ -1121,10 +1077,10 @@
                 >
                   {{
                     audioMatchPreparing
-                      ? '准备中...'
+                      ? locale.preparing
                       : audioMatchProcessing
-                        ? '识别中...'
-                        : '开始识曲'
+                        ? locale.recognizing
+                        : locale.startAudioMatch
                   }}
                 </button>
                 <button
@@ -1135,10 +1091,10 @@
                   @click="stopAudioMatchRecording"
                 >
                   <span class="recording-dot" />
-                  录制中...
+                  {{ locale.recording }}
                 </button>
                 <button class="audio-match-cancel-btn" type="button" @click="closeAudioMatchModal">
-                  取消
+                  {{ locale.cancel }}
                 </button>
               </div>
             </div>
@@ -1148,7 +1104,7 @@
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
               <div class="border-t border-zinc-800/60 pt-5">
-                <h4 class="text-sm font-semibold text-zinc-300 mb-4">识别结果</h4>
+                <h4 class="text-sm font-semibold text-zinc-300 mb-4">{{ locale.audioMatchResults }}</h4>
                 <div class="space-y-2">
                   <button
                     v-for="match in audioMatchResults"
@@ -1222,7 +1178,7 @@
                 >
                   <Edit3 :size="24" />
                 </div>
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight">手动输入歌曲信息</h3>
+                <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.manualTitle }}</h3>
               </div>
               <button
                 class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
@@ -1238,7 +1194,7 @@
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >歌曲名称</label
+                    >{{ locale.songName }}</label
                   >
                   <div class="relative group">
                     <input
@@ -1258,13 +1214,13 @@
                   <label
                     for="modal-artist"
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >歌手名称</label
+                    >{{ locale.artistName }}</label
                   >
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
                     class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
-                    placeholder="请输入歌手名称"
+                    :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
                   />
@@ -1275,7 +1231,7 @@
                   <label
                     for="modal-cover"
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >歌曲封面地址（选填）</label
+                    >{{ locale.coverUrl }}</label
                   >
                   <div class="relative group">
                     <input
@@ -1287,7 +1243,7 @@
                           ? 'border-red-500/50 focus:border-red-500/50'
                           : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
-                      placeholder="请输入歌曲封面图片URL"
+                      :placeholder="locale.coverPlaceholder"
                       type="url"
                     />
                     <div
@@ -1313,7 +1269,7 @@
                         v-else
                         class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
                       >
-                        <Check class="w-3 h-3" /> URL有效
+                        <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
                     </div>
                   </Transition>
@@ -1324,7 +1280,7 @@
                   <label
                     for="modal-play-url"
                     class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
-                    >播放地址（选填）</label
+                    >{{ locale.playUrl }}</label
                   >
                   <div class="relative group">
                     <input
@@ -1336,7 +1292,7 @@
                           ? 'border-red-500/50 focus:border-red-500/50'
                           : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
-                      placeholder="请输入歌曲播放URL"
+                      :placeholder="locale.playUrlPlaceholder"
                       type="url"
                     />
                     <div
@@ -1362,7 +1318,7 @@
                         v-else
                         class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
                       >
-                        <Check class="w-3 h-3" /> URL有效
+                        <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
                     </div>
                   </Transition>
@@ -1379,7 +1335,7 @@
                 type="button"
                 @click="showManualModal = false"
               >
-                取消
+                {{ locale.cancel }}
               </button>
               <button
                 :disabled="!canSubmitManualForm || submitting"
@@ -1387,7 +1343,7 @@
                 type="button"
                 @click="handleManualSubmit"
               >
-                {{ submitting ? '提交中...' : '确认提交' }}
+                {{ submitting ? locale.submitting : locale.confirmSubmit }}
               </button>
             </div>
           </div>
@@ -1417,6 +1373,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
@@ -1443,6 +1400,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['request', 'vote'])
+const { songs: songsLocale } = useLocale()
+const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
+const { t: callLocale } = useLocaleText(locale)
+const { localize: localizeServerError } = useServerErrors()
 
 // 站点配置
 const {
@@ -1531,38 +1492,38 @@ const cardCodeFieldMeta = computed(() => ({
   required: requireCardCodeForRequests.value,
   helper: requireCardCodeForRequests.value
     ? cardCodeLimitBypassActive.value
-      ? '提交点歌时必须填写有效点歌券；点歌券投稿不占普通额度。'
-      : '开启强制点歌券后，提交点歌时必须填写有效点歌券。'
+      ? locale.value.cardCodeRequiredBypassHelper
+      : locale.value.cardCodeRequiredHelper
     : cardCodeLimitBypassActive.value
-      ? '使用有效点歌券可突破个人投稿限额，且不占普通额度。'
-      : '填写点歌券可用于抵扣或提交点歌。',
-  placeholder: '请输入点歌券'
+      ? locale.value.cardCodeOptionalBypassHelper
+      : locale.value.cardCodeOptionalHelper,
+  placeholder: locale.value.cardCodePlaceholder
 }))
 
 const trimmedCardCode = computed(() => cardCode.value.trim())
 const cardCodeStatusText = computed(() => {
-  if (cardCodeValidation.value.checking) return '正在验证点歌券...'
+  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
   if (trimmedCardCode.value) {
     if (cardCodeValidation.value.valid && cardCodeLimitBypassActive.value) {
-      return '点歌券可用，不占普通额度'
+      return locale.value.cardCodeAvailableBypass
     }
-    return cardCodeValidation.value.message || '已填写点歌券，提交前会验证'
+    return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
   }
-  return cardCodeFieldMeta.value.required ? '提交前需要添加有效点歌券' : '可选添加点歌券'
+  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredStatus : locale.value.cardCodeOptionalStatus
 })
 const mobileCardCodeLabel = computed(() => {
-  if (cardCodeValidation.value.checking) return '验证中'
+  if (cardCodeValidation.value.checking) return locale.value.validatingShort
   if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid === false) return '点歌券无效'
-    if (cardCodeValidation.value.valid) return '点歌券可用'
-    return '已填点歌券'
+    if (cardCodeValidation.value.valid === false) return locale.value.cardCodeInvalid
+    if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
+    return locale.value.cardCodeFilled
   }
-  return cardCodeFieldMeta.value.required ? '点歌券必填' : '点歌券可选'
+  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredShort : locale.value.cardCodeOptionalShort
 })
 const cardCodeModalHint = computed(() => {
-  if (cardCodeValidation.value.checking) return '正在验证点歌券...'
+  if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
   if (cardCodeValidation.value.message) return cardCodeValidation.value.message
-  return '保存时会先验证点歌券是否可用。'
+  return locale.value.cardCodeSaveHint
 })
 
 const resetCardCodeValidation = () => {
@@ -1599,7 +1560,7 @@ const validateCardCode = async (code) => {
   cardCodeValidation.value = {
     checking: true,
     valid: null,
-    message: '正在验证点歌券...'
+    message: locale.value.validatingCardCode
   }
 
   try {
@@ -1612,12 +1573,11 @@ const validateCardCode = async (code) => {
     cardCodeValidation.value = {
       checking: false,
       valid: true,
-      message: response?.message || '点歌券可用'
+      message: locale.value.cardCodeAvailable
     }
     return true
   } catch (err) {
-    const message =
-      err?.data?.message || err?.message || err?.statusMessage || '点歌券验证失败，请稍后重试'
+    const message = localizeServerError(err, locale.value.cardCodeValidateFailed)
     cardCodeValidation.value = {
       checking: false,
       valid: false,
@@ -1634,7 +1594,7 @@ const saveCardCode = async () => {
   const draft = cardCodeDraft.value.trim().toUpperCase()
   if (requireCardCodeForRequests.value && !draft) {
     if (window.$showNotification) {
-      window.$showNotification('请先填写点歌券', 'warning')
+      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
     }
     return
   }
@@ -1671,7 +1631,7 @@ const ensureCardCodeForSubmit = async () => {
 
     await openCardCodeModal()
     if (window.$showNotification) {
-      window.$showNotification('请先填写点歌券', 'warning')
+      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
     }
     return false
   }
@@ -1794,7 +1754,7 @@ const loadAudioMatchScript = (src) =>
     script.async = true
     script.dataset.audioMatch = src
     script.onload = () => resolve()
-    script.onerror = () => reject(new Error(`加载识曲资源失败: ${src}`))
+    script.onerror = () => reject(new Error(callLocale('audioMatchScriptLoadFailed', '', src)))
     document.head.appendChild(script)
   })
 
@@ -1810,7 +1770,7 @@ const ensureAudioMatchScripts = async () => {
       .then(() => loadAudioMatchScript('/audio-match/afp.js'))
       .then(() => {
         if (typeof window.GenerateFP !== 'function') {
-          throw new Error('识曲引擎初始化失败')
+          throw new Error(locale.value.audioMatchEngineFailed)
         }
       })
       .catch((err) => {
@@ -1839,8 +1799,8 @@ const parseAudioMatchResults = (response) => {
     return {
       key: `${song.id || 'unknown'}-${index}`,
       id: song.id,
-      name: song.name || '未知歌曲',
-      artist: artists.join(' / ') || '未知歌手',
+      name: song.name || locale.value.unknownSong,
+      artist: artists.join(' / ') || locale.value.unknownArtist,
       album: song.album?.name || '',
       cover: song.album?.picUrl || song.al?.picUrl || '',
       startTime: typeof item?.startTime === 'number' ? item.startTime : 0
@@ -1851,7 +1811,7 @@ const parseAudioMatchResults = (response) => {
 const handleAudioMatchFingerprint = async (recording) => {
   try {
     audioMatchProcessing.value = true
-    audioMatchStatus.value = '正在生成指纹并识别...'
+    audioMatchStatus.value = locale.value.audioMatchGenerating
 
     const fingerprint = await window.GenerateFP(recording)
     const response = await $fetch('/api/api-enhanced/netease/audio/match', {
@@ -1864,14 +1824,14 @@ const handleAudioMatchFingerprint = async (recording) => {
 
     const matches = parseAudioMatchResults(response)
     if (!matches.length) {
-      throw new Error('未识别到匹配歌曲，请换一段更清晰的副歌重试')
+      throw new Error(locale.value.audioMatchNoMatch)
     }
 
     audioMatchResults.value = matches
-    audioMatchStatus.value = `识别完成，找到 ${matches.length} 个候选结果`
+    audioMatchStatus.value = callLocale('audioMatchDone', '', matches.length)
   } catch (err) {
     console.error('听歌识曲失败:', err)
-    audioMatchError.value = err?.message || '听歌识曲失败，请稍后重试'
+    audioMatchError.value = err?.message || locale.value.audioMatchFailed
     audioMatchStatus.value = ''
     audioMatchResults.value = []
   } finally {
@@ -1884,7 +1844,7 @@ const initializeAudioMatch = async () => {
   await stopAudioMatchSession()
 
   audioMatchPreparing.value = true
-  audioMatchStatus.value = '正在请求麦克风权限...'
+  audioMatchStatus.value = locale.value.microphoneRequesting
 
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext
@@ -1894,7 +1854,7 @@ const initializeAudioMatch = async () => {
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error('当前环境不支持麦克风访问，请确保使用 HTTPS 访问或 localhost 调试')
+      throw new Error(locale.value.microphoneUnsupported)
     }
 
     if (audioMatchContext.audioWorklet) {
@@ -1906,7 +1866,7 @@ const initializeAudioMatch = async () => {
           case 'bufferhealth': {
             const progress = Math.min(1, Number(event.data.health) || 0)
             const currentSeconds = (AUDIO_MATCH_DURATION * progress).toFixed(1)
-            audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
+            audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', currentSeconds, AUDIO_MATCH_DURATION)
             break
           }
           case 'finished':
@@ -1936,7 +1896,7 @@ const initializeAudioMatch = async () => {
 
         // 提高更新频率以改善用户体验
         if (bufIndex % bufferSize === 0) {
-          audioMatchStatus.value = `录音中 ${currentSeconds}s / ${AUDIO_MATCH_DURATION}s`
+          audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', currentSeconds, AUDIO_MATCH_DURATION)
         }
 
         if (bufIndex + channelL.length > maxLength) {
@@ -1989,7 +1949,7 @@ const initializeAudioMatch = async () => {
       }),
       new Promise((_, reject) =>
         setTimeout(
-          () => reject(new Error('麦克风授权超时，请在系统设置中确认已允许麦克风权限')),
+          () => reject(new Error(locale.value.microphoneTimeout)),
           GET_USER_MEDIA_TIMEOUT_MS
         )
       )
@@ -1997,7 +1957,7 @@ const initializeAudioMatch = async () => {
 
     audioMatchMicSourceNode = audioMatchContext.createMediaStreamSource(audioMatchMicStream)
     audioMatchMicSourceNode.connect(audioMatchRecorderNode)
-    audioMatchStatus.value = '麦克风已连接，点击开始识曲'
+    audioMatchStatus.value = locale.value.microphoneReady
   } catch (err) {
     await stopAudioMatchSession()
     throw err
@@ -2014,7 +1974,7 @@ const openAudioMatchModal = async () => {
     await initializeAudioMatch()
   } catch (err) {
     console.error('初始化听歌识曲失败:', err)
-    audioMatchError.value = err?.message || '无法初始化听歌识曲，请检查麦克风权限'
+    audioMatchError.value = err?.message || locale.value.audioMatchInitFailed
   }
 }
 
@@ -2058,12 +2018,12 @@ const startAudioMatchRecording = async () => {
       await initializeAudioMatch()
     } catch (err) {
       console.error('重新初始化听歌识曲失败:', err)
-      audioMatchError.value = err?.message || '无法访问麦克风，请稍后重试'
+      audioMatchError.value = err?.message || locale.value.microphoneAccessFailed
       return
     }
   }
 
-  audioMatchStatus.value = `录音中 0.0s / ${AUDIO_MATCH_DURATION}s`
+  audioMatchStatus.value = callLocale('audioMatchRecordingProgress', '', '0.0', AUDIO_MATCH_DURATION)
   audioMatchRecording.value = true
   audioMatchRecorderNode.port.postMessage({
     message: 'start',
@@ -2191,7 +2151,7 @@ const handleExportData = () => {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
   if (window.$showNotification) {
-    window.$showNotification('导出成功', 'success')
+    window.$showNotification(locale.value.notifications.exportSuccess, 'success')
   }
 }
 
@@ -2209,7 +2169,7 @@ const handleImportData = async (event) => {
     if (data.cookie) {
       checkingNeteaseLogin.value = true
       if (window.$showNotification) {
-        window.$showNotification('正在验证Cookie有效性...', 'info')
+        window.$showNotification(locale.value.notifications.validatingCookie, 'info')
       }
 
       const res = await getLoginStatus(data.cookie)
@@ -2220,22 +2180,22 @@ const handleImportData = async (event) => {
           user: dataObj.profile || dataObj.account
         })
         if (window.$showNotification) {
-          window.$showNotification('导入成功', 'success')
+          window.$showNotification(locale.value.notifications.importSuccess, 'success')
         }
       } else {
         if (window.$showNotification) {
-          window.$showNotification('导入的Cookie无效或已过期', 'error')
+          window.$showNotification(locale.value.notifications.cookieInvalid, 'error')
         }
       }
     } else {
       if (window.$showNotification) {
-        window.$showNotification('文件格式错误', 'error')
+        window.$showNotification(locale.value.notifications.fileFormatError, 'error')
       }
     }
   } catch (e) {
     console.error('导入失败', e)
     if (window.$showNotification) {
-      window.$showNotification('导入失败: ' + e.message, 'error')
+      window.$showNotification(callLocale('notifications.importFailed', '', getErrorMessage(e)), 'error')
     }
   } finally {
     checkingNeteaseLogin.value = false
@@ -2284,15 +2244,15 @@ const checkQQMusicLoginStatus = () => {
   isQQMusicLoggedIn.value = true
 
   try {
-    qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: 'QQ音乐已登录' }
+    qqMusicUser.value = userStr ? JSON.parse(userStr) : { nickname: locale.value.qqLoggedIn }
   } catch {
-    qqMusicUser.value = { nickname: 'QQ音乐已登录' }
+    qqMusicUser.value = { nickname: locale.value.qqLoggedIn }
   }
 }
 
 const handleQQLoginSuccess = (data) => {
   qqMusicCookie.value = data.cookie
-  qqMusicUser.value = data.user || { nickname: 'QQ音乐已登录' }
+  qqMusicUser.value = data.user || { nickname: locale.value.qqLoggedIn }
   isQQMusicLoggedIn.value = true
 
   if (import.meta.client) {
@@ -2355,22 +2315,20 @@ onMounted(async () => {
       console.error('加载歌曲列表失败:', error)
     }
 
-    // 恢复登录前的搜索状态
     try {
       const pendingSearch = sessionStorage.getItem('pending_search')
       if (pendingSearch) {
-        const { title: savedTitle, platform: savedPlatform } = JSON.parse(pendingSearch)
+        const saved = JSON.parse(pendingSearch)
         sessionStorage.removeItem('pending_search')
-        if (savedTitle) {
-          title.value = savedTitle
-          if (savedPlatform) platform.value = savedPlatform
-          // 确保网易云登录状态就绪后再搜索，保障搜索结果完整性
+        if (saved.title) {
+          title.value = saved.title
+          if (saved.platform) platform.value = saved.platform
           await checkNeteaseLoginStatus()
           await handleSearch()
         }
       }
-    } catch (e) {
-      /* ignore */
+    } catch {
+      // 浏览器禁用会话存储时不影响页面初始化。
     }
   }
   // 音源健康检查功能已移除
@@ -2386,7 +2344,7 @@ const formattedPlayTimes = computed(() => {
     ...pt,
     displayName: pt.startTime || pt.endTime ? `${pt.name} (${formatPlayTimeRange(pt)})` : pt.name
   }))
-  return [{ id: '', displayName: '不指定时段' }, ...options]
+  return [{ id: '', displayName: locale.value.choosePlayTime }, ...options]
 })
 
 // 格式化播出时段时间范围
@@ -2396,12 +2354,12 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`
+    return `${playTime.startTime}`
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`
+    return `${playTime.endTime}`
   }
 
-  return '不限时间'
+  return locale.value.choosePlayTime
 }
 
 // 监听用户状态变化，当用户登录后重新获取投稿状态
@@ -2446,7 +2404,7 @@ watch(cardCodeDraft, (value) => {
 const handleEpisodeVote = async (episode) => {
   if (!episode.songId) {
     if (window.$showNotification) {
-      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+      window.$showNotification(locale.value.notifications.missingSongId, 'error')
     }
     return
   }
@@ -2470,7 +2428,7 @@ const handleEpisodeVote = async (episode) => {
     })
   } catch (err) {
     if (window.$showNotification) {
-      window.$showNotification(err.message || '点赞失败', 'error')
+      window.$showNotification(getErrorMessage(err) || locale.value.notifications.likeFailed, 'error')
     }
   } finally {
     voting.value = false
@@ -2530,7 +2488,9 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
+      const message = song.played
+        ? locale.value.playedCannotLike
+        : locale.value.scheduledCannotLike
       window.$showNotification(message, 'warning')
     }
     return
@@ -2580,9 +2540,9 @@ const handleSearch = async () => {
   searchError.value = ''
 
   if (!title.value.trim()) {
-    error.value = '歌曲名称不能为空'
+    error.value = locale.value.notifications.songNameRequired
     if (window.$showNotification) {
-      window.$showNotification('歌曲名称不能为空', 'error')
+      window.$showNotification(locale.value.notifications.songNameRequired, 'error')
     }
     return
   }
@@ -2663,7 +2623,7 @@ const handleSearch = async () => {
       console.log('搜索成功，找到', results.data.length, '首歌曲')
     } else {
       searchResults.value = []
-      const errorMsg = results && results.error ? results.error : '没有找到匹配的歌曲'
+      const errorMsg = results && results.error ? results.error : locale.value.noMatchingSongs
       error.value = errorMsg
       if (window.$showNotification) {
         window.$showNotification(errorMsg, 'info')
@@ -2677,7 +2637,7 @@ const handleSearch = async () => {
     }
 
     console.error('搜索错误:', err)
-    searchError.value = err.message || '搜索请求失败，请稍后重试'
+    searchError.value = getErrorMessage(err) || locale.value.searchRequestFailed
     error.value = searchError.value
 
     if (window.$showNotification) {
@@ -2706,7 +2666,7 @@ const getAudioUrl = async (result) => {
     if (sourceType === 'bilibili' || isBilibiliSong(result)) {
       try {
         const songId = result.musicId || result.id
-        if (!songId) throw new Error('缺少歌曲ID参数')
+        if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
         const options = result.bilibiliCid ? { bilibiliCid: String(result.bilibiliCid) } : undefined
         const urlResult = await musicSources.getSongUrl(songId, 0, 'bilibili', undefined, options)
@@ -2725,7 +2685,7 @@ const getAudioUrl = async (result) => {
     if (sourceType === 'vkeys-v3') {
       try {
         const songId = result.musicId || result.id
-        if (!songId) throw new Error('缺少歌曲ID参数')
+        if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
         const { getQuality } = useAudioQuality()
         const quality = getQuality(platform.value) || 8
@@ -2761,7 +2721,7 @@ const getAudioUrl = async (result) => {
         if (platform.value === 'tencent') {
           try {
             const songId = result.musicId || result.id
-            if (!songId) throw new Error('缺少歌曲ID参数')
+            if (!songId) throw new Error(locale.value.notifications.missingSongId)
 
             const { getQuality } = useAudioQuality()
             const quality = getQuality(platform.value) || 8
@@ -2923,9 +2883,9 @@ const getAudioUrl = async (result) => {
 
     return result
   } catch (err) {
-    error.value = '获取音乐URL失败，请稍后重试'
+    error.value = locale.value.notifications.musicUrlFailedRetry
     if (window.$showNotification) {
-      window.$showNotification('获取音乐URL失败，请稍后重试', 'error')
+      window.$showNotification(locale.value.notifications.musicUrlFailedRetry, 'error')
     }
     return result
   }
@@ -2940,9 +2900,9 @@ const playSong = async (result, playlist, playlistIndex) => {
 
   // 对于非哔哩哔哩平台，如果没有URL则提示错误
   if (!result.url && !isBilibiliSong(result)) {
-    error.value = '该歌曲无法播放，可能是付费内容'
+    error.value = locale.value.notifications.songUnavailable
     if (window.$showNotification) {
-      window.$showNotification('该歌曲无法播放，可能是付费内容', 'error')
+      window.$showNotification(locale.value.notifications.songUnavailable, 'error')
     }
     return
   }
@@ -2999,7 +2959,7 @@ const playSong = async (result, playlist, playlistIndex) => {
   if (!playResult) {
     console.error('[RequestForm] 播放器返回 false，播放失败')
     if (window.$showNotification) {
-      window.$showNotification('播放失败，请稍后重试', 'error')
+      window.$showNotification(locale.value.notifications.playFailed, 'error')
     }
     return
   }
@@ -3046,9 +3006,9 @@ const selectResult = async (result) => {
 
   // 如果没有URL，给出提示
   if (!result.url) {
-    success.value = '已选择歌曲，但可能无法播放完整版本'
+    success.value = locale.value.notifications.songSelectedMaybeLimited
     if (window.$showNotification) {
-      window.$showNotification('已选择歌曲，但可能无法播放完整版本', 'info')
+      window.$showNotification(locale.value.notifications.songSelectedMaybeLimited, 'info')
     }
   }
 
@@ -3074,23 +3034,17 @@ const handleShowLogin = () => {
   showLoginModal.value = true
 }
 
-// 未登录时跳转登录页，保留搜索状态
 const handleLoginRedirect = async () => {
-  // 保存搜索状态到 sessionStorage
   if (title.value.trim()) {
     try {
-      sessionStorage.setItem(
-        'pending_search',
-        JSON.stringify({
-          title: title.value.trim(),
-          platform: platform.value
-        })
-      )
-    } catch (e) {
-      /* ignore */
+      sessionStorage.setItem('pending_search', JSON.stringify({
+        title: title.value.trim(),
+        platform: platform.value
+      }))
+    } catch {
+      // 浏览器禁用会话存储时仍可继续登录。
     }
   }
-  // 带上 tab 参数，确保登录后回到投稿歌曲页
   await navigateTo(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
 }
 
@@ -3175,7 +3129,7 @@ const submitSong = async (result, options = {}) => {
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
-              '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+              locale.value.notifications.duplicateSong,
               'warning'
             )
           }
@@ -3196,7 +3150,7 @@ const submitSong = async (result, options = {}) => {
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
-              '这首歌曲已经在列表中了，不能重复投稿。您可以为它点赞支持！',
+              locale.value.notifications.duplicateSong,
               'warning'
             )
           }
@@ -3228,7 +3182,7 @@ const submitSong = async (result, options = {}) => {
 
       if (blacklistCheck.isBlocked) {
         const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-        error.value = `该歌曲无法点歌: ${reasons}`
+        error.value = callLocale('notifications.blacklistedSong', '', reasons)
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
@@ -3287,7 +3241,7 @@ const submitSong = async (result, options = {}) => {
     resetForm()
     return true
   } catch (err) {
-    error.value = err.message || '投稿失败，请稍后重试'
+    error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3341,7 +3295,7 @@ const handleSubmit = async () => {
     // 成功提示由父组件处理，这里只重置表单
     resetForm()
   } catch (err) {
-    error.value = err.message || '投稿失败，请稍后重试'
+    error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3534,7 +3488,7 @@ const handleAlbumSongVote = async (song) => {
   if (voting.value) return
   if (!song.songId) {
     if (window.$showNotification) {
-      window.$showNotification('无法投票：缺少歌曲ID', 'error')
+      window.$showNotification(locale.value.notifications.missingSongId, 'error')
     }
     return
   }
@@ -3548,7 +3502,7 @@ const handleAlbumSongVote = async (song) => {
     await songService.voteSong(song.songId)
 
     if (window.$showNotification) {
-      window.$showNotification('点赞成功！', 'success')
+      window.$showNotification(locale.value.notifications.likeSuccess, 'success')
     }
 
     // 静默刷新歌曲列表
@@ -3558,7 +3512,7 @@ const handleAlbumSongVote = async (song) => {
   } catch (error) {
     console.error('点赞失败:', error)
     if (window.$showNotification) {
-      window.$showNotification(error.message || '点赞失败，请稍后重试', 'error')
+      window.$showNotification(getErrorMessage(error) || locale.value.notifications.likeFailedRetry, 'error')
     }
   } finally {
     voting.value = false
@@ -3623,26 +3577,26 @@ const handlePlaylistPlay = async (song) => {
 // 手动输入相关方法
 const handleManualSubmit = async () => {
   if (!title.value.trim() || !manualArtist.value.trim()) {
-    error.value = '请输入完整的歌曲信息'
+    error.value = locale.value.notifications.completeSongInfoRequired
     if (window.$showNotification) {
-      window.$showNotification('请输入完整的歌曲信息', 'error')
+      window.$showNotification(locale.value.notifications.completeSongInfoRequired, 'error')
     }
     return
   }
 
   // 验证URL
   if (manualCover.value && !coverValidation.value.valid) {
-    error.value = '请修正封面URL错误后再提交'
+    error.value = locale.value.notifications.fixCoverUrl
     if (window.$showNotification) {
-      window.$showNotification('请修正封面URL错误后再提交', 'error')
+      window.$showNotification(locale.value.notifications.fixCoverUrl, 'error')
     }
     return
   }
 
   if (manualPlayUrl.value && !playUrlValidation.value.valid) {
-    error.value = '请修正播放地址URL错误后再提交'
+    error.value = locale.value.notifications.fixPlayUrl
     if (window.$showNotification) {
-      window.$showNotification('请修正播放地址URL错误后再提交', 'error')
+      window.$showNotification(locale.value.notifications.fixPlayUrl, 'error')
     }
     return
   }
@@ -3678,7 +3632,7 @@ const handleManualSubmit = async () => {
 
       if (blacklistCheck.isBlocked) {
         const reasons = blacklistCheck.reasons.map((r) => r.reason).join('; ')
-        error.value = `该歌曲无法点歌: ${reasons}`
+        error.value = callLocale('notifications.blacklistedSong', '', reasons)
         if (window.$showNotification) {
           window.$showNotification(error.value, 'error')
         }
@@ -3719,7 +3673,7 @@ const handleManualSubmit = async () => {
     resetForm()
     showManualModal.value = false
   } catch (err) {
-    error.value = err.message || '投稿失败，请稍后重试'
+    error.value = getErrorMessage(err) || locale.value.notifications.submitFailed
     if (window.$showNotification) {
       window.$showNotification(error.value, 'error')
     }
@@ -3735,7 +3689,7 @@ const handleRequestReplay = async (song) => {
   // 如果已经申请过，不执行
   if (song.replayRequested) {
     if (window.$showNotification) {
-      window.$showNotification('该歌曲已申请过重播', 'info')
+      window.$showNotification(locale.value.notifications.replayAlreadyRequested, 'info')
     }
     return
   }
@@ -3748,12 +3702,12 @@ const handleRequestReplay = async (song) => {
       songService.refreshSongsSilent().catch(console.error)
     }, 500)
     if (window.$showNotification) {
-      window.$showNotification('申请重播成功', 'success')
+      window.$showNotification(locale.value.notifications.replayRequestSuccess, 'success')
     }
   } catch (err) {
     console.error('申请重播失败:', err)
     if (window.$showNotification) {
-      window.$showNotification('申请重播失败: ' + err.message, 'error')
+      window.$showNotification(callLocale('notifications.replayRequestFailed', '', getErrorMessage(err)), 'error')
     }
   } finally {
     requestingReplay.value = false
@@ -3762,61 +3716,61 @@ const handleRequestReplay = async (song) => {
 
 // 获取重播按钮文本
 const getReplayButtonText = (song) => {
-  if (requestingReplay.value) return '申请中...'
-  if (!song) return '申请重播'
+  if (requestingReplay.value) return locale.value.replayRequesting
+  if (!song) return locale.value.requestReplay
 
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '非本学期'
+    return locale.value.notCurrentSemester
   }
 
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     // 如果在冷却期内
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `已拒绝（${song.replayRequestCooldownRemaining}小时后可重新申请）`
+      return callLocale('replayRejectedCooldown', '', song.replayRequestCooldownRemaining)
     }
     // 冷却期已过
-    return '申请重播'
+    return locale.value.requestReplay
   }
 
   if (song.replayRequestStatus === 'FULFILLED') {
-    return '已重播'
+    return locale.value.replayed
   }
 
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '已申请重播'
+    return locale.value.alreadyRequestedReplay
   }
 
-  return '申请重播'
+  return locale.value.requestReplay
 }
 
 // 获取重播按钮标题（tooltip）
 const getReplayButtonTitle = (song) => {
-  if (!song) return '申请重播'
+  if (!song) return locale.value.requestReplay
 
   // 检查学期
   if (currentSemester.value && song.semester !== currentSemester.value.name) {
-    return '只能申请重播当前学期的歌曲'
+    return locale.value.onlyCurrentSemesterReplay
   }
 
   // 检查重播申请状态
   if (song.replayRequestStatus === 'REJECTED') {
     if (song.replayRequestCooldownRemaining && song.replayRequestCooldownRemaining > 0) {
-      return `申请被拒绝，需要等待 ${song.replayRequestCooldownRemaining} 小时后才能重新申请`
+      return callLocale('replayRejectedTooltip', '', song.replayRequestCooldownRemaining)
     }
-    return '申请重播'
+    return locale.value.requestReplay
   }
 
   if (song.replayRequestStatus === 'FULFILLED') {
-    return '该歌曲已重播'
+    return locale.value.alreadyReplayed
   }
 
   if (song.replayRequested || song.replayRequestStatus === 'PENDING') {
-    return '该歌曲已申请过重播'
+    return locale.value.alreadyRequestedReplay
   }
 
-  return '申请重播'
+  return locale.value.requestReplay
 }
 
 // 检查重播按钮是否应该禁用
@@ -3909,9 +3863,9 @@ const checkSubmissionLimit = () => {
 
   // 检查投稿是否已关闭
   if (submissionStatus.value.submissionClosed) {
-    let message = '投稿功能已关闭'
+    let message = locale.value.submissionClosed
     if (submissionStatus.value.timeLimitationEnabled && !submissionStatus.value.currentTimePeriod) {
-      message = '当前不在投稿开放时段'
+      message = locale.value.outsideRequestTime
     }
     return {
       canSubmit: false,
@@ -3925,20 +3879,17 @@ const checkSubmissionLimit = () => {
     if (expected > 0 && accepted >= expected) {
       return {
         canSubmit: false,
-        message: `当前时段投稿名额已满 (${accepted}/${expected})`
+        message: callLocale('notifications.periodQuotaFull', '', accepted, expected)
       }
     }
   }
+
 
   if (!submissionStatus.value.limitEnabled) {
     return { canSubmit: true, message: '' }
   }
 
-  if (
-    cardCodeLimitBypassActive.value &&
-    trimmedCardCode.value &&
-    cardCodeValidation.value.valid === true
-  ) {
+  if (cardCodeLimitBypassActive.value && trimmedCardCode.value && cardCodeValidation.value.valid === true) {
     return { canSubmit: true, message: '' }
   }
 
@@ -3949,7 +3900,7 @@ const checkSubmissionLimit = () => {
   if (dailyLimit && dailyUsed >= dailyLimit) {
     return {
       canSubmit: false,
-      message: `今日投稿已达上限 (${dailyUsed}/${dailyLimit})`
+      message: callLocale('notifications.dailyLimitReached', '', dailyUsed, dailyLimit)
     }
   }
 
@@ -3957,7 +3908,7 @@ const checkSubmissionLimit = () => {
   if (weeklyLimit && weeklyUsed >= weeklyLimit) {
     return {
       canSubmit: false,
-      message: `本周投稿已达上限 (${weeklyUsed}/${weeklyLimit})`
+      message: callLocale('notifications.weeklyLimitReached', '', weeklyUsed, weeklyLimit)
     }
   }
 
@@ -3965,7 +3916,7 @@ const checkSubmissionLimit = () => {
   if (monthlyLimit && monthlyUsed >= monthlyLimit) {
     return {
       canSubmit: false,
-      message: `本月投稿已达上限 (${monthlyUsed}/${monthlyLimit})`
+      message: callLocale('notifications.monthlyLimitReached', '', monthlyUsed, monthlyLimit)
     }
   }
 
@@ -4401,6 +4352,43 @@ defineExpose({
 }
 
 /* 横向投稿状态样式 */
+.login-required-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.login-required-notice .notice-icon {
+  flex-shrink: 0;
+  color: #60a5fa;
+}
+
+.login-required-notice .notice-text {
+  color: #93c5fd;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.login-required-notice .login-link-btn {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.login-required-notice .login-link-btn:hover {
+  background: rgba(59, 130, 246, 0.35);
+  color: #bfdbfe;
+}
+
 .submission-status-horizontal {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
@@ -4443,45 +4431,6 @@ defineExpose({
   font-weight: 500;
   font-size: 13px;
   color: #ff6b6b;
-}
-
-/* 未登录提示样式 */
-.login-required-notice {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
-}
-
-.login-required-notice .notice-icon {
-  font-size: 14px;
-}
-
-.login-required-notice .notice-text {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 500;
-  font-size: 13px;
-  color: #93c5fd;
-}
-
-.login-required-notice .login-link-btn {
-  font-family: 'MiSans', sans-serif;
-  font-weight: 600;
-  font-size: 12px;
-  color: #60a5fa;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  border-radius: 4px;
-  padding: 0.2rem 0.6rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.login-required-notice .login-link-btn:hover {
-  background: rgba(59, 130, 246, 0.35);
-  color: #93c5fd;
 }
 
 .status-content-horizontal {

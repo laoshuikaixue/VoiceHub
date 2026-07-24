@@ -25,9 +25,9 @@
                 >
                   <Icon name="history" :size="20" />
                 </div>
-                最近播放 - 歌曲
+                {{ locale.recentTitle }}
               </h3>
-              <p class="text-xs text-zinc-500 mt-1 ml-13">查看并快速投稿您最近在网易云播放的歌曲</p>
+              <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.recentDesc }}</p>
             </div>
             <button
               class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
@@ -45,7 +45,7 @@
             >
               <Icon name="refresh" :size="32" class="animate-spin mb-4 text-blue-500" />
               <div class="text-[10px] font-black uppercase tracking-widest">
-                正在获取播放记录...
+                {{ locale.loadingRecent }}
               </div>
             </div>
 
@@ -63,7 +63,7 @@
                 class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
                 @click="fetchRecentSongs"
               >
-                重试加载
+                {{ locale.retryLoad }}
               </button>
             </div>
 
@@ -72,7 +72,7 @@
               class="flex flex-col items-center justify-center py-20 text-zinc-600"
             >
               <Icon name="music" :size="48" class="mb-4 opacity-20" />
-              <p class="text-sm font-bold uppercase tracking-widest">暂无最近播放记录</p>
+              <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noRecent }}</p>
             </div>
 
             <div v-else class="recent-song-list space-y-2">
@@ -126,7 +126,7 @@
                     class="flex items-center gap-2 px-3 py-1 bg-zinc-800/50 rounded-lg"
                   >
                     <Icon name="refresh" :size="10" class="animate-spin text-zinc-500" />
-                    <span class="text-[10px] text-zinc-500 font-black uppercase">检查中</span>
+                    <span class="text-[10px] text-zinc-500 font-black uppercase">{{ locale.checking }}</span>
                   </div>
                   <template v-else-if="getSimilarSong(item.data)">
                     <div
@@ -141,10 +141,10 @@
                     >
                       {{
                         getSimilarSong(item.data)?.played
-                          ? '已播放'
+                          ? locale.played
                           : getSimilarSong(item.data)?.scheduled
-                            ? '已排期'
-                            : '已在列表中'
+                            ? locale.scheduled
+                            : locale.inList
                       }}
                     </div>
 
@@ -156,7 +156,7 @@
                         @click="selectSong(item.data)"
                       >
                         {{
-                          submitting && selectedSongId === item.data?.id ? '处理中...' : '继续投稿'
+                          submitting && selectedSongId === item.data?.id ? locale.processing : locale.continueSubmit
                         }}
                       </button>
                       <button
@@ -181,7 +181,7 @@
                             getSimilarSong(item.data)?.voted ? 'text-red-500 fill-current' : ''
                           ]"
                         />
-                        {{ getSimilarSong(item.data)?.voted ? '已点赞' : '点赞' }}
+                        {{ getSimilarSong(item.data)?.voted ? locale.liked : locale.like }}
                       </button>
                     </div>
                   </template>
@@ -192,7 +192,7 @@
                     @click="selectSong(item.data)"
                   >
                     {{
-                      submitting && selectedSongId === item.data?.id ? '正在提交...' : '选择投稿'
+                      submitting && selectedSongId === item.data?.id ? locale.submitting : locale.selectSubmit
                     }}
                   </button>
                 </div>
@@ -208,13 +208,13 @@
               class="flex items-center gap-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
             >
               <Icon name="info" :size="12" />
-              数据来自网易云音乐播放记录
+              {{ locale.recentSource }}
             </div>
             <button
               class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
               @click="close"
             >
-              关闭窗口
+              {{ locale.close }}
             </button>
           </div>
         </div>
@@ -228,6 +228,18 @@ import { computed, ref, watch } from 'vue'
 import { getRecentSongs } from '~/utils/neteaseApi'
 import { convertToHttps } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
+const { songs: songsLocale } = useLocale()
+const locale = computed(() => {
+  const base = songsLocale.value?.mediaModals || {}
+  const emptyText = () => ''
+  return useSafeLocale({
+    ...base,
+    minutesAgo: base.minutesAgo || emptyText,
+    hoursAgo: base.hoursAgo || emptyText,
+    monthDay: base.monthDay || emptyText
+  })
+})
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
@@ -294,11 +306,11 @@ const formatTime = (timestamp) => {
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
+  if (diff < 60000) return locale.value.justNow
+  if (diff < 3600000) return formatLocaleValue(locale.value.minutesAgo, Math.floor(diff / 60000))
+  if (diff < 86400000) return formatLocaleValue(locale.value.hoursAgo, Math.floor(diff / 3600000))
 
-  return `${date.getMonth() + 1}月${date.getDate()}日`
+  return formatLocaleValue(locale.value.monthDay, date.getMonth() + 1, date.getDate())
 }
 
 const fetchRecentSongs = async () => {
@@ -312,10 +324,10 @@ const fetchRecentSongs = async () => {
     if (code === 200 && body && body.list) {
       songs.value = body.list.filter((item) => item.resourceType === 'SONG' && item.data)
     } else {
-      error.value = message || '获取最近播放失败'
+      error.value = message || locale.value.fetchRecentFailed
     }
   } catch (err) {
-    error.value = '网络请求失败'
+    error.value = locale.value.networkFailed
     console.error(err)
   } finally {
     loading.value = false
@@ -363,7 +375,9 @@ const handleLike = async (song) => {
 
   if (song.played || song.scheduled) {
     if (window.$showNotification) {
-      const message = song.played ? '已播放的歌曲不能点赞' : '已排期的歌曲不能点赞'
+      const message = song.played
+        ? (locale.value.playedCannotLike || '已播放的歌曲不能点赞')
+        : (locale.value.scheduledCannotLike || '已排期的歌曲不能点赞')
       window.$showNotification(message, 'warning')
     }
     return

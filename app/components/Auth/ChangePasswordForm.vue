@@ -5,7 +5,7 @@
         <label
           for="current-password"
           class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1"
-          >当前密码</label
+          >{{ locale.currentPassword }}</label
         >
         <div class="relative group">
           <div
@@ -23,7 +23,7 @@
                 : 'border-zinc-800 focus:border-blue-500/30'
             ]"
             :type="showCurrentPassword ? 'text' : 'password'"
-            placeholder="请输入当前密码"
+            :placeholder="locale.currentPasswordPlaceholder"
             required
             @input="error = ''"
           >
@@ -42,7 +42,7 @@
         <label
           for="new-password"
           class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1"
-          >新密码</label
+          >{{ locale.newPassword }}</label
         >
         <div class="relative group">
           <div
@@ -60,7 +60,7 @@
                 : 'border-zinc-800 focus:border-blue-500/30'
             ]"
             :type="showNewPassword ? 'text' : 'password'"
-            placeholder="请输入新密码"
+            :placeholder="locale.newPasswordPlaceholder"
             required
             @input="
               error = '';
@@ -88,7 +88,7 @@
           </div>
           <div class="flex justify-between items-center">
             <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500"
-              >密码强度</span
+              >{{ locale.passwordStrength }}</span
             >
             <span
               class="text-[10px] font-black uppercase tracking-widest"
@@ -104,7 +104,7 @@
         <label
           for="confirm-password"
           class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1"
-          >确认新密码</label
+          >{{ locale.confirmPassword }}</label
         >
         <div class="relative group">
           <div
@@ -122,7 +122,7 @@
                 : 'border-zinc-800 focus:border-blue-500/30'
             ]"
             :type="showConfirmPassword ? 'text' : 'password'"
-            placeholder="请再次输入新密码"
+            :placeholder="locale.confirmPasswordPlaceholder"
             required
             @input="error = ''"
           >
@@ -143,11 +143,11 @@
             class="flex items-center gap-1.5 text-rose-500"
           >
             <XCircle :size="12" />
-            <span class="text-[10px] font-bold">密码不匹配</span>
+            <span class="text-[10px] font-bold">{{ locale.mismatch }}</span>
           </div>
           <div v-else class="flex items-center gap-1.5 text-emerald-500">
             <CheckCircle2 :size="12" />
-            <span class="text-[10px] font-bold">密码匹配</span>
+            <span class="text-[10px] font-bold">{{ locale.matched }}</span>
           </div>
         </div>
       </div>
@@ -175,7 +175,7 @@
         type="submit"
       >
         <Loader2 v-if="loading" :size="18" class="animate-spin" />
-        <span>{{ loading ? '处理中...' : isFirstLogin ? '设置初始密码' : '确认修改密码' }}</span>
+        <span>{{ loading ? locale.processing : isFirstLogin ? locale.setInitial : locale.submitChange }}</span>
       </button>
     </form>
   </div>
@@ -193,6 +193,8 @@ import {
   AlertCircle,
   Loader2
 } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
+import { usePasswordStrength } from '~/composables/usePasswordStrength'
 
 // 组件属性
 const props = defineProps({
@@ -204,6 +206,9 @@ const props = defineProps({
 
 const auth = useAuth()
 const router = useRouter()
+const { auth: authLocale } = useLocale()
+const locale = computed(() => authLocale.value?.changePasswordForm || {})
+const { localize: localizeServerError } = useServerErrors()
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -222,47 +227,7 @@ const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
 // 密码强度计算
-const passwordStrength = computed(() => {
-  const password = newPassword.value
-  if (!password) return { width: '0%', colorClass: '', textColorClass: '', text: '' }
-
-  let score = 0
-
-  if (password.length >= 8) score += 25
-  if (/[A-Z]/.test(password)) score += 25
-  if (/[a-z]/.test(password)) score += 25
-  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score += 25
-
-  if (score < 50) {
-    return {
-      width: `${score || 10}%`,
-      colorClass: 'bg-rose-500',
-      textColorClass: 'text-rose-500',
-      text: '弱'
-    }
-  } else if (score < 75) {
-    return {
-      width: `${score}%`,
-      colorClass: 'bg-amber-500',
-      textColorClass: 'text-amber-500',
-      text: '中等'
-    }
-  } else if (score < 100) {
-    return {
-      width: `${score}%`,
-      colorClass: 'bg-blue-500',
-      textColorClass: 'text-blue-500',
-      text: '强'
-    }
-  } else {
-    return {
-      width: '100%',
-      colorClass: 'bg-emerald-500',
-      textColorClass: 'text-emerald-500',
-      text: '极强'
-    }
-  }
-})
+const passwordStrength = usePasswordStrength(newPassword)
 
 // 表单验证
 const isFormValid = computed(() => {
@@ -286,7 +251,7 @@ const isFormValid = computed(() => {
 
 const validatePassword = () => {
   if (newPassword.value && newPassword.value.length < 8) {
-    error.value = '密码长度至少为8位'
+    error.value = locale.value.passwordTooShort
   } else {
     error.value = ''
   }
@@ -294,12 +259,12 @@ const validatePassword = () => {
 
 const handleChangePassword = async () => {
   if (newPassword.value !== confirmPassword.value) {
-    error.value = '新密码和确认密码不匹配'
+    error.value = locale.value.newPasswordMismatch
     return
   }
 
   if (newPassword.value.length < 8) {
-    error.value = '新密码长度至少为8位'
+    error.value = locale.value.newPasswordTooShort
     return
   }
 
@@ -310,7 +275,7 @@ const handleChangePassword = async () => {
   try {
     if (props.isFirstLogin) {
       await auth.setInitialPassword(newPassword.value)
-      success.value = '密码设置成功！正在跳转...'
+      success.value = locale.value.initialSuccess
 
       // 清空表单
       currentPassword.value = ''
@@ -330,7 +295,7 @@ const handleChangePassword = async () => {
       }, 2000)
     } else {
       await auth.changePassword(currentPassword.value, newPassword.value)
-      success.value = '密码修改成功！请重新登录'
+      success.value = locale.value.changeSuccess
 
       // 清空表单
       currentPassword.value = ''
@@ -344,18 +309,8 @@ const handleChangePassword = async () => {
       }, 2000)
     }
   } catch (err) {
-    // 提取错误信息，支持多种错误格式（优先使用 message）
-    if (err.data && err.data.message) {
-      error.value = err.data.message
-    } else if (err.data && err.data.statusMessage) {
-      error.value = err.data.statusMessage
-    } else if (err.message) {
-      error.value = err.message
-    } else if (err.statusMessage) {
-      error.value = err.statusMessage
-    } else {
-      error.value = '操作失败，请重试'
-    }
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(err, locale.value.failed)
   } finally {
     loading.value = false
   }

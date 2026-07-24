@@ -1,9 +1,10 @@
 import nodemailer from 'nodemailer'
 import { db } from '~/drizzle/db'
-import { emailTemplates, systemSettings, users } from '~/drizzle/schema'
+import { emailTemplates, users } from '~/drizzle/schema'
 import { and, eq, isNotNull } from 'drizzle-orm'
 import { getSiteTitle } from '~~/server/utils/siteUtils'
 import { formatIPForEmail } from '~~/server/utils/ip-utils'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 const HTML_ESCAPE_MAP: Record<string, string> = {
   '&': '&amp;',
@@ -224,8 +225,7 @@ export class SmtpService {
     }
 
     try {
-      const settingsResult = await db.select().from(systemSettings).limit(1)
-      const settings = settingsResult[0]
+      const settings = await getSystemSettingsCached()
 
       if (!settings || !settings.smtpEnabled || !settings.smtpHost) {
         this.smtpConfig = null

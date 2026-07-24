@@ -27,9 +27,9 @@
                 >
                   <Icon name="music" :size="20" />
                 </div>
-                QQ音乐扫码登录
+                {{ locale.qqTitle }}
               </h3>
-              <p class="ml-13 mt-1 text-xs text-zinc-500">扫描二维码以获取账号播放能力</p>
+              <p class="ml-13 mt-1 text-xs text-zinc-500">{{ locale.qqDesc }}</p>
             </div>
             <button
               class="rounded-2xl bg-zinc-800/50 p-3 text-zinc-500 transition-all hover:bg-zinc-800 hover:text-zinc-200"
@@ -44,7 +44,7 @@
             <div class="flex min-h-[250px] w-full flex-col items-center justify-center">
               <div v-if="loading" class="flex flex-col items-center text-zinc-500">
                 <Icon name="loader" :size="48" class="mb-4 animate-spin text-zinc-400" />
-                <p class="text-[10px] font-bold uppercase tracking-widest">正在获取二维码...</p>
+                <p class="text-[10px] font-bold uppercase tracking-widest">{{ locale.loadingQr }}</p>
               </div>
 
               <div v-else-if="qrImg" class="group relative">
@@ -61,8 +61,8 @@
                 >
                   <div class="flex flex-col items-center text-zinc-100">
                     <Icon name="refresh" :size="40" class="mb-3 text-zinc-400" />
-                    <span class="text-xs font-black uppercase tracking-widest">二维码已失效</span>
-                    <span class="mt-1 text-[10px] font-bold text-zinc-500">点击刷新</span>
+                    <span class="text-xs font-black uppercase tracking-widest">{{ locale.qrExpired }}</span>
+                    <span class="mt-1 text-[10px] font-bold text-zinc-500">{{ locale.clickRefresh }}</span>
                   </div>
                 </div>
               </div>
@@ -75,7 +75,7 @@
                   type="button"
                   @click="initLogin"
                 >
-                  重试
+                  {{ locale.retry }}
                 </button>
               </div>
 
@@ -89,19 +89,19 @@
                     v-if="status === 'expired'"
                     class="text-xs font-black uppercase tracking-widest text-zinc-400"
                   >
-                    二维码已过期，请点击刷新
+                    {{ locale.expiredRefresh }}
                   </p>
                   <p
                     v-else-if="status === 'waiting'"
                     class="text-xs font-black uppercase tracking-widest text-zinc-400"
                   >
-                    请使用 QQ 扫码登录
+                    {{ locale.qqWaiting }}
                   </p>
                   <p
                     v-else-if="status === 'success'"
                     class="text-xs font-black uppercase tracking-widest text-emerald-500"
                   >
-                    登录成功，正在关闭...
+                    {{ locale.qqSuccess }}
                   </p>
                 </Transition>
               </div>
@@ -111,7 +111,7 @@
               <p
                 class="text-center text-[10px] font-black uppercase leading-relaxed tracking-[0.15em] text-zinc-500"
               >
-                登录状态仅保存到当前浏览器，用于 QQ 音乐播放和歌词解析。
+                {{ locale.qqTip }}
               </p>
             </div>
           </div>
@@ -122,8 +122,12 @@
 </template>
 
 <script setup>
-import { onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
+
+const { songs } = useLocale()
+const locale = computed(() => songs.value?.musicLoginModal || {})
 
 const props = defineProps({
   show: {
@@ -168,8 +172,8 @@ const buildUserInfo = (session, user) => {
   return {
     userId: uin,
     id: uin,
-    nickname: uin ? `QQ ${uin}` : 'QQ音乐账号',
-    userName: uin ? `QQ ${uin}` : 'QQ音乐账号',
+    nickname: uin ? `QQ ${uin}` : locale.value.qqAccount,
+    userName: uin ? `QQ ${uin}` : locale.value.qqAccount,
     raw: session
   }
 }
@@ -187,7 +191,7 @@ const initLogin = async () => {
     const response = await $fetch('/api/native-api/qq/login-qr')
     const data = response?.data || {}
     if (!response?.success || !data.img || !data.ptqrtoken || !data.qrsig) {
-      throw new Error('QQ 登录二维码返回不完整')
+      throw new Error(locale.value.qqQrIncomplete)
     }
 
     qrPayload = data
@@ -196,7 +200,7 @@ const initLogin = async () => {
     timer = setInterval(checkStatus, 3000)
   } catch (error) {
     console.error('初始化 QQ 登录失败:', error)
-    errorMessage.value = error?.message || '获取 QQ 登录二维码失败'
+    errorMessage.value = error?.message || locale.value.qqQrFailed
   } finally {
     loading.value = false
   }
@@ -219,7 +223,7 @@ const checkStatus = async () => {
 
     if (loginStatus === 'success' || data.isOk) {
       const cookie = data.cookie || getSessionCookie(data.session)
-      if (!cookie) throw new Error('QQ 登录成功但未返回 Cookie')
+      if (!cookie) throw new Error(locale.value.qqMissingCookie)
 
       status.value = 'success'
       stopPolling()
@@ -247,7 +251,7 @@ const checkStatus = async () => {
     status.value = 'waiting'
   } catch (error) {
     console.error('检查 QQ 登录状态失败:', error)
-    errorMessage.value = error?.message || '检查 QQ 登录状态失败'
+    errorMessage.value = error?.message || locale.value.qqCheckFailed
     stopPolling()
   } finally {
     checking.value = false

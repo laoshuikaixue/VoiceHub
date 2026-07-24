@@ -31,7 +31,7 @@
         <div v-if="settings.showTitle" class="song-title">
           {{ schedule.song.title }}
           <!-- 重播标识 -->
-          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
+          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print"> {{ locale.replay }} </span>
           <!-- 跨学期标识 -->
           <span
             v-if="
@@ -41,7 +41,7 @@
             "
             class="cross-semester-badge-print"
           >
-            跨学期
+            {{ locale.crossSemester }}
           </span>
         </div>
         <div v-if="settings.showArtist" class="song-artist">
@@ -51,7 +51,7 @@
 
       <!-- 投稿人信息（重播歌曲不显示申请人，只显示原投稿人） -->
       <div v-if="settings.showRequester" class="requester-info">
-        <span class="label">投稿人：</span>
+        <span class="label">{{ locale.requesterPrefix }}</span>
         <span class="value">
           {{ schedule.song.requester }}
           <span v-if="schedule.song.collaborators && schedule.song.collaborators.length > 0">
@@ -62,11 +62,11 @@
 
       <!-- 人数信息 -->
       <div v-if="settings.showVotes" class="votes-info">
-        <span v-if="schedule.song.replayRequestCount > 0" class="label">申请重播：</span>
-        <span v-else class="label">热度：</span>
+        <span v-if="schedule.song.replayRequestCount > 0" class="label">{{ locale.replayRequestsPrefix }}</span>
+        <span v-else class="label">{{ locale.popularityPrefix }}</span>
         <span class="value">{{
           schedule.song.replayRequestCount > 0
-            ? schedule.song.replayRequestCount + '人'
+            ? locale.replayCount(schedule.song.replayRequestCount)
             : schedule.song.voteCount || 0
         }}</span>
       </div>
@@ -77,6 +77,9 @@
 <script setup>
 import { defineProps } from 'vue'
 import { convertToHttps } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
+const { admin } = useLocale()
+const locale = computed(() => admin.value.schedulePrinter)
 
 // 定义props
 defineProps({

@@ -16,9 +16,9 @@
         </div>
       </div>
 
-      <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ errorTitle }}</h3>
+      <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ displayTitle }}</h3>
       <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest max-w-xs mb-8">
-        {{ errorMessage }}
+        {{ displayMessage }}
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
@@ -28,7 +28,7 @@
           @click="handleRetry"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': retrying }" />
-          <span>{{ retrying ? '正在重试' : '重新尝试' }}</span>
+          <span>{{ retrying ? locale.retrying : locale.retry }}</span>
         </button>
 
         <button
@@ -36,7 +36,7 @@
           class="px-6 py-2.5 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
           @click="toggleDetails"
         >
-          {{ showErrorDetails ? '隐藏详细信息' : '查看详细信息' }}
+          {{ showErrorDetails ? locale.hideDetails : locale.showDetails }}
         </button>
       </div>
 
@@ -54,7 +54,7 @@
             <div class="flex items-center gap-2 mb-3">
               <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                >系统调试信息</span
+                >{{ locale.debugInfo }}</span
               >
             </div>
             <pre
@@ -71,6 +71,10 @@
 <script lang="ts" setup>
 import { AlertCircle, RefreshCw } from '@lucide/vue'
 import { computed, ref } from 'vue'
+import { useLocale } from '~/utils/locale'
+
+const { ui } = useLocale()
+const locale = computed(() => ui.value?.errorBoundary || {})
 
 interface Props {
   error?: Error | string | null
@@ -82,13 +86,15 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   error: null,
-  errorTitle: '加载失败',
-  errorMessage: '数据加载时发生错误，请稍后重试',
+  errorTitle: undefined,
+  errorMessage: undefined,
   showDetails: false,
   onRetry: undefined
 })
 
 const hasError = computed(() => !!props.error)
+const displayTitle = computed(() => props.errorTitle || locale.value.defaultTitle)
+const displayMessage = computed(() => props.errorMessage || locale.value.defaultMessage)
 const retrying = ref(false)
 const showErrorDetails = ref(false)
 
@@ -105,7 +111,7 @@ const handleRetry = async () => {
   try {
     await props.onRetry()
   } catch (error) {
-    console.error('重试失败:', error)
+    console.error(locale.value.retryFailed, error)
   } finally {
     retrying.value = false
   }

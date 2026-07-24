@@ -2,7 +2,7 @@
   <div v-if="hasEnabledProviders" class="mt-6 w-full">
     <div class="flex items-center text-center text-[var(--text-tertiary)] text-xs mb-4">
       <div class="flex-1 border-b border-[var(--border-color)] opacity-20" />
-      <span class="px-2.5">或使用第三方账号登录</span>
+      <span class="px-2.5">{{ locale.divider }}</span>
       <div class="flex-1 border-b border-[var(--border-color)] opacity-20" />
     </div>
     <div class="flex flex-wrap justify-center gap-4">
@@ -11,7 +11,7 @@
         :key="provider.key"
         type="button"
         :class="providerButtonClass(provider)"
-        :title="`使用 ${provider.name} 登录`"
+        :title="formatLocale(locale.loginWith, provider.name)"
         @click="loginWith(provider)"
       >
         <AuthProvidersGitHubIcon v-if="provider.key === 'github'" />
@@ -30,11 +30,23 @@
 
 <script setup>
 import { Shield } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
 import Icon from '~/components/UI/Icon.vue'
 import { getAggregateOAuthLoginTypeIcon } from '~/utils/oauth'
 
 const { oauthProviders, refreshSiteConfig } = useSiteConfig()
 const route = useRoute()
+const { auth } = useLocale()
+const locale = computed(() => auth.value?.oauthButtons || {})
+const formatLocale = (value, ...args) => {
+  if (typeof value === 'function') return value(...args)
+  if (typeof value === 'string') {
+    return value.replace(/{(\d+)}/g, (match, index) =>
+      args[Number(index)] !== undefined ? String(args[Number(index)]) : match
+    )
+  }
+  return 'OAuth 登录'
+}
 
 onMounted(async () => {
   await refreshSiteConfig()

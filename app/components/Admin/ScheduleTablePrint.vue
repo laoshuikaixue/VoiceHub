@@ -2,7 +2,7 @@
   <table class="schedule-timetable">
     <thead>
       <tr>
-        <th v-if="settings.showSequence" class="col-sequence">序号</th>
+        <th v-if="settings.showSequence" class="col-sequence">{{ locale.sequence }}</th>
         <th v-for="date in dates" :key="date" class="col-date">
           {{ formatDate(date) }}
         </th>
@@ -30,9 +30,9 @@
                 <div v-if="settings.showTitle" class="song-title">
                   <span class="title-text">{{ getSchedule(date, pt.key, rowIndex - 1).song.title }}</span>
                   <!-- 重播标识 -->
-                  <span v-if="getSchedule(date, pt.key, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
+                  <span v-if="getSchedule(date, pt.key, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> {{ locale.replay }} </span>
                   <!-- 跨学期标识 -->
-                  <span v-if="settings.currentSemester && getSchedule(date, pt.key, rowIndex - 1).song.semester && getSchedule(date, pt.key, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> 跨学期 </span>
+                  <span v-if="settings.currentSemester && getSchedule(date, pt.key, rowIndex - 1).song.semester && getSchedule(date, pt.key, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> {{ locale.crossSemester }} </span>
                 </div>
                 <div v-if="settings.showArtist" class="song-artist">
                   {{ getSchedule(date, pt.key, rowIndex - 1).song.artist }}
@@ -43,7 +43,7 @@
                   </span>
                   <span v-if="settings.showRequester && settings.showVotes" class="meta-divider">|</span>
                   <span v-if="settings.showVotes" class="song-votes">
-                    {{ getSchedule(date, pt.key, rowIndex - 1).song.replayRequestCount > 0 ? '重播:' + getSchedule(date, pt.key, rowIndex - 1).song.replayRequestCount : '热度:' + (getSchedule(date, pt.key, rowIndex - 1).song.voteCount || 0) }}
+                    {{ formatVotes(getSchedule(date, pt.key, rowIndex - 1).song) }}
                   </span>
                 </div>
               </div>
@@ -69,9 +69,9 @@
                 <div v-if="settings.showTitle" class="song-title">
                   <span class="title-text">{{ getScheduleAll(date, rowIndex - 1).song.title }}</span>
                   <!-- 重播标识 -->
-                  <span v-if="getScheduleAll(date, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> 重播 </span>
+                  <span v-if="getScheduleAll(date, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> {{ locale.replay }} </span>
                   <!-- 跨学期标识 -->
-                  <span v-if="settings.currentSemester && getScheduleAll(date, rowIndex - 1).song.semester && getScheduleAll(date, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> 跨学期 </span>
+                  <span v-if="settings.currentSemester && getScheduleAll(date, rowIndex - 1).song.semester && getScheduleAll(date, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> {{ locale.crossSemester }} </span>
                 </div>
                 <div v-if="settings.showArtist" class="song-artist">
                   {{ getScheduleAll(date, rowIndex - 1).song.artist }}
@@ -82,7 +82,7 @@
                   </span>
                   <span v-if="settings.showRequester && settings.showVotes" class="meta-divider">|</span>
                   <span v-if="settings.showVotes" class="song-votes">
-                    {{ getScheduleAll(date, rowIndex - 1).song.replayRequestCount > 0 ? '重播:' + getScheduleAll(date, rowIndex - 1).song.replayRequestCount : '热度:' + (getScheduleAll(date, rowIndex - 1).song.voteCount || 0) }}
+                    {{ formatVotes(getScheduleAll(date, rowIndex - 1).song) }}
                   </span>
                 </div>
               </div>
@@ -97,6 +97,12 @@
 <script setup>
 import { computed } from 'vue'
 import { convertToHttps } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
+const { admin } = useLocale()
+const locale = computed(() => admin.value.schedulePrinter)
+const formatVotes = (song) => song.replayRequestCount > 0
+  ? locale.value.replayCountShort(song.replayRequestCount)
+  : locale.value.popularityCountShort(song.voteCount || 0)
 
 const props = defineProps({
   groupedSchedules: {

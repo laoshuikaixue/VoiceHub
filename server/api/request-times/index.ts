@@ -1,17 +1,11 @@
-import { db, eq, requestTimes, systemSettings } from '~/drizzle/db'
+import { db, eq, requestTimes } from '~/drizzle/db'
 import { and, gt, lte } from 'drizzle-orm'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   try {
-    const settingsResult = await db
-      .select({
-        enableRequestTimeLimitation: systemSettings.enableRequestTimeLimitation,
-        forceBlockAllRequests: systemSettings.forceBlockAllRequests
-      })
-      .from(systemSettings)
-      .limit(1)
-    const settings = settingsResult[0] || null
+    const settings = await getSystemSettingsCached()
     let enabled = settings?.enableRequestTimeLimitation || false
     const forceBlockAllRequests = settings?.forceBlockAllRequests || false
     let hit = false

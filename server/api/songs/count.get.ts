@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs } from '~/drizzle/schema'
 import { count, eq } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -18,9 +19,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('获取歌曲数量失败:', error)
-    throw createError({
-      statusCode: 500,
-      message: '获取歌曲数量失败'
-    })
+    throw createApiError(500, 'SONG_FETCH_COUNT_FAILED', '获取歌曲数量失败')
   }
 })

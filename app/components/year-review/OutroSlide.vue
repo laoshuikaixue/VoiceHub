@@ -4,14 +4,14 @@
 
     <Transition name="entry" appear>
       <div v-show="active" class="content">
-        <div class="label">未来可期</div>
+        <div class="label">{{ yearReview.future }}</div>
 
         <div class="year-container">
           <h2 class="year-next">{{ data.year + 1 }}</h2>
           <div class="year-underline" />
         </div>
 
-        <p class="text-intro">愿音乐继续陪伴你的每一天</p>
+        <p class="text-intro">{{ yearReview.futureDesc }}</p>
 
         <div class="action-buttons">
           <NuxtLink to="/" class="btn-primary group">
@@ -30,7 +30,7 @@
                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                 <polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              返回首页
+              {{ yearReview.backHome }}
             </span>
           </NuxtLink>
         </div>
@@ -40,11 +40,14 @@
 </template>
 
 <script setup>
+import { useLocale } from '~/utils/locale'
+
 defineProps({
   data: Object,
   active: Boolean
 })
 defineEmits(['share'])
+const { yearReview } = useLocale()
 </script>
 
 <style scoped>

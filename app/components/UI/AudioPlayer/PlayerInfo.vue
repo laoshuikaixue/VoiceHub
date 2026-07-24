@@ -1,10 +1,10 @@
 <template>
   <div class="player-info">
-    <div class="cover-container" title="点击打开歌词" @click="openLyrics">
+    <div class="cover-container" :title="locale.openLyrics" @click="openLyrics">
       <template v-if="song.cover && !coverError">
         <img
           :src="convertToHttps(song.cover)"
-          alt="封面"
+          :alt="locale.coverAlt"
           class="player-cover"
           referrerpolicy="no-referrer"
           @error="handleImageError"
@@ -30,7 +30,7 @@
           <circle cx="20" cy="11" fill="currentColor" opacity="0.7" r="2" />
           <circle cx="18" cy="15" fill="currentColor" opacity="0.7" r="1.5" />
         </svg>
-        <span class="lyrics-text">歌词</span>
+        <span class="lyrics-text">{{ locale.lyrics }}</span>
       </div>
     </div>
     <div class="player-text">
@@ -41,8 +41,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { convertToHttps } from '~/utils/url'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   song: {
@@ -53,6 +54,8 @@ const props = defineProps({
 
 const emit = defineEmits(['openLyrics'])
 
+const { ui } = useLocale()
+const locale = computed(() => ui.value?.playerInfo || {})
 const coverError = ref(false)
 
 const handleImageError = () => {
@@ -60,7 +63,7 @@ const handleImageError = () => {
 }
 
 const getFirstChar = (title) => {
-  if (!title) return '音'
+  if (!title) return locale.value.textCoverFallback
   return title.trim().charAt(0)
 }
 

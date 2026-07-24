@@ -5,12 +5,13 @@ import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
   const config = await db.query.systemSettings.findFirst()
   if (!config?.allowOAuthRegistration) {
-    throw createError({ statusCode: 403, message: '系统已关闭第三方账号注册功能，请登录现有账号进行绑定' })
+    throw createApiError(403, 'AUTH_OAUTH_REGISTER_DISABLED_BIND', '系统已关闭第三方账号注册功能，请登录现有账号进行绑定')
   }
 
   const body = await readBody(event)
@@ -22,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
-    throw createError({ statusCode: 400, message: '注册会话已过期，请重新通过第三方登录发起' })
+    throw createApiError(400, 'AUTH_REGISTER_SESSION_EXPIRED', '注册会话已过期，请重新通过第三方登录发起')
   }
 
   let payload
@@ -30,12 +31,12 @@ export default defineEventHandler(async (event) => {
     payload = verifyBindingToken(bindingToken)
   } catch (e) {
     deleteCookie(event, 'binding-token')
-    throw createError({ statusCode: 400, message: '无效的注册令牌' })
+    throw createApiError(400, 'AUTH_INVALID_REGISTER_TOKEN', '无效的注册令牌')
   }
 
   // 验证输入
   if (!username || !name || !password || !confirmPassword) {
-    throw createError({ statusCode: 400, message: '姓名、用户名、密码不能为空' })
+    throw createApiError(400, 'AUTH_NAME_USERNAME_PASSWORD_REQUIRED', '姓名、用户名、密码不能为空')
   }
 
   const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
-    throw createError({ statusCode: 400, message: '年级和班级需要同时选择，或全部留空' })
+    throw createApiError(400, 'AUTH_GRADE_CLASS_TOGETHER', '年级和班级需要同时选择，或全部留空')
   }
 
   if (selectedGrade && selectedClass) {
@@ -55,7 +56,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!existingClass) {
-      throw createError({ statusCode: 400, message: '请选择系统内已存在的年级和班级' })
+      throw createApiError(400, 'AUTH_GRADE_CLASS_MUST_EXIST', '请选择系统内已存在的年级和班级')
     }
   }
 
@@ -65,7 +66,7 @@ export default defineEventHandler(async (event) => {
   })
 
   if (existingUser) {
-    throw createError({ statusCode: 409, message: '用户名已存在，请使用其他用户名' })
+    throw createApiError(409, 'AUTH_USERNAME_TAKEN', '用户名已存在，请使用其他用户名')
   }
 
   // 检查OAuth身份是否已被绑定
@@ -75,7 +76,7 @@ export default defineEventHandler(async (event) => {
   })
 
   if (existingIdentity) {
-    throw createError({ statusCode: 409, message: '该第三方账号已被绑定，请直接登录或绑定到现有账户' })
+    throw createApiError(409, 'AUTH_OAUTH_ALREADY_BOUND', '该第三方账号已被绑定，请直接登录或绑定到现有账户')
   }
 
   try {

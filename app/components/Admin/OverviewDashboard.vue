@@ -48,7 +48,7 @@
       >
         <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
-            <Activity :size="18" class="text-blue-500" /> 最近活动
+            <Activity :size="18" class="text-blue-500" /> {{ locale.recentActivities }}
           </h3>
           <button
             class="p-2 text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -66,14 +66,14 @@
             class="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 py-20"
           >
             <RefreshCw :size="24" class="animate-spin" />
-            <span class="text-sm">加载中...</span>
+            <span class="text-sm">{{ locale.loading }}</span>
           </div>
           <div
             v-else-if="recentActivities.length === 0"
             class="flex flex-col items-center justify-center h-full text-zinc-500 gap-3 py-20"
           >
             <Inbox :size="24" />
-            <span class="text-sm">暂无活动记录</span>
+            <span class="text-sm">{{ locale.noActivities }}</span>
           </div>
           <template v-else>
             <div
@@ -114,7 +114,7 @@
       >
         <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
-            <ShieldCheck :size="18" class="text-emerald-500" /> 系统状态
+            <ShieldCheck :size="18" class="text-emerald-500" /> {{ locale.systemStatus }}
           </h3>
           <span
             :class="[
@@ -124,7 +124,7 @@
                 : 'bg-red-500/10 text-red-500 border-red-500/20'
             ]"
           >
-            {{ systemStatus.online ? '在线' : '离线' }}
+            {{ systemStatus.online ? locale.online : locale.offline }}
           </span>
         </div>
         <div class="p-6 space-y-6">
@@ -149,16 +149,16 @@
         </div>
         <div class="mt-auto border-t border-zinc-800 px-6 py-4 flex flex-col items-center justify-center gap-1 text-center">
           <span class="text-[10px] font-medium uppercase tracking-[0.3em] text-zinc-600">
-            实例 ID
+            {{ locale.instanceId }}
           </span>
           <button
             type="button"
             class="max-w-full text-xs text-zinc-500 hover:text-zinc-300 transition-colors break-all leading-relaxed"
-            :title="instanceId || '暂无实例 ID'"
+            :title="instanceId || locale.noInstanceId"
             :disabled="!instanceId"
             @click="copyInstanceId"
           >
-            {{ instanceId || '暂无实例 ID' }}
+            {{ instanceId || locale.noInstanceId }}
           </button>
         </div>
       </div>
@@ -169,7 +169,7 @@
       >
         <div class="px-6 py-5 border-b border-zinc-800">
           <h3 class="text-lg font-bold flex items-center gap-2">
-            <Zap :size="18" class="text-yellow-500" /> 快速操作
+            <Zap :size="18" class="text-yellow-500" /> {{ locale.quickActions }}
           </h3>
         </div>
         <div class="p-6 space-y-3">
@@ -215,9 +215,13 @@ import {
 } from '@lucide/vue'
 import packageJson from '~~/package.json'
 import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
 
 const emit = defineEmits(['navigate'])
 const { success: showSuccess, error: showError } = useToast()
+const { admin } = useLocale()
+const locale = computed(() => useSafeLocale(admin.value?.overview || {}))
+const { format: formatLocaleValue } = useLocaleText(locale)
 
 const systemVersion = ref(packageJson.version)
 const stats = ref({
@@ -246,7 +250,7 @@ const systemStatus = ref({
 // 统计卡片数据
 const statCards = computed(() => [
   {
-    label: '总歌曲数',
+    label: locale.value.statCards?.totalSongs || '总歌曲数',
     value: formatNumber(stats.value.totalSongs),
     icon: Music,
     color: 'blue',
@@ -254,19 +258,19 @@ const statCards = computed(() => [
     trendDown: stats.value.songsChange < 0
   },
   {
-    label: '注册用户',
+    label: locale.value.statCards?.registeredUsers || '注册用户',
     value: formatNumber(stats.value.totalUsers),
     icon: Users,
     color: 'emerald'
   },
   {
-    label: '今日排期',
+    label: locale.value.statCards?.todaySchedules || '今日排班',
     value: formatNumber(stats.value.todaySchedules),
     icon: Calendar,
     color: 'zinc'
   },
   {
-    label: '本周点歌',
+    label: locale.value.statCards?.weeklyRequests || '本周点歌',
     value: formatNumber(stats.value.weeklyRequests),
     icon: Heart,
     color: 'pink',
@@ -278,35 +282,35 @@ const statCards = computed(() => [
 // 系统状态项
 const statusItems = computed(() => [
   {
-    label: '数据库连接',
-    value: systemStatus.value.database ? '正常' : '异常',
+    label: locale.value.statusItems?.database || '数据库',
+    value: systemStatus.value.database ? locale.value.normal || '正常' : locale.value.abnormal || '异常',
     active: systemStatus.value.database
   },
   {
-    label: 'API服务',
-    value: systemStatus.value.api ? '正常' : '异常',
+    label: locale.value.statusItems?.api || 'API',
+    value: systemStatus.value.api ? locale.value.normal || '正常' : locale.value.abnormal || '异常',
     active: systemStatus.value.api
   },
   {
-    label: '当前学期',
-    value: stats.value.currentSemester || '未设置',
+    label: locale.value.statusItems?.semester || '当前学期',
+    value: stats.value.currentSemester || locale.value.unset || '未设置',
     active: !!stats.value.currentSemester
   },
   {
-    label: '黑名单项目',
-    value: `${stats.value.blacklistCount} 项`,
+    label: locale.value.statusItems?.blacklist || '黑名单',
+    value: formatLocaleValue(locale.value.itemUnit, String(stats.value.blacklistCount), stats.value.blacklistCount),
     active: stats.value.blacklistCount >= 0
   },
-  { label: '系统版本', value: `v${systemVersion.value}`, active: true }
+  { label: locale.value.statusItems?.version || '版本', value: `v${systemVersion.value}`, active: true }
 ])
 
 // 快速操作
-const quickActions = [
-  { label: '管理排期', icon: Calendar, id: 'schedule', primary: true },
-  { label: '用户管理', icon: Users, id: 'users' },
-  { label: '发送通知', icon: Bell, id: 'notifications' },
-  { label: '黑名单管理', icon: Ban, id: 'blacklist' }
-]
+const quickActions = computed(() => [
+  { label: locale.value.actions?.schedule || '排班管理', icon: Calendar, id: 'schedule', primary: true },
+  { label: locale.value.actions?.users || '用户管理', icon: Users, id: 'users' },
+  { label: locale.value.actions?.notifications || '通知管理', icon: Bell, id: 'notifications' },
+  { label: locale.value.actions?.blacklist || '黑名单', icon: Ban, id: 'blacklist' }
+])
 
 const formatNumber = (num) => {
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
@@ -371,20 +375,20 @@ const copyToClipboard = async (text) => {
 
 const copyInstanceId = async () => {
   if (!instanceId.value) {
-    showError('暂无实例 ID')
+    showError(locale.value.noInstanceId || '暂无实例 ID')
     return
   }
 
   try {
     const copied = await copyToClipboard(instanceId.value)
     if (copied) {
-      showSuccess('实例 ID 已复制')
+      showSuccess(locale.value.copied || '已复制')
     } else {
-      showError('复制失败')
+      showError(locale.value.copyFailed || '复制失败')
     }
   } catch (error) {
     console.error('复制实例 ID 失败:', error)
-    showError('复制失败')
+    showError(locale.value.copyFailed || '复制失败')
   }
 }
 
@@ -412,10 +416,17 @@ const formatTime = (dateString) => {
   const now = getSyncedDate()
   const diff = now - date
 
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  return `${Math.floor(diff / 86400000)}天前`
+  if (diff < 60000) return locale.value?.justNow || '刚刚'
+  if (diff < 3600000) {
+    const minutes = Math.floor(diff / 60000)
+    return formatLocaleValue(locale.value?.minutesAgo, `${minutes}分钟前`, minutes)
+  }
+  if (diff < 86400000) {
+    const hours = Math.floor(diff / 3600000)
+    return formatLocaleValue(locale.value?.hoursAgo, `${hours}小时前`, hours)
+  }
+  const days = Math.floor(diff / 86400000)
+  return formatLocaleValue(locale.value?.daysAgo, `${days}天前`, days)
 }
 
 const navigateTo = (tab) => {

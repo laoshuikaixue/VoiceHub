@@ -1,9 +1,10 @@
 import { db, eq, and, userIdentities, sql } from '~/drizzle/db'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   interface RenameRequestBody {
@@ -15,11 +16,11 @@ export default defineEventHandler(async (event) => {
   const name = typeof rawName === 'string' ? rawName.trim() : ''
 
   if (!id || !name) {
-    throw createError({ statusCode: 400, message: '参数错误' })
+    throw createApiError(400, 'COMMON_INVALID_PARAMS', '参数错误')
   }
 
   if (name.length > 50) {
-    throw createError({ statusCode: 400, message: '设备名称过长' })
+    throw createApiError(400, 'AUTH_DEVICE_NAME_TOO_LONG', '设备名称过长')
   }
 
   // 查找对应的 Passkey
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
   })
 
   if (!identity) {
-    throw createError({ statusCode: 404, message: '未找到该设备' })
+    throw createApiError(404, 'AUTH_DEVICE_NOT_FOUND', '未找到该设备')
   }
 
   try {
@@ -46,6 +47,6 @@ export default defineEventHandler(async (event) => {
     return { success: true }
   } catch (e) {
     console.error('更新设备名称失败:', e)
-    throw createError({ statusCode: 500, message: '更新失败' })
+    throw createApiError(500, 'AUTH_UPDATE_FAILED', '更新失败')
   }
 })

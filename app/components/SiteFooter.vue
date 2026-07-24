@@ -29,7 +29,7 @@
       </span>
       <span v-if="siteTitle" class="footer-item">© {{ currentYear }} {{ siteTitle }}</span>
       <span v-else class="footer-item">© {{ currentYear }} {{ copyrightOwner }}</span>
-      <span class="footer-item">Worker in {{ responseTime }}ms</span>
+      <span class="footer-item">{{ common?.workerIn || 'Worker in' }} {{ responseTime }}ms</span>
       <span class="footer-item">
         <a class="voicehub-link" :href="repoUrl" rel="noopener noreferrer" target="_blank">
           {{ systemName }} v{{ systemVersion }}
@@ -52,14 +52,16 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, computed } from 'vue'
 import { getCopyrightOwner, getSystemName, getRepoUrl } from '@/utils/core/security'
+import { useLocale } from '~/utils/locale'
 import packageJson from '~~/package.json'
 
 // 使用 useSiteConfig composable 获取配置
 const { siteTitle, icp: icpNumber, gonganNumber, showBeianIcon } = useSiteConfig()
 const config = useRuntimeConfig()
+const { common } = useLocale()
 
 // 自动生成公安联网备案链接
 const gonganLink = computed(() => {
@@ -165,6 +167,17 @@ onMounted(() => {
   vertical-align: middle;
   margin-right: 4px;
   display: inline-block;
+}
+
+.sr-only {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {

@@ -66,6 +66,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   label: String,
@@ -86,7 +87,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请选择'
+    default: ''
   },
   disabled: {
     type: Boolean,
@@ -104,6 +105,9 @@ const isOpen = ref(false)
 const containerRef = ref(null)
 const dropdownRef = ref(null)
 const dropdownStyle = ref({})
+const { common } = useLocale()
+const locale = computed(() => common.value || {})
+const resolvedPlaceholder = computed(() => props.placeholder || locale.value?.selectPlaceholder || '请选择')
 
 // 统一获取当前值
 const currentValue = computed(() => {
@@ -140,7 +144,7 @@ const displayLabel = computed(() => {
     ? selected.label
     : currentValue.value && typeof currentValue.value !== 'object'
       ? currentValue.value
-      : props.placeholder
+      : resolvedPlaceholder.value
 })
 
 const isSelected = (option) => {

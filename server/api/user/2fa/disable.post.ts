@@ -1,17 +1,18 @@
 import { db, userIdentities, eq, and, users } from '~/drizzle/db'
 import bcrypt from 'bcryptjs'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   const body = await readBody(event)
   const { password } = body
 
   if (!password) {
-    throw createError({ statusCode: 400, message: '请输入密码' })
+    throw createApiError(400, 'USER_PASSWORD_REQUIRED', '请输入密码')
   }
 
   // 验证密码
@@ -19,13 +20,13 @@ export default defineEventHandler(async (event) => {
   const dbUser = dbUserResult[0]
 
   if (!dbUser) {
-    throw createError({ statusCode: 404, message: '用户不存在' })
+    throw createApiError(404, 'USER_NOT_FOUND', '用户不存在')
   }
 
   const isPasswordValid = await bcrypt.compare(password, dbUser.password)
   if (!isPasswordValid) {
     // 密码错误不应返回 401，否则会触发全局登出
-    throw createError({ statusCode: 403, message: '密码错误' })
+    throw createApiError(403, 'USER_PASSWORD_INCORRECT', '密码错误')
   }
   
   // 删除TOTP记录

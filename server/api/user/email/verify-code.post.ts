@@ -10,15 +10,16 @@ import {
   parseStoreJson,
   verifyStateCode
 } from '~~/server/utils/captchaStore'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
-    throw createError({ statusCode: 405, message: '方法不被允许' })
+    throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', '方法不被允许')
   }
 
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   const body = await readBody(event)
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
   const code = (body?.code || '').toString().trim()
 
   if (!email || !code) {
-    throw createError({ statusCode: 400, message: '邮箱与验证码不能为空' })
+    throw createApiError(400, 'USER_EMAIL_AND_CODE_REQUIRED', '邮箱与验证码不能为空')
   }
 
   const stateKey = `email-verify:${user.id}`
@@ -39,11 +40,11 @@ export default defineEventHandler(async (event) => {
     !Number.isFinite(record.expiresAt)
   ) {
     if (recordRaw) await delStoreIfValue(stateKey, recordRaw)
-    throw createError({ statusCode: 400, message: '请先发送验证码' })
+    throw createApiError(400, 'USER_SEND_CODE_FIRST', '请先发送验证码')
   }
   if (getServerTimestamp() > record.expiresAt) {
     await delStoreIfValue(stateKey, recordRaw!)
-    throw createError({ statusCode: 400, message: '验证码已过期，请重新发送' })
+    throw createApiError(400, 'USER_CODE_EXPIRED_RESEND', '验证码已过期，请重新发送')
   }
 
   const remainingTtl = Math.max(1, Math.ceil((record.expiresAt - getServerTimestamp()) / 1000))
@@ -53,20 +54,20 @@ export default defineEventHandler(async (event) => {
   if (attemptCount > 5) {
     await delStoreIfValue(stateKey, recordRaw!)
     await delStore(attemptKey)
-    throw createError({ statusCode: 400, message: '验证码错误次数过多，请重新发送' })
+    throw createApiError(400, 'USER_CODE_TOO_MANY_ATTEMPTS', '验证码错误次数过多，请重新发送')
   }
 
   if (!verifyStateCode(stateKey, code, record.codeHash)) {
     if (attemptCount >= 5) {
       await delStoreIfValue(stateKey, recordRaw!)
       await delStore(attemptKey)
-      throw createError({ statusCode: 400, message: '验证码错误次数过多，请重新发送' })
+      throw createApiError(400, 'USER_CODE_TOO_MANY_ATTEMPTS', '验证码错误次数过多，请重新发送')
     }
-    throw createError({ statusCode: 400, message: '验证码错误' })
+    throw createApiError(400, 'USER_CODE_INVALID', '验证码错误')
   }
 
   if (!(await delStoreIfValue(stateKey, recordRaw!))) {
-    throw createError({ statusCode: 400, message: '验证码已使用，请重新发送' })
+    throw createApiError(400, 'USER_CODE_ALREADY_USED', '验证码已使用，请重新发送')
   }
   await delStore(attemptKey)
 
@@ -78,7 +79,7 @@ export default defineEventHandler(async (event) => {
     .returning({ id: users.id })
 
   if (updatedUsers.length === 0) {
-    throw createError({ statusCode: 409, message: '邮箱已发生变化，请重新发送验证码' })
+    throw createApiError(409, 'USER_EMAIL_CHANGED_RESEND', '邮箱已发生变化，请重新发送验证码')
   }
 
   return { success: true, message: '邮箱验证成功' }

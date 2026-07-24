@@ -1,10 +1,12 @@
 import { db } from '~/drizzle/db'
-import { cardCodes, systemSettings } from '~/drizzle/schema'
+import { cardCodes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { setResponseHeader, type H3Event } from 'h3'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { createApiError } from '~~/server/utils/apiError'
 
 const USER_BURST_LIMIT = 5
 const USER_BURST_WINDOW_MS = 60 * 1000
@@ -63,7 +65,7 @@ const enforceValidationRateLimit = async (event: H3Event, userId: number) => {
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '需要登录才能验证点歌券' })
+    throw createApiError(401, 'CARD_CODE_AUTH_REQUIRED', 'Sign in to validate request card')
   }
 
   await enforceValidationRateLimit(event, user.id)
@@ -71,15 +73,14 @@ export default defineEventHandler(async (event) => {
   const body = (await readBody(event)) || {}
   const code = typeof body.cardCode === 'string' ? body.cardCode.trim().toUpperCase() : ''
   if (!code) {
-    throw createError({ statusCode: 400, message: '请输入点歌券' })
+    throw createApiError(400, 'CARD_CODE_REQUIRED', 'Request card is required')
   }
 
   const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
-  const settingsRows = await db.select().from(systemSettings).limit(1)
-  const settings = settingsRows[0]
+  const settings = await getSystemSettingsCached()
   const enabled = !!(settings?.enableCardCodeRequests || settings?.requireCardCodeForRequests)
   if (!enabled && !isAdmin) {
-    throw createError({ statusCode: 400, message: '点歌券投稿功能未启用' })
+    throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
   }
 
   const rows = await db
@@ -93,11 +94,12 @@ export default defineEventHandler(async (event) => {
 
   const found = rows[0]
   if (!found || found.status !== 'AVAILABLE') {
-    throw createError({ statusCode: 400, message: '点歌券无效或已被使用' })
+    throw createApiError(400, 'CARD_CODE_INVALID_OR_USED', 'Request card is invalid or already used')
   }
 
   return {
     valid: true,
-    message: '点歌券可用'
+    code: 'CARD_CODE_AVAILABLE',
+    message: 'Request card available'
   }
 })
