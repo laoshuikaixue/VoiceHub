@@ -3638,6 +3638,7 @@ export const serverErrors = {
   SONG_INACTIVE_SEMESTER_VOTE: '非活跃学期，无法进行投票操作',
   USER_API_KEY_NOT_FOUND: '个人集成令牌不存在',
   USER_API_KEY_ID_REQUIRED: '令牌 ID 不能为空',
+  USER_API_KEY_ID_INVALID: '无效的令牌 ID',
   USER_API_KEY_CREATE_FAILED: '创建个人 API Key 失败',
   USER_API_KEY_CREATE_FAILED_DETAIL: '创建个人 API Key 失败：{0}',
   USER_API_KEY_DELETE_FAILED_DETAIL: '删除个人集成令牌失败：{0}',

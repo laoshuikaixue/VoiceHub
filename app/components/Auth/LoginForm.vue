@@ -357,6 +357,7 @@ import { useLocale } from '~/utils/locale'
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
 const { auth: authLocale } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
+const { localize: localizeServerError } = useServerErrors()
 
 const route = useRoute()
 const isBindMode = computed(() => route.query.action === 'bind')
@@ -562,8 +563,11 @@ const handleLogin = async () => {
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
-    error.value = err.data?.message || err.message || 
-      (isBindMode.value ? locale.value.bindFailed : locale.value.loginFailed)
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(
+      err,
+      isBindMode.value ? locale.value.bindFailed : locale.value.loginFailed
+    )
 
     // 如果后端要求验证码，则显示验证码区域（针对图形验证码）
     if (innerData?.captchaRequired) {
@@ -623,7 +627,8 @@ const handleRegisterOAuth = async () => {
     }
   } catch (err) {
     const apiError = err
-    error.value = apiError.data?.message || apiError.message || apiError.statusMessage || locale.value.registerFailed
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(apiError, locale.value.registerFailed)
     // 当发生用户名冲突时 (HTTP 409 Conflict)，清空用户名字段
     if (apiError.statusCode === 409) {
       username.value = ''

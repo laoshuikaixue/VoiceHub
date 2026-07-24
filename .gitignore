@@ -30,6 +30,8 @@ backups/
 .trae
 .qoder
 .figma
+.codex
+.agents
 scripts/package-lock.json
 
 # Nix build output

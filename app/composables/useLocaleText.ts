@@ -24,7 +24,8 @@ import { useLocale } from '~/utils/locale'
 const substituteWithCount = (template: string, args: unknown[]): string =>
   template.replace(/{(\d+)}|{count}/g, (match, index) => {
     const argIndex = match === '{count}' ? 0 : Number(index)
-    return args[argIndex] !== undefined ? String(args[argIndex]) : match
+    // 缺参时回退为空串，避免把原始占位符（如 {0}）暴露给用户
+    return args[argIndex] !== undefined ? String(args[argIndex]) : ''
   })
 
 /**
@@ -45,19 +46,32 @@ export const formatLocaleValue = (value: unknown, ...args: unknown[]): string =>
 export const formatLocale = formatLocaleValue
 
 /**
+ * ofetch 抛出的 FetchError.message 形如 `[POST] "/api/x": 401 ...`、`[GET] "...": <no response>`，
+ * 属于面向开发者的技术串，绝不能作为用户可见文案；识别后跳过，交由上层本地化兜底处理。
+ */
+const isFetchEnvelopeMessage = (message: string): boolean =>
+  /^\[[A-Za-z]+\]\s+".*":\s+/.test(message)
+
+/**
  * Extract a human-readable message from a thrown error / failed `$fetch` response.
  * Superset of the previous `getThrownMessage` / `getErrorMessage` variants.
+ * 会过滤掉 ofetch 的技术性包装串，避免其泄漏到用户界面。
  */
 export const getThrownMessage = (err: any): string => {
   if (!err) return ''
   if (typeof err === 'string') return err
-  return (
-    err?.data?.message ||
-    err?.data?.statusMessage ||
-    err?.message ||
-    err?.statusMessage ||
-    ''
-  )
+  const candidates = [
+    err?.data?.message,
+    err?.data?.statusMessage,
+    err?.message,
+    err?.statusMessage
+  ]
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate && !isFetchEnvelopeMessage(candidate)) {
+      return candidate
+    }
+  }
+  return ''
 }
 
 /** Alias kept for call sites that used the `getErrorMessage` name. */
@@ -134,14 +148,15 @@ const extractErrorParams = (err: any): unknown[] => {
  * Resolution order:
  *  1. `serverErrors[code]` dictionary entry in the current locale (with `{n}` substitution
  *     from `err.data.params`), falling back to zh-CN via the dictionary merge;
- *  2. the server-provided `message` (English default from `createApiError`);
- *  3. the supplied `fallback` string.
+ *  2. the server-provided `message` (简体中文默认文案, from `createApiError`), 已过滤 ofetch 技术包装串;
+ *  3. the supplied `fallback` string;
+ *  4. 本地化通用兜底文案（按当前语言）。
  *
  * This is the single client entry point that decouples server messages from a specific
  * language, superseding the hand-maintained mirror maps (card-code tables, `serverMessages`).
  */
 export const useServerErrors = () => {
-  const { serverErrors } = useLocale()
+  const { serverErrors, currentLocale } = useLocale()
 
   const localize = (err: any, fallback = ''): string => {
     const code = extractErrorCode(err)
@@ -151,7 +166,14 @@ export const useServerErrors = () => {
         return formatLocaleValue(entry, ...extractErrorParams(err))
       }
     }
-    return getThrownMessage(err) || fallback
+    const thrown = getThrownMessage(err)
+    if (thrown) return thrown
+    if (fallback) return fallback
+    // catch-all：码未命中、无干净消息、调用方也未给兜底时，返回本地化通用文案，
+    // 避免向用户展示空白或 ofetch 原始技术串。
+    return currentLocale.value === 'en-US'
+      ? 'Request failed, please try again later.'
+      : '请求失败，请稍后重试'
   }
 
   return { localize, extractErrorCode }

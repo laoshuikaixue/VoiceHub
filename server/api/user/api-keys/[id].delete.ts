@@ -19,10 +19,11 @@ export default defineEventHandler(async (event) => {
 
   const parsedApiKeyId = apiKeyIdSchema.safeParse(apiKeyIdRaw)
   if (!parsedApiKeyId.success) {
-    throw createError({
-      statusCode: 400,
-      message: parsedApiKeyId.error.issues[0]?.message || '无效的令牌 ID'
-    })
+    throw createApiError(
+      400,
+      'USER_API_KEY_ID_INVALID',
+      parsedApiKeyId.error.issues[0]?.message || '无效的令牌 ID'
+    )
   }
 
   const apiKeyId = parsedApiKeyId.data

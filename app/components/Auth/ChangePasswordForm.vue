@@ -208,6 +208,7 @@ const auth = useAuth()
 const router = useRouter()
 const { auth: authLocale } = useLocale()
 const locale = computed(() => authLocale.value?.changePasswordForm || {})
+const { localize: localizeServerError } = useServerErrors()
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -308,18 +309,8 @@ const handleChangePassword = async () => {
       }, 2000)
     }
   } catch (err) {
-    // 提取错误信息，支持多种错误格式（优先使用 message）
-    if (err.data && err.data.message) {
-      error.value = err.data.message
-    } else if (err.data && err.data.statusMessage) {
-      error.value = err.data.statusMessage
-    } else if (err.message) {
-      error.value = err.message
-    } else if (err.statusMessage) {
-      error.value = err.statusMessage
-    } else {
-      error.value = locale.value.failed
-    }
+    // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+    error.value = localizeServerError(err, locale.value.failed)
   } finally {
     loading.value = false
   }

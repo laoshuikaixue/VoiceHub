@@ -3629,6 +3629,7 @@ export const serverErrors = {
   SONG_INACTIVE_SEMESTER_VOTE: 'The semester is inactive, so voting is unavailable',
   USER_API_KEY_NOT_FOUND: 'Personal integration token not found',
   USER_API_KEY_ID_REQUIRED: 'Token ID is required',
+  USER_API_KEY_ID_INVALID: 'Invalid token ID',
   USER_API_KEY_CREATE_FAILED: 'Failed to create the personal API key',
   USER_API_KEY_CREATE_FAILED_DETAIL: 'Failed to create the personal API key: {0}',
   USER_API_KEY_DELETE_FAILED_DETAIL: 'Failed to delete the personal integration token: {0}',

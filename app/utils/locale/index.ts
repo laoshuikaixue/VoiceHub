@@ -79,15 +79,22 @@ export function resolveClientInitialLocale(): Locale {
 export function resolveLocaleFromAcceptLanguage(header?: string | null): Locale {
   if (!header) return FALLBACK_LOCALE
 
+  // 解析 (语言, q 权重) 对，缺省 q=1，按 q 稳定降序后再匹配；
+  // 否则会忽略权重，对 `zh;q=0.1,en;q=0.9` 这类头选错语言。
   const languages = header
     .split(',')
-    .map((part) => part.trim().split(';')[0]?.toLowerCase())
-    .filter((value): value is string => Boolean(value))
+    .map((part) => {
+      const [lang, ...params] = part.trim().split(';')
+      const qParam = params.find((p) => p.trim().startsWith('q='))
+      const q = qParam ? Number(qParam.split('=')[1]) : 1
+      return { lang: lang?.trim().toLowerCase() ?? '', q: Number.isFinite(q) ? q : 0 }
+    })
+    .filter((item) => item.lang)
+    .sort((a, b) => b.q - a.q)
 
-  for (const language of languages) {
-    if (isSupportedLocale(language)) return language
-    if (language.startsWith('zh')) return 'zh-CN'
-    if (language.startsWith('en')) return 'en-US'
+  for (const { lang } of languages) {
+    if (lang.startsWith('zh')) return 'zh-CN'
+    if (lang.startsWith('en')) return 'en-US'
   }
 
   return FALLBACK_LOCALE
@@ -96,6 +103,8 @@ export function resolveLocaleFromAcceptLanguage(header?: string | null): Locale 
 // 当前语言状态：
 // - 在 Nuxt 上下文内用 useState：SSR 下每个请求相互隔离，客户端首屏自动水合，避免模块级 ref 造成的跨请求串扰；
 // - 在 Nuxt 上下文外（如个别 composable 在模块加载期即被实例化）回退到模块级 ref，避免 useState 脱离 Nuxt 实例而报错。
+// 注意：服务端的模块级 ref 为所有请求共享，但它仅在「无 Nuxt 上下文」的模块初始化期被读取（此时尚无请求态语言），
+// 且 setLocale 在服务端不会写它（见下），因此只会返回兜底默认值，不存在跨请求语言串扰。
 const fallbackLocaleRef = ref<Locale>(FALLBACK_LOCALE)
 const getCurrentLocale = () =>
   tryUseNuxtApp()
@@ -146,16 +155,44 @@ const getLocaleSection = <Key extends LocaleSectionKey>(
   return section
 }
 
+// 合并结果缓存：词典内容不可变，(语言, 段) 的深合并结果只需计算一次。
+// 仅在目标语言词典「已真正加载」后才缓存，避免把「加载完成前的临时回退结果」错误固化。
+const mergedSectionCache = new Map<string, unknown>()
+
+const getMergedSection = <Key extends LocaleSectionKey>(
+  locale: Locale,
+  key: Key
+): LocaleMessages[Key] => {
+  const loaded = loadedMessages.value[locale]
+  const currentMessages = loaded ?? zhMessages
+  const computeMerged = () =>
+    mergeLocaleFallback(getLocaleSection(zhMessages, key), getLocaleSection(currentMessages, key))
+
+  // 目标语言尚未加载完成时，实时合并且不缓存；待加载完成后再固化正确结果。
+  if (!loaded) return computeMerged()
+
+  const cacheKey = `${locale}:${String(key)}`
+  const cached = mergedSectionCache.get(cacheKey)
+  if (cached !== undefined) return cached as LocaleMessages[Key]
+
+  const result = computeMerged()
+  mergedSectionCache.set(cacheKey, result)
+  return result
+}
+
 export function setLocale(locale: Locale) {
   if (!isSupportedLocale(locale)) return
 
-  const currentLocale = getCurrentLocale()
-  currentLocale.value = locale
+  // 与读取路径解耦：存在 Nuxt 上下文时更新 useState（请求隔离），
+  // 客户端另同步模块级回退 ref，避免两者出现 split-brain 导致部分消费者收不到切换。
+  if (tryUseNuxtApp()) {
+    useState<Locale>('voicehub-locale', () => fallbackLocaleRef.value).value = locale
+  }
   // 触发目标语言词典的按需加载；加载完成后相关 computed 会自动更新。
   void loadLocaleMessages(locale)
 
   if (import.meta.client) {
-    // 同步模块级回退 ref，使在模块加载期实例化的单例（如共享歌词实例）也能响应语言切换。
+    // 客户端同步模块级回退 ref，使在模块加载期实例化的单例（如共享歌词实例）也能响应语言切换。
     fallbackLocaleRef.value = locale
     try {
       window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
@@ -167,13 +204,8 @@ export function setLocale(locale: Locale) {
 
 export function useLocale() {
   const currentLocale = getCurrentLocale()
-  const currentMessages = computed(() => loadedMessages.value[currentLocale.value] ?? zhMessages)
-  const fallbackMessages = zhMessages
   const withFallback = <Key extends keyof LocaleMessages>(key: Key) =>
-    computed(() => mergeLocaleFallback(
-      getLocaleSection(fallbackMessages, key),
-      getLocaleSection(currentMessages.value, key)
-    ))
+    computed(() => getMergedSection(currentLocale.value, key))
 
   return {
     currentLocale,

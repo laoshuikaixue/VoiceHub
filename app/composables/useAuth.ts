@@ -1,6 +1,7 @@
 import { navigateTo, useState } from '#app'
 import type { User } from '~/types'
 import { useUserFilters } from '~/composables/useUserFilters'
+import { useServerErrors } from '~/composables/useLocaleText'
 
 interface LoginResponse {
   success: boolean
@@ -17,6 +18,7 @@ export const useAuth = () => {
   const isAuthenticated = useState<boolean>('isAuthenticated', () => false)
   const isAdmin = useState<boolean>('isAdmin', () => false)
   const loading = useState<boolean>('loading', () => false)
+  const { localize: localizeServerError } = useServerErrors()
 
   const clearAuthState = () => {
     user.value = null
@@ -117,18 +119,8 @@ export const useAuth = () => {
         body: { currentPassword, newPassword }
       })
     } catch (error: any) {
-      // 处理 FetchError，提取错误信息（优先使用 message）
-      if (error.data && error.data.message) {
-        throw new Error(error.data.message)
-      } else if (error.data && error.data.statusMessage) {
-        throw new Error(error.data.statusMessage)
-      } else if (error.message) {
-        throw new Error(error.message)
-      } else if (error.statusMessage) {
-        throw new Error(error.statusMessage)
-      } else {
-        throw new Error('密码修改失败，请重试')
-      }
+      // 统一按错误码本地化服务端错误，未命中再回退到默认文案
+      throw new Error(localizeServerError(error, '密码修改失败，请重试'))
     } finally {
       loading.value = false
     }
