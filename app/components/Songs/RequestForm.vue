@@ -664,7 +664,7 @@
                           v-if="canResubmitBilibiliEpisodes(result)"
                           :disabled="submitting"
                           class="select-btn"
-                          @click.stop.prevent="submitSong(result)"
+                          @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
                           选择剧集
                         </button>
@@ -692,13 +692,7 @@
                           v-if="getSimilarSong(result)?.played"
                           class="similar-text status-played"
                         >
-                          {{
-                            isSuperAdmin
-                              ? '歌曲已播放'
-                              : enableReplayRequests
-                                ? '歌曲已播放'
-                                : '歌曲已播放'
-                          }}
+                          歌曲已播放
                         </span>
                         <span
                           v-else-if="getSimilarSong(result)?.scheduled"
@@ -709,12 +703,12 @@
 
                         <!-- 已播放且允许重播申请：按普通投稿流程继续投稿 -->
                         <button
-                          v-if="getSimilarSong(result)?.played && (isSuperAdmin || enableReplayRequests)"
+                          v-if="getSimilarSong(result)?.played && enableReplayRequests"
                           :disabled="submitting"
                           class="select-btn"
-                          @click.stop.prevent="submitSong(result, { forceResubmit: true })"
+                          @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
-                          {{ isSuperAdmin ? '继续投稿' : '选择投稿' }}
+                          选择投稿
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->
@@ -895,6 +889,7 @@
       :episodes="bilibiliEpisodes"
       :submitted-episodes="getBilibiliEpisodeStatus(selectedBilibiliVideo)?.submittedEpisodes || []"
       :current-user-id="user?.id"
+      :allow-played-resubmit="enableReplayRequests"
       @close="showBilibiliEpisodesModal = false"
       @play="handleBilibiliEpisodePlay"
       @submit="handleBilibiliEpisodeSelect"
@@ -1460,7 +1455,6 @@ const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.va
 // 用户认证
 const auth = useAuth()
 const user = computed(() => auth.user.value)
-const isSuperAdmin = computed(() => user.value?.role === 'SUPER_ADMIN')
 
 // 学期管理
 const { fetchCurrentSemester, currentSemester, fetchSemesterOptions, semesters } = useSemesters()
@@ -1719,6 +1713,7 @@ const showManualModal = ref(false)
 const showBilibiliEpisodesModal = ref(false)
 const selectedBilibiliVideo = ref(null)
 const bilibiliEpisodes = ref([])
+const bilibiliEpisodeSubmitOptions = ref({})
 
 // 专辑详情相关
 const showAlbumDetailsModal = ref(false)
@@ -2536,6 +2531,7 @@ const handleLikeFromSearch = async (song, originalResult = null) => {
   if (originalResult && isBilibiliMultiP(originalResult)) {
     selectedBilibiliVideo.value = originalResult
     bilibiliEpisodes.value = originalResult.pages
+    bilibiliEpisodeSubmitOptions.value = {}
     showBilibiliEpisodesModal.value = true
     return
   }
@@ -3121,29 +3117,18 @@ const submitSong = async (result, options = {}) => {
     console.log('打开 Bilibili 剧集列表:', result)
     selectedBilibiliVideo.value = result
     bilibiliEpisodes.value = result.pages
+    bilibiliEpisodeSubmitOptions.value = options.replayRequest === true ? { replayRequest: true } : {}
     showBilibiliEpisodesModal.value = true
     return
   }
 
   console.log('执行submitSong，提交歌曲:', result.title || result.song)
 
-  if (!(await ensureCardCodeForSubmit())) {
-    return false
-  }
-
-  // 检查投稿限额
-  const limitCheck = checkSubmissionLimit()
-  if (!limitCheck.canSubmit) {
-    error.value = limitCheck.message
-    if (window.$showNotification) {
-      window.$showNotification(limitCheck.message, 'error')
-    }
-    return
-  }
-
   // 使用搜索结果中的数据
   const songTitle = result.song || result.title
   const songArtist = result.singer || result.artist
+
+  let replayTargetSong = null
 
   // 只有在用户已登录且歌曲列表已加载时才检查是否已存在完全匹配的歌曲
   if (auth.isAuthenticated.value && songService.songs.value && songService.songs.value.length > 0) {
@@ -3166,8 +3151,10 @@ const submitSong = async (result, options = {}) => {
       )
 
       if (existingSong) {
-        const allowOverride =
-          options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        if (options.replayRequest === true && existingSong.played) {
+          replayTargetSong = existingSong
+        }
+        const allowOverride = options.replayRequest === true && existingSong.played
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
@@ -3187,8 +3174,10 @@ const submitSong = async (result, options = {}) => {
       )
 
       if (existingSong) {
-        const allowOverride =
-          options.forceResubmit === true || (isSuperAdmin.value && existingSong.played)
+        if (options.replayRequest === true && existingSong.played) {
+          replayTargetSong = existingSong
+        }
+        const allowOverride = options.replayRequest === true && existingSong.played
         if (!allowOverride) {
           if (window.$showNotification) {
             window.$showNotification(
@@ -3209,6 +3198,48 @@ const submitSong = async (result, options = {}) => {
   artist.value = songArtist
   selectedCover.value = result.cover || ''
   selectedUrl.value = result.url || result.file || ''
+
+  if (options.replayRequest === true) {
+    try {
+      if (!replayTargetSong) {
+        throw new Error('未找到可申请重播的原歌曲')
+      }
+
+      const replayResult = await songService.requestReplay(replayTargetSong.id, {
+        preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
+        submissionNote: submissionNote.value.trim() || null,
+        submissionNotePublic: submissionNotePublic.value
+      })
+
+      if (!replayResult) return false
+      resetForm()
+      return true
+    } catch (err) {
+      error.value = err.message || '申请重播失败，请稍后重试'
+      if (window.$showNotification) {
+        window.$showNotification(error.value, 'error')
+      }
+      return false
+    } finally {
+      submitting.value = false
+    }
+  }
+
+  if (!(await ensureCardCodeForSubmit())) {
+    submitting.value = false
+    return false
+  }
+
+  // 检查投稿限额
+  const limitCheck = checkSubmissionLimit()
+  if (!limitCheck.canSubmit) {
+    error.value = limitCheck.message
+    if (window.$showNotification) {
+      window.$showNotification(limitCheck.message, 'error')
+    }
+    submitting.value = false
+    return
+  }
 
   // 管理员不受黑名单限制
   if (!auth.isAdmin.value) {
@@ -3385,7 +3416,6 @@ const getBilibiliEpisodeStatus = (result) => {
 }
 
 const canResubmitBilibiliEpisodes = (result) => {
-  if (isSuperAdmin.value) return true
   if (!enableReplayRequests.value) return false
 
   const episodeStatus = getBilibiliEpisodeStatus(result)
@@ -3400,8 +3430,12 @@ const formatDuration = (seconds) => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
-const handleBilibiliEpisodeSelect = async (episode) => {
+const handleBilibiliEpisodeSelect = async (payload) => {
   if (!selectedBilibiliVideo.value) return
+
+  const episode = payload?.episode || payload
+  const episodeStatus = payload?.status || null
+  const isReplayEpisode = episodeStatus?.played === true
 
   const episodeResult = {
     ...selectedBilibiliVideo.value,
@@ -3411,12 +3445,14 @@ const handleBilibiliEpisodeSelect = async (episode) => {
   }
 
   const success = await submitSong(episodeResult, {
+    ...(isReplayEpisode ? { replayRequest: true } : bilibiliEpisodeSubmitOptions.value),
     isBilibiliEpisode: true,
     episode: episode
   })
 
   if (success) {
     showBilibiliEpisodesModal.value = false
+    bilibiliEpisodeSubmitOptions.value = {}
     if (bilibiliModalRef.value && bilibiliModalRef.value.resetSubmissionState) {
       bilibiliModalRef.value.resetSubmissionState()
     }

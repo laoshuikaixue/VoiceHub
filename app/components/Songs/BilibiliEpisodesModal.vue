@@ -118,8 +118,18 @@
                   </button>
 
                   <template v-if="getEpisodeStatus(episode).played">
+                    <button
+                      v-if="allowPlayedResubmit"
+                      :disabled="submitting"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      @click.stop="selectEpisode(episode)"
+                    >
+                      <span v-if="submitting && selectedEpisodeCid === episode.cid">提交中...</span>
+                      <span v-else><span class="hidden sm:inline">选择</span>投稿</span>
+                    </button>
                     <!-- 已播放标签 -->
                     <div
+                      v-else
                       class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       已播放
@@ -209,6 +219,10 @@ const props = defineProps({
   currentUserId: {
     type: Number,
     default: null
+  },
+  allowPlayedResubmit: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -251,14 +265,6 @@ const isCurrentEpisode = (episode) => {
   }
 
   return false
-}
-
-const isEpisodeSubmitted = (episode) => {
-  return props.submittedEpisodes.some((song) => {
-    if (!song.musicId) return false
-    const cid = song.musicId.includes(':') ? song.musicId.split(':')[1] : null
-    return cid === String(episode.cid)
-  })
 }
 
 // 获取 episode 的完整状态（包括 voted）
@@ -332,10 +338,11 @@ const playEpisode = (episode) => {
 }
 
 const selectEpisode = (episode) => {
-  if (submitting.value || isEpisodeSubmitted(episode)) return
+  const status = getEpisodeStatus(episode)
+  if (submitting.value || (status.submitted && !(props.allowPlayedResubmit && status.played))) return
   submitting.value = true
   selectedEpisodeCid.value = episode.cid
-  emit('submit', episode)
+  emit('submit', { episode, status })
 }
 
 const voteEpisode = (episode) => {
