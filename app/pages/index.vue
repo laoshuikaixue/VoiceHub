@@ -711,6 +711,7 @@ const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
 
 // 站点配置
 const {
+  isLoaded,
   siteTitle,
   description: siteDescription,
   guidelines: submissionGuidelines,
@@ -1186,16 +1187,17 @@ const updateSongCounts = async (semester = null) => {
   }
 }
 
-// 监听siteTitle变化，确保首页title正确设置
-watch(
-  siteTitle,
-  (newSiteTitle) => {
-    if (typeof document !== 'undefined' && newSiteTitle) {
-      document.title = `${locale.value.titleHome} | ${newSiteTitle}`
+// 首页标题：根据加载阶段动态切换
+const pageTitle = computed(() => {
+  if (showBootLoading.value) {
+    if (isLoaded.value && siteTitle.value) {
+      return `${locale.value.titleLoading} | ${siteTitle.value}`
     }
-  },
-  { immediate: true }
-)
+    return locale.value.titleLoading
+  }
+  return `${locale.value.titleHome} | ${siteTitle.value}`
+})
+useHead({ title: pageTitle })
 
 const isFirstVisit = !hasShownBootLoading.value
 
@@ -1236,10 +1238,6 @@ onMounted(async () => {
 
     setBootState({ progress: BOOT_PROGRESS.AUTH, message: locale.value.bootMessages.AUTH })
     const currentUser = await auth.initAuth()
-
-    if (typeof document !== 'undefined' && siteTitle.value) {
-      document.title = `${locale.value.titleHome} | ${siteTitle.value}`
-    }
 
     setBootState({ progress: BOOT_PROGRESS.CONTENT, message: locale.value.bootMessages.CONTENT })
     if (isClientAuthenticated.value) {
