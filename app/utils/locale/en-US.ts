@@ -629,7 +629,8 @@ export const pages = {
       notificationLogin: 'Please log in to view notifications',
       changePasswordTip: 'For account security, please change your password. You can use the change-password entry in the top-right menu.'
     },
-    titleHome: 'Home'
+    titleHome: 'Home',
+    titleLoading: 'Loading'
   },
   yearReview: {
     pageTitle: 'My Year in Review - VoiceHub',

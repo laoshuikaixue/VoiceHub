@@ -640,7 +640,8 @@ export const pages = {
       notificationLogin: '需要登录才能查看通知',
       changePasswordTip: '为了您的账户安全，建议您修改密码。您可以点击右上角的"修改密码"按钮进行修改。'
     },
-    titleHome: '首页'
+    titleHome: '首页',
+    titleLoading: '加载中'
   },
   yearReview: {
     pageTitle: '我的年度回顾 - VoiceHub',

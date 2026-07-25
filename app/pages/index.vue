@@ -711,6 +711,7 @@ const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
 
 // 站点配置
 const {
+  isLoaded,
   siteTitle,
   description: siteDescription,
   guidelines: submissionGuidelines,
@@ -1186,16 +1187,17 @@ const updateSongCounts = async (semester = null) => {
   }
 }
 
-// 监听siteTitle变化，确保首页title正确设置
-watch(
-  siteTitle,
-  (newSiteTitle) => {
-    if (typeof document !== 'undefined' && newSiteTitle) {
-      document.title = `${locale.value.titleHome} | ${newSiteTitle}`
-    }
-  },
-  { immediate: true }
-)
+// 首页标题：根据加载阶段动态切换
+// 配置加载完成前使用环境配置的站点标题兜底，保证 SSR 输出真实站点名（SEO / 链接预览），
+// 并与 og:title 保持一致；加载完成后切换为数据库配置的站点标题
+const pageTitle = computed(() => {
+  if (showBootLoading.value) {
+    const bootTitle = isLoaded.value ? siteTitle.value : config.public.siteTitle
+    return bootTitle ? `${locale.value.titleLoading} | ${bootTitle}` : locale.value.titleLoading
+  }
+  return `${locale.value.titleHome} | ${siteTitle.value}`
+})
+useHead({ title: pageTitle })
 
 const isFirstVisit = !hasShownBootLoading.value
 
@@ -1236,10 +1238,6 @@ onMounted(async () => {
 
     setBootState({ progress: BOOT_PROGRESS.AUTH, message: locale.value.bootMessages.AUTH })
     const currentUser = await auth.initAuth()
-
-    if (typeof document !== 'undefined' && siteTitle.value) {
-      document.title = `${locale.value.titleHome} | ${siteTitle.value}`
-    }
 
     setBootState({ progress: BOOT_PROGRESS.CONTENT, message: locale.value.bootMessages.CONTENT })
     if (isClientAuthenticated.value) {
