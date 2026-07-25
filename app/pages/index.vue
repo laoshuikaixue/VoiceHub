@@ -27,6 +27,36 @@
         <div class="user-section">
           <ClientOnly>
             <div class="user-actions-row">
+              <div class="theme-switcher">
+                <button
+                  type="button"
+                  class="theme-switcher-trigger"
+                  :class="{ 'is-open': showThemeMenu }"
+                  :aria-label="'主题'"
+                  :aria-expanded="showThemeMenu"
+                  @click="toggleThemeMenu"
+                >
+                  主题
+                </button>
+
+                <Transition name="dropdown-fade">
+                  <div v-if="showThemeMenu" class="theme-dropdown" role="listbox">
+                    <button
+                      v-for="themeItem in themes"
+                      :key="themeItem"
+                      type="button"
+                      role="option"
+                      class="theme-option"
+                      :class="{ 'is-active': currentTheme === themeItem }"
+                      :aria-selected="currentTheme === themeItem"
+                      @click="selectTheme(themeItem)"
+                    >
+                      {{ getThemeLabel(themeItem) }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+
               <div class="language-switcher">
                 <button
                   type="button"
@@ -689,6 +719,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+
 import logo from '~~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
@@ -699,6 +730,7 @@ import { useSiteConfig } from '~/composables/useSiteConfig'
 import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
+import { useTheme } from '~/composables/useTheme'
 
 // 获取运行时配�?
 const config = useRuntimeConfig()
@@ -756,6 +788,7 @@ const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
 const showLanguageMenu = ref(false)
+const showThemeMenu = ref(false)
 const avatarError = ref(false)
 
 const BOOT_PROGRESS = {
@@ -826,6 +859,31 @@ const selectLocale = (code) => {
   showLanguageMenu.value = false
 }
 
+// ==================== 主题切换 ====================
+const { currentTheme, themes, setTheme: setThemeFn } = useTheme()
+
+const toggleThemeMenu = (event) => {
+  event.stopPropagation()
+  showThemeMenu.value = !showThemeMenu.value
+}
+
+const closeThemeMenu = () => {
+  showThemeMenu.value = false
+}
+
+const selectTheme = (theme) => {
+  setThemeFn(theme)
+  closeThemeMenu()
+}
+
+const getThemeLabel = (theme) => {
+  return theme === 'dark' ? '经典深色' : '经典浅色'
+}
+
+const getPreviewClass = (theme) => {
+  return theme === 'dark' ? 'bg-[#111] border-[#333]' : 'bg-[#fff] border-[#ccc]'
+}
+
 // 监听用户头像变化，重置错误状�?
 watch(
   () => user.value?.avatar,
@@ -847,6 +905,12 @@ const handleClickOutside = (event) => {
     const switcher = document.querySelector('.language-switcher')
     if (switcher && !switcher.contains(event.target)) {
       showLanguageMenu.value = false
+    }
+  }
+  if (showThemeMenu.value) {
+    const switcher = document.querySelector('.theme-switcher')
+    if (switcher && !switcher.contains(event.target)) {
+      showThemeMenu.value = false
     }
   }
 }
@@ -1898,6 +1962,84 @@ if (
 
 .language-option.is-active .language-option-label {
   font-weight: 600;
+}
+
+/* ==================== 主题切换 ==================== */
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+}
+
+.theme-switcher-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  min-width: 44px;
+  padding: 0 12px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.theme-switcher-trigger:hover,
+.theme-switcher-trigger:focus-visible,
+.theme-switcher-trigger.is-open {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: #1a1a1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 200;
+}
+
+.theme-option {
+  display: block;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.theme-option:hover,
+.theme-option:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  outline: none;
+}
+
+.theme-option.is-active {
+  color: #ffffff;
 }
 
 .user-details-desktop {
@@ -2961,6 +3103,14 @@ if (
   .language-switcher-trigger {
     width: 32px;
     height: 32px;
+  }
+
+  .theme-switcher-trigger {
+    min-width: 40px;
+    padding: 0 10px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 16px;
   }
 
   .language-dropdown {

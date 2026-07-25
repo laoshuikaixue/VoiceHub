@@ -1320,12 +1320,14 @@ VoiceHub/
   - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
+  - **`useTheme.ts`**: 主题管理 composable，支持深色/浅色主题切换与 localStorage 持久化
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
 
 #### 配置目录 (app/)
 
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
+  - **`theme.client.ts`**: 主题初始化插件（客户端），恢复用户主题偏好、同步 `data-theme` attribute 和 `<meta name="theme-color">`
 - **`app/middleware/`**: 中间件，处理路由和认证
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）

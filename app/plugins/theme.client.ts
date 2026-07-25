@@ -1,0 +1,44 @@
+/**
+ * 主题初始化与同步插件（客户端）。
+ * - 恢复 localStorage 保存的主题并设置 data-theme attribute。
+ * - 动态更新 <meta name="theme-color"> 以跟随 PWA 状态栏颜色。
+ */
+import { watch } from 'vue'
+import type { Theme } from '~/composables/useTheme'
+import { THEMES } from '~/composables/useTheme'
+
+export default defineNuxtPlugin((nuxtApp) => {
+  if (import.meta.server) return
+
+  const { currentTheme, setTheme } = useTheme()
+
+  /** 根据主题更新 theme-color meta */
+  function updateMeta(theme) {
+    const colorMap = {
+      dark: '#111111',
+      light: '#ffffff'
+    }
+    let meta = document.querySelector("meta[name='theme-color']")
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('name', 'theme-color')
+      document.head.appendChild(meta)
+    }
+    meta.setAttribute('content', colorMap[theme] || '#111111')
+  }
+
+  // 应用 saved theme
+  const saved = localStorage.getItem('voicehub-theme') as Theme
+  if (saved && THEMES.includes(saved)) {
+    setTheme(saved)
+  }
+
+  // 首次挂载时设置
+  nuxtApp.hook('vue:mounted', () => {
+    document.documentElement.setAttribute('data-theme', currentTheme.value)
+    updateMeta(currentTheme.value)
+  })
+
+  // 主题变化时同步更新
+  watch(() => currentTheme.value, updateMeta)
+})
