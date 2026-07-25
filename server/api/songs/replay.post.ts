@@ -97,34 +97,35 @@ export default defineEventHandler(async (event) => {
 
   if (existing.length > 0) {
     const existingRequest = existing[0]
-    if (existingRequest.status === 'REJECTED') {
-      // 检查冷却期 (24 小时)
-      const COOLDOWN_HOURS = 24
-      const cooldownTime = COOLDOWN_HOURS * 60 * 60 * 1000
-      const timeSinceUpdate = Date.now() - new Date(existingRequest.updatedAt).getTime()
 
-      if (timeSinceUpdate < cooldownTime) {
-        const remainingHours = Math.ceil((cooldownTime - timeSinceUpdate) / (60 * 60 * 1000))
-        throw createApiError(429, 'SONG_REPLAY_REJECTED_WAIT_HOURS', `您的重播申请被拒绝后需要等待 ${remainingHours} 小时才能重新申请`, { params: [remainingHours] })
-      }
-
-      // 冷却期已过，更新状态为 PENDING
-      await db
-        .update(songReplayRequests)
-        .set({
-          status: 'PENDING',
-          updatedAt: new Date(),
-          createdAt: new Date(),
-          preferredPlayTimeId: preferredPlayTime?.id || null,
-          submissionNote,
-          submissionNotePublic
-        })
-        .where(eq(songReplayRequests.id, existingRequest.id))
-
-      return { success: true, message: '重新申请重播成功' }
-    } else {
+    if (existingRequest.status === 'PENDING') {
       throw createApiError(400, 'SONG_REPLAY_ALREADY_REQUESTED', '您已经申请过重播该歌曲')
     }
+
+    // REJECTED 或 FULFILLED 均可冷却 24 小时后重新申请
+    const COOLDOWN_HOURS = 24
+    const cooldownTime = COOLDOWN_HOURS * 60 * 60 * 1000
+    const timeSinceUpdate = Date.now() - new Date(existingRequest.updatedAt).getTime()
+
+    if (timeSinceUpdate < cooldownTime) {
+      const remainingHours = Math.ceil((cooldownTime - timeSinceUpdate) / (60 * 60 * 1000))
+      throw createApiError(429, 'SONG_REPLAY_COOLDOWN', `重播申请冷却中，还需等待 ${remainingHours} 小时`, { params: [remainingHours] })
+    }
+
+    // 冷却期已过，更新状态为 PENDING
+    await db
+      .update(songReplayRequests)
+      .set({
+        status: 'PENDING',
+        updatedAt: new Date(),
+        createdAt: new Date(),
+        preferredPlayTimeId: preferredPlayTime?.id || null,
+        submissionNote,
+        submissionNotePublic
+      })
+      .where(eq(songReplayRequests.id, existingRequest.id))
+
+    return { success: true, message: '重新申请重播成功' }
   }
 
   // 6. 插入申请记录
