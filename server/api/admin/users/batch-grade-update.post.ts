@@ -1,5 +1,4 @@
 import { db } from '~/drizzle/db'
-import { CacheService } from '~~/server/services/cacheService'
 import { users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 
@@ -26,7 +25,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 对输入的 userIds 进行去重和类型转换
-    const uniqueUserIds = [...new Set(userIds.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0))]
+    const uniqueUserIds = [
+      ...new Set(userIds.map((id) => parseInt(id)).filter((id) => !isNaN(id) && id > 0))
+    ]
 
     if (uniqueUserIds.length === 0) {
       throw createError({
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
     // 记录不存在的用户ID
     if (nonExistentUserIds.length > 0) {
       failed += nonExistentUserIds.length
-      nonExistentUserIds.forEach(id => {
+      nonExistentUserIds.forEach((id) => {
         errors.push({ userId: id, error: '用户不存在' })
       })
     }
@@ -137,20 +138,9 @@ export default defineEventHandler(async (event) => {
       } catch (error) {
         console.error('批量更新失败:', error)
         failed += validExistingUserIds.length
-        validExistingUserIds.forEach(id => {
+        validExistingUserIds.forEach((id) => {
           errors.push({ userId: id, error: '批量更新操作失败' })
         })
-      }
-    }
-
-    // 如果有用户更新成功，清除相关缓存
-    if (updated > 0) {
-      try {
-        const cacheService = CacheService.getInstance()
-        await cacheService.clearSongsCache()
-        console.log('批量年级更新后缓存清除成功')
-      } catch (cacheError) {
-        console.error('批量年级更新后缓存清除失败:', cacheError)
       }
     }
 

@@ -2,6 +2,7 @@ import { createError, defineEventHandler, getRouterParam } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,28 +10,19 @@ export default defineEventHandler(async (event) => {
     const user = event.context.user
 
     if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '需要登录才能查看投票人员'
-      })
+      throw createApiError(401, 'SONG_LOGIN_REQUIRED_VIEW_VOTERS', '需要登录才能查看投票人员')
     }
 
     // 检查管理员权限
     if (!['SONG_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '只有管理员才能查看投票人员列表'
-      })
+      throw createApiError(403, 'SONG_VOTERS_ADMIN_ONLY', '只有管理员才能查看投票人员列表')
     }
 
     // 获取歌曲ID
     const songId = parseInt(getRouterParam(event, 'id') || '0')
 
     if (!songId || isNaN(songId)) {
-      throw createError({
-        statusCode: 400,
-        message: '无效的歌曲ID'
-      })
+      throw createApiError(400, 'SONG_INVALID_ID', '无效的歌曲ID')
     }
 
     // 检查歌曲是否存在
@@ -47,10 +39,7 @@ export default defineEventHandler(async (event) => {
     const song = songResult[0]
 
     if (!song) {
-      throw createError({
-        statusCode: 404,
-        message: '歌曲不存在'
-      })
+      throw createApiError(404, 'SONG_NOT_FOUND', '歌曲不存在')
     }
 
     // 获取投票人员列表
@@ -104,9 +93,6 @@ export default defineEventHandler(async (event) => {
       throw error
     }
 
-    throw createError({
-      statusCode: 500,
-      message: '获取投票人员列表失败'
-    })
+    throw createApiError(500, 'SONG_FETCH_VOTERS_FAILED', '获取投票人员列表失败')
   }
 })

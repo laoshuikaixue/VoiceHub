@@ -1,4 +1,5 @@
 import { readonly, ref } from 'vue'
+import { useLocale } from '~/utils/locale'
 import type { Semester } from '~/types'
 
 // 全局事件总线用于学期更新通知
@@ -65,6 +66,10 @@ const persistenceUtils = {
 }
 
 export function useSemesters() {
+  const { composableErrors } = useLocale()
+  const action = (key: keyof typeof composableErrors.value.actions) => composableErrors.value.actions[key]
+  const loginRequired = (key: keyof typeof composableErrors.value.actions) => composableErrors.value.loginRequired(action(key))
+  const failed = (key: keyof typeof composableErrors.value.actions) => composableErrors.value.failed(action(key))
   const semesters = ref<Semester[]>([])
   const currentSemester = ref<Semester | null>(null)
   const loading = ref(false)
@@ -80,7 +85,7 @@ export function useSemesters() {
     const { isAuthenticated, getAuthConfig } = useAuth()
 
     if (!isAuthenticated.value) {
-      error.value = '需要登录才能获取学期列表'
+      error.value = loginRequired('getSemesters')
       return
     }
 
@@ -99,13 +104,13 @@ export function useSemesters() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `获取学期列表失败: ${response.status}`)
+        throw new Error(errorData.message || `${failed('getSemesters')}: ${response.status}`)
       }
 
       const data = await response.json()
       semesters.value = data as Semester[]
     } catch (err: any) {
-      error.value = err.message || '获取学期列表失败'
+      error.value = err.message || failed('getSemesters')
     } finally {
       loading.value = false
     }
@@ -117,7 +122,7 @@ export function useSemesters() {
       const response = await fetch('/api/semesters/current')
 
       if (!response.ok) {
-        throw new Error('获取当前学期失败')
+        throw new Error(failed('getCurrentSemester'))
       }
 
       const data = await response.json()
@@ -136,7 +141,7 @@ export function useSemesters() {
     }
 
     if (!isAuthenticated.value) {
-      error.value = '需要登录才能创建学期'
+      error.value = loginRequired('createSemester')
       return null
     }
 
@@ -157,7 +162,7 @@ export function useSemesters() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || '创建学期失败')
+        throw new Error(errorData.message || failed('createSemester'))
       }
 
       const data = await response.json()
@@ -175,7 +180,7 @@ export function useSemesters() {
 
       return data
     } catch (err: any) {
-      error.value = err.message || '创建学期失败'
+      error.value = err.message || failed('createSemester')
       return null
     } finally {
       loading.value = false
@@ -187,7 +192,7 @@ export function useSemesters() {
     const { isAuthenticated, getAuthConfig } = useAuth()
 
     if (!isAuthenticated.value) {
-      error.value = '需要登录才能设置活跃学期'
+      error.value = loginRequired('setActiveSemester')
       return false
     }
 
@@ -208,7 +213,7 @@ export function useSemesters() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || '设置活跃学期失败')
+        throw new Error(errorData.message || failed('setActiveSemester'))
       }
 
       // 更新学期列表
@@ -220,7 +225,7 @@ export function useSemesters() {
 
       return true
     } catch (err: any) {
-      error.value = err.message || '设置活跃学期失败'
+      error.value = err.message || failed('setActiveSemester')
       return false
     } finally {
       loading.value = false
@@ -236,7 +241,7 @@ export function useSemesters() {
     }
 
     if (!isAuthenticated.value) {
-      error.value = '需要登录才能更新学期'
+      error.value = loginRequired('updateSemester')
       return false
     }
 
@@ -257,7 +262,7 @@ export function useSemesters() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || '更新学期失败')
+        throw new Error(errorData.message || failed('updateSemester'))
       }
 
       // 更新学期列表
@@ -273,7 +278,7 @@ export function useSemesters() {
 
       return true
     } catch (err: any) {
-      error.value = err.message || '更新学期失败'
+      error.value = err.message || failed('updateSemester')
       return false
     } finally {
       loading.value = false
@@ -285,7 +290,7 @@ export function useSemesters() {
     const { isAuthenticated, getAuthConfig } = useAuth()
 
     if (!isAuthenticated.value) {
-      error.value = '需要登录才能删除学期'
+      error.value = loginRequired('deleteSemester')
       return false
     }
 
@@ -305,7 +310,7 @@ export function useSemesters() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || '删除学期失败')
+        throw new Error(errorData.message || failed('deleteSemester'))
       }
 
       // 更新学期列表
@@ -316,7 +321,7 @@ export function useSemesters() {
 
       return true
     } catch (err: any) {
-      error.value = err.message || '删除学期失败'
+      error.value = err.message || failed('deleteSemester')
       return false
     } finally {
       loading.value = false
@@ -330,7 +335,7 @@ export function useSemesters() {
     try {
       const response = await fetch('/api/semesters/options')
       if (!response.ok) {
-        throw new Error('获取学期选项失败')
+        throw new Error(failed('getSemesterOptions'))
       }
       const data = await response.json()
       if (data.success) {
@@ -338,7 +343,7 @@ export function useSemesters() {
       }
     } catch (err: any) {
       console.error('获取学期选项失败:', err)
-      error.value = err.message || '获取学期选项失败'
+      error.value = err.message || failed('getSemesterOptions')
     } finally {
       loading.value = false
     }

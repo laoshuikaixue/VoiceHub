@@ -18,7 +18,22 @@ if (!process.env.DATABASE_URL) {
 const connectionString = process.env.DATABASE_URL;
 
 // 检测数据库类型
-const isNeonDatabase = connectionString.includes('neon.tech') || connectionString.includes('neon.database.com');
+const getDatabaseHostname = (value: string) => {
+  try {
+    return new URL(value).hostname.toLowerCase().replace(/\.$/, '');
+  } catch {
+    return '';
+  }
+};
+
+const isDomainOrSubdomain = (hostname: string, domain: string) => {
+  return hostname === domain || hostname.endsWith(`.${domain}`);
+};
+
+const databaseHostname = getDatabaseHostname(connectionString);
+const isNeonDatabase =
+  isDomainOrSubdomain(databaseHostname, 'neon.tech') ||
+  isDomainOrSubdomain(databaseHostname, 'neon.database.com');
 
 // 根据数据库类型选择配置
 const getDatabaseConfig = () => {

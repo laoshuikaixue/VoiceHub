@@ -4,14 +4,14 @@
       <div class="form-section">
         <div class="form-header">
           <div class="logo-row">
-            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center" >
-            <div v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()" class="logo-divider" />
+            <img :src="brandLogoSrc" alt="Brand Logo" class="brand-logo-center" />
+            <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider" />
             <img
-              v-if="schoolLogoHomeUrl && schoolLogoHomeUrl.trim()"
-              :src="schoolLogoHomeUrl"
-              alt="学校Logo"
+              v-if="schoolLogoHomeDisplayUrl"
+              :src="schoolLogoHomeDisplayUrl"
+              :alt="locale.schoolLogoAlt"
               class="school-logo"
-            >
+            />
           </div>
           <h1 class="form-title">{{ siteTitle ? siteTitle + ' | VoiceHub' : 'VoiceHub' }}</h1>
           <div class="header-divider" />
@@ -30,9 +30,18 @@
 import { onMounted, computed, ref } from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
 import logo from '~~/public/images/logo.svg'
+import { useLocale } from '~/utils/locale'
 
 // 使用站点配置
-const { siteTitle, initSiteConfig, logoUrl, schoolLogoHomeUrl, icp: icpNumber } = useSiteConfig()
+const {
+  siteTitle,
+  initSiteConfig,
+  logoUrl,
+  schoolLogoHomeDisplayUrl,
+  icp: icpNumber
+} = useSiteConfig()
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.login || {})
 // 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value
@@ -47,7 +56,7 @@ onMounted(async () => {
 
   // 设置页面标题
   if (typeof document !== 'undefined' && siteTitle.value) {
-    document.title = `登录 | ${siteTitle.value}`
+    document.title = `${locale.value.title} | ${siteTitle.value}`
   }
 })
 </script>

@@ -22,6 +22,22 @@ const getDeploymentTarget = (): string => {
 
 const INSTANCE_ONLINE_TRANSACTION = 'voicehub.instance.online'
 
+const EXPECTED_AGGREGATE_OAUTH_ERROR_PATTERNS = [
+  '聚合登陆配置缺失',
+  '聚合登陆接口地址配置错误',
+  '聚合登陆授权地址请求失败',
+  '聚合登陆授权地址获取失败',
+  '聚合登陆返回了无效的授权地址',
+  'OAuth state 解密失败'
+]
+
+const isExpectedAggregateOAuthError = (text: string): boolean => {
+  const normalizedText = text.toLowerCase()
+  return EXPECTED_AGGREGATE_OAUTH_ERROR_PATTERNS.some((pattern) =>
+    normalizedText.includes(pattern.toLowerCase())
+  )
+}
+
 const shouldCaptureServerError = (error: unknown): boolean => {
   if (!error || typeof error !== 'object') return true
   const maybeStatusCode = (error as { statusCode?: unknown }).statusCode
@@ -33,7 +49,8 @@ const shouldCaptureServerError = (error: unknown): boolean => {
   }
 
   // 外部音源接口波动属于预期失败，本地保留日志和接口返回即可。
-  if (isExpectedUpstreamMusicError(stringifyErrorValue(error))) {
+  const errorText = stringifyErrorValue(error)
+  if (isExpectedUpstreamMusicError(errorText) || isExpectedAggregateOAuthError(errorText)) {
     return false
   }
 
@@ -140,11 +157,24 @@ export default defineNitroPlugin((nitroApp) => {
             return null
           }
 
-          if (isExpectedUpstreamMusicError(getSentryEventSearchText(event, hint))) {
+          const eventText = getSentryEventSearchText(event, hint)
+          if (isExpectedUpstreamMusicError(eventText) || isExpectedAggregateOAuthError(eventText)) {
             return null
           }
 
           return event
+        },
+        beforeSendLog(log) {
+          if (!isTelemetryEnabledCached()) {
+            return null
+          }
+
+          const logText = stringifyErrorValue(log)
+          if (isExpectedUpstreamMusicError(logText) || isExpectedAggregateOAuthError(logText)) {
+            return null
+          }
+
+          return log
         },
         beforeSendTransaction(event) {
           return isTelemetryEnabledCached() ? event : null

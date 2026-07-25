@@ -1,4 +1,9 @@
-import { parseState, getRedirectUri, getSafeOAuthReturnPath } from '~~/server/utils/oauth'
+import {
+  decodeOAuthStateCookie,
+  parseState,
+  getRedirectUri,
+  getSafeOAuthReturnPath
+} from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
@@ -14,19 +19,23 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import type { H3Event } from 'h3'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
   const query = getQuery(event)
-  const code = query.code as string
-  const stateStr = query.state as string
+  // OAuth 回调参数参与身份与 CSRF 校验，拒绝重复参数可避免上下游解析结果不一致。
+  const code = typeof query.code === 'string' ? query.code : undefined
+  const stateStr = typeof query.state === 'string' ? query.state : undefined
+  const callbackLoginType =
+    typeof query.type === 'string' ? query.type.trim().toLowerCase() : undefined
 
   if (!provider) {
-    throw createError({ statusCode: 400, message: 'Missing provider' })
+    throw createApiError(400, 'AUTH_MISSING_PROVIDER', 'Missing provider')
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({ statusCode: 400, message: '当前仅支持 GitHub / Casdoor / Google / 第三方 OAuth2' })
+    throw createApiError(400, 'AUTH_UNSUPPORTED_OAUTH_PROVIDER', '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2')
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -38,17 +47,14 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!code || !stateStr) {
-    throw createError({ statusCode: 400, message: 'Missing code or state' })
+    throw createApiError(400, 'AUTH_MISSING_CODE_OR_STATE', 'Missing code or state')
   }
 
   // 1. 验证 State
   const csrfCookie = getCookie(event, 'oauth_csrf')
-  
+
   if (!csrfCookie) {
-    throw createError({
-      statusCode: 400,
-      message: 'CSRF验证失败：Cookie丢失，请从登录页面重新开始'
-    })
+    throw createApiError(400, 'AUTH_CSRF_COOKIE_MISSING', 'CSRF验证失败：Cookie丢失，请从登录页面重新开始')
   }
 
   // 获取 Origin
@@ -56,14 +62,45 @@ export default defineEventHandler(async (event) => {
 
   const { stateSecret, redirectUriTemplate } = await getOAuthBaseConfig()
   const providerConfig = await getProviderRuntimeConfig(provider)
+  let stateToVerify = stateStr
 
-  const state = parseState(stateStr, origin, csrfCookie, stateSecret)
+  if (provider === 'aggregate') {
+    const storedFullState = getCookie(event, 'oauth_full_state')
+    const storedCompactState = getCookie(event, 'oauth_compact_state')
+    if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
+      throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
+    }
+    stateToVerify = decodeOAuthStateCookie(storedFullState)
+    if (!stateToVerify) {
+      throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
+    }
+  }
+
+  const state = parseState(stateToVerify, origin, csrfCookie, stateSecret)
   if (!state) {
-    throw createError({ statusCode: 400, message: 'Invalid or expired state' })
+    throw createApiError(400, 'AUTH_STATE_INVALID', 'Invalid or expired state')
+  }
+  if (state.provider && state.provider !== provider) {
+    throw createApiError(400, 'AUTH_OAUTH_PROVIDER_STATE_MISMATCH', 'OAuth provider 与 state 不匹配')
+  }
+
+  let identityProvider = provider
+  if (provider === 'aggregate') {
+    const loginType = state.loginType?.trim().toLowerCase()
+    if (!loginType || !providerConfig.loginTypes?.includes(loginType)) {
+      throw createApiError(400, 'AUTH_AGGREGATED_METHOD_CHANGED', '聚合登录方式未启用或已变更')
+    }
+    if (callbackLoginType !== loginType) {
+      throw createApiError(400, 'AUTH_AGGREGATED_CALLBACK_STATE_MISMATCH', '聚合登录回调类型与 state 不匹配')
+    }
+    providerConfig.loginType = loginType
+    identityProvider = `aggregate:${loginType}`
   }
 
   // 清除 CSRF cookie
   deleteCookie(event, 'oauth_csrf')
+  deleteCookie(event, 'oauth_full_state')
+  deleteCookie(event, 'oauth_compact_state')
 
   const strategy = getOAuthStrategy(provider)
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
@@ -95,7 +132,13 @@ export default defineEventHandler(async (event) => {
   const providerUserId = userInfo.id
   const providerUsername = userInfo.username
 
-  return handleUserLoginOrBind(event, provider, providerUserId, providerUsername, state.returnTo)
+  return handleUserLoginOrBind(
+    event,
+    identityProvider,
+    providerUserId,
+    providerUsername,
+    state.returnTo
+  )
 })
 
 async function handleUserLoginOrBind(
@@ -227,7 +270,7 @@ async function handleUserLoginOrBind(
     const redirectQuery = safeReturnTo ? `&redirect=${encodeURIComponent(safeReturnTo)}` : ''
     return sendRedirect(
       event,
-      `/login?action=bind&provider=${provider}&username=${encodeURIComponent(providerUsername)}${redirectQuery}`
+      `/login?action=bind&provider=${encodeURIComponent(provider)}&username=${encodeURIComponent(providerUsername)}${redirectQuery}`
     )
   }
 }

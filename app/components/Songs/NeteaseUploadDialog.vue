@@ -14,7 +14,7 @@
           <!-- 头部 -->
           <div class="flex items-center justify-between p-4 border-b border-zinc-800 shrink-0">
             <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">
-              上传到网易云音乐
+              {{ locale.title }}
             </h3>
             <button
               class="text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -29,12 +29,12 @@
             <!-- 登录状态检查 -->
             <section v-if="!isLoggedIn" class="space-y-3">
               <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4">
-                <p class="text-xs text-yellow-400 mb-3">请先登录网易云音乐账号</p>
+                <p class="text-xs text-yellow-400 mb-3">{{ locale.loginRequired }}</p>
                 <button
                   class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors"
                   @click="showLoginModal"
                 >
-                  立即登录
+                  {{ locale.loginNow }}
                 </button>
               </div>
             </section>
@@ -43,7 +43,7 @@
               <!-- 音质选择 -->
               <section class="space-y-3">
                 <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1"
-                  >选择音质</label
+                  >{{ locale.quality }}</label
                 >
                 <div class="grid grid-cols-2 gap-2">
                   <button
@@ -80,14 +80,14 @@
               <!-- 歌曲信息 -->
               <section class="space-y-3">
                 <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1"
-                  >歌曲信息</label
+                  >{{ locale.songInfo }}</label
                 >
                 <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-2">
                   <div class="flex items-center gap-3">
                     <img
                       v-if="song?.img || song?.cover"
                       :src="song.img || song.cover"
-                      alt="封面"
+                      :alt="locale.coverAlt"
                       class="w-12 h-12 rounded-lg object-cover"
                     >
                     <div class="flex-1 min-w-0">
@@ -135,14 +135,14 @@
               :disabled="uploading"
               @click="closeDialog"
             >
-              取消
+              {{ locale.cancel }}
             </button>
             <button
               class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="uploading"
               @click="startUpload"
             >
-              {{ uploading ? '上传中...' : '开始上传' }}
+              {{ uploading ? locale.uploading : locale.startUpload }}
             </button>
           </div>
         </div>
@@ -157,6 +157,7 @@ import Icon from '~/components/UI/Icon.vue'
 import { useAudioQuality, QUALITY_OPTIONS } from '~/composables/useAudioQuality'
 import { useToast } from '~/composables/useToast'
 import CryptoJS from 'crypto-js'
+import { useLocale } from '~/utils/locale'
 
 interface Props {
   show: boolean
@@ -164,12 +165,15 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { songs: songsLocale } = useLocale()
+const requestLocale = computed(() => songsLocale.value?.requestForm || {})
+const locale = computed(() => useSafeLocale(requestLocale.value?.neteaseUpload || {}))
 
 const songName = computed(
-  () => props.song?.name || props.song?.song || props.song?.title || '未知歌曲'
+  () => props.song?.name || props.song?.song || props.song?.title || locale.value.unknownSong
 )
-const artistName = computed(() => props.song?.singer || props.song?.artist || '未知歌手')
-const albumName = computed(() => props.song?.album || '未知专辑')
+const artistName = computed(() => props.song?.singer || props.song?.artist || locale.value.unknownArtist)
+const albumName = computed(() => props.song?.album || locale.value.unknownAlbum)
 
 const emit = defineEmits<{
   (e: 'close' | 'upload-success' | 'show-login'): void
@@ -186,6 +190,7 @@ const uploadProgress = ref(0)
 const uploadStatus = ref('')
 const uploadMessage = ref('')
 const isLoggedIn = ref(false)
+const getLocaleText = (key, ...args) => formatLocaleValue(locale.value?.[key], ...args)
 
 // 检查登录状态
 const checkLoginStatus = () => {
@@ -228,10 +233,10 @@ const getNeteaseCookie = () => {
 
 // 获取QQ音乐下载链接
 const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<string> => {
-  uploadStatus.value = '获取下载链接'
+  uploadStatus.value = locale.value.statusGetDownloadUrl
 
   if (!strMediaMid) {
-    throw new Error('缺少歌曲ID (strMediaMid)')
+    throw new Error(locale.value.missingSongId)
   }
 
   // 使用vkeys API获取QQ音乐链接
@@ -244,7 +249,7 @@ const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<stri
   })
 
   if (!response.ok) {
-    throw new Error(`获取链接失败: ${response.status}`)
+    throw new Error(getLocaleText('requestFailed', response.status))
   }
 
   const data = await response.json()
@@ -257,7 +262,7 @@ const getQQMusicUrl = async (strMediaMid: string, quality: number): Promise<stri
     return url
   }
 
-  throw new Error('无法获取有效的播放链接')
+  throw new Error(locale.value.invalidPlayUrl)
 }
 
 // 通过文件头识别音频格式
@@ -311,11 +316,11 @@ const detectAudioType = async (blob: Blob): Promise<string | null> => {
 
 // 下载音频文件
 const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> => {
-  uploadStatus.value = '正在下载音频'
+  uploadStatus.value = locale.value.statusDownloading
 
   const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`下载失败: ${response.status}`)
+    throw new Error(getLocaleText('downloadFailed', response.status))
   }
 
   const contentType = response.headers.get('content-type')
@@ -323,7 +328,7 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> 
   const total = contentLength ? parseInt(contentLength, 10) : 0
 
   if (!response.body) {
-    throw new Error('响应体为空')
+    throw new Error(locale.value.emptyResponse)
   }
 
   const reader = response.body.getReader()
@@ -383,7 +388,7 @@ const downloadAudio = async (url: string): Promise<{ blob: Blob; ext: string }> 
 
 // 上传到网易云音乐
 const uploadToNetease = async (audioBlob: Blob, filename: string) => {
-  uploadStatus.value = '正在计算文件指纹'
+  uploadStatus.value = locale.value.statusHashing
   const arrayBuffer = await audioBlob.arrayBuffer()
   const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer)
   const md5 = CryptoJS.MD5(wordArray).toString()
@@ -406,7 +411,7 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const contentType = contentTypeMap[ext] || 'audio/mpeg'
 
   // 获取上传凭证
-  uploadStatus.value = '正在获取上传凭证'
+  uploadStatus.value = locale.value.statusToken
   const tokenUrl = `${baseApiUrl}/cloud/upload/token?time=${Date.now()}`
 
   const tokenRes = await fetch(tokenUrl, {
@@ -425,14 +430,14 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
   const tokenData = await tokenRes.json()
 
   if (tokenData.code !== 200) {
-    throw new Error(`获取凭证失败: ${tokenData.msg || tokenData.code}`)
+    throw new Error(getLocaleText('tokenFailed', tokenData.msg || tokenData.code))
   }
 
   const { needUpload, uploadUrl, uploadToken, objectKey, resourceId, songId } = tokenData.data
 
   if (needUpload) {
     // 上传到对象存储
-    uploadStatus.value = '正在上传到网易云音乐'
+    uploadStatus.value = locale.value.statusUploading
 
     // 使用上传事件获取进度
     await new Promise((resolve, reject) => {
@@ -450,12 +455,12 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(xhr.responseText)
         } else {
-          reject(new Error(`NOS上传失败: ${xhr.status}`))
+          reject(new Error(getLocaleText('nosFailed', xhr.status)))
         }
       })
 
       xhr.addEventListener('error', () => {
-        reject(new Error('NOS网络错误'))
+        reject(new Error(locale.value.nosNetworkError))
       })
 
       xhr.open('POST', uploadUrl)
@@ -466,11 +471,11 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
     })
   } else {
     uploadProgress.value = 95
-    uploadStatus.value = '文件已存在，秒传成功'
+    uploadStatus.value = locale.value.statusExists
   }
 
   // 完成上传并写入云盘信息
-  uploadStatus.value = '正在保存云盘信息'
+  uploadStatus.value = locale.value.statusSaving
 
   const completeUrl = `${baseApiUrl}/cloud/upload/complete?time=${Date.now()}`
   const completeRes = await fetch(completeUrl, {
@@ -497,10 +502,10 @@ const uploadToNetease = async (audioBlob: Blob, filename: string) => {
     if (completeData.code === 502 || completeData.code === 526) {
       console.warn(`完成接口返回 ${completeData.code}，可能为暂时性错误`, completeData)
       throw new Error(
-        `云盘信息保存可能失败 (错误码: ${completeData.code})，请检查云盘内是否成功上传歌曲。`
+        getLocaleText('saveMaybeFailed', completeData.code)
       )
     } else {
-      throw new Error(`发布失败: ${completeData.msg || completeData.code}`)
+      throw new Error(getLocaleText('publishFailed', completeData.msg || completeData.code))
     }
   }
 
@@ -514,7 +519,7 @@ const startUpload = async () => {
 
   uploading.value = true
   uploadProgress.value = 0
-  uploadStatus.value = '准备中'
+  uploadStatus.value = locale.value.statusPreparing
   uploadMessage.value = ''
 
   try {
@@ -529,32 +534,32 @@ const startUpload = async () => {
 
     if (!musicId) {
       console.error('所有可能的ID字段都为空')
-      throw new Error('无法获取歌曲ID，请重试')
+      throw new Error(locale.value.missingResolvedId)
     }
 
     // 获取来源歌曲下载链接
-    uploadMessage.value = '正在从QQ音乐获取音频链接...'
+    uploadMessage.value = locale.value.fetchingQQUrl
 
     const musicUrl = await getQQMusicUrl(musicId, selectedQuality.value)
 
     if (!musicUrl) {
-      throw new Error('无法获取音乐播放链接')
+      throw new Error(locale.value.missingMusicUrl)
     }
 
     // 下载音频文件
-    uploadMessage.value = '正在下载音频文件...'
+    uploadMessage.value = locale.value.downloadingAudio
     const { blob: audioBlob, ext } = await downloadAudio(musicUrl)
 
     // 上传到网易云音乐云盘
-    uploadMessage.value = '正在上传到网易云音乐云盘...'
+    uploadMessage.value = locale.value.uploadingCloud
     const filename = `${artistName.value} - ${songName.value}.${ext}`
     await uploadToNetease(audioBlob, filename)
 
     uploadProgress.value = 100
-    uploadStatus.value = '上传完成'
-    uploadMessage.value = '歌曲已成功上传到您的网易云音乐云盘'
+    uploadStatus.value = locale.value.statusDone
+    uploadMessage.value = locale.value.uploadSuccess
 
-    showSuccess('歌曲已成功上传到网易云音乐云盘')
+    showSuccess(locale.value.uploadSuccess)
 
     emit('upload-success')
 
@@ -564,10 +569,10 @@ const startUpload = async () => {
     }, 1500)
   } catch (error: any) {
     console.error('上传失败:', error)
-    uploadStatus.value = '上传失败'
-    uploadMessage.value = error.message || '未知错误'
+    uploadStatus.value = locale.value.statusFailed
+    uploadMessage.value = getErrorMessage(error) || locale.value.unknownError
 
-    showError(`上传失败: ${error.message}`)
+    showError(getLocaleText('uploadFailed', getErrorMessage(error)))
   } finally {
     uploading.value = false
   }

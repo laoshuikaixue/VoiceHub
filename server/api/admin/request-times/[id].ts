@@ -100,14 +100,6 @@ export default defineEventHandler(async (event) => {
         .returning()
       const updatedRequestTime = updatedRequestTimeResult[0]
 
-      try {
-        const { cache } = await import('~~/server/utils/cache-helpers')
-        await cache.deletePattern('schedules:*')
-        console.log('[Cache] 排期缓存已清除（播放时间更新）')
-      } catch (cacheError) {
-        console.warn('[Cache] 清除缓存失败:', cacheError)
-      }
-
       return updatedRequestTime
     } catch (error: any) {
       console.error('更新投稿开放时段失败:', error)
@@ -156,14 +148,6 @@ export default defineEventHandler(async (event) => {
         .returning()
       const updatedRequestTime = updatedRequestTimeResult[0]
 
-      try {
-        const { cache } = await import('~~/server/utils/cache-helpers')
-        await cache.deletePattern('schedules:*')
-        console.log('[Cache] 排期缓存已清除（播放时间部分更新）')
-      } catch (cacheError) {
-        console.warn('[Cache] 清除缓存失败:', cacheError)
-      }
-
       return updatedRequestTime
     } catch (error: any) {
       console.error('部分更新投稿开放时段失败:', error)
@@ -184,14 +168,6 @@ export default defineEventHandler(async (event) => {
         .where(eq(requestTimes.id, id))
         .returning()
       const deletedRequestTime = deletedRequestTimeResult[0]
-
-      try {
-        const { cache } = await import('~~/server/utils/cache-helpers')
-        await cache.deletePattern('schedules:*')
-        console.log('[Cache] 缓存已清除（播放时间删除）')
-      } catch (cacheError) {
-        console.warn('[Cache] 清除缓存失败:', cacheError)
-      }
 
       return {
         message: '投稿开放时段已成功删除'

@@ -1,7 +1,6 @@
 import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
-import { cacheService } from '../../../services/cacheService'
 import { createSongRejectedNotification } from '../../../services/notificationService'
 
 export default defineEventHandler(async (event) => {
@@ -120,10 +119,6 @@ export default defineEventHandler(async (event) => {
 
       notificationSent = true
     }
-
-    // 清除相关缓存
-    await cacheService.clearSongsCache()
-    await cacheService.clearSchedulesCache()
 
     console.log(`歌曲驳回操作完成: ${body.songId}`)
 

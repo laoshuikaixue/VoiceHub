@@ -2,6 +2,7 @@ import { and, isNotNull, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
+import { createApiError } from '~~/server/utils/apiError'
 
 const smartSort = (a: string, b: string) => {
   const gradeOrder: Record<string, number> = {
@@ -24,19 +25,19 @@ const smartSort = (a: string, b: string) => {
 export default defineEventHandler(async (event) => {
   const config = await db.query.systemSettings.findFirst()
   if (!config?.allowOAuthRegistration) {
-    throw createError({ statusCode: 403, message: '系统已关闭第三方账号注册功能' })
+    throw createApiError(403, 'AUTH_OAUTH_REGISTER_DISABLED', '系统已关闭第三方账号注册功能')
   }
 
   const bindingToken = getCookie(event, 'binding-token')
   if (!bindingToken) {
-    throw createError({ statusCode: 401, message: '注册会话已过期，请重新通过第三方登录发起' })
+    throw createApiError(401, 'AUTH_REGISTER_SESSION_EXPIRED', '注册会话已过期，请重新通过第三方登录发起')
   }
 
   try {
     verifyBindingToken(bindingToken)
   } catch {
     deleteCookie(event, 'binding-token')
-    throw createError({ statusCode: 401, message: '无效的注册令牌' })
+    throw createApiError(401, 'AUTH_INVALID_REGISTER_TOKEN', '无效的注册令牌')
   }
 
   const rows = await db

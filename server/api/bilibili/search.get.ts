@@ -3,6 +3,7 @@
  * 代码参考 https://github.com/ljk743121/Sound-of-experiment/blob/v4/server/utils/plugins/bilibili.ts
  */
 import { defineEventHandler, getQuery, createError } from 'h3'
+import xss from 'xss'
 
 interface SongInfo {
   id: number
@@ -45,8 +46,12 @@ interface SearchRes {
   }
 }
 
-function htmlDecode(value: string) {
-  return value.replace(/<[^>]*>/g, '')
+function htmlToPlainText(value: string) {
+  return xss(value, {
+    whiteList: {},
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ['script', 'style']
+  })
 }
 
 function bi_convert_song(song_info: SongInfo, pages?: VideoPage[]) {
@@ -64,8 +69,8 @@ function bi_convert_song(song_info: SongInfo, pages?: VideoPage[]) {
   }
   const track = {
     id: song_info.bvid,
-    title: htmlDecode(song_info.title),
-    artist: htmlDecode(song_info.author),
+    title: htmlToPlainText(song_info.title),
+    artist: htmlToPlainText(song_info.author),
     source: 'bilibili',
     musicPlatform: 'bilibili',
     cover: imgUrl,

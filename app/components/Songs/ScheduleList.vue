@@ -26,7 +26,7 @@
             v-if="isNeteaseLoggedIn"
             class="mobile-action-btn"
             type="button"
-            title="添加到歌单"
+            :title="locale.addToPlaylist"
             @click="handleAddToPlaylistClick"
           >
             <Icon :size="20" color="#ffffff" name="music" />
@@ -39,7 +39,7 @@
             <div class="date-picker-overlay" @click="showDatePicker = false" />
             <div class="date-picker-content">
               <div class="date-picker-header">
-                <h3>选择日期</h3>
+                <h3>{{ locale.chooseDate }}</h3>
                 <button class="close-btn" @click="showDatePicker = false">×</button>
               </div>
               <div class="date-picker-list">
@@ -52,7 +52,7 @@
                   v-html="formatDate(date, false)"
                 />
 
-                <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
+                <div v-if="availableDates.length === 0" class="empty-dates">{{ locale.noScheduleDates }}</div>
               </div>
             </div>
           </div>
@@ -69,7 +69,7 @@
             v-html="formatDate(date)"
           />
 
-          <div v-if="availableDates.length === 0" class="empty-dates">暂无排期日期</div>
+          <div v-if="availableDates.length === 0" class="empty-dates">{{ locale.noScheduleDates }}</div>
         </div>
         <!-- 添加滚动指示器 -->
         <div class="scroll-indicator-container">
@@ -91,13 +91,13 @@
             @click="handleAddToPlaylistClick"
           >
             <Icon :size="18" color="#ffffff" name="music" />
-            <span>添加到歌单</span>
+            <span>{{ locale.addToPlaylist }}</span>
           </button>
         </div>
 
         <!-- 使用Transition组件包裹内容 -->
         <Transition mode="out-in" name="schedule-fade">
-          <div v-if="loading" key="loading" class="loading">加载中...</div>
+          <div v-if="loading" key="loading" class="loading">{{ locale.loading }}</div>
 
           <div v-else-if="error" key="error" class="error">
             {{ error }}
@@ -105,14 +105,14 @@
 
           <div v-else-if="!schedules || schedules.length === 0" key="empty-all" class="empty">
             <div class="icon mb-4">🎵</div>
-            <p>暂无排期信息</p>
-            <p class="text-sm text-gray">点歌后等待管理员安排播出时间</p>
+            <p>{{ locale.emptyAll }}</p>
+            <p class="text-sm text-gray">{{ locale.emptyAllDesc }}</p>
           </div>
 
           <div v-else-if="currentDateSchedules.length === 0" key="empty-date" class="empty">
             <div class="icon mb-4">📅</div>
-            <p>当前日期暂无排期</p>
-            <p>请选择其他日期查看</p>
+            <p>{{ locale.emptyDate }}</p>
+            <p>{{ locale.emptyDateDesc }}</p>
           </div>
 
           <div v-else :key="currentDate" class="schedule-items">
@@ -124,7 +124,7 @@
                 class="playtime-group"
               >
                 <div v-if="shouldShowPlayTimeHeader(playTimeId)" class="playtime-header">
-                  <h4 v-if="playTimeId === 'null'">未指定时段</h4>
+                  <h4 v-if="playTimeId === 'null'">{{ locale.unspecifiedPlayTime }}</h4>
                   <h4 v-else-if="getPlayTimeById(playTimeId)">
                     {{ getPlayTimeById(playTimeId).name }}
                     <span
@@ -172,7 +172,7 @@
                           class="play-button-overlay"
                         >
                           <button
-                            :title="isCurrentPlaying(schedule.song.id) ? '暂停' : '播放'"
+                            :title="isCurrentPlaying(schedule.song.id) ? locale.pause : locale.play"
                             class="play-button"
                           >
                             <Icon
@@ -198,14 +198,14 @@
                           <span
                             v-if="schedule.song.replayRequestCount > 0"
                             class="replay-badge"
-                            title="重播歌曲"
+                            :title="locale.replaySong"
                           >
                             <Icon name="repeat" :size="14" />
                           </span>
                           <button
                             v-if="schedule.song?.hasSubmissionNote && schedule.song?.submissionNote"
                             class="submission-note-trigger"
-                            title="查看备注留言"
+                            :title="locale.viewSubmissionNote"
                             @click.stop="openSubmissionNote(schedule.song)"
                           >
                             <Icon :size="14" name="message-circle" />
@@ -215,30 +215,30 @@
                           <span
                             v-if="schedule.song.replayRequestCount > 0"
                             :title="
-                              '重播申请人：' +
+                              (locale.replayApplicants || '重播申请人：') +
                               (schedule.song.replayRequesters || [])
                                 .map((r) => r.displayName || r.name)
                                 .join('、')
                             "
                             class="requester replay-requester"
                           >
-                            申请人：{{
+                            {{ locale.applicant }}{{
                               (schedule.song.replayRequesters || [])[0]
                                 ? (schedule.song.replayRequesters[0].displayName ||
                                     schedule.song.replayRequesters[0].name) +
                                   (schedule.song.replayRequestCount > 1 ? '...' : '')
-                                : '未知'
+                                : locale.unknown
                             }}
                           </span>
                           <span
                             v-else
                             :title="
                               (schedule.song.collaborators && schedule.song.collaborators.length > 0
-                                ? '主投稿人: '
-                                : '投稿人: ') +
+                                ? locale.mainRequesterTitle
+                                : locale.requesterTitle) +
                               schedule.song.requester +
                               (schedule.song.collaborators && schedule.song.collaborators.length
-                                ? '\n联合投稿: ' +
+                                ? '\n' + locale.collaboratorsTitle +
                                   schedule.song.collaborators
                                     .map((c) => c.displayName || c.name)
                                     .join(', ')
@@ -246,7 +246,7 @@
                             "
                             class="requester"
                           >
-                            投稿人：{{ schedule.song.requester }}
+                            {{ locale.requester }}{{ schedule.song.requester }}
                             <span
                               v-if="
                                 schedule.song.collaborators &&
@@ -273,7 +273,7 @@
                               : schedule.song.voteCount
                           }}</span>
                           <span class="label">{{
-                            schedule.song.replayRequestCount > 0 ? '重播' : '热度'
+                            schedule.song.replayRequestCount > 0 ? locale.replay : locale.heat
                           }}</span>
                         </div>
                       </div>
@@ -316,7 +316,7 @@
               >
                 <Icon name="music" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">添加到歌单</h3>
+              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.addToPlaylist }}</h3>
             </div>
             <button
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
@@ -338,13 +338,13 @@
               >
                 <Icon name="music" :size="40" class="text-zinc-500 opacity-20" />
               </div>
-              <p class="text-zinc-400 font-medium mb-8">需要登录网易云音乐账号才能管理歌单</p>
+              <p class="text-zinc-400 font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
               <button
                 class="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
                 type="button"
                 @click="openLoginFromPlaylist"
               >
-                立即登录
+                {{ locale.loginNow }}
               </button>
             </div>
 
@@ -368,10 +368,10 @@
                 <div class="flex-1 min-w-0">
                   <span
                     class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-0.5"
-                    >当前账号</span
+                    >{{ locale.currentAccount }}</span
                   >
                   <span class="block font-bold text-zinc-100 truncate">
-                    {{ neteaseUser.nickname || neteaseUser.userName || '网易云用户' }}
+                    {{ neteaseUser.nickname || neteaseUser.userName || locale.neteaseUser }}
                   </span>
                 </div>
               </div>
@@ -381,7 +381,7 @@
                 <!-- 选择歌单 -->
                 <div class="space-y-3">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >选择目标歌单</label
+                    >{{ locale.targetPlaylist }}</label
                   >
                   <div class="flex gap-3">
                     <CustomSelect
@@ -389,13 +389,13 @@
                       :options="formattedPlaylists"
                       label-key="displayName"
                       value-key="id"
-                      placeholder="请选择歌单"
+                      :placeholder="locale.playlistPlaceholder"
                       class="flex-1"
                     />
                     <button
                       :disabled="playlistsLoading"
                       class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all disabled:opacity-50"
-                      title="刷新歌单列表"
+                      :title="locale.refreshPlaylist"
                       type="button"
                       @click="reloadPlaylists"
                     >
@@ -415,7 +415,7 @@
                       @click="handleDeletePlaylist"
                     >
                       <Icon name="trash" :size="14" />
-                      删除当前歌单
+                      {{ locale.deletePlaylist }}
                     </button>
                   </div>
                 </div>
@@ -426,20 +426,20 @@
                   </div>
                   <span
                     class="relative px-4 bg-zinc-900 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]"
-                    >或</span
+                    >{{ locale.or }}</span
                   >
                 </div>
 
                 <!-- 创建新歌单 -->
                 <div class="space-y-4">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
-                    >创建新歌单</label
+                    >{{ locale.createPlaylist }}</label
                   >
                   <div class="flex gap-3">
                     <input
                       v-model="newPlaylistName"
                       class="flex-1 px-5 py-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
-                      placeholder="输入新歌单名称"
+                      :placeholder="locale.newPlaylistPlaceholder"
                       type="text"
                     >
                     <button
@@ -448,7 +448,7 @@
                       type="button"
                       @click="handleCreatePlaylist"
                     >
-                      {{ playlistActionLoading ? '...' : '新建' }}
+                      {{ playlistActionLoading ? '...' : locale.create }}
                     </button>
                   </div>
                   <label class="flex items-center gap-3 cursor-pointer group w-fit ml-1">
@@ -463,7 +463,7 @@
                     </div>
                     <span
                       class="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors"
-                      >设为隐私歌单</span
+                      >{{ locale.privatePlaylist }}</span
                     >
                   </label>
                 </div>
@@ -473,7 +473,7 @@
               <div class="space-y-4">
                 <div class="flex items-center justify-between px-1">
                   <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                    选择歌曲
+                    {{ locale.selectSongs }}
                     <span
                       class="ml-2 px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[9px]"
                       >{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span
@@ -485,14 +485,14 @@
                       type="button"
                       @click="selectAllNeteaseSongs"
                     >
-                      全选
+                      {{ locale.selectAll }}
                     </button>
                     <button
                       class="text-[10px] font-black text-zinc-400 hover:text-red-400 uppercase tracking-wider transition-colors"
                       type="button"
                       @click="clearSelectedSongs"
                     >
-                      清空
+                      {{ locale.clear }}
                     </button>
                   </div>
                 </div>
@@ -503,7 +503,7 @@
                 >
                   <Icon name="music" :size="32" class="mb-3 opacity-20" />
                   <p class="text-[10px] font-black uppercase tracking-widest">
-                    当前日期没有来自网易云的歌曲
+                    {{ locale.noNeteaseSongs }}
                   </p>
                 </div>
 
@@ -553,7 +553,7 @@
                 type="button"
                 @click="closePlaylistModal"
               >
-                取消
+                {{ locale.cancel }}
               </button>
               <button
                 :disabled="
@@ -565,7 +565,7 @@
               >
                 <Icon v-if="playlistActionLoading" name="loader" :size="16" class="animate-spin" />
                 <Icon v-else name="plus" :size="16" />
-                <span>{{ playlistActionLoading ? '正在添加...' : '确认添加' }}</span>
+                <span>{{ playlistActionLoading ? locale.adding : locale.confirmAdd }}</span>
               </button>
             </div>
           </div>
@@ -612,7 +612,7 @@
       >
         <div class="submission-note-modal" @click.stop>
           <div class="submission-note-header">
-            <h4>投稿备注留言</h4>
+            <h4>{{ locale.submissionNote }}</h4>
             <button @click="closeSubmissionNote">
               <Icon :size="14" name="close" />
             </button>
@@ -620,7 +620,7 @@
           <div class="submission-note-meta">
             <span class="song-title-tag">{{ submissionNoteDialog.songTitle }}</span>
             <span :class="['visibility-tag', submissionNoteDialog.isPublic ? 'visibility-public' : 'visibility-private']">
-              {{ submissionNoteDialog.isPublic ? '公开备注' : '仅管理员可见' }}
+              {{ submissionNoteDialog.isPublic ? locale.publicNote : locale.privateNote }}
             </span>
           </div>
           <div class="submission-note-content-box">
@@ -644,6 +644,7 @@ import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import { useLocale } from '~/utils/locale'
 import NeteaseLoginModal from './NeteaseLoginModal.vue'
 import {
   addSongsToPlaylist,
@@ -670,6 +671,9 @@ const props = defineProps({
 // 音频播放相关 - 使用全局音频播放器
 const audioPlayer = useAudioPlayer()
 const { checkNeteaseLoginStatus: updateGlobalNeteaseStatus } = useAudioQuality()
+const { currentLocale, songs: songsLocale } = useLocale()
+const locale = computed(() => songsLocale.value?.scheduleList || {})
+const { t: callLocale } = useLocaleText(locale)
 
 // 获取播放时段启用状态
 const { playTimeEnabled } = useSongs()
@@ -689,7 +693,7 @@ const playlistsLoading = ref(false)
 const formattedPlaylists = computed(() => {
   return playlists.value.map((pl) => ({
     ...pl,
-    displayName: `${pl.name} (${pl.trackCount}首)`
+    displayName: `${pl.name} (${callLocale('songsCount', '', pl.trackCount)})`
   }))
 })
 const selectedPlaylistId = ref('')
@@ -918,7 +922,7 @@ const findAndSelectTodayOrClosestDate = async () => {
 
 // 格式化当前日期
 const currentDateFormatted = computed(() => {
-  if (!currentDate.value) return '无日期'
+  if (!currentDate.value) return locale.value.emptyDate
   return formatDate(currentDate.value, isMobile.value)
 })
 
@@ -1036,30 +1040,44 @@ const formatDate = (dateStr, isMobile = false) => {
   try {
     const parsedDate = parseLocalDateParts(dateStr)
     if (!parsedDate) {
-      throw new Error('无效的日期格式')
+      throw new Error(locale.value.invalidDateFormat)
     }
 
     const { year, month, day } = parsedDate
 
-    // 创建日期对象
-    const date = new Date(year, month - 1, day)
+    // 创建 UTC 日期对象，避免浏览器本地时区导致排期日期跨天。
+    const date = new Date(Date.UTC(year, month - 1, day))
 
     // 检查日期是否有效
     if (isNaN(date.getTime())) {
-      throw new Error('无效的日期')
+      throw new Error(locale.value.invalidDate)
     }
 
-    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-    const weekday = weekdays[date.getDay()]
+    const weekday = new Intl.DateTimeFormat(currentLocale.value, {
+      weekday: 'short',
+      timeZone: 'UTC'
+    }).format(date)
 
     // 移动端显示更紧凑的格式
     if (isMobile) {
-      return `${month}月${day}日 ${weekday}`
+      const formattedMobileDate = new Intl.DateTimeFormat(currentLocale.value, {
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC'
+      }).format(date)
+      return callLocale('mobileDate', formattedMobileDate, month, day, weekday, formattedMobileDate)
     }
 
-    return `${year}年${month}月${day}日\n<span class="weekday">${weekday}</span>`
+    const intlFormattedDate = new Intl.DateTimeFormat(currentLocale.value, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC'
+    }).format(date)
+    const formattedDate = callLocale('fullDate', intlFormattedDate, year, month, day, intlFormattedDate)
+    return `${formattedDate}\n<span class="weekday">${weekday}</span>`
   } catch (e) {
-    return dateStr || '未知日期'
+    return dateStr || locale.value.unknown
   }
 }
 
@@ -1112,7 +1130,7 @@ const handleImageError = (event, song) => {
 
 // 获取歌曲标题的第一个字符作为封面
 const getFirstChar = (title) => {
-  if (!title) return '音'
+  if (!title) return (locale.value.unknown || '音').slice(0, 1)
   return title.trim().charAt(0)
 }
 
@@ -1164,7 +1182,7 @@ const handleAddToPlaylistClick = () => {
   }
   if (!neteaseSongs.value.length) {
     if (window.$showNotification) {
-      window.$showNotification('当前日期排期中没有来自网易云音乐的歌曲', 'warning')
+      window.$showNotification(locale.value.noNeteaseSongs, 'warning')
     }
     return
   }
@@ -1196,13 +1214,15 @@ const reloadPlaylists = async () => {
       }
     } else {
       if (window.$showNotification) {
-        const text = message ? `获取歌单列表失败：${message}` : '获取歌单列表失败'
+        const text = message
+          ? callLocale('playlistLoadFailedWithMessage', locale.value?.playlistLoadFailed || '播放列表加载失败', message)
+          : locale.value.playlistLoadFailed
         window.$showNotification(text, 'error')
       }
     }
   } catch (error) {
     if (window.$showNotification) {
-      window.$showNotification('获取歌单列表失败', 'error')
+      window.$showNotification(locale.value.playlistLoadFailed, 'error')
     }
   } finally {
     playlistsLoading.value = false
@@ -1223,7 +1243,7 @@ const handleCreatePlaylist = async () => {
     if (code === 200) {
       const createdId = body && (body.id || (body.playlist && body.playlist.id))
       if (window.$showNotification) {
-        window.$showNotification('歌单创建成功', 'success')
+        window.$showNotification(locale.value.playlistCreateSuccess, 'success')
       }
       newPlaylistName.value = ''
       await reloadPlaylists()
@@ -1232,13 +1252,15 @@ const handleCreatePlaylist = async () => {
       }
     } else {
       if (window.$showNotification) {
-        const text = message ? `歌单创建失败：${message}` : '歌单创建失败'
+        const text = message
+          ? callLocale('playlistCreateFailedWithMessage', locale.value?.playlistCreateFailed || '播放列表创建失败', message)
+          : locale.value.playlistCreateFailed
         window.$showNotification(text, 'error')
       }
     }
   } catch (error) {
     if (window.$showNotification) {
-      window.$showNotification('歌单创建失败', 'error')
+      window.$showNotification(locale.value.playlistCreateFailed, 'error')
     }
   } finally {
     playlistActionLoading.value = false
@@ -1251,8 +1273,8 @@ const handleDeletePlaylist = async () => {
 
   confirmDialog.value = {
     show: true,
-    title: '删除歌单',
-    message: '确定要删除当前歌单吗？此操作无法撤销。',
+    title: locale.value.deletePlaylistTitle,
+    message: locale.value.deletePlaylistMessage,
     type: 'danger',
     onConfirm: async () => {
       playlistActionLoading.value = true
@@ -1263,7 +1285,7 @@ const handleDeletePlaylist = async () => {
         )
         if (code === 200) {
           if (window.$showNotification) {
-            window.$showNotification('歌单删除成功', 'success')
+            window.$showNotification(locale.value.playlistDeleteSuccess, 'success')
           }
           await reloadPlaylists()
           if (
@@ -1275,7 +1297,9 @@ const handleDeletePlaylist = async () => {
           closeConfirmDialog()
         } else {
           if (window.$showNotification) {
-            const text = message ? `歌单删除失败：${message}` : '歌单删除失败'
+            const text = message
+              ? callLocale('playlistDeleteFailedWithMessage', locale.value?.playlistDeleteFailed || '播放列表删除失败', message)
+              : locale.value.playlistDeleteFailed
             window.$showNotification(text, 'error')
           }
           // 失败也关闭弹窗，或者保留让用户重试？通常关闭比较好，避免死循环
@@ -1283,7 +1307,7 @@ const handleDeletePlaylist = async () => {
         }
       } catch (error) {
         if (window.$showNotification) {
-          window.$showNotification('歌单删除失败', 'error')
+          window.$showNotification(locale.value.playlistDeleteFailed, 'error')
         }
         closeConfirmDialog()
       } finally {
@@ -1305,7 +1329,7 @@ const openSubmissionNote = (song) => {
   if (!song?.submissionNote) return
   submissionNoteDialog.value = {
     show: true,
-    songTitle: `${song.title || '未知歌曲'} - ${song.artist || '未知歌手'}`,
+    songTitle: `${song.title || locale.value.unknown} - ${song.artist || locale.value.unknown}`,
     note: song.submissionNote,
     isPublic: song.submissionNotePublic === true
   }
@@ -1351,7 +1375,7 @@ const handleAddSongsToPlaylist = async () => {
     .filter((id) => !!id)
   if (!tracks.length) {
     if (window.$showNotification) {
-      window.$showNotification('请先选择要添加的歌曲', 'warning')
+      window.$showNotification(locale.value.selectSongs, 'warning')
     }
     return
   }
@@ -1364,18 +1388,20 @@ const handleAddSongsToPlaylist = async () => {
     )
     if (code === 200) {
       if (window.$showNotification) {
-        window.$showNotification(`成功添加 ${tracks.length} 首歌曲到歌单`, 'success')
+        window.$showNotification(callLocale('playlistAddSuccess', '', tracks.length), 'success')
       }
       showPlaylistModal.value = false
     } else {
       if (window.$showNotification) {
-        const text = message ? `添加到歌单失败：${message}` : '添加到歌单失败'
+        const text = message
+          ? callLocale('playlistAddFailedWithMessage', locale.value?.playlistAddFailed || '添加到播放列表失败', message)
+          : locale.value.playlistAddFailed
         window.$showNotification(text, 'error')
       }
     }
   } catch (error) {
     if (window.$showNotification) {
-      window.$showNotification('添加到歌单失败', 'error')
+      window.$showNotification(locale.value.playlistAddFailed, 'error')
     }
   } finally {
     playlistActionLoading.value = false
@@ -1414,13 +1440,13 @@ const togglePlaySong = async (song) => {
             audioPlayer.playSong(playableSong)
           } else {
             if (window.$showNotification) {
-              window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
+              window.$showNotification(locale.value.musicUrlUnavailable, 'error')
             }
           }
         } catch (error) {
           console.error('获取音乐URL失败:', error)
           if (window.$showNotification) {
-            window.$showNotification('获取音乐播放链接失败', 'error')
+            window.$showNotification(locale.value.musicUrlFailed, 'error')
           }
         }
       }
@@ -1484,14 +1510,14 @@ const togglePlaySong = async (song) => {
         audioPlayer.playSong(playableSong, playlist, songIndex)
       } else {
         if (window.$showNotification) {
-          window.$showNotification('无法获取音乐播放链接，请稍后再试', 'error')
+          window.$showNotification(locale.value.musicUrlUnavailable, 'error')
         }
         audioPlayer.playSong({ ...song, musicUrl: null }, [], -1)
       }
     } catch (error) {
       console.error('获取音乐URL失败:', error)
       if (window.$showNotification) {
-        window.$showNotification('获取音乐播放链接失败', 'error')
+        window.$showNotification(locale.value.musicUrlFailed, 'error')
       }
       const { playlist, songIndex } = buildPlaylistForSong(song)
       audioPlayer.playSong({ ...song, musicUrl: null }, playlist, songIndex)
@@ -1526,7 +1552,7 @@ const getMusicUrl = async (song) => {
 
   // 如果没有playUrl，检查platform和musicId是否有效
   if (!platform || !musicId) {
-    throw new Error('歌曲缺少音乐平台或音乐ID信息，无法获取播放链接')
+    throw new Error(locale.value.missingMusicInfo)
   }
 
   // 检查是否为播客内容
@@ -1552,12 +1578,12 @@ const formatPlayTime = (schedule) => {
   try {
     // 根据歌曲播放状态显示不同文本
     if (schedule.song && schedule.song.played) {
-      return '已播放'
+      return locale.value.played
     } else {
-      return '已排期'
+      return locale.value.scheduled
     }
   } catch (e) {
-    return '时间未定'
+    return locale.value.unspecifiedPlayTime
   }
 }
 
@@ -1636,12 +1662,12 @@ const formatPlayTimeRange = (playTime) => {
   if (playTime.startTime && playTime.endTime) {
     return `${playTime.startTime} - ${playTime.endTime}`
   } else if (playTime.startTime) {
-    return `${playTime.startTime} 开始`
+    return callLocale('playTimeStart', playTime.startTime, playTime.startTime)
   } else if (playTime.endTime) {
-    return `${playTime.endTime} 结束`
+    return callLocale('playTimeEnd', playTime.endTime, playTime.endTime)
   }
 
-  return '不限时间'
+  return locale.value.unspecifiedPlayTime
 }
 
 // 判断是否显示播放时段标题
@@ -1972,7 +1998,7 @@ const vRipple = {
 }
 
 /* ----------------------------------
-   添加歌单按钮
+   Add playlist button
    ---------------------------------- */
 .add-playlist-btn {
   display: inline-flex;
@@ -2007,7 +2033,7 @@ const vRipple = {
 }
 
 /* ----------------------------------
-   歌单模态框
+   Playlist modal
    ---------------------------------- */
 .playlist-modal-overlay {
   position: fixed;

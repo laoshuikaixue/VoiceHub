@@ -12,27 +12,27 @@
       </div>
 
       <div class="title-section">
-        <h1 class="main-title">年度点歌报告</h1>
+        <h1 class="main-title">{{ yearReview.reportTitle }}</h1>
         <p class="subtitle">Music Journey</p>
       </div>
 
       <div class="stats-grid">
         <div class="stat-item">
           <div class="stat-value">{{ data.totalRequests }}</div>
-          <div class="stat-label">点歌次数</div>
+          <div class="stat-label">{{ yearReview.requests }}</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">{{ data.playedRequests }}</div>
-          <div class="stat-label">已播放</div>
+          <div class="stat-label">{{ yearReview.played }}</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">{{ data.totalVotes }}</div>
-          <div class="stat-label">投票数</div>
+          <div class="stat-label">{{ yearReview.votes }}</div>
         </div>
       </div>
 
       <div class="footer">
-        <div class="footer-text">用音乐记录每一刻</div>
+        <div class="footer-text">{{ yearReview.footerSlogan }}</div>
         <div class="footer-line" />
       </div>
     </div>
@@ -41,6 +41,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useLocale } from '~/utils/locale'
 
 defineProps({
   data: {
@@ -50,6 +51,7 @@ defineProps({
 })
 
 const shareCardRef = ref(null)
+const { yearReview } = useLocale()
 
 defineExpose({
   shareCardRef

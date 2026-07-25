@@ -1,10 +1,14 @@
 import { computed, ref } from 'vue'
 import { useAuth } from './useAuth'
+import { useServerErrors } from './useLocaleText'
 import { getGlobalDedup } from './useRequestDedup'
+import { useLocale } from '~/utils/locale'
 import type { PlayTime, Schedule, Song } from '~/types'
 
 export const useSongs = () => {
-  const { isAuthenticated, user, getAuthConfig, isAdmin } = useAuth()
+  const { isAuthenticated, user, getAuthConfig } = useAuth()
+  const { songs: songsLocale } = useLocale()
+  const { localize: localizeServerError } = useServerErrors()
   const dedup = getGlobalDedup()
 
   const songs = ref<Song[]>([])
@@ -16,6 +20,11 @@ export const useSongs = () => {
   const playTimes = ref<PlayTime[]>([])
   const playTimeEnabled = ref(false)
   const songCount = ref(0)
+  const requestFormLocale = computed(() => songsLocale.value?.requestForm)
+  const actionLocale = computed(() => songsLocale.value.actions)
+
+  let songsRequestVersion = 0
+  let publicSchedulesRequestVersion = 0
 
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -70,41 +79,43 @@ export const useSongs = () => {
   }
 
   // 获取歌曲列表
-  const fetchSongs = async (
-    silent = false,
-    semester?: string,
-    forceRefresh = false,
-    bypassCache = false
-  ) => {
+  const fetchSongs = async (silent = false, semester?: string, forceRefresh = false) => {
+    const requestVersion = ++songsRequestVersion
     if (!silent) {
       loading.value = true
     }
     error.value = ''
 
     try {
-      const requestParams = semester ? { semester } : undefined
+      const requestUserId = user.value?.id ?? null
+      const requestParams = {
+        semester: semester || '',
+        audience: requestUserId ? `user:${requestUserId}` : 'guest',
+        role: user.value?.role || ''
+      }
+      const request = async () => {
+        // 构建URL参数
+        const params = new URLSearchParams()
+        if (semester) {
+          params.append('semester', semester)
+        }
+        const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
 
-      const response = await dedup.dedupedRequest(
-        'songs',
-        async () => {
-          // 构建URL参数
-          const params = new URLSearchParams()
-          if (semester) {
-            params.append('semester', semester)
-          }
-          // 只有当 bypassCache 为 true 时才添加 bypass_cache 参数
-          if (bypassCache) {
-            params.append('bypass_cache', 'true')
-          }
-          const url = `/api/songs${params.toString() ? '?' + params.toString() : ''}`
+        // API请求
+        return await $fetch(url, {
+          ...getAuthConfig()
+        })
+      }
+      const response = forceRefresh
+        ? await request()
+        : await dedup.dedupedRequest('songs', request, requestParams)
 
-          // API请求
-          return await $fetch(url, {
-            ...getAuthConfig()
-          })
-        },
-        requestParams
+      if (
+        requestVersion !== songsRequestVersion ||
+        (user.value?.id ?? null) !== requestUserId ||
+        (user.value?.role ?? '') !== (requestParams.role || '')
       )
+        return
 
       // 正确解析API返回的数据结构
       if (response && response.success && response.data && Array.isArray(response.data.songs)) {
@@ -114,9 +125,11 @@ export const useSongs = () => {
         console.warn('API返回的数据格式不正确:', response)
       }
     } catch (err: any) {
-      error.value = err.message || '获取歌曲列表失败'
+      if (requestVersion === songsRequestVersion) {
+        error.value = err.message || '获取歌曲列表失败'
+      }
     } finally {
-      if (!silent) {
+      if (!silent && requestVersion === songsRequestVersion) {
         loading.value = false
       }
     }
@@ -165,41 +178,43 @@ export const useSongs = () => {
   }
 
   // 获取公共排期（无需登录）
-  const fetchPublicSchedules = async (
-    silent = false,
-    semester?: string,
-    forceRefresh = false,
-    bypassCache = false
-  ) => {
+  const fetchPublicSchedules = async (silent = false, semester?: string, forceRefresh = false) => {
+    const requestVersion = ++publicSchedulesRequestVersion
     if (!silent) {
       loading.value = true
     }
     error.value = ''
 
     try {
-      const requestParams = semester ? { semester } : undefined
+      const requestUserId = user.value?.id ?? null
+      const requestParams = {
+        semester: semester || '',
+        audience: requestUserId ? `user:${requestUserId}` : 'guest',
+        role: user.value?.role || ''
+      }
+      const request = async () => {
+        // 构建URL参数
+        const params = new URLSearchParams()
+        if (semester) {
+          params.append('semester', semester)
+        }
+        const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
 
-      const data = await dedup.dedupedRequest(
-        'public-schedules',
-        async () => {
-          // 构建URL参数
-          const params = new URLSearchParams()
-          if (semester) {
-            params.append('semester', semester)
-          }
-          // 只有当 bypassCache 为 true 时才添加 bypass_cache 参数
-          if (bypassCache) {
-            params.append('bypass_cache', 'true')
-          }
-          const url = `/api/songs/public${params.toString() ? '?' + params.toString() : ''}`
+        const response = await $fetch(url, {
+          ...getAuthConfig()
+        })
+        return response
+      }
+      const data = forceRefresh
+        ? await request()
+        : await dedup.dedupedRequest('public-schedules', request, requestParams)
 
-          const response = await $fetch(url, {
-            ...getAuthConfig()
-          })
-          return response
-        },
-        requestParams
+      if (
+        requestVersion !== publicSchedulesRequestVersion ||
+        (user.value?.id ?? null) !== requestUserId ||
+        (user.value?.role ?? '') !== (requestParams.role || '')
       )
+        return
 
       // 确保每个排期的歌曲都有played属性，并处理null/undefined转换
       const processedData = data.map((schedule: any) => {
@@ -230,9 +245,11 @@ export const useSongs = () => {
       // 直接从排期数据中提取歌曲信息，避免重复请求
       publicSongs.value = extractSongsFromSchedules(processedData)
     } catch (err: any) {
-      error.value = err.message || '获取排期失败'
+      if (requestVersion === publicSchedulesRequestVersion) {
+        error.value = err.message || '获取排期失败'
+      }
     } finally {
-      if (!silent) {
+      if (!silent && requestVersion === publicSchedulesRequestVersion) {
         loading.value = false
       }
     }
@@ -256,7 +273,7 @@ export const useSongs = () => {
     cardCode?: string | null
   }) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能点歌', 'error')
+      showNotification(actionLocale.value.loginRequest, 'error')
       return null
     }
 
@@ -273,12 +290,12 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       return data
     } catch (err: any) {
-      const errorMsg = err.data?.message || err.message || '点歌失败'
+      const errorMsg = localizeServerError(err) || '点歌失败'
       // 如果是重复投稿错误，只显示通知而不设置全局错误
       if (errorMsg.includes('已经在列表中') || errorMsg.includes('不能重复投稿')) {
         showNotification(errorMsg, 'info')
@@ -295,7 +312,7 @@ export const useSongs = () => {
   // 投票
   const voteSong = async (songId: number | { id: number; unvote?: boolean }) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能投票', 'error')
+      showNotification(actionLocale.value.loginVote, 'error')
       return null
     }
 
@@ -311,7 +328,7 @@ export const useSongs = () => {
       const targetSong = songs.value.find((s) => s.id === actualSongId)
 
       if (!isUnvote && targetSong && targetSong.voted) {
-        showNotification('您已经为这首歌投过票了', 'info')
+        showNotification(actionLocale.value.alreadyVoted, 'info')
         loading.value = false
         return null
       }
@@ -335,14 +352,16 @@ export const useSongs = () => {
             // 取消投票
             targetSong.voted = false
             targetSong.voteCount = Math.max(0, (targetSong.voteCount || 1) - 1)
-            showNotification(`已取消对歌曲《${targetSong.title}》的投票`, 'success')
+            showNotification(actionLocale.value.voteCancelled(targetSong.title), 'success')
           } else {
             // 正常投票
             targetSong.voted = true
             targetSong.voteCount = (targetSong.voteCount || 0) + 1
-            showNotification(`为歌曲《${targetSong.title}》投票成功！`, 'success')
+            showNotification(actionLocale.value.voteSucceeded(targetSong.title), 'success')
           }
         }
+
+        await fetchSongs(true, undefined, true)
 
         return data
       } catch (fetchErr: any) {
@@ -351,7 +370,7 @@ export const useSongs = () => {
 
         // 如果是已投票错误，只显示通知，不抛出异常
         if (errorMsg.includes('已经为这首歌投过票')) {
-          showNotification('您已经为这首歌投过票了', 'info')
+          showNotification(actionLocale.value.alreadyVoted, 'info')
 
           // 如果API返回已投票错误，也更新本地状态
           if (targetSong && !targetSong.voted) {
@@ -377,7 +396,7 @@ export const useSongs = () => {
   // 撤回歌曲（只能撤回自己的投稿）
   const withdrawSong = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能撤回歌曲', 'error')
+      showNotification(actionLocale.value.loginWithdraw, 'error')
       return null
     }
 
@@ -387,7 +406,7 @@ export const useSongs = () => {
     try {
       // 查找歌曲信息用于通知
       const targetSong = songs.value.find((s) => s.id === songId)
-      const songTitle = targetSong ? targetSong.title : '歌曲'
+      const songTitle = targetSong ? targetSong.title : actionLocale.value.fallbackSongTitle
 
       // 使用认证配置
       const authConfig = getAuthConfig()
@@ -398,26 +417,26 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
       // 显示成功通知
       let message = ''
       if (data.action === 'leave') {
-        message = `已成功退出歌曲《${songTitle}》的联合投稿`
+        message = actionLocale.value.leaveCollaborationSucceeded(songTitle)
       } else if (data.message) {
         // 如果后端返回了特定消息，优先使用（除了撤回投稿的情况，我们要保留带标题的格式）
         message = data.message
       } else {
         message = data.quotaReturned
-          ? `已成功撤回《${songTitle}》的投稿，投稿配额已返还`
-          : `已成功撤回《${songTitle}》的投稿`
+          ? actionLocale.value.withdrawSucceededQuota(songTitle)
+          : actionLocale.value.withdrawSucceeded(songTitle)
       }
 
       if (data.action !== 'leave') {
         message = data.quotaReturned
-          ? `已成功撤回《${songTitle}》的投稿，投稿配额已返还`
-          : `已成功撤回《${songTitle}》的投稿`
+          ? actionLocale.value.withdrawSucceededQuota(songTitle)
+          : actionLocale.value.withdrawSucceeded(songTitle)
       }
 
       showNotification(message, 'success')
@@ -435,7 +454,7 @@ export const useSongs = () => {
   // 删除歌曲（管理员专用）
   const deleteSong = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能删除歌曲', 'error')
+      showNotification(actionLocale.value.loginDelete, 'error')
       return null
     }
 
@@ -452,10 +471,10 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
-      showNotification('歌曲已成功删除！', 'success')
+      showNotification(actionLocale.value.deleteSucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '删除歌曲失败'
@@ -470,7 +489,7 @@ export const useSongs = () => {
   // 标记歌曲为已播放（管理员专用）
   const markPlayed = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能标记歌曲', 'error')
+      showNotification(actionLocale.value.loginMarkPlayed, 'error')
       return null
     }
 
@@ -487,10 +506,10 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
-      showNotification('歌曲已成功标记为已播放！', 'success')
+      showNotification(actionLocale.value.markPlayedSucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '标记歌曲失败'
@@ -505,7 +524,7 @@ export const useSongs = () => {
   // 撤回歌曲已播放状态（管理员专用）
   const unmarkPlayed = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能撤回歌曲已播放状态', 'error')
+      showNotification(actionLocale.value.loginUnmarkPlayed, 'error')
       return null
     }
 
@@ -522,10 +541,10 @@ export const useSongs = () => {
         ...authConfig
       })
 
-      // 更新歌曲列表
-      await fetchSongs()
+      // 绕过去重，从数据库重新校准写入后的列表
+      await fetchSongs(true, undefined, true)
 
-      showNotification('歌曲已成功撤回已播放状态！', 'success')
+      showNotification(actionLocale.value.unmarkPlayedSucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '撤回歌曲已播放状态失败'
@@ -540,7 +559,7 @@ export const useSongs = () => {
   // 申请重播
   const requestReplay = async (songId: number) => {
     if (!isAuthenticated.value) {
-      showNotification('需要登录才能申请重播', 'error')
+      showNotification(actionLocale.value.loginRequestReplay, 'error')
       return null
     }
 
@@ -561,12 +580,14 @@ export const useSongs = () => {
         songs.value[songIndex].replayRequested = true
       }
 
-      showNotification('申请重播成功', 'success')
+      await fetchSongs(true, undefined, true)
+
+      showNotification(actionLocale.value.replaySucceeded, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '申请重播失败'
       if (errorMsg.includes('已经申请')) {
-        showNotification('您已经申请过重播这首歌了', 'info')
+        showNotification(actionLocale.value.replayAlreadyRequested, 'info')
       } else {
         showNotification(errorMsg, 'error')
       }
@@ -583,7 +604,7 @@ export const useSongs = () => {
   const withdrawReplay = async (songId: number) => {
     const { user } = useAuth()
     if (!user.value) {
-      showNotification('需要登录才能取消重播申请', 'error')
+      showNotification(actionLocale.value.loginCancelReplay, 'error')
       return null
     }
 
@@ -604,7 +625,9 @@ export const useSongs = () => {
         songs.value[songIndex].replayRequested = false
       }
 
-      showNotification('已取消重播申请', 'success')
+      await fetchSongs(true, undefined, true)
+
+      showNotification(actionLocale.value.replayCancelled, 'success')
       return data
     } catch (err: any) {
       const errorMsg = err.data?.message || err.message || '取消重播申请失败'
@@ -651,12 +674,19 @@ export const useSongs = () => {
 
   // 所有可见的歌曲（登录用户看到的 + 公共歌曲）
   const visibleSongs = computed(() => {
-    if (songs.value && songs.value.length > 0) {
-      return songs.value
-    } else {
-      return publicSongs.value
-    }
+    return isAuthenticated.value ? songs.value : publicSongs.value
   })
+
+  const clearPrivateSongs = () => {
+    songsRequestVersion++
+    songs.value = []
+  }
+
+  const clearPublicSongs = () => {
+    publicSchedulesRequestVersion++
+    publicSongs.value = []
+    publicSchedules.value = []
+  }
 
   // 根据播放时间段过滤歌曲排期
   const filterSchedulesByPlayTime = (schedules: Schedule[], playTimeId: number | null) => {
@@ -700,13 +730,16 @@ export const useSongs = () => {
     return displayText
   }
 
-  // 获取歌曲总数（缓存版本）
+  // 获取歌曲总数
   const fetchSongCount = async (forceRefresh = false) => {
     try {
-      const response = await dedup.dedupedRequest('song-count', async () => {
+      const request = async () => {
         const response = await $fetch('/api/songs/count')
         return response
-      })
+      }
+      const response = forceRefresh
+        ? await request()
+        : await dedup.dedupedRequest('song-count', request)
 
       // 正确解析API返回的数据结构
       if (response && typeof response.count === 'number') {
@@ -749,6 +782,8 @@ export const useSongs = () => {
     fetchPublicSchedules,
     fetchPlayTimes,
     fetchSongCount,
+    clearPrivateSongs,
+    clearPublicSongs,
     refreshSongsSilent,
     refreshSchedulesSilent,
     requestSong,

@@ -3,6 +3,15 @@
     <div class="flex items-center justify-between">
       <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ title }}</h4>
       <div class="flex items-center gap-4">
+        <a
+          v-if="docUrl"
+          :href="docUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+        >
+          {{ docLabel || '查看文档' }}
+        </a>
         <button
           v-if="hasEnvConfig"
           type="button"
@@ -10,7 +19,7 @@
           @click="$emit('import-env')"
         >
           <Download :size="12" />
-          导入环境配置
+          {{ locale.importEnv }}
         </button>
         <div class="flex items-center gap-2">
           <span
@@ -19,7 +28,7 @@
               enabled ? 'text-green-500' : 'text-red-500'
             ]"
           >
-            {{ enabled ? '已启用' : '未启用' }}
+            {{ enabled ? locale.enabled : locale.disabled }}
           </span>
           <input
             :checked="enabled"
@@ -60,7 +69,7 @@
             class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
             @click="showSecret = !showSecret"
           >
-            {{ showSecret ? '隐藏' : '显示' }}
+            {{ showSecret ? locale.hide : locale.show }}
           </button>
         </div>
       </div>
@@ -71,8 +80,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Download } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
   title: String,
@@ -84,6 +94,8 @@ const props = defineProps({
   clientIdPlaceholder: String,
   clientSecretLabel: String,
   clientSecretPlaceholder: String,
+  docUrl: String,
+  docLabel: String,
 })
 
 const emit = defineEmits([
@@ -94,6 +106,8 @@ const emit = defineEmits([
 ])
 
 const showSecret = ref(false)
+const { admin } = useLocale()
+const locale = computed(() => admin.value?.oauthConfig || {})
 
 const inputClass = 'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'

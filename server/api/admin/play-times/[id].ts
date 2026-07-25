@@ -1,5 +1,4 @@
 import { db } from '~/drizzle/db'
-import { CacheService } from '../../../services/cacheService'
 import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { and, count, eq, ne } from 'drizzle-orm'
 
@@ -121,16 +120,6 @@ export default defineEventHandler(async (event) => {
         .returning()
       const updatedPlayTime = updatedPlayTimeResult[0]
 
-      // 清除相关缓存
-      try {
-        const cacheService = CacheService.getInstance()
-        await cacheService.clearSchedulesCache()
-        await cacheService.clearPlayTimesCache()
-        console.log('[Cache] 排期缓存已清除（播放时间更新）')
-      } catch (cacheError) {
-        console.warn('[Cache] 清除缓存失败:', cacheError)
-      }
-
       return updatedPlayTime
     } catch (error: any) {
       console.error('更新播出时段失败:', error)
@@ -183,16 +172,6 @@ export default defineEventHandler(async (event) => {
         .returning()
       const updatedPlayTime = updatedPlayTimeResult[0]
 
-      // 清除相关缓存
-      try {
-        const cacheService = CacheService.getInstance()
-        await cacheService.clearSchedulesCache()
-        await cacheService.clearPlayTimesCache()
-        console.log('[Cache] 排期缓存已清除（播放时间部分更新）')
-      } catch (cacheError) {
-        console.warn('[Cache] 清除缓存失败:', cacheError)
-      }
-
       return updatedPlayTime
     } catch (error: any) {
       console.error('部分更新播出时段失败:', error)
@@ -239,19 +218,6 @@ export default defineEventHandler(async (event) => {
 
       if (schedulesCount > 0) {
         await db.update(schedules).set({ playTimeId: null }).where(eq(schedules.playTimeId, id))
-      }
-
-      // 清除相关缓存
-      try {
-        const cacheService = CacheService.getInstance()
-        await cacheService.clearSchedulesCache()
-        await cacheService.clearPlayTimesCache()
-        if (songsCount > 0) {
-          await cacheService.clearSongsCache()
-        }
-        console.log('[Cache] 缓存已清除（播放时间删除）')
-      } catch (cacheError) {
-        console.warn('[Cache] 清除缓存失败:', cacheError)
       }
 
       return {

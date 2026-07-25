@@ -1,6 +1,5 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
-import { CacheService } from '../../../services/cacheService'
 import { maskSystemSettingsSecrets } from './secretMask'
 
 export default defineEventHandler(async (event) => {
@@ -22,17 +21,9 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 尝试从缓存获取系统设置
-    const cacheService = CacheService.getInstance()
-    let settings = await cacheService.getSystemSettings()
-
-    if (settings) {
-      return maskSystemSettingsSecrets(settings)
-    }
-
-    // 缓存中没有，从数据库获取系统设置，如果不存在则创建默认设置
+    // 系统设置包含敏感配置，始终从数据库读取。
     const settingsResult = await db.select().from(systemSettings).limit(1)
-    settings = settingsResult[0]
+    let settings = settingsResult[0]
 
     if (!settings) {
       const newSettingsResult = await db
@@ -60,13 +51,6 @@ export default defineEventHandler(async (event) => {
         })
         .returning()
       settings = newSettingsResult[0]
-    }
-
-    // 将设置存入缓存
-    try {
-      await cacheService.setSystemSettings(settings)
-    } catch (cacheError) {
-      console.warn('缓存系统设置失败:', cacheError)
     }
 
     return maskSystemSettingsSecrets(settings)

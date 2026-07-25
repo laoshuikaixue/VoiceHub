@@ -10,11 +10,14 @@ interface WebAuthnChallengePayload {
 }
 
 export function setWebAuthnChallenge(event: H3Event, challenge: string, userId: string) {
-  const token = JWTEnhanced.sign({
-    challenge,
-    userId,
-    type: 'webauthn_challenge'
-  }, { expiresIn: '3m' })
+  const token = JWTEnhanced.sign(
+    {
+      challenge,
+      userId,
+      type: 'webauthn_challenge'
+    },
+    { expiresIn: '3m' }
+  )
 
   setCookie(event, COOKIE_NAME, token, {
     httpOnly: true,
@@ -39,5 +42,5 @@ export function getWebAuthnChallenge(event: H3Event): { challenge: string; userI
 }
 
 export function clearWebAuthnChallenge(event: H3Event) {
-  deleteCookie(event, COOKIE_NAME)
+  deleteCookie(event, COOKIE_NAME, { path: '/' })
 }

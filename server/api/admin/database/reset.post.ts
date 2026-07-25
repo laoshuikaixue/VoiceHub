@@ -1,6 +1,5 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
-import { CacheService } from '../../../services/cacheService'
 import {
   apiKeyPermissions,
   apiKeys,
@@ -76,17 +75,23 @@ async function resetAutoIncrementSequences() {
       const maxIdResult = await db.execute(
         sql`SELECT MAX(id) as max_id FROM ${toQualifiedIdentifier(table.dbName)}`
       )
-      const maxId = Number(getFirstRow<{ max_id: number | string | null }>(maxIdResult)?.max_id || 0)
+      const maxId = Number(
+        getFirstRow<{ max_id: number | string | null }>(maxIdResult)?.max_id || 0
+      )
 
       // 获取序列名称
       const sequenceNameResult = await db.execute(
         sql`SELECT pg_get_serial_sequence(${toPgRelationName(table.dbName)}, 'id') as sequence_name`
       )
-      const sequenceName = getFirstRow<{ sequence_name: string | null }>(sequenceNameResult)?.sequence_name
+      const sequenceName = getFirstRow<{ sequence_name: string | null }>(
+        sequenceNameResult
+      )?.sequence_name
 
       if (sequenceName) {
         if (maxId === 0) {
-          await db.execute(sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`)
+          await db.execute(
+            sql`ALTER SEQUENCE ${toQualifiedIdentifier(sequenceName)} RESTART WITH 1`
+          )
         } else {
           const newSequenceValue = maxId
           await db.execute(sql`SELECT setval(${toRegclass(sequenceName)}, ${newSequenceValue})`)
@@ -259,16 +264,6 @@ export default defineEventHandler(async (event) => {
       // 重置自增序列
       const sequenceResults = await resetAutoIncrementSequences()
       resetResults.details.sequencesReset = sequenceResults.filter((r) => r.success).length
-
-      // 清除缓存
-      try {
-        const cacheService = CacheService.getInstance()
-        await cacheService.clearAllCache()
-      } catch (error) {
-        console.warn('清除缓存失败:', error)
-        resetResults.details.warnings = resetResults.details.warnings || []
-        resetResults.details.warnings.push('清除缓存失败')
-      }
     } catch (error) {
       console.error('重置数据库失败:', error)
       throw createError({

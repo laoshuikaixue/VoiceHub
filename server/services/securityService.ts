@@ -1,4 +1,10 @@
-import { setStore, getStore, delStore, incrStore } from '~~/server/utils/captchaStore'
+import {
+  RedisStateUnavailableError,
+  setStore,
+  getStore,
+  delStore,
+  incrStore
+} from '~~/server/utils/captchaStore'
 import { createSystemNotification } from './notificationService'
 import { sendMeowNotificationToUser } from './meowNotificationService'
 import { db } from '~/drizzle/db'
@@ -46,6 +52,10 @@ const userVoteStats = new Map<
 // 通知限流存储，记录最近发送的通知，避免重复发送
 const notificationRateLimit = new Map<string, Date>()
 const NOTIFICATION_RATE_LIMIT_MINUTES = 5 // 同一类型通知5分钟内只发送一次
+const fallbackLoginFailures = new Map<string, { count: number; expiresAt: number }>()
+const fallbackAccountLocks = new Map<string, number>()
+const REDIS_FALLBACK_LOG_INTERVAL_MS = 60 * 1000
+let lastRedisFallbackLogAt = 0
 
 // 配置常量
 const SECURITY_CONFIG = {
@@ -71,11 +81,67 @@ const RISK_CONTROL = {
   SONG_IP_MIN_SAMPLE: 8
 }
 
+const handleRedisStateUnavailable = (error: unknown) => {
+  if (!(error instanceof RedisStateUnavailableError)) throw error
+
+  const now = getServerTimestamp()
+  if (now - lastRedisFallbackLogAt >= REDIS_FALLBACK_LOG_INTERVAL_MS) {
+    console.warn('[Security] Redis 暂不可用，登录失败计数临时回退到当前实例内存')
+    lastRedisFallbackLogAt = now
+  }
+}
+
+const getFallbackFailureCount = (username: string) => {
+  const record = fallbackLoginFailures.get(username)
+  if (!record) return 0
+  if (record.expiresAt <= getServerTimestamp()) {
+    fallbackLoginFailures.delete(username)
+    return 0
+  }
+  return record.count
+}
+
+const incrementFallbackFailureCount = (username: string) => {
+  const now = getServerTimestamp()
+  if (fallbackLoginFailures.size >= 10000) {
+    for (const [key, record] of fallbackLoginFailures.entries()) {
+      if (record.expiresAt <= now) fallbackLoginFailures.delete(key)
+    }
+    if (fallbackLoginFailures.size >= 10000 && !fallbackLoginFailures.has(username)) {
+      const oldestKey = fallbackLoginFailures.keys().next().value
+      if (oldestKey !== undefined) fallbackLoginFailures.delete(oldestKey)
+    }
+  }
+  const current = fallbackLoginFailures.get(username)
+  const count = current && current.expiresAt > now ? current.count + 1 : 1
+  fallbackLoginFailures.set(username, {
+    count,
+    expiresAt: current && current.expiresAt > now ? current.expiresAt : now + 30 * 60 * 1000
+  })
+  return count
+}
+
+const getFallbackLockedUntil = (username: string) => {
+  const lockedUntil = fallbackAccountLocks.get(username) || 0
+  if (lockedUntil <= getServerTimestamp()) {
+    fallbackAccountLocks.delete(username)
+    return 0
+  }
+  return lockedUntil
+}
+
 /**
  * 清理过期的锁定记录
  */
 function cleanupExpiredLocks() {
   const now = getServerDate()
+
+  for (const [username, record] of fallbackLoginFailures.entries()) {
+    if (record.expiresAt <= now.getTime()) fallbackLoginFailures.delete(username)
+  }
+  for (const [username, lockedUntil] of fallbackAccountLocks.entries()) {
+    if (lockedUntil <= now.getTime()) fallbackAccountLocks.delete(username)
+  }
 
   // 清理过期的IP监控记录
   for (const [ip, monitorInfo] of ipMonitor.entries()) {
@@ -120,7 +186,10 @@ function cleanupExpiredLocks() {
   for (const [userId, stats] of userVoteStats.entries()) {
     const cutoff = getServerTimestamp() - 10 * 60 * 1000
     stats.windowTimestamps = stats.windowTimestamps.filter((t) => t >= cutoff)
-    if (stats.windowTimestamps.length === 0 && getServerTimestamp() - stats.lastUpdate > 60 * 60 * 1000) {
+    if (
+      stats.windowTimestamps.length === 0 &&
+      getServerTimestamp() - stats.lastUpdate > 60 * 60 * 1000
+    ) {
       userVoteStats.delete(userId)
     }
   }
@@ -131,11 +200,18 @@ function cleanupExpiredLocks() {
  */
 export async function isAccountLocked(username: string): Promise<boolean> {
   const lockKey = `account_lock:${username}`
-  const lockInfoStr = await getStore(lockKey)
-  if (!lockInfoStr) return false
-  
-  const lockedUntil = parseInt(lockInfoStr, 10)
-  return lockedUntil > getServerTimestamp()
+  let redisLockedUntil = 0
+  try {
+    const lockInfoStr = await getStore(lockKey)
+    if (lockInfoStr) {
+      const parsed = parseInt(lockInfoStr, 10)
+      if (Number.isFinite(parsed)) redisLockedUntil = parsed
+    }
+  } catch (error) {
+    handleRedisStateUnavailable(error)
+  }
+
+  return Math.max(redisLockedUntil, getFallbackLockedUntil(username)) > getServerTimestamp()
 }
 
 /**
@@ -143,13 +219,21 @@ export async function isAccountLocked(username: string): Promise<boolean> {
  */
 export async function getAccountLockRemainingTime(username: string): Promise<number> {
   const lockKey = `account_lock:${username}`
-  const lockInfoStr = await getStore(lockKey)
-  if (!lockInfoStr) return 0
-  
-  const lockedUntil = parseInt(lockInfoStr, 10)
+  let redisLockedUntil = 0
+  try {
+    const lockInfoStr = await getStore(lockKey)
+    if (lockInfoStr) {
+      const parsed = parseInt(lockInfoStr, 10)
+      if (Number.isFinite(parsed)) redisLockedUntil = parsed
+    }
+  } catch (error) {
+    handleRedisStateUnavailable(error)
+  }
+
   const now = getServerTimestamp()
+  const lockedUntil = Math.max(redisLockedUntil, getFallbackLockedUntil(username))
   if (lockedUntil <= now) return 0
-  
+
   return Math.ceil((lockedUntil - now) / (1000 * 60))
 }
 
@@ -229,14 +313,28 @@ export function getUserBlockRemainingTime(userId: number): number {
 export async function recordLoginFailure(username: string, ip: string): Promise<void> {
   const failKey = `login_fail:${username}`
   const lockKey = `account_lock:${username}`
-  
-  // 增加失败计数，有效期为 30 分钟
-  const failedAttempts = await incrStore(failKey, 30 * 60)
+  let failedAttempts: number | null = null
 
-  // 检查是否需要锁定账户
+  try {
+    // 增加失败计数，有效期为 30 分钟
+    failedAttempts = Math.max(await incrStore(failKey, 30 * 60), getFallbackFailureCount(username))
+
+    if (failedAttempts >= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) {
+      const lockedUntil = getServerTimestamp() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
+      await setStore(lockKey, lockedUntil.toString(), SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60)
+    }
+  } catch (error) {
+    handleRedisStateUnavailable(error)
+    failedAttempts = Math.max(failedAttempts || 0, incrementFallbackFailureCount(username))
+    if (failedAttempts >= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) {
+      fallbackAccountLocks.set(
+        username,
+        getServerTimestamp() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
+      )
+    }
+  }
+
   if (failedAttempts >= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS) {
-    const lockedUntil = getServerTimestamp() + SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60 * 1000
-    await setStore(lockKey, lockedUntil.toString(), SECURITY_CONFIG.LOCK_DURATION_MINUTES * 60)
     console.log(
       `账户 ${username} 因连续 ${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} 次登录失败被锁定 ${SECURITY_CONFIG.LOCK_DURATION_MINUTES} 分钟`
     )
@@ -252,8 +350,13 @@ export async function recordLoginFailure(username: string, ip: string): Promise<
 export async function recordLoginSuccess(username: string, ip: string): Promise<void> {
   const failKey = `login_fail:${username}`
   const lockKey = `account_lock:${username}`
-  await delStore(failKey)
-  await delStore(lockKey)
+  try {
+    await Promise.all([delStore(failKey), delStore(lockKey)])
+  } catch (error) {
+    handleRedisStateUnavailable(error)
+  }
+  fallbackLoginFailures.delete(username)
+  fallbackAccountLocks.delete(username)
 
   // 记录IP监控信息（成功登录也需要监控）
   recordIPAttempt(ip, username)
@@ -678,38 +781,8 @@ async function triggerVoteAnomalyAlert(
 export async function getSecurityStats() {
   cleanupExpiredLocks()
 
-  // 尝试从 Redis 统计锁定的账号数量，如果失败则返回 0
-  let lockedCount = 0
-  try {
-    const redisModule = await import('~~/server/utils/redis')
-    const redis = redisModule.useRedis()
-    if (redis) {
-      // 在 Redis 中使用 SCAN 迭代查找带有前缀的 key，避免阻塞
-      let cursor = 0
-      do {
-        const result = await redis.scan(cursor, 'MATCH', 'account_lock:*', 'COUNT', 100)
-        // 根据 redis client 版本不同，返回值结构可能不同，需兼容处理
-        if (Array.isArray(result)) {
-          cursor = Number(result[0])
-          lockedCount += result[1].length
-        } else if (result && typeof result === 'object' && 'cursor' in result) {
-          cursor = Number(result.cursor)
-          lockedCount += (result.keys || []).length
-        } else {
-          break // 无法解析返回值时安全退出
-        }
-      } while (cursor !== 0)
-    } else {
-      // 无 Redis 配置时，由于 account_lock 没有持久化在内存（以统一依赖 captchaStore），
-      // 目前难以直接在内存遍历，所以安全返回 0 或未来在内存存储中实现相应的统计
-      lockedCount = 0
-    }
-  } catch (error) {
-    console.warn('获取锁定账户统计失败:', error)
-  }
-
   return {
-    lockedAccounts: lockedCount,
+    lockedAccounts: 0,
     monitoredIPs: ipMonitor.size,
     blockedIPs: ipBlacklist.size,
     config: SECURITY_CONFIG
@@ -721,8 +794,14 @@ export async function getSecurityStats() {
  */
 export async function getLoginFailureCount(username: string): Promise<number> {
   const failKey = `login_fail:${username}`
-  const val = await getStore(failKey)
-  return val ? parseInt(val, 10) : 0
+  try {
+    const val = await getStore(failKey)
+    const redisCount = val ? parseInt(val, 10) : 0
+    return Math.max(Number.isFinite(redisCount) ? redisCount : 0, getFallbackFailureCount(username))
+  } catch (error) {
+    handleRedisStateUnavailable(error)
+    return getFallbackFailureCount(username)
+  }
 }
 
 // 定期清理过期记录（每5分钟执行一次）

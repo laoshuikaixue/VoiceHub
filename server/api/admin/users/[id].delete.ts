@@ -60,18 +60,6 @@ export default defineEventHandler(async (event) => {
     // 删除用户
     await db.delete(users).where(eq(users.id, parseInt(userId)))
 
-    // 清除相关缓存
-    try {
-      const { cache, userCache } = await import('~~/server/utils/cache-helpers')
-      await cache.deletePattern('song:*')
-      await cache.deletePattern('schedule:*')
-      await cache.deletePattern('stats:*')
-      await userCache.clearAuth(String(existingUser.id))
-      console.log('[Cache] 歌曲、排期、统计和用户认证缓存已清除（用户删除）')
-    } catch (cacheError) {
-      console.warn('[Cache] 清除缓存失败:', cacheError)
-    }
-
     return {
       success: true,
       message: '用户删除成功'

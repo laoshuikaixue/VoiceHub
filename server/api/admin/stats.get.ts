@@ -2,7 +2,6 @@ import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { schedules, semesters, songBlacklists, songs, users } from '~/drizzle/schema'
 import { and, count, eq, gte, lt } from 'drizzle-orm'
-import { cacheService } from '../../services/cacheService'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -26,12 +25,6 @@ export default defineEventHandler(async (event) => {
   const semester = query.semester as string
 
   try {
-    // 尝试从缓存获取数据
-    const cachedStats = await cacheService.getAdminStats(semester)
-    if (cachedStats) {
-      console.log('[Cache] 管理员统计数据缓存命中')
-      return cachedStats
-    }
     // 获取当前时间相关的日期
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -351,15 +344,6 @@ export default defineEventHandler(async (event) => {
       usersTrend: trendData[1],
       schedulesTrend: trendData[2],
       requestsTrend: trendData[3]
-    }
-
-    // 缓存结果
-    await cacheService.setAdminStats(semester, result)
-
-    // 只在Redis可用时显示缓存提示
-    const { isRedisReady } = await import('../../utils/redis')
-    if (isRedisReady()) {
-      console.log('[Cache] 管理员统计数据已缓存')
     }
 
     return result

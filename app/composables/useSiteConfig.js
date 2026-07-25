@@ -1,4 +1,5 @@
 import { computed, ref, readonly } from 'vue'
+import { getAggregateOAuthLoginTypesOrDefault, getProviderDisplayName } from '~/utils/oauth'
 
 const defaultSubmissionGuidelines = `1. 投稿时无需加入书名号
 2. 除DJ外，其他类型歌曲均接收（包括小语种）
@@ -29,12 +30,26 @@ const siteConfig = ref({
   githubOAuthEnabled: false,
   casdoorOAuthEnabled: false,
   googleOAuthEnabled: false,
+  aggregateOAuthEnabled: false,
+  aggregateOAuthLoginType: 'qq',
   customOAuthEnabled: false,
   customOAuthDisplayName: ''
 })
 
 const isLoaded = ref(false)
 const isLoading = ref(false)
+
+const getImageDisplayUrl = (url) => {
+  const normalizedUrl = typeof url === 'string' ? url.trim() : ''
+  if (!normalizedUrl) return ''
+
+  // HTTP 图片通过同源代理加载，避免在 HTTPS 页面中被浏览器按混合内容拦截
+  if (/^http:\/\//i.test(normalizedUrl)) {
+    return `/api/proxy/image?url=${encodeURIComponent(normalizedUrl)}`
+  }
+
+  return normalizedUrl
+}
 
 export const useSiteConfig = () => {
   // 获取站点配置
@@ -79,6 +94,8 @@ export const useSiteConfig = () => {
         githubOAuthEnabled: false,
         casdoorOAuthEnabled: false,
         googleOAuthEnabled: false,
+        aggregateOAuthEnabled: false,
+        aggregateOAuthLoginType: 'qq',
         customOAuthEnabled: false,
         customOAuthDisplayName: ''
       }
@@ -93,6 +110,8 @@ export const useSiteConfig = () => {
   const logoUrl = computed(() => siteConfig.value.siteLogoUrl || '/favicon.ico')
   const schoolLogoHomeUrl = computed(() => siteConfig.value.schoolLogoHomeUrl || '')
   const schoolLogoPrintUrl = computed(() => siteConfig.value.schoolLogoPrintUrl || '')
+  const schoolLogoHomeDisplayUrl = computed(() => getImageDisplayUrl(schoolLogoHomeUrl.value))
+  const schoolLogoPrintDisplayUrl = computed(() => getImageDisplayUrl(schoolLogoPrintUrl.value))
   const description = computed(
     () => siteConfig.value.siteDescription || '校园广播站点歌系统 - 让你的声音被听见'
   )
@@ -109,7 +128,9 @@ export const useSiteConfig = () => {
   const enableSubmissionRemarks = computed(() => siteConfig.value.enableSubmissionRemarks === true)
   const enableSubmissionLimit = computed(() => siteConfig.value.enableSubmissionLimit === true)
   const enableCardCodeRequests = computed(() => siteConfig.value.enableCardCodeRequests === true)
-  const requireCardCodeForRequests = computed(() => siteConfig.value.requireCardCodeForRequests === true)
+  const requireCardCodeForRequests = computed(
+    () => siteConfig.value.requireCardCodeForRequests === true
+  )
   const enableCardCodeLimitBypass = computed(
     () => siteConfig.value.enableCardCodeLimitBypass === true
   )
@@ -122,6 +143,7 @@ export const useSiteConfig = () => {
     github: !!siteConfig.value.githubOAuthEnabled,
     casdoor: !!siteConfig.value.casdoorOAuthEnabled,
     google: !!siteConfig.value.googleOAuthEnabled,
+    aggregate: !!siteConfig.value.aggregateOAuthEnabled,
     oauth2: !!siteConfig.value.customOAuthEnabled
   }))
 
@@ -135,6 +157,19 @@ export const useSiteConfig = () => {
     }
     if (siteConfig.value.googleOAuthEnabled) {
       providers.push({ key: 'google', name: 'Google' })
+    }
+    if (siteConfig.value.aggregateOAuthEnabled) {
+      const enabledLoginTypes = getAggregateOAuthLoginTypesOrDefault(
+        siteConfig.value.aggregateOAuthLoginType
+      )
+      enabledLoginTypes.forEach((loginType) => {
+        providers.push({
+          key: `aggregate:${loginType}`,
+          routeProvider: 'aggregate',
+          loginType,
+          name: getProviderDisplayName(`aggregate:${loginType}`)
+        })
+      })
     }
     if (siteConfig.value.customOAuthEnabled) {
       providers.push({
@@ -166,6 +201,8 @@ export const useSiteConfig = () => {
     logoUrl,
     schoolLogoHomeUrl,
     schoolLogoPrintUrl,
+    schoolLogoHomeDisplayUrl,
+    schoolLogoPrintDisplayUrl,
     description,
     guidelines,
     icp,

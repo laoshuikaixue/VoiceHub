@@ -3,15 +3,13 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SmtpService } from '~~/server/services/smtpService'
 import { getClientIP } from '~~/server/utils/ip-utils'
-
-// 简易验证码存储（如需分布式/重启持久，建议迁移到Redis）
-const emailVerificationCodes = new Map<
-  string,
-  { code: string; userId: number; expiresAt: number }
->()
+import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { delStoreIfValue, hashStateCode, setStore } from '~~/server/utils/captchaStore'
+import { randomInt } from 'node:crypto'
+import { createApiError } from '~~/server/utils/apiError'
 
 function generateCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return randomInt(100000, 1000000).toString()
 }
 
 export async function sendEmailVerificationCode(
@@ -21,35 +19,48 @@ export async function sendEmailVerificationCode(
   ipAddress?: string
 ) {
   const code = generateCode()
-  const expiresAt = Date.now() + 5 * 60 * 1000
-  emailVerificationCodes.set(email, { code, userId, expiresAt })
+  const expiresAt = getServerTimestamp() + 5 * 60 * 1000
+  const stateKey = `email-verify:${userId}`
+  const storedValue = JSON.stringify({
+    email,
+    codeHash: hashStateCode(stateKey, code),
+    expiresAt
+  })
+  await setStore(stateKey, storedValue, 5 * 60)
 
   const smtp = SmtpService.getInstance()
   await smtp.initializeSmtpConfig()
-  const sent = await smtp.renderAndSend(
-    email,
-    'verification.code',
-    {
-      name: name || '用户',
+  let sent = false
+  try {
+    sent = await smtp.renderAndSend(
       email,
-      code,
-      expiresInMinutes: 5
-    },
-    ipAddress
-  )
+      'verification.code',
+      {
+        name: name || '用户',
+        email,
+        code,
+        expiresInMinutes: 5
+      },
+      ipAddress
+    )
+  } catch (error) {
+    await delStoreIfValue(stateKey, storedValue)
+    throw error
+  }
   if (!sent) {
-    throw createError({ statusCode: 500, message: '验证码发送失败，请稍后重试' })
+    await delStoreIfValue(stateKey, storedValue)
+    throw createApiError(500, 'USER_CODE_SEND_FAILED', '验证码发送失败，请稍后重试')
   }
 }
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
-    throw createError({ statusCode: 405, message: '方法不被允许' })
+    throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', '方法不被允许')
   }
 
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   const body = await readBody(event)
@@ -57,13 +68,14 @@ export default defineEventHandler(async (event) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   if (!emailRaw || !emailRegex.test(emailRaw)) {
-    throw createError({ statusCode: 400, message: '请输入有效的邮箱地址' })
+    throw createApiError(400, 'USER_INVALID_EMAIL', '请输入有效的邮箱地址')
   }
 
   // 确认邮箱未被其他用户占用
   const existing = await db.select().from(users).where(eq(users.email, emailRaw)).limit(1)
-  if (existing.length > 0 && existing[0].id !== user.id) {
-    throw createError({ statusCode: 400, message: '该邮箱已被其他用户绑定' })
+  const existingUser = existing[0]
+  if (existingUser && existingUser.id !== user.id) {
+    throw createApiError(400, 'USER_EMAIL_TAKEN', '该邮箱已被其他用户绑定')
   }
 
   // 写入/更新邮箱，标记未验证
@@ -77,5 +89,3 @@ export default defineEventHandler(async (event) => {
 
   return { success: true, message: '验证码已发送，请查收邮箱' }
 })
-
-export { emailVerificationCodes }

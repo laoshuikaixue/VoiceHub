@@ -2,24 +2,19 @@ import { defineEventHandler, createError, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, semesters, songBlacklists } from '~/drizzle/schema'
 import { eq, inArray, and, asc } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录'
-    })
+    throw createApiError(401, 'AUTH_LOGIN_REQUIRED', '需要登录')
   }
 
   const body = await readBody(event)
   const { songIds } = body
 
   if (!songIds || !Array.isArray(songIds) || songIds.length === 0) {
-    throw createError({
-      statusCode: 400,
-      message: '请选择要导入的歌曲'
-    })
+    throw createApiError(400, 'SONG_SELECT_TO_IMPORT', '请选择要导入的歌曲')
   }
 
   // 获取当前活跃学期
@@ -33,10 +28,7 @@ export default defineEventHandler(async (event) => {
   const currentSemesterName = activeSemester?.name
 
   if (!currentSemesterName) {
-    throw createError({
-      statusCode: 400,
-      message: '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。'
-    })
+    throw createApiError(400, 'SONG_NO_ACTIVE_SEMESTER_IMPORT', '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。')
   }
 
   // 获取原始歌曲数据，确保只能获取自己投稿的歌曲，并按创建时间排序

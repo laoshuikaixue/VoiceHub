@@ -1,6 +1,5 @@
 import { createError, defineEventHandler } from 'h3'
 import { db } from '~/drizzle/db'
-import { CacheService } from '../../../services/cacheService'
 import { songs, users, votes } from '~/drizzle/schema'
 import { count, eq, gte } from 'drizzle-orm'
 import { getBeijingHour, getBeijingStartOfDay } from '~/utils/timeUtils'
@@ -16,13 +15,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 尝试从缓存获取数据
-    const cacheService = CacheService.getInstance()
-    const cachedStats = await cacheService.getRealtimeStats()
-    if (cachedStats) {
-      console.log('[Cache] 实时统计数据缓存命中')
-      return cachedStats
-    }
     // 获取当前时间相关的日期
     const now = new Date()
     const today = getBeijingStartOfDay() // 使用北京时间的一天开始
@@ -176,10 +168,6 @@ export default defineEventHandler(async (event) => {
       peakHours,
       timestamp: now.toISOString()
     }
-
-    // 缓存结果
-    await cacheService.setRealtimeStats(result)
-    console.log('[Cache] 实时统计数据已缓存')
 
     return result
   } catch (error) {

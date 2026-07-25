@@ -1,45 +1,43 @@
 import { db } from '~/drizzle/db'
 import { songs, users } from '~/drizzle/schema'
 import { and, eq, or } from 'drizzle-orm'
-import { cacheService } from '~~/server/services/cacheService'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   try {
     // 验证请求方法
     if (event.node.req.method !== 'POST') {
-      throw createError({
-        statusCode: 405,
-        message: 'Method Not Allowed'
-      })
+      throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', 'Method Not Allowed')
     }
 
     // 获取已验证的用户信息（由中间件提供）
     const user = event.context.user
     if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权访问'
-      })
+      throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
     }
 
     // 检查权限
     if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
+      throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
     }
 
     // 获取请求体
     const body = await readBody(event)
-    const { title, artist, requester, semester, musicPlatform, musicId, cover, playUrl, preferredPlayTimeId } = body
+    const {
+      title,
+      artist,
+      requester,
+      semester,
+      musicPlatform,
+      musicId,
+      cover,
+      playUrl,
+      preferredPlayTimeId
+    } = body
 
     // 验证必填字段
     if (!title || !artist) {
-      throw createError({
-        statusCode: 400,
-        message: 'Title and artist are required'
-      })
+      throw createApiError(400, 'SONG_TITLE_ARTIST_REQUIRED', 'Title and artist are required')
     }
 
     // 查找投稿人用户
@@ -81,10 +79,7 @@ export default defineEventHandler(async (event) => {
     const existingSong = existingSongResult[0]
 
     if (existingSong) {
-      throw createError({
-        statusCode: 409,
-        message: 'Song already exists'
-      })
+      throw createApiError(409, 'SONG_ALREADY_EXISTS', 'Song already exists')
     }
 
     // 创建歌曲
@@ -124,14 +119,6 @@ export default defineEventHandler(async (event) => {
     const songWithRequester = {
       ...newSong,
       requester: requesterInfo
-    }
-
-    // 清除歌曲相关缓存
-    try {
-      await cacheService.clearSongsCache()
-      console.log('[Cache] 歌曲缓存已清除（添加歌曲）')
-    } catch (error) {
-      console.error('清除歌曲缓存失败:', error)
     }
 
     return {

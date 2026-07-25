@@ -2,6 +2,7 @@ import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { and, eq, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
+import { createApiError } from '~~/server/utils/apiError'
 
 const PERSONAL_PERMISSION = 'songs:request'
 
@@ -13,10 +14,7 @@ const createPersonalApiKeySchema = z.object({
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '请先登录'
-    })
+    throw createApiError(401, 'AUTH_LOGIN_REQUIRED', '请先登录')
   }
 
   try {
@@ -50,10 +48,7 @@ export default defineEventHandler(async (event) => {
         )
 
       if (existingKeys.length >= 5) {
-        throw createError({
-          statusCode: 400,
-          message: '每个用户最多只能创建 5 个个人集成令牌'
-        })
+        throw createApiError(400, 'USER_API_KEY_LIMIT_REACHED', '每个用户最多只能创建 5 个个人集成令牌')
       }
 
       const apiKeyResult = await tx
@@ -75,10 +70,7 @@ export default defineEventHandler(async (event) => {
 
       const createdApiKey = apiKeyResult[0]
       if (!createdApiKey) {
-        throw createError({
-          statusCode: 500,
-          message: '创建个人 API Key 失败'
-        })
+        throw createApiError(500, 'USER_API_KEY_CREATE_FAILED', '创建个人 API Key 失败')
       }
 
       const apiKeyId = createdApiKey.id
@@ -115,15 +107,9 @@ export default defineEventHandler(async (event) => {
 
     if (error.name === 'ZodError') {
       const issues = error.issues || error.errors || []
-      throw createError({
-        statusCode: 400,
-        message: `请求参数验证失败：${issues.map((e: any) => e.message).join(', ')}`
-      })
+      throw createApiError(400, 'USER_REQUEST_VALIDATION_FAILED', `请求参数验证失败：${issues.map((e: any) => e.message).join(', ')}`, { params: [issues.map((e: any) => e.message).join(', ')] })
     }
 
-    throw createError({
-      statusCode: 500,
-      message: `创建个人 API Key 失败：${error.message}`
-    })
+    throw createApiError(500, 'USER_API_KEY_CREATE_FAILED_DETAIL', `创建个人 API Key 失败：${error.message}`, { params: [error.message] })
   }
 })
