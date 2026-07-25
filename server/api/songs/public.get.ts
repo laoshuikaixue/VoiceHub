@@ -80,14 +80,12 @@ export default defineEventHandler(async (event) => {
         GROUP BY song_id
       ),
       replay_metadata AS (
-        SELECT DISTINCT ON (rr.song_id)
-          rr.song_id,
+        SELECT
+          rr.id,
           rr.submission_note,
           rr.submission_note_public,
           rr.preferred_play_time_id
         FROM song_replay_requests rr
-        WHERE rr.status = 'FULFILLED'
-        ORDER BY rr.song_id, rr.created_at DESC
       ),
       ranked_replay_requesters AS (
         SELECT
@@ -131,6 +129,7 @@ export default defineEventHandler(async (event) => {
         sch.id,
         sch."playDate",
         sch.sequence,
+        sch.replay_request_id,
         sch.played AS "schedulePlayed",
         sch."playTimeId",
         s.id AS "songId",
@@ -178,7 +177,7 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN accepted_collaborators ac ON ac.song_id = s.id
       LEFT JOIN replay_counts rc ON rc.song_id = s.id
       LEFT JOIN replay_requesters rr ON rr.song_id = s.id
-      LEFT JOIN replay_metadata rm ON rm.song_id = s.id
+      LEFT JOIN replay_metadata rm ON rm.id = sch.replay_request_id
       WHERE sch."isDraft" = false
       ${semesterCondition}
       ORDER BY sch."playDate", sch.sequence

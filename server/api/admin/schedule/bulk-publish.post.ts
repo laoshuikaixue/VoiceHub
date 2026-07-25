@@ -208,18 +208,24 @@ export default defineEventHandler(async (event) => {
           updatedAt: publishedAt
         })
 
-        // 更新重播申请状态（无论之前是否有排期）
-        const updatedReplay = await tx
-          .update(songReplayRequests)
-          .set({ status: 'FULFILLED' })
+        // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
+        const pendingReplays = await tx
+          .select()
+          .from(songReplayRequests)
           .where(
             and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
           )
-          .returning({ userId: songReplayRequests.userId })
+          .orderBy(songReplayRequests.createdAt)
+          .limit(1)
 
-        for (const r of updatedReplay) {
+        for (const pending of pendingReplays) {
+          await tx
+            .update(songReplayRequests)
+            .set({ status: 'FULFILLED' })
+            .where(eq(songReplayRequests.id, pending.id))
+
           replayNotificationsToSend.push({
-            userId: r.userId,
+            userId: pending.userId,
             songId: song.id,
             songInfo: { title: song.title, artist: song.artist, playDate: playDate }
           })

@@ -205,16 +205,6 @@ export default defineEventHandler(async (event) => {
           ) FILTER (WHERE position <= 3) AS requesters
         FROM ranked_replay_requesters
         GROUP BY song_id
-      ),
-      replay_metadata AS (
-        SELECT DISTINCT ON (rr.song_id)
-          rr.song_id,
-          rr.submission_note,
-          rr.submission_note_public,
-          rr.preferred_play_time_id
-        FROM song_replay_requests rr
-        WHERE rr.status = 'FULFILLED'
-        ORDER BY rr.song_id, rr.created_at DESC
       )
       SELECT
         s.id,
@@ -230,9 +220,9 @@ export default defineEventHandler(async (event) => {
         s."musicId",
         s."cardCodeId",
         s."playUrl",
-        COALESCE(rm.submission_note, s."submissionNote") AS "effectiveSubmissionNote",
-        COALESCE(rm.submission_note_public, s."submissionNotePublic") AS "effectiveSubmissionNotePublic",
-        COALESCE(rm.preferred_play_time_id, s."preferredPlayTimeId") AS "effectivePlayTimeId",
+        s."submissionNote",
+        s."submissionNotePublic",
+        s."preferredPlayTimeId",
         u.id AS "requesterId",
         u.name AS "requesterName",
         u.grade AS "requesterGrade",
@@ -273,7 +263,6 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN current_user_replay cur ON cur.song_id = s.id
       LEFT JOIN accepted_collaborators ac ON ac.song_id = s.id
       LEFT JOIN replay_requesters rr ON rr.song_id = s.id
-      LEFT JOIN replay_metadata rm ON rm.song_id = s.id
       ${whereSql}
       ORDER BY ${orderSql}
     `
@@ -310,12 +299,9 @@ export default defineEventHandler(async (event) => {
           }))
         : []
       const isRequester = Boolean(user && Number(row.requesterId) === user.id)
-      const effectiveSubmissionNote = row.effectiveSubmissionNote
-      const effectiveSubmissionNotePublic = row.effectiveSubmissionNotePublic === true
-      const effectivePlayTimeId = row.effectivePlayTimeId ? Number(row.effectivePlayTimeId) : null
       const canViewSubmissionNote =
-        Boolean(effectiveSubmissionNote) &&
-        (effectiveSubmissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
+        Boolean(row.submissionNote) &&
+        (row.submissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
       const song: SongResponse = {
         id: Number(row.id),
@@ -352,9 +338,9 @@ export default defineEventHandler(async (event) => {
         isReplay: replayRequestCount > 0,
         replayRequesters,
         hasSubmissionNote: canViewSubmissionNote,
-        submissionNote: canViewSubmissionNote ? effectiveSubmissionNote : null,
-        submissionNotePublic: canViewSubmissionNote ? effectiveSubmissionNotePublic : false,
-        preferredPlayTimeId: effectivePlayTimeId
+        submissionNote: canViewSubmissionNote ? row.submissionNote : null,
+        submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
+        preferredPlayTimeId: row.preferredPlayTimeId ? Number(row.preferredPlayTimeId) : null
       }
 
       if (user) {

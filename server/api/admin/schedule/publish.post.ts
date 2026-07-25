@@ -106,25 +106,39 @@ export default defineEventHandler(async (event) => {
 
       const shouldNotify = existingPublished.length === 0
 
-      // 无论是否已有排期，重播申请都应标记为已履行
-      const updatedRequests = await tx
-        .update(songReplayRequests)
-        .set({
-          status: 'FULFILLED',
-          updatedAt: publishedAt
-        })
+      // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
+      const pendingReplayRequests = await tx
+        .select()
+        .from(songReplayRequests)
         .where(
           and(
             eq(songReplayRequests.songId, draft.song.id),
             eq(songReplayRequests.status, 'PENDING')
           )
         )
-        .returning({ userId: songReplayRequests.userId })
+        .orderBy(songReplayRequests.createdAt)
+        .limit(1)
 
-      const replayRequesterIds = updatedRequests.map((r) => r.userId)
+      let replayRequesterIds: number[] = []
+      if (pendingReplayRequests.length > 0) {
+        const pending = pendingReplayRequests[0]
 
-      if (updatedRequests.length > 0) {
-        console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
+        await tx
+          .update(songReplayRequests)
+          .set({
+            status: 'FULFILLED',
+            updatedAt: publishedAt
+          })
+          .where(eq(songReplayRequests.id, pending.id))
+
+        replayRequesterIds = [pending.userId]
+
+        await tx
+          .update(schedules)
+          .set({ replayRequestId: pending.id })
+          .where(eq(schedules.id, body.scheduleId))
+
+        console.log(`发布排期：重播申请 #${pending.id} 标记为 FULFILLED`)
       }
 
       if (existingPublished.length > 0) {

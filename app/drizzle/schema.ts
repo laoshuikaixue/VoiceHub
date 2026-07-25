@@ -99,6 +99,7 @@ export const schedules = pgTable('Schedule', {
   // 草稿支持字段
   isDraft: boolean('isDraft').default(false).notNull(),
   publishedAt: timestamp('publishedAt'),
+  replayRequestId: integer('replay_request_id'),
 }, (table) => [
   index('schedule_published_song_idx').on(table.isDraft, table.songId, table.playDate),
   index('schedule_published_date_idx').on(table.isDraft, table.playDate)

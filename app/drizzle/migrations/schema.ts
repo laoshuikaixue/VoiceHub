@@ -60,6 +60,7 @@ export const schedule = pgTable("Schedule", {
 	playTimeId: integer(),
 	isDraft: boolean().default(false).notNull(),
 	publishedAt: timestamp({ mode: 'string' }),
+	replayRequestId: integer(),
 });
 
 export const notificationSettings = pgTable("NotificationSettings", {

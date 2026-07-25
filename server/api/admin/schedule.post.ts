@@ -136,23 +136,38 @@ export default defineEventHandler(async (event) => {
         // 如果之前没有正式发布过，才发送通知（首次排期通知）
         shouldNotify = existingPublished.length === 0
 
-        // 无论是否已有排期，重播申请都应标记为已履行
-        const updatedReplayRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'FULFILLED',
-            updatedAt: createdSchedule.publishedAt || getServerDate()
-          })
+        // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
+        const pendingReplayRequests = await tx
+          .select()
+          .from(songReplayRequests)
           .where(
             and(
               eq(songReplayRequests.songId, schedule.song.id),
               eq(songReplayRequests.status, 'PENDING')
             )
           )
-          .returning({ userId: songReplayRequests.userId })
+          .orderBy(songReplayRequests.createdAt)
+          .limit(1)
 
-        // 收集重播申请人 ID 用于后续发送通知
-        replayRequesterIds = updatedReplayRequests.map((r) => r.userId)
+        if (pendingReplayRequests.length > 0) {
+          const pending = pendingReplayRequests[0]
+
+          await tx
+            .update(songReplayRequests)
+            .set({
+              status: 'FULFILLED',
+              updatedAt: createdSchedule.publishedAt || getServerDate()
+            })
+            .where(eq(songReplayRequests.id, pending.id))
+
+          replayRequesterIds = [pending.userId]
+
+          // 更新排期的 replayRequestId
+          await tx
+            .update(schedules)
+            .set({ replayRequestId: pending.id })
+            .where(eq(schedules.id, createdSchedule.id))
+        }
 
         if (existingPublished.length > 0) {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知`)

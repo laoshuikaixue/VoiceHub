@@ -79,6 +79,7 @@ export default defineEventHandler(async (event) => {
         playTimeId: schedules.playTimeId,
         isDraft: schedules.isDraft,
         publishedAt: schedules.publishedAt,
+        replayRequestId: schedules.replayRequestId,
         songId: schedules.songId,
         songTitle: songs.title,
         songArtist: songs.artist,
@@ -240,17 +241,11 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // 获取重播申请备注和期望时段（最新一个 FULFILLED 申请的字段）
-    const replayMetadataMap = new Map<number, { submissionNote: string | null; submissionNotePublic: boolean; preferredPlayTimeId: number | null }>()
+    // 获取重播申请元数据（按 ID 索引，展示时排期按 replayRequestId 取对应记录）
+    const replayMetadataByIdMap = new Map<number, { submissionNote: string | null; submissionNotePublic: boolean; preferredPlayTimeId: number | null }>()
     if (songIds.length > 0) {
       const replayMetaData = await db
-        .select({
-          songId: songReplayRequests.songId,
-          submissionNote: songReplayRequests.submissionNote,
-          submissionNotePublic: songReplayRequests.submissionNotePublic,
-          preferredPlayTimeId: songReplayRequests.preferredPlayTimeId,
-          createdAt: songReplayRequests.createdAt
-        })
+        .select()
         .from(songReplayRequests)
         .where(
           and(
@@ -258,17 +253,13 @@ export default defineEventHandler(async (event) => {
             eq(songReplayRequests.status, 'FULFILLED')
           )
         )
-        .orderBy(desc(songReplayRequests.createdAt))
 
-      // 每首歌只保留最新一条
       for (const row of replayMetaData) {
-        if (!replayMetadataMap.has(row.songId)) {
-          replayMetadataMap.set(row.songId, {
-            submissionNote: row.submissionNote,
-            submissionNotePublic: row.submissionNotePublic,
-            preferredPlayTimeId: row.preferredPlayTimeId
-          })
-        }
+        replayMetadataByIdMap.set(row.id, {
+          submissionNote: row.submissionNote,
+          submissionNotePublic: row.submissionNotePublic,
+          preferredPlayTimeId: row.preferredPlayTimeId
+        })
       }
     }
 
@@ -360,7 +351,8 @@ export default defineEventHandler(async (event) => {
             }
           : null,
         song: (() => {
-          const replayMeta = replayMetadataMap.get(schedule.songId)
+          const linkedReplayId = (schedule as any).replayRequestId
+          const replayMeta = linkedReplayId ? replayMetadataByIdMap.get(linkedReplayId) : null
           const hasReplayMeta = !!replayMeta
 
           return {
