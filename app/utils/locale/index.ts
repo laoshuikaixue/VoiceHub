@@ -3,6 +3,7 @@ import * as zhCN from './zh-CN'
 
 export const supportedLocales = [
   { code: 'zh-CN', label: '简体中文' },
+  { code: 'zh-WYW', label: '文言文' },
   { code: 'en-US', label: 'English' }
 ] as const
 
@@ -34,6 +35,7 @@ const zhMessages = zhCN as unknown as LocaleMessages
 
 const localeLoaders: Record<Locale, () => Promise<LocaleMessages>> = {
   'zh-CN': () => Promise.resolve(zhMessages),
+  'zh-WYW': () => import('./zh-WYW').then((module) => module as unknown as LocaleMessages),
   'en-US': () => import('./en-US').then((module) => module as unknown as LocaleMessages)
 }
 
