@@ -208,7 +208,10 @@ export default defineEventHandler(async (event) => {
             class: users.class
           },
           status: songReplayRequests.status,
-          createdAt: songReplayRequests.createdAt
+          createdAt: songReplayRequests.createdAt,
+          preferredPlayTimeId: songReplayRequests.preferredPlayTimeId,
+          submissionNote: songReplayRequests.submissionNote,
+          submissionNotePublic: songReplayRequests.submissionNotePublic
         })
         .from(songReplayRequests)
         .innerJoin(users, eq(songReplayRequests.userId, users.id))
@@ -235,6 +238,38 @@ export default defineEventHandler(async (event) => {
           })
         }
       })
+    }
+
+    // 获取重播申请备注和期望时段（最新一个 FULFILLED 申请的字段）
+    const replayMetadataMap = new Map<number, { submissionNote: string | null; submissionNotePublic: boolean; preferredPlayTimeId: number | null }>()
+    if (songIds.length > 0) {
+      const replayMetaData = await db
+        .select({
+          songId: songReplayRequests.songId,
+          submissionNote: songReplayRequests.submissionNote,
+          submissionNotePublic: songReplayRequests.submissionNotePublic,
+          preferredPlayTimeId: songReplayRequests.preferredPlayTimeId,
+          createdAt: songReplayRequests.createdAt
+        })
+        .from(songReplayRequests)
+        .where(
+          and(
+            inArray(songReplayRequests.songId, songIds),
+            eq(songReplayRequests.status, 'FULFILLED')
+          )
+        )
+        .orderBy(desc(songReplayRequests.createdAt))
+
+      // 每首歌只保留最新一条
+      for (const row of replayMetaData) {
+        if (!replayMetadataMap.has(row.songId)) {
+          replayMetadataMap.set(row.songId, {
+            submissionNote: row.submissionNote,
+            submissionNotePublic: row.submissionNotePublic,
+            preferredPlayTimeId: row.preferredPlayTimeId
+          })
+        }
+      }
     }
 
     // 格式化响应数据
@@ -324,28 +359,37 @@ export default defineEventHandler(async (event) => {
               enabled: schedule.playTimeEnabled
             }
           : null,
-        song: {
-          id: schedule.songId,
-          title: schedule.songTitle,
-          artist: schedule.songArtist,
-          requester: requesterName,
-          requesterId: schedule.songRequesterId,
-          requesterGrade: schedule.requesterGrade || null,
-          requesterClass: schedule.requesterClass || null,
-          collaborators: formattedCollaborators,
-          voteCount: voteCountMap.get(schedule.songId) || 0,
-          played: schedule.songPlayed || false,
-          cover: schedule.songCover || null,
-          cardCodeId: schedule.songCardCodeId || null,
-          musicPlatform: schedule.songMusicPlatform || null,
-          musicId: schedule.songMusicId || null,
-          semester: schedule.songSemester || null,
-          createdAt: schedule.songCreatedAt,
-          // 重播申请信息
-          replayRequestCount: isReplaySong ? replayRequestCount : 0,
-          replayRequesters: isReplaySong ? formattedReplayRequesters : [],
-          isReplay: isReplaySong // 只有已播放过且有重播申请的才标记为重播
-        }
+        song: (() => {
+          const replayMeta = replayMetadataMap.get(schedule.songId)
+          const hasReplayMeta = !!replayMeta
+
+          return {
+            id: schedule.songId,
+            title: schedule.songTitle,
+            artist: schedule.songArtist,
+            requester: requesterName,
+            requesterId: schedule.songRequesterId,
+            requesterGrade: schedule.requesterGrade || null,
+            requesterClass: schedule.requesterClass || null,
+            collaborators: formattedCollaborators,
+            voteCount: voteCountMap.get(schedule.songId) || 0,
+            played: schedule.songPlayed || false,
+            cover: schedule.songCover || null,
+            cardCodeId: schedule.songCardCodeId || null,
+            musicPlatform: schedule.songMusicPlatform || null,
+            musicId: schedule.songMusicId || null,
+            semester: schedule.songSemester || null,
+            createdAt: schedule.songCreatedAt,
+            submissionNote: hasReplayMeta ? replayMeta.submissionNote : null,
+            submissionNotePublic: hasReplayMeta ? replayMeta.submissionNotePublic : false,
+            hasSubmissionNote: hasReplayMeta && !!replayMeta.submissionNote,
+            preferredPlayTimeId: hasReplayMeta ? replayMeta.preferredPlayTimeId : null,
+            // 重播申请信息
+            replayRequestCount: isReplaySong ? replayRequestCount : 0,
+            replayRequesters: isReplaySong ? formattedReplayRequesters : [],
+            isReplay: isReplaySong
+          }
+        })()
       }
     })
 
