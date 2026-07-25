@@ -1188,12 +1188,12 @@ const updateSongCounts = async (semester = null) => {
 }
 
 // 首页标题：根据加载阶段动态切换
+// 配置加载完成前使用环境配置的站点标题兜底，保证 SSR 输出真实站点名（SEO / 链接预览），
+// 并与 og:title 保持一致；加载完成后切换为数据库配置的站点标题
 const pageTitle = computed(() => {
   if (showBootLoading.value) {
-    if (isLoaded.value && siteTitle.value) {
-      return `${locale.value.titleLoading} | ${siteTitle.value}`
-    }
-    return locale.value.titleLoading
+    const bootTitle = isLoaded.value ? siteTitle.value : config.public.siteTitle
+    return bootTitle ? `${locale.value.titleLoading} | ${bootTitle}` : locale.value.titleLoading
   }
   return `${locale.value.titleHome} | ${siteTitle.value}`
 })
