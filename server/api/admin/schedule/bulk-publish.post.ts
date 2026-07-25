@@ -203,9 +203,16 @@ export default defineEventHandler(async (event) => {
           updatedAt: publishedAt
         })
 
-        // 如果该歌曲之前未在此时间段发布过，则发送通知并更新重播状态
+        // 更新重播申请状态（无论之前是否有排期）
+        await tx
+          .update(songReplayRequests)
+          .set({ status: 'FULFILLED' })
+          .where(
+            and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
+          )
+
+        // 如果该歌曲之前未在此时间段发布过，则发送通知
         if (!existingPublishedSongIds.has(item.songId)) {
-          // 添加到通知列表，稍后发送
           notificationsToSend.push({
             requesterId: song.requesterId,
             songId: song.id,
@@ -216,14 +223,6 @@ export default defineEventHandler(async (event) => {
             }
           })
           existingPublishedSongIds.add(item.songId)
-
-          // 更新重播申请状态
-          await tx
-            .update(songReplayRequests)
-            .set({ status: 'FULFILLED' })
-            .where(
-              and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
-            )
         }
 
         await redeemCardCodeForSchedule(tx, {

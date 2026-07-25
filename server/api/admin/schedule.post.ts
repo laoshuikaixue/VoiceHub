@@ -132,24 +132,27 @@ export default defineEventHandler(async (event) => {
           )
           .limit(1)
 
-        // 如果之前没有正式发布过，才发送通知和更新重播状态
+        // 如果之前没有正式发布过，才发送通知（首次排期通知）
         shouldNotify = existingPublished.length === 0
-        if (shouldNotify) {
-          await tx
-            .update(songReplayRequests)
-            .set({
-              status: 'FULFILLED',
-              updatedAt: createdSchedule.publishedAt || getServerDate()
-            })
-            .where(
-              and(
-                eq(songReplayRequests.songId, schedule.song.id),
-                eq(songReplayRequests.status, 'PENDING')
-              )
+
+        // 无论是否已有排期，只要重播申请未完成就更新状态
+        await tx
+          .update(songReplayRequests)
+          .set({
+            status: 'FULFILLED',
+            updatedAt: createdSchedule.publishedAt || getServerDate()
+          })
+          .where(
+            and(
+              eq(songReplayRequests.songId, schedule.song.id),
+              eq(songReplayRequests.status, 'PENDING')
             )
-        } else {
-          console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+          )
+
+        if (existingPublished.length > 0) {
+          console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知`)
         }
+      }
         await redeemCardCodeForSchedule(tx, {
           songId: schedule.song.id,
           cardCodeId: schedule.song.cardCodeId,

@@ -105,28 +105,28 @@ export default defineEventHandler(async (event) => {
         .limit(1)
 
       const shouldNotify = existingPublished.length === 0
-      // 如果之前没有正式发布过，只更新重播状态；通知在事务提交后发送。
-      if (shouldNotify) {
-        // 将该歌曲的所有待处理重播申请标记为已完成
-        const updatedRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'FULFILLED',
-            updatedAt: publishedAt
-          })
-          .where(
-            and(
-              eq(songReplayRequests.songId, draft.song.id),
-              eq(songReplayRequests.status, 'PENDING')
-            )
-          )
-          .returning({ id: songReplayRequests.id })
 
-        if (updatedRequests.length > 0) {
-          console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
-        }
-      } else {
-        console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+      // 无论是否已有排期，重播申请都应标记为已履行
+      const updatedRequests = await tx
+        .update(songReplayRequests)
+        .set({
+          status: 'FULFILLED',
+          updatedAt: publishedAt
+        })
+        .where(
+          and(
+            eq(songReplayRequests.songId, draft.song.id),
+            eq(songReplayRequests.status, 'PENDING')
+          )
+        )
+        .returning({ id: songReplayRequests.id })
+
+      if (updatedRequests.length > 0) {
+        console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
+      }
+
+      if (existingPublished.length > 0) {
+        console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知`)
       }
 
       await redeemCardCodeForSchedule(tx, {
