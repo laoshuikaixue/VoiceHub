@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { inArray, and, eq, gte, lte } from 'drizzle-orm'
-import { createSongSelectedNotification } from '~~/server/services/notificationService'
+import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   redeemCardCodeForSchedule,
@@ -87,6 +87,11 @@ export default defineEventHandler(async (event) => {
     // 需要发送通知的列表
     const notificationsToSend: Array<{
       requesterId: number
+      songId: number
+      songInfo: { title: string; artist: string; playDate: Date }
+    }> = []
+    const replayNotificationsToSend: Array<{
+      userId: number
       songId: number
       songInfo: { title: string; artist: string; playDate: Date }
     }> = []
@@ -204,12 +209,21 @@ export default defineEventHandler(async (event) => {
         })
 
         // 更新重播申请状态（无论之前是否有排期）
-        await tx
+        const updatedReplay = await tx
           .update(songReplayRequests)
           .set({ status: 'FULFILLED' })
           .where(
             and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
           )
+          .returning({ userId: songReplayRequests.userId })
+
+        for (const r of updatedReplay) {
+          replayNotificationsToSend.push({
+            userId: r.userId,
+            songId: song.id,
+            songInfo: { title: song.title, artist: song.artist, playDate: playDate }
+          })
+        }
 
         // 如果该歌曲之前未在此时间段发布过，则发送通知
         if (!existingPublishedSongIds.has(item.songId)) {
@@ -233,6 +247,17 @@ export default defineEventHandler(async (event) => {
         })
       }
     })
+
+    // 发送重播安排通知
+    if (replayNotificationsToSend.length > 0) {
+      event.waitUntil(
+        Promise.allSettled(
+          replayNotificationsToSend.map((n) =>
+            createReplaySongSelectedNotification(n.userId, n.songId, n.songInfo)
+          )
+        )
+      )
+    }
 
     // 由运行时托管后台通知，避免 Serverless 在响应结束后中止任务。
     if (notificationsToSend.length > 0) {

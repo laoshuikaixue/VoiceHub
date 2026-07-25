@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { schedules, songs, songReplayRequests, users } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte, ne } from 'drizzle-orm'
-import { createSongSelectedNotification } from '../../services/notificationService'
+import { createSongSelectedNotification, createReplaySongSelectedNotification } from '../../services/notificationService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 import { getServerDate } from '~~/server/utils/serverTime'
 
@@ -116,6 +116,7 @@ export default defineEventHandler(async (event) => {
       }
 
       let shouldNotify = false
+      let replayRequesterIds: number[] = []
 
       // 只有在非草稿模式下才更新重播状态
       if (!isDraft) {
@@ -135,8 +136,8 @@ export default defineEventHandler(async (event) => {
         // 如果之前没有正式发布过，才发送通知（首次排期通知）
         shouldNotify = existingPublished.length === 0
 
-        // 无论是否已有排期，只要重播申请未完成就更新状态
-        await tx
+        // 无论是否已有排期，重播申请都应标记为已履行
+        const updatedReplayRequests = await tx
           .update(songReplayRequests)
           .set({
             status: 'FULFILLED',
@@ -148,11 +149,15 @@ export default defineEventHandler(async (event) => {
               eq(songReplayRequests.status, 'PENDING')
             )
           )
+          .returning({ userId: songReplayRequests.userId })
+
+        // 收集重播申请人 ID 用于后续发送通知
+        replayRequesterIds = updatedReplayRequests.map((r) => r.userId)
 
         if (existingPublished.length > 0) {
           console.log(`歌曲 ${schedule.song.id} 已有其他正式排期，不再重复发送通知`)
         }
-      }
+
         await redeemCardCodeForSchedule(tx, {
           songId: schedule.song.id,
           cardCodeId: schedule.song.cardCodeId,
@@ -161,7 +166,7 @@ export default defineEventHandler(async (event) => {
         })
       }
 
-      return { schedule, shouldNotify }
+      return { schedule, shouldNotify, replayRequesterIds }
     })
 
     let notificationSent = true
@@ -175,6 +180,21 @@ export default defineEventHandler(async (event) => {
       } catch (notificationError) {
         notificationSent = false
         console.error('排期已创建，但发送歌曲入选通知失败:', notificationError)
+      }
+    }
+
+    // 发送重播申请已安排通知
+    if (!isDraft && transactionResult.replayRequesterIds.length > 0) {
+      for (const replayUserId of transactionResult.replayRequesterIds) {
+        try {
+          await createReplaySongSelectedNotification(replayUserId, song.id, {
+            title: song.title,
+            artist: song.artist,
+            playDate: transactionResult.schedule.playDate
+          })
+        } catch (error) {
+          console.error(`发送重播安排通知给用户 ${replayUserId} 失败:`, error)
+        }
       }
     }
 

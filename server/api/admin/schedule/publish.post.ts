@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
-import { createSongSelectedNotification } from '~~/server/services/notificationService'
+import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { getBeijingTimestamp } from '~/utils/timeUtils'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
 
@@ -119,7 +119,9 @@ export default defineEventHandler(async (event) => {
             eq(songReplayRequests.status, 'PENDING')
           )
         )
-        .returning({ id: songReplayRequests.id })
+        .returning({ userId: songReplayRequests.userId })
+
+      const replayRequesterIds = updatedRequests.map((r) => r.userId)
 
       if (updatedRequests.length > 0) {
         console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
@@ -136,8 +138,23 @@ export default defineEventHandler(async (event) => {
         at: publishedAt
       })
 
-      return { schedule, shouldNotify }
+      return { schedule, shouldNotify, replayRequesterIds }
     })
+
+    // 发送重播申请已安排通知
+    if (publishResult.replayRequesterIds?.length > 0) {
+      for (const replayUserId of publishResult.replayRequesterIds) {
+        try {
+          await createReplaySongSelectedNotification(replayUserId, draft.song.id, {
+            title: draft.song.title,
+            artist: draft.song.artist,
+            playDate: publishResult.schedule.playDate
+          })
+        } catch (error) {
+          console.error(`发送重播安排通知给用户 ${replayUserId} 失败:`, error)
+        }
+      }
+    }
 
     let notificationSent = true
     if (publishResult.shouldNotify) {
