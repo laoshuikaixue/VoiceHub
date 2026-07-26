@@ -335,6 +335,7 @@ export default defineEventHandler(async (event) => {
         updatedAt: schedule.updatedAt,
         playDate: dateOnly.toISOString().split('T')[0],
         sequence: schedule.sequence || 1,
+        replayRequestId: schedule.replayRequestId || null,
         played: schedule.played || false,
         playTimeId: schedule.playTimeId,
         // 草稿状态信息

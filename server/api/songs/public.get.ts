@@ -129,7 +129,7 @@ export default defineEventHandler(async (event) => {
         sch.id,
         sch."playDate",
         sch.sequence,
-        sch.replay_request_id,
+        sch.replay_request_id AS "replayRequestId",
         sch.played AS "schedulePlayed",
         sch."playTimeId",
         s.id AS "songId",
@@ -237,11 +237,13 @@ export default defineEventHandler(async (event) => {
         Boolean(effectiveSubmissionNote) &&
         (effectiveSubmissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
+      const linkedReplayRequestId = row.replayRequestId ? Number(row.replayRequestId) : null
 
       return {
         id: Number(row.id),
         playDate: dateOnly.toISOString().split('T')[0],
         sequence: Number(row.sequence || 1),
+        replayRequestId: linkedReplayRequestId,
         played: row.schedulePlayed === true,
         playTimeId: row.playTimeId ? Number(row.playTimeId) : null,
         playTime: row.playTimeRecordId
@@ -285,7 +287,7 @@ export default defineEventHandler(async (event) => {
           requesterId: row.requesterId ? Number(row.requesterId) : null,
           replayRequestCount,
           replayRequesters,
-          isReplay: replayRequestCount > 0
+          isReplay: linkedReplayRequestId !== null
         }
       }
     }) as PublicScheduleItem[]

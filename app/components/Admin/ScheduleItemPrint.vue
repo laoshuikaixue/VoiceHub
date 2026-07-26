@@ -31,7 +31,7 @@
         <div v-if="settings.showTitle" class="song-title">
           {{ schedule.song.title }}
           <!-- 重播标识 -->
-          <span v-if="schedule.song.replayRequestCount > 0" class="replay-badge-print"> {{ locale.replay }} </span>
+          <span v-if="schedule.replayRequestId != null" class="replay-badge-print"> {{ locale.replay }} </span>
           <!-- 跨学期标识 -->
           <span
             v-if="
@@ -62,10 +62,10 @@
 
       <!-- 人数信息 -->
       <div v-if="settings.showVotes" class="votes-info">
-        <span v-if="schedule.song.replayRequestCount > 0" class="label">{{ locale.replayRequestsPrefix }}</span>
+        <span v-if="schedule.replayRequestId != null" class="label">{{ locale.replayRequestsPrefix }}</span>
         <span v-else class="label">{{ locale.popularityPrefix }}</span>
         <span class="value">{{
-          schedule.song.replayRequestCount > 0
+          schedule.replayRequestId != null
             ? locale.replayCount(schedule.song.replayRequestCount)
             : schedule.song.voteCount || 0
         }}</span>

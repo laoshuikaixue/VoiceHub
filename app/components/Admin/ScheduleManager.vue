@@ -682,7 +682,7 @@
                       </span>
                       <!-- 重播标识 -->
                       <span
-                        v-if="schedule.song.replayRequestCount > 0"
+                        v-if="schedule.replayRequestId != null"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1"
                         :title="locale.replaySong"
                       >
@@ -707,7 +707,7 @@
                     <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
                       <!-- 显示申请人或投稿人 -->
                       <span
-                        v-if="schedule.song.replayRequestCount > 0"
+                        v-if="schedule.replayRequestId != null"
                         :title="
                           (locale.replayApplicants || '重播申请人：') +
                           (schedule.song.replayRequesters || [])

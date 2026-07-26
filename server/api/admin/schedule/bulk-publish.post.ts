@@ -1,6 +1,6 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
-import { inArray, and, eq, gte, lte } from 'drizzle-orm'
+import { inArray, and, desc, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
@@ -198,15 +198,23 @@ export default defineEventHandler(async (event) => {
         const song = songMap.get(item.songId)!
 
         // 插入排期
-        await tx.insert(schedules).values({
-          songId: item.songId,
-          playDate: playDate,
-          sequence: item.sequence,
-          playTimeId: playTimeId,
-          isDraft: false, // 直接发布
-          publishedAt: publishedAt,
-          updatedAt: publishedAt
-        })
+        const insertedSchedules = await tx
+          .insert(schedules)
+          .values({
+            songId: item.songId,
+            playDate: playDate,
+            sequence: item.sequence,
+            playTimeId: playTimeId,
+            isDraft: false, // 直接发布
+            publishedAt: publishedAt,
+            updatedAt: publishedAt
+          })
+          .returning({ id: schedules.id })
+
+        const insertedSchedule = insertedSchedules[0]
+        if (!insertedSchedule) {
+          throw createError({ statusCode: 500, message: '创建排期失败' })
+        }
 
         // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
         const pendingReplays = await tx
@@ -215,14 +223,19 @@ export default defineEventHandler(async (event) => {
           .where(
             and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
           )
-          .orderBy(songReplayRequests.createdAt)
+          .orderBy(desc(songReplayRequests.createdAt))
           .limit(1)
 
         for (const pending of pendingReplays) {
           await tx
             .update(songReplayRequests)
-            .set({ status: 'FULFILLED' })
+            .set({ status: 'FULFILLED', updatedAt: publishedAt })
             .where(eq(songReplayRequests.id, pending.id))
+
+          await tx
+            .update(schedules)
+            .set({ replayRequestId: pending.id, updatedAt: publishedAt })
+            .where(eq(schedules.id, insertedSchedule.id))
 
           replayNotificationsToSend.push({
             userId: pending.userId,

@@ -196,7 +196,7 @@
                           >
                           <!-- 重播标识 -->
                           <span
-                            v-if="schedule.song.replayRequestCount > 0"
+                            v-if="schedule.replayRequestId != null"
                             class="replay-badge"
                             :title="locale.replaySong"
                           >
@@ -213,7 +213,7 @@
                         </h3>
                         <div class="song-meta">
                           <span
-                            v-if="schedule.song.replayRequestCount > 0"
+                            v-if="schedule.replayRequestId != null"
                             :title="
                               (locale.replayApplicants || '重播申请人：') +
                               (schedule.song.replayRequesters || [])
@@ -268,12 +268,12 @@
                       <div class="action-area">
                         <div class="vote-count">
                           <span class="count">{{
-                            schedule.song.replayRequestCount > 0
+                            schedule.replayRequestId != null
                               ? schedule.song.replayRequestCount
                               : schedule.song.voteCount
                           }}</span>
                           <span class="label">{{
-                            schedule.song.replayRequestCount > 0 ? locale.replay : locale.heat
+                            schedule.replayRequestId != null ? locale.replay : locale.heat
                           }}</span>
                         </div>
                       </div>
