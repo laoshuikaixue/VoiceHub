@@ -1,6 +1,10 @@
 /* 导入浏览器主题保护样式 */
 @import url('./theme-protection.css');
 
+/* 导入主题变量（亮色覆盖暗色，由 data-theme 控制） */
+@import url('./theme-dark.css');
+@import url('./theme-light.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

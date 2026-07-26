@@ -751,9 +751,11 @@ VoiceHub/
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
+│   │       ├── theme-dark.css     # 暗色主题设计变量
+│   │       ├── theme-light.css    # 亮色主题设计变量
 │   │       ├── theme-protection.css # 主题保护样式
 │   │       ├── transitions.css    # 过渡动画样式
-│   │       ├── variables.css      # CSS变量定义
+│   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       └── year-review.css    # 年度回顾样式
 │   ├── components/            # Vue组件目录
 │   │   ├── Admin/             # 管理员功能组件
