@@ -1,8 +1,9 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, songReplayRequests, users } from '~/drizzle/schema'
+import { schedules, songs, users } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '../../services/notificationService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
+import { bindLatestPendingReplayRequestToSchedule } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -136,37 +137,15 @@ export default defineEventHandler(async (event) => {
         // 如果之前没有正式发布过，才发送通知（首次排期通知）
         shouldNotify = existingPublished.length === 0
 
-        // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
-        const pendingReplayRequests = await tx
-          .select()
-          .from(songReplayRequests)
-          .where(
-            and(
-              eq(songReplayRequests.songId, schedule.song.id),
-              eq(songReplayRequests.status, 'PENDING')
-            )
-          )
-          .orderBy(songReplayRequests.createdAt)
-          .limit(1)
+        const replayBinding = await bindLatestPendingReplayRequestToSchedule({
+          tx,
+          songId: schedule.song.id,
+          scheduleId: createdSchedule.id,
+          at: createdSchedule.publishedAt || getServerDate()
+        })
 
-        if (pendingReplayRequests.length > 0) {
-          const pending = pendingReplayRequests[0]
-
-          await tx
-            .update(songReplayRequests)
-            .set({
-              status: 'FULFILLED',
-              updatedAt: createdSchedule.publishedAt || getServerDate()
-            })
-            .where(eq(songReplayRequests.id, pending.id))
-
-          replayRequesterIds = [pending.userId]
-
-          // 更新排期的 replayRequestId
-          await tx
-            .update(schedules)
-            .set({ replayRequestId: pending.id })
-            .where(eq(schedules.id, createdSchedule.id))
+        if (replayBinding) {
+          replayRequesterIds = replayBinding.replayRequesterIds
         }
 
         if (existingPublished.length > 0) {

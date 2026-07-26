@@ -1,9 +1,10 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { schedules, songs } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
-import { getBeijingTimestamp } from '~/utils/timeUtils'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
+import { bindLatestPendingReplayRequestToSchedule } from '~~/server/utils/scheduleReplayBinding'
+import { getBeijingTimestamp } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -106,39 +107,17 @@ export default defineEventHandler(async (event) => {
 
       const shouldNotify = existingPublished.length === 0
 
-      // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
-      const pendingReplayRequests = await tx
-        .select()
-        .from(songReplayRequests)
-        .where(
-          and(
-            eq(songReplayRequests.songId, draft.song.id),
-            eq(songReplayRequests.status, 'PENDING')
-          )
-        )
-        .orderBy(songReplayRequests.createdAt)
-        .limit(1)
-
       let replayRequesterIds: number[] = []
-      if (pendingReplayRequests.length > 0) {
-        const pending = pendingReplayRequests[0]
+      const replayBinding = await bindLatestPendingReplayRequestToSchedule({
+        tx,
+        songId: draft.song.id,
+        scheduleId: body.scheduleId,
+        at: publishedAt
+      })
 
-        await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'FULFILLED',
-            updatedAt: publishedAt
-          })
-          .where(eq(songReplayRequests.id, pending.id))
-
-        replayRequesterIds = [pending.userId]
-
-        await tx
-          .update(schedules)
-          .set({ replayRequestId: pending.id })
-          .where(eq(schedules.id, body.scheduleId))
-
-        console.log(`发布排期：重播申请 #${pending.id} 标记为 FULFILLED`)
+      if (replayBinding) {
+        replayRequesterIds = replayBinding.replayRequesterIds
+        console.log(`发布排期：重播申请 #${replayBinding.replayRequestId} 标记为 FULFILLED`)
       }
 
       if (existingPublished.length > 0) {

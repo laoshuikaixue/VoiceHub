@@ -1,12 +1,13 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
-import { inArray, and, desc, eq, gte, lte } from 'drizzle-orm'
+import { inArray, and, eq, gte, lte } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   redeemCardCodeForSchedule,
   restoreCardCodeAfterScheduleRemoval
 } from '~~/server/services/cardCodeLifecycleService'
+import { bindLatestPendingReplayRequestToSchedule } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -216,32 +217,21 @@ export default defineEventHandler(async (event) => {
           throw createError({ statusCode: 500, message: '创建排期失败' })
         }
 
-        // 如果有待处理的重播申请，将最新一条关联到排期并标记为已履行
-        const pendingReplays = await tx
-          .select()
-          .from(songReplayRequests)
-          .where(
-            and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
-          )
-          .orderBy(desc(songReplayRequests.createdAt))
-          .limit(1)
+        const replayBinding = await bindLatestPendingReplayRequestToSchedule({
+          tx,
+          songId: song.id,
+          scheduleId: insertedSchedule.id,
+          at: publishedAt
+        })
 
-        for (const pending of pendingReplays) {
-          await tx
-            .update(songReplayRequests)
-            .set({ status: 'FULFILLED', updatedAt: publishedAt })
-            .where(eq(songReplayRequests.id, pending.id))
-
-          await tx
-            .update(schedules)
-            .set({ replayRequestId: pending.id, updatedAt: publishedAt })
-            .where(eq(schedules.id, insertedSchedule.id))
-
-          replayNotificationsToSend.push({
-            userId: pending.userId,
-            songId: song.id,
-            songInfo: { title: song.title, artist: song.artist, playDate: playDate }
-          })
+        if (replayBinding) {
+          for (const replayUserId of replayBinding.replayRequesterIds) {
+            replayNotificationsToSend.push({
+              userId: replayUserId,
+              songId: song.id,
+              songInfo: { title: song.title, artist: song.artist, playDate: playDate }
+            })
+          }
         }
 
         // 如果该歌曲之前未在此时间段发布过，则发送通知
