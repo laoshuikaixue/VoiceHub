@@ -77,12 +77,20 @@ export default defineNuxtConfig({
     port: 3000
   },
   modules: [
-    '@nuxtjs/tailwindcss',
+    '@unocss/nuxt',
     '@vite-pwa/nuxt',
     ...(process.env.NODE_ENV === 'development' || process.env.npm_lifecycle_event?.includes('lint')
       ? ['@nuxt/eslint']
       : [])
   ],
+
+  // UnoCSS 配置
+  unocss: {
+    presets: [
+      // Tailwind 3 / Windi CSS compact preset — 完全兼容 Tailwind 类名
+      () => import('@unocss/preset-wind3').then(m => m.presetWind3())
+    ]
+  },
 
   // 引入全局CSS
   css: [
