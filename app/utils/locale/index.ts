@@ -223,6 +223,7 @@ export function useLocale() {
     songs: withFallback('songs'),
     admin: withFallback('admin'),
     yearReview: withFallback('yearReview'),
-    serverErrors: withFallback('serverErrors')
+    serverErrors: withFallback('serverErrors'),
+    theme: withFallback('theme') as unknown as typeof import('./zh-CN').theme
   }
 }

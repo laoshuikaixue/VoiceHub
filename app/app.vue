@@ -1,5 +1,5 @@
 <template>
-  <div class="app" data-theme="dark" data-color-scheme="custom">
+  <div class="app" data-color-scheme="custom">
     <!-- 注入 PWA Manifest -->
     <VitePwaManifest />
 
