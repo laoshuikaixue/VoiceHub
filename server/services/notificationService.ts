@@ -244,13 +244,15 @@ export async function createReplaySongSelectedNotification(
     title: string
     artist: string
     playDate: Date
-  }
+  },
+  scheduleId?: number
 ) {
   try {
     // 获取系统设置，检查是否启用播出时段功能
     const systemConfig = await getSystemSettingsCached()
     const isPlayTimeEnabled = systemConfig?.enablePlayTimeSelection || false
 
+    // 优先按排期 ID 精确查询，避免同日同歌多排期时取错时段
     const scheduleResult = await db
       .select({
         id: schedules.id,
@@ -263,7 +265,11 @@ export async function createReplaySongSelectedNotification(
       })
       .from(schedules)
       .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
-      .where(and(eq(schedules.songId, songId), eq(schedules.playDate, songInfo.playDate)))
+      .where(
+        scheduleId
+          ? eq(schedules.id, scheduleId)
+          : and(eq(schedules.songId, songId), eq(schedules.playDate, songInfo.playDate))
+      )
       .limit(1)
     const schedule = scheduleResult[0]
 

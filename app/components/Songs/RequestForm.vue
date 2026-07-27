@@ -3155,8 +3155,16 @@ const submitSong = async (result, options = {}) => {
 
   if (options.replayRequest === true) {
     try {
+      // 严格匹配未命中时回退到归一化模糊匹配，与相似歌曲检测保持一致
       if (!replayTargetSong) {
-        throw new Error(locale.value.notifications?.replayRequestFailed || '未找到可申请重播的原歌曲')
+        const similarSong = getSimilarSong(result)
+        if (similarSong?.played) {
+          replayTargetSong = similarSong
+        }
+      }
+
+      if (!replayTargetSong) {
+        throw new Error(locale.value.notifications?.replayOriginalNotFound || '未找到可申请重播的原歌曲')
       }
 
       const replayResult = await songService.requestReplay(replayTargetSong.id, {
@@ -3169,7 +3177,10 @@ const submitSong = async (result, options = {}) => {
       resetForm()
       return true
     } catch (err) {
-      error.value = getErrorMessage(err) || locale.value.notifications.replayRequestFailed
+      // replayRequestFailed 是带参数的词典函数，需用 formatLocaleValue 求值
+      error.value =
+        formatLocaleValue(locale.value.notifications?.replayRequestFailed, getErrorMessage(err) || '') ||
+        getErrorMessage(err)
       if (window.$showNotification) {
         window.$showNotification(error.value, 'error')
       }

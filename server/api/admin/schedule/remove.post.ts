@@ -1,5 +1,6 @@
-import { db, eq, ne, schedules, songs, songReplayRequests, and } from '~/drizzle/db'
+import { db, eq, ne, schedules, songs, and } from '~/drizzle/db'
 import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
+import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -95,23 +96,15 @@ export default defineEventHandler(async (event) => {
             }
           }
 
-          const updatedRequests = await tx
-            .update(songReplayRequests)
-            .set({
-              status: 'PENDING',
-              updatedAt: getServerDate()
-            })
-            .where(
-              and(
-                eq(songReplayRequests.songId, existingSchedule.songId),
-                // 不恢复已拒绝的申请
-                eq(songReplayRequests.status, 'FULFILLED')
-              )
-            )
-            .returning({ id: songReplayRequests.id })
+          // 恢复重播申请（每人仅恢复最新一条，避免违反部分唯一索引）
+          const restoredCount = await restoreReplayRequestsToPending({
+            tx,
+            songIds: [existingSchedule.songId],
+            at: getServerDate()
+          })
 
-          if (updatedRequests.length > 0) {
-            console.log(`恢复了 ${updatedRequests.length} 个重播申请状态为 PENDING`)
+          if (restoredCount > 0) {
+            console.log(`恢复了 ${restoredCount} 个重播申请状态为 PENDING`)
           }
         } else {
           console.log(`该歌曲仍有其他正式排期，不恢复重播申请状态`)

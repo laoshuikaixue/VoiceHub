@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 // 输入验证函数
 function validateInput(body: any) {
@@ -112,16 +113,17 @@ export default defineEventHandler(async (event) => {
 
       // 校验重播申请绑定（草稿仅记录绑定关系，不修改申请状态）
       let replayRequestId: number | null = null
-      if (body.replayRequestId) {
+      const requestedReplayId = Number(body.replayRequestId)
+      if (body.replayRequestId != null && Number.isInteger(requestedReplayId) && requestedReplayId > 0) {
         const replayRequestResult = await tx
           .select({ id: songReplayRequests.id, songId: songReplayRequests.songId, status: songReplayRequests.status })
           .from(songReplayRequests)
-          .where(eq(songReplayRequests.id, body.replayRequestId))
+          .where(eq(songReplayRequests.id, requestedReplayId))
           .limit(1)
 
         const replayRequest = replayRequestResult[0]
         if (!replayRequest || replayRequest.songId !== song.id || replayRequest.status !== 'PENDING') {
-          throw createError({ statusCode: 400, message: '重播申请无效或已被处理' })
+          throw createApiError(400, 'SONG_REPLAY_INVALID_REQUEST', '重播申请无效或已被处理')
         }
 
         replayRequestId = replayRequest.id

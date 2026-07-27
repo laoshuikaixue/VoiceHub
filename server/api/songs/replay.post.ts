@@ -1,4 +1,4 @@
-import { and, db, eq, songs, songReplayRequests, semesters, playTimes } from '~/drizzle/db'
+import { and, db, desc, eq, songs, songReplayRequests, semesters, playTimes } from '~/drizzle/db'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { createApiError } from '~~/server/utils/apiError'
 import { z } from 'zod'
@@ -21,14 +21,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const parsedBody = replayRequestSchema.safeParse(body || {})
   if (!parsedBody.success) {
-    const issues = parsedBody.error.issues || []
-    throw createApiError(
-      400,
-      'SONG_REPLAY_INVALID_REQUEST',
-      issues.length
-        ? `请求参数验证失败：${issues.map((issue) => issue.message).join(', ')}`
-        : '请求参数验证失败'
-    )
+    const issueText = (parsedBody.error.issues || []).map((issue) => issue.message).join(', ')
+    throw createApiError(400, 'USER_REQUEST_VALIDATION_FAILED', `请求参数验证失败：${issueText}`, {
+      params: [issueText]
+    })
   }
 
   const { songId, preferredPlayTimeId } = parsedBody.data
@@ -42,7 +38,7 @@ export default defineEventHandler(async (event) => {
   let preferredPlayTime = null
   if (preferredPlayTimeId) {
     if (!settings.enablePlayTimeSelection) {
-      throw createError({ statusCode: 400, message: '播出时段选择功能未启用' })
+      throw createApiError(400, 'SONG_REPLAY_PLAY_TIME_DISABLED', '播出时段选择功能未启用')
     }
 
     const playTimeResult = await db
@@ -53,7 +49,7 @@ export default defineEventHandler(async (event) => {
     preferredPlayTime = playTimeResult[0]
 
     if (!preferredPlayTime) {
-      throw createError({ statusCode: 400, message: '选择的播出时段不存在或未启用' })
+      throw createApiError(400, 'SONG_REPLAY_PLAY_TIME_INVALID', '选择的播出时段不存在或未启用')
     }
   }
 
@@ -88,44 +84,29 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, 'SONG_NO_ACTIVE_SEMESTER_REPLAY', '当前没有活跃学期，无法申请重播')
   }
 
-  // 5. 检查是否重复申请和冷却期
-  const existing = await db
+  // 5. 检查重复申请和冷却期（insert-only：历史申请不覆写，每次申请新增一条记录）
+  const latestRequestResult = await db
     .select()
     .from(songReplayRequests)
     .where(and(eq(songReplayRequests.songId, songId), eq(songReplayRequests.userId, user.id)))
+    .orderBy(desc(songReplayRequests.createdAt))
     .limit(1)
+  const latestRequest = latestRequestResult[0]
 
-  if (existing.length > 0) {
-    const existingRequest = existing[0]
-
-    if (existingRequest.status === 'PENDING') {
+  if (latestRequest) {
+    if (latestRequest.status === 'PENDING') {
       throw createApiError(400, 'SONG_REPLAY_ALREADY_REQUESTED', '您已经申请过重播该歌曲')
     }
 
-    // REJECTED 或 FULFILLED 均可冷却 24 小时后重新申请
+    // REJECTED 或 FULFILLED 均需冷却 24 小时后才能再次申请
     const COOLDOWN_HOURS = 24
     const cooldownTime = COOLDOWN_HOURS * 60 * 60 * 1000
-    const timeSinceUpdate = Date.now() - new Date(existingRequest.updatedAt).getTime()
+    const timeSinceUpdate = Date.now() - new Date(latestRequest.updatedAt).getTime()
 
     if (timeSinceUpdate < cooldownTime) {
       const remainingHours = Math.ceil((cooldownTime - timeSinceUpdate) / (60 * 60 * 1000))
       throw createApiError(429, 'SONG_REPLAY_COOLDOWN', `重播申请冷却中，还需等待 ${remainingHours} 小时`, { params: [remainingHours] })
     }
-
-    // 冷却期已过，更新状态为 PENDING
-    await db
-      .update(songReplayRequests)
-      .set({
-        status: 'PENDING',
-        updatedAt: new Date(),
-        createdAt: new Date(),
-        preferredPlayTimeId: preferredPlayTime?.id || null,
-        submissionNote,
-        submissionNotePublic
-      })
-      .where(eq(songReplayRequests.id, existingRequest.id))
-
-    return { success: true, message: '重新申请重播成功' }
   }
 
   // 6. 插入申请记录
@@ -137,9 +118,9 @@ export default defineEventHandler(async (event) => {
       submissionNote,
       submissionNotePublic
     })
-    return { success: true, message: '申请重播成功' }
+    return { success: true, message: latestRequest ? '重新申请重播成功' : '申请重播成功' }
   } catch (error: any) {
-    // 处理唯一约束冲突
+    // 并发提交时命中待处理申请的部分唯一索引
     if (error.code === '23505') {
       throw createApiError(400, 'SONG_REPLAY_ALREADY_REQUESTED', '您已经申请过重播该歌曲')
     }

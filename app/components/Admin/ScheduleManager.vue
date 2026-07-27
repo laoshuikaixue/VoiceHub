@@ -2813,10 +2813,11 @@ const publishScheduleConfirmed = async () => {
   loading.value = true
 
   try {
-    // 构建发布数据
+    // 构建发布数据，携带拖拽时显式选择的重播申请绑定
     const songsToPublish = localScheduledSongs.value.map((item, index) => ({
       songId: item.song.id,
-      sequence: index + 1
+      sequence: index + 1,
+      replayRequestId: item.replayRequestId || item.song?.replayRequestId || null
     }))
 
     // 调用批量发布API

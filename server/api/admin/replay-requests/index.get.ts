@@ -47,7 +47,8 @@ export default defineEventHandler(async (event) => {
         submissionNotePublic: songs.submissionNotePublic,
         hitRequestId: songs.hitRequestId
       },
-      requestCount: sql<number>`count(${songReplayRequests.id})`
+      // insert-only 模型下同一用户可能有多条申请，按申请人去重计数
+      requestCount: sql<number>`count(distinct ${songReplayRequests.userId})`
         .mapWith(Number)
         .as('request_count'),
       lastRequestedAt: sql<string>`max(${songReplayRequests.createdAt})`.as('last_requested_at')

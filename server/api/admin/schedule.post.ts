@@ -1,9 +1,9 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, users } from '~/drizzle/schema'
+import { schedules, songs } from '~/drizzle/schema'
 import { and, desc, eq, gte, lte, ne } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '../../services/notificationService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
-import { bindLatestPendingReplayRequestToSchedule } from '~~/server/utils/scheduleReplayBinding'
+import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -35,6 +35,12 @@ export default defineEventHandler(async (event) => {
 
   // 检查是否为草稿模式（默认直接发布）
   const isDraft = body.isDraft === true
+
+  // 前端显式选择的重播申请，发布时优先绑定
+  const preferredReplayRequestId =
+    Number.isInteger(Number(body.replayRequestId)) && Number(body.replayRequestId) > 0
+      ? Number(body.replayRequestId)
+      : null
 
   try {
     // 检查歌曲是否存在
@@ -137,11 +143,12 @@ export default defineEventHandler(async (event) => {
         // 如果之前没有正式发布过，才发送通知（首次排期通知）
         shouldNotify = existingPublished.length === 0
 
-        const replayBinding = await bindLatestPendingReplayRequestToSchedule({
+        const replayBinding = await fulfillReplayRequestsForSchedule({
           tx,
           songId: schedule.song.id,
           scheduleId: createdSchedule.id,
-          at: createdSchedule.publishedAt || getServerDate()
+          at: createdSchedule.publishedAt || getServerDate(),
+          preferredRequestId: preferredReplayRequestId || undefined
         })
 
         if (replayBinding) {
@@ -185,7 +192,7 @@ export default defineEventHandler(async (event) => {
             title: song.title,
             artist: song.artist,
             playDate: transactionResult.schedule.playDate
-          })
+          }, transactionResult.schedule.id)
         } catch (error) {
           console.error(`发送重播安排通知给用户 ${replayUserId} 失败:`, error)
         }

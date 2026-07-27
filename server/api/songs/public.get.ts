@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
         GROUP BY sc.song_id
       ),
       replay_counts AS (
-        SELECT song_id, COUNT(*)::int AS replay_count
+        SELECT song_id, COUNT(DISTINCT user_id)::int AS replay_count
         FROM song_replay_requests
         WHERE status IN ('PENDING', 'FULFILLED')
         GROUP BY song_id
@@ -82,6 +82,7 @@ export default defineEventHandler(async (event) => {
       replay_metadata AS (
         SELECT
           rr.id,
+          rr.user_id,
           rr.submission_note,
           rr.submission_note_public,
           rr.preferred_play_time_id
@@ -99,12 +100,17 @@ export default defineEventHandler(async (event) => {
           rr.status,
           rr.created_at,
           ROW_NUMBER() OVER (PARTITION BY rr.song_id ORDER BY rr.created_at DESC) AS position
-        FROM song_replay_requests rr
+        FROM (
+          -- insert-only 模型下同一用户可能有多条申请，每人只取最新一条
+          SELECT DISTINCT ON (song_id, user_id) song_id, user_id, status, created_at
+          FROM song_replay_requests
+          WHERE status IN ('PENDING', 'FULFILLED')
+          ORDER BY song_id, user_id, created_at DESC
+        ) rr
         INNER JOIN "User" u ON u.id = rr.user_id
         LEFT JOIN user_name_counts unc ON unc.name = u.name
         LEFT JOIN user_grade_counts ugc
           ON ugc.name = u.name AND ugc.grade IS NOT DISTINCT FROM u.grade
-        WHERE rr.status IN ('PENDING', 'FULFILLED')
       ),
       replay_requesters AS (
         SELECT
@@ -145,9 +151,10 @@ export default defineEventHandler(async (event) => {
         s."createdAt",
         s."submissionNote",
         s."submissionNotePublic",
-        COALESCE(rm.submission_note, s."submissionNote") AS "effectiveSubmissionNote",
-        COALESCE(rm.submission_note_public, s."submissionNotePublic") AS "effectiveSubmissionNotePublic",
-        COALESCE(rm.preferred_play_time_id, s."preferredPlayTimeId") AS "effectivePlayTimeId",
+        CASE WHEN rm.id IS NOT NULL THEN rm.submission_note ELSE s."submissionNote" END AS "effectiveSubmissionNote",
+        CASE WHEN rm.id IS NOT NULL THEN COALESCE(rm.submission_note_public, false) ELSE s."submissionNotePublic" END AS "effectiveSubmissionNotePublic",
+        CASE WHEN rm.id IS NOT NULL THEN rm.preferred_play_time_id ELSE s."preferredPlayTimeId" END AS "effectivePlayTimeId",
+        rm.user_id AS "replayRequesterUserId",
         u.name AS "requesterName",
         u.grade AS "requesterGrade",
         u.class AS "requesterClass",
@@ -229,15 +236,22 @@ export default defineEventHandler(async (event) => {
           }))
         : []
 
-      const isRequester = Boolean(user && Number(row.requesterId) === user.id)
+      const linkedReplayRequestId = row.replayRequestId ? Number(row.replayRequestId) : null
       const effectiveSubmissionNote = row.effectiveSubmissionNote
       const effectiveSubmissionNotePublic = row.effectiveSubmissionNotePublic === true
       const effectivePlayTimeId = row.effectivePlayTimeId ? Number(row.effectivePlayTimeId) : null
+      // 备注可见性主体：绑定重播申请时为申请人，否则为歌曲投稿人
+      const noteOwnerId =
+        linkedReplayRequestId !== null && row.replayRequesterUserId
+          ? Number(row.replayRequesterUserId)
+          : row.requesterId
+            ? Number(row.requesterId)
+            : null
+      const isNoteOwner = Boolean(user && noteOwnerId !== null && noteOwnerId === user.id)
       const canViewSubmissionNote =
         Boolean(effectiveSubmissionNote) &&
-        (effectiveSubmissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
+        (effectiveSubmissionNotePublic === true || Boolean(user && (isAdmin || isNoteOwner)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
-      const linkedReplayRequestId = row.replayRequestId ? Number(row.replayRequestId) : null
 
       return {
         id: Number(row.id),

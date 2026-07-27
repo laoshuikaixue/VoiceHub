@@ -327,6 +327,17 @@
               >
                 {{ locale.withdraw }}
               </button>
+
+              <!-- 撤回待处理的重播申请 -->
+              <button
+                v-if="isAuthenticated && shouldShowCancelReplayButton(song)"
+                :disabled="actionInProgress"
+                :title="locale.cancelReplayTitle"
+                class="withdraw-button replay-cancel-btn"
+                @click.stop="handleCancelReplay(song)"
+              >
+                {{ locale.cancelReplay }}
+              </button>
             </div>
           </div>
         </TransitionGroup>
@@ -428,7 +439,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['vote', 'withdraw', 'refresh', 'semester-change'])
+const emit = defineEmits(['vote', 'withdraw', 'cancelReplay', 'refresh', 'semester-change'])
 const voteInProgress = ref(false)
 const actionInProgress = ref(false)
 const { currentLocale, songs: songsLocale } = useLocale()
@@ -878,6 +889,22 @@ const handleWithdraw = (song) => {
   }
 }
 
+// 仅在存在待处理重播申请时显示撤回入口
+const shouldShowCancelReplayButton = (song) => {
+  return song.played && song.replayRequested && song.replayRequestStatus === 'PENDING'
+}
+
+// 撤回待处理的重播申请
+const handleCancelReplay = (song) => {
+  confirmDialog.value = {
+    show: true,
+    title: locale.value.cancelReplayConfirmTitle,
+    message: callLocale('cancelReplayMessage', '', song.title),
+    type: 'warning',
+    action: 'cancelReplay',
+    data: song
+  }
+}
 
 // 处理刷新按钮点击
 const handleRefresh = () => {
@@ -2199,6 +2226,11 @@ const vRipple = {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.replay-cancel-btn {
+  background: linear-gradient(180deg, #0b5afe 0%, #3d7fff 100%);
+  min-width: 75px;
+}
+
 .withdraw-button:active {
   transform: translateY(0);
 }
@@ -2603,6 +2635,12 @@ button:disabled {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.8);
+  }
+
+  .withdraw-button.replay-cancel-btn {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary-border);
   }
 
   /* 加载和空状态 */

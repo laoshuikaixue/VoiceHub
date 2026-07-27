@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, bigint, foreignKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, uniqueIndex, bigint, foreignKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
@@ -232,7 +232,9 @@ export const songReplayRequests = pgTable("song_replay_requests", {
 	submissionNote: text("submission_note"),
 	submissionNotePublic: boolean("submission_note_public").default(false).notNull(),
 }, (table) => [
-	unique("song_replay_requests_song_id_user_id_unique").on(table.songId, table.userId),
+	uniqueIndex("song_replay_requests_pending_song_user_unique")
+		.on(table.songId, table.userId)
+		.where(sql`${table.status} = 'PENDING'`),
 ]);
 
 export const userIdentity = pgTable("UserIdentity", {

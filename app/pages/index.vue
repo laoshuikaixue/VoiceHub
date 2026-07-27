@@ -206,6 +206,7 @@
                   @refresh="refreshSongs"
                   @vote="handleVote"
                   @withdraw="handleWithdraw"
+                  @cancel-replay="handleCancelReplay"
                   @semester-change="handleSemesterChange"
                 />
               </div>
@@ -1423,6 +1424,22 @@ const handleVote = async (song) => {
   } catch (err) {
     // 不做任何处理，因为useSongs中已经处理了错误提示
     console.log('API????useSongs???')
+  }
+}
+
+// 处理撤回重播申请
+const handleCancelReplay = async (song) => {
+  if (!isClientAuthenticated.value) {
+    showNotification(getMessage('cancelReplayLogin'), 'error')
+    return
+  }
+
+  try {
+    if (!songs) return
+    await songs.withdrawReplay(song.id)
+    updateSongCounts()
+  } catch (err) {
+    // 不做任何处理，因为useSongs中已经处理了错误提示
   }
 }
 

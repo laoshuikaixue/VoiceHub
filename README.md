@@ -1267,6 +1267,7 @@ VoiceHub/
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
 │   │   ├── serverTime.ts   # 服务器时间管理工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具

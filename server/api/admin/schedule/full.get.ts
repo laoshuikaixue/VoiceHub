@@ -8,7 +8,7 @@ import {
   songCollaborators,
   songReplayRequests
 } from '~/drizzle/schema'
-import { and, asc, count, eq, gte, lt, inArray, desc } from 'drizzle-orm'
+import { and, asc, count, countDistinct, eq, gte, lt, inArray, desc } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查用户身份验证和权限
@@ -179,11 +179,11 @@ export default defineEventHandler(async (event) => {
     const replayRequestersMap = new Map()
 
     if (songIds.length > 0) {
-      // 获取每首歌的重播申请数量（统计 PENDING 和 FULFILLED 状态）
+      // 获取每首歌的重播申请数量（统计 PENDING 和 FULFILLED 状态，按申请人去重）
       const replayCountsData = await db
         .select({
           songId: songReplayRequests.songId,
-          count: count(songReplayRequests.id)
+          count: countDistinct(songReplayRequests.userId)
         })
         .from(songReplayRequests)
         .where(
@@ -224,12 +224,19 @@ export default defineEventHandler(async (event) => {
         )
         .orderBy(desc(songReplayRequests.createdAt))
 
+      // 每首歌按用户去重（保留最新一条），只保留前5个申请人
+      const seenRequesterIds = new Map()
       replayRequestersData.forEach((r) => {
         if (!replayRequestersMap.has(r.songId)) {
           replayRequestersMap.set(r.songId, [])
+          seenRequesterIds.set(r.songId, new Set())
         }
-        // 只保留前5个
+        const seen = seenRequesterIds.get(r.songId)
+        if (seen.has(r.user.id)) {
+          return
+        }
         if (replayRequestersMap.get(r.songId).length < 5) {
+          seen.add(r.user.id)
           replayRequestersMap.get(r.songId).push({
             id: r.user.id,
             name: r.user.name || '未知用户',

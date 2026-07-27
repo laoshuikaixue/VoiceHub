@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, users, votes, songReplayRequests } from '~/drizzle/schema'
-import { count, desc, eq, sql } from 'drizzle-orm'
+import { count, countDistinct, desc, eq, sql } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -30,14 +30,15 @@ export default defineEventHandler(async (event) => {
           artist: songs.artist,
           requesterName: users.name,
           requesterUsername: users.username,
-          count: count(songReplayRequests.id)
+          // insert-only 模型下同一用户可能有多条申请，按申请人去重计数
+          count: countDistinct(songReplayRequests.userId)
         })
         .from(songs)
         .leftJoin(users, eq(songs.requesterId, users.id))
         .leftJoin(songReplayRequests, eq(songs.id, songReplayRequests.songId))
         .where(semester && semester !== 'all' ? eq(songs.semester, semester) : sql`1=1`)
         .groupBy(songs.id, songs.title, songs.artist, users.name, users.username)
-        .orderBy(desc(count(songReplayRequests.id)))
+        .orderBy(desc(countDistinct(songReplayRequests.userId)))
         .limit(limit)
     } else {
       // 按投票数排行（默认）
