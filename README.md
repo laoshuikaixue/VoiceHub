@@ -270,6 +270,22 @@ docker run -d \
   voicehub
 ```
 
+### Podman 部署
+
+Podman 是一个与 Docker 兼容的容器引擎，无需守护进程，支持 rootless 模式（无需 root 权限）。VoiceHub 的 Docker 配置文件可以直接用于 Podman。
+
+#### 使用 Podman Compose 部署
+
+```bash
+podman compose -f docker-compose.yml up -d
+```
+
+> **说明**：`podman compose` 完全兼容 `docker-compose.yml` 文件，无需修改配置。
+
+#### rootless 模式
+
+Podman 默认以当前用户身份运行，无需 `sudo`，安全性更高。但容易遇到文件权限问题（特别是挂载卷时）。
+
 ### 飞牛 (FnOS) 部署
 
 VoiceHub 现已支持飞牛 OS (FnOS) 的 `.fpk` 安装包。
