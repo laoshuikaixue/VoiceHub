@@ -136,28 +136,6 @@
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
 
-### Claw 部署
-
-[![Claw](https://ap-southeast-1.run.claw.cloud/logo.svg)](https://ap-southeast-1.run.claw.cloud/)
-
-1. **点击部署按钮**：选择上方的 Claw 部署按钮
-2. **打开应用程序启动板**：打开 App Launchpad （应用程序启动板）
-3. **创建应用**：选 Create App （创建应用）
-4. **相关配置**：
-   ```
-   Application Name：VoiceHub 或 其它
-   Image Name: ghcr.io/laoshuikaixue/voicehub:latest
-   Usage：按需调整
-   Network：3000 ，开 Public Access
-   Environment Variables：
-      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-      # 可能需要 ?sslmode=disable
-      JWT_SECRET=your-jwt-secret-here
-      # 按实际情况填写
-   ```
-5. **等待部署**：平台会自动构建和部署应用
-6. **访问应用**：部署完成后，您将获得一个可访问的 URL
-
 ### Linux 服务器部署
 
 本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
