@@ -17,6 +17,7 @@ export interface User {
     provider: string
     providerUsername?: string | null
     providerUserId?: string | null
+    providerAvatar?: string | null
   }>
 }
 

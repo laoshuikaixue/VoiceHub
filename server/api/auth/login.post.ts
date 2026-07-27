@@ -277,6 +277,7 @@ export default defineEventHandler(async (event) => {
         grade: user.grade,
         class: user.class,
         role: user.role,
+        avatar: user.avatar,
         needsPasswordChange: !user.passwordChangedAt
       }
     }

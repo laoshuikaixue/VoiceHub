@@ -519,12 +519,126 @@ const customOAuth2Strategy: OAuthStrategy = {
   }
 }
 
+// QQ 策略实现
+// QQ OAuth2 是非标准实现：token 接口返回 access_token，需额外获取 openid
+const qqStrategy: OAuthStrategy = {
+  getAuthorizeUrl(redirectUri: string, state: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.QQ_CLIENT_ID
+    if (!clientId)
+      throw createError({ statusCode: 500, message: 'QQ Client ID not configured' })
+    return `https://graph.qq.com/oauth2.0/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=get_user_info`
+  },
+
+  async exchangeToken(code: string, redirectUri: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.QQ_CLIENT_ID
+    const clientSecret = config?.clientSecret || process.env.QQ_CLIENT_SECRET
+    if (!clientId || !clientSecret) {
+      throw createError({ statusCode: 500, message: 'QQ config missing' })
+    }
+    try {
+      // QQ token 接口返回的是 text/html 格式，需要手动解析
+      const tokenResponse = await $fetch<string>('https://graph.qq.com/oauth2.0/token', {
+        method: 'POST',
+        body: {
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+          fmt: 'json'
+        }
+      })
+
+      // 尝试解析 JSON 响应（fmt=json 时返回 JSON）
+      let tokenData: any
+      if (typeof tokenResponse === 'string') {
+        // 如果是 query string 格式：access_token=xxx&expires_in=7776000&refresh_token=xxx
+        const params = new URLSearchParams(tokenResponse)
+        tokenData = Object.fromEntries(params.entries())
+      } else {
+        tokenData = tokenResponse
+      }
+
+      if (tokenData.error) {
+        console.error('QQ Token Error:', tokenData.error_description || tokenData.error)
+        throw new Error(tokenData.error_description || 'QQ 授权失败，请重试')
+      }
+      if (!tokenData.access_token) {
+        console.error('QQ Token Response missing access_token:', tokenData)
+        throw new Error('未能获取 QQ 访问令牌')
+      }
+
+      // 获取 openid
+      const meResponse = await $fetch<any>('https://graph.qq.com/oauth2.0/me', {
+        params: { access_token: tokenData.access_token }
+      })
+
+      let openid: string
+      if (typeof meResponse === 'string') {
+        // 返回格式：callback( {"client_id":"...","openid":"..."} );
+        const match = meResponse.match(/"openid"\s*:\s*"([^"]+)"/)
+        if (!match) throw new Error('无法获取 QQ openid')
+        openid = match[1]
+      } else {
+        openid = meResponse.openid
+      }
+
+      // 将 access_token 和 openid 组合返回，用分隔符传递给 getUserInfo
+      return `${tokenData.access_token}:::${openid}`
+    } catch (e: any) {
+      console.error('QQ token exchange failed', e.message || e)
+      const errorMessage = e.data?.error_description || e.message || 'QQ 令牌请求失败'
+      throw new Error(errorMessage)
+    }
+  },
+
+  async getUserInfo(accessToken: string, config?: ProviderRuntimeConfig) {
+    const clientId = config?.clientId || process.env.QQ_CLIENT_ID
+    if (!clientId) throw createError({ statusCode: 500, message: 'QQ Client ID not configured' })
+
+    // 解析 access_token:::openid 组合
+    const parts = accessToken.split(':::')
+    const token = parts[0]
+    const openid = parts[1]
+
+    if (!token || !openid) {
+      throw new Error('QQ access_token 格式错误')
+    }
+
+    try {
+      const userInfo = await $fetch<any>('https://graph.qq.com/user/get_user_info', {
+        params: {
+          access_token: token,
+          openid,
+          oauth_consumer_key: clientId
+        }
+      })
+
+      if (userInfo.ret !== 0) {
+        console.error('QQ User Info Error:', userInfo.msg)
+        throw new Error(userInfo.msg || '获取 QQ 用户信息失败')
+      }
+
+      return {
+        id: openid,
+        username: `qq_${openid}`,
+        name: userInfo.nickname,
+        avatar: userInfo.figureurl_qq || userInfo.figureurl_qq_2
+      }
+    } catch (e: any) {
+      console.error('QQ user info failed', e)
+      throw new Error('获取 QQ 用户信息失败')
+    }
+  }
+}
+
 // 策略注册表
 const strategies: Record<string, OAuthStrategy> = {
   github: githubStrategy,
   casdoor: casdoorStrategy,
   google: googleStrategy,
   oauth2: customOAuth2Strategy,
+  qq: qqStrategy,
   aggregate: aggregateOAuthStrategy
 }
 

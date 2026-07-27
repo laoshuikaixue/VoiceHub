@@ -423,6 +423,10 @@ export default defineEventHandler(async (event) => {
       body.googleOAuthEnabled !== undefined
         ? body.googleOAuthEnabled
         : (settings?.googleOAuthEnabled ?? false)
+    const nextQQOAuthEnabled =
+      body.qqOAuthEnabled !== undefined
+        ? body.qqOAuthEnabled
+        : (settings?.qqOAuthEnabled ?? false)
     const nextAggregateOAuthEnabled =
       body.aggregateOAuthEnabled !== undefined
         ? body.aggregateOAuthEnabled
@@ -436,6 +440,7 @@ export default defineEventHandler(async (event) => {
       nextGithubOAuthEnabled ||
       nextCasdoorOAuthEnabled ||
       nextGoogleOAuthEnabled ||
+      nextQQOAuthEnabled ||
       nextAggregateOAuthEnabled ||
       nextCustomOAuthEnabled
     ) {
@@ -541,15 +546,46 @@ export default defineEventHandler(async (event) => {
       updateData.googleClientSecret = body.googleClientSecret
     }
 
+    // 原生 QQ OAuth
+    if (body.qqOAuthEnabled !== undefined) {
+      if (typeof body.qqOAuthEnabled !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'qqOAuthEnabled 必须是布尔值'
+        })
+      }
+      if (body.qqOAuthEnabled && !body.qqClientId && !settings?.qqClientId) {
+        throw createError({ statusCode: 400, message: '启用 QQ 登录时必须提供 Client ID (App ID)' })
+      }
+      if (body.qqOAuthEnabled && !body.qqClientSecret && !settings?.qqClientSecret) {
+        throw createError({ statusCode: 400, message: '启用 QQ 登录时必须提供 Client Secret (App Key)' })
+      }
+      updateData.qqOAuthEnabled = body.qqOAuthEnabled
+    }
+
+    if (body.qqClientId !== undefined) {
+      updateData.qqClientId = body.qqClientId
+    }
+
+    if (body.qqClientSecret !== undefined && body.qqClientSecret !== SECRET_FIELD_MASK) {
+      updateData.qqClientSecret = body.qqClientSecret
+    }
+
     // 聚合登陆
     const normalizeOptionalText = (value: any) => (typeof value === 'string' ? value.trim() : value)
     const storedAggregateLoginTypes = getAggregateOAuthLoginTypesOrDefault(
       settings?.aggregateOAuthLoginType
     )
-    const nextAggregateLoginTypes =
+    let nextAggregateLoginTypes =
       body.aggregateOAuthLoginType !== undefined
         ? normalizeAggregateOAuthLoginTypes(body.aggregateOAuthLoginType)
         : storedAggregateLoginTypes
+
+    // 互斥：原生 QQ 启用时，自动从聚合登录方式中移除 qq
+    // 避免同一 QQ 用户在两套登录机制下产生重复的 userIdentities 记录
+    if (nextQQOAuthEnabled) {
+      nextAggregateLoginTypes = nextAggregateLoginTypes.filter((type) => type !== 'qq')
+    }
     const nextAggregateAppId =
       body.aggregateOAuthAppId !== undefined
         ? normalizeOptionalText(body.aggregateOAuthAppId)

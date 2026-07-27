@@ -40,14 +40,16 @@ export default defineEventHandler(async (event) => {
       email: true,
       emailVerified: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      avatar: true
     },
     with: {
       identities: {
         columns: {
           provider: true,
           providerUsername: true,
-          providerUserId: true
+          providerUserId: true,
+          providerAvatar: true
         }
       }
     }
@@ -60,11 +62,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const githubIdentity = user.identities?.find((identity) => identity.provider === 'github')
+  const providerAvatar = user.identities
+    ?.map((identity) => identity.providerAvatar)
+    .find((avatar) => Boolean(avatar))
   return {
     ...user,
-    avatar: githubIdentity?.providerUsername
-      ? `https://github.com/${githubIdentity.providerUsername}.png`
-      : null
+    avatar: user.avatar || providerAvatar || null
   }
 })

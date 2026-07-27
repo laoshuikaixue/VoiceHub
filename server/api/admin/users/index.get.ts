@@ -122,27 +122,29 @@ export default defineEventHandler(async (event) => {
         email: true,
         emailVerified: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        avatar: true
       },
       with: {
         identities: {
           columns: {
             provider: true,
             providerUsername: true,
-            providerUserId: true
+            providerUserId: true,
+            providerAvatar: true
           }
         }
       }
     })
 
-    // 处理用户列表，添加头像字段
+    // 处理用户列表，添加头像字段：用户自定义头像 > 任意 provider 头像 > null
     const formattedUsers = usersList.map((user) => {
-      const githubIdentity = user.identities?.find((id) => id.provider === 'github')
+      const providerAvatar = user.identities
+        ?.map((id) => id.providerAvatar)
+        .find((avatar) => Boolean(avatar))
       return {
         ...user,
-        avatar: githubIdentity?.providerUsername
-          ? `https://github.com/${githubIdentity.providerUsername}.png`
-          : null
+        avatar: user.avatar || providerAvatar || null
       }
     })
 

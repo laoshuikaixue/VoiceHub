@@ -14,6 +14,7 @@
             <AuthProvidersGitHubIcon v-if="provider.key === 'github'" class="w-5 h-5" />
             <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" class="w-5 h-5" />
             <AuthProvidersGoogleIcon v-else-if="provider.key === 'google'" class="w-5 h-5" />
+            <AuthProvidersQQIcon v-else-if="provider.key === 'qq'" class="w-5 h-5" />
             <Icon
               v-else-if="provider.routeProvider === 'aggregate'"
               :name="getAggregateOAuthLoginTypeIcon(provider.loginType)"

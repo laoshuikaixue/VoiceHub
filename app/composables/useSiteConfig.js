@@ -143,6 +143,7 @@ export const useSiteConfig = () => {
     github: !!siteConfig.value.githubOAuthEnabled,
     casdoor: !!siteConfig.value.casdoorOAuthEnabled,
     google: !!siteConfig.value.googleOAuthEnabled,
+    qq: !!siteConfig.value.qqOAuthEnabled,
     aggregate: !!siteConfig.value.aggregateOAuthEnabled,
     oauth2: !!siteConfig.value.customOAuthEnabled
   }))
@@ -158,11 +159,17 @@ export const useSiteConfig = () => {
     if (siteConfig.value.googleOAuthEnabled) {
       providers.push({ key: 'google', name: 'Google' })
     }
+    if (siteConfig.value.qqOAuthEnabled) {
+      providers.push({ key: 'qq', name: 'QQ' })
+    }
     if (siteConfig.value.aggregateOAuthEnabled) {
       const enabledLoginTypes = getAggregateOAuthLoginTypesOrDefault(
         siteConfig.value.aggregateOAuthLoginType
       )
+      // 互斥：原生 QQ 启用时，聚合登录中的 qq 类型不暴露，避免同一 QQ 用户出现两个登录入口
+      const nativeQQEnabled = !!siteConfig.value.qqOAuthEnabled
       enabledLoginTypes.forEach((loginType) => {
+        if (nativeQQEnabled && loginType === 'qq') return
         providers.push({
           key: `aggregate:${loginType}`,
           routeProvider: 'aggregate',

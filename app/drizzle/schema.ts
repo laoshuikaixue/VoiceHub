@@ -32,6 +32,7 @@ export const users = pgTable('User', {
   forcePasswordChange: boolean('forcePasswordChange').default(true).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
+  avatar: text('avatar'),
   status: userStatusEnum('status').default('active').notNull(),
   statusChangedAt: timestamp('statusChangedAt').defaultNow(),
   statusChangedBy: integer('statusChangedBy'),
@@ -205,6 +206,10 @@ export const systemSettings = pgTable('SystemSettings', {
   googleOAuthEnabled: boolean('googleOAuthEnabled').default(false).notNull(),
   googleClientId: text('googleClientId'),
   googleClientSecret: text('googleClientSecret'),
+  // QQ OAuth
+  qqOAuthEnabled: boolean('qqOAuthEnabled').default(false).notNull(),
+  qqClientId: text('qqClientId'),
+  qqClientSecret: text('qqClientSecret'),
   // 聚合登陆
   aggregateOAuthEnabled: boolean('aggregateOAuthEnabled').default(false).notNull(),
   aggregateOAuthAppId: text('aggregateOAuthAppId'),
@@ -353,6 +358,7 @@ export const userIdentities = pgTable('UserIdentity', {
   provider: text('provider').notNull(),
   providerUserId: text('providerUserId').notNull(),
   providerUsername: text('providerUsername'),
+  providerAvatar: text('providerAvatar'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (t) => ({
   unq: unique().on(t.provider, t.providerUserId),

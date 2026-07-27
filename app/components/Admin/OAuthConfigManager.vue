@@ -128,7 +128,33 @@
           />
         </div>
       </template>
+      <template #after-fields v-else-if="provider.id === 'qq'">
+        <div
+          v-if="formData.aggregateOAuthEnabled && aggregateLoginTypesArray.includes('qq')"
+          class="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl"
+        >
+          <AlertCircle :size="14" class="text-amber-500 shrink-0 mt-0.5" />
+          <p class="text-[10px] text-zinc-500 leading-relaxed">
+            {{
+              locale.nativeQQConflictHint ||
+              '已启用聚合登录中的 QQ 方式。保存后将以原生 QQ 登录为准，聚合登录中的 QQ 方式会被自动忽略。'
+            }}
+          </p>
+        </div>
+      </template>
       <template #after-fields v-else-if="provider.id === 'aggregate'">
+        <div
+          v-if="formData.qqOAuthEnabled"
+          class="flex items-start gap-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl"
+        >
+          <AlertCircle :size="14" class="text-amber-500 shrink-0 mt-0.5" />
+          <p class="text-[10px] text-zinc-500 leading-relaxed">
+            {{
+              locale.aggregateQQConflictHint ||
+              '已启用原生 QQ 登录，聚合登录中的 QQ 方式将被自动忽略，避免同一 QQ 用户出现两个登录入口和重复身份记录。'
+            }}
+          </p>
+        </div>
         <div>
           <CustomSelect
             v-model="formData.aggregateOAuthLoginType"
@@ -378,6 +404,7 @@ const envData = ref({
   hasGithubConfig: false,
   hasCasdoorConfig: false,
   hasGoogleConfig: false,
+  hasQQConfig: false,
   hasAggregateConfig: false
 })
 
@@ -419,6 +446,20 @@ const oauthProviders = computed(() => [
     clientSecretPlaceholder: locale.value?.googleClientSecretPlaceholder || 'Enter Google Client Secret',
   },
   {
+    id: 'qq',
+    title: locale.value?.qqTitle || 'QQ OAuth',
+    hasEnvConfig: envData.value.hasQQConfig,
+    enabledKey: 'qqOAuthEnabled',
+    clientIdKey: 'qqClientId',
+    clientSecretKey: 'qqClientSecret',
+    clientIdLabel: locale.value?.qqClientId || 'QQ Client ID (App ID)',
+    clientIdPlaceholder: locale.value?.qqClientIdPlaceholder || 'Enter QQ App ID',
+    clientSecretLabel: locale.value?.qqClientSecret || 'QQ Client Secret (App Key)',
+    clientSecretPlaceholder: locale.value?.qqClientSecretPlaceholder || 'Enter QQ App Key',
+    docUrl: 'https://wiki.connect.qq.com/',
+    docLabel: locale.value?.qqDocLabel || '查看 QQ 互联开发文档'
+  },
+  {
     id: 'aggregate',
     title: locale.value?.aggregateTitle || '聚合登录',
     hasEnvConfig: envData.value.hasAggregateConfig,
@@ -441,6 +482,20 @@ const aggregateLoginTypes = computed(() =>
     label: locale.value?.aggregateLoginTypes?.[option.value] || option.label
   }))
 )
+
+const aggregateLoginTypesArray = computed(() => {
+  const value = formData.value.aggregateOAuthLoginType
+  if (Array.isArray(value)) return value.map((item) => String(item).toLowerCase())
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item).toLowerCase())
+    } catch {
+      return value.split(',').map((item) => item.trim().toLowerCase())
+    }
+  }
+  return getAggregateOAuthLoginTypesOrDefault(value)
+})
 
 const fetchEnvData = async () => {
   try {

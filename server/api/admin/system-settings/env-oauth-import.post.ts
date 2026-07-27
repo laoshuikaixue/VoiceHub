@@ -67,6 +67,13 @@ export default defineEventHandler(async (event) => {
     updateData.googleOAuthEnabled = true
     updateData.googleClientId = process.env.GOOGLE_CLIENT_ID
     updateData.googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
+  } else if (provider === 'qq') {
+    if (!process.env.QQ_CLIENT_ID || !process.env.QQ_CLIENT_SECRET) {
+      throw createError({ statusCode: 400, message: '未检测到完整的 QQ 环境配置' })
+    }
+    updateData.qqOAuthEnabled = true
+    updateData.qqClientId = process.env.QQ_CLIENT_ID
+    updateData.qqClientSecret = process.env.QQ_CLIENT_SECRET
   } else if (provider === 'aggregate') {
     const appId = process.env.AGGREGATE_OAUTH_APP_ID?.trim()
     const appKey = process.env.AGGREGATE_OAUTH_APP_KEY?.trim()

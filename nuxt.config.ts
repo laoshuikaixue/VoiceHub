@@ -120,7 +120,8 @@ export default defineNuxtConfig({
       oauth: {
         github: !!process.env.GITHUB_CLIENT_ID,
         casdoor: !!process.env.CASDOOR_CLIENT_ID,
-        google: !!process.env.GOOGLE_CLIENT_ID
+        google: !!process.env.GOOGLE_CLIENT_ID,
+        qq: !!process.env.QQ_CLIENT_ID
       },
       siteTitle,
       siteLogo,

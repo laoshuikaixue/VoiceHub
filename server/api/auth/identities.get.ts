@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
       id: true, // 需要 id 以便单独删除
       provider: true,
       providerUsername: true,
+      providerAvatar: true,
       createdAt: true
     }
   })

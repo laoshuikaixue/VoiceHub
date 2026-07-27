@@ -101,7 +101,9 @@ export default defineEventHandler(async (event) => {
           updatedAt: now,
           passwordChangedAt: now,
           lastLogin: now,
-          forcePasswordChange: false
+          forcePasswordChange: false,
+          // 新建账号时直接用第三方头像作为初始头像
+          avatar: payload.providerAvatar || null
         })
         .returning({ id: users.id }))[0]
 
@@ -115,6 +117,7 @@ export default defineEventHandler(async (event) => {
         provider: payload.provider,
         providerUserId: payload.providerUserId,
         providerUsername: payload.providerUsername,
+        providerAvatar: payload.providerAvatar,
         createdAt: getBeijingTime()
       })
 

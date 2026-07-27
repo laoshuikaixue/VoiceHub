@@ -795,8 +795,10 @@ VoiceHub/
 │   │   │   │   │   └── Icon.vue # Casdoor图标
 │   │   │   │   ├── GitHub/    # GitHub登录组件
 │   │   │   │   │   └── Icon.vue # GitHub图标
-│   │   │   │   └── Google/    # Google登录组件
-│   │   │   │       └── Icon.vue # Google图标
+│   │   │   │   ├── Google/    # Google登录组件
+│   │   │   │   │   └── Icon.vue # Google图标
+│   │   │   │   └── QQ/        # QQ登录组件
+│   │   │   │       └── Icon.vue # QQ图标
 │   │   │   ├── ChangePasswordForm.vue # 修改密码表单
 │   │   │   ├── LoginForm.vue         # 登录表单
 │   │   │   ├── OAuthBindingCard.vue  # OAuth绑定卡片

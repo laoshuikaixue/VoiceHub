@@ -94,7 +94,9 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, 'AUTH_AGGREGATED_CALLBACK_STATE_MISMATCH', '聚合登录回调类型与 state 不匹配')
     }
     providerConfig.loginType = loginType
-    identityProvider = `aggregate:${loginType}`
+    // 统一身份存储键：原生 QQ 和聚合 QQ 共享同一份 userIdentities 记录
+    // 避免同一 QQ 用户的 openid 在两套机制下产生重复身份
+    identityProvider = loginType
   }
 
   // 清除 CSRF cookie
@@ -131,12 +133,14 @@ export default defineEventHandler(async (event) => {
 
   const providerUserId = userInfo.id
   const providerUsername = userInfo.username
+  const providerAvatar = userInfo.avatar
 
   return handleUserLoginOrBind(
     event,
     identityProvider,
     providerUserId,
     providerUsername,
+    providerAvatar,
     state.returnTo
   )
 })
@@ -146,6 +150,7 @@ async function handleUserLoginOrBind(
   provider: string,
   providerUserId: string,
   providerUsername: string,
+  providerAvatar: string | undefined,
   returnTo?: string
 ) {
   const isSecure = isSecureRequest(event)
@@ -197,8 +202,16 @@ async function handleUserLoginOrBind(
         provider: provider,
         providerUserId: providerUserId,
         providerUsername: providerUsername,
+        providerAvatar: providerAvatar,
         createdAt: new Date()
       })
+      // 绑定第三方账号时，如果用户尚未设置头像且第三方提供了头像，则同步到 users.avatar
+      if (providerAvatar && !currentUserRecord.avatar) {
+        await db
+          .update(users)
+          .set({ avatar: providerAvatar })
+          .where(eq(users.id, currentUser.userId))
+      }
       return sendRedirect(event, '/account?message=' + encodeURIComponent('绑定成功'))
     }
   }
@@ -233,11 +246,26 @@ async function handleUserLoginOrBind(
       )
     }
 
+    // 每次登录都刷新 userIdentities 上的头像，QQ 等平台的 figureurl 可能随时间变化
+    if (providerAvatar) {
+      await db
+        .update(userIdentities)
+        .set({ providerAvatar })
+        .where(
+          and(
+            eq(userIdentities.provider, provider),
+            eq(userIdentities.providerUserId, providerUserId)
+          )
+        )
+    }
+
     await db
       .update(users)
       .set({
         lastLogin: getBeijingTime(),
-        lastLoginIp: getClientIP(event)
+        lastLoginIp: getClientIP(event),
+        // 若用户尚未设置头像，使用第三方头像；已有头像保持不变（避免覆盖用户主动上传的头像）
+        ...(providerAvatar && !user.avatar ? { avatar: providerAvatar } : {})
       })
       .where(eq(users.id, user.id))
 
@@ -255,7 +283,8 @@ async function handleUserLoginOrBind(
     const bindingToken = generateBindingToken({
       provider: provider,
       providerUserId,
-      providerUsername
+      providerUsername,
+      providerAvatar
     })
 
     // 将绑定令牌存入 cookie

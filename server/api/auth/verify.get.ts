@@ -23,13 +23,15 @@ export default defineEventHandler(async (event) => {
         class: true,
         role: true,
         forcePasswordChange: true,
-        passwordChangedAt: true
+        passwordChangedAt: true,
+        avatar: true
       },
       with: {
         identities: {
           columns: {
             provider: true,
-            providerUsername: true
+            providerUsername: true,
+            providerAvatar: true
           }
         }
       }
@@ -41,8 +43,10 @@ export default defineEventHandler(async (event) => {
       throw createApiError(401, 'USER_NOT_FOUND', '用户不存在')
     }
 
-    // 构建返回的用户对象，只包含需要的字段
-    const githubIdentity = dbUser.identities?.find((id: any) => id.provider === 'github')
+    // 头像优先级：用户自定义头像 > 任意已绑定 provider 提供的最新头像 > null
+    const providerAvatar = dbUser.identities
+      ?.map((id: any) => id.providerAvatar)
+      .find((avatar: string | null | undefined) => Boolean(avatar))
     const user = {
       id: dbUser.id,
       username: dbUser.username,
@@ -52,10 +56,7 @@ export default defineEventHandler(async (event) => {
       role: dbUser.role,
       requirePasswordChange: dbUser.forcePasswordChange || !dbUser.passwordChangedAt,
       has2FA: dbUser.identities?.some((id: any) => id.provider === 'totp') || false,
-      // 动态生成 GitHub 头像 URL
-      avatar: githubIdentity?.providerUsername
-        ? `https://github.com/${githubIdentity.providerUsername}.png`
-        : null
+      avatar: dbUser.avatar || providerAvatar || null
     }
 
     return {
