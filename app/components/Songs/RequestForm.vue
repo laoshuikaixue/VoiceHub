@@ -3177,10 +3177,11 @@ const submitSong = async (result, options = {}) => {
       resetForm()
       return true
     } catch (err) {
-      // replayRequestFailed 是带参数的词典函数，需用 formatLocaleValue 求值
+      // 服务端错误按错误码本地化；replayRequestFailed 是带参数的词典函数，需用 formatLocaleValue 求值
+      const replayErrorMessage = localizeServerError(err)
       error.value =
-        formatLocaleValue(locale.value.notifications?.replayRequestFailed, getErrorMessage(err) || '') ||
-        getErrorMessage(err)
+        formatLocaleValue(locale.value.notifications?.replayRequestFailed, replayErrorMessage || '') ||
+        replayErrorMessage
       if (window.$showNotification) {
         window.$showNotification(error.value, 'error')
       }

@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import { useAuth } from './useAuth'
-import { useServerErrors } from './useLocaleText'
+import { extractErrorCode, useServerErrors } from './useLocaleText'
 import { getGlobalDedup } from './useRequestDedup'
 import { useLocale } from '~/utils/locale'
 import type { PlayTime, Schedule, Song } from '~/types'
@@ -592,11 +592,11 @@ export const useSongs = () => {
       showNotification(actionLocale.value.replaySucceeded, 'success')
       return data
     } catch (err: any) {
-      const errorMsg = err.data?.message || err.message || '申请重播失败'
-      if (errorMsg.includes('已经申请')) {
+      // 按错误码本地化展示，重复申请降级为提示
+      if (extractErrorCode(err) === 'SONG_REPLAY_ALREADY_REQUESTED') {
         showNotification(actionLocale.value.replayAlreadyRequested, 'info')
       } else {
-        showNotification(errorMsg, 'error')
+        showNotification(localizeServerError(err) || '申请重播失败', 'error')
       }
       return null
     } finally {
@@ -637,8 +637,7 @@ export const useSongs = () => {
       showNotification(actionLocale.value.replayCancelled, 'success')
       return data
     } catch (err: any) {
-      const errorMsg = err.data?.message || err.message || '取消重播申请失败'
-      showNotification(errorMsg, 'error')
+      showNotification(localizeServerError(err) || '取消重播申请失败', 'error')
       return null
     } finally {
       loading.value = false
