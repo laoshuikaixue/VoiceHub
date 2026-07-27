@@ -1425,6 +1425,7 @@ export const pages = {
       scheduled: 'Scheduled',
       chooseProgram: 'Choose Program',
       chooseSubmit: 'Submit',
+      requestReplay: 'Request Replay',
       manualSubmitLong: 'Not finding the song? Submit manually',
       loginRequiredToSubmit: 'Sign in to submit',
       loginRequiredNotice: 'You are not signed in and cannot submit requests',

@@ -1434,6 +1434,7 @@ export const pages = {
       scheduled: '已排期',
       chooseProgram: '选择节目',
       chooseSubmit: '选择投稿',
+      requestReplay: '申请重播',
       manualSubmitLong: '以上没有我想要的歌曲，手动输入提交',
       loginRequiredToSubmit: '请先登录后提交',
       loginRequiredNotice: '注意，您尚未登录，不能投稿',

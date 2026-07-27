@@ -678,14 +678,14 @@
                         >
                         <span v-else class="similar-text">{{ locale.songExists }}</span>
 
-                        <!-- 已播放且允许重播申请：按普通投稿流程继续投稿 -->
+                        <!-- 已播放且允许重播申请：管理员显示选择投稿，普通用户显示申请重播 -->
                         <button
                           v-if="getSimilarSong(result)?.played && enableReplayRequests"
                           :disabled="submitting"
                           class="select-btn"
                           @click.stop.prevent="submitSong(result, { replayRequest: true })"
                         >
-                          {{ locale.chooseSubmit }}
+                          {{ auth.isAdmin.value ? locale.chooseSubmit : locale.requestReplay }}
                         </button>
 
                         <!-- 其他用户：显示点赞按钮，根据状态设置不同样式 -->

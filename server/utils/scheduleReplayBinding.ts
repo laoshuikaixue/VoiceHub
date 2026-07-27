@@ -103,13 +103,19 @@ export async function restoreReplayRequestsToPending({
     return 0
   }
 
+  // drizzle 原生 SQL 模板不能序列化 JS 数组和 Date（列为 timestamp 无时区），逐个参数化并传 ISO 字符串
+  const songIdList = sql.join(
+    validSongIds.map((id) => sql`${id}`),
+    sql`, `
+  )
+
   const restored = await tx.execute(sql`
     UPDATE song_replay_requests AS r
-    SET status = 'PENDING', updated_at = ${at}
+    SET status = 'PENDING', updated_at = ${at.toISOString()}
     WHERE r.id IN (
       SELECT DISTINCT ON (song_id, user_id) id
       FROM song_replay_requests
-      WHERE song_id = ANY(${validSongIds}::int[]) AND status = 'FULFILLED'
+      WHERE song_id IN (${songIdList}) AND status = 'FULFILLED'
       ORDER BY song_id, user_id, created_at DESC
     )
       AND NOT EXISTS (

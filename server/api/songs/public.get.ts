@@ -133,7 +133,7 @@ export default defineEventHandler(async (event) => {
       )
       SELECT
         sch.id,
-        sch."playDate",
+        to_char(sch."playDate", 'YYYY-MM-DD') AS "playDate",
         sch.sequence,
         sch.replay_request_id AS "replayRequestId",
         sch.played AS "schedulePlayed",
@@ -194,19 +194,6 @@ export default defineEventHandler(async (event) => {
     const shouldHideStudentInfo = rows[0]?.hideStudentInfo ?? true
 
     const formattedSchedules = rows.map((row: any) => {
-      const originalDate = new Date(row.playDate)
-      const dateOnly = new Date(
-        Date.UTC(
-          originalDate.getUTCFullYear(),
-          originalDate.getUTCMonth(),
-          originalDate.getUTCDate(),
-          0,
-          0,
-          0,
-          0
-        )
-      )
-
       const collaborators = Array.isArray(row.collaborators)
         ? row.collaborators.map((collaborator: any) => ({
             id: collaborator.id,
@@ -255,7 +242,8 @@ export default defineEventHandler(async (event) => {
 
       return {
         id: Number(row.id),
-        playDate: dateOnly.toISOString().split('T')[0],
+        // playDate 已在 SQL 层用 to_char 格式化为 YYYY-MM-DD，避免时区解析偏移
+        playDate: row.playDate,
         sequence: Number(row.sequence || 1),
         replayRequestId: linkedReplayRequestId,
         played: row.schedulePlayed === true,
