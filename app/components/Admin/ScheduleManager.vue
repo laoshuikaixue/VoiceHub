@@ -2240,7 +2240,8 @@ const dragStart = (event, song) => {
     'text/plain',
     JSON.stringify({
       type: 'add-to-schedule',
-      songId: song.id
+      songId: song.id,
+      replayRequestId: song.replayRequestId || null
     })
   )
 
@@ -2317,8 +2318,10 @@ const dropToSequence = async (event) => {
 
     if (dragData.type === 'add-to-schedule') {
       const songId = parseInt(dragData.songId)
-      // 尝试在普通歌曲列表和重播申请列表中查找
-      let song = songs.value.find((s) => s.id === songId)
+      const isReplayRequest = dragData.replayRequestId != null
+      let song = isReplayRequest
+        ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
+        : songs.value.find((s) => s.id === songId)
       if (!song) {
         song = replayRequests.value.find((s) => s.id === songId)
       }
@@ -2330,6 +2333,7 @@ const dropToSequence = async (event) => {
 
       const newSchedule = {
         id: Date.now(),
+        replayRequestId: dragData.replayRequestId || song.replayRequestId || null,
         song: song,
         playDate: selectedDate.value, // 直接使用日期字符串
         sequence: localScheduledSongs.value.length + 1,
@@ -2375,8 +2379,10 @@ const dropReorder = async (event, dropIndex) => {
     } else if (dragData.type === 'add-to-schedule') {
       // 处理从左侧拖到特定位置
       const songId = parseInt(dragData.songId)
-      // 尝试在普通歌曲列表和重播申请列表中查找
-      let song = songs.value.find((s) => s.id === songId)
+      const isReplayRequest = dragData.replayRequestId != null
+      let song = isReplayRequest
+        ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
+        : songs.value.find((s) => s.id === songId)
       if (!song) {
         song = replayRequests.value.find((s) => s.id === songId)
       }
@@ -2388,6 +2394,7 @@ const dropReorder = async (event, dropIndex) => {
 
       const newSchedule = {
         id: Date.now(),
+        replayRequestId: dragData.replayRequestId || song.replayRequestId || null,
         song: song,
         playDate: selectedDate.value, // 直接使用日期字符串
         sequence: dropIndex + 1,
@@ -2420,6 +2427,7 @@ const addSongToSchedule = (song) => {
 
   const newSchedule = {
     id: Date.now(),
+    replayRequestId: song.replayRequestId || null,
     song: song,
     playDate: selectedDate.value,
     sequence: localScheduledSongs.value.length + 1,
@@ -2736,7 +2744,8 @@ const saveDraft = async () => {
               songId: song.song.id,
               playDate: selectedDate.value, // 直接传递日期字符串
               sequence: i + 1,
-              playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null
+              playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+              replayRequestId: song.replayRequestId || song.song?.replayRequestId || null
             },
             ...auth.getAuthConfig()
           })
@@ -3143,6 +3152,7 @@ const handleTouchDropToSequence = async (targetElement) => {
   // 直接添加到本地列表，不发送请求
   const newSchedule = {
     id: Date.now(),
+    replayRequestId: song.replayRequestId || null,
     song: song,
     playDate: selectedDate.value,
     sequence: insertIndex + 1,

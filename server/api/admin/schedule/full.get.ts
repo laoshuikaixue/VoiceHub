@@ -250,7 +250,7 @@ export default defineEventHandler(async (event) => {
         .where(
           and(
             inArray(songReplayRequests.songId, songIds),
-            eq(songReplayRequests.status, 'FULFILLED')
+            inArray(songReplayRequests.status, ['PENDING', 'FULFILLED'])
           )
         )
 
@@ -315,8 +315,11 @@ export default defineEventHandler(async (event) => {
       }))
 
       // 获取重播申请信息
-      const replayRequestCount = replayRequestCountsMap.get(schedule.songId) || 0
-      const replayRequesters = replayRequestersMap.get(schedule.songId) || []
+      const linkedReplayRequestId = schedule.replayRequestId || null
+      const replayRequestCount = linkedReplayRequestId
+        ? replayRequestCountsMap.get(schedule.songId) || 0
+        : 0
+      const replayRequesters = linkedReplayRequestId ? replayRequestersMap.get(schedule.songId) || [] : []
       const formattedReplayRequesters = replayRequesters.map((r: any) => ({
         id: r.id,
         name: r.name,
@@ -326,8 +329,8 @@ export default defineEventHandler(async (event) => {
         status: r.status
       }))
 
-      // 判断是否为重播：有重播申请（PENDING 或 FULFILLED）
-      const isReplaySong = replayRequestCount > 0
+      // 只有正式绑定了重播申请的排期才按重播展示；草稿排期不提前暴露申请信息
+      const isReplaySong = linkedReplayRequestId !== null
 
       return {
         id: schedule.id,
@@ -335,7 +338,7 @@ export default defineEventHandler(async (event) => {
         updatedAt: schedule.updatedAt,
         playDate: dateOnly.toISOString().split('T')[0],
         sequence: schedule.sequence || 1,
-        replayRequestId: schedule.replayRequestId || null,
+        replayRequestId: linkedReplayRequestId,
         played: schedule.played || false,
         playTimeId: schedule.playTimeId,
         // 草稿状态信息
@@ -352,8 +355,7 @@ export default defineEventHandler(async (event) => {
             }
           : null,
         song: (() => {
-          const linkedReplayId = (schedule as any).replayRequestId
-          const replayMeta = linkedReplayId ? replayMetadataByIdMap.get(linkedReplayId) : null
+          const replayMeta = linkedReplayRequestId ? replayMetadataByIdMap.get(linkedReplayRequestId) : null
           const hasReplayMeta = !!replayMeta
 
           return {

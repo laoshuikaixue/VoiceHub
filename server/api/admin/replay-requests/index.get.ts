@@ -1,5 +1,5 @@
-import { db, songs, songReplayRequests, users, semesters } from '~/drizzle/db'
-import { desc, eq, sql, and, or } from 'drizzle-orm'
+import { db, songs, songReplayRequests, users } from '~/drizzle/db'
+import { desc, eq, sql, and } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
   // 1. 检查权限
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // 2. 查询
-  // 获取歌曲信息及重播申请数量，同时关联用户信息
+  // 获取歌曲信息及重播申请数量，同时关联最新申请人信息
   const requestsQuery = db
     .select({
       song: {
@@ -47,12 +47,6 @@ export default defineEventHandler(async (event) => {
         submissionNotePublic: songs.submissionNotePublic,
         hitRequestId: songs.hitRequestId
       },
-      requester: {
-        id: users.id,
-        name: users.name,
-        grade: users.grade,
-        class: users.class
-      },
       requestCount: sql<number>`count(${songReplayRequests.id})`
         .mapWith(Number)
         .as('request_count'),
@@ -60,8 +54,7 @@ export default defineEventHandler(async (event) => {
     })
     .from(songs)
     .innerJoin(songReplayRequests, eq(songs.id, songReplayRequests.songId))
-    .leftJoin(users, eq(songs.requesterId, users.id))
-    .groupBy(songs.id, users.id)
+    .groupBy(songs.id)
     .orderBy(desc(sql`request_count`))
 
   if (conditions.length > 0) {
@@ -104,8 +97,10 @@ export default defineEventHandler(async (event) => {
   // 获取详细的重播申请人信息
   const requestDetailsQuery = db
     .select({
+      id: songReplayRequests.id,
       songId: songReplayRequests.songId,
       user: {
+        id: users.id,
         name: users.name,
         grade: users.grade,
         class: users.class
@@ -139,6 +134,8 @@ export default defineEventHandler(async (event) => {
   requestDetails.forEach((d) => {
     if (!detailsMap.has(d.songId)) detailsMap.set(d.songId, [])
     detailsMap.get(d.songId).push({
+      id: d.id,
+      userId: d.user.id,
       name: formatDisplayName(d.user),
       grade: d.user.grade,
       class: d.user.class,
@@ -156,13 +153,26 @@ export default defineEventHandler(async (event) => {
 
     return {
       ...item.song,
+      requesterId: latestRequest?.userId || null,
       preferredPlayTimeId: latestRequest?.preferredPlayTimeId || null,
       submissionNote: latestRequest?.submissionNote || null,
       submissionNotePublic: latestRequest?.submissionNotePublic === true,
       hasSubmissionNote: !!latestRequest?.submissionNote,
-      requester: formatDisplayName(item.requester),
-      requesterGrade: item.requester?.grade,
-      requesterClass: item.requester?.class,
+      requester: latestRequest?.name || '未知用户',
+      requesterGrade: latestRequest?.grade || null,
+      requesterClass: latestRequest?.class || null,
+      replayRequestId: latestRequest?.id || null,
+      replayRequestCount: item.requestCount,
+      replayRequesters: requestDetails.map((request: any) => ({
+        id: request.userId,
+        name: request.name,
+        displayName: request.name,
+        grade: request.grade,
+        class: request.class,
+        status: request.status,
+        createdAt: request.createdAt
+      })),
+      isReplay: true,
       voteCount: item.requestCount,
       requestCount: item.requestCount,
       lastRequestedAt: item.lastRequestedAt,

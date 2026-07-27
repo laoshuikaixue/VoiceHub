@@ -110,6 +110,23 @@ export default defineEventHandler(async (event) => {
         }
       }
 
+      // 校验重播申请绑定（草稿仅记录绑定关系，不修改申请状态）
+      let replayRequestId: number | null = null
+      if (body.replayRequestId) {
+        const replayRequestResult = await tx
+          .select({ id: songReplayRequests.id, songId: songReplayRequests.songId, status: songReplayRequests.status })
+          .from(songReplayRequests)
+          .where(eq(songReplayRequests.id, body.replayRequestId))
+          .limit(1)
+
+        const replayRequest = replayRequestResult[0]
+        if (!replayRequest || replayRequest.songId !== song.id || replayRequest.status !== 'PENDING') {
+          throw createError({ statusCode: 400, message: '重播申请无效或已被处理' })
+        }
+
+        replayRequestId = replayRequest.id
+      }
+
       // 获取序号，如果未提供则查找当天最大序号+1
       let sequence = body.sequence || 1
 
@@ -149,6 +166,7 @@ export default defineEventHandler(async (event) => {
           playDate: playDate,
           sequence: sequence,
           playTimeId: body.playTimeId || null,
+          replayRequestId,
           isDraft: true, // 标记为草稿
           publishedAt: null // 草稿状态下没有发布时间
         })

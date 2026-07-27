@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs } from '~/drizzle/schema'
+import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
 import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
         playTimeId: schedules.playTimeId,
         isDraft: schedules.isDraft,
         publishedAt: schedules.publishedAt,
+        replayRequestId: schedules.replayRequestId,
         song: {
           id: songs.id,
           title: songs.title,
@@ -108,16 +109,36 @@ export default defineEventHandler(async (event) => {
       const shouldNotify = existingPublished.length === 0
 
       let replayRequesterIds: number[] = []
-      const replayBinding = await bindLatestPendingReplayRequestToSchedule({
-        tx,
-        songId: draft.song.id,
-        scheduleId: body.scheduleId,
-        at: publishedAt
-      })
+      if (draft.replayRequestId) {
+        const fulfilledReplayRequests = await tx
+          .update(songReplayRequests)
+          .set({
+            status: 'FULFILLED',
+            updatedAt: publishedAt
+          })
+          .where(
+            and(
+              eq(songReplayRequests.id, draft.replayRequestId),
+              eq(songReplayRequests.songId, draft.song.id),
+              eq(songReplayRequests.status, 'PENDING')
+            )
+          )
+          .returning({ userId: songReplayRequests.userId })
 
-      if (replayBinding) {
-        replayRequesterIds = replayBinding.replayRequesterIds
-        console.log(`发布排期：重播申请 #${replayBinding.replayRequestId} 标记为 FULFILLED`)
+        replayRequesterIds = fulfilledReplayRequests.map((request) => request.userId)
+        console.log(`发布排期：草稿绑定的重播申请 #${draft.replayRequestId} 标记为 FULFILLED`)
+      } else {
+        const replayBinding = await bindLatestPendingReplayRequestToSchedule({
+          tx,
+          songId: draft.song.id,
+          scheduleId: body.scheduleId,
+          at: publishedAt
+        })
+
+        if (replayBinding) {
+          replayRequesterIds = replayBinding.replayRequesterIds
+          console.log(`发布排期：重播申请 #${replayBinding.replayRequestId} 标记为 FULFILLED`)
+        }
       }
 
       if (existingPublished.length > 0) {
