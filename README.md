@@ -2188,13 +2188,15 @@ Thanks goes to these wonderful people:
 
 [GPL-3.0](LICENSE)
 
-## 星标历史
+## Star History
 
-<picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
+<a href="https://www.star-history.com/?repos=laoshuikaixue%2FVoiceHub&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=laoshuikaixue/VoiceHub&type=date&theme=dark&legend=top-left&sealed_token=JVSllfBpQvo-lUL1pD1tGnYru0EWt_m7SH5emqWolyH1w9767FJw5Sgo6EAyadezWyEifZuASniT84NxukOHxhQP6mck7BwHsXrdCFf44oHK98DoSPZtFw" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=laoshuikaixue/VoiceHub&type=date&legend=top-left&sealed_token=JVSllfBpQvo-lUL1pD1tGnYru0EWt_m7SH5emqWolyH1w9767FJw5Sgo6EAyadezWyEifZuASniT84NxukOHxhQP6mck7BwHsXrdCFf44oHK98DoSPZtFw" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=laoshuikaixue/VoiceHub&type=date&legend=top-left&sealed_token=JVSllfBpQvo-lUL1pD1tGnYru0EWt_m7SH5emqWolyH1w9767FJw5Sgo6EAyadezWyEifZuASniT84NxukOHxhQP6mck7BwHsXrdCFf44oHK98DoSPZtFw" />
  </picture>
+</a>
 
 ## 其他
 
