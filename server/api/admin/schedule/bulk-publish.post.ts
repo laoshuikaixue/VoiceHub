@@ -1,12 +1,16 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { schedules, songs } from '~/drizzle/schema'
 import { inArray, and, eq, gte, lte } from 'drizzle-orm'
-import { createSongSelectedNotification } from '~~/server/services/notificationService'
+import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   redeemCardCodeForSchedule,
   restoreCardCodeAfterScheduleRemoval
 } from '~~/server/services/cardCodeLifecycleService'
+import {
+  fulfillReplayRequestsForSchedule,
+  restoreReplayRequestsToPending
+} from '~~/server/utils/scheduleReplayBinding'
 import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
@@ -37,8 +41,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const scheduleItems: Array<{ songId: number; sequence: number }> = (body.songs as any[]).map(
-    (item: any, index: number) => {
+  const scheduleItems: Array<{ songId: number; sequence: number; replayRequestId: number | null }> =
+    (body.songs as any[]).map((item: any, index: number) => {
       const songId = Number(item?.songId)
       const sequence = Number(item?.sequence)
       if (
@@ -49,9 +53,14 @@ export default defineEventHandler(async (event) => {
       ) {
         throw createError({ statusCode: 400, message: `第 ${index + 1} 条排期数据无效` })
       }
-      return { songId, sequence }
-    }
-  )
+      // 管理员拖拽时显式选择的重播申请，发布时优先绑定
+      const replayRequestId = Number(item?.replayRequestId)
+      return {
+        songId,
+        sequence,
+        replayRequestId: Number.isInteger(replayRequestId) && replayRequestId > 0 ? replayRequestId : null
+      }
+    })
 
   const clientIP = getClientIP(event)
   const startTime = Date.now()
@@ -90,6 +99,12 @@ export default defineEventHandler(async (event) => {
       songId: number
       songInfo: { title: string; artist: string; playDate: Date }
     }> = []
+    const replayNotificationsToSend: Array<{
+      userId: number
+      songId: number
+      songInfo: { title: string; artist: string; playDate: Date }
+      scheduleId: number
+    }> = []
 
     // 开始事务
     await db.transaction(async (tx) => {
@@ -121,11 +136,20 @@ export default defineEventHandler(async (event) => {
         .select({
           songId: schedules.songId,
           isDraft: schedules.isDraft,
+          replayRequestId: schedules.replayRequestId,
           cardCodeId: songs.cardCodeId
         })
         .from(schedules)
         .leftJoin(songs, eq(schedules.songId, songs.id))
         .where(and(...whereConditions))
+
+      // 记录被删除的已发布排期的重播绑定，同歌重发时回写，避免重播标识丢失
+      const previousReplayBindings = new Map<number, number>()
+      for (const scheduleToDelete of schedulesToDelete) {
+        if (!scheduleToDelete.isDraft && scheduleToDelete.replayRequestId) {
+          previousReplayBindings.set(scheduleToDelete.songId, scheduleToDelete.replayRequestId)
+        }
+      }
 
       // 3. 删除该时间段内的所有排期（包括草稿和已发布）
       await tx.delete(schedules).where(and(...whereConditions))
@@ -174,15 +198,12 @@ export default defineEventHandler(async (event) => {
             }
           }
 
-          await tx
-            .update(songReplayRequests)
-            .set({ status: 'PENDING', updatedAt: getServerDate() })
-            .where(
-              and(
-                inArray(songReplayRequests.songId, finalRestoreIds),
-                eq(songReplayRequests.status, 'FULFILLED')
-              )
-            )
+          // 恢复重播申请（每人仅恢复最新一条，避免违反部分唯一索引）
+          await restoreReplayRequestsToPending({
+            tx,
+            songIds: finalRestoreIds,
+            at: getServerDate()
+          })
         }
       }
 
@@ -193,19 +214,46 @@ export default defineEventHandler(async (event) => {
         const song = songMap.get(item.songId)!
 
         // 插入排期
-        await tx.insert(schedules).values({
-          songId: item.songId,
-          playDate: playDate,
-          sequence: item.sequence,
-          playTimeId: playTimeId,
-          isDraft: false, // 直接发布
-          publishedAt: publishedAt,
-          updatedAt: publishedAt
+        const insertedSchedules = await tx
+          .insert(schedules)
+          .values({
+            songId: item.songId,
+            playDate: playDate,
+            sequence: item.sequence,
+            playTimeId: playTimeId,
+            isDraft: false, // 直接发布
+            publishedAt: publishedAt,
+            updatedAt: publishedAt
+          })
+          .returning({ id: schedules.id })
+
+        const insertedSchedule = insertedSchedules[0]
+        if (!insertedSchedule) {
+          throw createError({ statusCode: 500, message: '创建排期失败' })
+        }
+
+        const replayBinding = await fulfillReplayRequestsForSchedule({
+          tx,
+          songId: song.id,
+          scheduleId: insertedSchedule.id,
+          at: publishedAt,
+          preferredRequestId: item.replayRequestId || undefined,
+          fallbackRequestId: previousReplayBindings.get(song.id) || undefined
         })
 
-        // 如果该歌曲之前未在此时间段发布过，则发送通知并更新重播状态
+        if (replayBinding) {
+          for (const replayUserId of replayBinding.replayRequesterIds) {
+            replayNotificationsToSend.push({
+              userId: replayUserId,
+              songId: song.id,
+              songInfo: { title: song.title, artist: song.artist, playDate: playDate },
+              scheduleId: insertedSchedule.id
+            })
+          }
+        }
+
+        // 如果该歌曲之前未在此时间段发布过，则发送通知
         if (!existingPublishedSongIds.has(item.songId)) {
-          // 添加到通知列表，稍后发送
           notificationsToSend.push({
             requesterId: song.requesterId,
             songId: song.id,
@@ -216,14 +264,6 @@ export default defineEventHandler(async (event) => {
             }
           })
           existingPublishedSongIds.add(item.songId)
-
-          // 更新重播申请状态
-          await tx
-            .update(songReplayRequests)
-            .set({ status: 'FULFILLED' })
-            .where(
-              and(eq(songReplayRequests.songId, song.id), eq(songReplayRequests.status, 'PENDING'))
-            )
         }
 
         await redeemCardCodeForSchedule(tx, {
@@ -234,6 +274,17 @@ export default defineEventHandler(async (event) => {
         })
       }
     })
+
+    // 发送重播安排通知
+    if (replayNotificationsToSend.length > 0) {
+      event.waitUntil(
+        Promise.allSettled(
+          replayNotificationsToSend.map((n) =>
+            createReplaySongSelectedNotification(n.userId, n.songId, n.songInfo, n.scheduleId)
+          )
+        )
+      )
+    }
 
     // 由运行时托管后台通知，避免 Serverless 在响应结束后中止任务。
     if (notificationsToSend.length > 0) {

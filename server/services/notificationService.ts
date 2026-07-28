@@ -234,6 +234,116 @@ export async function createSongSelectedNotification(
   }
 }
 
+/**
+ * 创建重播申请已安排排期的通知（发送给重播申请人）
+ */
+export async function createReplaySongSelectedNotification(
+  userId: number,
+  songId: number,
+  songInfo: {
+    title: string
+    artist: string
+    playDate: Date
+  },
+  scheduleId?: number
+) {
+  try {
+    // 获取系统设置，检查是否启用播出时段功能
+    const systemConfig = await getSystemSettingsCached()
+    const isPlayTimeEnabled = systemConfig?.enablePlayTimeSelection || false
+
+    // 优先按排期 ID 精确查询，避免同日同歌多排期时取错时段
+    const scheduleResult = await db
+      .select({
+        id: schedules.id,
+        playTime: {
+          id: playTimes.id,
+          name: playTimes.name,
+          startTime: playTimes.startTime,
+          endTime: playTimes.endTime
+        }
+      })
+      .from(schedules)
+      .leftJoin(playTimes, eq(schedules.playTimeId, playTimes.id))
+      .where(
+        scheduleId
+          ? eq(schedules.id, scheduleId)
+          : and(eq(schedules.songId, songId), eq(schedules.playDate, songInfo.playDate))
+      )
+      .limit(1)
+    const schedule = scheduleResult[0]
+
+    // 获取用户通知设置
+    const settingsResult = await db
+      .select()
+      .from(notificationSettings)
+      .where(eq(notificationSettings.userId, userId))
+      .limit(1)
+    const settings = settingsResult[0]
+
+    if (settings && !settings.enabled) {
+      return null
+    }
+
+    let message = `您申请重播的歌曲《${songInfo.title}》已安排播放，播放日期：${formatDate(songInfo.playDate)}。`
+
+    if (isPlayTimeEnabled && schedule?.playTime) {
+      let timeInfo = ''
+      if (schedule.playTime.startTime && schedule.playTime.endTime) {
+        timeInfo = `(${schedule.playTime.startTime}-${schedule.playTime.endTime})`
+      } else if (schedule.playTime.startTime) {
+        timeInfo = `(开始时间：${schedule.playTime.startTime})`
+      } else if (schedule.playTime.endTime) {
+        timeInfo = `(结束时间：${schedule.playTime.endTime})`
+      }
+      message += `播出时段：${schedule.playTime.name}${timeInfo ? ' ' + timeInfo : ''}。`
+    }
+
+    let notification
+    try {
+      const notificationResult = await db
+        .insert(notifications)
+        .values({
+          userId,
+          type: 'SONG_SELECTED',
+          message,
+          songId
+        })
+        .returning()
+      notification = notificationResult[0]
+    } catch (error) {
+      throw error
+    }
+
+    try {
+      await sendMeowNotificationToUser(userId, '重播已安排', message)
+    } catch (error) {
+      console.error('发送 MeoW 通知失败:', error)
+    }
+
+    try {
+      await sendEmailNotificationToUser(
+        userId,
+        '重播申请已安排',
+        message,
+        undefined,
+        'notification.replaySongSelected',
+        {
+          songTitle: songInfo.title,
+          playDate: formatDate(songInfo.playDate),
+          playTimeName: isPlayTimeEnabled && schedule?.playTime ? schedule.playTime.name : ''
+        }
+      )
+    } catch (error) {
+      console.error('发送邮件通知失败:', error)
+    }
+
+    return notification
+  } catch (err) {
+    return null
+  }
+}
+
 // 格式化日期为 yyyy-MM-dd 格式（北京时间）
 function formatDate(date: Date): string {
   return formatDateTime(date, 'YYYY-MM-DD')

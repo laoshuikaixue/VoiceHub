@@ -1,9 +1,10 @@
 import { db } from '~/drizzle/db'
-import { schedules, songs, songReplayRequests } from '~/drizzle/schema'
+import { schedules, songs } from '~/drizzle/schema'
 import { and, eq, ne } from 'drizzle-orm'
-import { createSongSelectedNotification } from '~~/server/services/notificationService'
-import { getBeijingTimestamp } from '~/utils/timeUtils'
+import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
 import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleService'
+import { fulfillReplayRequestsForSchedule } from '~~/server/utils/scheduleReplayBinding'
+import { getBeijingTimestamp } from '~/utils/timeUtils'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -43,6 +44,7 @@ export default defineEventHandler(async (event) => {
         playTimeId: schedules.playTimeId,
         isDraft: schedules.isDraft,
         publishedAt: schedules.publishedAt,
+        replayRequestId: schedules.replayRequestId,
         song: {
           id: songs.id,
           title: songs.title,
@@ -105,28 +107,25 @@ export default defineEventHandler(async (event) => {
         .limit(1)
 
       const shouldNotify = existingPublished.length === 0
-      // 如果之前没有正式发布过，只更新重播状态；通知在事务提交后发送。
-      if (shouldNotify) {
-        // 将该歌曲的所有待处理重播申请标记为已完成
-        const updatedRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'FULFILLED',
-            updatedAt: publishedAt
-          })
-          .where(
-            and(
-              eq(songReplayRequests.songId, draft.song.id),
-              eq(songReplayRequests.status, 'PENDING')
-            )
-          )
-          .returning({ id: songReplayRequests.id })
 
-        if (updatedRequests.length > 0) {
-          console.log(`发布排期：将 ${updatedRequests.length} 个重播申请标记为 FULFILLED`)
-        }
-      } else {
-        console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知或更新重播状态`)
+      // 履行该歌曲全部待处理重播申请，优先绑定草稿指定的申请
+      let replayRequesterIds: number[] = []
+      const replayBinding = await fulfillReplayRequestsForSchedule({
+        tx,
+        songId: draft.song.id,
+        scheduleId: body.scheduleId,
+        at: publishedAt,
+        preferredRequestId: draft.replayRequestId || undefined,
+        fallbackRequestId: draft.replayRequestId || undefined
+      })
+
+      if (replayBinding) {
+        replayRequesterIds = replayBinding.replayRequesterIds
+        console.log(`发布排期：重播申请 #${replayBinding.replayRequestId} 绑定到排期 #${body.scheduleId}`)
+      }
+
+      if (existingPublished.length > 0) {
+        console.log(`歌曲 ${draft.song.id} 已有其他正式排期，不再重复发送通知`)
       }
 
       await redeemCardCodeForSchedule(tx, {
@@ -136,8 +135,23 @@ export default defineEventHandler(async (event) => {
         at: publishedAt
       })
 
-      return { schedule, shouldNotify }
+      return { schedule, shouldNotify, replayRequesterIds, replayRequestId: replayBinding?.replayRequestId ?? null }
     })
+
+    // 发送重播申请已安排通知
+    if (publishResult.replayRequesterIds?.length > 0) {
+      for (const replayUserId of publishResult.replayRequesterIds) {
+        try {
+          await createReplaySongSelectedNotification(replayUserId, draft.song.id, {
+            title: draft.song.title,
+            artist: draft.song.artist,
+            playDate: publishResult.schedule.playDate
+          }, publishResult.schedule.id)
+        } catch (error) {
+          console.error(`发送重播安排通知给用户 ${replayUserId} 失败:`, error)
+        }
+      }
+    }
 
     let notificationSent = true
     if (publishResult.shouldNotify) {
@@ -161,6 +175,8 @@ export default defineEventHandler(async (event) => {
       song: draft.song,
       isDraft: false,
       publishedAt: publishedSchedule.publishedAt,
+      // 绑定在 fulfill 中回写，.returning() 快照早于绑定，需显式覆盖
+      replayRequestId: publishResult.replayRequestId,
       message: publishResult.shouldNotify
         ? notificationSent
           ? '排期发布成功，通知已发送'

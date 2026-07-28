@@ -1,5 +1,5 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar, unique} from 'drizzle-orm/pg-core';
-import {relations} from 'drizzle-orm';
+import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
@@ -99,6 +99,7 @@ export const schedules = pgTable('Schedule', {
   // 草稿支持字段
   isDraft: boolean('isDraft').default(false).notNull(),
   publishedAt: timestamp('publishedAt'),
+  replayRequestId: integer('replay_request_id'),
 }, (table) => [
   index('schedule_published_song_idx').on(table.isDraft, table.songId, table.playDate),
   index('schedule_published_date_idx').on(table.isDraft, table.playDate)
@@ -341,8 +342,14 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
   status: replayRequestStatusEnum('status').default('PENDING').notNull(),
+  preferredPlayTimeId: integer('preferred_play_time_id'),
+  submissionNote: text('submission_note'),
+  submissionNotePublic: boolean('submission_note_public').default(false).notNull(),
 }, (table) => [
-  unique('song_replay_requests_song_id_user_id_unique').on(table.songId, table.userId),
+  // 同一用户对同一首歌同时最多一条待处理申请；历史申请（FULFILLED/REJECTED）允许多条
+  uniqueIndex('song_replay_requests_pending_song_user_unique')
+    .on(table.songId, table.userId)
+    .where(sql`${table.status} = 'PENDING'`),
   index('song_replay_requests_user_status_song_idx').on(table.userId, table.status, table.songId)
 ]);
 
