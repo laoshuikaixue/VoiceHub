@@ -683,15 +683,14 @@
                       <!-- 重播标识 -->
                       <span
                         v-if="schedule.replayRequestId != null"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
-                        <Icon name="repeat" :size="10" />
-                        {{ locale.replay }}
+                        <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
@@ -715,8 +714,7 @@
                             .join('、')
                         "
                       >
-                        {{ locale.applicant }}
-                        {{
+                        {{ locale.applicant }}{{
                           (schedule.song.replayRequesters || [])
                             .slice(0, 2)
                             .map((r) => r.displayName || r.name)
@@ -1015,6 +1013,7 @@ import {
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
+import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
@@ -2008,9 +2007,12 @@ watch(selectedFilterPlayTime, () => {
 // 加载重播申请
 const fetchReplayRequests = async () => {
   try {
+    // 与歌曲列表一致，按当前选中学期过滤；选择"全部"时不传学期参数
+    const selectedSemesterOption = availableSemesters.value.find((item) => String(item.id) === String(selectedSemester.value))
+    const semester = selectedSemester.value === 'all' ? undefined : selectedSemesterOption?.name
     const data = await $fetch('/api/admin/replay-requests', {
       ...auth.getAuthConfig(),
-      query: { status: 'PENDING' }
+      query: { status: 'PENDING', ...(semester ? { semester } : {}) }
     })
     replayRequests.value = data || []
   } catch (err) {

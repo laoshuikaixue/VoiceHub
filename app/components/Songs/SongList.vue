@@ -267,22 +267,10 @@
                     "
                     class="requester"
                   >
-                    <template v-if="song.isReplay">
-                      {{ locale.replayRequest(song.replayRequestCount || 0) }}{{
-                        song.replayRequesters
-                          ? song.replayRequesters
-                              .map((r) => r.displayName || r.name || locale.unknownUser())
-                              .slice(0, 3)
-                              .join(', ') + (song.replayRequesters.length > 3 ? '...' : '')
-                          : ''
-                      }}
-                    </template>
-                    <template v-else>
-                      {{ locale.requester }}{{ song.requester }}
-                      <span v-if="song.collaborators && song.collaborators.length > 0">
-                        & {{ song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
-                      </span>
-                    </template>
+                    {{ locale.requester }}{{ song.requester }}
+                    <span v-if="song.collaborators && song.collaborators.length > 0">
+                      & {{ song.collaborators.map((c) => c.displayName || c.name).join(' & ') }}
+                    </span>
                   </span>
                 </div>
               </div>
