@@ -137,6 +137,9 @@ importers:
       gl-matrix:
         specifier: 4.0.0-beta.2
         version: 4.0.0-beta.2
+      h3:
+        specifier: 1.15.11
+        version: 1.15.11
       html-to-image:
         specifier: ^1.11.13
         version: 1.11.13

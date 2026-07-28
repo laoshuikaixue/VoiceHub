@@ -15,3 +15,26 @@ export async function getSystemSettingsCached(): Promise<SystemSettings | null> 
     return null
   }
 }
+
+export async function getForcePasswordChangeOnFirstLogin(): Promise<boolean> {
+  const settings = await getSystemSettingsCached()
+  return settings && typeof settings.forcePasswordChangeOnFirstLogin === 'boolean'
+    ? settings.forcePasswordChangeOnFirstLogin
+    : false
+}
+
+export function computeRequirePasswordChange(
+  user: { forcePasswordChange?: boolean | null; passwordChangedAt?: Date | string | null },
+  forcePasswordChangeOnFirstLogin: boolean
+): boolean {
+  return !!user.forcePasswordChange || (forcePasswordChangeOnFirstLogin && !user.passwordChangedAt)
+}
+
+export async function resolveRequirePasswordChange(user: {
+  forcePasswordChange?: boolean | null
+  passwordChangedAt?: Date | string | null
+}): Promise<boolean> {
+  if (user.forcePasswordChange) return true
+  if (user.passwordChangedAt) return false
+  return computeRequirePasswordChange(user, await getForcePasswordChangeOnFirstLogin())
+}

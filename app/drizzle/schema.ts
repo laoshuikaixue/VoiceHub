@@ -29,7 +29,8 @@ export const users = pgTable('User', {
   lastLogin: timestamp('lastLogin'),
   lastLoginIp: text('lastLoginIp'),
   passwordChangedAt: timestamp('passwordChangedAt'),
-  forcePasswordChange: boolean('forcePasswordChange').default(true).notNull(),
+  forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
+  tokenVersion: integer('tokenVersion').default(0).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
   status: userStatusEnum('status').default('active').notNull(),
@@ -173,6 +174,7 @@ export const systemSettings = pgTable('SystemSettings', {
   smtpFromName: text('smtpFromName').default('校园广播站'),
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
+  forcePasswordChangeOnFirstLogin: boolean('forcePasswordChangeOnFirstLogin').default(false).notNull(),
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
   enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
@@ -356,6 +358,28 @@ export const userIdentities = pgTable('UserIdentity', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (t) => ({
   unq: unique().on(t.provider, t.providerUserId),
+}));
+
+export const passwordAuditLogs = pgTable('PasswordAuditLog', {
+  id: serial('id').primaryKey(),
+  userId: integer('userId').notNull(),
+  actorId: integer('actorId'),
+  action: text('action').notNull(),
+  success: boolean('success').notNull(),
+  ipAddress: text('ipAddress'),
+  userAgent: text('userAgent'),
+  failureReason: text('failureReason'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => ({
+  userCreatedIdx: index('PasswordAuditLog_user_created_idx').on(table.userId, table.createdAt)
+}));
+
+export const passwordRateLimits = pgTable('PasswordRateLimit', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  resetAt: timestamp('resetAt', { withTimezone: true }).notNull()
+}, (table) => ({
+  resetIdx: index('PasswordRateLimit_reset_idx').on(table.resetAt)
 }));
 
 // 关系定义

@@ -1,4 +1,4 @@
-import { db, userIdentities, eq, and, users } from '~/drizzle/db'
+import { db, userIdentities, eq, and, users, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
@@ -15,15 +15,23 @@ import {
 } from '~~/server/utils/captchaStore'
 import otplib from 'otplib'
 import { createApiError } from '~~/server/utils/apiError'
+import {
+  computeRequirePasswordChange,
+  resolveRequirePasswordChange
+} from '~~/server/utils/system-settings-helper'
+import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
+import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
 
 const { authenticator } = otplib
 const TOTP_FAILURE_LIMIT = 5
 const TOTP_FAILURE_WINDOW_SECONDS = 5 * 60
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const { code, type } = body
-  const token = body.token || getCookie(event, 'pre-auth-token')
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const code = typeof body?.code === 'string' ? body.code : ''
+  const type = typeof body?.type === 'string' ? body.type : ''
+  const bodyToken = typeof body?.token === 'string' ? body.token : ''
+  const token = bodyToken || getCookie(event, 'pre-auth-token')
 
   if (!code || !type) {
     throw createApiError(400, 'AUTH_MISSING_REQUIRED_PARAMS', '缺少必要参数')
@@ -31,6 +39,7 @@ export default defineEventHandler(async (event) => {
 
   // 验证预认证临时令牌
   let targetUserId: number
+  let preAuthPayload: { tokenVersion?: unknown } | null = null
 
   if (token) {
     try {
@@ -39,6 +48,7 @@ export default defineEventHandler(async (event) => {
         throw new Error('无效的预认证令牌')
       }
       targetUserId = decoded.userId
+      preAuthPayload = decoded
     } catch (e) {
       deleteCookie(event, 'pre-auth-token')
       throw createApiError(401, 'AUTH_SESSION_EXPIRED', '会话已失效，请重新登录')
@@ -53,6 +63,12 @@ export default defineEventHandler(async (event) => {
   const user = userResult[0]
   if (!user) {
     throw createApiError(404, 'USER_NOT_FOUND', '用户不存在')
+  }
+
+  if (!JWTEnhanced.hasCurrentTokenVersion(preAuthPayload, user.tokenVersion)) {
+    deleteCookie(event, 'pre-auth-token')
+    deleteCookie(event, 'binding-token')
+    throw createApiError(401, 'AUTH_SESSION_EXPIRED', '会话已失效，请重新登录')
   }
 
   if (user.status !== 'active') {
@@ -79,7 +95,11 @@ export default defineEventHandler(async (event) => {
     ])
 
     if (userFailureCount > TOTP_FAILURE_LIMIT || ipFailureCount > TOTP_FAILURE_LIMIT) {
-      throw createApiError(429, 'AUTH_TOTP_TOO_MANY_ATTEMPTS', '动态验证码错误次数过多，请在 5 分钟后重试')
+      throw createApiError(
+        429,
+        'AUTH_TOTP_TOO_MANY_ATTEMPTS',
+        '动态验证码错误次数过多，请在 5 分钟后重试'
+      )
     }
 
     verified = authenticator.check(code, identity.providerUserId)
@@ -131,7 +151,12 @@ export default defineEventHandler(async (event) => {
         await delStore(attemptKey)
         throw createApiError(400, 'AUTH_TOO_MANY_VERIFY_ATTEMPTS', '验证尝试次数过多，请重新获取')
       }
-      throw createApiError(400, 'AUTH_CODE_WRONG_ATTEMPTS_LEFT', `验证码错误，剩余尝试次数：${5 - attemptCount}`, { params: [5 - attemptCount] })
+      throw createApiError(
+        400,
+        'AUTH_CODE_WRONG_ATTEMPTS_LEFT',
+        `验证码错误，剩余尝试次数：${5 - attemptCount}`,
+        { params: [5 - attemptCount] }
+      )
     }
   } else {
     throw createApiError(400, 'AUTH_UNSUPPORTED_VERIFICATION_TYPE', '不支持的验证类型')
@@ -150,6 +175,48 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.transaction(async (tx) => {
+      const [currentUser] = await tx
+        .select({
+          tokenVersion: users.tokenVersion,
+          forcePasswordChange: users.forcePasswordChange,
+          passwordChangedAt: users.passwordChangedAt
+        })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .for('update')
+
+      if (
+        !currentUser ||
+        !JWTEnhanced.hasCurrentTokenVersion(preAuthPayload, currentUser.tokenVersion)
+      ) {
+        deleteCookie(event, 'binding-token')
+        deleteCookie(event, 'pre-auth-token')
+        throw createApiError(401, 'AUTH_SESSION_EXPIRED', '会话已失效，请重新登录')
+      }
+
+      const [currentSettings] = await tx
+        .select({
+          forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin
+        })
+        .from(systemSettings)
+        .limit(1)
+        .for('share')
+      const requirePasswordChange = computeRequirePasswordChange(
+        currentUser,
+        currentSettings?.forcePasswordChangeOnFirstLogin ?? false
+      )
+
+      if (!canBindOAuthIdentity(requirePasswordChange)) {
+        deleteCookie(event, 'binding-token')
+        deleteCookie(event, 'pre-auth-token')
+        throw createApiError(
+          403,
+          'AUTH_PASSWORD_CHANGE_REQUIRED',
+          '请先完成密码修改后再绑定第三方账号',
+          { requirePasswordChange: true }
+        )
+      }
+
       const existing = await tx.query.userIdentities.findFirst({
         where: (t, { eq, and }) =>
           and(
@@ -184,7 +251,7 @@ export default defineEventHandler(async (event) => {
     .catch((err) => console.error('Error updating user login info:', err))
 
   // 生成Token
-  const authToken = JWTEnhanced.generateToken(user.id, user.role)
+  const authToken = JWTEnhanced.generateToken(user.id, user.role, user.tokenVersion)
 
   const isSecure = isSecureRequest(event)
 
@@ -199,6 +266,9 @@ export default defineEventHandler(async (event) => {
   deleteCookie(event, 'pre-auth-token')
   deleteCookie(event, 'binding-token')
 
+  const requirePasswordChange = await resolveRequirePasswordChange(user)
+  const passwordSetupState = getPasswordSetupState(user, requirePasswordChange)
+
   return {
     success: true,
     user: {
@@ -208,7 +278,12 @@ export default defineEventHandler(async (event) => {
       grade: user.grade,
       class: user.class,
       role: user.role,
-      needsPasswordChange: !user.passwordChangedAt,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      forcePasswordChange: user.forcePasswordChange,
+      passwordChangedAt: user.passwordChangedAt,
+      requirePasswordChange,
+      ...passwordSetupState,
       has2FA: true
     }
   }
