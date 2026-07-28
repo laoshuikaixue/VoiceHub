@@ -1,7 +1,8 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { songBlacklists, systemSettings } from '~/drizzle/schema'
+import { songBlacklists } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -29,8 +30,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // 获取系统设置
-    const systemSettingsResult = await db.select().from(systemSettings).limit(1)
-    const systemSettingsData = systemSettingsResult[0]
+    const systemSettingsData = await getSystemSettingsCached()
     const showBlacklistKeywords = systemSettingsData?.showBlacklistKeywords ?? false
 
     // 获取所有活跃的黑名单项

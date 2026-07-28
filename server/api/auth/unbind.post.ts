@@ -1,17 +1,18 @@
 import { db, eq, and, userIdentities } from '~/drizzle/db'
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   const body = await readBody(event)
   const { provider, id } = body
 
   if (!provider) {
-    throw createError({ statusCode: 400, message: '缺少提供商参数' })
+    throw createApiError(400, 'AUTH_MISSING_PROVIDER_PARAM', '缺少提供商参数')
   }
 
   const whereCondition = id

@@ -14,23 +14,21 @@ import {
   isSupportedOAuthProvider
 } from '~~/server/services/oauthConfigService'
 import { getRequestOrigin, getSafeRequestProtocol } from '~~/server/utils/request-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
   if (!provider) {
-    throw createError({ statusCode: 400, message: 'Missing provider' })
+    throw createApiError(400, 'AUTH_MISSING_PROVIDER', 'Missing provider')
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({
-      statusCode: 400,
-      message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
-    })
+    throw createApiError(400, 'AUTH_UNSUPPORTED_OAUTH_PROVIDER', '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2')
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
   if (!enabled) {
-    throw createError({ statusCode: 403, message: 'OAuth provider is disabled' })
+    throw createApiError(403, 'AUTH_OAUTH_PROVIDER_DISABLED', 'OAuth provider is disabled')
   }
 
   const query = getQuery(event)
@@ -42,7 +40,7 @@ export default defineEventHandler(async (event) => {
     aggregateLoginType =
       typeof query.type === 'string' ? query.type.trim().toLowerCase() : undefined
     if (!aggregateLoginType || !providerConfig.loginTypes?.includes(aggregateLoginType)) {
-      throw createError({ statusCode: 400, message: '未启用或不支持的聚合登录方式' })
+      throw createApiError(400, 'AUTH_AGGREGATED_LOGIN_UNSUPPORTED', '未启用或不支持的聚合登录方式')
     }
     providerConfig.loginType = aggregateLoginType
   }
@@ -62,11 +60,12 @@ export default defineEventHandler(async (event) => {
     if (!['http:', 'https:'].includes(redirectUrl.protocol)) {
       throw new Error('unsupported protocol')
     }
+    // 源站不一致不再阻断（兼容 Broker 与代理平台），仅告警便于排查配置问题
+    if (redirectUrl.origin !== origin) {
+      console.warn('OAuth 重定向 URI 与当前请求源站不一致', { redirectUri, origin })
+    }
   } catch {
-    throw createError({
-      statusCode: 400,
-      message: 'OAuth 重定向 URI 配置无效，请在管理员后台检查配置'
-    })
+    throw createApiError(400, 'AUTH_OAUTH_REDIRECT_INVALID', 'OAuth 重定向 URI 配置无效，请在管理员后台检查配置')
   }
 
   const returnTo = getSafeOAuthReturnPath(query.redirect)

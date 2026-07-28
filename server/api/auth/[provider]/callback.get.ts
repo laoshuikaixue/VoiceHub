@@ -21,6 +21,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTime } from '~/utils/timeUtils'
 import type { H3Event } from 'h3'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 const getSingleQueryValue = (value: unknown): string | undefined => {
   return typeof value === 'string' ? value : undefined
@@ -35,14 +36,11 @@ export default defineEventHandler(async (event) => {
   const callbackLoginType = getSingleQueryValue(query.type)?.trim().toLowerCase()
 
   if (!provider) {
-    throw createError({ statusCode: 400, message: 'Missing provider' })
+    throw createApiError(400, 'AUTH_MISSING_PROVIDER', 'Missing provider')
   }
 
   if (!isSupportedOAuthProvider(provider)) {
-    throw createError({
-      statusCode: 400,
-      message: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2'
-    })
+    throw createApiError(400, 'AUTH_UNSUPPORTED_OAUTH_PROVIDER', '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2')
   }
 
   const enabled = await isOAuthProviderEnabled(provider)
@@ -54,13 +52,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!code) {
-    throw createError({ statusCode: 400, message: 'OAuth 回调缺少或包含冲突的 code 参数' })
+    throw createApiError(400, 'AUTH_MISSING_CODE_OR_STATE', 'OAuth 回调缺少或包含冲突的 code 参数')
   }
   if (!stateStr) {
-    throw createError({
-      statusCode: 400,
-      message: 'OAuth 回调缺少或包含冲突的 state 参数，无法完成安全验证'
-    })
+    throw createApiError(400, 'AUTH_MISSING_CODE_OR_STATE', 'OAuth 回调缺少或包含冲突的 state 参数，无法完成安全验证')
   }
 
   // 1. 验证 State
@@ -79,10 +74,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!csrfCookie) {
-    throw createError({
-      statusCode: 400,
-      message: 'CSRF验证失败：Cookie丢失，请从登录页面重新开始'
-    })
+    throw createApiError(400, 'AUTH_CSRF_COOKIE_MISSING', 'CSRF验证失败：Cookie丢失，请从登录页面重新开始')
   }
 
   // 获取 Origin
@@ -94,30 +86,30 @@ export default defineEventHandler(async (event) => {
 
   if (provider === 'aggregate') {
     if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
-      throw createError({ statusCode: 400, message: '聚合登录状态无效或已过期' })
+      throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
     }
     stateToVerify = decodeOAuthStateCookie(storedFullState)
     if (!stateToVerify) {
-      throw createError({ statusCode: 400, message: '聚合登录状态无效或已过期' })
+      throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
     }
   }
 
   const state = parseState(stateToVerify, origin, csrfCookie, stateSecret)
   if (!state) {
-    throw createError({ statusCode: 400, message: 'Invalid or expired state' })
+    throw createApiError(400, 'AUTH_STATE_INVALID', 'Invalid or expired state')
   }
   if (state.provider && state.provider !== provider) {
-    throw createError({ statusCode: 400, message: 'OAuth provider 与 state 不匹配' })
+    throw createApiError(400, 'AUTH_OAUTH_PROVIDER_STATE_MISMATCH', 'OAuth provider 与 state 不匹配')
   }
 
-  let identityProvider = provider
+  let identityProvider: string = provider
   if (provider === 'aggregate') {
     const loginType = state.loginType?.trim().toLowerCase()
     if (!loginType || !providerConfig.loginTypes?.includes(loginType)) {
-      throw createError({ statusCode: 400, message: '聚合登录方式未启用或已变更' })
+      throw createApiError(400, 'AUTH_AGGREGATED_METHOD_CHANGED', '聚合登录方式未启用或已变更')
     }
     if (callbackLoginType !== loginType) {
-      throw createError({ statusCode: 400, message: '聚合登录回调类型与 state 不匹配' })
+      throw createApiError(400, 'AUTH_AGGREGATED_CALLBACK_STATE_MISMATCH', '聚合登录回调类型与 state 不匹配')
     }
     providerConfig.loginType = loginType
     identityProvider = `aggregate:${loginType}`

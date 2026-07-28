@@ -3,24 +3,19 @@ import { db } from '~/drizzle/db'
 import { songCollaborators, collaborationLogs, songs } from '~/drizzle/schema'
 import { and, eq } from 'drizzle-orm'
 import { createCollaborationResponseNotification } from '~~/server/services/notificationService'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '未登录'
-    })
+    throw createApiError(401, 'AUTH_LOGIN_REQUIRED', '未登录')
   }
 
   const body = await readBody(event)
   const { songId, accept } = body
 
   if (!songId || typeof accept !== 'boolean') {
-    throw createError({
-      statusCode: 400,
-      message: '参数错误'
-    })
+    throw createApiError(400, 'COMMON_INVALID_PARAMS', '参数错误')
   }
 
   try {
@@ -39,10 +34,7 @@ export default defineEventHandler(async (event) => {
       .then((res) => res[0])
 
     if (!collabRecord) {
-      throw createError({
-        statusCode: 404,
-        message: '未找到待处理的邀请'
-      })
+      throw createApiError(404, 'SONG_INVITATION_NOT_FOUND', '未找到待处理的邀请')
     }
 
     // 更新状态
@@ -80,9 +72,6 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     console.error('处理联合投稿邀请失败:', error)
     if (error.statusCode) throw error
-    throw createError({
-      statusCode: 500,
-      message: '处理邀请失败'
-    })
+    throw createApiError(500, 'SONG_INVITATION_FAILED', '处理邀请失败')
   }
 })

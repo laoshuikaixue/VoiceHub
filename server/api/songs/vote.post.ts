@@ -9,26 +9,21 @@ import {
   recordUserVoteActivity
 } from '~~/server/services/securityService'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
   const user = event.context.user
 
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能投票'
-    })
+    throw createApiError(401, 'SONG_LOGIN_REQUIRED_VOTE', '需要登录才能投票')
   }
 
   const body = await readBody(event)
   const clientIP = getClientIP(event)
 
   if (!body.songId) {
-    throw createError({
-      statusCode: 400,
-      message: '歌曲ID不能为空'
-    })
+    throw createApiError(400, 'SONG_ID_REQUIRED', '歌曲ID不能为空')
   }
 
   const isUnvote = body.unvote === true
@@ -40,10 +35,7 @@ export default defineEventHandler(async (event) => {
     const song = songResult[0]
 
     if (!song) {
-      throw createError({
-        statusCode: 404,
-        message: '歌曲不存在'
-      })
+      throw createApiError(404, 'SONG_NOT_FOUND', '歌曲不存在')
     }
 
     // 检查学期
@@ -55,25 +47,16 @@ export default defineEventHandler(async (event) => {
     const currentSemester = currentSemesterResult[0]
 
     if (!currentSemester) {
-      throw createError({
-        statusCode: 400,
-        message: '未设置活跃学期，无法进行投票操作'
-      })
+      throw createApiError(400, 'SONG_NO_ACTIVE_SEMESTER_VOTE', '未设置活跃学期，无法进行投票操作')
     }
 
     if (song.semester !== currentSemester.name) {
-      throw createError({
-        statusCode: 400,
-        message: '非活跃学期，无法进行投票操作'
-      })
+      throw createApiError(400, 'SONG_INACTIVE_SEMESTER_VOTE', '非活跃学期，无法进行投票操作')
     }
 
     // 检查歌曲是否已播放
     if (song.played) {
-      throw createError({
-        statusCode: 400,
-        message: '该歌曲已播放，无法进行投票操作'
-      })
+      throw createApiError(400, 'SONG_PLAYED_NO_VOTE', '该歌曲已播放，无法进行投票操作')
     }
 
     // 检查歌曲是否已排期（只检查已发布的排期，草稿不算）
@@ -84,26 +67,17 @@ export default defineEventHandler(async (event) => {
       .limit(1)
 
     if (schedulesResult.length > 0) {
-      throw createError({
-        statusCode: 400,
-        message: '该歌曲已排期，无法进行投票操作'
-      })
+      throw createApiError(400, 'SONG_SCHEDULED_NO_VOTE', '该歌曲已排期，无法进行投票操作')
     }
 
     // 检查是否是自己的歌曲
     if (song.requesterId === user.id) {
-      throw createError({
-        statusCode: 400,
-        message: '不允许自己给自己投票'
-      })
+      throw createApiError(400, 'SONG_CANNOT_SELF_VOTE', '不允许自己给自己投票')
     }
 
     if (isSongProtected(body.songId)) {
       const remain = getSongProtectRemainingSeconds(body.songId)
-      throw createError({
-        statusCode: 423,
-        message: `该歌曲处于临时保护期，剩余 ${Math.max(remain, 1)} 秒`
-      })
+      throw createApiError(423, 'SONG_TEMP_PROTECTED_SECONDS', `该歌曲处于临时保护期，剩余 ${Math.max(remain, 1)} 秒`, { params: [Math.max(remain, 1)] })
     }
 
     // 检查用户是否已经投过票
@@ -118,10 +92,7 @@ export default defineEventHandler(async (event) => {
     if (isUnvote) {
       // 撤销投票逻辑
       if (!existingVote) {
-        throw createError({
-          statusCode: 400,
-          message: '你尚未为这首歌投票，无法取消'
-        })
+        throw createApiError(400, 'SONG_VOTE_NOT_FOUND', '你尚未为这首歌投票，无法取消')
       }
 
       // 删除投票
@@ -148,10 +119,7 @@ export default defineEventHandler(async (event) => {
     } else {
       // 正常投票逻辑
       if (existingVote) {
-        throw createError({
-          statusCode: 409,
-          message: '你已经为这首歌投过票了'
-        })
+        throw createApiError(409, 'SONG_ALREADY_VOTED', '你已经为这首歌投过票了')
       }
 
       // 创建新的投票
@@ -196,15 +164,9 @@ export default defineEventHandler(async (event) => {
     if (error.statusCode) {
       throw error
     } else if (error.code === '23505') {
-      throw createError({
-        statusCode: 409,
-        message: '你已经为这首歌投过票了'
-      })
+      throw createApiError(409, 'SONG_ALREADY_VOTED', '你已经为这首歌投过票了')
     } else {
-      throw createError({
-        statusCode: 500,
-        message: '操作失败，请稍后重试'
-      })
+      throw createApiError(500, 'SONG_OPERATION_FAILED', '操作失败，请稍后重试')
     }
   }
 })

@@ -2,41 +2,30 @@ import { db } from '~/drizzle/db'
 import { songs, users, songCollaborators, collaborationLogs } from '~/drizzle/schema'
 import { eq, or } from 'drizzle-orm'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   try {
     // 验证请求方法
     if (event.node.req.method !== 'PUT') {
-      throw createError({
-        statusCode: 405,
-        message: 'Method Not Allowed'
-      })
+      throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', 'Method Not Allowed')
     }
 
     // 获取已验证的用户信息（由中间件提供）
     const user = event.context.user
     if (!user) {
-      throw createError({
-        statusCode: 401,
-        message: '未授权访问'
-      })
+      throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
     }
 
     // 检查权限
     if (!['ADMIN', 'SONG_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
-      throw createError({
-        statusCode: 403,
-        message: '权限不足'
-      })
+      throw createApiError(403, 'COMMON_INSUFFICIENT_PERMISSION', '权限不足')
     }
 
     // 获取歌曲ID
     const songId = parseInt(getRouterParam(event, 'id'))
     if (!songId) {
-      throw createError({
-        statusCode: 400,
-        message: 'Invalid song ID'
-      })
+      throw createApiError(400, 'SONG_INVALID_ID', 'Invalid song ID')
     }
 
     // 获取请求体
@@ -57,20 +46,14 @@ export default defineEventHandler(async (event) => {
 
     // 验证必填字段
     if (!title || !artist) {
-      throw createError({
-        statusCode: 400,
-        message: 'Title and artist are required'
-      })
+      throw createApiError(400, 'SONG_TITLE_ARTIST_REQUIRED', 'Title and artist are required')
     }
 
     const existingSongResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
     const existingSong = existingSongResult[0]
 
     if (!existingSong) {
-      throw createError({
-        statusCode: 404,
-        message: '歌曲不存在'
-      })
+      throw createApiError(404, 'SONG_NOT_FOUND', '歌曲不存在')
     }
 
     const updateData: Partial<typeof songs.$inferInsert> = {
@@ -109,10 +92,7 @@ export default defineEventHandler(async (event) => {
           .limit(1)
 
         if (requesterUser.length === 0) {
-          throw createError({
-            statusCode: 404,
-            message: '投稿人用户不存在'
-          })
+          throw createApiError(404, 'SONG_REQUESTER_NOT_FOUND', '投稿人用户不存在')
         }
 
         // 设置投稿人

@@ -6,6 +6,7 @@ import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { formatIPForEmail, getClientIP } from '~~/server/utils/ip-utils'
 import { checkDistributedRateLimit } from '~~/server/utils/rateLimiter'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const clientIP = getClientIP(event)
@@ -16,17 +17,14 @@ export default defineEventHandler(async (event) => {
 
   if (!limitResult.isAllowed) {
     const waitMinutes = Math.ceil((limitResult.resetTime - getServerTimestamp()) / 60000)
-    throw createError({
-      statusCode: 429,
-      message: `操作过于频繁，请等待 ${waitMinutes} 分钟后再试`
-    })
+    throw createApiError(429, 'AUTH_RATE_LIMITED_MINUTES', `操作过于频繁，请等待 ${waitMinutes} 分钟后再试`, { params: [waitMinutes] })
   }
 
   const body = await readBody(event)
   const { username, email } = body
 
   if (!username) {
-    throw createError({ statusCode: 400, message: '请提供账号名' })
+    throw createApiError(400, 'AUTH_ACCOUNT_NAME_REQUIRED', '请提供账号名')
   }
 
   try {
@@ -36,13 +34,10 @@ export default defineEventHandler(async (event) => {
     // 如果未提供邮箱，则进入第一步：检查账号并返回掩码邮箱
     if (!email) {
       if (!user) {
-        throw createError({ statusCode: 404, message: '找不到该账号名，请检查是否拼写错误' })
+        throw createApiError(404, 'AUTH_ACCOUNT_NAME_NOT_FOUND', '找不到该账号名，请检查是否拼写错误')
       }
       if (!user.email) {
-        throw createError({
-          statusCode: 400,
-          message: '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。'
-        })
+        throw createApiError(400, 'AUTH_NO_SECURITY_EMAIL', '该账号未绑定安全邮箱，无法通过此方式找回密码。请联系管理员。')
       }
 
       // 生成掩码邮箱 (例如: a***b@gmail.com)
@@ -125,9 +120,6 @@ export default defineEventHandler(async (event) => {
       throw error
     }
     console.error('重置密码请求失败:', error)
-    throw createError({
-      statusCode: 500,
-      message: '系统错误，请稍后重试'
-    })
+    throw createApiError(500, 'AUTH_SYSTEM_ERROR', '系统错误，请稍后重试')
   }
 })

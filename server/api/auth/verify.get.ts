@@ -1,15 +1,13 @@
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   try {
     const authUser = event.context.user
     if (!authUser) {
-      throw createError({
-        statusCode: 401,
-        message: '未提供认证令牌'
-      })
+      throw createApiError(401, 'AUTH_TOKEN_MISSING', '未提供认证令牌')
     }
 
     const userId = authUser.id
@@ -40,10 +38,7 @@ export default defineEventHandler(async (event) => {
     const dbUser = userResult || null
 
     if (!dbUser) {
-      throw createError({
-        statusCode: 401,
-        message: '用户不存在'
-      })
+      throw createApiError(401, 'USER_NOT_FOUND', '用户不存在')
     }
 
     // 构建返回的用户对象，只包含需要的字段

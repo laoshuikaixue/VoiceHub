@@ -2,6 +2,7 @@ import { verifyRegistrationResponse } from '@simplewebauthn/server'
 import { getWebAuthnChallenge, clearWebAuthnChallenge } from '~~/server/utils/webauthn-token'
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { db, userIdentities } from '~/drizzle/db'
+import { createApiError } from '~~/server/utils/apiError'
 
 const VALID_TRANSPORTS = ['ble', 'cable', 'hybrid', 'internal', 'nfc', 'smart-card', 'usb']
 
@@ -15,14 +16,14 @@ function sanitizeTransports(transports: unknown): string[] {
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   const body = await readBody(event)
   const challengeData = getWebAuthnChallenge(event)
 
   if (!challengeData || challengeData.userId !== user.id.toString()) {
-    throw createError({ statusCode: 400, message: 'Challenge 已失效或不匹配' })
+    throw createApiError(400, 'AUTH_CHALLENGE_INVALID', 'Challenge 已失效或不匹配')
   }
 
   // Challenge 只能使用一次，验证失败后也必须重新生成。
@@ -78,11 +79,13 @@ export default defineEventHandler(async (event) => {
 
       return { success: true }
     } else {
-      throw createError({ statusCode: 400, message: '验证失败' })
+      throw createApiError(400, 'AUTH_VERIFICATION_FAILED', '验证失败')
     }
   } catch (error) {
+    // 透传已携带错误码的业务错误，避免被重新包装后丢失 code 通道。
+    if (error && typeof error === 'object' && 'statusCode' in error) throw error
     console.error('WebAuthn 验证失败:', error)
     const message = error instanceof Error ? error.message : '验证失败'
-    throw createError({ statusCode: 400, message })
+    throw createApiError(400, 'AUTH_VERIFICATION_FAILED', message)
   }
 })

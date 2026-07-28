@@ -2,11 +2,12 @@ import otplib from 'otplib'
 const { authenticator } = otplib
 import QRCode from 'qrcode'
 import { db, userIdentities, eq, and } from '~/drizzle/db'
+import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   // 检查是否已开启2FA
@@ -15,7 +16,7 @@ export default defineEventHandler(async (event) => {
   })
 
   if (existing) {
-    throw createError({ statusCode: 400, message: '已开启双重认证' })
+    throw createApiError(400, 'USER_2FA_ALREADY_ENABLED', '已开启双重认证')
   }
 
   const secret = authenticator.generateSecret()

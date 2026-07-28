@@ -31,7 +31,7 @@
           v-if="errorCode"
           class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-2"
         >
-          <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest">错误代码</p>
+          <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{{ locale.errorCode }}</p>
           <code
             class="text-xs font-mono text-blue-500 font-bold bg-blue-500/5 px-2 py-1 rounded-lg"
           >
@@ -53,13 +53,13 @@
             class="flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-black rounded-xl transition-all active:scale-95"
           >
             <Home :size="18" />
-            返回首页
+            {{ locale.backHome }}
           </NuxtLink>
         </div>
 
         <!-- 底部提示 -->
         <p class="text-[10px] text-zinc-700 font-medium uppercase tracking-widest pt-4">
-          如果您认为这是一个错误，请联系系统管理员
+          {{ locale.contactAdmin }}
         </p>
       </div>
     </div>
@@ -69,8 +69,11 @@
 <script setup>
 import { computed } from 'vue'
 import { ShieldAlert, X, LogIn, Home } from '@lucide/vue'
+import { useLocale } from '~/utils/locale'
 
 const route = useRoute()
+const { pages } = useLocale()
+const locale = computed(() => pages.value?.authError || {})
 
 const errorCode = computed(() => {
   const code = Array.isArray(route.query.code) ? route.query.code[0] : route.query.code
@@ -80,14 +83,18 @@ const isAggregateLoginUnavailable = computed(
   () => errorCode.value === 'AGGREGATE_LOGIN_UNAVAILABLE'
 )
 const errorTitle = computed(() =>
-  isAggregateLoginUnavailable.value ? '当前登录方式暂不可用' : '身份验证失败'
+  isAggregateLoginUnavailable.value
+    ? locale.value.aggregateUnavailableTitle || '当前登录方式暂不可用'
+    : locale.value.title
 )
 const primaryActionLabel = computed(() =>
-  isAggregateLoginUnavailable.value ? '选择其他登录方式' : '重新尝试登录'
+  isAggregateLoginUnavailable.value
+    ? locale.value.aggregateUnavailableAction || '选择其他登录方式'
+    : locale.value.retryLogin
 )
 const errorMessage = computed(() => {
   const message = Array.isArray(route.query.message) ? route.query.message[0] : route.query.message
-  return typeof message === 'string' ? message : '在尝试使用第三方账号登录时发生未知错误，请重试'
+  return typeof message === 'string' && message ? message : locale.value.defaultMessage
 })
 
 definePageMeta({

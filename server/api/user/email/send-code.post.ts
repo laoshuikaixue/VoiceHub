@@ -6,6 +6,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { delStoreIfValue, hashStateCode, setStore } from '~~/server/utils/captchaStore'
 import { randomInt } from 'node:crypto'
+import { createApiError } from '~~/server/utils/apiError'
 
 function generateCode(): string {
   return randomInt(100000, 1000000).toString()
@@ -48,18 +49,18 @@ export async function sendEmailVerificationCode(
   }
   if (!sent) {
     await delStoreIfValue(stateKey, storedValue)
-    throw createError({ statusCode: 500, message: '验证码发送失败，请稍后重试' })
+    throw createApiError(500, 'USER_CODE_SEND_FAILED', '验证码发送失败，请稍后重试')
   }
 }
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
-    throw createError({ statusCode: 405, message: '方法不被允许' })
+    throw createApiError(405, 'HTTP_METHOD_NOT_ALLOWED', '方法不被允许')
   }
 
   const user = event.context.user
   if (!user) {
-    throw createError({ statusCode: 401, message: '未授权访问' })
+    throw createApiError(401, 'AUTH_UNAUTHORIZED_ACCESS', '未授权访问')
   }
 
   const body = await readBody(event)
@@ -67,14 +68,14 @@ export default defineEventHandler(async (event) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   if (!emailRaw || !emailRegex.test(emailRaw)) {
-    throw createError({ statusCode: 400, message: '请输入有效的邮箱地址' })
+    throw createApiError(400, 'USER_INVALID_EMAIL', '请输入有效的邮箱地址')
   }
 
   // 确认邮箱未被其他用户占用
   const existing = await db.select().from(users).where(eq(users.email, emailRaw)).limit(1)
   const existingUser = existing[0]
   if (existingUser && existingUser.id !== user.id) {
-    throw createError({ statusCode: 400, message: '该邮箱已被其他用户绑定' })
+    throw createApiError(400, 'USER_EMAIL_TAKEN', '该邮箱已被其他用户绑定')
   }
 
   // 写入/更新邮箱，标记未验证
