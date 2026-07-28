@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js'
-import { createHash, createHmac, randomBytes } from 'node:crypto'
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { createError } from 'h3'
 
 export interface OAuthState {
@@ -99,21 +99,51 @@ export const generateState = (
   return { state, csrf }
 }
 
-// 聚合登录服务会把 state 截断为 100 字符，因此这里只传递固定长度的一次性签名随机值。
+// 聚合登录服务会把 state 截断为 100 字符，因此 Broker 只接收携带源站的可验签短路由信息。
 // 完整状态保存在 HttpOnly Cookie 中，回调时仍会校验 Origin、CSRF 和过期时间。
-export const generateCompactOAuthState = (secretKey?: string): string => {
+export const generateCompactOAuthState = (targetOrigin: string, secretKey?: string): string => {
   if (!secretKey) {
     throw createError({ statusCode: 500, message: 'OAuth State 密钥未配置' })
   }
 
-  const nonce = randomBytes(16).toString('base64url')
-  const payload = `v2.${nonce}`
+  const target = new URL(targetOrigin).origin
+  const encodedTarget = Buffer.from(target, 'utf8').toString('base64url')
+  const nonce = randomBytes(8).toString('base64url')
+  const payload = `v1.${encodedTarget}.${nonce}`
   const signature = createHmac('sha256', secretKey)
     .update(payload)
     .digest()
-    .subarray(0, 16)
+    .subarray(0, 12)
     .toString('base64url')
-  return `${payload}.${signature}`
+  const state = `${payload}.${signature}`
+
+  if (state.length > 100) {
+    throw createError({
+      statusCode: 400,
+      message: '当前站点地址过长，无法兼容聚合登录的 state 长度限制'
+    })
+  }
+
+  return state
+}
+
+// 校验紧凑 state 的 HMAC 签名，阻止伪造的 state 进入后续流程。
+export const verifyCompactOAuthState = (state: string, secretKey?: string): boolean => {
+  if (!secretKey) {
+    throw createError({ statusCode: 500, message: 'OAuth State 密钥未配置' })
+  }
+
+  const lastDot = state.lastIndexOf('.')
+  if (lastDot <= 0 || !state.startsWith('v1.')) return false
+
+  try {
+    const payload = state.slice(0, lastDot)
+    const expected = createHmac('sha256', secretKey).update(payload).digest().subarray(0, 12)
+    const actual = Buffer.from(state.slice(lastDot + 1), 'base64url')
+    return actual.length === expected.length && timingSafeEqual(actual, expected)
+  } catch {
+    return false
+  }
 }
 
 // 解析 OAuth 状态参数

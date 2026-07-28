@@ -702,7 +702,7 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
   - GitHub：Client ID / Secret
   - Casdoor：Server URL / Client ID / Secret / Organization Name
   - Google：Client ID / Secret
-  - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝、微博、百度、抖音、华为、小米、Gitee、Gitea、哔哩哔哩、快手
+  - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝等平台
   - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
 2. **OAuth 提供商配置**：

@@ -16,8 +16,9 @@ export function getSafeRequestProtocol(event: H3Event): 'http' | 'https' {
   const requestProto = getRequestURL(event).protocol.replace(/:$/, '').toLowerCase()
 
   const normalizedForwardedProto = forwardedProto.toLowerCase().replace(/:$/, '')
+  // 非法的转发协议值不可信，忽略并回退到请求自身协议，避免误伤全局认证等调用方
   if (normalizedForwardedProto && !['http', 'https'].includes(normalizedForwardedProto)) {
-    throw createError({ statusCode: 400, message: '请求协议无效' })
+    return requestProto === 'https' ? 'https' : 'http'
   }
 
   return (normalizedForwardedProto || requestProto) === 'https' ? 'https' : 'http'
@@ -32,6 +33,14 @@ export function isSecureRequest(event: H3Event): boolean {
   return getSafeRequestProtocol(event) === 'https'
 }
 
+// 仅在显式声明位于受信反向代理之后时，才采纳可被客户端伪造的 X-Forwarded-Host
+const isTrustProxyHeadersEnabled = (): boolean =>
+  ['1', 'true', 'yes'].includes(process.env.TRUST_PROXY_HEADERS?.trim().toLowerCase() || '')
+
+// 不带方括号的裸 IPv6 地址需补齐方括号才能通过 URL 解析
+const normalizeHostForUrl = (host: string): string =>
+  host.includes(':') && !host.startsWith('[') && /^[0-9a-f:]+$/i.test(host) ? `[${host}]` : host
+
 /**
  * 获取请求的 Origin (包含协议和主机名)
  * @param event H3Event
@@ -40,11 +49,13 @@ export function isSecureRequest(event: H3Event): boolean {
 export function getRequestOrigin(event: H3Event): string {
   const protocol = getSafeRequestProtocol(event)
   const headers = getRequestHeaders(event)
-  const forwardedHost = getFirstForwardedValue(headers['x-forwarded-host']?.toString())
+  const forwardedHost = isTrustProxyHeadersEnabled()
+    ? getFirstForwardedValue(headers['x-forwarded-host']?.toString())
+    : ''
   const host = forwardedHost || headers['host']?.toString() || getRequestURL(event).host
 
   try {
-    const requestUrl = new URL(`${protocol}://${host}`)
+    const requestUrl = new URL(`${protocol}://${normalizeHostForUrl(host)}`)
     if (
       requestUrl.origin === 'null' ||
       requestUrl.username ||
