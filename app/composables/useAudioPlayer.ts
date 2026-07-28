@@ -1,15 +1,19 @@
 import { computed, readonly, ref } from 'vue'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { useMusicSources } from '~/composables/useMusicSources'
 
 export interface PlayableSong {
   id: number | string
   title: string
   artist: string
+  album?: string | null
+  duration?: number | null
   musicUrl?: string | null
   cover?: string | null
   musicPlatform?: string
   musicId?: string
   playUrl?: string | null
+  sourceInfo?: Record<string, any>
 }
 
 interface PlaylistItem {
@@ -26,6 +30,9 @@ const currentPlaylist = ref<PlaylistItem[]>([])
 const currentPlaylistIndex = ref(-1)
 const currentPosition = ref(0) // 当前播放位置（秒）
 const duration = ref(0) // 歌曲总时长（秒）
+
+// 预载中的封面图引用，防止加载完成前被回收
+let pendingCoverImage: HTMLImageElement | null = null
 
 export function useAudioPlayer() {
   // 播放歌曲
@@ -279,6 +286,38 @@ export function useAudioPlayer() {
     return currentPlaylist.value.length > 0 && currentPlaylistIndex.value > 0
   })
 
+  // 预载下一首歌曲的封面与歌词（切歌时直接命中缓存，减少等待）
+  const preloadNextSongAssets = (song: PlayableSong) => {
+    if (typeof window === 'undefined') return
+
+    // 封面预载
+    if (song.cover) {
+      const img = new Image()
+      const clear = () => {
+        if (pendingCoverImage === img) pendingCoverImage = null
+      }
+      img.onload = clear
+      img.onerror = clear
+      img.src = song.cover
+      pendingCoverImage = img
+    }
+
+    // 歌词预载：静默请求，参数与正式取词路径一致以命中 getLyrics 的请求缓存
+    if (song.musicPlatform && song.musicId) {
+      try {
+        const { getLyrics } = useMusicSources()
+        getLyrics(song.musicPlatform as 'netease' | 'tencent', song.musicId, {
+          title: song.title,
+          artist: song.artist,
+          album: song.album || undefined,
+          duration: song.duration || undefined
+        }).catch(() => {})
+      } catch (error) {
+        console.warn('[AudioPlayer] 歌词预载失败:', error)
+      }
+    }
+  }
+
   // 提前预加载下一首歌曲的URL
   let isPrefetching = false
   const prefetchNextSong = async () => {
@@ -286,8 +325,13 @@ export function useAudioPlayer() {
     
     const nextIndex = currentPlaylistIndex.value + 1
     const nextSong = currentPlaylist.value[nextIndex]?.song
-    
-    if (!nextSong || nextSong.musicUrl || !nextSong.musicPlatform || !nextSong.musicId) {
+
+    if (!nextSong) return false
+
+    // 封面与歌词预载不依赖播放 URL，先行触发
+    preloadNextSongAssets(nextSong)
+
+    if (nextSong.musicUrl || !nextSong.musicPlatform || !nextSong.musicId) {
       return false
     }
 
