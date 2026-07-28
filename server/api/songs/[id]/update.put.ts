@@ -129,16 +129,17 @@ export default defineEventHandler(async (event) => {
 
     const currentRequesterId = updateData.requesterId || existingSong.requesterId
 
-    // 如果指定了 replayRequestId，则更新对应重播申请的备注可见性
+    // 如果指定了 replayRequestId，则更新对应重播申请的备注可见性，且不再改动歌曲本身的备注可见性
     if ('replayRequestId' in body) {
       const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
       if (replayRequestId) {
         await db
           .update(songReplayRequests)
-          .set({ submissionNotePublic: body.submissionNotePublic === true })
+          .set({ submissionNotePublic: body.submissionNotePublic === true, updatedAt: new Date() })
           .where(
             and(eq(songReplayRequests.id, replayRequestId), eq(songReplayRequests.songId, songId))
           )
+        delete updateData.submissionNotePublic
       }
     }
 

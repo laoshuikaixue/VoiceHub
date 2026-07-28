@@ -664,7 +664,7 @@
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
                         class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
                         :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(schedule.song)"
+                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
                         <MessageSquare :size="12" />
                       </button>
@@ -672,7 +672,7 @@
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
                         class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
                         :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(schedule.song)"
+                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
                         {{
                           schedule.song.submissionNote.length > 25
@@ -1243,12 +1243,13 @@ const closeReplayModal = () => {
   replayModalSongId.value = null
 }
 
-const openSubmissionRemark = (song) => {
+const openSubmissionRemark = (song, scheduleReplayRequestId = null) => {
   if (!song?.submissionNote) return
   submissionRemarkDialog.value = {
     show: true,
     songId: song.id,
-    replayRequestId: song.replayRequestId || null,
+    // 排期卡片的 replayRequestId 在排期顶层而非 song 子对象，优先使用显式传入的绑定
+    replayRequestId: scheduleReplayRequestId || song.replayRequestId || null,
     title: song.title,
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
