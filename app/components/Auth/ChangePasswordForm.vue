@@ -31,7 +31,9 @@
           <button
             class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
             type="button"
-            :aria-label="showCurrentPassword ? '隐藏当前密码' : '显示当前密码'"
+            :aria-label="
+              showCurrentPassword ? locale.hideCurrentPassword : locale.showCurrentPassword
+            "
             @click="showCurrentPassword = !showCurrentPassword"
           >
             <Eye v-if="!showCurrentPassword" :size="18" />
@@ -70,7 +72,7 @@
           <button
             class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
             type="button"
-            :aria-label="showNewPassword ? '隐藏新密码' : '显示新密码'"
+            :aria-label="showNewPassword ? locale.hideNewPassword : locale.showNewPassword"
             @click="showNewPassword = !showNewPassword"
           >
             <Eye v-if="!showNewPassword" :size="18" />
@@ -131,7 +133,9 @@
           <button
             class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
             type="button"
-            :aria-label="showConfirmPassword ? '隐藏确认密码' : '显示确认密码'"
+            :aria-label="
+              showConfirmPassword ? locale.hideConfirmPassword : locale.showConfirmPassword
+            "
             @click="showConfirmPassword = !showConfirmPassword"
           >
             <Eye v-if="!showConfirmPassword" :size="18" />

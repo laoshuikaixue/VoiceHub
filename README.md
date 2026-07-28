@@ -890,12 +890,6 @@ VoiceHub/
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
-│   │       ├── *.sql           # 既有 Drizzle 迁移脚本
-│   │       ├── 20260719*.sql   # 首次登录与密码安全迁移（4 个）
-│   │       ├── 20260720*.sql   # 密码状态兼容与最终校准迁移（3 个）
-│   │       └── meta/           # Drizzle 迁移快照
-│   │           ├── 20260720100252_snapshot.json # 密码安全结构快照
-│   │           └── _journal.json # 迁移执行顺序索引
 │   ├── layouts/               # 布局组件
 │   │   └── default.vue         # 默认布局模板
 │   ├── middleware/            # 中间件
@@ -1241,6 +1235,7 @@ VoiceHub/
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── auth.ts         # 认证工具函数

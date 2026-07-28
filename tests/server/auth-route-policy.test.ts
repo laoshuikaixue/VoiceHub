@@ -46,13 +46,14 @@ test('公共 API 只放行已注册的 HTTP 方法', () => {
   assert.equal(isPublicApiPath('/api/auth/login', 'GET'), false)
   assert.equal(isPublicApiPath('/api/site-config', 'GET'), true)
   assert.equal(isPublicApiPath('/api/site-config', 'POST'), false)
-  assert.equal(isPublicApiPath('/api/music/state', 'POST'), false)
+  assert.equal(isPublicApiPath('/api/music/state', 'POST'), true)
+  assert.equal(isPublicApiPath('/api/music/state', 'GET'), false)
 })
 
 test('强制改密门控放行公共 API，但阻止业务写入和 OAuth provider 路由', () => {
   assert.equal(shouldBlockDuringPasswordChange('/api/site-config', 'GET', true), false)
   assert.equal(shouldBlockDuringPasswordChange('/api/sys/time', 'GET', true), false)
-  assert.equal(shouldBlockDuringPasswordChange('/api/music/state', 'POST', true), true)
+  assert.equal(shouldBlockDuringPasswordChange('/api/music/state', 'POST', true), false)
   assert.equal(shouldBlockDuringPasswordChange('/api/auth/github', 'GET', true), true)
   assert.equal(shouldBlockDuringPasswordChange('/api/auth/github/callback', 'GET', true), true)
   assert.equal(shouldBlockDuringPasswordChange('/api/admin/users', 'GET', true), true)

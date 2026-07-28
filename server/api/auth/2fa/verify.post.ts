@@ -75,7 +75,6 @@ export default defineEventHandler(async (event) => {
     throw createApiError(403, 'AUTH_ACCOUNT_DISABLED_OR_RESTRICTED', '账号已被禁用或限制访问')
   }
 
-  let verified = false
   const clientIp = getClientIP(event)
   const totpUserFailureKey = `2fa_totp_user:${targetUserId}`
   const totpIpFailureKey = `2fa_totp_ip:${clientIp}`
@@ -102,9 +101,9 @@ export default defineEventHandler(async (event) => {
       )
     }
 
-    verified = authenticator.check(code, identity.providerUserId)
+    const totpValid = authenticator.check(code, identity.providerUserId)
 
-    if (!verified) {
+    if (!totpValid) {
       throw createApiError(400, 'AUTH_TOTP_CODE_INVALID', '动态验证码错误')
     }
 
@@ -144,7 +143,6 @@ export default defineEventHandler(async (event) => {
         throw createApiError(400, 'AUTH_CODE_ALREADY_USED', '验证码已使用，请重新获取')
       }
       await delStore(attemptKey)
-      verified = true
     } else {
       if (attemptCount >= 5) {
         await delStoreIfValue(stateKey, storedRaw!)
@@ -283,6 +281,8 @@ export default defineEventHandler(async (event) => {
       forcePasswordChange: user.forcePasswordChange,
       passwordChangedAt: user.passwordChangedAt,
       requirePasswordChange,
+      // 兼容旧客户端字段名
+      needsPasswordChange: requirePasswordChange,
       ...passwordSetupState,
       has2FA: true
     }

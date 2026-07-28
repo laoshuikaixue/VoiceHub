@@ -4,6 +4,8 @@ import {
   getPasswordAuditContext,
   recordPasswordAudit
 } from '~~/server/services/passwordSecurityService'
+import { createApiError } from '~~/server/utils/apiError'
+import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 export default defineEventHandler(async (event) => {
   // 检查认证和权限
@@ -27,13 +29,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody<Record<string, unknown> | null>(event)
-  const newPassword = typeof body?.newPassword === 'string' ? body.newPassword : ''
+  const newPassword = typeof body?.newPassword === 'string' ? body.newPassword.trim() : ''
 
-  if (!newPassword) {
-    throw createError({
-      statusCode: 400,
-      message: '新密码不能为空'
-    })
+  // 管理员重置为临时密码且 forceReset 强制用户登录后修改，仅做基础校验不要求完整复杂度
+  const violation = getAdminPasswordViolation(newPassword)
+  if (violation) {
+    throw createApiError(400, violation.code, violation.message)
   }
 
   try {

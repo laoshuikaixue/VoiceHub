@@ -85,7 +85,7 @@
             </NuxtLink>
             <button v-else class="back-link logout-link" type="button" @click="auth.logout()">
               <Icon class="shrink-0" name="logout" :size="16" aria-hidden="true" />
-              退出登录
+              {{ locale.logout }}
             </button>
           </div>
         </div>

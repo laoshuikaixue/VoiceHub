@@ -36,6 +36,7 @@ export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
   { path: '/api/system/location', methods: GET_METHODS },
   { path: '/api/auth/webauthn/login', methods: ['POST'] },
   { path: '/api/music/resolve-url', methods: ['POST'] },
+  { path: '/api/music/state', methods: ['POST'] },
   { path: '/api/music/websocket', methods: GET_METHODS },
   { path: '/api/sys/time', methods: GET_METHODS }
 ]

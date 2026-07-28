@@ -26,13 +26,22 @@ export default defineNuxtPlugin({
 
       if (!requirePasswordChange) return false
 
-      await refreshPasswordState()
+      // 以服务端刷新后的状态为准，仅刷新失败时回退信任 403 信号，避免过期信号把已改密用户锁在改密页
+      let refreshed = true
+      try {
+        await refreshPasswordState()
+      } catch {
+        refreshed = false
+      }
 
-      if (auth.user.value && auth.user.value.requirePasswordChange !== true) {
+      if (!refreshed && auth.user.value && auth.user.value.requirePasswordChange !== true) {
         auth.user.value.requirePasswordChange = true
       }
 
-      if (window.location.pathname !== '/change-password') {
+      if (
+        auth.user.value?.requirePasswordChange === true &&
+        window.location.pathname !== '/change-password'
+      ) {
         await router.replace('/change-password')
       }
       return true

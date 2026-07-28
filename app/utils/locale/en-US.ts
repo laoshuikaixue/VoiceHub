@@ -68,6 +68,9 @@ export const siteConfig = {
   turnstileSecretKeyDesc: 'When Turnstile is enabled, all users must pass verification on each login.',
   showBlacklistKeywords: 'Show Exact Blacklist Keywords',
   showBlacklistKeywordsDesc: 'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
+  forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
+  forcePasswordChangeOnFirstLoginDesc:
+    'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc: 'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
   telemetryEnabled: 'Enable Error Tracking and Telemetry',
@@ -179,7 +182,8 @@ export const changePassword = {
   changePasswordTitle: 'Change Password',
   setNewPasswordDesc: 'Create a secure password',
   updatePasswordDesc: 'Update your login password',
-  backToHome: 'Back to Home'
+  backToHome: 'Back to Home',
+  logout: 'Log Out'
 } as const
 
 export const common = {
@@ -782,7 +786,13 @@ export const pages = {
       newPasswordTooShort: 'New password must be at least 8 characters',
       initialSuccess: 'Password set successfully. Redirecting...',
       changeSuccess: 'Password changed successfully. Please log in again.',
-      failed: 'Operation failed. Please try again.'
+      failed: 'Operation failed. Please try again.',
+      showCurrentPassword: 'Show current password',
+      hideCurrentPassword: 'Hide current password',
+      showNewPassword: 'Show new password',
+      hideNewPassword: 'Hide new password',
+      showConfirmPassword: 'Show confirm password',
+      hideConfirmPassword: 'Hide confirm password'
     },
     captchaInput: {
       label: 'Verification Code',

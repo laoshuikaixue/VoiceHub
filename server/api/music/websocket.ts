@@ -130,23 +130,23 @@ export default defineEventHandler(async (event) => {
         .limit(1)
       const user = userResult[0]
 
-      if (!user || user.status !== 'active' || (decoded.tokenVersion ?? 0) !== user.tokenVersion) {
-        throw createApiError(401, 'AUTH_SESSION_EXPIRED', '登录状态无效，请重新登录')
+      // 失效会话降级为匿名收听，保持公共播放页/信息屏可用；仅对有效登录态执行强制改密门控。
+      if (user && user.status === 'active' && (decoded.tokenVersion ?? 0) === user.tokenVersion) {
+        if (await resolveRequirePasswordChange(user)) {
+          throw createApiError(403, 'AUTH_PASSWORD_CHANGE_REQUIRED', '请先完成密码修改', {
+            requirePasswordChange: true
+          })
+        }
+        userId = user.id
+      } else {
+        console.warn('音乐 SSE 连接会话已失效，降级为匿名连接')
       }
-
-      if (await resolveRequirePasswordChange(user)) {
-        throw createApiError(403, 'AUTH_PASSWORD_CHANGE_REQUIRED', '请先完成密码修改', {
-          requirePasswordChange: true
-        })
-      }
-
-      userId = user.id
     } catch (error) {
       if (error && typeof error === 'object' && 'statusCode' in error) {
         throw error
       }
-      console.warn('音乐 SSE 连接令牌无效:', error)
-      throw createApiError(401, 'AUTH_SESSION_EXPIRED', '登录状态无效，请重新登录')
+      // 令牌无法解码时同样降级匿名，避免残留失效 Cookie 导致重连循环持续报错。
+      console.warn('音乐 SSE 连接令牌无效，降级为匿名连接:', error)
     }
   }
 

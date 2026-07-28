@@ -11,7 +11,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
-    "test": "node --experimental-strip-types --test tests/server/auth-route-policy.test.ts",
+    "test": "node --experimental-strip-types --test \"tests/server/*.test.ts\"",
     "db:migrate": "pnpm exec drizzle-kit migrate",
     "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
     "db:push": "pnpm exec drizzle-kit push --force",
@@ -117,6 +117,7 @@
     "@nuxt/kit": "4.5.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^9.39.5",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3"
   }
 }

@@ -1,6 +1,6 @@
 {
-  "id": "2ef54088-eabe-451f-ae85-9eb1cfc33372",
-  "prevId": "a902f1ce-466d-4a48-9343-71b93dacbdf4",
+  "id": "3217bc20-a7f0-46ad-9e45-3757b77c7b79",
+  "prevId": "f5b1ddc0-fff4-4b0f-bb3c-0f8b05a3ecb7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1073,6 +1073,12 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "replay_request_id": {
+          "name": "replay_request_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -1383,9 +1389,50 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'PENDING'"
+        },
+        "preferred_play_time_id": {
+          "name": "preferred_play_time_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submission_note": {
+          "name": "submission_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submission_note_public": {
+          "name": "submission_note_public",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {
+        "song_replay_requests_pending_song_user_unique": {
+          "name": "song_replay_requests_pending_song_user_unique",
+          "columns": [
+            {
+              "expression": "song_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"song_replay_requests\".\"status\" = 'PENDING'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "song_replay_requests_user_status_song_idx": {
           "name": "song_replay_requests_user_status_song_idx",
           "columns": [
@@ -1416,16 +1463,7 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "song_replay_requests_song_id_user_id_unique": {
-          "name": "song_replay_requests_song_id_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "song_id",
-            "user_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

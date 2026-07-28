@@ -77,6 +77,9 @@ export const siteConfig = {
   turnstileSecretKeyDesc: '开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。',
   showBlacklistKeywords: '显示黑名单具体关键词',
   showBlacklistKeywordsDesc: '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
+  forcePasswordChangeOnFirstLogin: '首次登录强制修改密码',
+  forcePasswordChangeOnFirstLoginDesc:
+    '开启后，尚未设置过密码的新用户首次登录时必须设置新密码，完成前不能访问其他功能。',
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc: '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
   telemetryEnabled: '启用错误追踪与遥测',
@@ -190,7 +193,8 @@ export const changePassword = {
   changePasswordTitle: '修改密码',
   setNewPasswordDesc: '请设置一个安全的密码',
   updatePasswordDesc: '更新您的登录密码',
-  backToHome: '返回主页'
+  backToHome: '返回主页',
+  logout: '退出登录'
 } as const
 
 export const common = {
@@ -793,7 +797,13 @@ export const pages = {
       newPasswordTooShort: '新密码长度至少为8位',
       initialSuccess: '密码设置成功！正在跳转...',
       changeSuccess: '密码修改成功！请重新登录',
-      failed: '操作失败，请重试'
+      failed: '操作失败，请重试',
+      showCurrentPassword: '显示当前密码',
+      hideCurrentPassword: '隐藏当前密码',
+      showNewPassword: '显示新密码',
+      hideNewPassword: '隐藏新密码',
+      showConfirmPassword: '显示确认密码',
+      hideConfirmPassword: '隐藏确认密码'
     },
     captchaInput: {
       label: '验证码',

@@ -21,7 +21,7 @@ import { getPasswordSetupState } from '~~/server/utils/initial-password-policy'
 
 // 导入验证码校验函数
 import { verifyAndConsumeCaptcha } from '~~/server/utils/captcha'
-import { type SystemSettings } from '~/drizzle/schema'
+import type { SystemSettings } from '~/drizzle/schema'
 import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
@@ -290,6 +290,8 @@ export default defineEventHandler(async (event) => {
         forcePasswordChange: user.forcePasswordChange,
         passwordChangedAt: user.passwordChangedAt,
         requirePasswordChange,
+        // 兼容旧客户端字段名
+        needsPasswordChange: requirePasswordChange,
         ...passwordSetupState
       }
     }

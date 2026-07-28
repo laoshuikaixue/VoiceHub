@@ -8,7 +8,7 @@ FROM --platform=$BUILDPLATFORM node:24-alpine AS builder
 WORKDIR /app
 
 # 依赖安装阶段只复制 postinstall 所需脚本，避免其他脚本变更使依赖缓存失效
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY scripts/postinstall.js ./scripts/postinstall.js
 
 # 安装所有依赖
@@ -49,7 +49,7 @@ USER root
 WORKDIR /app
 
 # 运行依赖必须在目标平台安装，不能从构建平台复制 node_modules。
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY scripts/postinstall.js ./scripts/postinstall.js
 RUN set -eux; \
     export CI=true; \

@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, uniqueIndex, bigint, foreignKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, text, boolean, integer, uuid, varchar, unique, uniqueIndex, index, bigint, foreignKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const blacklistType = pgEnum("BlacklistType", ['SONG', 'KEYWORD'])
@@ -176,6 +176,28 @@ export const user = pgTable("User", {
 	email: text(),
 	emailVerified: boolean().default(false),
 });
+
+export const passwordAuditLog = pgTable("PasswordAuditLog", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	actorId: integer(),
+	action: text().notNull(),
+	success: boolean().notNull(),
+	ipAddress: text(),
+	userAgent: text(),
+	failureReason: text(),
+	createdAt: timestamp({ withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("PasswordAuditLog_user_created_idx").on(table.userId, table.createdAt),
+]);
+
+export const passwordRateLimit = pgTable("PasswordRateLimit", {
+	key: text().primaryKey().notNull(),
+	count: integer().notNull(),
+	resetAt: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	index("PasswordRateLimit_reset_idx").on(table.resetAt),
+]);
 
 export const emailTemplate = pgTable("EmailTemplate", {
 	id: serial().primaryKey().notNull(),

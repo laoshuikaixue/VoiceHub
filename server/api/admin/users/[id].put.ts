@@ -7,6 +7,8 @@ import {
   PASSWORD_AUDIT_ACTIONS,
   getPasswordAuditContext
 } from '~~/server/services/passwordSecurityService'
+import { createApiError } from '~~/server/utils/apiError'
+import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -164,8 +166,10 @@ export default defineEventHandler(async (event) => {
     // 如果提供了密码，则使用统一服务更新密码
     if (password) {
       const trimmedPassword = String(password).trim()
-      if (!trimmedPassword) {
-        throw createError({ statusCode: 400, message: '新密码不能为空' })
+      // 管理员重置为临时密码且 forceReset 强制用户登录后修改，仅做基础校验不要求完整复杂度
+      const violation = getAdminPasswordViolation(trimmedPassword)
+      if (violation) {
+        throw createApiError(400, violation.code, violation.message)
       }
 
       await updateUserPassword(targetUser.id, trimmedPassword, {

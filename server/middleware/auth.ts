@@ -88,12 +88,25 @@ export default defineEventHandler(async (event) => {
     )
   }
 
+  // 公共接口与 OAuth 启动/回调路由上，失效登录态统一降级为匿名访问，避免残留 Cookie 阻断公共功能。
+  const degradeToAnonymous = (clearCookie: boolean) => {
+    if (!isPublicApi && !isOAuthProviderRoute) return false
+    if (clearCookie) {
+      clearAuthCookie(event)
+    }
+    delete event.context.user
+    return true
+  }
+
   try {
     // 验证token并自动续期
     const { valid, payload, newToken } = JWTEnhanced.verifyAndRefresh(token)
 
     if (!valid || !payload) {
-      throw new Error('Token无效')
+      // 打标令牌失效错误，与数据库等基础设施异常区分处理
+      const invalidTokenError = new Error('Token无效') as Error & { invalidToken?: boolean }
+      invalidTokenError.invalidToken = true
+      throw invalidTokenError
     }
 
     // 如果生成了新token，更新cookie
@@ -133,6 +146,7 @@ export default defineEventHandler(async (event) => {
 
     // 用户不存在或状态异常时token无效
     if (!user || user.status !== 'active') {
+      if (degradeToAnonymous(true)) return
       clearAuthCookie(event)
 
       const errorMessage = !user
@@ -154,6 +168,7 @@ export default defineEventHandler(async (event) => {
 
     // 用户级版本号可以可靠撤销同一秒内签发的旧令牌。
     if ((decoded.tokenVersion ?? 0) !== user.tokenVersion) {
+      if (degradeToAnonymous(true)) return
       clearAuthCookie(event)
 
       return sendError(
@@ -165,10 +180,11 @@ export default defineEventHandler(async (event) => {
       )
     }
 
-    // 兼容迁移前签发的令牌，继续检查密码修改时间。
-    if (user.passwordChangedAt && decoded.iat) {
+    // 仅兼容迁移前签发的无版本号令牌；新体系令牌由 tokenVersion 撤销，避免 NTP 校准时钟与 iat 本机时钟偏差误杀。
+    if (decoded.tokenVersion === undefined && user.passwordChangedAt && decoded.iat) {
       const passwordChangedTime = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000)
       if (decoded.iat < passwordChangedTime) {
+        if (degradeToAnonymous(true)) return
         clearAuthCookie(event)
 
         return sendError(
@@ -190,6 +206,8 @@ export default defineEventHandler(async (event) => {
       console.error('[Auth] 读取强制改密策略失败，按放行策略降级:', error)
     }
     if (isUserBlocked(user.id)) {
+      // 风控期为临时限制，不清除 Cookie，公共接口降级匿名保持可访问。
+      if (degradeToAnonymous(false)) return
       delete event.context.user
       const remaining = getUserBlockRemainingTime(user.id)
       return sendError(
@@ -243,9 +261,24 @@ export default defineEventHandler(async (event) => {
       )
     }
   } catch (error: any) {
-    // 携带失效登录态访问公共接口时仍按匿名请求处理，避免破坏公共功能。
-    if (isPublicApi) {
-      delete event.context.user
+    // 仅令牌校验失败才视为登录态失效；数据库瞬断等异常不得误清合法会话 Cookie。
+    if (error?.invalidToken !== true) {
+      console.error('[Auth] 认证中间件处理异常:', error)
+      // 公共接口保留 Cookie 降级匿名，待基础设施恢复后自愈；受保护接口返回 503。
+      if (degradeToAnonymous(false)) {
+        return
+      }
+      return sendError(
+        event,
+        createError({
+          statusCode: 503,
+          message: '服务暂时不可用，请稍后重试'
+        })
+      )
+    }
+
+    // 携带失效登录态访问公共接口或 OAuth 登录入口时，清理 Cookie 并按匿名请求处理，保证可自愈。
+    if (degradeToAnonymous(true)) {
       return
     }
 

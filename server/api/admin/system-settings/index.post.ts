@@ -305,6 +305,16 @@ export default defineEventHandler(async (event) => {
       updateData.forceBlockAllRequests = body.forceBlockAllRequests
     }
 
+    if (body.forcePasswordChangeOnFirstLogin !== undefined) {
+      if (typeof body.forcePasswordChangeOnFirstLogin !== 'boolean') {
+        throw createError({
+          statusCode: 400,
+          message: 'forcePasswordChangeOnFirstLogin 必须是布尔值'
+        })
+      }
+      updateData.forcePasswordChangeOnFirstLogin = body.forcePasswordChangeOnFirstLogin
+    }
+
     // SMTP配置字段
     if (body.smtpEnabled !== undefined) {
       if (typeof body.smtpEnabled !== 'boolean') {

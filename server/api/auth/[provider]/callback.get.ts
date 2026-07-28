@@ -159,7 +159,7 @@ export default defineEventHandler(async (event) => {
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
   // 2. 使用 Code 换取 Token
-  let accessToken = ''
+  let accessToken: string
   try {
     accessToken = await strategy.exchangeToken(code, redirectUri, providerConfig)
   } catch (e: any) {
@@ -262,7 +262,8 @@ async function handleUserLoginOrBind(
 
         if (
           !currentUserRecord ||
-          !JWTEnhanced.hasCurrentTokenVersion(currentUser, currentUserRecord.tokenVersion)
+          // 兼容迁移前签发的无版本号令牌，按版本 0 参与比对，与全局认证中间件语义一致
+          (currentUser.tokenVersion ?? 0) !== currentUserRecord.tokenVersion
         ) {
           return 'invalid-session'
         }

@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { passwordAuditLogs, users } from '~/drizzle/schema'
-import { and, eq } from 'drizzle-orm'
-import { sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { createApiError } from '~~/server/utils/apiError'
 
@@ -63,8 +62,13 @@ export async function updateUserPassword(
       throw createApiError(404, 'USER_NOT_FOUND', '用户不存在')
     }
 
-    if (options.auditContext) {
-      await tx.insert(passwordAuditLogs).values({
+    return updatedUser
+  })
+
+  // 3. 审计日志在事务外写入，失败不影响密码修改主流程
+  if (options.auditContext) {
+    try {
+      await db.insert(passwordAuditLogs).values({
         userId,
         actorId: options.auditContext.actorId ?? null,
         action: options.auditContext.action,
@@ -73,10 +77,10 @@ export async function updateUserPassword(
         userAgent: options.auditContext.userAgent,
         failureReason: null
       })
+    } catch (error) {
+      console.error('[PasswordAudit] 写入密码审计日志失败:', error)
     }
-
-    return updatedUser
-  })
+  }
 
   return {
     passwordChangedAt: updated.passwordChangedAt || passwordChangedAt,
