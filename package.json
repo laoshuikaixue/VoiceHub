@@ -11,7 +11,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "start": "node .output/server/index.mjs",
-    "test": "node --experimental-strip-types --test tests/server/auth-route-policy.test.ts",
+    "test": "node --experimental-strip-types --test \"tests/server/*.test.ts\"",
     "db:migrate": "pnpm exec drizzle-kit migrate",
     "db:generate": "pnpm exec drizzle-kit generate --name=auto-migration",
     "db:push": "pnpm exec drizzle-kit push --force",
@@ -38,7 +38,7 @@
     "@applemusic-like-lyrics/lyric": "^0.4.1",
     "@applemusic-like-lyrics/vue": "^0.5.2",
     "@breezystack/lamejs": "^1.2.7",
-    "@lucide/vue": "^1.26.0",
+    "@lucide/vue": "^1.27.0",
     "@neteasecloudmusicapienhanced/api": "^4.38.0",
     "@netlify/functions": "^2.8.2",
     "@nuxt/kit": "4.5.0",
@@ -52,7 +52,7 @@
     "@pixi/sprite": "^7.4.3",
     "@sansenjian/qq-music-api": "2.4.0",
     "@sentry/node": "^10.68.0",
-    "@sentry/vue": "^10.67.0",
+    "@sentry/vue": "^10.68.0",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.2",
     "@types/bcryptjs": "^2.4.6",
@@ -76,6 +76,7 @@
     "drizzle-orm": "^0.45.2",
     "formidable": "^3.5.4",
     "gl-matrix": "4.0.0-beta.2",
+    "h3": "1.15.11",
     "html-to-image": "^1.11.13",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
@@ -84,7 +85,7 @@
     "marked": "^18.0.7",
     "multer": "^2.2.0",
     "nodemailer": "^8.0.11",
-    "nuxt": "^4.5.0",
+    "nuxt": "^4.5.1",
     "otplib": "^12.0.1",
     "postgres": "^3.4.9",
     "prompts": "^2.4.2",
@@ -116,6 +117,7 @@
     "@nuxt/kit": "4.5.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^9.39.5",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3"
   }
 }

@@ -246,6 +246,13 @@
       "when": 1785196801000,
       "tag": "20260727000100_replay_request_seamless",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1785239348895,
+      "tag": "20260728114908_add_password_security",
+      "breakpoints": true
     }
   ]
 }

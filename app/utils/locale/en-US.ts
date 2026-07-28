@@ -68,6 +68,9 @@ export const siteConfig = {
   turnstileSecretKeyDesc: 'When Turnstile is enabled, all users must pass verification on each login.',
   showBlacklistKeywords: 'Show Exact Blacklist Keywords',
   showBlacklistKeywordsDesc: 'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
+  forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
+  forcePasswordChangeOnFirstLoginDesc:
+    'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc: 'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
   telemetryEnabled: 'Enable Error Tracking and Telemetry',
@@ -179,7 +182,8 @@ export const changePassword = {
   changePasswordTitle: 'Change Password',
   setNewPasswordDesc: 'Create a secure password',
   updatePasswordDesc: 'Update your login password',
-  backToHome: 'Back to Home'
+  backToHome: 'Back to Home',
+  logout: 'Log Out'
 } as const
 
 export const common = {
@@ -782,7 +786,13 @@ export const pages = {
       newPasswordTooShort: 'New password must be at least 8 characters',
       initialSuccess: 'Password set successfully. Redirecting...',
       changeSuccess: 'Password changed successfully. Please log in again.',
-      failed: 'Operation failed. Please try again.'
+      failed: 'Operation failed. Please try again.',
+      showCurrentPassword: 'Show current password',
+      hideCurrentPassword: 'Hide current password',
+      showNewPassword: 'Show new password',
+      hideNewPassword: 'Hide new password',
+      showConfirmPassword: 'Show confirm password',
+      hideConfirmPassword: 'Hide confirm password'
     },
     captchaInput: {
       label: 'Verification Code',
@@ -3527,6 +3537,14 @@ export const serverErrors = {
   COMMON_INVALID_PARAMS: 'Invalid parameters',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
   AUTH_PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
+  AUTH_PASSWORD_TOO_LONG: 'Password cannot exceed 128 characters',
+  AUTH_PASSWORD_TOO_MANY_BYTES: 'Password cannot exceed 72 bytes',
+  AUTH_PASSWORD_TOO_COMMON: 'This password is too common. Choose a more secure password.',
+  AUTH_PASSWORD_COMPLEXITY_REQUIRED: 'Password must include at least three of: uppercase letters, lowercase letters, numbers, and special characters',
+  AUTH_PASSWORD_NOT_SET: 'This account does not have a password yet. Use the initial password setup flow.',
+  AUTH_INITIAL_PASSWORD_NOT_REQUIRED: 'This account does not need initial password setup. Use the change-password flow.',
+  AUTH_PASSWORD_CHANGE_REQUIRED: 'Change your password before continuing',
+  AUTH_PASSWORD_STATE_CHANGED: 'The password state changed. Verify again and retry.',
   AUTH_GRADE_CLASS_TOGETHER: 'Grade and class must be selected together, or both left empty',
   AUTH_UNSUPPORTED_OAUTH_PROVIDER: 'Only GitHub / Casdoor / Google / aggregated login / third-party OAuth2 are currently supported',
   AUTH_CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',

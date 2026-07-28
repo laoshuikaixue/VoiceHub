@@ -77,6 +77,9 @@ export const siteConfig = {
   turnstileSecretKeyDesc: '开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。',
   showBlacklistKeywords: '显示黑名单具体关键词',
   showBlacklistKeywordsDesc: '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
+  forcePasswordChangeOnFirstLogin: '首次登录强制修改密码',
+  forcePasswordChangeOnFirstLoginDesc:
+    '开启后，尚未设置过密码的新用户首次登录时必须设置新密码，完成前不能访问其他功能。',
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc: '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
   telemetryEnabled: '启用错误追踪与遥测',
@@ -190,7 +193,8 @@ export const changePassword = {
   changePasswordTitle: '修改密码',
   setNewPasswordDesc: '请设置一个安全的密码',
   updatePasswordDesc: '更新您的登录密码',
-  backToHome: '返回主页'
+  backToHome: '返回主页',
+  logout: '退出登录'
 } as const
 
 export const common = {
@@ -793,7 +797,13 @@ export const pages = {
       newPasswordTooShort: '新密码长度至少为8位',
       initialSuccess: '密码设置成功！正在跳转...',
       changeSuccess: '密码修改成功！请重新登录',
-      failed: '操作失败，请重试'
+      failed: '操作失败，请重试',
+      showCurrentPassword: '显示当前密码',
+      hideCurrentPassword: '隐藏当前密码',
+      showNewPassword: '显示新密码',
+      hideNewPassword: '隐藏新密码',
+      showConfirmPassword: '显示确认密码',
+      hideConfirmPassword: '隐藏确认密码'
     },
     captchaInput: {
       label: '验证码',
@@ -3536,6 +3546,14 @@ export const serverErrors = {
   COMMON_INVALID_PARAMS: '参数错误',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: '姓名、用户名、密码不能为空',
   AUTH_PASSWORD_TOO_SHORT: '密码长度不能少于8个字符',
+  AUTH_PASSWORD_TOO_LONG: '密码长度不能超过128位',
+  AUTH_PASSWORD_TOO_MANY_BYTES: '密码有效长度不能超过72字节',
+  AUTH_PASSWORD_TOO_COMMON: '该密码过于常见，请更换更安全的密码',
+  AUTH_PASSWORD_COMPLEXITY_REQUIRED: '密码至少需要包含大写字母、小写字母、数字、特殊字符中的三类',
+  AUTH_PASSWORD_NOT_SET: '当前账号尚未设置密码，请使用初始密码设置功能',
+  AUTH_INITIAL_PASSWORD_NOT_REQUIRED: '当前账号不需要设置初始密码，请使用修改密码功能',
+  AUTH_PASSWORD_CHANGE_REQUIRED: '请先完成密码修改后再继续',
+  AUTH_PASSWORD_STATE_CHANGED: '密码状态已变化，请重新验证后再试',
   AUTH_GRADE_CLASS_TOGETHER: '年级和班级需要同时选择，或全部留空',
   AUTH_UNSUPPORTED_OAUTH_PROVIDER: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2',
   AUTH_CURRENT_PASSWORD_INCORRECT: '当前密码不正确',

@@ -417,6 +417,27 @@
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
+                  id="force-password-change-first-login"
+                  v-model="formData.forcePasswordChangeOnFirstLogin"
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                />
+              </div>
+              <label for="force-password-change-first-login" class="cursor-pointer">
+                <p class="text-xs font-bold text-zinc-200">
+                  {{ locale.forcePasswordChangeOnFirstLogin }}
+                </p>
+                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                  {{ locale.forcePasswordChangeOnFirstLoginDesc }}
+                </p>
+              </label>
+            </div>
+          </div>
+
+          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="shrink-0 pt-0.5">
+                <input
                   id="show-keywords"
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
@@ -597,6 +618,7 @@ const formData = ref({
   monthlySubmissionLimit: null,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
+  forcePasswordChangeOnFirstLogin: false,
   telemetryEnabled: true,
   captchaEnabled: false,
   captchaProvider: 'graphic',
@@ -819,6 +841,7 @@ const loadConfig = async () => {
       monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
+      forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
       telemetryEnabled: !!data.telemetryEnabled,
       captchaEnabled: !!data.captchaEnabled,
       captchaProvider: data.captchaProvider || 'graphic',
