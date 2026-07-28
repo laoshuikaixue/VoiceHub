@@ -25,7 +25,10 @@ const getAggregateProviderMessage = (value: any): string | undefined => {
   return message
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/\b(app(?:id|key)|client_(?:id|secret))\s*[:=]\s*[^\s,;]+/gi, '$1=[已隐藏]')
+    .replace(
+      /["']?\b(app(?:id|key)|client_(?:id|secret))\b["']?\s*[:=：]\s*["']?[^\s,;"'&]+["']?/gi,
+      '$1=[已隐藏]'
+    )
     .trim()
     .slice(0, 200)
 }
@@ -341,6 +344,8 @@ const aggregateOAuthStrategy: OAuthStrategy = {
 
     if (!isAggregateSuccessCode(loginResponse?.code) || !loginResponse?.url) {
       const providerMessage = getAggregateProviderMessage(loginResponse)
+      // 上游返回的失败原因需落日志，便于管理员排查未开通/配置错误等问题
+      console.error('聚合登陆授权地址获取失败', { providerMessage })
       throw createError({
         statusCode: 502,
         message: getAggregateAuthorizeErrorMessage(providerMessage)
@@ -383,10 +388,12 @@ const aggregateOAuthStrategy: OAuthStrategy = {
       })
     } catch (e: any) {
       // AppKey 位于协议规定的查询串中，避免记录或继续抛出完整请求 URL。
+      const providerMessage = getAggregateProviderMessage(e?.data || e?.response?._data)
       console.error('聚合登陆回调请求失败', {
-        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown'
+        statusCode: e?.response?.status || e?.statusCode || e?.status || 'unknown',
+        providerMessage
       })
-      throw new Error('令牌请求失败')
+      throw new Error(providerMessage ? `令牌请求失败：${providerMessage}` : '令牌请求失败')
     }
 
     if (!isAggregateSuccessCode(tokenResponse?.code)) {

@@ -4,7 +4,8 @@ import {
   LEGACY_OAUTH_STATE_COOKIE_NAMES,
   parseState,
   getRedirectUri,
-  getSafeOAuthReturnPath
+  getSafeOAuthReturnPath,
+  verifyCompactOAuthState
 } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
 import { db, eq, users, userIdentities } from '~/drizzle/db'
@@ -66,14 +67,35 @@ export default defineEventHandler(async (event) => {
   let storedCompactState = getCookie(event, activeStateCookieNames.compactState)
 
   // 兼容升级前已经发起、仍在十分钟有效期内的登录流程。
-  if (provider === 'aggregate' && (!csrfCookie || !storedFullState || !storedCompactState)) {
+  // 仅在新命名 Cookie 全部缺失时才回退，避免部分丢失时连同有效的新命名 Cookie 一起被丢弃。
+  if (provider === 'aggregate' && !csrfCookie && !storedFullState && !storedCompactState) {
     activeStateCookieNames = LEGACY_OAUTH_STATE_COOKIE_NAMES
     csrfCookie = getCookie(event, activeStateCookieNames.csrf)
     storedFullState = getCookie(event, activeStateCookieNames.fullState)
     storedCompactState = getCookie(event, activeStateCookieNames.compactState)
   }
 
+  // 验证失败时同时清理两套命名下的残留 Cookie，避免无效状态干扰后续流程
+  const cleanupStateCookies = () => {
+    const names = new Set([
+      stateCookieNames.csrf,
+      LEGACY_OAUTH_STATE_COOKIE_NAMES.csrf,
+      ...(provider === 'aggregate'
+        ? [
+            stateCookieNames.fullState,
+            stateCookieNames.compactState,
+            LEGACY_OAUTH_STATE_COOKIE_NAMES.fullState,
+            LEGACY_OAUTH_STATE_COOKIE_NAMES.compactState
+          ]
+        : [])
+    ])
+    for (const name of names) {
+      deleteCookie(event, name, { path: '/' })
+    }
+  }
+
   if (!csrfCookie) {
+    cleanupStateCookies()
     throw createApiError(400, 'AUTH_CSRF_COOKIE_MISSING', 'CSRF验证失败：Cookie丢失，请从登录页面重新开始')
   }
 
@@ -85,17 +107,26 @@ export default defineEventHandler(async (event) => {
   let stateToVerify = stateStr
 
   if (provider === 'aggregate') {
-    if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
+    // Cookie 比对确认回调属于本流程，HMAC 验签阻止伪造的 state
+    if (
+      !storedFullState ||
+      !storedCompactState ||
+      storedCompactState !== stateStr ||
+      !verifyCompactOAuthState(stateStr, stateSecret)
+    ) {
+      cleanupStateCookies()
       throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
     }
     stateToVerify = decodeOAuthStateCookie(storedFullState)
     if (!stateToVerify) {
+      cleanupStateCookies()
       throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
     }
   }
 
   const state = parseState(stateToVerify, origin, csrfCookie, stateSecret)
   if (!state) {
+    cleanupStateCookies()
     throw createApiError(400, 'AUTH_STATE_INVALID', 'Invalid or expired state')
   }
   if (state.provider && state.provider !== provider) {

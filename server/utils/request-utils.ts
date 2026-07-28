@@ -33,10 +33,6 @@ export function isSecureRequest(event: H3Event): boolean {
   return getSafeRequestProtocol(event) === 'https'
 }
 
-// 仅在显式声明位于受信反向代理之后时，才采纳可被客户端伪造的 X-Forwarded-Host
-const isTrustProxyHeadersEnabled = (): boolean =>
-  ['1', 'true', 'yes'].includes(process.env.TRUST_PROXY_HEADERS?.trim().toLowerCase() || '')
-
 // 不带方括号的裸 IPv6 地址需补齐方括号才能通过 URL 解析
 const normalizeHostForUrl = (host: string): string =>
   host.includes(':') && !host.startsWith('[') && /^[0-9a-f:]+$/i.test(host) ? `[${host}]` : host
@@ -49,9 +45,7 @@ const normalizeHostForUrl = (host: string): string =>
 export function getRequestOrigin(event: H3Event): string {
   const protocol = getSafeRequestProtocol(event)
   const headers = getRequestHeaders(event)
-  const forwardedHost = isTrustProxyHeadersEnabled()
-    ? getFirstForwardedValue(headers['x-forwarded-host']?.toString())
-    : ''
+  const forwardedHost = getFirstForwardedValue(headers['x-forwarded-host']?.toString())
   const host = forwardedHost || headers['host']?.toString() || getRequestURL(event).host
 
   try {
