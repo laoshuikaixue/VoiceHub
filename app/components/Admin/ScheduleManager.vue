@@ -1220,6 +1220,7 @@ const moveTargetDate = ref('')
 const submissionRemarkDialog = ref({
   show: false,
   songId: null,
+  replayRequestId: null,
   title: '',
   artist: '',
   songTitle: '',
@@ -1247,6 +1248,7 @@ const openSubmissionRemark = (song) => {
   submissionRemarkDialog.value = {
     show: true,
     songId: song.id,
+    replayRequestId: song.replayRequestId || null,
     title: song.title,
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
@@ -1263,11 +1265,17 @@ const updateSubmissionNotePublic = async (isPublic) => {
   dialogData.isPublic = isPublic
 
   try {
-    await adminService.updateSong(dialogData.songId, {
+    const updatePayload = {
       title: dialogData.title,
       artist: dialogData.artist,
       submissionNotePublic: isPublic
-    })
+    }
+    // 如果是重播申请，传入 replayRequestId 以更新重播申请的备注可见性
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
 
     if (songsService && songsService.songs && songsService.songs.value) {
       const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
@@ -1276,18 +1284,20 @@ const updateSubmissionNotePublic = async (isPublic) => {
       }
     }
 
-    const localScheduledIndex = localScheduledSongs.value.findIndex(
-      (s) => s.song && s.song.id === dialogData.songId
-    )
-    if (localScheduledIndex !== -1) {
-      localScheduledSongs.value[localScheduledIndex].song.submissionNotePublic = isPublic
+    // 更新排期列表中的重播申请备注可见性
+    for (const scheduleList of [localScheduledSongs.value, publicSchedules.value]) {
+      const scheduleIndex = scheduleList.findIndex(
+        (s) => s.song && s.song.id === dialogData.songId
+      )
+      if (scheduleIndex !== -1) {
+        scheduleList[scheduleIndex].song.submissionNotePublic = isPublic
+      }
     }
 
-    const publicScheduleIndex = publicSchedules.value.findIndex(
-      (s) => s.song && s.song.id === dialogData.songId
-    )
-    if (publicScheduleIndex !== -1) {
-      publicSchedules.value[publicScheduleIndex].song.submissionNotePublic = isPublic
+    // 更新重播请求列表中的备注可见性
+    const replayIndex = replayRequests.value.findIndex((s) => s.id === dialogData.songId)
+    if (replayIndex !== -1) {
+      replayRequests.value[replayIndex].submissionNotePublic = isPublic
     }
 
     if (window.$showNotification) {

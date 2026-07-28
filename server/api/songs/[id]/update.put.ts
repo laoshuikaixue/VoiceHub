@@ -1,6 +1,12 @@
 import { db } from '~/drizzle/db'
-import { songs, users, songCollaborators, collaborationLogs } from '~/drizzle/schema'
-import { eq, or } from 'drizzle-orm'
+import {
+  songs,
+  users,
+  songCollaborators,
+  collaborationLogs,
+  songReplayRequests
+} from '~/drizzle/schema'
+import { eq, or, and } from 'drizzle-orm'
 import { createSubmissionNoteClearedNotification } from '~~/server/services/notificationService'
 import { createApiError } from '~~/server/utils/apiError'
 
@@ -122,6 +128,19 @@ export default defineEventHandler(async (event) => {
     }
 
     const currentRequesterId = updateData.requesterId || existingSong.requesterId
+
+    // 如果指定了 replayRequestId，则更新对应重播申请的备注可见性
+    if ('replayRequestId' in body) {
+      const replayRequestId = body.replayRequestId ? Number(body.replayRequestId) : null
+      if (replayRequestId) {
+        await db
+          .update(songReplayRequests)
+          .set({ submissionNotePublic: body.submissionNotePublic === true })
+          .where(
+            and(eq(songReplayRequests.id, replayRequestId), eq(songReplayRequests.songId, songId))
+          )
+      }
+    }
 
     // 更新歌曲
     const updatedSongResult = await db
