@@ -272,7 +272,9 @@ export const pages = {
     retryLogin: 'Try Signing In Again',
     backHome: 'Back to Home',
     contactAdmin: 'If you believe this is an error, please contact the system administrator',
-    defaultMessage: 'An unknown error occurred while signing in with a third-party account. Please try again.'
+    defaultMessage: 'An unknown error occurred while signing in with a third-party account. Please try again.',
+    aggregateUnavailableTitle: 'This sign-in method is currently unavailable',
+    aggregateUnavailableAction: 'Choose Another Sign-in Method'
   },
   resetPassword: {
     title: 'Reset Password',
@@ -747,7 +749,15 @@ export const pages = {
         qq: 'QQ',
         wx: 'WeChat',
         alipay: 'Alipay',
-        douyin: 'Douyin'
+        sina: 'Weibo',
+        baidu: 'Baidu',
+        douyin: 'Douyin',
+        huawei: 'Huawei',
+        xiaomi: 'Xiaomi',
+        gitee: 'Gitee',
+        gitea: 'Gitea',
+        bilibili: 'Bilibili',
+        kuaishou: 'Kuaishou'
       }
     },
     changePasswordForm: {
@@ -2378,7 +2388,7 @@ export const admin = {
     aggregateTitle: 'Aggregate OAuth',
     aggregateLoginTypeLabel: 'Login Methods',
     aggregateLoginTypePlaceholder: 'Select at least one login method',
-    aggregateLoginTypeDesc: 'Multiple aggregate login platforms can be enabled. Each platform is treated as an independent identity for sign-in and account binding.',
+    aggregateLoginTypeDesc: 'Select only the login methods that your aggregate login service has enabled. Enabling a platform the provider does not support will cause authorization failures. Each login method keeps its own account binding.',
     aggregateEndpointLabel: 'Endpoint URL',
     aggregateEndpointDesc: 'The connect.php endpoint for a compatible aggregate OAuth service. Use HTTPS on public networks; HTTP is acceptable only on trusted private networks.',
     aggregateClientIdPlaceholder: 'Enter aggregate OAuth AppID',
@@ -2388,7 +2398,15 @@ export const admin = {
       qq: 'QQ',
       wx: 'WeChat',
       alipay: 'Alipay',
-      douyin: 'Douyin'
+      sina: 'Weibo',
+      baidu: 'Baidu',
+      douyin: 'Douyin',
+      huawei: 'Huawei',
+      xiaomi: 'Xiaomi',
+      gitee: 'Gitee',
+      gitea: 'Gitea',
+      bilibili: 'Bilibili',
+      kuaishou: 'Kuaishou'
     },
     userIdField: 'User ID Field',
     usernameField: 'Username Field',

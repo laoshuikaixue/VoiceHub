@@ -283,7 +283,9 @@ export const pages = {
     retryLogin: '重新尝试登录',
     backHome: '返回首页',
     contactAdmin: '如果您认为这是一个错误，请联系系统管理员',
-    defaultMessage: '在尝试使用第三方账号登录时发生未知错误，请重试'
+    defaultMessage: '在尝试使用第三方账号登录时发生未知错误，请重试',
+    aggregateUnavailableTitle: '当前登录方式暂不可用',
+    aggregateUnavailableAction: '选择其他登录方式'
   },
   resetPassword: {
     title: '重置密码',
@@ -758,7 +760,15 @@ export const pages = {
         qq: 'QQ',
         wx: '微信',
         alipay: '支付宝',
-        douyin: '抖音'
+        sina: '微博',
+        baidu: '百度',
+        douyin: '抖音',
+        huawei: '华为',
+        xiaomi: '小米',
+        gitee: 'Gitee',
+        gitea: 'Gitea',
+        bilibili: '哔哩哔哩',
+        kuaishou: '快手'
       }
     },
     changePasswordForm: {
@@ -2387,7 +2397,7 @@ export const admin = {
     aggregateTitle: '聚合登录',
     aggregateLoginTypeLabel: '登录方式',
     aggregateLoginTypePlaceholder: '请选择至少一种登录方式',
-    aggregateLoginTypeDesc: '可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。',
+    aggregateLoginTypeDesc: '请选择当前聚合登录服务已接入并开通的登录方式；启用服务商尚未支持的平台会导致授权失败。每种登录方式会独立记录账号绑定关系。',
     aggregateEndpointLabel: '接口地址',
     aggregateEndpointDesc: '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。',
     aggregateClientIdPlaceholder: '输入聚合登录 AppID',
@@ -2397,7 +2407,15 @@ export const admin = {
       qq: 'QQ',
       wx: '微信',
       alipay: '支付宝',
-      douyin: '抖音'
+      sina: '微博',
+      baidu: '百度',
+      douyin: '抖音',
+      huawei: '华为',
+      xiaomi: '小米',
+      gitee: 'Gitee',
+      gitea: 'Gitea',
+      bilibili: '哔哩哔哩',
+      kuaishou: '快手'
     },
     userIdField: '用户 ID 字段',
     usernameField: '用户名字段',

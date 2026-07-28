@@ -140,7 +140,7 @@
           <p class="text-[10px] text-zinc-600 px-1 mt-2">
             {{
               locale.aggregateLoginTypeDesc ||
-              '可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。'
+              '请选择当前聚合登录服务已接入并开通的登录方式；启用服务商尚未支持的平台会导致授权失败。每种登录方式会独立记录账号绑定关系。'
             }}
           </p>
         </div>
@@ -325,7 +325,7 @@
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
         <p>
           {{ locale.brokerHintPrefix }}
-          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-blue-500 hover:underline">VoiceHub-Auth-Broker</a> 
+          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-blue-500 hover:underline">VoiceHub-Auth-Broker</a>
           {{ locale.brokerHintSuffix }}
         </p>
       </div>
