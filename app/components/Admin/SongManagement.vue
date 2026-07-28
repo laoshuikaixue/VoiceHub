@@ -1127,18 +1127,12 @@ const locale = computed(() => {
     },
     timeAgo: {
       ...(base.timeAgo || {}),
-      minutes: (value) => formatString(base.timeAgo?.minutes, [value]) || '',
-      hours: (value) => formatString(base.timeAgo?.hours, [value]) || '',
-      days: (value) => formatString(base.timeAgo?.days, [value]) || ''
+      minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value) || '',
+      hours: (value) => formatLocaleValue(base.timeAgo?.hours, value) || '',
+      days: (value) => formatLocaleValue(base.timeAgo?.days, value) || ''
     }
   })
 })
-const formatString = (value, args) => {
-  if (typeof value !== 'string') return value
-  return value.replace(/{(\d+)}/g, (match, index) =>
-    args[index] !== undefined ? String(args[index]) : match
-  )
-}
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
 const loading = ref(false)
 const searchQuery = ref('')
