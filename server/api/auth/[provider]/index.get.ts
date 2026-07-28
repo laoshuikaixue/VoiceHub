@@ -53,16 +53,12 @@ export default defineEventHandler(async (event) => {
 
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
-  // 代理平台可能重写服务端可见的 Host，因此这里只校验回调地址格式。
-  // 回调请求仍会通过 state、CSRF 和 host-only Cookie 完成来源验证。
+  // 代理平台可能重写服务端可见的 Host，且 Auth-Broker 场景下回调域名本就与源站不同，
+  // 因此这里只校验回调地址格式，回调请求仍会通过 state、CSRF 和 host-only Cookie 完成来源验证。
   try {
     const redirectUrl = new URL(redirectUri)
     if (!['http:', 'https:'].includes(redirectUrl.protocol)) {
       throw new Error('unsupported protocol')
-    }
-    // 源站不一致不再阻断（兼容 Broker 与代理平台），仅告警便于排查配置问题
-    if (redirectUrl.origin !== origin) {
-      console.warn('OAuth 重定向 URI 与当前请求源站不一致', { redirectUri, origin })
     }
   } catch {
     throw createApiError(400, 'AUTH_OAUTH_REDIRECT_INVALID', 'OAuth 重定向 URI 配置无效，请在管理员后台检查配置')
@@ -76,7 +72,22 @@ export default defineEventHandler(async (event) => {
 
   let authorizeState = state
   if (provider === 'aggregate') {
-    authorizeState = generateCompactOAuthState(stateSecret)
+    authorizeState = generateCompactOAuthState(origin, stateSecret)
+
+    // 限制并发授权流程数量，防止被放弃的流程在 Cookie 中无限累积导致请求头超限
+    const existingCookies = parseCookies(event)
+    const pendingSuffixes = new Set<string>()
+    for (const name of Object.keys(existingCookies)) {
+      const suffix = name.match(/^oauth_(?:csrf|full_state|compact_state)_(.+)$/)?.[1]
+      if (suffix) pendingSuffixes.add(suffix)
+    }
+    if (pendingSuffixes.size >= 3) {
+      for (const suffix of pendingSuffixes) {
+        deleteCookie(event, `oauth_csrf_${suffix}`, { path: '/' })
+        deleteCookie(event, `oauth_full_state_${suffix}`, { path: '/' })
+        deleteCookie(event, `oauth_compact_state_${suffix}`, { path: '/' })
+      }
+    }
   }
   const stateCookieNames = getOAuthStateCookieNames(
     provider === 'aggregate' ? authorizeState : undefined
@@ -106,15 +117,20 @@ export default defineEventHandler(async (event) => {
     deleteCookie(event, stateCookieNames.csrf, { path: '/' })
     deleteCookie(event, stateCookieNames.fullState, { path: '/' })
     deleteCookie(event, stateCookieNames.compactState, { path: '/' })
+    const statusCode = error?.statusCode || 500
     console.error('聚合登录方式暂不可用', {
       loginType: aggregateLoginType,
-      statusCode: error?.statusCode || 500
+      statusCode,
+      message: error?.message
     })
+    // 区分服务端配置缺失与上游未开通，避免误导管理员排查方向
+    const errorMessage =
+      statusCode === 500
+        ? '聚合登录配置不完整，请联系管理员检查配置。'
+        : '当前登录方式暂不可用，可能尚未在聚合登录服务中开通。请尝试其他登录方式或联系管理员。'
     return sendRedirect(
       event,
-      `/auth/error?code=AGGREGATE_LOGIN_UNAVAILABLE&message=${encodeURIComponent(
-        '当前登录方式暂不可用，可能尚未在聚合登录服务中开通。请尝试其他登录方式或联系管理员。'
-      )}`
+      `/auth/error?code=AGGREGATE_LOGIN_UNAVAILABLE&message=${encodeURIComponent(errorMessage)}`
     )
   }
 
