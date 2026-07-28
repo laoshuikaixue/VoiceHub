@@ -30,7 +30,7 @@
                 <div v-if="settings.showTitle" class="song-title">
                   <span class="title-text">{{ getSchedule(date, pt.key, rowIndex - 1).song.title }}</span>
                   <!-- 重播标识 -->
-                  <span v-if="getSchedule(date, pt.key, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> {{ locale.replay }} </span>
+                  <span v-if="getSchedule(date, pt.key, rowIndex - 1).replayRequestId != null" class="replay-badge-print"> {{ locale.replay }} </span>
                   <!-- 跨学期标识 -->
                   <span v-if="settings.currentSemester && getSchedule(date, pt.key, rowIndex - 1).song.semester && getSchedule(date, pt.key, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> {{ locale.crossSemester }} </span>
                 </div>
@@ -43,7 +43,7 @@
                   </span>
                   <span v-if="settings.showRequester && settings.showVotes" class="meta-divider">|</span>
                   <span v-if="settings.showVotes" class="song-votes">
-                    {{ formatVotes(getSchedule(date, pt.key, rowIndex - 1).song) }}
+                    {{ formatVotes(getSchedule(date, pt.key, rowIndex - 1)) }}
                   </span>
                 </div>
               </div>
@@ -69,7 +69,7 @@
                 <div v-if="settings.showTitle" class="song-title">
                   <span class="title-text">{{ getScheduleAll(date, rowIndex - 1).song.title }}</span>
                   <!-- 重播标识 -->
-                  <span v-if="getScheduleAll(date, rowIndex - 1).song.replayRequestCount > 0" class="replay-badge-print"> {{ locale.replay }} </span>
+                  <span v-if="getScheduleAll(date, rowIndex - 1).replayRequestId != null" class="replay-badge-print"> {{ locale.replay }} </span>
                   <!-- 跨学期标识 -->
                   <span v-if="settings.currentSemester && getScheduleAll(date, rowIndex - 1).song.semester && getScheduleAll(date, rowIndex - 1).song.semester !== settings.currentSemester" class="cross-semester-badge-print"> {{ locale.crossSemester }} </span>
                 </div>
@@ -82,7 +82,7 @@
                   </span>
                   <span v-if="settings.showRequester && settings.showVotes" class="meta-divider">|</span>
                   <span v-if="settings.showVotes" class="song-votes">
-                    {{ formatVotes(getScheduleAll(date, rowIndex - 1).song) }}
+                    {{ formatVotes(getScheduleAll(date, rowIndex - 1)) }}
                   </span>
                 </div>
               </div>
@@ -100,9 +100,9 @@ import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 const { admin } = useLocale()
 const locale = computed(() => admin.value.schedulePrinter)
-const formatVotes = (song) => song.replayRequestCount > 0
-  ? locale.value.replayCountShort(song.replayRequestCount)
-  : locale.value.popularityCountShort(song.voteCount || 0)
+const formatVotes = (schedule) => schedule.replayRequestId != null
+  ? locale.value.replayCountShort(schedule.song.replayRequestCount)
+  : locale.value.popularityCountShort(schedule.song.voteCount || 0)
 
 const props = defineProps({
   groupedSchedules: {

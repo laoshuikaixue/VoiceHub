@@ -20,6 +20,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - API 调用用 `useFetch` 或 `$fetch`，需错误处理
 - 模态框用 `<Teleport to="body">`
 - 图标用 `<Icon name="..." />`，name 需在 `Icon.vue` 中有定义
+- 项目未开启组件自动导入，模板中使用的自定义组件（含 `Icon`）必须在 `<script setup>` 中显式导入；漏导入不会报错，会被渲染成无内容的原生未知标签（如 `<icon>`），表现为占位但不显示
 - 下拉选择统一复用 `~/components/UI/Common/CustomSelect.vue`；多选使用其 `multiple` 模式，禁止为普通业务配置新增原生 `<select>`
 - 状态管理用 Composables，不用 Pinia
 

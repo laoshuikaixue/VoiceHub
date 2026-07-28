@@ -4,6 +4,7 @@ import { songs, songReplayRequests } from '~/drizzle/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getClientIP } from '~~/server/utils/ip-utils'
+import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
 import { z } from 'zod'
 
 const markPlayedSchema = z.object({
@@ -60,28 +61,36 @@ export default defineEventHandler(async (event) => {
     const updatedSongIds = updatedSongsResult.map((s) => s.id)
 
     if (updatedSongIds.length > 0) {
-      const targetStatus = !isUnmark ? 'PENDING' : 'FULFILLED'
-      const newStatus = !isUnmark ? 'FULFILLED' : 'PENDING'
-
-      const updatedRequests = await tx
-        .update(songReplayRequests)
-        .set({
-          status: newStatus,
-          updatedAt: getBeijingTime()
-        })
-        .where(
-          and(
-            inArray(songReplayRequests.songId, updatedSongIds),
-            eq(songReplayRequests.status, targetStatus)
+      if (!isUnmark) {
+        // 标记已播放：履行全部待处理的重播申请
+        const updatedRequests = await tx
+          .update(songReplayRequests)
+          .set({
+            status: 'FULFILLED',
+            updatedAt: getBeijingTime()
+          })
+          .where(
+            and(
+              inArray(songReplayRequests.songId, updatedSongIds),
+              eq(songReplayRequests.status, 'PENDING')
+            )
           )
-        )
-        .returning({ id: songReplayRequests.id })
+          .returning({ id: songReplayRequests.id })
 
-      if (updatedRequests.length > 0) {
-        const logMessage = !isUnmark
-          ? `将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`
-          : `将 ${updatedRequests.length} 个重播申请状态恢复为 PENDING（撤回已播放）`
-        console.log(logMessage)
+        if (updatedRequests.length > 0) {
+          console.log(`将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`)
+        }
+      } else {
+        // 撤回已播放：每人仅恢复最新一条，避免违反部分唯一索引
+        const restoredCount = await restoreReplayRequestsToPending({
+          tx,
+          songIds: updatedSongIds,
+          at: getBeijingTime()
+        })
+
+        if (restoredCount > 0) {
+          console.log(`将 ${restoredCount} 个重播申请状态恢复为 PENDING（撤回已播放）`)
+        }
       }
     }
 
