@@ -20,7 +20,7 @@
               inputClass,
               error
                 ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-zinc-800 focus:border-blue-500/30'
+                : 'border-zinc-800 focus:border-blue-500 border-opacity-30'
             ]"
             :type="showCurrentPassword ? 'text' : 'password'"
             autocomplete="current-password"
@@ -61,7 +61,7 @@
               inputClass,
               error
                 ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-zinc-800 focus:border-blue-500/30'
+                : 'border-zinc-800 focus:border-blue-500 border-opacity-30'
             ]"
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
@@ -122,7 +122,7 @@
               inputClass,
               error || (confirmPassword && newPassword !== confirmPassword)
                 ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-zinc-800 focus:border-blue-500/30'
+                : 'border-zinc-800 focus:border-blue-500 border-opacity-30'
             ]"
             :type="showConfirmPassword ? 'text' : 'password'"
             autocomplete="new-password"
@@ -163,7 +163,7 @@
       <div
         v-if="error"
         aria-live="polite"
-        class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3"
+        class="p-3 bg-rose-500 bg-opacity-10 border border-rose-500 border-opacity-20 rounded-xl flex items-center gap-3"
       >
         <AlertCircle :size="16" class="text-rose-500 shrink-0" />
         <span class="text-xs text-rose-500 font-medium">{{ error }}</span>
@@ -172,7 +172,7 @@
       <div
         v-if="success"
         aria-live="polite"
-        class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3"
+        class="p-3 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-20 rounded-xl flex items-center gap-3"
       >
         <CheckCircle2 :size="16" class="text-emerald-500 shrink-0" />
         <span class="text-xs text-emerald-500 font-medium">{{ success }}</span>

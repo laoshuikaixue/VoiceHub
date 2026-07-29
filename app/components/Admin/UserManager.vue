@@ -33,7 +33,7 @@
 
     <!-- Filter Bar -->
     <div
-      class="bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-3 flex flex-col lg:flex-row gap-3 items-center"
+      class="bg-zinc-900 bg-opacity-40 border border-zinc-800 border-opacity-60 rounded-xl p-3 flex flex-col lg:flex-row gap-3 items-center"
     >
       <div class="relative flex-1 w-full group">
         <Search
@@ -42,7 +42,7 @@
         />
         <input
           v-model="searchQuery"
-          class="w-full bg-zinc-950 border border-zinc-800/80 rounded-lg pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+          class="w-full bg-zinc-950 border border-zinc-800 border-opacity-80 rounded-lg pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
           :placeholder="locale.searchPlaceholder"
           type="text"
         >
@@ -94,9 +94,9 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-[360px_minmax(0,1fr)] gap-4 items-start">
       <section
-        class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl overflow-hidden shadow-lg min-w-0"
+        class="bg-zinc-900 bg-opacity-30 border border-zinc-800 border-opacity-60 rounded-xl overflow-hidden shadow-lg min-w-0"
       >
-        <div class="p-4 border-b border-zinc-800/60 flex items-center justify-between gap-3">
+        <div class="p-4 border-b border-zinc-800 border-opacity-60 flex items-center justify-between gap-3">
           <div>
             <h3 class="text-sm font-black text-zinc-100 tracking-tight">{{ locale.organization.title }}</h3>
             <p class="text-[10px] text-zinc-600 mt-1">
@@ -114,7 +114,7 @@
 
         <div
           v-if="activeOrgFilterLabel"
-          class="mx-4 mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-between gap-3"
+          class="mx-4 mt-4 p-3 bg-blue-500 bg-opacity-10 border border-blue-500 border-opacity-20 rounded-lg flex items-center justify-between gap-3"
         >
           <div class="min-w-0">
             <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">{{ locale.organization.currentScope }}</p>
@@ -135,7 +135,7 @@
 
         <div
           v-else-if="treeError"
-          class="m-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 leading-relaxed"
+          class="m-4 p-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-lg text-xs text-red-400 leading-relaxed"
         >
           {{ treeError }}
         </div>
@@ -225,17 +225,17 @@
       <div class="space-y-4 min-w-0">
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-zinc-500">
         <div
-          class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
+          class="w-8 h-8 border-2 border-blue-500 border-opacity-20 border-t-blue-500 rounded-full animate-spin mb-4"
         />
         <div class="text-xs font-black uppercase tracking-widest">{{ locale.loading }}</div>
       </div>
 
       <div
         v-else-if="users.length === 0"
-        class="flex flex-col items-center justify-center py-20 bg-zinc-900/20 border border-zinc-800/50 rounded-xl"
+        class="flex flex-col items-center justify-center py-20 bg-zinc-900 bg-opacity-20 border border-zinc-800 border-opacity-50 rounded-xl"
       >
         <div
-          class="w-16 h-16 rounded-lg bg-zinc-800/50 flex items-center justify-center text-zinc-600 mb-4"
+          class="w-16 h-16 rounded-lg bg-zinc-800 bg-opacity-50 flex items-center justify-center text-zinc-600 mb-4"
         >
           <Search :size="32" />
         </div>
@@ -247,12 +247,12 @@
       <template v-else>
         <!-- 桌面端表格 -->
         <div
-          class="hidden lg:block bg-zinc-900/20 border border-zinc-800/50 rounded-xl overflow-hidden shadow-lg custom-scrollbar"
+          class="hidden lg:block bg-zinc-900 bg-opacity-20 border border-zinc-800 border-opacity-50 rounded-xl overflow-hidden shadow-lg custom-scrollbar"
         >
           <table class="w-full">
             <thead>
               <tr
-                class="bg-zinc-900/60 border-b border-zinc-800 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                class="bg-zinc-900 bg-opacity-60 border-b border-zinc-800 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
               >
                 <th class="px-6 py-5 text-left">{{ locale.table.userDetails }}</th>
                 <th class="px-6 py-5 text-left">{{ locale.table.role }}</th>
@@ -266,7 +266,7 @@
               <tr
                 v-for="user in users"
                 :key="user.id"
-                class="group hover:bg-zinc-800/30 transition-all text-xs cursor-pointer"
+                class="group hover:bg-zinc-800 bg-opacity-30 transition-all text-xs cursor-pointer"
                 @click="showUserDetail(user, $event)"
               >
                 <td class="px-6 py-5">
@@ -274,12 +274,12 @@
                     <img
                       v-if="user.avatar && !failedImages[user.id]"
                       :src="user.avatar"
-                      class="w-10 h-10 rounded-xl object-cover border border-zinc-700/50"
+                      class="w-10 h-10 rounded-xl object-cover border border-zinc-700 border-opacity-50"
                       @error="handleImageError(user.id)"
                     >
                     <div
                       v-else
-                      class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-300 transition-colors border border-zinc-700/50"
+                      class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-zinc-300 transition-colors border border-zinc-700 border-opacity-50"
                     >
                       {{ getUserInitial(user) }}
                     </div>
@@ -294,22 +294,22 @@
                 <td class="px-6 py-5">
                   <span
                     v-if="user.role === 'SUPER_ADMIN'"
-                    class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-orange-500 bg-opacity-10 text-orange-400 text-[10px] font-black rounded border border-orange-500 border-opacity-20 uppercase tracking-widest"
                     >{{ getRoleName('SUPER_ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'ADMIN'"
-                    class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-blue-500 bg-opacity-10 text-blue-400 text-[10px] font-black rounded border border-blue-500 border-opacity-20 uppercase tracking-widest"
                     >{{ getRoleName('ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
-                    class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-purple-500 bg-opacity-10 text-purple-400 text-[10px] font-black rounded border border-purple-500 border-opacity-20 uppercase tracking-widest"
                     >{{ getRoleName('SONG_ADMIN') }}</span
                   >
                   <span
                     v-else
-                    class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700 border-opacity-50 uppercase tracking-widest"
                     >{{ getRoleName('USER') }}</span
                   >
                 </td>
@@ -401,7 +401,7 @@
           <div
             v-for="user in users"
             :key="user.id"
-            class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20"
+            class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-xl p-5 space-y-5 shadow-lg shadow-black/20"
             @click="showUserDetail(user, $event)"
           >
             <div class="flex items-start justify-between">
@@ -458,7 +458,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 py-4 border-y border-zinc-800/50">
+            <div class="grid grid-cols-2 gap-4 py-4 border-y border-zinc-800 border-opacity-50">
               <div class="space-y-1">
                 <p class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">
                   {{ locale.mobile.roleLevel }}
@@ -466,22 +466,22 @@
                 <div>
                   <span
                     v-if="user.role === 'SUPER_ADMIN'"
-                    class="px-2 py-0.5 bg-orange-500/10 text-orange-400 text-[10px] font-black rounded border border-orange-500/20 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-orange-500 bg-opacity-10 text-orange-400 text-[10px] font-black rounded border border-orange-500 border-opacity-20 uppercase tracking-widest"
                     >{{ getRoleName('SUPER_ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'ADMIN'"
-                    class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-black rounded border border-blue-500/20 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-blue-500 bg-opacity-10 text-blue-400 text-[10px] font-black rounded border border-blue-500 border-opacity-20 uppercase tracking-widest"
                     >{{ getRoleName('ADMIN') }}</span
                   >
                   <span
                     v-else-if="user.role === 'SONG_ADMIN'"
-                    class="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-black rounded border border-purple-500/20 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-purple-500 bg-opacity-10 text-purple-400 text-[10px] font-black rounded border border-purple-500 border-opacity-20 uppercase tracking-widest"
                     >{{ getRoleName('SONG_ADMIN') }}</span
                   >
                   <span
                     v-else
-                    class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700/50 uppercase tracking-widest"
+                    class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded border border-zinc-700 border-opacity-50 uppercase tracking-widest"
                     >{{ getRoleName('USER') }}</span
                   >
                 </div>
@@ -572,7 +572,7 @@
               <div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                    class="w-10 h-10 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
                   >
                     <UserPlus v-if="!editingUser" :size="20" />
                     <Edit2 v-else :size="20" />
@@ -582,7 +582,7 @@
                 <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.form.desc }}</p>
               </div>
               <button
-                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
                 @click="closeModal"
               >
                 <X :size="20" />
@@ -602,7 +602,7 @@
                     />
                     <input
                       v-model="userForm.name"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
                       :placeholder="locale.form.namePlaceholder"
                       type="text"
                     >
@@ -619,7 +619,7 @@
                     />
                     <input
                       v-model="userForm.username"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
                       :placeholder="locale.form.usernamePlaceholder"
                       type="text"
                     >
@@ -638,7 +638,7 @@
                   />
                   <input
                     v-model="userForm.password"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
                     :placeholder="locale.form.passwordPlaceholder"
                     type="password"
                   >
@@ -684,7 +684,7 @@
                     />
                     <input
                       v-model="userForm.grade"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
                       :placeholder="locale.form.gradePlaceholder"
                       type="text"
                     >
@@ -701,7 +701,7 @@
                     />
                     <input
                       v-model="userForm.class"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
                       :placeholder="locale.form.classPlaceholder"
                       type="text"
                     >
@@ -711,7 +711,7 @@
 
               <div
                 v-if="formError"
-                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
+                class="p-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
               >
                 <AlertCircle :size="16" />
                 {{ formError }}
@@ -759,7 +759,7 @@
         >
           <div class="p-8 text-center">
             <div
-              class="w-20 h-20 bg-amber-500/10 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto mb-6"
+              class="w-20 h-20 bg-amber-500 bg-opacity-10 rounded-[2rem] flex items-center justify-center text-amber-500 mx-auto mb-6"
             >
               <Lock :size="32" />
             </div>
@@ -782,7 +782,7 @@
                   />
                   <input
                     v-model="passwordForm.password"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500 border-opacity-30 transition-all text-zinc-200"
                     :placeholder="locale.resetPasswordModal.newPasswordPlaceholder"
                     type="password"
                   >
@@ -799,7 +799,7 @@
                   />
                   <input
                     v-model="passwordForm.confirmPassword"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500 border-opacity-30 transition-all text-zinc-200"
                     :placeholder="locale.resetPasswordModal.confirmPasswordPlaceholder"
                     type="password"
                   >
@@ -808,7 +808,7 @@
 
               <div
                 v-if="passwordError"
-                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
+                class="p-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-2xl flex items-center gap-3 text-red-400 text-xs"
               >
                 <AlertCircle :size="16" />
                 {{ passwordError }}
@@ -859,7 +859,7 @@
               <div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-emerald-600/10 flex items-center justify-center text-emerald-500"
+                    class="w-10 h-10 rounded-2xl bg-emerald-600 bg-opacity-10 flex items-center justify-center text-emerald-500"
                   >
                     <FileSpreadsheet :size="20" />
                   </div>
@@ -870,7 +870,7 @@
                 </p>
               </div>
               <button
-                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
                 @click="closeImportModal"
               >
                 <X :size="20" />
@@ -878,7 +878,7 @@
             </div>
 
             <div class="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-              <div class="p-5 bg-zinc-950/50 border border-zinc-800/50 rounded-3xl space-y-4">
+              <div class="p-5 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-3xl space-y-4">
                 <div class="flex items-center gap-2 text-zinc-300 font-bold text-sm mb-2">
                   <Info :size="16" class="text-blue-400" />
                   {{ locale.importModal.instructionsTitle }}
@@ -888,7 +888,7 @@
                   {{ locale.importModal.instructionsLine2 }}
                 </p>
 
-                <div class="overflow-hidden rounded-2xl border border-zinc-800/80">
+                <div class="overflow-hidden rounded-2xl border border-zinc-800 border-opacity-80">
                   <table class="w-full text-[10px] text-left">
                     <thead class="bg-zinc-900 text-zinc-400 uppercase tracking-tighter">
                       <tr>
@@ -901,7 +901,7 @@
                       </tr>
                     </thead>
                     <tbody class="text-zinc-500">
-                      <tr class="border-b border-zinc-900/50">
+                      <tr class="border-b border-zinc-900 border-opacity-50">
                         <td class="px-3 py-2">{{ locale.importModal.sampleName }}</td>
                         <td class="px-3 py-2">zhangsan</td>
                         <td class="px-3 py-2">******</td>
@@ -915,7 +915,7 @@
 
                 <div class="flex items-center justify-between gap-4">
                   <div
-                    class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl text-[10px] text-blue-400/80 leading-relaxed flex-1"
+                    class="p-3 bg-blue-500 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-2xl text-[10px] text-blue-400 text-opacity-80 leading-relaxed flex-1"
                   >
                     <strong>{{ locale.importModal.supportedRoles }}</strong>
                     <span v-if="isSuperAdmin"
@@ -924,7 +924,7 @@
                     <span v-else>{{ locale.importModal.supportedRolesLimited }}</span>
                   </div>
                   <button
-                    class="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex items-center gap-2 group shrink-0"
+                    class="px-4 py-3 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-20 hover:border-emerald-500 border-opacity-40 rounded-xl transition-all flex items-center gap-2 group shrink-0"
                     @click="downloadImportTemplate"
                   >
                     <Download
@@ -952,7 +952,7 @@
                     @change="handleFileUpload"
                   >
                   <div
-                    class="w-full py-10 border-2 border-dashed border-zinc-800 group-hover:border-emerald-500/50 group-hover:bg-emerald-500/5 rounded-3xl transition-all flex flex-col items-center justify-center gap-3"
+                    class="w-full py-10 border-2 border-dashed border-zinc-800 group-hover:border-emerald-500 border-opacity-50 group-hover:bg-emerald-500 bg-opacity-5 rounded-3xl transition-all flex flex-col items-center justify-center gap-3"
                   >
                     <div
                       class="w-12 h-12 rounded-2xl bg-zinc-900 flex items-center justify-center text-zinc-600 group-hover:text-emerald-500 transition-colors"
@@ -969,7 +969,7 @@
 
               <div
                 v-if="importError"
-                class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex gap-3 text-red-400 text-xs items-start"
+                class="p-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-2xl flex gap-3 text-red-400 text-xs items-start"
               >
                 <AlertCircle :size="16" class="mt-0.5 shrink-0" />
                 <div class="whitespace-pre-wrap leading-relaxed">{{ importError }}</div>
@@ -978,7 +978,7 @@
               <!-- 进度条 -->
               <div
                 v-if="importProgressText"
-                class="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                class="p-5 bg-emerald-500 bg-opacity-5 border border-emerald-500 border-opacity-20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
               >
                 <div class="flex items-center justify-between">
                   <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{ importProgressText }}</span>
@@ -998,9 +998,9 @@
                     >{{ formatMessage(locale.importModal.previewData, previewData.length) }}</label
                   >
                 </div>
-                <div class="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/30">
+                <div class="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950 bg-opacity-30">
                   <table class="w-full text-xs text-left">
-                    <thead class="bg-zinc-900/50 text-zinc-500">
+                    <thead class="bg-zinc-900 bg-opacity-50 text-zinc-500">
                       <tr>
                         <th class="px-4 py-3 font-medium">{{ locale.importModal.sampleHeaders.name }}</th>
                         <th class="px-4 py-3 font-medium">{{ locale.importModal.account }}</th>
@@ -1110,7 +1110,7 @@
               <div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                    class="w-10 h-10 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
                   >
                     <User :size="20" />
                   </div>
@@ -1119,7 +1119,7 @@
                 <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.detail.desc }}</p>
               </div>
               <button
-                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
                 @click="closeUserDetailModal"
               >
                 <X :size="20" />
@@ -1139,19 +1139,19 @@
                   {{ locale.detail.basicInfo }}
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                       {{ locale.detail.userId }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.id }}</div>
                   </div>
-                  <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                       {{ locale.detail.name }}
                     </div>
                     <div class="text-sm font-bold text-zinc-300">{{ selectedUserDetail.name }}</div>
                   </div>
-                  <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                       {{ locale.detail.username }}
                     </div>
@@ -1159,7 +1159,7 @@
                       {{ selectedUserDetail.username }}
                     </div>
                   </div>
-                  <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                       {{ locale.detail.role }}
                     </div>
@@ -1174,7 +1174,7 @@
                       </span>
                     </div>
                   </div>
-                  <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                       {{ locale.detail.grade }}
                     </div>
@@ -1182,7 +1182,7 @@
                       {{ selectedUserDetail.grade || locale.detail.unset }}
                     </div>
                   </div>
-                  <div class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-1">
+                  <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-1">
                     <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
                       {{ locale.detail.class }}
                     </div>
@@ -1203,7 +1203,7 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div
-                    class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
+                    class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
@@ -1231,8 +1231,8 @@
                         'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
                         !selectedUserDetail.forcePasswordChange &&
                         selectedUserDetail.passwordChangedAt
-                          ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-amber-500/10 text-amber-500'
+                          ? 'bg-emerald-500 bg-opacity-10 text-emerald-500'
+                          : 'bg-amber-500 bg-opacity-10 text-amber-500'
                       ]"
                     >
                       <CheckCircle2
@@ -1246,7 +1246,7 @@
                     </div>
                   </div>
                   <div
-                    class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
+                    class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
@@ -1270,7 +1270,7 @@
                       :class="[
                         'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
                         selectedUserDetail.meowNickname
-                          ? 'bg-emerald-500/10 text-emerald-500'
+                          ? 'bg-emerald-500 bg-opacity-10 text-emerald-500'
                           : 'bg-zinc-800 text-zinc-600'
                       ]"
                     >
@@ -1280,7 +1280,7 @@
 
                   <!-- 邮箱绑定 -->
                   <div
-                    class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
+                    class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
@@ -1304,7 +1304,7 @@
                       :class="[
                         'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
                         selectedUserDetail.email
-                          ? (selectedUserDetail.emailVerified ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500')
+                          ? (selectedUserDetail.emailVerified ? 'bg-emerald-500 bg-opacity-10 text-emerald-500' : 'bg-amber-500 bg-opacity-10 text-amber-500')
                           : 'bg-zinc-800 text-zinc-600'
                       ]"
                     >
@@ -1314,7 +1314,7 @@
 
                   <!-- OAuth 账号绑定 -->
                   <div
-                    class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl flex items-center justify-between"
+                    class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl flex items-center justify-between"
                   >
                     <div class="space-y-1 overflow-hidden pr-2">
                       <div class="text-[10px] font-black text-zinc-600 uppercase tracking-tighter">
@@ -1338,7 +1338,7 @@
                       :class="[
                         'w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
                         selectedUserDetail.identities?.length > 0
-                          ? 'bg-emerald-500/10 text-emerald-500'
+                          ? 'bg-emerald-500 bg-opacity-10 text-emerald-500'
                           : 'bg-zinc-800 text-zinc-600'
                       ]"
                     >
@@ -1359,7 +1359,7 @@
                   </div>
                   <div class="space-y-3">
                     <div
-                      class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
+                      class="flex items-center justify-between text-xs p-3 bg-zinc-950 bg-opacity-30 rounded-xl border border-zinc-800 border-opacity-30"
                     >
                       <span class="text-zinc-500">{{ locale.detail.lastLogin }}</span>
                       <span class="text-zinc-300 font-medium">{{
@@ -1367,7 +1367,7 @@
                       }}</span>
                     </div>
                     <div
-                      class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
+                      class="flex items-center justify-between text-xs p-3 bg-zinc-950 bg-opacity-30 rounded-xl border border-zinc-800 border-opacity-30"
                     >
                       <span class="text-zinc-500">{{ locale.detail.loginIp }}</span>
                       <span class="text-zinc-300 font-medium">{{
@@ -1385,7 +1385,7 @@
                   </div>
                   <div class="space-y-3">
                     <div
-                      class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
+                      class="flex items-center justify-between text-xs p-3 bg-zinc-950 bg-opacity-30 rounded-xl border border-zinc-800 border-opacity-30"
                     >
                       <span class="text-zinc-500">{{ locale.detail.createdAt }}</span>
                       <span class="text-zinc-300 font-medium">{{
@@ -1393,7 +1393,7 @@
                       }}</span>
                     </div>
                     <div
-                      class="flex items-center justify-between text-xs p-3 bg-zinc-950/30 rounded-xl border border-zinc-800/30"
+                      class="flex items-center justify-between text-xs p-3 bg-zinc-950 bg-opacity-30 rounded-xl border border-zinc-800 border-opacity-30"
                     >
                       <span class="text-zinc-500">{{ locale.detail.updatedAt }}</span>
                       <span class="text-zinc-300 font-medium">{{
@@ -1427,7 +1427,7 @@
 
                 <div
                   v-else-if="statusLogs.length === 0"
-                  class="py-12 text-center bg-zinc-950/30 border border-zinc-800/50 rounded-3xl"
+                  class="py-12 text-center bg-zinc-950 bg-opacity-30 border border-zinc-800 border-opacity-50 rounded-3xl"
                 >
                   <p class="text-xs text-zinc-600">{{ locale.detail.noLogs }}</p>
                 </div>
@@ -1441,7 +1441,7 @@
                         class="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-zinc-900 border-2 border-zinc-700 ring-4 ring-zinc-900"
                       />
                       <div
-                        class="p-4 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl space-y-3"
+                        class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl space-y-3"
                       >
                         <div class="flex items-center justify-between">
                           <div class="flex items-center gap-2">
@@ -1470,7 +1470,7 @@
 
                         <div
                           v-if="log.reason"
-                          class="text-xs text-zinc-400 bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-800/30 leading-relaxed"
+                          class="text-xs text-zinc-400 bg-zinc-900 bg-opacity-50 p-2.5 rounded-xl border border-zinc-800 border-opacity-30 leading-relaxed"
                         >
                           <span class="text-zinc-600 font-bold mr-1">{{ locale.detail.reason }}</span>
                           {{ log.reason }}

@@ -78,7 +78,7 @@
           </div>
           <div class="pt-2">
             <div
-              class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+              class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
             >
               <div>
                 <p class="text-xs font-bold text-zinc-200">{{ locale.showBeianIcon }}</p>
@@ -150,7 +150,7 @@
         </h3>
         <div class="space-y-6">
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">{{ locale.enableCollaborative }}</p>
@@ -164,7 +164,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">{{ locale.enableRemarks }}</p>
@@ -178,7 +178,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">{{ locale.enableCardCodeRequests }}</p>
@@ -192,7 +192,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">{{ locale.requireCardCodeForRequests }}</p>
@@ -207,7 +207,7 @@
 
           <div
             :class="[
-              'flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl transition-opacity',
+              'flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl transition-opacity',
               !formData.enableSubmissionLimit ||
               (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
                 ? 'opacity-50'
@@ -232,7 +232,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-zinc-200">{{ locale.enableReplay }}</p>
@@ -247,7 +247,7 @@
 
           <div class="space-y-4">
             <div
-              class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+              class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl"
             >
               <div>
                 <p class="text-xs font-bold text-zinc-200">{{ locale.enableLimit }}</p>
@@ -325,7 +325,7 @@
           <Shield :size="16" class="text-rose-500" /> {{ locale.securityPrivacy }}
         </h3>
         <div class="space-y-4">
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -413,7 +413,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -434,7 +434,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -453,7 +453,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -472,7 +472,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -492,7 +492,7 @@
           </div>
 
           <div
-            class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+            class="p-4 bg-blue-500 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-blue-500 shrink-0 mt-0.5" :size="14" />
             <p class="text-[10px] text-zinc-500 leading-normal">
@@ -504,7 +504,7 @@
 
       <!-- 投稿须知 -->
       <section
-        class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
+        class="lg:col-span-2 bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-2xl p-6 space-y-6"
       >
         <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
           <h3
@@ -589,9 +589,9 @@ const renderedPreview = computed(() => renderMarkdown(formData.value.submissionG
 
 // 样式类常量
 const inputClass =
-  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
+  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
+const cardClass = 'bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
 
 const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '请遵守校园广播站投稿规范。')
 

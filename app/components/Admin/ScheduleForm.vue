@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      <div v-if="error" class="p-3 mt-4 bg-red-500/10 text-red-300 rounded-lg">
+      <div v-if="error" class="p-3 mt-4 bg-red-500 bg-opacity-10 text-red-300 rounded-lg">
         {{ error }}
       </div>
 
@@ -59,7 +59,7 @@
         </button>
         <button
           :disabled="loading"
-          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500/50 disabled:cursor-not-allowed disabled:transform-none"
+          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500 bg-opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           type="submit"
         >
           {{ loading ? locale.creating : locale.create }}

@@ -5,12 +5,12 @@
     <!-- 错误状态 -->
     <div
       v-else
-      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl animate-in fade-in zoom-in duration-300"
+      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-zinc-900 bg-opacity-30 border border-dashed border-zinc-800 rounded-3xl animate-in fade-in zoom-in duration-300"
     >
       <div class="relative mb-6">
-        <div class="absolute inset-0 blur-2xl bg-red-500/10 rounded-full" />
+        <div class="absolute inset-0 blur-2xl bg-red-500 bg-opacity-10 rounded-full" />
         <div
-          class="relative flex items-center justify-center w-16 h-16 bg-zinc-950 border border-red-500/30 rounded-2xl text-red-500 shadow-xl shadow-black/40"
+          class="relative flex items-center justify-center w-16 h-16 bg-zinc-950 border border-red-500 border-opacity-30 rounded-2xl text-red-500 shadow-xl shadow-black/40"
         >
           <AlertCircle :size="32" stroke-width="1.5" />
         </div>
@@ -24,7 +24,7 @@
       <div class="flex flex-wrap items-center justify-center gap-4">
         <button
           :disabled="retrying"
-          class="flex items-center gap-2 px-6 py-2.5 bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 text-zinc-400 hover:text-zinc-100 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-black/20 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2.5 bg-zinc-950 border border-zinc-800 hover:border-blue-500 border-opacity-50 text-zinc-400 hover:text-zinc-100 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-black/20 disabled:opacity-50"
           @click="handleRetry"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': retrying }" />
@@ -33,7 +33,7 @@
 
         <button
           v-if="showDetails"
-          class="px-6 py-2.5 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+          class="px-6 py-2.5 bg-zinc-900 bg-opacity-50 border border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
           @click="toggleDetails"
         >
           {{ showErrorDetails ? locale.hideDetails : locale.showDetails }}

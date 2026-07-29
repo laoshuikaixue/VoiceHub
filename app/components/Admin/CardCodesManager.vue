@@ -26,7 +26,7 @@
     </div>
 
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-      <div v-for="item in stats" :key="item.label" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
+      <div v-for="item in stats" :key="item.label" class="rounded-2xl border border-zinc-800 bg-zinc-900 bg-opacity-50 p-4">
         <p class="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500">{{ item.label }}</p>
         <div class="mt-2 flex items-end justify-between gap-2">
           <span class="text-2xl font-black text-zinc-100">{{ item.value }}</span>
@@ -36,7 +36,7 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
-      <section class="min-w-0 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-5">
+      <section class="min-w-0 rounded-2xl border border-zinc-800 bg-zinc-900 bg-opacity-40 p-5 space-y-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex flex-1 flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
@@ -45,7 +45,7 @@
                 v-model="filters.q"
                 type="text"
                 :placeholder="locale.searchPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40 transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 border-opacity-40 transition-all"
                 @keyup.enter="fetchCodes(1)"
               >
             </div>
@@ -70,7 +70,7 @@
           </button>
         </div>
 
-        <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
+        <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500 border-opacity-20 bg-blue-500 bg-opacity-5 p-3">
           <span class="text-xs font-black text-blue-400">{{ getLocaleMessage('selectedItems', selectedIds.length) }}</span>
           <CustomSelect
             v-model="bulkStatus"
@@ -92,12 +92,12 @@
         </div>
 
         <div class="overflow-x-auto rounded-2xl border border-zinc-800">
-          <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
+          <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-zinc-950 bg-opacity-60 p-8 text-center text-sm text-zinc-500">
             {{ locale.loading }}
           </div>
 
           <table v-else class="min-w-[880px] table-fixed text-left text-sm">
-            <thead class="bg-zinc-950/80 text-zinc-500">
+            <thead class="bg-zinc-950 bg-opacity-80 text-zinc-500">
               <tr>
                 <th class="px-3 py-3 w-10">
                   <input
@@ -117,7 +117,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in codes" :key="item.id" class="border-t border-zinc-800/80 hover:bg-zinc-950/70 transition-colors">
+              <tr v-for="item in codes" :key="item.id" class="border-t border-zinc-800 border-opacity-80 hover:bg-zinc-950 bg-opacity-70 transition-colors">
                 <td class="px-3 py-3 align-top">
                   <input
                     type="checkbox"
@@ -150,7 +150,7 @@
                       v-model="item.noteDraft"
                       rows="2"
                       :placeholder="locale.note"
-                      class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+                      class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 border-opacity-40"
                     />
                     <button class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 hover:text-blue-300 transition-colors" @click="saveNote(item)">
                       {{ locale.saveNote }}
@@ -187,7 +187,7 @@
       </section>
 
       <section class="space-y-4">
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 bg-opacity-40 p-4 space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
               <h3 class="text-sm font-black text-zinc-100">{{ locale.createTitle }}</h3>
@@ -214,32 +214,32 @@
               v-model="manualCodes"
               rows="4"
               :placeholder="locale.manualPlaceholder"
-              class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+              class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 border-opacity-40"
             />
           </div>
 
           <div v-else class="grid grid-cols-2 gap-2.5">
             <div>
               <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.generateCount }}</label>
-              <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40">
             </div>
             <div>
               <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.prefix }}</label>
-              <input v-model="generateForm.prefix" type="text" :placeholder="locale.prefixPlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <input v-model="generateForm.prefix" type="text" :placeholder="locale.prefixPlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40">
             </div>
             <div>
               <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.randomLength }}</label>
-              <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40">
             </div>
             <div>
               <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.charset }}</label>
-              <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40">
             </div>
           </div>
 
           <div>
             <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.note }}</label>
-            <input v-model="createNote" type="text" :placeholder="locale.bulkNotePlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40">
+            <input v-model="createNote" type="text" :placeholder="locale.bulkNotePlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 border-opacity-40">
           </div>
 
           <div class="flex flex-wrap gap-2">
@@ -257,7 +257,7 @@
 
           <div
             v-if="createMode === 'generate' && lastGeneratedCodes.length"
-            class="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3 space-y-3"
+            class="rounded-2xl border border-zinc-800 bg-zinc-950 bg-opacity-60 p-3 space-y-3"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
@@ -277,7 +277,7 @@
           </div>
         </div>
 
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 bg-opacity-40 p-4 space-y-3">
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
           <ul class="space-y-2 text-[12px] leading-relaxed text-zinc-500">
             <li v-for="tip in locale.quickTips" :key="tip">· {{ tip }}</li>
@@ -286,7 +286,7 @@
       </section>
     </div>
 
-    <section class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-4">
+    <section class="rounded-2xl border border-zinc-800 bg-zinc-900 bg-opacity-40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
           <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">{{ locale.redeemLogsTitle }}</h3>
@@ -307,7 +307,7 @@
             v-model="logFilters.q"
             type="text"
             :placeholder="locale.logSearchPlaceholder"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 border-opacity-40"
             @keyup.enter="fetchRedeemLogs"
           >
         </div>
@@ -315,7 +315,7 @@
           <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.source }}</label>
           <select
             v-model="logFilters.source"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40"
           >
             <option value="">{{ locale.allSources }}</option>
             <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual || '手动核销' }}</option>
@@ -329,7 +329,7 @@
             v-model="logFilters.redeemer"
             type="text"
             :placeholder="locale.redeemerPlaceholder"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 border-opacity-40"
           >
         </div>
         <div>
@@ -337,7 +337,7 @@
           <input
             v-model="logFilters.startDate"
             type="date"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40"
           >
         </div>
         <div>
@@ -345,7 +345,7 @@
           <input
             v-model="logFilters.endDate"
             type="date"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-40"
           >
         </div>
       </div>
@@ -365,13 +365,13 @@
         </button>
       </div>
 
-      <div v-if="logsLoading" class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-6 text-center text-sm text-zinc-500">
+      <div v-if="logsLoading" class="rounded-xl border border-zinc-800 bg-zinc-950 bg-opacity-60 p-6 text-center text-sm text-zinc-500">
         {{ locale.loadingLogs }}
       </div>
 
       <div v-else class="overflow-hidden rounded-2xl border border-zinc-800">
         <table class="min-w-full text-left text-sm">
-          <thead class="bg-zinc-950/80 text-zinc-500">
+          <thead class="bg-zinc-950 bg-opacity-80 text-zinc-500">
             <tr>
               <th class="px-3 py-3 w-20">{{ locale.logId }}</th>
               <th class="px-3 py-3">{{ locale.cardCode }}</th>
@@ -385,7 +385,7 @@
             <tr
               v-for="item in redeemLogs"
               :key="item.id"
-              class="border-t border-zinc-800/80 hover:bg-zinc-950/70 transition-colors"
+              class="border-t border-zinc-800 border-opacity-80 hover:bg-zinc-950 bg-opacity-70 transition-colors"
             >
               <td class="px-3 py-3 text-zinc-500">{{ item.id }}</td>
               <td class="px-3 py-3 font-mono text-zinc-200 break-all">{{ item.code || item.codeSnapshot }}</td>
@@ -463,23 +463,23 @@ const bulkStatusOptions = computed(() => [
 
 const statusMeta = (status) => {
   const statusMap = {
-    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
+    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-emerald-500 bg-opacity-10 text-emerald-300 border border-emerald-500 border-opacity-20' },
+    LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-amber-500 bg-opacity-10 text-amber-300 border border-amber-500 border-opacity-20' },
+    REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-blue-500 bg-opacity-10 text-blue-300 border border-blue-500 border-opacity-20' },
+    INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-red-500 bg-opacity-10 text-red-300 border border-red-500 border-opacity-20' }
   }
-  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-zinc-500 bg-opacity-10 text-zinc-300 border border-zinc-500 border-opacity-20' }
 }
 
 const logSourceMeta = (source) => {
   const sourceMap = {
-    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-blue-500 bg-opacity-10 text-blue-300 border border-blue-500 border-opacity-20' },
+    ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-blue-500 bg-opacity-10 text-blue-300 border border-blue-500 border-opacity-20' },
+    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-emerald-500 bg-opacity-10 text-emerald-300 border border-emerald-500 border-opacity-20' },
+    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-amber-500 bg-opacity-10 text-amber-300 border border-amber-500 border-opacity-20' },
+    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-emerald-500 bg-opacity-10 text-emerald-300 border border-emerald-500 border-opacity-20' },
+    WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-amber-500 bg-opacity-10 text-amber-300 border border-amber-500 border-opacity-20' },
+    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-zinc-500 bg-opacity-10 text-zinc-300 border border-zinc-500 border-opacity-20' }
   }
   return sourceMap[source] || sourceMap.UNKNOWN
 }
@@ -492,9 +492,9 @@ const stats = computed(() => {
 
   return [
     { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-zinc-800 text-zinc-200' },
-    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-emerald-500/10 text-emerald-300' },
-    { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-amber-500/10 text-amber-300' },
-    { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-blue-500/10 text-blue-300' }
+    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-emerald-500 bg-opacity-10 text-emerald-300' },
+    { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-amber-500 bg-opacity-10 text-amber-300' },
+    { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-blue-500 bg-opacity-10 text-blue-300' }
   ]
 })
 

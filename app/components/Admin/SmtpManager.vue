@@ -31,7 +31,7 @@
       <!-- 左侧栏：SMTP 设置与测试 -->
       <div class="xl:col-span-4 space-y-8">
         <!-- SMTP 核心设置 -->
-        <section class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
+        <section class="bg-zinc-900 bg-opacity-30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
           <div class="flex items-center justify-between">
             <h3
               class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
@@ -59,7 +59,7 @@
                 v-model="config.smtpHost"
                 type="text"
                 placeholder="smtp.example.com"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
               >
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -71,7 +71,7 @@
                   v-model.number="config.smtpPort"
                   type="number"
                   placeholder="587"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
                 >
               </div>
               <div class="space-y-1.5">
@@ -94,7 +94,7 @@
                 v-model="config.smtpUsername"
                 type="text"
                 placeholder="your-email@example.com"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
               >
             </div>
             <div class="space-y-1.5">
@@ -105,7 +105,7 @@
                 v-model="config.smtpFromEmail"
                 type="text"
                 :placeholder="config.smtpUsername || 'your-email@example.com'"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
               >
               <p class="text-[9px] text-zinc-500 px-1 italic">
                 {{ locale.fromEmailHint }}
@@ -119,7 +119,7 @@
                 v-model="config.smtpPassword"
                 type="password"
                 placeholder="••••••••••••"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
               >
             </div>
             <div class="space-y-1.5">
@@ -130,14 +130,14 @@
                 v-model="config.smtpFromName"
                 type="text"
                 :placeholder="locale.defaultFromName"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
               >
             </div>
           </div>
         </section>
 
         <!-- SMTP 测试模块 -->
-        <section class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
+        <section class="bg-zinc-900 bg-opacity-30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
           <h3
             class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
           >
@@ -154,7 +154,7 @@
                   v-model="testEmail"
                   type="email"
                   :placeholder="locale.testEmailPlaceholder"
-                  class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
                 >
                 <button
                   class="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
@@ -173,8 +173,8 @@
                 class="flex items-center gap-2 p-3 rounded-xl text-xs"
                 :class="
                   testResult.success
-                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                    : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                    ? 'bg-emerald-500 bg-opacity-10 text-emerald-500 border border-emerald-500 border-opacity-20'
+                    : 'bg-red-500 bg-opacity-10 text-red-500 border border-red-500 border-opacity-20'
                 "
               >
                 <CheckCircle v-if="testResult.success" :size="14" />

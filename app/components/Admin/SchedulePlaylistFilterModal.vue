@@ -20,10 +20,10 @@
           @click.stop
         >
           <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-zinc-800/50">
+          <div class="flex items-center justify-between p-6 border-b border-zinc-800 border-opacity-50">
             <h3 class="text-lg font-black text-zinc-100 tracking-tight">{{ locale.title }}</h3>
             <button
-              class="p-2 rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="p-2 rounded-xl bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
               @click="close"
             >
               <X class="w-4 h-4" />
@@ -44,12 +44,12 @@
                   :class="[
                     'relative p-3 rounded-xl border text-sm font-medium transition-all text-left flex items-center gap-3 overflow-hidden group',
                     selectedIds.includes(playlist.id)
-                      ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                      ? 'bg-blue-500 bg-opacity-10 border-blue-500 border-opacity-30 text-blue-400'
                       : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-700'
                   ]"
                   @click="togglePlaylist(playlist.id)"
                 >
-                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800/50 border border-zinc-700/50 flex-shrink-0 relative">
+                  <div class="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 bg-opacity-50 border border-zinc-700 border-opacity-50 flex-shrink-0 relative">
                     <img 
                       v-if="playlist.coverImgUrl" 
                       :src="convertToHttps(playlist.coverImgUrl)" 
@@ -74,7 +74,7 @@
                   {{ locale.customPlaylists }}
                 </label>
                 <button
-                  class="p-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-all flex items-center gap-1.5 text-[10px] font-bold"
+                  class="p-1.5 rounded-lg bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-all flex items-center gap-1.5 text-[10px] font-bold"
                   @click="refreshCustomPlaylists"
                   :disabled="isRefreshingCustom"
                   :title="locale.refreshTitle"
@@ -91,7 +91,7 @@
                   class="flex items-center gap-2"
                 >
                   <div class="flex-1 relative">
-                    <div class="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded overflow-hidden bg-zinc-800 border border-zinc-700/50 flex items-center justify-center flex-shrink-0">
+                    <div class="absolute left-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded overflow-hidden bg-zinc-800 border border-zinc-700 border-opacity-50 flex items-center justify-center flex-shrink-0">
                       <img 
                         v-if="item.coverImgUrl" 
                         :src="convertToHttps(item.coverImgUrl)" 
@@ -107,7 +107,7 @@
                       v-model="item.inputValue"
                       type="text"
                       :placeholder="locale.playlistPlaceholder"
-                      class="w-full pl-9 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm focus:outline-none focus:border-blue-500/30 text-zinc-200 transition-all"
+                      class="w-full pl-9 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm focus:outline-none focus:border-blue-500 border-opacity-30 text-zinc-200 transition-all"
                       @input="handleCustomInputChange(index)"
                     />
                     
@@ -117,7 +117,7 @@
                   </div>
                   
                   <button
-                    class="p-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-all flex-shrink-0"
+                    class="p-2.5 rounded-xl bg-red-500 bg-opacity-10 text-red-500 hover:bg-red-500 bg-opacity-20 border border-red-500 border-opacity-20 transition-all flex-shrink-0"
                     @click="removeCustomPlaylist(index)"
                   >
                     <Trash2 class="w-4 h-4" />
@@ -135,7 +135,7 @@
           </div>
 
           <!-- Footer -->
-          <div class="p-6 border-t border-zinc-800/50 bg-zinc-900/50 flex items-center gap-3">
+          <div class="p-6 border-t border-zinc-800 border-opacity-50 bg-zinc-900 bg-opacity-50 flex items-center gap-3">
             <button
               class="flex-1 px-4 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-bold transition-all"
               @click="clearSelection"

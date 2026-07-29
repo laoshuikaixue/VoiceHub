@@ -11,7 +11,7 @@
       <!-- 首页 -->
       <button
         :disabled="currentPage === 1"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500 border-opacity-30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
         :title="locale.first"
         @click="goToPage(1)"
       >
@@ -21,7 +21,7 @@
       <!-- 上一页 -->
       <button
         :disabled="currentPage === 1"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500 border-opacity-30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
         :title="locale.prev"
         @click="goToPage(currentPage - 1)"
       >
@@ -37,7 +37,7 @@
             'w-10 h-10 rounded-lg text-xs font-black transition-all shadow-lg',
             currentPage === page
               ? 'bg-blue-600 text-white shadow-blue-900/20'
-              : 'border border-zinc-800 text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 shadow-none'
+              : 'border border-zinc-800 text-zinc-700 hover:text-blue-400 hover:border-blue-500 border-opacity-30 shadow-none'
           ]"
           @click="goToPage(page)"
         >
@@ -48,7 +48,7 @@
       <!-- 下一页 -->
       <button
         :disabled="currentPage === totalPages"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500 border-opacity-30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
         :title="locale.next"
         @click="goToPage(currentPage + 1)"
       >
@@ -58,7 +58,7 @@
       <!-- 尾页 -->
       <button
         :disabled="currentPage === totalPages"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500 border-opacity-30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
         :title="locale.last"
         @click="goToPage(totalPages)"
       >
@@ -71,7 +71,7 @@
           <input
             v-model="jumpPageInput"
             type="text"
-            class="w-12 h-10 bg-zinc-950 border border-zinc-800 rounded-lg text-center text-xs font-black text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-all"
+            class="w-12 h-10 bg-zinc-950 border border-zinc-800 rounded-lg text-center text-xs font-black text-zinc-300 focus:outline-none focus:border-blue-500 border-opacity-50 transition-all"
             :placeholder="locale.pagePlaceholder"
             @keyup.enter="handleJump"
           >

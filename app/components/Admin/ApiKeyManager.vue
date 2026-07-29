@@ -16,7 +16,7 @@
 
     <!-- 过滤器栏 -->
     <div
-      class="bg-zinc-900/40 border border-zinc-800/60 rounded-2xl p-3 flex flex-col lg:flex-row gap-3 items-center"
+      class="bg-zinc-900 bg-opacity-40 border border-zinc-800 border-opacity-60 rounded-2xl p-3 flex flex-col lg:flex-row gap-3 items-center"
     >
       <div class="relative flex-1 w-full">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" :size="16" />
@@ -24,7 +24,7 @@
           v-model="filters.search"
           type="text"
           :placeholder="locale.searchPlaceholder"
-          class="w-full bg-zinc-950 border border-zinc-800/80 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
+          class="w-full bg-zinc-950 border border-zinc-800 border-opacity-80 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all placeholder:text-zinc-800 text-zinc-200"
           @input="debouncedSearch"
         >
       </div>
@@ -91,7 +91,7 @@
       <div
         v-for="apiKey in apiKeys"
         :key="apiKey.id"
-        class="bg-zinc-900/30 border border-zinc-800/60 rounded-2xl p-6 group hover:border-zinc-700 transition-all relative overflow-hidden"
+        class="bg-zinc-900 bg-opacity-30 border border-zinc-800 border-opacity-60 rounded-2xl p-6 group hover:border-zinc-700 transition-all relative overflow-hidden"
       >
         <div class="flex items-start justify-between relative z-10">
           <div class="space-y-1">
@@ -101,17 +101,17 @@
               </h4>
               <span
                 v-if="apiKey.status === 'active'"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500 bg-opacity-10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500 border-opacity-20"
                 >{{ locale.active }}</span
               >
               <span
                 v-else-if="apiKey.status === 'inactive'"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700 border-opacity-50"
                 >{{ locale.inactive }}</span
               >
               <span
                 v-else-if="apiKey.status === 'expired'"
-                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20"
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500 bg-opacity-10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500 border-opacity-20"
                 >{{ locale.expired }}</span
               >
             </div>
@@ -146,7 +146,7 @@
           </div>
         </div>
 
-        <div class="mt-8 grid grid-cols-2 gap-4 border-t border-zinc-800/40 pt-6 relative z-10">
+        <div class="mt-8 grid grid-cols-2 gap-4 border-t border-zinc-800 border-opacity-40 pt-6 relative z-10">
           <div class="space-y-0.5">
             <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
               >{{ locale.creator }}</span
@@ -169,7 +169,7 @@
               <span
                 v-for="perm in apiKey.permissions"
                 :key="perm"
-                class="text-[9px] font-mono bg-zinc-950 px-1.5 py-0.5 rounded text-zinc-500 border border-zinc-800/50"
+                class="text-[9px] font-mono bg-zinc-950 px-1.5 py-0.5 rounded text-zinc-500 border border-zinc-800 border-opacity-50"
               >
                 {{ perm }}
               </span>
@@ -179,7 +179,7 @@
 
         <!-- 背景点缀 -->
         <div
-          class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-500 bg-opacity-5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
         />
       </div>
     </div>
@@ -230,7 +230,7 @@
                 v-model="form.name"
                 type="text"
                 :placeholder="locale.namePlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 placeholder:text-zinc-800"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 text-zinc-200 placeholder:text-zinc-800"
               >
             </div>
             <div class="space-y-1.5">
@@ -240,7 +240,7 @@
               <textarea
                 v-model="form.description"
                 :placeholder="locale.descriptionPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500/30 text-zinc-200 min-h-[80px] resize-none placeholder:text-zinc-800"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs focus:outline-none focus:border-blue-500 border-opacity-30 text-zinc-200 min-h-[80px] resize-none placeholder:text-zinc-800"
               />
             </div>
             <div class="space-y-1.5">
@@ -264,7 +264,7 @@
                   :key="perm.value"
                   class="flex items-start gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-600 transition-all"
                   :class="{
-                    'border-blue-500/30 bg-blue-500/5': form.permissions.includes(perm.value)
+                    'border-blue-500 border-opacity-30 bg-blue-500 bg-opacity-5': form.permissions.includes(perm.value)
                   }"
                 >
                   <input
@@ -289,7 +289,7 @@
             </div>
             <label
               v-if="showEditModal"
-              class="flex items-center gap-2 p-3 bg-blue-600/5 border border-blue-500/10 rounded-xl cursor-pointer group"
+              class="flex items-center gap-2 p-3 bg-blue-600 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-xl cursor-pointer group"
             >
               <input
                 v-model="form.isActive"
@@ -339,7 +339,7 @@
 
           <div class="p-6 space-y-6">
             <div
-              class="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center text-center"
+              class="p-6 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-20 rounded-2xl flex flex-col items-center text-center"
             >
               <div
                 class="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-4 shadow-lg shadow-emerald-900/20"
@@ -374,7 +374,7 @@
                 </button>
               </div>
               <div
-                class="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500"
+                class="flex items-center gap-2 p-3 bg-amber-500 bg-opacity-10 border border-amber-500 border-opacity-20 rounded-xl text-amber-500"
               >
                 <AlertTriangle :size="14" class="shrink-0" />
                 <p class="text-[10px] font-bold">
@@ -426,17 +426,17 @@
                   <div>
                     <span
                       v-if="selectedApiKey.status === 'active'"
-                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500/20"
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500 bg-opacity-10 text-emerald-500 text-[10px] font-black rounded uppercase border border-emerald-500 border-opacity-20"
                       >{{ locale.active }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'inactive'"
-                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700/50"
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase border border-zinc-700 border-opacity-50"
                       >{{ locale.inactive }}</span
                     >
                     <span
                       v-else-if="selectedApiKey.status === 'expired'"
-                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500/20"
+                      class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-500 bg-opacity-10 text-red-500 text-[10px] font-black rounded uppercase border border-red-500 border-opacity-20"
                       >{{ locale.expired }}</span
                     >
                   </div>
@@ -479,7 +479,7 @@
               </h5>
               <div class="grid grid-cols-2 gap-4">
                 <div
-                  class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-blue-500/30 transition-all"
+                  class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-blue-500 border-opacity-30 transition-all"
                 >
                   <div class="space-y-0.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
@@ -490,13 +490,13 @@
                     </p>
                   </div>
                   <div
-                    class="p-2 bg-blue-500/10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform"
+                    class="p-2 bg-blue-500 bg-opacity-10 rounded-xl text-blue-500 group-hover:scale-110 transition-transform"
                   >
                     <BarChart :size="20" />
                   </div>
                 </div>
                 <div
-                  class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-amber-500/30 transition-all"
+                  class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-amber-500 border-opacity-30 transition-all"
                 >
                   <div class="space-y-0.5">
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
@@ -511,7 +511,7 @@
                     </p>
                   </div>
                   <div
-                    class="p-2 bg-amber-500/10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform"
+                    class="p-2 bg-amber-500 bg-opacity-10 rounded-xl text-amber-500 group-hover:scale-110 transition-transform"
                   >
                     <Clock :size="20" />
                   </div>
@@ -541,7 +541,7 @@
                 </div>
                 <div
                   v-else-if="apiLogs.length === 0"
-                  class="flex flex-col items-center justify-center py-10 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl"
+                  class="flex flex-col items-center justify-center py-10 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl"
                 >
                   <History :size="24" class="text-zinc-800 mb-2" />
                   <span class="text-[10px] font-bold text-zinc-700 uppercase tracking-widest"
@@ -552,7 +552,7 @@
                   v-for="log in apiLogs"
                   v-else
                   :key="log.id"
-                  class="p-3 bg-zinc-950 border border-zinc-800/40 rounded-xl flex items-center justify-between group hover:border-zinc-700 transition-all"
+                  class="p-3 bg-zinc-950 border border-zinc-800 border-opacity-40 rounded-xl flex items-center justify-between group hover:border-zinc-700 transition-all"
                 >
                   <div class="flex items-center gap-4">
                     <div
@@ -1097,12 +1097,12 @@ const copyToClipboard = async (text) => {
 
 const getMethodClass = (method) => {
   const map = {
-    GET: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-    POST: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    PUT: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    DELETE: 'bg-red-500/10 text-red-500 border-red-500/20'
+    GET: 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20',
+    POST: 'bg-blue-500 bg-opacity-10 text-blue-500 border-blue-500 border-opacity-20',
+    PUT: 'bg-amber-500 bg-opacity-10 text-amber-500 border-amber-500 border-opacity-20',
+    DELETE: 'bg-red-500 bg-opacity-10 text-red-500 border-red-500 border-opacity-20'
   }
-  return map[method] || 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+  return map[method] || 'bg-zinc-500 bg-opacity-10 text-zinc-500 border-zinc-500 border-opacity-20'
 }
 
 const getStatusColorClass = (code) => {

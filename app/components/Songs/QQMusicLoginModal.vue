@@ -19,11 +19,11 @@
           class="relative w-full max-w-sm overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl"
           @click.stop
         >
-          <div class="flex items-center justify-between border-b border-zinc-800/50 p-8 pb-4">
+          <div class="flex items-center justify-between border-b border-zinc-800 border-opacity-50 p-8 pb-4">
             <div>
               <h3 class="flex items-center gap-3 text-xl font-black tracking-tight text-zinc-100">
                 <div
-                  class="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-400"
+                  class="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500 bg-opacity-10 text-cyan-400"
                 >
                   <Icon name="music" :size="20" />
                 </div>
@@ -32,7 +32,7 @@
               <p class="ml-13 mt-1 text-xs text-zinc-500">{{ locale.qqDesc }}</p>
             </div>
             <button
-              class="rounded-2xl bg-zinc-800/50 p-3 text-zinc-500 transition-all hover:bg-zinc-800 hover:text-zinc-200"
+              class="rounded-2xl bg-zinc-800 bg-opacity-50 p-3 text-zinc-500 transition-all hover:bg-zinc-800 hover:text-zinc-200"
               type="button"
               @click="handleClose"
             >
@@ -56,7 +56,7 @@
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-3xl bg-zinc-900/90 backdrop-blur-sm transition-all hover:bg-zinc-900/80"
+                  class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-3xl bg-zinc-900 bg-opacity-90 backdrop-blur-sm transition-all hover:bg-zinc-900 bg-opacity-80"
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-zinc-100">
@@ -107,7 +107,7 @@
               </div>
             </div>
 
-            <div class="mt-8 w-full rounded-2xl border border-zinc-800/50 bg-zinc-800/30 p-4">
+            <div class="mt-8 w-full rounded-2xl border border-zinc-800 border-opacity-50 bg-zinc-800 bg-opacity-30 p-4">
               <p
                 class="text-center text-[10px] font-black uppercase leading-relaxed tracking-[0.15em] text-zinc-500"
               >

@@ -17,11 +17,11 @@
           class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
         >
           <!-- 头部 -->
-          <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
+          <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800 border-opacity-50">
             <div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
                 <div
-                  class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  class="w-10 h-10 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
                 >
                   <Icon name="history" :size="20" />
                 </div>
@@ -30,7 +30,7 @@
               <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.recentDesc }}</p>
             </div>
             <button
-              class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+              class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -54,7 +54,7 @@
               class="flex flex-col items-center justify-center py-20 text-center px-8"
             >
               <div
-                class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-4"
+                class="w-16 h-16 rounded-2xl bg-red-500 bg-opacity-10 flex items-center justify-center text-red-500 mb-4"
               >
                 <Icon name="alert-triangle" :size="32" />
               </div>
@@ -79,7 +79,7 @@
               <div
                 v-for="item in songs"
                 :key="item.resourceId"
-                class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-zinc-800/50 transition-all border border-transparent hover:border-zinc-800"
+                class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-zinc-800 bg-opacity-50 transition-all border border-transparent hover:border-zinc-800"
               >
                 <div
                   class="relative w-14 h-14 rounded-xl overflow-hidden bg-zinc-800 flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300"
@@ -123,7 +123,7 @@
                 <div class="flex flex-col items-end gap-2">
                   <div
                     v-if="songsLoadingForSimilar"
-                    class="flex items-center gap-2 px-3 py-1 bg-zinc-800/50 rounded-lg"
+                    class="flex items-center gap-2 px-3 py-1 bg-zinc-800 bg-opacity-50 rounded-lg"
                   >
                     <Icon name="refresh" :size="10" class="animate-spin text-zinc-500" />
                     <span class="text-[10px] text-zinc-500 font-black uppercase">{{ locale.checking }}</span>
@@ -133,9 +133,9 @@
                       :class="[
                         'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border',
                         getSimilarSong(item.data)?.played
-                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          ? 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
                           : getSimilarSong(item.data)?.scheduled
-                            ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                            ? 'bg-amber-500 bg-opacity-10 text-amber-500 border-amber-500 border-opacity-20'
                             : 'bg-zinc-800 text-zinc-500 border-zinc-700'
                       ]"
                     >
@@ -167,7 +167,7 @@
                           getSimilarSong(item.data)?.voted ||
                           submitting
                         "
-                        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900/50 text-zinc-400 disabled:text-zinc-700 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900 bg-opacity-50 text-zinc-400 disabled:text-zinc-700 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
                         @click="
                           getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled
                             ? null
@@ -202,7 +202,7 @@
 
           <!-- 底部栏 -->
           <div
-            class="p-6 border-t border-zinc-800/50 bg-zinc-900/50 flex items-center justify-between"
+            class="p-6 border-t border-zinc-800 border-opacity-50 bg-zinc-900 bg-opacity-50 flex items-center justify-between"
           >
             <div
               class="flex items-center gap-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest"

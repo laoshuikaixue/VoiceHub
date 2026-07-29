@@ -10,7 +10,7 @@
       </div>
       <div class="flex items-center gap-3">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3"
+          class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-xl px-4 py-2 flex items-center gap-3"
         >
           <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
             >{{ locale.enableSelection }}</span
@@ -40,7 +40,7 @@
     </div>
 
     <!-- 信息卡片 -->
-    <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
+    <div class="bg-blue-600 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-xl p-5 flex items-start gap-4">
       <Info class="text-blue-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-zinc-300">{{ locale.aboutTitle }}</p>
@@ -53,10 +53,10 @@
     <!-- 加载状态 -->
     <div
       v-if="loading"
-      class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900/20 border border-zinc-800/50 rounded-xl"
+      class="flex flex-col items-center justify-center py-20 space-y-4 bg-zinc-900 bg-opacity-20 border border-zinc-800 border-opacity-50 rounded-xl"
     >
       <div
-        class="w-10 h-10 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"
+        class="w-10 h-10 border-4 border-blue-600 border-opacity-20 border-t-blue-600 rounded-full animate-spin"
       />
       <p class="text-xs font-black text-zinc-500 uppercase tracking-widest">{{ locale.loading }}</p>
     </div>
@@ -64,7 +64,7 @@
     <!-- 错误状态 -->
     <div
       v-else-if="error"
-      class="bg-red-500/5 border border-red-500/10 rounded-xl p-5 flex items-start gap-4"
+      class="bg-red-500 bg-opacity-5 border border-red-500 border-opacity-10 rounded-xl p-5 flex items-start gap-4"
     >
       <AlertCircle class="text-red-500 shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
@@ -76,7 +76,7 @@
     <!-- 空状态 -->
     <div
       v-else-if="playTimes.length === 0"
-      class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900/20 border border-zinc-800/50 rounded-xl"
+      class="flex flex-col items-center justify-center py-20 space-y-6 bg-zinc-900 bg-opacity-20 border border-zinc-800 border-opacity-50 rounded-xl"
     >
       <div class="p-6 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-700">
         <Clock :size="48" />
@@ -94,15 +94,15 @@
           v-for="playTime in playTimes"
           :key="playTime.id"
           :class="[
-            'group relative bg-zinc-900/30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
-            playTime.enabled ? 'border-zinc-800/80' : 'border-zinc-800/40 opacity-60'
+            'group relative bg-zinc-900 bg-opacity-30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
+            playTime.enabled ? 'border-zinc-800 border-opacity-80' : 'border-zinc-800 border-opacity-40 opacity-60'
           ]"
         >
           <div class="flex items-start justify-between mb-6">
             <div
               :class="[
                 'p-3 rounded-xl bg-zinc-950 border border-zinc-800 transition-all',
-                playTime.enabled ? 'text-blue-500 border-blue-500/20' : 'text-zinc-700'
+                playTime.enabled ? 'text-blue-500 border-blue-500 border-opacity-20' : 'text-zinc-700'
               ]"
             >
               <Clock :size="20" />
@@ -112,8 +112,8 @@
                 :class="[
                   'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
                   playTime.enabled
-                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                    : 'bg-zinc-800/50 text-zinc-600 border-zinc-700/50'
+                    ? 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
+                    : 'bg-zinc-800 bg-opacity-50 text-zinc-600 border-zinc-700 border-opacity-50'
                 ]"
               >
                 {{ playTime.enabled ? locale.enabled : locale.disabled }}
@@ -132,7 +132,7 @@
                 {{ playTime.name }}
               </h4>
               <div
-                class="flex items-center gap-2 mt-1.5 text-blue-500/80 font-black tracking-tighter"
+                class="flex items-center gap-2 mt-1.5 text-blue-500 text-opacity-80 font-black tracking-tighter"
               >
                 <span class="text-xl">{{ playTime.startTime || locale.unlimited }}</span>
                 <div class="w-4 h-[2px] bg-zinc-800" />
@@ -145,16 +145,16 @@
             </p>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-zinc-800/50 flex items-center justify-between">
+          <div class="mt-8 pt-6 border-t border-zinc-800 border-opacity-50 flex items-center justify-between">
             <div class="flex gap-2">
               <button
-                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-blue-400 hover:border-blue-500/30 transition-all"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-blue-400 hover:border-blue-500 border-opacity-30 transition-all"
                 @click="editPlayTime(playTime)"
               >
                 <Edit2 :size="14" />
               </button>
               <button
-                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-red-400 hover:border-red-500/30 transition-all"
+                class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-500 hover:text-red-400 hover:border-red-500 border-opacity-30 transition-all"
                 @click="confirmDelete(playTime)"
               >
                 <Trash2 :size="14" />
@@ -209,7 +209,7 @@
                   v-model="formData.name"
                   type="text"
                   :placeholder="locale.namePlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30"
                 >
               </div>
 
@@ -222,7 +222,7 @@
                     <input
                       v-model="formData.startTime"
                       type="time"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 appearance-none"
                     >
                     <Clock
                       class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none"
@@ -239,7 +239,7 @@
                     <input
                       v-model="formData.endTime"
                       type="time"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 appearance-none"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 appearance-none"
                     >
                     <Clock
                       class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 pointer-events-none"
@@ -259,7 +259,7 @@
                 <textarea
                   v-model="formData.description"
                   :placeholder="locale.descriptionPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[100px] resize-none"
+                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 min-h-[100px] resize-none"
                 />
               </div>
 
@@ -277,14 +277,14 @@
 
               <div
                 v-if="formError"
-                class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[11px] text-red-400"
+                class="bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-lg p-3 text-[11px] text-red-400"
               >
                 {{ formError }}
               </div>
             </div>
           </div>
 
-          <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex justify-end gap-3">
+          <div class="px-8 py-6 bg-zinc-950 bg-opacity-50 border-t border-zinc-800 flex justify-end gap-3">
             <button
               class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
               @click="cancelForm"
@@ -316,7 +316,7 @@
           <div class="p-8">
             <div class="flex flex-col items-center py-4 space-y-6">
               <div
-                class="w-16 h-16 rounded-xl bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/10 shadow-xl shadow-red-900/5"
+                class="w-16 h-16 rounded-xl bg-red-600 bg-opacity-10 text-red-500 flex items-center justify-center border border-red-500 border-opacity-10 shadow-xl shadow-red-900/5"
               >
                 <AlertCircle :size="32" />
               </div>

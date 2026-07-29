@@ -69,7 +69,7 @@
               </button>
             </div>
 
-            <div v-if="error" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-500 text-sm">
+            <div v-if="error" class="p-3 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-lg flex items-center gap-2 text-red-500 text-sm">
               <AlertCircle :size="16" />
               <span>{{ error }}</span>
             </div>

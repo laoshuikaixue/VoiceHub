@@ -28,7 +28,7 @@
           <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             <!-- 登录状态检查 -->
             <section v-if="!isLoggedIn" class="space-y-3">
-              <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4">
+              <div class="bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-20 rounded-2xl p-4">
                 <p class="text-xs text-yellow-400 mb-3">{{ locale.loginRequired }}</p>
                 <button
                   class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors"
@@ -52,7 +52,7 @@
                     class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
                     :class="[
                       selectedQuality === option.value
-                        ? 'bg-blue-600/10 border-blue-500 shadow-sm'
+                        ? 'bg-blue-600 bg-opacity-10 border-blue-500 shadow-sm'
                         : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
                     ]"
                     @click="selectedQuality = option.value"
@@ -101,7 +101,7 @@
               <!-- 上传进度 -->
               <section
                 v-if="uploading || uploadProgress > 0"
-                class="space-y-3 pt-4 border-t border-zinc-800/50"
+                class="space-y-3 pt-4 border-t border-zinc-800 border-opacity-50"
               >
                 <div
                   class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
@@ -110,7 +110,7 @@
                   <span class="text-blue-400">{{ uploadProgress }}%</span>
                 </div>
                 <div
-                  class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50 relative"
+                  class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 border-opacity-50 relative"
                 >
                   <div
                     class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"

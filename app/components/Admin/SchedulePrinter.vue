@@ -10,10 +10,10 @@
     <!-- 权限检查 -->
     <div
       v-if="!canPrintSchedule"
-      class="flex flex-col items-center justify-center py-20 bg-zinc-900/50 rounded-xl border border-zinc-800"
+      class="flex flex-col items-center justify-center py-20 bg-zinc-900 bg-opacity-50 rounded-xl border border-zinc-800"
     >
       <div
-        class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4"
+        class="w-16 h-16 bg-red-500 bg-opacity-10 rounded-full flex items-center justify-center text-red-500 mb-4"
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10" />
@@ -29,7 +29,7 @@
       <!-- 设置面板 -->
       <div class="lg:col-span-4 flex flex-col gap-6 h-auto">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
+          class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
         >
           <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100 shrink-0">
             <Layout class="w-4 h-4 text-blue-500" /> {{ locale.settingsTitle }}
@@ -59,7 +59,7 @@
                   :class="[
                     'py-2.5 rounded-lg text-sm font-bold transition-all',
                     settings.orientation === 'portrait'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
+                      ? 'border border-blue-500 border-opacity-30 bg-blue-600 bg-opacity-10 text-blue-400 shadow-sm'
                       : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
                   ]"
                   @click="settings.orientation = 'portrait'"
@@ -70,7 +70,7 @@
                   :class="[
                     'py-2.5 rounded-lg text-sm font-bold transition-all',
                     settings.orientation === 'landscape'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
+                      ? 'border border-blue-500 border-opacity-30 bg-blue-600 bg-opacity-10 text-blue-400 shadow-sm'
                       : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
                   ]"
                   @click="settings.orientation = 'landscape'"
@@ -90,7 +90,7 @@
                   :class="[
                     'py-2 rounded-lg text-sm font-bold transition-all',
                     settings.layoutStyle === 'classic'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
+                      ? 'border border-blue-500 border-opacity-30 bg-blue-600 bg-opacity-10 text-blue-400 shadow-sm'
                       : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
                   ]"
                   @click="selectClassicLayout"
@@ -101,7 +101,7 @@
                   :class="[
                     'py-2 rounded-lg text-sm font-bold transition-all',
                     settings.layoutStyle === 'table'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
+                      ? 'border border-blue-500 border-opacity-30 bg-blue-600 bg-opacity-10 text-blue-400 shadow-sm'
                       : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
                   ]"
                   @click="selectTableLayout"
@@ -120,13 +120,13 @@
                 <input
                   v-model="settings.startDate"
                   type="date"
-                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500 border-opacity-50 transition-colors"
                   max="9999-12-31"
                 />
                 <input
                   v-model="settings.endDate"
                   type="date"
-                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500 border-opacity-50 transition-colors"
                   max="9999-12-31"
                 />
               </div>
@@ -137,8 +137,8 @@
                   :class="[
                     'px-2 py-1 text-[10px] rounded-md transition-colors border',
                     settings.dateRangePreset === range.value
-                      ? 'bg-blue-600/20 border-blue-500/50 text-blue-400'
-                      : 'bg-zinc-800/50 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                      ? 'bg-blue-600 bg-opacity-20 border-blue-500 border-opacity-50 text-blue-400'
+                      : 'bg-zinc-800 bg-opacity-50 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
                   ]"
                   @click="setDateRange(range.value)"
                 >
@@ -216,7 +216,7 @@
               <textarea
                 v-model="settings.remark"
                 :placeholder="locale.remarkPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500/50 transition-colors"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500 border-opacity-50 transition-colors"
               />
             </div>
           </div>
@@ -224,7 +224,7 @@
           <!-- 操作按钮 -->
           <div class="space-y-2 pt-4 border-t border-zinc-800 shrink-0">
             <button
-              class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all"
+              class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800 bg-opacity-80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all"
               @click="refreshPreview"
             >
               <RefreshCw class="w-4 h-4" /> {{ locale.refreshPreview }}
@@ -239,14 +239,14 @@
             <div class="grid grid-cols-2 gap-2">
               <button
                 :disabled="isExporting"
-                class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500/20 transition-all"
+                class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600 bg-opacity-10 text-emerald-500 hover:bg-emerald-600 bg-opacity-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500 border-opacity-20 transition-all"
                 @click="exportPDF"
               >
                 <FileText class="w-3.5 h-3.5" /> {{ isExporting ? locale.exporting : locale.exportPdf }}
               </button>
               <button
                 :disabled="isExportingImage"
-                class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500/20 transition-all"
+                class="flex items-center justify-center gap-2 py-2.5 bg-amber-500 bg-opacity-10 text-amber-500 hover:bg-amber-500 bg-opacity-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500 border-opacity-20 transition-all"
                 @click="exportImage"
               >
                 <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? locale.exporting : locale.exportImage }}
@@ -259,7 +259,7 @@
       <!-- 预览区域 -->
       <div class="lg:col-span-8 flex flex-col gap-4 h-[700px] lg:h-0 lg:min-h-full mb-8 lg:mb-0">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
+          class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
         >
           <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
             <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
@@ -269,19 +269,19 @@
               <span class="text-zinc-400">{{ formatLocale(locale.songCount, '', filteredSchedules.length) }}</span>
               <span
                 v-if="schedules.length === 0"
-                class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20"
+                class="px-2 py-0.5 rounded bg-red-500 bg-opacity-10 text-red-500 border border-red-500 border-opacity-20"
                 >{{ locale.noData }}</span
               >
               <span
                 v-else-if="filteredSchedules.length === 0"
-                class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                class="px-2 py-0.5 rounded bg-amber-500 bg-opacity-10 text-amber-500 border border-amber-500 border-opacity-20"
                 >{{ locale.filtered }}</span
               >
             </div>
           </div>
 
           <div
-            class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
+            class="flex-1 bg-zinc-950 bg-opacity-50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
           >
             <!-- 纸张预览 -->
             <div

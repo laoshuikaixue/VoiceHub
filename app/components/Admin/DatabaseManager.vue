@@ -14,8 +14,8 @@
         v-for="card in cards"
         :key="card.id"
         :class="[
-          'group relative bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 transition-all hover:border-zinc-700 hover:shadow-2xl hover:shadow-black/40',
-          card.isDanger ? 'hover:border-rose-500/20' : ''
+          'group relative bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-2xl p-8 transition-all hover:border-zinc-700 hover:shadow-2xl hover:shadow-black/40',
+          card.isDanger ? 'hover:border-rose-500 border-opacity-20' : ''
         ]"
       >
         <div class="flex flex-col h-full space-y-6">
@@ -24,7 +24,7 @@
               :class="[
                 'p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 transition-all',
                 card.isDanger
-                  ? 'text-rose-500 border-rose-500/10'
+                  ? 'text-rose-500 border-rose-500 border-opacity-10'
                   : `text-${card.color}-500 border-${card.color}-500/10 shadow-lg`
               ]"
             >
@@ -32,7 +32,7 @@
             </div>
             <span
               v-if="card.isDanger"
-              class="px-2 py-0.5 bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase tracking-widest border border-rose-500/20 rounded"
+              class="px-2 py-0.5 bg-rose-500 bg-opacity-10 text-rose-500 text-[9px] font-black uppercase tracking-widest border border-rose-500 border-opacity-20 rounded"
               >{{ locale.highRisk }}</span
             >
           </div>
@@ -51,7 +51,7 @@
             class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-zinc-950 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 hover:border-zinc-700"
             :class="
               card.isDanger
-                ? 'bg-zinc-950 border border-rose-900/30 text-rose-500 hover:bg-rose-600 hover:text-white hover:border-rose-600 shadow-lg shadow-rose-900/5'
+                ? 'bg-zinc-950 border border-rose-900 border-opacity-30 text-rose-500 hover:bg-rose-600 hover:text-white hover:border-rose-600 shadow-lg shadow-rose-900/5'
                 : ''
             "
             @click="openModal(card.id)"
@@ -65,14 +65,14 @@
         <div
           :class="[
             'absolute -right-4 -bottom-4 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none',
-            card.isDanger ? 'bg-rose-500/5' : `bg-${card.color}-500/5`
+            card.isDanger ? 'bg-rose-500 bg-opacity-5' : `bg-${card.color}-500/5`
           ]"
         />
       </div>
     </div>
 
     <!-- 维护建议 -->
-    <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
+    <div class="bg-blue-600 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-xl p-5 flex items-start gap-4">
       <AlertCircle class="text-blue-500 shrink-0 mt-0.5 w-[18px] h-[18px]" />
       <div class="space-y-1">
         <p class="text-[11px] font-bold text-zinc-300">{{ locale.maintenanceTitle }}</p>
@@ -109,7 +109,7 @@
               <label
                 v-for="(item, i) in backupOptions"
                 :key="i"
-                class="flex items-start gap-4 p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
+                class="flex items-start gap-4 p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
               >
                 <div class="shrink-0 mt-0.5">
                   <input
@@ -129,13 +129,13 @@
               </label>
             </div>
           </div>
-          <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl">
+          <div class="p-3 bg-blue-500 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-xl">
             <p class="text-[10px] text-zinc-500 text-center italic">
               {{ locale.backupHint }}
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-zinc-950 bg-opacity-50 border-t border-zinc-800 flex gap-3 justify-end">
           <button
             class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -173,7 +173,7 @@
         </div>
         <div class="p-8 space-y-6">
           <div
-            class="border-2 border-dashed border-zinc-800 rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all cursor-pointer"
+            class="border-2 border-dashed border-zinc-800 rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-emerald-500 border-opacity-50 hover:bg-emerald-500 bg-opacity-5 transition-all cursor-pointer"
             @click="$refs.fileInput.click()"
             @dragover.prevent
             @drop.prevent="handleFileDrop"
@@ -205,7 +205,7 @@
                 :class="[
                   'p-4 border rounded-xl text-left transition-all',
                   restoreForm.mode === 'merge'
-                    ? 'bg-zinc-950 border-emerald-500/30'
+                    ? 'bg-zinc-950 border-emerald-500 border-opacity-30'
                     : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
                 ]"
                 @click="restoreForm.mode = 'merge'"
@@ -224,7 +224,7 @@
                 :class="[
                   'p-4 border rounded-xl text-left transition-all',
                   restoreForm.mode === 'replace'
-                    ? 'bg-zinc-950 border-emerald-500/30'
+                    ? 'bg-zinc-950 border-emerald-500 border-opacity-30'
                     : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
                 ]"
                 @click="restoreForm.mode = 'replace'"
@@ -262,7 +262,7 @@
           </div>
 
           <div
-            class="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
+            class="p-4 bg-amber-500 bg-opacity-5 border border-amber-500 border-opacity-10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-amber-500 shrink-0 mt-0.5 w-4 h-4" />
             <p class="text-[10px] text-zinc-500 leading-normal font-medium">
@@ -270,7 +270,7 @@
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-zinc-950 bg-opacity-50 border-t border-zinc-800 flex gap-3 justify-end">
           <button
             class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -320,10 +320,10 @@
             />
           </div>
 
-          <div class="p-6 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-4">
+          <div class="p-6 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-2xl space-y-4">
             <div class="flex items-center gap-3">
               <div
-                class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center"
+                class="w-8 h-8 rounded-lg bg-amber-500 bg-opacity-10 text-amber-500 flex items-center justify-center"
               >
                 <AlertCircle class="w-4 h-4" />
               </div>
@@ -336,7 +336,7 @@
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-zinc-950 bg-opacity-50 border-t border-zinc-800 flex gap-3 justify-end">
           <button
             class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -374,7 +374,7 @@
         </div>
         <div class="p-8 space-y-6">
           <div
-            class="p-6 bg-rose-600/10 border border-rose-500/20 rounded-2xl flex flex-col items-center text-center"
+            class="p-6 bg-rose-600 bg-opacity-10 border border-rose-500 border-opacity-20 rounded-2xl flex flex-col items-center text-center"
           >
             <Trash2 class="text-rose-500 mb-4 w-12 h-12" />
             <h4 class="text-lg font-black text-rose-500 tracking-tight">
@@ -390,12 +390,12 @@
 
           <div class="space-y-3">
             <label
-              class="text-[11px] font-black text-rose-500/80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
+              class="text-[11px] font-black text-rose-500 text-opacity-80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
             >
               {{ locale.confirmCodeLabel }}
             </label>
             <div
-              class="bg-zinc-950 border border-rose-900/30 rounded-xl px-4 py-3 font-mono text-[10px] text-rose-400 text-center select-all"
+              class="bg-zinc-950 border border-rose-900 border-opacity-30 rounded-xl px-4 py-3 font-mono text-[10px] text-rose-400 text-center select-all"
             >
               {{ CONFIRM_CODE }}
             </div>
@@ -403,7 +403,7 @@
               v-model="resetConfirmText"
               type="text"
               :placeholder="locale.confirmCodePlaceholder"
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-rose-500/40 text-center font-mono placeholder:text-zinc-700"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-rose-500 border-opacity-40 text-center font-mono placeholder:text-zinc-700"
             >
           </div>
 

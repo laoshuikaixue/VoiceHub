@@ -41,8 +41,8 @@
                 :class="[
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-all group border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 focus-visible:ring-inset',
                   activeTab === item.id
-                    ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
-                    : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 border-transparent'
+                    ? 'bg-blue-600 bg-opacity-10 text-blue-400 border-blue-500 border-opacity-20'
+                    : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 bg-opacity-40 border-transparent'
                 ]"
                 @click="onNavigate(item.id)"
               >
@@ -71,7 +71,7 @@
       <!-- 用户信息及退出登录 -->
       <div class="mt-4 pt-4 border-t border-zinc-800">
         <div
-          class="flex items-center gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50 hover:bg-zinc-800/30 transition-colors"
+          class="flex items-center gap-3 p-3 rounded-lg bg-zinc-900 bg-opacity-50 border border-zinc-800 border-opacity-50 hover:bg-zinc-800 bg-opacity-30 transition-colors"
         >
           <!-- 用户头像/首字母 -->
           <img
@@ -99,7 +99,7 @@
           </div>
           <!-- 退出按钮 -->
           <button
-            class="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+            class="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-400 bg-opacity-10 rounded-lg transition-all"
             :title="locale.logout"
             @click="$emit('logout')"
           >

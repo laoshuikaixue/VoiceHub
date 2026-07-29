@@ -31,7 +31,7 @@
         >
           <!-- 头部 -->
           <div
-            class="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm"
+            class="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900 bg-opacity-50 backdrop-blur-sm"
           >
             <h3 class="text-lg font-semibold text-white">{{ locale.title }}</h3>
             <button
@@ -99,7 +99,7 @@
 
               <!-- 工具栏 (标签页 + 过滤) -->
               <div
-                class="flex flex-col sm:flex-row items-center justify-between border-b border-zinc-800 bg-zinc-900/50"
+                class="flex flex-col sm:flex-row items-center justify-between border-b border-zinc-800 bg-zinc-900 bg-opacity-50"
               >
                 <!-- 标签页 -->
                 <div class="flex w-full sm:w-auto overflow-x-auto no-scrollbar">
@@ -110,7 +110,7 @@
                     :class="
                       activeTab === tab.id
                         ? 'text-blue-500'
-                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800 bg-opacity-50'
                     "
                     @click="activeTab = tab.id"
                   >
@@ -119,7 +119,7 @@
                       class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
                       :class="
                         activeTab === tab.id
-                          ? 'bg-blue-500/10 text-blue-500'
+                          ? 'bg-blue-500 bg-opacity-10 text-blue-500'
                           : 'bg-zinc-800 text-zinc-500'
                       "
                     >
@@ -135,7 +135,7 @@
 
                 <!-- 学期过滤器 -->
                 <div
-                  class="w-full sm:w-auto px-4 py-2 border-t sm:border-t-0 sm:border-l border-zinc-800 flex items-center gap-3 bg-zinc-900/30"
+                  class="w-full sm:w-auto px-4 py-2 border-t sm:border-t-0 sm:border-l border-zinc-800 flex items-center gap-3 bg-zinc-900 bg-opacity-30"
                 >
                   <CustomSelect
                     v-model="selectedSemester"
@@ -160,7 +160,7 @@
                 <div
                   v-for="song in filteredSongs"
                   :key="song.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-zinc-800 bg-zinc-800/20 hover:bg-zinc-800/50 hover:border-zinc-700 transition-all duration-200"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-zinc-800 bg-zinc-800 bg-opacity-20 hover:bg-zinc-800 bg-opacity-50 hover:border-zinc-700 transition-all duration-200"
                 >
                   <!-- 歌曲信息 -->
                   <div class="flex-1 min-w-0">
@@ -224,7 +224,7 @@
                   <!-- 投稿人信息 (移动端) -->
                   <div
                     v-if="song.requester"
-                    class="sm:hidden pt-3 mt-1 border-t border-zinc-800/50 flex justify-between items-center text-xs"
+                    class="sm:hidden pt-3 mt-1 border-t border-zinc-800 border-opacity-50 flex justify-between items-center text-xs"
                   >
                     <span class="text-zinc-500">{{ locale.requester }}</span>
                     <span class="text-zinc-300">
@@ -437,12 +437,12 @@ const getStatusText = (song) => {
 
 const getStatusClasses = (song) => {
   if (song.played) {
-    return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+    return 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
   }
   if (song.scheduled) {
-    return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+    return 'bg-blue-500 bg-opacity-10 text-blue-500 border-blue-500 border-opacity-20'
   }
-  return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+  return 'bg-amber-500 bg-opacity-10 text-amber-500 border-amber-500 border-opacity-20'
 }
 
 // 监听器

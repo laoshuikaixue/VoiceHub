@@ -6,7 +6,7 @@
       class="flex flex-col items-center justify-center min-h-[60vh] space-y-6"
     >
       <div class="relative w-24 h-24">
-        <div class="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
+        <div class="absolute inset-0 border-4 border-blue-500 border-opacity-20 rounded-full" />
         <div class="absolute inset-0 border-4 border-t-blue-500 rounded-full animate-spin" />
         <div class="absolute inset-0 flex items-center justify-center">
           <Activity class="text-blue-500 animate-pulse" :size="32" />
@@ -25,7 +25,7 @@
       v-else-if="error && !hasInitialData"
       class="flex flex-col items-center justify-center min-h-[60vh] space-y-6"
     >
-      <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-3xl">
+      <div class="p-6 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-3xl">
         <X class="text-red-500" :size="48" />
       </div>
       <div class="text-center">
@@ -52,13 +52,13 @@
         <div class="flex items-center gap-3">
           <button
             :disabled="isLoading"
-            class="p-2.5 bg-zinc-900/50 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-all group disabled:opacity-50"
+            class="p-2.5 bg-zinc-900 bg-opacity-50 border border-zinc-800 rounded-full text-zinc-400 hover:text-white transition-all group disabled:opacity-50"
             @click="refreshAllData"
           >
             <RefreshCw :size="18" :class="{ 'animate-spin': isLoading }" />
           </button>
           <div
-            class="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full flex items-center gap-2"
+            class="px-3 py-1.5 bg-blue-500 bg-opacity-10 border border-blue-500 border-opacity-20 rounded-full flex items-center gap-2"
           >
             <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
             <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest"
@@ -82,7 +82,7 @@
         <div
           v-for="(stat, i) in kpiStats"
           :key="i"
-          class="group relative p-6 bg-zinc-900/40 border border-zinc-800/60 rounded-[2rem] overflow-hidden hover:border-zinc-700 transition-all hover:shadow-2xl hover:shadow-black/40"
+          class="group relative p-6 bg-zinc-900 bg-opacity-40 border border-zinc-800 border-opacity-60 rounded-[2rem] overflow-hidden hover:border-zinc-700 transition-all hover:shadow-2xl hover:shadow-black/40"
         >
           <div class="flex justify-between items-start">
             <div
@@ -122,7 +122,7 @@
         <!-- 实时脉冲部分 -->
         <div class="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
-            class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl flex items-center justify-between relative overflow-hidden group cursor-help"
+            class="p-8 bg-zinc-900 bg-opacity-20 border border-zinc-800 border-opacity-40 rounded-3xl flex items-center justify-between relative overflow-hidden group cursor-help"
             @mouseenter="handleMouseEnter"
             @mouseleave="handleMouseLeave"
           >
@@ -136,13 +136,13 @@
               </div>
             </div>
             <div class="relative z-10 w-24 h-24 flex items-center justify-center">
-              <div class="absolute inset-0 bg-blue-500/20 rounded-full animate-ping opacity-20" />
-              <div class="absolute inset-4 bg-blue-500/20 rounded-full animate-pulse opacity-40" />
+              <div class="absolute inset-0 bg-blue-500 bg-opacity-20 rounded-full animate-ping opacity-20" />
+              <div class="absolute inset-4 bg-blue-500 bg-opacity-20 rounded-full animate-pulse opacity-40" />
               <Activity class="text-blue-500" :size="32" />
             </div>
           </div>
           <div
-            class="p-8 bg-zinc-900/20 border border-zinc-800/40 rounded-3xl flex items-center justify-between relative overflow-hidden group"
+            class="p-8 bg-zinc-900 bg-opacity-20 border border-zinc-800 border-opacity-40 rounded-3xl flex items-center justify-between relative overflow-hidden group"
           >
             <div class="relative z-10">
               <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
@@ -157,7 +157,7 @@
             </div>
             <div class="relative z-10 w-24 h-24 flex items-center justify-center">
               <div
-                class="absolute inset-0 bg-emerald-500/20 rounded-full animate-ping opacity-10"
+                class="absolute inset-0 bg-emerald-500 bg-opacity-20 rounded-full animate-ping opacity-10"
               />
               <Globe class="text-emerald-500" :size="32" />
             </div>
@@ -166,7 +166,7 @@
 
         <!-- 趋势分析图表卡片 -->
         <div
-          class="lg:col-span-8 bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 shadow-2xl overflow-hidden flex flex-col min-h-[500px]"
+          class="lg:col-span-8 bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-[3rem] p-8 shadow-2xl overflow-hidden flex flex-col min-h-[500px]"
         >
           <div class="flex items-center justify-between mb-10">
             <div>
@@ -196,7 +196,7 @@
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
             <div
-              class="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+              class="w-12 h-12 border-4 border-blue-500 border-opacity-20 border-t-blue-500 rounded-full animate-spin"
             />
             <p class="text-xs font-black text-zinc-600 uppercase tracking-widest">
               {{ locale.loadingTrends }}
@@ -206,8 +206,8 @@
             v-else-if="panelStates.trends.error && trendData.length === 0"
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
-            <div class="p-4 bg-red-500/10 rounded-2xl">
-              <Activity class="text-red-500/50" :size="32" />
+            <div class="p-4 bg-red-500 bg-opacity-10 rounded-2xl">
+              <Activity class="text-red-500 text-opacity-50" :size="32" />
             </div>
             <p class="text-xs font-black text-red-400 uppercase tracking-widest">
               {{ panelStates.trends.error }}
@@ -233,7 +233,7 @@
                   :style="{
                     height: `${(item.count / Math.max(...trendData.map((d) => d.count), 1)) * 100}%`
                   }"
-                  class="w-full bg-gradient-to-t from-blue-600/10 to-blue-500/40 rounded-t-xl group-hover:from-blue-600/30 group-hover:to-blue-400 transition-all border-x border-t border-blue-500/20 group-hover:border-blue-500/40 min-h-[4px]"
+                  class="w-full bg-gradient-to-t from-blue-600/10 to-blue-500/40 rounded-t-xl group-hover:from-blue-600/30 group-hover:to-blue-400 transition-all border-x border-t border-blue-500 border-opacity-20 group-hover:border-blue-500 border-opacity-40 min-h-[4px]"
                 />
                 <div
                   class="absolute left-1/2 -translate-x-1/2 -translate-y-full mb-2 text-[10px] font-black text-blue-400 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-10"
@@ -259,7 +259,7 @@
 
         <!-- 热门歌曲排行榜 -->
         <div
-          class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]"
+          class="lg:col-span-4 bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]"
         >
           <div class="flex items-center justify-between mb-8">
             <h3 class="text-xl font-bold flex items-center gap-3 text-white">
@@ -292,13 +292,13 @@
             v-if="panelStates.topSongs.loading && topSongs.length === 0"
             class="flex-1 space-y-4"
           >
-            <div v-for="i in 5" :key="i" class="h-20 bg-zinc-800/20 animate-pulse rounded-2xl" />
+            <div v-for="i in 5" :key="i" class="h-20 bg-zinc-800 bg-opacity-20 animate-pulse rounded-2xl" />
           </div>
           <div
             v-else-if="panelStates.topSongs.error && topSongs.length === 0"
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
-            <Music :size="32" class="text-red-500/20" />
+            <Music :size="32" class="text-red-500 text-opacity-20" />
             <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">
               {{ panelStates.topSongs.error }}
             </p>
@@ -316,7 +316,7 @@
             <div
               v-for="(song, i) in topSongs.slice(0, 5)"
               :key="i"
-              class="p-4 bg-zinc-950/50 border border-zinc-800/40 rounded-2xl flex items-center gap-4 group hover:bg-zinc-800/30 transition-all"
+              class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-40 rounded-2xl flex items-center gap-4 group hover:bg-zinc-800 bg-opacity-30 transition-all"
             >
               <div
                 :class="`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
@@ -360,7 +360,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- 活跃用户排行榜 -->
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]"
+          class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]"
         >
           <div class="flex items-center justify-between mb-8">
             <h3 class="text-xl font-bold flex items-center gap-3 text-white">
@@ -376,13 +376,13 @@
             v-if="panelStates.activeUsers.loading && activeUsers.length === 0"
             class="flex-1 space-y-4"
           >
-            <div v-for="i in 4" :key="i" class="h-24 bg-zinc-800/20 animate-pulse rounded-3xl" />
+            <div v-for="i in 4" :key="i" class="h-24 bg-zinc-800 bg-opacity-20 animate-pulse rounded-3xl" />
           </div>
           <div
             v-else-if="panelStates.activeUsers.error && activeUsers.length === 0"
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
-            <Users :size="32" class="text-red-500/20" />
+            <Users :size="32" class="text-red-500 text-opacity-20" />
             <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">
               {{ panelStates.activeUsers.error }}
             </p>
@@ -400,7 +400,7 @@
             <div
               v-for="(user, i) in activeUsers.slice(0, 5)"
               :key="i"
-              class="relative p-5 bg-zinc-950/30 border border-zinc-800/50 rounded-3xl overflow-hidden group"
+              class="relative p-5 bg-zinc-950 bg-opacity-30 border border-zinc-800 border-opacity-50 rounded-3xl overflow-hidden group"
             >
               <div class="flex items-center gap-4 relative z-10">
                 <div
@@ -426,7 +426,7 @@
               </div>
               <!-- 进度条指示器 -->
               <div
-                class="absolute bottom-0 left-0 h-1 bg-purple-500/20 group-hover:bg-purple-500/40 transition-all"
+                class="absolute bottom-0 left-0 h-1 bg-purple-500 bg-opacity-20 group-hover:bg-purple-500 bg-opacity-40 transition-all"
                 :style="{
                   width: `${(user.activityScore / Math.max(...activeUsers.map((u) => u.activityScore), 1)) * 100}%`
                 }"
@@ -441,7 +441,7 @@
 
         <!-- 学期对比分析 -->
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]"
+          class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-[3rem] p-8 flex flex-col min-h-[500px]"
         >
           <div class="flex items-center justify-between mb-8">
             <h3 class="text-xl font-bold flex items-center gap-3 text-white">
@@ -460,13 +460,13 @@
             v-if="panelStates.semesterComparison.loading && semesterComparison.length === 0"
             class="flex-1 space-y-4"
           >
-            <div v-for="i in 3" :key="i" class="h-32 bg-zinc-800/20 animate-pulse rounded-[2rem]" />
+            <div v-for="i in 3" :key="i" class="h-32 bg-zinc-800 bg-opacity-20 animate-pulse rounded-[2rem]" />
           </div>
           <div
             v-else-if="panelStates.semesterComparison.error && semesterComparison.length === 0"
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
-            <Globe :size="32" class="text-red-500/20" />
+            <Globe :size="32" class="text-red-500 text-opacity-20" />
             <p class="text-[10px] font-black text-red-400 uppercase tracking-widest">
               {{ panelStates.semesterComparison.error }}
             </p>
@@ -484,7 +484,7 @@
             <div
               v-for="(sem, i) in semesterComparison"
               :key="i"
-              :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-emerald-500/5 border-emerald-500/20 shadow-lg shadow-emerald-500/5' : 'bg-zinc-950/20 border-zinc-800/60 opacity-60 hover:opacity-100'}`"
+              :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-emerald-500 bg-opacity-5 border-emerald-500 border-opacity-20 shadow-lg shadow-emerald-500/5' : 'bg-zinc-950 bg-opacity-20 border-zinc-800 border-opacity-60 opacity-60 hover:opacity-100'}`"
             >
               <div class="flex items-center justify-between mb-4">
                 <span class="text-xs font-black text-zinc-300 uppercase tracking-widest">{{
@@ -492,7 +492,7 @@
                 }}</span>
                 <span
                   v-if="sem.isActive"
-                  class="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 rounded text-[8px] font-black uppercase"
+                  class="px-2 py-0.5 bg-emerald-500 bg-opacity-20 text-emerald-500 rounded text-[8px] font-black uppercase"
                   >{{ locale.currentSemester }}</span
                 >
                 <span v-else class="text-[10px] font-black text-zinc-600">{{ locale.historyBaseline }}</span>
@@ -540,11 +540,11 @@
           class="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200"
         >
           <div
-            class="p-6 border-b border-zinc-800/50 bg-gradient-to-br from-blue-500/10 to-transparent"
+            class="p-6 border-b border-zinc-800 border-opacity-50 bg-gradient-to-br from-blue-500/10 to-transparent"
           >
             <div class="flex items-center justify-between mb-4">
               <h4 class="text-sm font-black text-white uppercase tracking-widest">{{ locale.activeUserDetails }}</h4>
-              <div class="flex items-center gap-2 px-2 py-1 bg-blue-500/20 rounded-full">
+              <div class="flex items-center gap-2 px-2 py-1 bg-blue-500 bg-opacity-20 rounded-full">
                 <div class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
                 <span class="text-[10px] font-black text-blue-400"
                   >{{ locale.onlineCount(realtimeStats.activeUsers) }}</span
@@ -559,7 +559,7 @@
               <div
                 v-for="user in realtimeStats.activeUsersList.slice(0, 5)"
                 :key="user.id"
-                class="flex items-center gap-3 p-3 bg-zinc-950/50 border border-zinc-800/50 rounded-2xl group hover:border-blue-500/30 transition-all"
+                class="flex items-center gap-3 p-3 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl group hover:border-blue-500 border-opacity-30 transition-all"
               >
                 <div
                   class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center font-black text-zinc-500 group-hover:text-blue-400 transition-colors"
@@ -587,7 +587,7 @@
               <p class="text-xs font-black uppercase tracking-widest">{{ locale.noOnlineUsers }}</p>
             </div>
           </div>
-          <div class="px-6 py-4 bg-zinc-950/50 flex items-center justify-between">
+          <div class="px-6 py-4 bg-zinc-950 bg-opacity-50 flex items-center justify-between">
             <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
               >{{ locale.syncingRealtime }}</span
             >

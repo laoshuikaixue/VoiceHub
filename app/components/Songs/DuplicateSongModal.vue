@@ -21,7 +21,7 @@
           <div>
             <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500"
+                class="w-10 h-10 rounded-2xl bg-amber-500 bg-opacity-10 flex items-center justify-center text-amber-500"
               >
                 <Icon name="alert-triangle" :size="20" />
               </div>
@@ -30,7 +30,7 @@
             <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.desc }}</p>
           </div>
           <button
-            class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+            class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
             @click="$emit('close')"
           >
             <Icon name="x" :size="20" />
@@ -81,8 +81,8 @@
                   :class="[
                     'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border',
                     song.played
-                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                      : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                      ? 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
+                      : 'bg-amber-500 bg-opacity-10 text-amber-500 border-amber-500 border-opacity-20'
                   ]"
                 >
                   {{ song.played ? locale.played : locale.pending }}

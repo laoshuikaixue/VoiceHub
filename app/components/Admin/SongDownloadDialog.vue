@@ -36,7 +36,7 @@
                   class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
                   :class="[
                     selectedQuality === option.value
-                      ? 'bg-blue-600/10 border-blue-500 shadow-sm'
+                      ? 'bg-blue-600 bg-opacity-10 border-blue-500 shadow-sm'
                       : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
                   ]"
                   @click="selectedQuality = option.value"
@@ -91,14 +91,14 @@
                   <!-- 标准化选项 -->
                   <div
                     class="flex items-center justify-between"
-                    :class="selectedSongs.size > 1 ? 'pt-3 border-t border-zinc-800/50' : ''"
+                    :class="selectedSongs.size > 1 ? 'pt-3 border-t border-zinc-800 border-opacity-50' : ''"
                   >
                     <div class="flex flex-col">
                       <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-zinc-200">{{ locale.normalizeAudio }}</span>
                         <span
                           v-if="normalizeAudio"
-                          class="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/20"
+                          class="text-[10px] bg-blue-500 bg-opacity-10 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500 border-opacity-20"
                           >Peak {{ targetDb }}dB</span
                         >
                       </div>
@@ -149,7 +149,7 @@
                   </Transition>
 
                   <!-- 导出格式设置 -->
-                  <div class="space-y-4 pt-4 border-t border-zinc-800/50">
+                  <div class="space-y-4 pt-4 border-t border-zinc-800 border-opacity-50">
                     <div class="flex items-center justify-between">
                       <div class="flex flex-col">
                         <span class="text-xs font-bold text-zinc-200">{{ locale.exportFormat }}</span>
@@ -186,7 +186,7 @@
                           class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
                           :class="[
                             exportFormat === 'mp3'
-                              ? 'bg-blue-600/10 border-blue-500 text-blue-400'
+                              ? 'bg-blue-600 bg-opacity-10 border-blue-500 text-blue-400'
                               : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700',
                             !shouldUseExportFormat ? 'opacity-50 cursor-not-allowed' : ''
                           ]"
@@ -199,7 +199,7 @@
                           class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
                           :class="[
                             exportFormat === 'wav'
-                              ? 'bg-blue-600/10 border-blue-500 text-blue-400'
+                              ? 'bg-blue-600 bg-opacity-10 border-blue-500 text-blue-400'
                               : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700',
                             !shouldUseExportFormat ? 'opacity-50 cursor-not-allowed' : ''
                           ]"
@@ -232,7 +232,7 @@
                           v-model="customFilename"
                           type="text"
                           :placeholder="locale.filenamePlaceholder"
-                          class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/50 transition-colors pr-8"
+                          class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-50 transition-colors pr-8"
                         >
                         <!-- 快速插入占位符按钮 -->
                         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
@@ -282,7 +282,7 @@
                   >
                   <div
                     v-if="estimatedTotalDuration.count > 0"
-                    class="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20"
+                    class="flex items-center gap-1.5 text-[10px] text-blue-400 font-bold bg-blue-500 bg-opacity-10 px-2 py-0.5 rounded-full border border-blue-500 border-opacity-20"
                   >
                     <Clock class="w-3 h-3" />
                     <span>{{ getLocaleText('estimatedDuration', '', formatDuration(estimatedTotalDuration.total)) }}</span>
@@ -310,7 +310,7 @@
                     {{ locale.preloadSelected }}
                   </button>
                   <button
-                    class="text-[10px] font-bold text-blue-500/80 hover:text-blue-400 transition-colors"
+                    class="text-[10px] font-bold text-blue-500 text-opacity-80 hover:text-blue-400 transition-colors"
                     @click="toggleSelectAll"
                   >
                     {{ isAllSelected ? locale.deselectAll : locale.selectAll }}
@@ -319,12 +319,12 @@
               </div>
 
               <div
-                class="bg-zinc-950/50 border border-zinc-800/50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
+                class="bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
               >
                 <div
                   v-for="song in songs"
                   :key="song.id"
-                  class="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-800/30 transition-all text-left border-b border-zinc-800/30 last:border-0 group relative"
+                  class="w-full flex items-center gap-3 p-3.5 hover:bg-zinc-800 bg-opacity-30 transition-all text-left border-b border-zinc-800 border-opacity-30 last:border-0 group relative"
                 >
                   <!-- 预下载进度条背景 -->
                   <div
@@ -333,7 +333,7 @@
                         preloadedSongs.get(song.song.id).loading) ||
                       activeDownloads.has(song.song.id)
                     "
-                    class="absolute bottom-0 left-0 h-0.5 bg-blue-500/50 transition-all duration-300 ease-out"
+                    class="absolute bottom-0 left-0 h-0.5 bg-blue-500 bg-opacity-50 transition-all duration-300 ease-out"
                     :style="{
                       width: `${
                         (typeof activeDownloads.get(song.song.id) === 'number'
@@ -370,7 +370,7 @@
                       <!-- 预下载标记（精确时长） -->
                       <div
                         v-if="getUsablePreload(song.song.id, selectedQuality)"
-                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500 bg-opacity-10 border border-green-500 border-opacity-20"
                       >
                         <Check class="w-2 h-2 text-green-400" />
                         <span class="text-[9px] font-mono text-green-400">{{
@@ -380,7 +380,7 @@
                       <!-- API 预估标记 -->
                       <div
                         v-else-if="estimatedDurations.has(song.song.id)"
-                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500 bg-opacity-10 border border-purple-500 border-opacity-20"
                       >
                         <Clock class="w-2 h-2 text-purple-400" />
                         <span class="text-[9px] font-mono text-purple-400">{{
@@ -399,7 +399,7 @@
                     <!-- 单个预下载/删除按钮 -->
                     <button
                       v-if="getUsablePreload(song.song.id, selectedQuality)"
-                      class="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-600 hover:text-red-400 transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-red-500 bg-opacity-10 text-zinc-600 hover:text-red-400 transition-colors"
                       :title="locale.deleteCache"
                       @click.stop="removePreloaded(song.song.id)"
                     >
@@ -407,7 +407,7 @@
                     </button>
                     <button
                       v-else
-                      class="p-1.5 rounded-lg hover:bg-blue-500/10 text-zinc-600 hover:text-blue-400 transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-blue-500 bg-opacity-10 text-zinc-600 hover:text-blue-400 transition-colors"
                       :title="locale.preloadSong"
                       @click.stop="preloadSong(song.song)"
                     >
@@ -425,7 +425,7 @@
             <!-- 进度条 -->
             <section
               v-if="downloading || downloadedCount > 0"
-              class="space-y-3 pt-4 border-t border-zinc-800/50"
+              class="space-y-3 pt-4 border-t border-zinc-800 border-opacity-50"
             >
               <div
                 class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
@@ -436,7 +436,7 @@
                 <span class="text-blue-400">{{ downloadedCount }} / {{ totalCount }}</span>
               </div>
               <div
-                class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50 relative"
+                class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800 border-opacity-50 relative"
               >
                 <div
                   class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"
@@ -466,7 +466,7 @@
               <!-- 错误信息 -->
               <div
                 v-if="downloadErrors.length > 0"
-                class="bg-red-500/5 border border-red-500/10 rounded-xl p-3 space-y-2"
+                class="bg-red-500 bg-opacity-5 border border-red-500 border-opacity-10 rounded-xl p-3 space-y-2"
               >
                 <div class="text-[10px] font-bold text-red-400 flex items-center gap-2">
                   <AlertTriangle class="w-3 h-3" />
@@ -476,7 +476,7 @@
                   <div
                     v-for="error in downloadErrors"
                     :key="error.id"
-                    class="text-[9px] text-red-500/70 truncate"
+                    class="text-[9px] text-red-500 text-opacity-70 truncate"
                   >
                     {{ error.title }} - {{ error.error }}
                   </div>
@@ -487,7 +487,7 @@
 
           <!-- 底部按钮 -->
           <div
-            class="p-4 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between shrink-0"
+            class="p-4 border-t border-zinc-800 bg-zinc-900 bg-opacity-50 flex items-center justify-between shrink-0"
           >
             <div class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">
               {{ getLocaleText('selectedSongsCount', '', selectedSongs.size) }}

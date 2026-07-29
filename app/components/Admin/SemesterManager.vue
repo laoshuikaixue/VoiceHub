@@ -82,7 +82,7 @@
               <h4 class="text-3xl font-black text-white tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
-              <div class="flex items-center gap-2 text-blue-100/60 font-bold text-xs">
+              <div class="flex items-center gap-2 text-blue-100 text-opacity-60 font-bold text-xs">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="12"
@@ -134,7 +134,7 @@
 
         <div
           v-else
-          class="bg-zinc-900/30 border border-zinc-800 border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
+          class="bg-zinc-900 bg-opacity-30 border border-zinc-800 border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -158,7 +158,7 @@
           </button>
         </div>
 
-        <div class="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl flex items-start gap-4">
+        <div class="p-6 bg-zinc-900 bg-opacity-20 border border-zinc-800 rounded-3xl flex items-start gap-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -214,7 +214,7 @@
         <div class="space-y-4">
           <div
             v-if="loading && semesters.length === 0"
-            class="text-center py-20 bg-zinc-900/10 border border-zinc-800 border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-zinc-900 bg-opacity-10 border border-zinc-800 border-dashed rounded-[2rem]"
           >
             <p class="text-xs font-bold text-zinc-600">{{ locale.loading }}</p>
           </div>
@@ -225,8 +225,8 @@
             class="group flex items-center justify-between p-6 rounded-[2rem] border transition-all"
             :class="
               sem.isActive
-                ? 'bg-blue-600/5 border-blue-500/30'
-                : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700'
+                ? 'bg-blue-600 bg-opacity-5 border-blue-500 border-opacity-30'
+                : 'bg-zinc-900 bg-opacity-40 border-zinc-800 hover:border-zinc-700'
             "
           >
             <div class="flex items-center gap-5">
@@ -272,7 +272,7 @@
             <div class="flex items-center gap-2">
               <div
                 v-if="sem.isActive"
-                class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/20"
+                class="flex items-center gap-2 px-4 py-2 bg-emerald-500 bg-opacity-10 text-emerald-500 rounded-xl border border-emerald-500 border-opacity-20"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -315,7 +315,7 @@
 
               <button
                 :disabled="loading"
-                class="p-2.5 text-zinc-700 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2.5 text-zinc-700 hover:text-blue-400 hover:bg-blue-500 bg-opacity-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.editSemester"
                 @click="openEditModal(sem)"
               >
@@ -337,7 +337,7 @@
               <button
                 v-if="!sem.isActive"
                 :disabled="loading"
-                class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500 bg-opacity-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.deleteSemester"
                 @click="deleteSemester(sem.id)"
               >
@@ -365,7 +365,7 @@
 
           <div
             v-if="semesters.length === 0 && !loading"
-            class="text-center py-20 bg-zinc-900/10 border border-zinc-800 border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-zinc-900 bg-opacity-10 border border-zinc-800 border-dashed rounded-[2rem]"
           >
             <p class="text-xs font-bold text-zinc-600">{{ locale.empty }}</p>
           </div>
@@ -417,7 +417,7 @@
                 v-model="semesterForm.name"
                 type="text"
                 :placeholder="locale.namePlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 font-bold transition-all"
+                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 font-bold transition-all"
               >
             </div>
 
@@ -462,7 +462,7 @@
           </div>
         </div>
 
-        <div class="p-6 bg-zinc-800/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="p-6 bg-zinc-800 bg-opacity-50 border-t border-zinc-800 flex gap-3 justify-end">
           <button
             class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
             @click="closeModal"

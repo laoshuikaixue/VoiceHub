@@ -2,13 +2,13 @@
   <div class="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
     <div class="max-w-md w-full">
       <div
-        class="bg-zinc-900/40 border border-zinc-900 rounded-3xl p-8 md:p-10 shadow-2xl text-center space-y-8"
+        class="bg-zinc-900 bg-opacity-40 border border-zinc-900 rounded-3xl p-8 md:p-10 shadow-2xl text-center space-y-8"
       >
         <!-- 错误图标 -->
         <div class="flex justify-center">
           <div class="relative">
             <div
-              class="w-24 h-24 rounded-3xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500"
+              class="w-24 h-24 rounded-3xl bg-rose-500 bg-opacity-10 border border-rose-500 border-opacity-20 flex items-center justify-center text-rose-500"
             >
               <ShieldAlert :size="48" stroke-width="1.5" />
             </div>
@@ -29,11 +29,11 @@
         <!-- 错误详情 -->
         <div
           v-if="errorCode"
-          class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-2"
+          class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-2xl space-y-2"
         >
           <p class="text-[10px] text-zinc-600 font-black uppercase tracking-widest">{{ locale.errorCode }}</p>
           <code
-            class="text-xs font-mono text-blue-500 font-bold bg-blue-500/5 px-2 py-1 rounded-lg"
+            class="text-xs font-mono text-blue-500 font-bold bg-blue-500 bg-opacity-5 px-2 py-1 rounded-lg"
           >
             {{ errorCode }}
           </code>

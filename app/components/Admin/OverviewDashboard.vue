@@ -5,19 +5,19 @@
       <div
         v-for="(stat, i) in statCards"
         :key="i"
-        class="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-lg shadow-black/20"
+        class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-2xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-lg shadow-black/20"
       >
         <div class="flex justify-between items-start mb-4">
           <div
             :class="[
               'p-3 rounded-xl border',
               stat.color === 'blue'
-                ? 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                ? 'bg-blue-500 bg-opacity-10 text-blue-500 border-blue-500 border-opacity-20'
                 : stat.color === 'emerald'
-                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                  ? 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
                   : stat.color === 'pink'
-                    ? 'bg-pink-500/10 text-pink-500 border-pink-500/20'
-                    : 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+                    ? 'bg-pink-500 bg-opacity-10 text-pink-500 border-pink-500 border-opacity-20'
+                    : 'bg-zinc-500 bg-opacity-10 text-zinc-500 border-zinc-500 border-opacity-20'
             ]"
           >
             <component :is="stat.icon" :size="24" />
@@ -44,7 +44,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <!-- 最近活动 -->
       <div
-        class="lg:col-span-5 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
+        class="lg:col-span-5 bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
         <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -79,7 +79,7 @@
             <div
               v-for="(activity, idx) in recentActivities"
               :key="idx"
-              class="flex items-start gap-4 p-4 rounded-2xl hover:bg-zinc-800/40 transition-all cursor-pointer group"
+              class="flex items-start gap-4 p-4 rounded-2xl hover:bg-zinc-800 bg-opacity-40 transition-all cursor-pointer group"
             >
               <div
                 :class="[
@@ -110,7 +110,7 @@
 
       <!-- 系统状态 -->
       <div
-        class="lg:col-span-4 bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
+        class="lg:col-span-4 bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
         <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -120,8 +120,8 @@
             :class="[
               'px-3 py-1 text-[10px] font-black uppercase rounded-full border',
               systemStatus.online
-                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                : 'bg-red-500/10 text-red-500 border-red-500/20'
+                ? 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
+                : 'bg-red-500 bg-opacity-10 text-red-500 border-red-500 border-opacity-20'
             ]"
           >
             {{ systemStatus.online ? locale.online : locale.offline }}
@@ -165,7 +165,7 @@
 
       <!-- 快速操作 -->
       <div
-        class="lg:col-span-3 bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
+        class="lg:col-span-3 bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
         <div class="px-6 py-5 border-b border-zinc-800">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -180,7 +180,7 @@
               'w-full flex items-center gap-3 px-5 py-4 rounded-lg border font-bold text-sm transition-all text-left group',
               action.primary
                 ? 'bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-900/20 hover:bg-blue-500'
-                : 'bg-zinc-950/40 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
+                : 'bg-zinc-950 bg-opacity-40 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200'
             ]"
             @click="navigateTo(action.id)"
           >
@@ -319,12 +319,12 @@ const formatNumber = (num) => {
 
 const getActivityStyle = (type) => {
   const styles = {
-    song: { icon: Music, bg: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
-    user: { icon: Users, bg: 'bg-pink-500/10 text-pink-500 border-pink-500/20' },
-    schedule: { icon: Calendar, bg: 'bg-blue-500/10 text-blue-500 border-blue-500/20' }
+    song: { icon: Music, bg: 'bg-purple-500 bg-opacity-10 text-purple-500 border-purple-500 border-opacity-20' },
+    user: { icon: Users, bg: 'bg-pink-500 bg-opacity-10 text-pink-500 border-pink-500 border-opacity-20' },
+    schedule: { icon: Calendar, bg: 'bg-blue-500 bg-opacity-10 text-blue-500 border-blue-500 border-opacity-20' }
   }
 
-  return styles[type] || { icon: Activity, bg: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20' }
+  return styles[type] || { icon: Activity, bg: 'bg-zinc-500 bg-opacity-10 text-zinc-500 border-zinc-500 border-opacity-20' }
 }
 
 const loadStats = async () => {

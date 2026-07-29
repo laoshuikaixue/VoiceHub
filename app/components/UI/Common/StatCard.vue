@@ -1,18 +1,18 @@
 <template>
   <div
-    class="relative overflow-hidden p-6 bg-zinc-900 border border-zinc-800 rounded-xl group hover:border-blue-500/30 transition-all duration-300 shadow-xl shadow-black/20"
+    class="relative overflow-hidden p-6 bg-zinc-900 border border-zinc-800 rounded-xl group hover:border-blue-500 border-opacity-30 transition-all duration-300 shadow-xl shadow-black/20"
     :class="{ 'opacity-60 grayscale cursor-wait': isLoading }"
   >
     <!-- 背景装饰 -->
     <div
-      class="absolute -right-4 -top-4 w-24 h-24 bg-blue-600/5 blur-3xl rounded-full group-hover:bg-blue-600/10 transition-colors"
+      class="absolute -right-4 -top-4 w-24 h-24 bg-blue-600 bg-opacity-5 blur-3xl rounded-full group-hover:bg-blue-600 bg-opacity-10 transition-colors"
     />
 
     <div class="flex items-start justify-between relative z-10">
       <div class="space-y-4 flex-1">
         <div class="flex items-center gap-2">
           <div
-            class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 group-hover:border-blue-500/30 group-hover:bg-blue-600/5 transition-all duration-300"
+            class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 group-hover:border-blue-500 border-opacity-30 group-hover:bg-blue-600 bg-opacity-5 transition-all duration-300"
             :class="iconClass"
           >
             <component
@@ -71,10 +71,10 @@
     <!-- 加载动画 -->
     <div
       v-if="isLoading"
-      class="absolute inset-0 flex items-center justify-center bg-zinc-900/40 backdrop-blur-[1px]"
+      class="absolute inset-0 flex items-center justify-center bg-zinc-900 bg-opacity-40 backdrop-blur-[1px]"
     >
       <div
-        class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+        class="w-6 h-6 border-2 border-blue-500 border-opacity-20 border-t-blue-500 rounded-full animate-spin"
       />
     </div>
   </div>
@@ -134,8 +134,8 @@ const iconComponent = computed(() => {
 
 const changeClass = computed(() => {
   if (props.change === undefined) return ''
-  if (props.change > 0) return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-  if (props.change < 0) return 'bg-red-500/10 text-red-500 border-red-500/20'
+  if (props.change > 0) return 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20'
+  if (props.change < 0) return 'bg-red-500 bg-opacity-10 text-red-500 border-red-500 border-opacity-20'
   return 'bg-zinc-800 text-zinc-500 border-zinc-700'
 })
 

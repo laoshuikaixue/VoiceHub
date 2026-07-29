@@ -9,7 +9,7 @@
         :value="searchQuery"
         type="text"
         :placeholder="resolvedSearchPlaceholder"
-        class="block w-full pl-11 pr-11 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-blue-600/5 transition-all"
+        class="block w-full pl-11 pr-11 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500 border-opacity-50 focus:bg-blue-600 bg-opacity-5 transition-all"
         @input="$emit('update:searchQuery', $event.target.value)"
       >
       <button
@@ -58,7 +58,7 @@
         <div v-else-if="filter.type === 'multiSelect'" ref="dropdownRef" class="relative">
           <button
             class="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl transition-all hover:border-zinc-700"
-            :class="{ 'border-blue-500/50 bg-blue-600/5': openDropdown === filter.key }"
+            :class="{ 'border-blue-500 border-opacity-50 bg-blue-600 bg-opacity-5': openDropdown === filter.key }"
             @click="toggleDropdown(filter.key)"
           >
             <div class="flex flex-col items-start gap-0.5 overflow-hidden">
@@ -117,7 +117,7 @@
     <div v-if="showActions" class="flex items-center gap-2 w-full lg:w-auto">
       <button
         v-if="hasActiveFilters"
-        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 text-zinc-400 hover:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
+        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-red-500 border-opacity-30 hover:bg-red-500 bg-opacity-5 text-zinc-400 hover:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
         @click="clearAllFilters"
       >
         <RotateCcw :size="14" />

@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6 pb-24 md:pb-8">
     <!-- 日期选择器 -->
-    <div class="relative bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-1 overflow-hidden">
+    <div class="relative bg-zinc-900 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl p-1 overflow-hidden">
       <div class="flex items-center" @touchstart.stop>
         <button
           :disabled="isFirstDateVisible"
@@ -128,7 +128,7 @@
     <!-- 播出时段选择器 (如果启用) -->
     <div
       v-if="playTimeEnabled"
-      class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3"
+      class="flex items-center gap-3 bg-zinc-900 bg-opacity-30 border border-zinc-800 rounded-lg p-3"
     >
       <CustomSelect
         :model-value="selectedPlayTime"
@@ -146,7 +146,7 @@
 
     <div v-else>
       <div
-        class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4"
+        class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950 bg-opacity-90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4"
       >
         <button
           :class="[
@@ -197,7 +197,7 @@
               {{ locale.pendingSongs }}
             </h3>
             <div
-              class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800"
+              class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900 bg-opacity-50 rounded-xl border border-zinc-800"
             >
               <button
                 v-for="tab in scheduleTabs"
@@ -205,7 +205,7 @@
                 :class="[
                   'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                   activeTab === tab.id
-                    ? 'bg-zinc-800 text-blue-400 shadow-md border border-blue-500/20'
+                    ? 'bg-zinc-800 text-blue-400 shadow-md border border-blue-500 border-opacity-20'
                     : 'text-zinc-600 hover:text-zinc-400'
                 ]"
                 @click="activeTab = tab.id"
@@ -216,9 +216,9 @@
           </div>
 
           <!-- 筛选区 - 移动端折叠 -->
-          <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl shadow-xl">
+          <div class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-2xl shadow-xl">
             <div
-              class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50 rounded-t-2xl"
+              class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800 border-opacity-50 rounded-t-2xl"
               @click="mobileFiltersOpen = !mobileFiltersOpen"
             >
               <div class="flex items-center gap-2 text-zinc-400">
@@ -245,7 +245,7 @@
                   v-model="searchQuery"
                   type="text"
                   :placeholder="locale.searchPlaceholder"
-                  class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                  class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500 border-opacity-30 transition-all text-zinc-200"
                 />
                 <button
                   v-if="searchQuery"
@@ -283,9 +283,9 @@
                   <CustomSelect v-model="songSortOption" :label="locale.sort" :options="sortOptions" />
                 </div>
                 <button
-                  class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
+                  class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500 border-opacity-30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
                   :class="{
-                    'border-blue-500/50 text-blue-400 bg-blue-500/10': isPlaylistFilterActive
+                    'border-blue-500 border-opacity-50 text-blue-400 bg-blue-500 bg-opacity-10': isPlaylistFilterActive
                   }"
                   @click="showPlaylistFilterModal = true"
                 >
@@ -300,8 +300,8 @@
             :class="[
               'draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
               isDraggableOver
-                ? 'border-blue-500 bg-blue-500/5'
-                : 'border-zinc-800/80 bg-zinc-900/20'
+                ? 'border-blue-500 bg-blue-500 bg-opacity-5'
+                : 'border-zinc-800 border-opacity-80 bg-zinc-900 bg-opacity-20'
             ]"
           >
             <div class="space-y-2">
@@ -311,8 +311,8 @@
                 :class="[
                   'draggable-song relative group rounded-xl p-3 transition-all select-none',
                   song.cardCodeId
-                    ? 'bg-amber-500/5 border border-amber-500/30'
-                    : 'bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700'
+                    ? 'bg-amber-500 bg-opacity-5 border border-amber-500 border-opacity-30'
+                    : 'bg-zinc-900 border border-zinc-800 border-opacity-50 hover:border-zinc-700'
                 ]"
                 draggable="true"
                 @dragend="dragEnd"
@@ -325,7 +325,7 @@
                 <div class="flex items-center gap-3">
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700 border-opacity-50 cursor-pointer hover:opacity-80 transition-opacity"
                     @click.stop="playSong(song)"
                   >
                     <img
@@ -365,7 +365,7 @@
                           <span
                             v-for="(playlistName, idx) in playlistNamesMap[song.musicId]"
                             :key="idx"
-                            class="px-1.5 py-[2px] bg-blue-500/10 text-blue-400 rounded text-[9px] border border-blue-500/20 truncate max-w-[100px] font-normal leading-none"
+                            class="px-1.5 py-[2px] bg-blue-500 bg-opacity-10 text-blue-400 rounded text-[9px] border border-blue-500 border-opacity-20 truncate max-w-[100px] font-normal leading-none"
                             :title="playlistName"
                           >
                             {{ playlistName }}
@@ -374,7 +374,7 @@
                       </h4>
                       <button
                         v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500 border-opacity-30 bg-blue-500 bg-opacity-10 text-blue-400 hover:bg-blue-500 bg-opacity-20 transition-all flex-shrink-0"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
@@ -382,14 +382,14 @@
                       </button>
                       <span
                         v-if="song.cardCodeId"
-                        class="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 whitespace-nowrap flex-shrink-0"
+                        class="inline-flex items-center rounded-md border border-amber-500 border-opacity-20 bg-amber-500 bg-opacity-10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
                         {{ locale.cardPending }}
                       </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
+                        class="text-xs text-blue-400 text-opacity-80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
@@ -410,7 +410,7 @@
                       </span>
                       <span
                         v-if="song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
+                        class="ml-1 px-1.5 py-0.5 bg-indigo-500 bg-opacity-10 text-indigo-400 rounded text-[9px] border border-indigo-500 border-opacity-20 whitespace-nowrap"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
@@ -421,16 +421,16 @@
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"
-                      class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50"
+                      class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950 bg-opacity-50 px-2 py-1 rounded-md border border-zinc-800 border-opacity-50"
                     >
-                      <Heart class="w-3 h-3 text-red-500/50" />
+                      <Heart class="w-3 h-3 text-red-500 text-opacity-50" />
                       {{ song.voteCount || 0 }}
                     </div>
 
                     <!-- 重播模式：查看按钮 -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
+                      class="px-3 py-1.5 rounded-lg bg-blue-500 bg-opacity-10 hover:bg-blue-500 bg-opacity-20 text-blue-400 border border-blue-500 border-opacity-20 text-[10px] font-bold transition-colors"
                       @click.stop="openReplayModal(song)"
                     >
                       {{ locale.view }}
@@ -439,7 +439,7 @@
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
+                      class="lg:hidden p-1.5 rounded-lg bg-red-500 bg-opacity-10 hover:bg-red-500 bg-opacity-20 text-red-500 border border-red-500 border-opacity-20 transition-colors"
                       :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
@@ -448,7 +448,7 @@
 
                     <!-- 移动端添加按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-blue-600 bg-opacity-20 text-blue-400 hover:bg-blue-600 bg-opacity-30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="addSongToSchedule(song)"
                     >
                       <Plus class="w-5 h-5" />
@@ -503,7 +503,7 @@
           >
             <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">{{ locale.playOrder }}</h3>
             <div
-              class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl"
+              class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-2xl"
             >
               <div class="flex gap-1">
                 <button
@@ -566,7 +566,7 @@
               <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
               <button
                 :disabled="!canPublish"
-                class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                class="flex items-center gap-2 px-4 py-2 bg-emerald-500 bg-opacity-10 hover:bg-emerald-500 bg-opacity-20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500 border-opacity-20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="publishSchedule"
               >
                 <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
@@ -585,7 +585,7 @@
             ref="sequenceList"
             :class="[
               'sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
-              isSequenceOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20'
+              isSequenceOver ? 'border-blue-500 bg-blue-500 bg-opacity-5' : 'border-zinc-800 border-opacity-80 bg-zinc-900 bg-opacity-20'
             ]"
             @dragleave="handleSequenceDragLeave"
             @dragover.prevent="handleDragOver"
@@ -605,11 +605,11 @@
                 v-for="(schedule, index) in localScheduledSongs"
                 :key="schedule.id"
                 :class="[
-                  'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
+                  'scheduled-song relative group bg-zinc-900 border border-zinc-800 border-opacity-50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
-                  schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '',
+                  schedule.isDraft ? 'border-amber-500 border-opacity-30 bg-amber-500 bg-opacity-5' : '',
                   schedule.song && schedule.song.cardCodeId
-                    ? 'border-amber-500/30 bg-amber-500/5'
+                    ? 'border-amber-500 border-opacity-30 bg-amber-500 bg-opacity-5'
                     : ''
                 ]"
                 :data-schedule-id="schedule.id"
@@ -626,7 +626,7 @@
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950/50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0"
+                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950 bg-opacity-50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0"
                   >
                     <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
                     <span class="text-sm text-zinc-300 leading-none">{{
@@ -636,7 +636,7 @@
 
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700 border-opacity-50 cursor-pointer hover:opacity-80 transition-opacity"
                     @click.stop="playSong(schedule.song)"
                   >
                     <img
@@ -662,7 +662,7 @@
                       </h4>
                       <button
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500 border-opacity-30 bg-blue-500 bg-opacity-10 text-blue-400 hover:bg-blue-500 bg-opacity-20 transition-all flex-shrink-0"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
@@ -670,7 +670,7 @@
                       </button>
                       <span
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
-                        class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
+                        class="text-xs text-blue-400 text-opacity-80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
@@ -683,20 +683,20 @@
                       <!-- 重播标识 -->
                       <span
                         v-if="schedule.replayRequestId != null"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500 bg-opacity-10 text-blue-500 border border-blue-500 border-opacity-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
                         <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500 bg-opacity-10 text-amber-500 border border-amber-500 border-opacity-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
                       <span
                         v-if="schedule.song.cardCodeId"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500 bg-opacity-10 text-amber-400 border border-amber-500 border-opacity-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
                         {{ locale.cardCode }}
@@ -737,7 +737,7 @@
                       </span>
                       <span
                         v-if="schedule.song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
+                        class="ml-1 px-1.5 py-0.5 bg-indigo-500 bg-opacity-10 text-indigo-400 rounded text-[9px] border border-indigo-500 border-opacity-20 whitespace-nowrap"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(schedule.song.preferredPlayTimeId)}`, getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
@@ -747,7 +747,7 @@
                   <div class="flex items-center gap-2">
                     <button
                       v-if="schedule.isDraft"
-                      class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-colors"
+                      class="p-1.5 rounded-lg bg-emerald-500 bg-opacity-10 hover:bg-emerald-500 bg-opacity-20 text-emerald-500 border border-emerald-500 border-opacity-20 transition-colors"
                       :title="locale.publishThisDraft"
                       @click="publishSingleDraft(schedule)"
                     >
@@ -756,7 +756,7 @@
 
                     <!-- 移动端删除按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-red-500 bg-opacity-20 text-red-500 hover:bg-red-500 bg-opacity-30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="removeSongFromSchedule(schedule)"
                     >
                       <Minus class="w-5 h-5" />
@@ -777,7 +777,7 @@
 
       <!-- 移动端底部操作栏 -->
       <div
-        class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6"
+        class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950 bg-opacity-90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6"
       >
         <div class="w-[148px] overflow-x-auto scrollbar-hide">
           <div class="flex items-center gap-2 w-max">
@@ -912,7 +912,7 @@
         </h3>
         <div class="flex items-center gap-3">
           <button
-            class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
+            class="px-3 py-1.5 bg-red-500 bg-opacity-10 hover:bg-red-500 bg-opacity-20 text-red-500 border border-red-500 border-opacity-20 rounded-lg text-xs font-bold transition-colors"
             @click="(rejectReplayRequest(replayModalSongId), closeReplayModal())"
           >
           {{ locale.rejectRequest }}
@@ -3039,7 +3039,7 @@ const updateDragPosition = (x, y) => {
   document.querySelectorAll('.border-blue-500').forEach((el) => {
     // 仅移除通过拖拽添加的高亮，避免移除原本的样式
     if (el.dataset.dragHighlight) {
-      el.classList.remove('border-blue-500', 'bg-blue-500/10')
+      el.classList.remove('border-blue-500', 'bg-blue-500', 'bg-opacity-10')
       delete el.dataset.dragHighlight
     }
   })
@@ -3053,19 +3053,19 @@ const updateDragPosition = (x, y) => {
   if (touchDragData.value?.type === 'song') {
     // 拖拽待排歌曲时，高亮播放列表区域
     if (sequenceList) {
-      sequenceList.classList.add('border-blue-500', 'bg-blue-500/10')
+      sequenceList.classList.add('border-blue-500', 'bg-blue-500', 'bg-opacity-10')
       sequenceList.dataset.dragHighlight = 'true'
     } else if (scheduledSong) {
-      scheduledSong.classList.add('border-blue-500', 'bg-blue-500/10')
+      scheduledSong.classList.add('border-blue-500', 'bg-blue-500', 'bg-opacity-10')
       scheduledSong.dataset.dragHighlight = 'true'
     }
   } else if (touchDragData.value?.type === 'schedule') {
     // 拖拽已排歌曲时，高亮待排区域或其他已排歌曲
     if (draggableSongs) {
-      draggableSongs.classList.add('border-blue-500', 'bg-blue-500/10')
+      draggableSongs.classList.add('border-blue-500', 'bg-blue-500', 'bg-opacity-10')
       draggableSongs.dataset.dragHighlight = 'true'
     } else if (scheduledSong) {
-      scheduledSong.classList.add('border-blue-500', 'bg-blue-500/10')
+      scheduledSong.classList.add('border-blue-500', 'bg-blue-500', 'bg-opacity-10')
       scheduledSong.dataset.dragHighlight = 'true'
     }
   }
@@ -3075,7 +3075,7 @@ const updateDragPosition = (x, y) => {
 const clearDragPosition = () => {
   document.querySelectorAll('.border-blue-500').forEach((el) => {
     if (el.dataset.dragHighlight) {
-      el.classList.remove('border-blue-500', 'bg-blue-500/10')
+      el.classList.remove('border-blue-500', 'bg-blue-500', 'bg-opacity-10')
       delete el.dataset.dragHighlight
     }
   })

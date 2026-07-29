@@ -37,7 +37,7 @@
 
         <button
           v-if="getIdentityByProvider(provider.key)"
-          class="px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
+          class="px-4 py-1.5 bg-rose-500 bg-opacity-10 border border-rose-500 border-opacity-20 hover:bg-rose-500 bg-opacity-20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
           :disabled="actionLoading"
           @click="confirmUnbind(provider.key)"
         >
@@ -58,7 +58,7 @@
         v-if="isWebAuthnSupported || webauthnIdentities.length > 0 || !isSecureContext"
         :class="[
           itemClass,
-          webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900/70' : ''
+          webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900 bg-opacity-70' : ''
         ]"
         @click="toggleWebAuthnList"
       >
@@ -94,7 +94,7 @@
         </button>
         <div
           v-else-if="!isSecureContext"
-          class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20"
+          class="flex items-center gap-1 text-amber-500 bg-amber-500 bg-opacity-10 px-3 py-1.5 rounded-lg border border-amber-500 border-opacity-20"
         >
           <AlertTriangle :size="12" />
           <span class="text-[10px] font-medium">{{ locale.httpsRequired }}</span>
@@ -111,7 +111,7 @@
             <div
               v-for="cred in webauthnIdentities"
               :key="cred.id"
-              class="flex items-center justify-between p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl group/item"
+              class="flex items-center justify-between p-3 bg-zinc-950 bg-opacity-20 border border-zinc-900 rounded-xl group/item"
             >
               <div class="flex flex-col flex-1 mr-4">
                 <div v-if="editingId === cred.id" class="flex items-center gap-2 mb-1">
@@ -299,7 +299,7 @@ const confirmDialog = ref({
 
 // 样式类
 const itemClass =
-  'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group'
+  'flex items-center justify-between p-4 bg-zinc-950 bg-opacity-30 border border-zinc-900 rounded-2xl hover:bg-zinc-900 bg-opacity-50 transition-all group'
 
 const aggregateIconClass = (loginType) => {
   const classes = {

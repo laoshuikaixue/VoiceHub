@@ -8,14 +8,14 @@
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-[10px] px-2 py-1 bg-blue-500 bg-opacity-10 text-blue-500 hover:bg-blue-500 bg-opacity-20 border border-blue-500 border-opacity-20 rounded-md transition-colors font-bold flex items-center gap-1"
         >
           {{ docLabel || '查看文档' }}
         </a>
         <button
           v-if="hasEnvConfig"
           type="button"
-          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-[10px] px-2 py-1 bg-blue-500 bg-opacity-10 text-blue-500 hover:bg-blue-500 bg-opacity-20 border border-blue-500 border-opacity-20 rounded-md transition-colors font-bold flex items-center gap-1"
           @click="$emit('import-env')"
         >
           <Download :size="12" />
@@ -109,6 +109,6 @@ const showSecret = ref(false)
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.oauthConfig || {})
 
-const inputClass = 'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
+const inputClass = 'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
 </script>
