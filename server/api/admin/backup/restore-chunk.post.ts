@@ -950,6 +950,9 @@ export default defineEventHandler(async (event) => {
               if (record.hasOwnProperty(field)) notificationData[field] = record[field]
             })
             notificationData.read = record.hasOwnProperty('read') ? record.read : false
+            notificationData.important = record.hasOwnProperty('important')
+              ? record.important
+              : false
             notificationData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()
             notificationData.updatedAt = record.updatedAt ? new Date(record.updatedAt) : new Date()
 

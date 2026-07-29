@@ -14,34 +14,64 @@
           <div class="space-y-6">
             <!-- 标题 -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >{{ locale.notificationTitle }}</label
-              >
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1">{{
+                locale.notificationTitle
+              }}</label>
               <input
                 v-model="form.title"
                 type="text"
                 :placeholder="locale.titlePlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800"
-              >
+              />
             </div>
 
             <!-- 内容 -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >{{ locale.notificationContent }}</label
-              >
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1">{{
+                locale.notificationContent
+              }}</label>
               <textarea
                 v-model="form.content"
                 :placeholder="locale.contentPlaceholder"
                 class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800 min-h-[160px] resize-none"
               />
+              <p class="px-1 text-[10px] font-medium text-zinc-600">
+                {{ locale.markdownHint }}
+              </p>
             </div>
+
+            <label
+              class="flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-colors"
+              :class="
+                form.important
+                  ? 'border-amber-400/30 bg-amber-400/5'
+                  : 'border-zinc-800 bg-zinc-950/50 hover:border-zinc-700'
+              "
+            >
+              <input v-model="form.important" type="checkbox" class="peer sr-only" />
+              <span
+                class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-zinc-800 transition-colors after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-zinc-400 after:transition-transform peer-checked:bg-amber-400 peer-checked:after:translate-x-5 peer-checked:after:bg-zinc-950 peer-focus-visible:ring-2 peer-focus-visible:ring-amber-300"
+                aria-hidden="true"
+              />
+              <span class="min-w-0">
+                <span class="flex items-center gap-2 text-sm font-black text-zinc-200">
+                  <AlertTriangle
+                    :size="16"
+                    :class="form.important ? 'text-amber-300' : 'text-zinc-600'"
+                  />
+                  {{ locale.importantToggleTitle }}
+                </span>
+                <span class="mt-1 block text-xs leading-relaxed text-zinc-500">
+                  {{ locale.importantToggleDescription }}
+                </span>
+              </span>
+            </label>
 
             <!-- 范围选择 -->
             <div class="space-y-3 pt-4 border-t border-zinc-800/50">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
-                >{{ locale.scope }}</label
-              >
+              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1">{{
+                locale.scope
+              }}</label>
               <div class="flex flex-wrap gap-2">
                 <button
                   v-for="opt in targetOptions"
@@ -76,7 +106,8 @@
 
                 <div v-else-if="form.scope === 'GRADE'" key="grade" class="space-y-4">
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    <span
+                      class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
                       >{{ locale.selectGrade }}</span
                     >
                     <CustomSelect
@@ -96,7 +127,8 @@
                   class="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    <span
+                      class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
                       >{{ locale.grade }}</span
                     >
                     <CustomSelect
@@ -109,7 +141,8 @@
                     />
                   </div>
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    <span
+                      class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
                       >{{ locale.className }}</span
                     >
                     <CustomSelect
@@ -132,7 +165,7 @@
                         :options="gradeOptions"
                         label-key="label"
                         value-key="value"
-                          :placeholder="locale.selectGradePlaceholder"
+                        :placeholder="locale.selectGradePlaceholder"
                         class-name="w-full"
                       />
                       <div class="flex gap-2">
@@ -198,7 +231,7 @@
                       :placeholder="locale.userSearchPlaceholder"
                       class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
                       @input="onUserSearchInput"
-                    >
+                    />
                   </div>
 
                   <!-- 搜索结果 -->
@@ -207,9 +240,9 @@
                     class="bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
                   >
                     <div class="px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/40">
-                      <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >{{ getLocaleMessage('searchResults', userSearchResults.length) }}</span
-                      >
+                      <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{{
+                        getLocaleMessage('searchResults', userSearchResults.length)
+                      }}</span>
                     </div>
                     <div
                       v-for="user in userSearchResults"
@@ -247,9 +280,9 @@
                   <!-- 已选择的用户 -->
                   <div v-if="form.selectedUsers.length > 0" class="space-y-3">
                     <div class="flex items-center justify-between px-1">
-                      <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
-                        >{{ getLocaleMessage('selectedUsers', form.selectedUsers.length) }}</span
-                      >
+                      <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{{
+                        getLocaleMessage('selectedUsers', form.selectedUsers.length)
+                      }}</span>
                       <button
                         class="text-[9px] font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors"
                         @click="clearAllSelectedUsers"
@@ -338,26 +371,45 @@
 
           <div class="flex-1 flex flex-col items-center justify-center p-4">
             <div
-              class="w-full max-w-[320px] bg-[#0c0c0e] border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl relative"
+              class="w-full overflow-hidden rounded-2xl border bg-[#0c0c0e] shadow-2xl transition-all"
+              :class="
+                form.important
+                  ? 'max-w-[380px] border-amber-400/30 shadow-amber-950/20'
+                  : 'max-w-[320px] border-zinc-800'
+              "
             >
               <!-- 顶部装饰 -->
-              <div class="h-1.5 bg-blue-600 w-full" />
+              <div class="h-1.5 w-full" :class="form.important ? 'bg-amber-400' : 'bg-blue-600'" />
 
               <div class="p-6 space-y-4">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <div
-                      class="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-500 flex items-center justify-center border border-blue-500/20"
+                      class="w-8 h-8 rounded-xl flex items-center justify-center border"
+                      :class="
+                        form.important
+                          ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
+                          : 'border-blue-500/20 bg-blue-600/10 text-blue-500'
+                      "
                     >
                       <Bell :size="14" />
                     </div>
-                    <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                      >{{ locale.previewSender }}</span
-                    >
+                    <div>
+                      <span
+                        class="block text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                        >{{ locale.previewSender }}</span
+                      >
+                      <span
+                        v-if="form.important"
+                        class="mt-0.5 block text-[9px] font-black text-amber-300"
+                      >
+                        {{ locale.importantBadge }}
+                      </span>
+                    </div>
                   </div>
-                  <span class="text-[9px] text-zinc-700 font-bold uppercase tracking-wider"
-                    >{{ locale.justNow }}</span
-                  >
+                  <span class="text-[9px] text-zinc-700 font-bold uppercase tracking-wider">{{
+                    locale.justNow
+                  }}</span>
                 </div>
 
                 <div class="space-y-2">
@@ -369,21 +421,26 @@
                   >
                     {{ form.title || locale.previewTitlePlaceholder }}
                   </h4>
-                  <p
-                    :class="[
-                      'text-[11px] leading-relaxed transition-colors',
-                      form.content ? 'text-zinc-400' : 'text-zinc-800 italic line-clamp-3'
-                    ]"
-                  >
-                    {{ form.content || locale.previewContentPlaceholder }}
+                  <div
+                    v-if="form.content"
+                    class="markdown-body max-h-64 overflow-y-auto text-[11px] leading-relaxed text-zinc-400"
+                    v-html="previewContent"
+                  />
+                  <p v-else class="line-clamp-3 text-[11px] italic leading-relaxed text-zinc-800">
+                    {{ locale.previewContentPlaceholder }}
                   </p>
                 </div>
 
                 <div class="pt-4 border-t border-zinc-800/50 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
-                    <Users :size="12" class="text-zinc-700" />
+                    <AlertTriangle v-if="form.important" :size="12" class="text-amber-400" />
+                    <Users v-else :size="12" class="text-zinc-700" />
                     <span class="text-[9px] font-black text-zinc-600 uppercase tracking-wider">
-                      {{ getLocaleMessage('previewScope', scopeDescription) }}
+                      {{
+                        form.important
+                          ? locale.unread
+                          : getLocaleMessage('previewScope', scopeDescription)
+                      }}
                     </span>
                   </div>
                   <button
@@ -432,6 +489,7 @@ import {
   Check,
   Plus,
   AlertCircle,
+  AlertTriangle,
   Eye,
   MessageSquare,
   Loader2
@@ -441,6 +499,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
 import { useLocale } from '~/utils/locale'
+import { renderMarkdown } from '~/utils/markdown'
 
 const { isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
@@ -454,13 +513,14 @@ onMounted(() => {
 })
 
 const gradeOptions = computed(() => {
-  return userFilters.getAvailableGrades().map(g => ({ label: g, value: g }))
+  return userFilters.getAvailableGrades().map((g) => ({ label: g, value: g }))
 })
 
 // 表单数据
 const form = ref({
   title: '',
   content: '',
+  important: false,
   scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'
   grade: '',
   classGrade: '',
@@ -477,25 +537,32 @@ const multiClassForm = ref({
 
 const classOptionsForClassScope = computed(() => {
   const classes = userFilters.getAvailableClasses(undefined, form.value.classGrade)
-  return classes.map(c => ({ label: c, value: c }))
+  return classes.map((c) => ({ label: c, value: c }))
 })
 
 const classOptionsForMultiClassScope = computed(() => {
   const classes = userFilters.getAvailableClasses(undefined, multiClassForm.value.grade)
-  return classes.map(c => ({ label: c, value: c }))
+  return classes.map((c) => ({ label: c, value: c }))
 })
 
-watch(() => form.value.classGrade, () => {
-  form.value.className = ''
-})
+watch(
+  () => form.value.classGrade,
+  () => {
+    form.value.className = ''
+  }
+)
 
-watch(() => multiClassForm.value.grade, () => {
-  multiClassForm.value.class = ''
-})
+watch(
+  () => multiClassForm.value.grade,
+  () => {
+    multiClassForm.value.class = ''
+  }
+)
 
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+const previewContent = computed(() => renderMarkdown(form.value.content))
 
 // 用户搜索相关
 const userSearchQuery = ref('')
@@ -665,7 +732,12 @@ const scopeDescription = computed(() => {
         : getNestedMessage('scopeDescriptions', 'selectGrade')
     case 'CLASS':
       return form.value.classGrade && form.value.className
-        ? getNestedMessage('scopeDescriptions', 'class', form.value.classGrade, form.value.className)
+        ? getNestedMessage(
+            'scopeDescriptions',
+            'class',
+            form.value.classGrade,
+            form.value.className
+          )
         : getNestedMessage('scopeDescriptions', 'selectClass')
     case 'MULTI_CLASS':
       return form.value.selectedClasses.length > 0
@@ -701,6 +773,7 @@ const sendNotification = async () => {
     const notificationData = {
       title: form.value.title,
       content: form.value.content,
+      important: form.value.important,
       scope: form.value.scope,
       filter: {}
     }
@@ -732,6 +805,7 @@ const sendNotification = async () => {
       form.value = {
         title: '',
         content: '',
+        important: false,
         scope: 'ALL',
         grade: '',
         classGrade: '',

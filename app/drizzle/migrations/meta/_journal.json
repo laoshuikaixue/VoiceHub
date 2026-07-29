@@ -253,6 +253,13 @@
       "when": 1785239348895,
       "tag": "20260728114908_add_password_security",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1785322950130,
+      "tag": "20260729110230_important-notification",
+      "breakpoints": true
     }
   ]
 }

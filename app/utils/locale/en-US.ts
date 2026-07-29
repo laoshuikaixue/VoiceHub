@@ -1609,6 +1609,17 @@ export const yearReview = pages.yearReview
 export const composableErrors = pages.composableErrors
 export const audioPlayer = pages.audioPlayer
 
+export const importantNotification = {
+  label: 'Important Notice',
+  unread: 'Unread',
+  read: 'Read',
+  close: 'Close',
+  closing: 'Closing...',
+  loadFailed: 'Failed to load the important notice. Please try again later.',
+  closeFailed: 'Failed to close the notice. Please try again.',
+  retry: 'Retry'
+}
+
 export const admin = {
   sidebar: {
     console: 'Admin Console',
@@ -2725,6 +2736,11 @@ export const admin = {
     titlePlaceholder: 'Enter notification title',
     notificationContent: 'Notification Content',
     contentPlaceholder: 'Enter notification details...',
+    markdownHint: 'Markdown is supported and rendered safely in the preview.',
+    importantToggleTitle: 'Full-screen Important Notice',
+    importantToggleDescription: 'Shown full-screen after sign-in and marked as read when closed',
+    importantBadge: 'Important Notice',
+    unread: 'Unread',
     scope: 'Notification Scope',
     allUsersHint: 'This notification will be sent to all active registered users.',
     selectGrade: 'Select Grade',
@@ -3699,4 +3715,22 @@ export const serverErrors = {
   USER_CODE_EXPIRED_RESEND: 'The verification code has expired. Please resend.',
   USER_CODE_INVALID: 'Incorrect verification code',
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
+  NOTIFICATION_AUTH_REQUIRED: 'Please sign in before working with notifications',
+  NOTIFICATION_ADMIN_REQUIRED: 'Only administrators can send system notifications',
+  NOTIFICATION_IMPORTANT_INVALID: 'The important notice flag must be a boolean',
+  NOTIFICATION_TITLE_CONTENT_REQUIRED: 'Notification title and content are required',
+  NOTIFICATION_TITLE_TOO_LONG: 'Notification title cannot exceed {0} characters',
+  NOTIFICATION_CONTENT_TOO_LONG: 'Notification content cannot exceed {0} characters',
+  NOTIFICATION_USER_ID_INVALID: 'Invalid user ID',
+  NOTIFICATION_SCOPE_INVALID: 'Invalid notification scope',
+  NOTIFICATION_GRADE_REQUIRED: 'Grade is required',
+  NOTIFICATION_GRADE_CLASS_REQUIRED: 'Grade and class are required',
+  NOTIFICATION_CLASSES_REQUIRED: 'Select at least one valid class',
+  NOTIFICATION_USERS_REQUIRED: 'Select at least one user',
+  NOTIFICATION_SEND_FAILED: 'Failed to send the notification',
+  NOTIFICATION_FETCH_FAILED: 'Failed to fetch the important notice',
+  NOTIFICATION_ID_INVALID: 'Invalid notification ID',
+  NOTIFICATION_NOT_FOUND: 'Notification not found',
+  NOTIFICATION_FORBIDDEN: 'You cannot operate on this notification',
+  NOTIFICATION_MARK_READ_FAILED: 'Failed to mark the notification as read',
 } as const

@@ -112,11 +112,20 @@ export const notifications = pgTable('Notification', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   type: text('type').notNull(),
+  title: text('title'),
   message: text('message').notNull(),
+  important: boolean('important').default(false).notNull(),
   read: boolean('read').default(false).notNull(),
   userId: integer('userId').notNull(),
   songId: integer('songId'),
-});
+}, (table) => [
+  index('notification_user_important_read_created_idx').on(
+    table.userId,
+    table.important,
+    table.read,
+    table.createdAt
+  )
+]);
 
 // 通知设置表
 export const notificationSettings = pgTable('NotificationSettings', {

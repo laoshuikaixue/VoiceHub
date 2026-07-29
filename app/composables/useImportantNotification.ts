@@ -1,0 +1,143 @@
+import { useState } from '#app'
+import { useAuth } from '~/composables/useAuth'
+import { useServerErrors } from '~/composables/useLocaleText'
+import { useToast } from '~/composables/useToast'
+import { useLocale } from '~/utils/locale'
+
+export interface ImportantNotification {
+  id: number
+  title: string | null
+  message: string
+  important: boolean
+  read: boolean
+  createdAt: string
+}
+
+let inFlightCheck: Promise<ImportantNotification | null> | null = null
+let inFlightUserId: number | null = null
+let requestVersion = 0
+
+export const useImportantNotification = () => {
+  const notification = useState<ImportantNotification | null>('important-notification', () => null)
+  const loading = useState<boolean>('important-notification-loading', () => false)
+  const closing = useState<boolean>('important-notification-closing', () => false)
+  const error = useState<string>('important-notification-error', () => '')
+  const checkedUserId = useState<number | null>('important-notification-user', () => null)
+  const { user, isAuthenticated } = useAuth()
+  const { localize: localizeServerError } = useServerErrors()
+  const { importantNotification: locale } = useLocale()
+  const toast = useToast()
+
+  const resetImportantNotification = () => {
+    requestVersion += 1
+    notification.value = null
+    loading.value = false
+    closing.value = false
+    error.value = ''
+    checkedUserId.value = null
+    inFlightCheck = null
+    inFlightUserId = null
+  }
+
+  const checkImportantNotification = async (force = false) => {
+    if (import.meta.server) return null
+
+    const currentUserId = user.value?.id
+    if (!isAuthenticated.value || !currentUserId || user.value?.requirePasswordChange === true) {
+      resetImportantNotification()
+      return null
+    }
+
+    if (!force && checkedUserId.value === currentUserId) {
+      return notification.value
+    }
+
+    if (inFlightCheck && inFlightUserId === currentUserId) {
+      return inFlightCheck
+    }
+
+    const activeRequestVersion = requestVersion
+    inFlightUserId = currentUserId
+    loading.value = true
+    error.value = ''
+
+    inFlightCheck = $fetch<{ notification: ImportantNotification | null }>(
+      '/api/notifications/important'
+    )
+      .then((response) => {
+        if (
+          activeRequestVersion !== requestVersion ||
+          !isAuthenticated.value ||
+          user.value?.id !== currentUserId
+        ) {
+          return null
+        }
+
+        notification.value = response.notification
+        checkedUserId.value = currentUserId
+        return response.notification
+      })
+      .catch((fetchError) => {
+        if (activeRequestVersion !== requestVersion) return null
+
+        error.value = localizeServerError(fetchError, locale.value.loadFailed)
+        toast.error(error.value)
+        return null
+      })
+      .finally(() => {
+        if (activeRequestVersion === requestVersion) {
+          loading.value = false
+        }
+        if (inFlightUserId === currentUserId) {
+          inFlightCheck = null
+          inFlightUserId = null
+        }
+      })
+
+    return inFlightCheck
+  }
+
+  const markAsReadAndClose = async () => {
+    const currentNotification = notification.value
+    const currentUserId = user.value?.id
+    if (!currentNotification || !currentUserId || closing.value) return false
+
+    closing.value = true
+    error.value = ''
+
+    try {
+      await $fetch(`/api/notifications/${currentNotification.id}/read`, {
+        method: 'POST'
+      })
+
+      if (user.value?.id !== currentUserId) {
+        resetImportantNotification()
+        return true
+      }
+
+      if (notification.value?.id === currentNotification.id) {
+        notification.value = { ...notification.value, read: true }
+        notification.value = null
+      }
+      checkedUserId.value = null
+      await checkImportantNotification(true)
+      return true
+    } catch (fetchError) {
+      error.value = localizeServerError(fetchError, locale.value.closeFailed)
+      return false
+    } finally {
+      closing.value = false
+    }
+  }
+
+  return {
+    notification,
+    loading,
+    closing,
+    error,
+    checkedUserId,
+    checkImportantNotification,
+    markAsReadAndClose,
+    resetImportantNotification
+  }
+}

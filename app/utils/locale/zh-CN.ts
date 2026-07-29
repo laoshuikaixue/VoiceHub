@@ -1618,6 +1618,17 @@ export const yearReview = pages.yearReview
 export const composableErrors = pages.composableErrors
 export const audioPlayer = pages.audioPlayer
 
+export const importantNotification = {
+  label: '重要通知',
+  unread: '未读',
+  read: '已读',
+  close: '关闭',
+  closing: '正在关闭...',
+  loadFailed: '加载重要通知失败，请稍后重试',
+  closeFailed: '关闭失败，请重试',
+  retry: '重试'
+}
+
 export const admin = {
   sidebar: {
     console: '管理控制台',
@@ -2734,6 +2745,11 @@ export const admin = {
     titlePlaceholder: '请输入通知标题',
     notificationContent: '通知内容',
     contentPlaceholder: '请输入通知详情内容...',
+    markdownHint: '支持 Markdown 格式，将按右侧预览安全渲染。',
+    importantToggleTitle: '重要通知全屏提醒',
+    importantToggleDescription: '用户登录后将立即全屏展示，关闭后标记为已读',
+    importantBadge: '重要通知',
+    unread: '未读',
     scope: '通知范围',
     allUsersHint: '将向系统中所有已注册的活跃用户发送此通知。',
     selectGrade: '选择年级',
@@ -3708,4 +3724,22 @@ export const serverErrors = {
   USER_CODE_EXPIRED_RESEND: '验证码已过期，请重新发送',
   USER_CODE_INVALID: '验证码错误',
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
+  NOTIFICATION_AUTH_REQUIRED: '请先登录后再操作通知',
+  NOTIFICATION_ADMIN_REQUIRED: '只有管理员可以发送系统通知',
+  NOTIFICATION_IMPORTANT_INVALID: '重要通知标记必须是布尔值',
+  NOTIFICATION_TITLE_CONTENT_REQUIRED: '通知标题和内容不能为空',
+  NOTIFICATION_TITLE_TOO_LONG: '通知标题不能超过 {0} 个字符',
+  NOTIFICATION_CONTENT_TOO_LONG: '通知正文不能超过 {0} 个字符',
+  NOTIFICATION_USER_ID_INVALID: '用户 ID 无效',
+  NOTIFICATION_SCOPE_INVALID: '通知范围无效',
+  NOTIFICATION_GRADE_REQUIRED: '年级不能为空',
+  NOTIFICATION_GRADE_CLASS_REQUIRED: '年级和班级不能为空',
+  NOTIFICATION_CLASSES_REQUIRED: '请选择有效的班级',
+  NOTIFICATION_USERS_REQUIRED: '请选择至少一名用户',
+  NOTIFICATION_SEND_FAILED: '发送通知失败',
+  NOTIFICATION_FETCH_FAILED: '获取重要通知失败',
+  NOTIFICATION_ID_INVALID: '通知 ID 无效',
+  NOTIFICATION_NOT_FOUND: '通知不存在',
+  NOTIFICATION_FORBIDDEN: '无权操作此通知',
+  NOTIFICATION_MARK_READ_FAILED: '标记通知为已读失败',
 } as const

@@ -1,0 +1,200 @@
+<template>
+  <Teleport to="body">
+    <Transition name="important-notification">
+      <div
+        v-if="notification"
+        class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm sm:p-6"
+        @keydown="handleKeydown"
+      >
+        <section
+          ref="dialogRef"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          :aria-describedby="contentId"
+          tabindex="-1"
+          class="flex max-h-[calc(100dvh-1.5rem)] min-h-[min(38rem,calc(100dvh-1.5rem))] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-amber-400/35 bg-zinc-950 shadow-2xl shadow-black/70 sm:max-h-[calc(100dvh-3rem)] sm:min-h-[min(42rem,calc(100dvh-3rem))]"
+        >
+          <header class="border-b border-zinc-800 bg-zinc-900/80 px-5 py-5 sm:px-8 sm:py-6">
+            <div class="flex items-start gap-4">
+              <div
+                class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
+                aria-hidden="true"
+              >
+                <Icon name="bell" :size="22" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="text-xs font-bold text-amber-300">{{ locale.label }}</span>
+                <h2
+                  :id="titleId"
+                  class="mt-1 break-words text-xl font-black text-zinc-50 sm:text-2xl"
+                >
+                  {{ notification.title || locale.label }}
+                </h2>
+                <time
+                  v-if="formattedCreatedAt"
+                  :datetime="notification.createdAt"
+                  class="mt-2 block text-xs text-zinc-500"
+                >
+                  {{ formattedCreatedAt }}
+                </time>
+              </div>
+            </div>
+          </header>
+
+          <div
+            :id="contentId"
+            class="important-notification-content markdown-body min-h-0 flex-1 overflow-y-auto px-5 py-6 text-sm text-zinc-300 sm:px-8 sm:py-8 sm:text-base"
+            v-html="renderedMessage"
+          />
+
+          <footer
+            class="flex flex-col gap-4 border-t border-zinc-800 bg-zinc-900/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8"
+          >
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 text-xs font-bold text-zinc-300">
+                <span
+                  class="h-2 w-2 rounded-full"
+                  :class="notification.read ? 'bg-emerald-400' : 'bg-amber-400'"
+                />
+                {{ notification.read ? locale.read : locale.unread }}
+              </div>
+              <p
+                v-if="error"
+                class="mt-2 break-words text-xs font-medium text-red-400"
+                role="alert"
+              >
+                {{ error }}
+              </p>
+            </div>
+
+            <button
+              ref="closeButtonRef"
+              type="button"
+              :disabled="closing"
+              class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-400 px-6 py-3 text-sm font-black text-zinc-950 transition-colors hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-60"
+              @click="markAsReadAndClose"
+            >
+              <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />
+              <Icon v-else name="close" :size="17" />
+              {{ closing ? locale.closing : locale.close }}
+            </button>
+          </footer>
+        </section>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
+
+<script setup>
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import Icon from '~/components/UI/Icon.vue'
+import { useImportantNotification } from '~/composables/useImportantNotification'
+import { useLocale } from '~/utils/locale'
+import { renderMarkdown } from '~/utils/markdown'
+
+const { notification, closing, error, markAsReadAndClose } = useImportantNotification()
+const { importantNotification, currentLocale } = useLocale()
+const locale = computed(() => importantNotification.value)
+const dialogRef = ref(null)
+const closeButtonRef = ref(null)
+const titleId = 'important-notification-title'
+const contentId = 'important-notification-content'
+let previousFocusedElement = null
+let previousBodyOverflow = ''
+
+const renderedMessage = computed(() => renderMarkdown(notification.value?.message || ''))
+const formattedCreatedAt = computed(() => {
+  if (!notification.value?.createdAt) return ''
+
+  const date = new Date(notification.value.createdAt)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return new Intl.DateTimeFormat(currentLocale.value, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+})
+
+const restorePageState = () => {
+  if (!import.meta.client) return
+
+  document.body.style.overflow = previousBodyOverflow
+  if (previousFocusedElement instanceof HTMLElement) {
+    previousFocusedElement.focus()
+  }
+  previousFocusedElement = null
+}
+
+watch(
+  () => notification.value?.id,
+  async (notificationId, previousId) => {
+    if (notificationId) {
+      if (!previousId) {
+        previousFocusedElement = document.activeElement
+        previousBodyOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+      }
+      await nextTick()
+      closeButtonRef.value?.focus()
+    } else if (previousId) {
+      restorePageState()
+    }
+  },
+  { immediate: true, flush: 'post' }
+)
+
+const handleKeydown = (event) => {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    markAsReadAndClose()
+    return
+  }
+
+  if (event.key !== 'Tab' || !dialogRef.value) return
+
+  const focusableElements = dialogRef.value.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )
+  if (!focusableElements.length) {
+    event.preventDefault()
+    dialogRef.value.focus()
+    return
+  }
+
+  const firstElement = focusableElements[0]
+  const lastElement = focusableElements[focusableElements.length - 1]
+  if (event.shiftKey && document.activeElement === firstElement) {
+    event.preventDefault()
+    lastElement.focus()
+  } else if (!event.shiftKey && document.activeElement === lastElement) {
+    event.preventDefault()
+    firstElement.focus()
+  }
+}
+
+onBeforeUnmount(restorePageState)
+</script>
+
+<style scoped>
+.important-notification-enter-active,
+.important-notification-leave-active {
+  transition: opacity 180ms ease;
+}
+
+.important-notification-enter-from,
+.important-notification-leave-to {
+  opacity: 0;
+}
+
+.important-notification-content :deep(:first-child) {
+  margin-top: 0;
+}
+
+.important-notification-content :deep(:last-child) {
+  margin-bottom: 0;
+}
+</style>

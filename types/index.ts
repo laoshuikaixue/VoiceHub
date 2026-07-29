@@ -83,8 +83,10 @@ export interface Notification {
   updatedAt: string
   userId: number
   type: string
+  title?: string | null
   message: string
   songId?: number | null
+  important: boolean
   read: boolean
 }
 

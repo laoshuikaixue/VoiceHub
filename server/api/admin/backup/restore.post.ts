@@ -1505,6 +1505,9 @@ export default defineEventHandler(async (event) => {
 
                         // 布尔字段，提供默认值
                         notificationData.read = record.hasOwnProperty('read') ? record.read : false
+                        notificationData.important = record.hasOwnProperty('important')
+                          ? record.important
+                          : false
 
                         // 日期字段
                         notificationData.createdAt = record.createdAt
