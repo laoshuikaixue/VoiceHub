@@ -81,7 +81,7 @@
                     }"
                     :style="getYrcVars(text, index)"
                   >
-                    <span class="yrc-word" :lang="getLyricLanguage(text.word)">
+                    <span class="yrc-word" :lang="lineLanguages[item.originalIndex]">
                       {{ text.word }}
                     </span>
                   </div>
@@ -89,7 +89,7 @@
               </template>
               <!-- 普通歌词 -->
               <template v-else>
-                <span class="content" :lang="getLyricLanguage(item.data.words?.[0]?.word)">
+                <span class="content" :lang="lineLanguages[item.originalIndex]">
                   {{ item.data.words.map((w) => w.word).join('') }}
                 </span>
               </template>
@@ -137,6 +137,7 @@ import { useLyricManager } from '~/composables/useLyricManager'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
+import { detectLyricLanguages } from '~/utils/lyric/lyricLanguage'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
@@ -167,6 +168,9 @@ const isYrcMode = computed(() => {
 // 获取当前使用的歌词数据
 const currentLyricData = computed(() => lyricManager.lyrics.value)
 
+// 基于整首歌词上下文推断的每行语言（用于 lang 属性，修正中日混合歌词字形）
+const lineLanguages = computed(() => detectLyricLanguages(currentLyricData.value || []))
+
 const isPlaying = computed(() => audioPlayer.getPlayingStatus().value)
 
 /** 处理后的歌词项类型 */
@@ -196,6 +200,7 @@ const processedLyrics = computed<ProcessedLyricItem[]>(() => {
   // 遍历歌词
   for (let i = 0; i < lyrics.length; i++) {
     const item = lyrics[i]
+    if (!item) continue
     result.push({
       type: 'lyric',
       originalIndex: i,
@@ -235,6 +240,7 @@ const activeLineIndices = computed<number[]>(() => {
 
   for (let i = 0; i < lyrics.length; i++) {
     const item = lyrics[i]
+    if (!item) continue
     let start = 0
     let end = Infinity
     if (item.type === 'lyric') {
@@ -488,14 +494,6 @@ const getFontSize = (size: number, mode: string) => {
     return `calc(${size} / 1080 * 100vh)`
   }
   return `${size}px`
-}
-
-const getLyricLanguage = (lyric: string): 'ja' | 'ko' | 'zh-CN' | 'en' => {
-  if (!lyric || typeof lyric !== 'string') return 'en'
-  if (/[\u3040-\u309F\u30A0-\u30FF]/.test(lyric)) return 'ja'
-  if (/[\uAC00-\uD7AF]/.test(lyric)) return 'ko'
-  if (/[\u4E00-\u9FFF]/.test(lyric)) return 'zh-CN'
-  return 'en'
 }
 
 // Watchers

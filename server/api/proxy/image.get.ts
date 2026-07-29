@@ -1,8 +1,12 @@
 import { isIP } from 'node:net'
 import { lookup } from 'node:dns/promises'
+import { lookup as dnsLookup } from 'node:dns'
+import http from 'node:http'
+import https from 'node:https'
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 const MAX_CONCURRENT_IMAGE_FETCHES = 30
+const MAX_REDIRECTS = 5
 let activeImageFetches = 0
 
 const isBlockedIPv4 = (address) => {
@@ -76,55 +80,98 @@ const getReferer = (hostname) => {
   return ''
 }
 
-const fetchImage = async (imageUrl) => {
-  const url = new URL(imageUrl)
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error('不支持的协议')
-  }
+// 连接时 DNS 校验：作为 http/https 请求的自定义 lookup，确保实际连接的 IP 与校验的 IP 一致，
+// 彻底关闭 DNS 重绑定（DNS Rebinding）窗口
+const secureLookup = (hostname, options, callback) => {
+  dnsLookup(hostname, options, (err, address, family) => {
+    if (err) {
+      callback(err)
+      return
+    }
+    const resolved = Array.isArray(address) ? address : [{ address, family }]
+    for (const item of resolved) {
+      if (isBlockedAddress(item.address)) {
+        callback(new Error('该域名解析到内网地址，不允许代理'))
+        return
+      }
+    }
+    callback(null, address, family)
+  })
+}
 
-  await validateUrl(url)
-
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-    Referer: getReferer(url.hostname) || url.origin
-  }
-
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 15000)
-
-  try {
-    const response = await fetch(imageUrl, {
-      headers,
-      signal: controller.signal,
-      redirect: 'follow'
+// 发起单次请求（不自动跟随重定向），连接层使用 secureLookup 校验 IP
+const requestOnce = (targetUrl, headers, timeoutMs) => {
+  return new Promise((resolve, reject) => {
+    const url = new URL(targetUrl)
+    const client = url.protocol === 'https:' ? https : http
+    const req = client.request(
+      targetUrl,
+      { method: 'GET', headers, lookup: secureLookup },
+      (res) => resolve(res)
+    )
+    req.on('error', reject)
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error('图片请求超时'))
     })
+    req.end()
+  })
+}
 
-    // 二次校验：防止重定向到内网或非法地址
-    const finalUrl = new URL(response.url)
-    await validateUrl(finalUrl)
+const fetchImage = async (imageUrl) => {
+  let currentUrl = imageUrl
 
-    const contentType = response.headers.get('content-type') || ''
+  for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect++) {
+    const url = new URL(currentUrl)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new Error('不支持的协议')
+    }
+
+    // 每一跳连接前都先校验（直连 IP / localhost / 域名预解析）
+    await validateUrl(url)
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
+      Referer: getReferer(url.hostname) || url.origin
+    }
+
+    const res = await requestOnce(currentUrl, headers, 15000)
+    const status = res.statusCode || 0
+
+    // 手动处理重定向：下一跳目标会在循环顶部重新校验，避免自动跟随造成的 SSRF
+    if (status >= 300 && status < 400 && res.headers.location) {
+      res.destroy()
+      if (redirect === MAX_REDIRECTS) {
+        throw new Error('重定向次数过多')
+      }
+      currentUrl = new URL(res.headers.location, currentUrl).toString()
+      continue
+    }
+
+    if (status !== 200) {
+      res.destroy()
+      throw new Error(`图片请求失败: HTTP ${status}`)
+    }
+
+    const contentType = res.headers['content-type'] || ''
     if (!contentType.startsWith('image/')) {
-      response.body?.cancel()
+      res.destroy()
       throw new Error('响应不是图片类型')
     }
 
-    const contentLength = Number(response.headers.get('content-length') || 0)
+    const contentLength = Number(res.headers['content-length'] || 0)
     if (contentLength > MAX_IMAGE_BYTES) {
-      response.body?.cancel()
+      res.destroy()
       throw createError({ statusCode: 413, message: '图片文件过大' })
     }
 
     // 流式读取，防止恶意服务器通过缺失或伪造 content-length 导致内存耗尽
-    if (!response.body) {
-      throw new Error('响应体为空')
-    }
     let loaded = 0
     const chunks = []
-    for await (const chunk of response.body as any) {
+    for await (const chunk of res) {
       loaded += chunk.length
       if (loaded > MAX_IMAGE_BYTES) {
+        res.destroy()
         throw createError({ statusCode: 413, message: '图片文件过大' })
       }
       chunks.push(chunk)
@@ -132,9 +179,9 @@ const fetchImage = async (imageUrl) => {
     const buffer = Buffer.concat(chunks)
 
     return { contentType, buffer }
-  } finally {
-    clearTimeout(timeout)
   }
+
+  throw new Error('重定向次数过多')
 }
 
 const retryFetchImage = async (imageUrl, maxRetries = 2) => {
