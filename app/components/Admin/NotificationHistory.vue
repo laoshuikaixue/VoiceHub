@@ -98,14 +98,35 @@
                 {{ formatDateTime(item.createdAt) }}
               </td>
               <td class="px-5 py-4 text-right align-top">
-                <button
-                  type="button"
-                  class="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-zinc-700 px-3 text-xs font-bold text-zinc-300 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300"
-                  @click="openDetails(item)"
-                >
-                  <Eye :size="14" />
-                  {{ locale.viewDetails }}
-                </button>
+                <div class="inline-flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300"
+                    :title="locale.viewDetails"
+                    :aria-label="locale.viewDetails"
+                    @click="openDetails(item)"
+                  >
+                    <Eye :size="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-300"
+                    :title="locale.edit"
+                    :aria-label="locale.edit"
+                    @click="openEdit(item)"
+                  >
+                    <Pencil :size="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+                    :title="locale.delete"
+                    :aria-label="locale.delete"
+                    @click="requestDelete(item)"
+                  >
+                    <Trash2 :size="15" />
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -139,14 +160,32 @@
             <span>{{ formatDateTime(item.createdAt) }}</span>
           </div>
 
-          <button
-            type="button"
-            class="mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300"
-            @click="openDetails(item)"
-          >
-            <Eye :size="14" />
-            {{ locale.viewDetails }}
-          </button>
+          <div class="mt-4 grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300"
+              @click="openDetails(item)"
+            >
+              <Eye :size="14" />
+              {{ locale.view }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-300"
+              @click="openEdit(item)"
+            >
+              <Pencil :size="14" />
+              {{ locale.edit }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+              @click="requestDelete(item)"
+            >
+              <Trash2 :size="14" />
+              {{ locale.delete }}
+            </button>
+          </div>
         </article>
       </div>
 
@@ -316,6 +355,144 @@
         </div>
       </div>
     </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="editingBatch"
+        class="fixed inset-0 z-[130] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="notification-edit-title"
+        @click.self="closeEdit"
+        @keydown.esc="closeEdit"
+      >
+        <form
+          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
+          @submit.prevent="saveEdit"
+        >
+          <header class="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-800 px-5 py-4 sm:px-6">
+            <div>
+              <p class="text-[10px] font-black uppercase text-emerald-400">{{ locale.editEyebrow }}</p>
+              <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-zinc-100">
+                {{ locale.editNotification }}
+              </h2>
+            </div>
+            <button
+              type="button"
+              class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50"
+              :disabled="editSaving"
+              :title="locale.close"
+              :aria-label="locale.close"
+              @click="closeEdit"
+            >
+              <X :size="19" />
+            </button>
+          </header>
+
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+            <div>
+              <label for="notification-edit-name" class="mb-2 block text-xs font-bold text-zinc-300">
+                {{ locale.editTitle }}
+              </label>
+              <input
+                id="notification-edit-name"
+                ref="editTitleInput"
+                v-model="editForm.title"
+                type="text"
+                maxlength="200"
+                class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500"
+                :placeholder="locale.editTitlePlaceholder"
+              >
+            </div>
+
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <label for="notification-edit-content" class="text-xs font-bold text-zinc-300">
+                  {{ locale.editContent }}
+                </label>
+                <span class="text-[10px] font-bold text-zinc-600">Markdown</span>
+              </div>
+              <textarea
+                id="notification-edit-content"
+                v-model="editForm.content"
+                maxlength="20000"
+                rows="10"
+                class="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500"
+                :placeholder="locale.editContentPlaceholder"
+              />
+            </div>
+
+            <label class="flex cursor-pointer items-start gap-3 border-y border-zinc-800 py-4">
+              <input
+                v-model="editForm.important"
+                type="checkbox"
+                class="mt-0.5 size-4 shrink-0 accent-amber-500"
+              >
+              <span>
+                <span class="block text-xs font-bold text-zinc-200">{{ locale.editImportant }}</span>
+                <span class="mt-1 block text-[10px] leading-relaxed text-zinc-500">
+                  {{ locale.editImportantDescription }}
+                </span>
+              </span>
+            </label>
+
+            <div v-if="editForm.content.trim()">
+              <p class="mb-2 text-xs font-bold text-zinc-300">{{ locale.preview }}</p>
+              <div
+                class="markdown-body max-h-56 overflow-y-auto border-y border-zinc-800 py-4 text-xs text-zinc-400"
+                v-html="renderMarkdown(editForm.content)"
+              />
+            </div>
+
+            <div
+              v-if="editError"
+              class="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-300"
+              role="alert"
+            >
+              {{ editError }}
+            </div>
+          </div>
+
+          <footer class="flex shrink-0 flex-col-reverse gap-3 border-t border-zinc-800 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+            <button
+              type="button"
+              :disabled="editSaving"
+              class="min-h-10 rounded-lg border border-zinc-700 px-5 text-xs font-bold text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50"
+              @click="closeEdit"
+            >
+              {{ locale.cancel }}
+            </button>
+            <button
+              type="submit"
+              :disabled="editSaving"
+              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-50"
+            >
+              <Loader2 v-if="editSaving" :size="15" class="animate-spin" />
+              <Save v-else :size="15" />
+              {{ editSaving ? locale.saving : locale.save }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </Teleport>
+
+    <ConfirmDialog
+      :show="Boolean(deletingBatch)"
+      :title="locale.deleteNotification"
+      :message="
+        deletingBatch
+          ? locale.deleteConfirmation(deletingBatch.title || locale.untitled)
+          : ''
+      "
+      :confirm-text="locale.confirmDelete"
+      :cancel-text="locale.cancel"
+      :loading="deleteLoading"
+      :close-on-overlay="!deleteLoading"
+      type="danger"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+      @update:show="handleDeleteDialogVisibility"
+    />
   </section>
 </template>
 
@@ -331,13 +508,19 @@ import {
   History,
   Inbox,
   Loader2,
+  Pencil,
   RefreshCw,
+  Save,
+  Trash2,
   Users,
   X
 } from '@lucide/vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useServerErrors } from '~/composables/useLocaleText'
+import { useToast } from '~/composables/useToast'
+import { renderMarkdown } from '~/utils/markdown'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
@@ -349,6 +532,7 @@ const props = defineProps({
 
 const { getAuthConfig } = useAuth()
 const { localize: localizeServerError } = useServerErrors()
+const { showToast } = useToast()
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.notificationSender?.history || {})
 const notifications = ref([])
@@ -363,6 +547,13 @@ const detailStatus = ref('ALL')
 const detailStats = ref({ total: 0, read: 0, unread: 0 })
 const detailPagination = ref({ page: 1, limit: 20, total: 0, totalPages: 1 })
 const closeButton = ref(null)
+const editingBatch = ref(null)
+const editForm = ref({ title: '', content: '', important: false })
+const editSaving = ref(false)
+const editError = ref('')
+const editTitleInput = ref(null)
+const deletingBatch = ref(null)
+const deleteLoading = ref(false)
 let requestVersion = 0
 let detailRequestVersion = 0
 let previousFocus = null
@@ -475,6 +666,124 @@ const closeDetails = () => {
   nextTick(() => previousFocus?.focus?.())
 }
 
+const openEdit = async (item) => {
+  editingBatch.value = item
+  editForm.value = {
+    title: item.title || '',
+    content: item.message || '',
+    important: Boolean(item.important)
+  }
+  editError.value = ''
+  previousFocus = document.activeElement
+  previousBodyOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+  await nextTick()
+  editTitleInput.value?.focus()
+}
+
+const closeEdit = () => {
+  if (editSaving.value) return
+  editingBatch.value = null
+  editError.value = ''
+  document.body.style.overflow = previousBodyOverflow
+  nextTick(() => previousFocus?.focus?.())
+}
+
+const saveEdit = async () => {
+  if (!editingBatch.value?.batchId || editSaving.value) return
+
+  const title = editForm.value.title.trim()
+  const content = editForm.value.content.trim()
+  if (!title || !content) {
+    editError.value = locale.value.titleContentRequired
+    return
+  }
+  if (title.length > 200) {
+    editError.value = locale.value.titleTooLong(200)
+    return
+  }
+  if (content.length > 20000) {
+    editError.value = locale.value.contentTooLong(20000)
+    return
+  }
+
+  editSaving.value = true
+  editError.value = ''
+  let saved = false
+
+  try {
+    const response = await $fetch(
+      `/api/admin/notifications/history/${encodeURIComponent(editingBatch.value.batchId)}`,
+      {
+        method: 'PUT',
+        body: {
+          title,
+          content,
+          important: editForm.value.important
+        },
+        ...getAuthConfig()
+      }
+    )
+
+    const index = notifications.value.findIndex(
+      (item) => item.batchId === editingBatch.value?.batchId
+    )
+    if (index >= 0) {
+      notifications.value[index] = {
+        ...notifications.value[index],
+        ...(response.notification || {})
+      }
+    }
+    saved = true
+    showToast(locale.value.updateSuccess, 'success')
+  } catch (saveError) {
+    editError.value = localizeServerError(saveError, locale.value.updateFailed)
+  } finally {
+    editSaving.value = false
+  }
+
+  if (saved) closeEdit()
+}
+
+const requestDelete = (item) => {
+  deletingBatch.value = item
+}
+
+const cancelDelete = () => {
+  if (deleteLoading.value) return
+  deletingBatch.value = null
+}
+
+const handleDeleteDialogVisibility = (show) => {
+  if (!show) cancelDelete()
+}
+
+const confirmDelete = async () => {
+  if (!deletingBatch.value?.batchId || deleteLoading.value) return
+
+  deleteLoading.value = true
+  const shouldGoToPreviousPage =
+    notifications.value.length === 1 && pagination.value.page > 1
+
+  try {
+    await $fetch(
+      `/api/admin/notifications/history/${encodeURIComponent(deletingBatch.value.batchId)}`,
+      {
+        method: 'DELETE',
+        ...getAuthConfig()
+      }
+    )
+    deletingBatch.value = null
+    if (shouldGoToPreviousPage) pagination.value.page -= 1
+    await loadHistory()
+    showToast(locale.value.deleteSuccess, 'success')
+  } catch (deleteError) {
+    showToast(localizeServerError(deleteError, locale.value.deleteFailed), 'error')
+  } finally {
+    deleteLoading.value = false
+  }
+}
+
 const setDetailStatus = (status) => {
   if (detailStatus.value === status) return
   detailStatus.value = status
@@ -518,6 +827,8 @@ onMounted(loadHistory)
 onUnmounted(() => {
   requestVersion += 1
   detailRequestVersion += 1
-  if (selectedBatch.value) document.body.style.overflow = previousBodyOverflow
+  if (selectedBatch.value || editingBatch.value) {
+    document.body.style.overflow = previousBodyOverflow
+  }
 })
 </script>

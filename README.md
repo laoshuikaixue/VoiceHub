@@ -1005,7 +1005,9 @@ VoiceHub/
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
 │   │   │   ├── notifications/       # 管理员通知API
 │   │   │   │   ├── history/         # 通知批次明细API
-│   │   │   │   │   └── [batchId].get.ts # 查询批次用户已读明细
+│   │   │   │   │   ├── [batchId].delete.ts # 删除通知批次
+│   │   │   │   │   ├── [batchId].get.ts # 查询批次用户已读明细
+│   │   │   │   │   └── [batchId].put.ts # 修改通知批次
 │   │   │   │   ├── history.get.ts   # 查询按发送批次归类的通知历史
 │   │   │   │   └── send.post.ts     # 发送通知
 │   │   │   ├── play-times/          # 播放时间管理API
