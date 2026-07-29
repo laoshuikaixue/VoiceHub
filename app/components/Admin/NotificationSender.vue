@@ -471,6 +471,8 @@
         </div>
       </div>
     </div>
+
+    <NotificationHistory :refresh-key="historyRefreshKey" />
   </div>
 </template>
 
@@ -495,6 +497,7 @@ import {
   Loader2
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import NotificationHistory from '~/components/Admin/NotificationHistory.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
@@ -562,6 +565,7 @@ watch(
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+const historyRefreshKey = ref(0)
 const previewContent = computed(() => renderMarkdown(form.value.content))
 
 // 用户搜索相关
@@ -795,6 +799,7 @@ const sendNotification = async () => {
 
     if (result && result.success) {
       success.value = getNestedMessage('messages', 'sendSuccess', result.sentCount)
+      historyRefreshKey.value += 1
 
       // 3秒后自动隐藏成功提示
       setTimeout(() => {

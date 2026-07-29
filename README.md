@@ -759,6 +759,7 @@ VoiceHub/
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
+│   │   │   ├── NotificationHistory.vue # 通知投递与已读历史
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
@@ -1003,6 +1004,7 @@ VoiceHub/
 │   │   │   │   └── preview.post.ts  # 预览邮件模板
 │   │   │   ├── fix-sequence.post.ts # 修复数据库序列
 │   │   │   ├── notifications/       # 管理员通知API
+│   │   │   │   ├── history.get.ts   # 查询通知投递与已读历史
 │   │   │   │   └── send.post.ts     # 发送通知
 │   │   │   ├── play-times/          # 播放时间管理API
 │   │   │   │   ├── [id].ts          # 播放时间操作
@@ -1255,6 +1257,7 @@ VoiceHub/
 │   │   ├── geo.ts          # 地理位置工具
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略
+│   │   ├── notification-history-policy.ts # 通知历史筛选与分页策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
@@ -1291,6 +1294,7 @@ VoiceHub/
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
+│       ├── notification-history-policy.test.ts # 通知历史筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
 │       └── token-version-policy.test.ts # 令牌版本策略测试

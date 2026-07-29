@@ -2809,6 +2809,35 @@ export const admin = {
       class: '按班级选择',
       multiClass: '多班级选择',
       specificUsers: '指定用户'
+    },
+    history: {
+      title: '发送历史',
+      description: '查看系统通知的投递记录与用户已读情况',
+      refresh: '刷新',
+      refreshing: '刷新中...',
+      statusFilter: '按已读状态筛选',
+      all: '全部',
+      read: '已读',
+      unread: '未读',
+      notification: '通知',
+      recipient: '接收用户',
+      type: '类型',
+      status: '状态',
+      sentAt: '发送时间',
+      readAt: '已读时间',
+      important: '重要通知',
+      normal: '普通通知',
+      untitled: '无标题通知',
+      notRead: '尚未阅读',
+      loading: '正在加载发送历史...',
+      empty: '暂无发送记录',
+      emptyDescription: '发送系统通知后，投递与已读情况会显示在这里。',
+      loadFailed: '加载通知历史失败，请重试',
+      retry: '重试',
+      unknownTime: '时间未知',
+      unknownUser: (id: number) => `用户 #${id}`,
+      userId: (id: number) => `用户 ID：${id}`,
+      itemName: '条投递记录'
     }
   },
   cardCodesManager: {
@@ -3746,4 +3775,6 @@ export const serverErrors = {
   NOTIFICATION_NOT_FOUND: '通知不存在',
   NOTIFICATION_FORBIDDEN: '无权操作此通知',
   NOTIFICATION_MARK_READ_FAILED: '标记通知为已读失败',
+  NOTIFICATION_HISTORY_STATUS_INVALID: '通知历史状态筛选值无效',
+  NOTIFICATION_HISTORY_FETCH_FAILED: '获取通知历史失败',
 } as const

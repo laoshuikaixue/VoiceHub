@@ -53,7 +53,10 @@
                   :datetime="notification.createdAt"
                   class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-zinc-500"
                 >
-                  <span class="font-semibold text-zinc-400">{{ relativeCreatedAt }}</span>
+                  <span class="inline-flex items-center gap-1 font-semibold text-zinc-400">
+                    <Icon name="clock" :size="13" class="shrink-0" aria-hidden="true" />
+                    {{ relativeCreatedAt }}
+                  </span>
                   <span aria-hidden="true">&middot;</span>
                   <span>{{ formattedCreatedAt }}</span>
                 </time>

@@ -2800,6 +2800,35 @@ export const admin = {
       class: 'By Class',
       multiClass: 'Multiple Classes',
       specificUsers: 'Specific Users'
+    },
+    history: {
+      title: 'Delivery History',
+      description: 'Review system notification deliveries and recipient read status',
+      refresh: 'Refresh',
+      refreshing: 'Refreshing...',
+      statusFilter: 'Filter by read status',
+      all: 'All',
+      read: 'Read',
+      unread: 'Unread',
+      notification: 'Notification',
+      recipient: 'Recipient',
+      type: 'Type',
+      status: 'Status',
+      sentAt: 'Sent At',
+      readAt: 'Read At',
+      important: 'Important',
+      normal: 'Standard',
+      untitled: 'Untitled notification',
+      notRead: 'Not read yet',
+      loading: 'Loading delivery history...',
+      empty: 'No delivery history',
+      emptyDescription: 'Notification deliveries and read status will appear here after sending.',
+      loadFailed: 'Failed to load notification history. Please try again.',
+      retry: 'Retry',
+      unknownTime: 'Unknown time',
+      unknownUser: (id: number) => `User #${id}`,
+      userId: (id: number) => `User ID: ${id}`,
+      itemName: 'delivery records'
     }
   },
   cardCodesManager: {
@@ -3737,4 +3766,6 @@ export const serverErrors = {
   NOTIFICATION_NOT_FOUND: 'Notification not found',
   NOTIFICATION_FORBIDDEN: 'You cannot operate on this notification',
   NOTIFICATION_MARK_READ_FAILED: 'Failed to mark the notification as read',
+  NOTIFICATION_HISTORY_STATUS_INVALID: 'Invalid notification history status filter',
+  NOTIFICATION_HISTORY_FETCH_FAILED: 'Failed to fetch notification history',
 } as const
