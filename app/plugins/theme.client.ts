@@ -28,7 +28,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   // 应用 saved theme
-  const saved = localStorage.getItem('voicehub-theme') as Theme
+  let saved: Theme | null = null
+  try {
+    saved = localStorage.getItem('voicehub-theme') as Theme
+  } catch {
+    // localStorage 不可用，静默降级
+  }
   if (saved && THEMES.includes(saved)) {
     setTheme(saved)
   }

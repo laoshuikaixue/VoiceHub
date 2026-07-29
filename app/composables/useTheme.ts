@@ -15,7 +15,15 @@ let current: Ref<Theme> | null = null
 export function useTheme() {
   if (!current) {
     // 初始化状态，SSR 时默认 dark
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('voicehub-theme') : null
+    let saved = null
+    if (typeof window !== 'undefined') {
+      try {
+        saved = localStorage.getItem('voicehub-theme')
+      } catch {
+        // localStorage 不可用（如无痕模式被禁用），静默降级
+        saved = null
+      }
+    }
     const resolved: Theme = (THEMES.includes(saved as Theme) ? saved : null) ?? 'dark'
 
     current = ref<Theme>(resolved)
@@ -36,7 +44,11 @@ export function useTheme() {
     theme.value = t
     document.documentElement.setAttribute('data-theme', t)
     if (import.meta.client) {
-      localStorage.setItem('voicehub-theme', t)
+      try {
+        localStorage.setItem('voicehub-theme', t)
+      } catch {
+        // localStorage 写入失败（如配额满或被禁用），静默忽略
+      }
     }
   }
 
