@@ -15,6 +15,7 @@ import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtp
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { shouldDeliverSystemNotification } from '~~/server/utils/important-notification-policy'
+import { randomUUID } from 'node:crypto'
 
 /**
  * 创建联合投稿邀请通知
@@ -692,6 +693,7 @@ export async function createSystemNotification(
   important = false
 ) {
   try {
+    const batchId = randomUUID()
     // 获取用户通知设置
     const settingsResult = await db
       .select()
@@ -711,6 +713,7 @@ export async function createSystemNotification(
       .values({
         userId: userId,
         type: 'SYSTEM_NOTICE',
+        batchId,
         title,
         message: content,
         important
@@ -752,6 +755,8 @@ export async function createBatchSystemNotifications(
       return []
     }
 
+    const batchId = randomUUID()
+
     // 获取用户通知设置
     const userSettings = await db
       .select()
@@ -778,6 +783,7 @@ export async function createBatchSystemNotifications(
       notificationsToCreate.push({
         userId,
         type: 'SYSTEM_NOTICE',
+        batchId,
         title,
         message: content,
         important

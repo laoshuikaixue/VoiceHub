@@ -83,6 +83,7 @@ export interface Notification {
   updatedAt: string
   userId: number
   type: string
+  batchId?: string | null
   title?: string | null
   message: string
   songId?: number | null

@@ -1,13 +1,10 @@
-import { and, count, desc, eq } from 'drizzle-orm'
+import { count, desc, eq, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { notifications, users } from '~/drizzle/schema'
+import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import { canSendSystemNotification } from '~~/server/utils/important-notification-policy'
-import {
-  resolveNotificationHistoryPagination,
-  resolveNotificationHistoryStatus
-} from '~~/server/utils/notification-history-policy'
+import { resolveNotificationHistoryPagination } from '~~/server/utils/notification-history-policy'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -28,85 +25,60 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event)
-  const status = resolveNotificationHistoryStatus(query.status)
-  if (!status) {
-    throw createApiError(
-      400,
-      SERVER_ERROR_CODES.NOTIFICATION_HISTORY_STATUS_INVALID,
-      '通知历史状态筛选值无效'
-    )
-  }
-
   const { page, limit, offset } = resolveNotificationHistoryPagination(query.page, query.limit)
-  const conditions = [eq(notifications.type, 'SYSTEM_NOTICE')]
-  if (status === 'READ') conditions.push(eq(notifications.read, true))
-  if (status === 'UNREAD') conditions.push(eq(notifications.read, false))
-  const whereCondition = and(...conditions)!
+  const batchKey = sql<string>`coalesce(
+    ${notifications.batchId},
+    'legacy-' || cast(${notifications.id} as text)
+  )`
+
+  const notificationBatches = db
+    .select({
+      batchId: batchKey.as('batch_id'),
+      notificationId: sql<number>`max(${notifications.id})`.as('notification_id'),
+      title: notifications.title,
+      message: notifications.message,
+      important: notifications.important,
+      createdAt: notifications.createdAt,
+      recipientCount: count().as('recipient_count')
+    })
+    .from(notifications)
+    .where(eq(notifications.type, 'SYSTEM_NOTICE'))
+    .groupBy(
+      batchKey,
+      notifications.title,
+      notifications.message,
+      notifications.important,
+      notifications.createdAt
+    )
+    .as('notification_batches')
 
   try {
-    const [historyRows, totalRows, statsRows] = await Promise.all([
+    const [historyRows, totalRows] = await Promise.all([
       db
-        .select({
-          id: notifications.id,
-          title: notifications.title,
-          message: notifications.message,
-          important: notifications.important,
-          read: notifications.read,
-          createdAt: notifications.createdAt,
-          updatedAt: notifications.updatedAt,
-          userId: notifications.userId,
-          username: users.username,
-          userName: users.name,
-          grade: users.grade,
-          className: users.class
-        })
-        .from(notifications)
-        .leftJoin(users, eq(notifications.userId, users.id))
-        .where(whereCondition)
-        .orderBy(desc(notifications.createdAt), desc(notifications.id))
+        .select()
+        .from(notificationBatches)
+        .orderBy(desc(notificationBatches.createdAt), desc(notificationBatches.notificationId))
         .limit(limit)
         .offset(offset),
-      db.select({ count: count() }).from(notifications).where(whereCondition),
-      db
-        .select({ read: notifications.read, count: count() })
-        .from(notifications)
-        .where(eq(notifications.type, 'SYSTEM_NOTICE'))
-        .groupBy(notifications.read)
+      db.select({ count: count() }).from(notificationBatches)
     ])
-
-    const stats = { total: 0, read: 0, unread: 0 }
-    for (const row of statsRows) {
-      const value = Number(row.count || 0)
-      stats.total += value
-      if (row.read) stats.read = value
-      else stats.unread = value
-    }
 
     const total = Number(totalRows[0]?.count || 0)
     return {
       notifications: historyRows.map((row) => ({
-        id: row.id,
+        batchId: row.batchId,
         title: row.title,
         message: row.message,
         important: row.important,
-        read: row.read,
         createdAt: row.createdAt,
-        readAt: row.read ? row.updatedAt : null,
-        recipient: {
-          id: row.userId,
-          username: row.username,
-          name: row.userName,
-          grade: row.grade,
-          class: row.className
-        }
+        recipientCount: Number(row.recipientCount || 0)
       })),
       pagination: {
         page,
         limit,
         total,
         totalPages: Math.max(1, Math.ceil(total / limit))
-      },
-      stats
+      }
     }
   } catch (error) {
     console.error('获取通知历史失败:', error)

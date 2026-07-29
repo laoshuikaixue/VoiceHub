@@ -112,6 +112,7 @@ export const notifications = pgTable('Notification', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   type: text('type').notNull(),
+  batchId: text('batchId'),
   title: text('title'),
   message: text('message').notNull(),
   important: boolean('important').default(false).notNull(),
@@ -124,7 +125,8 @@ export const notifications = pgTable('Notification', {
     table.important,
     table.read,
     table.createdAt
-  )
+  ),
+  index('notification_batch_id_idx').on(table.batchId)
 ]);
 
 // 通知设置表

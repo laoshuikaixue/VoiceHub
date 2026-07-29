@@ -945,7 +945,7 @@ export default defineEventHandler(async (event) => {
             }
 
             const notificationData: any = { userId: validUserId }
-            const fields = ['title', 'message', 'type']
+            const fields = ['batchId', 'title', 'message', 'type']
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) notificationData[field] = record[field]
             })

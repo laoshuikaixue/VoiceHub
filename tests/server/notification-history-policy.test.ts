@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  resolveNotificationBatchReference,
   resolveNotificationHistoryPagination,
   resolveNotificationHistoryStatus
 } from '../../server/utils/notification-history-policy.ts'
@@ -32,4 +33,28 @@ test('通知历史分页使用安全缺省值并限制最大页大小', () => {
     limit: 20,
     offset: 0
   })
+})
+
+test('通知批次引用支持新批次和历史单条记录', () => {
+  assert.deepEqual(resolveNotificationBatchReference('550E8400-E29B-41D4-A716-446655440000'), {
+    batchId: '550e8400-e29b-41d4-a716-446655440000',
+    notificationId: null
+  })
+  assert.deepEqual(resolveNotificationBatchReference('legacy-42'), {
+    batchId: null,
+    notificationId: 42
+  })
+  assert.deepEqual(
+    resolveNotificationBatchReference('legacy-group-550e8400e29b41d4a716446655440000'),
+    {
+      batchId: 'legacy-group-550e8400e29b41d4a716446655440000',
+      notificationId: null
+    }
+  )
+})
+
+test('通知批次引用拒绝无效值', () => {
+  assert.equal(resolveNotificationBatchReference('legacy-0'), null)
+  assert.equal(resolveNotificationBatchReference('not-a-batch'), null)
+  assert.equal(resolveNotificationBatchReference(undefined), null)
 })
