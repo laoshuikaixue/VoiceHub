@@ -136,28 +136,6 @@
 1. `DATABASE_URL`：PostgreSQL数据库连接地址
 2. `JWT_SECRET`：JWT令牌签名密钥
 
-### Claw 部署
-
-[![Claw](https://ap-southeast-1.run.claw.cloud/logo.svg)](https://ap-southeast-1.run.claw.cloud/)
-
-1. **点击部署按钮**：选择上方的 Claw 部署按钮
-2. **打开应用程序启动板**：打开 App Launchpad （应用程序启动板）
-3. **创建应用**：选 Create App （创建应用）
-4. **相关配置**：
-   ```
-   Application Name：VoiceHub 或 其它
-   Image Name: ghcr.io/laoshuikaixue/voicehub:latest
-   Usage：按需调整
-   Network：3000 ，开 Public Access
-   Environment Variables：
-      DATABASE_URL=postgresql://user:password@postgres:5432/voicehub
-      # 可能需要 ?sslmode=disable
-      JWT_SECRET=your-jwt-secret-here
-      # 按实际情况填写
-   ```
-5. **等待部署**：平台会自动构建和部署应用
-6. **访问应用**：部署完成后，您将获得一个可访问的 URL
-
 ### Linux 服务器部署
 
 本项目提供了针对 Ubuntu/Debian 服务器的一键部署脚本，支持自动安装 Node.js 22、配置环境变量、安装依赖和构建项目。
@@ -269,6 +247,22 @@ docker run -d \
   --name voicehub \
   voicehub
 ```
+
+### Podman 部署
+
+Podman 是一个与 Docker 兼容的容器引擎，无需守护进程，支持 rootless 模式（无需 root 权限）。VoiceHub 的 Docker 配置文件可以直接用于 Podman。
+
+#### 使用 Podman Compose 部署
+
+```bash
+podman compose -f docker-compose.yml up -d
+```
+
+> **说明**：`podman compose` 完全兼容 `docker-compose.yml` 文件，无需修改配置。
+
+#### rootless 模式
+
+Podman 默认以当前用户身份运行，无需 `sudo`，安全性更高。但容易遇到文件权限问题（特别是挂载卷时）。
 
 ### 飞牛 (FnOS) 部署
 
@@ -708,7 +702,7 @@ OAuth 运行时配置统一保存在管理员后台数据库中；环境变量�
   - GitHub：Client ID / Secret
   - Casdoor：Server URL / Client ID / Secret / Organization Name
   - Google：Client ID / Secret
-  - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝、抖音
+  - 聚合登陆：AppID / AppKey / 接口地址，并可同时启用 QQ、微信、支付宝等平台
   - 第三方 OAuth2：完整的 OAuth 端点和字段映射
 
 2. **OAuth 提供商配置**：
@@ -954,6 +948,7 @@ VoiceHub/
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具
+│       ├── password-policy.ts # 统一密码策略
 │       ├── oauth.ts           # OAuth工具
 │       ├── timeUtils.ts       # 时间工具
 │       ├── webauthn.js        # WebAuthn浏览器兼容工具
@@ -1238,14 +1233,17 @@ VoiceHub/
 │   │   ├── meowNotificationService.ts # MeoW通知服务
 │   │   ├── notificationService.ts # 通知服务
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
+│   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── auth.ts         # 认证工具函数
+│   │   ├── auth-route-policy.ts # 强制改密期间的接口访问策略
 │   │   ├── bilibiliWbi.ts  # Bilibili WBI签名工具
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
@@ -1253,6 +1251,7 @@ VoiceHub/
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
+│   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
@@ -1269,12 +1268,13 @@ VoiceHub/
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
 │   │   ├── serverTime.ts   # 服务器时间管理工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── system-settings-defaults.ts # 系统设置默认值
-│   │   ├── system-settings-helper.ts # 系统设置缓存读取工具
+│   │   ├── system-settings-helper.ts # 系统设置读取与强制改密判断工具
 │   │   ├── telemetry.ts    # 遥测与错误追踪工具
 │   │   ├── user.ts         # 用户相关工具函数
 │   │   ├── webauthn-config.ts # WebAuthn配置工具
@@ -1283,6 +1283,13 @@ VoiceHub/
 ├── scripts/               # 构建、部署与数据库维护脚本
 │   ├── build.js           # 输出环境变量解析结果并执行 Nuxt 构建
 │   └── redis-scan-legacy.js # 旧Redis业务缓存键dry-run扫描工具
+├── tests/                 # 自动化测试
+│   └── server/             # 服务端策略与安全测试
+│       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── initial-password-policy.test.ts # 初始密码状态策略测试
+│       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
+│       ├── password-policy.test.ts # 密码策略测试
+│       └── token-version-policy.test.ts # 令牌版本策略测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
 │   └── index.ts            # 通用类型定义
@@ -2198,13 +2205,15 @@ Thanks goes to these wonderful people:
 
 [GPL-3.0](LICENSE)
 
-## 星标历史
+## Star History
 
-<picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=laoshuikaixue/VoiceHub&type=Date" />
+<a href="https://www.star-history.com/?repos=laoshuikaixue%2FVoiceHub&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=laoshuikaixue/VoiceHub&type=date&theme=dark&legend=top-left&sealed_token=JVSllfBpQvo-lUL1pD1tGnYru0EWt_m7SH5emqWolyH1w9767FJw5Sgo6EAyadezWyEifZuASniT84NxukOHxhQP6mck7BwHsXrdCFf44oHK98DoSPZtFw" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=laoshuikaixue/VoiceHub&type=date&legend=top-left&sealed_token=JVSllfBpQvo-lUL1pD1tGnYru0EWt_m7SH5emqWolyH1w9767FJw5Sgo6EAyadezWyEifZuASniT84NxukOHxhQP6mck7BwHsXrdCFf44oHK98DoSPZtFw" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=laoshuikaixue/VoiceHub&type=date&legend=top-left&sealed_token=JVSllfBpQvo-lUL1pD1tGnYru0EWt_m7SH5emqWolyH1w9767FJw5Sgo6EAyadezWyEifZuASniT84NxukOHxhQP6mck7BwHsXrdCFf44oHK98DoSPZtFw" />
  </picture>
+</a>
 
 ## 其他
 

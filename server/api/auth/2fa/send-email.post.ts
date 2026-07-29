@@ -15,7 +15,10 @@ import { getServerTimestamp } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 
 export default defineEventHandler(async (event) => {
-  const { userId: reqUserId, token: rawToken, email } = await readBody(event)
+  const body = await readBody<Record<string, unknown> | null>(event)
+  const reqUserId = body?.userId
+  const rawToken = typeof body?.token === 'string' ? body.token : ''
+  const email = typeof body?.email === 'string' ? body.email : ''
   const token = rawToken || getCookie(event, 'pre-auth-token')
 
   // 必须提供预认证令牌
@@ -24,12 +27,14 @@ export default defineEventHandler(async (event) => {
   }
 
   let userId: number
+  let preAuthPayload: { tokenVersion?: unknown } | null = null
   try {
     const decoded = JWTEnhanced.verify(token) as any
     if (decoded.type !== 'pre-auth' || decoded.scope !== '2fa_pending') {
       throw new Error('无效的预认证令牌')
     }
     userId = decoded.userId
+    preAuthPayload = decoded
   } catch (e) {
     deleteCookie(event, 'pre-auth-token')
     throw createApiError(401, 'AUTH_SESSION_EXPIRED', '会话已失效，请重新登录')
@@ -46,7 +51,8 @@ export default defineEventHandler(async (event) => {
       id: users.id,
       email: users.email,
       emailVerified: users.emailVerified,
-      name: users.name
+      name: users.name,
+      tokenVersion: users.tokenVersion
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -56,6 +62,12 @@ export default defineEventHandler(async (event) => {
   // 增加 emailVerified 校验
   if (!user || !user.email || !user.emailVerified) {
     throw createApiError(400, 'AUTH_USER_NOT_FOUND_OR_NO_EMAIL', '用户不存在或未绑定邮箱')
+  }
+
+  if (!JWTEnhanced.hasCurrentTokenVersion(preAuthPayload, user.tokenVersion)) {
+    deleteCookie(event, 'pre-auth-token')
+    deleteCookie(event, 'binding-token')
+    throw createApiError(401, 'AUTH_SESSION_EXPIRED', '会话已失效，请重新登录')
   }
 
   // 校验用户输入的邮箱是否匹配
@@ -76,7 +88,12 @@ export default defineEventHandler(async (event) => {
     if (timePassed < 60 * 1000) {
       // 60秒冷却
       const remainingSeconds = Math.ceil((60000 - timePassed) / 1000)
-      throw createApiError(429, 'AUTH_RATE_LIMITED_SECONDS', `操作过于频繁，请等待 ${remainingSeconds} 秒后再试`, { params: [remainingSeconds] })
+      throw createApiError(
+        429,
+        'AUTH_RATE_LIMITED_SECONDS',
+        `操作过于频繁，请等待 ${remainingSeconds} 秒后再试`,
+        { params: [remainingSeconds] }
+      )
     }
   }
 

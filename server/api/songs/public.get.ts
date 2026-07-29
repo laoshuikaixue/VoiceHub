@@ -74,10 +74,19 @@ export default defineEventHandler(async (event) => {
         GROUP BY sc.song_id
       ),
       replay_counts AS (
-        SELECT song_id, COUNT(*)::int AS replay_count
+        SELECT song_id, COUNT(DISTINCT user_id)::int AS replay_count
         FROM song_replay_requests
         WHERE status IN ('PENDING', 'FULFILLED')
         GROUP BY song_id
+      ),
+      replay_metadata AS (
+        SELECT
+          rr.id,
+          rr.user_id,
+          rr.submission_note,
+          rr.submission_note_public,
+          rr.preferred_play_time_id
+        FROM song_replay_requests rr
       ),
       ranked_replay_requesters AS (
         SELECT
@@ -91,12 +100,17 @@ export default defineEventHandler(async (event) => {
           rr.status,
           rr.created_at,
           ROW_NUMBER() OVER (PARTITION BY rr.song_id ORDER BY rr.created_at DESC) AS position
-        FROM song_replay_requests rr
+        FROM (
+          -- insert-only 模型下同一用户可能有多条申请，每人只取最新一条
+          SELECT DISTINCT ON (song_id, user_id) song_id, user_id, status, created_at
+          FROM song_replay_requests
+          WHERE status IN ('PENDING', 'FULFILLED')
+          ORDER BY song_id, user_id, created_at DESC
+        ) rr
         INNER JOIN "User" u ON u.id = rr.user_id
         LEFT JOIN user_name_counts unc ON unc.name = u.name
         LEFT JOIN user_grade_counts ugc
           ON ugc.name = u.name AND ugc.grade IS NOT DISTINCT FROM u.grade
-        WHERE rr.status IN ('PENDING', 'FULFILLED')
       ),
       replay_requesters AS (
         SELECT
@@ -119,8 +133,9 @@ export default defineEventHandler(async (event) => {
       )
       SELECT
         sch.id,
-        sch."playDate",
+        to_char(sch."playDate", 'YYYY-MM-DD') AS "playDate",
         sch.sequence,
+        sch.replay_request_id AS "replayRequestId",
         sch.played AS "schedulePlayed",
         sch."playTimeId",
         s.id AS "songId",
@@ -136,6 +151,10 @@ export default defineEventHandler(async (event) => {
         s."createdAt",
         s."submissionNote",
         s."submissionNotePublic",
+        CASE WHEN rm.id IS NOT NULL THEN rm.submission_note ELSE s."submissionNote" END AS "effectiveSubmissionNote",
+        CASE WHEN rm.id IS NOT NULL THEN COALESCE(rm.submission_note_public, false) ELSE s."submissionNotePublic" END AS "effectiveSubmissionNotePublic",
+        CASE WHEN rm.id IS NOT NULL THEN rm.preferred_play_time_id ELSE s."preferredPlayTimeId" END AS "effectivePlayTimeId",
+        rm.user_id AS "replayRequesterUserId",
         u.name AS "requesterName",
         u.grade AS "requesterGrade",
         u.class AS "requesterClass",
@@ -165,6 +184,7 @@ export default defineEventHandler(async (event) => {
       LEFT JOIN accepted_collaborators ac ON ac.song_id = s.id
       LEFT JOIN replay_counts rc ON rc.song_id = s.id
       LEFT JOIN replay_requesters rr ON rr.song_id = s.id
+      LEFT JOIN replay_metadata rm ON rm.id = sch.replay_request_id
       WHERE sch."isDraft" = false
       ${semesterCondition}
       ORDER BY sch."playDate", sch.sequence
@@ -174,19 +194,6 @@ export default defineEventHandler(async (event) => {
     const shouldHideStudentInfo = rows[0]?.hideStudentInfo ?? true
 
     const formattedSchedules = rows.map((row: any) => {
-      const originalDate = new Date(row.playDate)
-      const dateOnly = new Date(
-        Date.UTC(
-          originalDate.getUTCFullYear(),
-          originalDate.getUTCMonth(),
-          originalDate.getUTCDate(),
-          0,
-          0,
-          0,
-          0
-        )
-      )
-
       const collaborators = Array.isArray(row.collaborators)
         ? row.collaborators.map((collaborator: any) => ({
             id: collaborator.id,
@@ -216,16 +223,29 @@ export default defineEventHandler(async (event) => {
           }))
         : []
 
-      const isRequester = Boolean(user && Number(row.requesterId) === user.id)
+      const linkedReplayRequestId = row.replayRequestId ? Number(row.replayRequestId) : null
+      const effectiveSubmissionNote = row.effectiveSubmissionNote
+      const effectiveSubmissionNotePublic = row.effectiveSubmissionNotePublic === true
+      const effectivePlayTimeId = row.effectivePlayTimeId ? Number(row.effectivePlayTimeId) : null
+      // 备注可见性主体：绑定重播申请时为申请人，否则为歌曲投稿人
+      const noteOwnerId =
+        linkedReplayRequestId !== null && row.replayRequesterUserId
+          ? Number(row.replayRequesterUserId)
+          : row.requesterId
+            ? Number(row.requesterId)
+            : null
+      const isNoteOwner = Boolean(user && noteOwnerId !== null && noteOwnerId === user.id)
       const canViewSubmissionNote =
-        Boolean(row.submissionNote) &&
-        (row.submissionNotePublic === true || Boolean(user && (isAdmin || isRequester)))
+        Boolean(effectiveSubmissionNote) &&
+        (effectiveSubmissionNotePublic === true || Boolean(user && (isAdmin || isNoteOwner)))
       const replayRequestCount = Number(row.replayRequestCount || 0)
 
       return {
         id: Number(row.id),
-        playDate: dateOnly.toISOString().split('T')[0],
+        // playDate 已在 SQL 层用 to_char 格式化为 YYYY-MM-DD，避免时区解析偏移
+        playDate: row.playDate,
         sequence: Number(row.sequence || 1),
+        replayRequestId: linkedReplayRequestId,
         played: row.schedulePlayed === true,
         playTimeId: row.playTimeId ? Number(row.playTimeId) : null,
         playTime: row.playTimeRecordId
@@ -263,12 +283,13 @@ export default defineEventHandler(async (event) => {
           semester: row.semester || null,
           requestedAt: row.createdAt ? formatDateTime(row.createdAt) : null,
           hasSubmissionNote: canViewSubmissionNote,
-          submissionNote: canViewSubmissionNote ? row.submissionNote : null,
-          submissionNotePublic: canViewSubmissionNote ? row.submissionNotePublic === true : false,
+          submissionNote: canViewSubmissionNote ? effectiveSubmissionNote : null,
+          submissionNotePublic: canViewSubmissionNote ? effectiveSubmissionNotePublic : false,
+          preferredPlayTimeId: effectivePlayTimeId,
           requesterId: row.requesterId ? Number(row.requesterId) : null,
           replayRequestCount,
           replayRequesters,
-          isReplay: replayRequestCount > 0
+          isReplay: linkedReplayRequestId !== null
         }
       }
     }) as PublicScheduleItem[]

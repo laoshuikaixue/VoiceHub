@@ -664,7 +664,7 @@
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
                         class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
                         :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(schedule.song)"
+                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
                         <MessageSquare :size="12" />
                       </button>
@@ -672,7 +672,7 @@
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
                         class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
                         :title="locale.viewRemark"
-                        @click.stop="openSubmissionRemark(schedule.song)"
+                        @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
                         {{
                           schedule.song.submissionNote.length > 25
@@ -682,16 +682,15 @@
                       </span>
                       <!-- 重播标识 -->
                       <span
-                        v-if="schedule.song.replayRequestCount > 0"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider flex items-center gap-1"
+                        v-if="schedule.replayRequestId != null"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
-                        <Icon name="repeat" :size="10" />
-                        {{ locale.replay }}
+                        <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
@@ -707,7 +706,7 @@
                     <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
                       <!-- 显示申请人或投稿人 -->
                       <span
-                        v-if="schedule.song.replayRequestCount > 0"
+                        v-if="schedule.replayRequestId != null"
                         :title="
                           (locale.replayApplicants || '重播申请人：') +
                           (schedule.song.replayRequesters || [])
@@ -715,8 +714,7 @@
                             .join('、')
                         "
                       >
-                        {{ locale.applicant }}
-                        {{
+                        {{ locale.applicant }}{{
                           (schedule.song.replayRequesters || [])
                             .slice(0, 2)
                             .map((r) => r.displayName || r.name)
@@ -1015,6 +1013,7 @@ import {
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
+import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
@@ -1221,6 +1220,7 @@ const moveTargetDate = ref('')
 const submissionRemarkDialog = ref({
   show: false,
   songId: null,
+  replayRequestId: null,
   title: '',
   artist: '',
   songTitle: '',
@@ -1243,11 +1243,13 @@ const closeReplayModal = () => {
   replayModalSongId.value = null
 }
 
-const openSubmissionRemark = (song) => {
+const openSubmissionRemark = (song, scheduleReplayRequestId = null) => {
   if (!song?.submissionNote) return
   submissionRemarkDialog.value = {
     show: true,
     songId: song.id,
+    // 排期卡片的 replayRequestId 在排期顶层而非 song 子对象，优先使用显式传入的绑定
+    replayRequestId: scheduleReplayRequestId || song.replayRequestId || null,
     title: song.title,
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
@@ -1264,11 +1266,17 @@ const updateSubmissionNotePublic = async (isPublic) => {
   dialogData.isPublic = isPublic
 
   try {
-    await adminService.updateSong(dialogData.songId, {
+    const updatePayload = {
       title: dialogData.title,
       artist: dialogData.artist,
       submissionNotePublic: isPublic
-    })
+    }
+    // 如果是重播申请，传入 replayRequestId 以更新重播申请的备注可见性
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
 
     if (songsService && songsService.songs && songsService.songs.value) {
       const songIndex = songsService.songs.value.findIndex((s) => s.id === dialogData.songId)
@@ -1277,18 +1285,20 @@ const updateSubmissionNotePublic = async (isPublic) => {
       }
     }
 
-    const localScheduledIndex = localScheduledSongs.value.findIndex(
-      (s) => s.song && s.song.id === dialogData.songId
-    )
-    if (localScheduledIndex !== -1) {
-      localScheduledSongs.value[localScheduledIndex].song.submissionNotePublic = isPublic
+    // 更新排期列表中的重播申请备注可见性
+    for (const scheduleList of [localScheduledSongs.value, publicSchedules.value]) {
+      const scheduleIndex = scheduleList.findIndex(
+        (s) => s.song && s.song.id === dialogData.songId
+      )
+      if (scheduleIndex !== -1) {
+        scheduleList[scheduleIndex].song.submissionNotePublic = isPublic
+      }
     }
 
-    const publicScheduleIndex = publicSchedules.value.findIndex(
-      (s) => s.song && s.song.id === dialogData.songId
-    )
-    if (publicScheduleIndex !== -1) {
-      publicSchedules.value[publicScheduleIndex].song.submissionNotePublic = isPublic
+    // 更新重播请求列表中的备注可见性
+    const replayIndex = replayRequests.value.findIndex((s) => s.id === dialogData.songId)
+    if (replayIndex !== -1) {
+      replayRequests.value[replayIndex].submissionNotePublic = isPublic
     }
 
     if (window.$showNotification) {
@@ -2008,9 +2018,12 @@ watch(selectedFilterPlayTime, () => {
 // 加载重播申请
 const fetchReplayRequests = async () => {
   try {
+    // 与歌曲列表一致，按当前选中学期过滤；选择"全部"时不传学期参数
+    const selectedSemesterOption = availableSemesters.value.find((item) => String(item.id) === String(selectedSemester.value))
+    const semester = selectedSemester.value === 'all' ? undefined : selectedSemesterOption?.name
     const data = await $fetch('/api/admin/replay-requests', {
       ...auth.getAuthConfig(),
-      query: { status: 'PENDING' }
+      query: { status: 'PENDING', ...(semester ? { semester } : {}) }
     })
     replayRequests.value = data || []
   } catch (err) {
@@ -2240,7 +2253,8 @@ const dragStart = (event, song) => {
     'text/plain',
     JSON.stringify({
       type: 'add-to-schedule',
-      songId: song.id
+      songId: song.id,
+      replayRequestId: song.replayRequestId || null
     })
   )
 
@@ -2317,8 +2331,10 @@ const dropToSequence = async (event) => {
 
     if (dragData.type === 'add-to-schedule') {
       const songId = parseInt(dragData.songId)
-      // 尝试在普通歌曲列表和重播申请列表中查找
-      let song = songs.value.find((s) => s.id === songId)
+      const isReplayRequest = dragData.replayRequestId != null
+      let song = isReplayRequest
+        ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
+        : songs.value.find((s) => s.id === songId)
       if (!song) {
         song = replayRequests.value.find((s) => s.id === songId)
       }
@@ -2330,6 +2346,7 @@ const dropToSequence = async (event) => {
 
       const newSchedule = {
         id: Date.now(),
+        replayRequestId: dragData.replayRequestId || song.replayRequestId || null,
         song: song,
         playDate: selectedDate.value, // 直接使用日期字符串
         sequence: localScheduledSongs.value.length + 1,
@@ -2375,8 +2392,10 @@ const dropReorder = async (event, dropIndex) => {
     } else if (dragData.type === 'add-to-schedule') {
       // 处理从左侧拖到特定位置
       const songId = parseInt(dragData.songId)
-      // 尝试在普通歌曲列表和重播申请列表中查找
-      let song = songs.value.find((s) => s.id === songId)
+      const isReplayRequest = dragData.replayRequestId != null
+      let song = isReplayRequest
+        ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
+        : songs.value.find((s) => s.id === songId)
       if (!song) {
         song = replayRequests.value.find((s) => s.id === songId)
       }
@@ -2388,6 +2407,7 @@ const dropReorder = async (event, dropIndex) => {
 
       const newSchedule = {
         id: Date.now(),
+        replayRequestId: dragData.replayRequestId || song.replayRequestId || null,
         song: song,
         playDate: selectedDate.value, // 直接使用日期字符串
         sequence: dropIndex + 1,
@@ -2420,6 +2440,7 @@ const addSongToSchedule = (song) => {
 
   const newSchedule = {
     id: Date.now(),
+    replayRequestId: song.replayRequestId || null,
     song: song,
     playDate: selectedDate.value,
     sequence: localScheduledSongs.value.length + 1,
@@ -2736,7 +2757,8 @@ const saveDraft = async () => {
               songId: song.song.id,
               playDate: selectedDate.value, // 直接传递日期字符串
               sequence: i + 1,
-              playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null
+              playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+              replayRequestId: song.replayRequestId || song.song?.replayRequestId || null
             },
             ...auth.getAuthConfig()
           })
@@ -2804,10 +2826,11 @@ const publishScheduleConfirmed = async () => {
   loading.value = true
 
   try {
-    // 构建发布数据
+    // 构建发布数据，携带拖拽时显式选择的重播申请绑定
     const songsToPublish = localScheduledSongs.value.map((item, index) => ({
       songId: item.song.id,
-      sequence: index + 1
+      sequence: index + 1,
+      replayRequestId: item.replayRequestId || item.song?.replayRequestId || null
     }))
 
     // 调用批量发布API
@@ -3143,6 +3166,7 @@ const handleTouchDropToSequence = async (targetElement) => {
   // 直接添加到本地列表，不发送请求
   const newSchedule = {
     id: Date.now(),
+    replayRequestId: song.replayRequestId || null,
     song: song,
     playDate: selectedDate.value,
     sequence: insertIndex + 1,

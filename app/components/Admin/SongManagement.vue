@@ -1127,18 +1127,12 @@ const locale = computed(() => {
     },
     timeAgo: {
       ...(base.timeAgo || {}),
-      minutes: (value) => formatString(base.timeAgo?.minutes, [value]) || '',
-      hours: (value) => formatString(base.timeAgo?.hours, [value]) || '',
-      days: (value) => formatString(base.timeAgo?.days, [value]) || ''
+      minutes: (value) => formatLocaleValue(base.timeAgo?.minutes, value) || '',
+      hours: (value) => formatLocaleValue(base.timeAgo?.hours, value) || '',
+      days: (value) => formatLocaleValue(base.timeAgo?.days, value) || ''
     }
   })
 })
-const formatString = (value, args) => {
-  if (typeof value !== 'string') return value
-  return value.replace(/{(\d+)}/g, (match, index) =>
-    args[index] !== undefined ? String(args[index]) : match
-  )
-}
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
 const loading = ref(false)
 const searchQuery = ref('')
@@ -1197,6 +1191,7 @@ const selectedSongsForDownload = ref([])
 const submissionRemarkDialog = ref({
   show: false,
   songId: null,
+  replayRequestId: null,
   title: '',
   artist: '',
   songTitle: '',
@@ -1479,6 +1474,7 @@ const openSubmissionRemark = (song) => {
   submissionRemarkDialog.value = {
     show: true,
     songId: song.id,
+    replayRequestId: song.replayRequestId || null,
     title: song.title,
     artist: song.artist,
     songTitle: `${song.title} - ${song.artist}`,
@@ -1495,11 +1491,17 @@ const updateSubmissionNotePublic = async (isPublic) => {
   dialogData.isPublic = isPublic
 
   try {
-    await adminService.updateSong(dialogData.songId, {
+    const updatePayload = {
       title: dialogData.title,
       artist: dialogData.artist,
       submissionNotePublic: isPublic
-    })
+    }
+    // 如果是重播申请，传入 replayRequestId 以更新重播申请的备注可见性
+    if (dialogData.replayRequestId) {
+      updatePayload.replayRequestId = dialogData.replayRequestId
+    }
+
+    await adminService.updateSong(dialogData.songId, updatePayload)
 
     const songIndex = songs.value.findIndex((s) => s.id === dialogData.songId)
     if (songIndex !== -1) {

@@ -60,7 +60,7 @@
             required
             type="text"
             @input="error = ''"
-          >
+          />
         </div>
         <p v-if="showCreateMode" class="hint-text">{{ locale.usernameHint }}</p>
       </div>
@@ -89,7 +89,7 @@
             required
             type="text"
             @input="error = ''"
-          >
+          />
         </div>
       </div>
 
@@ -148,7 +148,7 @@
             :placeholder="showCreateMode ? locale.createPasswordPlaceholder : locale.passwordPlaceholder"
             required
             @input="error = ''"
-          >
+          />
           <button class="password-toggle" type="button" @click="showPassword = !showPassword">
             <svg
               v-if="showPassword"
@@ -168,7 +168,7 @@
             </svg>
           </button>
         </div>
-        
+
         <!-- 密码强度指示器 -->
         <div v-if="showCreateMode && password" class="px-1 pt-1 space-y-2 mt-1">
           <div class="h-1 w-full bg-[var(--input-border)] rounded-full overflow-hidden">
@@ -215,8 +215,12 @@
             :placeholder="locale.confirmPasswordPlaceholder"
             required
             @input="error = ''"
+          />
+          <button
+            class="password-toggle"
+            type="button"
+            @click="showConfirmPassword = !showConfirmPassword"
           >
-          <button class="password-toggle" type="button" @click="showConfirmPassword = !showConfirmPassword">
             <svg
               v-if="showConfirmPassword"
               fill="none"
@@ -243,14 +247,14 @@
           ref="turnstileRef"
           v-model="turnstileToken"
         />
-        <CaptchaInput 
+        <CaptchaInput
           v-else
           ref="captchaRef"
-          v-model="captchaInput" 
-          @update:captchaId="captchaId = $event" 
+          v-model="captchaInput"
+          @update:captchaId="captchaId = $event"
         />
       </div>
-      
+
       <div v-if="error" class="error-container">
         <svg
           class="error-icon"
@@ -302,12 +306,7 @@
       <div class="divider">
         <span>{{ locale.or }}</span>
       </div>
-      <button 
-        type="button" 
-        class="webauthn-btn" 
-        :disabled="loading" 
-        @click="handleWebAuthnLogin"
-      >
+      <button type="button" class="webauthn-btn" :disabled="loading" @click="handleWebAuthnLogin">
         <Fingerprint :size="20" class="webauthn-icon" />
         <span>{{ locale.webauthn }}</span>
       </button>
@@ -423,7 +422,7 @@ const getSafeRedirect = (fallback = '/') => {
 }
 
 const gradeOptions = computed(() => {
-  return [...new Set(classOptions.value.map(item => item.grade))]
+  return [...new Set(classOptions.value.map((item) => item.grade))]
 })
 
 const gradeSelectOptions = computed(() => {
@@ -436,13 +435,11 @@ const gradeSelectOptions = computed(() => {
 const availableClassOptions = computed(() => {
   if (!grade.value) return []
 
-  return classOptions.value
-    .filter(item => item.grade === grade.value)
-    .map(item => item.class)
+  return classOptions.value.filter((item) => item.grade === grade.value).map((item) => item.class)
 })
 
 const classSelectOptions = computed(() => {
-  return availableClassOptions.value.map(option => ({ label: option, value: option }))
+  return availableClassOptions.value.map((option) => ({ label: option, value: option }))
 })
 
 const fetchClassOptions = async () => {
@@ -468,8 +465,15 @@ const handleGradeChange = () => {
   studentClass.value = ''
 }
 
+const redirectAfterLogin = async () => {
+  if (auth.user.value?.requirePasswordChange) {
+    return navigateTo('/change-password')
+  }
+  return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+}
+
 const handle2FASuccess = async () => {
-  await navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+  await redirectAfterLogin()
 }
 
 onMounted(async () => {
@@ -525,7 +529,7 @@ const handleLogin = async () => {
   // 构建请求体，包含验证码信息
   const requestBody = {
     username: username.value,
-    password: password.value,
+    password: password.value
   }
   if (showCaptcha.value) {
     if (captchaProvider.value === 'turnstile') {
@@ -538,10 +542,8 @@ const handleLogin = async () => {
 
   try {
     // 根据模式选择接口
-    const url = isBindMode.value && !showCreateMode.value
-      ? '/api/auth/bind'
-      : '/api/auth/login'
-    
+    const url = isBindMode.value && !showCreateMode.value ? '/api/auth/bind' : '/api/auth/login'
+
     const response = await $fetch(url, {
       method: 'POST',
       body: requestBody
@@ -558,8 +560,8 @@ const handleLogin = async () => {
     }
 
     // 登录成功，刷新认证状态
-    await auth.initAuth()
-    return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+    await auth.initAuth(true)
+    return redirectAfterLogin()
   } catch (err) {
     // 正确的错误路径：err.data = { statusCode, message, data: { captchaRequired } }
     const innerData = err.data?.data
@@ -582,7 +584,7 @@ const handleLogin = async () => {
         captchaRef.value?.refreshCaptcha?.()
       }
     }
-    
+
     // 仅凭据错误（401）时清空密码字段（避免验证码错误时误清）
     if (err.statusCode === 401) {
       password.value = ''
@@ -622,8 +624,8 @@ const handleRegisterOAuth = async () => {
 
     if (response.success) {
       // 账户创建成功，刷新认证状态
-      await auth.initAuth()
-      return navigateTo(getSafeRedirect())
+      await auth.initAuth(true)
+      return redirectAfterLogin()
     }
   } catch (err) {
     const apiError = err
@@ -658,8 +660,8 @@ const runWebAuthnLogin = async ({ useBrowserAutofill = false, showErrors = true 
 
     if (verification.success) {
       // 登录成功
-      await auth.initAuth()
-      return navigateTo(getSafeRedirect(auth.isAdmin.value ? '/dashboard' : '/'))
+      await auth.initAuth(true)
+      return redirectAfterLogin()
     }
   } catch (e) {
     if (isWebAuthnCeremonyAborted(e)) return

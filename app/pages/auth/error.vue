@@ -22,7 +22,7 @@
 
         <!-- 错误标题与信息 -->
         <div class="space-y-3">
-          <h1 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h1>
+          <h1 class="text-2xl font-black text-zinc-100 tracking-tight">{{ errorTitle }}</h1>
           <p class="text-sm text-zinc-500 leading-relaxed">{{ errorMessage }}</p>
         </div>
 
@@ -46,7 +46,7 @@
             class="flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
           >
             <LogIn :size="18" />
-            {{ locale.retryLogin }}
+            {{ primaryActionLabel }}
           </NuxtLink>
           <NuxtLink
             to="/"
@@ -75,10 +75,27 @@ const route = useRoute()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.authError || {})
 
-const errorCode = computed(() => route.query.code)
-const errorMessage = computed(
-  () => route.query.message || locale.value.defaultMessage
+const errorCode = computed(() => {
+  const code = Array.isArray(route.query.code) ? route.query.code[0] : route.query.code
+  return typeof code === 'string' ? code : ''
+})
+const isAggregateLoginUnavailable = computed(
+  () => errorCode.value === 'AGGREGATE_LOGIN_UNAVAILABLE'
 )
+const errorTitle = computed(() =>
+  isAggregateLoginUnavailable.value
+    ? locale.value.aggregateUnavailableTitle || '当前登录方式暂不可用'
+    : locale.value.title
+)
+const primaryActionLabel = computed(() =>
+  isAggregateLoginUnavailable.value
+    ? locale.value.aggregateUnavailableAction || '选择其他登录方式'
+    : locale.value.retryLogin
+)
+const errorMessage = computed(() => {
+  const message = Array.isArray(route.query.message) ? route.query.message[0] : route.query.message
+  return typeof message === 'string' && message ? message : locale.value.defaultMessage
+})
 
 definePageMeta({
   layout: 'default'

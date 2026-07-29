@@ -144,9 +144,10 @@ export default defineEventHandler(async (event) => {
         GROUP BY song_id
       ),
       current_user_replay AS (
-        SELECT song_id, status, updated_at
+        SELECT DISTINCT ON (song_id) song_id, status, updated_at
         FROM song_replay_requests
         WHERE $1::int IS NOT NULL AND user_id = $1
+        ORDER BY song_id, created_at DESC
       ),
       accepted_collaborators AS (
         SELECT

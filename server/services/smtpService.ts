@@ -18,7 +18,7 @@ const TRUSTED_HTML_TEMPLATE_KEYS = new Set(['contentBlock'])
 const EMAIL_REQUEST_SOURCE_LABEL = 'This email was requested from:'
 
 const escapeHtml = (value: unknown): string => {
-  return String(value).replace(/[&<>"']/g, (character) => HTML_ESCAPE_MAP[character])
+  return String(value).replace(/[&<>"']/g, (character) => HTML_ESCAPE_MAP[character] ?? character)
 }
 
 const normalizeEmailActionUrl = (value: unknown): string | undefined => {
@@ -105,6 +105,13 @@ export class SmtpService {
     songPlayed: `
       <p>您投稿的歌曲《{{songTitle}}》已播放。</p>
     `,
+    replaySongSelected: `
+      <p>您申请重播的歌曲《{{songTitle}}》已安排播放。</p>
+      <p>播放日期：<strong>{{playDate}}</strong></p>
+      {{#if playTimeName}}
+      <p>播出时段：<strong>{{playTimeName}}</strong></p>
+      {{/if}}
+    `,
     songVoted: `
       <p>您投稿的歌曲《{{songTitle}}》获得了新的投票。</p>
       <p>当前共有 <strong>{{votesCount}}</strong> 个投票。</p>
@@ -154,6 +161,12 @@ export class SmtpService {
       name: '歌曲已播放',
       subject: '歌曲已播放 | {{siteTitle}}通知推送',
       contentType: 'songPlayed',
+      headerSubtitle: '通知推送'
+    },
+    'notification.replaySongSelected': {
+      name: '重播申请已安排',
+      subject: '重播已安排 | {{siteTitle}}通知推送',
+      contentType: 'replaySongSelected',
       headerSubtitle: '通知推送'
     },
     'notification.songVoted': {

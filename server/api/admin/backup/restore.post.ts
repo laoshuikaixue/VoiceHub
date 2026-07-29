@@ -1134,6 +1134,7 @@ export default defineEventHandler(async (event) => {
                           'enableRequestTimeLimitation',
                           'requestTimeLimitation',
                           'forceBlockAllRequests',
+                          'forcePasswordChangeOnFirstLogin',
                           'enableReplayRequests',
                           'enableCollaborativeSubmission',
                           'enableSubmissionRemarks',
@@ -1297,6 +1298,26 @@ export default defineEventHandler(async (event) => {
                         scheduleData.sequence = record.hasOwnProperty('sequence')
                           ? record.sequence
                           : 1
+
+                        // 重播申请绑定：申请先于排期恢复，校验绑定存在且属于同一首歌，避免悬空绑定
+                        let validScheduleReplayRequestId = null
+                        if (record.replayRequestId) {
+                          const boundReplayRequest = await tx
+                            .select({
+                              id: songReplayRequests.id,
+                              songId: songReplayRequests.songId
+                            })
+                            .from(songReplayRequests)
+                            .where(eq(songReplayRequests.id, record.replayRequestId))
+                            .limit(1)
+                          if (
+                            boundReplayRequest.length > 0 &&
+                            boundReplayRequest[0].songId === validSongId
+                          ) {
+                            validScheduleReplayRequestId = record.replayRequestId
+                          }
+                        }
+                        scheduleData.replayRequestId = validScheduleReplayRequestId
 
                         if (mode === 'merge') {
                           // 检查是否存在相同的排期（按歌曲ID和播放日期）
@@ -1696,9 +1717,27 @@ export default defineEventHandler(async (event) => {
                           if (mappedSongId) validReplaySongId = mappedSongId
                         }
 
+                        // 校验期望播出时段是否存在（可选字段）
+                        let validReplayPlayTimeId = record.preferredPlayTimeId || null
+                        if (validReplayPlayTimeId) {
+                          const replayPlayTimeExists = await tx
+                            .select({ id: playTimes.id })
+                            .from(playTimes)
+                            .where(eq(playTimes.id, validReplayPlayTimeId))
+                            .limit(1)
+                          if (replayPlayTimeExists.length === 0) {
+                            validReplayPlayTimeId = null
+                          }
+                        }
+
+                        // 保留原始状态与申请元数据，避免历史已履行记录恢复为 PENDING 触发部分唯一索引冲突
                         const replayData = {
                           songId: validReplaySongId,
                           userId: validReplayUserId,
+                          status: record.status || 'PENDING',
+                          preferredPlayTimeId: validReplayPlayTimeId,
+                          submissionNote: record.submissionNote ?? null,
+                          submissionNotePublic: record.submissionNotePublic === true,
                           createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
                           updatedAt: record.updatedAt ? new Date(record.updatedAt) : new Date()
                         }

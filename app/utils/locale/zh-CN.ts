@@ -77,6 +77,9 @@ export const siteConfig = {
   turnstileSecretKeyDesc: '开启 Turnstile 后，所有用户在每次登录时都需要进行安全验证。',
   showBlacklistKeywords: '显示黑名单具体关键词',
   showBlacklistKeywordsDesc: '开启后，在投稿命中黑名单时将明确提示冲突关键词；关闭则仅提示"包含关键词"。',
+  forcePasswordChangeOnFirstLogin: '首次登录强制修改密码',
+  forcePasswordChangeOnFirstLoginDesc:
+    '开启后，尚未设置过密码的新用户首次登录时必须设置新密码，完成前不能访问其他功能。',
   hideStudentInfo: '隐藏学生详细信息',
   hideStudentInfoDesc: '开启后，非管理员用户在前端点歌列表、排期预览中将无法查看投稿学生的完整学号与真实姓名。',
   telemetryEnabled: '启用错误追踪与遥测',
@@ -190,7 +193,8 @@ export const changePassword = {
   changePasswordTitle: '修改密码',
   setNewPasswordDesc: '请设置一个安全的密码',
   updatePasswordDesc: '更新您的登录密码',
-  backToHome: '返回主页'
+  backToHome: '返回主页',
+  logout: '退出登录'
 } as const
 
 export const common = {
@@ -283,7 +287,9 @@ export const pages = {
     retryLogin: '重新尝试登录',
     backHome: '返回首页',
     contactAdmin: '如果您认为这是一个错误，请联系系统管理员',
-    defaultMessage: '在尝试使用第三方账号登录时发生未知错误，请重试'
+    defaultMessage: '在尝试使用第三方账号登录时发生未知错误，请重试',
+    aggregateUnavailableTitle: '当前登录方式暂不可用',
+    aggregateUnavailableAction: '选择其他登录方式'
   },
   resetPassword: {
     title: '重置密码',
@@ -758,7 +764,15 @@ export const pages = {
         qq: 'QQ',
         wx: '微信',
         alipay: '支付宝',
-        douyin: '抖音'
+        sina: '微博',
+        baidu: '百度',
+        douyin: '抖音',
+        huawei: '华为',
+        xiaomi: '小米',
+        gitee: 'Gitee',
+        gitea: 'Gitea',
+        bilibili: '哔哩哔哩',
+        kuaishou: '快手'
       }
     },
     changePasswordForm: {
@@ -783,7 +797,13 @@ export const pages = {
       newPasswordTooShort: '新密码长度至少为8位',
       initialSuccess: '密码设置成功！正在跳转...',
       changeSuccess: '密码修改成功！请重新登录',
-      failed: '操作失败，请重试'
+      failed: '操作失败，请重试',
+      showCurrentPassword: '显示当前密码',
+      hideCurrentPassword: '隐藏当前密码',
+      showNewPassword: '显示新密码',
+      hideNewPassword: '隐藏新密码',
+      showConfirmPassword: '显示确认密码',
+      hideConfirmPassword: '隐藏确认密码'
     },
     captchaInput: {
       label: '验证码',
@@ -1408,6 +1428,7 @@ export const pages = {
         replayAlreadyRequested: '该歌曲已申请过重播',
         replayRequestSuccess: '申请重播成功',
         replayRequestFailed: (message: string) => `申请重播失败: ${message}`,
+        replayOriginalNotFound: '未找到可申请重播的原歌曲',
         periodQuotaFull: (accepted: number, expected: number) => `当前时段投稿名额已满 (${accepted}/${expected})`,
         dailyLimitReached: (used: number, limit: number) => `今日投稿已达上限 (${used}/${limit})`,
         weeklyLimitReached: (used: number, limit: number) => `本周投稿已达上限 (${used}/${limit})`,
@@ -1433,6 +1454,7 @@ export const pages = {
       scheduled: '已排期',
       chooseProgram: '选择节目',
       chooseSubmit: '选择投稿',
+      requestReplay: '申请重播',
       manualSubmitLong: '以上没有我想要的歌曲，手动输入提交',
       loginRequiredToSubmit: '请先登录后提交',
       loginRequiredNotice: '注意，您尚未登录，不能投稿',
@@ -2387,7 +2409,7 @@ export const admin = {
     aggregateTitle: '聚合登录',
     aggregateLoginTypeLabel: '登录方式',
     aggregateLoginTypePlaceholder: '请选择至少一种登录方式',
-    aggregateLoginTypeDesc: '可同时启用多个聚合登录平台，每个平台会作为独立身份进行登录和绑定。',
+    aggregateLoginTypeDesc: '请选择当前聚合登录服务已接入并开通的登录方式；启用服务商尚未支持的平台会导致授权失败。每种登录方式会独立记录账号绑定关系。',
     aggregateEndpointLabel: '接口地址',
     aggregateEndpointDesc: '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。',
     aggregateClientIdPlaceholder: '输入聚合登录 AppID',
@@ -2397,7 +2419,15 @@ export const admin = {
       qq: 'QQ',
       wx: '微信',
       alipay: '支付宝',
-      douyin: '抖音'
+      sina: '微博',
+      baidu: '百度',
+      douyin: '抖音',
+      huawei: '华为',
+      xiaomi: '小米',
+      gitee: 'Gitee',
+      gitea: 'Gitea',
+      bilibili: '哔哩哔哩',
+      kuaishou: '快手'
     },
     userIdField: '用户 ID 字段',
     usernameField: '用户名字段',
@@ -3523,6 +3553,14 @@ export const serverErrors = {
   COMMON_INVALID_PARAMS: '参数错误',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: '姓名、用户名、密码不能为空',
   AUTH_PASSWORD_TOO_SHORT: '密码长度不能少于8个字符',
+  AUTH_PASSWORD_TOO_LONG: '密码长度不能超过128位',
+  AUTH_PASSWORD_TOO_MANY_BYTES: '密码有效长度不能超过72字节',
+  AUTH_PASSWORD_TOO_COMMON: '该密码过于常见，请更换更安全的密码',
+  AUTH_PASSWORD_COMPLEXITY_REQUIRED: '密码至少需要包含大写字母、小写字母、数字、特殊字符中的三类',
+  AUTH_PASSWORD_NOT_SET: '当前账号尚未设置密码，请使用初始密码设置功能',
+  AUTH_INITIAL_PASSWORD_NOT_REQUIRED: '当前账号不需要设置初始密码，请使用修改密码功能',
+  AUTH_PASSWORD_CHANGE_REQUIRED: '请先完成密码修改后再继续',
+  AUTH_PASSWORD_STATE_CHANGED: '密码状态已变化，请重新验证后再试',
   AUTH_GRADE_CLASS_TOGETHER: '年级和班级需要同时选择，或全部留空',
   AUTH_UNSUPPORTED_OAUTH_PROVIDER: '当前仅支持 GitHub / Casdoor / Google / 聚合登陆 / 第三方 OAuth2',
   AUTH_CURRENT_PASSWORD_INCORRECT: '当前密码不正确',
@@ -3615,7 +3653,10 @@ export const serverErrors = {
   SONG_PLAYED_CANNOT_WITHDRAW: '已播放的歌曲不能撤回',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: '当前没有活跃学期，无法申请重播',
   SONG_REPLAY_ALREADY_REQUESTED: '您已经申请过重播该歌曲',
-  SONG_REPLAY_REJECTED_WAIT_HOURS: '您的重播申请被拒绝后需要等待 {0} 小时才能重新申请',
+  SONG_REPLAY_COOLDOWN: '重播申请冷却中，还需等待 {0} 小时',
+  SONG_REPLAY_INVALID_REQUEST: '重播申请无效或已被处理',
+  SONG_REPLAY_PLAY_TIME_DISABLED: '播出时段选择功能未启用',
+  SONG_REPLAY_PLAY_TIME_INVALID: '选择的播出时段不存在或未启用',
   SONG_REQUESTER_NOT_FOUND: '投稿人用户不存在',
   SONG_OPERATION_FAILED: '操作失败，请稍后重试',
   SONG_INVITATION_NOT_FOUND: '未找到待处理的邀请',

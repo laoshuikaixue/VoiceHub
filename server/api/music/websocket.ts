@@ -1,5 +1,9 @@
 import { defineEventHandler, getQuery } from 'h3'
-import jwt from 'jsonwebtoken'
+import { db, users } from '~/drizzle/db'
+import { eq } from 'drizzle-orm'
+import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
+import { resolveRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { createApiError } from '~~/server/utils/apiError'
 
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()
@@ -112,15 +116,38 @@ export default defineEventHandler(async (event) => {
   let userId: number | null = null
   if (token) {
     try {
-      if (process.env.JWT_SECRET) {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: number }
-        userId = decoded.userId
+      const decoded = JWTEnhanced.verifyToken(token)
+      const userResult = await db
+        .select({
+          id: users.id,
+          status: users.status,
+          passwordChangedAt: users.passwordChangedAt,
+          forcePasswordChange: users.forcePasswordChange,
+          tokenVersion: users.tokenVersion
+        })
+        .from(users)
+        .where(eq(users.id, decoded.userId))
+        .limit(1)
+      const user = userResult[0]
+
+      // 失效会话降级为匿名收听，保持公共播放页/信息屏可用；仅对有效登录态执行强制改密门控。
+      if (user && user.status === 'active' && (decoded.tokenVersion ?? 0) === user.tokenVersion) {
+        if (await resolveRequirePasswordChange(user)) {
+          throw createApiError(403, 'AUTH_PASSWORD_CHANGE_REQUIRED', '请先完成密码修改', {
+            requirePasswordChange: true
+          })
+        }
+        userId = user.id
+      } else {
+        console.warn('音乐 SSE 连接会话已失效，降级为匿名连接')
       }
     } catch (error) {
-      console.warn('Invalid token for music WebSocket connection, proceeding as anonymous:', error)
-      // 不抛出错误，允许匿名连接
+      if (error && typeof error === 'object' && 'statusCode' in error) {
+        throw error
+      }
+      // 令牌无法解码时同样降级匿名，避免残留失效 Cookie 导致重连循环持续报错。
+      console.warn('音乐 SSE 连接令牌无效，降级为匿名连接:', error)
     }
-  } else {
   }
 
   // 生成连接ID

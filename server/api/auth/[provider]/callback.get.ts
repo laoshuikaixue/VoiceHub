@@ -1,11 +1,14 @@
 import {
   decodeOAuthStateCookie,
+  getOAuthStateCookieNames,
+  LEGACY_OAUTH_STATE_COOKIE_NAMES,
   parseState,
   getRedirectUri,
-  getSafeOAuthReturnPath
+  getSafeOAuthReturnPath,
+  verifyCompactOAuthState
 } from '~~/server/utils/oauth'
 import { generateBindingToken } from '~~/server/utils/oauth-token'
-import { db, eq, users, userIdentities } from '~/drizzle/db'
+import { db, eq, users, userIdentities, systemSettings } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { getOAuthStrategy } from '~~/server/utils/oauth-strategies'
 import { isUserBlocked, getUserBlockRemainingTime } from '~~/server/services/securityService'
@@ -20,15 +23,20 @@ import { getBeijingTime } from '~/utils/timeUtils'
 import type { H3Event } from 'h3'
 import { getRequestOrigin, isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
+import { computeRequirePasswordChange } from '~~/server/utils/system-settings-helper'
+import { canBindOAuthIdentity } from '~~/server/utils/auth-route-policy'
+
+const getSingleQueryValue = (value: unknown): string | undefined => {
+  return typeof value === 'string' ? value : undefined
+}
 
 export default defineEventHandler(async (event) => {
   const provider = getRouterParam(event, 'provider')
   const query = getQuery(event)
   // OAuth 回调参数参与身份与 CSRF 校验，拒绝重复参数可避免上下游解析结果不一致。
-  const code = typeof query.code === 'string' ? query.code : undefined
-  const stateStr = typeof query.state === 'string' ? query.state : undefined
-  const callbackLoginType =
-    typeof query.type === 'string' ? query.type.trim().toLowerCase() : undefined
+  const code = getSingleQueryValue(query.code)
+  const stateStr = getSingleQueryValue(query.state)
+  const callbackLoginType = getSingleQueryValue(query.type)?.trim().toLowerCase()
 
   if (!provider) {
     throw createApiError(400, 'AUTH_MISSING_PROVIDER', 'Missing provider')
@@ -46,14 +54,50 @@ export default defineEventHandler(async (event) => {
     )
   }
 
-  if (!code || !stateStr) {
-    throw createApiError(400, 'AUTH_MISSING_CODE_OR_STATE', 'Missing code or state')
+  if (!code) {
+    throw createApiError(400, 'AUTH_MISSING_CODE_OR_STATE', 'OAuth 回调缺少或包含冲突的 code 参数')
+  }
+  if (!stateStr) {
+    throw createApiError(400, 'AUTH_MISSING_CODE_OR_STATE', 'OAuth 回调缺少或包含冲突的 state 参数，无法完成安全验证')
   }
 
   // 1. 验证 State
-  const csrfCookie = getCookie(event, 'oauth_csrf')
+  const stateCookieNames = getOAuthStateCookieNames(provider === 'aggregate' ? stateStr : undefined)
+  let activeStateCookieNames = stateCookieNames
+  let csrfCookie = getCookie(event, activeStateCookieNames.csrf)
+  let storedFullState = getCookie(event, activeStateCookieNames.fullState)
+  let storedCompactState = getCookie(event, activeStateCookieNames.compactState)
+
+  // 兼容升级前已经发起、仍在十分钟有效期内的登录流程。
+  // 仅在新命名 Cookie 全部缺失时才回退，避免部分丢失时连同有效的新命名 Cookie 一起被丢弃。
+  if (provider === 'aggregate' && !csrfCookie && !storedFullState && !storedCompactState) {
+    activeStateCookieNames = LEGACY_OAUTH_STATE_COOKIE_NAMES
+    csrfCookie = getCookie(event, activeStateCookieNames.csrf)
+    storedFullState = getCookie(event, activeStateCookieNames.fullState)
+    storedCompactState = getCookie(event, activeStateCookieNames.compactState)
+  }
+
+  // 验证失败时同时清理两套命名下的残留 Cookie，避免无效状态干扰后续流程
+  const cleanupStateCookies = () => {
+    const names = new Set([
+      stateCookieNames.csrf,
+      LEGACY_OAUTH_STATE_COOKIE_NAMES.csrf,
+      ...(provider === 'aggregate'
+        ? [
+            stateCookieNames.fullState,
+            stateCookieNames.compactState,
+            LEGACY_OAUTH_STATE_COOKIE_NAMES.fullState,
+            LEGACY_OAUTH_STATE_COOKIE_NAMES.compactState
+          ]
+        : [])
+    ])
+    for (const name of names) {
+      deleteCookie(event, name, { path: '/' })
+    }
+  }
 
   if (!csrfCookie) {
+    cleanupStateCookies()
     throw createApiError(400, 'AUTH_CSRF_COOKIE_MISSING', 'CSRF验证失败：Cookie丢失，请从登录页面重新开始')
   }
 
@@ -65,26 +109,33 @@ export default defineEventHandler(async (event) => {
   let stateToVerify = stateStr
 
   if (provider === 'aggregate') {
-    const storedFullState = getCookie(event, 'oauth_full_state')
-    const storedCompactState = getCookie(event, 'oauth_compact_state')
-    if (!storedFullState || !storedCompactState || storedCompactState !== stateStr) {
+    // Cookie 比对确认回调属于本流程，HMAC 验签阻止伪造的 state
+    if (
+      !storedFullState ||
+      !storedCompactState ||
+      storedCompactState !== stateStr ||
+      !verifyCompactOAuthState(stateStr, stateSecret)
+    ) {
+      cleanupStateCookies()
       throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
     }
     stateToVerify = decodeOAuthStateCookie(storedFullState)
     if (!stateToVerify) {
+      cleanupStateCookies()
       throw createApiError(400, 'AUTH_AGGREGATED_STATE_INVALID', '聚合登录状态无效或已过期')
     }
   }
 
   const state = parseState(stateToVerify, origin, csrfCookie, stateSecret)
   if (!state) {
+    cleanupStateCookies()
     throw createApiError(400, 'AUTH_STATE_INVALID', 'Invalid or expired state')
   }
   if (state.provider && state.provider !== provider) {
     throw createApiError(400, 'AUTH_OAUTH_PROVIDER_STATE_MISMATCH', 'OAuth provider 与 state 不匹配')
   }
 
-  let identityProvider = provider
+  let identityProvider: string = provider
   if (provider === 'aggregate') {
     const loginType = state.loginType?.trim().toLowerCase()
     if (!loginType || !providerConfig.loginTypes?.includes(loginType)) {
@@ -98,22 +149,28 @@ export default defineEventHandler(async (event) => {
   }
 
   // 清除 CSRF cookie
-  deleteCookie(event, 'oauth_csrf')
-  deleteCookie(event, 'oauth_full_state')
-  deleteCookie(event, 'oauth_compact_state')
+  deleteCookie(event, activeStateCookieNames.csrf, { path: '/' })
+  if (provider === 'aggregate') {
+    deleteCookie(event, activeStateCookieNames.fullState, { path: '/' })
+    deleteCookie(event, activeStateCookieNames.compactState, { path: '/' })
+  }
 
   const strategy = getOAuthStrategy(provider)
   const redirectUri = getRedirectUri(provider, redirectUriTemplate)
 
   // 2. 使用 Code 换取 Token
-  let accessToken = ''
+  let accessToken: string
   try {
     accessToken = await strategy.exchangeToken(code, redirectUri, providerConfig)
   } catch (e: any) {
     console.error(`[OAuth] ${provider} token exchange failed:`, e.message)
+    const errorMessage =
+      provider === 'aggregate' && typeof e?.message === 'string' && e.message.trim()
+        ? `聚合登录授权失败：${e.message.trim()}`
+        : '授权失败，无法获取访问令牌'
     return sendRedirect(
       event,
-      `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent('授权失败，无法获取访问令牌')}`
+      `/auth/error?code=TOKEN_EXCHANGE_FAILED&message=${encodeURIComponent(errorMessage)}`
     )
   }
 
@@ -180,27 +237,116 @@ async function handleUserLoginOrBind(
         // 已经被其他用户绑定
         return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
       }
-    } else {
-      const currentUserRecord = await db.query.users.findFirst({
-        where: eq(users.id, currentUser.userId)
-      })
+    }
 
-      if (!currentUserRecord || currentUserRecord.status !== 'active') {
+    let bindingResult:
+      | 'success'
+      | 'already-bound'
+      | 'bound-to-other'
+      | 'invalid-session'
+      | 'inactive'
+      | 'password-change-required'
+
+    try {
+      bindingResult = await db.transaction(async (tx) => {
+        const [currentUserRecord] = await tx
+          .select({
+            status: users.status,
+            tokenVersion: users.tokenVersion,
+            forcePasswordChange: users.forcePasswordChange,
+            passwordChangedAt: users.passwordChangedAt
+          })
+          .from(users)
+          .where(eq(users.id, currentUser.userId))
+          .for('update')
+
+        if (
+          !currentUserRecord ||
+          // 兼容迁移前签发的无版本号令牌，按版本 0 参与比对，与全局认证中间件语义一致
+          (currentUser.tokenVersion ?? 0) !== currentUserRecord.tokenVersion
+        ) {
+          return 'invalid-session'
+        }
+
+        if (currentUserRecord.status !== 'active') {
+          return 'inactive'
+        }
+
+        const [currentSettings] = await tx
+          .select({
+            forcePasswordChangeOnFirstLogin: systemSettings.forcePasswordChangeOnFirstLogin
+          })
+          .from(systemSettings)
+          .limit(1)
+          .for('share')
+        const requirePasswordChange = computeRequirePasswordChange(
+          currentUserRecord,
+          currentSettings?.forcePasswordChangeOnFirstLogin ?? false
+        )
+
+        if (!canBindOAuthIdentity(requirePasswordChange)) {
+          return 'password-change-required'
+        }
+
+        const identity = await tx.query.userIdentities.findFirst({
+          where: (t, { eq, and }) =>
+            and(eq(t.provider, provider), eq(t.providerUserId, providerUserId))
+        })
+
+        if (identity) {
+          return identity.userId === currentUser.userId ? 'already-bound' : 'bound-to-other'
+        }
+
+        await tx.insert(userIdentities).values({
+          userId: currentUser.userId,
+          provider,
+          providerUserId,
+          providerUsername,
+          createdAt: new Date()
+        })
+        return 'success'
+      })
+    } catch (error: any) {
+      if (error?.code !== '23505') {
+        console.error('[OAuth] 绑定第三方账号失败:', error)
         return sendRedirect(
           event,
-          '/account?error=' + encodeURIComponent('当前账号状态异常，暂时无法绑定第三方账号')
+          '/account?error=' + encodeURIComponent('绑定第三方账号失败，请稍后重试')
         )
       }
 
-      await db.insert(userIdentities).values({
-        userId: currentUser.userId,
-        provider: provider,
-        providerUserId: providerUserId,
-        providerUsername: providerUsername,
-        createdAt: new Date()
+      const concurrentIdentity = await db.query.userIdentities.findFirst({
+        where: (t, { eq, and }) =>
+          and(eq(t.provider, provider), eq(t.providerUserId, providerUserId))
       })
+      bindingResult =
+        concurrentIdentity?.userId === currentUser.userId ? 'already-bound' : 'bound-to-other'
+    }
+
+    if (bindingResult === 'success') {
       return sendRedirect(event, '/account?message=' + encodeURIComponent('绑定成功'))
     }
+    if (bindingResult === 'already-bound') {
+      return sendRedirect(event, '/account?message=' + encodeURIComponent('账号已绑定'))
+    }
+    if (bindingResult === 'bound-to-other') {
+      return sendRedirect(event, '/account?error=' + encodeURIComponent('该账号已被其他用户绑定'))
+    }
+    if (bindingResult === 'password-change-required') {
+      return sendRedirect(
+        event,
+        '/change-password?error=' + encodeURIComponent('请先完成密码修改后再绑定第三方账号')
+      )
+    }
+    if (bindingResult === 'invalid-session') {
+      deleteCookie(event, 'auth-token')
+      return sendRedirect(event, '/login?error=' + encodeURIComponent('会话已失效，请重新登录'))
+    }
+
+    return sendRedirect(
+      event,
+      '/account?error=' + encodeURIComponent('当前账号状态异常，暂时无法绑定第三方账号')
+    )
   }
 
   // 未登录，则是登录或新绑定流程
@@ -241,7 +387,11 @@ async function handleUserLoginOrBind(
       })
       .where(eq(users.id, user.id))
 
-    const token = JWTEnhanced.generateToken(existingIdentity.user.id, existingIdentity.user.role)
+    const token = JWTEnhanced.generateToken(
+      existingIdentity.user.id,
+      existingIdentity.user.role,
+      existingIdentity.user.tokenVersion
+    )
     setCookie(event, 'auth-token', token, {
       httpOnly: true,
       secure: isSecure,

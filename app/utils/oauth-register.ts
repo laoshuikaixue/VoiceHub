@@ -1,4 +1,5 @@
 import { useLocale } from '~/utils/locale'
+import { validatePasswordPolicy } from './password-policy'
 
 export const OAUTH_REGISTER_USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/
 
@@ -18,8 +19,9 @@ export const validateOAuthRegisterCredentials = (
     return locale.usernamePatternInvalid
   }
 
-  if (password.length < 8) {
-    return locale.registerPasswordTooShort
+  const passwordError = validatePasswordPolicy(password)
+  if (passwordError) {
+    return passwordError
   }
 
   if (password !== confirmPassword) {

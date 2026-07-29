@@ -1,5 +1,5 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uuid, varchar, unique} from 'drizzle-orm/pg-core';
-import {relations} from 'drizzle-orm';
+import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
 export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
@@ -29,7 +29,8 @@ export const users = pgTable('User', {
   lastLogin: timestamp('lastLogin'),
   lastLoginIp: text('lastLoginIp'),
   passwordChangedAt: timestamp('passwordChangedAt'),
-  forcePasswordChange: boolean('forcePasswordChange').default(true).notNull(),
+  forcePasswordChange: boolean('forcePasswordChange').default(false).notNull(),
+  tokenVersion: integer('tokenVersion').default(0).notNull(),
   meowNickname: text('meowNickname'),
   meowBoundAt: timestamp('meowBoundAt'),
   status: userStatusEnum('status').default('active').notNull(),
@@ -99,6 +100,7 @@ export const schedules = pgTable('Schedule', {
   // 草稿支持字段
   isDraft: boolean('isDraft').default(false).notNull(),
   publishedAt: timestamp('publishedAt'),
+  replayRequestId: integer('replay_request_id'),
 }, (table) => [
   index('schedule_published_song_idx').on(table.isDraft, table.songId, table.playDate),
   index('schedule_published_date_idx').on(table.isDraft, table.playDate)
@@ -173,6 +175,7 @@ export const systemSettings = pgTable('SystemSettings', {
   smtpFromName: text('smtpFromName').default('校园广播站'),
   enableRequestTimeLimitation: boolean('enableRequestTimeLimitation').default(false).notNull(),
   forceBlockAllRequests: boolean().default(false).notNull(),
+  forcePasswordChangeOnFirstLogin: boolean('forcePasswordChangeOnFirstLogin').default(false).notNull(),
   enableReplayRequests: boolean('enableReplayRequests').default(false).notNull(),
   enableCollaborativeSubmission: boolean('enableCollaborativeSubmission').default(true).notNull(),
   enableSubmissionRemarks: boolean('enableSubmissionRemarks').default(false).notNull(),
@@ -341,8 +344,14 @@ export const songReplayRequests = pgTable('song_replay_requests', {
   createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', {withTimezone: true}).defaultNow().notNull(),
   status: replayRequestStatusEnum('status').default('PENDING').notNull(),
+  preferredPlayTimeId: integer('preferred_play_time_id'),
+  submissionNote: text('submission_note'),
+  submissionNotePublic: boolean('submission_note_public').default(false).notNull(),
 }, (table) => [
-  unique('song_replay_requests_song_id_user_id_unique').on(table.songId, table.userId),
+  // 同一用户对同一首歌同时最多一条待处理申请；历史申请（FULFILLED/REJECTED）允许多条
+  uniqueIndex('song_replay_requests_pending_song_user_unique')
+    .on(table.songId, table.userId)
+    .where(sql`${table.status} = 'PENDING'`),
   index('song_replay_requests_user_status_song_idx').on(table.userId, table.status, table.songId)
 ]);
 
@@ -356,6 +365,28 @@ export const userIdentities = pgTable('UserIdentity', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
 }, (t) => ({
   unq: unique().on(t.provider, t.providerUserId),
+}));
+
+export const passwordAuditLogs = pgTable('PasswordAuditLog', {
+  id: serial('id').primaryKey(),
+  userId: integer('userId').notNull(),
+  actorId: integer('actorId'),
+  action: text('action').notNull(),
+  success: boolean('success').notNull(),
+  ipAddress: text('ipAddress'),
+  userAgent: text('userAgent'),
+  failureReason: text('failureReason'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull()
+}, (table) => ({
+  userCreatedIdx: index('PasswordAuditLog_user_created_idx').on(table.userId, table.createdAt)
+}));
+
+export const passwordRateLimits = pgTable('PasswordRateLimit', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  resetAt: timestamp('resetAt', { withTimezone: true }).notNull()
+}, (table) => ({
+  resetIdx: index('PasswordRateLimit_reset_idx').on(table.resetAt)
 }));
 
 // 关系定义

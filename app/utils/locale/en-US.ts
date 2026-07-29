@@ -68,6 +68,9 @@ export const siteConfig = {
   turnstileSecretKeyDesc: 'When Turnstile is enabled, all users must pass verification on each login.',
   showBlacklistKeywords: 'Show Exact Blacklist Keywords',
   showBlacklistKeywordsDesc: 'Show the exact conflicting keyword when a request hits the blacklist; otherwise only show a generic keyword warning.',
+  forcePasswordChangeOnFirstLogin: 'Force Password Change on First Login',
+  forcePasswordChangeOnFirstLoginDesc:
+    'When enabled, new users who have never set a password must set one on first login and cannot access other features until done.',
   hideStudentInfo: 'Hide Student Details',
   hideStudentInfoDesc: 'Hide full student IDs and real names from non-admin users in request lists and schedule previews.',
   telemetryEnabled: 'Enable Error Tracking and Telemetry',
@@ -179,7 +182,8 @@ export const changePassword = {
   changePasswordTitle: 'Change Password',
   setNewPasswordDesc: 'Create a secure password',
   updatePasswordDesc: 'Update your login password',
-  backToHome: 'Back to Home'
+  backToHome: 'Back to Home',
+  logout: 'Log Out'
 } as const
 
 export const common = {
@@ -272,7 +276,9 @@ export const pages = {
     retryLogin: 'Try Signing In Again',
     backHome: 'Back to Home',
     contactAdmin: 'If you believe this is an error, please contact the system administrator',
-    defaultMessage: 'An unknown error occurred while signing in with a third-party account. Please try again.'
+    defaultMessage: 'An unknown error occurred while signing in with a third-party account. Please try again.',
+    aggregateUnavailableTitle: 'This sign-in method is currently unavailable',
+    aggregateUnavailableAction: 'Choose Another Sign-in Method'
   },
   resetPassword: {
     title: 'Reset Password',
@@ -747,7 +753,15 @@ export const pages = {
         qq: 'QQ',
         wx: 'WeChat',
         alipay: 'Alipay',
-        douyin: 'Douyin'
+        sina: 'Weibo',
+        baidu: 'Baidu',
+        douyin: 'Douyin',
+        huawei: 'Huawei',
+        xiaomi: 'Xiaomi',
+        gitee: 'Gitee',
+        gitea: 'Gitea',
+        bilibili: 'Bilibili',
+        kuaishou: 'Kuaishou'
       }
     },
     changePasswordForm: {
@@ -772,7 +786,13 @@ export const pages = {
       newPasswordTooShort: 'New password must be at least 8 characters',
       initialSuccess: 'Password set successfully. Redirecting...',
       changeSuccess: 'Password changed successfully. Please log in again.',
-      failed: 'Operation failed. Please try again.'
+      failed: 'Operation failed. Please try again.',
+      showCurrentPassword: 'Show current password',
+      hideCurrentPassword: 'Hide current password',
+      showNewPassword: 'Show new password',
+      hideNewPassword: 'Hide new password',
+      showConfirmPassword: 'Show confirm password',
+      hideConfirmPassword: 'Hide confirm password'
     },
     captchaInput: {
       label: 'Verification Code',
@@ -1399,6 +1419,7 @@ export const pages = {
         replayAlreadyRequested: 'Replay has already been requested for this song',
         replayRequestSuccess: 'Replay request submitted',
         replayRequestFailed: (message: string) => `Replay request failed: ${message}`,
+        replayOriginalNotFound: 'Original song for the replay request was not found',
         periodQuotaFull: (accepted: number, expected: number) => `Current period quota is full (${accepted}/${expected})`,
         dailyLimitReached: (used: number, limit: number) => `Daily submission limit reached (${used}/${limit})`,
         weeklyLimitReached: (used: number, limit: number) => `Weekly submission limit reached (${used}/${limit})`,
@@ -1424,6 +1445,7 @@ export const pages = {
       scheduled: 'Scheduled',
       chooseProgram: 'Choose Program',
       chooseSubmit: 'Submit',
+      requestReplay: 'Request Replay',
       manualSubmitLong: 'Not finding the song? Submit manually',
       loginRequiredToSubmit: 'Sign in to submit',
       loginRequiredNotice: 'You are not signed in and cannot submit requests',
@@ -2378,7 +2400,7 @@ export const admin = {
     aggregateTitle: 'Aggregate OAuth',
     aggregateLoginTypeLabel: 'Login Methods',
     aggregateLoginTypePlaceholder: 'Select at least one login method',
-    aggregateLoginTypeDesc: 'Multiple aggregate login platforms can be enabled. Each platform is treated as an independent identity for sign-in and account binding.',
+    aggregateLoginTypeDesc: 'Select only the login methods that your aggregate login service has enabled. Enabling a platform the provider does not support will cause authorization failures. Each login method keeps its own account binding.',
     aggregateEndpointLabel: 'Endpoint URL',
     aggregateEndpointDesc: 'The connect.php endpoint for a compatible aggregate OAuth service. Use HTTPS on public networks; HTTP is acceptable only on trusted private networks.',
     aggregateClientIdPlaceholder: 'Enter aggregate OAuth AppID',
@@ -2388,7 +2410,15 @@ export const admin = {
       qq: 'QQ',
       wx: 'WeChat',
       alipay: 'Alipay',
-      douyin: 'Douyin'
+      sina: 'Weibo',
+      baidu: 'Baidu',
+      douyin: 'Douyin',
+      huawei: 'Huawei',
+      xiaomi: 'Xiaomi',
+      gitee: 'Gitee',
+      gitea: 'Gitea',
+      bilibili: 'Bilibili',
+      kuaishou: 'Kuaishou'
     },
     userIdField: 'User ID Field',
     usernameField: 'Username Field',
@@ -3514,6 +3544,14 @@ export const serverErrors = {
   COMMON_INVALID_PARAMS: 'Invalid parameters',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
   AUTH_PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
+  AUTH_PASSWORD_TOO_LONG: 'Password cannot exceed 128 characters',
+  AUTH_PASSWORD_TOO_MANY_BYTES: 'Password cannot exceed 72 bytes',
+  AUTH_PASSWORD_TOO_COMMON: 'This password is too common. Choose a more secure password.',
+  AUTH_PASSWORD_COMPLEXITY_REQUIRED: 'Password must include at least three of: uppercase letters, lowercase letters, numbers, and special characters',
+  AUTH_PASSWORD_NOT_SET: 'This account does not have a password yet. Use the initial password setup flow.',
+  AUTH_INITIAL_PASSWORD_NOT_REQUIRED: 'This account does not need initial password setup. Use the change-password flow.',
+  AUTH_PASSWORD_CHANGE_REQUIRED: 'Change your password before continuing',
+  AUTH_PASSWORD_STATE_CHANGED: 'The password state changed. Verify again and retry.',
   AUTH_GRADE_CLASS_TOGETHER: 'Grade and class must be selected together, or both left empty',
   AUTH_UNSUPPORTED_OAUTH_PROVIDER: 'Only GitHub / Casdoor / Google / aggregated login / third-party OAuth2 are currently supported',
   AUTH_CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
@@ -3606,7 +3644,10 @@ export const serverErrors = {
   SONG_PLAYED_CANNOT_WITHDRAW: 'Played songs cannot be withdrawn',
   SONG_NO_ACTIVE_SEMESTER_REPLAY: 'There is no active semester, so a replay cannot be requested',
   SONG_REPLAY_ALREADY_REQUESTED: 'You have already requested a replay for this song',
-  SONG_REPLAY_REJECTED_WAIT_HOURS: 'After your replay request was rejected, you must wait {0} hours before requesting again',
+  SONG_REPLAY_COOLDOWN: 'Replay request is cooling down; please wait {0} more hour(s)',
+  SONG_REPLAY_INVALID_REQUEST: 'The replay request is invalid or has already been processed',
+  SONG_REPLAY_PLAY_TIME_DISABLED: 'Play time selection is not enabled',
+  SONG_REPLAY_PLAY_TIME_INVALID: 'The selected play time does not exist or is not enabled',
   SONG_REQUESTER_NOT_FOUND: 'The submitting user does not exist',
   SONG_OPERATION_FAILED: 'Operation failed. Please try again later.',
   SONG_INVITATION_NOT_FOUND: 'No pending invitation was found',

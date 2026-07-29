@@ -4,11 +4,14 @@ export interface User {
   name: string | null
   grade?: string | null
   class?: string | null
-  role: 'USER' | 'ADMIN'
+  role: 'USER' | 'ADMIN' | 'SUPER_ADMIN' | 'SONG_ADMIN'
   lastLoginAt?: Date | null
   lastLoginIp?: string | null
   forcePasswordChange?: boolean
-  passwordChangedAt?: Date | null
+  passwordChangedAt?: Date | string | null
+  requirePasswordChange?: boolean
+  hasSetPassword?: boolean
+  needsInitialPasswordSetup?: boolean
   avatar?: string | null
   has2FA?: boolean
   email?: string | null
