@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -65,7 +66,13 @@ export default defineEventHandler(async (event) => {
 
     // 验证 hash 是否匹配当前密码的前10位
     // 如果用户已经修改过密码，则 user.password 发生变化，旧 token 失效
-    if (user.password.substring(0, 10) !== decoded.hash) {
+    // 使用恒定时间比较，避免通过时序侧信道泄露密码是否已被修改
+    const expectedHash = Buffer.from(user.password.substring(0, 10), 'utf8')
+    const providedHash = Buffer.from(typeof decoded.hash === 'string' ? decoded.hash : '', 'utf8')
+    if (
+      expectedHash.length !== providedHash.length ||
+      !crypto.timingSafeEqual(expectedHash, providedHash)
+    ) {
       throw createApiError(400, 'AUTH_RESET_LINK_INVALIDATED', '该重置链接已失效（密码已被修改）')
     }
 
