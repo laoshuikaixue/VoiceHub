@@ -553,6 +553,9 @@ export const pages = {
     notificationCenter: '通知中心',
     loading: '加载中...',
     noNotifications: '暂无通知',
+    notificationTypeLabel: '消息类型',
+    read: '已读',
+    unread: '未读',
     notificationTypes: {
       SONG_SELECTED: '歌曲已选中',
       SONG_PLAYED: '歌曲已播放',
@@ -560,6 +563,7 @@ export const pages = {
       SONG_REJECTED: '歌曲被驳回',
       COLLABORATION_INVITE: '联合投稿邀请',
       COLLABORATION_RESPONSE: '联合投稿回复',
+      SYSTEM_NOTICE: '系统通知',
       SYSTEM: '系统通知'
     },
     inviteStatus: {

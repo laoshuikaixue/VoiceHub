@@ -252,6 +252,12 @@
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </g>
 
+    <!-- 查看状态图标 -->
+    <g v-else-if="name === 'eye'">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </g>
+
     <!-- 日历图标 -->
     <g v-else-if="name === 'calendar'">
       <rect height="18" rx="2" ry="2" width="18" x="3" y="4" />

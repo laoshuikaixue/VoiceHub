@@ -542,6 +542,9 @@ export const pages = {
     notificationCenter: 'Notification Center',
     loading: 'Loading...',
     noNotifications: 'No notifications',
+    notificationTypeLabel: 'Message Type',
+    read: 'Read',
+    unread: 'Unread',
     notificationTypes: {
       SONG_SELECTED: 'Song Selected',
       SONG_PLAYED: 'Song Played',
@@ -549,6 +552,7 @@ export const pages = {
       SONG_REJECTED: 'Song Rejected',
       COLLABORATION_INVITE: 'Collaboration Invite',
       COLLABORATION_RESPONSE: 'Collaboration Response',
+      SYSTEM_NOTICE: 'System Notification',
       SYSTEM: 'System Notification'
     },
     inviteStatus: {
