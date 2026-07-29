@@ -932,6 +932,7 @@ VoiceHub/
 │       ├── lyric/             # 歌词处理工具
 │       │   ├── exclude.ts     # 歌词排除规则
 │       │   ├── lyricFormat.ts # 歌词格式化
+│       │   ├── lyricLanguage.ts # 歌词语言识别（CJK 混合上下文）
 │       │   ├── lyricMatchQuality.ts # 歌词版本一致性检测
 │       │   ├── lyricParser.ts # 歌词解析器
 │       │   ├── lyricStripper.ts # 歌词清理
