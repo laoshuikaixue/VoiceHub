@@ -15,8 +15,25 @@
           tabindex="-1"
           class="flex max-h-[calc(100dvh-1.5rem)] min-h-[min(38rem,calc(100dvh-1.5rem))] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-amber-400/35 bg-zinc-950 shadow-2xl shadow-black/70 sm:max-h-[calc(100dvh-3rem)] sm:min-h-[min(42rem,calc(100dvh-3rem))]"
         >
-          <header class="border-b border-zinc-800 bg-zinc-900/80 px-5 py-5 sm:px-8 sm:py-6">
-            <div class="flex items-start gap-4">
+          <header
+            class="relative border-b border-zinc-800 bg-zinc-900/80 px-5 py-5 sm:px-8 sm:py-6"
+          >
+            <div
+              class="absolute right-5 top-5 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold sm:right-8 sm:top-6"
+              :class="
+                notification.read
+                  ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+                  : 'border-amber-400/30 bg-amber-400/10 text-amber-300'
+              "
+            >
+              <span
+                class="h-2 w-2 rounded-full"
+                :class="notification.read ? 'bg-emerald-400' : 'bg-amber-400'"
+              />
+              {{ notification.read ? locale.read : locale.unread }}
+            </div>
+
+            <div class="flex items-start gap-4 pr-20 sm:pr-24">
               <div
                 class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
                 aria-hidden="true"
@@ -34,9 +51,11 @@
                 <time
                   v-if="formattedCreatedAt"
                   :datetime="notification.createdAt"
-                  class="mt-2 block text-xs text-zinc-500"
+                  class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-zinc-500"
                 >
-                  {{ formattedCreatedAt }}
+                  <span class="font-semibold text-zinc-400">{{ relativeCreatedAt }}</span>
+                  <span aria-hidden="true">&middot;</span>
+                  <span>{{ formattedCreatedAt }}</span>
                 </time>
               </div>
             </div>
@@ -49,24 +68,15 @@
           />
 
           <footer
-            class="flex flex-col gap-4 border-t border-zinc-800 bg-zinc-900/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8"
+            class="flex flex-col items-end gap-3 border-t border-zinc-800 bg-zinc-900/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8"
           >
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 text-xs font-bold text-zinc-300">
-                <span
-                  class="h-2 w-2 rounded-full"
-                  :class="notification.read ? 'bg-emerald-400' : 'bg-amber-400'"
-                />
-                {{ notification.read ? locale.read : locale.unread }}
-              </div>
-              <p
-                v-if="error"
-                class="mt-2 break-words text-xs font-medium text-red-400"
-                role="alert"
-              >
-                {{ error }}
-              </p>
-            </div>
+            <p
+              v-if="error"
+              class="w-full min-w-0 flex-1 break-words text-xs font-medium text-red-400"
+              role="alert"
+            >
+              {{ error }}
+            </p>
 
             <button
               ref="closeButtonRef"
@@ -76,7 +86,7 @@
               @click="markAsReadAndClose"
             >
               <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />
-              <Icon v-else name="close" :size="17" />
+              <Icon v-else name="check" :size="17" />
               {{ closing ? locale.closing : locale.close }}
             </button>
           </footer>
@@ -98,10 +108,12 @@ const { importantNotification, currentLocale } = useLocale()
 const locale = computed(() => importantNotification.value)
 const dialogRef = ref(null)
 const closeButtonRef = ref(null)
+const nowTimestamp = ref(Date.now())
 const titleId = 'important-notification-title'
 const contentId = 'important-notification-content'
 let previousFocusedElement = null
 let previousBodyOverflow = ''
+let relativeTimeTimer = null
 
 const renderedMessage = computed(() => renderMarkdown(notification.value?.message || ''))
 const formattedCreatedAt = computed(() => {
@@ -115,9 +127,45 @@ const formattedCreatedAt = computed(() => {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   }).format(date)
 })
+
+const relativeCreatedAt = computed(() => {
+  if (!notification.value?.createdAt) return ''
+
+  const date = new Date(notification.value.createdAt)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const elapsedSeconds = Math.max(0, Math.floor((nowTimestamp.value - date.getTime()) / 1000))
+  if (elapsedSeconds < 60) return locale.value.justNow
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60)
+  if (elapsedMinutes < 60) return locale.value.minutesAgo(elapsedMinutes)
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60)
+  if (elapsedHours < 24) return locale.value.hoursAgo(elapsedHours)
+
+  return locale.value.daysAgo(Math.floor(elapsedHours / 24))
+})
+
+const stopRelativeTimeClock = () => {
+  if (relativeTimeTimer) {
+    clearInterval(relativeTimeTimer)
+    relativeTimeTimer = null
+  }
+}
+
+const startRelativeTimeClock = () => {
+  if (!import.meta.client) return
+
+  stopRelativeTimeClock()
+  nowTimestamp.value = Date.now()
+  relativeTimeTimer = window.setInterval(() => {
+    nowTimestamp.value = Date.now()
+  }, 30_000)
+}
 
 const restorePageState = () => {
   if (!import.meta.client) return
@@ -133,6 +181,7 @@ watch(
   () => notification.value?.id,
   async (notificationId, previousId) => {
     if (notificationId) {
+      startRelativeTimeClock()
       if (!previousId) {
         previousFocusedElement = document.activeElement
         previousBodyOverflow = document.body.style.overflow
@@ -141,6 +190,7 @@ watch(
       await nextTick()
       closeButtonRef.value?.focus()
     } else if (previousId) {
+      stopRelativeTimeClock()
       restorePageState()
     }
   },
@@ -176,7 +226,10 @@ const handleKeydown = (event) => {
   }
 }
 
-onBeforeUnmount(restorePageState)
+onBeforeUnmount(() => {
+  stopRelativeTimeClock()
+  restorePageState()
+})
 </script>
 
 <style scoped>

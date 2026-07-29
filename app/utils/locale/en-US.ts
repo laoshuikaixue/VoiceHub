@@ -1613,10 +1613,14 @@ export const importantNotification = {
   label: 'Important Notice',
   unread: 'Unread',
   read: 'Read',
-  close: 'Close',
-  closing: 'Closing...',
+  close: 'Mark as read',
+  closing: 'Marking as read...',
+  justNow: 'Just now',
+  minutesAgo: (minutes: number) => `${minutes} min ago`,
+  hoursAgo: (hours: number) => `${hours} hr ago`,
+  daysAgo: (days: number) => `${days} days ago`,
   loadFailed: 'Failed to load the important notice. Please try again later.',
-  closeFailed: 'Failed to close the notice. Please try again.',
+  closeFailed: 'Failed to mark the notice as read. Please try again.',
   retry: 'Retry'
 }
 

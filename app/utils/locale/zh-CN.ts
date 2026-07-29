@@ -1622,10 +1622,14 @@ export const importantNotification = {
   label: '重要通知',
   unread: '未读',
   read: '已读',
-  close: '关闭',
-  closing: '正在关闭...',
+  close: '已读',
+  closing: '正在标记已读...',
+  justNow: '刚刚',
+  minutesAgo: (minutes: number) => `${minutes}分钟前`,
+  hoursAgo: (hours: number) => `${hours}小时前`,
+  daysAgo: (days: number) => `${days}天前`,
   loadFailed: '加载重要通知失败，请稍后重试',
-  closeFailed: '关闭失败，请重试',
+  closeFailed: '标记已读失败，请重试',
   retry: '重试'
 }
 
