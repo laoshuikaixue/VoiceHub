@@ -2833,7 +2833,7 @@ export const admin = {
       allTypes: 'All Types',
       senderFilter: 'Sender',
       allSenders: 'All Senders',
-      sentAtSort: 'Sent At',
+      sentAtSort: 'Sort by Sent Time',
       newestFirst: 'Newest First',
       oldestFirst: 'Oldest First',
       clearFilters: 'Clear Filters',

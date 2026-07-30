@@ -3682,13 +3682,12 @@ if (
   .notification-search {
     grid-column: 1 / -1;
     grid-row: 2;
-    width: calc(100% + 8px);
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
-    margin-right: -4px;
-    margin-left: -4px;
-    border-right: 0;
-    border-left: 0;
-    border-radius: 0;
+    margin: 0;
+    box-sizing: border-box;
+    border-radius: 8px;
   }
 
   .mark-all-read-header {

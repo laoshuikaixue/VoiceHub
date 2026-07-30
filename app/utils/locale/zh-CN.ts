@@ -2842,7 +2842,7 @@ export const admin = {
       allTypes: '全部类型',
       senderFilter: '发送人',
       allSenders: '全部发送人',
-      sentAtSort: '发送时间',
+      sentAtSort: '发送时间排序',
       newestFirst: '最新发送优先',
       oldestFirst: '最早发送优先',
       clearFilters: '清除筛选',

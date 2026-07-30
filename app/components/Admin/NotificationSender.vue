@@ -370,133 +370,114 @@
           </h3>
 
           <div class="flex flex-1 flex-col items-center justify-center p-1 sm:p-4">
-            <section
-              v-if="form.important"
-              class="w-full max-w-xl overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
-            >
-              <header class="relative border-b border-zinc-800/50 px-5 py-5">
-                <div
-                  class="absolute right-5 top-5 flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-bold text-amber-300"
-                >
-                  <span class="h-2 w-2 rounded-full bg-amber-400" />
-                  {{ locale.unread }}
-                </div>
+              <section
+                v-if="form.important"
+                class="w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-800 bg-[#0c0c0e] shadow-2xl"
+              >
+                <div class="h-1.5 w-full bg-amber-500" />
 
-                <div class="flex items-start gap-4 pr-20">
-                  <div
-                    class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
-                    aria-hidden="true"
-                  >
-                    <Icon name="bell-ring" :size="22" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <span class="text-xs font-bold text-amber-300">
-                      {{ locale.importantBadge }}
-                    </span>
+                <div class="space-y-5 p-5 sm:p-6">
+                  <header class="flex items-center gap-3">
+                    <div
+                      class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
+                      aria-hidden="true"
+                    >
+                      <Icon name="bell-ring" :size="17" />
+                    </div>
+                    <p class="min-w-0 truncate text-[11px] font-bold text-zinc-500">
+                      {{ locale.senderLabel }}：{{ previewSenderName }}
+                    </p>
+                  </header>
+
+                  <div class="space-y-3">
                     <h4
-                      class="mt-1 break-words text-xl font-black"
-                      :class="form.title ? 'text-zinc-50' : 'italic text-zinc-600'"
+                      class="break-words text-sm font-bold"
+                      :class="form.title ? 'text-zinc-200' : 'italic text-zinc-700'"
                     >
                       {{ form.title || locale.previewTitlePlaceholder }}
                     </h4>
-                    <time
-                      :datetime="previewDateTime"
-                      class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-zinc-500"
-                    >
-                      <span class="inline-flex items-center gap-1 font-semibold text-zinc-400">
-                        <Icon name="clock" :size="13" class="shrink-0" aria-hidden="true" />
-                        {{ locale.justNow }}
-                      </span>
-                      <span aria-hidden="true">&middot;</span>
-                      <span>{{ previewFormattedTime }}</span>
-                    </time>
-                    <p class="mt-2 flex items-center gap-1.5 text-xs text-zinc-400">
-                      <Icon name="user" :size="13" class="shrink-0" aria-hidden="true" />
-                      <span>{{ locale.senderLabel }}：{{ previewSenderName }}</span>
+                    <div
+                      v-if="form.content"
+                      class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-400"
+                      v-html="previewContent"
+                    />
+                    <p v-else class="text-sm italic leading-relaxed text-zinc-700">
+                      {{ locale.previewContentPlaceholder }}
                     </p>
                   </div>
+
+                  <footer
+                    class="flex items-center justify-between gap-4 border-t border-zinc-800/70 pt-4"
+                  >
+                    <div class="flex min-w-0 items-center gap-1.5 text-zinc-500">
+                      <Users :size="13" class="shrink-0" aria-hidden="true" />
+                      <span class="truncate text-[10px] font-bold">
+                        {{ getLocaleMessage('previewScope', scopeDescription) }}
+                      </span>
+                    </div>
+                    <MessageSquare :size="17" class="shrink-0 text-amber-400" aria-hidden="true" />
+                  </footer>
                 </div>
-              </header>
-
-              <div
-                v-if="form.content"
-                class="markdown-body max-h-72 overflow-y-auto px-5 py-6 text-sm text-zinc-300"
-                v-html="previewContent"
-              />
-              <p v-else class="px-5 py-8 text-sm italic text-zinc-600">
-                {{ locale.previewContentPlaceholder }}
-              </p>
-
-              <footer
-                class="flex justify-end border-t border-zinc-800/50 bg-zinc-900/50 px-5 py-5"
-              >
-                <button
-                  type="button"
-                  disabled
-                  class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-xs font-black text-white"
-                >
-                  <Icon name="check" :size="17" />
-                  {{ locale.markAsRead }}
-                </button>
-              </footer>
-            </section>
+              </section>
 
             <article
               v-else
-              class="w-full max-w-lg rounded-[20px] border border-blue-500/20 bg-blue-500/5 p-5 shadow-xl"
+              class="w-full max-w-sm overflow-hidden rounded-2xl border border-zinc-800 bg-[#0c0c0e] shadow-2xl"
             >
-              <header class="flex items-start">
-                <div
-                  class="mr-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-zinc-500"
-                  aria-hidden="true"
-                >
-                  <Icon name="bell" :size="20" />
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-start justify-between gap-3">
-                    <h4
-                      class="min-w-0 break-words text-sm font-semibold"
-                      :class="form.title ? 'text-white' : 'italic text-zinc-600'"
-                    >
-                      {{ form.title || locale.previewTitlePlaceholder }}
-                    </h4>
-                    <span
-                      class="inline-flex shrink-0 items-center gap-1 rounded-md border border-amber-400/20 bg-amber-400/10 px-2 py-1 text-[11px] font-bold text-amber-300"
-                    >
-                      <Icon name="eye" :size="14" />
-                      {{ locale.unread }}
-                    </span>
+              <div class="h-1.5 w-full bg-blue-600" />
+
+              <div class="space-y-5 p-5 sm:p-6">
+                <header class="flex items-center gap-3">
+                  <div
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-400"
+                    aria-hidden="true"
+                  >
+                    <Icon name="bell" :size="17" />
                   </div>
-                  <p class="mt-1.5 text-xs text-zinc-500">{{ locale.justNow }}</p>
-                  <p class="mt-1.5 flex items-center gap-1 text-[11px] text-zinc-500">
-                    <Icon name="user" :size="13" aria-hidden="true" />
-                    <span>{{ locale.senderLabel }}：{{ previewSenderName }}</span>
+                  <p class="min-w-0 truncate text-[11px] font-bold text-zinc-500">
+                    {{ locale.senderLabel }}：{{ previewSenderName }}
+                  </p>
+                </header>
+
+                <div class="space-y-3">
+                  <h4
+                    class="break-words text-sm font-bold"
+                    :class="form.title ? 'text-zinc-200' : 'italic text-zinc-700'"
+                  >
+                    {{ form.title || locale.previewTitlePlaceholder }}
+                  </h4>
+                  <div
+                    v-if="form.content"
+                    class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-400"
+                    v-html="previewContent"
+                  />
+                  <p v-else class="text-sm italic leading-relaxed text-zinc-700">
+                    {{ locale.previewContentPlaceholder }}
                   </p>
                 </div>
-              </header>
 
-              <div class="pl-14">
-                <div
-                  v-if="form.content"
-                  class="markdown-body mt-4 max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-300"
-                  v-html="previewContent"
-                />
-                <p v-else class="mt-4 text-sm italic leading-relaxed text-zinc-600">
-                  {{ locale.previewContentPlaceholder }}
-                </p>
-              </div>
-
-              <div class="mt-4 flex justify-end pl-14">
-                <button
-                  type="button"
-                  disabled
-                  class="inline-flex items-center gap-1.5 rounded-lg border border-red-500/10 bg-red-500/5 px-3 py-1.5 text-xs text-red-500"
+                <footer
+                  class="flex items-center justify-between gap-4 border-t border-zinc-800/70 pt-4"
                 >
-                  <Icon name="trash" :size="14" />
-                  {{ locale.deletePreview }}
-                </button>
+                  <div class="flex min-w-0 items-center gap-1.5 text-zinc-500">
+                    <Users :size="13" class="shrink-0" aria-hidden="true" />
+                    <span class="truncate text-[10px] font-bold">
+                      {{ getLocaleMessage('previewScope', scopeDescription) }}
+                    </span>
+                  </div>
+                  <MessageSquare :size="17" class="shrink-0 text-blue-500" aria-hidden="true" />
+                </footer>
               </div>
             </article>
+
+            <div
+              class="mt-6 flex w-full max-w-sm items-start gap-3 rounded-lg border border-amber-500/10 bg-amber-500/5 p-3"
+            >
+              <AlertCircle :size="14" class="mt-0.5 shrink-0 text-amber-500" />
+              <p class="text-[10px] font-bold leading-normal text-zinc-500">
+                {{ locale.previewHint }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -522,6 +503,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Eye,
+  MessageSquare,
   Loader2
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -536,34 +518,17 @@ import { renderMarkdown } from '~/utils/markdown'
 const { user: authUser, isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
-const { admin, currentLocale } = useLocale()
+const { admin } = useLocale()
 const locale = computed(() => admin.value?.notificationSender || {})
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
-const previewTimestamp = ref(Date.now())
-let previewClockTimer = null
 const previewSenderName = computed(
   () =>
     authUser.value?.name?.trim() ||
     authUser.value?.username?.trim() ||
     locale.value.previewSender
 )
-const previewDateTime = computed(() => new Date(previewTimestamp.value).toISOString())
-const previewFormattedTime = computed(() =>
-  new Intl.DateTimeFormat(currentLocale.value, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }).format(new Date(previewTimestamp.value))
-)
-
 onMounted(() => {
   userFilters.fetchOptions()
-  previewClockTimer = window.setInterval(() => {
-    previewTimestamp.value = Date.now()
-  }, 1000)
 })
 
 const gradeOptions = computed(() => {
@@ -618,6 +583,35 @@ const error = ref('')
 const success = ref('')
 const historyRefreshKey = ref(0)
 const previewContent = computed(() => renderMarkdown(form.value.content))
+const scopeDescription = computed(() => {
+  switch (form.value.scope) {
+    case 'ALL':
+      return getNestedMessage('scopeDescriptions', 'all')
+    case 'GRADE':
+      return form.value.grade
+        ? getNestedMessage('scopeDescriptions', 'grade', form.value.grade)
+        : getNestedMessage('scopeDescriptions', 'selectGrade')
+    case 'CLASS':
+      return form.value.classGrade && form.value.className
+        ? getNestedMessage(
+            'scopeDescriptions',
+            'class',
+            form.value.classGrade,
+            form.value.className
+          )
+        : getNestedMessage('scopeDescriptions', 'selectClass')
+    case 'MULTI_CLASS':
+      return form.value.selectedClasses.length > 0
+        ? getNestedMessage('scopeDescriptions', 'multiClass', form.value.selectedClasses.length)
+        : getNestedMessage('scopeDescriptions', 'selectClass')
+    case 'SPECIFIC_USERS':
+      return form.value.selectedUsers.length > 0
+        ? getNestedMessage('scopeDescriptions', 'specificUsers', form.value.selectedUsers.length)
+        : getNestedMessage('scopeDescriptions', 'selectUsers')
+    default:
+      return ''
+  }
+})
 
 // 用户搜索相关
 const userSearchQuery = ref('')
@@ -865,9 +859,6 @@ const sendNotification = async () => {
 }
 
 onUnmounted(() => {
-  if (previewClockTimer) {
-    window.clearInterval(previewClockTimer)
-  }
   if (userSearchTimeout) {
     clearTimeout(userSearchTimeout)
   }

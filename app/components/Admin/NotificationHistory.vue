@@ -711,8 +711,7 @@ const hasActiveFilters = computed(
   () =>
     Boolean(filters.value.keyword.trim()) ||
     filters.value.type !== 'ALL' ||
-    Boolean(filters.value.sender) ||
-    filters.value.sortOrder !== 'DESC'
+    Boolean(filters.value.sender)
 )
 
 const loadHistory = async () => {
@@ -772,7 +771,12 @@ const scheduleHistorySearch = () => {
 }
 
 const clearHistoryFilters = () => {
-  filters.value = { keyword: '', type: 'ALL', sender: '', sortOrder: 'DESC' }
+  filters.value = {
+    keyword: '',
+    type: 'ALL',
+    sender: '',
+    sortOrder: filters.value.sortOrder
+  }
   applyHistoryFilters()
 }
 
