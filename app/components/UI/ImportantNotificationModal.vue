@@ -3,7 +3,7 @@
     <Transition name="important-notification">
       <div
         v-if="notification"
-        class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm sm:p-6"
+        class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-6"
         @keydown="handleKeydown"
       >
         <section
@@ -13,10 +13,10 @@
           :aria-labelledby="titleId"
           :aria-describedby="contentId"
           tabindex="-1"
-          class="flex max-h-[calc(100dvh-1.5rem)] min-h-[min(38rem,calc(100dvh-1.5rem))] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-amber-400/35 bg-zinc-950 shadow-2xl shadow-black/70 sm:max-h-[calc(100dvh-3rem)] sm:min-h-[min(42rem,calc(100dvh-3rem))]"
+          class="flex max-h-[calc(100dvh-1.5rem)] min-h-[min(38rem,calc(100dvh-1.5rem))] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-amber-400/35 bg-zinc-900 shadow-2xl shadow-black/60 sm:max-h-[calc(100dvh-3rem)] sm:min-h-[min(42rem,calc(100dvh-3rem))]"
         >
           <header
-            class="relative border-b border-zinc-800 bg-zinc-900/80 px-5 py-5 sm:px-8 sm:py-6"
+            class="relative border-b border-zinc-700 bg-zinc-800/70 px-5 py-5 sm:px-8 sm:py-6"
           >
             <div
               class="absolute right-5 top-5 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold sm:right-8 sm:top-6"
@@ -38,7 +38,7 @@
                 class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
                 aria-hidden="true"
               >
-                <Icon name="bell" :size="22" />
+                <Icon name="bell-ring" :size="22" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="text-xs font-bold text-amber-300">{{ locale.label }}</span>
@@ -71,7 +71,7 @@
           />
 
           <footer
-            class="flex flex-col items-end gap-3 border-t border-zinc-800 bg-zinc-900/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8"
+            class="flex flex-col items-end gap-3 border-t border-zinc-700 bg-zinc-800/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8"
           >
             <p
               v-if="error"

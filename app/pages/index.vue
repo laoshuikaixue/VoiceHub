@@ -239,7 +239,8 @@
               <div v-else class="notification-container">
                 <!-- 标题和设置按�?-->
                 <div class="notification-header">
-                  <div class="notification-header-main">
+                  <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
+                  <div class="notification-header-actions">
                     <div
                       :aria-label="locale.notificationFilterLabel"
                       class="notification-filter"
@@ -262,9 +263,28 @@
                         {{ locale.unread }}
                       </button>
                     </div>
-                    <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
-                  </div>
-                  <div class="notification-header-actions">
+                    <div class="notification-search">
+                      <Icon :size="17" aria-hidden="true" name="search" />
+                      <input
+                        v-model="notificationSearchInput"
+                        :aria-label="locale.searchNotifications"
+                        :placeholder="locale.searchNotificationsPlaceholder"
+                        autocomplete="off"
+                        maxlength="100"
+                        type="search"
+                        @input="handleNotificationSearchInput"
+                        @keydown.enter.prevent="runNotificationSearch"
+                      >
+                      <button
+                        v-if="notificationSearchInput"
+                        :aria-label="locale.clearNotificationSearch"
+                        :title="locale.clearNotificationSearch"
+                        type="button"
+                        @click="clearNotificationSearch"
+                      >
+                        <Icon :size="15" name="x" />
+                      </button>
+                    </div>
                     <button
                       :class="{ disabled: !hasUnreadNotifications }"
                       :disabled="!hasUnreadNotifications"
@@ -293,29 +313,6 @@
                       </svg>
                     </button>
                   </div>
-                </div>
-
-                <div class="notification-search">
-                  <Icon :size="17" aria-hidden="true" name="search" />
-                  <input
-                    v-model="notificationSearchInput"
-                    :aria-label="locale.searchNotifications"
-                    :placeholder="locale.searchNotificationsPlaceholder"
-                    autocomplete="off"
-                    maxlength="100"
-                    type="search"
-                    @input="handleNotificationSearchInput"
-                    @keydown.enter.prevent="runNotificationSearch"
-                  >
-                  <button
-                    v-if="notificationSearchInput"
-                    :aria-label="locale.clearNotificationSearch"
-                    :title="locale.clearNotificationSearch"
-                    type="button"
-                    @click="clearNotificationSearch"
-                  >
-                    <Icon :size="15" name="x" />
-                  </button>
                 </div>
 
                 <!-- 通知列表 -->
@@ -357,7 +354,13 @@
                         <div class="notification-card-header">
                           <div class="notification-icon-type">
                             <Icon
-                              v-if="notification.type === 'SONG_SELECTED'"
+                              v-if="notification.important"
+                              :size="20"
+                              color="#fbbf24"
+                              name="bell-ring"
+                            />
+                            <Icon
+                              v-else-if="notification.type === 'SONG_SELECTED'"
                               :size="20"
                               color="#4f46e5"
                               name="check"
@@ -2499,15 +2502,8 @@ if (
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 0;
-  margin-bottom: 0.85rem;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.notification-header-main {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .notification-filter {
@@ -2554,9 +2550,13 @@ if (
 
 .notification-header-actions {
   display: flex;
+  min-width: 0;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  flex-shrink: 0;
+  margin-left: auto;
+  flex-shrink: 1;
 }
 
 .mark-all-read-header {
@@ -2613,11 +2613,12 @@ if (
 /* 通知列表 */
 .notification-search {
   display: flex;
-  width: min(100%, 360px);
-  min-height: 40px;
+  width: 260px;
+  min-width: 180px;
+  min-height: 36px;
+  flex: 0 1 260px;
   align-items: center;
   gap: 0.6rem;
-  margin-bottom: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
@@ -3499,10 +3500,6 @@ if (
     gap: 0.5rem;
   }
 
-  .notification-header-main {
-    gap: 0.5rem;
-  }
-
   .notification-title {
     font-size: 1.05rem;
   }
@@ -3514,7 +3511,13 @@ if (
   }
 
   .notification-header-actions {
+    width: 100%;
     gap: 0.35rem;
+  }
+
+  .notification-search {
+    width: auto;
+    flex: 1 1 180px;
   }
 
   .mark-all-read-header {

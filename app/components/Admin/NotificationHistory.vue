@@ -86,8 +86,7 @@
                       : 'border-zinc-700 bg-zinc-900 text-zinc-500'
                   "
                 >
-                  <BellRing v-if="item.important" :size="12" />
-                  <Bell v-else :size="12" />
+                  <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
                   {{ item.important ? locale.important : locale.normal }}
                 </span>
               </td>
@@ -145,9 +144,10 @@
               </p>
             </div>
             <span
-              class="shrink-0 text-[10px] font-bold"
+              class="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-bold"
               :class="item.important ? 'text-amber-300' : 'text-zinc-500'"
             >
+              <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
               {{ item.important ? locale.important : locale.normal }}
             </span>
           </div>
@@ -500,8 +500,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   AlertCircle,
-  Bell,
-  BellRing,
   CheckCircle2,
   Circle,
   Eye,
@@ -516,6 +514,7 @@ import {
   X
 } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useServerErrors } from '~/composables/useLocaleText'

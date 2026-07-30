@@ -392,7 +392,7 @@
                           : 'border-blue-500/20 bg-blue-600/10 text-blue-500'
                       "
                     >
-                      <Bell :size="14" />
+                      <Icon :name="form.important ? 'bell-ring' : 'bell'" :size="14" />
                     </div>
                     <div>
                       <span
@@ -485,7 +485,6 @@ import {
   LayoutGrid,
   User,
   Search,
-  Bell,
   Info,
   X,
   Check,
@@ -497,6 +496,7 @@ import {
   Loader2
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import Icon from '~/components/UI/Icon.vue'
 import NotificationHistory from '~/components/Admin/NotificationHistory.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
