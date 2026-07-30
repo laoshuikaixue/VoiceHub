@@ -204,293 +204,342 @@
     </template>
 
     <Teleport to="body">
-      <div
-        v-if="selectedBatch"
-        class="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="notification-detail-title"
-        @click.self="closeDetails"
-        @keydown.esc="closeDetails"
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
       >
         <div
-          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/40 sm:max-h-[calc(100vh-3rem)]"
+          v-if="selectedBatch"
+          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-zinc-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notification-detail-title"
+          @click.self="closeDetails"
+          @keydown.esc="closeDetails"
         >
-          <header class="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 px-5 py-4 sm:px-6">
-            <div class="min-w-0">
-              <p class="text-[10px] font-black uppercase text-blue-400">{{ locale.detailsEyebrow }}</p>
-              <h2 id="notification-detail-title" class="mt-1 break-words text-lg font-black text-zinc-100">
-                {{ selectedBatch.title || locale.untitled }}
-              </h2>
-              <p class="mt-1 text-xs text-zinc-500">
-                {{ formatDateTime(selectedBatch.createdAt) }}
-              </p>
-              <p class="mt-1 text-xs text-zinc-500">
-                {{ locale.sender }}：{{ senderName(selectedBatch) }}
-              </p>
-            </div>
-            <button
-              ref="closeButton"
-              type="button"
-              class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
-              :title="locale.close"
-              :aria-label="locale.close"
-              @click="closeDetails"
+          <div
+            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+          >
+            <header
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800/50 px-5 py-5 sm:px-8 sm:py-6"
             >
-              <X :size="19" />
-            </button>
-          </header>
-
-          <div class="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-            <p class="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-zinc-500">
-              {{ selectedBatch.message }}
-            </p>
-
-            <div
-              class="mt-5 inline-flex max-w-full overflow-x-auto rounded-lg border border-zinc-700 bg-zinc-800/70 p-1"
-              role="group"
-              :aria-label="locale.statusFilter"
-            >
+              <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase text-blue-400">
+                  {{ locale.detailsEyebrow }}
+                </p>
+                <h2
+                  id="notification-detail-title"
+                  class="mt-1 break-words text-lg font-black text-zinc-100"
+                >
+                  {{ selectedBatch.title || locale.untitled }}
+                </h2>
+                <p class="mt-1 text-xs text-zinc-500">
+                  {{ formatDateTime(selectedBatch.createdAt) }}
+                </p>
+                <p class="mt-1 text-xs text-zinc-500">
+                  {{ locale.sender }}：{{ senderName(selectedBatch) }}
+                </p>
+              </div>
               <button
-                v-for="option in detailFilterOptions"
-                :key="option.value"
+                ref="closeButton"
                 type="button"
-                :aria-pressed="detailStatus === option.value"
-                class="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-md px-3 text-xs font-bold transition-colors"
-                :class="
-                  detailStatus === option.value
-                    ? 'bg-zinc-800 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                "
-                @click="setDetailStatus(option.value)"
+                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+                :title="locale.close"
+                :aria-label="locale.close"
+                @click="closeDetails"
               >
-                <component :is="option.icon" :size="14" />
-                {{ option.label }}
-                <span class="min-w-6 rounded bg-zinc-900 px-1.5 py-0.5 text-center text-[10px] text-zinc-400">
-                  {{ option.count }}
-                </span>
+                <X :size="19" />
               </button>
-            </div>
+            </header>
 
-            <div
-              v-if="detailError"
-              class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-red-500/20 bg-red-500/5 p-4"
-              role="alert"
-            >
-              <p class="break-words text-xs font-medium text-red-300">{{ detailError }}</p>
-              <button type="button" class="shrink-0 text-xs font-bold text-red-300" @click="loadDetails">
-                {{ locale.retry }}
-              </button>
-            </div>
+            <div class="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:p-8">
+              <p class="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-zinc-500">
+                {{ selectedBatch.message }}
+              </p>
 
-            <div v-if="detailLoading" class="flex min-h-48 items-center justify-center text-zinc-600">
-              <Loader2 :size="22" class="animate-spin" />
-              <span class="ml-3 text-xs font-bold">{{ locale.detailsLoading }}</span>
-            </div>
-
-            <div
-              v-else-if="recipients.length === 0"
-              class="mt-5 flex min-h-48 items-center justify-center border-y border-zinc-800 text-xs text-zinc-600"
-            >
-              {{ locale.noRecipients }}
-            </div>
-
-            <template v-else>
-              <div class="mt-5 hidden overflow-x-auto rounded-lg border border-zinc-800 sm:block">
-                <table class="w-full min-w-[620px] border-collapse text-left">
-                  <thead class="bg-zinc-800/70 text-[10px] font-black uppercase text-zinc-500">
-                    <tr>
-                      <th class="px-4 py-3">{{ locale.recipient }}</th>
-                      <th class="px-4 py-3">{{ locale.status }}</th>
-                      <th class="px-4 py-3">{{ locale.readAt }}</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-zinc-800/80">
-                    <tr v-for="item in recipients" :key="item.id">
-                      <td class="px-4 py-3">
-                        <p class="text-xs font-bold text-zinc-300">{{ recipientName(item) }}</p>
-                        <p class="mt-1 text-[10px] text-zinc-600">{{ recipientMeta(item) }}</p>
-                      </td>
-                      <td class="px-4 py-3">
-                        <span
-                          class="inline-flex items-center gap-1.5 text-xs font-bold"
-                          :class="item.read ? 'text-emerald-400' : 'text-amber-300'"
-                        >
-                          <CheckCircle2 v-if="item.read" :size="14" />
-                          <Circle v-else :size="14" />
-                          {{ item.read ? locale.read : locale.unread }}
-                        </span>
-                      </td>
-                      <td class="whitespace-nowrap px-4 py-3 text-xs text-zinc-500">
-                        {{ item.readAt ? formatDateTime(item.readAt) : locale.notRead }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div
+                class="mt-5 inline-flex max-w-full overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-1"
+                role="group"
+                :aria-label="locale.statusFilter"
+              >
+                <button
+                  v-for="option in detailFilterOptions"
+                  :key="option.value"
+                  type="button"
+                  :aria-pressed="detailStatus === option.value"
+                  class="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-md px-3 text-xs font-bold transition-colors"
+                  :class="
+                    detailStatus === option.value
+                      ? 'bg-zinc-800 text-zinc-100'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  "
+                  @click="setDetailStatus(option.value)"
+                >
+                  <component :is="option.icon" :size="14" />
+                  {{ option.label }}
+                  <span
+                    class="min-w-6 rounded bg-zinc-900 px-1.5 py-0.5 text-center text-[10px] text-zinc-400"
+                  >
+                    {{ option.count }}
+                  </span>
+                </button>
               </div>
 
-              <div class="mt-5 divide-y divide-zinc-800 border-y border-zinc-800 sm:hidden">
-                <article v-for="item in recipients" :key="item.id" class="py-4">
-                  <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                      <p class="break-words text-xs font-bold text-zinc-300">{{ recipientName(item) }}</p>
-                      <p class="mt-1 break-words text-[10px] text-zinc-600">{{ recipientMeta(item) }}</p>
+              <div
+                v-if="detailError"
+                class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-red-500/20 bg-red-500/5 p-4"
+                role="alert"
+              >
+                <p class="break-words text-xs font-medium text-red-300">{{ detailError }}</p>
+                <button
+                  type="button"
+                  class="shrink-0 text-xs font-bold text-red-300"
+                  @click="loadDetails"
+                >
+                  {{ locale.retry }}
+                </button>
+              </div>
+
+              <div
+                v-if="detailLoading"
+                class="flex min-h-48 items-center justify-center text-zinc-600"
+              >
+                <Loader2 :size="22" class="animate-spin" />
+                <span class="ml-3 text-xs font-bold">{{ locale.detailsLoading }}</span>
+              </div>
+
+              <div
+                v-else-if="recipients.length === 0"
+                class="mt-5 flex min-h-48 items-center justify-center border-y border-zinc-800 text-xs text-zinc-600"
+              >
+                {{ locale.noRecipients }}
+              </div>
+
+              <template v-else>
+                <div class="mt-5 hidden overflow-x-auto rounded-lg border border-zinc-800 sm:block">
+                  <table class="w-full min-w-[620px] border-collapse text-left">
+                    <thead class="bg-zinc-950/60 text-[10px] font-black uppercase text-zinc-500">
+                      <tr>
+                        <th class="px-4 py-3">{{ locale.recipient }}</th>
+                        <th class="px-4 py-3">{{ locale.status }}</th>
+                        <th class="px-4 py-3">{{ locale.readAt }}</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-800/80">
+                      <tr v-for="item in recipients" :key="item.id">
+                        <td class="px-4 py-3">
+                          <p class="text-xs font-bold text-zinc-300">{{ recipientName(item) }}</p>
+                          <p class="mt-1 text-[10px] text-zinc-600">{{ recipientMeta(item) }}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                          <span
+                            class="inline-flex items-center gap-1.5 text-xs font-bold"
+                            :class="item.read ? 'text-emerald-400' : 'text-amber-300'"
+                          >
+                            <CheckCircle2 v-if="item.read" :size="14" />
+                            <Circle v-else :size="14" />
+                            {{ item.read ? locale.read : locale.unread }}
+                          </span>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-xs text-zinc-500">
+                          {{ item.readAt ? formatDateTime(item.readAt) : locale.notRead }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-5 divide-y divide-zinc-800 border-y border-zinc-800 sm:hidden">
+                  <article v-for="item in recipients" :key="item.id" class="py-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="break-words text-xs font-bold text-zinc-300">
+                          {{ recipientName(item) }}
+                        </p>
+                        <p class="mt-1 break-words text-[10px] text-zinc-600">
+                          {{ recipientMeta(item) }}
+                        </p>
+                      </div>
+                      <span
+                        class="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold"
+                        :class="item.read ? 'text-emerald-400' : 'text-amber-300'"
+                      >
+                        <CheckCircle2 v-if="item.read" :size="14" />
+                        <Circle v-else :size="14" />
+                        {{ item.read ? locale.read : locale.unread }}
+                      </span>
                     </div>
-                    <span
-                      class="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold"
-                      :class="item.read ? 'text-emerald-400' : 'text-amber-300'"
-                    >
-                      <CheckCircle2 v-if="item.read" :size="14" />
-                      <Circle v-else :size="14" />
-                      {{ item.read ? locale.read : locale.unread }}
-                    </span>
-                  </div>
-                  <p class="mt-3 text-[10px] text-zinc-600">
-                    {{ locale.readAt }}：{{ item.readAt ? formatDateTime(item.readAt) : locale.notRead }}
-                  </p>
-                </article>
-              </div>
+                    <p class="mt-3 text-[10px] text-zinc-600">
+                      {{ locale.readAt }}：{{
+                        item.readAt ? formatDateTime(item.readAt) : locale.notRead
+                      }}
+                    </p>
+                  </article>
+                </div>
 
-              <Pagination
-                v-model:current-page="detailPagination.page"
-                :total-pages="detailPagination.totalPages"
-                :total-items="detailPagination.total"
-                :item-name="locale.recipientItemName"
-                @change="loadDetails"
-              />
-            </template>
+                <Pagination
+                  v-model:current-page="detailPagination.page"
+                  :total-pages="detailPagination.totalPages"
+                  :total-items="detailPagination.total"
+                  :item-name="locale.recipientItemName"
+                  @change="loadDetails"
+                />
+              </template>
+            </div>
           </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
 
     <Teleport to="body">
-      <div
-        v-if="editingBatch"
-        class="fixed inset-0 z-[130] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="notification-edit-title"
-        @click.self="closeEdit"
-        @keydown.esc="closeEdit"
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
       >
-        <form
-          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/40 sm:max-h-[calc(100vh-3rem)]"
-          @submit.prevent="saveEdit"
+        <div
+          v-if="editingBatch"
+          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-zinc-950/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notification-edit-title"
+          @click.self="closeEdit"
+          @keydown.esc="closeEdit"
         >
-          <header class="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-800 px-5 py-4 sm:px-6">
-            <div>
-              <p class="text-[10px] font-black uppercase text-emerald-400">{{ locale.editEyebrow }}</p>
-              <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-zinc-100">
-                {{ locale.editNotification }}
-              </h2>
-            </div>
-            <button
-              type="button"
-              class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50"
-              :disabled="editSaving"
-              :title="locale.close"
-              :aria-label="locale.close"
-              @click="closeEdit"
+          <form
+            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+            @submit.prevent="saveEdit"
+          >
+            <header
+              class="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-800/50 px-5 py-5 sm:px-8 sm:py-6"
             >
-              <X :size="19" />
-            </button>
-          </header>
-
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-            <div>
-              <label for="notification-edit-name" class="mb-2 block text-xs font-bold text-zinc-300">
-                {{ locale.editTitle }}
-              </label>
-              <input
-                id="notification-edit-name"
-                ref="editTitleInput"
-                v-model="editForm.title"
-                type="text"
-                maxlength="200"
-                class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500"
-                :placeholder="locale.editTitlePlaceholder"
-              >
-            </div>
-
-            <div>
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <label for="notification-edit-content" class="text-xs font-bold text-zinc-300">
-                  {{ locale.editContent }}
-                </label>
-                <span class="text-[10px] font-bold text-zinc-600">Markdown</span>
+              <div>
+                <p class="text-[10px] font-black uppercase text-emerald-400">
+                  {{ locale.editEyebrow }}
+                </p>
+                <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-zinc-100">
+                  {{ locale.editNotification }}
+                </h2>
               </div>
-              <textarea
-                id="notification-edit-content"
-                v-model="editForm.content"
-                maxlength="20000"
-                rows="10"
-                class="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-3 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500"
-                :placeholder="locale.editContentPlaceholder"
-              />
-            </div>
-
-            <label class="flex cursor-pointer items-start gap-3 border-y border-zinc-800 py-4">
-              <input
-                v-model="editForm.important"
-                type="checkbox"
-                class="mt-0.5 size-4 shrink-0 accent-amber-500"
+              <button
+                type="button"
+                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50"
+                :disabled="editSaving"
+                :title="locale.close"
+                :aria-label="locale.close"
+                @click="closeEdit"
               >
-              <span>
-                <span class="block text-xs font-bold text-zinc-200">{{ locale.editImportant }}</span>
-                <span class="mt-1 block text-[10px] leading-relaxed text-zinc-500">
-                  {{ locale.editImportantDescription }}
+                <X :size="19" />
+              </button>
+            </header>
+
+            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:p-8">
+              <div>
+                <label
+                  for="notification-edit-name"
+                  class="mb-2 block text-xs font-bold text-zinc-300"
+                >
+                  {{ locale.editTitle }}
+                </label>
+                <input
+                  id="notification-edit-name"
+                  ref="editTitleInput"
+                  v-model="editForm.title"
+                  type="text"
+                  maxlength="200"
+                  class="min-h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-blue-500/30"
+                  :placeholder="locale.editTitlePlaceholder"
+                >
+              </div>
+
+              <div>
+                <div class="mb-2 flex items-center justify-between gap-3">
+                  <label for="notification-edit-content" class="text-xs font-bold text-zinc-300">
+                    {{ locale.editContent }}
+                  </label>
+                  <span class="text-[10px] font-bold text-zinc-600">Markdown</span>
+                </div>
+                <textarea
+                  id="notification-edit-content"
+                  v-model="editForm.content"
+                  maxlength="20000"
+                  rows="10"
+                  class="w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm leading-relaxed text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-blue-500/30"
+                  :placeholder="locale.editContentPlaceholder"
+                />
+              </div>
+
+              <label class="flex cursor-pointer items-start gap-3 border-y border-zinc-800 py-4">
+                <input
+                  v-model="editForm.important"
+                  type="checkbox"
+                  class="mt-0.5 size-4 shrink-0 accent-amber-500"
+                >
+                <span>
+                  <span class="block text-xs font-bold text-zinc-200">{{
+                    locale.editImportant
+                  }}</span>
+                  <span class="mt-1 block text-[10px] leading-relaxed text-zinc-500">
+                    {{ locale.editImportantDescription }}
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
 
-            <div v-if="editForm.content.trim()">
-              <p class="mb-2 text-xs font-bold text-zinc-300">{{ locale.preview }}</p>
+              <div v-if="editForm.content.trim()">
+                <p class="mb-2 text-xs font-bold text-zinc-300">{{ locale.preview }}</p>
+                <div
+                  class="markdown-body max-h-56 overflow-y-auto border-y border-zinc-800 py-4 text-xs text-zinc-400"
+                  v-html="renderMarkdown(editForm.content)"
+                />
+              </div>
+
               <div
-                class="markdown-body max-h-56 overflow-y-auto border-y border-zinc-800 py-4 text-xs text-zinc-400"
-                v-html="renderMarkdown(editForm.content)"
-              />
+                v-if="editError"
+                class="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-300"
+                role="alert"
+              >
+                {{ editError }}
+              </div>
             </div>
 
-            <div
-              v-if="editError"
-              class="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-300"
-              role="alert"
+            <footer
+              class="flex shrink-0 flex-col-reverse gap-3 border-t border-zinc-800/50 bg-zinc-900/50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
             >
-              {{ editError }}
-            </div>
-          </div>
-
-          <footer class="flex shrink-0 flex-col-reverse gap-3 border-t border-zinc-800 px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
-            <button
-              type="button"
-              :disabled="editSaving"
-              class="min-h-10 rounded-lg border border-zinc-700 px-5 text-xs font-bold text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50"
-              @click="closeEdit"
-            >
-              {{ locale.cancel }}
-            </button>
-            <button
-              type="submit"
-              :disabled="editSaving"
-              class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-50"
-            >
-              <Loader2 v-if="editSaving" :size="15" class="animate-spin" />
-              <Save v-else :size="15" />
-              {{ editSaving ? locale.saving : locale.save }}
-            </button>
-          </footer>
-        </form>
-      </div>
+              <button
+                type="button"
+                :disabled="editSaving"
+                class="min-h-10 px-6 text-xs font-bold text-zinc-500 transition-colors hover:text-zinc-300 disabled:cursor-wait disabled:opacity-50"
+                @click="closeEdit"
+              >
+                {{ locale.cancel }}
+              </button>
+              <button
+                type="submit"
+                :disabled="editSaving"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 text-xs font-black text-white transition-colors hover:bg-blue-500 disabled:cursor-wait disabled:opacity-50"
+              >
+                <Loader2 v-if="editSaving" :size="15" class="animate-spin" />
+                <Save v-else :size="15" />
+                {{ editSaving ? locale.saving : locale.save }}
+              </button>
+            </footer>
+          </form>
+        </div>
+      </Transition>
     </Teleport>
 
     <ConfirmDialog
       :show="Boolean(deletingBatch)"
       :title="locale.deleteNotification"
       :message="
-        deletingBatch
-          ? locale.deleteConfirmation(deletingBatch.title || locale.untitled)
-          : ''
+        deletingBatch ? locale.deleteConfirmation(deletingBatch.title || locale.untitled) : ''
       "
       :confirm-text="locale.confirmDelete"
       :cancel-text="locale.cancel"
@@ -769,8 +818,7 @@ const confirmDelete = async () => {
   if (!deletingBatch.value?.batchId || deleteLoading.value) return
 
   deleteLoading.value = true
-  const shouldGoToPreviousPage =
-    notifications.value.length === 1 && pagination.value.page > 1
+  const shouldGoToPreviousPage = notifications.value.length === 1 && pagination.value.page > 1
 
   try {
     await $fetch(
@@ -813,9 +861,7 @@ const formatDateTime = (value) => {
 }
 
 const recipientName = (item) =>
-  item.recipient?.name ||
-  item.recipient?.username ||
-  locale.value.unknownUser(item.recipient?.id)
+  item.recipient?.name || item.recipient?.username || locale.value.unknownUser(item.recipient?.id)
 
 const recipientMeta = (item) => {
   const details = []

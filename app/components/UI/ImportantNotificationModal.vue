@@ -1,9 +1,16 @@
 <template>
   <Teleport to="body">
-    <Transition name="important-notification">
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
       <div
         v-if="notification"
-        class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-6"
+        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-zinc-950/80 p-4 backdrop-blur-sm"
         @keydown="handleKeydown"
       >
         <section
@@ -13,11 +20,9 @@
           :aria-labelledby="titleId"
           :aria-describedby="contentId"
           tabindex="-1"
-          class="flex max-h-[calc(100dvh-1.5rem)] min-h-[min(38rem,calc(100dvh-1.5rem))] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-amber-400/35 bg-zinc-900 shadow-2xl shadow-black/60 sm:max-h-[calc(100dvh-3rem)] sm:min-h-[min(42rem,calc(100dvh-3rem))]"
+          class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
         >
-          <header
-            class="relative border-b border-zinc-700 bg-zinc-800/70 px-5 py-5 sm:px-8 sm:py-6"
-          >
+          <header class="relative border-b border-zinc-800/50 px-5 py-5 sm:px-8 sm:py-6">
             <div
               class="absolute right-5 top-5 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold sm:right-8 sm:top-6"
               :class="
@@ -70,12 +75,12 @@
 
           <div
             :id="contentId"
-            class="important-notification-content markdown-body min-h-0 flex-1 overflow-y-auto px-5 py-6 text-sm text-zinc-300 sm:px-8 sm:py-8 sm:text-base"
+            class="important-notification-content markdown-body min-h-0 flex-1 overflow-y-auto px-5 py-6 text-sm text-zinc-300 sm:p-8 sm:text-base"
             v-html="renderedMessage"
           />
 
           <footer
-            class="flex flex-col items-end gap-3 border-t border-zinc-700 bg-zinc-800/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8"
+            class="flex flex-col items-end gap-3 border-t border-zinc-800/50 bg-zinc-900/50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
           >
             <p
               v-if="error"
@@ -89,7 +94,7 @@
               ref="closeButtonRef"
               type="button"
               :disabled="closing"
-              class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-amber-400 px-6 py-3 text-sm font-black text-zinc-950 transition-colors hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:cursor-wait disabled:opacity-60"
+              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-wait disabled:opacity-60"
               @click="markAsReadAndClose"
             >
               <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />
@@ -246,16 +251,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.important-notification-enter-active,
-.important-notification-leave-active {
-  transition: opacity 180ms ease;
-}
-
-.important-notification-enter-from,
-.important-notification-leave-to {
-  opacity: 0;
-}
-
 .important-notification-content :deep(:first-child) {
   margin-top: 0;
 }
