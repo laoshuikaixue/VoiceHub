@@ -5,36 +5,36 @@
     <!-- 页面标题 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+        <h2 class="text-2xl font-black text-text-primary tracking-tight flex items-center gap-3">
           {{ locale.title }}
         </h2>
-        <p class="text-xs text-zinc-500 mt-1 font-medium">
+        <p class="text-xs text-text-tertiary mt-1 font-medium">
           {{ locale.desc }}
         </p>
       </div>
     </div>
 
     <!-- 添加黑名单项表单 -->
-    <section class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-8 shadow-xl">
-      <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-6 px-1">
+    <section class="bg-bg-secondary/40 border border-border-secondary rounded-xl p-8 shadow-xl">
+      <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] mb-6 px-1">
         {{ locale.addTitle }}
       </h3>
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-end">
         <div class="xl:col-span-2 space-y-2">
-          <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+          <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
             >{{ locale.type }}</label
           >
-          <div class="flex p-1 bg-zinc-950 border border-zinc-800 rounded-lg">
+          <div class="flex p-1 bg-bg-primary border border-border-secondary rounded-lg">
             <button
               class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
-              :class="newItem.type === 'SONG' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600'"
+              :class="newItem.type === 'SONG' ? 'bg-bg-tertiary text-primary' : 'text-text-disabled'"
               @click="newItem.type = 'SONG'"
             >
               <Music :size="12" /> {{ locale.song }}
             </button>
             <button
               class="flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[11px] font-bold transition-all"
-              :class="newItem.type === 'KEYWORD' ? 'bg-zinc-800 text-purple-400' : 'text-zinc-600'"
+              :class="newItem.type === 'KEYWORD' ? 'bg-bg-tertiary text-info' : 'text-text-disabled'"
               @click="newItem.type = 'KEYWORD'"
             >
               <Type :size="12" /> {{ locale.keyword }}
@@ -43,7 +43,7 @@
         </div>
 
         <div class="xl:col-span-4 space-y-2">
-          <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">
+          <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
             {{ newItem.type === 'SONG' ? locale.songLabel : locale.keywordLabel }}
           </label>
           <input
@@ -52,32 +52,32 @@
             :placeholder="
               newItem.type === 'SONG' ? locale.songPlaceholder : locale.keywordPlaceholder
             "
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+            class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 placeholder:text-text-secondary transition-all"
           >
         </div>
 
         <div class="xl:col-span-4 space-y-2">
-          <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+          <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
             >{{ locale.reason }}</label
           >
           <input
             v-model="newItem.reason"
             type="text"
             :placeholder="locale.reasonPlaceholder"
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+            class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 placeholder:text-text-secondary transition-all"
           >
         </div>
 
         <div class="xl:col-span-2">
           <button
             :disabled="!newItem.value || loading"
-            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
             @click="addBlacklistItem"
           >
             <Plus v-if="!loading" :size="16" />
             <div
               v-else
-              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
             />
             {{ loading ? locale.processing : locale.addButton }}
           </button>
@@ -87,15 +87,15 @@
 
     <!-- 筛选和搜索 -->
     <div
-      class="bg-zinc-900/20 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center"
+      class="bg-bg-secondary/20 border border-border-secondary rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center"
     >
       <div class="flex-1 relative w-full">
-        <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" :size="18" />
+        <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" :size="18" />
         <input
           v-model="filters.search"
           type="text"
           :placeholder="locale.searchPlaceholder"
-          class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
+          class="w-full bg-bg-primary/50 border border-border-secondary rounded-lg pl-12 pr-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 placeholder:text-text-secondary transition-all"
           @input="debounceSearch"
         >
       </div>
@@ -110,7 +110,7 @@
           @change="() => { pagination.page = 1; loadBlacklist(); }"
         />
         <button
-          class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-600 hover:text-blue-400 transition-all active:scale-95"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all active:scale-95"
           @click="loadBlacklist"
         >
           <Filter :size="18" />
@@ -121,7 +121,7 @@
     <!-- 黑名单列表 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between px-2">
-        <h4 class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+        <h4 class="text-[10px] font-black text-text-disabled uppercase tracking-widest">
           {{ locale.listTitle(pagination.total) }}
         </h4>
       </div>
@@ -138,16 +138,16 @@
           <div
             v-for="item in blacklist"
             :key="item.id"
-            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-zinc-900/30 border rounded-xl transition-all hover:border-zinc-700"
-            :class="[item.isActive ? 'border-zinc-800' : 'border-zinc-800/40 opacity-60']"
+            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-bg-secondary/30 border rounded-xl transition-all hover:border-border-tertiary"
+            :class="[item.isActive ? 'border-border-secondary' : 'border-border-secondary/40 opacity-60']"
           >
             <div class="flex-1 flex items-start gap-5">
               <div
                 class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border transition-all"
                 :class="[
                   item.type === 'SONG'
-                    ? 'bg-blue-600/10 text-blue-500 border-blue-500/20 shadow-lg shadow-blue-900/5'
-                    : 'bg-purple-600/10 text-purple-500 border-purple-500/20 shadow-lg shadow-purple-900/5'
+                    ? 'bg-primary-hover/10 text-primary border-primary/20 shadow-lg shadow-blue-900/5'
+                    : 'bg-info/10 text-info border-info/20 shadow-lg shadow-purple-900/5'
                 ]"
               >
                 <Music v-if="item.type === 'SONG'" :size="22" />
@@ -160,26 +160,26 @@
                     class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border"
                     :class="[
                       item.type === 'SONG'
-                        ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
-                        : 'bg-purple-600/10 text-purple-400 border-purple-500/20'
+                        ? 'bg-primary-hover/10 text-primary border-primary/20'
+                        : 'bg-info/10 text-info border-info/20'
                     ]"
                   >
                     {{ item.type === 'SONG' ? locale.song : locale.keyword }}
                   </span>
-                  <h5 class="text-base font-black text-zinc-100 truncate tracking-tight">
+                  <h5 class="text-base font-black text-text-primary truncate tracking-tight">
                     {{ item.value }}
                   </h5>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-4">
-                  <div class="flex items-center gap-2 text-zinc-500 font-bold text-[11px]">
-                    <MessageSquare :size="12" class="text-zinc-700" />
+                  <div class="flex items-center gap-2 text-text-tertiary font-bold text-[11px]">
+                    <MessageSquare :size="12" class="text-text-secondary" />
                     {{ locale.reasonPrefix }} {{ item.reason || locale.noReason }}
                   </div>
                   <div
-                    class="flex items-center gap-2 text-zinc-600 font-bold text-[10px] uppercase tracking-tighter"
+                    class="flex items-center gap-2 text-text-disabled font-bold text-[10px] uppercase tracking-tighter"
                   >
-                    <Clock :size="11" class="text-zinc-800" />
+                    <Clock :size="11" class="text-text-primary" />
                     {{ locale.createdAt }} {{ formatDate(item.createdAt) }}
                   </div>
                 </div>
@@ -187,15 +187,15 @@
             </div>
 
             <div
-              class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-zinc-800/50"
+              class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-border-secondary/50"
             >
               <button
                 :disabled="loading"
                 class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                 :class="[
                   item.isActive
-                    ? 'bg-zinc-800 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/5 hover:border-amber-500/10 border border-transparent'
-                    : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+                    ? 'bg-bg-tertiary text-text-tertiary hover:text-warning hover:bg-warning/5 hover:border-warning/10 border border-transparent'
+                    : 'bg-success text-text-primary shadow-lg shadow-emerald-900/20'
                 ]"
                 @click="toggleItemStatus(item)"
               >
@@ -204,7 +204,7 @@
               </button>
               <button
                 :disabled="loading"
-                class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-700 hover:text-red-500 hover:border-red-500/30 transition-all active:scale-95"
+                class="p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error/30 transition-all active:scale-95"
                 @click="deleteItem(item)"
               >
                 <Trash2 :size="16" />
@@ -219,24 +219,24 @@
           class="py-20 flex flex-col items-center justify-center space-y-4"
         >
           <div
-            class="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin"
+            class="w-12 h-12 border-4 border-border-secondary border-t-primary rounded-full animate-spin"
           />
-          <p class="text-zinc-500 text-xs font-bold uppercase tracking-widest">{{ locale.loading }}</p>
+          <p class="text-text-tertiary text-xs font-bold uppercase tracking-widest">{{ locale.loading }}</p>
         </div>
 
         <!-- 空状态 -->
         <div
           v-else-if="blacklist.length === 0"
-          class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-zinc-900/10 border border-zinc-800/40 border-dashed rounded-xl"
+          class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-bg-secondary/10 border border-border-secondary/40 border-dashed rounded-xl"
         >
           <div
-            class="w-16 h-16 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-800 shadow-xl"
+            class="w-16 h-16 rounded-lg bg-bg-primary border border-border-secondary flex items-center justify-center text-text-primary shadow-xl"
           >
             <Ban :size="32" />
           </div>
           <div class="space-y-1 px-4">
-            <h6 class="text-sm font-bold text-zinc-600">{{ locale.emptyTitle }}</h6>
-            <p class="text-[10px] text-zinc-700 font-bold uppercase tracking-widest">
+            <h6 class="text-sm font-bold text-text-disabled">{{ locale.emptyTitle }}</h6>
+            <p class="text-[10px] text-text-secondary font-bold uppercase tracking-widest">
               {{ locale.emptyDesc }}
             </p>
           </div>
@@ -247,19 +247,19 @@
       <div v-if="pagination.pages > 1" class="flex items-center justify-center gap-4 mt-8">
         <button
           :disabled="pagination.page <= 1 || loading"
-          class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
           @click="changePage(pagination.page - 1)"
         >
           <ChevronLeft :size="20" />
         </button>
         <div
-          class="px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-[11px] font-black text-zinc-400 uppercase tracking-widest"
+          class="px-6 py-3 bg-bg-secondary/50 border border-border-secondary rounded-lg text-[11px] font-black text-text-tertiary uppercase tracking-widest"
         >
           {{ locale.pagination(pagination.page, pagination.pages) }}
         </div>
         <button
           :disabled="pagination.page >= pagination.pages || loading"
-          class="p-3 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
           @click="changePage(pagination.page + 1)"
         >
           <ChevronRight :size="20" />
@@ -278,34 +278,34 @@
     >
       <div
         v-if="showDeleteDialog"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
       >
         <div
-          class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
+          class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
           @click.stop
         >
           <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
             <div
-              class="w-16 h-16 rounded-lg bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-2xl shadow-red-900/10"
+              class="w-16 h-16 rounded-lg bg-error/10 text-error flex items-center justify-center border border-error/20 shadow-2xl shadow-red-900/10"
             >
               <Trash2 :size="28" />
             </div>
             <div class="space-y-2">
-              <h4 class="text-lg font-bold text-zinc-100">{{ locale.removeTitle }}</h4>
-              <p class="text-xs text-zinc-500 leading-relaxed">
+              <h4 class="text-lg font-bold text-text-primary">{{ locale.removeTitle }}</h4>
+              <p class="text-xs text-text-tertiary leading-relaxed">
                 {{ locale.removeMessage(deleteTargetItem?.value || '') }}
               </p>
             </div>
             <div class="flex gap-3 w-full pt-4">
               <button
-                class="flex-1 px-4 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] font-black rounded-lg transition-all uppercase tracking-widest"
+                class="flex-1 px-4 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary text-[10px] font-black rounded-lg transition-all uppercase tracking-widest"
                 @click="showDeleteDialog = false"
               >
                 {{ locale.cancel }}
               </button>
               <button
                 :disabled="loading"
-                class="flex-1 px-4 py-4 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
+                class="flex-1 px-4 py-4 bg-error hover:bg-error text-text-primary text-[10px] font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
                 @click="confirmDelete"
               >
                 {{ loading ? locale.deleting : locale.confirmRemove }}

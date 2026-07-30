@@ -17,20 +17,20 @@
         <!-- 移动端侧边栏遮罩 -->
         <div
           v-if="sidebarOpen"
-          class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          class="fixed inset-0 bg-bg-primary/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
           @click="closeSidebar"
         />
 
         <!-- 主内容区域 -->
         <main
-          class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-zinc-100"
+          class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-text-primary"
         >
           <header
-            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-zinc-800 bg-zinc-950/60 backdrop-blur-xl z-30"
+            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border-secondary bg-bg-primary/60 backdrop-blur-xl z-30"
           >
             <div class="flex items-center gap-3">
               <button
-                class="lg:hidden p-2 text-zinc-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                class="lg:hidden p-2 text-text-tertiary hover:bg-bg-tertiary rounded-lg transition-colors"
                 @click="toggleSidebar"
               >
                 <Menu :size="20" />
@@ -49,7 +49,7 @@
             <button
               v-if="showBackToTop"
               :aria-label="locale.backToTop"
-              class="fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all z-50"
+              class="fixed bottom-8 right-8 p-3 bg-primary-hover text-text-primary rounded-full shadow-lg hover:bg-primary-hover transition-all z-50"
               @click="scrollToTop"
             >
               <ChevronUp :size="24" />

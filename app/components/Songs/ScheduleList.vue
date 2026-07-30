@@ -302,24 +302,24 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="closePlaylistModal"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
               <div
-                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                class="w-12 h-12 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
               >
                 <Icon name="music" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.addToPlaylist }}</h3>
+              <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.addToPlaylist }}</h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               type="button"
               @click="closePlaylistModal"
             >
@@ -334,13 +334,13 @@
               class="flex flex-col items-center justify-center py-20 text-center"
             >
               <div
-                class="w-20 h-20 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-6"
+                class="w-20 h-20 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-6"
               >
-                <Icon name="music" :size="40" class="text-zinc-500 opacity-20" />
+                <Icon name="music" :size="40" class="text-text-tertiary opacity-20" />
               </div>
-              <p class="text-zinc-400 font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
+              <p class="text-text-tertiary font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
               <button
-                class="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+                class="px-10 py-4 rounded-2xl bg-primary-hover hover:bg-primary text-text-primary font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
                 type="button"
                 @click="openLoginFromPlaylist"
               >
@@ -352,10 +352,10 @@
               <!-- 用户信息栏 -->
               <div
                 v-if="neteaseUser"
-                class="flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-2xl"
+                class="flex items-center p-4 bg-bg-tertiary/30 border border-border-secondary/50 rounded-2xl"
               >
                 <div
-                  class="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 mr-4 ring-2 ring-zinc-700/50"
+                  class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-zinc-700/50"
                 >
                   <img
                     v-if="neteaseUser.avatarUrl"
@@ -363,14 +363,14 @@
                     alt="avatar"
                     class="w-full h-full object-cover"
                   >
-                  <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-zinc-500" />
+                  <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-text-tertiary" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <span
-                    class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-0.5"
+                    class="block text-[10px] font-black text-text-tertiary uppercase tracking-widest mb-0.5"
                     >{{ locale.currentAccount }}</span
                   >
-                  <span class="block font-bold text-zinc-100 truncate">
+                  <span class="block font-bold text-text-primary truncate">
                     {{ neteaseUser.nickname || neteaseUser.userName || locale.neteaseUser }}
                   </span>
                 </div>
@@ -380,7 +380,7 @@
               <div class="space-y-6">
                 <!-- 选择歌单 -->
                 <div class="space-y-3">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.targetPlaylist }}</label
                   >
                   <div class="flex gap-3">
@@ -394,7 +394,7 @@
                     />
                     <button
                       :disabled="playlistsLoading"
-                      class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all disabled:opacity-50"
+                      class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-bg-primary border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
                       :title="locale.refreshPlaylist"
                       type="button"
                       @click="reloadPlaylists"
@@ -410,7 +410,7 @@
                   <div v-if="selectedPlaylistId" class="px-1 pt-1">
                     <button
                       :disabled="playlistActionLoading"
-                      class="text-[10px] font-black text-red-400/60 hover:text-red-400 flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+                      class="text-[10px] font-black text-error/60 hover:text-error flex items-center gap-1.5 transition-colors uppercase tracking-wider"
                       type="button"
                       @click="handleDeletePlaylist"
                     >
@@ -422,29 +422,29 @@
 
                 <div class="relative py-2 flex items-center justify-center">
                   <div class="absolute inset-0 flex items-center px-8">
-                    <div class="w-full border-t border-zinc-800/30" />
+                    <div class="w-full border-t border-border-secondary/30" />
                   </div>
                   <span
-                    class="relative px-4 bg-zinc-900 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]"
+                    class="relative px-4 bg-bg-secondary text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]"
                     >{{ locale.or }}</span
                   >
                 </div>
 
                 <!-- 创建新歌单 -->
                 <div class="space-y-4">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.createPlaylist }}</label
                   >
                   <div class="flex gap-3">
                     <input
                       v-model="newPlaylistName"
-                      class="flex-1 px-5 py-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                      class="flex-1 px-5 py-3.5 bg-bg-primary border border-border-secondary rounded-xl text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary/30 transition-all"
                       :placeholder="locale.newPlaylistPlaceholder"
                       type="text"
                     >
                     <button
                       :disabled="!newPlaylistName.trim() || playlistActionLoading"
-                      class="px-8 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                      class="px-8 py-3.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
                       type="button"
                       @click="handleCreatePlaylist"
                     >
@@ -455,14 +455,14 @@
                     <div class="relative">
                       <input v-model="newPlaylistPrivacy" class="sr-only peer" type="checkbox" >
                       <div
-                        class="w-9 h-5 bg-zinc-800 rounded-full border border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all"
+                        class="w-9 h-5 bg-bg-tertiary rounded-full border border-border-tertiary peer-checked:bg-primary-hover peer-checked:border-primary transition-all"
                       />
                       <div
-                        class="absolute left-1 top-1 w-3 h-3 bg-zinc-500 rounded-full transition-all peer-checked:left-5 peer-checked:bg-white"
+                        class="absolute left-1 top-1 w-3 h-3 bg-bg-quaternary rounded-full transition-all peer-checked:left-5 peer-checked:bg-bg-secondary"
                       />
                     </div>
                     <span
-                      class="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors"
+                      class="text-[10px] font-black text-text-tertiary uppercase tracking-widest group-hover:text-text-secondary transition-colors"
                       >{{ locale.privatePlaylist }}</span
                     >
                   </label>
@@ -472,23 +472,23 @@
               <!-- 歌曲选择区域 -->
               <div class="space-y-4">
                 <div class="flex items-center justify-between px-1">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
                     {{ locale.selectSongs }}
                     <span
-                      class="ml-2 px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[9px]"
+                      class="ml-2 px-2 py-0.5 rounded-md bg-primary-hover/10 text-primary text-[9px]"
                       >{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span
                     >
                   </label>
                   <div class="flex gap-4">
                     <button
-                      class="text-[10px] font-black text-zinc-400 hover:text-blue-500 uppercase tracking-wider transition-colors"
+                      class="text-[10px] font-black text-text-tertiary hover:text-primary uppercase tracking-wider transition-colors"
                       type="button"
                       @click="selectAllNeteaseSongs"
                     >
                       {{ locale.selectAll }}
                     </button>
                     <button
-                      class="text-[10px] font-black text-zinc-400 hover:text-red-400 uppercase tracking-wider transition-colors"
+                      class="text-[10px] font-black text-text-tertiary hover:text-error uppercase tracking-wider transition-colors"
                       type="button"
                       @click="clearSelectedSongs"
                     >
@@ -499,7 +499,7 @@
 
                 <div
                   v-if="neteaseSongs.length === 0"
-                  class="flex flex-col items-center justify-center py-12 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-3xl text-zinc-600"
+                  class="flex flex-col items-center justify-center py-12 bg-bg-primary/30 border border-dashed border-border-secondary rounded-3xl text-text-disabled"
                 >
                   <Icon name="music" :size="32" class="mb-3 opacity-20" />
                   <p class="text-[10px] font-black uppercase tracking-widest">
@@ -514,8 +514,8 @@
                     :class="[
                       'group flex items-center p-3.5 rounded-xl border transition-all cursor-pointer',
                       isSongSelected(song.id)
-                        ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
-                        : 'bg-zinc-950 border-transparent hover:border-zinc-800'
+                        ? 'bg-primary-hover/10 border-primary/30 shadow-lg'
+                        : 'bg-bg-primary border-transparent hover:border-border-secondary'
                     ]"
                     @click="toggleSongSelection(song.id)"
                   >
@@ -523,18 +523,18 @@
                       :class="[
                         'w-5 h-5 rounded-lg border-2 flex items-center justify-center mr-3.5 transition-all',
                         isSongSelected(song.id)
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'border-zinc-800 group-hover:border-zinc-700'
+                          ? 'bg-primary-hover border-primary text-text-primary'
+                          : 'border-border-secondary group-hover:border-border-tertiary'
                       ]"
                     >
                       <Icon v-if="isSongSelected(song.id)" name="check" :size="12" />
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="text-sm font-bold truncate text-zinc-100">
+                      <div class="text-sm font-bold truncate text-text-primary">
                         {{ song.title }}
                       </div>
                       <div
-                        class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-zinc-500"
+                        class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-text-tertiary"
                       >
                         {{ song.artist }}
                       </div>
@@ -549,7 +549,7 @@
           <div v-if="isNeteaseLoggedIn" class="p-8 pt-0">
             <div class="flex gap-3">
               <button
-                class="flex-1 px-6 py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                class="flex-1 px-6 py-4 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
                 type="button"
                 @click="closePlaylistModal"
               >
@@ -559,7 +559,7 @@
                 :disabled="
                   !selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading
                 "
-                class="flex-[2] px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+                class="flex-[2] px-6 py-4 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
                 type="button"
                 @click="handleAddSongsToPlaylist"
               >
@@ -607,7 +607,7 @@
     >
       <div
         v-if="submissionNoteDialog.show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-sm"
         @click="closeSubmissionNote"
       >
         <div class="submission-note-modal" @click.stop>

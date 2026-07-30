@@ -616,26 +616,26 @@
       >
         <div
           v-if="showRules"
-          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
           @click.self="showRules = false"
         >
           <div
-            class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+            class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
           >
             <div class="p-8 pb-4 flex items-center justify-between">
               <div>
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                    class="w-10 h-10 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
                   >
                     <Icon name="bell" :size="20" />
                   </div>
                   {{ locale.rulesTitle }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.rulesDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
-                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="showRules = false"
               >
                 <Icon name="x" :size="20" />
@@ -645,30 +645,30 @@
             <div class="p-8 pt-4 space-y-8">
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
+                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
                 >
                   <Icon name="message-circle" :size="12" />
                   {{ locale.submissionGuidelines }}
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary/50 p-6 rounded-3xl border border-border-secondary/50"
                   v-html="renderedGuidelines"
                 />
                 <div
                   v-else
-                  class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  class="space-y-3 bg-bg-primary/50 p-6 rounded-3xl border border-border-secondary/50"
                 >
-                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
-                    <span class="text-blue-500 font-black">01</span>
+                  <div class="flex gap-3 text-sm text-text-tertiary font-medium">
+                    <span class="text-primary font-black">01</span>
                     <p>{{ locale.defaultRules[0] }}</p>
                   </div>
-                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
-                    <span class="text-blue-500 font-black">02</span>
+                  <div class="flex gap-3 text-sm text-text-tertiary font-medium">
+                    <span class="text-primary font-black">02</span>
                     <p>{{ locale.defaultRules[1] }}</p>
                   </div>
-                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
-                    <span class="text-blue-500 font-black">03</span>
+                  <div class="flex gap-3 text-sm text-text-tertiary font-medium">
+                    <span class="text-primary font-black">03</span>
                     <p>{{ locale.defaultRules[2] }}</p>
                   </div>
                 </div>
@@ -676,22 +676,22 @@
 
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
+                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
                 >
                   <Icon name="calendar" :size="12" />
                   {{ locale.playbackTime }}
                 </h4>
                 <div
-                  class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4"
+                  class="bg-primary-hover/10 border border-primary/20 p-6 rounded-3xl flex items-center gap-4"
                 >
                   <div
-                    class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40"
+                    class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-blue-900/40"
                   >
                     <Icon name="clock" :size="24" />
                   </div>
                   <div>
-                    <p class="text-sm font-black text-zinc-100">{{ locale.playbackTimeDesc }}</p>
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
+                    <p class="text-sm font-black text-text-primary">{{ locale.playbackTimeDesc }}</p>
+                    <p class="text-[10px] text-text-tertiary font-bold uppercase tracking-widest mt-0.5">
                       PLAYBACK TIME
                     </p>
                   </div>
@@ -701,7 +701,7 @@
 
             <div class="p-8 pt-0">
               <button
-                class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
+                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
                 @click="showRules = false"
               >
                 {{ locale.gotIt }}
@@ -3186,7 +3186,7 @@ if (
     padding: 0; /* 移除固定内边距，改用 flex 居中 */
     font-size: 10px;
     font-weight: 500;
-    color: #71717a; /* text-zinc-500 */
+    color: #71717a; /* text-text-tertiary */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3211,7 +3211,7 @@ if (
   }
 
   .section-tab.active {
-    color: #3b82f6 !important; /* text-blue-500 - Force blue */
+    color: #3b82f6 !important; /* text-primary - Force blue */
     background: transparent !important;
     transform: none !important;
     text-shadow: 0 0 12px rgba(59, 130, 246, 0.6); /* Text Glow */

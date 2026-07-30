@@ -89,7 +89,91 @@ export default defineNuxtConfig({
     presets: [
       // Tailwind 3 / Windi CSS compact preset — 完全兼容 Tailwind 类名
       () => import('@unocss/preset-wind3').then(m => m.presetWind3())
-    ]
+    ],
+    // 将 Tailwind 语义化颜色映射到 CSS 变量，实现主题自适应
+    theme: {
+      colors: {
+        // === 主色调 ===
+        primary: 'var(--primary)',
+        'primary-hover': 'var(--primary-hover)',
+        'primary-light': 'var(--primary-light)',
+        'primary-border': 'var(--primary-border)',
+        // === 语义色 ===
+        success: 'var(--success)',
+        'success-hover': 'var(--success-hover)',
+        'success-light': 'var(--success-light)',
+        'success-border': 'var(--success-border)',
+        warning: 'var(--warning)',
+        'warning-hover': 'var(--warning-hover)',
+        'warning-light': 'var(--warning-light)',
+        'warning-border': 'var(--warning-border)',
+        error: 'var(--error)',
+        'error-hover': 'var(--error-hover)',
+        'error-light': 'var(--error-light)',
+        'error-border': 'var(--error-border)',
+        // === 靛蓝色 → 信息色 ===
+        'bg-indigo-600': 'bg-info',
+        'bg-indigo-500': 'bg-info',
+        'text-indigo-500': 'text-info',
+        'text-indigo-400': 'text-info',
+        'border-indigo-600': 'border-info',
+        'border-indigo-500': 'border-info',
+        // === 紫色 → 信息色 ===
+        'bg-purple-600': 'bg-info',
+        'text-purple-600': 'text-info',
+        // === 橙色 ===
+        'bg-orange-500': 'bg-warning',
+        'text-orange-500': 'text-warning',
+        'text-orange-400': 'text-warning',
+        // === 背景色 ===
+        'bg-primary': 'var(--bg-primary)',
+        'bg-secondary': 'var(--bg-secondary)',
+        'bg-tertiary': 'var(--bg-tertiary)',
+        'bg-quaternary': 'var(--bg-quaternary)',
+        'bg-hover': 'var(--bg-hover)',
+        // === 文字颜色 ===
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-tertiary': 'var(--text-tertiary)',
+        'text-quaternary': 'var(--text-quaternary)',
+        'text-disabled': 'var(--text-disabled)',
+        // === 边框颜色 ===
+        'border-primary': 'var(--border-primary)',
+        'border-secondary': 'var(--border-secondary)',
+        'border-tertiary': 'var(--border-tertiary)',
+        'border-quaternary': 'var(--border-quaternary)',
+        // === 卡片 ===
+        'card-bg': 'var(--card-bg)',
+        'card-border': 'var(--card-border)',
+        'card-hover-border': 'var(--card-hover-border)',
+        // === 输入框 ===
+        'input-bg': 'var(--input-bg)',
+        'input-border': 'var(--input-border)',
+        'input-text': 'var(--input-text)',
+        'input-placeholder': 'var(--input-placeholder)',
+        // === 模态框 ===
+        'modal-bg': 'var(--modal-bg)',
+        'modal-border': 'var(--modal-border)',
+      },
+      // 圆角映射
+      borderRadius: {
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+      },
+      // 间距映射
+      spacing: {
+        xs: 'var(--spacing-xs)',
+        sm: 'var(--spacing-sm)',
+        md: 'var(--spacing-md)',
+        lg: 'var(--spacing-lg)',
+        xl: 'var(--spacing-xl)',
+        '2xl': 'var(--spacing-2xl)',
+        '3xl': 'var(--spacing-3xl)',
+      },
+    },
   },
 
   // 引入全局CSS

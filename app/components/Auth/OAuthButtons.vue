@@ -64,37 +64,37 @@ const providerButtonClass = (provider) => {
     'w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[var(--bg-tertiary)]'
 
   if (key === 'github') {
-    return `${baseClass} hover:bg-[#24292e] hover:text-white hover:border-[#24292e]`
+    return `${baseClass} hover:bg-[#24292e] hover:text-text-primary hover:border-[#24292e]`
   }
   if (key === 'casdoor') {
     return `${baseClass} hover:border-[#67c23a]`
   }
   if (key === 'google') {
-    return `${baseClass} hover:bg-white hover:text-black hover:border-[#dadce0]`
+    return `${baseClass} hover:bg-bg-secondary hover:text-black hover:border-[#dadce0]`
   }
   if (key === 'aggregate') {
     const aggregateClasses = {
-      qq: 'hover:bg-[#12b7f5] hover:text-white hover:border-[#12b7f5]',
-      wx: 'hover:bg-[#07c160] hover:text-white hover:border-[#07c160]',
-      alipay: 'hover:bg-[#1677ff] hover:text-white hover:border-[#1677ff]',
-      sina: 'hover:bg-[#e6162d] hover:text-white hover:border-[#e6162d]',
-      baidu: 'hover:bg-[#2932e1] hover:text-white hover:border-[#2932e1]',
-      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]',
-      huawei: 'hover:bg-[#cf0a2c] hover:text-white hover:border-[#cf0a2c]',
-      xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
-      gitee: 'hover:bg-[#c71d23] hover:text-white hover:border-[#c71d23]',
+      qq: 'hover:bg-[#12b7f5] hover:text-text-primary hover:border-[#12b7f5]',
+      wx: 'hover:bg-[#07c160] hover:text-text-primary hover:border-[#07c160]',
+      alipay: 'hover:bg-[#1677ff] hover:text-text-primary hover:border-[#1677ff]',
+      sina: 'hover:bg-[#e6162d] hover:text-text-primary hover:border-[#e6162d]',
+      baidu: 'hover:bg-[#2932e1] hover:text-text-primary hover:border-[#2932e1]',
+      douyin: 'hover:bg-[#161823] hover:text-text-primary hover:border-[#25f4ee]',
+      huawei: 'hover:bg-[#cf0a2c] hover:text-text-primary hover:border-[#cf0a2c]',
+      xiaomi: 'hover:bg-[#ff6900] hover:text-text-primary hover:border-[#ff6900]',
+      gitee: 'hover:bg-[#c71d23] hover:text-text-primary hover:border-[#c71d23]',
       gitea:
-        '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:#fff] hover:bg-white hover:text-black hover:border-white',
-      bilibili: 'hover:bg-[#00a1d6] hover:text-white hover:border-[#00a1d6]',
-      kuaishou: 'hover:bg-[#ff4906] hover:text-white hover:border-[#ff4906]'
+        '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:#fff] hover:bg-bg-secondary hover:text-black hover:border-primary',
+      bilibili: 'hover:bg-[#00a1d6] hover:text-text-primary hover:border-[#00a1d6]',
+      kuaishou: 'hover:bg-[#ff4906] hover:text-text-primary hover:border-[#ff4906]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }
   if (key === 'oauth2') {
-    return `${baseClass} hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e]`
+    return `${baseClass} hover:bg-[#0f766e] hover:text-text-primary hover:border-[#0f766e]`
   }
 
-  return `${baseClass} hover:border-blue-500/40 hover:text-blue-400`
+  return `${baseClass} hover:border-primary/40 hover:text-primary`
 }
 
 const loginWith = (provider) => {

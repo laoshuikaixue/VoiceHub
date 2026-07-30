@@ -2,44 +2,44 @@
   <div class="max-w-[1400px] mx-auto space-y-8 pb-20">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-1">{{ locale.desc }}</p>
+        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       <!-- 左侧：编辑区 -->
       <div class="lg:col-span-7 space-y-6">
-        <div class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-8 shadow-xl">
+        <div class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] p-8 shadow-xl">
           <div class="space-y-6">
             <!-- 标题 -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.notificationTitle }}</label
               >
               <input
                 v-model="form.title"
                 type="text"
                 :placeholder="locale.titlePlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800"
+                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-primary/30 transition-all text-text-primary placeholder:text-text-primary"
               >
             </div>
 
             <!-- 内容 -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.notificationContent }}</label
               >
               <textarea
                 v-model="form.content"
                 :placeholder="locale.contentPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200 placeholder:text-zinc-800 min-h-[160px] resize-none"
+                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary/30 transition-all text-text-primary placeholder:text-text-primary min-h-[160px] resize-none"
               />
             </div>
 
             <!-- 范围选择 -->
-            <div class="space-y-3 pt-4 border-t border-zinc-800/50">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] px-1"
+            <div class="space-y-3 pt-4 border-t border-border-secondary/50">
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.scope }}</label
               >
               <div class="flex flex-wrap gap-2">
@@ -49,8 +49,8 @@
                   :class="[
                     'flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all border',
                     form.scope === opt.id
-                      ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
-                      : 'bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                      ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-blue-900/20'
+                      : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
                   ]"
                   @click="form.scope = opt.id"
                 >
@@ -66,17 +66,17 @@
                 <div
                   v-if="form.scope === 'ALL'"
                   key="all"
-                  class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex items-center gap-4"
+                  class="p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-center gap-4"
                 >
-                  <Info class="text-blue-500 shrink-0" :size="18" />
-                  <p class="text-[11px] font-bold text-zinc-400">
+                  <Info class="text-primary shrink-0" :size="18" />
+                  <p class="text-[11px] font-bold text-text-tertiary">
                     {{ locale.allUsersHint }}
                   </p>
                 </div>
 
                 <div v-else-if="form.scope === 'GRADE'" key="grade" class="space-y-4">
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest px-1"
                       >{{ locale.selectGrade }}</span
                     >
                     <CustomSelect
@@ -96,7 +96,7 @@
                   class="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest px-1"
                       >{{ locale.grade }}</span
                     >
                     <CustomSelect
@@ -109,7 +109,7 @@
                     />
                   </div>
                   <div class="space-y-1.5">
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest px-1"
                       >{{ locale.className }}</span
                     >
                     <CustomSelect
@@ -125,7 +125,7 @@
                 </div>
 
                 <div v-else-if="form.scope === 'MULTI_CLASS'" key="multi" class="space-y-4">
-                  <div class="p-6 bg-zinc-950/50 border border-zinc-800 border-dashed rounded-2xl">
+                  <div class="p-6 bg-bg-primary/50 border border-border-secondary border-dashed rounded-2xl">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                       <CustomSelect
                         v-model="multiClassForm.grade"
@@ -147,7 +147,7 @@
                         />
                         <button
                           :disabled="!canAddClass"
-                          class="px-4 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 font-bold rounded-xl text-xs transition-all"
+                          class="px-4 bg-bg-tertiary hover:bg-bg-quaternary disabled:opacity-50 disabled:cursor-not-allowed text-text-tertiary font-bold rounded-xl text-xs transition-all"
                           @click="addClassToSelection"
                         >
                           {{ locale.add }}
@@ -159,13 +159,13 @@
                       <div
                         v-for="(cls, index) in form.selectedClasses"
                         :key="index"
-                        class="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg group"
+                        class="flex items-center gap-2 px-3 py-1.5 bg-bg-secondary border border-border-secondary rounded-lg group"
                       >
-                        <span class="text-[10px] font-bold text-zinc-400"
+                        <span class="text-[10px] font-bold text-text-tertiary"
                           >{{ cls.grade }} {{ cls.class }}</span
                         >
                         <button
-                          class="text-zinc-600 hover:text-red-400 transition-colors"
+                          class="text-text-disabled hover:text-error transition-colors"
                           @click="removeClassFromSelection(index)"
                         >
                           <X :size="12" />
@@ -173,7 +173,7 @@
                       </div>
                     </div>
                     <div v-else class="text-center py-4">
-                      <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
+                      <p class="text-[10px] font-black text-text-secondary uppercase tracking-widest">
                         {{ locale.noClassSelected }}
                       </p>
                     </div>
@@ -184,19 +184,19 @@
                   <div class="relative flex items-center">
                     <Search
                       v-if="!userSearchLoading"
-                      class="absolute left-4 text-zinc-700 pointer-events-none"
+                      class="absolute left-4 text-text-secondary pointer-events-none"
                       :size="16"
                     />
                     <Loader2
                       v-else
-                      class="absolute left-4 text-blue-500 animate-spin pointer-events-none"
+                      class="absolute left-4 text-primary animate-spin pointer-events-none"
                       :size="16"
                     />
                     <input
                       v-model="userSearchQuery"
                       type="text"
                       :placeholder="locale.userSearchPlaceholder"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary/30 transition-all text-text-primary"
                       @input="onUserSearchInput"
                     >
                   </div>
@@ -204,39 +204,39 @@
                   <!-- 搜索结果 -->
                   <div
                     v-if="showUserSearchResults && userSearchResults.length > 0"
-                    class="bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
+                    class="bg-bg-primary border border-border-secondary rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
                   >
-                    <div class="px-4 py-2 border-b border-zinc-800/60 bg-zinc-900/40">
-                      <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
+                    <div class="px-4 py-2 border-b border-border-secondary/60 bg-bg-secondary/40">
+                      <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
                         >{{ getLocaleMessage('searchResults', userSearchResults.length) }}</span
                       >
                     </div>
                     <div
                       v-for="user in userSearchResults"
                       :key="user.id"
-                      class="flex items-center justify-between p-4 border-b border-zinc-800/30 last:border-0 hover:bg-zinc-800/30 transition-all"
+                      class="flex items-center justify-between p-4 border-b border-border-secondary/30 last:border-0 hover:bg-bg-tertiary/30 transition-all"
                     >
                       <div>
-                        <h5 class="text-sm font-bold text-zinc-200">
+                        <h5 class="text-sm font-bold text-text-primary">
                           {{ user.name || user.username }}
                         </h5>
                         <div class="flex items-center gap-2 mt-0.5">
-                          <span class="text-[10px] text-blue-500 font-black"
+                          <span class="text-[10px] text-primary font-black"
                             >@{{ user.username }}</span
                           >
                           <span
                             v-if="user.grade && user.class"
-                            class="text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
+                            class="text-[10px] text-text-disabled font-bold uppercase tracking-widest"
                             >{{ user.grade }} {{ user.class }}</span
                           >
-                          <span class="text-[10px] text-zinc-700 font-black">{{
+                          <span class="text-[10px] text-text-secondary font-black">{{
                             getRoleText(user.role)
                           }}</span>
                         </div>
                       </div>
                       <button
                         :disabled="isUserSelected(user.id)"
-                        class="px-3 py-1.5 bg-zinc-800 hover:bg-blue-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-zinc-400 text-[10px] font-black rounded-lg transition-all uppercase"
+                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-primary-hover hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-tertiary text-[10px] font-black rounded-lg transition-all uppercase"
                         @click="addUserToSelection(user)"
                       >
                         {{ isUserSelected(user.id) ? locale.selected : locale.select }}
@@ -247,11 +247,11 @@
                   <!-- 已选择的用户 -->
                   <div v-if="form.selectedUsers.length > 0" class="space-y-3">
                     <div class="flex items-center justify-between px-1">
-                      <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest"
+                      <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
                         >{{ getLocaleMessage('selectedUsers', form.selectedUsers.length) }}</span
                       >
                       <button
-                        class="text-[9px] font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest transition-colors"
+                        class="text-[9px] font-black text-error/70 hover:text-error uppercase tracking-widest transition-colors"
                         @click="clearAllSelectedUsers"
                       >
                         {{ locale.clearAll }}
@@ -261,16 +261,16 @@
                       <div
                         v-for="(user, index) in form.selectedUsers"
                         :key="user.id"
-                        class="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg group"
+                        class="flex items-center gap-2 px-3 py-1.5 bg-bg-secondary border border-border-secondary rounded-lg group"
                       >
                         <div class="flex flex-col">
-                          <span class="text-[10px] font-bold text-zinc-300 leading-none">{{
+                          <span class="text-[10px] font-bold text-text-secondary leading-none">{{
                             user.name || user.username
                           }}</span>
-                          <span class="text-[8px] text-zinc-600">@{{ user.username }}</span>
+                          <span class="text-[8px] text-text-disabled">@{{ user.username }}</span>
                         </div>
                         <button
-                          class="text-zinc-600 hover:text-red-400 transition-colors"
+                          class="text-text-disabled hover:text-error transition-colors"
                           @click="removeUserFromSelection(index)"
                         >
                           <X :size="12" />
@@ -279,7 +279,7 @@
                     </div>
                   </div>
                   <div v-else class="text-center py-4">
-                    <p class="text-[10px] font-black text-zinc-700 uppercase tracking-widest">
+                    <p class="text-[10px] font-black text-text-secondary uppercase tracking-widest">
                       {{ locale.noUsersSelected }}
                     </p>
                   </div>
@@ -292,17 +292,17 @@
           <div v-if="error || success" class="mt-6">
             <div
               v-if="error"
-              class="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl flex items-center gap-3"
+              class="p-4 bg-error/5 border border-error/10 rounded-2xl flex items-center gap-3"
             >
-              <AlertCircle class="text-red-500 shrink-0" :size="18" />
-              <p class="text-xs font-bold text-red-400">{{ error }}</p>
+              <AlertCircle class="text-error shrink-0" :size="18" />
+              <p class="text-xs font-bold text-error">{{ error }}</p>
             </div>
             <div
               v-if="success"
-              class="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex items-center gap-3"
+              class="p-4 bg-success/5 border border-success/10 rounded-2xl flex items-center gap-3"
             >
-              <Check class="text-green-500 shrink-0" :size="18" />
-              <p class="text-xs font-bold text-green-400">{{ success }}</p>
+              <Check class="text-success shrink-0" :size="18" />
+              <p class="text-xs font-bold text-success">{{ success }}</p>
             </div>
           </div>
 
@@ -310,10 +310,10 @@
             <button
               :disabled="loading || !isFormValid"
               :class="[
-                'flex items-center gap-2 px-10 py-4 bg-zinc-950 border border-zinc-800 text-xs font-black rounded-2xl transition-all uppercase tracking-[0.2em] shadow-lg',
+                'flex items-center gap-2 px-10 py-4 bg-bg-primary border border-border-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-[0.2em] shadow-lg',
                 loading || !isFormValid
-                  ? 'text-zinc-800 cursor-not-allowed'
-                  : 'text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 hover:bg-zinc-900'
+                  ? 'text-text-primary cursor-not-allowed'
+                  : 'text-text-tertiary hover:text-text-primary hover:border-border-tertiary hover:bg-bg-secondary'
               ]"
               @click="sendNotification"
             >
@@ -328,34 +328,34 @@
       <!-- 右侧：预览区 -->
       <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-8">
         <div
-          class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-8 shadow-xl flex flex-col h-full"
+          class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] p-8 shadow-xl flex flex-col h-full"
         >
           <h3
-            class="text-sm font-black text-zinc-100 uppercase tracking-widest mb-6 flex items-center gap-2"
+            class="text-sm font-black text-text-primary uppercase tracking-widest mb-6 flex items-center gap-2"
           >
-            <Eye :size="16" class="text-blue-500" /> {{ locale.previewTitle }}
+            <Eye :size="16" class="text-primary" /> {{ locale.previewTitle }}
           </h3>
 
           <div class="flex-1 flex flex-col items-center justify-center p-4">
             <div
-              class="w-full max-w-[320px] bg-[#0c0c0e] border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl relative"
+              class="w-full max-w-[320px] bg-[#0c0c0e] border border-border-secondary rounded-3xl overflow-hidden shadow-2xl relative"
             >
               <!-- 顶部装饰 -->
-              <div class="h-1.5 bg-blue-600 w-full" />
+              <div class="h-1.5 bg-primary-hover w-full" />
 
               <div class="p-6 space-y-4">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <div
-                      class="w-8 h-8 rounded-xl bg-blue-600/10 text-blue-500 flex items-center justify-center border border-blue-500/20"
+                      class="w-8 h-8 rounded-xl bg-primary-hover/10 text-primary flex items-center justify-center border border-primary/20"
                     >
                       <Bell :size="14" />
                     </div>
-                    <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                    <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                       >{{ locale.previewSender }}</span
                     >
                   </div>
-                  <span class="text-[9px] text-zinc-700 font-bold uppercase tracking-wider"
+                  <span class="text-[9px] text-text-secondary font-bold uppercase tracking-wider"
                     >{{ locale.justNow }}</span
                   >
                 </div>
@@ -364,7 +364,7 @@
                   <h4
                     :class="[
                       'text-sm font-black transition-colors',
-                      form.title ? 'text-zinc-100' : 'text-zinc-800 italic'
+                      form.title ? 'text-text-primary' : 'text-text-primary italic'
                     ]"
                   >
                     {{ form.title || locale.previewTitlePlaceholder }}
@@ -372,22 +372,22 @@
                   <p
                     :class="[
                       'text-[11px] leading-relaxed transition-colors',
-                      form.content ? 'text-zinc-400' : 'text-zinc-800 italic line-clamp-3'
+                      form.content ? 'text-text-tertiary' : 'text-text-primary italic line-clamp-3'
                     ]"
                   >
                     {{ form.content || locale.previewContentPlaceholder }}
                   </p>
                 </div>
 
-                <div class="pt-4 border-t border-zinc-800/50 flex items-center justify-between">
+                <div class="pt-4 border-t border-border-secondary/50 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
-                    <Users :size="12" class="text-zinc-700" />
-                    <span class="text-[9px] font-black text-zinc-600 uppercase tracking-wider">
+                    <Users :size="12" class="text-text-secondary" />
+                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-wider">
                       {{ getLocaleMessage('previewScope', scopeDescription) }}
                     </span>
                   </div>
                   <button
-                    class="p-1.5 text-blue-500 hover:bg-blue-600/10 rounded-lg transition-all"
+                    class="p-1.5 text-primary hover:bg-primary-hover/10 rounded-lg transition-all"
                   >
                     <MessageSquare :size="14" />
                   </button>
@@ -396,16 +396,16 @@
 
               <!-- 背景光晕 -->
               <div
-                class="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[50px] -z-10 rounded-full"
+                class="absolute top-0 right-0 w-32 h-32 bg-primary-hover/5 blur-[50px] -z-10 rounded-full"
               />
             </div>
 
             <div class="mt-8 space-y-3 w-full max-w-[320px]">
               <div
-                class="flex items-start gap-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl"
+                class="flex items-start gap-3 p-3 bg-warning/5 border border-warning/10 rounded-2xl"
               >
-                <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
-                <p class="text-[10px] font-bold text-zinc-500 leading-normal">
+                <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
+                <p class="text-[10px] font-bold text-text-tertiary leading-normal">
                   {{ locale.previewHint }}
                 </p>
               </div>

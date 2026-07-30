@@ -5,26 +5,26 @@
     <!-- 错误状态 -->
     <div
       v-else
-      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-zinc-900/30 border border-dashed border-zinc-800 rounded-3xl animate-in fade-in zoom-in duration-300"
+      class="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-bg-secondary/30 border border-dashed border-border-secondary rounded-3xl animate-in fade-in zoom-in duration-300"
     >
       <div class="relative mb-6">
-        <div class="absolute inset-0 blur-2xl bg-red-500/10 rounded-full" />
+        <div class="absolute inset-0 blur-2xl bg-error/10 rounded-full" />
         <div
-          class="relative flex items-center justify-center w-16 h-16 bg-zinc-950 border border-red-500/30 rounded-2xl text-red-500 shadow-xl shadow-black/40"
+          class="relative flex items-center justify-center w-16 h-16 bg-bg-primary border border-error/30 rounded-2xl text-error shadow-xl shadow-black/40"
         >
           <AlertCircle :size="32" stroke-width="1.5" />
         </div>
       </div>
 
-      <h3 class="text-xl font-black text-zinc-100 tracking-tight mb-2">{{ displayTitle }}</h3>
-      <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest max-w-xs mb-8">
+      <h3 class="text-xl font-black text-text-primary tracking-tight mb-2">{{ displayTitle }}</h3>
+      <p class="text-[10px] font-black text-text-tertiary uppercase tracking-widest max-w-xs mb-8">
         {{ displayMessage }}
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-4">
         <button
           :disabled="retrying"
-          class="flex items-center gap-2 px-6 py-2.5 bg-zinc-950 border border-zinc-800 hover:border-blue-500/50 text-zinc-400 hover:text-zinc-100 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-black/20 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2.5 bg-bg-primary border border-border-secondary hover:border-primary/50 text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-black/20 disabled:opacity-50"
           @click="handleRetry"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': retrying }" />
@@ -33,7 +33,7 @@
 
         <button
           v-if="showDetails"
-          class="px-6 py-2.5 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 text-zinc-500 hover:text-zinc-300 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+          class="px-6 py-2.5 bg-bg-secondary/50 border border-border-secondary hover:border-border-tertiary text-text-tertiary hover:text-text-secondary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
           @click="toggleDetails"
         >
           {{ showErrorDetails ? locale.hideDetails : locale.showDetails }}
@@ -50,15 +50,15 @@
         leave-to-class="transform scale-95 opacity-0"
       >
         <div v-if="showErrorDetails" class="mt-8 w-full max-w-2xl text-left">
-          <div class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl">
+          <div class="p-4 bg-bg-primary border border-border-secondary rounded-2xl">
             <div class="flex items-center gap-2 mb-3">
-              <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+              <div class="w-2 h-2 rounded-full bg-error animate-pulse" />
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                 >{{ locale.debugInfo }}</span
               >
             </div>
             <pre
-              class="text-[10px] font-mono text-zinc-500 leading-relaxed overflow-x-auto p-4 bg-black/30 rounded-xl whitespace-pre-wrap break-all"
+              class="text-[10px] font-mono text-text-tertiary leading-relaxed overflow-x-auto p-4 bg-bg-primary/30 rounded-xl whitespace-pre-wrap break-all"
               >{{ errorDetails }}</pre
             >
           </div>

@@ -312,7 +312,7 @@
                       <Icon :size="14" name="download" />
                     </button>
                     <button
-                      class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      class="action-btn-compact text-error hover:text-error hover:bg-error/10"
                       :aria-label="locale.logout"
                       :title="locale.logout"
                       type="button"
@@ -359,7 +359,7 @@
 
                   <div class="user-actions-row">
                     <button
-                      class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
+                      class="action-btn-compact text-error hover:bg-error/10 hover:text-error"
                       :aria-label="locale.logoutQQ"
                       :title="locale.logoutQQ"
                       type="button"
@@ -398,7 +398,7 @@
               <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <label for="submission-note" class="text-[12px] font-bold text-zinc-300"
+                    <label for="submission-note" class="text-[12px] font-bold text-text-secondary"
                       >{{ locale.submissionNote }}</label
                     >
                     <div class="flex items-center gap-2">
@@ -463,9 +463,9 @@
                     id="submission-note"
                     v-model="submissionNote"
                     maxlength="300"
-                    class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary/60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
                   />
-                  <div class="mt-1 flex justify-end text-[11px] text-zinc-500">
+                  <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
                     <span>{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
@@ -482,13 +482,13 @@
                   <div class="flex min-w-0 items-center gap-2">
                     <div class="min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-zinc-200">{{ locale.cardCode }}</span>
+                        <span class="text-xs font-black text-text-primary">{{ locale.cardCode }}</span>
                         <span
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                             cardCodeFieldMeta.required
-                              ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-                              : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
+                              ? 'border-warning/30 bg-warning/10 text-yellow-300'
+                              : 'border-border-tertiary bg-bg-tertiary/70 text-text-tertiary'
                           ]"
                         >
                           {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
@@ -500,10 +500,10 @@
                           cardCodeValidation.valid
                             ? 'text-emerald-300/80'
                             : cardCodeValidation.valid === false
-                              ? 'text-red-300/80'
+                              ? 'text-error/80'
                               : cardCodeFieldMeta.required
                                 ? 'text-yellow-300/80'
-                                : 'text-zinc-500'
+                                : 'text-text-tertiary'
                         ]"
                       >
                         {{ cardCodeStatusText }}
@@ -512,7 +512,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-yellow-500/25 bg-yellow-500/10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-yellow-400/40 hover:bg-yellow-500/15"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning/25 bg-warning/10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-warning/40 hover:bg-warning/15"
                       type="button"
                       @click="openCardCodeModal"
                     >
@@ -521,7 +521,7 @@
                     </button>
                     <button
                       v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-500 transition-all hover:border-red-500/30 hover:text-red-300"
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary/80 text-text-tertiary transition-all hover:border-error/30 hover:text-error"
                       :title="locale.clearCardCode"
                       type="button"
                       @click="clearCardCode"
@@ -918,32 +918,32 @@
       >
         <div
           v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-zinc-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
           @click.self="closeCardCodeModal"
         >
           <div
-            class="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+            class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
             @click.stop
           >
-            <div class="flex items-center justify-between border-b border-zinc-800/70 px-5 py-4">
+            <div class="flex items-center justify-between border-b border-border-secondary/70 px-5 py-4">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-zinc-100">{{ locale.cardCode }}</h3>
+                  <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
                   <span
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                       cardCodeFieldMeta.required
-                        ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-                        : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
+                        ? 'border-warning/30 bg-warning/10 text-yellow-300'
+                        : 'border-border-tertiary bg-bg-tertiary/70 text-text-tertiary'
                     ]"
                   >
                     {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
                   </span>
                 </div>
-                <p class="mt-1 text-[11px] text-zinc-500">{{ cardCodeFieldMeta.helper }}</p>
+                <p class="mt-1 text-[11px] text-text-tertiary">{{ cardCodeFieldMeta.helper }}</p>
               </div>
               <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800/60 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-zinc-100"
+                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary/60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
                 type="button"
                 @click="closeCardCodeModal"
               >
@@ -954,7 +954,7 @@
             <div class="px-5 py-5">
               <label
                 for="card-code-modal"
-                class="px-1 text-[10px] font-black uppercase tracking-widest text-zinc-600"
+                class="px-1 text-[10px] font-black uppercase tracking-widest text-text-disabled"
               >
                 {{ locale.cardCodeLabel }}
               </label>
@@ -963,7 +963,7 @@
                 ref="cardCodeInputRef"
                 v-model="cardCodeDraft"
                 :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 placeholder-zinc-600 transition-all focus:border-yellow-400/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
+                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-zinc-600 transition-all focus:border-warning/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
               />
@@ -973,8 +973,8 @@
                   cardCodeValidation.valid
                     ? 'text-emerald-300/80'
                     : cardCodeValidation.valid === false
-                      ? 'text-red-300/80'
-                      : 'text-zinc-500'
+                      ? 'text-error/80'
+                      : 'text-text-tertiary'
                 ]"
               >
                 {{ cardCodeModalHint }}
@@ -982,10 +982,10 @@
             </div>
 
             <div
-              class="flex flex-col-reverse gap-2 border-t border-zinc-800/70 bg-zinc-900/70 px-5 py-4 sm:flex-row sm:justify-end"
+              class="flex flex-col-reverse gap-2 border-t border-border-secondary/70 bg-bg-secondary/70 px-5 py-4 sm:flex-row sm:justify-end"
             >
               <button
-                class="rounded-lg px-4 py-2.5 text-xs font-bold text-zinc-500 transition-all hover:text-zinc-300"
+                class="rounded-lg px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:text-text-secondary"
                 type="button"
                 @click="closeCardCodeModal"
               >
@@ -993,7 +993,7 @@
               </button>
               <button
                 v-if="trimmedCardCode"
-                class="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-all hover:border-red-500/30 hover:text-red-300"
+                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error/30 hover:text-error"
                 type="button"
                 @click="clearCardCode"
               >
@@ -1001,7 +1001,7 @@
               </button>
               <button
                 :disabled="cardCodeValidation.checking"
-                class="rounded-lg bg-yellow-500 px-5 py-2.5 text-xs font-black text-zinc-950 transition-all hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-zinc-950 transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 @click="saveCardCode"
               >
@@ -1024,10 +1024,10 @@
       >
         <div
           v-if="showAudioMatchModal"
-          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/85 backdrop-blur-sm"
+          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary/85 backdrop-blur-sm"
         >
           <div
-            class="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             @click.stop
           >
             <div class="px-8 py-7 flex flex-col items-center text-center">
@@ -1036,23 +1036,23 @@
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
                   :class="
                     audioMatchRecording
-                      ? 'bg-red-500/20 text-red-400 scale-110'
+                      ? 'bg-error/20 text-error scale-110'
                       : audioMatchError
-                        ? 'bg-zinc-800/50 text-zinc-500'
-                        : 'bg-blue-500/10 text-blue-400'
+                        ? 'bg-bg-tertiary/50 text-text-tertiary'
+                        : 'bg-primary/10 text-primary'
                   "
                 >
                   <Icon :size="32" name="mic" />
                 </div>
                 <div
                   v-if="audioMatchRecording"
-                  class="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-30"
+                  class="absolute inset-0 rounded-full border-2 border-error animate-ping opacity-30"
                 />
               </div>
 
-              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">{{ locale.audioMatch }}</h3>
+              <h3 class="mt-6 text-xl font-bold text-text-primary tracking-tight">{{ locale.audioMatch }}</h3>
 
-              <p class="mt-2 text-sm text-zinc-400 max-w-[260px]">
+              <p class="mt-2 text-sm text-text-tertiary max-w-[260px]">
                 {{
                   audioMatchStatus ||
                   (audioMatchError ? audioMatchError : locale.audioMatchHint)
@@ -1095,8 +1095,8 @@
               v-if="audioMatchResults.length"
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
-              <div class="border-t border-zinc-800/60 pt-5">
-                <h4 class="text-sm font-semibold text-zinc-300 mb-4">{{ locale.audioMatchResults }}</h4>
+              <div class="border-t border-border-secondary/60 pt-5">
+                <h4 class="text-sm font-semibold text-text-secondary mb-4">{{ locale.audioMatchResults }}</h4>
                 <div class="space-y-2">
                   <button
                     v-for="match in audioMatchResults"
@@ -1107,7 +1107,7 @@
                   >
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                       <div
-                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800/50 flex items-center justify-center"
+                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-bg-tertiary/50 flex items-center justify-center"
                         @click.stop="playAudioMatchResult(match)"
                       >
                         <img
@@ -1115,19 +1115,19 @@
                           :src="match.cover"
                           class="w-full h-full object-cover"
                         />
-                        <Music v-else class="w-5 h-5 text-zinc-500" />
+                        <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
-                          class="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
+                          class="absolute inset-0 bg-bg-primary/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
                         >
-                          <Play class="w-4 h-4 text-white fill-white" />
+                          <Play class="w-4 h-4 text-text-primary fill-white" />
                         </div>
                       </div>
                       <div class="min-w-0 text-left flex-1">
-                        <p class="truncate text-sm font-medium text-zinc-100">{{ match.name }}</p>
-                        <p class="truncate text-xs text-zinc-400 mt-0.5">{{ match.artist }}</p>
+                        <p class="truncate text-sm font-medium text-text-primary">{{ match.name }}</p>
+                        <p class="truncate text-xs text-text-tertiary mt-0.5">{{ match.artist }}</p>
                       </div>
                       <div class="shrink-0 text-right">
-                        <span class="text-[11px] font-mono text-blue-400">
+                        <span class="text-[11px] font-mono text-primary">
                           {{ (match.startTime / 1000).toFixed(1) }}s
                         </span>
                       </div>
@@ -1153,27 +1153,27 @@
       >
         <div
           v-if="showManualModal"
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/80 backdrop-blur-sm"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-bg-primary/80 backdrop-blur-sm"
           @click.self="showManualModal = false"
         >
           <div
-            class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             @click.stop
           >
             <!-- Header -->
             <div
-              class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0"
+              class="px-8 py-6 border-b border-border-secondary/50 flex items-center justify-between shrink-0"
             >
               <div class="flex items-center gap-4">
                 <div
-                  class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  class="w-12 h-12 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
                 >
                   <Edit3 :size="24" />
                 </div>
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.manualTitle }}</h3>
+                <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.manualTitle }}</h3>
               </div>
               <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
                 @click="showManualModal = false"
               >
                 <X class="w-5 h-5" />
@@ -1185,18 +1185,18 @@
               <div class="grid grid-cols-1 gap-6">
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.songName }}</label
                   >
                   <div class="relative group">
                     <input
                       :value="title"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-tertiary font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
                     />
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                      <Lock class="w-4 h-4 text-zinc-600" />
+                      <Lock class="w-4 h-4 text-text-disabled" />
                     </div>
                   </div>
                 </div>
@@ -1205,13 +1205,13 @@
                 <div class="space-y-2">
                   <label
                     for="modal-artist"
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.artistName }}</label
                   >
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary/30 transition-all"
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
@@ -1222,7 +1222,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-cover"
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.coverUrl }}</label
                   >
                   <div class="relative group">
@@ -1230,10 +1230,10 @@
                       id="modal-cover"
                       v-model="manualCover"
                       :class="[
-                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
+                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
-                          ? 'border-red-500/50 focus:border-red-500/50'
-                          : 'border-zinc-800 focus:border-blue-500/30'
+                          ? 'border-error/50 focus:border-error/50'
+                          : 'border-border-secondary focus:border-primary/30'
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
@@ -1242,7 +1242,7 @@
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
                     >
-                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                      <Loader2 class="w-4 h-4 text-text-tertiary animate-spin" />
                     </div>
                   </div>
                   <Transition
@@ -1253,13 +1253,13 @@
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!coverValidation.valid"
-                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-error/80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-success/80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1271,7 +1271,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-play-url"
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.playUrl }}</label
                   >
                   <div class="relative group">
@@ -1279,10 +1279,10 @@
                       id="modal-play-url"
                       v-model="manualPlayUrl"
                       :class="[
-                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
+                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
-                          ? 'border-red-500/50 focus:border-red-500/50'
-                          : 'border-zinc-800 focus:border-blue-500/30'
+                          ? 'border-error/50 focus:border-error/50'
+                          : 'border-border-secondary focus:border-primary/30'
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
@@ -1291,7 +1291,7 @@
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
                     >
-                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                      <Loader2 class="w-4 h-4 text-text-tertiary animate-spin" />
                     </div>
                   </div>
                   <Transition
@@ -1302,13 +1302,13 @@
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!playUrlValidation.valid"
-                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-error/80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-success/80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1320,10 +1320,10 @@
 
             <!-- Footer -->
             <div
-              class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end shrink-0"
+              class="px-8 py-6 bg-bg-secondary/50 border-t border-border-secondary/50 flex gap-3 justify-end shrink-0"
             >
               <button
-                class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-all"
+                class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-all"
                 type="button"
                 @click="showManualModal = false"
               >
@@ -1331,7 +1331,7 @@
               </button>
               <button
                 :disabled="!canSubmitManualForm || submitting"
-                class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+                class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
                 type="button"
                 @click="handleManualSubmit"
               >

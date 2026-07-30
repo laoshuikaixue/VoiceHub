@@ -360,7 +360,7 @@
           >
             <div
               v-if="submissionNoteDialog.show"
-              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-sm"
               @click="closeSubmissionNote"
             >
               <div class="submission-note-modal" @click.stop>
