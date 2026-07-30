@@ -263,6 +263,7 @@
   --panel-border: #2a2a2a;
   --panel-border-active: #242f38;
   --panel-border-subtle: #1f1f1f;
+  --panel-border-10: rgba(31, 31, 31, 0.1);
   --panel-border-light: #3a3a3a;
   --panel-border-dark: #4a4a4a;
   --panel-border-highlight: #3f3f46;
@@ -402,6 +403,8 @@
   --bg-secondary-90: rgba(26, 26, 26, 0.9);
   --bg-secondary-95: rgba(26, 26, 26, 0.95);
   /* === Alpha (--bg-tertiary) === */
+  --bg-tertiary-5: rgba(42, 42, 42, 0.05);
+  --bg-tertiary-10: rgba(42, 42, 42, 0.1);
   --bg-tertiary-20: rgba(42, 42, 42, 0.2);
   --bg-tertiary-30: rgba(42, 42, 42, 0.3);
   --bg-tertiary-40: rgba(42, 42, 42, 0.4);
