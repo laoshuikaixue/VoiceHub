@@ -9,7 +9,7 @@
   >
     <div
       v-if="show"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       @click="$emit('close')"
     >
       <div
@@ -17,11 +17,11 @@
         @click.stop
       >
         <!-- 头部 -->
-        <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary/50">
+        <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
           <div>
             <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-xl bg-info/10 flex items-center justify-center text-info"
+                class="w-10 h-10 rounded-xl bg-info-10 flex items-center justify-center text-info"
               >
                 <Layers :size="20" />
               </div>
@@ -32,7 +32,7 @@
             </p>
           </div>
           <button
-            class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
+            class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
             @click="$emit('close')"
           >
             <X :size="20" />
@@ -46,7 +46,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'grade-only'
-                  ? 'bg-info/5 border-info/50 ring-4 ring-purple-500/10'
+                  ? 'bg-info-5 border-info/50 ring-4 ring-purple-500/10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -81,7 +81,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'excel-batch'
-                  ? 'bg-success/5 border-success/50 ring-4 ring-emerald-500/10'
+                  ? 'bg-success-5 border-success-50 ring-4 ring-emerald-500/10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -116,7 +116,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'status-batch'
-                  ? 'bg-warning/5 border-warning/50 ring-4 ring-amber-500/10'
+                  ? 'bg-warning-5 border-warning-50 ring-4 ring-amber-500/10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -153,7 +153,7 @@
             v-if="['grade-only', 'status-batch'].includes(updateType)"
             class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
-            <div class="p-6 bg-bg-primary/50 border border-border-secondary/50 rounded-xl space-y-6">
+            <div class="p-6 bg-bg-primary-50 border border-border-secondary-50 rounded-xl space-y-6">
               <div
                 class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest"
               >
@@ -215,7 +215,7 @@
                     <label
                       v-for="user in filteredUsers"
                       :key="user.id"
-                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary/50 cursor-pointer transition-colors group"
+                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary-50 cursor-pointer transition-colors group"
                     >
                       <input
                         v-model="selectedUserIds"
@@ -239,7 +239,7 @@
             </div>
 
             <!-- 目标年级设置 -->
-            <div v-if="updateType === 'grade-only'" class="p-6 bg-info/5 border border-info/20 rounded-xl space-y-6">
+            <div v-if="updateType === 'grade-only'" class="p-6 bg-info-5 border border-info-20 rounded-xl space-y-6">
               <div
                 class="flex items-center gap-2 text-xs font-black text-info uppercase tracking-widest"
               >
@@ -260,7 +260,7 @@
                       v-model="targetGrade"
                       type="text"
                       :placeholder="locale.gradeSettings.targetGradePlaceholder"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-info/30 transition-all text-text-primary"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-info-30 transition-all text-text-primary"
                     >
                   </div>
                 </div>
@@ -278,7 +278,7 @@
             </div>
 
             <!-- 目标状态设置 -->
-            <div v-if="updateType === 'status-batch'" class="p-6 bg-warning/5 border border-warning/20 rounded-xl space-y-6">
+            <div v-if="updateType === 'status-batch'" class="p-6 bg-warning-5 border border-warning-20 rounded-xl space-y-6">
               <div class="flex items-center gap-2 text-xs font-black text-warning uppercase tracking-widest">
                 <Save :size="14" />
                 {{ locale.statusSettings.title }}
@@ -314,7 +314,7 @@
                       v-model="statusReason"
                       rows="2"
                       :placeholder="locale.statusSettings.reasonPlaceholder"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-warning/30 transition-all text-text-primary resize-none"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-warning-30 transition-all text-text-primary resize-none"
                     ></textarea>
                   </div>
                 </div>
@@ -350,8 +350,8 @@
                 :class="[
                   'w-full py-12 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-4',
                   isDragOver
-                    ? 'border-success bg-success/10'
-                    : 'border-border-secondary hover:border-success/50 hover:bg-success/5'
+                    ? 'border-success bg-success-10'
+                    : 'border-border-secondary hover:border-success-50 hover:bg-success-5'
                 ]"
               >
                 <div
@@ -386,7 +386,7 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'username'
-                      ? 'bg-primary/10 border-primary/50 text-primary ring-4 ring-blue-500/10'
+                      ? 'bg-primary-10 border-primary-50 text-primary ring-4 ring-blue-500/10'
                       : 'bg-bg-secondary border-border-secondary text-text-disabled hover:border-border-tertiary hover:text-text-tertiary'
                   ]"
                 >
@@ -398,7 +398,7 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'name'
-                      ? 'bg-success/10 border-success/50 text-success ring-4 ring-emerald-500/10'
+                      ? 'bg-success-10 border-success-50 text-success ring-4 ring-emerald-500/10'
                       : 'bg-bg-secondary border-border-secondary text-text-disabled hover:border-border-tertiary hover:text-text-tertiary'
                   ]"
                 >
@@ -449,7 +449,7 @@
                 </ul>
               </div>
               <button
-                class="p-5 bg-success/5 border border-success/20 hover:border-success/40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group"
+                class="p-5 bg-success-5 border border-success-20 hover:border-success-40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group"
                 @click="downloadTemplate"
               >
                 <div
@@ -469,20 +469,20 @@
               <!-- 外部阻断用户提示 -->
               <div
                 v-if="blockerList.length > 0"
-                class="p-5 bg-warning/5 border border-warning/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
+                class="p-5 bg-warning-5 border border-warning-20 rounded-2xl space-y-3 animate-in fade-in duration-300"
               >
                 <div class="flex items-center gap-2 text-xs font-black text-warning uppercase tracking-widest">
                   <AlertCircle :size="16" />
                   {{ locale.preview.blockersTitle(blockerList.length) }}
                 </div>
-                <p class="text-[10px] text-warning/80 leading-relaxed">
+                <p class="text-[10px] text-warning-80 leading-relaxed">
                   {{ locale.preview.blockersDesc }}
                 </p>
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="(blocker, i) in blockerList"
                     :key="i"
-                    class="px-3 py-1.5 bg-warning/10 border border-warning/20 rounded-lg text-xs font-bold text-warning"
+                    class="px-3 py-1.5 bg-warning-10 border border-warning-20 rounded-lg text-xs font-bold text-warning"
                   >
                     {{ blocker.name }}({{ blocker.username }})
                   </span>
@@ -535,7 +535,7 @@
                 <div class="overflow-x-auto custom-scrollbar">
                   <table class="w-full text-left border-collapse">
                     <thead
-                      class="bg-bg-secondary/80 text-[10px] font-black text-text-tertiary uppercase tracking-widest border-b border-border-secondary"
+                      class="bg-bg-secondary-80 text-[10px] font-black text-text-tertiary uppercase tracking-widest border-b border-border-secondary"
                     >
                       <tr>
                         <th class="px-5 py-4 whitespace-nowrap">
@@ -551,7 +551,7 @@
                         v-for="(row, index) in filteredPreviewData.slice(0, 10)"
                         :key="index"
                         :class="[
-                          row.error ? 'bg-error/5' : 'hover:bg-bg-secondary/30 transition-colors'
+                          row.error ? 'bg-error-5' : 'hover:bg-bg-secondary-30 transition-colors'
                         ]"
                       >
                         <td class="px-5 py-4">
@@ -601,19 +601,19 @@
                         <td class="px-5 py-4 text-right">
                           <span
                             v-if="row.error"
-                            class="px-2 py-0.5 bg-error/10 text-error text-[10px] font-black rounded uppercase tracking-tighter border border-error/20"
+                            class="px-2 py-0.5 bg-error-10 text-error text-[10px] font-black rounded uppercase tracking-tighter border border-error-20"
                           >
                             {{ row.error }}
                           </span>
                           <span
                             v-else-if="row.noChange"
-                            class="px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded uppercase tracking-tighter border border-border-tertiary/50"
+                            class="px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded uppercase tracking-tighter border border-border-tertiary-50"
                           >
                             {{ locale.preview.noChange }}
                           </span>
                           <span
                             v-else
-                            class="px-2 py-0.5 bg-success/10 text-success text-[10px] font-black rounded uppercase tracking-tighter border border-success/20"
+                            class="px-2 py-0.5 bg-success-10 text-success text-[10px] font-black rounded uppercase tracking-tighter border border-success-20"
                           >
                             {{ locale.preview.ready }}
                           </span>
@@ -624,7 +624,7 @@
                 </div>
                 <div
                   v-if="filteredPreviewData.length > 10"
-                  class="p-4 text-center border-t border-border-secondary bg-bg-secondary/20 text-[10px] text-text-disabled font-bold uppercase tracking-widest"
+                  class="p-4 text-center border-t border-border-secondary bg-bg-secondary-20 text-[10px] text-text-disabled font-bold uppercase tracking-widest"
                 >
                   {{ locale.preview.moreQueued(filteredPreviewData.length - 10) }}
                 </div>
@@ -635,7 +635,7 @@
           <!-- 错误提示 -->
           <div
             v-if="error"
-            class="p-4 bg-error/10 border border-error/20 rounded-2xl flex items-center gap-3 text-error text-xs animate-in shake duration-300"
+            class="p-4 bg-error-10 border border-error-20 rounded-2xl flex items-center gap-3 text-error text-xs animate-in shake duration-300"
           >
             <AlertCircle :size="16" />
             {{ error }}
@@ -644,7 +644,7 @@
           <!-- 进度条 -->
           <div
             v-if="updateType === 'excel-batch' && updateProgressText"
-            class="p-5 bg-success/5 border border-success/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            class="p-5 bg-success-5 border border-success-20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div class="flex items-center justify-between">
               <span class="text-xs font-black text-success uppercase tracking-widest">{{ updateProgressText }}</span>
@@ -660,7 +660,7 @@
         </div>
 
         <!-- 底部按钮 -->
-        <div class="p-8 pt-4 border-t border-border-secondary/50 bg-bg-secondary/50 flex gap-3">
+        <div class="p-8 pt-4 border-t border-border-secondary-50 bg-bg-secondary-50 flex gap-3">
           <button
             class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
             @click="$emit('close')"

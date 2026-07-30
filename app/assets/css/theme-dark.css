@@ -202,4 +202,129 @@
   --scrollbar-track: var(--bg-tertiary);
   --scrollbar-thumb: var(--bg-quaternary);
   --scrollbar-thumb-hover: #4a4a4a;
+
+  /* === Alpha (--primary) === */
+  --primary-5: rgba(59, 130, 246, 0.05);
+  --primary-10: rgba(59, 130, 246, 0.1);
+  --primary-20: rgba(59, 130, 246, 0.2);
+  --primary-50: rgba(59, 130, 246, 0.5);
+  /* === Alpha (--primary-hover) === */
+  --primary-hover-5: rgba(37, 99, 235, 0.05);
+  --primary-hover-10: rgba(37, 99, 235, 0.1);
+  --primary-hover-20: rgba(37, 99, 235, 0.2);
+  --primary-hover-30: rgba(37, 99, 235, 0.3);
+  /* === Alpha (--success) === */
+  --success-5: rgba(16, 185, 129, 0.05);
+  --success-10: rgba(16, 185, 129, 0.1);
+  --success-20: rgba(16, 185, 129, 0.2);
+  /* === Alpha (--success-hover) === */
+  --success-hover-5: rgba(5, 150, 105, 0.05);
+  --success-hover-10: rgba(5, 150, 105, 0.1);
+  --success-hover-20: rgba(5, 150, 105, 0.2);
+  /* === Alpha (--warning) === */
+  --warning-5: rgba(245, 158, 11, 0.05);
+  --warning-10: rgba(245, 158, 11, 0.1);
+  --warning-15: rgba(245, 158, 11, 0.15);
+  --warning-20: rgba(245, 158, 11, 0.2);
+  --warning-25: rgba(245, 158, 11, 0.25);
+  --warning-30: rgba(245, 158, 11, 0.3);
+  --warning-40: rgba(245, 158, 11, 0.4);
+  --warning-50: rgba(245, 158, 11, 0.5);
+  /* === Alpha (--warning-hover) === */
+  --warning-hover-5: rgba(217, 119, 6, 0.05);
+  --warning-hover-10: rgba(217, 119, 6, 0.1);
+  --warning-hover-15: rgba(217, 119, 6, 0.15);
+  --warning-hover-20: rgba(217, 119, 6, 0.2);
+  --warning-hover-25: rgba(217, 119, 6, 0.25);
+  --warning-hover-30: rgba(217, 119, 6, 0.3);
+  --warning-hover-40: rgba(217, 119, 6, 0.4);
+  --warning-hover-50: rgba(217, 119, 6, 0.5);
+  /* === Alpha (--error) === */
+  --error-5: rgba(239, 68, 68, 0.05);
+  --error-10: rgba(239, 68, 68, 0.1);
+  --error-15: rgba(239, 68, 68, 0.15);
+  --error-20: rgba(239, 68, 68, 0.2);
+  --error-30: rgba(239, 68, 68, 0.3);
+  /* === Alpha (--error-hover) === */
+  --error-hover-5: rgba(220, 38, 38, 0.05);
+  --error-hover-10: rgba(220, 38, 38, 0.1);
+  --error-hover-15: rgba(220, 38, 38, 0.15);
+  --error-hover-20: rgba(220, 38, 38, 0.2);
+  --error-hover-30: rgba(220, 38, 38, 0.3);
+  /* === Alpha (--info) === */
+  --info-5: rgba(59, 130, 246, 0.05);
+  --info-10: rgba(59, 130, 246, 0.1);
+  --info-20: rgba(59, 130, 246, 0.2);
+  --info-30: rgba(59, 130, 246, 0.3);
+  --info-40: rgba(59, 130, 246, 0.4);
+  --info-50: rgba(59, 130, 246, 0.5);
+  /* === Alpha (--info-hover) === */
+  --info-hover-5: rgba(37, 99, 235, 0.05);
+  --info-hover-10: rgba(37, 99, 235, 0.1);
+  --info-hover-20: rgba(37, 99, 235, 0.2);
+  --info-hover-30: rgba(37, 99, 235, 0.3);
+  --info-hover-40: rgba(37, 99, 235, 0.4);
+  --info-hover-50: rgba(37, 99, 235, 0.5);
+  /* === Alpha (--bg-primary) === */
+  --bg-primary-5: rgba(17, 17, 17, 0.05);
+  --bg-primary-10: rgba(17, 17, 17, 0.1);
+  --bg-primary-20: rgba(17, 17, 17, 0.2);
+  --bg-primary-30: rgba(17, 17, 17, 0.3);
+  --bg-primary-40: rgba(17, 17, 17, 0.4);
+  --bg-primary-45: rgba(17, 17, 17, 0.45);
+  --bg-primary-50: rgba(17, 17, 17, 0.5);
+  --bg-primary-60: rgba(17, 17, 17, 0.6);
+  --bg-primary-70: rgba(17, 17, 17, 0.7);
+  --bg-primary-80: rgba(17, 17, 17, 0.8);
+  --bg-primary-85: rgba(17, 17, 17, 0.85);
+  --bg-primary-90: rgba(17, 17, 17, 0.9);
+  --bg-primary-95: rgba(17, 17, 17, 0.95);
+  /* === Alpha (--bg-secondary) === */
+  --bg-secondary-5: rgba(26, 26, 26, 0.05);
+  --bg-secondary-10: rgba(26, 26, 26, 0.1);
+  --bg-secondary-15: rgba(26, 26, 26, 0.15);
+  --bg-secondary-20: rgba(26, 26, 26, 0.2);
+  --bg-secondary-30: rgba(26, 26, 26, 0.3);
+  --bg-secondary-40: rgba(26, 26, 26, 0.4);
+  --bg-secondary-50: rgba(26, 26, 26, 0.5);
+  --bg-secondary-60: rgba(26, 26, 26, 0.6);
+  --bg-secondary-70: rgba(26, 26, 26, 0.7);
+  --bg-secondary-80: rgba(26, 26, 26, 0.8);
+  --bg-secondary-90: rgba(26, 26, 26, 0.9);
+  --bg-secondary-95: rgba(26, 26, 26, 0.95);
+  /* === Alpha (--bg-tertiary) === */
+  --bg-tertiary-20: rgba(42, 42, 42, 0.2);
+  --bg-tertiary-30: rgba(42, 42, 42, 0.3);
+  --bg-tertiary-40: rgba(42, 42, 42, 0.4);
+  --bg-tertiary-50: rgba(42, 42, 42, 0.5);
+  --bg-tertiary-60: rgba(42, 42, 42, 0.6);
+  --bg-tertiary-70: rgba(42, 42, 42, 0.7);
+  --bg-tertiary-80: rgba(42, 42, 42, 0.8);
+  /* === Alpha (--bg-quaternary) === */
+  --bg-quaternary-50: rgba(58, 58, 58, 0.5);
+  /* === Alpha (--border-secondary) === */
+  --border-secondary-30: rgba(42, 42, 42, 0.3);
+  --border-secondary-40: rgba(42, 42, 42, 0.4);
+  --border-secondary-50: rgba(42, 42, 42, 0.5);
+  --border-secondary-60: rgba(42, 42, 42, 0.6);
+  --border-secondary-70: rgba(42, 42, 42, 0.7);
+  --border-secondary-80: rgba(42, 42, 42, 0.8);
+  /* === Alpha (--border-tertiary) === */
+  --border-tertiary-30: rgba(58, 58, 58, 0.3);
+  --border-tertiary-50: rgba(58, 58, 58, 0.5);
+  /* === Alpha (--text-primary) === */
+  --text-primary-60: rgba(255, 255, 255, 0.6);
+  --text-primary-80: rgba(255, 255, 255, 0.8);
+  /* === Alpha (--text-error) === */
+  --text-error-20: rgba(239, 68, 68, 0.2);
+  --text-error-50: rgba(239, 68, 68, 0.5);
+  --text-error-60: rgba(239, 68, 68, 0.6);
+  --text-error-70: rgba(239, 68, 68, 0.7);
+  --text-error-80: rgba(239, 68, 68, 0.8);
+  /* === Alpha (--text-success) === */
+  --text-success-50: rgba(16, 185, 129, 0.5);
+  --text-success-70: rgba(16, 185, 129, 0.7);
+  --text-success-80: rgba(16, 185, 129, 0.8);
+  /* === Alpha (--text-warning) === */
+  --text-warning-80: rgba(245, 158, 11, 0.8);
 }

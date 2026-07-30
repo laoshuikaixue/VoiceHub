@@ -23,7 +23,7 @@
         >
           <template v-if="saving">
             <div
-              class="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+              class="w-3.5 h-3.5 border-2 border-primary-30 border-t-primary rounded-full animate-spin"
             />
             {{ locale.saving }}
           </template>
@@ -78,7 +78,7 @@
           </div>
           <div class="pt-2">
             <div
-              class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
             >
               <div>
                 <p class="text-xs font-bold text-text-primary">{{ locale.showBeianIcon }}</p>
@@ -150,7 +150,7 @@
         </h3>
         <div class="space-y-6">
           <div
-            class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.enableCollaborative }}</p>
@@ -164,7 +164,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.enableRemarks }}</p>
@@ -178,7 +178,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeRequests }}</p>
@@ -192,7 +192,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.requireCardCodeForRequests }}</p>
@@ -207,7 +207,7 @@
 
           <div
             :class="[
-              'flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl transition-opacity',
+              'flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl transition-opacity',
               !formData.enableSubmissionLimit ||
               (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
                 ? 'opacity-50'
@@ -232,7 +232,7 @@
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
               <p class="text-xs font-bold text-text-primary">{{ locale.enableReplay }}</p>
@@ -247,7 +247,7 @@
 
           <div class="space-y-4">
             <div
-              class="flex items-center justify-between p-3 bg-bg-primary/50 border border-border-secondary rounded-xl"
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
             >
               <div>
                 <p class="text-xs font-bold text-text-primary">{{ locale.enableLimit }}</p>
@@ -325,7 +325,7 @@
           <Shield :size="16" class="text-error" /> {{ locale.securityPrivacy }}
         </h3>
         <div class="space-y-4">
-          <div class="p-4 bg-bg-primary/50 border border-border-secondary rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -413,7 +413,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-bg-primary/50 border border-border-secondary rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -434,7 +434,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-bg-primary/50 border border-border-secondary rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -453,7 +453,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-bg-primary/50 border border-border-secondary rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -472,7 +472,7 @@
             </div>
           </div>
 
-          <div class="p-4 bg-bg-primary/50 border border-border-secondary rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
@@ -492,7 +492,7 @@
           </div>
 
           <div
-            class="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3"
+            class="p-4 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-primary shrink-0 mt-0.5" :size="14" />
             <p class="text-[10px] text-text-tertiary leading-normal">
@@ -504,7 +504,7 @@
 
       <!-- 投稿须知 -->
       <section
-        class="lg:col-span-2 bg-bg-secondary/40 border border-border-secondary rounded-2xl p-6 space-y-6"
+        class="lg:col-span-2 bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 space-y-6"
       >
         <div class="flex items-center justify-between border-b border-border-secondary pb-4">
           <h3
@@ -589,9 +589,9 @@ const renderedPreview = computed(() => renderMarkdown(formData.value.submissionG
 
 // 样式类常量
 const inputClass =
-  'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all placeholder:text-text-primary'
+  'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
 const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-bg-secondary/40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
+const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '请遵守校园广播站投稿规范。')
 

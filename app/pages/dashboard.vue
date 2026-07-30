@@ -17,7 +17,7 @@
         <!-- 移动端侧边栏遮罩 -->
         <div
           v-if="sidebarOpen"
-          class="fixed inset-0 bg-bg-primary/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
+          class="fixed inset-0 bg-bg-primary-60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300"
           @click="closeSidebar"
         />
 
@@ -26,7 +26,7 @@
           class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-text-primary"
         >
           <header
-            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border-secondary bg-bg-primary/60 backdrop-blur-xl z-30"
+            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border-secondary bg-bg-primary-60 backdrop-blur-xl z-30"
           >
             <div class="flex items-center gap-3">
               <button

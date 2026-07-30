@@ -6,7 +6,7 @@
       <Shield :size="16" class="text-success" /> {{ locale.title }}
     </h3>
 
-    <div class="flex items-start gap-3 p-4 bg-primary/5 border border-primary/10 rounded-xl">
+    <div class="flex items-start gap-3 p-4 bg-primary-5 border border-primary-10 rounded-xl">
       <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
       <p class="text-[10px] text-text-tertiary leading-relaxed">
         {{
@@ -23,7 +23,7 @@
         <button
           v-if="envData.hasBaseConfig"
           type="button"
-          class="text-[10px] px-2 py-1 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-[10px] px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
           @click="importEnvData('base')"
         >
           <Download :size="12" />
@@ -32,7 +32,7 @@
       </div>
 
       <div
-        class="flex items-center justify-between bg-bg-secondary/50 p-4 rounded-xl border border-border-secondary/50"
+        class="flex items-center justify-between bg-bg-secondary-50 p-4 rounded-xl border border-border-secondary-50"
       >
         <div>
           <label :class="labelClass">{{ locale.allowRegistration }}</label>
@@ -319,7 +319,7 @@
 
     <!-- 信息提示 -->
     <div
-      class="mt-6 p-4 bg-warning/5 border border-warning/10 rounded-xl flex items-start gap-3"
+      class="mt-6 p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
     >
       <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-text-tertiary leading-relaxed space-y-1">
@@ -359,9 +359,9 @@ const locale = computed(() => admin.value?.oauthConfig || {})
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
-  'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all placeholder:text-text-primary'
+  'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
 const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-bg-secondary/40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
+const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 const showSecrets = ref({
   state: false,

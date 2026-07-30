@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       <!-- 左侧：编辑区 -->
       <div class="lg:col-span-7 space-y-6">
-        <div class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] p-8 shadow-xl">
+        <div class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-8 shadow-xl">
           <div class="space-y-6">
             <!-- 标题 -->
             <div class="space-y-2">
@@ -21,7 +21,7 @@
                 v-model="form.title"
                 type="text"
                 :placeholder="locale.titlePlaceholder"
-                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-primary/30 transition-all text-text-primary placeholder:text-text-primary"
+                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-primary-30 transition-all text-text-primary placeholder:text-text-primary"
               >
             </div>
 
@@ -33,12 +33,12 @@
               <textarea
                 v-model="form.content"
                 :placeholder="locale.contentPlaceholder"
-                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary/30 transition-all text-text-primary placeholder:text-text-primary min-h-[160px] resize-none"
+                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary-30 transition-all text-text-primary placeholder:text-text-primary min-h-[160px] resize-none"
               />
             </div>
 
             <!-- 范围选择 -->
-            <div class="space-y-3 pt-4 border-t border-border-secondary/50">
+            <div class="space-y-3 pt-4 border-t border-border-secondary-50">
               <label class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] px-1"
                 >{{ locale.scope }}</label
               >
@@ -66,7 +66,7 @@
                 <div
                   v-if="form.scope === 'ALL'"
                   key="all"
-                  class="p-4 bg-primary/5 border border-primary/10 rounded-2xl flex items-center gap-4"
+                  class="p-4 bg-primary-5 border border-primary-10 rounded-2xl flex items-center gap-4"
                 >
                   <Info class="text-primary shrink-0" :size="18" />
                   <p class="text-[11px] font-bold text-text-tertiary">
@@ -125,7 +125,7 @@
                 </div>
 
                 <div v-else-if="form.scope === 'MULTI_CLASS'" key="multi" class="space-y-4">
-                  <div class="p-6 bg-bg-primary/50 border border-border-secondary border-dashed rounded-2xl">
+                  <div class="p-6 bg-bg-primary-50 border border-border-secondary border-dashed rounded-2xl">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                       <CustomSelect
                         v-model="multiClassForm.grade"
@@ -196,7 +196,7 @@
                       v-model="userSearchQuery"
                       type="text"
                       :placeholder="locale.userSearchPlaceholder"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary/30 transition-all text-text-primary"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                       @input="onUserSearchInput"
                     >
                   </div>
@@ -206,7 +206,7 @@
                     v-if="showUserSearchResults && userSearchResults.length > 0"
                     class="bg-bg-primary border border-border-secondary rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
                   >
-                    <div class="px-4 py-2 border-b border-border-secondary/60 bg-bg-secondary/40">
+                    <div class="px-4 py-2 border-b border-border-secondary-60 bg-bg-secondary-40">
                       <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest"
                         >{{ getLocaleMessage('searchResults', userSearchResults.length) }}</span
                       >
@@ -214,7 +214,7 @@
                     <div
                       v-for="user in userSearchResults"
                       :key="user.id"
-                      class="flex items-center justify-between p-4 border-b border-border-secondary/30 last:border-0 hover:bg-bg-tertiary/30 transition-all"
+                      class="flex items-center justify-between p-4 border-b border-border-secondary-30 last:border-0 hover:bg-bg-tertiary-30 transition-all"
                     >
                       <div>
                         <h5 class="text-sm font-bold text-text-primary">
@@ -251,7 +251,7 @@
                         >{{ getLocaleMessage('selectedUsers', form.selectedUsers.length) }}</span
                       >
                       <button
-                        class="text-[9px] font-black text-error/70 hover:text-error uppercase tracking-widest transition-colors"
+                        class="text-[9px] font-black text-error-70 hover:text-error uppercase tracking-widest transition-colors"
                         @click="clearAllSelectedUsers"
                       >
                         {{ locale.clearAll }}
@@ -292,14 +292,14 @@
           <div v-if="error || success" class="mt-6">
             <div
               v-if="error"
-              class="p-4 bg-error/5 border border-error/10 rounded-2xl flex items-center gap-3"
+              class="p-4 bg-error-5 border border-error-10 rounded-2xl flex items-center gap-3"
             >
               <AlertCircle class="text-error shrink-0" :size="18" />
               <p class="text-xs font-bold text-error">{{ error }}</p>
             </div>
             <div
               v-if="success"
-              class="p-4 bg-success/5 border border-success/10 rounded-2xl flex items-center gap-3"
+              class="p-4 bg-success-5 border border-success-10 rounded-2xl flex items-center gap-3"
             >
               <Check class="text-success shrink-0" :size="18" />
               <p class="text-xs font-bold text-success">{{ success }}</p>
@@ -328,7 +328,7 @@
       <!-- 右侧：预览区 -->
       <div class="lg:col-span-5 space-y-6 lg:sticky lg:top-8">
         <div
-          class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] p-8 shadow-xl flex flex-col h-full"
+          class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-8 shadow-xl flex flex-col h-full"
         >
           <h3
             class="text-sm font-black text-text-primary uppercase tracking-widest mb-6 flex items-center gap-2"
@@ -347,7 +347,7 @@
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <div
-                      class="w-8 h-8 rounded-xl bg-primary-hover/10 text-primary flex items-center justify-center border border-primary/20"
+                      class="w-8 h-8 rounded-xl bg-primary-hover-10 text-primary flex items-center justify-center border border-primary-20"
                     >
                       <Bell :size="14" />
                     </div>
@@ -379,7 +379,7 @@
                   </p>
                 </div>
 
-                <div class="pt-4 border-t border-border-secondary/50 flex items-center justify-between">
+                <div class="pt-4 border-t border-border-secondary-50 flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
                     <Users :size="12" class="text-text-secondary" />
                     <span class="text-[9px] font-black text-text-disabled uppercase tracking-wider">
@@ -387,7 +387,7 @@
                     </span>
                   </div>
                   <button
-                    class="p-1.5 text-primary hover:bg-primary-hover/10 rounded-lg transition-all"
+                    class="p-1.5 text-primary hover:bg-primary-hover-10 rounded-lg transition-all"
                   >
                     <MessageSquare :size="14" />
                   </button>
@@ -396,13 +396,13 @@
 
               <!-- 背景光晕 -->
               <div
-                class="absolute top-0 right-0 w-32 h-32 bg-primary-hover/5 blur-[50px] -z-10 rounded-full"
+                class="absolute top-0 right-0 w-32 h-32 bg-primary-hover-5 blur-[50px] -z-10 rounded-full"
               />
             </div>
 
             <div class="mt-8 space-y-3 w-full max-w-[320px]">
               <div
-                class="flex items-start gap-3 p-3 bg-warning/5 border border-warning/10 rounded-2xl"
+                class="flex items-start gap-3 p-3 bg-warning-5 border border-warning-10 rounded-2xl"
               >
                 <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
                 <p class="text-[10px] font-bold text-text-tertiary leading-normal">

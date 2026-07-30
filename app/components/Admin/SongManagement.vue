@@ -39,21 +39,21 @@
           >
             <div
               v-if="selectedSongs.length > 0"
-              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary/90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
+              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="openDownloadDialog"
               >
-                <Download :size="14" class="text-success/70" /> {{ locale.actions.download }} ({{
+                <Download :size="14" class="text-success-70" /> {{ locale.actions.download }} ({{
                   selectedSongs.length
                 }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-[11px] font-black rounded-lg border border-border-tertiary/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchDelete"
               >
-                <Trash2 :size="14" class="text-error/70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
+                <Trash2 :size="14" class="text-error-70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
               </button>
             </div>
           </Transition>
@@ -66,7 +66,7 @@
           </button>
           <button
             :disabled="loading"
-            class="flex items-center gap-2 px-5 py-2.5 bg-primary-hover/10 hover:bg-primary-hover/20 text-primary text-xs font-bold rounded-lg border border-primary/20 transition-all disabled:opacity-50"
+            class="flex items-center gap-2 px-5 py-2.5 bg-primary-hover-10 hover:bg-primary-hover-20 text-primary text-xs font-bold rounded-lg border border-primary-20 transition-all disabled:opacity-50"
             @click="refreshSongs(true)"
           >
             <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> {{ locale.actions.refresh }}
@@ -76,7 +76,7 @@
 
       <!-- 过滤器栏 -->
       <div
-        class="bg-bg-secondary/30 border border-border-secondary/60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
+        class="bg-bg-secondary-30 border border-border-secondary-60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
       >
         <div class="relative flex-1 group w-full lg:w-auto">
           <Search
@@ -87,7 +87,7 @@
             v-model="searchQuery"
             type="text"
             :placeholder="locale.searchPlaceholder"
-            class="w-full bg-bg-primary/50 border border-border-secondary/80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary/30 transition-all placeholder:text-text-primary text-text-primary"
+            class="w-full bg-bg-primary-50 border border-border-secondary-80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary text-text-primary"
           />
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:flex lg:items-center gap-3 w-full lg:w-auto">
@@ -129,16 +129,16 @@
 
     <!-- 歌曲表格 -->
     <div
-      class="bg-bg-secondary/10 border border-border-secondary/40 rounded-xl overflow-hidden shadow-2xl relative"
+      class="bg-bg-secondary-10 border border-border-secondary-40 rounded-xl overflow-hidden shadow-2xl relative"
     >
       <!-- 加载遮罩 -->
       <div
         v-if="loading"
-        class="absolute inset-0 bg-bg-primary/40 backdrop-blur-sm z-10 flex items-center justify-center"
+        class="absolute inset-0 bg-bg-primary-40 backdrop-blur-sm z-10 flex items-center justify-center"
       >
         <div class="flex flex-col items-center gap-3">
           <div
-            class="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin"
+            class="w-8 h-8 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
           />
           <span class="text-xs font-bold text-text-tertiary tracking-widest uppercase">{{ locale.loading }}</span>
         </div>
@@ -146,7 +146,7 @@
 
       <!-- 表头 -->
       <div
-        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-border-secondary/60 bg-bg-secondary/40"
+        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-border-secondary-60 bg-bg-secondary-40"
       >
         <div class="col-span-1 flex items-center">
           <input
@@ -182,7 +182,7 @@
       <!-- 移动端批量操作栏 -->
       <div
         v-if="filteredSongs.length > 0"
-        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-border-secondary/60 bg-bg-secondary/40"
+        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-border-secondary-60 bg-bg-secondary-40"
       >
         <label class="flex items-center gap-2 text-xs font-bold text-text-secondary cursor-pointer py-1">
           <input
@@ -212,7 +212,7 @@
           :key="song.id"
           :class="[
             'flex flex-col lg:grid lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all lg:items-center group relative',
-            selectedSongs.includes(song.id) ? 'bg-primary-hover/5' : 'hover:bg-bg-tertiary/20'
+            selectedSongs.includes(song.id) ? 'bg-primary-hover-5' : 'hover:bg-bg-tertiary-20'
           ]"
         >
           <div class="hidden lg:flex col-span-1 items-center">
@@ -237,8 +237,8 @@
             </label>
             <div
               :class="[
-                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-bg-tertiary/40 border-border-tertiary/30 group-hover:border-border-tertiary cursor-pointer hover:opacity-80',
-                selectedSongs.includes(song.id) ? 'border-primary/50' : ''
+                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-bg-tertiary-40 border-border-tertiary-30 group-hover:border-border-tertiary cursor-pointer hover:opacity-80',
+                selectedSongs.includes(song.id) ? 'border-primary-50' : ''
               ]"
               @click.stop="playSong(song)"
             >
@@ -268,7 +268,7 @@
                 <span v-else class="truncate">{{ song.title }}</span>
                 <button
                   v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all"
                   :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
@@ -276,7 +276,7 @@
                 </button>
                 <span
                   v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 text-xs text-primary/80 truncate max-w-[200px] cursor-pointer hover:text-primary transition-colors font-normal"
+                  class="ml-2 text-xs text-primary-80 truncate max-w-[200px] cursor-pointer hover:text-primary transition-colors font-normal"
                   :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
@@ -322,7 +322,7 @@
                     'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
                     song.voteCount > 0
                       ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer'
-                      : 'bg-bg-primary/30 text-text-secondary cursor-default'
+                      : 'bg-bg-primary-30 text-text-secondary cursor-default'
                   ]"
                   @click="showVoters(song.id)"
                 >
@@ -336,9 +336,9 @@
                   :class="[
                     'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
                     song.played
-                      ? 'bg-success/10 text-success'
+                      ? 'bg-success-10 text-success'
                       : song.scheduled
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-primary-10 text-primary'
                         : 'bg-bg-tertiary text-text-tertiary'
                   ]"
                 >
@@ -352,7 +352,7 @@
               class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
             >
               <button
-                class="p-2 bg-bg-tertiary/50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary/30"
+                class="p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.edit"
                 @click="editSong(song)"
               >
@@ -361,7 +361,7 @@
 
               <button
                 v-if="!song.played"
-                class="p-2 bg-bg-tertiary/50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary/30"
+                class="p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
               >
@@ -369,7 +369,7 @@
               </button>
               <button
                 v-else
-                class="p-2 bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary/30"
+                class="p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
               >
@@ -377,14 +377,14 @@
               </button>
 
               <button
-                class="p-2 bg-bg-tertiary/50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary/30"
+                class="p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
-                class="p-2 bg-bg-tertiary/50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary/30"
+                class="p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
               >
@@ -415,7 +415,7 @@
     >
       <div
         v-if="selectedSongs.length > 0"
-        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary/95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
+        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
       >
         <div class="px-3 flex flex-col">
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
@@ -423,14 +423,14 @@
         </div>
         <div class="flex items-center gap-2">
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary/50 transition-all active:scale-95"
+            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
             @click="openDownloadDialog"
           >
             <Download :size="16" class="mb-1" />
             <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
           </button>
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary/50 transition-all active:scale-95"
+            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
             @click="batchDelete"
           >
             <Trash2 :size="16" class="mb-1" />
@@ -475,13 +475,13 @@
     >
       <div
         v-if="showRejectDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
           class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
           @click.stop
         >
-          <div class="px-8 py-6 border-b border-border-secondary/50 flex items-center justify-between">
+          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
             <h3 class="text-xl font-black text-text-primary">{{ locale.rejectDialog.title }}</h3>
             <button
               class="text-text-tertiary hover:text-text-secondary transition-colors"
@@ -494,7 +494,7 @@
           <div class="p-8 space-y-6">
             <div class="p-5 bg-bg-primary border border-border-secondary rounded-lg flex items-center gap-4">
               <div
-                class="w-10 h-10 rounded-lg bg-error/10 text-error flex items-center justify-center border border-error/10"
+                class="w-10 h-10 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-10"
               >
                 <Music :size="18" />
               </div>
@@ -511,7 +511,7 @@
               <textarea
                 v-model="rejectReason"
                 :placeholder="locale.rejectDialog.reasonPlaceholder"
-                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-error/30 min-h-[120px] resize-none transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-error-30 min-h-[120px] resize-none transition-all"
               />
             </div>
 
@@ -533,7 +533,7 @@
             </label>
           </div>
 
-          <div class="px-8 py-6 bg-bg-secondary/50 border-t border-border-secondary/50 flex gap-3 justify-end">
+          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelReject"
@@ -573,13 +573,13 @@
     >
       <div
         v-if="showEditModal || showAddSongModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm overflow-y-auto"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm overflow-y-auto"
       >
         <div
           class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden my-auto"
           @click.stop
         >
-          <div class="px-8 py-6 border-b border-border-secondary/50 flex items-center justify-between">
+          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
             <h3 class="text-xl font-black text-text-primary">
               {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
             </h3>
@@ -602,14 +602,14 @@
                   v-model="editForm.title"
                   type="text"
                   :placeholder="locale.editModal.titlePlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.title"
                   type="text"
                   :placeholder="locale.editModal.titlePlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
               </div>
               <div class="space-y-2">
@@ -621,14 +621,14 @@
                   v-model="editForm.artist"
                   type="text"
                   :placeholder="locale.editModal.artistPlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.artist"
                   type="text"
                   :placeholder="locale.editModal.artistPlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
               </div>
             </div>
@@ -644,7 +644,7 @@
                     v-model="editUserSearchQuery"
                     type="text"
                     :placeholder="locale.editModal.userSearchPlaceholder"
-                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                     @focus="showEditUserDropdown = true"
                     @input="searchEditUsers()"
                   />
@@ -653,7 +653,7 @@
                     v-model="userSearchQuery"
                     type="text"
                     :placeholder="locale.editModal.userSearchPlaceholder"
-                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                     @focus="showUserDropdown = true"
                     @input="searchUsers()"
                   />
@@ -662,7 +662,7 @@
                     class="absolute right-4 top-1/2 -translate-y-1/2"
                   >
                     <div
-                      class="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin"
+                      class="w-4 h-4 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
                     />
                   </div>
                 </div>
@@ -744,7 +744,7 @@
                     v-model="editCollaboratorSearchQuery"
                     type="text"
                     :placeholder="locale.editModal.collaboratorSearchPlaceholder"
-                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                     @focus="showEditCollaboratorDropdown = true"
                     @input="searchEditCollaborators()"
                   />
@@ -753,7 +753,7 @@
                     class="absolute right-4 top-1/2 -translate-y-1/2"
                   >
                     <div
-                      class="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin"
+                      class="w-4 h-4 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
                     />
                   </div>
                   <div
@@ -836,7 +836,7 @@
                   :class="
                     submissionNoteClearRequested
                       ? 'border-border-tertiary bg-bg-primary text-text-secondary hover:border-border-tertiary'
-                      : 'border-warning/20 bg-warning/10 text-warning hover:bg-warning/20'
+                      : 'border-warning-20 bg-warning-10 text-warning hover:bg-warning-20'
                   "
                   @click="
                     submissionNoteClearRequested
@@ -851,7 +851,7 @@
                 v-model="editForm.submissionNote"
                 :disabled="submissionNoteClearRequested"
                 :placeholder="locale.editModal.submissionNotePlaceholder"
-                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-primary/30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-primary-30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <label
                 class="flex items-center gap-3 px-1 transition-opacity"
@@ -880,7 +880,7 @@
               </label>
               <div
                 v-if="submissionNoteClearRequested"
-                class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-4"
+                class="space-y-3 rounded-xl border border-warning-20 bg-warning-5 p-4"
               >
                 <div class="text-xs font-bold text-warning">
                   {{ locale.editModal.clearNoteHint }}
@@ -888,7 +888,7 @@
                 <textarea
                   v-model="submissionNoteClearReason"
                   :placeholder="locale.editModal.clearNoteReasonPlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-warning/30 min-h-[96px] resize-none transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-warning-30 min-h-[96px] resize-none transition-all"
                 />
                 <label class="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -907,7 +907,7 @@
                 </label>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-border-secondary/50">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-border-secondary-50">
               <div class="space-y-2">
                 <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.editModal.musicPlatform }}</label
@@ -977,7 +977,7 @@
                   (showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-success/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -986,7 +986,7 @@
                   !(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-error/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editCoverValidation.error : addCoverValidation.error }}
@@ -1016,7 +1016,7 @@
                   (showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-success/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -1025,7 +1025,7 @@
                   !(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-error/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
@@ -1033,7 +1033,7 @@
             </div>
           </div>
 
-          <div class="px-8 py-6 bg-bg-secondary/50 border-t border-border-secondary/50 flex gap-3 justify-end">
+          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"

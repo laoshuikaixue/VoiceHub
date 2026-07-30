@@ -2,13 +2,13 @@
   <div class="min-h-screen bg-bg-primary flex items-center justify-center p-6">
     <div class="max-w-md w-full">
       <div
-        class="bg-bg-secondary/40 border border-border-secondary rounded-3xl p-8 md:p-10 shadow-2xl text-center space-y-8"
+        class="bg-bg-secondary-40 border border-border-secondary rounded-3xl p-8 md:p-10 shadow-2xl text-center space-y-8"
       >
         <!-- 错误图标 -->
         <div class="flex justify-center">
           <div class="relative">
             <div
-              class="w-24 h-24 rounded-3xl bg-error/10 border border-error/20 flex items-center justify-center text-error"
+              class="w-24 h-24 rounded-3xl bg-error-10 border border-error-20 flex items-center justify-center text-error"
             >
               <ShieldAlert :size="48" stroke-width="1.5" />
             </div>
@@ -29,11 +29,11 @@
         <!-- 错误详情 -->
         <div
           v-if="errorCode"
-          class="p-4 bg-bg-primary/50 border border-border-secondary rounded-2xl space-y-2"
+          class="p-4 bg-bg-primary-50 border border-border-secondary rounded-2xl space-y-2"
         >
           <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest">{{ locale.errorCode }}</p>
           <code
-            class="text-xs font-mono text-primary font-bold bg-primary/5 px-2 py-1 rounded-lg"
+            class="text-xs font-mono text-primary font-bold bg-primary-5 px-2 py-1 rounded-lg"
           >
             {{ errorCode }}
           </code>

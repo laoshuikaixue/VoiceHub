@@ -2,7 +2,7 @@
   <Transition name="fade">
     <div
       v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
       @click="closeDialog"
     >
       <Transition name="scale">
@@ -36,7 +36,7 @@
                   class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
                   :class="[
                     selectedQuality === option.value
-                      ? 'bg-primary-hover/10 border-primary shadow-sm'
+                      ? 'bg-primary-hover-10 border-primary shadow-sm'
                       : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                   ]"
                   @click="selectedQuality = option.value"
@@ -91,14 +91,14 @@
                   <!-- 标准化选项 -->
                   <div
                     class="flex items-center justify-between"
-                    :class="selectedSongs.size > 1 ? 'pt-3 border-t border-border-secondary/50' : ''"
+                    :class="selectedSongs.size > 1 ? 'pt-3 border-t border-border-secondary-50' : ''"
                   >
                     <div class="flex flex-col">
                       <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-text-primary">{{ locale.normalizeAudio }}</span>
                         <span
                           v-if="normalizeAudio"
-                          class="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20"
+                          class="text-[10px] bg-primary-10 text-primary px-1.5 py-0.5 rounded border border-primary-20"
                           >Peak {{ targetDb }}dB</span
                         >
                       </div>
@@ -149,7 +149,7 @@
                   </Transition>
 
                   <!-- 导出格式设置 -->
-                  <div class="space-y-4 pt-4 border-t border-border-secondary/50">
+                  <div class="space-y-4 pt-4 border-t border-border-secondary-50">
                     <div class="flex items-center justify-between">
                       <div class="flex flex-col">
                         <span class="text-xs font-bold text-text-primary">{{ locale.exportFormat }}</span>
@@ -186,7 +186,7 @@
                           class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
                           :class="[
                             exportFormat === 'mp3'
-                              ? 'bg-primary-hover/10 border-primary text-primary'
+                              ? 'bg-primary-hover-10 border-primary text-primary'
                               : 'bg-bg-secondary border-border-secondary text-text-tertiary hover:border-border-tertiary',
                             !shouldUseExportFormat ? 'opacity-50 cursor-not-allowed' : ''
                           ]"
@@ -199,7 +199,7 @@
                           class="flex-1 py-1.5 px-3 rounded-lg border text-[10px] font-bold transition-all"
                           :class="[
                             exportFormat === 'wav'
-                              ? 'bg-primary-hover/10 border-primary text-primary'
+                              ? 'bg-primary-hover-10 border-primary text-primary'
                               : 'bg-bg-secondary border-border-secondary text-text-tertiary hover:border-border-tertiary',
                             !shouldUseExportFormat ? 'opacity-50 cursor-not-allowed' : ''
                           ]"
@@ -232,7 +232,7 @@
                           v-model="customFilename"
                           type="text"
                           :placeholder="locale.filenamePlaceholder"
-                          class="w-full bg-bg-secondary border border-border-secondary rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary/50 transition-colors pr-8"
+                          class="w-full bg-bg-secondary border border-border-secondary rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-primary-50 transition-colors pr-8"
                         >
                         <!-- 快速插入占位符按钮 -->
                         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
@@ -282,7 +282,7 @@
                   >
                   <div
                     v-if="estimatedTotalDuration.count > 0"
-                    class="flex items-center gap-1.5 text-[10px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20"
+                    class="flex items-center gap-1.5 text-[10px] text-primary font-bold bg-primary-10 px-2 py-0.5 rounded-full border border-primary-20"
                   >
                     <Clock class="w-3 h-3" />
                     <span>{{ getLocaleText('estimatedDuration', '', formatDuration(estimatedTotalDuration.total)) }}</span>
@@ -310,7 +310,7 @@
                     {{ locale.preloadSelected }}
                   </button>
                   <button
-                    class="text-[10px] font-bold text-primary/80 hover:text-primary transition-colors"
+                    class="text-[10px] font-bold text-primary-80 hover:text-primary transition-colors"
                     @click="toggleSelectAll"
                   >
                     {{ isAllSelected ? locale.deselectAll : locale.selectAll }}
@@ -319,12 +319,12 @@
               </div>
 
               <div
-                class="bg-bg-primary/50 border border-border-secondary/50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
+                class="bg-bg-primary-50 border border-border-secondary-50 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
               >
                 <div
                   v-for="song in songs"
                   :key="song.id"
-                  class="w-full flex items-center gap-3 p-3.5 hover:bg-bg-tertiary/30 transition-all text-left border-b border-border-secondary/30 last:border-0 group relative"
+                  class="w-full flex items-center gap-3 p-3.5 hover:bg-bg-tertiary-30 transition-all text-left border-b border-border-secondary-30 last:border-0 group relative"
                 >
                   <!-- 预下载进度条背景 -->
                   <div
@@ -333,7 +333,7 @@
                         preloadedSongs.get(song.song.id).loading) ||
                       activeDownloads.has(song.song.id)
                     "
-                    class="absolute bottom-0 left-0 h-0.5 bg-primary/50 transition-all duration-300 ease-out"
+                    class="absolute bottom-0 left-0 h-0.5 bg-primary-50 transition-all duration-300 ease-out"
                     :style="{
                       width: `${
                         (typeof activeDownloads.get(song.song.id) === 'number'
@@ -370,7 +370,7 @@
                       <!-- 预下载标记（精确时长） -->
                       <div
                         v-if="getUsablePreload(song.song.id, selectedQuality)"
-                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-success/10 border border-success/20"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-success-10 border border-success-20"
                       >
                         <Check class="w-2 h-2 text-success" />
                         <span class="text-[9px] font-mono text-success">{{
@@ -380,7 +380,7 @@
                       <!-- API 预估标记 -->
                       <div
                         v-else-if="estimatedDurations.has(song.song.id)"
-                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-info/10 border border-info/20"
+                        class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-info-10 border border-info-20"
                       >
                         <Clock class="w-2 h-2 text-info" />
                         <span class="text-[9px] font-mono text-info">{{
@@ -399,7 +399,7 @@
                     <!-- 单个预下载/删除按钮 -->
                     <button
                       v-if="getUsablePreload(song.song.id, selectedQuality)"
-                      class="p-1.5 rounded-lg hover:bg-error/10 text-text-disabled hover:text-error transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-error-10 text-text-disabled hover:text-error transition-colors"
                       :title="locale.deleteCache"
                       @click.stop="removePreloaded(song.song.id)"
                     >
@@ -407,7 +407,7 @@
                     </button>
                     <button
                       v-else
-                      class="p-1.5 rounded-lg hover:bg-primary/10 text-text-disabled hover:text-primary transition-colors"
+                      class="p-1.5 rounded-lg hover:bg-primary-10 text-text-disabled hover:text-primary transition-colors"
                       :title="locale.preloadSong"
                       @click.stop="preloadSong(song.song)"
                     >
@@ -425,7 +425,7 @@
             <!-- 进度条 -->
             <section
               v-if="downloading || downloadedCount > 0"
-              class="space-y-3 pt-4 border-t border-border-secondary/50"
+              class="space-y-3 pt-4 border-t border-border-secondary-50"
             >
               <div
                 class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
@@ -436,7 +436,7 @@
                 <span class="text-primary">{{ downloadedCount }} / {{ totalCount }}</span>
               </div>
               <div
-                class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary/50 relative"
+                class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary-50 relative"
               >
                 <div
                   class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"
@@ -445,7 +445,7 @@
                   }"
                 >
                   <div
-                    class="absolute inset-0 bg-bg-secondary/20 animate-[shimmer_2s_infinite] -skew-x-12"
+                    class="absolute inset-0 bg-bg-secondary-20 animate-[shimmer_2s_infinite] -skew-x-12"
                   />
                 </div>
               </div>
@@ -466,7 +466,7 @@
               <!-- 错误信息 -->
               <div
                 v-if="downloadErrors.length > 0"
-                class="bg-error/5 border border-error/10 rounded-xl p-3 space-y-2"
+                class="bg-error-5 border border-error-10 rounded-xl p-3 space-y-2"
               >
                 <div class="text-[10px] font-bold text-error flex items-center gap-2">
                   <AlertTriangle class="w-3 h-3" />
@@ -476,7 +476,7 @@
                   <div
                     v-for="error in downloadErrors"
                     :key="error.id"
-                    class="text-[9px] text-error/70 truncate"
+                    class="text-[9px] text-error-70 truncate"
                   >
                     {{ error.title }} - {{ error.error }}
                   </div>
@@ -487,7 +487,7 @@
 
           <!-- 底部按钮 -->
           <div
-            class="p-4 border-t border-border-secondary bg-bg-secondary/50 flex items-center justify-between shrink-0"
+            class="p-4 border-t border-border-secondary bg-bg-secondary-50 flex items-center justify-between shrink-0"
           >
             <div class="text-[11px] font-black text-text-tertiary uppercase tracking-widest">
               {{ getLocaleText('selectedSongsCount', '', selectedSongs.size) }}
@@ -516,7 +516,7 @@
                 <Download v-if="!downloading" class="w-3.5 h-3.5" />
                 <span
                   v-else
-                  class="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+                  class="w-3.5 h-3.5 border-2 border-primary-30 border-t-primary rounded-full animate-spin"
                 />
                 {{
                   downloading

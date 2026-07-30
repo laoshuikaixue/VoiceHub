@@ -616,7 +616,7 @@
       >
         <div
           v-if="showRules"
-          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
           @click.self="showRules = false"
         >
           <div
@@ -626,7 +626,7 @@
               <div>
                 <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                   >
                     <Icon name="bell" :size="20" />
                   </div>
@@ -635,7 +635,7 @@
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="showRules = false"
               >
                 <Icon name="x" :size="20" />
@@ -652,12 +652,12 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary/50 p-6 rounded-3xl border border-border-secondary/50"
+                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
                   v-html="renderedGuidelines"
                 />
                 <div
                   v-else
-                  class="space-y-3 bg-bg-primary/50 p-6 rounded-3xl border border-border-secondary/50"
+                  class="space-y-3 bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
                 >
                   <div class="flex gap-3 text-sm text-text-tertiary font-medium">
                     <span class="text-primary font-black">01</span>
@@ -682,7 +682,7 @@
                   {{ locale.playbackTime }}
                 </h4>
                 <div
-                  class="bg-primary-hover/10 border border-primary/20 p-6 rounded-3xl flex items-center gap-4"
+                  class="bg-primary-hover-10 border border-primary-20 p-6 rounded-3xl flex items-center gap-4"
                 >
                   <div
                     class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-blue-900/40"

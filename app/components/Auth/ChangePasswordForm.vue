@@ -20,7 +20,7 @@
               inputClass,
               error
                 ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-border-secondary focus:border-primary/30'
+                : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showCurrentPassword ? 'text' : 'password'"
             autocomplete="current-password"
@@ -61,7 +61,7 @@
               inputClass,
               error
                 ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-border-secondary focus:border-primary/30'
+                : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
@@ -122,7 +122,7 @@
               inputClass,
               error || (confirmPassword && newPassword !== confirmPassword)
                 ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-border-secondary focus:border-primary/30'
+                : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showConfirmPassword ? 'text' : 'password'"
             autocomplete="new-password"
@@ -163,7 +163,7 @@
       <div
         v-if="error"
         aria-live="polite"
-        class="p-3 bg-error/10 border border-error/20 rounded-xl flex items-center gap-3"
+        class="p-3 bg-error-10 border border-error-20 rounded-xl flex items-center gap-3"
       >
         <AlertCircle :size="16" class="text-error shrink-0" />
         <span class="text-xs text-error font-medium">{{ error }}</span>
@@ -172,7 +172,7 @@
       <div
         v-if="success"
         aria-live="polite"
-        class="p-3 bg-success/10 border border-success/20 rounded-xl flex items-center gap-3"
+        class="p-3 bg-success-10 border border-success-20 rounded-xl flex items-center gap-3"
       >
         <CheckCircle2 :size="16" class="text-success shrink-0" />
         <span class="text-xs text-success font-medium">{{ success }}</span>

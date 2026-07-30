@@ -14,8 +14,8 @@
         v-for="card in cards"
         :key="card.id"
         :class="[
-          'group relative bg-bg-secondary/40 border border-border-secondary rounded-2xl p-8 transition-all hover:border-border-tertiary hover:shadow-2xl hover:shadow-black/40',
-          card.isDanger ? 'hover:border-error/20' : ''
+          'group relative bg-bg-secondary-40 border border-border-secondary rounded-2xl p-8 transition-all hover:border-border-tertiary hover:shadow-2xl hover:shadow-black/40',
+          card.isDanger ? 'hover:border-error-20' : ''
         ]"
       >
         <div class="flex flex-col h-full space-y-6">
@@ -24,7 +24,7 @@
               :class="[
                 'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary transition-all',
                 card.isDanger
-                  ? 'text-error border-error/10'
+                  ? 'text-error border-error-10'
                   : `text-${card.color}-500 border-${card.color}-500/10 shadow-lg`
               ]"
             >
@@ -32,7 +32,7 @@
             </div>
             <span
               v-if="card.isDanger"
-              class="px-2 py-0.5 bg-error/10 text-error text-[9px] font-black uppercase tracking-widest border border-error/20 rounded"
+              class="px-2 py-0.5 bg-error-10 text-error text-[9px] font-black uppercase tracking-widest border border-error-20 rounded"
               >{{ locale.highRisk }}</span
             >
           </div>
@@ -51,7 +51,7 @@
             class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
             :class="
               card.isDanger
-                ? 'bg-bg-primary border border-error/30 text-error hover:bg-error hover:text-text-primary hover:border-rose-600 shadow-lg shadow-rose-900/5'
+                ? 'bg-bg-primary border border-error-30 text-error hover:bg-error hover:text-text-primary hover:border-rose-600 shadow-lg shadow-rose-900/5'
                 : ''
             "
             @click="openModal(card.id)"
@@ -65,14 +65,14 @@
         <div
           :class="[
             'absolute -right-4 -bottom-4 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none',
-            card.isDanger ? 'bg-error/5' : `bg-${card.color}-500/5`
+            card.isDanger ? 'bg-error-5' : `bg-${card.color}-500/5`
           ]"
         />
       </div>
     </div>
 
     <!-- 维护建议 -->
-    <div class="bg-primary-hover/5 border border-primary/10 rounded-xl p-5 flex items-start gap-4">
+    <div class="bg-primary-hover-5 border border-primary-10 rounded-xl p-5 flex items-start gap-4">
       <AlertCircle class="text-primary shrink-0 mt-0.5 w-[18px] h-[18px]" />
       <div class="space-y-1">
         <p class="text-[11px] font-bold text-text-secondary">{{ locale.maintenanceTitle }}</p>
@@ -87,7 +87,7 @@
       v-if="activeModal === 'backup'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
@@ -109,7 +109,7 @@
               <label
                 v-for="(item, i) in backupOptions"
                 :key="i"
-                class="flex items-start gap-4 p-4 bg-bg-primary/50 border border-border-secondary rounded-xl cursor-pointer hover:border-border-tertiary transition-all group"
+                class="flex items-start gap-4 p-4 bg-bg-primary-50 border border-border-secondary rounded-xl cursor-pointer hover:border-border-tertiary transition-all group"
               >
                 <div class="shrink-0 mt-0.5">
                   <input
@@ -129,13 +129,13 @@
               </label>
             </div>
           </div>
-          <div class="p-3 bg-primary/5 border border-primary/10 rounded-xl">
+          <div class="p-3 bg-primary-5 border border-primary-10 rounded-xl">
             <p class="text-[10px] text-text-tertiary text-center italic">
               {{ locale.backupHint }}
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-bg-primary/50 border-t border-border-secondary flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -158,7 +158,7 @@
       v-if="activeModal === 'restore'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
@@ -173,7 +173,7 @@
         </div>
         <div class="p-8 space-y-6">
           <div
-            class="border-2 border-dashed border-border-secondary rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-success/50 hover:bg-success/5 transition-all cursor-pointer"
+            class="border-2 border-dashed border-border-secondary rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-success-50 hover:bg-success-5 transition-all cursor-pointer"
             @click="$refs.fileInput.click()"
             @dragover.prevent
             @drop.prevent="handleFileDrop"
@@ -262,7 +262,7 @@
           </div>
 
           <div
-            class="p-4 bg-warning/5 border border-warning/10 rounded-xl flex items-start gap-3"
+            class="p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
           >
             <AlertCircle class="text-warning shrink-0 mt-0.5 w-4 h-4" />
             <p class="text-[10px] text-text-tertiary leading-normal font-medium">
@@ -270,7 +270,7 @@
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-bg-primary/50 border-t border-border-secondary flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -293,7 +293,7 @@
       v-if="activeModal === 'reset-seq'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
@@ -320,10 +320,10 @@
             />
           </div>
 
-          <div class="p-6 bg-bg-primary/50 border border-border-secondary rounded-2xl space-y-4">
+          <div class="p-6 bg-bg-primary-50 border border-border-secondary rounded-2xl space-y-4">
             <div class="flex items-center gap-3">
               <div
-                class="w-8 h-8 rounded-lg bg-warning/10 text-warning flex items-center justify-center"
+                class="w-8 h-8 rounded-lg bg-warning-10 text-warning flex items-center justify-center"
               >
                 <AlertCircle class="w-4 h-4" />
               </div>
@@ -336,7 +336,7 @@
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-bg-primary/50 border-t border-border-secondary flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
             class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
@@ -359,7 +359,7 @@
       v-if="activeModal === 'reset-db'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
         class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
@@ -374,7 +374,7 @@
         </div>
         <div class="p-8 space-y-6">
           <div
-            class="p-6 bg-error/10 border border-error/20 rounded-2xl flex flex-col items-center text-center"
+            class="p-6 bg-error-10 border border-error-20 rounded-2xl flex flex-col items-center text-center"
           >
             <Trash2 class="text-error mb-4 w-12 h-12" />
             <h4 class="text-lg font-black text-error tracking-tight">
@@ -390,12 +390,12 @@
 
           <div class="space-y-3">
             <label
-              class="text-[11px] font-black text-error/80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
+              class="text-[11px] font-black text-error-80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
             >
               {{ locale.confirmCodeLabel }}
             </label>
             <div
-              class="bg-bg-primary border border-error/30 rounded-xl px-4 py-3 font-mono text-[10px] text-error text-center select-all"
+              class="bg-bg-primary border border-error-30 rounded-xl px-4 py-3 font-mono text-[10px] text-error text-center select-all"
             >
               {{ CONFIRM_CODE }}
             </div>
@@ -403,7 +403,7 @@
               v-model="resetConfirmText"
               type="text"
               :placeholder="locale.confirmCodePlaceholder"
-              class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-error/40 text-center font-mono placeholder:text-text-secondary"
+              class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-error-40 text-center font-mono placeholder:text-text-secondary"
             >
           </div>
 

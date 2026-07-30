@@ -13,7 +13,7 @@
         class="fixed inset-0 z-[10000] flex items-center justify-center p-4"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-bg-primary/90 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-90 backdrop-blur-sm" />
 
         <div class="relative w-full max-w-6xl h-[90vh] flex flex-col" @click.stop>
           <!-- 顶部工具栏 -->
@@ -37,7 +37,7 @@
               {{ locale.openInBilibili }}
             </button>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/80 hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-80 hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary transition-all"
               :title="locale.close"
               @click="close"
             >

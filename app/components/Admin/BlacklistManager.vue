@@ -15,7 +15,7 @@
     </div>
 
     <!-- 添加黑名单项表单 -->
-    <section class="bg-bg-secondary/40 border border-border-secondary rounded-xl p-8 shadow-xl">
+    <section class="bg-bg-secondary-40 border border-border-secondary rounded-xl p-8 shadow-xl">
       <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em] mb-6 px-1">
         {{ locale.addTitle }}
       </h3>
@@ -52,7 +52,7 @@
             :placeholder="
               newItem.type === 'SONG' ? locale.songPlaceholder : locale.keywordPlaceholder
             "
-            class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 placeholder:text-text-secondary transition-all"
+            class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 placeholder:text-text-secondary transition-all"
           >
         </div>
 
@@ -64,7 +64,7 @@
             v-model="newItem.reason"
             type="text"
             :placeholder="locale.reasonPlaceholder"
-            class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 placeholder:text-text-secondary transition-all"
+            class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 placeholder:text-text-secondary transition-all"
           >
         </div>
 
@@ -77,7 +77,7 @@
             <Plus v-if="!loading" :size="16" />
             <div
               v-else
-              class="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+              class="w-4 h-4 border-2 border-primary-30 border-t-primary rounded-full animate-spin"
             />
             {{ loading ? locale.processing : locale.addButton }}
           </button>
@@ -87,7 +87,7 @@
 
     <!-- 筛选和搜索 -->
     <div
-      class="bg-bg-secondary/20 border border-border-secondary rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center"
+      class="bg-bg-secondary-20 border border-border-secondary rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center"
     >
       <div class="flex-1 relative w-full">
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" :size="18" />
@@ -95,7 +95,7 @@
           v-model="filters.search"
           type="text"
           :placeholder="locale.searchPlaceholder"
-          class="w-full bg-bg-primary/50 border border-border-secondary rounded-lg pl-12 pr-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary/30 placeholder:text-text-secondary transition-all"
+          class="w-full bg-bg-primary-50 border border-border-secondary rounded-lg pl-12 pr-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 placeholder:text-text-secondary transition-all"
           @input="debounceSearch"
         >
       </div>
@@ -138,16 +138,16 @@
           <div
             v-for="item in blacklist"
             :key="item.id"
-            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-bg-secondary/30 border rounded-xl transition-all hover:border-border-tertiary"
-            :class="[item.isActive ? 'border-border-secondary' : 'border-border-secondary/40 opacity-60']"
+            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-bg-secondary-30 border rounded-xl transition-all hover:border-border-tertiary"
+            :class="[item.isActive ? 'border-border-secondary' : 'border-border-secondary-40 opacity-60']"
           >
             <div class="flex-1 flex items-start gap-5">
               <div
                 class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border transition-all"
                 :class="[
                   item.type === 'SONG'
-                    ? 'bg-primary-hover/10 text-primary border-primary/20 shadow-lg shadow-blue-900/5'
-                    : 'bg-info/10 text-info border-info/20 shadow-lg shadow-purple-900/5'
+                    ? 'bg-primary-hover-10 text-primary border-primary-20 shadow-lg shadow-blue-900/5'
+                    : 'bg-info-10 text-info border-info-20 shadow-lg shadow-purple-900/5'
                 ]"
               >
                 <Music v-if="item.type === 'SONG'" :size="22" />
@@ -160,8 +160,8 @@
                     class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border"
                     :class="[
                       item.type === 'SONG'
-                        ? 'bg-primary-hover/10 text-primary border-primary/20'
-                        : 'bg-info/10 text-info border-info/20'
+                        ? 'bg-primary-hover-10 text-primary border-primary-20'
+                        : 'bg-info-10 text-info border-info-20'
                     ]"
                   >
                     {{ item.type === 'SONG' ? locale.song : locale.keyword }}
@@ -187,14 +187,14 @@
             </div>
 
             <div
-              class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-border-secondary/50"
+              class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-border-secondary-50"
             >
               <button
                 :disabled="loading"
                 class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                 :class="[
                   item.isActive
-                    ? 'bg-bg-tertiary text-text-tertiary hover:text-warning hover:bg-warning/5 hover:border-warning/10 border border-transparent'
+                    ? 'bg-bg-tertiary text-text-tertiary hover:text-warning hover:bg-warning-5 hover:border-warning-10 border border-transparent'
                     : 'bg-success text-text-primary shadow-lg shadow-emerald-900/20'
                 ]"
                 @click="toggleItemStatus(item)"
@@ -204,7 +204,7 @@
               </button>
               <button
                 :disabled="loading"
-                class="p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error/30 transition-all active:scale-95"
+                class="p-3 bg-bg-primary border border-border-secondary rounded-xl text-text-secondary hover:text-error hover:border-error-30 transition-all active:scale-95"
                 @click="deleteItem(item)"
               >
                 <Trash2 :size="16" />
@@ -227,7 +227,7 @@
         <!-- 空状态 -->
         <div
           v-else-if="blacklist.length === 0"
-          class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-bg-secondary/10 border border-border-secondary/40 border-dashed rounded-xl"
+          class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-bg-secondary-10 border border-border-secondary-40 border-dashed rounded-xl"
         >
           <div
             class="w-16 h-16 rounded-lg bg-bg-primary border border-border-secondary flex items-center justify-center text-text-primary shadow-xl"
@@ -253,7 +253,7 @@
           <ChevronLeft :size="20" />
         </button>
         <div
-          class="px-6 py-3 bg-bg-secondary/50 border border-border-secondary rounded-lg text-[11px] font-black text-text-tertiary uppercase tracking-widest"
+          class="px-6 py-3 bg-bg-secondary-50 border border-border-secondary rounded-lg text-[11px] font-black text-text-tertiary uppercase tracking-widest"
         >
           {{ locale.pagination(pagination.page, pagination.pages) }}
         </div>
@@ -278,7 +278,7 @@
     >
       <div
         v-if="showDeleteDialog"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
           class="w-full max-w-md bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
@@ -286,7 +286,7 @@
         >
           <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
             <div
-              class="w-16 h-16 rounded-lg bg-error/10 text-error flex items-center justify-center border border-error/20 shadow-2xl shadow-red-900/10"
+              class="w-16 h-16 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-2xl shadow-red-900/10"
             >
               <Trash2 :size="28" />
             </div>

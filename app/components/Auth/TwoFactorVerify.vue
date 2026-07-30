@@ -7,7 +7,7 @@
     >
       <div
         v-if="show"
-        class="fixed inset-0 z-[2000] bg-bg-primary/80 backdrop-blur-sm flex items-center justify-center p-4"
+        class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
         @click="$emit('cancel')"
       >
         <div 
@@ -69,7 +69,7 @@
               </button>
             </div>
 
-            <div v-if="error" class="p-3 bg-error/10 border border-error/20 rounded-lg flex items-center gap-2 text-error text-sm">
+            <div v-if="error" class="p-3 bg-error-10 border border-error-20 rounded-lg flex items-center gap-2 text-error text-sm">
               <AlertCircle :size="16" />
               <span>{{ error }}</span>
             </div>

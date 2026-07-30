@@ -2,7 +2,7 @@
   <Transition name="fade">
     <div
       v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
       @click="closeDialog"
     >
       <Transition name="scale">
@@ -28,7 +28,7 @@
           <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             <!-- 登录状态检查 -->
             <section v-if="!isLoggedIn" class="space-y-3">
-              <div class="bg-warning/10 border border-warning/20 rounded-2xl p-4">
+              <div class="bg-warning-10 border border-warning-20 rounded-2xl p-4">
                 <p class="text-xs text-warning mb-3">{{ locale.loginRequired }}</p>
                 <button
                   class="w-full py-2 px-4 bg-primary-hover hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-colors"
@@ -52,7 +52,7 @@
                     class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
                     :class="[
                       selectedQuality === option.value
-                        ? 'bg-primary-hover/10 border-primary shadow-sm'
+                        ? 'bg-primary-hover-10 border-primary shadow-sm'
                         : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                     ]"
                     @click="selectedQuality = option.value"
@@ -101,7 +101,7 @@
               <!-- 上传进度 -->
               <section
                 v-if="uploading || uploadProgress > 0"
-                class="space-y-3 pt-4 border-t border-border-secondary/50"
+                class="space-y-3 pt-4 border-t border-border-secondary-50"
               >
                 <div
                   class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
@@ -110,7 +110,7 @@
                   <span class="text-primary">{{ uploadProgress }}%</span>
                 </div>
                 <div
-                  class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary/50 relative"
+                  class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary-50 relative"
                 >
                   <div
                     class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"

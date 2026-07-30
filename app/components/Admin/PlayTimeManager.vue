@@ -10,7 +10,7 @@
       </div>
       <div class="flex items-center gap-3">
         <div
-          class="bg-bg-secondary/40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
+          class="bg-bg-secondary-40 border border-border-secondary rounded-xl px-4 py-2 flex items-center gap-3"
         >
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
             >{{ locale.enableSelection }}</span
@@ -40,7 +40,7 @@
     </div>
 
     <!-- 信息卡片 -->
-    <div class="bg-primary-hover/5 border border-primary/10 rounded-xl p-5 flex items-start gap-4">
+    <div class="bg-primary-hover-5 border border-primary-10 rounded-xl p-5 flex items-start gap-4">
       <Info class="text-primary shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
         <p class="text-xs font-bold text-text-secondary">{{ locale.aboutTitle }}</p>
@@ -53,10 +53,10 @@
     <!-- 加载状态 -->
     <div
       v-if="loading"
-      class="flex flex-col items-center justify-center py-20 space-y-4 bg-bg-secondary/20 border border-border-secondary/50 rounded-xl"
+      class="flex flex-col items-center justify-center py-20 space-y-4 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl"
     >
       <div
-        class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"
+        class="w-10 h-10 border-4 border-primary-20 border-t-primary rounded-full animate-spin"
       />
       <p class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ locale.loading }}</p>
     </div>
@@ -64,7 +64,7 @@
     <!-- 错误状态 -->
     <div
       v-else-if="error"
-      class="bg-error/5 border border-error/10 rounded-xl p-5 flex items-start gap-4"
+      class="bg-error-5 border border-error-10 rounded-xl p-5 flex items-start gap-4"
     >
       <AlertCircle class="text-error shrink-0 mt-0.5" :size="18" />
       <div class="space-y-1">
@@ -76,7 +76,7 @@
     <!-- 空状态 -->
     <div
       v-else-if="playTimes.length === 0"
-      class="flex flex-col items-center justify-center py-20 space-y-6 bg-bg-secondary/20 border border-border-secondary/50 rounded-xl"
+      class="flex flex-col items-center justify-center py-20 space-y-6 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl"
     >
       <div class="p-6 rounded-xl bg-bg-primary border border-border-secondary text-text-secondary">
         <Clock :size="48" />
@@ -94,15 +94,15 @@
           v-for="playTime in playTimes"
           :key="playTime.id"
           :class="[
-            'group relative bg-bg-secondary/30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
-            playTime.enabled ? 'border-border-secondary/80' : 'border-border-secondary/40 opacity-60'
+            'group relative bg-bg-secondary-30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-black/40',
+            playTime.enabled ? 'border-border-secondary-80' : 'border-border-secondary-40 opacity-60'
           ]"
         >
           <div class="flex items-start justify-between mb-6">
             <div
               :class="[
                 'p-3 rounded-xl bg-bg-primary border border-border-secondary transition-all',
-                playTime.enabled ? 'text-primary border-primary/20' : 'text-text-secondary'
+                playTime.enabled ? 'text-primary border-primary-20' : 'text-text-secondary'
               ]"
             >
               <Clock :size="20" />
@@ -112,8 +112,8 @@
                 :class="[
                   'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border transition-all',
                   playTime.enabled
-                    ? 'bg-success/10 text-success border-success/20'
-                    : 'bg-bg-tertiary/50 text-text-disabled border-border-tertiary/50'
+                    ? 'bg-success-10 text-success border-success-20'
+                    : 'bg-bg-tertiary-50 text-text-disabled border-border-tertiary-50'
                 ]"
               >
                 {{ playTime.enabled ? locale.enabled : locale.disabled }}
@@ -132,7 +132,7 @@
                 {{ playTime.name }}
               </h4>
               <div
-                class="flex items-center gap-2 mt-1.5 text-primary/80 font-black tracking-tighter"
+                class="flex items-center gap-2 mt-1.5 text-primary-80 font-black tracking-tighter"
               >
                 <span class="text-xl">{{ playTime.startTime || locale.unlimited }}</span>
                 <div class="w-4 h-[2px] bg-bg-tertiary" />
@@ -145,16 +145,16 @@
             </p>
           </div>
 
-          <div class="mt-8 pt-6 border-t border-border-secondary/50 flex items-center justify-between">
+          <div class="mt-8 pt-6 border-t border-border-secondary-50 flex items-center justify-between">
             <div class="flex gap-2">
               <button
-                class="p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary/30 transition-all"
+                class="p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-primary hover:border-primary-30 transition-all"
                 @click="editPlayTime(playTime)"
               >
                 <Edit2 :size="14" />
               </button>
               <button
-                class="p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-error hover:border-error/30 transition-all"
+                class="p-2.5 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-error hover:border-error-30 transition-all"
                 @click="confirmDelete(playTime)"
               >
                 <Trash2 :size="14" />
@@ -183,7 +183,7 @@
         v-if="showAddForm || editingPlayTime"
         class="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
-        <div class="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm" @click="cancelForm" />
+        <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="cancelForm" />
         <div
           class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
         >
@@ -209,7 +209,7 @@
                   v-model="formData.name"
                   type="text"
                   :placeholder="locale.namePlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
 
@@ -222,7 +222,7 @@
                     <input
                       v-model="formData.startTime"
                       type="time"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary/30 appearance-none"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 appearance-none"
                     >
                     <Clock
                       class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
@@ -239,7 +239,7 @@
                     <input
                       v-model="formData.endTime"
                       type="time"
-                      class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary/30 appearance-none"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-3.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 appearance-none"
                     >
                     <Clock
                       class="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
@@ -259,7 +259,7 @@
                 <textarea
                   v-model="formData.description"
                   :placeholder="locale.descriptionPlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-4 text-sm text-text-primary focus:outline-none focus:border-primary/30 min-h-[100px] resize-none"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-5 py-4 text-sm text-text-primary focus:outline-none focus:border-primary-30 min-h-[100px] resize-none"
                 />
               </div>
 
@@ -277,14 +277,14 @@
 
               <div
                 v-if="formError"
-                class="bg-error/10 border border-error/20 rounded-lg p-3 text-[11px] text-error"
+                class="bg-error-10 border border-error-20 rounded-lg p-3 text-[11px] text-error"
               >
                 {{ formError }}
               </div>
             </div>
           </div>
 
-          <div class="px-8 py-6 bg-bg-primary/50 border-t border-border-secondary flex justify-end gap-3">
+          <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex justify-end gap-3">
             <button
               class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelForm"
@@ -307,7 +307,7 @@
     <Transition name="modal">
       <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          class="absolute inset-0 bg-bg-primary/80 backdrop-blur-sm"
+          class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm"
           @click="showDeleteConfirm = false"
         />
         <div
@@ -316,7 +316,7 @@
           <div class="p-8">
             <div class="flex flex-col items-center py-4 space-y-6">
               <div
-                class="w-16 h-16 rounded-xl bg-error/10 text-error flex items-center justify-center border border-error/10 shadow-xl shadow-red-900/5"
+                class="w-16 h-16 rounded-xl bg-error-10 text-error flex items-center justify-center border border-error-10 shadow-xl shadow-red-900/5"
               >
                 <AlertCircle :size="32" />
               </div>

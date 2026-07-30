@@ -11,7 +11,7 @@
       <!-- 首页 -->
       <button
         :disabled="currentPage === 1"
-        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary/30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.first"
         @click="goToPage(1)"
       >
@@ -21,7 +21,7 @@
       <!-- 上一页 -->
       <button
         :disabled="currentPage === 1"
-        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary/30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.prev"
         @click="goToPage(currentPage - 1)"
       >
@@ -37,7 +37,7 @@
             'w-10 h-10 rounded-lg text-xs font-black transition-all shadow-lg',
             currentPage === page
               ? 'bg-primary-hover text-text-primary shadow-blue-900/20'
-              : 'border border-border-secondary text-text-secondary hover:text-primary hover:border-primary/30 shadow-none'
+              : 'border border-border-secondary text-text-secondary hover:text-primary hover:border-primary-30 shadow-none'
           ]"
           @click="goToPage(page)"
         >
@@ -48,7 +48,7 @@
       <!-- 下一页 -->
       <button
         :disabled="currentPage === totalPages"
-        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary/30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.next"
         @click="goToPage(currentPage + 1)"
       >
@@ -58,7 +58,7 @@
       <!-- 尾页 -->
       <button
         :disabled="currentPage === totalPages"
-        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary/30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.last"
         @click="goToPage(totalPages)"
       >
@@ -71,7 +71,7 @@
           <input
             v-model="jumpPageInput"
             type="text"
-            class="w-12 h-10 bg-bg-primary border border-border-secondary rounded-lg text-center text-xs font-black text-text-secondary focus:outline-none focus:border-primary/50 transition-all"
+            class="w-12 h-10 bg-bg-primary border border-border-secondary rounded-lg text-center text-xs font-black text-text-secondary focus:outline-none focus:border-primary-50 transition-all"
             :placeholder="locale.pagePlaceholder"
             @keyup.enter="handleJump"
           >

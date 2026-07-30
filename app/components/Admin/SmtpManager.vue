@@ -31,7 +31,7 @@
       <!-- 左侧栏：SMTP 设置与测试 -->
       <div class="xl:col-span-4 space-y-8">
         <!-- SMTP 核心设置 -->
-        <section class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <div class="flex items-center justify-between">
             <h3
               class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
@@ -59,7 +59,7 @@
                 v-model="config.smtpHost"
                 type="text"
                 placeholder="smtp.example.com"
-                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -71,7 +71,7 @@
                   v-model.number="config.smtpPort"
                   type="number"
                   placeholder="587"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
               <div class="space-y-1.5">
@@ -94,7 +94,7 @@
                 v-model="config.smtpUsername"
                 type="text"
                 placeholder="your-email@example.com"
-                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
             <div class="space-y-1.5">
@@ -105,7 +105,7 @@
                 v-model="config.smtpFromEmail"
                 type="text"
                 :placeholder="config.smtpUsername || 'your-email@example.com'"
-                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
               <p class="text-[9px] text-text-tertiary px-1 italic">
                 {{ locale.fromEmailHint }}
@@ -119,7 +119,7 @@
                 v-model="config.smtpPassword"
                 type="password"
                 placeholder="••••••••••••"
-                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
             <div class="space-y-1.5">
@@ -130,14 +130,14 @@
                 v-model="config.smtpFromName"
                 type="text"
                 :placeholder="locale.defaultFromName"
-                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
           </div>
         </section>
 
         <!-- SMTP 测试模块 -->
-        <section class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
+        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <h3
             class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
           >
@@ -154,7 +154,7 @@
                   v-model="testEmail"
                   type="email"
                   :placeholder="locale.testEmailPlaceholder"
-                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
                 <button
                   class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
@@ -173,8 +173,8 @@
                 class="flex items-center gap-2 p-3 rounded-xl text-xs"
                 :class="
                   testResult.success
-                    ? 'bg-success/10 text-success border border-success/20'
-                    : 'bg-error/10 text-error border border-error/20'
+                    ? 'bg-success-10 text-success border border-success-20'
+                    : 'bg-error-10 text-error border border-error-20'
                 "
               >
                 <CheckCircle v-if="testResult.success" :size="14" />

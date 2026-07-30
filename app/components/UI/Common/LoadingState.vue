@@ -1,7 +1,7 @@
 <template>
   <div
     :class="{
-      'fixed inset-0 z-[9999] bg-bg-primary/80 backdrop-blur-md': fullScreen,
+      'fixed inset-0 z-[9999] bg-bg-primary-80 backdrop-blur-md': fullScreen,
       'min-h-[200px] py-12': !fullScreen
     }"
     class="flex flex-col items-center justify-center animate-in fade-in duration-300"
@@ -12,9 +12,9 @@
         <!-- 默认圆形加载器 -->
         <div v-if="spinnerType === 'circle'" class="relative">
           <div
-            class="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"
+            class="w-12 h-12 border-4 border-primary-20 border-t-primary rounded-full animate-spin"
           />
-          <div class="absolute inset-0 blur-lg bg-primary/20 rounded-full animate-pulse" />
+          <div class="absolute inset-0 blur-lg bg-primary-20 rounded-full animate-pulse" />
         </div>
 
         <!-- 点状加载器 -->
@@ -88,13 +88,13 @@
             <div class="relative flex items-center justify-center w-6 h-6">
               <div
                 v-if="index < currentStep"
-                class="flex items-center justify-center w-6 h-6 bg-primary/10 border border-primary/20 rounded-lg"
+                class="flex items-center justify-center w-6 h-6 bg-primary-10 border border-primary-20 rounded-lg"
               >
                 <Check :size="12" class="text-primary" />
               </div>
               <div
                 v-else-if="index === currentStep"
-                class="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-lg animate-spin"
+                class="w-6 h-6 border-2 border-primary-20 border-t-primary rounded-lg animate-spin"
               />
               <div
                 v-else

@@ -37,7 +37,7 @@
 
         <button
           v-if="getIdentityByProvider(provider.key)"
-          class="px-4 py-1.5 bg-error/10 border border-error/20 hover:bg-error/20 text-error text-xs font-black rounded-xl transition-all disabled:opacity-50"
+          class="px-4 py-1.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all disabled:opacity-50"
           :disabled="actionLoading"
           @click="confirmUnbind(provider.key)"
         >
@@ -58,7 +58,7 @@
         v-if="isWebAuthnSupported || webauthnIdentities.length > 0 || !isSecureContext"
         :class="[
           itemClass,
-          webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-bg-secondary/70' : ''
+          webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-bg-secondary-70' : ''
         ]"
         @click="toggleWebAuthnList"
       >
@@ -94,7 +94,7 @@
         </button>
         <div
           v-else-if="!isSecureContext"
-          class="flex items-center gap-1 text-warning bg-warning/10 px-3 py-1.5 rounded-lg border border-warning/20"
+          class="flex items-center gap-1 text-warning bg-warning-10 px-3 py-1.5 rounded-lg border border-warning-20"
         >
           <AlertTriangle :size="12" />
           <span class="text-[10px] font-medium">{{ locale.httpsRequired }}</span>
@@ -111,7 +111,7 @@
             <div
               v-for="cred in webauthnIdentities"
               :key="cred.id"
-              class="flex items-center justify-between p-3 bg-bg-primary/20 border border-border-secondary rounded-xl group/item"
+              class="flex items-center justify-between p-3 bg-bg-primary-20 border border-border-secondary rounded-xl group/item"
             >
               <div class="flex flex-col flex-1 mr-4">
                 <div v-if="editingId === cred.id" class="flex items-center gap-2 mb-1">
@@ -299,7 +299,7 @@ const confirmDialog = ref({
 
 // 样式类
 const itemClass =
-  'flex items-center justify-between p-4 bg-bg-primary/30 border border-border-secondary rounded-2xl hover:bg-bg-secondary/50 transition-all group'
+  'flex items-center justify-between p-4 bg-bg-primary-30 border border-border-secondary rounded-2xl hover:bg-bg-secondary-50 transition-all group'
 
 const aggregateIconClass = (loginType) => {
   const classes = {

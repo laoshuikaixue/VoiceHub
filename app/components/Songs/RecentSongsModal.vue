@@ -10,18 +10,18 @@
     >
       <div
         v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
         @click.self="close"
       >
         <div
           class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
         >
           <!-- 头部 -->
-          <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary/50">
+          <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
             <div>
               <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                 <div
-                  class="w-10 h-10 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                  class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="history" :size="20" />
                 </div>
@@ -30,7 +30,7 @@
               <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.recentDesc }}</p>
             </div>
             <button
-              class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+              class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -54,7 +54,7 @@
               class="flex flex-col items-center justify-center py-20 text-center px-8"
             >
               <div
-                class="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center text-error mb-4"
+                class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center text-error mb-4"
               >
                 <Icon name="alert-triangle" :size="32" />
               </div>
@@ -79,7 +79,7 @@
               <div
                 v-for="item in songs"
                 :key="item.resourceId"
-                class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-bg-tertiary/50 transition-all border border-transparent hover:border-border-secondary"
+                class="group flex items-center gap-4 p-3 rounded-2xl hover:bg-bg-tertiary-50 transition-all border border-transparent hover:border-border-secondary"
               >
                 <div
                   class="relative w-14 h-14 rounded-xl overflow-hidden bg-bg-tertiary flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform duration-300"
@@ -91,11 +91,11 @@
                     loading="lazy"
                   >
                   <div
-                    class="absolute inset-0 bg-bg-primary/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    class="absolute inset-0 bg-bg-primary-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     @click.stop="playSong(item.data)"
                   >
                     <div
-                      class="w-8 h-8 rounded-full bg-bg-secondary/20 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary/30"
+                      class="w-8 h-8 rounded-full bg-bg-secondary-20 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-30"
                     >
                       <Icon name="play" :size="14" class="fill-current" />
                     </div>
@@ -123,7 +123,7 @@
                 <div class="flex flex-col items-end gap-2">
                   <div
                     v-if="songsLoadingForSimilar"
-                    class="flex items-center gap-2 px-3 py-1 bg-bg-tertiary/50 rounded-lg"
+                    class="flex items-center gap-2 px-3 py-1 bg-bg-tertiary-50 rounded-lg"
                   >
                     <Icon name="refresh" :size="10" class="animate-spin text-text-tertiary" />
                     <span class="text-[10px] text-text-tertiary font-black uppercase">{{ locale.checking }}</span>
@@ -133,9 +133,9 @@
                       :class="[
                         'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border',
                         getSimilarSong(item.data)?.played
-                          ? 'bg-success/10 text-success border-success/20'
+                          ? 'bg-success-10 text-success border-success-20'
                           : getSimilarSong(item.data)?.scheduled
-                            ? 'bg-warning/10 text-warning border-warning/20'
+                            ? 'bg-warning-10 text-warning border-warning-20'
                             : 'bg-bg-tertiary text-text-tertiary border-border-tertiary'
                       ]"
                     >
@@ -167,7 +167,7 @@
                           getSimilarSong(item.data)?.voted ||
                           submitting
                         "
-                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-quaternary disabled:bg-bg-secondary/50 text-text-tertiary disabled:text-text-secondary text-[10px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
+                        class="px-3 py-1.5 bg-bg-tertiary hover:bg-bg-quaternary disabled:bg-bg-secondary-50 text-text-tertiary disabled:text-text-secondary text-[10px] font-black rounded-lg transition-all uppercase tracking-widest flex items-center gap-1.5"
                         @click="
                           getSimilarSong(item.data)?.played || getSimilarSong(item.data)?.scheduled
                             ? null
@@ -202,7 +202,7 @@
 
           <!-- 底部栏 -->
           <div
-            class="p-6 border-t border-border-secondary/50 bg-bg-secondary/50 flex items-center justify-between"
+            class="p-6 border-t border-border-secondary-50 bg-bg-secondary-50 flex items-center justify-between"
           >
             <div
               class="flex items-center gap-2 text-[10px] font-black text-text-disabled uppercase tracking-widest"

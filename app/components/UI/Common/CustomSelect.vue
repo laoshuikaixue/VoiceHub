@@ -5,7 +5,7 @@
       :class="[
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         isOpen
-          ? 'border-primary/50 bg-primary-hover/5 shadow-lg'
+          ? 'border-primary-50 bg-primary-hover-5 shadow-lg'
           : 'border-border-secondary hover:border-border-tertiary'
       ]"
       @click="toggleDropdown"
@@ -48,8 +48,8 @@
               class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="[
                 isSelected(option)
-                  ? 'bg-primary-hover/10 text-primary'
-                  : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary/40'
+                  ? 'bg-primary-hover-10 text-primary'
+                  : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-40'
               ]"
               @click="selectOption(option)"
             >

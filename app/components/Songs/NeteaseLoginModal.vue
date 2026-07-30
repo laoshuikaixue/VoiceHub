@@ -13,18 +13,18 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4"
         @click="handleClose"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-sm bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
-          <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary/50">
+          <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
             <div>
               <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                 <div
-                  class="w-10 h-10 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                  class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="music" :size="20" />
                 </div>
@@ -33,7 +33,7 @@
               <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.neteaseDesc }}</p>
             </div>
             <button
-              class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+              class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
               @click="handleClose"
             >
               <Icon name="x" :size="20" />
@@ -57,7 +57,7 @@
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 bg-bg-secondary/90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-bg-secondary/80"
+                  class="absolute inset-0 bg-bg-secondary-90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-bg-secondary-80"
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-text-primary">
@@ -104,7 +104,7 @@
             </div>
 
             <!-- 说明提示 -->
-            <div class="mt-8 p-4 bg-bg-tertiary/30 rounded-2xl border border-border-secondary/50 w-full">
+            <div class="mt-8 p-4 bg-bg-tertiary-30 rounded-2xl border border-border-secondary-50 w-full">
               <p
                 class="text-[10px] leading-relaxed text-text-tertiary text-center uppercase tracking-[0.15em] font-black"
               >

@@ -312,7 +312,7 @@
                       <Icon :size="14" name="download" />
                     </button>
                     <button
-                      class="action-btn-compact text-error hover:text-error hover:bg-error/10"
+                      class="action-btn-compact text-error hover:text-error hover:bg-error-10"
                       :aria-label="locale.logout"
                       :title="locale.logout"
                       type="button"
@@ -359,7 +359,7 @@
 
                   <div class="user-actions-row">
                     <button
-                      class="action-btn-compact text-error hover:bg-error/10 hover:text-error"
+                      class="action-btn-compact text-error hover:bg-error-10 hover:text-error"
                       :aria-label="locale.logoutQQ"
                       :title="locale.logoutQQ"
                       type="button"
@@ -463,7 +463,7 @@
                     id="submission-note"
                     v-model="submissionNote"
                     maxlength="300"
-                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary/60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
                   />
                   <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
                     <span>{{ submissionNote.length }}/300</span>
@@ -487,8 +487,8 @@
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                             cardCodeFieldMeta.required
-                              ? 'border-warning/30 bg-warning/10 text-yellow-300'
-                              : 'border-border-tertiary bg-bg-tertiary/70 text-text-tertiary'
+                              ? 'border-warning-30 bg-warning-10 text-yellow-300'
+                              : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
                           ]"
                         >
                           {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
@@ -500,7 +500,7 @@
                           cardCodeValidation.valid
                             ? 'text-emerald-300/80'
                             : cardCodeValidation.valid === false
-                              ? 'text-error/80'
+                              ? 'text-error-80'
                               : cardCodeFieldMeta.required
                                 ? 'text-yellow-300/80'
                                 : 'text-text-tertiary'
@@ -512,7 +512,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning/25 bg-warning/10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-warning/40 hover:bg-warning/15"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-warning-40 hover:bg-warning-15"
                       type="button"
                       @click="openCardCodeModal"
                     >
@@ -521,7 +521,7 @@
                     </button>
                     <button
                       v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary/80 text-text-tertiary transition-all hover:border-error/30 hover:text-error"
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary-80 text-text-tertiary transition-all hover:border-error-30 hover:text-error"
                       :title="locale.clearCardCode"
                       type="button"
                       @click="clearCardCode"
@@ -918,14 +918,14 @@
       >
         <div
           v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary-80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
           @click.self="closeCardCodeModal"
         >
           <div
             class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
             @click.stop
           >
-            <div class="flex items-center justify-between border-b border-border-secondary/70 px-5 py-4">
+            <div class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4">
               <div>
                 <div class="flex items-center gap-2">
                   <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
@@ -933,8 +933,8 @@
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                       cardCodeFieldMeta.required
-                        ? 'border-warning/30 bg-warning/10 text-yellow-300'
-                        : 'border-border-tertiary bg-bg-tertiary/70 text-text-tertiary'
+                        ? 'border-warning-30 bg-warning-10 text-yellow-300'
+                        : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
                     ]"
                   >
                     {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
@@ -943,7 +943,7 @@
                 <p class="mt-1 text-[11px] text-text-tertiary">{{ cardCodeFieldMeta.helper }}</p>
               </div>
               <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary/60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
+                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary-60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
                 type="button"
                 @click="closeCardCodeModal"
               >
@@ -963,7 +963,7 @@
                 ref="cardCodeInputRef"
                 v-model="cardCodeDraft"
                 :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-zinc-600 transition-all focus:border-warning/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
+                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-zinc-600 transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
               />
@@ -973,7 +973,7 @@
                   cardCodeValidation.valid
                     ? 'text-emerald-300/80'
                     : cardCodeValidation.valid === false
-                      ? 'text-error/80'
+                      ? 'text-error-80'
                       : 'text-text-tertiary'
                 ]"
               >
@@ -982,7 +982,7 @@
             </div>
 
             <div
-              class="flex flex-col-reverse gap-2 border-t border-border-secondary/70 bg-bg-secondary/70 px-5 py-4 sm:flex-row sm:justify-end"
+              class="flex flex-col-reverse gap-2 border-t border-border-secondary-70 bg-bg-secondary-70 px-5 py-4 sm:flex-row sm:justify-end"
             >
               <button
                 class="rounded-lg px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:text-text-secondary"
@@ -993,7 +993,7 @@
               </button>
               <button
                 v-if="trimmedCardCode"
-                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error/30 hover:text-error"
+                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error-30 hover:text-error"
                 type="button"
                 @click="clearCardCode"
               >
@@ -1024,7 +1024,7 @@
       >
         <div
           v-if="showAudioMatchModal"
-          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary/85 backdrop-blur-sm"
+          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-85 backdrop-blur-sm"
         >
           <div
             class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
@@ -1036,10 +1036,10 @@
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
                   :class="
                     audioMatchRecording
-                      ? 'bg-error/20 text-error scale-110'
+                      ? 'bg-error-20 text-error scale-110'
                       : audioMatchError
-                        ? 'bg-bg-tertiary/50 text-text-tertiary'
-                        : 'bg-primary/10 text-primary'
+                        ? 'bg-bg-tertiary-50 text-text-tertiary'
+                        : 'bg-primary-10 text-primary'
                   "
                 >
                   <Icon :size="32" name="mic" />
@@ -1095,7 +1095,7 @@
               v-if="audioMatchResults.length"
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
-              <div class="border-t border-border-secondary/60 pt-5">
+              <div class="border-t border-border-secondary-60 pt-5">
                 <h4 class="text-sm font-semibold text-text-secondary mb-4">{{ locale.audioMatchResults }}</h4>
                 <div class="space-y-2">
                   <button
@@ -1107,7 +1107,7 @@
                   >
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                       <div
-                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-bg-tertiary/50 flex items-center justify-center"
+                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-bg-tertiary-50 flex items-center justify-center"
                         @click.stop="playAudioMatchResult(match)"
                       >
                         <img
@@ -1117,7 +1117,7 @@
                         />
                         <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
-                          class="absolute inset-0 bg-bg-primary/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
+                          class="absolute inset-0 bg-bg-primary-50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
                         >
                           <Play class="w-4 h-4 text-text-primary fill-white" />
                         </div>
@@ -1153,7 +1153,7 @@
       >
         <div
           v-if="showManualModal"
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-bg-primary/80 backdrop-blur-sm"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-80 backdrop-blur-sm"
           @click.self="showManualModal = false"
         >
           <div
@@ -1162,18 +1162,18 @@
           >
             <!-- Header -->
             <div
-              class="px-8 py-6 border-b border-border-secondary/50 flex items-center justify-between shrink-0"
+              class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between shrink-0"
             >
               <div class="flex items-center gap-4">
                 <div
-                  class="w-12 h-12 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                  class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Edit3 :size="24" />
                 </div>
                 <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.manualTitle }}</h3>
               </div>
               <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
                 @click="showManualModal = false"
               >
                 <X class="w-5 h-5" />
@@ -1211,7 +1211,7 @@
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
-                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary-30 transition-all"
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
@@ -1233,7 +1233,7 @@
                         'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
                           ? 'border-error/50 focus:border-error/50'
-                          : 'border-border-secondary focus:border-primary/30'
+                          : 'border-border-secondary focus:border-primary-30'
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
@@ -1253,13 +1253,13 @@
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!coverValidation.valid"
-                        class="text-[10px] font-bold text-error/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-success/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1282,7 +1282,7 @@
                         'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
                           ? 'border-error/50 focus:border-error/50'
-                          : 'border-border-secondary focus:border-primary/30'
+                          : 'border-border-secondary focus:border-primary-30'
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
@@ -1302,13 +1302,13 @@
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!playUrlValidation.valid"
-                        class="text-[10px] font-bold text-error/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-success/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1320,7 +1320,7 @@
 
             <!-- Footer -->
             <div
-              class="px-8 py-6 bg-bg-secondary/50 border-t border-border-secondary/50 flex gap-3 justify-end shrink-0"
+              class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end shrink-0"
             >
               <button
                 class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-all"

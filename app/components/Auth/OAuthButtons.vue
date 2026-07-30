@@ -94,7 +94,7 @@ const providerButtonClass = (provider) => {
     return `${baseClass} hover:bg-[#0f766e] hover:text-text-primary hover:border-[#0f766e]`
   }
 
-  return `${baseClass} hover:border-primary/40 hover:text-primary`
+  return `${baseClass} hover:border-primary-40 hover:text-primary`
 }
 
 const loginWith = (provider) => {

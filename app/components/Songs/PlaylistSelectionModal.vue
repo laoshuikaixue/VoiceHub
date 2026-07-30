@@ -13,7 +13,7 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -24,7 +24,7 @@
             <div class="flex items-center gap-4">
               <button
                 v-if="view === 'songs'"
-                class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+                class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
                 @click="backToPlaylists"
               >
                 <Icon name="arrow-left" :size="20" />
@@ -36,7 +36,7 @@
               </h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -58,7 +58,7 @@
               class="flex flex-col items-center justify-center py-20 text-center px-8"
             >
               <div
-                class="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center mb-4"
               >
                 <Icon name="alert-circle" :size="32" class="text-error" />
               </div>
@@ -78,7 +78,7 @@
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="music" :size="32" class="opacity-20" />
                 </div>
@@ -89,7 +89,7 @@
                 v-for="playlist in playlists"
                 v-else
                 :key="playlist.id"
-                class="group flex items-center p-4 bg-bg-tertiary/30 border border-border-secondary/50 rounded-3xl hover:bg-bg-tertiary/50 hover:border-border-tertiary transition-all cursor-pointer"
+                class="group flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-3xl hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all cursor-pointer"
                 @click="selectPlaylist(playlist)"
               >
                 <div class="w-16 h-16 rounded-2xl overflow-hidden bg-bg-tertiary mr-4 flex-shrink-0">
@@ -130,7 +130,7 @@
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="music" :size="32" class="opacity-20" />
                 </div>
@@ -141,7 +141,7 @@
                 v-for="song in songs"
                 v-else
                 :key="song.id"
-                class="group flex items-center p-4 bg-bg-tertiary/30 border border-border-secondary/50 rounded-3xl hover:bg-bg-tertiary/50 hover:border-border-tertiary transition-all"
+                class="group flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-3xl hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all"
               >
                 <!-- 封面与播放叠加层 -->
                 <div
@@ -155,10 +155,10 @@
                     loading="lazy"
                   >
                   <div
-                    class="absolute inset-0 bg-bg-primary/40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity"
+                    class="absolute inset-0 bg-bg-primary-40 flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity"
                   >
                     <div
-                      class="w-8 h-8 rounded-full bg-bg-secondary/20 backdrop-blur-md flex items-center justify-center"
+                      class="w-8 h-8 rounded-full bg-bg-secondary-20 backdrop-blur-md flex items-center justify-center"
                     >
                       <Icon name="play" :size="16" class="text-text-primary fill-current" />
                     </div>
@@ -190,19 +190,19 @@
                   <div v-else-if="getSimilarSong(song)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(song)?.played"
-                      class="px-2 py-0.5 rounded-md bg-error/10 text-error text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-error-10 text-error text-[10px] font-black uppercase tracking-wider"
                     >
                   {{ requestLocale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(song)?.scheduled"
-                      class="px-2 py-0.5 rounded-md bg-warning/10 text-warning text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-warning-10 text-warning text-[10px] font-black uppercase tracking-wider"
                     >
                   {{ requestLocale.scheduled }}
                     </span>
                     <span
                       v-else
-                      class="px-2 py-0.5 rounded-md bg-bg-quaternary/50 text-text-tertiary text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-bg-quaternary-50 text-text-tertiary text-[10px] font-black uppercase tracking-wider"
                     >
                   {{ locale.exists }}
                     </span>
@@ -221,8 +221,8 @@
                         class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
                         :class="[
                           getSimilarSong(song)?.voted
-                            ? 'bg-error/10 text-error border border-error/20'
-                            : 'bg-bg-tertiary text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary border border-border-tertiary/50 hover:border-border-tertiary'
+                            ? 'bg-error-10 text-error border border-error-20'
+                            : 'bg-bg-tertiary text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary border border-border-tertiary-50 hover:border-border-tertiary'
                         ]"
                         :disabled="
                           getSimilarSong(song)?.played ||

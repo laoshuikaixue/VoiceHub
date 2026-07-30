@@ -13,7 +13,7 @@
       @click="handleOverlayClick"
     >
       <!-- 遮罩层 -->
-      <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+      <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
       <!-- 模态框面板 -->
       <transition
@@ -31,7 +31,7 @@
         >
           <!-- 头部 -->
           <div
-            class="flex items-center justify-between px-6 py-4 border-b border-border-secondary bg-bg-secondary/50 backdrop-blur-sm"
+            class="flex items-center justify-between px-6 py-4 border-b border-border-secondary bg-bg-secondary-50 backdrop-blur-sm"
           >
             <h3 class="text-lg font-semibold text-text-primary">{{ locale.title }}</h3>
             <button
@@ -99,7 +99,7 @@
 
               <!-- 工具栏 (标签页 + 过滤) -->
               <div
-                class="flex flex-col sm:flex-row items-center justify-between border-b border-border-secondary bg-bg-secondary/50"
+                class="flex flex-col sm:flex-row items-center justify-between border-b border-border-secondary bg-bg-secondary-50"
               >
                 <!-- 标签页 -->
                 <div class="flex w-full sm:w-auto overflow-x-auto no-scrollbar">
@@ -110,7 +110,7 @@
                     :class="
                       activeTab === tab.id
                         ? 'text-primary'
-                        : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary/50'
+                        : 'text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary-50'
                     "
                     @click="activeTab = tab.id"
                   >
@@ -119,7 +119,7 @@
                       class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
                       :class="
                         activeTab === tab.id
-                          ? 'bg-primary/10 text-primary'
+                          ? 'bg-primary-10 text-primary'
                           : 'bg-bg-tertiary text-text-tertiary'
                       "
                     >
@@ -135,7 +135,7 @@
 
                 <!-- 学期过滤器 -->
                 <div
-                  class="w-full sm:w-auto px-4 py-2 border-t sm:border-t-0 sm:border-l border-border-secondary flex items-center gap-3 bg-bg-secondary/30"
+                  class="w-full sm:w-auto px-4 py-2 border-t sm:border-t-0 sm:border-l border-border-secondary flex items-center gap-3 bg-bg-secondary-30"
                 >
                   <CustomSelect
                     v-model="selectedSemester"
@@ -160,7 +160,7 @@
                 <div
                   v-for="song in filteredSongs"
                   :key="song.id"
-                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-secondary bg-bg-tertiary/20 hover:bg-bg-tertiary/50 hover:border-border-tertiary transition-all duration-200"
+                  class="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border-secondary bg-bg-tertiary-20 hover:bg-bg-tertiary-50 hover:border-border-tertiary transition-all duration-200"
                 >
                   <!-- 歌曲信息 -->
                   <div class="flex-1 min-w-0">
@@ -224,7 +224,7 @@
                   <!-- 投稿人信息 (移动端) -->
                   <div
                     v-if="song.requester"
-                    class="sm:hidden pt-3 mt-1 border-t border-border-secondary/50 flex justify-between items-center text-xs"
+                    class="sm:hidden pt-3 mt-1 border-t border-border-secondary-50 flex justify-between items-center text-xs"
                   >
                     <span class="text-text-tertiary">{{ locale.requester }}</span>
                     <span class="text-text-secondary">
@@ -437,12 +437,12 @@ const getStatusText = (song) => {
 
 const getStatusClasses = (song) => {
   if (song.played) {
-    return 'bg-success/10 text-success border-success/20'
+    return 'bg-success-10 text-success border-success-20'
   }
   if (song.scheduled) {
-    return 'bg-primary/10 text-primary border-primary/20'
+    return 'bg-primary-10 text-primary border-primary-20'
   }
-  return 'bg-warning/10 text-warning border-warning/20'
+  return 'bg-warning-10 text-warning border-warning-20'
 }
 
 // 监听器

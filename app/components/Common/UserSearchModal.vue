@@ -13,7 +13,7 @@
         class="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -23,14 +23,14 @@
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
               <div
-                class="w-12 h-12 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
               >
                 <Icon name="user" :size="24" />
               </div>
               <h3 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -51,7 +51,7 @@
               <input
                 ref="searchInput"
                 v-model="searchQuery"
-                class="w-full pl-12 pr-12 py-4 bg-bg-primary border border-border-secondary rounded-2xl text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary/30 transition-all"
+                class="w-full pl-12 pr-12 py-4 bg-bg-primary border border-border-secondary rounded-2xl text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary-30 transition-all"
                 :placeholder="locale.searchUsersPlaceholder"
                 type="text"
                 @input="handleSearch"
@@ -69,7 +69,7 @@
                 class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="search" :size="32" class="opacity-20" />
                 </div>
@@ -82,7 +82,7 @@
                 :class="[
                   'group flex items-center p-4 rounded-2xl border transition-all cursor-pointer',
                   isSelected(user)
-                    ? 'bg-primary-hover/10 border-primary/30 shadow-lg'
+                    ? 'bg-primary-hover-10 border-primary-30 shadow-lg'
                     : 'bg-bg-primary border-transparent hover:border-border-secondary'
                 ]"
                 @click="toggleSelection(user)"

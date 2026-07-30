@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-bg-primary text-text-primary pb-24">
     <!-- 顶部导航栏 -->
     <div
-      class="sticky top-0 z-30 bg-bg-primary/80 backdrop-blur-xl border-b border-border-secondary/50 px-4 py-4 mb-8"
+      class="sticky top-0 z-30 bg-bg-primary-80 backdrop-blur-xl border-b border-border-secondary-50 px-4 py-4 mb-8"
     >
       <div class="max-w-[1200px] mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -55,7 +55,7 @@
 
             <div class="flex flex-wrap justify-center gap-2 mt-6">
               <span
-                class="px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-primary-10 border border-primary-20 text-primary text-[10px] font-black uppercase tracking-wider rounded-full"
               >
                 {{ roleName }}
               </span>
@@ -79,8 +79,8 @@
         <div class="lg:col-span-8 space-y-8">
           <!-- 第三方登录绑定 -->
           <section v-if="hasOAuthProviders" :class="sectionClass">
-            <div class="flex items-center gap-3 border-b border-border-secondary/50 pb-5 mb-6">
-              <div class="p-2.5 bg-info/10 rounded-xl">
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-info-10 rounded-xl">
                 <LinkIcon :size="20" class="text-info" />
               </div>
               <div>
@@ -93,9 +93,9 @@
 
           <!-- 个人 API Key -->
           <section :class="sectionClass">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary/50 pb-5 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary-50 pb-5 mb-6">
               <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-success/10 rounded-xl">
+                <div class="p-2.5 bg-success-10 rounded-xl">
                   <KeyRound :size="20" class="text-success" />
                 </div>
                 <div>
@@ -121,7 +121,7 @@
 
             <div
               v-else-if="personalApiKeys.length === 0"
-              class="rounded-2xl border border-dashed border-border-secondary bg-bg-primary/40 px-5 py-8 text-center"
+              class="rounded-2xl border border-dashed border-border-secondary bg-bg-primary-40 px-5 py-8 text-center"
             >
               <KeyRound :size="28" class="mx-auto text-text-secondary mb-3" />
               <p class="text-sm font-bold text-text-secondary">{{ locale.personalApiKey.emptyTitle }}</p>
@@ -134,7 +134,7 @@
               <div
                 v-for="key in personalApiKeys"
                 :key="key.id"
-                class="rounded-2xl border border-border-secondary/70 bg-bg-primary/45 p-4"
+                class="rounded-2xl border border-border-secondary-70 bg-bg-primary-45 p-4"
               >
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div class="min-w-0">
@@ -150,7 +150,7 @@
                     <p class="text-xs text-text-tertiary mt-1">{{ key.description || locale.personalApiKey.noDescription }}</p>
                   </div>
                   <button
-                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-error/20 bg-error/10 text-error hover:bg-error/15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-error-20 bg-error-10 text-error hover:bg-error-15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                     :disabled="apiKeyDeletingId === key.id"
                     @click="deletePersonalApiKey(key)"
                   >
@@ -193,8 +193,8 @@
 
           <!-- 修改密码 -->
           <section :class="sectionClass">
-            <div class="flex items-center gap-3 border-b border-border-secondary/50 pb-5 mb-6">
-              <div class="p-2.5 bg-primary/10 rounded-xl">
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-primary-10 rounded-xl">
                 <Lock :size="20" class="text-primary" />
               </div>
               <div>
@@ -231,7 +231,7 @@
       <Transition name="modal">
         <div
           v-if="createdApiKey"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary/70 backdrop-blur-sm"
+          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
         >
           <div class="w-full max-w-xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-border-secondary flex items-center justify-between">
@@ -245,7 +245,7 @@
             </div>
 
             <div class="p-6 space-y-5">
-              <div class="flex items-start gap-3 rounded-2xl border border-warning/20 bg-warning/10 p-4 text-warning">
+              <div class="flex items-start gap-3 rounded-2xl border border-warning-20 bg-warning-10 p-4 text-warning">
                 <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
                 <p class="text-xs font-bold leading-relaxed">
                   {{ locale.personalApiKey.copyWarning }}
@@ -287,7 +287,7 @@
       <Transition name="modal">
         <div
           v-if="showApiKeyLogsModal"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary/70 backdrop-blur-sm"
+          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
         >
           <div class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
             <div class="p-6 border-b border-border-secondary flex items-start justify-between gap-4">
@@ -317,7 +317,7 @@
                 <div class="overflow-hidden rounded-2xl border border-border-secondary">
                   <div class="max-h-[60vh] overflow-auto">
                     <table class="min-w-full text-left">
-                      <thead class="sticky top-0 bg-bg-primary/95 backdrop-blur border-b border-border-secondary">
+                      <thead class="sticky top-0 bg-bg-primary-95 backdrop-blur border-b border-border-secondary">
                         <tr class="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.time }}</th>
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.method }}</th>
@@ -465,7 +465,7 @@ onMounted(() => {
 })
 
 // 样式类常量
-const sectionClass = 'bg-bg-secondary/40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
 
 const userInitials = computed(() => {
   const name = auth.user.value?.name || auth.user.value?.username || 'U'
@@ -668,21 +668,21 @@ const getApiKeyStatusLabel = (status) => {
 
 const getApiKeyStatusClass = (status) => {
   const map = {
-    active: 'bg-success/10 text-success border-success/20',
-    inactive: 'bg-bg-tertiary text-text-tertiary border-border-tertiary/50',
-    expired: 'bg-error/10 text-error border-error/20'
+    active: 'bg-success-10 text-success border-success-20',
+    inactive: 'bg-bg-tertiary text-text-tertiary border-border-tertiary-50',
+    expired: 'bg-error-10 text-error border-error-20'
   }
-  return map[status] || 'bg-bg-tertiary text-text-tertiary border-border-tertiary/50'
+  return map[status] || 'bg-bg-tertiary text-text-tertiary border-border-tertiary-50'
 }
 
 const getApiMethodClass = (method) => {
   const map = {
-    GET: 'bg-success/10 text-success border-success/20',
-    POST: 'bg-primary/10 text-primary border-primary/20',
-    PUT: 'bg-warning/10 text-warning border-warning/20',
-    DELETE: 'bg-error/10 text-error border-error/20'
+    GET: 'bg-success-10 text-success border-success-20',
+    POST: 'bg-primary-10 text-primary border-primary-20',
+    PUT: 'bg-warning-10 text-warning border-warning-20',
+    DELETE: 'bg-error-10 text-error border-error-20'
   }
-  return map[method] || 'bg-bg-tertiary text-text-tertiary border-border-tertiary/50'
+  return map[method] || 'bg-bg-tertiary text-text-tertiary border-border-tertiary-50'
 }
 
 const getApiStatusClass = (statusCode) => {

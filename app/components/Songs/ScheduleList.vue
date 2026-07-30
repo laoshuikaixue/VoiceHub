@@ -302,7 +302,7 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="closePlaylistModal"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -312,14 +312,14 @@
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
               <div
-                class="w-12 h-12 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
               >
                 <Icon name="music" :size="24" />
               </div>
               <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.addToPlaylist }}</h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               type="button"
               @click="closePlaylistModal"
             >
@@ -334,7 +334,7 @@
               class="flex flex-col items-center justify-center py-20 text-center"
             >
               <div
-                class="w-20 h-20 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-6"
+                class="w-20 h-20 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-6"
               >
                 <Icon name="music" :size="40" class="text-text-tertiary opacity-20" />
               </div>
@@ -352,7 +352,7 @@
               <!-- 用户信息栏 -->
               <div
                 v-if="neteaseUser"
-                class="flex items-center p-4 bg-bg-tertiary/30 border border-border-secondary/50 rounded-2xl"
+                class="flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-2xl"
               >
                 <div
                   class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-zinc-700/50"
@@ -410,7 +410,7 @@
                   <div v-if="selectedPlaylistId" class="px-1 pt-1">
                     <button
                       :disabled="playlistActionLoading"
-                      class="text-[10px] font-black text-error/60 hover:text-error flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+                      class="text-[10px] font-black text-error-60 hover:text-error flex items-center gap-1.5 transition-colors uppercase tracking-wider"
                       type="button"
                       @click="handleDeletePlaylist"
                     >
@@ -422,7 +422,7 @@
 
                 <div class="relative py-2 flex items-center justify-center">
                   <div class="absolute inset-0 flex items-center px-8">
-                    <div class="w-full border-t border-border-secondary/30" />
+                    <div class="w-full border-t border-border-secondary-30" />
                   </div>
                   <span
                     class="relative px-4 bg-bg-secondary text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]"
@@ -438,7 +438,7 @@
                   <div class="flex gap-3">
                     <input
                       v-model="newPlaylistName"
-                      class="flex-1 px-5 py-3.5 bg-bg-primary border border-border-secondary rounded-xl text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary/30 transition-all"
+                      class="flex-1 px-5 py-3.5 bg-bg-primary border border-border-secondary rounded-xl text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary-30 transition-all"
                       :placeholder="locale.newPlaylistPlaceholder"
                       type="text"
                     >
@@ -475,7 +475,7 @@
                   <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
                     {{ locale.selectSongs }}
                     <span
-                      class="ml-2 px-2 py-0.5 rounded-md bg-primary-hover/10 text-primary text-[9px]"
+                      class="ml-2 px-2 py-0.5 rounded-md bg-primary-hover-10 text-primary text-[9px]"
                       >{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span
                     >
                   </label>
@@ -499,7 +499,7 @@
 
                 <div
                   v-if="neteaseSongs.length === 0"
-                  class="flex flex-col items-center justify-center py-12 bg-bg-primary/30 border border-dashed border-border-secondary rounded-3xl text-text-disabled"
+                  class="flex flex-col items-center justify-center py-12 bg-bg-primary-30 border border-dashed border-border-secondary rounded-3xl text-text-disabled"
                 >
                   <Icon name="music" :size="32" class="mb-3 opacity-20" />
                   <p class="text-[10px] font-black uppercase tracking-widest">
@@ -514,7 +514,7 @@
                     :class="[
                       'group flex items-center p-3.5 rounded-xl border transition-all cursor-pointer',
                       isSongSelected(song.id)
-                        ? 'bg-primary-hover/10 border-primary/30 shadow-lg'
+                        ? 'bg-primary-hover-10 border-primary-30 shadow-lg'
                         : 'bg-bg-primary border-transparent hover:border-border-secondary'
                     ]"
                     @click="toggleSongSelection(song.id)"
@@ -607,7 +607,7 @@
     >
       <div
         v-if="submissionNoteDialog.show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
         @click="closeSubmissionNote"
       >
         <div class="submission-note-modal" @click.stop>

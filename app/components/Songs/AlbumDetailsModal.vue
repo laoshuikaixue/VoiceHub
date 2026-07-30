@@ -13,7 +13,7 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-3xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -32,7 +32,7 @@
                 >
                 <div
                   v-else
-                  class="w-full h-full bg-primary-hover/10 flex items-center justify-center text-primary"
+                  class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="disc" :size="32" />
                 </div>
@@ -67,7 +67,7 @@
               </div>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -81,7 +81,7 @@
                 v-model="searchQuery"
                 type="text"
                 :placeholder="locale.searchPlaceholder"
-                class="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-tertiary/60 border border-border-tertiary/50 text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary/50 focus:bg-bg-tertiary transition-all"
+                class="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-tertiary-60 border border-border-tertiary-50 text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary-50 focus:bg-bg-tertiary transition-all"
               >
               <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
             </div>
@@ -99,7 +99,7 @@
           <div v-else-if="error" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center text-error">
               <div
-                class="w-16 h-16 rounded-3xl bg-error/10 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-error-10 flex items-center justify-center mb-4"
               >
                 <Icon name="alert-circle" :size="32" />
               </div>
@@ -114,7 +114,7 @@
               class="flex flex-col items-center justify-center py-12 text-text-tertiary"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
                 <Icon name="music" :size="32" class="opacity-20" />
               </div>
@@ -130,8 +130,8 @@
                 class="group flex items-center p-2 sm:p-3 rounded-2xl transition-all"
                 :class="[
                   isCurrentSong(song)
-                    ? 'bg-primary-hover/10 border border-primary/50'
-                    : 'bg-bg-tertiary/30 border border-border-secondary/50 hover:bg-bg-tertiary/50 hover:border-border-tertiary'
+                    ? 'bg-primary-hover-10 border border-primary-50'
+                    : 'bg-bg-tertiary-30 border border-border-secondary-50 hover:bg-bg-tertiary-50 hover:border-border-tertiary'
                 ]"
               >
                 <!-- 歌曲封面 -->
@@ -187,7 +187,7 @@
                   <template v-if="song.status.played">
                     <!-- 已播放标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success/10 text-success border border-success/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ requestLocale.played }}
                     </div>
@@ -196,7 +196,7 @@
                   <template v-else-if="song.status.scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning/10 text-warning border border-warning/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ requestLocale.scheduled }}
                     </div>
@@ -218,7 +218,7 @@
                         :class="[
                           'w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
                           song.status.voted
-                            ? 'bg-error/10 text-error border border-error/20 cursor-not-allowed'
+                            ? 'bg-error-10 text-error border border-error-20 cursor-not-allowed'
                             : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-error'
                         ]"
                         @click.stop="voteSong(song)"
@@ -267,7 +267,7 @@
         class="fixed inset-0 z-[200] flex items-center justify-center p-6"
         @click.self="showDescModal = false"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
         <div
           class="relative w-full max-w-xl max-h-[70vh] bg-bg-secondary border border-border-secondary rounded-2xl p-6 overflow-y-auto custom-scrollbar"
           @click.stop
@@ -275,7 +275,7 @@
           <div class="flex items-center justify-between mb-4">
             <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.albumIntro }}</h4>
             <button
-              class="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
+              class="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="showDescModal = false"
             >
               <Icon name="x" :size="16" />

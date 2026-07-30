@@ -13,17 +13,17 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4"
         @click="handleClose"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-sm overflow-hidden rounded-3xl border border-border-secondary bg-bg-secondary shadow-2xl"
           @click.stop
         >
-          <div class="flex items-center justify-between border-b border-border-secondary/50 p-8 pb-4">
+          <div class="flex items-center justify-between border-b border-border-secondary-50 p-8 pb-4">
             <div>
               <h3 class="flex items-center gap-3 text-xl font-black tracking-tight text-text-primary">
                 <div
-                  class="flex h-10 w-10 items-center justify-center rounded-2xl bg-info/10 text-info"
+                  class="flex h-10 w-10 items-center justify-center rounded-2xl bg-info-10 text-info"
                 >
                   <Icon name="music" :size="20" />
                 </div>
@@ -32,7 +32,7 @@
               <p class="ml-13 mt-1 text-xs text-text-tertiary">{{ locale.qqDesc }}</p>
             </div>
             <button
-              class="rounded-2xl bg-bg-tertiary/50 p-3 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
+              class="rounded-2xl bg-bg-tertiary-50 p-3 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
               type="button"
               @click="handleClose"
             >
@@ -56,7 +56,7 @@
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-3xl bg-bg-secondary/90 backdrop-blur-sm transition-all hover:bg-bg-secondary/80"
+                  class="absolute inset-0 flex cursor-pointer items-center justify-center rounded-3xl bg-bg-secondary-90 backdrop-blur-sm transition-all hover:bg-bg-secondary-80"
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-text-primary">
@@ -107,7 +107,7 @@
               </div>
             </div>
 
-            <div class="mt-8 w-full rounded-2xl border border-border-secondary/50 bg-bg-tertiary/30 p-4">
+            <div class="mt-8 w-full rounded-2xl border border-border-secondary-50 bg-bg-tertiary-30 p-4">
               <p
                 class="text-center text-[10px] font-black uppercase leading-relaxed tracking-[0.15em] text-text-tertiary"
               >

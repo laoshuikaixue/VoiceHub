@@ -1,10 +1,10 @@
 <template>
-  <div class="bg-bg-secondary/30 border border-border-secondary rounded-[2rem] overflow-hidden">
+  <div class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] overflow-hidden">
     <!-- 头部 -->
-    <div class="flex items-center justify-between p-6 border-b border-border-secondary bg-bg-secondary/20">
+    <div class="flex items-center justify-between p-6 border-b border-border-secondary bg-bg-secondary-20">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-2xl bg-primary-hover/10 flex items-center justify-center border border-primary/20"
+          class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center border border-primary-20"
         >
           <Mail :size="20" class="text-primary" />
         </div>
@@ -35,14 +35,14 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[650px]">
       <!-- 左侧：模板列表 -->
-      <div class="lg:col-span-3 border-r border-border-secondary bg-bg-secondary/10 flex flex-col">
-        <div class="p-4 border-b border-border-secondary/50">
+      <div class="lg:col-span-3 border-r border-border-secondary bg-bg-secondary-10 flex flex-col">
+        <div class="p-4 border-b border-border-secondary-50">
           <div class="relative">
             <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
             <input
               type="text"
               :placeholder="locale.searchPlaceholder"
-              class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-9 pr-3 py-2 text-[10px] text-text-tertiary focus:outline-none focus:border-primary/30"
+              class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-9 pr-3 py-2 text-[10px] text-text-tertiary focus:outline-none focus:border-primary-30"
             >
           </div>
         </div>
@@ -53,8 +53,8 @@
             class="w-full group flex flex-col gap-1 p-3 rounded-2xl transition-all text-left border"
             :class="[
               selectedKey === t.key
-                ? 'bg-primary-hover/10 border-primary/20'
-                : 'bg-transparent border-transparent hover:bg-bg-tertiary/40'
+                ? 'bg-primary-hover-10 border-primary-20'
+                : 'bg-transparent border-transparent hover:bg-bg-tertiary-40'
             ]"
             @click="select(t)"
           >
@@ -78,7 +78,7 @@
                 </span>
                 <span
                   v-if="t.isOverridden"
-                  class="px-1.5 py-0.5 rounded-md bg-success/10 text-[8px] font-black text-success uppercase tracking-tighter"
+                  class="px-1.5 py-0.5 rounded-md bg-success-10 text-[8px] font-black text-success uppercase tracking-tighter"
                 >
                   {{ locale.custom }}
                 </span>
@@ -90,7 +90,7 @@
       </div>
 
       <!-- 右侧：编辑器区域 -->
-      <div class="lg:col-span-9 flex flex-col bg-bg-primary/20 overflow-hidden">
+      <div class="lg:col-span-9 flex flex-col bg-bg-primary-20 overflow-hidden">
         <div v-if="selected" class="flex-1 overflow-y-auto custom-scrollbar p-8">
           <div class="max-w-4xl mx-auto space-y-8">
             <!-- 基础信息与主题 -->
@@ -102,7 +102,7 @@
                 <input
                   v-model="form.name"
                   type="text"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
               <div class="space-y-2">
@@ -116,15 +116,15 @@
                   v-model="form.subject"
                   type="text"
                   :placeholder="locale.subjectPlaceholder"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
             </div>
 
             <!-- 变量提示 -->
-            <div class="bg-primary-hover/5 border border-primary/10 rounded-2xl p-4 flex gap-4">
+            <div class="bg-primary-hover-5 border border-primary-10 rounded-2xl p-4 flex gap-4">
               <div
-                class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"
+                class="w-8 h-8 rounded-xl bg-primary-10 flex items-center justify-center shrink-0"
               >
                 <Info :size="16" class="text-primary" />
               </div>
@@ -165,14 +165,14 @@
               </div>
               <div class="relative group">
                 <div
-                  class="absolute right-4 top-4 p-2 rounded-lg bg-bg-secondary/50 border border-border-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute right-4 top-4 p-2 rounded-lg bg-bg-secondary-50 border border-border-secondary opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Code :size="14" class="text-text-tertiary" />
                 </div>
                 <textarea
                   v-model="form.html"
                   rows="16"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl p-6 text-[11px] text-text-secondary font-mono leading-relaxed focus:outline-none focus:border-primary/30 custom-scrollbar"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl p-6 text-[11px] text-text-secondary font-mono leading-relaxed focus:outline-none focus:border-primary-30 custom-scrollbar"
                   placeholder="<html>..."
                 />
               </div>
@@ -213,7 +213,7 @@
           class="flex-1 flex flex-col items-center justify-center text-text-secondary space-y-4"
         >
           <div
-            class="w-16 h-16 rounded-3xl bg-bg-secondary/50 flex items-center justify-center border border-border-secondary/50"
+            class="w-16 h-16 rounded-3xl bg-bg-secondary-50 flex items-center justify-center border border-border-secondary-50"
           >
             <Mail :size="32" class="text-text-primary" />
           </div>

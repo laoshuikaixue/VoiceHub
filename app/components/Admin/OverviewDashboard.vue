@@ -5,16 +5,16 @@
       <div
         v-for="(stat, i) in statCards"
         :key="i"
-        class="bg-bg-secondary/40 border border-border-secondary rounded-2xl p-6 relative overflow-hidden group hover:border-border-tertiary transition-all shadow-lg shadow-black/20"
+        class="bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 relative overflow-hidden group hover:border-border-tertiary transition-all shadow-lg shadow-black/20"
       >
         <div class="flex justify-between items-start mb-4">
           <div
             :class="[
               'p-3 rounded-xl border',
               stat.color === 'blue'
-                ? 'bg-primary/10 text-primary border-primary/20'
+                ? 'bg-primary-10 text-primary border-primary-20'
                 : stat.color === 'emerald'
-                  ? 'bg-success/10 text-success border-success/20'
+                  ? 'bg-success-10 text-success border-success-20'
                   : stat.color === 'pink'
                     ? 'bg-pink-500/10 text-pink-500 border-pink-500/20'
                     : 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20'
@@ -44,7 +44,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <!-- 最近活动 -->
       <div
-        class="lg:col-span-5 bg-bg-secondary/40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
+        class="lg:col-span-5 bg-bg-secondary-40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
         <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -79,7 +79,7 @@
             <div
               v-for="(activity, idx) in recentActivities"
               :key="idx"
-              class="flex items-start gap-4 p-4 rounded-2xl hover:bg-bg-tertiary/40 transition-all cursor-pointer group"
+              class="flex items-start gap-4 p-4 rounded-2xl hover:bg-bg-tertiary-40 transition-all cursor-pointer group"
             >
               <div
                 :class="[
@@ -110,7 +110,7 @@
 
       <!-- 系统状态 -->
       <div
-        class="lg:col-span-4 bg-bg-secondary/40 border border-border-secondary rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
+        class="lg:col-span-4 bg-bg-secondary-40 border border-border-secondary rounded-xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
         <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -120,8 +120,8 @@
             :class="[
               'px-3 py-1 text-[10px] font-black uppercase rounded-full border',
               systemStatus.online
-                ? 'bg-success/10 text-success border-success/20'
-                : 'bg-error/10 text-error border-error/20'
+                ? 'bg-success-10 text-success border-success-20'
+                : 'bg-error-10 text-error border-error-20'
             ]"
           >
             {{ systemStatus.online ? locale.online : locale.offline }}
@@ -165,7 +165,7 @@
 
       <!-- 快速操作 -->
       <div
-        class="lg:col-span-3 bg-bg-secondary/40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
+        class="lg:col-span-3 bg-bg-secondary-40 border border-border-secondary rounded-3xl overflow-hidden flex flex-col shadow-lg shadow-black/20"
       >
         <div class="px-6 py-5 border-b border-border-secondary">
           <h3 class="text-lg font-bold flex items-center gap-2">
@@ -180,7 +180,7 @@
               'w-full flex items-center gap-3 px-5 py-4 rounded-lg border font-bold text-sm transition-all text-left group',
               action.primary
                 ? 'bg-primary-hover border-primary text-text-primary shadow-xl shadow-blue-900/20 hover:bg-primary'
-                : 'bg-bg-primary/40 border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-primary'
+                : 'bg-bg-primary-40 border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-primary'
             ]"
             @click="navigateTo(action.id)"
           >
@@ -319,9 +319,9 @@ const formatNumber = (num) => {
 
 const getActivityStyle = (type) => {
   const styles = {
-    song: { icon: Music, bg: 'bg-info/10 text-info border-info/20' },
+    song: { icon: Music, bg: 'bg-info-10 text-info border-info-20' },
     user: { icon: Users, bg: 'bg-pink-500/10 text-pink-500 border-pink-500/20' },
-    schedule: { icon: Calendar, bg: 'bg-primary/10 text-primary border-primary/20' }
+    schedule: { icon: Calendar, bg: 'bg-primary-10 text-primary border-primary-20' }
   }
 
   return styles[type] || { icon: Activity, bg: 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20' }

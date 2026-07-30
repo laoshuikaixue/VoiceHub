@@ -9,14 +9,14 @@
   >
     <div
       v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       @click="close"
     >
       <div
         class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
         @click.stop
       >
-        <div class="px-8 py-6 border-b border-border-secondary/50 flex items-center justify-between">
+        <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
           <h3 class="text-xl font-black text-text-primary">{{ locale.title }}</h3>
           <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="close">
             <X :size="20" />
@@ -38,8 +38,8 @@
                 :class="[
                   'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border transition-colors',
                   isPublic
-                    ? 'bg-primary/10 text-primary border-primary/20 group-hover:bg-primary/20'
-                    : 'bg-warning/10 text-warning border-warning/20 group-hover:bg-warning/20'
+                    ? 'bg-primary-10 text-primary border-primary-20 group-hover:bg-primary-20'
+                    : 'bg-warning-10 text-warning border-warning-20 group-hover:bg-warning-20'
                 ]"
               >
                 {{ isPublic ? locale.publicRemark : locale.adminOnly }}
@@ -47,7 +47,7 @@
               <span v-if="isUpdatingPublic" class="text-[10px] text-text-tertiary animate-pulse">{{ locale.updating }}</span>
             </label>
           </div>
-          <div class="bg-bg-primary/50 border border-border-secondary/50 rounded-xl p-4">
+          <div class="bg-bg-primary-50 border border-border-secondary-50 rounded-xl p-4">
             <p class="text-sm text-text-primary leading-relaxed whitespace-pre-wrap">
               {{ content }}
             </p>

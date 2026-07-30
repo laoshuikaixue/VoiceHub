@@ -13,7 +13,7 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-bg-primary/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
           class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -32,7 +32,7 @@
                 >
                 <div
                   v-else
-                  class="w-full h-full bg-primary-hover/10 flex items-center justify-center text-primary"
+                  class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="play" :size="24" />
                 </div>
@@ -47,7 +47,7 @@
               </div>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -61,7 +61,7 @@
               class="flex flex-col items-center justify-center py-12 text-text-tertiary"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-bg-tertiary/50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
                 <Icon name="play" :size="32" class="opacity-20" />
               </div>
@@ -75,8 +75,8 @@
                 class="group flex items-center p-3 sm:p-4 rounded-3xl transition-all"
                 :class="[
                   isCurrentEpisode(episode)
-                    ? 'bg-primary-hover/10 border border-primary/50'
-                    : 'bg-bg-tertiary/30 border border-border-secondary/50 hover:bg-bg-tertiary/50 hover:border-border-tertiary'
+                    ? 'bg-primary-hover-10 border border-primary-50'
+                    : 'bg-bg-tertiary-30 border border-border-secondary-50 hover:bg-bg-tertiary-50 hover:border-border-tertiary'
                 ]"
               >
                 <!-- 剧集编号 -->
@@ -130,7 +130,7 @@
                     <!-- 已播放标签 -->
                     <div
                       v-else
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success/10 text-success border border-success/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ locale.played }}
                     </div>
@@ -139,7 +139,7 @@
                   <template v-else-if="getEpisodeStatus(episode).scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning/10 text-warning border border-warning/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ locale.scheduled }}
                     </div>
@@ -161,7 +161,7 @@
                         :class="[
                           'w-full px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
                           getEpisodeStatus(episode).voted
-                            ? 'bg-error/10 text-error border border-error/20 cursor-not-allowed'
+                            ? 'bg-error-10 text-error border border-error-20 cursor-not-allowed'
                             : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-error'
                         ]"
                         @click.stop="voteEpisode(episode)"

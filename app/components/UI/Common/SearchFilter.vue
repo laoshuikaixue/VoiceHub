@@ -9,7 +9,7 @@
         :value="searchQuery"
         type="text"
         :placeholder="resolvedSearchPlaceholder"
-        class="block w-full pl-11 pr-11 py-2.5 bg-bg-primary border border-border-secondary rounded-2xl text-xs font-bold text-text-primary placeholder:text-text-disabled focus:outline-none focus:border-primary/50 focus:bg-primary-hover/5 transition-all"
+        class="block w-full pl-11 pr-11 py-2.5 bg-bg-primary border border-border-secondary rounded-2xl text-xs font-bold text-text-primary placeholder:text-text-disabled focus:outline-none focus:border-primary-50 focus:bg-primary-hover-5 transition-all"
         @input="$emit('update:searchQuery', $event.target.value)"
       >
       <button
@@ -58,7 +58,7 @@
         <div v-else-if="filter.type === 'multiSelect'" ref="dropdownRef" class="relative">
           <button
             class="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-2xl transition-all hover:border-border-tertiary"
-            :class="{ 'border-primary/50 bg-primary-hover/5': openDropdown === filter.key }"
+            :class="{ 'border-primary-50 bg-primary-hover-5': openDropdown === filter.key }"
             @click="toggleDropdown(filter.key)"
           >
             <div class="flex flex-col items-start gap-0.5 overflow-hidden">
@@ -117,7 +117,7 @@
     <div v-if="showActions" class="flex items-center gap-2 w-full lg:w-auto">
       <button
         v-if="hasActiveFilters"
-        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary hover:border-error/30 hover:bg-error/5 text-text-tertiary hover:text-error text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
+        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary hover:border-error-30 hover:bg-error-5 text-text-tertiary hover:text-error text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
         @click="clearAllFilters"
       >
         <RotateCcw :size="14" />

@@ -10,10 +10,10 @@
     <!-- 权限检查 -->
     <div
       v-if="!canPrintSchedule"
-      class="flex flex-col items-center justify-center py-20 bg-bg-secondary/50 rounded-xl border border-border-secondary"
+      class="flex flex-col items-center justify-center py-20 bg-bg-secondary-50 rounded-xl border border-border-secondary"
     >
       <div
-        class="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center text-error mb-4"
+        class="w-16 h-16 bg-error-10 rounded-full flex items-center justify-center text-error mb-4"
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10" />
@@ -29,7 +29,7 @@
       <!-- 设置面板 -->
       <div class="lg:col-span-4 flex flex-col gap-6 h-auto">
         <div
-          class="bg-bg-secondary/40 border border-border-secondary rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
+          class="bg-bg-secondary-40 border border-border-secondary rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
         >
           <h3 class="text-lg font-bold flex items-center gap-2 text-text-primary shrink-0">
             <Layout class="w-4 h-4 text-primary" /> {{ locale.settingsTitle }}
@@ -59,7 +59,7 @@
                   :class="[
                     'py-2.5 rounded-lg text-sm font-bold transition-all',
                     settings.orientation === 'portrait'
-                      ? 'border border-primary/30 bg-primary-hover/10 text-primary shadow-sm'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
                       : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="settings.orientation = 'portrait'"
@@ -70,7 +70,7 @@
                   :class="[
                     'py-2.5 rounded-lg text-sm font-bold transition-all',
                     settings.orientation === 'landscape'
-                      ? 'border border-primary/30 bg-primary-hover/10 text-primary shadow-sm'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
                       : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="settings.orientation = 'landscape'"
@@ -90,7 +90,7 @@
                   :class="[
                     'py-2 rounded-lg text-sm font-bold transition-all',
                     settings.layoutStyle === 'classic'
-                      ? 'border border-primary/30 bg-primary-hover/10 text-primary shadow-sm'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
                       : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="selectClassicLayout"
@@ -101,7 +101,7 @@
                   :class="[
                     'py-2 rounded-lg text-sm font-bold transition-all',
                     settings.layoutStyle === 'table'
-                      ? 'border border-primary/30 bg-primary-hover/10 text-primary shadow-sm'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
                       : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="selectTableLayout"
@@ -120,13 +120,13 @@
                 <input
                   v-model="settings.startDate"
                   type="date"
-                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
+                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
                   max="9999-12-31"
                 />
                 <input
                   v-model="settings.endDate"
                   type="date"
-                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary/50 transition-colors"
+                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
                   max="9999-12-31"
                 />
               </div>
@@ -137,8 +137,8 @@
                   :class="[
                     'px-2 py-1 text-[10px] rounded-md transition-colors border',
                     settings.dateRangePreset === range.value
-                      ? 'bg-primary-hover/20 border-primary/50 text-primary'
-                      : 'bg-bg-tertiary/50 border-border-secondary text-text-tertiary hover:bg-bg-tertiary'
+                      ? 'bg-primary-hover-20 border-primary-50 text-primary'
+                      : 'bg-bg-tertiary-50 border-border-secondary text-text-tertiary hover:bg-bg-tertiary'
                   ]"
                   @click="setDateRange(range.value)"
                 >
@@ -216,7 +216,7 @@
               <textarea
                 v-model="settings.remark"
                 :placeholder="locale.remarkPlaceholder"
-                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm focus:outline-none text-text-secondary min-h-[80px] resize-none focus:border-primary/50 transition-colors"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm focus:outline-none text-text-secondary min-h-[80px] resize-none focus:border-primary-50 transition-colors"
               />
             </div>
           </div>
@@ -224,7 +224,7 @@
           <!-- 操作按钮 -->
           <div class="space-y-2 pt-4 border-t border-border-secondary shrink-0">
             <button
-              class="w-full flex items-center justify-center gap-2 py-3 bg-bg-tertiary/80 hover:bg-bg-quaternary text-text-secondary text-sm font-bold rounded-lg border border-border-tertiary transition-all"
+              class="w-full flex items-center justify-center gap-2 py-3 bg-bg-tertiary-80 hover:bg-bg-quaternary text-text-secondary text-sm font-bold rounded-lg border border-border-tertiary transition-all"
               @click="refreshPreview"
             >
               <RefreshCw class="w-4 h-4" /> {{ locale.refreshPreview }}
@@ -239,14 +239,14 @@
             <div class="grid grid-cols-2 gap-2">
               <button
                 :disabled="isExporting"
-                class="flex items-center justify-center gap-2 py-2.5 bg-success/10 text-success hover:bg-success/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-success/20 transition-all"
+                class="flex items-center justify-center gap-2 py-2.5 bg-success-10 text-success hover:bg-success-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-success-20 transition-all"
                 @click="exportPDF"
               >
                 <FileText class="w-3.5 h-3.5" /> {{ isExporting ? locale.exporting : locale.exportPdf }}
               </button>
               <button
                 :disabled="isExportingImage"
-                class="flex items-center justify-center gap-2 py-2.5 bg-warning/10 text-warning hover:bg-warning/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-warning/20 transition-all"
+                class="flex items-center justify-center gap-2 py-2.5 bg-warning-10 text-warning hover:bg-warning-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-warning-20 transition-all"
                 @click="exportImage"
               >
                 <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? locale.exporting : locale.exportImage }}
@@ -259,7 +259,7 @@
       <!-- 预览区域 -->
       <div class="lg:col-span-8 flex flex-col gap-4 h-[700px] lg:h-0 lg:min-h-full mb-8 lg:mb-0">
         <div
-          class="bg-bg-secondary/40 border border-border-secondary rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
+          class="bg-bg-secondary-40 border border-border-secondary rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
         >
           <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
             <h3 class="text-lg font-bold flex items-center gap-2 text-text-primary">
@@ -269,19 +269,19 @@
               <span class="text-text-tertiary">{{ formatLocale(locale.songCount, '', filteredSchedules.length) }}</span>
               <span
                 v-if="schedules.length === 0"
-                class="px-2 py-0.5 rounded bg-error/10 text-error border border-error/20"
+                class="px-2 py-0.5 rounded bg-error-10 text-error border border-error-20"
                 >{{ locale.noData }}</span
               >
               <span
                 v-else-if="filteredSchedules.length === 0"
-                class="px-2 py-0.5 rounded bg-warning/10 text-warning border border-warning/20"
+                class="px-2 py-0.5 rounded bg-warning-10 text-warning border border-warning-20"
                 >{{ locale.filtered }}</span
               >
             </div>
           </div>
 
           <div
-            class="flex-1 bg-bg-primary/50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
+            class="flex-1 bg-bg-primary-50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
           >
             <!-- 纸张预览 -->
             <div

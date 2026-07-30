@@ -9,7 +9,7 @@
   >
     <div
       v-if="show"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       @click="$emit('close')"
     >
       <div
@@ -21,7 +21,7 @@
           <div>
             <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-2xl bg-warning/10 flex items-center justify-center text-warning"
+                class="w-10 h-10 rounded-2xl bg-warning-10 flex items-center justify-center text-warning"
               >
                 <Icon name="alert-triangle" :size="20" />
               </div>
@@ -30,7 +30,7 @@
             <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.desc }}</p>
           </div>
           <button
-            class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+            class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
             @click="$emit('close')"
           >
             <Icon name="x" :size="20" />
@@ -81,8 +81,8 @@
                   :class="[
                     'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border',
                     song.played
-                      ? 'bg-success/10 text-success border-success/20'
-                      : 'bg-warning/10 text-warning border-warning/20'
+                      ? 'bg-success-10 text-success border-success-20'
+                      : 'bg-warning-10 text-warning border-warning-20'
                   ]"
                 >
                   {{ song.played ? locale.played : locale.pending }}

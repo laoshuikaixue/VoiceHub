@@ -61,7 +61,7 @@
         >
           <div class="relative z-10 space-y-6">
             <div
-              class="w-16 h-16 rounded-3xl bg-bg-secondary/10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary/20"
+              class="w-16 h-16 rounded-3xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -82,7 +82,7 @@
               <h4 class="text-3xl font-black text-text-primary tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
-              <div class="flex items-center gap-2 text-primary/60 font-bold text-xs">
+              <div class="flex items-center gap-2 text-primary-60 font-bold text-xs">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="12"
@@ -112,7 +112,7 @@
           </div>
 
           <!-- 装饰性背景元素 -->
-          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-bg-secondary/5 blur-3xl rounded-full" />
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-bg-secondary-5 blur-3xl rounded-full" />
           <div class="absolute top-10 right-10 opacity-10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -134,7 +134,7 @@
 
         <div
           v-else
-          class="bg-bg-secondary/30 border border-border-secondary border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
+          class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -158,7 +158,7 @@
           </button>
         </div>
 
-        <div class="p-6 bg-bg-secondary/20 border border-border-secondary rounded-3xl flex items-start gap-4">
+        <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-3xl flex items-start gap-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -214,7 +214,7 @@
         <div class="space-y-4">
           <div
             v-if="loading && semesters.length === 0"
-            class="text-center py-20 bg-bg-secondary/10 border border-border-secondary border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
           >
             <p class="text-xs font-bold text-text-disabled">{{ locale.loading }}</p>
           </div>
@@ -225,8 +225,8 @@
             class="group flex items-center justify-between p-6 rounded-[2rem] border transition-all"
             :class="
               sem.isActive
-                ? 'bg-primary-hover/5 border-primary/30'
-                : 'bg-bg-secondary/40 border-border-secondary hover:border-border-tertiary'
+                ? 'bg-primary-hover-5 border-primary-30'
+                : 'bg-bg-secondary-40 border-border-secondary hover:border-border-tertiary'
             "
           >
             <div class="flex items-center gap-5">
@@ -272,7 +272,7 @@
             <div class="flex items-center gap-2">
               <div
                 v-if="sem.isActive"
-                class="flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-xl border border-success/20"
+                class="flex items-center gap-2 px-4 py-2 bg-success-10 text-success rounded-xl border border-success-20"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -315,7 +315,7 @@
 
               <button
                 :disabled="loading"
-                class="p-2.5 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2.5 text-text-secondary hover:text-primary hover:bg-primary-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.editSemester"
                 @click="openEditModal(sem)"
               >
@@ -337,7 +337,7 @@
               <button
                 v-if="!sem.isActive"
                 :disabled="loading"
-                class="p-2.5 text-text-secondary hover:text-error hover:bg-error/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2.5 text-text-secondary hover:text-error hover:bg-error-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.deleteSemester"
                 @click="deleteSemester(sem.id)"
               >
@@ -365,7 +365,7 @@
 
           <div
             v-if="semesters.length === 0 && !loading"
-            class="text-center py-20 bg-bg-secondary/10 border border-border-secondary border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
           >
             <p class="text-xs font-bold text-text-disabled">{{ locale.empty }}</p>
           </div>
@@ -376,7 +376,7 @@
     <!-- 添加/修改学期弹窗 -->
     <div
       v-if="showModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
     >
       <div
         class="w-full max-w-md bg-bg-secondary rounded-3xl border border-border-secondary shadow-2xl overflow-hidden"
@@ -417,7 +417,7 @@
                 v-model="semesterForm.name"
                 type="text"
                 :placeholder="locale.namePlaceholder"
-                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm text-text-primary focus:outline-none focus:border-primary/30 font-bold transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm text-text-primary focus:outline-none focus:border-primary-30 font-bold transition-all"
               >
             </div>
 
@@ -462,7 +462,7 @@
           </div>
         </div>
 
-        <div class="p-6 bg-bg-tertiary/50 border-t border-border-secondary flex gap-3 justify-end">
+        <div class="p-6 bg-bg-tertiary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
             class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors"
             @click="closeModal"

@@ -10,7 +10,7 @@
     >
       <div
         v-if="show"
-        class="fixed inset-0 z-[2000] bg-bg-primary/80 backdrop-blur-sm flex items-center justify-center p-4"
+        class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
         @click="handleOverlayClick"
       >
         <div
@@ -40,7 +40,7 @@
                   v-model="inputValue"
                   :type="inputType"
                   :placeholder="inputPlaceholder"
-                  class="w-full bg-bg-tertiary/50 border border-border-tertiary/50 rounded-xl px-4 py-3 text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                  class="w-full bg-bg-tertiary-50 border border-border-tertiary-50 rounded-xl px-4 py-3 text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all text-sm"
                   @keyup.enter="handleConfirm"
                 />
               </div>
@@ -177,14 +177,14 @@ const iconName = computed(() => {
 const iconClasses = computed(() => {
   switch (props.type) {
     case 'danger':
-      return 'bg-error/10 text-error border-error/20 shadow-red-900/5'
+      return 'bg-error-10 text-error border-error-20 shadow-red-900/5'
     case 'success':
-      return 'bg-success/10 text-success border-success/20 shadow-emerald-900/5'
+      return 'bg-success-10 text-success border-success-20 shadow-emerald-900/5'
     case 'info':
-      return 'bg-primary/10 text-primary border-primary/20 shadow-blue-900/5'
+      return 'bg-primary-10 text-primary border-primary-20 shadow-blue-900/5'
     case 'warning':
     default:
-      return 'bg-warning/10 text-warning border-warning/20 shadow-amber-900/5'
+      return 'bg-warning-10 text-warning border-warning-20 shadow-amber-900/5'
   }
 })
 

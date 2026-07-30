@@ -9,7 +9,7 @@
         <slot name="toolbar-left">
           <div
             v-if="selectedRows.length > 0"
-            class="flex items-center gap-2 px-3 py-1.5 bg-primary-hover/10 border border-primary/20 rounded-lg"
+            class="flex items-center gap-2 px-3 py-1.5 bg-primary-hover-10 border border-primary-20 rounded-lg"
           >
             <span class="text-[10px] font-black text-primary uppercase tracking-widest"
               >{{ formatLocale(locale.selectedItems, selectedRows.length) }}</span
@@ -40,15 +40,15 @@
 
     <!-- 表格主容器 -->
     <div
-      class="relative bg-bg-secondary/50 border border-border-secondary rounded-xl overflow-hidden shadow-2xl shadow-black/20"
+      class="relative bg-bg-secondary-50 border border-border-secondary rounded-xl overflow-hidden shadow-2xl shadow-black/20"
     >
       <!-- 加载状态 -->
       <div
         v-if="loading"
-        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg-primary/60 backdrop-blur-[2px] animate-in fade-in duration-300"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg-primary-60 backdrop-blur-[2px] animate-in fade-in duration-300"
       >
         <div
-          class="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"
+          class="w-10 h-10 border-4 border-primary-20 border-t-primary rounded-full animate-spin mb-4"
         />
         <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{
           resolvedLoadingText
@@ -59,7 +59,7 @@
       <div class="hidden md:block overflow-x-auto custom-scrollbar">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="border-b border-border-secondary bg-bg-secondary/50">
+            <tr class="border-b border-border-secondary bg-bg-secondary-50">
               <th v-if="selectable" class="p-4 w-10">
                 <input
                   type="checkbox"
@@ -103,8 +103,8 @@
             <tr
               v-for="(row, index) in data"
               :key="getRowKey(row, index)"
-              class="group hover:bg-bg-tertiary/30 transition-colors cursor-default"
-              :class="{ 'bg-primary-hover/5': selectedRows.includes(getRowKey(row, index)) }"
+              class="group hover:bg-bg-tertiary-30 transition-colors cursor-default"
+              :class="{ 'bg-primary-hover-5': selectedRows.includes(getRowKey(row, index)) }"
               @click="handleRowClick(row, index)"
             >
               <td v-if="selectable" class="p-4" @click.stop>
@@ -133,13 +133,13 @@
                 <div class="flex items-center justify-end gap-1">
                   <slot name="actions" :row="row" :index="index">
                     <button
-                      class="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                      class="p-2 text-text-tertiary hover:text-primary hover:bg-primary-10 rounded-xl transition-all"
                       :title="locale.edit"
                     >
                       <Edit2 :size="14" />
                     </button>
                     <button
-                      class="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-xl transition-all"
+                      class="p-2 text-text-tertiary hover:text-error hover:bg-error-10 rounded-xl transition-all"
                       :title="locale.delete"
                     >
                       <Trash2 :size="14" />
@@ -165,8 +165,8 @@
         <div
           v-for="(row, index) in data"
           :key="getRowKey(row, index)"
-          class="p-4 space-y-4 hover:bg-bg-tertiary/30 transition-colors"
-          :class="{ 'bg-primary-hover/5': selectedRows.includes(getRowKey(row, index)) }"
+          class="p-4 space-y-4 hover:bg-bg-tertiary-30 transition-colors"
+          :class="{ 'bg-primary-hover-5': selectedRows.includes(getRowKey(row, index)) }"
           @click="handleRowClick(row, index)"
         >
           <div class="flex items-center justify-between">
@@ -188,12 +188,12 @@
             <div v-if="hasActions" class="flex items-center gap-1" @click.stop>
               <slot name="actions" :row="row" :index="index">
                 <button
-                  class="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                  class="p-2 text-text-tertiary hover:text-primary hover:bg-primary-10 rounded-xl transition-all"
                 >
                   <Edit2 :size="14" />
                 </button>
                 <button
-                  class="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-xl transition-all"
+                  class="p-2 text-text-tertiary hover:text-error hover:bg-error-10 rounded-xl transition-all"
                 >
                   <Trash2 :size="14" />
                 </button>

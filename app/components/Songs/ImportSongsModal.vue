@@ -10,7 +10,7 @@
     >
       <div
         v-if="show"
-        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-primary/80 backdrop-blur-sm"
+        class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
         @click.self="close"
       >
         <div
@@ -21,11 +21,11 @@
             v-if="importResult"
             class="flex flex-col flex-1 overflow-hidden animate-in fade-in duration-500"
           >
-            <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary/50">
+            <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
               <div>
                 <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-success/10 flex items-center justify-center text-success"
+                    class="w-10 h-10 rounded-2xl bg-success-10 flex items-center justify-center text-success"
                   >
                     <Icon name="success" :size="20" />
                   </div>
@@ -34,7 +34,7 @@
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.resultDesc }}</p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="close"
               >
                 <Icon name="x" :size="20" />
@@ -44,7 +44,7 @@
             <div class="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
               <div class="grid grid-cols-2 gap-4">
                 <div
-                  class="p-6 bg-success/5 border border-success/20 rounded-3xl flex flex-col items-center gap-2"
+                  class="p-6 bg-success-5 border border-success-20 rounded-3xl flex flex-col items-center gap-2"
                 >
                   <span class="text-[10px] font-black text-success uppercase tracking-widest"
                     >{{ locale.successCount }}</span
@@ -54,7 +54,7 @@
                   }}</span>
                 </div>
                 <div
-                  class="p-6 bg-error/5 border border-error/20 rounded-3xl flex flex-col items-center gap-2"
+                  class="p-6 bg-error-5 border border-error-20 rounded-3xl flex flex-col items-center gap-2"
                 >
                   <span class="text-[10px] font-black text-error uppercase tracking-widest"
                     >{{ locale.failedCount }}</span
@@ -82,14 +82,14 @@
               </div>
               <div
                 v-else
-                class="flex flex-col items-center justify-center py-10 text-success/50"
+                class="flex flex-col items-center justify-center py-10 text-success-50"
               >
                 <Icon name="success" :size="48" class="mb-4" />
                 <p class="text-sm font-bold uppercase tracking-widest">{{ locale.allSuccess }}</p>
               </div>
             </div>
 
-            <div class="p-8 pt-4 border-t border-border-secondary/50 bg-bg-secondary/50">
+            <div class="p-8 pt-4 border-t border-border-secondary-50 bg-bg-secondary-50">
               <button
                 class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
                 @click="close"
@@ -101,11 +101,11 @@
 
           <!-- 正常导入视图 -->
           <div v-else class="flex flex-col flex-1 overflow-hidden">
-            <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary/50">
+            <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
               <div>
                 <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-primary-hover/10 flex items-center justify-center text-primary"
+                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                   >
                     <Icon name="download" :size="20" />
                   </div>
@@ -114,14 +114,14 @@
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.desc }}</p>
               </div>
               <button
-                class="p-3 bg-bg-tertiary/50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
+                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="close"
               >
                 <Icon name="x" :size="20" />
               </button>
             </div>
 
-            <div class="p-8 py-6 space-y-6 border-b border-border-secondary/50">
+            <div class="p-8 py-6 space-y-6 border-b border-border-secondary-50">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
@@ -156,7 +156,7 @@
               </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar bg-bg-primary/30">
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar bg-bg-primary-30">
               <div
                 v-if="loadingSemesters || loadingSongs"
                 class="flex flex-col items-center justify-center py-20 text-text-tertiary"
@@ -170,7 +170,7 @@
                 class="flex flex-col items-center justify-center py-20 text-center px-8"
               >
                 <div
-                  class="w-16 h-16 rounded-2xl bg-error/10 flex items-center justify-center text-error mb-4"
+                  class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center text-error mb-4"
                 >
                   <Icon name="alert-triangle" :size="32" />
                 </div>
@@ -206,7 +206,7 @@
                   class="group flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all border"
                   :class="[
                     isSelected(song.id)
-                      ? 'bg-primary-hover/10 border-primary/30 shadow-lg'
+                      ? 'bg-primary-hover-10 border-primary-30 shadow-lg'
                       : 'bg-bg-secondary border-transparent hover:border-border-secondary'
                   ]"
                   @click="toggleSelection(song.id)"
@@ -248,7 +248,7 @@
                     :class="[
                       'px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter border',
                       song.played
-                        ? 'bg-success/10 text-success border-success/20'
+                        ? 'bg-success-10 text-success border-success-20'
                         : 'bg-bg-tertiary text-text-tertiary border-border-tertiary'
                     ]"
                   >
@@ -259,7 +259,7 @@
             </div>
 
             <div
-              class="p-8 border-t border-border-secondary/50 bg-bg-secondary/50 flex flex-col md:flex-row gap-4 items-center justify-between"
+              class="p-8 border-t border-border-secondary-50 bg-bg-secondary-50 flex flex-col md:flex-row gap-4 items-center justify-between"
             >
               <div class="flex items-center gap-4 w-full md:w-auto">
                 <button
