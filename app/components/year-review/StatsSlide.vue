@@ -103,7 +103,7 @@ const { yearReview } = useLocale()
 
 .suffix {
   font-size: 1.5rem;
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   font-weight: 500;
   margin-left: 0.5rem;
 }

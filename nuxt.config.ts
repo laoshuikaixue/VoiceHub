@@ -291,6 +291,7 @@ export default defineNuxtConfig({
         'brand-purple': 'var(--brand-purple)',
         'brand-purple-hover': 'var(--brand-purple-hover)',
         'brand-purple-light': 'var(--brand-purple-light)',
+        'brand-purple-lighter': 'var(--brand-purple-lighter)',
         'brand-purple-glow': 'var(--brand-purple-glow)',
         'brand-pink': 'var(--brand-pink)',
         'brand-cyan': 'var(--brand-cyan)',

@@ -267,7 +267,7 @@ const handleTouchEnd = (e) => {
 }
 
 .error-desc {
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
 }
@@ -308,7 +308,7 @@ const handleTouchEnd = (e) => {
 }
 
 .empty-desc {
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   margin-bottom: 2rem;
 }
 

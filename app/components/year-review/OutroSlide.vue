@@ -78,7 +78,7 @@ const { yearReview } = useLocale()
 }
 
 .label {
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   font-size: 0.875rem;
   letter-spacing: 0.5em;
   text-transform: uppercase;

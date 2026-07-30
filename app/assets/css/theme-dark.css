@@ -284,6 +284,7 @@
   --brand-purple: #8b5cf6;
   --brand-purple-hover: #7c3aed;
   --brand-purple-light: #a78bfa;
+  --brand-purple-lighter: #e9d5ff;
   --brand-purple-glow: rgba(139, 92, 246, 0.5);
   --brand-pink: #f472b6;
   --brand-cyan: #22d3ee;
@@ -441,4 +442,14 @@
   --text-success-80: rgba(16, 185, 129, 0.8);
   /* === Alpha (--text-warning) === */
   --text-warning-80: rgba(245, 158, 11, 0.8);
+  /* 打印专用变量（覆盖主题配色） */
+  --print-bg: #f0f0f0;
+  --print-text-primary: #000;
+  --print-text-secondary: #333;
+  --print-text-tertiary: #666;
+  --print-border: #ccc;
+  /* Year Review 专用变量 */
+  --year-review-text-tertiary: #6b7280;
+  --year-review-text-yellow: #fde047;
+  --year-review-text-cyan: #67e8f9;
 }

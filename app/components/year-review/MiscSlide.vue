@@ -85,7 +85,7 @@ const formatPlatform = (platform) => {
 
 .label {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 0.5rem; /* adjusted */
@@ -114,7 +114,7 @@ const formatPlatform = (platform) => {
 .active-value {
   font-size: 2.25rem; /* text-4xl */
   font-weight: 700;
-  color: #fde047; /* yellow-300 */
+  color: var(--year-review-text-yellow);
 }
 
 .unit {
@@ -126,7 +126,7 @@ const formatPlatform = (platform) => {
 .votes-value {
   font-size: 1.875rem; /* text-3xl */
   font-weight: 700;
-  color: #67e8f9; /* cyan-300 */
+  color: var(--year-review-text-cyan); /* cyan-300 */
 }
 
 @media (min-width: 768px) {
