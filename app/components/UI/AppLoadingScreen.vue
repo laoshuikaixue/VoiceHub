@@ -118,8 +118,8 @@ const warpSettings = computed(() => ({
   justify-content: space-between;
   padding: 0;
   overflow: hidden;
-  color: #f3f4f6;
-  background: #070709;
+  color: var(--text-primary);
+  background: var(--bg-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   user-select: none;
 }

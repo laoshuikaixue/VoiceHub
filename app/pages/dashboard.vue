@@ -23,7 +23,7 @@
 
         <!-- 主内容区域 -->
         <main
-          class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-text-primary"
+          class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-bg-primary text-text-primary"
         >
           <header
             class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-border-secondary bg-bg-primary-60 backdrop-blur-xl z-30"

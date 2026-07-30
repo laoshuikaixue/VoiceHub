@@ -38,7 +38,7 @@
           v-if="isOpen"
           ref="dropdownRef"
           :style="dropdownStyle"
-          class="fixed z-[9999] p-1 bg-[#0c0c0e] border border-border-secondary rounded-lg shadow-2xl backdrop-blur-xl"
+          class="fixed z-[9999] p-1 bg-bg-primary border border-border-secondary rounded-lg shadow-2xl backdrop-blur-xl"
         >
           <div class="max-h-[200px] overflow-y-auto custom-scrollbar">
             <button

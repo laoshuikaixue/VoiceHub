@@ -338,7 +338,7 @@
 
           <div class="flex-1 flex flex-col items-center justify-center p-4">
             <div
-              class="w-full max-w-[320px] bg-[#0c0c0e] border border-border-secondary rounded-3xl overflow-hidden shadow-2xl relative"
+              class="w-full max-w-[320px] bg-bg-primary border border-border-secondary rounded-3xl overflow-hidden shadow-2xl relative"
             >
               <!-- 顶部装饰 -->
               <div class="h-1.5 bg-primary-hover w-full" />

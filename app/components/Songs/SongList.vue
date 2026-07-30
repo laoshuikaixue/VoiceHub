@@ -2916,7 +2916,7 @@ button:disabled {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 24px;
-  color: #f3f4f6;
+  color: var(--text-secondary);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
@@ -2930,7 +2930,7 @@ button:disabled {
 .submission-note-header h4 {
   font-size: 18px;
   font-weight: 600;
-  color: #f3f4f6;
+  color: var(--text-secondary);
   margin: 0;
 }
 

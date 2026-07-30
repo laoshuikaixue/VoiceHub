@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute inset-0 z-0 bg-[#070709] overflow-hidden">
+  <div class="absolute inset-0 z-0 bg-bg-primary overflow-hidden">
     <canvas
       ref="canvasRef"
       class="w-full h-full block touch-none pointer-events-auto"
