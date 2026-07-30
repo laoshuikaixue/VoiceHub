@@ -1091,7 +1091,7 @@ const startAnimationLoop = () => {
 }
 
 // 从 rgba/rgb 颜色字符串中提取 R/G/B 并替换为新的 alpha
-const extractColorWithAlpha = (colorStr: string, alpha: number): string => {
+const extractColorWithAlpha = (colorStr, alpha) => {
   const match = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
   if (!match) return colorStr
   const [, r, g, b] = match
@@ -1136,7 +1136,6 @@ const drawSpectrum = () => {
     // 根据 percent (0~1) 在 0.2~0.7 之间动态计算 alpha
     const dynamicAlpha = 0.2 + percent * 0.5
     ctx.fillStyle = extractColorWithAlpha(overlayBase, dynamicAlpha)
-  }
 
     ctx.beginPath()
     ctx.roundRect(0, y, Math.max(4, barW), blockH, 4)
