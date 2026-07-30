@@ -377,34 +377,34 @@
                 <div class="h-1.5 w-full bg-amber-500" />
 
                 <div class="space-y-5 p-5 sm:p-6">
-                  <header class="flex items-center gap-3">
+                  <header class="flex items-start gap-3">
                     <div
                       class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
                       aria-hidden="true"
                     >
                       <Icon name="bell-ring" :size="17" />
                     </div>
-                    <p class="min-w-0 truncate text-[11px] font-bold text-zinc-500">
-                      {{ locale.senderLabel }}：{{ previewSenderName }}
-                    </p>
+                    <div class="min-w-0 flex-1">
+                      <h4
+                        class="break-words text-sm font-bold"
+                        :class="form.title ? 'text-zinc-200' : 'italic text-zinc-700'"
+                      >
+                        {{ form.title || locale.previewTitlePlaceholder }}
+                      </h4>
+                      <p class="mt-1 truncate text-[11px] font-bold text-zinc-500">
+                        {{ locale.senderLabel }}：{{ previewSenderName }}
+                      </p>
+                    </div>
                   </header>
 
-                  <div class="space-y-3">
-                    <h4
-                      class="break-words text-sm font-bold"
-                      :class="form.title ? 'text-zinc-200' : 'italic text-zinc-700'"
-                    >
-                      {{ form.title || locale.previewTitlePlaceholder }}
-                    </h4>
-                    <div
-                      v-if="form.content"
-                      class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-400"
-                      v-html="previewContent"
-                    />
-                    <p v-else class="text-sm italic leading-relaxed text-zinc-700">
-                      {{ locale.previewContentPlaceholder }}
-                    </p>
-                  </div>
+                  <div
+                    v-if="form.content"
+                    class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-400"
+                    v-html="previewContent"
+                  />
+                  <p v-else class="text-sm italic leading-relaxed text-zinc-700">
+                    {{ locale.previewContentPlaceholder }}
+                  </p>
 
                   <footer
                     class="flex items-center justify-between gap-4 border-t border-zinc-800/70 pt-4"
@@ -427,34 +427,34 @@
               <div class="h-1.5 w-full bg-blue-600" />
 
               <div class="space-y-5 p-5 sm:p-6">
-                <header class="flex items-center gap-3">
+                <header class="flex items-start gap-3">
                   <div
                     class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-400"
                     aria-hidden="true"
                   >
                     <Icon name="bell" :size="17" />
                   </div>
-                  <p class="min-w-0 truncate text-[11px] font-bold text-zinc-500">
-                    {{ locale.senderLabel }}：{{ previewSenderName }}
-                  </p>
+                  <div class="min-w-0 flex-1">
+                    <h4
+                      class="break-words text-sm font-bold"
+                      :class="form.title ? 'text-zinc-200' : 'italic text-zinc-700'"
+                    >
+                      {{ form.title || locale.previewTitlePlaceholder }}
+                    </h4>
+                    <p class="mt-1 truncate text-[11px] font-bold text-zinc-500">
+                      {{ locale.senderLabel }}：{{ previewSenderName }}
+                    </p>
+                  </div>
                 </header>
 
-                <div class="space-y-3">
-                  <h4
-                    class="break-words text-sm font-bold"
-                    :class="form.title ? 'text-zinc-200' : 'italic text-zinc-700'"
-                  >
-                    {{ form.title || locale.previewTitlePlaceholder }}
-                  </h4>
-                  <div
-                    v-if="form.content"
-                    class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-400"
-                    v-html="previewContent"
-                  />
-                  <p v-else class="text-sm italic leading-relaxed text-zinc-700">
-                    {{ locale.previewContentPlaceholder }}
-                  </p>
-                </div>
+                <div
+                  v-if="form.content"
+                  class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-zinc-400"
+                  v-html="previewContent"
+                />
+                <p v-else class="text-sm italic leading-relaxed text-zinc-700">
+                  {{ locale.previewContentPlaceholder }}
+                </p>
 
                 <footer
                   class="flex items-center justify-between gap-4 border-t border-zinc-800/70 pt-4"
