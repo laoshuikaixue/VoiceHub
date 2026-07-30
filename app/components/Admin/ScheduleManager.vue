@@ -31,7 +31,7 @@
             :class="[
               'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
               selectedDate === date.value
-                ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-blue-900/20'
+                ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-[var(--primary-glow)]'
                 : 'bg-bg-secondary border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-secondary hover:border-border-tertiary'
             ]"
             @click="handleDateSelect(date.value)"
@@ -115,7 +115,7 @@
               {{ locale.cancel }}
             </button>
             <button
-              class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider"
+              class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider"
               @click="confirmManualDate"
             >
               {{ locale.confirm }}
@@ -573,7 +573,7 @@
               </button>
               <button
                 :disabled="!hasChanges"
-                class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
               >
                 <FileBadge class="w-3.5 h-3.5" /> {{ locale.saveAndPublish }}
@@ -825,7 +825,7 @@
         <!-- 主要操作 -->
         <button
           :disabled="!hasChanges"
-          class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           @click="saveSequence"
         >
           <FileBadge class="w-4 h-4" /> {{ locale.saveAndPublish }}
@@ -886,7 +886,7 @@
           {{ locale.cancel }}
           </button>
           <button
-            class="flex-1 py-3 bg-info hover:bg-info text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-purple-900/20 transition-colors uppercase tracking-wider"
+            class="flex-1 py-3 bg-info hover:bg-info text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--info-glow-20)] transition-colors uppercase tracking-wider"
             @click="confirmMoveDate"
           >
           {{ locale.nextStep }}

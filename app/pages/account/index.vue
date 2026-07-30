@@ -29,7 +29,7 @@
           <section :class="sectionClass" class="flex flex-col items-center text-center">
             <div class="relative group">
               <div
-                class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-text-primary text-4xl font-black shadow-2xl shadow-blue-900/20 mb-6 group-hover:scale-105 transition-transform duration-500"
+                class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-text-primary text-4xl font-black shadow-2xl shadow-[var(--primary-glow)] mb-6 group-hover:scale-105 transition-transform duration-500"
               >
                 <img
                   v-if="auth.user.value?.avatar && !avatarError"

@@ -36,7 +36,7 @@
           :class="[
             'w-10 h-10 rounded-lg text-xs font-black transition-all shadow-lg',
             currentPage === page
-              ? 'bg-primary-hover text-text-primary shadow-blue-900/20'
+              ? 'bg-primary-hover text-text-primary shadow-[var(--primary-glow)]'
               : 'border border-border-secondary text-text-secondary hover:text-primary hover:border-primary-30 shadow-none'
           ]"
           @click="goToPage(page)"

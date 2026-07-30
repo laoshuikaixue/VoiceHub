@@ -9,7 +9,7 @@
         </p>
       </div>
       <button
-        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
         @click="openModal"
       >
         <svg
@@ -57,7 +57,7 @@
 
         <div
           v-if="currentSemester"
-          class="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-10 shadow-2xl shadow-blue-900/20 overflow-hidden group"
+          class="relative bg-gradient-to-br from-primary to-primary-hover rounded-3xl p-10 shadow-2xl shadow-[var(--primary-glow)] overflow-hidden group"
         >
           <div class="relative z-10 space-y-6">
             <div
@@ -234,7 +234,7 @@
                 class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
                 :class="
                   sem.isActive
-                    ? 'bg-primary-hover text-text-primary shadow-lg shadow-blue-900/20'
+                    ? 'bg-primary-hover text-text-primary shadow-lg shadow-[var(--primary-glow)]'
                     : 'bg-bg-tertiary text-text-disabled border border-border-tertiary'
                 "
               >
@@ -425,7 +425,7 @@
               <input
                 v-model="semesterForm.isActive"
                 type="checkbox"
-                class="w-4.5 h-4.5 rounded-lg border-border-secondary bg-bg-primary accent-blue-600 transition-all"
+                class="w-4.5 h-4.5 rounded-lg border-border-secondary bg-bg-primary transition-all"
               >
               <div>
                 <span

@@ -113,7 +113,7 @@
                   class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary-50 relative"
                 >
                   <div
-                    class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"
+                    class="h-full bg-gradient-to-r from-primary to-primary-hover transition-all duration-300 ease-out relative overflow-hidden"
                     :style="{ width: `${uploadProgress}%` }"
                   >
                     <div

@@ -31,7 +31,7 @@
           </button>
         </div>
         <button
-          class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           @click="openAddForm"
         >
           <Plus :size="14" /> {{ locale.add }}
@@ -165,7 +165,7 @@
                 'flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                 playTime.enabled
                   ? 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'
-                  : 'bg-success text-text-primary shadow-lg shadow-emerald-900/20'
+                  : 'bg-success text-text-primary shadow-lg shadow-[var(--success-glow-20)]'
               ]"
               @click="togglePlayTimeStatus(playTime)"
             >
@@ -267,7 +267,7 @@
                 <input
                   v-model="formData.enabled"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-primary accent-blue-600"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-primary"
                 >
                 <span
                   class="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
@@ -316,7 +316,7 @@
           <div class="p-8">
             <div class="flex flex-col items-center py-4 space-y-6">
               <div
-                class="w-16 h-16 rounded-xl bg-error-10 text-error flex items-center justify-center border border-error-10 shadow-xl shadow-red-900/5"
+                class="w-16 h-16 rounded-xl bg-error-10 text-error flex items-center justify-center border border-error-10 shadow-xl shadow-[var(--error-glow-5)]"
               >
                 <AlertCircle :size="32" />
               </div>
@@ -337,7 +337,7 @@
                 </button>
                 <button
                   :disabled="deleteInProgress"
-                  class="flex-1 px-4 py-3 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95"
+                  class="flex-1 px-4 py-3 bg-error hover:bg-error disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95"
                   @click="deletePlayTime"
                 >
                   {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}

@@ -45,7 +45,7 @@
         </button>
         <button
           v-else
-          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click="handleBind(provider)"
         >
@@ -86,7 +86,7 @@
 
         <button
           v-if="isWebAuthnSupported"
-          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click.stop="handleWebAuthnRegister"
         >

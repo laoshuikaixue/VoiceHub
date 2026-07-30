@@ -31,7 +31,7 @@
           <input
             v-model="localSettings.songSelectedNotify"
             type="checkbox"
-            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             @change="saveSettings"
           >
         </div>
@@ -46,7 +46,7 @@
           <input
             v-model="localSettings.songPlayedNotify"
             type="checkbox"
-            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             @change="saveSettings"
           >
         </div>
@@ -61,7 +61,7 @@
           <input
             v-model="localSettings.songVotedNotify"
             type="checkbox"
-            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             @change="saveSettings"
           >
         </div>
@@ -83,7 +83,7 @@
           max="10"
           min="1"
           step="1"
-          class="w-full h-1.5 bg-bg-tertiary rounded-full appearance-none accent-blue-600 cursor-pointer"
+          class="w-full h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer"
           @change="saveSettings"
         >
         <div class="flex justify-between text-[10px] font-black text-text-secondary">
@@ -101,7 +101,7 @@
           <input
             v-model="localSettings.systemNotify"
             type="checkbox"
-            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+            class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             @change="saveSettings"
           >
         </div>
@@ -123,7 +123,7 @@
           max="300"
           min="10"
           step="10"
-          class="w-full h-1.5 bg-bg-tertiary rounded-full appearance-none accent-blue-600 cursor-pointer"
+          class="w-full h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer"
           @change="saveSettings"
         >
         <div class="flex justify-between text-[10px] font-black text-text-secondary">

@@ -115,7 +115,7 @@
                   <input
                     v-model="createForm[item.key]"
                     type="checkbox"
-                    class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-blue-600"
+                    class="w-4 h-4 rounded border-border-secondary bg-bg-secondary"
                   >
                 </div>
                 <div>

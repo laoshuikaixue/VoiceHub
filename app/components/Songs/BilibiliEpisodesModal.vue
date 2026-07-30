@@ -121,7 +121,7 @@
                     <button
                       v-if="allowPlayedResubmit"
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectEpisode(episode)"
                     >
                       <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>
@@ -182,7 +182,7 @@
                     <!-- 选择投稿按钮（未投稿） -->
                     <button
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectEpisode(episode)"
                     >
                       <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>

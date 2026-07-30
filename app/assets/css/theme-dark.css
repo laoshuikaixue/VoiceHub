@@ -6,6 +6,34 @@
   --primary-light: rgba(59, 130, 246, 0.1);
   --primary-border: rgba(59, 130, 246, 0.2);
 
+  /* 控件强调色（与 --primary 一致，供 accent-color 使用） */
+  --accent-color: #3b82f6;
+
+  /* 主色光晕（供阴影 glow 使用） */
+  --primary-glow: rgba(59, 130, 246, 0.2);
+  --primary-glow-5: rgba(59, 130, 246, 0.05);
+  --primary-glow-10: rgba(59, 130, 246, 0.1);
+  --primary-glow-20: rgba(59, 130, 246, 0.2);
+  --primary-glow-40: rgba(59, 130, 246, 0.4);
+
+  /* 成功色光晕 */
+  --success-glow: rgba(16, 185, 129, 0.2);
+  --success-glow-5: rgba(16, 185, 129, 0.05);
+  --success-glow-10: rgba(16, 185, 129, 0.1);
+  --success-glow-20: rgba(16, 185, 129, 0.2);
+
+  /* 警告色光晕 */
+  --warning-glow: rgba(245, 158, 11, 0.2);
+  --warning-glow-5: rgba(245, 158, 11, 0.05);
+  --warning-glow-10: rgba(245, 158, 11, 0.1);
+  --warning-glow-20: rgba(245, 158, 11, 0.2);
+
+  /* 错误色光晕 */
+  --error-glow: rgba(239, 68, 68, 0.2);
+  --error-glow-5: rgba(239, 68, 68, 0.05);
+  --error-glow-10: rgba(239, 68, 68, 0.1);
+  --error-glow-20: rgba(239, 68, 68, 0.2);
+
   /* 成功色 */
   --success: #10b981;
   --success-hover: #059669;
@@ -24,11 +52,17 @@
   --error-light: rgba(239, 68, 68, 0.1);
   --error-border: rgba(239, 68, 68, 0.2);
 
-  /* 信息色 */
+  /* 信息色光晕 */
   --info: #3b82f6;
   --info-hover: #2563eb;
   --info-light: rgba(59, 130, 246, 0.1);
   --info-border: rgba(59, 130, 246, 0.2);
+
+  /* 信息色光晕（紫色系，与 info 品牌色一致） */
+  --info-glow: rgba(139, 92, 246, 0.2);
+  --info-glow-5: rgba(139, 92, 246, 0.05);
+  --info-glow-10: rgba(139, 92, 246, 0.1);
+  --info-glow-20: rgba(139, 92, 246, 0.2);
 
   /* 背景色 */
   --bg-primary: #111111;

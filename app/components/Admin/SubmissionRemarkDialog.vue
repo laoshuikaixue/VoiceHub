@@ -32,7 +32,7 @@
                 :checked="isPublic"
                 :disabled="isUpdatingPublic"
                 @change="$emit('update:isPublic', $event.target.checked)"
-                class="w-4 h-4 rounded border-border-secondary bg-bg-primary accent-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                class="w-4 h-4 rounded border-border-secondary bg-bg-primary cursor-pointer disabled:cursor-not-allowed"
               >
               <span
                 :class="[

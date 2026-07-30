@@ -231,7 +231,7 @@
             </button>
             <button
               :disabled="isPrinting"
-              class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-sm font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
+              class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-sm font-bold rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all"
               @click="printSchedule"
             >
               <Printer class="w-4 h-4" /> {{ isPrinting ? locale.printing : locale.print }}

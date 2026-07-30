@@ -18,7 +18,7 @@
           {{ reloading ? locale.reloading : locale.reload }}
         </button>
         <button
-          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           :disabled="saving"
           @click="saveConfig"
         >

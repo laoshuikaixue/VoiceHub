@@ -439,7 +439,7 @@
                 class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary-50 relative"
               >
                 <div
-                  class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"
+                  class="h-full bg-gradient-to-r from-primary to-primary-hover transition-all duration-300 ease-out relative overflow-hidden"
                   :style="{
                     width: `${totalCount > 0 ? (downloadedCount / totalCount) * 100 : 0}%`
                   }"
@@ -510,7 +510,7 @@
               <button
                 v-else
                 :disabled="selectedSongs.size === 0 || downloading"
-                class="px-6 py-2.5 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider flex items-center gap-2"
+                class="px-6 py-2.5 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-wider flex items-center gap-2"
                 @click="startDownload"
               >
                 <Download v-if="!downloading" class="w-3.5 h-3.5" />

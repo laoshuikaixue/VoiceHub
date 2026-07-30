@@ -188,7 +188,7 @@
                   <button
                     v-else
                     :disabled="submitting || songsLoadingForSimilar"
-                    class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 shadow-lg shadow-blue-900/20"
+                    class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)]"
                     @click="selectSong(item.data)"
                   >
                     {{

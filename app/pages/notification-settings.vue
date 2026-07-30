@@ -22,7 +22,7 @@
 
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           @click="saveSettings"
         >
           <template v-if="saving"> <Loader2 :size="14" class="animate-spin" /> {{ locale.saving }} </template>
@@ -61,7 +61,7 @@
                 <input
                   v-model="localSettings.songSelectedNotify"
                   type="checkbox"
-                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 >
               </div>
             </div>
@@ -76,7 +76,7 @@
                 <input
                   v-model="localSettings.songPlayedNotify"
                   type="checkbox"
-                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 >
               </div>
             </div>
@@ -91,7 +91,7 @@
                 <input
                   v-model="localSettings.songVotedNotify"
                   type="checkbox"
-                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 >
               </div>
             </div>
@@ -106,7 +106,7 @@
                 <input
                   v-model="localSettings.systemNotify"
                   type="checkbox"
-                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 >
               </div>
             </div>
@@ -142,7 +142,7 @@
                   max="300"
                   min="30"
                   step="30"
-                  class="w-24 h-1.5 bg-bg-tertiary rounded-full appearance-none accent-blue-600 cursor-pointer"
+                  class="w-24 h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer"
                 >
                 <span class="text-[11px] font-bold text-primary min-w-[40px] text-right"
                   >{{ localSettings.refreshInterval }}s</span
@@ -341,7 +341,7 @@
                     >
                     <button
                       :disabled="!meowUserId || binding"
-                      class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-900/20 whitespace-nowrap"
+                      class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] whitespace-nowrap"
                       @click="sendVerificationCode"
                     >
                       {{ binding ? locale.sending : locale.sendCode }}

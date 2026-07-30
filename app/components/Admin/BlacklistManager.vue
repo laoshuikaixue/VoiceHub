@@ -71,7 +71,7 @@
         <div class="xl:col-span-2">
           <button
             :disabled="!newItem.value || loading"
-            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-xs font-black rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
             @click="addBlacklistItem"
           >
             <Plus v-if="!loading" :size="16" />
@@ -146,8 +146,8 @@
                 class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border transition-all"
                 :class="[
                   item.type === 'SONG'
-                    ? 'bg-primary-hover-10 text-primary border-primary-20 shadow-lg shadow-blue-900/5'
-                    : 'bg-info-10 text-info border-info-20 shadow-lg shadow-purple-900/5'
+                    ? 'bg-primary-hover-10 text-primary border-primary-20 shadow-lg shadow-[var(--primary-glow-5)]'
+                    : 'bg-info-10 text-info border-info-20 shadow-lg shadow-[var(--info-glow-5)]'
                 ]"
               >
                 <Music v-if="item.type === 'SONG'" :size="22" />
@@ -195,7 +195,7 @@
                 :class="[
                   item.isActive
                     ? 'bg-bg-tertiary text-text-tertiary hover:text-warning hover:bg-warning-5 hover:border-warning-10 border border-transparent'
-                    : 'bg-success text-text-primary shadow-lg shadow-emerald-900/20'
+                    : 'bg-success text-text-primary shadow-lg shadow-[var(--success-glow-20)]'
                 ]"
                 @click="toggleItemStatus(item)"
               >
@@ -286,7 +286,7 @@
         >
           <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
             <div
-              class="w-16 h-16 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-2xl shadow-red-900/10"
+              class="w-16 h-16 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-2xl shadow-[var(--error-glow-10)]"
             >
               <Trash2 :size="28" />
             </div>
@@ -305,7 +305,7 @@
               </button>
               <button
                 :disabled="loading"
-                class="flex-1 px-4 py-4 bg-error hover:bg-error text-text-primary text-[10px] font-black rounded-lg shadow-xl shadow-red-900/20 transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
+                class="flex-1 px-4 py-4 bg-error hover:bg-error text-text-primary text-[10px] font-black rounded-lg shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50"
                 @click="confirmDelete"
               >
                 {{ loading ? locale.deleting : locale.confirmRemove }}

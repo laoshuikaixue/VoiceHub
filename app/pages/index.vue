@@ -685,7 +685,7 @@
                   class="bg-primary-hover-10 border border-primary-20 p-6 rounded-3xl flex items-center gap-4"
                 >
                   <div
-                    class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-blue-900/40"
+                    class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-[var(--primary-glow-40)]"
                   >
                     <Icon name="clock" :size="24" />
                   </div>

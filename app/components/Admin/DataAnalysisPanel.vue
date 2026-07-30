@@ -233,7 +233,7 @@
                   :style="{
                     height: `${(item.count / Math.max(...trendData.map((d) => d.count), 1)) * 100}%`
                   }"
-                  class="w-full bg-gradient-to-t from-blue-600/10 to-blue-500/40 rounded-t-xl group-hover:from-blue-600/30 group-hover:to-blue-400 transition-all border-x border-t border-primary-20 group-hover:border-primary-40 min-h-[4px]"
+                  class="w-full bg-gradient-to-t from-primary/10 to-primary/40 rounded-t-xl group-hover:from-primary/30 group-hover:to-primary/60 transition-all border-x border-t border-primary-20 group-hover:border-primary-40 min-h-[4px]"
                 />
                 <div
                   class="absolute left-1/2 -translate-x-1/2 -translate-y-full mb-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-10"
@@ -321,7 +321,7 @@
               <div
                 :class="`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs ${
                   i === 0
-                    ? 'bg-warning text-black shadow-lg shadow-amber-500/20'
+                    ? 'bg-warning text-black shadow-lg shadow-[var(--warning-glow-20)]'
                     : i === 1
                       ? 'bg-bg-quaternary text-black'
                       : i === 2
@@ -484,7 +484,7 @@
             <div
               v-for="(sem, i) in semesterComparison"
               :key="i"
-              :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-success-5 border-success-20 shadow-lg shadow-emerald-500/5' : 'bg-bg-primary-20 border-border-secondary-60 opacity-60 hover:opacity-100'}`"
+              :class="`p-6 border rounded-[2rem] transition-all ${sem.isActive ? 'bg-success-5 border-success-20 shadow-lg shadow-[var(--success-glow-5)]' : 'bg-bg-primary-20 border-border-secondary-60 opacity-60 hover:opacity-100'}`"
             >
               <div class="flex items-center justify-between mb-4">
                 <span class="text-xs font-black text-text-secondary uppercase tracking-widest">{{
@@ -540,7 +540,7 @@
           class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200"
         >
           <div
-            class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-blue-500/10 to-transparent"
+            class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary/10 to-transparent"
           >
             <div class="flex items-center justify-between mb-4">
               <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.activeUserDetails }}</h4>

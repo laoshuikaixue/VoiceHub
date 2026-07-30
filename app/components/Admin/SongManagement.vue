@@ -152,7 +152,7 @@
           <input
             type="checkbox"
             :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary accent-blue-600 transition-all cursor-pointer"
+            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
             @change="toggleSelectAll"
           />
         </div>
@@ -188,7 +188,7 @@
           <input
             type="checkbox"
             :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary accent-blue-600 transition-all cursor-pointer"
+            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
             @change="toggleSelectAll"
           >
           {{ locale.table.selectPage }}
@@ -219,7 +219,7 @@
             <input
               type="checkbox"
               :checked="selectedSongs.includes(song.id)"
-              class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary accent-blue-600 transition-all cursor-pointer"
+              class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
               @change="toggleSelectSong(song.id)"
             />
           </div>
@@ -231,7 +231,7 @@
               <input
                 type="checkbox"
                 :checked="selectedSongs.includes(song.id)"
-                class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary accent-blue-600 transition-all cursor-pointer"
+                class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
                 @change="toggleSelectSong(song.id)"
               />
             </label>
@@ -865,7 +865,7 @@
                   v-model="editForm.submissionNotePublic"
                   :disabled="submissionNoteClearRequested"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-primary accent-blue-500"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-primary"
                 />
                 <div>
                   <span

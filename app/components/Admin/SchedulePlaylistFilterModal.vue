@@ -143,7 +143,7 @@
               {{ locale.clearFilter }}
             </button>
             <button
-              class="flex-1 px-4 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-sm font-bold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="flex-1 px-4 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-sm font-bold transition-all shadow-lg shadow-[var(--primary-glow)] disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="isApplying || isAnyCustomLoading"
               @click="applyFilter"
             >

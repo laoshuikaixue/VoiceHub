@@ -105,7 +105,7 @@
           </button>
           <button
             :disabled="liking || song.voted"
-            class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
+            class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
             @click="handleLike"
           >
             <Icon v-if="liking" name="loader" :size="16" class="animate-spin" />

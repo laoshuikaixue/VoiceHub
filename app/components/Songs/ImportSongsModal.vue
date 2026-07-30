@@ -285,7 +285,7 @@
                 </button>
                 <button
                   type="button"
-                  class="flex-[2] md:flex-none px-8 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-900/20 active:scale-95"
+                  class="flex-[2] md:flex-none px-8 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] active:scale-95"
                   :disabled="selectedSongIds.size === 0 || importing"
                   @click="handleImport"
                 >

@@ -340,7 +340,7 @@
               </div>
               <p class="text-text-tertiary font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
               <button
-                class="px-10 py-4 rounded-2xl bg-primary-hover hover:bg-primary text-text-primary font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+                class="px-10 py-4 rounded-2xl bg-primary-hover hover:bg-primary text-text-primary font-black transition-all active:scale-95 shadow-xl shadow-[var(--primary-glow)]"
                 type="button"
                 @click="openLoginFromPlaylist"
               >
@@ -559,7 +559,7 @@
                 :disabled="
                   !selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading
                 "
-                class="flex-[2] px-6 py-4 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+                class="flex-[2] px-6 py-4 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-[var(--primary-glow)] flex items-center justify-center gap-2 uppercase tracking-widest"
                 type="button"
                 @click="handleAddSongsToPlaylist"
               >

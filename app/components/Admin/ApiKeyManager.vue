@@ -7,7 +7,7 @@
         <p class="text-xs text-text-tertiary mt-1">{{ locale.desc }}</p>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+        class="flex items-center gap-2 px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl transition-all shadow-lg shadow-[var(--primary-glow)] active:scale-95"
         @click="openCreateModal"
       >
         <Plus :size="14" /> {{ locale.create }}
@@ -271,7 +271,7 @@
                     v-model="form.permissions"
                     type="checkbox"
                     :value="perm.value"
-                    class="mt-1 w-3.5 h-3.5 rounded border-border-secondary bg-bg-secondary accent-blue-600"
+                    class="mt-1 w-3.5 h-3.5 rounded border-border-secondary bg-bg-secondary"
                   >
                   <div>
                     <p
@@ -294,7 +294,7 @@
               <input
                 v-model="form.isActive"
                 type="checkbox"
-                class="w-3.5 h-3.5 rounded border-border-secondary bg-bg-secondary accent-blue-600"
+                class="w-3.5 h-3.5 rounded border-border-secondary bg-bg-secondary"
               >
               <span
                 class="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
@@ -312,7 +312,7 @@
             </button>
             <button
               :disabled="submitting"
-              class="px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 disabled:opacity-50 transition-all"
+              class="px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] disabled:opacity-50 transition-all"
               @click="showCreateModal ? createApiKey() : updateApiKey()"
             >
               {{ submitting ? locale.saving : showCreateModal ? locale.createKey : locale.saveChanges }}
@@ -342,7 +342,7 @@
               class="p-6 bg-success-10 border border-success-20 rounded-2xl flex flex-col items-center text-center"
             >
               <div
-                class="w-12 h-12 rounded-full bg-success text-text-primary flex items-center justify-center mb-4 shadow-lg shadow-emerald-900/20"
+                class="w-12 h-12 rounded-full bg-success text-text-primary flex items-center justify-center mb-4 shadow-lg shadow-[var(--success-glow-20)]"
               >
                 <Check :size="24" :stroke-width="3" />
               </div>

@@ -18,7 +18,7 @@
         </button>
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveConfig"
         >
           <template v-if="saving">
@@ -87,7 +87,7 @@
               <input
                 v-model="formData.showBeianIcon"
                 type="checkbox"
-                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@
             <input
               v-model="formData.enableCollaborativeSubmission"
               type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
@@ -173,7 +173,7 @@
             <input
               v-model="formData.enableSubmissionRemarks"
               type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
@@ -187,7 +187,7 @@
             <input
               v-model="formData.enableCardCodeRequests"
               type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
@@ -201,7 +201,7 @@
             <input
               v-model="formData.requireCardCodeForRequests"
               type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
@@ -227,7 +227,7 @@
                 !formData.enableSubmissionLimit ||
                 (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
               "
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
             />
           </div>
 
@@ -241,7 +241,7 @@
             <input
               v-model="formData.enableReplayRequests"
               type="checkbox"
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
@@ -256,7 +256,7 @@
               <input
                 v-model="formData.enableSubmissionLimit"
                 type="checkbox"
-                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
               />
             </div>
 
@@ -332,7 +332,7 @@
                   id="captcha-enabled"
                   v-model="formData.captchaEnabled"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <div class="flex-1 space-y-4">
@@ -353,7 +353,7 @@
                           v-model="formData.captchaProvider"
                           type="radio"
                           value="graphic"
-                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer"
                         />
                         <span class="text-sm text-text-secondary">{{ locale.captchaGraphic }}</span>
                       </label>
@@ -362,7 +362,7 @@
                           v-model="formData.captchaProvider"
                           type="radio"
                           value="turnstile"
-                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer"
                         />
                         <span class="text-sm text-text-secondary">{{ locale.captchaTurnstile }}</span>
                       </label>
@@ -420,7 +420,7 @@
                   id="force-password-change-first-login"
                   v-model="formData.forcePasswordChangeOnFirstLogin"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="force-password-change-first-login" class="cursor-pointer">
@@ -441,7 +441,7 @@
                   id="show-keywords"
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="show-keywords" class="cursor-pointer">
@@ -460,7 +460,7 @@
                   id="hide-students"
                   v-model="formData.hideStudentInfo"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="hide-students" class="cursor-pointer">
@@ -479,7 +479,7 @@
                   id="telemetry-enabled"
                   v-model="formData.telemetryEnabled"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="telemetry-enabled" class="cursor-pointer">

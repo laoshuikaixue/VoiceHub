@@ -49,7 +49,7 @@
                   :class="[
                     'flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black transition-all border',
                     form.scope === opt.id
-                      ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-blue-900/20'
+                      ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-[var(--primary-glow)]'
                       : 'bg-bg-primary border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-secondary'
                   ]"
                   @click="form.scope = opt.id"

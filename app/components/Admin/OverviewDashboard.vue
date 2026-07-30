@@ -179,7 +179,7 @@
             :class="[
               'w-full flex items-center gap-3 px-5 py-4 rounded-lg border font-bold text-sm transition-all text-left group',
               action.primary
-                ? 'bg-primary-hover border-primary text-text-primary shadow-xl shadow-blue-900/20 hover:bg-primary'
+                ? 'bg-primary-hover border-primary text-text-primary shadow-xl shadow-[var(--primary-glow)] hover:bg-primary'
                 : 'bg-bg-primary-40 border-border-secondary text-text-tertiary hover:border-border-tertiary hover:text-text-primary'
             ]"
             @click="navigateTo(action.id)"

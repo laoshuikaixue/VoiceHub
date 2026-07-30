@@ -8,7 +8,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-2">
         <button
-          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-blue-900/20"
+          class="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all uppercase tracking-widest active:scale-95 shadow-lg shadow-[var(--primary-glow)]"
           @click="showAddModal = true"
         >
           <UserPlus :size="14" />
@@ -727,7 +727,7 @@
               </button>
               <button
                 :disabled="saving"
-                class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-900/20 active:scale-95"
+                class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] active:scale-95"
                 @click="saveUser"
               >
                 <Save v-if="!saving" :size="16" />
@@ -824,7 +824,7 @@
               </button>
               <button
                 :disabled="resetting"
-                class="flex-[2] px-6 py-4 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-amber-900/20 active:scale-95"
+                class="flex-[2] px-6 py-4 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--warning-glow-20)] active:scale-95"
                 @click="confirmResetPassword"
               >
                 <Save v-if="!resetting" :size="16" />
@@ -1047,7 +1047,7 @@
               </button>
               <button
                 :disabled="importLoading || previewData.length === 0"
-                class="flex-[2] px-6 py-4 bg-success hover:bg-success text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-900/20 active:scale-95"
+                class="flex-[2] px-6 py-4 bg-success hover:bg-success text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--success-glow-20)] active:scale-95"
                 @click="importUsers"
               >
                 <Save v-if="!importLoading" :size="16" />

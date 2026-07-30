@@ -151,7 +151,7 @@
                 </button>
                 <button
                   :disabled="selectedUsers.length === 0"
-                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                   @click="confirm"
                 >
                   {{ locale.confirm }}

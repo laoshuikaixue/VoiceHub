@@ -453,7 +453,7 @@
                 @click="downloadTemplate"
               >
                 <div
-                  class="w-10 h-10 rounded-lg bg-success text-text-primary flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-110 transition-transform"
+                  class="w-10 h-10 rounded-lg bg-success text-text-primary flex items-center justify-center shadow-lg shadow-[var(--success-glow-20)] group-hover:scale-110 transition-transform"
                 >
                   <Download :size="20" />
                 </div>
@@ -672,10 +672,10 @@
             :class="[
               'flex-[2] px-6 py-4 text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg active:scale-95',
               updateType === 'excel-batch'
-                ? 'bg-success hover:bg-success shadow-emerald-900/20'
+                ? 'bg-success hover:bg-success shadow-[var(--success-glow-20)]'
                 : updateType === 'status-batch'
-                  ? 'bg-warning hover:bg-warning shadow-amber-900/20'
-                  : 'bg-info hover:bg-info shadow-purple-900/20'
+                  ? 'bg-warning hover:bg-warning shadow-[var(--warning-glow-20)]'
+                  : 'bg-info hover:bg-info shadow-[var(--info-glow-20)]'
             ]"
             @click="performUpdate"
           >

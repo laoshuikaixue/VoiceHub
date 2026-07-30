@@ -177,28 +177,28 @@ const iconName = computed(() => {
 const iconClasses = computed(() => {
   switch (props.type) {
     case 'danger':
-      return 'bg-error-10 text-error border-error-20 shadow-red-900/5'
+      return 'bg-error-10 text-error border-error-20 shadow-[var(--error-glow-5)]'
     case 'success':
-      return 'bg-success-10 text-success border-success-20 shadow-emerald-900/5'
+      return 'bg-success-10 text-success border-success-20 shadow-[var(--success-glow-5)]'
     case 'info':
-      return 'bg-primary-10 text-primary border-primary-20 shadow-blue-900/5'
+      return 'bg-primary-10 text-primary border-primary-20 shadow-[var(--primary-glow-5)]'
     case 'warning':
     default:
-      return 'bg-warning-10 text-warning border-warning-20 shadow-amber-900/5'
+      return 'bg-warning-10 text-warning border-warning-20 shadow-[var(--warning-glow-5)]'
   }
 })
 
 const confirmBtnClasses = computed(() => {
   switch (props.type) {
     case 'danger':
-      return 'bg-error hover:bg-error shadow-red-900/20'
+      return 'bg-error hover:bg-error shadow-[var(--error-glow-20)]'
     case 'success':
-      return 'bg-success hover:bg-success shadow-emerald-900/20'
+      return 'bg-success hover:bg-success shadow-[var(--success-glow-20)]'
     case 'info':
-      return 'bg-primary-hover hover:bg-primary shadow-blue-900/20'
+      return 'bg-primary-hover hover:bg-primary shadow-[var(--primary-glow)]'
     case 'warning':
     default:
-      return 'bg-warning hover:bg-warning shadow-amber-900/20'
+      return 'bg-warning hover:bg-warning shadow-[var(--warning-glow-20)]'
   }
 })
 </script>

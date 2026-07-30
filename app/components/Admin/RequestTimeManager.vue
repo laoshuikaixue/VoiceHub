@@ -110,7 +110,7 @@
               :class="[
                 'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary text-text-tertiary transition-colors',
                 slot.enabled && !slot.past
-                  ? 'text-primary border-primary-20 shadow-lg shadow-blue-900/10'
+                  ? 'text-primary border-primary-20 shadow-lg shadow-[var(--primary-glow-10)]'
                   : ''
               ]"
             >
@@ -218,7 +218,7 @@
                 'flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all',
                 slot.enabled
                   ? 'bg-bg-tertiary text-text-tertiary hover:text-text-primary'
-                  : 'bg-success text-text-primary shadow-lg shadow-emerald-900/20'
+                  : 'bg-success text-text-primary shadow-lg shadow-[var(--success-glow-20)]'
               ]"
               @click="toggleRequestTimeStatus(slot)"
             >
@@ -338,7 +338,7 @@
                   <input
                     v-model="formData.enabled"
                     type="checkbox"
-                    class="w-4.5 h-4.5 rounded-lg border-border-secondary bg-bg-primary accent-blue-600"
+                    class="w-4.5 h-4.5 rounded-lg border-border-secondary bg-bg-primary"
                   >
                   <div>
                     <span
@@ -411,7 +411,7 @@
         >
           <div class="flex flex-col items-center space-y-6">
             <div
-              class="w-16 h-16 rounded-[2rem] bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-xl shadow-red-900/10"
+              class="w-16 h-16 rounded-[2rem] bg-error-10 text-error flex items-center justify-center border border-error-20 shadow-xl shadow-[var(--error-glow-10)]"
             >
               <Trash2 :size="28" />
             </div>
@@ -433,7 +433,7 @@
               </button>
               <button
                 :disabled="deleteInProgress"
-                class="flex-1 px-4 py-3 bg-error hover:bg-error text-text-primary text-xs font-black rounded-2xl shadow-xl shadow-red-900/20 transition-all active:scale-95 disabled:opacity-50"
+                class="flex-1 px-4 py-3 bg-error hover:bg-error text-text-primary text-xs font-black rounded-2xl shadow-xl shadow-[var(--error-glow-20)] transition-all active:scale-95 disabled:opacity-50"
                 @click="deleteRequestTime"
               >
                 {{ deleteInProgress ? locale.deleting : locale.confirmDelete }}

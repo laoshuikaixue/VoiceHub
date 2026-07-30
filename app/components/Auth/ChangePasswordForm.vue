@@ -180,7 +180,7 @@
 
       <button
         :disabled="loading || !isFormValid"
-        class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
+        class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-50"
         type="submit"
       >
         <Loader2 v-if="loading" :size="18" class="animate-spin" />

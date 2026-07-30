@@ -43,7 +43,7 @@
         <div class="grid grid-cols-1 gap-3 pt-4">
           <NuxtLink
             to="/login"
-            class="flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            class="flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           >
             <LogIn :size="18" />
             {{ primaryActionLabel }}

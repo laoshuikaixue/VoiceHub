@@ -191,7 +191,7 @@
                   <button
                     v-else
                     :disabled="submitting"
-                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                    class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                     @click="selectProgram(program)"
                   >
                     {{ submitting && selectedProgramId === program.id ? locale.submitLoading : locale.selectSubmit }}
