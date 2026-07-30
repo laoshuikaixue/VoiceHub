@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -20,7 +20,11 @@ export default defineEventHandler(async (event) => {
   let notification
   try {
     notification = await db
-      .select({ id: notifications.id, userId: notifications.userId })
+      .select({
+        id: notifications.id,
+        userId: notifications.userId,
+        userDeleted: notifications.userDeleted
+      })
       .from(notifications)
       .where(eq(notifications.id, id))
       .limit(1)
@@ -30,7 +34,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_MARK_READ_FAILED, '标记通知失败')
   }
 
-  if (!notification) {
+  if (!notification || notification.userDeleted) {
     throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
   }
 
@@ -42,7 +46,13 @@ export default defineEventHandler(async (event) => {
     const updatedNotification = await db
       .update(notifications)
       .set(createNotificationReadUpdate())
-      .where(eq(notifications.id, id))
+      .where(
+        and(
+          eq(notifications.id, id),
+          eq(notifications.userId, user.id),
+          eq(notifications.userDeleted, false)
+        )
+      )
       .returning()
       .then((result) => result[0])
 

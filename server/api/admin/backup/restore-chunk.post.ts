@@ -953,7 +953,8 @@ export default defineEventHandler(async (event) => {
               'senderUsername',
               'title',
               'message',
-              'type'
+              'type',
+              'userDeleted'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) notificationData[field] = record[field]

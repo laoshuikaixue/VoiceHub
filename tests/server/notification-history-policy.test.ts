@@ -2,9 +2,42 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   resolveNotificationBatchReference,
+  resolveNotificationHistoryFilters,
   resolveNotificationHistoryPagination,
   resolveNotificationHistoryStatus
 } from '../../server/utils/notification-history-policy.ts'
+
+test('通知发送历史支持关键词、类型、发送人和时间排序筛选', () => {
+  assert.deepEqual(
+    resolveNotificationHistoryFilters({
+      keyword: '  放假通知  ',
+      type: 'important',
+      sender: '7',
+      sortOrder: 'asc'
+    }),
+    {
+      keyword: '放假通知',
+      type: 'IMPORTANT',
+      senderId: 7,
+      sortOrder: 'ASC'
+    }
+  )
+  assert.deepEqual(resolveNotificationHistoryFilters({}), {
+    keyword: '',
+    type: 'ALL',
+    senderId: null,
+    sortOrder: 'DESC'
+  })
+})
+
+test('通知发送历史拒绝无效筛选参数', () => {
+  assert.equal(resolveNotificationHistoryFilters({ keyword: ['通知'] }), null)
+  assert.equal(resolveNotificationHistoryFilters({ keyword: 'a'.repeat(101) }), null)
+  assert.equal(resolveNotificationHistoryFilters({ type: 'SYSTEM' }), null)
+  assert.equal(resolveNotificationHistoryFilters({ sender: '0' }), null)
+  assert.equal(resolveNotificationHistoryFilters({ sender: 'admin' }), null)
+  assert.equal(resolveNotificationHistoryFilters({ sortOrder: 'latest' }), null)
+})
 
 test('通知历史状态筛选支持全部、已读和未读', () => {
   assert.equal(resolveNotificationHistoryStatus(undefined), 'ALL')

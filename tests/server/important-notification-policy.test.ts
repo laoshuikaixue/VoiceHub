@@ -4,11 +4,13 @@ import {
   canSendSystemNotification,
   createNotificationSenderSnapshot,
   createNotificationReadUpdate,
+  createNotificationUserDeleteUpdate,
   resolveImportantFlag,
   resolveNotificationSource,
   selectNextImportantNotification,
   shouldCheckImportantNotification,
   shouldDeliverSystemNotification,
+  shouldRetainNotificationHistory,
   serializeNotificationSender
 } from '../../server/utils/important-notification-policy.ts'
 
@@ -64,10 +66,25 @@ test('关闭通知使用服务端已读更新并刷新更新时间', () => {
   assert.deepEqual(createNotificationReadUpdate(updatedAt), { read: true, updatedAt })
 })
 
+test('用户删除通知时保留记录并同步标记为已读', () => {
+  const updatedAt = new Date('2026-07-29T12:30:00.000Z')
+  assert.deepEqual(createNotificationUserDeleteUpdate(updatedAt), {
+    userDeleted: true,
+    read: true,
+    updatedAt
+  })
+})
+
 test('重要通知绕过普通通知开关，普通通知保持原策略', () => {
   assert.equal(shouldDeliverSystemNotification(false, false), false)
   assert.equal(shouldDeliverSystemNotification(false, true), true)
   assert.equal(shouldDeliverSystemNotification(true, false), true)
+})
+
+test('只有后台手工发送的通知需要在用户删除后保留历史', () => {
+  assert.equal(shouldRetainNotificationHistory('SYSTEM_NOTICE', 'ADMIN_MANUAL'), true)
+  assert.equal(shouldRetainNotificationHistory('SYSTEM_NOTICE', 'SYSTEM'), false)
+  assert.equal(shouldRetainNotificationHistory('SONG_PLAYED', 'SYSTEM'), false)
 })
 
 test('只有管理员角色可以发送系统通知', () => {

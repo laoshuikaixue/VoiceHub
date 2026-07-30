@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
       .where(
         and(
           eq(notifications.userId, user.id),
+          eq(notifications.userDeleted, false),
           eq(notifications.important, true),
           eq(notifications.read, false)
         )

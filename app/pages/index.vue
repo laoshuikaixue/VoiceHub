@@ -317,6 +317,37 @@
                   </div>
                 </div>
 
+                <button
+                  :aria-label="formatLocaleValue(
+                    locale.unreadCountSummary,
+                    notificationsService.unreadCount.value
+                  )"
+                  :class="{ empty: !hasUnreadNotifications }"
+                  :disabled="!hasUnreadNotifications"
+                  class="notification-unread-summary"
+                  type="button"
+                  @click="notificationsService.changeFilter('unread')"
+                >
+                  <span class="notification-unread-summary-icon">
+                    <Icon :size="21" aria-hidden="true" name="bell-ring" />
+                  </span>
+                  <span class="notification-unread-summary-copy">
+                    <span>{{ locale.unreadOverview }}</span>
+                    <strong>
+                      {{
+                        formatLocaleValue(
+                          locale.unreadCountSummary,
+                          notificationsService.unreadCount.value
+                        )
+                      }}
+                    </strong>
+                  </span>
+                  <span v-if="hasUnreadNotifications" class="notification-unread-summary-action">
+                    <span>{{ locale.viewUnreadNotifications }}</span>
+                    <Icon :size="17" aria-hidden="true" name="chevron-right" />
+                  </span>
+                </button>
+
                 <!-- 通知列表 -->
                 <div class="notification-list">
                   <div v-if="notificationsLoading" class="loading-indicator">
@@ -759,6 +790,7 @@ import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useToast } from '~/composables/useToast'
 import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
@@ -807,6 +839,7 @@ const userClassInfo = computed(() => {
 const songs = useSongs()
 // 立即初始化通知服务，避免时序问�?
 const notificationsService = useNotifications()
+const { showToast } = useToast()
 const unreadNotificationCount = ref(0)
 
 // 模拟数据初始�?
@@ -1050,7 +1083,10 @@ const markNotificationAsRead = async (id) => {
 const markAllNotificationsAsRead = async () => {
   try {
     if (notificationsService) {
-      await notificationsService.markAllAsRead()
+      const result = await notificationsService.markAllAsRead()
+      if (result) {
+        showToast(locale.value.markAllReadSuccess, 'success')
+      }
     }
   } catch (error) {
     console.error('[????] ???????????', error)
@@ -1103,7 +1139,10 @@ const handleConfirmAction = async () => {
       await notificationsService.deleteNotification(pendingId.value)
       pendingId.value = null
     } else if (pendingAction.value === 'clearAll') {
-      await notificationsService.clearAllNotifications()
+      const result = await notificationsService.clearAllNotifications()
+      if (result) {
+        showToast(locale.value.clearAllSuccess, 'success')
+      }
     }
   }
   showConfirmDialog.value = false
@@ -2628,6 +2667,86 @@ if (
   transform: rotate(30deg);
 }
 
+.notification-unread-summary {
+  display: flex;
+  width: 100%;
+  min-height: 72px;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 0.8rem 1rem;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.notification-unread-summary:hover:not(:disabled) {
+  border-color: rgba(245, 158, 11, 0.48);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.notification-unread-summary:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.notification-unread-summary.empty {
+  border-color: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.58);
+  cursor: default;
+}
+
+.notification-unread-summary-icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+}
+
+.notification-unread-summary.empty .notification-unread-summary-icon {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.notification-unread-summary-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.notification-unread-summary-copy > span {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.notification-unread-summary-copy strong {
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.notification-unread-summary-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 /* 通知列表 */
 .notification-search {
   display: flex;
@@ -3583,6 +3702,15 @@ if (
     line-height: 1.15;
     text-align: center;
   }
+
+  .notification-unread-summary {
+    min-height: 66px;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .notification-unread-summary-action {
+    font-size: 0.7rem;
+  }
 }
 
 /* 超小屏幕设备 */
@@ -3626,6 +3754,14 @@ if (
   .settings-icon {
     width: 34px;
     height: 34px;
+  }
+
+  .notification-unread-summary-action {
+    gap: 0;
+  }
+
+  .notification-unread-summary-action > span {
+    display: none;
   }
 }
 

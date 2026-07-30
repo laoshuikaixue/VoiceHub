@@ -96,6 +96,7 @@ export interface Notification {
   songId?: number | null
   important: boolean
   read: boolean
+  userDeleted: boolean
   sender: NotificationSender | null
 }
 

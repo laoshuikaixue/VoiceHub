@@ -20,6 +20,63 @@
       </button>
     </div>
 
+    <div class="mt-5 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
+      <div
+        class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_170px_190px_170px_auto]"
+      >
+        <div class="relative sm:col-span-2 xl:col-span-1">
+          <Search
+            :size="15"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+          />
+          <input
+            v-model="filters.keyword"
+            type="search"
+            maxlength="100"
+            class="min-h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-blue-500/40"
+            :placeholder="locale.searchPlaceholder"
+            :aria-label="locale.searchPlaceholder"
+            @input="scheduleHistorySearch"
+            @keydown.enter.prevent="applyHistoryFilters"
+          >
+        </div>
+
+        <CustomSelect
+          v-model="filters.type"
+          :label="locale.typeFilter"
+          :options="typeFilterOptions"
+          class-name="w-full"
+          @change="applyHistoryFilters"
+        />
+
+        <CustomSelect
+          v-model="filters.sender"
+          :label="locale.senderFilter"
+          :options="senderFilterOptions"
+          class-name="w-full"
+          @change="applyHistoryFilters"
+        />
+
+        <CustomSelect
+          v-model="filters.sortOrder"
+          :label="locale.sentAtSort"
+          :options="sortOptions"
+          class-name="w-full"
+          @change="applyHistoryFilters"
+        />
+
+        <button
+          type="button"
+          :disabled="!hasActiveFilters || loading"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-zinc-800 px-4 text-xs font-bold text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+          @click="clearHistoryFilters"
+        >
+          <X :size="14" />
+          {{ locale.clearFilters }}
+        </button>
+      </div>
+    </div>
+
     <div
       v-if="error"
       class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-red-500/20 bg-red-500/5 p-4"
@@ -51,8 +108,12 @@
       class="mt-6 flex min-h-56 flex-col items-center justify-center border-y border-zinc-800 text-center"
     >
       <Inbox :size="28" class="text-zinc-700" />
-      <p class="mt-3 text-sm font-bold text-zinc-400">{{ locale.empty }}</p>
-      <p class="mt-1 text-xs text-zinc-600">{{ locale.emptyDescription }}</p>
+      <p class="mt-3 text-sm font-bold text-zinc-400">
+        {{ hasActiveFilters ? locale.filteredEmpty : locale.empty }}
+      </p>
+      <p class="mt-1 text-xs text-zinc-600">
+        {{ hasActiveFilters ? locale.filteredEmptyDescription : locale.emptyDescription }}
+      </p>
     </div>
 
     <template v-else>
@@ -566,11 +627,13 @@ import {
   Pencil,
   RefreshCw,
   Save,
+  Search,
   Trash2,
   Users,
   X
 } from '@lucide/vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import { useAuth } from '~/composables/useAuth'
@@ -592,8 +655,10 @@ const { showToast } = useToast()
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.notificationSender?.history || {})
 const notifications = ref([])
+const senders = ref([])
 const loading = ref(false)
 const error = ref('')
+const filters = ref({ keyword: '', type: 'ALL', sender: '', sortOrder: 'DESC' })
 const pagination = ref({ page: 1, limit: 20, total: 0, totalPages: 1 })
 const selectedBatch = ref(null)
 const recipients = ref([])
@@ -612,6 +677,7 @@ const deletingBatch = ref(null)
 const deleteLoading = ref(false)
 let requestVersion = 0
 let detailRequestVersion = 0
+let searchTimer = null
 let previousFocus = null
 let previousBodyOverflow = ''
 
@@ -620,6 +686,34 @@ const detailFilterOptions = computed(() => [
   { value: 'READ', label: locale.value.read, count: detailStats.value.read, icon: CheckCircle2 },
   { value: 'UNREAD', label: locale.value.unread, count: detailStats.value.unread, icon: Circle }
 ])
+
+const typeFilterOptions = computed(() => [
+  { value: 'ALL', label: locale.value.allTypes },
+  { value: 'NORMAL', label: locale.value.normal },
+  { value: 'IMPORTANT', label: locale.value.important }
+])
+
+const senderFilterOptions = computed(() => [
+  { value: '', label: locale.value.allSenders },
+  ...senders.value.map((sender) => ({
+    value: String(sender.id),
+    label:
+      sender.name?.trim() || sender.username?.trim() || locale.value.unknownUser(sender.id)
+  }))
+])
+
+const sortOptions = computed(() => [
+  { value: 'DESC', label: locale.value.newestFirst },
+  { value: 'ASC', label: locale.value.oldestFirst }
+])
+
+const hasActiveFilters = computed(
+  () =>
+    Boolean(filters.value.keyword.trim()) ||
+    filters.value.type !== 'ALL' ||
+    Boolean(filters.value.sender) ||
+    filters.value.sortOrder !== 'DESC'
+)
 
 const loadHistory = async () => {
   const activeRequest = ++requestVersion
@@ -630,7 +724,11 @@ const loadHistory = async () => {
     const response = await $fetch('/api/admin/notifications/history', {
       query: {
         page: pagination.value.page,
-        limit: pagination.value.limit
+        limit: pagination.value.limit,
+        keyword: filters.value.keyword.trim(),
+        type: filters.value.type,
+        sender: filters.value.sender,
+        sortOrder: filters.value.sortOrder
       },
       ...getAuthConfig()
     })
@@ -638,6 +736,7 @@ const loadHistory = async () => {
     if (activeRequest !== requestVersion) return
 
     notifications.value = response.notifications || []
+    senders.value = response.senders || []
     pagination.value = {
       page: Number(response.pagination?.page || 1),
       limit: Number(response.pagination?.limit || 20),
@@ -655,6 +754,26 @@ const loadHistory = async () => {
 const refreshHistory = () => {
   pagination.value.page = 1
   loadHistory()
+}
+
+const applyHistoryFilters = () => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+    searchTimer = null
+  }
+  pagination.value.page = 1
+  notifications.value = []
+  loadHistory()
+}
+
+const scheduleHistorySearch = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(applyHistoryFilters, 300)
+}
+
+const clearHistoryFilters = () => {
+  filters.value = { keyword: '', type: 'ALL', sender: '', sortOrder: 'DESC' }
+  applyHistoryFilters()
 }
 
 const loadDetails = async () => {
@@ -768,7 +887,7 @@ const saveEdit = async () => {
   let saved = false
 
   try {
-    const response = await $fetch(
+    await $fetch(
       `/api/admin/notifications/history/${encodeURIComponent(editingBatch.value.batchId)}`,
       {
         method: 'PUT',
@@ -781,15 +900,7 @@ const saveEdit = async () => {
       }
     )
 
-    const index = notifications.value.findIndex(
-      (item) => item.batchId === editingBatch.value?.batchId
-    )
-    if (index >= 0) {
-      notifications.value[index] = {
-        ...notifications.value[index],
-        ...(response.notification || {})
-      }
-    }
+    await loadHistory()
     saved = true
     showToast(locale.value.updateSuccess, 'success')
   } catch (saveError) {
@@ -881,6 +992,7 @@ watch(
 
 onMounted(loadHistory)
 onUnmounted(() => {
+  if (searchTimer) clearTimeout(searchTimer)
   requestVersion += 1
   detailRequestVersion += 1
   if (selectedBatch.value || editingBatch.value) {

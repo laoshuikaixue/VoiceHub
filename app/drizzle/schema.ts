@@ -121,11 +121,13 @@ export const notifications = pgTable('Notification', {
   message: text('message').notNull(),
   important: boolean('important').default(false).notNull(),
   read: boolean('read').default(false).notNull(),
+  userDeleted: boolean('userDeleted').default(false).notNull(),
   userId: integer('userId').notNull(),
   songId: integer('songId'),
 }, (table) => [
   index('notification_user_important_read_created_idx').on(
     table.userId,
+    table.userDeleted,
     table.important,
     table.read,
     table.createdAt

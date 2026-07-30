@@ -66,7 +66,7 @@ export const useImportantNotification = () => {
     loading.value = true
     error.value = ''
 
-    inFlightCheck = $fetch<{ notification: ImportantNotification | null }>(
+    const checkPromise = $fetch<{ notification: ImportantNotification | null }>(
       '/api/notifications/important'
     )
       .then((response) => {
@@ -93,13 +93,14 @@ export const useImportantNotification = () => {
         if (activeRequestVersion === requestVersion) {
           loading.value = false
         }
-        if (inFlightUserId === currentUserId) {
+        if (inFlightCheck === checkPromise) {
           inFlightCheck = null
           inFlightUserId = null
         }
       })
 
-    return inFlightCheck
+    inFlightCheck = checkPromise
+    return checkPromise
   }
 
   const markAsReadAndClose = async () => {

@@ -2,6 +2,59 @@ export const NOTIFICATION_HISTORY_STATUSES = ['ALL', 'READ', 'UNREAD'] as const
 
 export type NotificationHistoryStatus = (typeof NOTIFICATION_HISTORY_STATUSES)[number]
 
+export const NOTIFICATION_HISTORY_TYPES = ['ALL', 'IMPORTANT', 'NORMAL'] as const
+export const NOTIFICATION_HISTORY_SORT_ORDERS = ['DESC', 'ASC'] as const
+export const NOTIFICATION_HISTORY_KEYWORD_MAX_LENGTH = 100
+
+export type NotificationHistoryType = (typeof NOTIFICATION_HISTORY_TYPES)[number]
+export type NotificationHistorySortOrder = (typeof NOTIFICATION_HISTORY_SORT_ORDERS)[number]
+
+export const resolveNotificationHistoryFilters = (values: {
+  keyword?: unknown
+  type?: unknown
+  sender?: unknown
+  sortOrder?: unknown
+}): {
+  keyword: string
+  type: NotificationHistoryType
+  senderId: number | null
+  sortOrder: NotificationHistorySortOrder
+} | null => {
+  if (values.keyword !== undefined && typeof values.keyword !== 'string') return null
+
+  const keyword = typeof values.keyword === 'string' ? values.keyword.trim() : ''
+  if (keyword.length > NOTIFICATION_HISTORY_KEYWORD_MAX_LENGTH) return null
+
+  if (values.type !== undefined && typeof values.type !== 'string') return null
+  const type = typeof values.type === 'string' && values.type.trim()
+    ? values.type.trim().toUpperCase()
+    : 'ALL'
+  if (!NOTIFICATION_HISTORY_TYPES.includes(type as NotificationHistoryType)) return null
+
+  let senderId: number | null = null
+  if (values.sender !== undefined && values.sender !== null && values.sender !== '') {
+    if (typeof values.sender !== 'string') return null
+    const parsedSenderId = Number(values.sender.trim())
+    if (!Number.isInteger(parsedSenderId) || parsedSenderId <= 0) return null
+    senderId = parsedSenderId
+  }
+
+  if (values.sortOrder !== undefined && typeof values.sortOrder !== 'string') return null
+  const sortOrder = typeof values.sortOrder === 'string' && values.sortOrder.trim()
+    ? values.sortOrder.trim().toUpperCase()
+    : 'DESC'
+  if (!NOTIFICATION_HISTORY_SORT_ORDERS.includes(sortOrder as NotificationHistorySortOrder)) {
+    return null
+  }
+
+  return {
+    keyword,
+    type: type as NotificationHistoryType,
+    senderId,
+    sortOrder: sortOrder as NotificationHistorySortOrder
+  }
+}
+
 export const resolveNotificationHistoryStatus = (
   value: unknown
 ): NotificationHistoryStatus | null => {

@@ -1,14 +1,17 @@
 import { and, eq } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
 import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
   canSendSystemNotification,
+  createNotificationSenderSnapshot,
   NOTIFICATION_SOURCES,
   NOTIFICATION_CONTENT_MAX_LENGTH,
   NOTIFICATION_TITLE_MAX_LENGTH,
-  resolveImportantFlag
+  resolveImportantFlag,
+  serializeNotificationSender
 } from '~~/server/utils/important-notification-policy'
 import { resolveNotificationBatchReference } from '~~/server/utils/notification-history-policy'
 
@@ -74,19 +77,80 @@ export default defineEventHandler(async (event) => {
   const batchCondition = batchReference.batchId
     ? eq(notifications.batchId, batchReference.batchId)
     : eq(notifications.id, batchReference.notificationId!)
+  const baseCondition = and(
+    eq(notifications.type, 'SYSTEM_NOTICE'),
+    eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL),
+    batchCondition
+  )!
+
+  if (important) {
+    try {
+      const recipients = await db
+        .select({ userId: notifications.userId })
+        .from(notifications)
+        .where(baseCondition)
+
+      if (recipients.length === 0) {
+        throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
+      }
+
+      const recipientUserIds = [...new Set(recipients.map(({ userId }) => userId))]
+      const batchId = randomUUID()
+      const createdAt = new Date()
+      const senderSnapshot = createNotificationSenderSnapshot({
+        id: user.id,
+        name: user.name,
+        username: user.username
+      })
+
+      await db.insert(notifications).values(
+        recipientUserIds.map((userId) => ({
+          userId,
+          type: 'SYSTEM_NOTICE',
+          batchId,
+          source: NOTIFICATION_SOURCES.ADMIN_MANUAL,
+          ...senderSnapshot,
+          title,
+          message: content,
+          important: true,
+          read: false,
+          userDeleted: false,
+          createdAt,
+          updatedAt: createdAt
+        }))
+      )
+
+      return {
+        success: true,
+        createdNewBatch: true,
+        updatedCount: recipientUserIds.length,
+        notification: {
+          batchId,
+          title,
+          message: content,
+          important: true,
+          sender: serializeNotificationSender(senderSnapshot),
+          createdAt,
+          recipientCount: recipientUserIds.length
+        }
+      }
+    } catch (error) {
+      if (typeof error === 'object' && error && 'statusCode' in error) throw error
+      console.error('重新发送重要通知失败:', error)
+      throw createApiError(
+        500,
+        SERVER_ERROR_CODES.NOTIFICATION_HISTORY_UPDATE_FAILED,
+        '修改通知失败'
+      )
+    }
+  }
 
   let updatedRows
   try {
     updatedRows = await db
       .update(notifications)
-      .set({ title, message: content, important })
-      .where(
-        and(
-          eq(notifications.type, 'SYSTEM_NOTICE'),
-          eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL),
-          batchCondition
-        )
-      )
+      .set({ title, message: content, important: false })
+      .where(baseCondition)
       .returning({ id: notifications.id })
   } catch (error) {
     console.error('修改通知失败:', error)

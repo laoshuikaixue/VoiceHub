@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
       : undefined
     const notificationCondition = and(
       eq(notifications.userId, user.id),
+      eq(notifications.userDeleted, false),
       unreadOnly ? eq(notifications.read, false) : undefined,
       searchCondition
     )
@@ -131,7 +132,13 @@ export default defineEventHandler(async (event) => {
     const unreadCountResult = await db
       .select({ count: count() })
       .from(notifications)
-      .where(and(eq(notifications.userId, user.id), eq(notifications.read, false)))
+      .where(
+        and(
+          eq(notifications.userId, user.id),
+          eq(notifications.userDeleted, false),
+          eq(notifications.read, false)
+        )
+      )
 
     const unreadCount = unreadCountResult[0]?.count || 0
 

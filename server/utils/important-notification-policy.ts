@@ -64,6 +64,9 @@ export const shouldDeliverSystemNotification = (
   notificationsEnabled?: boolean
 ): boolean => important || notificationsEnabled !== false
 
+export const shouldRetainNotificationHistory = (type: string, source: string): boolean =>
+  type === 'SYSTEM_NOTICE' && source === NOTIFICATION_SOURCES.ADMIN_MANUAL
+
 export const selectNextImportantNotification = <T extends ImportantNotificationCandidate>(
   candidates: T[]
 ): T | null => {
@@ -79,6 +82,12 @@ export const selectNextImportantNotification = <T extends ImportantNotificationC
 }
 
 export const createNotificationReadUpdate = (updatedAt = new Date()) => ({
+  read: true as const,
+  updatedAt
+})
+
+export const createNotificationUserDeleteUpdate = (updatedAt = new Date()) => ({
+  userDeleted: true as const,
   read: true as const,
   updatedAt
 })

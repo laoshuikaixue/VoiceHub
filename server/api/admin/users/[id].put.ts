@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { updateUserPassword } from '~~/server/services/userService'
+import { createSystemNotification } from '~~/server/services/notificationService'
 import {
   PASSWORD_AUDIT_ACTIONS,
   getPasswordAuditContext
@@ -14,6 +15,13 @@ const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
   const normalized = String(value || '').trim()
   return normalized || null
+}
+
+const roleNames: Record<string, string> = {
+  USER: '用户',
+  SONG_ADMIN: '歌曲管理员',
+  ADMIN: '管理员',
+  SUPER_ADMIN: '超级管理员'
 }
 
 export default defineEventHandler(async (event) => {
@@ -213,6 +221,19 @@ export default defineEventHandler(async (event) => {
         reason: `管理员${user.name || user.username}修改用户状态`,
         operatorId: user.id
       })
+    }
+
+    if (validRole !== targetUser.role) {
+      const oldRoleName = roleNames[targetUser.role] || targetUser.role
+      const newRoleName = roleNames[validRole] || validRole
+      const notification = await createSystemNotification(
+        targetUser.id,
+        '权限变更通知',
+        `您的账户权限已由系统更新：${oldRoleName} → ${newRoleName}`
+      )
+      if (!notification) {
+        console.warn(`未向用户 ${targetUser.id} 发送权限变更通知`)
+      }
     }
 
     return {

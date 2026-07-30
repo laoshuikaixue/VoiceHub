@@ -1503,7 +1503,8 @@ export default defineEventHandler(async (event) => {
                           'senderUsername',
                           'title',
                           'message',
-                          'type'
+                          'type',
+                          'userDeleted'
                         ]
 
                         notificationDataFields.forEach((field) => {
