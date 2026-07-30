@@ -239,24 +239,82 @@
               <div v-else class="notification-container">
                 <!-- 标题和设置按�?-->
                 <div class="notification-header">
-                  <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
-                  <button class="settings-icon" @click="toggleNotificationSettings">
-                    <svg
-                      fill="none"
-                      height="20"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      viewBox="0 0 24 24"
-                      width="20"
-                      xmlns="http://www.w3.org/2000/svg"
+                  <div class="notification-header-main">
+                    <div
+                      :aria-label="locale.notificationFilterLabel"
+                      class="notification-filter"
+                      role="group"
                     >
-                      <circle cx="12" cy="12" r="3" />
-                      <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                      />
-                    </svg>
+                      <button
+                        :aria-pressed="notificationsService.currentFilter.value === 'all'"
+                        :class="{ active: notificationsService.currentFilter.value === 'all' }"
+                        type="button"
+                        @click="notificationsService.changeFilter('all')"
+                      >
+                        {{ locale.allNotifications }}
+                      </button>
+                      <button
+                        :aria-pressed="notificationsService.currentFilter.value === 'unread'"
+                        :class="{ active: notificationsService.currentFilter.value === 'unread' }"
+                        type="button"
+                        @click="notificationsService.changeFilter('unread')"
+                      >
+                        {{ locale.unread }}
+                      </button>
+                    </div>
+                    <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
+                  </div>
+                  <div class="notification-header-actions">
+                    <button
+                      :class="{ disabled: !hasUnreadNotifications }"
+                      :disabled="!hasUnreadNotifications"
+                      class="mark-all-read-header"
+                      @click="markAllNotificationsAsRead"
+                    >
+                      <Icon :size="15" name="check" />
+                      <span>{{ locale.markAllRead }}</span>
+                    </button>
+                    <button class="settings-icon" @click="toggleNotificationSettings">
+                      <svg
+                        fill="none"
+                        height="20"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        width="20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="notification-search">
+                  <Icon :size="17" aria-hidden="true" name="search" />
+                  <input
+                    v-model="notificationSearchInput"
+                    :aria-label="locale.searchNotifications"
+                    :placeholder="locale.searchNotificationsPlaceholder"
+                    autocomplete="off"
+                    maxlength="100"
+                    type="search"
+                    @input="handleNotificationSearchInput"
+                    @keydown.enter.prevent="runNotificationSearch"
+                  >
+                  <button
+                    v-if="notificationSearchInput"
+                    :aria-label="locale.clearNotificationSearch"
+                    :title="locale.clearNotificationSearch"
+                    type="button"
+                    @click="clearNotificationSearch"
+                  >
+                    <Icon :size="15" name="x" />
                   </button>
                 </div>
 
@@ -271,13 +329,21 @@
                     <div class="empty-icon">
                       <Icon :size="48" color="#6b7280" name="bell" />
                     </div>
-                    <p>{{ locale.noNotifications }}</p>
+                    <p>
+                      {{
+                        notificationsService.currentSearch.value
+                          ? locale.noMatchingNotifications
+                          : notificationsService.currentFilter.value === 'unread'
+                            ? locale.noUnreadNotifications
+                            : locale.noNotifications
+                      }}
+                    </p>
                   </div>
 
                   <Transition mode="out-in" name="notification-list-fade">
                     <div
                       v-if="userNotifications.length > 0"
-                      :key="notificationsService.currentPage.value"
+                      :key="`${notificationsService.currentPage.value}-${notificationsService.currentFilter.value}-${notificationsService.currentSearch.value}`"
                       class="notification-items"
                     >
                       <div
@@ -360,13 +426,8 @@
                                 {{ notification.read ? locale.read : locale.unread }}
                               </span>
                             </div>
-                            <div class="notification-meta-row">
-                              <span class="notification-type-badge">
-                                {{ locale.notificationTypeLabel }}：{{ getNotificationTypeLabel(notification.type) }}
-                              </span>
-                              <span class="notification-time">
-                                {{ formatNotificationTime(notification.createdAt) }}
-                              </span>
+                            <div class="notification-time">
+                              {{ formatNotificationTime(notification.createdAt) }}
                             </div>
                           </div>
                         </div>
@@ -542,14 +603,6 @@
 
                 <!-- 底部操作按钮 -->
                 <div v-if="userNotifications.length > 0" class="notification-actions-bar">
-                  <button
-                    :class="{ disabled: !hasUnreadNotifications }"
-                    :disabled="!hasUnreadNotifications"
-                    class="action-button-large"
-                    @click="markAllNotificationsAsRead"
-                  >
-                    {{ locale.markAllRead }}
-                  </button>
                   <button class="action-button-large danger" @click="clearAllNotifications">
                     {{ locale.clearAllMessages }}
                   </button>
@@ -878,6 +931,34 @@ let refreshInterval = null
 // 添加通知相关变量
 const userNotifications = computed(() => notificationsService?.notifications?.value || [])
 const notificationsLoading = computed(() => notificationsService?.loading?.value || false)
+const notificationSearchInput = ref('')
+let notificationSearchTimer = null
+
+const runNotificationSearch = async () => {
+  if (notificationSearchTimer) {
+    clearTimeout(notificationSearchTimer)
+    notificationSearchTimer = null
+  }
+  await notificationsService.changeSearch(notificationSearchInput.value)
+}
+
+const handleNotificationSearchInput = () => {
+  if (notificationSearchTimer) clearTimeout(notificationSearchTimer)
+  notificationSearchTimer = setTimeout(() => {
+    notificationSearchTimer = null
+    notificationsService.changeSearch(notificationSearchInput.value)
+  }, 300)
+}
+
+const clearNotificationSearch = async () => {
+  notificationSearchInput.value = ''
+  await runNotificationSearch()
+}
+
+onUnmounted(() => {
+  if (notificationSearchTimer) clearTimeout(notificationSearchTimer)
+})
+
 const hasUnreadNotifications = computed(() => {
   // 确保notificationsService已初始化且有unreadCount
   if (!notificationsService || !notificationsService.unreadCount) {
@@ -2418,8 +2499,47 @@ if (
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notification-header-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notification-filter {
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+}
+
+.notification-filter button {
+  min-height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0.3rem 0.65rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.notification-filter button:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.notification-filter button.active {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 .notification-title {
@@ -2430,6 +2550,44 @@ if (
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.notification-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.mark-all-read-header {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.45rem 0.75rem;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mark-all-read-header:hover:not(.disabled) {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+}
+
+.mark-all-read-header.disabled {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
 }
 
 .settings-icon {
@@ -2453,6 +2611,64 @@ if (
 }
 
 /* 通知列表 */
+.notification-search {
+  display: flex;
+  width: min(100%, 360px);
+  min-height: 40px;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.notification-search:focus-within {
+  border-color: rgba(59, 130, 246, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+  color: #93c5fd;
+}
+
+.notification-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+.notification-search input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.notification-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.notification-search button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+
+.notification-search button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
 .notification-list {
   flex: 1;
   display: flex;
@@ -2594,27 +2810,8 @@ if (
   color: #fcd34d;
 }
 
-.notification-meta-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.4rem 0.75rem;
-  margin-top: 0.4rem;
-}
-
-.notification-type-badge {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 0.2rem 0.45rem;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
 .notification-time {
+  margin-top: 0.4rem;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.4);
 }
@@ -3295,6 +3492,35 @@ if (
 
   .tab-content-container {
     padding: 0 4px calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .notification-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .notification-header-main {
+    gap: 0.5rem;
+  }
+
+  .notification-title {
+    font-size: 1.05rem;
+  }
+
+  .notification-filter button {
+    min-height: 26px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .notification-header-actions {
+    gap: 0.35rem;
+  }
+
+  .mark-all-read-header {
+    gap: 0.25rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.7rem;
   }
 }
 

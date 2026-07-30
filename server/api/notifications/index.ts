@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { notifications, songCollaborators, songs } from '~/drizzle/schema'
@@ -20,12 +20,26 @@ export default defineEventHandler(async (event) => {
     const page = Math.max(1, parseInt(query.page as string) || 1)
     const limit = Math.min(50, Math.max(1, parseInt(query.limit as string) || 10))
     const offset = (page - 1) * limit
+    const unreadOnly = query.filter === 'unread'
+    const search = typeof query.search === 'string' ? query.search.trim().slice(0, 100) : ''
+    const escapedSearch = search.replace(/[\\%_]/g, '\\$&')
+    const searchCondition = escapedSearch
+      ? or(
+          ilike(notifications.title, `%${escapedSearch}%`),
+          ilike(notifications.message, `%${escapedSearch}%`)
+        )
+      : undefined
+    const notificationCondition = and(
+      eq(notifications.userId, user.id),
+      unreadOnly ? eq(notifications.read, false) : undefined,
+      searchCondition
+    )
 
     // 获取总通知数量
     const totalCountResult = await db
       .select({ count: count() })
       .from(notifications)
-      .where(eq(notifications.userId, user.id))
+      .where(notificationCondition)
     const totalCount = totalCountResult[0]?.count || 0
     const totalPages = Math.ceil(totalCount / limit)
 
@@ -33,7 +47,7 @@ export default defineEventHandler(async (event) => {
     const userNotifications = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, user.id))
+      .where(notificationCondition)
       .orderBy(desc(notifications.createdAt))
       .limit(limit)
       .offset(offset)
