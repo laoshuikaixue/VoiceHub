@@ -1,5 +1,9 @@
 export const NOTIFICATION_TITLE_MAX_LENGTH = 200
 export const NOTIFICATION_CONTENT_MAX_LENGTH = 20000
+export const NOTIFICATION_SOURCES = {
+  SYSTEM: 'SYSTEM',
+  ADMIN_MANUAL: 'ADMIN_MANUAL'
+} as const
 
 export type ImportantNotificationCandidate = {
   id: number
@@ -19,6 +23,9 @@ export type NotificationSenderSnapshot = {
   senderName: string | null
   senderUsername: string | null
 }
+
+export const resolveNotificationSource = (sender: NotificationSenderInput | null) =>
+  sender ? NOTIFICATION_SOURCES.ADMIN_MANUAL : NOTIFICATION_SOURCES.SYSTEM
 
 export const createNotificationSenderSnapshot = (
   sender: NotificationSenderInput | null = null

@@ -893,6 +893,7 @@ VoiceHub/
 │   │   ├── db.ts               # 数据库连接
 │   │   ├── schema.ts           # 数据库模型
 │   │   └── migrations/         # 数据库迁移文件
+│   │       ├── 20260730124016_notification-source.sql # 区分系统通知与后台手动通知
 │   │       ├── 20260730114534_notification-sender.sql # 通知发送人快照迁移
 │   │       ├── *.sql           # 其他 Drizzle 迁移脚本
 │   │       └── meta/           # Drizzle 迁移快照

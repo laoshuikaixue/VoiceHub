@@ -9,6 +9,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   canSendSystemNotification,
+  NOTIFICATION_SOURCES,
   NOTIFICATION_CONTENT_MAX_LENGTH,
   NOTIFICATION_TITLE_MAX_LENGTH,
   resolveImportantFlag
@@ -39,11 +40,13 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody<Record<string, unknown> | null>(event)
-  const sender = {
-    id: user.id,
-    name: user.name,
-    username: user.username
-  }
+  const sender = body?.source === NOTIFICATION_SOURCES.SYSTEM
+    ? null
+    : {
+        id: user.id,
+        name: user.name,
+        username: user.username
+      }
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const rawContent = typeof body?.content === 'string' ? body.content : body?.message
   const content = typeof rawContent === 'string' ? rawContent.trim() : ''

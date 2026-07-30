@@ -90,6 +90,7 @@ export interface Notification {
   userId: number
   type: string
   batchId?: string | null
+  source: 'SYSTEM' | 'ADMIN_MANUAL'
   title?: string | null
   message: string
   songId?: number | null

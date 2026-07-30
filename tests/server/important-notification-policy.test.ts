@@ -5,6 +5,7 @@ import {
   createNotificationSenderSnapshot,
   createNotificationReadUpdate,
   resolveImportantFlag,
+  resolveNotificationSource,
   selectNextImportantNotification,
   shouldCheckImportantNotification,
   shouldDeliverSystemNotification,
@@ -92,6 +93,7 @@ test('系统通知不保存发送人，管理员通知保存发送时的名称�
     senderUsername: null
   })
   assert.equal(serializeNotificationSender(systemSender), null)
+  assert.equal(resolveNotificationSource(null), 'SYSTEM')
 
   const adminSender = createNotificationSenderSnapshot({
     id: 7,
@@ -108,4 +110,8 @@ test('系统通知不保存发送人，管理员通知保存发送时的名称�
     name: '张老师',
     username: 'admin'
   })
+  assert.equal(
+    resolveNotificationSource({ id: 7, name: '张老师', username: 'admin' }),
+    'ADMIN_MANUAL'
+  )
 })

@@ -1,10 +1,11 @@
-import { count, desc, eq, sql } from 'drizzle-orm'
+import { and, count, desc, eq, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
   canSendSystemNotification,
+  NOTIFICATION_SOURCES,
   serializeNotificationSender
 } from '~~/server/utils/important-notification-policy'
 import { resolveNotificationHistoryPagination } from '~~/server/utils/notification-history-policy'
@@ -48,7 +49,12 @@ export default defineEventHandler(async (event) => {
       recipientCount: count().as('recipient_count')
     })
     .from(notifications)
-    .where(eq(notifications.type, 'SYSTEM_NOTICE'))
+    .where(
+      and(
+        eq(notifications.type, 'SYSTEM_NOTICE'),
+        eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL)
+      )
+    )
     .groupBy(
       batchKey,
       notifications.title,

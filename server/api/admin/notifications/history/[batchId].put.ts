@@ -5,6 +5,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
   canSendSystemNotification,
+  NOTIFICATION_SOURCES,
   NOTIFICATION_CONTENT_MAX_LENGTH,
   NOTIFICATION_TITLE_MAX_LENGTH,
   resolveImportantFlag
@@ -79,7 +80,13 @@ export default defineEventHandler(async (event) => {
     updatedRows = await db
       .update(notifications)
       .set({ title, message: content, important })
-      .where(and(eq(notifications.type, 'SYSTEM_NOTICE'), batchCondition))
+      .where(
+        and(
+          eq(notifications.type, 'SYSTEM_NOTICE'),
+          eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL),
+          batchCondition
+        )
+      )
       .returning({ id: notifications.id })
   } catch (error) {
     console.error('修改通知失败:', error)

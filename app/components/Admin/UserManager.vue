@@ -2309,7 +2309,8 @@ const saveUser = async () => {
             userId: editingUser.value.id,
             title: locale.value.permissionNotification.title,
             message: notificationMessage,
-            type: 'system'
+            type: 'system',
+            source: 'SYSTEM'
           },
           ...auth.getAuthConfig()
         })

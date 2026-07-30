@@ -113,6 +113,7 @@ export const notifications = pgTable('Notification', {
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   type: text('type').notNull(),
   batchId: text('batchId'),
+  source: text('source').default('SYSTEM').notNull(),
   senderId: integer('senderId'),
   senderName: text('senderName'),
   senderUsername: text('senderUsername'),

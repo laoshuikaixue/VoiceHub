@@ -3,7 +3,10 @@ import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
-import { canSendSystemNotification } from '~~/server/utils/important-notification-policy'
+import {
+  canSendSystemNotification,
+  NOTIFICATION_SOURCES
+} from '~~/server/utils/important-notification-policy'
 import { resolveNotificationBatchReference } from '~~/server/utils/notification-history-policy'
 
 export default defineEventHandler(async (event) => {
@@ -33,7 +36,13 @@ export default defineEventHandler(async (event) => {
   try {
     deletedRows = await db
       .delete(notifications)
-      .where(and(eq(notifications.type, 'SYSTEM_NOTICE'), batchCondition))
+      .where(
+        and(
+          eq(notifications.type, 'SYSTEM_NOTICE'),
+          eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL),
+          batchCondition
+        )
+      )
       .returning({ id: notifications.id })
   } catch (error) {
     console.error('删除通知失败:', error)

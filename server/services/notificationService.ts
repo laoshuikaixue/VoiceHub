@@ -16,6 +16,7 @@ import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import {
   createNotificationSenderSnapshot,
+  resolveNotificationSource,
   shouldDeliverSystemNotification,
   type NotificationSenderInput
 } from '~~/server/utils/important-notification-policy'
@@ -700,6 +701,7 @@ export async function createSystemNotification(
   try {
     const batchId = randomUUID()
     const senderSnapshot = createNotificationSenderSnapshot(sender)
+    const source = resolveNotificationSource(sender)
     // 获取用户通知设置
     const settingsResult = await db
       .select()
@@ -720,6 +722,7 @@ export async function createSystemNotification(
         userId: userId,
         type: 'SYSTEM_NOTICE',
         batchId,
+        source,
         ...senderSnapshot,
         title,
         message: content,
@@ -765,6 +768,7 @@ export async function createBatchSystemNotifications(
 
     const batchId = randomUUID()
     const senderSnapshot = createNotificationSenderSnapshot(sender)
+    const source = resolveNotificationSource(sender)
 
     // 获取用户通知设置
     const userSettings = await db
@@ -793,6 +797,7 @@ export async function createBatchSystemNotifications(
         userId,
         type: 'SYSTEM_NOTICE',
         batchId,
+        source,
         ...senderSnapshot,
         title,
         message: content,

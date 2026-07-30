@@ -947,6 +947,7 @@ export default defineEventHandler(async (event) => {
             const notificationData: any = { userId: validUserId }
             const fields = [
               'batchId',
+              'source',
               'senderId',
               'senderName',
               'senderUsername',

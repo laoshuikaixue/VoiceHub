@@ -214,7 +214,7 @@
         @keydown.esc="closeDetails"
       >
         <div
-          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
+          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/40 sm:max-h-[calc(100vh-3rem)]"
         >
           <header class="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 px-5 py-4 sm:px-6">
             <div class="min-w-0">
@@ -247,7 +247,7 @@
             </p>
 
             <div
-              class="mt-5 inline-flex max-w-full overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-1"
+              class="mt-5 inline-flex max-w-full overflow-x-auto rounded-lg border border-zinc-700 bg-zinc-800/70 p-1"
               role="group"
               :aria-label="locale.statusFilter"
             >
@@ -266,7 +266,7 @@
               >
                 <component :is="option.icon" :size="14" />
                 {{ option.label }}
-                <span class="min-w-6 rounded bg-zinc-950 px-1.5 py-0.5 text-center text-[10px] text-zinc-500">
+                <span class="min-w-6 rounded bg-zinc-900 px-1.5 py-0.5 text-center text-[10px] text-zinc-400">
                   {{ option.count }}
                 </span>
               </button>
@@ -298,7 +298,7 @@
             <template v-else>
               <div class="mt-5 hidden overflow-x-auto rounded-lg border border-zinc-800 sm:block">
                 <table class="w-full min-w-[620px] border-collapse text-left">
-                  <thead class="bg-zinc-900/80 text-[10px] font-black uppercase text-zinc-600">
+                  <thead class="bg-zinc-800/70 text-[10px] font-black uppercase text-zinc-500">
                     <tr>
                       <th class="px-4 py-3">{{ locale.recipient }}</th>
                       <th class="px-4 py-3">{{ locale.status }}</th>
@@ -375,7 +375,7 @@
         @keydown.esc="closeEdit"
       >
         <form
-          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 shadow-2xl sm:max-h-[calc(100vh-3rem)]"
+          class="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/40 sm:max-h-[calc(100vh-3rem)]"
           @submit.prevent="saveEdit"
         >
           <header class="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-800 px-5 py-4 sm:px-6">
@@ -408,7 +408,7 @@
                 v-model="editForm.title"
                 type="text"
                 maxlength="200"
-                class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500"
+                class="min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 text-sm text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500"
                 :placeholder="locale.editTitlePlaceholder"
               >
             </div>
@@ -425,7 +425,7 @@
                 v-model="editForm.content"
                 maxlength="20000"
                 rows="10"
-                class="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-3 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-emerald-500"
+                class="w-full resize-y rounded-lg border border-zinc-700 bg-zinc-800/70 px-3 py-3 text-sm leading-relaxed text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500"
                 :placeholder="locale.editContentPlaceholder"
               />
             </div>

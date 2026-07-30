@@ -5,6 +5,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
 import {
   canSendSystemNotification,
+  NOTIFICATION_SOURCES,
   serializeNotificationSender
 } from '~~/server/utils/important-notification-policy'
 import {
@@ -50,7 +51,11 @@ export default defineEventHandler(async (event) => {
   const batchCondition = batchReference.batchId
     ? eq(notifications.batchId, batchReference.batchId)
     : eq(notifications.id, batchReference.notificationId!)
-  const baseCondition = and(eq(notifications.type, 'SYSTEM_NOTICE'), batchCondition)!
+  const baseCondition = and(
+    eq(notifications.type, 'SYSTEM_NOTICE'),
+    eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL),
+    batchCondition
+  )!
   const filteredConditions = [baseCondition]
   if (status === 'READ') filteredConditions.push(eq(notifications.read, true))
   if (status === 'UNREAD') filteredConditions.push(eq(notifications.read, false))
