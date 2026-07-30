@@ -487,7 +487,7 @@
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                             cardCodeFieldMeta.required
-                              ? 'border-warning-30 bg-warning-10 text-yellow-300'
+                              ? 'border-warning-30 bg-warning-10 text-warning-300'
                               : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
                           ]"
                         >
@@ -498,11 +498,11 @@
                         :class="[
                           'mt-1 truncate text-[11px]',
                           cardCodeValidation.valid
-                            ? 'text-emerald-300/80'
+                            ? 'text-success-300'
                             : cardCodeValidation.valid === false
                               ? 'text-error-80'
                               : cardCodeFieldMeta.required
-                                ? 'text-yellow-300/80'
+                                ? 'text-warning-300'
                                 : 'text-text-tertiary'
                         ]"
                       >
@@ -512,7 +512,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-warning-40 hover:bg-warning-15"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-warning-200 transition-all hover:border-warning-40 hover:bg-warning-15"
                       type="button"
                       @click="openCardCodeModal"
                     >
@@ -933,7 +933,7 @@
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                       cardCodeFieldMeta.required
-                        ? 'border-warning-30 bg-warning-10 text-yellow-300'
+                        ? 'border-warning-30 bg-warning-10 text-warning-300'
                         : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
                     ]"
                   >
@@ -971,7 +971,7 @@
                 :class="[
                   'mt-2 px-1 text-[11px]',
                   cardCodeValidation.valid
-                    ? 'text-emerald-300/80'
+                    ? 'text-success-300'
                     : cardCodeValidation.valid === false
                       ? 'text-error-80'
                       : 'text-text-tertiary'

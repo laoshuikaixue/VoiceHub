@@ -165,7 +165,7 @@
                   <div class="flex flex-wrap gap-2">
                     <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary" @click="updateStatus([item.id], 'AVAILABLE')">{{ locale.available }}</button>
                     <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
-                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-emerald-300" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
                     <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
                   </div>
                 </td>
@@ -463,7 +463,7 @@ const bulkStatusOptions = computed(() => [
 
 const statusMeta = (status) => {
   const statusMap = {
-    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-success-10 text-emerald-300 border border-success-20' },
+    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-success-10 text-success border border-success-20' },
     LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-warning-10 text-warning border border-warning-20' },
     REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-primary-10 text-primary border border-primary-20' },
     INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-error-10 text-error border border-error-20' }
@@ -475,9 +475,9 @@ const logSourceMeta = (source) => {
   const sourceMap = {
     ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-primary-10 text-primary border border-primary-20' },
     ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-primary-10 text-primary border border-primary-20' },
-    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-success-10 text-emerald-300 border border-success-20' },
+    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-success-10 text-success border border-success-20' },
     SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-warning-10 text-warning border border-warning-20' },
-    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-success-10 text-emerald-300 border border-success-20' },
+    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-success-10 text-success border border-success-20' },
     WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-warning-10 text-warning border border-warning-20' },
     UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary/10 text-text-secondary border border-border-tertiary/20' }
   }
@@ -492,7 +492,7 @@ const stats = computed(() => {
 
   return [
     { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-bg-tertiary text-text-primary' },
-    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-success-10 text-emerald-300' },
+    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-success-10 text-success' },
     { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-warning-10 text-warning' },
     { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-primary-10 text-primary' }
   ]

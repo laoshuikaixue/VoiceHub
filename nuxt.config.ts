@@ -154,6 +154,7 @@ export default defineNuxtConfig({
         'success-5': 'var(--success-5)',
         'success-10': 'var(--success-10)',
         'success-20': 'var(--success-20)',
+        'success-30': 'var(--success-30)',
         'success-hover-5': 'var(--success-hover-5)',
         'success-hover-10': 'var(--success-hover-10)',
         'success-hover-20': 'var(--success-hover-20)',
@@ -165,6 +166,8 @@ export default defineNuxtConfig({
         'warning-30': 'var(--warning-30)',
         'warning-40': 'var(--warning-40)',
         'warning-50': 'var(--warning-50)',
+        'warning-200': 'var(--warning-200)',
+        'warning-300': 'var(--warning-300)',
         'warning-hover-5': 'var(--warning-hover-5)',
         'warning-hover-10': 'var(--warning-hover-10)',
         'warning-hover-15': 'var(--warning-hover-15)',
@@ -247,7 +250,6 @@ export default defineNuxtConfig({
         'text-success-70': 'var(--text-success-70)',
         'text-success-80': 'var(--text-success-80)',
         'text-warning-80': 'var(--text-warning-80)',
-
 
         // === 卡片 ===
         'card-bg': 'var(--card-bg)',

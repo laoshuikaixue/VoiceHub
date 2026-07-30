@@ -176,7 +176,7 @@
                   <div class="space-y-1">
                     <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.usageCount }}</p>
                     <button
-                      class="text-xs font-bold text-success hover:text-emerald-300 transition-colors disabled:cursor-default disabled:opacity-60"
+                      class="text-xs font-bold text-success hover:text-success-hover transition-colors disabled:cursor-default disabled:opacity-60"
                       @click="openPersonalApiKeyLogs(key)"
                     >
                       {{ key.usageCount || 0 }}

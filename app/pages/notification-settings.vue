@@ -290,7 +290,7 @@
             </div>
 
             <!-- MeoW 账号绑定 -->
-            <div :class="[cardClass, 'border-primary-20 bg-primary/[0.02]']">
+            <div :class="[cardClass, 'border-primary-20 bg-primary-5']">
               <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
                   <div class="p-2 bg-primary-10 rounded-lg border border-primary-20">

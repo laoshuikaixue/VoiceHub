@@ -217,6 +217,7 @@
   --success-5: rgba(16, 185, 129, 0.05);
   --success-10: rgba(16, 185, 129, 0.1);
   --success-20: rgba(16, 185, 129, 0.2);
+  --success-30: rgba(16, 185, 129, 0.3);
   /* === Alpha (--success-hover) === */
   --success-hover-5: rgba(5, 150, 105, 0.05);
   --success-hover-10: rgba(5, 150, 105, 0.1);
@@ -230,6 +231,8 @@
   --warning-30: rgba(245, 158, 11, 0.3);
   --warning-40: rgba(245, 158, 11, 0.4);
   --warning-50: rgba(245, 158, 11, 0.5);
+  --warning-200: rgba(245, 158, 11, 0.2);
+  --warning-300: rgba(245, 158, 11, 0.3);
   /* === Alpha (--warning-hover) === */
   --warning-hover-5: rgba(217, 119, 6, 0.05);
   --warning-hover-10: rgba(217, 119, 6, 0.1);
