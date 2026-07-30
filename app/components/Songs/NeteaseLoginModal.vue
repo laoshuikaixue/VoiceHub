@@ -20,11 +20,11 @@
           @click.stop
         >
           <!-- 头部 -->
-          <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800 border-opacity-50">
+          <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
             <div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
                 <div
-                  class="w-10 h-10 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
+                  class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
                 >
                   <Icon name="music" :size="20" />
                 </div>
@@ -33,7 +33,7 @@
               <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.neteaseDesc }}</p>
             </div>
             <button
-              class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+              class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
               @click="handleClose"
             >
               <Icon name="x" :size="20" />
@@ -57,7 +57,7 @@
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 bg-zinc-900 bg-opacity-90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-zinc-900 bg-opacity-80"
+                  class="absolute inset-0 bg-zinc-900/90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-zinc-900/80"
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-zinc-100">
@@ -104,7 +104,7 @@
             </div>
 
             <!-- 说明提示 -->
-            <div class="mt-8 p-4 bg-zinc-800 bg-opacity-30 rounded-2xl border border-zinc-800 border-opacity-50 w-full">
+            <div class="mt-8 p-4 bg-zinc-800/30 rounded-2xl border border-zinc-800/50 w-full">
               <p
                 class="text-[10px] leading-relaxed text-zinc-500 text-center uppercase tracking-[0.15em] font-black"
               >

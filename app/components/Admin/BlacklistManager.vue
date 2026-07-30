@@ -15,7 +15,7 @@
     </div>
 
     <!-- 添加黑名单项表单 -->
-    <section class="bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-xl p-8 shadow-xl">
+    <section class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-8 shadow-xl">
       <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em] mb-6 px-1">
         {{ locale.addTitle }}
       </h3>
@@ -52,7 +52,7 @@
             :placeholder="
               newItem.type === 'SONG' ? locale.songPlaceholder : locale.keywordPlaceholder
             "
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 placeholder:text-zinc-700 transition-all"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           >
         </div>
 
@@ -64,7 +64,7 @@
             v-model="newItem.reason"
             type="text"
             :placeholder="locale.reasonPlaceholder"
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 placeholder:text-zinc-700 transition-all"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-5 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           >
         </div>
 
@@ -87,7 +87,7 @@
 
     <!-- 筛选和搜索 -->
     <div
-      class="bg-zinc-900 bg-opacity-20 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center"
+      class="bg-zinc-900/20 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center"
     >
       <div class="flex-1 relative w-full">
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700" :size="18" />
@@ -95,7 +95,7 @@
           v-model="filters.search"
           type="text"
           :placeholder="locale.searchPlaceholder"
-          class="w-full bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-lg pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 placeholder:text-zinc-700 transition-all"
+          class="w-full bg-zinc-950/50 border border-zinc-800 rounded-lg pl-12 pr-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 placeholder:text-zinc-700 transition-all"
           @input="debounceSearch"
         >
       </div>
@@ -138,16 +138,16 @@
           <div
             v-for="item in blacklist"
             :key="item.id"
-            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-zinc-900 bg-opacity-30 border rounded-xl transition-all hover:border-zinc-700"
-            :class="[item.isActive ? 'border-zinc-800' : 'border-zinc-800 border-opacity-40 opacity-60']"
+            class="group flex flex-col lg:flex-row lg:items-center gap-6 p-6 bg-zinc-900/30 border rounded-xl transition-all hover:border-zinc-700"
+            :class="[item.isActive ? 'border-zinc-800' : 'border-zinc-800/40 opacity-60']"
           >
             <div class="flex-1 flex items-start gap-5">
               <div
                 class="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center border transition-all"
                 :class="[
                   item.type === 'SONG'
-                    ? 'bg-blue-600 bg-opacity-10 text-blue-500 border-blue-500 border-opacity-20 shadow-lg shadow-blue-900/5'
-                    : 'bg-purple-600 bg-opacity-10 text-purple-500 border-purple-500 border-opacity-20 shadow-lg shadow-purple-900/5'
+                    ? 'bg-blue-600/10 text-blue-500 border-blue-500/20 shadow-lg shadow-blue-900/5'
+                    : 'bg-purple-600/10 text-purple-500 border-purple-500/20 shadow-lg shadow-purple-900/5'
                 ]"
               >
                 <Music v-if="item.type === 'SONG'" :size="22" />
@@ -160,8 +160,8 @@
                     class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border"
                     :class="[
                       item.type === 'SONG'
-                        ? 'bg-blue-600 bg-opacity-10 text-blue-400 border-blue-500 border-opacity-20'
-                        : 'bg-purple-600 bg-opacity-10 text-purple-400 border-purple-500 border-opacity-20'
+                        ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
+                        : 'bg-purple-600/10 text-purple-400 border-purple-500/20'
                     ]"
                   >
                     {{ item.type === 'SONG' ? locale.song : locale.keyword }}
@@ -187,14 +187,14 @@
             </div>
 
             <div
-              class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-zinc-800 border-opacity-50"
+              class="flex items-center justify-end gap-3 pt-4 lg:pt-0 border-t lg:border-t-0 border-zinc-800/50"
             >
               <button
                 :disabled="loading"
                 class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                 :class="[
                   item.isActive
-                    ? 'bg-zinc-800 text-zinc-500 hover:text-amber-500 hover:bg-amber-500 bg-opacity-5 hover:border-amber-500 border-opacity-10 border border-transparent'
+                    ? 'bg-zinc-800 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/5 hover:border-amber-500/10 border border-transparent'
                     : 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
                 ]"
                 @click="toggleItemStatus(item)"
@@ -204,7 +204,7 @@
               </button>
               <button
                 :disabled="loading"
-                class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-700 hover:text-red-500 hover:border-red-500 border-opacity-30 transition-all active:scale-95"
+                class="p-3 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-700 hover:text-red-500 hover:border-red-500/30 transition-all active:scale-95"
                 @click="deleteItem(item)"
               >
                 <Trash2 :size="16" />
@@ -227,7 +227,7 @@
         <!-- 空状态 -->
         <div
           v-else-if="blacklist.length === 0"
-          class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-zinc-900 bg-opacity-10 border border-zinc-800 border-opacity-40 border-dashed rounded-xl"
+          class="py-20 flex flex-col items-center justify-center text-center space-y-4 bg-zinc-900/10 border border-zinc-800/40 border-dashed rounded-xl"
         >
           <div
             class="w-16 h-16 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-800 shadow-xl"
@@ -253,7 +253,7 @@
           <ChevronLeft :size="20" />
         </button>
         <div
-          class="px-6 py-3 bg-zinc-900 bg-opacity-50 border border-zinc-800 rounded-lg text-[11px] font-black text-zinc-400 uppercase tracking-widest"
+          class="px-6 py-3 bg-zinc-900/50 border border-zinc-800 rounded-lg text-[11px] font-black text-zinc-400 uppercase tracking-widest"
         >
           {{ locale.pagination(pagination.page, pagination.pages) }}
         </div>
@@ -278,7 +278,7 @@
     >
       <div
         v-if="showDeleteDialog"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950 bg-opacity-80 backdrop-blur-sm"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
       >
         <div
           class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
@@ -286,7 +286,7 @@
         >
           <div class="flex flex-col items-center py-8 space-y-6 text-center px-8">
             <div
-              class="w-16 h-16 rounded-lg bg-red-600 bg-opacity-10 text-red-500 flex items-center justify-center border border-red-500 border-opacity-20 shadow-2xl shadow-red-900/10"
+              class="w-16 h-16 rounded-lg bg-red-600/10 text-red-500 flex items-center justify-center border border-red-500/20 shadow-2xl shadow-red-900/10"
             >
               <Trash2 :size="28" />
             </div>

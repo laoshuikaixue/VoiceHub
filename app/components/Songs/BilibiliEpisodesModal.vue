@@ -32,7 +32,7 @@
                 >
                 <div
                   v-else
-                  class="w-full h-full bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
+                  class="w-full h-full bg-blue-600/10 flex items-center justify-center text-blue-500"
                 >
                   <Icon name="play" :size="24" />
                 </div>
@@ -47,7 +47,7 @@
               </div>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -61,7 +61,7 @@
               class="flex flex-col items-center justify-center py-12 text-zinc-500"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-zinc-800 bg-opacity-50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
               >
                 <Icon name="play" :size="32" class="opacity-20" />
               </div>
@@ -75,8 +75,8 @@
                 class="group flex items-center p-3 sm:p-4 rounded-3xl transition-all"
                 :class="[
                   isCurrentEpisode(episode)
-                    ? 'bg-blue-600 bg-opacity-10 border border-blue-500 border-opacity-50'
-                    : 'bg-zinc-800 bg-opacity-30 border border-zinc-800 border-opacity-50 hover:bg-zinc-800 bg-opacity-50 hover:border-zinc-700'
+                    ? 'bg-blue-600/10 border border-blue-500/50'
+                    : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50 hover:border-zinc-700'
                 ]"
               >
                 <!-- 剧集编号 -->
@@ -130,7 +130,7 @@
                     <!-- 已播放标签 -->
                     <div
                       v-else
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500 bg-opacity-10 text-emerald-500 border border-emerald-500 border-opacity-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ locale.played }}
                     </div>
@@ -139,7 +139,7 @@
                   <template v-else-if="getEpisodeStatus(episode).scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500 bg-opacity-10 text-amber-500 border border-amber-500 border-opacity-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ locale.scheduled }}
                     </div>
@@ -161,7 +161,7 @@
                         :class="[
                           'w-full px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
                           getEpisodeStatus(episode).voted
-                            ? 'bg-red-500 bg-opacity-10 text-red-500 border border-red-500 border-opacity-20 cursor-not-allowed'
+                            ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-500'
                         ]"
                         @click.stop="voteEpisode(episode)"

@@ -23,14 +23,14 @@
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
               <div
-                class="w-12 h-12 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
+                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
               >
                 <Icon name="user" :size="24" />
               </div>
               <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -51,7 +51,7 @@
               <input
                 ref="searchInput"
                 v-model="searchQuery"
-                class="w-full pl-12 pr-12 py-4 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 border-opacity-30 transition-all"
+                class="w-full pl-12 pr-12 py-4 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
                 :placeholder="locale.searchUsersPlaceholder"
                 type="text"
                 @input="handleSearch"
@@ -69,7 +69,7 @@
                 class="flex flex-col items-center justify-center py-12 text-zinc-500"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-zinc-800 bg-opacity-50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
                 >
                   <Icon name="search" :size="32" class="opacity-20" />
                 </div>
@@ -82,7 +82,7 @@
                 :class="[
                   'group flex items-center p-4 rounded-2xl border transition-all cursor-pointer',
                   isSelected(user)
-                    ? 'bg-blue-600 bg-opacity-10 border-blue-500 border-opacity-30 shadow-lg'
+                    ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
                     : 'bg-zinc-950 border-transparent hover:border-zinc-800'
                 ]"
                 @click="toggleSelection(user)"

@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-zinc-950 text-zinc-200 pb-24">
     <!-- 顶部导航栏 -->
     <div
-      class="sticky top-0 z-30 bg-zinc-950 bg-opacity-80 backdrop-blur-xl border-b border-zinc-900 border-opacity-50 px-4 py-4 mb-8"
+      class="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900/50 px-4 py-4 mb-8"
     >
       <div class="max-w-[1200px] mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
@@ -55,7 +55,7 @@
 
             <div class="flex flex-wrap justify-center gap-2 mt-6">
               <span
-                class="px-3 py-1 bg-blue-500 bg-opacity-10 border border-blue-500 border-opacity-20 text-blue-500 text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black uppercase tracking-wider rounded-full"
               >
                 {{ roleName }}
               </span>
@@ -79,8 +79,8 @@
         <div class="lg:col-span-8 space-y-8">
           <!-- 第三方登录绑定 -->
           <section v-if="hasOAuthProviders" :class="sectionClass">
-            <div class="flex items-center gap-3 border-b border-zinc-800 border-opacity-50 pb-5 mb-6">
-              <div class="p-2.5 bg-purple-500 bg-opacity-10 rounded-xl">
+            <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
+              <div class="p-2.5 bg-purple-500/10 rounded-xl">
                 <LinkIcon :size="20" class="text-purple-500" />
               </div>
               <div>
@@ -93,9 +93,9 @@
 
           <!-- 个人 API Key -->
           <section :class="sectionClass">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 border-opacity-50 pb-5 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/50 pb-5 mb-6">
               <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-emerald-500 bg-opacity-10 rounded-xl">
+                <div class="p-2.5 bg-emerald-500/10 rounded-xl">
                   <KeyRound :size="20" class="text-emerald-500" />
                 </div>
                 <div>
@@ -121,7 +121,7 @@
 
             <div
               v-else-if="personalApiKeys.length === 0"
-              class="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950 bg-opacity-40 px-5 py-8 text-center"
+              class="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-5 py-8 text-center"
             >
               <KeyRound :size="28" class="mx-auto text-zinc-700 mb-3" />
               <p class="text-sm font-bold text-zinc-300">{{ locale.personalApiKey.emptyTitle }}</p>
@@ -134,7 +134,7 @@
               <div
                 v-for="key in personalApiKeys"
                 :key="key.id"
-                class="rounded-2xl border border-zinc-800 border-opacity-70 bg-zinc-950 bg-opacity-45 p-4"
+                class="rounded-2xl border border-zinc-800/70 bg-zinc-950/45 p-4"
               >
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div class="min-w-0">
@@ -150,7 +150,7 @@
                     <p class="text-xs text-zinc-500 mt-1">{{ key.description || locale.personalApiKey.noDescription }}</p>
                   </div>
                   <button
-                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-red-500 border-opacity-20 bg-red-500 bg-opacity-10 text-red-400 hover:bg-red-500 bg-opacity-15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                     :disabled="apiKeyDeletingId === key.id"
                     @click="deletePersonalApiKey(key)"
                   >
@@ -193,8 +193,8 @@
 
           <!-- 修改密码 -->
           <section :class="sectionClass">
-            <div class="flex items-center gap-3 border-b border-zinc-800 border-opacity-50 pb-5 mb-6">
-              <div class="p-2.5 bg-blue-500 bg-opacity-10 rounded-xl">
+            <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
+              <div class="p-2.5 bg-blue-500/10 rounded-xl">
                 <Lock :size="20" class="text-blue-500" />
               </div>
               <div>
@@ -245,7 +245,7 @@
             </div>
 
             <div class="p-6 space-y-5">
-              <div class="flex items-start gap-3 rounded-2xl border border-amber-500 border-opacity-20 bg-amber-500 bg-opacity-10 p-4 text-amber-400">
+              <div class="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-400">
                 <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
                 <p class="text-xs font-bold leading-relaxed">
                   {{ locale.personalApiKey.copyWarning }}
@@ -317,7 +317,7 @@
                 <div class="overflow-hidden rounded-2xl border border-zinc-800">
                   <div class="max-h-[60vh] overflow-auto">
                     <table class="min-w-full text-left">
-                      <thead class="sticky top-0 bg-zinc-950 bg-opacity-95 backdrop-blur border-b border-zinc-800">
+                      <thead class="sticky top-0 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
                         <tr class="text-[10px] font-black uppercase tracking-widest text-zinc-500">
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.time }}</th>
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.method }}</th>
@@ -465,7 +465,7 @@ onMounted(() => {
 })
 
 // 样式类常量
-const sectionClass = 'bg-zinc-900 bg-opacity-40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'
 
 const userInitials = computed(() => {
   const name = auth.user.value?.name || auth.user.value?.username || 'U'
@@ -668,21 +668,21 @@ const getApiKeyStatusLabel = (status) => {
 
 const getApiKeyStatusClass = (status) => {
   const map = {
-    active: 'bg-emerald-500 bg-opacity-10 text-emerald-400 border-emerald-500 border-opacity-20',
-    inactive: 'bg-zinc-800 text-zinc-500 border-zinc-700 border-opacity-50',
-    expired: 'bg-red-500 bg-opacity-10 text-red-400 border-red-500 border-opacity-20'
+    active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    inactive: 'bg-zinc-800 text-zinc-500 border-zinc-700/50',
+    expired: 'bg-red-500/10 text-red-400 border-red-500/20'
   }
-  return map[status] || 'bg-zinc-800 text-zinc-500 border-zinc-700 border-opacity-50'
+  return map[status] || 'bg-zinc-800 text-zinc-500 border-zinc-700/50'
 }
 
 const getApiMethodClass = (method) => {
   const map = {
-    GET: 'bg-emerald-500 bg-opacity-10 text-emerald-400 border-emerald-500 border-opacity-20',
-    POST: 'bg-blue-500 bg-opacity-10 text-blue-400 border-blue-500 border-opacity-20',
-    PUT: 'bg-amber-500 bg-opacity-10 text-amber-400 border-amber-500 border-opacity-20',
-    DELETE: 'bg-red-500 bg-opacity-10 text-red-400 border-red-500 border-opacity-20'
+    GET: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    POST: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    PUT: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    DELETE: 'bg-red-500/10 text-red-400 border-red-500/20'
   }
-  return map[method] || 'bg-zinc-800 text-zinc-400 border-zinc-700 border-opacity-50'
+  return map[method] || 'bg-zinc-800 text-zinc-400 border-zinc-700/50'
 }
 
 const getApiStatusClass = (statusCode) => {

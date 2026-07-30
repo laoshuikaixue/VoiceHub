@@ -6,7 +6,7 @@
       <Shield :size="16" class="text-green-500" /> {{ locale.title }}
     </h3>
 
-    <div class="flex items-start gap-3 p-4 bg-blue-500 bg-opacity-5 border border-blue-500 border-opacity-10 rounded-xl">
+    <div class="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
       <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
       <p class="text-[10px] text-zinc-500 leading-relaxed">
         {{
@@ -23,7 +23,7 @@
         <button
           v-if="envData.hasBaseConfig"
           type="button"
-          class="text-[10px] px-2 py-1 bg-blue-500 bg-opacity-10 text-blue-500 hover:bg-blue-500 bg-opacity-20 border border-blue-500 border-opacity-20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
           @click="importEnvData('base')"
         >
           <Download :size="12" />
@@ -32,7 +32,7 @@
       </div>
 
       <div
-        class="flex items-center justify-between bg-zinc-900 bg-opacity-50 p-4 rounded-xl border border-zinc-800 border-opacity-50"
+        class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"
       >
         <div>
           <label :class="labelClass">{{ locale.allowRegistration }}</label>
@@ -319,7 +319,7 @@
 
     <!-- 信息提示 -->
     <div
-      class="mt-6 p-4 bg-amber-500 bg-opacity-5 border border-amber-500 border-opacity-10 rounded-xl flex items-start gap-3"
+      class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
     >
       <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
       <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
@@ -359,9 +359,9 @@ const locale = computed(() => admin.value?.oauthConfig || {})
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
-  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500 border-opacity-30 transition-all placeholder:text-zinc-800'
+  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
 const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-zinc-900 bg-opacity-40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
+const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
 
 const showSecrets = ref({
   state: false,

@@ -1,11 +1,11 @@
 <template>
   <div class="space-y-6">
     <!-- 状态显示 -->
-    <div class="flex items-center justify-between p-4 bg-zinc-950 bg-opacity-50 rounded-xl border border-zinc-800">
+    <div class="flex items-center justify-between p-4 bg-zinc-950/50 rounded-xl border border-zinc-800">
       <div class="flex items-center gap-3">
         <div 
           class="p-2 rounded-lg"
-          :class="isEnabled ? 'bg-green-500 bg-opacity-10 text-green-500' : 'bg-zinc-800 text-zinc-500'"
+          :class="isEnabled ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'"
         >
           <ShieldCheck :size="20" />
         </div>
@@ -27,14 +27,14 @@
       <button
         v-else
         @click="confirmDisable"
-        class="px-4 py-2 bg-red-500 bg-opacity-10 hover:bg-red-500 bg-opacity-20 text-red-500 border border-red-500 border-opacity-20 text-sm font-bold rounded-lg transition-colors"
+        class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 text-sm font-bold rounded-lg transition-colors"
       >
         {{ locale.disable }}
       </button>
     </div>
 
     <!-- 开启流程 -->
-    <div v-if="showSetup" class="bg-zinc-950 bg-opacity-30 rounded-xl border border-zinc-800 p-6 space-y-6 animate-in fade-in slide-in-from-top-4">
+    <div v-if="showSetup" class="bg-zinc-950/30 rounded-xl border border-zinc-800 p-6 space-y-6 animate-in fade-in slide-in-from-top-4">
       <div class="flex items-start justify-between">
         <div>
           <h4 class="font-bold text-zinc-100 mb-1">{{ locale.setupTitle }}</h4>

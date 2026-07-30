@@ -312,7 +312,7 @@
                       <Icon :size="14" name="download" />
                     </button>
                     <button
-                      class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400 bg-opacity-10"
+                      class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
                       :aria-label="locale.logout"
                       :title="locale.logout"
                       type="button"
@@ -359,7 +359,7 @@
 
                   <div class="user-actions-row">
                     <button
-                      class="action-btn-compact text-red-400 hover:bg-red-400 bg-opacity-10 hover:text-red-300"
+                      class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
                       :aria-label="locale.logoutQQ"
                       :title="locale.logoutQQ"
                       type="button"
@@ -463,7 +463,7 @@
                     id="submission-note"
                     v-model="submissionNote"
                     maxlength="300"
-                    class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900 bg-opacity-60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500 border-opacity-50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+                    class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
                   />
                   <div class="mt-1 flex justify-end text-[11px] text-zinc-500">
                     <span>{{ submissionNote.length }}/300</span>
@@ -487,8 +487,8 @@
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                             cardCodeFieldMeta.required
-                              ? 'border-yellow-500 border-opacity-30 bg-yellow-500 bg-opacity-10 text-yellow-300'
-                              : 'border-zinc-700 bg-zinc-800 bg-opacity-70 text-zinc-400'
+                              ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
+                              : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
                           ]"
                         >
                           {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
@@ -498,11 +498,11 @@
                         :class="[
                           'mt-1 truncate text-[11px]',
                           cardCodeValidation.valid
-                            ? 'text-emerald-300 text-opacity-80'
+                            ? 'text-emerald-300/80'
                             : cardCodeValidation.valid === false
-                              ? 'text-red-300 text-opacity-80'
+                              ? 'text-red-300/80'
                               : cardCodeFieldMeta.required
-                                ? 'text-yellow-300 text-opacity-80'
+                                ? 'text-yellow-300/80'
                                 : 'text-zinc-500'
                         ]"
                       >
@@ -512,7 +512,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-yellow-500 border-opacity-25 bg-yellow-500 bg-opacity-10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-yellow-400 border-opacity-40 hover:bg-yellow-500 bg-opacity-15"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-yellow-500/25 bg-yellow-500/10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-yellow-400/40 hover:bg-yellow-500/15"
                       type="button"
                       @click="openCardCodeModal"
                     >
@@ -521,7 +521,7 @@
                     </button>
                     <button
                       v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 bg-opacity-80 text-zinc-500 transition-all hover:border-red-500 border-opacity-30 hover:text-red-300"
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-500 transition-all hover:border-red-500/30 hover:text-red-300"
                       :title="locale.clearCardCode"
                       type="button"
                       @click="clearCardCode"
@@ -918,14 +918,14 @@
       >
         <div
           v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-zinc-950 bg-opacity-80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+          class="fixed inset-0 z-[105] flex items-end justify-center bg-zinc-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
           @click.self="closeCardCodeModal"
         >
           <div
             class="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
             @click.stop
           >
-            <div class="flex items-center justify-between border-b border-zinc-800 border-opacity-70 px-5 py-4">
+            <div class="flex items-center justify-between border-b border-zinc-800/70 px-5 py-4">
               <div>
                 <div class="flex items-center gap-2">
                   <h3 class="text-base font-black text-zinc-100">{{ locale.cardCode }}</h3>
@@ -933,8 +933,8 @@
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                       cardCodeFieldMeta.required
-                        ? 'border-yellow-500 border-opacity-30 bg-yellow-500 bg-opacity-10 text-yellow-300'
-                        : 'border-zinc-700 bg-zinc-800 bg-opacity-70 text-zinc-400'
+                        ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
+                        : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
                     ]"
                   >
                     {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
@@ -943,7 +943,7 @@
                 <p class="mt-1 text-[11px] text-zinc-500">{{ cardCodeFieldMeta.helper }}</p>
               </div>
               <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800 bg-opacity-60 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-zinc-100"
+                class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800/60 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-zinc-100"
                 type="button"
                 @click="closeCardCodeModal"
               >
@@ -963,7 +963,7 @@
                 ref="cardCodeInputRef"
                 v-model="cardCodeDraft"
                 :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 placeholder-zinc-600 transition-all focus:border-yellow-400 border-opacity-50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
+                class="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 placeholder-zinc-600 transition-all focus:border-yellow-400/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
               />
@@ -971,9 +971,9 @@
                 :class="[
                   'mt-2 px-1 text-[11px]',
                   cardCodeValidation.valid
-                    ? 'text-emerald-300 text-opacity-80'
+                    ? 'text-emerald-300/80'
                     : cardCodeValidation.valid === false
-                      ? 'text-red-300 text-opacity-80'
+                      ? 'text-red-300/80'
                       : 'text-zinc-500'
                 ]"
               >
@@ -982,7 +982,7 @@
             </div>
 
             <div
-              class="flex flex-col-reverse gap-2 border-t border-zinc-800 border-opacity-70 bg-zinc-900 bg-opacity-70 px-5 py-4 sm:flex-row sm:justify-end"
+              class="flex flex-col-reverse gap-2 border-t border-zinc-800/70 bg-zinc-900/70 px-5 py-4 sm:flex-row sm:justify-end"
             >
               <button
                 class="rounded-lg px-4 py-2.5 text-xs font-bold text-zinc-500 transition-all hover:text-zinc-300"
@@ -993,7 +993,7 @@
               </button>
               <button
                 v-if="trimmedCardCode"
-                class="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-all hover:border-red-500 border-opacity-30 hover:text-red-300"
+                class="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-all hover:border-red-500/30 hover:text-red-300"
                 type="button"
                 @click="clearCardCode"
               >
@@ -1024,7 +1024,7 @@
       >
         <div
           v-if="showAudioMatchModal"
-          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950 bg-opacity-85 backdrop-blur-sm"
+          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/85 backdrop-blur-sm"
         >
           <div
             class="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
@@ -1036,10 +1036,10 @@
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
                   :class="
                     audioMatchRecording
-                      ? 'bg-red-500 bg-opacity-20 text-red-400 scale-110'
+                      ? 'bg-red-500/20 text-red-400 scale-110'
                       : audioMatchError
-                        ? 'bg-zinc-800 bg-opacity-50 text-zinc-500'
-                        : 'bg-blue-500 bg-opacity-10 text-blue-400'
+                        ? 'bg-zinc-800/50 text-zinc-500'
+                        : 'bg-blue-500/10 text-blue-400'
                   "
                 >
                   <Icon :size="32" name="mic" />
@@ -1095,7 +1095,7 @@
               v-if="audioMatchResults.length"
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
-              <div class="border-t border-zinc-800 border-opacity-60 pt-5">
+              <div class="border-t border-zinc-800/60 pt-5">
                 <h4 class="text-sm font-semibold text-zinc-300 mb-4">{{ locale.audioMatchResults }}</h4>
                 <div class="space-y-2">
                   <button
@@ -1107,7 +1107,7 @@
                   >
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                       <div
-                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800 bg-opacity-50 flex items-center justify-center"
+                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800/50 flex items-center justify-center"
                         @click.stop="playAudioMatchResult(match)"
                       >
                         <img
@@ -1153,7 +1153,7 @@
       >
         <div
           v-if="showManualModal"
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950 bg-opacity-80 backdrop-blur-sm"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/80 backdrop-blur-sm"
           @click.self="showManualModal = false"
         >
           <div
@@ -1162,18 +1162,18 @@
           >
             <!-- Header -->
             <div
-              class="px-8 py-6 border-b border-zinc-800 border-opacity-50 flex items-center justify-between shrink-0"
+              class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0"
             >
               <div class="flex items-center gap-4">
                 <div
-                  class="w-12 h-12 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
+                  class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
                 >
                   <Edit3 :size="24" />
                 </div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.manualTitle }}</h3>
               </div>
               <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
                 @click="showManualModal = false"
               >
                 <X class="w-5 h-5" />
@@ -1211,7 +1211,7 @@
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500 border-opacity-30 transition-all"
+                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
@@ -1232,8 +1232,8 @@
                       :class="[
                         'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
-                          ? 'border-red-500 border-opacity-50 focus:border-red-500 border-opacity-50'
-                          : 'border-zinc-800 focus:border-blue-500 border-opacity-30'
+                          ? 'border-red-500/50 focus:border-red-500/50'
+                          : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
@@ -1253,13 +1253,13 @@
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!coverValidation.valid"
-                        class="text-[10px] font-bold text-red-500 text-opacity-80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-emerald-500 text-opacity-80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1281,8 +1281,8 @@
                       :class="[
                         'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
-                          ? 'border-red-500 border-opacity-50 focus:border-red-500 border-opacity-50'
-                          : 'border-zinc-800 focus:border-blue-500 border-opacity-30'
+                          ? 'border-red-500/50 focus:border-red-500/50'
+                          : 'border-zinc-800 focus:border-blue-500/30'
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
@@ -1302,13 +1302,13 @@
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!playUrlValidation.valid"
-                        class="text-[10px] font-bold text-red-500 text-opacity-80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-emerald-500 text-opacity-80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1320,7 +1320,7 @@
 
             <!-- Footer -->
             <div
-              class="px-8 py-6 bg-zinc-900 bg-opacity-50 border-t border-zinc-800 border-opacity-50 flex gap-3 justify-end shrink-0"
+              class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end shrink-0"
             >
               <button
                 class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-all"

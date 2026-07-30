@@ -40,7 +40,7 @@
                   v-model="inputValue"
                   :type="inputType"
                   :placeholder="inputPlaceholder"
-                  class="w-full bg-zinc-800 bg-opacity-50 border border-zinc-700 border-opacity-50 rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                  class="w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all text-sm"
                   @keyup.enter="handleConfirm"
                 />
               </div>
@@ -177,14 +177,14 @@ const iconName = computed(() => {
 const iconClasses = computed(() => {
   switch (props.type) {
     case 'danger':
-      return 'bg-red-500 bg-opacity-10 text-red-500 border-red-500 border-opacity-20 shadow-red-900/5'
+      return 'bg-red-500/10 text-red-500 border-red-500/20 shadow-red-900/5'
     case 'success':
-      return 'bg-emerald-500 bg-opacity-10 text-emerald-500 border-emerald-500 border-opacity-20 shadow-emerald-900/5'
+      return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-emerald-900/5'
     case 'info':
-      return 'bg-blue-500 bg-opacity-10 text-blue-500 border-blue-500 border-opacity-20 shadow-blue-900/5'
+      return 'bg-blue-500/10 text-blue-500 border-blue-500/20 shadow-blue-900/5'
     case 'warning':
     default:
-      return 'bg-amber-500 bg-opacity-10 text-amber-500 border-amber-500 border-opacity-20 shadow-amber-900/5'
+      return 'bg-amber-500/10 text-amber-500 border-amber-500/20 shadow-amber-900/5'
   }
 })
 

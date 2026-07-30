@@ -7,7 +7,7 @@
 
     <div
       v-else-if="error"
-      class="p-4 bg-rose-500 bg-opacity-10 border border-rose-500 border-opacity-20 rounded-xl flex items-center justify-between"
+      class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-between"
     >
       <div class="flex items-center gap-3">
         <AlertCircle :size="16" class="text-rose-500" />
@@ -69,7 +69,7 @@
 
       <div
         v-if="localSettings.songVotedNotify"
-        class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-2xl space-y-3"
+        class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-3"
       >
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-black text-zinc-500 uppercase tracking-widest">{{ locale.voteThresholdTitle }}</h3>
@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <div class="p-4 bg-zinc-950 bg-opacity-50 border border-zinc-800 rounded-2xl space-y-3">
+      <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex-1">
             <h3 class="text-sm font-bold text-zinc-200">{{ locale.refreshTitle }}</h3>
@@ -150,7 +150,7 @@ const settings = computed(() => notificationsService.settings.value)
 
 // 样式类
 const itemClass =
-  'flex items-center justify-between p-4 bg-zinc-950 bg-opacity-30 border border-zinc-900 rounded-2xl hover:bg-zinc-900 bg-opacity-50 transition-all'
+  'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all'
 
 // 本地设置，用于双向绑定
 const localSettings = ref({

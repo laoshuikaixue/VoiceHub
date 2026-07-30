@@ -57,28 +57,6 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - `AlbumDetailsModal.vue`：仅网易云支持，使用 `AbortController` 防止竞态
 - QQ 音乐专辑链接不可点击
 
-### 3.5. 主题系统修改准则
-
-#### 核心原则
-- 类名必须表达**精确语义意图**，禁止近似等价映射
-- 修改 CSS 变量时，深色/亮色文件必须成对修改
-
-#### 透明修饰符处理（第一阶段 - 已完成）
-- `bg/text/border-*` 的 `/xx` 拆为独立 `*-opacity-xx` 类
-  - 例：`bg-zinc-900/50` → `bg-zinc-900 bg-opacity-50`
-- `shadow-*` 和 `ring-*` 保留 `/xx` 不动（无对应 opacity 类）
-- 仅处理 `class="..."` 和 JS 字符串中的 `/xx`，不处理 `<style>` 块
-
-#### 语义化替换（第二阶段 - 待执行）
-- 将 UnoCSS 颜色类替换为语义化 CSS 变量类
-- 命名规则：`bg-primary`（页面背景）、`text-secondary`（次要文字）、`border-tertiary`（边框）等
-- 在 `theme-dark.css` / `theme-light.css` 中定义对应变量
-
-#### 阴影变量语义化（第三阶段 - 待执行）
-- 语义化命名：`shadow-primary`（蓝色按钮）、`shadow-success`（绿色按钮）、`shadow-danger`（红色按钮）等
-- 在主题文件中定义完整阴影值：`--shadow-primary: 0 0 15px 5px rgba(30, 27, 75, 0.2);`
-- 组件中使用：`shadow-[var(--shadow-primary)]`
-
 ## 4. 文件变更提醒
 
 **每次完成任务后，如果新增或删除了文件/目录，必须同步更新 `README.md` 的"项目结构"部分，保持与实际文件系统一致。**

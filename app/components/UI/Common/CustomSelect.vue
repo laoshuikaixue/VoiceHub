@@ -5,7 +5,7 @@
       :class="[
         disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         isOpen
-          ? 'border-blue-500 border-opacity-50 bg-blue-600 bg-opacity-5 shadow-lg'
+          ? 'border-blue-500/50 bg-blue-600/5 shadow-lg'
           : 'border-zinc-800 hover:border-zinc-700'
       ]"
       @click="toggleDropdown"
@@ -48,8 +48,8 @@
               class="w-full flex items-center justify-between px-3 py-2 rounded-md text-[11px] font-bold transition-all"
               :class="[
                 isSelected(option)
-                  ? 'bg-blue-600 bg-opacity-10 text-blue-400'
-                  : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 bg-opacity-40'
+                  ? 'bg-blue-600/10 text-blue-400'
+                  : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40'
               ]"
               @click="selectOption(option)"
             >

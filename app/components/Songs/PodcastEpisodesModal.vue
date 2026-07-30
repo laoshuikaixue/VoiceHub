@@ -23,7 +23,7 @@
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4 min-w-0">
               <div
-                class="w-12 h-12 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500 flex-shrink-0"
+                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 flex-shrink-0"
               >
                 <Icon name="mic" :size="24" />
               </div>
@@ -32,7 +32,7 @@
               </h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -54,7 +54,7 @@
               class="flex flex-col items-center justify-center py-20 text-center px-8"
             >
               <div
-                class="w-16 h-16 rounded-2xl bg-red-500 bg-opacity-10 flex items-center justify-center text-red-500 mb-4"
+                class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-500 mb-4"
               >
                 <Icon name="alert-triangle" :size="32" />
               </div>
@@ -72,7 +72,7 @@
               class="flex flex-col items-center justify-center py-12 text-zinc-500"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-zinc-800 bg-opacity-50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
               >
                 <Icon name="mic" :size="32" class="opacity-20" />
               </div>
@@ -83,7 +83,7 @@
               <div
                 v-for="program in programs"
                 :key="program.id"
-                class="group flex items-center p-4 bg-zinc-800 bg-opacity-30 border border-zinc-800 border-opacity-50 rounded-3xl hover:bg-zinc-800 bg-opacity-50 hover:border-zinc-700 transition-all"
+                class="group flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-3xl hover:bg-zinc-800/50 hover:border-zinc-700 transition-all"
               >
                 <!-- 封面与播放叠加层 -->
                 <div
@@ -142,19 +142,19 @@
                   <div v-else-if="getSimilarSong(program)" class="flex flex-col items-end gap-1.5">
                     <span
                       v-if="getSimilarSong(program)?.played"
-                      class="px-2 py-0.5 rounded-md bg-red-500 bg-opacity-10 text-red-500 text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-wider"
                     >
                       {{ locale.played }}
                     </span>
                     <span
                       v-else-if="getSimilarSong(program)?.scheduled"
-                      class="px-2 py-0.5 rounded-md bg-amber-500 bg-opacity-10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase tracking-wider"
                     >
                       {{ locale.scheduled }}
                     </span>
                     <span
                       v-else
-                      class="px-2 py-0.5 rounded-md bg-zinc-700 bg-opacity-50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
+                      class="px-2 py-0.5 rounded-md bg-zinc-700/50 text-zinc-500 text-[10px] font-black uppercase tracking-wider"
                     >
                       {{ locale.existing }}
                     </span>
@@ -173,8 +173,8 @@
                         class="px-3 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 disabled:cursor-not-allowed uppercase tracking-widest"
                         :class="[
                           getSimilarSong(program)?.voted
-                            ? 'bg-red-500 bg-opacity-10 text-red-500 border border-red-500 border-opacity-20'
-                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700 border-opacity-50 hover:border-zinc-600'
+                            ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700/50 hover:border-zinc-600'
                         ]"
                         :disabled="
                           getSimilarSong(program)?.played ||

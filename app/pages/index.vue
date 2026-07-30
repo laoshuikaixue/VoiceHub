@@ -626,7 +626,7 @@
               <div>
                 <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
+                    class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
                   >
                     <Icon name="bell" :size="20" />
                   </div>
@@ -635,7 +635,7 @@
                 <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
-                class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
                 @click="showRules = false"
               >
                 <Icon name="x" :size="20" />
@@ -652,12 +652,12 @@
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950 bg-opacity-50 p-6 rounded-3xl border border-zinc-800 border-opacity-50"
+                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
                   v-html="renderedGuidelines"
                 />
                 <div
                   v-else
-                  class="space-y-3 bg-zinc-950 bg-opacity-50 p-6 rounded-3xl border border-zinc-800 border-opacity-50"
+                  class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
                 >
                   <div class="flex gap-3 text-sm text-zinc-400 font-medium">
                     <span class="text-blue-500 font-black">01</span>
@@ -682,7 +682,7 @@
                   {{ locale.playbackTime }}
                 </h4>
                 <div
-                  class="bg-blue-600 bg-opacity-10 border border-blue-500 border-opacity-20 p-6 rounded-3xl flex items-center gap-4"
+                  class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4"
                 >
                   <div
                     class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40"

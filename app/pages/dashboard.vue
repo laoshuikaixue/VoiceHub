@@ -26,7 +26,7 @@
           class="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64 relative bg-[#09090b] text-zinc-100"
         >
           <header
-            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-zinc-800 bg-zinc-950 bg-opacity-60 backdrop-blur-xl z-30"
+            class="h-16 shrink-0 flex items-center justify-between px-4 md:px-8 border-b border-zinc-800 bg-zinc-950/60 backdrop-blur-xl z-30"
           >
             <div class="flex items-center gap-3">
               <button

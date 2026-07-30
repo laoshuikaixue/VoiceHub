@@ -32,7 +32,7 @@
                 >
                 <div
                   v-else
-                  class="w-full h-full bg-blue-600 bg-opacity-10 flex items-center justify-center text-blue-500"
+                  class="w-full h-full bg-blue-600/10 flex items-center justify-center text-blue-500"
                 >
                   <Icon name="disc" :size="32" />
                 </div>
@@ -67,7 +67,7 @@
               </div>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -81,7 +81,7 @@
                 v-model="searchQuery"
                 type="text"
                 :placeholder="locale.searchPlaceholder"
-                class="w-full h-9 pl-9 pr-3 rounded-xl bg-zinc-800 bg-opacity-60 border border-zinc-700 border-opacity-50 text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500 border-opacity-50 focus:bg-zinc-800 transition-all"
+                class="w-full h-9 pl-9 pr-3 rounded-xl bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-800 transition-all"
               >
               <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
             </div>
@@ -99,7 +99,7 @@
           <div v-else-if="error" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center text-red-500">
               <div
-                class="w-16 h-16 rounded-3xl bg-red-500 bg-opacity-10 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-red-500/10 flex items-center justify-center mb-4"
               >
                 <Icon name="alert-circle" :size="32" />
               </div>
@@ -114,7 +114,7 @@
               class="flex flex-col items-center justify-center py-12 text-zinc-500"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-zinc-800 bg-opacity-50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
               >
                 <Icon name="music" :size="32" class="opacity-20" />
               </div>
@@ -130,8 +130,8 @@
                 class="group flex items-center p-2 sm:p-3 rounded-2xl transition-all"
                 :class="[
                   isCurrentSong(song)
-                    ? 'bg-blue-600 bg-opacity-10 border border-blue-500 border-opacity-50'
-                    : 'bg-zinc-800 bg-opacity-30 border border-zinc-800 border-opacity-50 hover:bg-zinc-800 bg-opacity-50 hover:border-zinc-700'
+                    ? 'bg-blue-600/10 border border-blue-500/50'
+                    : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50 hover:border-zinc-700'
                 ]"
               >
                 <!-- 歌曲封面 -->
@@ -187,7 +187,7 @@
                   <template v-if="song.status.played">
                     <!-- 已播放标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500 bg-opacity-10 text-emerald-500 border border-emerald-500 border-opacity-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ requestLocale.played }}
                     </div>
@@ -196,7 +196,7 @@
                   <template v-else-if="song.status.scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500 bg-opacity-10 text-amber-500 border border-amber-500 border-opacity-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ requestLocale.scheduled }}
                     </div>
@@ -218,7 +218,7 @@
                         :class="[
                           'w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
                           song.status.voted
-                            ? 'bg-red-500 bg-opacity-10 text-red-500 border border-red-500 border-opacity-20 cursor-not-allowed'
+                            ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-500'
                         ]"
                         @click.stop="voteSong(song)"
@@ -275,7 +275,7 @@
           <div class="flex items-center justify-between mb-4">
             <h4 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.albumIntro }}</h4>
             <button
-              class="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800 bg-opacity-50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
               @click="showDescModal = false"
             >
               <Icon name="x" :size="16" />

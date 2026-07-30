@@ -37,7 +37,7 @@
               {{ locale.openInBilibili }}
             </button>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800 bg-opacity-80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-all"
               :title="locale.close"
               @click="close"
             >

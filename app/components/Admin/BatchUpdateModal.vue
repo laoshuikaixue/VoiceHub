@@ -17,11 +17,11 @@
         @click.stop
       >
         <!-- 头部 -->
-        <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800 border-opacity-50">
+        <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
           <div>
             <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-xl bg-purple-600 bg-opacity-10 flex items-center justify-center text-purple-500"
+                class="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-500"
               >
                 <Layers :size="20" />
               </div>
@@ -32,7 +32,7 @@
             </p>
           </div>
           <button
-            class="p-3 bg-zinc-800 bg-opacity-50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all"
+            class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all"
             @click="$emit('close')"
           >
             <X :size="20" />
@@ -46,7 +46,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'grade-only'
-                  ? 'bg-purple-500 bg-opacity-5 border-purple-500 border-opacity-50 ring-4 ring-purple-500/10'
+                  ? 'bg-purple-500/5 border-purple-500/50 ring-4 ring-purple-500/10'
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
               ]"
             >
@@ -81,7 +81,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'excel-batch'
-                  ? 'bg-emerald-500 bg-opacity-5 border-emerald-500 border-opacity-50 ring-4 ring-emerald-500/10'
+                  ? 'bg-emerald-500/5 border-emerald-500/50 ring-4 ring-emerald-500/10'
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
               ]"
             >
@@ -116,7 +116,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'status-batch'
-                  ? 'bg-amber-500 bg-opacity-5 border-amber-500 border-opacity-50 ring-4 ring-amber-500/10'
+                  ? 'bg-amber-500/5 border-amber-500/50 ring-4 ring-amber-500/10'
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
               ]"
             >
@@ -153,7 +153,7 @@
             v-if="['grade-only', 'status-batch'].includes(updateType)"
             class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
-            <div class="p-6 bg-zinc-950 bg-opacity-50 border border-zinc-800 border-opacity-50 rounded-xl space-y-6">
+            <div class="p-6 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-6">
               <div
                 class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest"
               >
@@ -215,7 +215,7 @@
                     <label
                       v-for="user in filteredUsers"
                       :key="user.id"
-                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900 bg-opacity-50 cursor-pointer transition-colors group"
+                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900/50 cursor-pointer transition-colors group"
                     >
                       <input
                         v-model="selectedUserIds"
@@ -239,7 +239,7 @@
             </div>
 
             <!-- 目标年级设置 -->
-            <div v-if="updateType === 'grade-only'" class="p-6 bg-purple-500 bg-opacity-5 border border-purple-500 border-opacity-20 rounded-xl space-y-6">
+            <div v-if="updateType === 'grade-only'" class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
               <div
                 class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest"
               >
@@ -260,7 +260,7 @@
                       v-model="targetGrade"
                       type="text"
                       :placeholder="locale.gradeSettings.targetGradePlaceholder"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500 border-opacity-30 transition-all text-zinc-200"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200"
                     >
                   </div>
                 </div>
@@ -278,7 +278,7 @@
             </div>
 
             <!-- 目标状态设置 -->
-            <div v-if="updateType === 'status-batch'" class="p-6 bg-amber-500 bg-opacity-5 border border-amber-500 border-opacity-20 rounded-xl space-y-6">
+            <div v-if="updateType === 'status-batch'" class="p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-6">
               <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
                 <Save :size="14" />
                 {{ locale.statusSettings.title }}
@@ -314,7 +314,7 @@
                       v-model="statusReason"
                       rows="2"
                       :placeholder="locale.statusSettings.reasonPlaceholder"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500 border-opacity-30 transition-all text-zinc-200 resize-none"
+                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200 resize-none"
                     ></textarea>
                   </div>
                 </div>
@@ -350,8 +350,8 @@
                 :class="[
                   'w-full py-12 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-4',
                   isDragOver
-                    ? 'border-emerald-500 bg-emerald-500 bg-opacity-10'
-                    : 'border-zinc-800 hover:border-emerald-500 border-opacity-50 hover:bg-emerald-500 bg-opacity-5'
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-500/5'
                 ]"
               >
                 <div
@@ -386,7 +386,7 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'username'
-                      ? 'bg-blue-500 bg-opacity-10 border-blue-500 border-opacity-50 text-blue-400 ring-4 ring-blue-500/10'
+                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 ring-4 ring-blue-500/10'
                       : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
                   ]"
                 >
@@ -398,7 +398,7 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'name'
-                      ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-50 text-emerald-400 ring-4 ring-emerald-500/10'
+                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 ring-4 ring-emerald-500/10'
                       : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
                   ]"
                 >
@@ -449,7 +449,7 @@
                 </ul>
               </div>
               <button
-                class="p-5 bg-emerald-500 bg-opacity-5 border border-emerald-500 border-opacity-20 hover:border-emerald-500 border-opacity-40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group"
+                class="p-5 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group"
                 @click="downloadTemplate"
               >
                 <div
@@ -469,20 +469,20 @@
               <!-- 外部阻断用户提示 -->
               <div
                 v-if="blockerList.length > 0"
-                class="p-5 bg-amber-500 bg-opacity-5 border border-amber-500 border-opacity-20 rounded-2xl space-y-3 animate-in fade-in duration-300"
+                class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
               >
                 <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
                   <AlertCircle :size="16" />
                   {{ locale.preview.blockersTitle(blockerList.length) }}
                 </div>
-                <p class="text-[10px] text-amber-300 text-opacity-80 leading-relaxed">
+                <p class="text-[10px] text-amber-300/80 leading-relaxed">
                   {{ locale.preview.blockersDesc }}
                 </p>
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="(blocker, i) in blockerList"
                     :key="i"
-                    class="px-3 py-1.5 bg-amber-500 bg-opacity-10 border border-amber-500 border-opacity-20 rounded-lg text-xs font-bold text-amber-400"
+                    class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs font-bold text-amber-400"
                   >
                     {{ blocker.name }}({{ blocker.username }})
                   </span>
@@ -535,7 +535,7 @@
                 <div class="overflow-x-auto custom-scrollbar">
                   <table class="w-full text-left border-collapse">
                     <thead
-                      class="bg-zinc-900 bg-opacity-80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800"
+                      class="bg-zinc-900/80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800"
                     >
                       <tr>
                         <th class="px-5 py-4 whitespace-nowrap">
@@ -551,7 +551,7 @@
                         v-for="(row, index) in filteredPreviewData.slice(0, 10)"
                         :key="index"
                         :class="[
-                          row.error ? 'bg-red-500 bg-opacity-5' : 'hover:bg-zinc-900 bg-opacity-30 transition-colors'
+                          row.error ? 'bg-red-500/5' : 'hover:bg-zinc-900/30 transition-colors'
                         ]"
                       >
                         <td class="px-5 py-4">
@@ -601,19 +601,19 @@
                         <td class="px-5 py-4 text-right">
                           <span
                             v-if="row.error"
-                            class="px-2 py-0.5 bg-red-500 bg-opacity-10 text-red-500 text-[10px] font-black rounded uppercase tracking-tighter border border-red-500 border-opacity-20"
+                            class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase tracking-tighter border border-red-500/20"
                           >
                             {{ row.error }}
                           </span>
                           <span
                             v-else-if="row.noChange"
-                            class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase tracking-tighter border border-zinc-700 border-opacity-50"
+                            class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase tracking-tighter border border-zinc-700/50"
                           >
                             {{ locale.preview.noChange }}
                           </span>
                           <span
                             v-else
-                            class="px-2 py-0.5 bg-emerald-500 bg-opacity-10 text-emerald-500 text-[10px] font-black rounded uppercase tracking-tighter border border-emerald-500 border-opacity-20"
+                            class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase tracking-tighter border border-emerald-500/20"
                           >
                             {{ locale.preview.ready }}
                           </span>
@@ -624,7 +624,7 @@
                 </div>
                 <div
                   v-if="filteredPreviewData.length > 10"
-                  class="p-4 text-center border-t border-zinc-900 bg-zinc-900 bg-opacity-20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
+                  class="p-4 text-center border-t border-zinc-900 bg-zinc-900/20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
                 >
                   {{ locale.preview.moreQueued(filteredPreviewData.length - 10) }}
                 </div>
@@ -635,7 +635,7 @@
           <!-- 错误提示 -->
           <div
             v-if="error"
-            class="p-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-20 rounded-2xl flex items-center gap-3 text-red-400 text-xs animate-in shake duration-300"
+            class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs animate-in shake duration-300"
           >
             <AlertCircle :size="16" />
             {{ error }}
@@ -644,7 +644,7 @@
           <!-- 进度条 -->
           <div
             v-if="updateType === 'excel-batch' && updateProgressText"
-            class="p-5 bg-emerald-500 bg-opacity-5 border border-emerald-500 border-opacity-20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            class="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div class="flex items-center justify-between">
               <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{ updateProgressText }}</span>
@@ -660,7 +660,7 @@
         </div>
 
         <!-- 底部按钮 -->
-        <div class="p-8 pt-4 border-t border-zinc-800 border-opacity-50 bg-zinc-900 bg-opacity-50 flex gap-3">
+        <div class="p-8 pt-4 border-t border-zinc-800/50 bg-zinc-900/50 flex gap-3">
           <button
             class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
             @click="$emit('close')"
