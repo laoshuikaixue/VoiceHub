@@ -1722,9 +1722,9 @@ const vRipple = {
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, rgba(11, 90, 254, 0.1) 0%, rgba(33, 36, 45, 0.9) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--panel-surface-deep) 100%);
   border-radius: 12px;
-  border: 1px solid rgba(11, 90, 254, 0.2);
+  border: 1px solid var(--primary-border);
   backdrop-filter: blur(10px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -3498,8 +3498,8 @@ const vRipple = {
 }
 
 .date-nav-btn {
-  background: rgba(11, 90, 254, 0.1);
-  border: 1px solid rgba(11, 90, 254, 0.2);
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border);
   color: var(--text-primary);
   border-radius: 50%;
   width: 36px;

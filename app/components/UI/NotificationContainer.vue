@@ -90,7 +90,7 @@ onMounted(() => {
   overflow: hidden;
   position: relative;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .notification-item.success {
@@ -252,13 +252,5 @@ onMounted(() => {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   transition: all 0.2s ease;
-}
-
-/* 暗色主题优化 */
-@media (prefers-color-scheme: dark) {
-  .notification-item {
-    background: rgba(33, 36, 45, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
 }
 </style>
