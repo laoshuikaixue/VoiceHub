@@ -60,6 +60,10 @@
                   <span aria-hidden="true">&middot;</span>
                   <span>{{ formattedCreatedAt }}</span>
                 </time>
+                <p class="mt-2 flex items-center gap-1.5 text-xs text-zinc-400">
+                  <Icon name="user" :size="13" class="shrink-0" aria-hidden="true" />
+                  <span>{{ locale.sender }}：{{ senderDisplayName }}</span>
+                </p>
               </div>
             </div>
           </header>
@@ -119,6 +123,12 @@ let previousBodyOverflow = ''
 let relativeTimeTimer = null
 
 const renderedMessage = computed(() => renderMarkdown(notification.value?.message || ''))
+const senderDisplayName = computed(
+  () =>
+    notification.value?.sender?.name?.trim() ||
+    notification.value?.sender?.username?.trim() ||
+    locale.value.systemSender
+)
 const formattedCreatedAt = computed(() => {
   if (!notification.value?.createdAt) return ''
 

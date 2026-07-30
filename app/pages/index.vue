@@ -239,8 +239,8 @@
               <div v-else class="notification-container">
                 <!-- 标题和设置按�?-->
                 <div class="notification-header">
-                  <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
-                  <div class="notification-header-actions">
+                  <div class="notification-header-main">
+                    <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
                     <div
                       :aria-label="locale.notificationFilterLabel"
                       class="notification-filter"
@@ -285,6 +285,8 @@
                         <Icon :size="15" name="x" />
                       </button>
                     </div>
+                  </div>
+                  <div class="notification-header-actions">
                     <button
                       :class="{ disabled: !hasUnreadNotifications }"
                       :disabled="!hasUnreadNotifications"
@@ -431,6 +433,10 @@
                             </div>
                             <div class="notification-time">
                               {{ formatNotificationTime(notification.createdAt) }}
+                            </div>
+                            <div class="notification-sender">
+                              <Icon :size="13" aria-hidden="true" name="user" />
+                              <span>{{ locale.sender }}：{{ getNotificationSenderName(notification) }}</span>
                             </div>
                           </div>
                         </div>
@@ -1167,6 +1173,11 @@ const getNotificationTypeLabel = (type) =>
   locale.value?.notificationTypes?.[type] ||
   locale.value?.notificationTypes?.SYSTEM ||
   type
+
+const getNotificationSenderName = (notification) =>
+  notification?.sender?.name?.trim() ||
+  notification?.sender?.username?.trim() ||
+  locale.value.systemSender
 
 // 格式化通知时间
 const formatNotificationTime = (timeString) => {
@@ -2506,6 +2517,15 @@ if (
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.notification-header-main {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .notification-filter {
   display: inline-flex;
   flex-shrink: 0;
@@ -2550,13 +2570,11 @@ if (
 
 .notification-header-actions {
   display: flex;
-  min-width: 0;
   align-items: center;
   justify-content: flex-end;
-  flex-wrap: wrap;
   gap: 0.5rem;
   margin-left: auto;
-  flex-shrink: 1;
+  flex-shrink: 0;
 }
 
 .mark-all-read-header {
@@ -2815,6 +2833,15 @@ if (
   margin-top: 0.4rem;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.4);
+}
+
+.notification-sender {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
 }
 
 .notification-card-body {
@@ -3496,12 +3523,27 @@ if (
   }
 
   .notification-header {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.65rem 0.35rem;
   }
 
   .notification-title {
+    grid-column: 1;
+    grid-row: 1;
+    max-width: 90px;
     font-size: 1.05rem;
+    line-height: 1.15;
+  }
+
+  .notification-header-main {
+    display: contents;
+  }
+
+  .notification-filter {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .notification-filter button {
@@ -3511,19 +3553,35 @@ if (
   }
 
   .notification-header-actions {
-    width: 100%;
+    grid-column: 3;
+    grid-row: 1;
+    width: auto;
     gap: 0.35rem;
+    margin-left: auto;
   }
 
   .notification-search {
-    width: auto;
-    flex: 1 1 180px;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: calc(100% + 8px);
+    min-width: 0;
+    margin-right: -4px;
+    margin-left: -4px;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
   }
 
   .mark-all-read-header {
     gap: 0.25rem;
     padding: 0.4rem 0.5rem;
     font-size: 0.7rem;
+  }
+
+  .mark-all-read-header span {
+    white-space: normal;
+    line-height: 1.15;
+    text-align: center;
   }
 }
 
@@ -3545,6 +3603,29 @@ if (
 
   .section-tab {
     font-size: 9px;
+  }
+
+  .notification-title {
+    max-width: 78px;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .notification-filter button {
+    min-height: 25px;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.65rem;
+  }
+
+  .mark-all-read-header {
+    max-width: 96px;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.65rem;
+  }
+
+  .settings-icon {
+    width: 34px;
+    height: 34px;
   }
 }
 

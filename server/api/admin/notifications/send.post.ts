@@ -39,6 +39,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody<Record<string, unknown> | null>(event)
+  const sender = {
+    id: user.id,
+    name: user.name,
+    username: user.username
+  }
   const title = typeof body?.title === 'string' ? body.title.trim() : ''
   const rawContent = typeof body?.content === 'string' ? body.content : body?.message
   const content = typeof rawContent === 'string' ? rawContent.trim() : ''
@@ -84,7 +89,13 @@ export default defineEventHandler(async (event) => {
       throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_USER_ID_INVALID, '无效的用户 ID')
     }
 
-    const result = await createSystemNotification(Number(targetUserId), title, content, important)
+    const result = await createSystemNotification(
+      Number(targetUserId),
+      title,
+      content,
+      important,
+      sender
+    )
     if (!result) {
       throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
     }
@@ -184,7 +195,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const result = await createBatchSystemNotifications(userIds, title, content, important)
+  const result = await createBatchSystemNotifications(userIds, title, content, important, sender)
   if (!result) {
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_SEND_FAILED, '发送通知失败')
   }

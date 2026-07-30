@@ -62,6 +62,7 @@
             <tr>
               <th class="px-5 py-3">{{ locale.notification }}</th>
               <th class="px-5 py-3">{{ locale.type }}</th>
+              <th class="px-5 py-3">{{ locale.sender }}</th>
               <th class="px-5 py-3">{{ locale.recipientCountLabel }}</th>
               <th class="px-5 py-3">{{ locale.sentAt }}</th>
               <th class="px-5 py-3 text-right">{{ locale.actions }}</th>
@@ -89,6 +90,9 @@
                   <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
                   {{ item.important ? locale.important : locale.normal }}
                 </span>
+              </td>
+              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-zinc-400">
+                {{ senderName(item) }}
               </td>
               <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-zinc-400">
                 {{ locale.recipientCount(item.recipientCount) }}
@@ -157,6 +161,7 @@
               <Users :size="14" />
               {{ locale.recipientCount(item.recipientCount) }}
             </span>
+            <span>{{ locale.sender }}：{{ senderName(item) }}</span>
             <span>{{ formatDateTime(item.createdAt) }}</span>
           </div>
 
@@ -219,6 +224,9 @@
               </h2>
               <p class="mt-1 text-xs text-zinc-500">
                 {{ formatDateTime(selectedBatch.createdAt) }}
+              </p>
+              <p class="mt-1 text-xs text-zinc-500">
+                {{ locale.sender }}：{{ senderName(selectedBatch) }}
               </p>
             </div>
             <button
@@ -816,6 +824,9 @@ const recipientMeta = (item) => {
   if (item.recipient?.class) details.push(item.recipient.class)
   return details.join(' · ') || locale.value.userId(item.recipient?.id)
 }
+
+const senderName = (item) =>
+  item?.sender?.name?.trim() || item?.sender?.username?.trim() || locale.value.systemSender
 
 watch(
   () => props.refreshKey,

@@ -3,7 +3,10 @@ import { db } from '~/drizzle/db'
 import { notifications, users } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
-import { canSendSystemNotification } from '~~/server/utils/important-notification-policy'
+import {
+  canSendSystemNotification,
+  serializeNotificationSender
+} from '~~/server/utils/important-notification-policy'
 import {
   resolveNotificationBatchReference,
   resolveNotificationHistoryPagination,
@@ -85,6 +88,9 @@ export default defineEventHandler(async (event) => {
           title: notifications.title,
           message: notifications.message,
           important: notifications.important,
+          senderId: notifications.senderId,
+          senderName: notifications.senderName,
+          senderUsername: notifications.senderUsername,
           createdAt: notifications.createdAt
         })
         .from(notifications)
@@ -116,10 +122,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const total = Number(totalRows[0]?.count || 0)
+  const { senderId, senderName, senderUsername, ...notificationMetadata } = metadata
   return {
     notification: {
       batchId: getRouterParam(event, 'batchId'),
-      ...metadata
+      ...notificationMetadata,
+      sender: serializeNotificationSender({ senderId, senderName, senderUsername })
     },
     recipients: detailRows.map((row) => ({
       id: row.id,

@@ -14,7 +14,11 @@ import { sendBatchMeowNotifications, sendMeowNotificationToUser } from './meowNo
 import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtpService'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
-import { shouldDeliverSystemNotification } from '~~/server/utils/important-notification-policy'
+import {
+  createNotificationSenderSnapshot,
+  shouldDeliverSystemNotification,
+  type NotificationSenderInput
+} from '~~/server/utils/important-notification-policy'
 import { randomUUID } from 'node:crypto'
 
 /**
@@ -690,10 +694,12 @@ export async function createSystemNotification(
   userId: number,
   title: string,
   content: string,
-  important = false
+  important = false,
+  sender: NotificationSenderInput | null = null
 ) {
   try {
     const batchId = randomUUID()
+    const senderSnapshot = createNotificationSenderSnapshot(sender)
     // 获取用户通知设置
     const settingsResult = await db
       .select()
@@ -714,6 +720,7 @@ export async function createSystemNotification(
         userId: userId,
         type: 'SYSTEM_NOTICE',
         batchId,
+        ...senderSnapshot,
         title,
         message: content,
         important
@@ -748,7 +755,8 @@ export async function createBatchSystemNotifications(
   userIds: number[],
   title: string,
   content: string,
-  important = false
+  important = false,
+  sender: NotificationSenderInput | null = null
 ) {
   try {
     if (!userIds.length) {
@@ -756,6 +764,7 @@ export async function createBatchSystemNotifications(
     }
 
     const batchId = randomUUID()
+    const senderSnapshot = createNotificationSenderSnapshot(sender)
 
     // 获取用户通知设置
     const userSettings = await db
@@ -784,6 +793,7 @@ export async function createBatchSystemNotifications(
         userId,
         type: 'SYSTEM_NOTICE',
         batchId,
+        ...senderSnapshot,
         title,
         message: content,
         important

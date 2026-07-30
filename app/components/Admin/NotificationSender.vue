@@ -397,7 +397,7 @@
                     <div>
                       <span
                         class="block text-[10px] font-black text-zinc-600 uppercase tracking-widest"
-                        >{{ locale.previewSender }}</span
+                        >{{ previewSenderName }}</span
                       >
                       <span
                         v-if="form.important"
@@ -504,12 +504,18 @@ import { useUserFilters } from '~/composables/useUserFilters'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'
 
-const { isAdmin, getAuthConfig } = useAuth()
+const { user: authUser, isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.notificationSender || {})
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
+const previewSenderName = computed(
+  () =>
+    authUser.value?.name?.trim() ||
+    authUser.value?.username?.trim() ||
+    locale.value.previewSender
+)
 
 onMounted(() => {
   userFilters.fetchOptions()

@@ -1495,7 +1495,15 @@ export default defineEventHandler(async (event) => {
 
                         // 动态构建通知数据，自动跳过不存在的字段
                         const notificationData = { userId: validNotificationUserId }
-                        const notificationDataFields = ['batchId', 'title', 'message', 'type']
+                        const notificationDataFields = [
+                          'batchId',
+                          'senderId',
+                          'senderName',
+                          'senderUsername',
+                          'title',
+                          'message',
+                          'type'
+                        ]
 
                         notificationDataFields.forEach((field) => {
                           if (record.hasOwnProperty(field)) {

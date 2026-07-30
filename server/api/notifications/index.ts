@@ -2,6 +2,19 @@ import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { notifications, songCollaborators, songs } from '~/drizzle/schema'
+import { serializeNotificationSender } from '~~/server/utils/important-notification-policy'
+
+const serializeNotification = <T extends {
+  senderId: number | null
+  senderName: string | null
+  senderUsername: string | null
+}>(notification: T) => {
+  const { senderId, senderName, senderUsername, ...data } = notification
+  return {
+    ...data,
+    sender: serializeNotificationSender({ senderId, senderName, senderUsername })
+  }
+}
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -55,6 +68,7 @@ export default defineEventHandler(async (event) => {
     // 丰富通知数据，特别是对于联合投稿邀请
     const enrichedNotifications = await Promise.all(
       userNotifications.map(async (notification) => {
+        const serializedNotification = serializeNotification(notification)
         if (notification.type === 'COLLABORATION_INVITE' && notification.songId) {
           // 1. 检查歌曲是否存在
           const songExists = await db
@@ -66,7 +80,7 @@ export default defineEventHandler(async (event) => {
 
           if (!songExists) {
             return {
-              ...notification,
+              ...serializedNotification,
               handled: true,
               status: 'INVALID',
               isValid: false,
@@ -88,7 +102,7 @@ export default defineEventHandler(async (event) => {
 
           if (collab.length > 0) {
             return {
-              ...notification,
+              ...serializedNotification,
               handled: collab[0].status !== 'PENDING',
               status: collab[0].status,
               isValid: true,
@@ -97,7 +111,7 @@ export default defineEventHandler(async (event) => {
           } else {
             // 如果找不到邀请记录，说明可能已经被撤回或删除
             return {
-              ...notification,
+              ...serializedNotification,
               handled: true,
               status: 'INVALID',
               isValid: false,
@@ -106,7 +120,7 @@ export default defineEventHandler(async (event) => {
           }
         }
         return {
-          ...notification,
+          ...serializedNotification,
           handled: false, // 默认未处理，或者不适用
           isValid: true
         }

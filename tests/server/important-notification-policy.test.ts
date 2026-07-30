@@ -2,11 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   canSendSystemNotification,
+  createNotificationSenderSnapshot,
   createNotificationReadUpdate,
   resolveImportantFlag,
   selectNextImportantNotification,
   shouldCheckImportantNotification,
-  shouldDeliverSystemNotification
+  shouldDeliverSystemNotification,
+  serializeNotificationSender
 } from '../../server/utils/important-notification-policy.ts'
 
 const notice = (
@@ -80,4 +82,30 @@ test('important 只接受布尔值，缺省值为 false', () => {
   assert.equal(resolveImportantFlag(false), false)
   assert.equal(resolveImportantFlag('true'), null)
   assert.equal(resolveImportantFlag(1), null)
+})
+
+test('系统通知不保存发送人，管理员通知保存发送时的名称快照', () => {
+  const systemSender = createNotificationSenderSnapshot()
+  assert.deepEqual(systemSender, {
+    senderId: null,
+    senderName: null,
+    senderUsername: null
+  })
+  assert.equal(serializeNotificationSender(systemSender), null)
+
+  const adminSender = createNotificationSenderSnapshot({
+    id: 7,
+    name: ' 张老师 ',
+    username: ' admin '
+  })
+  assert.deepEqual(adminSender, {
+    senderId: 7,
+    senderName: '张老师',
+    senderUsername: 'admin'
+  })
+  assert.deepEqual(serializeNotificationSender(adminSender), {
+    id: 7,
+    name: '张老师',
+    username: 'admin'
+  })
 })

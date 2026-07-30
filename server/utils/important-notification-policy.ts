@@ -8,6 +8,35 @@ export type ImportantNotificationCandidate = {
   read: boolean
 }
 
+export type NotificationSenderInput = {
+  id: number
+  name?: string | null
+  username?: string | null
+}
+
+export type NotificationSenderSnapshot = {
+  senderId: number | null
+  senderName: string | null
+  senderUsername: string | null
+}
+
+export const createNotificationSenderSnapshot = (
+  sender: NotificationSenderInput | null = null
+): NotificationSenderSnapshot => ({
+  senderId: sender?.id ?? null,
+  senderName: sender?.name?.trim() || null,
+  senderUsername: sender?.username?.trim() || null
+})
+
+export const serializeNotificationSender = (snapshot: NotificationSenderSnapshot) =>
+  snapshot.senderId
+    ? {
+        id: snapshot.senderId,
+        name: snapshot.senderName,
+        username: snapshot.senderUsername
+      }
+    : null
+
 export const shouldCheckImportantNotification = (
   authenticated: boolean,
   userId?: number | null,

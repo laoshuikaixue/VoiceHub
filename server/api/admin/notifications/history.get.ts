@@ -3,7 +3,10 @@ import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
-import { canSendSystemNotification } from '~~/server/utils/important-notification-policy'
+import {
+  canSendSystemNotification,
+  serializeNotificationSender
+} from '~~/server/utils/important-notification-policy'
 import { resolveNotificationHistoryPagination } from '~~/server/utils/notification-history-policy'
 
 export default defineEventHandler(async (event) => {
@@ -38,6 +41,9 @@ export default defineEventHandler(async (event) => {
       title: notifications.title,
       message: notifications.message,
       important: notifications.important,
+      senderId: notifications.senderId,
+      senderName: notifications.senderName,
+      senderUsername: notifications.senderUsername,
       createdAt: notifications.createdAt,
       recipientCount: count().as('recipient_count')
     })
@@ -48,6 +54,9 @@ export default defineEventHandler(async (event) => {
       notifications.title,
       notifications.message,
       notifications.important,
+      notifications.senderId,
+      notifications.senderName,
+      notifications.senderUsername,
       notifications.createdAt
     )
     .as('notification_batches')
@@ -70,6 +79,11 @@ export default defineEventHandler(async (event) => {
         title: row.title,
         message: row.message,
         important: row.important,
+        sender: serializeNotificationSender({
+          senderId: row.senderId,
+          senderName: row.senderName,
+          senderUsername: row.senderUsername
+        }),
         createdAt: row.createdAt,
         recipientCount: Number(row.recipientCount || 0)
       })),

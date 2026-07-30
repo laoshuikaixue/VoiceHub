@@ -11,6 +11,11 @@ export interface ImportantNotification {
   important: boolean
   read: boolean
   createdAt: string
+  sender: {
+    id: number
+    name: string | null
+    username: string | null
+  } | null
 }
 
 let inFlightCheck: Promise<ImportantNotification | null> | null = null
