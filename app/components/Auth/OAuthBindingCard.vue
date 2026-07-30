@@ -314,7 +314,7 @@ const aggregateIconClass = (loginType) => {
     gitee: 'text-[var(--brand-red-hover)]',
     gitea: 'text-text-primary [--gitea-cutout:var(--panel-surface-dialog)]',
     bilibili: 'text-[var(--brand-teal)]',
-    kuaishou: 'text-[#ff4906]'
+    kuaishou: 'text-[var(--oauth-kuaishou-orange)]'
   }
   return classes[loginType] || 'text-text-primary'
 }

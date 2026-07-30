@@ -452,4 +452,8 @@
   --year-review-text-tertiary: #6b7280;
   --year-review-text-yellow: #fde047;
   --year-review-text-cyan: #67e8f9;
+
+  /* OAuth 第三方平台品牌色 */
+  --oauth-casdoor-green: #67c23a;
+  --oauth-kuaishou-orange: #ff4906;
 }

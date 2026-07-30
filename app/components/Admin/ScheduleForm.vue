@@ -12,7 +12,7 @@
         <input
           id="playDate"
           v-model="playDate"
-          class="w-full p-3 border border-primary-10 rounded-lg text-base bg-[#0f172a99] text-text-primary outline-none transition-colors duration-150 focus:border-info focus:shadow-[0_0_0_2px_rgba(99,102,241,0.25)]"
+          class="w-full p-3 border border-primary-10 rounded-lg text-base bg-bg-tertiary-50 text-text-primary outline-none transition-colors duration-150 focus:border-primary focus:shadow-[0_0_0_2px_var(--primary-light)]"
           required
           type="date"
         >

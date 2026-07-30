@@ -67,7 +67,7 @@ const providerButtonClass = (provider) => {
     return `${baseClass} hover:bg-[var(--panel-surface-subtle)] hover:text-text-primary hover:border-[var(--panel-surface-subtle)]`
   }
   if (key === 'casdoor') {
-    return `${baseClass} hover:border-[#67c23a]`
+    return `${baseClass} hover:border-[var(--oauth-casdoor-green)]`
   }
   if (key === 'google') {
     return `${baseClass} hover:bg-bg-secondary hover:text-black hover:border-[var(--panel-border)]`
@@ -86,7 +86,7 @@ const providerButtonClass = (provider) => {
       gitea:
         '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:var(--text-primary)] hover:bg-bg-secondary hover:text-black hover:border-primary',
       bilibili: 'hover:bg-[var(--brand-teal)] hover:text-text-primary hover:border-[var(--brand-teal)]',
-      kuaishou: 'hover:bg-[#ff4906] hover:text-text-primary hover:border-[#ff4906]'
+      kuaishou: 'hover:bg-[var(--oauth-kuaishou-orange)] hover:text-text-primary hover:border-[var(--oauth-kuaishou-orange)]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }

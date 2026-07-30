@@ -315,7 +315,7 @@ body::before {
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, var(--bg-quaternary) 0%, #4a4a4a 100%);
+  background: linear-gradient(135deg, var(--bg-quaternary) 0%, var(--btn-secondary-hover) 100%);
   color: var(--text-primary);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);

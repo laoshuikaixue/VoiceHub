@@ -96,7 +96,7 @@
 - **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
 - **Vue 3**：响应式前端框架，使用Composition API
 - **TypeScript**：类型安全的JavaScript，提供完整的类型定义
-- **Tailwind CSS**：实用优先的CSS框架，响应式设计
+- **UNO CSS**：实用优先的CSS框架，响应式设计
 - **Vue Router**：前端路由管理
 
 ### 后端技术
