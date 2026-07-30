@@ -70,7 +70,7 @@ const props = defineProps({
   height: { type: String, default: '400px' },
   fontSize: { type: Number, default: 18 },
   lineHeight: { type: Number, default: 1.6 },
-  activeLineColor: { type: String, default: '#ffffff' },
+  activeLineColor: { type: String, default: 'var(--text-primary)' },
   inactiveLineColor: { type: String, default: 'rgba(255, 255, 255, 0.6)' },
   backgroundColor: { type: String, default: 'transparent' },
 
@@ -217,7 +217,7 @@ watch(
 }
 
 .placeholder.error {
-  color: #ff6b6b;
+  color: var(--brand-red-light);
 }
 
 .loading-spinner {

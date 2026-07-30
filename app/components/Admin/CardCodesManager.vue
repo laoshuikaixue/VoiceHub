@@ -805,7 +805,7 @@ onMounted(refreshAll)
 <style scoped>
 textarea {
   scrollbar-width: thin;
-  scrollbar-color: #3f3f46 transparent;
+  scrollbar-color: var(--panel-surface-hover) transparent;
 }
 
 textarea::-webkit-scrollbar {
@@ -813,7 +813,7 @@ textarea::-webkit-scrollbar {
 }
 
 textarea::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--panel-surface-hover);
   border-radius: 9999px;
 }
 </style>

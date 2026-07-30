@@ -1496,7 +1496,7 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
 
     const blob = await toBlob(imageContainer, {
       quality: 0.9,
-      backgroundColor: '#ffffff',
+      backgroundColor: 'var(--text-primary)',
       width: targetWidth,
       height: contentHeight,
       pixelRatio: pixelRatio,
@@ -1751,15 +1751,15 @@ watch(
 /* 预览区域和打印样式的核心CSS - 保持原生CSS以确保精确控制 */
 
 .preview-content {
-  background: #ffffff;
+  background: var(--text-primary);
   padding: 0;
   position: relative;
 }
 
 /* 打印页面样式 */
 .print-page {
-  background: #ffffff;
-  color: #000000;
+  background: var(--text-primary);
+  color: var(--bg-primary);
   width: 100%;
   margin: 0 auto;
   padding: 30px;
@@ -1775,7 +1775,7 @@ watch(
   align-items: flex-start;
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #e5e5e5;
+  border-bottom: 2px solid var(--panel-border-light);
 }
 
 .logo-section {
@@ -1794,7 +1794,7 @@ watch(
 .logo-divider {
   width: 2px;
   height: 60px;
-  background: linear-gradient(to bottom, #ddd, #999, #ddd);
+  background: linear-gradient(to bottom, var(--panel-border-light), var(--text-muted), var(--panel-border-light));
   border-radius: 1px;
   margin: 0 4px;
 }
@@ -1813,19 +1813,19 @@ watch(
   font-size: 24px;
   font-weight: normal;
   margin: 0 0 4px 0;
-  color: #000;
+  color: var(--bg-primary);
 }
 
 .title-section h2 {
   font-size: 18px;
   font-weight: 500;
   margin: 0;
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .date-info {
   font-size: 14px;
-  color: #666;
+  color: var(--text-tertiary);
   text-align: right;
   display: flex;
   align-items: flex-start;
@@ -1845,7 +1845,7 @@ watch(
 .no-data-message {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: var(--text-tertiary);
   column-span: all;
 }
 
@@ -1853,7 +1853,7 @@ watch(
   width: 64px;
   height: 64px;
   margin: 0 auto 20px;
-  color: #ccc;
+  color: var(--panel-border-light);
 }
 
 .no-data-icon svg {
@@ -1865,7 +1865,7 @@ watch(
   font-size: 18px;
   font-weight: 500;
   margin: 0 0 12px 0;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .no-data-message p {
@@ -1885,28 +1885,28 @@ watch(
   font-weight: bold;
   margin: 0 0 12px 0;
   padding: 8px 12px;
-  border-bottom: 2px solid #ddd;
-  background: #f8f9fa;
-  color: #333;
+  border-bottom: 2px solid var(--panel-border-light);
+  background: var(--panel-surface-alt);
+  color: var(--text-primary);
   border-radius: 4px 4px 0 0;
 }
 
 .playtime-group .group-title {
-  background: #e3f2fd;
-  border-bottom-color: #2196f3;
-  color: #1565c0;
+  background: var(--panel-surface-overlay);
+  border-bottom-color: var(--brand-blue);
+  color: var(--brand-blue-hover);
 }
 
 .date-group .group-title {
-  background: #f3e5f5;
-  border-bottom-color: #9c27b0;
-  color: #7b1fa2;
+  background: var(--panel-surface-overlay);
+  border-bottom-color: var(--brand-purple);
+  color: var(--brand-purple-hover);
 }
 
 .group-count {
   font-size: 14px;
   font-weight: normal;
-  color: #666;
+  color: var(--text-tertiary);
   margin-left: 8px;
 }
 
@@ -1923,16 +1923,16 @@ watch(
   font-weight: bold;
   margin: 0 0 8px 0;
   padding: 6px 10px;
-  background: #f0f8ff;
-  border-left: 3px solid #2196f3;
-  color: #1565c0;
+  background: var(--panel-surface-overlay);
+  border-left: 3px solid var(--brand-blue);
+  color: var(--brand-blue-hover);
   border-radius: 0 4px 4px 0;
 }
 
 .playtime-count {
   font-size: 12px;
   font-weight: normal;
-  color: #666;
+  color: var(--text-tertiary);
   margin-left: 6px;
 }
 
@@ -1949,9 +1949,9 @@ watch(
   justify-content: space-between;
   align-items: flex-start;
   padding-top: 16px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--panel-border-light);
   font-size: 12px;
-  color: #666;
+  color: var(--text-tertiary);
 }
 
 .footer-left {
@@ -1966,7 +1966,7 @@ watch(
 
 .remark-text {
   font-size: 11px;
-  color: #555;
+  color: var(--text-disabled);
   max-width: 400px;
   word-wrap: break-word;
   line-height: 1.3;

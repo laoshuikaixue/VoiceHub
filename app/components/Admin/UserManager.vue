@@ -2809,12 +2809,12 @@ onBeforeUnmount(() => {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #4a5568;
+  background: var(--text-muted);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+  background: var(--text-muted);
 }
 
 /* 确保模态框中的表格在移动端可以滚动 */
@@ -2839,13 +2839,13 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #71717a;
+  color: var(--text-muted);
   border-radius: 0.375rem;
   transition: color 0.2s ease, background-color 0.2s ease;
 }
 
 .tree-toggle:hover {
-  color: #60a5fa;
+  color: var(--brand-blue-light);
   background: rgba(39, 39, 42, 0.8);
 }
 
@@ -2858,7 +2858,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.375rem;
   border-radius: 0.5rem;
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   font-size: 0.75rem;
   font-weight: 700;
   text-align: left;
@@ -2866,18 +2866,18 @@ onBeforeUnmount(() => {
 }
 
 .tree-label:hover {
-  color: #e4e4e7;
+  color: var(--text-primary-lighter);
   background: rgba(39, 39, 42, 0.7);
 }
 
 .tree-label-active {
-  color: #60a5fa;
+  color: var(--brand-blue-light);
   background: rgba(37, 99, 235, 0.16);
 }
 
 .tree-count {
   flex-shrink: 0;
-  color: #3f3f46;
+  color: var(--panel-surface-hover);
   font-size: 0.6875rem;
   font-weight: 900;
 }

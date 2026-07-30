@@ -103,6 +103,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f9fafb; /* 浅灰背景，与你的设计一致 */
+  background-color: var(--panel-surface-overlay); /* 浅灰背景，与你的设计一致 */
 }
 </style>

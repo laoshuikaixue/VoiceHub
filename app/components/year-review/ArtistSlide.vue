@@ -40,13 +40,13 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #1a0b2e;
+  background-color: var(--panel-surface-tertiary);
 }
 
 .bg-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, #000, transparent, transparent);
+  background: linear-gradient(to top, var(--bg-primary), transparent, transparent);
   opacity: 0.8;
   z-index: 10;
 }
@@ -56,7 +56,7 @@ const { yearReview } = useLocale()
   top: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, #581c87, #000);
+  background: linear-gradient(to bottom, var(--brand-purple-hover), var(--bg-primary));
   opacity: 0.5;
   animation: pulse 8s infinite;
 }
@@ -72,7 +72,7 @@ const { yearReview } = useLocale()
 }
 
 .label {
-  color: #d8b4fe; /* purple-300 */
+  color: var(--brand-purple-light); /* purple-300 */
   letter-spacing: 0.3em;
   text-transform: uppercase;
   margin-bottom: 1.5rem;
@@ -84,7 +84,7 @@ const { yearReview } = useLocale()
 
 .text-intro {
   font-size: 1.5rem;
-  color: #d1d5db;
+  color: var(--text-primary-lighter);
   font-weight: 300;
   margin-bottom: 3rem;
 }
@@ -112,7 +112,7 @@ const { yearReview } = useLocale()
   font-weight: 900;
   font-style: italic;
   letter-spacing: -0.05em;
-  background-image: linear-gradient(to bottom right, #e9d5ff, #f472b6, #fb923c);
+  background-image: linear-gradient(to bottom right, var(--brand-purple-light), var(--brand-pink), var(--brand-orange));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -123,7 +123,7 @@ const { yearReview } = useLocale()
 
 .text-desc {
   margin-top: 3rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   max-width: 24rem;
   margin-left: auto;
   margin-right: auto;

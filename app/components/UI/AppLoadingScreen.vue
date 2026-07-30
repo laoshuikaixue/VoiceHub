@@ -165,7 +165,7 @@ const warpSettings = computed(() => ({
 }
 
 .ring-fill {
-  stroke: #6366f1;
+  stroke: var(--brand-indigo);
   filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
   transition: stroke-dashoffset 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 400ms ease;
 }
@@ -187,7 +187,7 @@ const warpSettings = computed(() => ({
   font-size: 26px;
   font-weight: 700;
   letter-spacing: normal;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .text-container {
@@ -238,7 +238,7 @@ const warpSettings = computed(() => ({
   left: 0;
   height: 3px;
   z-index: 20;
-  background: linear-gradient(90deg, #6366f1, #a78bfa);
+  background: linear-gradient(90deg, var(--brand-indigo), var(--brand-purple-light));
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.6), 0 0 40px rgba(99, 102, 241, 0.25);
   transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }

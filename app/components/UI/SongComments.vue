@@ -403,7 +403,7 @@ watch(
   min-height: 0;
   display: flex;
   flex-direction: column;
-  color: #ffffff;
+  color: var(--text-primary);
   overflow: hidden;
 }
 
@@ -425,7 +425,7 @@ watch(
 
 .comments-title {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -446,7 +446,7 @@ watch(
 }
 
 .refresh-button:hover:not(:disabled) {
-  color: #ffffff;
+  color: var(--text-primary);
   background: rgba(255, 255, 255, 0.2);
 }
 
@@ -632,7 +632,7 @@ watch(
 .load-more-button {
   border: 0;
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
   background: rgba(255, 255, 255, 0.14);
   cursor: pointer;
   font-weight: 700;
@@ -664,7 +664,7 @@ watch(
   width: 24px;
   height: 24px;
   border: 3px solid rgba(255, 255, 255, 0.18);
-  border-top-color: #ffffff;
+  border-top-color: var(--text-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

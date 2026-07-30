@@ -193,9 +193,9 @@
               :show-translation="false"
               :translation-lyrics="control.lyrics.translationLyrics.value"
               :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
-              active-line-color="#ffffff"
+              active-line-color="var(--text-primary)"
               height="120px"
-              inactive-line-color="rgba(255, 255, 255, 0.6)"
+              :inactive-line-color="inactiveColor"
               @seek="handleLyricSeek"
             />
           </div>
@@ -264,6 +264,7 @@ import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
   getMusicUrlResult,
@@ -273,6 +274,14 @@ import {
 // 添加 router 导入
 const router = useRouter()
 const { audioPlayer: audioPlayerLocale } = useLocale()
+
+// 歌词非活跃行颜色 — 随主题切换
+const theme = useTheme()
+const inactiveColor = computed(() =>
+  theme.currentTheme.value === 'dark'
+    ? 'rgba(255, 255, 255, 0.6)'
+    : 'rgba(0, 0, 0, 0.6)'
+)
 
 const props = defineProps({
   song: {
@@ -1973,7 +1982,7 @@ const getFirstChar = (text) => {
 
 .mobile-top-progress .progress-fill {
   height: 100%;
-  background: #0b5afe;
+  background: var(--brand-blue);
   box-shadow: 0 0 8px rgba(11, 90, 254, 0.6);
   border-radius: 0 1px 1px 0;
 }
@@ -2213,8 +2222,8 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-purple-hover) 100%);
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 600;
   font-family:
@@ -2242,7 +2251,7 @@ const getFirstChar = (text) => {
   line-height: 22px;
   padding-bottom: 2px;
   letter-spacing: -0.4px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2262,7 +2271,7 @@ const getFirstChar = (text) => {
   overflow: hidden;
   line-height: 20px;
   letter-spacing: -0.4px;
-  color: #ffffff75;
+  color: var(--text-primary-60);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2283,7 +2292,7 @@ const getFirstChar = (text) => {
   align-items: center;
   justify-content: center;
   border-radius: 100px;
-  background: #00000042;
+  background: var(--bg-primary-25);
   padding: 6px;
   width: 32px;
   height: 32px;
@@ -2300,7 +2309,7 @@ const getFirstChar = (text) => {
 }
 
 .close-icon {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
   line-height: 1;
   font-family:
@@ -2337,7 +2346,7 @@ const getFirstChar = (text) => {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--panel-surface-deep);
   border-radius: 7px;
   height: 8px;
   width: 100%;
@@ -2350,14 +2359,14 @@ const getFirstChar = (text) => {
 }
 
 .ios-progress-bar:hover {
-  border-color: #333;
+  border-color: var(--text-primary);
   box-shadow:
     0 0 20px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, #ffffffb2, #ffffff);
+  background: linear-gradient(90deg, var(--text-primary-80), var(--text-primary));
   height: 8px;
   transition: width 0.1s linear;
   border-radius: 7px;
@@ -2402,7 +2411,7 @@ const getFirstChar = (text) => {
 }
 
 .clickable-time:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.05);
 }
 
@@ -2417,10 +2426,10 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff1a;
+  background: var(--text-primary-10);
   border-radius: 4px;
   padding: 0 8px;
-  color: #ffffffb3;
+  color: var(--text-primary-80);
   font-size: 10px;
   font-weight: 600;
   backdrop-filter: blur(10px);
@@ -2430,8 +2439,8 @@ const getFirstChar = (text) => {
 }
 
 .audio-quality-badge:hover {
-  background: #ffffff26;
-  color: #ffffff;
+  background: var(--text-primary-20);
+  color: var(--text-primary);
 }
 
 /* 控制按钮区域 */
@@ -2448,7 +2457,7 @@ const getFirstChar = (text) => {
 .ios-control-btn {
   background: none;
   border: none;
-  color: #ffffff92;
+  color: var(--text-primary-60);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   display: flex;
@@ -2483,7 +2492,7 @@ const getFirstChar = (text) => {
 }
 
 .ios-control-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
   box-shadow:
     0 0 20px rgba(255, 255, 255, 0.2),
@@ -2690,7 +2699,7 @@ const getFirstChar = (text) => {
   width: 60px;
   line-height: 18px;
   letter-spacing: 0.42px;
-  color: #ffffffb3;
+  color: var(--text-primary-80);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2709,10 +2718,10 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff1a;
+  background: var(--text-primary-10);
   border-radius: 4px;
   padding: 0 8px;
-  color: #ffffffb3;
+  color: var(--text-primary-80);
   font-size: 10px;
   font-weight: 600;
   backdrop-filter: blur(10px);
@@ -2722,8 +2731,8 @@ const getFirstChar = (text) => {
 }
 
 .audio-quality:hover {
-  background: #ffffff26;
-  color: #ffffff;
+  background: var(--text-primary-20);
+  color: var(--text-primary);
 }
 
 .audio-quality:active {
@@ -2745,13 +2754,13 @@ const getFirstChar = (text) => {
   width: 39px;
   font-size: 25px;
   text-align: center;
-  color: #ffffff92;
+  color: var(--text-primary-60);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .lyrics-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
 }
 
@@ -2759,7 +2768,7 @@ const getFirstChar = (text) => {
 .control-btn {
   line-height: 1;
   font-size: 24px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -2784,7 +2793,7 @@ const getFirstChar = (text) => {
 .play-pause-btn {
   line-height: 44px;
   font-size: 37px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -2889,7 +2898,7 @@ const getFirstChar = (text) => {
 }
 
 .quality-option.active {
-  color: #007aff;
+  color: var(--brand-blue);
   background:
     linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
     rgba(0, 122, 255, 0.1);

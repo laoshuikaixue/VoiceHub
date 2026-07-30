@@ -303,17 +303,17 @@ const itemClass =
 
 const aggregateIconClass = (loginType) => {
   const classes = {
-    qq: 'text-[#12b7f5]',
-    wx: 'text-[#07c160]',
-    alipay: 'text-[#1677ff]',
-    sina: 'text-[#e6162d]',
-    baidu: 'text-[#2932e1]',
-    douyin: 'text-[#25f4ee]',
-    huawei: 'text-[#cf0a2c]',
-    xiaomi: 'text-[#ff6900]',
-    gitee: 'text-[#c71d23]',
-    gitea: 'text-text-primary [--gitea-cutout:#18181b]',
-    bilibili: 'text-[#00a1d6]',
+    qq: 'text-[var(--brand-cyan)]',
+    wx: 'text-[var(--brand-green)]',
+    alipay: 'text-[var(--brand-blue)]',
+    sina: 'text-[var(--brand-red-hover)]',
+    baidu: 'text-[var(--brand-indigo)]',
+    douyin: 'text-[var(--brand-cyan)]',
+    huawei: 'text-[var(--brand-red-hover)]',
+    xiaomi: 'text-[var(--brand-orange-hover)]',
+    gitee: 'text-[var(--brand-red-hover)]',
+    gitea: 'text-text-primary [--gitea-cutout:var(--panel-surface-dialog)]',
+    bilibili: 'text-[var(--brand-teal)]',
     kuaishou: 'text-[#ff4906]'
   }
   return classes[loginType] || 'text-text-primary'

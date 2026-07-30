@@ -576,7 +576,7 @@ onMounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--panel-surface-alt);
   border-radius: 10px;
 }
 </style>

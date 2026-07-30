@@ -525,8 +525,8 @@ const formatFileSize = (bytes) => {
 /* 主容器 */
 .backup-manager {
   min-height: 100vh;
-  background: #1a1a1a;
-  color: #e5e5e5;
+  background: var(--panel-surface-deep);
+  color: var(--panel-border-light);
   padding: 2rem;
   position: relative;
 }
@@ -540,13 +540,13 @@ const formatFileSize = (bytes) => {
 .header h3 {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
 }
 
 .header .description {
   font-size: 1.125rem;
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
   margin: 0;
 }
 
@@ -561,8 +561,8 @@ const formatFileSize = (bytes) => {
 
 /* 操作卡片 */
 .action-card {
-  background: #2a2a2a;
-  border: 1px solid #404040;
+  background: var(--panel-border);
+  border: 1px solid var(--panel-border-dark);
   border-radius: 12px;
   padding: 2rem;
   text-align: center;
@@ -570,8 +570,8 @@ const formatFileSize = (bytes) => {
 }
 
 .action-card:hover {
-  border-color: #606060;
-  background: #2f2f2f;
+  border-color: var(--panel-border-dark);
+  background: var(--panel-border-subtle);
 }
 
 .action-card .card-content {
@@ -587,12 +587,12 @@ const formatFileSize = (bytes) => {
   width: 4rem;
   height: 4rem;
   margin: 0 auto 1.5rem;
-  background: #404040;
+  background: var(--panel-border-dark);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .action-icon svg {
@@ -604,12 +604,12 @@ const formatFileSize = (bytes) => {
 .action-card h4 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 0.75rem 0;
 }
 
 .action-card p {
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
   font-size: 1rem;
   margin: 0 0 2rem 0;
   line-height: 1.6;
@@ -634,24 +634,24 @@ const formatFileSize = (bytes) => {
 }
 
 .action-btn.primary {
-  background: #4a90e2;
+  background: var(--brand-blue);
 }
 
 .action-btn.primary:hover {
-  background: #357abd;
+  background: var(--brand-blue);
 }
 
 .action-btn.secondary {
-  background: #606060;
+  background: var(--panel-border-dark);
 }
 
 .action-btn.secondary:hover {
-  background: #505050;
+  background: var(--panel-border-dark);
 }
 
 .action-btn:disabled {
-  background: #404040 !important;
-  color: #808080 !important;
+  background: var(--panel-border-dark) !important;
+  color: var(--text-muted) !important;
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -677,8 +677,8 @@ const formatFileSize = (bytes) => {
 }
 
 .modal {
-  background: #2a2a2a;
-  border: 1px solid #404040;
+  background: var(--panel-border);
+  border: 1px solid var(--panel-border-dark);
   border-radius: 12px;
   max-width: 600px;
   width: 100%;
@@ -696,19 +696,19 @@ const formatFileSize = (bytes) => {
 
 .current-status h4 {
   margin: 0 0 15px 0;
-  color: #4a90e2;
+  color: var(--brand-blue);
   font-size: 18px;
 }
 
 .progress-stats p {
   margin: 5px 0;
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
 }
 
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: #404040;
+  background: var(--panel-border-dark);
   border-radius: 4px;
   margin: 15px 0;
   overflow: hidden;
@@ -716,7 +716,7 @@ const formatFileSize = (bytes) => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4a90e2, #357abd);
+  background: linear-gradient(90deg, var(--brand-blue), var(--brand-blue));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -729,7 +729,7 @@ const formatFileSize = (bytes) => {
 .progress-details h5,
 .progress-errors h5 {
   margin: 0 0 10px 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -738,17 +738,17 @@ const formatFileSize = (bytes) => {
 .errors-list {
   max-height: 150px;
   overflow-y: auto;
-  border: 1px solid #505050;
+  border: 1px solid var(--panel-border-dark);
   border-radius: 6px;
   padding: 10px;
-  background: #333333;
+  background: var(--text-primary);
 }
 
 .detail-item {
   padding: 4px 0;
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
   font-size: 13px;
-  border-bottom: 1px solid #404040;
+  border-bottom: 1px solid var(--panel-border-dark);
 }
 
 .detail-item:last-child {
@@ -757,9 +757,9 @@ const formatFileSize = (bytes) => {
 
 .error-item {
   padding: 4px 0;
-  color: #ff6b6b;
+  color: var(--brand-red-light);
   font-size: 13px;
-  border-bottom: 1px solid #4a2a2a;
+  border-bottom: 1px solid var(--panel-surface-darker);
 }
 
 .error-item:last-child {
@@ -777,14 +777,14 @@ const formatFileSize = (bytes) => {
 .modal-title {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .close-btn {
-  background: #404040;
+  background: var(--panel-border-dark);
   border: none;
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
   cursor: pointer;
   padding: 0.75rem;
   border-radius: 8px;
@@ -792,8 +792,8 @@ const formatFileSize = (bytes) => {
 }
 
 .close-btn:hover {
-  background: #505050;
-  color: #ffffff;
+  background: var(--panel-border-dark);
+  color: var(--text-primary);
 }
 
 .close-btn svg {
@@ -807,11 +807,11 @@ const formatFileSize = (bytes) => {
 
 .modal-footer {
   padding: 1.5rem 2rem;
-  border-top: 1px solid #404040;
+  border-top: 1px solid var(--panel-border-dark);
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  background: #252525;
+  background: var(--panel-border-subtle);
 }
 
 .modal-footer button {
@@ -827,7 +827,7 @@ const formatFileSize = (bytes) => {
   display: block;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 1rem;
 }
 
@@ -843,8 +843,8 @@ const formatFileSize = (bytes) => {
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem;
-  background: #333333;
-  border: 1px solid #505050;
+  background: var(--text-primary);
+  border: 1px solid var(--panel-border-dark);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -852,8 +852,8 @@ const formatFileSize = (bytes) => {
 
 .radio-option:hover,
 .checkbox-option:hover {
-  border-color: #606060;
-  background: #383838;
+  border-color: var(--panel-border-dark);
+  background: var(--panel-border-dark);
 }
 
 .radio-option input[type='radio'],
@@ -861,7 +861,7 @@ const formatFileSize = (bytes) => {
   width: 1.25rem;
   height: 1.25rem;
   margin: 0;
-  accent-color: #4a90e2;
+  accent-color: var(--brand-blue);
   cursor: pointer;
 }
 
@@ -875,7 +875,7 @@ const formatFileSize = (bytes) => {
   display: block;
   font-size: 1rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
@@ -883,21 +883,21 @@ const formatFileSize = (bytes) => {
 .checkbox-option small {
   display: block;
   font-size: 0.875rem;
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
   line-height: 1.4;
 }
 
 .checkbox-option.danger {
-  border-color: #d32f2f;
+  border-color: var(--brand-red-hover);
   background: rgba(211, 47, 47, 0.1);
 }
 
 .checkbox-option.danger span {
-  color: #ff6b6b;
+  color: var(--brand-red-light);
 }
 
 .checkbox-option.danger small {
-  color: #ff8a80;
+  color: var(--brand-red-light);
 }
 
 /* 文件上传区域 */
@@ -906,37 +906,37 @@ const formatFileSize = (bytes) => {
 }
 
 .upload-area {
-  border: 2px dashed #505050;
+  border: 2px dashed var(--panel-border-dark);
   border-radius: 8px;
   padding: 3rem 2rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #333333;
+  background: var(--text-primary);
 }
 
 .upload-area:hover,
 .upload-area.drag-over {
-  border-color: #4a90e2;
-  background: #383838;
+  border-color: var(--brand-blue);
+  background: var(--panel-border-dark);
 }
 
 .upload-area svg {
   width: 4rem;
   height: 4rem;
-  color: #4a90e2;
+  color: var(--brand-blue);
   margin-bottom: 1.5rem;
 }
 
 .upload-area h4 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 0.5rem 0;
 }
 
 .upload-area p {
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
   font-size: 1rem;
   margin: 0;
 }
@@ -946,8 +946,8 @@ const formatFileSize = (bytes) => {
   align-items: center;
   justify-content: space-between;
   padding: 1.25rem;
-  background: #333333;
-  border: 1px solid #505050;
+  background: var(--text-primary);
+  border: 1px solid var(--panel-border-dark);
   border-radius: 8px;
   margin-top: 1rem;
 }
@@ -962,7 +962,7 @@ const formatFileSize = (bytes) => {
 .file-info svg {
   width: 1.5rem;
   height: 1.5rem;
-  color: #4a90e2;
+  color: var(--brand-blue);
   flex-shrink: 0;
 }
 
@@ -974,14 +974,14 @@ const formatFileSize = (bytes) => {
   display: block;
   font-size: 1rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .file-size {
   display: block;
   font-size: 0.875rem;
-  color: #a0a0a0;
+  color: var(--text-muted-dark);
 }
 
 .remove-file-btn {
@@ -991,7 +991,7 @@ const formatFileSize = (bytes) => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #ff6b6b;
+  color: var(--brand-red-light);
 }
 
 .remove-file-btn:hover {
@@ -1006,7 +1006,7 @@ const formatFileSize = (bytes) => {
 /* 警告框 */
 .warning-box {
   background: rgba(255, 152, 0, 0.1);
-  border: 1px solid #ff9800;
+  border: 1px solid var(--brand-orange);
   border-radius: 8px;
   padding: 1.5rem;
   display: flex;
@@ -1018,7 +1018,7 @@ const formatFileSize = (bytes) => {
 .warning-box svg {
   width: 1.5rem;
   height: 1.5rem;
-  color: #ff9800;
+  color: var(--brand-orange);
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
@@ -1028,14 +1028,14 @@ const formatFileSize = (bytes) => {
 }
 
 .warning-box h4 {
-  color: #ff9800;
+  color: var(--brand-orange);
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
 }
 
 .warning-box p {
-  color: #ffb74d;
+  color: var(--brand-orange);
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -1061,23 +1061,23 @@ const formatFileSize = (bytes) => {
 }
 
 .notification.success {
-  background: #2e7d32;
-  border: 1px solid #4caf50;
+  background: var(--brand-green);
+  border: 1px solid var(--brand-green);
 }
 
 .notification.error {
-  background: #d32f2f;
-  border: 1px solid #f44336;
+  background: var(--brand-red-hover);
+  border: 1px solid var(--brand-red);
 }
 
 .notification.warning {
-  background: #f57c00;
-  border: 1px solid #ff9800;
+  background: var(--brand-orange);
+  border: 1px solid var(--brand-orange);
 }
 
 .notification.info {
-  background: #1976d2;
-  border: 1px solid #2196f3;
+  background: var(--brand-blue-hover);
+  border: 1px solid var(--brand-blue);
 }
 
 @keyframes slideInRight {

@@ -49,6 +49,7 @@
   --border-secondary: #d1d1d6;
   --border-tertiary: #c7c7cc;
   --border-quaternary: #8e8e93;
+  --border-color: var(--border-quaternary);
 
   /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -203,6 +204,96 @@
   --scrollbar-thumb: var(--bg-quaternary);
   --scrollbar-thumb-hover: #8e8e93;
 
+  /* 用途化变量 — 品牌色 */
+  --brand-blue: #0b5afe;
+  --brand-blue-light: #3b82f6;
+  --brand-blue-hover: #2563eb;
+  --brand-blue-light-hover: #1d4ed8;
+  --brand-blue-glow: rgba(11, 90, 254, 0.4);
+  --brand-red: #ef4444;
+  --brand-red-light: #f87171;
+  --brand-red-hover: #dc2626;
+  --brand-red-glow: rgba(239, 68, 68, 0.4);
+  --brand-green: #10b981;
+  --brand-green-light: #4ade80;
+  --brand-green-hover: #22c55e;
+  --brand-green-glow: rgba(34, 197, 94, 0.4);
+  --brand-yellow: #f59e0b;
+  --brand-yellow-light: #fbbf24;
+  --brand-yellow-hover: #d97706;
+  --brand-orange: #fb923c;
+  --brand-orange-hover: #ff6900;
+  --brand-orange-glow: rgba(251, 146, 60, 0.4);
+
+  /* 用途化变量 — 面板背景色（浅色模式） */
+  --panel-surface: #ffffff;
+  --panel-surface-alt: #f8f9fa;
+  --panel-surface-hover: #e9ecef;
+  --panel-surface-deep: #f0f0f0;
+  --panel-surface-deepest: #f8f9fa;
+  --panel-surface-overlay: #f8f9fa;
+  --panel-surface-elevated: #ffffff;
+  --panel-surface-dialog: #ffffff;
+  --panel-surface-subtle: #f8f9fa;
+  --panel-surface-tertiary: #f0f0f0;
+  --panel-surface-quaternary: #e9ecef;
+  --panel-surface-contrast: #f8f9fa;
+  --panel-surface-dark: #f0f0f0;
+  --panel-surface-darker: #f5f5f5;
+  --panel-surface-darkest: #f0f0f0;
+  --panel-surface-compact: #f8f9fa;
+  --panel-surface-flat: #ffffff;
+  --panel-surface-raised: #ffffff;
+  --panel-surface-inset: #f8f9fa;
+
+  /* 用途化变量 — 文字灰度（浅色模式） */
+  --text-muted: #6c757d;
+  --text-muted-light: #495057;
+  --text-muted-dark: #6c757d;
+  --text-tertiary: #6c757d;
+  --text-tertiary-hover: #495057;
+  --text-disabled: #adb5bd;
+  --text-primary-light: #212529;
+  --text-primary-lighter: #333333;
+  --text-link: #0b5afe;
+  --text-link-hover: #0952e8;
+  --text-highlight: #856404;
+
+  /* 用途化变量 — 边框与分割线（浅色模式） */
+  --panel-border: #dee2e6;
+  --panel-border-active: #0b5afe;
+  --panel-border-subtle: #e9ecef;
+  --panel-border-light: #dee2e6;
+  --panel-border-dark: #adb5bd;
+  --panel-border-highlight: #ced4da;
+  --panel-border-brand: #0b5afe;
+  --panel-border-error: #ef4444;
+
+  /* 用途化变量 — 状态色（浅色模式） */
+  --status-info-bg: #e7f5ff;
+  --status-info-border: #0b5afe;
+  --status-info-glow: rgba(11, 90, 254, 0.15);
+  --status-info-icon: #1677ff;
+  --status-success-icon: #07c160;
+  --status-warning-icon: #fadb14;
+  --status-error-icon: #ff4d4f;
+  --status-error-deep: #d32f2f;
+
+  /* 用途化变量 — 品牌渐变辅助色 */
+  --brand-purple: #8b5cf6;
+  --brand-purple-hover: #7c3aed;
+  --brand-purple-light: #a78bfa;
+  --brand-purple-glow: rgba(139, 92, 246, 0.3);
+  --brand-pink: #f472b6;
+  --brand-cyan: #22d3ee;
+  --brand-teal: #06b6d4;
+  --brand-indigo: #6366f1;
+  --brand-indigo-hover: #4f46e5;
+
+  /* 用途化变量 — 滚动条与轨道 */
+  --scrollbar-track-dark: #e9ecef;
+  --scrollbar-track-hover: #f8f9fa;
+
   /* === Alpha (--primary) === */
   --primary-5: rgba(59, 130, 246, 0.05);
   --primary-10: rgba(59, 130, 246, 0.1);
@@ -286,6 +377,7 @@
   --bg-primary-5: rgba(245, 245, 247, 0.05);
   --bg-primary-10: rgba(245, 245, 247, 0.1);
   --bg-primary-20: rgba(245, 245, 247, 0.2);
+  --bg-primary-25: rgba(245, 245, 247, 0.25);
   --bg-primary-30: rgba(245, 245, 247, 0.3);
   --bg-primary-40: rgba(245, 245, 247, 0.4);
   --bg-primary-45: rgba(245, 245, 247, 0.45);
@@ -330,6 +422,8 @@
   --border-tertiary-30: rgba(199, 199, 204, 0.3);
   --border-tertiary-50: rgba(199, 199, 204, 0.5);
   /* === Alpha (--text-primary) === */
+  --text-primary-10: rgba(26, 26, 26, 0.1);
+  --text-primary-20: rgba(26, 26, 26, 0.2);
   --text-primary-60: rgba(26, 26, 26, 0.6);
   --text-primary-80: rgba(26, 26, 26, 0.8);
   /* === Alpha (--text-error) === */

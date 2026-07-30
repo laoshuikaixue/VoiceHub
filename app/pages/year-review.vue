@@ -215,8 +215,8 @@ const handleTouchEnd = (e) => {
 .review-page {
   position: fixed;
   inset: 0;
-  background-color: #000;
-  color: #fff;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   z-index: 9999;
   font-family:
     'MiSans',
@@ -234,7 +234,7 @@ const handleTouchEnd = (e) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #000;
+  background-color: var(--bg-primary);
   z-index: 50;
 }
 
@@ -242,21 +242,21 @@ const handleTouchEnd = (e) => {
   width: 3rem;
   height: 3rem;
   border: 4px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #8b5cf6; /* brand-purple */
+  border-top-color: var(--brand-purple); /* brand-purple */
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loading-text {
   margin-top: 1rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.875rem;
   animation: pulse 2s infinite;
 }
 
 .error .icon-warning {
   font-size: 3rem;
-  color: #ef4444;
+  color: var(--brand-red);
   margin-bottom: 1rem;
 }
 
@@ -289,7 +289,7 @@ const handleTouchEnd = (e) => {
 .empty .empty-icon-circle {
   width: 5rem;
   height: 5rem;
-  background: #111827;
+  background: var(--panel-surface-dark);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -314,7 +314,7 @@ const handleTouchEnd = (e) => {
 
 .home-btn {
   padding: 0.75rem 2rem;
-  background: #8b5cf6;
+  background: var(--brand-purple);
   border-radius: 9999px;
   font-weight: 700;
   box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.2);
@@ -322,7 +322,7 @@ const handleTouchEnd = (e) => {
 }
 
 .home-btn:hover {
-  background: #7c3aed;
+  background: var(--brand-purple-hover);
 }
 
 /* 幻灯片容器 */
@@ -368,7 +368,7 @@ const handleTouchEnd = (e) => {
 
 .indicator-dot.active {
   height: 1.5rem;
-  background: #fff;
+  background: var(--text-primary);
 }
 
 /* 滚动提示 */

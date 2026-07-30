@@ -879,10 +879,10 @@ const cancelForm = () => {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--panel-surface-alt);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: var(--panel-surface-hover);
 }
 </style>

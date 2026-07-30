@@ -34,7 +34,7 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: radial-gradient(circle at center, #111827, #000000);
+  background: radial-gradient(circle at center, var(--panel-surface-dark), var(--bg-primary));
 }
 
 .blob {
@@ -85,7 +85,7 @@ const { yearReview } = useLocale()
 .sub-title {
   font-size: 1.5rem;
   font-weight: 300;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin-bottom: 1rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -94,7 +94,7 @@ const { yearReview } = useLocale()
 .main-title {
   font-size: 5rem;
   font-weight: 900;
-  background-image: linear-gradient(to right, #ffffff, #e5e7eb, #6b7280);
+  background-image: linear-gradient(to right, var(--text-primary), var(--panel-border-light), var(--text-muted));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

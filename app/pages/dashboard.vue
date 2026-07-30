@@ -414,8 +414,8 @@ onUnmounted(() => {
 .admin-layout {
   display: flex;
   min-height: 100vh;
-  background: #0a0a0a;
-  color: #ffffff;
+  background: var(--panel-surface-deepest);
+  color: var(--text-primary);
   position: relative;
 }
 
@@ -427,10 +427,10 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--panel-surface-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: var(--panel-surface-hover);
 }
 </style>

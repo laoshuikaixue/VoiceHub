@@ -216,17 +216,17 @@ const handleImageError = (event) => {
 
 .schedule-timetable th,
 .schedule-timetable td {
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--panel-border-light);
   padding: 8px;
   vertical-align: top;
   overflow: hidden;
 }
 
 .schedule-timetable th {
-  background: #f8f9fa;
+  background: var(--panel-surface-alt);
   font-weight: bold;
   text-align: center;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .col-sequence {
@@ -244,12 +244,12 @@ const handleImageError = (event) => {
 }
 
 .playtime-header-row {
-  background: #e3f2fd;
+  background: var(--panel-surface-overlay);
 }
 
 .playtime-header {
   font-weight: bold;
-  color: #1565c0;
+  color: var(--brand-blue-hover);
   text-align: center !important;
   padding: 6px !important;
 }
@@ -278,7 +278,7 @@ const handleImageError = (event) => {
 
 .song-title {
   font-weight: bold;
-  color: #333;
+  color: var(--text-primary);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -297,10 +297,10 @@ const handleImageError = (event) => {
 .replay-badge-print {
   display: inline-block;
   padding: 1px 4px;
-  background: #e3f2fd;
-  border: 1px solid #2196f3;
+  background: var(--panel-surface-overlay);
+  border: 1px solid var(--brand-blue);
   border-radius: 3px;
-  color: #1976d2;
+  color: var(--brand-blue-hover);
   font-size: 10px;
   font-weight: bold;
   flex-shrink: 0;
@@ -311,9 +311,9 @@ const handleImageError = (event) => {
 .cross-semester-badge-print {
   display: inline-block;
   padding: 1px 4px;
-  background: #f5f5f5;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background: var(--panel-surface-darker);
+  border: 1px solid var(--text-primary-lighter);
+  color: var(--text-tertiary);
   font-size: 10px;
   border-radius: 2px;
   font-weight: normal;
@@ -322,7 +322,7 @@ const handleImageError = (event) => {
 }
 
 .song-artist {
-  color: #666;
+  color: var(--text-tertiary);
   font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
@@ -334,7 +334,7 @@ const handleImageError = (event) => {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #888;
+  color: var(--text-tertiary-hover);
   font-size: 10px;
   line-height: 1.2;
   white-space: nowrap;
@@ -350,25 +350,25 @@ const handleImageError = (event) => {
 }
 
 .meta-divider {
-  color: #ccc;
+  color: var(--panel-border-light);
   font-size: 8px;
 }
 
 @media print {
   .schedule-timetable {
-    color: #000 !important;
+    color: var(--bg-primary) !important;
   }
   .schedule-timetable th,
   .schedule-timetable td {
-    border-color: #ddd !important;
+    border-color: var(--panel-border-light) !important;
   }
   .schedule-timetable th {
-    background: #f0f0f0 !important;
+    background: var(--panel-surface-deep) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .playtime-header-row {
-    background: #e3f2fd !important;
+    background: var(--panel-surface-overlay) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

@@ -141,7 +141,7 @@ const toggleDetails = () => {
 .error-icon {
   width: 64px;
   height: 64px;
-  color: #ef4444;
+  color: var(--brand-red);
   margin-bottom: 16px;
 }
 
@@ -153,13 +153,13 @@ const toggleDetails = () => {
 .error-title {
   font-size: 20px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary-lighter);
   margin: 0 0 8px 0;
 }
 
 .error-message {
   font-size: 16px;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin: 0 0 24px 0;
   max-width: 400px;
   line-height: 1.5;
@@ -176,7 +176,7 @@ const toggleDetails = () => {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  background: linear-gradient(135deg, var(--brand-indigo-hover), var(--brand-purple-hover));
   border: none;
   border-radius: 8px;
   color: white;
@@ -186,7 +186,7 @@ const toggleDetails = () => {
 }
 
 .retry-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--brand-indigo), var(--brand-purple));
   transform: translateY(-1px);
 }
 
@@ -206,7 +206,7 @@ const toggleDetails = () => {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -215,7 +215,7 @@ const toggleDetails = () => {
 .details-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.3);
-  color: #f1f5f9;
+  color: var(--text-primary-lighter);
 }
 
 .error-details {
@@ -233,13 +233,13 @@ const toggleDetails = () => {
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary-lighter);
 }
 
 .error-details pre {
   margin: 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-muted);
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 200px;

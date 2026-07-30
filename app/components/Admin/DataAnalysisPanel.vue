@@ -325,7 +325,7 @@
                     : i === 1
                       ? 'bg-bg-quaternary text-black'
                       : i === 2
-                        ? 'bg-amber-800 text-text-primary'
+                        ? 'bg-brand-yellow text-text-primary'
                         : 'text-text-disabled border border-border-secondary'
                 }`"
               >

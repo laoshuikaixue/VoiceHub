@@ -33,8 +33,19 @@ const isAcceleratingRef = ref(props.isAccelerating)
 
 watch(() => props.settings, (val) => { settingsRef.value = val })
 watch(() => props.isAccelerating, (val) => { isAcceleratingRef.value = val })
+watch(() => useTheme().currentTheme, () => {
+  loadBrandColors()
+  // 主题切换后重新生成星星颜色
+  stars.length = 0
+  for (let i = 0; i < 250; i++) {
+    stars.push(initStar({ z: Math.random() * 1000 }))
+  }
+})
 
 const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 }
+
+// Canvas 动画所需的状态，提升为模块级以便主题切换时重绘
+const stars: Star[] = []
 
 interface Star {
   x: number
@@ -46,21 +57,47 @@ interface Star {
   angle: number
 }
 
+// Canvas 2D API 不识别 CSS 变量，此处从 CSS 变量动态读取实际色值
+const BRAND_COLORS: Record<string, string> = {}
+
+function loadBrandColors(root: Element = document.documentElement) {
+  const cs = getComputedStyle(root)
+  const keys = [
+    'brand-indigo', 'brand-purple', 'brand-purple-light', 'brand-blue-light',
+    'brand-green', 'brand-green-light', 'brand-red', 'brand-pink',
+    'brand-teal', 'brand-orange', 'brand-yellow-light',
+    'text-primary', 'text-primary-lighter', 'brand-cyan',
+  ]
+  for (const key of keys) {
+    const val = cs.getPropertyValue(`--${key}`).trim()
+    if (val) BRAND_COLORS[key] = val
+  }
+}
+
+loadBrandColors()
+
 function getRandomColor(base: string): string {
-  const cold = ['#6366f1', '#8b5cf6', '#a855f7', '#3b82f6', '#ffffff', '#e0e7ff']
+  const cold = ['brand-indigo', 'brand-purple', 'brand-blue-light', 'text-primary', 'brand-purple-light']
   if (base === 'emerald') {
-    const greens = ['#10b981', '#34d399', '#6ee7b7', '#059669', '#38bdf8']
-    return greens[Math.floor(Math.random() * greens.length)]
+    const greens = ['brand-green', 'brand-green-light', 'brand-cyan']
+    return toHex(greens[Math.floor(Math.random() * greens.length)])
   }
   if (base === 'cyberpunk') {
-    const pinks = ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#06b6d4']
-    return pinks[Math.floor(Math.random() * pinks.length)]
+    const pinks = ['brand-red', 'brand-pink', 'brand-purple', 'brand-teal']
+    return toHex(pinks[Math.floor(Math.random() * pinks.length)])
   }
   if (base === 'sunset') {
-    const warm = ['#f97316', '#ef4444', '#f1f5f9', '#facc15', '#ec4899']
-    return warm[Math.floor(Math.random() * warm.length)]
+    const warm = ['brand-orange', 'brand-red', 'text-primary-lighter', 'brand-yellow-light', 'brand-pink']
+    return toHex(warm[Math.floor(Math.random() * warm.length)])
   }
-  return cold[Math.floor(Math.random() * cold.length)]
+  return toHex(cold[Math.floor(Math.random() * cold.length)])
+}
+
+function toHex(color: string): string {
+  // 已经是 hex 直接返回
+  if (color.startsWith('#')) return color
+  // 从映射表取实际色值
+  return BRAND_COLORS[color as keyof typeof BRAND_COLORS] ?? '#6366f1'
 }
 
 function initStar(partial: Partial<Star> = {}): Star {
@@ -101,7 +138,6 @@ onMounted(() => {
   }
   handleResize()
 
-  const stars: Star[] = []
   for (let i = 0; i < 250; i++) {
     stars.push(initStar({ z: Math.random() * 1000 }))
   }

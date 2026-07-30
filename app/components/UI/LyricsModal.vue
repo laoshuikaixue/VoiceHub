@@ -1200,8 +1200,8 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #000000;
-  color: #ffffff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1230,7 +1230,7 @@ onUnmounted(() => {
   background:
     radial-gradient(circle at 30% 30%, rgba(84, 130, 255, 0.32), transparent 34%),
     radial-gradient(circle at 70% 40%, rgba(255, 88, 126, 0.25), transparent 32%),
-    linear-gradient(135deg, #14141c 0%, #090910 100%);
+    linear-gradient(135deg, var(--panel-surface-subtle) 0%, var(--panel-surface-deepest) 100%);
   background-size: 180% 180%;
   transition: opacity 0.5s ease;
 }
@@ -1412,7 +1412,7 @@ onUnmounted(() => {
 .default-cover {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #333, #555);
+  background: linear-gradient(135deg, var(--text-primary), var(--text-disabled));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1428,7 +1428,7 @@ onUnmounted(() => {
   font-size: 2.2rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  color: #ffffff;
+  color: var(--text-primary);
   line-height: 1.2;
   letter-spacing: -0.02em;
   white-space: normal;
@@ -1520,11 +1520,11 @@ onUnmounted(() => {
 }
 
 .switcher-button:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .switcher-button.active {
-  color: #ffffff;
+  color: var(--text-primary);
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -1623,7 +1623,7 @@ onUnmounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: #ffffff;
+  background: var(--text-primary);
   border-radius: 3px;
   pointer-events: none;
 }
@@ -1633,7 +1633,7 @@ onUnmounted(() => {
   top: 50%;
   width: 14px;
   height: 14px;
-  background: #ffffff;
+  background: var(--text-primary);
   border-radius: 50%;
   transform: translate(-50%, -50%) scale(0);
   transition: transform 0.1s ease;
@@ -1702,7 +1702,7 @@ onUnmounted(() => {
 
 .secondary-btn.active {
   opacity: 1;
-  color: #ffffff;
+  color: var(--text-primary);
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
@@ -1811,7 +1811,7 @@ onUnmounted(() => {
 .setting-item input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: #fa2d48;
+  accent-color: var(--brand-red);
 }
 
 /* 音质菜单动画 */
@@ -1868,7 +1868,7 @@ onUnmounted(() => {
   width: 100%;
   text-align: center;
   background: transparent;
-  color: #333; /* 深色文字 */
+  color: var(--text-primary); /* 深色文字 */
   padding: 8px 12px; /* 减小内边距 */
   border-radius: 8px;
   font-size: 0.85rem; /* 稍微减小字体 */
@@ -1885,8 +1885,8 @@ onUnmounted(() => {
 }
 
 .badge-quality-option.active {
-  color: #007aff; /* 蓝色字 */
-  background: #ffffff;
+  color: var(--brand-blue); /* 蓝色字 */
+  background: var(--text-primary);
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
@@ -1918,7 +1918,7 @@ onUnmounted(() => {
   width: 20px;
   height: 5px;
   border-radius: 3px;
-  background: #ffffff;
+  background: var(--text-primary);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
@@ -2169,7 +2169,7 @@ onUnmounted(() => {
   }
 
   .progress-fill {
-    background: #ffffff;
+    background: var(--text-primary);
   }
 
   .progress-thumb {

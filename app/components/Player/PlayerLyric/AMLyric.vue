@@ -163,7 +163,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   :deep(.am-lyric .is-active),
   :deep(.am-lyric .lyric-line.current),
   :deep(.am-lyric .lyric-line.is-current) {
-    color: #ffffff;
+    color: var(--text-primary);
     text-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
   }
 }
@@ -179,7 +179,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--amll-lp-color, #efefef);
+  color: var(--amll-lp-color, #e4e4e7);
   gap: 16px;
   opacity: 0.8;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

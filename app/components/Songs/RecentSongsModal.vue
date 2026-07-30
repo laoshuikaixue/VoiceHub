@@ -457,11 +457,11 @@ defineExpose({
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #4a5568;
+  background: var(--text-muted);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+  background: var(--text-muted);
 }
 </style>

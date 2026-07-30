@@ -130,7 +130,7 @@ onMounted(async () => {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  background: #0a0a0a;
+  background: var(--panel-surface-deepest);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,9 +142,9 @@ onMounted(async () => {
 .auth-container {
   width: 100%;
   max-width: 1200px;
-  background: #111111;
+  background: var(--bg-primary);
   border-radius: 24px;
-  border: 1px solid #1f1f1f;
+  border: 1px solid var(--panel-border-subtle);
   overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -153,7 +153,7 @@ onMounted(async () => {
 }
 
 .info-section {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--brand-indigo-hover) 0%, var(--brand-purple-hover) 100%);
   padding: 60px 40px;
   display: flex;
   align-items: center;
@@ -195,7 +195,7 @@ onMounted(async () => {
   font-size: 36px;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--panel-surface-deep) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -253,7 +253,7 @@ onMounted(async () => {
 .tip-icon {
   width: 16px;
   height: 16px;
-  color: #10b981;
+  color: var(--brand-green);
   flex-shrink: 0;
 }
 
@@ -267,7 +267,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #111111;
+  background: var(--bg-primary);
 }
 
 .form-container {
@@ -291,13 +291,13 @@ onMounted(async () => {
 .form-header h2 {
   font-size: 28px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .form-header p {
   font-size: 16px;
-  color: #888888;
+  color: var(--text-tertiary-hover);
   margin: 0;
 }
 
@@ -311,10 +311,10 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--panel-surface-deep);
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
-  color: #cccccc;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -322,9 +322,9 @@ onMounted(async () => {
 }
 
 .back-link:hover {
-  background: #2a2a2a;
-  color: #ffffff;
-  border-color: #3a3a3a;
+  background: var(--panel-border);
+  color: var(--text-primary);
+  border-color: var(--panel-border-light);
 }
 
 .back-link svg {

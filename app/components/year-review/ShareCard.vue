@@ -65,7 +65,7 @@ defineExpose({
   height: 100%;
   min-height: 600px;
   overflow: hidden;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, var(--panel-surface-tertiary) 0%, var(--panel-surface-tertiary) 50%, var(--panel-surface-tertiary) 100%);
 }
 
 .card-background {
@@ -108,7 +108,7 @@ defineExpose({
 .logo {
   font-size: 1.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  background: linear-gradient(135deg, var(--brand-purple), var(--brand-pink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -129,7 +129,7 @@ defineExpose({
 .main-title {
   font-size: 3.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 50%, #9ca3af 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--panel-border-light) 50%, var(--text-muted) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -163,7 +163,7 @@ defineExpose({
 .stat-value {
   font-size: 2.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  background: linear-gradient(135deg, var(--brand-blue-light), var(--brand-blue-light));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

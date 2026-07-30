@@ -215,7 +215,7 @@ const handleClickOutside = (e: Event) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff92;
+  color: var(--text-primary-60);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border-radius: 50%;
@@ -224,12 +224,12 @@ const handleClickOutside = (e: Event) => {
 }
 
 .volume-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
 }
 
 .volume-btn.active {
-  color: #ffffff;
+  color: var(--text-primary);
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
 }
@@ -314,7 +314,7 @@ const handleClickOutside = (e: Event) => {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: linear-gradient(to top, #4facfe, #00f2fe);
+  background: linear-gradient(to top, var(--brand-blue-light), var(--brand-cyan));
   border-radius: 3px;
   transition: height 0.1s linear;
 }
@@ -325,7 +325,7 @@ const handleClickOutside = (e: Event) => {
   transform: translate(-50%, 50%);
   width: 14px;
   height: 14px;
-  background: #ffffff;
+  background: var(--text-primary);
   border-radius: 50%;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;

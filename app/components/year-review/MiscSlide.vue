@@ -49,7 +49,7 @@ const formatPlatform = (platform) => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #111827; /* gray-900 */
+  background-color: var(--panel-surface-dark); /* gray-900 */
 }
 
 .bg-gradient {
@@ -58,7 +58,7 @@ const formatPlatform = (platform) => {
   left: 0;
   width: 100%;
   height: 50%;
-  background: linear-gradient(to bottom, #1f2937, transparent);
+  background: linear-gradient(to bottom, var(--panel-border-subtle), transparent);
   opacity: 0.2;
 }
 
@@ -94,7 +94,7 @@ const formatPlatform = (platform) => {
 .platform-value {
   font-size: 1.5rem; /* text-2xl */
   font-weight: 700;
-  background-image: linear-gradient(to right, #f87171, #fb923c);
+  background-image: linear-gradient(to right, var(--brand-red-light), var(--brand-orange));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -120,7 +120,7 @@ const formatPlatform = (platform) => {
 .unit {
   font-size: 1rem;
   margin-left: 0.25rem;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .votes-value {

@@ -29,7 +29,7 @@
             :title="locale.addToPlaylist"
             @click="handleAddToPlaylistClick"
           >
-            <Icon :size="20" color="#ffffff" name="music" />
+            <Icon :size="20" color="var(--text-primary)" name="music" />
           </button>
         </div>
 
@@ -90,7 +90,7 @@
             type="button"
             @click="handleAddToPlaylistClick"
           >
-            <Icon :size="18" color="#ffffff" name="music" />
+            <Icon :size="18" color="var(--text-primary)" name="music" />
             <span>{{ locale.addToPlaylist }}</span>
           </button>
         </div>
@@ -1730,7 +1730,7 @@ const vRipple = {
 }
 
 .semester-label {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
   font-weight: 500;
   margin-right: 0.75rem;
@@ -1742,7 +1742,7 @@ const vRipple = {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
   padding: 0.6rem 1rem;
   font-size: 14px;
   font-weight: 500;
@@ -1762,7 +1762,7 @@ const vRipple = {
 
 .semester-select:focus {
   outline: none;
-  border-color: #0b5afe;
+  border-color: var(--brand-blue);
   box-shadow:
     0 0 0 3px rgba(11, 90, 254, 0.3),
     0 4px 12px rgba(11, 90, 254, 0.2);
@@ -1770,8 +1770,8 @@ const vRipple = {
 }
 
 .semester-select option {
-  background: #1a1d24;
-  color: #ffffff;
+  background: var(--panel-surface-overlay);
+  color: var(--text-primary);
   padding: 0.5rem;
 }
 
@@ -1825,18 +1825,18 @@ const vRipple = {
 }
 
 .date-item:hover {
-  background: #21242d;
+  background: var(--panel-surface);
   transform: translateY(-2px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .date-item.active {
-  background: #21242d;
-  color: #ffffff;
+  background: var(--panel-surface);
+  color: var(--text-primary);
   font-weight: 600;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(11, 90, 254, 0.2);
-  border-left: 3px solid #0b5afe;
+  border-left: 3px solid var(--brand-blue);
 }
 
 .empty-dates {
@@ -1897,7 +1897,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -1906,7 +1906,7 @@ const vRipple = {
   padding: 3rem;
   text-align: center;
   border-radius: 10px;
-  background: #21242d;
+  background: var(--panel-surface);
   margin: 1rem 0;
   color: rgba(255, 255, 255, 0.6);
   display: flex;
@@ -1923,7 +1923,7 @@ const vRipple = {
   margin-bottom: 1rem;
   border-radius: 50%;
   border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0b5afe;
+  border-top-color: var(--brand-blue);
   animation: spin 1s linear infinite;
 }
 
@@ -1941,13 +1941,13 @@ const vRipple = {
   padding: 2rem;
   text-align: center;
   border-radius: 10px;
-  background: #21242d;
+  background: var(--panel-surface);
   margin: 1rem 0;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .error {
-  color: #ef4444;
+  color: var(--brand-red);
 }
 
 .empty .icon {
@@ -1991,7 +1991,7 @@ const vRipple = {
 .song-card {
   width: 320px;
   flex-shrink: 0;
-  background: #21242d;
+  background: var(--panel-surface);
   border-radius: 10px;
   overflow: hidden;
   position: relative;
@@ -2008,7 +2008,7 @@ const vRipple = {
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -2051,7 +2051,7 @@ const vRipple = {
   width: 100%;
   max-width: 580px;
   max-height: 85vh;
-  background: #1e1e24;
+  background: var(--panel-surface-elevated);
   border-radius: 20px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2085,7 +2085,7 @@ const vRipple = {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: 0.5px;
 }
 
@@ -2105,7 +2105,7 @@ const vRipple = {
 
 .playlist-modal-close:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
   transform: rotate(90deg);
 }
 
@@ -2114,7 +2114,7 @@ const vRipple = {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
-  background: #1e1e24;
+  background: var(--panel-surface-elevated);
 }
 
 /* 滚动条美化 */
@@ -2187,7 +2187,7 @@ const vRipple = {
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  background: #2a2a32;
+  background: var(--panel-surface-compact);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2208,7 +2208,7 @@ const vRipple = {
 
 .user-name {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
 }
 
@@ -2282,9 +2282,9 @@ const vRipple = {
 .custom-select,
 .custom-input {
   width: 100%;
-  background: #141418;
+  background: var(--panel-surface-subtle);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
   padding: 0.75rem 1rem;
   border-radius: 10px;
   font-size: 14px;
@@ -2311,7 +2311,7 @@ const vRipple = {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  background: #1a1a20;
+  background: var(--panel-surface-inset);
 }
 
 .btn-icon {
@@ -2331,7 +2331,7 @@ const vRipple = {
 
 .btn-icon:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .btn-icon:disabled {
@@ -2365,7 +2365,7 @@ const vRipple = {
 
 .btn-text-danger:hover {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--brand-red);
 }
 
 .divider {
@@ -2542,7 +2542,7 @@ const vRipple = {
 
 .song-name {
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -2590,7 +2590,7 @@ const vRipple = {
 
 .btn-primary {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--text-primary);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
@@ -2609,7 +2609,7 @@ const vRipple = {
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .btn-secondary:hover {
@@ -2623,7 +2623,7 @@ const vRipple = {
 
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 /* 动画定义 */
@@ -2658,7 +2658,7 @@ const vRipple = {
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   margin-right: 0.5rem;
   backdrop-filter: blur(10px);
@@ -2782,8 +2782,8 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: bold;
   font-family: 'MiSans', sans-serif;
@@ -2846,7 +2846,7 @@ const vRipple = {
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: flex-start;
@@ -2872,7 +2872,7 @@ const vRipple = {
   background: rgba(11, 90, 254, 0.15);
   border: 1px solid rgba(11, 90, 254, 0.3);
   border-radius: 4px;
-  color: #0b5afe;
+  color: var(--brand-blue);
   font-size: 12px;
   font-weight: 500;
   flex-shrink: 0;
@@ -2931,7 +2931,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #0b5afe;
+  color: var(--brand-blue);
   text-shadow:
     0px 20px 30px rgba(0, 114, 248, 0.5),
     0px 8px 15px rgba(0, 114, 248, 0.5),
@@ -2945,7 +2945,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   opacity: 0.4;
 }
 
@@ -3019,7 +3019,7 @@ const vRipple = {
 
   .nav-btn:active:not(:disabled) {
     background: rgba(255, 255, 255, 0.1);
-    color: #0b5afe;
+    color: var(--brand-blue);
   }
 
   .nav-btn:disabled {
@@ -3040,7 +3040,7 @@ const vRipple = {
   .date-text {
     font-size: 15px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
     white-space: nowrap;
     text-shadow:
       0 0 10px rgba(255, 255, 255, 0.2),
@@ -3049,7 +3049,7 @@ const vRipple = {
 
   .dropdown-icon {
     opacity: 0.5;
-    color: #ffffff;
+    color: var(--text-primary);
   }
 
   .mobile-action-btn {
@@ -3058,7 +3058,7 @@ const vRipple = {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0b5afe 0%, #0043f8 100%);
+    background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
     border: none;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(11, 90, 254, 0.4);
@@ -3162,7 +3162,7 @@ const vRipple = {
   }
 
   .song-card.playing .song-title {
-    color: #0b5afe;
+    color: var(--brand-blue);
     text-shadow: 0 0 10px rgba(11, 90, 254, 0.4);
   }
 
@@ -3239,7 +3239,7 @@ const vRipple = {
     font-weight: 600;
     margin-bottom: 2px;
     line-height: 1.4;
-    color: #ffffff;
+    color: var(--text-primary);
     letter-spacing: 0.01em;
   }
 
@@ -3253,7 +3253,7 @@ const vRipple = {
   .vote-count .count {
     font-size: 22px;
     font-weight: 800;
-    color: #0b5afe;
+    color: var(--brand-blue);
     font-family: 'MiSans-Bold', sans-serif;
     line-height: 1;
   }
@@ -3289,7 +3289,7 @@ const vRipple = {
 
   /* 日期选择弹窗 */
   .date-picker-content {
-    background: #1a1a1f;
+    background: var(--panel-surface);
     border-radius: 20px 20px 0 0;
     width: 100%;
     max-width: 100%;
@@ -3339,7 +3339,7 @@ const vRipple = {
   .date-picker-item.active {
     background: rgba(11, 90, 254, 0.15);
     border-left: none;
-    color: #0b5afe;
+    color: var(--brand-blue);
   }
 }
 
@@ -3487,7 +3487,7 @@ const vRipple = {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  background: #21242d;
+  background: var(--panel-surface);
   border-radius: 10px;
   padding: 0.75rem 1rem;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -3500,7 +3500,7 @@ const vRipple = {
 .date-nav-btn {
   background: rgba(11, 90, 254, 0.1);
   border: 1px solid rgba(11, 90, 254, 0.2);
-  color: #ffffff;
+  color: var(--text-primary);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -3524,7 +3524,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #ffffff;
+  color: var(--text-primary);
   text-align: center;
   flex: 1;
   white-space: pre-line;
@@ -3543,7 +3543,7 @@ const vRipple = {
 }
 
 .current-date-mobile:hover {
-  color: #0b5afe;
+  color: var(--brand-blue);
 }
 
 /* 日期选择器弹窗样式 */
@@ -3574,7 +3574,7 @@ const vRipple = {
   width: 85%;
   max-width: 350px;
   max-height: 70vh;
-  background: #1a1d24;
+  background: var(--panel-surface-overlay);
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -3633,7 +3633,7 @@ const vRipple = {
 
 .date-picker-item.active {
   background: rgba(11, 90, 254, 0.2);
-  border-left: 3px solid #0b5afe;
+  border-left: 3px solid var(--brand-blue);
 }
 
 /* 过渡动画 */
@@ -3668,7 +3668,7 @@ const vRipple = {
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 999px;
   background: rgba(59, 130, 246, 0.08);
-  color: #60a5fa;
+  color: var(--brand-blue-light);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
@@ -3717,14 +3717,14 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .submission-note-header button:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #f4f4f5;
+  color: var(--text-primary-light);
 }
 
 .submission-note-meta {
@@ -3737,7 +3737,7 @@ const vRipple = {
 
 .song-title-tag {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-muted);
   background: rgba(255, 255, 255, 0.06);
   padding: 4px 10px;
   border-radius: 6px;
@@ -3751,13 +3751,13 @@ const vRipple = {
 
 .visibility-public {
   background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  color: var(--brand-blue-light);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .visibility-private {
   background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
+  color: var(--brand-yellow-light);
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
@@ -3773,7 +3773,7 @@ const vRipple = {
 .submission-note-content {
   font-size: 14px;
   line-height: 1.7;
-  color: #e4e4e7;
+  color: var(--text-primary-lighter);
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;

@@ -780,11 +780,11 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--panel-surface-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: var(--panel-surface-hover);
 }
 
 .fade-enter-active,
