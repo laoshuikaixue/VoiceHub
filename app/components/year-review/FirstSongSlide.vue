@@ -105,8 +105,8 @@ const formatDate = (dateStr) => {
   display: inline-block;
   padding: 0.25rem 1rem;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-20);
+  background: var(--overlay-5);
   backdrop-filter: blur(12px);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
@@ -142,8 +142,8 @@ const formatDate = (dateStr) => {
   height: 100%;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
+  border: 1px solid var(--overlay-10);
   background: var(--panel-surface-dark);
   display: flex;
   align-items: center;
@@ -168,7 +168,7 @@ const formatDate = (dateStr) => {
 .glossy-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top right, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(to top right, var(--overlay-10), transparent);
   pointer-events: none;
 }
 

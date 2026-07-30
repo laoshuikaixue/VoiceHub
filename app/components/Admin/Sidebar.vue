@@ -60,7 +60,7 @@
                 <!-- 选中状态指示器 -->
                 <div
                   v-if="activeTab === item.id"
-                  class="ml-auto w-1 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(96,165,250,0.6)]"
+                  class="ml-auto w-1 h-1 bg-primary rounded-full shadow-[0_0_8px_var(--primary-60)]"
                 />
               </button>
             </template>

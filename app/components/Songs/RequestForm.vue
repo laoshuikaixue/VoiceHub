@@ -3962,7 +3962,7 @@ defineExpose({
 }
 
 .rules-section {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   border-radius: 13px;
   padding: 1.25rem;
   flex: 0 0 35%; /* 稍微缩小规则区域占比 */
@@ -3976,7 +3976,7 @@ defineExpose({
   font-weight: 400;
   font-size: 15px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   margin-bottom: 0.75rem;
 }
 
@@ -4004,7 +4004,7 @@ defineExpose({
   gap: 0.5rem;
   font-size: 15px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   margin-bottom: 1.25rem;
 }
 
@@ -4016,7 +4016,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-size: 13px;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
 }
 
 .rule-item {
@@ -4026,7 +4026,7 @@ defineExpose({
 
 .rule-item span {
   margin-right: 0.5rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--overlay-30);
   font-weight: 600;
 }
 
@@ -4090,7 +4090,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   flex: 1;
   min-width: 100px; /* 确保输入框不会缩到太小 */
 }
@@ -4102,7 +4102,7 @@ defineExpose({
 
 .search-button {
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
   color: var(--text-primary);
@@ -4117,7 +4117,7 @@ defineExpose({
 
 .search-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 4px 12px var(--primary-30);
 }
 
 .search-button:disabled {
@@ -4131,11 +4131,11 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
   padding: 0.75rem 0.9rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--overlay-85);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
@@ -4146,7 +4146,7 @@ defineExpose({
 }
 
 .audio-match-btn:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.18);
+  background: var(--primary-18);
   border-color: rgba(96, 165, 250, 0.35);
   color: var(--text-primary);
 }
@@ -4185,8 +4185,8 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(11, 90, 254, 0.1);
-  border: 1px solid rgba(11, 90, 254, 0.2);
+  background: var(--brand-blue-10);
+  border: 1px solid var(--brand-blue-20);
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
   font-size: 14px;
@@ -4196,7 +4196,7 @@ defineExpose({
 .remove-collaborator {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4211,18 +4211,18 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   border-radius: 6px;
   padding: 0.25rem 0.75rem;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .add-collaborator-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   color: var(--text-primary);
 }
 
@@ -4247,7 +4247,7 @@ defineExpose({
   height: 14px;
   border-radius: 4px;
   border: 1px solid var(--panel-surface-hover);
-  background: rgba(24, 24, 27, 0.5);
+  background: var(--panel-surface-overlay);
   transition: all 0.2s ease;
 }
 
@@ -4290,8 +4290,8 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: var(--primary-10);
+  border-color: var(--primary-30);
 }
 
 .login-required-notice .notice-icon {
@@ -4307,9 +4307,9 @@ defineExpose({
 
 .login-required-notice .login-link-btn {
   padding: 0.2rem 0.6rem;
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  border: 1px solid var(--primary-40);
   border-radius: 4px;
-  background: rgba(59, 130, 246, 0.2);
+  background: var(--primary-20);
   color: var(--brand-blue-light);
   font-size: 12px;
   font-weight: 600;
@@ -4318,16 +4318,16 @@ defineExpose({
 }
 
 .login-required-notice .login-link-btn:hover {
-  background: rgba(59, 130, 246, 0.35);
+  background: var(--primary-35);
   color: var(--text-link-hover);
 }
 
 .submission-status-horizontal {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--mask-30);
   border-radius: 8px;
   padding: 0.4rem 0.75rem;
   margin-bottom: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
 }
 
 .admin-notice-horizontal {
@@ -4398,9 +4398,9 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(11, 90, 254, 0.1);
-  border: 1px solid rgba(11, 90, 254, 0.3);
+  color: var(--overlay-70);
+  background: var(--brand-blue-10);
+  border: 1px solid var(--brand-blue-30);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
 }
@@ -4428,9 +4428,9 @@ defineExpose({
 .desktop-card-code-panel {
   min-height: 94px;
   height: 100%;
-  border: 1px solid rgba(39, 39, 42, 0.8);
+  border: 1px solid var(--panel-surface-deep);
   border-radius: 12px;
-  background: rgba(24, 24, 27, 0.35);
+  background: var(--panel-surface-overlay);
   padding: 0.75rem;
   display: flex;
   align-items: center;
@@ -4457,7 +4457,7 @@ defineExpose({
   font-weight: 600;
   font-size: 15px;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   margin-bottom: 0.25rem;
 }
 
@@ -4474,7 +4474,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   width: 100%;
 }
 
@@ -4551,7 +4551,7 @@ defineExpose({
 
 .login-hint {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--overlay-45);
   margin: 2px 0 0 0;
   line-height: 1.3;
 }
@@ -4568,12 +4568,12 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 10px var(--primary-15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 5px 14px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 5px 14px var(--primary-25);
   filter: brightness(1.1);
 }
 
@@ -4598,7 +4598,7 @@ defineExpose({
   gap: 0.25rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-size: 11px;
@@ -4608,7 +4608,7 @@ defineExpose({
 
 .header-btn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
 }
 
 .login-actions {
@@ -4618,9 +4618,9 @@ defineExpose({
 }
 
 .import-btn {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--overlay-4);
+  color: var(--overlay-70);
+  border: 1px solid var(--overlay-8);
   padding: 0.45rem 0.75rem;
   border-radius: 7px;
   font-size: 12px;
@@ -4635,8 +4635,8 @@ defineExpose({
 }
 
 .import-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-8);
+  border-color: var(--overlay-15);
   color: var(--text-primary);
 }
 
@@ -4663,7 +4663,7 @@ defineExpose({
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid var(--overlay-10);
 }
 
 .qq-user-avatar {
@@ -4681,7 +4681,7 @@ defineExpose({
 
 .user-name {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -4697,9 +4697,9 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--overlay-4);
+  border: 1px solid var(--overlay-6);
+  color: var(--overlay-70);
   padding: 0.35rem 0.6rem;
   border-radius: 6px;
   font-size: 11px;
@@ -4710,9 +4710,9 @@ defineExpose({
 }
 
 .action-btn-compact:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--overlay-12);
 }
 
 .audio-waveform {
@@ -4837,7 +4837,7 @@ defineExpose({
 
 .audio-match-cancel-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 0.875rem 1.5rem;
   color: var(--text-muted-light);
@@ -4847,9 +4847,9 @@ defineExpose({
 }
 
 .audio-match-cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
   color: var(--text-primary-lighter);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--overlay-15);
 }
 
 .audio-match-result-item {
@@ -4859,24 +4859,24 @@ defineExpose({
   justify-content: space-between;
   gap: 1rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--overlay-8);
+  background: var(--overlay-3);
   padding: 0.95rem 1rem;
   cursor: pointer;
 }
 
 .audio-match-result-item:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--primary-10);
   border-color: rgba(96, 165, 250, 0.22);
   transform: translateY(-1px);
 }
 
 .search-type-switch {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--mask-20);
   border-radius: 6px;
   padding: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 .radio-label {
@@ -4884,7 +4884,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   cursor: pointer;
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
@@ -4894,8 +4894,8 @@ defineExpose({
 .radio-label.active {
   color: var(--text-primary);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--overlay-8);
+  box-shadow: 0 1px 3px var(--mask-10);
 }
 
 .radio-label input {
@@ -4908,7 +4908,7 @@ defineExpose({
   gap: 0.2rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-size: 11px;
@@ -4917,19 +4917,19 @@ defineExpose({
 }
 
 .logout-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--overlay-70);
+  background: var(--overlay-5);
 }
 
 .platform-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
   padding: 0.45rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -4937,19 +4937,19 @@ defineExpose({
 
 .platform-btn.active {
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--overlay-16);
   color: var(--text-primary);
 }
 
 .platform-btn:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--overlay-20);
+  color: var(--overlay-80);
 }
 
 /* 音源状态显示 */
 .source-status-display {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -4966,14 +4966,14 @@ defineExpose({
 .status-title {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   font-family: 'MiSans', sans-serif;
 }
 
 .status-summary {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--overlay-60);
+  background: var(--overlay-10);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-family: 'MiSans', sans-serif;
@@ -5006,8 +5006,8 @@ defineExpose({
 }
 
 .source-item.unhealthy {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: var(--error-15);
+  border-color: var(--error-30);
   color: var(--brand-red-light);
 }
 
@@ -5018,7 +5018,7 @@ defineExpose({
 }
 
 .source-item.current {
-  box-shadow: 0 0 0 2px rgba(11, 90, 254, 0.4);
+  box-shadow: 0 0 0 2px var(--brand-blue-40);
   transform: scale(1.02);
 }
 
@@ -5040,7 +5040,7 @@ defineExpose({
 
 .source-item.unhealthy .source-indicator {
   background: var(--brand-red);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 6px var(--error-60);
 }
 
 .source-item.checking .source-indicator {
@@ -5065,8 +5065,8 @@ defineExpose({
   gap: 0.5rem;
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--error-15);
+  border: 1px solid var(--error-30);
   border-radius: 6px;
   color: var(--brand-red-light);
   font-size: 12px;
@@ -5077,7 +5077,7 @@ defineExpose({
 /* 搜索结果容器样式 */
 .search-results-container {
   flex: 1;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   border-radius: 13px;
   display: flex;
   flex-direction: column;
@@ -5108,14 +5108,14 @@ defineExpose({
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(11, 90, 254, 0.2);
+  border: 3px solid var(--brand-blue-20);
   border-top-color: var(--brand-blue);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loading-text {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   margin: 0;
@@ -5154,17 +5154,17 @@ defineExpose({
 }
 
 .results-grid::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 3px;
 }
 
 .results-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-30);
   border-radius: 3px;
 }
 
 .results-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--overlay-50);
 }
 
 /* 空状态和初始状态 */
@@ -5198,7 +5198,7 @@ defineExpose({
 
 .empty-hint,
 .initial-hint {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 13px;
   margin: 0;
 }
@@ -5226,13 +5226,13 @@ defineExpose({
 .manual-input-trigger {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-10);
   text-align: center;
 }
 
 .manual-submit-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
   font-family: 'MiSans', sans-serif;
@@ -5244,7 +5244,7 @@ defineExpose({
 }
 
 .manual-submit-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   transform: translateY(-2px);
 }
 
@@ -5253,7 +5253,7 @@ defineExpose({
   font-weight: 600;
   font-size: 14px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   margin-top: 0.5rem;
 }
 
@@ -5265,7 +5265,7 @@ defineExpose({
 
 .submit-button {
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
   font-family: 'MiSans', sans-serif;
@@ -5327,7 +5327,7 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--overlay-5);
 }
 
 .similar-song-item:last-child {
@@ -5374,7 +5374,7 @@ defineExpose({
 }
 
 .alert-hint {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 14px;
   margin-top: 0.5rem;
 }
@@ -5397,7 +5397,7 @@ defineExpose({
 
 .vote-btn {
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -5410,18 +5410,18 @@ defineExpose({
 
 .vote-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 2px 8px var(--primary-30);
 }
 
 .vote-btn:disabled {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   cursor: not-allowed;
   transform: none;
 }
 
 .ignore-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -5511,7 +5511,7 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--mask-60);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -5525,9 +5525,9 @@ defineExpose({
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   transform-origin: center;
 }
 
@@ -5536,8 +5536,8 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--overlay-5);
+  background: var(--overlay-2);
 }
 
 .modal-header h3 {
@@ -5552,7 +5552,7 @@ defineExpose({
 .close-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 24px;
   cursor: pointer;
   padding: 0;
@@ -5566,7 +5566,7 @@ defineExpose({
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   color: var(--text-primary);
   transform: rotate(90deg);
 }
@@ -5601,22 +5601,22 @@ defineExpose({
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--overlay-5);
+  border-color: var(--overlay-10);
+  color: var(--overlay-80);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--overlay-20);
 }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--overlay-10);
   color: var(--text-primary);
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 4px 12px var(--primary-30);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -5631,8 +5631,8 @@ defineExpose({
 }
 
 .readonly {
-  background: rgba(0, 0, 0, 0.2) !important;
-  color: rgba(255, 255, 255, 0.5) !important;
+  background: var(--mask-20) !important;
+  color: var(--overlay-50) !important;
   cursor: not-allowed;
   border-color: transparent !important;
 }
@@ -5660,7 +5660,7 @@ defineExpose({
   gap: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--overlay-10);
 }
 
 .result-item:last-child {
@@ -5668,7 +5668,7 @@ defineExpose({
 }
 
 .result-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
 }
 
 .result-cover {
@@ -5678,7 +5678,7 @@ defineExpose({
   flex-shrink: 0;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px var(--mask-20);
   background: var(--panel-surface-dialog);
 }
 
@@ -5696,7 +5696,7 @@ defineExpose({
 .play-overlay-container {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5713,15 +5713,15 @@ defineExpose({
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--overlay-30);
+  box-shadow: 0 8px 16px var(--mask-30);
 }
 
 .play-icon {
@@ -5752,7 +5752,7 @@ defineExpose({
 }
 
 .result-artist {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 13px;
   margin: 0.25rem 0;
   white-space: nowrap;
@@ -5763,7 +5763,7 @@ defineExpose({
 .result-album,
 .result-quality,
 .result-pay {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 11px;
   margin: 0.15rem 0;
 }
@@ -5780,7 +5780,7 @@ defineExpose({
 
 .cloud-disk-btn {
   background: linear-gradient(180deg, var(--brand-red) 0%, var(--brand-red-hover) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--overlay-20);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -5793,7 +5793,7 @@ defineExpose({
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px var(--mask-20);
   -webkit-appearance: none;
   appearance: none;
 }
@@ -5802,7 +5802,7 @@ defineExpose({
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 4px 12px rgba(236, 65, 65, 0.5);
   background: linear-gradient(180deg, var(--brand-red-hover) 0%, var(--brand-red-hover) 100%);
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: var(--overlay-40);
 }
 
 .cloud-disk-btn:active {
@@ -5820,7 +5820,7 @@ defineExpose({
 
 .similar-text {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
 }
@@ -5837,7 +5837,7 @@ defineExpose({
 
 .like-btn {
   background: linear-gradient(180deg, var(--brand-red) 0%, var(--brand-red-hover) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
   color: var(--text-primary);
@@ -5854,18 +5854,18 @@ defineExpose({
 
 .like-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 8px var(--error-30);
 }
 
 .like-btn:disabled {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   cursor: not-allowed;
   transform: none;
 }
 
 .like-btn.disabled {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -5878,7 +5878,7 @@ defineExpose({
 
 .select-btn {
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -5914,9 +5914,9 @@ defineExpose({
 }
 
 .replay-btn:disabled {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-5);
+  border-color: var(--overlay-10);
+  color: var(--overlay-30);
   cursor: not-allowed;
   transform: none;
 }
@@ -5928,12 +5928,12 @@ defineExpose({
   margin-top: 1rem;
   text-align: center;
   padding: 1rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-10);
 }
 
 .manual-submit-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
   font-family: 'MiSans', sans-serif;
@@ -5945,14 +5945,14 @@ defineExpose({
 }
 
 .manual-submit-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   transform: translateY(-2px);
 }
 
 /* 手动输入区域样式 */
 .manual-input-section {
   margin-top: 2rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   border-radius: 13px;
   padding: 1.5rem;
 }
@@ -5978,8 +5978,8 @@ defineExpose({
 }
 
 .manual-cancel-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -5991,12 +5991,12 @@ defineExpose({
 }
 
 .manual-cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .manual-confirm-btn {
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   color: var(--text-primary);
@@ -6009,7 +6009,7 @@ defineExpose({
 
 .manual-confirm-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 4px 12px var(--primary-30);
 }
 
 .manual-confirm-btn:disabled {
@@ -6082,16 +6082,16 @@ defineExpose({
     height: auto;
     margin-bottom: 1.5rem;
     padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--overlay-8);
     border-radius: 18px;
   }
 
   .rules-title {
     font-size: 15px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--overlay-90);
     margin-bottom: 1.25rem;
     letter-spacing: normal;
   }
@@ -6136,9 +6136,9 @@ defineExpose({
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--overlay-2);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--overlay-8);
     border-radius: 20px;
     /* 允许容器内容触发页面滚动 */
     touch-action: pan-y;
@@ -6230,8 +6230,8 @@ defineExpose({
   }
 
   .search-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
     border-radius: 12px;
     padding: 0.75rem 1rem;
     font-size: 15px;
@@ -6264,7 +6264,7 @@ defineExpose({
   }
 
   .platform-selection {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--mask-20);
     padding: 4px;
     border-radius: 12px;
     margin-bottom: 0.5rem;
@@ -6279,14 +6279,14 @@ defineExpose({
     border-radius: 10px;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--overlay-50);
     min-width: auto;
   }
 
   .platform-btn.active {
     background: var(--brand-blue);
     color: var(--text-primary);
-    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
+    box-shadow: 0 2px 8px var(--brand-blue-30);
   }
 
   /* 移动端音源状态显示 */
@@ -6373,7 +6373,7 @@ defineExpose({
     min-height: 42px;
     border-radius: 12px;
     border: 1px solid rgba(113, 113, 122, 0.4);
-    background: rgba(24, 24, 27, 0.65);
+    background: var(--panel-surface-overlay);
     color: rgba(228, 228, 231, 0.9);
     padding: 0.65rem 0.85rem;
     font-size: 13px;
@@ -6396,7 +6396,7 @@ defineExpose({
   .mobile-card-code-chip.is-valid,
   .mobile-card-code-button.is-valid {
     border-color: rgba(16, 185, 129, 0.35);
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--success-10);
     color: var(--brand-green-light);
   }
 
@@ -6461,9 +6461,9 @@ defineExpose({
 
   /* 移动端搜索结果优化 */
   .result-item {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--overlay-3);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--overlay-6);
     margin-bottom: 0.5rem;
     padding: 10px;
     flex-direction: row;
@@ -6595,7 +6595,7 @@ defineExpose({
 .netease-loading-state .loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(239, 68, 68, 0.2);
+  border: 2px solid var(--error-20);
   border-top-color: var(--brand-red);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -6639,11 +6639,11 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
   padding: 0.6rem 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -6655,9 +6655,9 @@ defineExpose({
 }
 
 .import-semester-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-15);
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--overlay-20);
 }
 
 @media (max-width: 768px) {
@@ -6674,7 +6674,7 @@ defineExpose({
 
 .video-info {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--overlay-10);
   margin-bottom: 1rem;
 }
 
@@ -6689,7 +6689,7 @@ defineExpose({
 .video-author {
   font-family: 'MiSans', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .episodes-list {
@@ -6704,16 +6704,16 @@ defineExpose({
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .episode-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
   transform: translateX(4px);
 }
 
@@ -6721,8 +6721,8 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--overlay-80);
+  background: var(--overlay-10);
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   min-width: 40px;
@@ -6746,7 +6746,7 @@ defineExpose({
 .episode-duration {
   font-family: 'MiSans', sans-serif;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
 }
 
 /* 专辑详情样式 */
@@ -6765,7 +6765,7 @@ defineExpose({
 }
 
 .album-label {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
 }
 
 .album-link-icon {

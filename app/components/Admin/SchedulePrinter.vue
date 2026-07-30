@@ -1763,7 +1763,7 @@ watch(
   width: 100%;
   margin: 0 auto;
   padding: 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--mask-10);
   box-sizing: border-box;
   overflow: visible;
   position: relative;

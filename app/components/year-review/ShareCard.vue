@@ -79,7 +79,7 @@ defineExpose({
   background:
     radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 70%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+    radial-gradient(circle at 50% 50%, var(--primary-10) 0%, transparent 60%);
 }
 
 .noise-overlay {
@@ -117,7 +117,7 @@ defineExpose({
 .year {
   font-size: 3rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.1);
+  color: var(--overlay-10);
   line-height: 1;
 }
 
@@ -139,7 +139,7 @@ defineExpose({
 
 .subtitle {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   letter-spacing: 0.3em;
   text-transform: uppercase;
 }
@@ -154,9 +154,9 @@ defineExpose({
 .stat-item {
   text-align: center;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-3);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-8);
   backdrop-filter: blur(10px);
 }
 
@@ -172,7 +172,7 @@ defineExpose({
 
 .stat-label {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   letter-spacing: 0.05em;
 }
 
@@ -183,7 +183,7 @@ defineExpose({
 
 .footer-text {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   letter-spacing: 0.1em;
   margin-bottom: 1rem;
 }
@@ -191,7 +191,7 @@ defineExpose({
 .footer-line {
   width: 100px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-20), transparent);
   margin: 0 auto;
 }
 

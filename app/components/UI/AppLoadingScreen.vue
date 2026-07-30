@@ -151,7 +151,7 @@ const warpSettings = computed(() => ({
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 .progress-ring {
@@ -161,7 +161,7 @@ const warpSettings = computed(() => ({
 }
 
 .ring-track {
-  stroke: rgba(255, 255, 255, 0.05);
+  stroke: var(--overlay-5);
 }
 
 .ring-fill {
@@ -213,7 +213,7 @@ const warpSettings = computed(() => ({
   font-size: 18px;
   font-weight: 500;
   letter-spacing: -0.025em;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--overlay-95);
   text-wrap: balance;
 }
 

@@ -203,8 +203,8 @@ const toggleDetails = () => {
 
 .details-btn {
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-20);
   border-radius: 8px;
   color: var(--text-muted);
   font-weight: 500;
@@ -213,16 +213,16 @@ const toggleDetails = () => {
 }
 
 .details-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-15);
+  border-color: var(--overlay-30);
   color: var(--text-primary-lighter);
 }
 
 .error-details {
   margin-top: 24px;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--mask-30);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
   text-align: left;
   max-width: 600px;

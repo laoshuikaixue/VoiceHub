@@ -60,7 +60,7 @@
         <div v-if="showProgress" class="mt-8 space-y-2">
           <div class="h-1.5 w-full bg-bg-secondary rounded-full overflow-hidden border border-border-secondary">
             <div
-              class="h-full bg-primary transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              class="h-full bg-primary transition-all duration-300 shadow-[0_0_10px_var(--primary-50)]"
               :style="{ width: `${progress}%` }"
             />
           </div>

@@ -257,6 +257,20 @@
   --brand-yellow-hover: #d97706;
   --brand-orange: #fb923c;
   --brand-orange-hover: #ff6900;
+  
+  /* === Alpha (--brand-blue) === */
+  --brand-blue-10: rgba(11, 90, 254, 0.08);
+  --brand-blue-12: rgba(11, 90, 254, 0.10);
+  --brand-blue-15: rgba(11, 90, 254, 0.12);
+  --brand-blue-18: rgba(11, 90, 254, 0.14);
+  --brand-blue-20: rgba(11, 90, 254, 0.16);
+  --brand-blue-25: rgba(11, 90, 254, 0.20);
+  --brand-blue-30: rgba(11, 90, 254, 0.25);
+  --brand-blue-40: rgba(11, 90, 254, 0.30);
+  --brand-blue-50: rgba(11, 90, 254, 0.40);
+  --brand-blue-60: rgba(11, 90, 254, 0.50);
+  --brand-blue-80: rgba(11, 90, 254, 0.60);
+
   --brand-orange-glow: rgba(251, 146, 60, 0.4);
 
   /* 用途化变量 — 面板背景色（浅色模式） */
@@ -474,6 +488,67 @@
   --text-success-80: rgba(16, 185, 129, 0.8);
   /* === Alpha (--text-warning) === */
   --text-warning-80: rgba(245, 158, 11, 0.8);
+  /* === Overlay / 遮罩层半透明色（浅色模式 = 黑色半透明） === */
+  --overlay-1: rgba(0, 0, 0, 0.01);
+  --overlay-2: rgba(0, 0, 0, 0.02);
+  --overlay-3: rgba(0, 0, 0, 0.03);
+  --overlay-4: rgba(0, 0, 0, 0.04);
+  --overlay-5: rgba(0, 0, 0, 0.05);
+  --overlay-6: rgba(0, 0, 0, 0.06);
+  --overlay-7: rgba(0, 0, 0, 0.07);
+  --overlay-8: rgba(0, 0, 0, 0.08);
+  --overlay-10: rgba(0, 0, 0, 0.1);
+  --overlay-12: rgba(0, 0, 0, 0.12);
+  --overlay-14: rgba(0, 0, 0, 0.14);
+  --overlay-15: rgba(0, 0, 0, 0.15);
+  --overlay-16: rgba(0, 0, 0, 0.16);
+  --overlay-18: rgba(0, 0, 0, 0.18);
+  --overlay-20: rgba(0, 0, 0, 0.2);
+  --overlay-22: rgba(0, 0, 0, 0.22);
+  --overlay-25: rgba(0, 0, 0, 0.25);
+  --overlay-30: rgba(0, 0, 0, 0.3);
+  --overlay-40: rgba(0, 0, 0, 0.4);
+  --overlay-42: rgba(0, 0, 0, 0.42);
+  --overlay-45: rgba(0, 0, 0, 0.45);
+  --overlay-50: rgba(0, 0, 0, 0.5);
+  --overlay-52: rgba(0, 0, 0, 0.52);
+  --overlay-55: rgba(0, 0, 0, 0.55);
+  --overlay-58: rgba(0, 0, 0, 0.58);
+  --overlay-60: rgba(0, 0, 0, 0.6);
+  --overlay-62: rgba(0, 0, 0, 0.62);
+  --overlay-70: rgba(0, 0, 0, 0.7);
+  --overlay-78: rgba(0, 0, 0, 0.78);
+  --overlay-80: rgba(0, 0, 0, 0.8);
+  --overlay-85: rgba(0, 0, 0, 0.85);
+  --overlay-86: rgba(0, 0, 0, 0.86);
+  --overlay-88: rgba(0, 0, 0, 0.88);
+  --overlay-90: rgba(0, 0, 0, 0.9);
+  --overlay-92: rgba(0, 0, 0, 0.92);
+  --overlay-95: rgba(0, 0, 0, 0.95);
+
+  /* === Mask / 暗色遮罩（浅色模式 = 更淡） === */
+  --mask-2: rgba(0, 0, 0, 0.01);
+  --mask-4: rgba(0, 0, 0, 0.02);
+  --mask-5: rgba(0, 0, 0, 0.03);
+  --mask-6: rgba(0, 0, 0, 0.04);
+  --mask-8: rgba(0, 0, 0, 0.05);
+  --mask-10: rgba(0, 0, 0, 0.06);
+  --mask-15: rgba(0, 0, 0, 0.08);
+  --mask-18: rgba(0, 0, 0, 0.09);
+  --mask-20: rgba(0, 0, 0, 0.1);
+  --mask-25: rgba(0, 0, 0, 0.12);
+  --mask-30: rgba(0, 0, 0, 0.15);
+  --mask-35: rgba(0, 0, 0, 0.17);
+  --mask-40: rgba(0, 0, 0, 0.2);
+  --mask-45: rgba(0, 0, 0, 0.22);
+  --mask-50: rgba(0, 0, 0, 0.25);
+  --mask-60: rgba(0, 0, 0, 0.3);
+  --mask-70: rgba(0, 0, 0, 0.35);
+  --mask-75: rgba(0, 0, 0, 0.4);
+  --mask-80: rgba(0, 0, 0, 0.5);
+  --mask-85: rgba(0, 0, 0, 0.6);
+  --mask-95: rgba(0, 0, 0, 0.7);
+
   /* 打印专用变量（覆盖主题配色） */
   --print-bg: #f0f0f0;
   --print-text-primary: #000;

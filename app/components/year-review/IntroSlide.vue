@@ -76,7 +76,7 @@ const { yearReview } = useLocale()
   transform: translate(-50%, -50%);
   font-size: 14rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.03);
+  color: var(--overlay-3);
   pointer-events: none;
   user-select: none;
   line-height: 1;
@@ -99,7 +99,7 @@ const { yearReview } = useLocale()
   background-clip: text;
   color: transparent;
   margin-bottom: 2rem;
-  filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 25px 25px var(--mask-15));
 }
 
 @media (max-width: 768px) {

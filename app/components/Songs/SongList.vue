@@ -1540,7 +1540,7 @@ const vRipple = {
   .search-icon-box {
     position: absolute;
     left: 14px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     display: flex;
     align-items: center;
     pointer-events: none;
@@ -1548,8 +1548,8 @@ const vRipple = {
   }
 
   .mobile-search-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
     border-radius: 12px;
     padding: 12px 16px 12px 42px;
     font-size: 14px;
@@ -1559,16 +1559,16 @@ const vRipple = {
   }
 
   .mobile-search-input:focus {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     border-color: var(--brand-blue-light);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px var(--primary-10);
   }
 
   .mobile-tabs {
     display: flex;
     gap: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--overlay-5);
     padding-bottom: 2px;
   }
 
@@ -1578,7 +1578,7 @@ const vRipple = {
     padding: 0 0 8px 0;
     font-size: 14px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     cursor: pointer;
     position: relative;
     white-space: nowrap;
@@ -1597,7 +1597,7 @@ const vRipple = {
     height: 2px;
     background: var(--brand-blue-light);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 8px var(--primary-50);
   }
 }
 
@@ -1634,7 +1634,7 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   border-bottom: 3px solid transparent;
@@ -1642,7 +1642,7 @@ const vRipple = {
 }
 
 .tab-button:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   transform: translateY(-3px);
 }
 
@@ -1662,7 +1662,7 @@ const vRipple = {
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(11, 90, 254, 0.3) 0%, rgba(255, 255, 255, 0.1) 70%);
+  background: radial-gradient(circle, var(--brand-blue-30) 0%, var(--overlay-10) 70%);
   transform: scale(0);
   animation: ripple 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: none;
@@ -1697,11 +1697,11 @@ const vRipple = {
   width: 36px;
   height: 36px;
   background: var(--panel-surface);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   font-size: 14px;
   padding: 0;
 }
@@ -1709,7 +1709,7 @@ const vRipple = {
 .semester-toggle-btn:hover {
   background: var(--panel-surface-contrast);
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--mask-20);
   color: var(--brand-blue);
 }
 
@@ -1718,9 +1718,9 @@ const vRipple = {
   top: calc(100% + 8px);
   right: 0;
   background: var(--panel-surface-overlay);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--mask-30);
   z-index: 100;
   min-width: 180px;
   overflow: hidden;
@@ -1728,11 +1728,11 @@ const vRipple = {
 
 .semester-option {
   padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--overlay-5);
 }
 
 .semester-option:last-child {
@@ -1740,12 +1740,12 @@ const vRipple = {
 }
 
 .semester-option:hover {
-  background: rgba(11, 90, 254, 0.1);
+  background: var(--brand-blue-10);
   color: var(--text-primary);
 }
 
 .semester-option.active {
-  background: rgba(11, 90, 254, 0.2);
+  background: var(--brand-blue-20);
   color: var(--brand-blue);
   font-weight: 600;
 }
@@ -1763,7 +1763,7 @@ const vRipple = {
   padding-right: 2.5rem;
   font-family: 'MiSans-Demibold', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   width: 100%;
   transition: all 0.2s ease;
 }
@@ -1778,7 +1778,7 @@ const vRipple = {
   right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .refresh-button {
@@ -1788,17 +1788,17 @@ const vRipple = {
   width: 36px;
   height: 36px;
   background: var(--panel-surface);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
 }
 
 .refresh-button:hover {
   background: var(--panel-surface-contrast);
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--mask-20);
 }
 
 .refresh-button:active {
@@ -1835,7 +1835,7 @@ const vRipple = {
 .loading {
   text-align: center;
   padding: 3rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1849,7 +1849,7 @@ const vRipple = {
   height: 40px;
   margin-bottom: 1rem;
   border-radius: 50%;
-  border: 3px solid rgba(11, 90, 254, 0.2);
+  border: 3px solid var(--brand-blue-20);
   border-top-color: var(--brand-blue);
   animation: spin 1s linear infinite;
 }
@@ -1858,7 +1858,7 @@ const vRipple = {
 .empty {
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .error {
@@ -1891,7 +1891,7 @@ const vRipple = {
 .song-card-main {
   padding: 1rem 0 1rem 1rem; /* 移除右侧内边距，保留左侧、上下内边距 */
   background: var(--panel-surface);
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  box-shadow: 0px 4px 4px var(--mask-25);
   position: relative;
   height: 100px; /* 减小卡片高度 */
   border-radius: 10px;
@@ -1920,7 +1920,7 @@ const vRipple = {
   position: relative;
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px var(--mask-30);
 }
 
 .cover-image {
@@ -1955,7 +1955,7 @@ const vRipple = {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   opacity: 0;
   transition: opacity 0.2s ease;
   cursor: pointer;
@@ -1970,7 +1970,7 @@ const vRipple = {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(11, 90, 254, 0.8);
+  background: var(--brand-blue-80);
   border: none;
   display: flex;
   align-items: center;
@@ -2029,7 +2029,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: normal;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -2065,12 +2065,12 @@ const vRipple = {
   font-size: 20px;
   color: var(--brand-blue);
   text-shadow:
-    0px 20px 30px rgba(0, 114, 248, 0.5),
-    0px 8px 15px rgba(0, 114, 248, 0.5),
+    0px 20px 30px var(--primary-50),
+    0px 8px 15px var(--primary-50),
     0px 4px 10px rgba(0, 179, 248, 0.3),
     0px 2px 10px rgba(0, 179, 248, 0.2),
-    inset 3px 3px 10px rgba(255, 255, 255, 0.4),
-    inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+    inset 3px 3px 10px var(--overlay-40),
+    inset -1px -1px 15px var(--overlay-40);
 }
 
 .vote-count .label {
@@ -2094,7 +2094,7 @@ const vRipple = {
   width: 48px;
   height: 45px;
   background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -2107,8 +2107,8 @@ const vRipple = {
 }
 
 .like-button.disabled {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -2129,8 +2129,8 @@ const vRipple = {
 
 .scheduled-tag {
   display: inline-flex;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--success-20);
+  border: 1px solid var(--success-40);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
@@ -2142,8 +2142,8 @@ const vRipple = {
 
 .played-tag {
   display: inline-flex;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--success-20);
+  border: 1px solid var(--success-40);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
@@ -2155,8 +2155,8 @@ const vRipple = {
 
 .replay-tag {
   display: inline-flex;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: var(--primary-20);
+  border: 1px solid var(--primary-40);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
@@ -2184,14 +2184,14 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   text-align: left;
   max-width: 70%;
 }
 
 .withdraw-button {
   background: linear-gradient(180deg, var(--brand-red-light) 0%, var(--brand-red-light) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.25rem 0.75rem;
   font-family: 'MiSans-Demibold', sans-serif;
@@ -2211,7 +2211,7 @@ const vRipple = {
 
 .withdraw-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--mask-20);
 }
 
 .replay-cancel-btn {
@@ -2240,8 +2240,8 @@ button:disabled {
 
 .page-button,
 .page-number {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
@@ -2257,7 +2257,7 @@ button:disabled {
 
 .page-info {
   margin-left: 0.5rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 0.875rem;
 }
 
@@ -2270,14 +2270,14 @@ button:disabled {
 }
 
 .jump-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 0.875rem;
   white-space: nowrap;
 }
 
 .jump-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
@@ -2290,17 +2290,17 @@ button:disabled {
 .jump-input:focus {
   outline: none;
   border-color: var(--brand-blue);
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-15);
 }
 
 .jump-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 0.75rem;
 }
 
 .jump-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
@@ -2311,8 +2311,8 @@ button:disabled {
 }
 
 .jump-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-20);
+  border-color: var(--overlay-30);
 }
 
 .jump-button:disabled {
@@ -2360,20 +2360,20 @@ button:disabled {
     font-weight: 500;
     border: none;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.5);
+    background: var(--overlay-4);
+    color: var(--overlay-50);
     margin: 0;
     white-space: nowrap;
   }
 
   .tab-button:hover {
     transform: none;
-    color: rgba(255, 255, 255, 0.8);
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--overlay-80);
+    background: var(--overlay-8);
   }
 
   .tab-button.active {
-    background: rgba(11, 90, 254, 0.15);
+    background: var(--brand-blue-15);
     color: var(--brand-blue);
     border-bottom: none;
     box-shadow: none;
@@ -2392,7 +2392,7 @@ button:disabled {
   }
 
   .search-input {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
     border-radius: 12px;
     padding: 10px 16px;
@@ -2401,7 +2401,7 @@ button:disabled {
   }
 
   .search-input:focus {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     box-shadow: none;
   }
 
@@ -2419,12 +2419,12 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
   }
 
   .semester-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     transform: none;
     box-shadow: none;
   }
@@ -2433,7 +2433,7 @@ button:disabled {
     background: var(--panel-surface);
     border: none;
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 10px 40px var(--mask-40);
     top: calc(100% + 8px);
   }
 
@@ -2447,13 +2447,13 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
     flex-shrink: 0;
   }
 
   .refresh-button:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     transform: none;
     box-shadow: none;
   }
@@ -2468,38 +2468,38 @@ button:disabled {
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--overlay-7);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--overlay-12);
+    box-shadow: 0 4px 20px var(--mask-15);
   }
 
   .song-card.playing {
-    background: rgba(11, 90, 254, 0.12);
-    border-color: rgba(11, 90, 254, 0.4);
-    box-shadow: 0 0 20px rgba(11, 90, 254, 0.2);
+    background: var(--brand-blue-12);
+    border-color: var(--brand-blue-40);
+    box-shadow: 0 0 20px var(--brand-blue-20);
   }
 
   .song-card.playing .song-title {
     color: var(--brand-blue);
-    text-shadow: 0 0 10px rgba(11, 90, 254, 0.3);
+    text-shadow: 0 0 10px var(--brand-blue-30);
   }
 
   .song-card:active {
     transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-10);
+    border-color: var(--overlay-20);
   }
 
   .song-card.played {
     opacity: 0.8;
     filter: grayscale(0.35);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-8);
+    border-color: var(--overlay-10);
   }
 
   .song-card-main {
@@ -2523,7 +2523,7 @@ button:disabled {
     height: 60px;
     aspect-ratio: 1;
     border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--mask-30);
   }
 
   /* 播放按钮 */
@@ -2548,7 +2548,7 @@ button:disabled {
 
   .requester {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     font-weight: 400;
     margin-top: 2px;
   }
@@ -2573,7 +2573,7 @@ button:disabled {
   .vote-count .label {
     font-size: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
     margin-top: 2px;
     text-transform: uppercase;
   }
@@ -2582,8 +2582,8 @@ button:disabled {
     width: 44px;
     height: 44px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2602,16 +2602,16 @@ button:disabled {
 
   /* 投稿时间和操作 */
   .submission-footer {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--overlay-2);
     padding: 10px 16px;
     height: auto;
     width: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid var(--overlay-4);
   }
 
   .submission-time {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
     font-weight: 400;
   }
 
@@ -2620,9 +2620,9 @@ button:disabled {
     padding: 0 12px;
     font-size: 12px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
+    background: var(--overlay-8);
+    border: 1px solid var(--overlay-10);
+    color: var(--overlay-80);
   }
 
   .withdraw-button.replay-cancel-btn {
@@ -2657,7 +2657,7 @@ button:disabled {
 
   .page-button,
   .page-number {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -2665,13 +2665,13 @@ button:disabled {
   }
 
   .page-number.active {
-    background: rgba(11, 90, 254, 0.15);
+    background: var(--brand-blue-15);
     color: var(--brand-blue);
   }
 
   .page-info {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
   }
 
   .page-jump {
@@ -2680,7 +2680,7 @@ button:disabled {
   }
 
   .jump-input {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
     border-radius: 8px;
     width: 50px;
@@ -2688,7 +2688,7 @@ button:disabled {
   }
 
   .jump-button {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -2764,8 +2764,8 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -2776,7 +2776,7 @@ button:disabled {
 
   .page-nav-btn:active {
     transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-10);
   }
 
   .page-nav-btn:disabled {
@@ -2790,10 +2790,10 @@ button:disabled {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--overlay-3);
     border-radius: 12px;
     height: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--overlay-8);
   }
 
   .mobile-page-input {
@@ -2814,19 +2814,19 @@ button:disabled {
   }
 
   .page-selector .divider {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
     font-size: 14px;
   }
 
   .page-selector .total {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--overlay-60);
     font-size: 14px;
     font-weight: 500;
   }
 }
 
 .page-nav-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-color: var(--brand-blue-light);
 }
 
@@ -2850,12 +2850,12 @@ button:disabled {
 
 .page-indicator .divider {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--overlay-20);
 }
 
 .page-indicator .total {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
 }
 
 @media (max-width: 768px) {
@@ -2891,33 +2891,33 @@ button:disabled {
   width: 24px;
   height: 22px;
   margin-left: 6px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid var(--primary-30);
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--primary-10);
   color: var(--brand-blue-light);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  box-shadow: 0 0 0 0 transparent;
   flex-shrink: 0;
 }
 
 .submission-note-trigger:hover {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 6px 12px rgba(96, 165, 250, 0.15);
+  background: var(--primary-18);
+  border-color: var(--primary-50);
+  box-shadow: 0 6px 12px var(--primary-15);
 }
 
 .submission-note-modal {
   width: 100%;
   max-width: 400px;
-  background: rgba(24, 24, 27, 0.85);
+  background: var(--panel-surface-overlay);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-8);
   border-radius: 20px;
   padding: 24px;
   color: var(--text-secondary);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
 }
 
 .submission-note-header {
@@ -2936,7 +2936,7 @@ button:disabled {
 
 .submission-note-header button {
   border: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
   border-radius: 50%;
   width: 28px;
   height: 28px;
@@ -2949,7 +2949,7 @@ button:disabled {
 }
 
 .submission-note-header button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   color: var(--text-primary-light);
 }
 
@@ -2964,7 +2964,7 @@ button:disabled {
 .song-title-tag {
   font-size: 13px;
   color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--overlay-6);
   padding: 4px 10px;
   border-radius: 6px;
 }
@@ -2976,20 +2976,20 @@ button:disabled {
 }
 
 .visibility-public {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--primary-15);
   color: var(--brand-blue-light);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid var(--primary-20);
 }
 
 .visibility-private {
-  background: rgba(245, 158, 11, 0.15);
+  background: var(--warning-15);
   color: var(--brand-yellow-light);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  border: 1px solid var(--warning-20);
 }
 
 .submission-note-content-box {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--mask-20);
+  border: 1px solid var(--overlay-5);
   border-radius: 12px;
   padding: 16px;
   max-height: 300px;

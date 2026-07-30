@@ -1148,7 +1148,7 @@ const formatDateShort = (dateStr) => {
   width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {

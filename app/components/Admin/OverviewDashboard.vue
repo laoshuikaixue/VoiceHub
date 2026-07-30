@@ -138,7 +138,7 @@
                 :class="[
                   'w-1.5 h-1.5 rounded-full',
                   status.active
-                    ? 'bg-success shadow-[0_0_10px_rgba(16,185,129,0.7)]'
+                    ? 'bg-success shadow-[0_0_10px_var(--success-70)]'
                     : 'bg-bg-quaternary'
                 ]"
               />

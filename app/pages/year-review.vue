@@ -241,7 +241,7 @@ const handleTouchEnd = (e) => {
 .loading .spinner {
   width: 3rem;
   height: 3rem;
-  border: 4px solid rgba(255, 255, 255, 0.2);
+  border: 4px solid var(--overlay-20);
   border-top-color: var(--brand-purple); /* brand-purple */
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -274,7 +274,7 @@ const handleTouchEnd = (e) => {
 
 .retry-btn {
   padding: 0.5rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 9999px;
   display: flex;
   align-items: center;
@@ -283,7 +283,7 @@ const handleTouchEnd = (e) => {
 }
 
 .retry-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .empty .empty-icon-circle {
@@ -358,12 +358,12 @@ const handleTouchEnd = (e) => {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-30);
   transition: all 0.3s;
 }
 
 .indicator-dot:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--overlay-60);
 }
 
 .indicator-dot.active {
@@ -378,7 +378,7 @@ const handleTouchEnd = (e) => {
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -319,7 +319,7 @@
                     class="flex items-center gap-1.5 text-success font-black uppercase text-[10px] tracking-widest"
                   >
                     <div
-                      class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                      class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success-50)]"
                     />
                     {{ getStatusName('active') }}
                   </div>
@@ -429,7 +429,7 @@
                   class="flex items-center gap-1.5 text-success font-black uppercase text-[10px] tracking-widest"
                 >
                   <div
-                    class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                    class="w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_8px_var(--success-50)]"
                   />
                   {{ getStatusName('active') }}
                 </div>
@@ -2846,7 +2846,7 @@ onBeforeUnmount(() => {
 
 .tree-toggle:hover {
   color: var(--brand-blue-light);
-  background: rgba(39, 39, 42, 0.8);
+  background: var(--panel-surface-deep);
 }
 
 .tree-label {
@@ -2867,7 +2867,7 @@ onBeforeUnmount(() => {
 
 .tree-label:hover {
   color: var(--text-primary-lighter);
-  background: rgba(39, 39, 42, 0.7);
+  background: var(--panel-surface-deep);
 }
 
 .tree-label-active {
@@ -2905,6 +2905,6 @@ onBeforeUnmount(() => {
 }
 
 .tree-user:hover {
-  background: rgba(39, 39, 42, 0.7);
+  background: var(--panel-surface-deep);
 }
 </style>

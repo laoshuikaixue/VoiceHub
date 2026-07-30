@@ -668,7 +668,7 @@ const formatFileSize = (bytes) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--mask-70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1050,7 +1050,7 @@ const formatFileSize = (bytes) => {
   border-radius: 8px;
   color: white;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--mask-30);
   z-index: 1001;
   animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;

@@ -1121,7 +1121,7 @@ onMounted(() => {
 .loading-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--overlay-10);
   border-top-color: var(--brand-blue-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;

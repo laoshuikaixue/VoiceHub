@@ -107,7 +107,7 @@ const openLyrics = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--mask-70);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -125,7 +125,7 @@ const openLyrics = () => {
 .lyrics-text {
   font-size: 10px;
   font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 2px var(--mask-50);
 }
 
 .player-cover {
@@ -134,17 +134,17 @@ const openLyrics = () => {
   object-fit: cover;
   /* 添加辉光效果 */
   box-shadow:
-    0 0 10px rgba(255, 255, 255, 0.3),
-    0 0 20px rgba(255, 255, 255, 0.2),
-    0 0 30px rgba(255, 255, 255, 0.1);
+    0 0 10px var(--overlay-30),
+    0 0 20px var(--overlay-20),
+    0 0 30px var(--overlay-10);
   transition: box-shadow 0.3s ease;
 }
 
 .player-cover:hover {
   box-shadow:
-    0 0 15px rgba(255, 255, 255, 0.4),
-    0 0 30px rgba(255, 255, 255, 0.3),
-    0 0 45px rgba(255, 255, 255, 0.2);
+    0 0 15px var(--overlay-40),
+    0 0 30px var(--overlay-30),
+    0 0 45px var(--overlay-20);
 }
 
 .text-cover {
@@ -158,7 +158,7 @@ const openLyrics = () => {
   color: white;
   font-size: 18px;
   font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px var(--mask-30);
 }
 
 .player-text {
@@ -174,16 +174,16 @@ const openLyrics = () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px var(--mask-30);
 }
 
 .player-text p {
   margin: 2px 0 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px var(--mask-30);
 }
 </style>

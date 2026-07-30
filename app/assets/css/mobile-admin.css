@@ -422,7 +422,7 @@
   .form-textarea:focus,
   .search-input:focus {
     transform: none;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+    box-shadow: 0 0 0 3px var(--primary-20) !important;
   }
 }
 

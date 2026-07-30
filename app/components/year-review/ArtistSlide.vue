@@ -116,7 +116,7 @@ const { yearReview } = useLocale()
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 25px 25px var(--mask-15));
   word-break: break-word;
   padding: 0 0.5rem;
 }

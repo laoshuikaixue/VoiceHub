@@ -74,8 +74,8 @@ const formatPlatform = (platform) => {
 .card {
   padding: 1.5rem;
   border-radius: 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;

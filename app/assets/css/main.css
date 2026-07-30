@@ -242,9 +242,9 @@ body::before {
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
   box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 4px 6px var(--mask-10),
+    0 1px 3px var(--mask-8),
+    inset 0 1px 0 var(--overlay-5);
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
@@ -257,16 +257,16 @@ body::before {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-10), transparent);
 }
 
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--card-hover-border);
   box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.15),
-    0 4px 8px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 12px 24px var(--mask-15),
+    0 4px 8px var(--mask-10),
+    inset 0 1px 0 var(--overlay-10);
 }
 
 /* 按钮 */
@@ -285,7 +285,7 @@ body::before {
   font-size: var(--text-sm);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--mask-10);
 }
 
 .btn::before {
@@ -295,7 +295,7 @@ body::before {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-10), transparent);
   transition: left 0.5s;
 }
 
@@ -325,7 +325,7 @@ body::before {
   background: linear-gradient(135deg, var(--bg-quaternary) 0%, var(--btn-secondary-hover) 100%);
   color: var(--text-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px var(--overlay-10);
 }
 
 .btn-outline {
@@ -340,7 +340,7 @@ body::before {
   border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px var(--primary-20);
 }
 
 .btn:disabled {
@@ -388,7 +388,7 @@ body::before {
   border-color: var(--input-border-focus);
   box-shadow:
     var(--input-shadow-focus),
-    0 4px 12px rgba(102, 126, 234, 0.1);
+    0 4px 12px var(--primary-10);
   background: var(--bg-secondary);
   transform: translateY(-1px);
 }

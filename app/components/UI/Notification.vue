@@ -69,7 +69,7 @@ defineEmits(['close'])
   align-items: center;
   padding: 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px var(--mask-40);
   background: var(--panel-surface);
   color: var(--text-primary);
   max-width: 400px;
@@ -103,17 +103,17 @@ defineEmits(['close'])
 }
 
 .success .notification-icon {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--success-20);
   color: var(--brand-green);
 }
 
 .error .notification-icon {
-  background: rgba(239, 68, 68, 0.2);
+  background: var(--error-20);
   color: var(--brand-red);
 }
 
 .info .notification-icon {
-  background: rgba(11, 90, 254, 0.2);
+  background: var(--brand-blue-20);
   color: var(--brand-blue);
 }
 
@@ -126,7 +126,7 @@ defineEmits(['close'])
 .notification-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 20px;
   cursor: pointer;
   width: 28px;
@@ -150,7 +150,7 @@ defineEmits(['close'])
   left: 0;
   width: 100%;
   height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
 }
 
 .notification-progress-bar {

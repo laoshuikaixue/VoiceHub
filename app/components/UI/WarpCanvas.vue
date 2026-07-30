@@ -295,7 +295,7 @@ onMounted(() => {
       const grad = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, Math.max(width, height) * 0.75)
       grad.addColorStop(0, hexWithAlpha(glowColors.color, radialGlowOpacity))
       grad.addColorStop(0.5, hexWithAlpha(glowColors.color, 0.04))
-      grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      grad.addColorStop(1, 'transparent')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, width, height)
     }

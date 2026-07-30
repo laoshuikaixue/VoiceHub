@@ -49,7 +49,7 @@
                     >
                     <div
                       v-if="selectedQuality === option.value"
-                      class="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                      class="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_var(--primary-50)]"
                     />
                   </div>
                   <span class="text-[10px] text-text-tertiary relative z-10">{{

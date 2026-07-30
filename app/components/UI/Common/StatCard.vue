@@ -54,7 +54,7 @@
 
       <!-- 迷你趋势图 -->
       <div v-if="trendData && trendData.length > 0" class="w-24 h-12 self-end mb-1">
-        <svg class="w-full h-full drop-shadow-[0_0_8px_rgba(59,130,246,0.2)]" viewBox="0 0 100 20">
+        <svg class="w-full h-full drop-shadow-[0_0_8px_var(--primary-20)]" viewBox="0 0 100 20">
           <polyline
             :points="trendPoints"
             :stroke="trendColor"

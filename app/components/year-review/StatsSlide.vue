@@ -112,8 +112,8 @@ const { yearReview } = useLocale()
   margin-top: 3rem;
   padding: 1.5rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   backdrop-filter: blur(4px);
 }
 

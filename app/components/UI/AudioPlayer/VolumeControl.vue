@@ -230,7 +230,7 @@ const handleClickOutside = (e: Event) => {
 
 .volume-btn.active {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 20px;
 }
 
@@ -263,16 +263,16 @@ const handleClickOutside = (e: Event) => {
   transform: translateX(-50%);
   width: 36px;
   height: 120px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)),
+  background: linear-gradient(135deg, var(--overlay-15), var(--overlay-5)),
     rgba(30, 30, 35, 0.85);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--mask-30), inset 0 1px 0 var(--overlay-20);
   padding: 12px 0;
 }
 
@@ -305,7 +305,7 @@ const handleClickOutside = (e: Event) => {
   position: relative;
   width: 6px;
   height: 100%;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   border-radius: 3px;
 }
 
@@ -327,7 +327,7 @@ const handleClickOutside = (e: Event) => {
   height: 14px;
   background: var(--text-primary);
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 6px var(--mask-30);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   pointer-events: none;
 }
@@ -335,6 +335,6 @@ const handleClickOutside = (e: Event) => {
 .volume-slider-thumb.dragging,
 .volume-slider:hover .volume-slider-thumb {
   transform: translate(-50%, 50%) scale(1.2);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 10px var(--mask-40);
 }
 </style>

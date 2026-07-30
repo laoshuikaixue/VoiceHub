@@ -107,7 +107,7 @@ const { yearReview } = useLocale()
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(to right, transparent, var(--overlay-20), transparent);
 }
 
 .text-intro {
@@ -174,8 +174,8 @@ const { yearReview } = useLocale()
   width: 100%;
   padding: 1rem 2rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-20);
   color: var(--text-primary);
   font-weight: 700;
   font-size: 1.125rem;
@@ -188,7 +188,7 @@ const { yearReview } = useLocale()
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .btn-secondary:active {

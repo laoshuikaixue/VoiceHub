@@ -65,7 +65,7 @@
               />
             </button>
             <button class="mobile-control-btn" @click.stop="stopPlaying">
-              <Icon name="close" :size="20" color="rgba(255,255,255,0.6)" />
+              <Icon name="close" :size="20" color="var(--overlay-60)" />
             </button>
           </div>
 
@@ -279,8 +279,8 @@ const { audioPlayer: audioPlayerLocale } = useLocale()
 const theme = useTheme()
 const inactiveColor = computed(() =>
   theme.currentTheme.value === 'dark'
-    ? 'rgba(255, 255, 255, 0.6)'
-    : 'rgba(0, 0, 0, 0.6)'
+    ? 'var(--overlay-60)'
+    : 'var(--mask-60)'
 )
 
 const props = defineProps({
@@ -1856,20 +1856,20 @@ const getFirstChar = (text) => {
   0%,
   100% {
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 4px 16px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-      0 0 0 1px rgba(255, 255, 255, 0.1);
+      0 8px 32px var(--mask-30),
+      0 4px 16px var(--mask-20),
+      inset 0 1px 0 var(--overlay-20),
+      inset 0 -1px 0 var(--mask-10),
+      0 0 0 1px var(--overlay-10);
   }
   50% {
     box-shadow:
-      0 12px 48px rgba(0, 0, 0, 0.4),
-      0 6px 24px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-      0 0 0 1px rgba(255, 255, 255, 0.15),
-      0 0 40px rgba(255, 255, 255, 0.08);
+      0 12px 48px var(--mask-40),
+      0 6px 24px var(--mask-30),
+      inset 0 1px 0 var(--overlay-30),
+      inset 0 -1px 0 var(--mask-15),
+      0 0 0 1px var(--overlay-15),
+      0 0 40px var(--overlay-8);
   }
 }
 
@@ -1891,7 +1891,7 @@ const getFirstChar = (text) => {
   left: 0;
   right: 0;
   height: 20vh;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.3));
+  background: linear-gradient(to bottom, transparent, var(--mask-30));
   z-index: 999;
   backdrop-filter: blur(1px);
   pointer-events: none;
@@ -1958,8 +1958,8 @@ const getFirstChar = (text) => {
   background: rgba(20, 20, 25, 0.85);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--overlay-8);
+  box-shadow: 0 8px 32px var(--mask-40);
   animation: none;
   overflow: hidden;
 }
@@ -1975,7 +1975,7 @@ const getFirstChar = (text) => {
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   cursor: pointer;
   z-index: 10;
 }
@@ -1983,7 +1983,7 @@ const getFirstChar = (text) => {
 .mobile-top-progress .progress-fill {
   height: 100%;
   background: var(--brand-blue);
-  box-shadow: 0 0 8px rgba(11, 90, 254, 0.6);
+  box-shadow: 0 0 8px var(--brand-blue-60);
   border-radius: 0 1px 1px 0;
 }
 
@@ -1998,7 +1998,7 @@ const getFirstChar = (text) => {
   height: 44px;
   aspect-ratio: 1;
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px var(--mask-20);
 }
 
 .music-widget.mobile-player-bar .song-info {
@@ -2052,7 +2052,7 @@ const getFirstChar = (text) => {
 .loading-spinner-small {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--overlay-10);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -2094,7 +2094,7 @@ const getFirstChar = (text) => {
 }
 
 .progress-fill {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--overlay-70);
   height: 100%;
   transition: width 0.1s linear;
   border-radius: 6px;
@@ -2118,14 +2118,14 @@ const getFirstChar = (text) => {
   height: 165px;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--overlay-20);
   box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 16px 48px var(--mask-30),
+    0 8px 24px var(--mask-20),
+    0 4px 12px var(--mask-10),
+    inset 0 1px 0 var(--overlay-30),
+    inset 0 -1px 0 var(--mask-10),
+    0 0 0 1px var(--overlay-5);
   z-index: 1000;
   will-change: transform, opacity;
   font-family:
@@ -2138,14 +2138,14 @@ const getFirstChar = (text) => {
 .music-widget:hover {
   transform: translateX(-50%) translateY(-2px);
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 6px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 40px rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
+    0 20px 60px var(--mask-40),
+    0 12px 32px var(--mask-25),
+    0 6px 16px var(--mask-15),
+    inset 0 1px 0 var(--overlay-40),
+    inset 0 -1px 0 var(--mask-10),
+    0 0 0 1px var(--overlay-10),
+    0 0 40px var(--overlay-10);
+  border-color: var(--overlay-25);
 }
 
 /* 标题区域 */
@@ -2176,7 +2176,7 @@ const getFirstChar = (text) => {
 }
 
 .cover-container.clickable:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px var(--mask-40);
 }
 
 .cover-container.clickable:hover .cover-hover-overlay {
@@ -2205,7 +2205,7 @@ const getFirstChar = (text) => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--mask-30);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2304,7 +2304,7 @@ const getFirstChar = (text) => {
 }
 
 .close-button:hover {
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--mask-60);
   transform: scale(1.05);
 }
 
@@ -2361,8 +2361,8 @@ const getFirstChar = (text) => {
 .ios-progress-bar:hover {
   border-color: var(--text-primary);
   box-shadow:
-    0 0 20px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 0 20px var(--overlay-10),
+    inset 0 1px 0 var(--overlay-10);
 }
 
 .progress-fill {
@@ -2373,7 +2373,7 @@ const getFirstChar = (text) => {
   position: absolute;
   left: 0;
   top: 0;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px var(--overlay-30);
 }
 
 /* 时间和音质显示 */
@@ -2391,7 +2391,7 @@ const getFirstChar = (text) => {
   width: 60px;
   line-height: 18px;
   letter-spacing: 0.42px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2486,7 +2486,7 @@ const getFirstChar = (text) => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--overlay-10) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -2495,8 +2495,8 @@ const getFirstChar = (text) => {
   color: var(--text-primary);
   transform: scale(1.1);
   box-shadow:
-    0 0 20px rgba(255, 255, 255, 0.2),
-    0 0 40px rgba(255, 255, 255, 0.1);
+    0 0 20px var(--overlay-20),
+    0 0 40px var(--overlay-10);
 }
 
 .ios-control-btn:hover::before {
@@ -2506,8 +2506,8 @@ const getFirstChar = (text) => {
 .ios-control-btn:active {
   transform: scale(0.95);
   box-shadow:
-    0 0 15px rgba(255, 255, 255, 0.3),
-    inset 0 0 10px rgba(255, 255, 255, 0.1);
+    0 0 15px var(--overlay-30),
+    inset 0 0 10px var(--overlay-10);
 }
 
 .ios-control-btn:disabled {
@@ -2565,12 +2565,12 @@ const getFirstChar = (text) => {
 /* 歌词面板样式 */
 .lyrics-panel {
   margin-top: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--mask-20);
   border-radius: 12px;
   padding: 0.5rem;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 /* 歌词滑动动画 */
@@ -2648,7 +2648,7 @@ const getFirstChar = (text) => {
 .loading-spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--overlay-30);
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -2838,28 +2838,28 @@ const getFirstChar = (text) => {
   left: 50%;
   transform: translateX(-50%);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)),
+    linear-gradient(135deg, var(--overlay-25), var(--overlay-15)),
     rgba(128, 128, 128, 0.85);
   border-radius: 12px;
   padding: 8px 0;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--overlay-40);
   z-index: 9999;
   min-width: 120px;
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.3),
-    0 6px 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 30px rgba(255, 255, 255, 0.1);
+    0 20px 60px var(--mask-40),
+    0 12px 32px var(--mask-30),
+    0 6px 16px var(--mask-20),
+    inset 0 1px 0 var(--overlay-40),
+    inset 0 -1px 0 var(--mask-10),
+    0 0 0 1px var(--overlay-10),
+    0 0 30px var(--overlay-10);
 }
 
 .quality-option {
   padding: 8px 16px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-size: 12px;
@@ -2879,18 +2879,18 @@ const getFirstChar = (text) => {
   right: 0;
   bottom: 0;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(135deg, var(--overlay-10), var(--overlay-5));
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .quality-option:hover {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--overlay-95);
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
   box-shadow:
-    0 4px 16px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 4px 16px var(--overlay-10),
+    inset 0 1px 0 var(--overlay-20);
 }
 
 .quality-option:hover::before {
@@ -2908,7 +2908,7 @@ const getFirstChar = (text) => {
   box-shadow:
     0 6px 20px rgba(0, 122, 255, 0.4),
     0 2px 8px rgba(0, 122, 255, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 1px 0 var(--overlay-30),
     0 0 0 1px rgba(0, 122, 255, 0.2);
 }
 
@@ -2941,7 +2941,7 @@ const getFirstChar = (text) => {
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .music-widget {
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
+      linear-gradient(135deg, var(--overlay-10), var(--overlay-5)),
       rgba(128, 128, 128, 0.25);
   }
 }
