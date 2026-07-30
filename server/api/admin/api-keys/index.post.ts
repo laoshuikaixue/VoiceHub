@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     // 生成API Key
     const apiKey = generateApiKey()
     const keyPrefix = apiKey.substring(0, 10) // vhub_xxxxx
-    const keyHash = hashApiKey(apiKey)
+    const keyHash = await hashApiKey(apiKey)
 
     // 处理过期时间
     let expiresAt: Date | null = null
