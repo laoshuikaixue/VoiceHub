@@ -430,13 +430,20 @@
         </div>
       </div>
     </div>
+
+    <!-- 自动备份设置 -->
+    <BackupAutoSettings
+      :visible="activeModal === 'auto-backup'"
+      @close="activeModal = 'none'"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
-import { Download, Upload, RotateCw, Trash2, AlertCircle, X } from '@lucide/vue'
+import { Download, Upload, RotateCw, Trash2, AlertCircle, CloudUpload, X } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import BackupAutoSettings from '~/components/Admin/BackupAutoSettings.vue'
 import { useToast } from '~/composables/useToast'
 import { useAuth } from '~/composables/useAuth'
 import { useLocale } from '~/utils/locale'
@@ -528,6 +535,14 @@ const cards = computed(() => [
     color: 'rose',
     btnText: locale.value?.cards?.resetDb?.button ?? '重置数据库',
     isDanger: true
+  },
+  {
+    id: 'auto-backup',
+    title: locale.value?.cards?.autoBackup?.title ?? '自动备份',
+    desc: locale.value?.cards?.autoBackup?.desc ?? '配置 S3 兼容存储定时备份，数据安全无忧',
+    icon: CloudUpload,
+    color: 'green',
+    btnText: locale.value?.cards?.autoBackup?.button ?? '配置自动备份'
   }
 ])
 

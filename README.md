@@ -752,6 +752,7 @@ VoiceHub/
 │   ├── components/            # Vue组件目录
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
+│   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
