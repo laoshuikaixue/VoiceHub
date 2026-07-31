@@ -276,8 +276,8 @@ crontab -e
               <div v-for="record in historyRecords" :key="record.id" class="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
-                    <span :class="record.success ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'" class="px-2 py-0.5 text-[10px] font-bold rounded-md border">
-                      {{ record.success ? '成功' : '失败' }}
+                    <span :class="getStatusInfo(record).cls" class="px-2 py-0.5 text-[10px] font-bold rounded-md border">
+                      {{ getStatusInfo(record).text }}
                     </span>
                     <span class="text-[11px] text-zinc-400 font-mono">{{ record.filename }}</span>
                   </div>
@@ -290,7 +290,7 @@ crontab -e
                 </div>
                 <div v-if="record.methods && record.methods.length" class="flex gap-2 mt-2">
                   <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-emerald-500' : 'text-red-500'" class="text-[10px]">
-                    {{ m.method }} {{ m.success ? '✓' : '✗' }}
+                    {{ m.method }} {{ m.success ? '✓' : '✗' }}<span v-if="!m.success && m.error" class="text-zinc-500 ml-0.5">({{ formatMethodError(m.error) }})</span>
                   </span>
                 </div>
               </div>
@@ -440,6 +440,26 @@ const formatSize = (bytes) => {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+const getStatusInfo = (record) => {
+  const methods = record.methods || []
+  if (methods.length === 0) {
+    return record.success
+      ? { text: '成功', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' }
+      : { text: '失败', cls: 'bg-red-500/10 text-red-400 border-red-500/20' }
+  }
+  const allSuccess = methods.every((m) => m.success)
+  const allFailed = methods.every((m) => !m.success)
+  if (allSuccess) return { text: '成功', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' }
+  if (allFailed) return { text: '失败', cls: 'bg-red-500/10 text-red-400 border-red-500/20' }
+  return { text: '部分成功', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' }
+}
+
+const formatMethodError = (err) => {
+  if (!err) return ''
+  const match = err.match(/(\d{3})/)
+  return match ? match[1] : err.slice(0, 16)
 }
 
 const loadHistory = async () => {
