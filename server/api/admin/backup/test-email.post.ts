@@ -1,17 +1,19 @@
-import { createError, defineEventHandler, readBody } from 'h3'
+import { defineEventHandler, readBody } from 'h3'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({ statusCode: 403, message: '只有超级管理员可以测试邮件发送' })
+    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以测试邮件发送')
   }
 
   const body = await readBody(event)
   const { recipient } = body
 
   if (!recipient) {
-    throw createError({ statusCode: 400, message: '缺少必要参数：recipient' })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：recipient')
   }
 
   const settings = await getSystemSettingsCached()

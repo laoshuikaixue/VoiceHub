@@ -1,16 +1,18 @@
-import { createError, defineEventHandler, readBody } from 'h3'
+import { defineEventHandler, readBody } from 'h3'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({ statusCode: 403, message: '只有超级管理员可以测试 Telegram 发送' })
+    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以测试 Telegram 发送')
   }
 
   const body = await readBody(event)
   const { botToken, chatId } = body
 
   if (!botToken || !chatId) {
-    throw createError({ statusCode: 400, message: '缺少必要参数：botToken, chatId' })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：botToken, chatId')
   }
 
   try {

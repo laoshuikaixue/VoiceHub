@@ -1,5 +1,6 @@
 import { defineEventHandler, readBody } from 'h3'
-import { createError } from 'h3'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -8,14 +9,14 @@ import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaul
 export default defineEventHandler(async (event) => {
   const user = event.context.user
   if (!user || user.role !== 'SUPER_ADMIN') {
-    throw createError({ statusCode: 403, message: '只有超级管理员可以修改自动备份配置' })
+    throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '只有超级管理员可以修改自动备份配置')
   }
 
   const body = await readBody(event)
   const { enabled, config } = body
 
   if (typeof enabled !== 'boolean') {
-    throw createError({ statusCode: 400, message: 'enabled 字段必填' })
+    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'enabled 字段必填')
   }
 
   const [existing] = await db.select({ id: systemSettings.id }).from(systemSettings).limit(1)

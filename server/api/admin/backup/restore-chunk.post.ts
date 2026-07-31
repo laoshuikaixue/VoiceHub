@@ -755,7 +755,12 @@ export default defineEventHandler(async (event) => {
               'customOAuthEmailField',
               'customOAuthAvatarField',
               'captchaEnabled',
-              'captchaMaxFailures'
+              'captchaMaxFailures',
+              'captchaProvider',
+              'turnstileSiteKey',
+              'turnstileSecretKey',
+              'autoBackupEnabled',
+              'autoBackupConfig'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]

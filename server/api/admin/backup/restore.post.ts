@@ -1184,7 +1184,12 @@ export default defineEventHandler(async (event) => {
                           'customOAuthEmailField',
                           'customOAuthAvatarField',
                           'captchaEnabled',
-                          'captchaMaxFailures'
+                          'captchaMaxFailures',
+                          'captchaProvider',
+                          'turnstileSiteKey',
+                          'turnstileSecretKey',
+                          'autoBackupEnabled',
+                          'autoBackupConfig'
                         ]
 
                         // 只添加备份数据中存在的字段
