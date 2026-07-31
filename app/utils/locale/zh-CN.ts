@@ -3075,16 +3075,17 @@ export const admin = {
         },
         email: {
           name: '邮件附件',
-          desc: '发送至指定邮箱（复用系统 SMTP 配置）',
+          desc: '将备份文件发送至指定邮箱',
           recipient: '收件人邮箱',
           recipientPlaceholder: 'admin@example.com',
           testSend: '测试发送',
-          smtpHint: '使用系统已配置的 SMTP 服务发送，只需填写收件人即可',
+          smtpHint: '使用站点已配置的邮件服务发送，只需填写收件人邮箱即可',
         },
       },
 
       endpoint: {
         title: 'API 触发端点',
+        hint: '请先在「API 密钥管理」页面创建一个密钥，勾选「自动备份」权限，然后从外部定时调用此端点即可触发备份。',
         url: '备份端点 URL',
         methods: '触发方式',
         curlTab: 'cURL',
@@ -3584,7 +3585,8 @@ export const admin = {
       songsWrite: { label: '歌曲管理', description: '更新歌曲状态' },
       cardCodesRead: { label: '点歌券查询', description: '查看点歌券列表和统计' },
       cardCodesWrite: { label: '点歌券管理', description: '创建和更新点歌券' },
-      cardCodesDelete: { label: '点歌券删除', description: '删除点歌券' }
+      cardCodesDelete: { label: '点歌券删除', description: '删除点歌券' },
+      backupExecute: { label: '自动备份', description: '触发自动备份任务' }
     },
     loadFailed: '加载API密钥失败',
     nameRequired: '请输入密钥名称',
@@ -3798,4 +3800,9 @@ export const serverErrors = {
   USER_CODE_EXPIRED_RESEND: '验证码已过期，请重新发送',
   USER_CODE_INVALID: '验证码错误',
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
+  BACKUP_DISABLED: '自动备份未启用',
+  BACKUP_NOT_CONFIGURED: '自动备份未配置',
+  NO_BACKUP_METHOD_ENABLED: '没有启用任何备份方式',
+  BACKUP_FAILED: '备份执行失败',
+  SMTP_NOT_CONFIGURED: '邮件服务未配置',
 } as const

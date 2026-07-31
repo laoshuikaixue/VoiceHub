@@ -132,6 +132,12 @@
           <!-- API 触发端点（可折叠） -->
           <CollapsibleSection :title="locale.endpoint.title">
             <div class="space-y-4">
+              <!-- 提示 -->
+              <div class="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-2.5">
+                <Info class="text-amber-500 shrink-0 mt-0.5 w-3.5 h-3.5" />
+                <p class="text-[11px] text-zinc-400 leading-relaxed">{{ locale.endpoint.hint }}</p>
+              </div>
+
               <!-- 端点 URL -->
               <div class="space-y-1.5">
                 <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.endpoint.url }}</label>
@@ -160,9 +166,8 @@
               <!-- curl -->
               <div v-if="activeTriggerMethod === 'curl'" class="relative">
                 <pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code>curl -X POST "{{ triggerEndpointUrl }}" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"type": "full"}'</code></pre>
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json"</code></pre>
                 <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyCurlCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
@@ -181,7 +186,7 @@
                   </div>
                   <div class="flex items-center gap-2 text-[11px] text-zinc-400">
                     <span class="text-zinc-600 shrink-0">Header:</span>
-                    <code class="text-emerald-400 font-mono text-[10px]">Authorization: Bearer YOUR_API_KEY</code>
+                    <code class="text-emerald-400 font-mono text-[10px]">X-API-Key: YOUR_API_KEY</code>
                   </div>
                   <div class="flex items-center gap-2 text-[11px] text-zinc-400">
                     <span class="text-zinc-600 shrink-0">Body:</span>
@@ -207,9 +212,8 @@ jobs:
       - name: Trigger Backup
         run: |
           curl -X POST "${{ secrets.BACKUP_URL }}" \
-            -H "Authorization: Bearer ${{ secrets.API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"type": "full"}'</code></pre>
+            -H "X-API-Key: ${{ secrets.API_KEY }}" \
+            -H "Content-Type: application/json"</code></pre>
                 <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyGithubAction">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
@@ -222,9 +226,8 @@ crontab -e
 
 # 添加以下行（每天凌晨3点执行备份）
 0 3 * * * curl -X POST "{{ triggerEndpointUrl }}" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"type": "full"}'</code></pre>
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json"</code></pre>
                 <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyCronCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
@@ -234,10 +237,36 @@ crontab -e
 
           <!-- 备份历史（可折叠） -->
           <CollapsibleSection :title="locale.history.title">
-            <div class="p-6 text-center text-zinc-600">
+            <div v-if="historyLoading" class="p-6 text-center text-zinc-600">
+              <p class="text-xs">加载中...</p>
+            </div>
+            <div v-else-if="historyRecords.length === 0" class="p-6 text-center text-zinc-600">
               <Clock class="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p class="text-xs font-medium">{{ locale.history.empty }}</p>
               <p class="text-[10px] text-zinc-700 mt-1">{{ locale.history.emptyHint }}</p>
+            </div>
+            <div v-else class="space-y-2">
+              <div v-for="record in historyRecords" :key="record.id" class="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span :class="record.success ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'" class="px-2 py-0.5 text-[10px] font-bold rounded-md border">
+                      {{ record.success ? '成功' : '失败' }}
+                    </span>
+                    <span class="text-[11px] text-zinc-400 font-mono">{{ record.filename }}</span>
+                  </div>
+                  <span class="text-[10px] text-zinc-600">{{ formatTime(record.createdAt) }}</span>
+                </div>
+                <div class="flex items-center gap-4 text-[10px] text-zinc-500">
+                  <span>{{ record.totalRecords }} 条记录</span>
+                  <span>{{ formatSize(record.backupSize) }}</span>
+                  <span>{{ record.triggeredBy === 'api' ? 'API 触发' : record.triggeredBy || '未知' }}</span>
+                </div>
+                <div v-if="record.methods && record.methods.length" class="flex gap-2 mt-2">
+                  <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-emerald-500' : 'text-red-500'" class="text-[10px]">
+                    {{ m.method }} {{ m.success ? '✓' : '✗' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </CollapsibleSection>
         </div>
@@ -247,8 +276,8 @@ crontab -e
           <button class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest" @click="$emit('close')">
             {{ locale.cancel }}
           </button>
-          <button class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest" @click="saveAll">
-            {{ locale.saveAll }}
+          <button class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" :disabled="saving" @click="saveAll">
+            {{ saving ? '保存中...' : locale.saveAll }}
           </button>
         </div>
       </div>
@@ -257,7 +286,7 @@ crontab -e
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
@@ -275,6 +304,11 @@ defineEmits(['close'])
 const { showToast } = useToast()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.databaseManager?.autoBackup || {})
+
+const saving = ref(false)
+const loading = ref(false)
+const historyLoading = ref(false)
+const historyRecords = ref([])
 
 // 总开关
 const masterEnabled = ref(false)
@@ -319,10 +353,69 @@ const triggerMethods = computed(() => [
 
 const triggerEndpointUrl = computed(() => {
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/api/admin/backup/auto`
+    return `${window.location.origin}/api/open/backup/auto`
   }
-  return 'https://your-domain.com/api/admin/backup/auto'
+  return 'https://your-domain.com/api/open/backup/auto'
 })
+
+// 加载已有配置
+const loadConfig = async () => {
+  loading.value = true
+  try {
+    const { data } = await $fetch('/api/admin/backup/auto-config')
+    if (data) {
+      masterEnabled.value = data.enabled
+      if (data.config) {
+        const cfg = data.config
+        if (cfg.methods) {
+          for (const key of ['s3', 'webdav', 'telegram', 'email']) {
+            if (cfg.methods[key]) {
+              Object.assign(methods[key], cfg.methods[key])
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('加载自动备份配置失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 弹窗打开时加载配置
+watch(() => props.visible, (val) => {
+  if (val) {
+    loadConfig()
+    loadHistory()
+  }
+})
+
+const formatTime = (d) => {
+  if (!d) return ''
+  const date = new Date(d)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+const formatSize = (bytes) => {
+  if (!bytes) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
+
+const loadHistory = async () => {
+  historyLoading.value = true
+  try {
+    const { data } = await $fetch('/api/admin/backup/history')
+    historyRecords.value = data || []
+  } catch (err) {
+    console.error('加载备份历史失败:', err)
+  } finally {
+    historyLoading.value = false
+  }
+}
 
 const copyToClipboard = async (text) => {
   try {
@@ -335,29 +428,69 @@ const copyToClipboard = async (text) => {
 
 const copyCurlCommand = () => {
   const url = triggerEndpointUrl.value
-  copyToClipboard(`curl -X POST "${url}" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "full"}'`)
+  copyToClipboard(`curl -X POST "${url}" \\\n  -H "X-API-Key: YOUR_API_KEY" \\\n  -H "Content-Type: application/json"`)
 }
 
 const copyGithubAction = () => {
-  copyToClipboard(`name: Auto Backup\non:\n  schedule:\n    - cron: '0 3 * * *'\njobs:\n  backup:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Trigger Backup\n        run: |\n          curl -X POST "\${ secrets.BACKUP_URL }" \\\n            -H "Authorization: Bearer \${ secrets.API_KEY }" \\\n            -H "Content-Type: application/json" \\\n            -d '{"type": "full"}'`)
+  copyToClipboard(`name: Auto Backup\non:\n  schedule:\n    - cron: '0 3 * * *'\njobs:\n  backup:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Trigger Backup\n        run: |\n          curl -X POST "\${ secrets.BACKUP_URL }" \\\n            -H "X-API-Key: \${ secrets.API_KEY }" \\\n            -H "Content-Type: application/json"`)
 }
 
 const copyCronCommand = () => {
   const url = triggerEndpointUrl.value
-  copyToClipboard(`0 3 * * * curl -X POST "${url}" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "full"}'`)
+  copyToClipboard(`0 3 * * * curl -X POST "${url}" \\\n  -H "X-API-Key: YOUR_API_KEY" \\\n  -H "Content-Type: application/json"`)
 }
 
-const testConnection = (type) => {
-  const labels = {
-    s3: locale.value?.methods?.s3?.testConnection,
-    webdav: locale.value?.methods?.webdav?.testConnection,
-    telegram: locale.value?.methods?.telegram?.testSend,
-    email: locale.value?.methods?.email?.testSend
+const testConnection = async (type) => {
+  const testLabels = {
+    s3: locale.value?.methods?.s3?.testConnection || '测试连接',
+    webdav: locale.value?.methods?.webdav?.testConnection || '测试连接',
+    telegram: locale.value?.methods?.telegram?.testSend || '测试发送',
+    email: locale.value?.methods?.email?.testSend || '测试发送'
   }
-  showToast(labels[type] || '正在测试...', 'info')
+  showToast(testLabels[type] + '...', 'info')
+  try {
+    const result = await $fetch(`/api/admin/backup/test-${type}`, {
+      method: 'POST',
+      body: methods[type]
+    })
+    if (result.success) {
+      showToast(result.message || '测试成功', 'success')
+    } else {
+      showToast(result.message || '测试失败', 'error')
+    }
+  } catch (err) {
+    showToast(err?.data?.message || err?.message || '测试失败', 'error')
+  }
 }
 
-const saveAll = () => {
-  showToast(locale.value?.messages?.allSaved || '全部配置已保存', 'success')
+const saveAll = async () => {
+  saving.value = true
+  try {
+    const config = {
+      methods: {
+        s3: { ...methods.s3 },
+        webdav: { ...methods.webdav },
+        telegram: { ...methods.telegram },
+        email: { ...methods.email }
+      }
+    }
+    // 空密码不覆盖已有值
+    for (const key of ['s3', 'webdav', 'telegram']) {
+      const m = config.methods[key]
+      if (key === 's3' && !m.secretKey) delete m.secretKey
+      if (key === 'webdav' && !m.password) delete m.password
+      if (key === 'telegram' && !m.botToken) delete m.botToken
+    }
+
+    await $fetch('/api/admin/backup/auto-config', {
+      method: 'PUT',
+      body: { enabled: masterEnabled.value, config }
+    })
+    showToast(locale.value?.messages?.allSaved || '全部配置已保存', 'success')
+  } catch (err) {
+    showToast(err?.data?.message || err?.message || '保存失败', 'error')
+  } finally {
+    saving.value = false
+  }
 }
 </script>

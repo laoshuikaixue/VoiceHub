@@ -972,12 +972,20 @@ VoiceHub/
 │   │   │   │   │   └── [filename].delete.ts
 │   │   │   │   ├── download/        # 下载备份子目录
 │   │   │   │   │   └── [filename].get.ts
+│   │   │   │   ├── auto-config.get.ts   # 获取自动备份配置
+│   │   │   │   ├── auto-config.put.ts   # 更新自动备份配置
 │   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
+│   │   │   │   ├── history.get.ts   # 获取备份历史
+│   │   │   │   ├── history-clear.post.ts # 清空备份历史记录
 │   │   │   │   ├── list.get.ts      # 获取备份列表
 │   │   │   │   ├── restore-chunk.post.ts # 恢复备份分片
 │   │   │   │   ├── restore.post.ts  # 恢复备份
+│   │   │   │   ├── test-email.post.ts  # 测试邮件发送
+│   │   │   │   ├── test-s3.post.ts     # 测试 S3 连接
+│   │   │   │   ├── test-telegram.post.ts # 测试 Telegram Bot
+│   │   │   │   ├── test-webdav.post.ts  # 测试 WebDAV 连接
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   │   ├── [id].delete.ts   # 删除黑名单项
@@ -1151,6 +1159,8 @@ VoiceHub/
 │   │   │   ├── songs/               # 歌曲相关开放API
 │   │   │   │   ├── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   │   └── request.post.ts  # 使用个人集成令牌投稿歌曲
+│   │   │   ├── backup/              # 自动备份开放API
+│   │   │   │   └── auto.post.ts     # 触发自动备份（需 API Key）
 │   │   │   ├── schedules.get.ts     # 获取公开排期
 │   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
@@ -1232,6 +1242,7 @@ VoiceHub/
 │   │   └── time-sync.ts    # 服务器时间同步插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
+│   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
@@ -1272,6 +1283,7 @@ VoiceHub/
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
 │   │   ├── serverTime.ts   # 服务器时间管理工具
 │   │   ├── siteUtils.ts    # 站点工具函数

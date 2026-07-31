@@ -3066,16 +3066,17 @@ export const admin = {
         },
         email: {
           name: 'Email Attachment',
-          desc: 'Send to specified email (reuses system SMTP config)',
+          desc: 'Send backup file to specified email',
           recipient: 'Recipient Email',
           recipientPlaceholder: 'admin@example.com',
           testSend: 'Test Send',
-          smtpHint: 'Uses the system SMTP configuration. Only the recipient email is required.',
+          smtpHint: 'Uses the site\'s configured email service. Only the recipient email is required.',
         },
       },
 
       endpoint: {
         title: 'API Trigger Endpoint',
+        hint: 'First create an API key in "API Key Manager" with the "Auto Backup" permission, then call this endpoint from an external scheduler to trigger backups.',
         url: 'Backup Endpoint URL',
         methods: 'Trigger Method',
         curlTab: 'cURL',
@@ -3575,7 +3576,8 @@ export const admin = {
       songsWrite: { label: 'Song Management', description: 'Update song status' },
       cardCodesRead: { label: 'Request Card Read', description: 'View request card list and statistics' },
       cardCodesWrite: { label: 'Request Card Management', description: 'Create and update request cards' },
-      cardCodesDelete: { label: 'Request Card Delete', description: 'Delete request cards' }
+      cardCodesDelete: { label: 'Request Card Delete', description: 'Delete request cards' },
+      backupExecute: { label: 'Auto Backup', description: 'Trigger automatic backup tasks' }
     },
     loadFailed: 'Failed to load API keys',
     nameRequired: 'Enter key name',
@@ -3789,4 +3791,9 @@ export const serverErrors = {
   USER_CODE_EXPIRED_RESEND: 'The verification code has expired. Please resend.',
   USER_CODE_INVALID: 'Incorrect verification code',
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
+  BACKUP_DISABLED: 'Auto backup is disabled',
+  BACKUP_NOT_CONFIGURED: 'Auto backup is not configured',
+  NO_BACKUP_METHOD_ENABLED: 'No backup methods enabled',
+  BACKUP_FAILED: 'Backup execution failed',
+  SMTP_NOT_CONFIGURED: 'Email service is not configured',
 } as const
