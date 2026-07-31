@@ -187,7 +187,8 @@
               <div v-if="activeTriggerMethod === 'curl'" class="relative">
                 <pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code>curl -X POST "{{ triggerEndpointUrl }}" \
   -H "X-API-Key: YOUR_API_KEY" \
-  -H "Content-Type: application/json"</code></pre>
+  -H "Content-Type: application/json" \
+  -d '{"type": "full"}'</code></pre>
                 <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyCurlCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
@@ -207,6 +208,10 @@
                   <div class="flex items-center gap-2 text-[11px] text-zinc-400">
                     <span class="text-zinc-600 shrink-0">Header:</span>
                     <code class="text-emerald-400 font-mono text-[10px]">X-API-Key: YOUR_API_KEY</code>
+                  </div>
+                  <div class="flex items-center gap-2 text-[11px] text-zinc-400">
+                    <span class="text-zinc-600 shrink-0"></span>
+                    <code class="text-emerald-400 font-mono text-[10px]">Content-Type: application/json</code>
                   </div>
                   <div class="flex items-center gap-2 text-[11px] text-zinc-400">
                     <span class="text-zinc-600 shrink-0">Body:</span>
@@ -233,7 +238,8 @@ jobs:
         run: |
           curl -X POST "${{ secrets.BACKUP_URL }}" \
             -H "X-API-Key: ${{ secrets.API_KEY }}" \
-            -H "Content-Type: application/json"</code></pre>
+            -H "Content-Type: application/json" \
+            -d '{"type": "full"}'</code></pre>
                 <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyGithubAction">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
@@ -247,7 +253,8 @@ crontab -e
 # 添加以下行（每天凌晨3点执行备份）
 0 3 * * * curl -X POST "{{ triggerEndpointUrl }}" \
   -H "X-API-Key: YOUR_API_KEY" \
-  -H "Content-Type: application/json"</code></pre>
+  -H "Content-Type: application/json" \
+  -d '{"type": "full"}'</code></pre>
                 <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyCronCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
@@ -449,16 +456,16 @@ const copyToClipboard = async (text) => {
 
 const copyCurlCommand = () => {
   const url = triggerEndpointUrl.value
-  copyToClipboard(`curl -X POST "${url}" \\\n  -H "X-API-Key: YOUR_API_KEY" \\\n  -H "Content-Type: application/json"`)
+  copyToClipboard(`curl -X POST "${url}" \\\n  -H "X-API-Key: YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "full"}'`)
 }
 
 const copyGithubAction = () => {
-  copyToClipboard(`name: Auto Backup\non:\n  schedule:\n    - cron: '0 3 * * *'\njobs:\n  backup:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Trigger Backup\n        run: |\n          curl -X POST "\${ secrets.BACKUP_URL }" \\\n            -H "X-API-Key: \${ secrets.API_KEY }" \\\n            -H "Content-Type: application/json"`)
+  copyToClipboard(`name: Auto Backup\non:\n  schedule:\n    - cron: '0 3 * * *'\njobs:\n  backup:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Trigger Backup\n        run: |\n          curl -X POST "\${ secrets.BACKUP_URL }" \\\n            -H "X-API-Key: \${ secrets.API_KEY }" \\\n            -H "Content-Type: application/json" \\\n            -d '{"type": "full"}'`)
 }
 
 const copyCronCommand = () => {
   const url = triggerEndpointUrl.value
-  copyToClipboard(`0 3 * * * curl -X POST "${url}" \\\n  -H "X-API-Key: YOUR_API_KEY" \\\n  -H "Content-Type: application/json"`)
+  copyToClipboard(`0 3 * * * curl -X POST "${url}" \\\n  -H "X-API-Key: YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "full"}'`)
 }
 
 const testConnection = async (type) => {
