@@ -288,9 +288,6 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
     triggeredBy
   })
 
-  // 清理过期记录
-  await cleanupOldHistory()
-
   return {
     success: overallSuccess,
     results
