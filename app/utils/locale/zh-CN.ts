@@ -2955,7 +2955,7 @@ export const admin = {
       restore: { title: '恢复备份', desc: '从之前导出的备份文件中恢复系统数据。', button: '选择备份文件' },
       resetSeq: { title: '重置序列', desc: '修复数据表的自增ID序列，确保新记录的ID从正确值开始。', button: '开始重置序列' },
       resetDb: { title: '重置数据库', desc: '清空除管理员账号外的所有系统数据。此操作不可撤销。', button: '立即重置数据库' },
-      autoBackup: { title: '自动备份', desc: '配置 S3 兼容存储定时备份，数据安全无忧', button: '配置自动备份' }
+      autoBackup: { title: '自动备份', desc: '配置多种备份方式，通过外部触发实现定时自动备份', button: '配置自动备份' }
     },
     backupOptions: {
       songs: { label: '歌曲与排期数据', desc: '包含所有歌曲库、用户投稿记录及历史播音排期' },
@@ -3024,77 +3024,91 @@ export const admin = {
     },
     autoBackup: {
       title: '自动备份设置',
-      subtitle: '配置 S3 兼容云存储，实现定时自动备份',
       cancel: '取消',
-      saveAll: '保存全部配置',
-      sections: {
-        status: '状态概览',
-        storage: 'S3 兼容存储配置',
-        apiKey: 'API 密钥集成',
-        trigger: '外部触发方式',
-        retention: '保留策略',
-        history: '云端备份历史'
+      saveAll: '保存全部',
+
+      masterSwitch: {
+        label: '启用自动备份',
+        desc: 'API 被触发时，总开关关闭则不执行任何备份；开启时仅执行已启用的备份方式',
       },
-      status: {
-        lastBackup: '最近备份',
-        nextBackup: '下次备份',
-        storageStatus: '存储状态',
-        unconfigured: '未配置'
+
+      methods: {
+        title: '备份方式',
+        s3: {
+          name: 'S3 兼容存储',
+          desc: '支持 R2 / S3 / B2 / MinIO 等',
+          endpoint: 'Endpoint',
+          endpointPlaceholder: 'https://xxx.r2.cloudflarestorage.com',
+          bucket: 'Bucket',
+          bucketPlaceholder: 'my-backups',
+          region: 'Region',
+          regionPlaceholder: 'auto',
+          pathPrefix: '路径前缀',
+          pathPrefixPlaceholder: 'voicehub-backups/',
+          accessKey: 'Access Key ID',
+          accessKeyPlaceholder: '请输入 Access Key ID',
+          secretKey: 'Secret Access Key',
+          secretKeyPlaceholder: '请输入 Secret Access Key',
+          testConnection: '测试连接',
+        },
+        webdav: {
+          name: 'WebDAV',
+          desc: '支持 Nextcloud / 群晖 / ownCloud',
+          url: '服务器地址',
+          urlPlaceholder: 'https://example.com/remote.php/dav/files/user/',
+          username: '用户名',
+          usernamePlaceholder: '请输入用户名',
+          password: '密码',
+          passwordPlaceholder: '请输入密码',
+          path: '上传路径',
+          pathPlaceholder: 'voicehub-backups/',
+          testConnection: '测试连接',
+        },
+        telegram: {
+          name: 'Telegram Bot',
+          desc: '通过 Bot 将备份文件发送至聊天',
+          botToken: 'Bot Token',
+          botTokenPlaceholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
+          chatId: 'Chat ID',
+          chatIdPlaceholder: '123456789',
+          testSend: '测试发送',
+        },
+        email: {
+          name: '邮件附件',
+          desc: '发送至指定邮箱（复用系统 SMTP 配置）',
+          recipient: '收件人邮箱',
+          recipientPlaceholder: 'admin@example.com',
+          testSend: '测试发送',
+          smtpHint: '使用系统已配置的 SMTP 服务发送，只需填写收件人即可',
+        },
       },
-      storage: {
-        s3Hint: '支持所有兼容 S3 协议的对象存储服务，如 Cloudflare R2、AWS S3、Backblaze B2、MinIO 等。凭据将使用 AES 加密后存储。',
-        endpoint: 'Endpoint / 服务端点',
-        endpointPlaceholder: 'https://xxx.r2.cloudflarestorage.com',
-        bucket: 'Bucket / 存储桶名称',
-        bucketPlaceholder: 'my-backups',
-        region: 'Region / 区域',
-        regionPlaceholder: 'auto',
-        pathPrefix: '路径前缀',
-        pathPrefixPlaceholder: 'voicehub-backups/',
-        accessKey: 'Access Key ID',
-        accessKeyPlaceholder: '请输入 Access Key ID',
-        secretKey: 'Secret Access Key',
-        secretKeyPlaceholder: '请输入 Secret Access Key',
-        testConnection: '测试连接',
-        save: '保存存储配置'
-      },
-      apiKey: {
-        existingKeyTitle: '复用现有 API 密钥',
-        existingKeyDesc: '自动备份使用系统已有的 API Key 进行鉴权，无需额外创建备份专用令牌。在 API 密钥管理页面创建密钥时，勾选 backup 权限即可。',
-        requiredPermission: '所需权限',
-        permissionHint: '调用备份 API 需要 API Key 拥有 backup 权限。请在 API 密钥管理页面为已有密钥添加此权限，或创建新密钥。',
-        note: '为保障安全，请勿将 API Key 直接写入前端代码或公开仓库。建议使用环境变量或 Secrets 管理工具存储。'
-      },
-      trigger: {
-        intro: '配置好存储和 API 密钥后，通过以下任一方式从外部定时触发备份端点，即可实现全自动备份。',
-        endpointUrl: '备份端点 URL',
+
+      endpoint: {
+        title: 'API 触发端点',
+        url: '备份端点 URL',
         methods: '触发方式',
         curlTab: 'cURL',
         cronjobTab: 'cron-job.org',
         githubTab: 'GitHub Actions',
         cronTab: 'Linux Cron',
-        curlHint: '将 YOUR_API_KEY 替换为你的 API 密钥，在终端中运行即可手动触发一次备份。',
+        curlHint: '将 YOUR_API_KEY 替换为你的 API 密钥，在终端中运行即可触发一次备份。',
         cronjobLink: '访问 cron-job.org 免费创建定时任务',
         githubHint: '在 GitHub 仓库 Settings → Secrets 中配置 BACKUP_URL 和 API_KEY，将上述内容保存为 .github/workflows/backup.yml。',
-        cronHint: '将 YOUR_API_KEY 替换为实际的 API 密钥，在服务器上执行 crontab -e 并添加上述内容。'
+        cronHint: '将 YOUR_API_KEY 替换为实际的 API 密钥，在服务器上执行 crontab -e 并添加上述内容。',
       },
-      retention: {
-        days: '保留天数',
-        daysHint: '超过此天数的备份文件将被自动清理',
-        maxBackups: '最大备份数',
-        maxBackupsHint: '云端最多保留的备份文件数量，超出后自动删除最旧的',
-        save: '保存保留策略'
-      },
+
       history: {
-        empty: '暂无云端备份',
-        emptyHint: '配置存储并触发一次备份后，备份记录将显示在此处'
+        title: '备份历史',
+        empty: '暂无备份记录',
+        emptyHint: '触发一次备份后，记录将显示在此处',
       },
+
       messages: {
         copied: '已复制到剪贴板',
         copyFailed: '复制失败',
-        testConnection: '正在测试 S3 连接...',
-        storageSaved: '存储配置已保存',
-        allSaved: '全部配置已保存'
+        testConnection: '正在测试连接...',
+        testSend: '正在测试发送...',
+        allSaved: '全部配置已保存',
       }
     }
   },

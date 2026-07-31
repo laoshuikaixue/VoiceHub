@@ -539,7 +539,7 @@ const cards = computed(() => [
   {
     id: 'auto-backup',
     title: locale.value?.cards?.autoBackup?.title ?? '自动备份',
-    desc: locale.value?.cards?.autoBackup?.desc ?? '配置 S3 兼容存储定时备份，数据安全无忧',
+    desc: locale.value?.cards?.autoBackup?.desc ?? '配置多种备份方式，通过外部触发实现定时自动备份',
     icon: CloudUpload,
     color: 'green',
     btnText: locale.value?.cards?.autoBackup?.button ?? '配置自动备份'

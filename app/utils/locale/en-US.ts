@@ -2946,7 +2946,7 @@ export const admin = {
       restore: { title: 'Restore Backup', desc: 'Restore system data from a previously exported backup file.', button: 'Select Backup File' },
       resetSeq: { title: 'Reset Sequences', desc: 'Fix table auto-increment ID sequences so new records start from the correct values.', button: 'Start Sequence Reset' },
       resetDb: { title: 'Reset Database', desc: 'Clear all system data except administrator accounts. This cannot be undone.', button: 'Reset Database Now' },
-      autoBackup: { title: 'Auto Backup', desc: 'Configure S3-compatible storage for scheduled backups', button: 'Configure Auto Backup' }
+      autoBackup: { title: 'Auto Backup', desc: 'Configure multiple backup methods, triggered externally for scheduled auto backup', button: 'Configure Auto Backup' }
     },
     backupOptions: {
       songs: { label: 'Songs & Schedules', desc: 'Includes song library, user submissions, and historical broadcast schedules' },
@@ -3015,77 +3015,91 @@ export const admin = {
     },
     autoBackup: {
       title: 'Auto Backup Settings',
-      subtitle: 'Configure S3-compatible cloud storage for scheduled automatic backups',
       cancel: 'Cancel',
-      saveAll: 'Save All Settings',
-      sections: {
-        status: 'Status Overview',
-        storage: 'S3 Compatible Storage',
-        apiKey: 'API Key Integration',
-        trigger: 'External Trigger',
-        retention: 'Retention Policy',
-        history: 'Cloud Backup History'
+      saveAll: 'Save All',
+
+      masterSwitch: {
+        label: 'Enable Auto Backup',
+        desc: 'When API is triggered, no backup runs if master switch is off; only enabled methods run when master switch is on',
       },
-      status: {
-        lastBackup: 'Last Backup',
-        nextBackup: 'Next Backup',
-        storageStatus: 'Storage Status',
-        unconfigured: 'Not Configured'
+
+      methods: {
+        title: 'Backup Methods',
+        s3: {
+          name: 'S3 Compatible Storage',
+          desc: 'Supports R2 / S3 / B2 / MinIO',
+          endpoint: 'Endpoint',
+          endpointPlaceholder: 'https://xxx.r2.cloudflarestorage.com',
+          bucket: 'Bucket',
+          bucketPlaceholder: 'my-backups',
+          region: 'Region',
+          regionPlaceholder: 'auto',
+          pathPrefix: 'Path Prefix',
+          pathPrefixPlaceholder: 'voicehub-backups/',
+          accessKey: 'Access Key ID',
+          accessKeyPlaceholder: 'Enter Access Key ID',
+          secretKey: 'Secret Access Key',
+          secretKeyPlaceholder: 'Enter Secret Access Key',
+          testConnection: 'Test Connection',
+        },
+        webdav: {
+          name: 'WebDAV',
+          desc: 'Supports Nextcloud / Synology / ownCloud',
+          url: 'Server URL',
+          urlPlaceholder: 'https://example.com/remote.php/dav/files/user/',
+          username: 'Username',
+          usernamePlaceholder: 'Enter username',
+          password: 'Password',
+          passwordPlaceholder: 'Enter password',
+          path: 'Upload Path',
+          pathPlaceholder: 'voicehub-backups/',
+          testConnection: 'Test Connection',
+        },
+        telegram: {
+          name: 'Telegram Bot',
+          desc: 'Send backup files to a chat via Bot',
+          botToken: 'Bot Token',
+          botTokenPlaceholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
+          chatId: 'Chat ID',
+          chatIdPlaceholder: '123456789',
+          testSend: 'Test Send',
+        },
+        email: {
+          name: 'Email Attachment',
+          desc: 'Send to specified email (reuses system SMTP config)',
+          recipient: 'Recipient Email',
+          recipientPlaceholder: 'admin@example.com',
+          testSend: 'Test Send',
+          smtpHint: 'Uses the system SMTP configuration. Only the recipient email is required.',
+        },
       },
-      storage: {
-        s3Hint: 'Supports all S3-compatible object storage services, such as Cloudflare R2, AWS S3, Backblaze B2, MinIO, etc. Credentials are encrypted with AES before storage.',
-        endpoint: 'Endpoint',
-        endpointPlaceholder: 'https://xxx.r2.cloudflarestorage.com',
-        bucket: 'Bucket Name',
-        bucketPlaceholder: 'my-backups',
-        region: 'Region',
-        regionPlaceholder: 'auto',
-        pathPrefix: 'Path Prefix',
-        pathPrefixPlaceholder: 'voicehub-backups/',
-        accessKey: 'Access Key ID',
-        accessKeyPlaceholder: 'Enter Access Key ID',
-        secretKey: 'Secret Access Key',
-        secretKeyPlaceholder: 'Enter Secret Access Key',
-        testConnection: 'Test Connection',
-        save: 'Save Storage Config'
-      },
-      apiKey: {
-        existingKeyTitle: 'Reuse Existing API Keys',
-        existingKeyDesc: 'Auto backup authenticates using existing system API keys. No need to create a separate backup token. When creating an API key, simply enable the backup permission.',
-        requiredPermission: 'Required Permission',
-        permissionHint: 'Calling the backup API requires an API key with backup permission. Add this permission to an existing key or create a new one in the API Key Manager.',
-        note: 'For security, never hardcode API keys in frontend code or public repositories. Use environment variables or secret management tools.'
-      },
-      trigger: {
-        intro: 'After configuring storage and API keys, trigger the backup endpoint from an external scheduler using any of the methods below for fully automated backups.',
-        endpointUrl: 'Backup Endpoint URL',
+
+      endpoint: {
+        title: 'API Trigger Endpoint',
+        url: 'Backup Endpoint URL',
         methods: 'Trigger Method',
         curlTab: 'cURL',
         cronjobTab: 'cron-job.org',
         githubTab: 'GitHub Actions',
         cronTab: 'Linux Cron',
-        curlHint: 'Replace YOUR_API_KEY with your actual API key and run in terminal to trigger a backup manually.',
+        curlHint: 'Replace YOUR_API_KEY with your API key and run in terminal to trigger a backup.',
         cronjobLink: 'Visit cron-job.org to create a free scheduled task',
         githubHint: 'Configure BACKUP_URL and API_KEY in GitHub repo Settings → Secrets, then save the above as .github/workflows/backup.yml.',
-        cronHint: 'Replace YOUR_API_KEY with your actual API key, run crontab -e on your server, and add the above line.'
+        cronHint: 'Replace YOUR_API_KEY with your API key, run crontab -e on your server, and add the above line.',
       },
-      retention: {
-        days: 'Retention Days',
-        daysHint: 'Backup files older than this will be automatically deleted',
-        maxBackups: 'Max Backups',
-        maxBackupsHint: 'Maximum number of backup files to keep in the cloud; oldest are deleted when exceeded',
-        save: 'Save Retention Policy'
-      },
+
       history: {
-        empty: 'No cloud backups yet',
-        emptyHint: 'Backup records will appear here after configuring storage and triggering a backup'
+        title: 'Backup History',
+        empty: 'No backup records yet',
+        emptyHint: 'Records will appear here after triggering a backup',
       },
+
       messages: {
         copied: 'Copied to clipboard',
         copyFailed: 'Copy failed',
-        testConnection: 'Testing S3 connection...',
-        storageSaved: 'Storage configuration saved',
-        allSaved: 'All settings saved'
+        testConnection: 'Testing connection...',
+        testSend: 'Testing send...',
+        allSaved: 'All settings saved',
       }
     }
   },
