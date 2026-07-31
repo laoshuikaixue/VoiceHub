@@ -56,7 +56,7 @@
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <InputField :label="locale.methods.s3.accessKey" :placeholder="locale.methods.s3.accessKeyPlaceholder" v-model="methods.s3.accessKey" />
-                    <PasswordField :label="locale.methods.s3.secretKey" :placeholder="s3SecretKeyPlaceholder" v-model="methods.s3.secretKey" />
+                    <PasswordField :label="locale.methods.s3.secretKey" :placeholder="locale.methods.s3.secretKeyPlaceholder" v-model="methods.s3.secretKey" />
                   </div>
                   <div class="flex gap-2">
                     <button
@@ -84,7 +84,7 @@
                   <InputField :label="locale.methods.webdav.url" :placeholder="locale.methods.webdav.urlPlaceholder" v-model="methods.webdav.url" />
                   <div class="grid grid-cols-2 gap-3">
                     <InputField :label="locale.methods.webdav.username" :placeholder="locale.methods.webdav.usernamePlaceholder" v-model="methods.webdav.username" />
-                    <PasswordField :label="locale.methods.webdav.password" :placeholder="webdavPasswordPlaceholder" v-model="methods.webdav.password" />
+                    <PasswordField :label="locale.methods.webdav.password" :placeholder="locale.methods.webdav.passwordPlaceholder" v-model="methods.webdav.password" />
                   </div>
                   <InputField :label="locale.methods.webdav.path" :placeholder="locale.methods.webdav.pathPlaceholder" v-model="methods.webdav.path" />
                   <button
@@ -108,7 +108,7 @@
               >
                 <template #icon><Send class="w-5 h-5" /></template>
                 <div class="space-y-3">
-                  <PasswordField :label="locale.methods.telegram.botToken" :placeholder="telegramBotTokenPlaceholder" v-model="methods.telegram.botToken" />
+                  <PasswordField :label="locale.methods.telegram.botToken" :placeholder="locale.methods.telegram.botTokenPlaceholder" v-model="methods.telegram.botToken" />
                   <InputField :label="locale.methods.telegram.chatId" :placeholder="locale.methods.telegram.chatIdPlaceholder" v-model="methods.telegram.chatId" />
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
@@ -387,17 +387,8 @@ const triggerEndpointUrl = computed(() => {
   return 'https://your-domain.com/api/open/backup/auto'
 })
 
-// 密钥占位符：已配置时显示圆点，未配置时显示 locale 原文
-const SECRET_PLACEHOLDER = '••••••••••••••••'
-const s3SecretKeyPlaceholder = computed(() =>
-  configuredSecrets.value.s3SecretKey && !methods.s3.secretKey ? SECRET_PLACEHOLDER : locale.value?.methods?.s3?.secretKeyPlaceholder || ''
-)
-const webdavPasswordPlaceholder = computed(() =>
-  configuredSecrets.value.webdavPassword && !methods.webdav.password ? SECRET_PLACEHOLDER : locale.value?.methods?.webdav?.passwordPlaceholder || ''
-)
-const telegramBotTokenPlaceholder = computed(() =>
-  configuredSecrets.value.telegramBotToken && !methods.telegram.botToken ? SECRET_PLACEHOLDER : locale.value?.methods?.telegram?.botTokenPlaceholder || ''
-)
+// 密钥哨兵值：已配置密钥时填入输入框，用户可选中后删除
+const SECRET_SENTINEL = '••••••••••••••••'
 
 // 加载已有配置
 const loadConfig = async () => {
@@ -416,6 +407,10 @@ const loadConfig = async () => {
             }
           }
         }
+        // 已配置的密钥填入哨兵值，用户可选中删除
+        if (configuredSecrets.value.s3SecretKey) methods.s3.secretKey = SECRET_SENTINEL
+        if (configuredSecrets.value.webdavPassword) methods.webdav.password = SECRET_SENTINEL
+        if (configuredSecrets.value.telegramBotToken) methods.telegram.botToken = SECRET_SENTINEL
       }
     }
   } catch (err) {
@@ -519,12 +514,12 @@ const saveAll = async () => {
         email: { ...methods.email }
       }
     }
-    // 空密码不覆盖已有值
+    // 空值或哨兵值不覆盖已有密钥
     for (const key of ['s3', 'webdav', 'telegram']) {
       const m = config.methods[key]
-      if (key === 's3' && !m.secretKey) delete m.secretKey
-      if (key === 'webdav' && !m.password) delete m.password
-      if (key === 'telegram' && !m.botToken) delete m.botToken
+      if (key === 's3' && (!m.secretKey || m.secretKey === SECRET_SENTINEL)) delete m.secretKey
+      if (key === 'webdav' && (!m.password || m.password === SECRET_SENTINEL)) delete m.password
+      if (key === 'telegram' && (!m.botToken || m.botToken === SECRET_SENTINEL)) delete m.botToken
     }
 
     await $fetch('/api/admin/backup/auto-config', {
