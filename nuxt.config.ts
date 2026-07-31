@@ -335,7 +335,11 @@ export default defineNuxtConfig({
     // 根据部署环境调整配置
     ...(process.env.VERCEL
       ? {
-          // Vercel 环境：使用标准配置
+          vercel: {
+            functions: {
+              maxDuration: 60
+            }
+          }
         }
       : process.env.NETLIFY
         ? {

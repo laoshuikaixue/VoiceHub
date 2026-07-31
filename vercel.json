@@ -1,11 +1,6 @@
 {
   "buildCommand": "node scripts/deploy.js",
   "installCommand": "pnpm install --frozen-lockfile || pnpm install",
-  "functions": {
-    "server/api/open/backup/auto.post.ts": {
-      "maxDuration": 60
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
