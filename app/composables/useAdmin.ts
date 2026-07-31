@@ -1,14 +1,19 @@
 import { ref } from 'vue'
 import { useAuth } from './useAuth'
+import { useServerErrors } from './useLocaleText'
 import { useLocale } from '~/utils/locale'
 import type { PlayTime, SystemSettings } from '~/types'
 
 export const useAdmin = () => {
   const { getAuthConfig, isAdmin } = useAuth()
   const { composableErrors } = useLocale()
-  const action = (key: keyof typeof composableErrors.value.actions) => composableErrors.value.actions[key]
-  const adminOnly = (key: keyof typeof composableErrors.value.actions) => composableErrors.value.adminOnly(action(key))
-  const failed = (key: keyof typeof composableErrors.value.actions) => composableErrors.value.failed(action(key))
+  const { localize: localizeServerError } = useServerErrors()
+  const action = (key: keyof typeof composableErrors.value.actions) =>
+    composableErrors.value.actions[key]
+  const adminOnly = (key: keyof typeof composableErrors.value.actions) =>
+    composableErrors.value.adminOnly(action(key))
+  const failed = (key: keyof typeof composableErrors.value.actions) =>
+    composableErrors.value.failed(action(key))
 
   const loading = ref(false)
   const error = ref('')
@@ -146,11 +151,13 @@ export const useAdmin = () => {
   const sendAdminNotification = async (notificationData: {
     title: string
     content: string
-    scope: 'ALL' | 'GRADE' | 'CLASS' | 'MULTI_CLASS'
+    important?: boolean
+    scope: 'ALL' | 'GRADE' | 'CLASS' | 'MULTI_CLASS' | 'SPECIFIC_USERS'
     filter: {
       grade?: string
       class?: string
       classes?: Array<{ grade: string; class: string }>
+      userIds?: number[]
     }
   }) => {
     if (!isAdmin.value) {
@@ -172,8 +179,8 @@ export const useAdmin = () => {
 
       return data
     } catch (err: any) {
-      error.value = err.message || failed('sendNotification')
-      throw err
+      error.value = localizeServerError(err, failed('sendNotification'))
+      throw new Error(error.value, { cause: err })
     } finally {
       loading.value = false
     }

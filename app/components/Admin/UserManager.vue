@@ -1519,7 +1519,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
-import { usePermissions } from '~/composables/usePermissions'
 import {
   Check,
   UserPlus,
@@ -1733,7 +1732,6 @@ const passwordForm = ref({
 
 // 服务
 const auth = useAuth()
-const permissions = usePermissions()
 
 // 判断是否为当前登录用户
 const isSelf = (user) => {
@@ -2275,11 +2273,6 @@ const saveUser = async () => {
       userData.password = userForm.value.password
     }
 
-    // 检查是否是权限更新
-    const isRoleUpdate = editingUser.value && editingUser.value.role !== userForm.value.role
-    const oldRole = editingUser.value?.role
-    const newRole = userForm.value.role
-
     if (editingUser.value) {
       await $fetch(`/api/admin/users/${editingUser.value.id}`, {
         method: 'PUT',
@@ -2292,31 +2285,6 @@ const saveUser = async () => {
         body: userData,
         ...auth.getAuthConfig()
       })
-    }
-
-    // 如果是权限更新且当前用户是超级管理员，发送通知
-    if (isRoleUpdate && permissions.isSuperAdmin) {
-      try {
-        const notificationMessage = formatMessage(
-          locale.value.permissionNotification.message,
-          getRoleName(oldRole),
-          getRoleName(newRole)
-        )
-
-        await $fetch('/api/admin/notifications/send', {
-          method: 'POST',
-          body: {
-            userId: editingUser.value.id,
-            title: locale.value.permissionNotification.title,
-            message: notificationMessage,
-            type: 'system'
-          },
-          ...auth.getAuthConfig()
-        })
-      } catch (notificationError) {
-        console.error('发送权限变更通知失败:', notificationError)
-        // 不影响主要操作，只记录错误
-      }
     }
 
     await Promise.all([loadUserTree(), loadUsers()])

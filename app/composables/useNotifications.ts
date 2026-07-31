@@ -21,11 +21,20 @@ export const useNotifications = () => {
   const pageSize = ref(10)
   const totalPages = ref(0)
   const totalCount = ref(0)
+  const currentFilter = ref<'all' | 'unread'>('all')
+  const currentSearch = ref('')
   const hasNextPage = computed(() => currentPage.value < totalPages.value)
   const hasPrevPage = computed(() => currentPage.value > 1)
   const isPaginationLoading = ref(false)
+  let fetchSequence = 0
 
-  const fetchNotifications = async (page?: number, limit?: number) => {
+  const fetchNotifications = async (
+    page?: number,
+    limit?: number,
+    filter: 'all' | 'unread' = currentFilter.value,
+    search: string = currentSearch.value
+  ) => {
+    const requestId = ++fetchSequence
     if (!isAuthenticated.value) {
       notifications.value = []
       unreadCount.value = 0
@@ -44,6 +53,10 @@ export const useNotifications = () => {
     // 使用传入的参数或当前状态
     const requestPage = page || currentPage.value
     const requestLimit = limit || pageSize.value
+    const requestFilter = filter === 'unread' ? 'unread' : 'all'
+    const requestSearch = search.trim().slice(0, 100)
+    currentFilter.value = requestFilter
+    currentSearch.value = requestSearch
 
     try {
       const authConfig = getAuthConfig()
@@ -51,12 +64,14 @@ export const useNotifications = () => {
       const data = await $fetch('/api/notifications', {
         query: {
           page: requestPage,
-          limit: requestLimit
+          limit: requestLimit,
+          filter: requestFilter,
+          search: requestSearch || undefined
         },
         ...authConfig
       })
 
-      if (data) {
+      if (data && requestId === fetchSequence) {
         notifications.value = data.notifications || []
         unreadCount.value = data.unreadCount || 0
 
@@ -69,6 +84,7 @@ export const useNotifications = () => {
         }
       }
     } catch (err: any) {
+      if (requestId !== fetchSequence) return
       const errorHandler = useErrorHandler()
       if (await errorHandler.checkAndHandleFetchError(err)) {
         return
@@ -78,8 +94,10 @@ export const useNotifications = () => {
       unreadCount.value = 0
       resetPagination()
     } finally {
-      loading.value = false
-      isPaginationLoading.value = false
+      if (requestId === fetchSequence) {
+        loading.value = false
+        isPaginationLoading.value = false
+      }
     }
   }
 
@@ -117,6 +135,19 @@ export const useNotifications = () => {
       const newCurrentPage = Math.min(currentPage.value, newTotalPages || 1)
       await fetchNotifications(newCurrentPage, newSize)
     }
+  }
+
+  const changeFilter = async (filter: 'all' | 'unread') => {
+    if (filter === currentFilter.value) return
+    currentPage.value = 1
+    await fetchNotifications(1, pageSize.value, filter)
+  }
+
+  const changeSearch = async (search: string) => {
+    const normalizedSearch = search.trim().slice(0, 100)
+    if (normalizedSearch === currentSearch.value) return
+    currentPage.value = 1
+    await fetchNotifications(1, pageSize.value, currentFilter.value, normalizedSearch)
   }
 
   const fetchNotificationSettings = async () => {
@@ -210,6 +241,13 @@ export const useNotifications = () => {
         unreadCount.value = Math.max(0, unreadCount.value - 1)
       }
 
+      if (currentFilter.value === 'unread') {
+        const targetPage = notifications.value.length <= 1 && currentPage.value > 1
+          ? currentPage.value - 1
+          : currentPage.value
+        await fetchNotifications(targetPage, pageSize.value)
+      }
+
       return data
     } catch (err: any) {
       const errorHandler = useErrorHandler()
@@ -245,6 +283,10 @@ export const useNotifications = () => {
       if (data) {
         notifications.value.forEach((n) => (n.read = true))
         unreadCount.value = 0
+        if (currentFilter.value === 'unread') {
+          notifications.value = []
+          resetPagination()
+        }
         return data
       }
       return null
@@ -366,6 +408,8 @@ export const useNotifications = () => {
     pageSize,
     totalPages,
     totalCount,
+    currentFilter,
+    currentSearch,
     hasNextPage,
     hasPrevPage,
     isPaginationLoading,
@@ -382,6 +426,8 @@ export const useNotifications = () => {
     nextPage,
     prevPage,
     changePageSize,
+    changeFilter,
+    changeSearch,
     resetPagination
   }
 }
