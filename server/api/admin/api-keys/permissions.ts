@@ -7,5 +7,6 @@ export const apiPermissionSchema = z.enum([
   'songs:write',
   'card-codes:read',
   'card-codes:write',
-  'card-codes:delete'
+  'card-codes:delete',
+  'backup:execute'
 ])
