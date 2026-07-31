@@ -47,25 +47,13 @@
             </div>
             <span class="status-badge">{{ locale.health.waiting }}</span>
           </div>
-          <div class="health-layout">
+          <div class="health-layout health-layout--score-only">
             <div class="health-score-wrap">
               <div class="health-score-ring">
                 <strong>--</strong>
                 <span>{{ locale.overview.healthScore }}</span>
               </div>
               <p>{{ locale.noData }}</p>
-            </div>
-            <div class="health-dependencies">
-              <div class="health-dependencies__title">
-                <span class="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                {{ locale.overview.healthFactors }}
-              </div>
-              <div v-for="item in healthDependencies" :key="item.label" class="dependency-row">
-                <span class="dependency-name">
-                  <Icon :name="item.icon" :size="13" />{{ item.label }}
-                </span>
-                <span class="dependency-value">--</span>
-              </div>
             </div>
           </div>
         </article>
@@ -80,52 +68,6 @@
             <p class="metric-detail">{{ item.detail }}</p>
           </article>
         </div>
-      </section>
-
-      <section class="resource-strip">
-        <article v-for="item in overviewResources" :key="item.label" class="resource-item">
-          <div class="flex items-center gap-2 text-zinc-500">
-            <Icon :name="item.icon" :size="14" />
-            <span>{{ item.label }}</span>
-          </div>
-          <strong>--</strong>
-        </article>
-      </section>
-
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.overview.services }}</h3>
-              <p class="panel-description">{{ locale.overview.servicesDetail }}</p>
-            </div>
-          </div>
-          <div class="service-list">
-            <div v-for="item in serviceRows" :key="item.label" class="service-row">
-              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
-                <p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p>
-              </div>
-              <span class="text-xs font-semibold text-zinc-600">--</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.overview.runtimeDetails }}</h3>
-              <p class="panel-description">{{ locale.overview.runtimeDetailsDetail }}</p>
-            </div>
-          </div>
-          <dl class="detail-grid">
-            <div v-for="item in runtimeDetails" :key="item">
-              <dt>{{ item }}</dt>
-              <dd>--</dd>
-            </div>
-          </dl>
-        </article>
       </section>
     </template>
 
@@ -215,6 +157,10 @@
     </template>
 
     <template v-else-if="activeGroup === 'server'">
+      <section class="server-summary-strip">
+        <div v-for="item in serverSummaryDetails" :key="item"><span>{{ item }}</span><strong>--</strong></div>
+      </section>
+
       <section class="metric-grid">
         <article v-for="item in serverMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top">
@@ -226,31 +172,102 @@
         </article>
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.server.runtime }}</h3></div>
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel xl:col-span-5">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.healthScore }}</h3>
+              <p class="panel-description">{{ locale.server.healthScoreDetail }}</p>
+            </div>
+            <span class="status-badge">{{ locale.health.waiting }}</span>
+          </div>
+          <div class="server-health-layout">
+            <div class="health-score-ring"><strong>--</strong><span>{{ locale.overview.healthScore }}</span></div>
+            <dl class="server-health-details">
+              <div v-for="item in serverHealthDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            </dl>
+          </div>
+        </article>
+
+        <article class="panel xl:col-span-7">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.runtime }}</h3>
+              <p class="panel-description">{{ locale.server.runtimeEnvironmentDetail }}</p>
+            </div>
+          </div>
           <dl class="detail-grid">
-            <div v-for="item in runtimeDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in serverRuntimeDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
           </dl>
         </article>
+      </section>
+
+      <section class="server-resource-grid">
+        <article v-for="panel in serverResourcePanels" :key="panel.title" class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ panel.title }}</h3>
+              <p class="panel-description">{{ panel.detail }}</p>
+            </div>
+            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
+          </div>
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.diskPartitions }}</h3>
+              <p class="panel-description">{{ locale.server.diskPartitionsDetail }}</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[620px]">
+              <thead><tr><th>{{ locale.disk.mount }}</th><th>{{ locale.disk.filesystem }}</th><th>{{ locale.disk.used }}</th><th>{{ locale.disk.available }}</th><th>{{ locale.disk.usage }}</th></tr></thead>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.networkInterfaces }}</h3>
+              <p class="panel-description">{{ locale.server.networkInterfacesDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.server.externalAddressCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[620px]">
+              <thead><tr><th>{{ locale.network.name }}</th><th>{{ locale.network.address }}</th><th>{{ locale.server.addressFamily }}</th><th>{{ locale.server.addressScope }}</th></tr></thead>
+              <tbody><tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><h3 class="panel-title">{{ locale.server.database }}</h3></div>
           <dl class="detail-grid">
             <div v-for="item in databaseDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
           </dl>
         </article>
-      </section>
-
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <div>
-            <h3 class="panel-title">{{ locale.server.databasePerformance }}</h3>
-            <p class="panel-description">{{ locale.server.databasePerformanceDetail }}</p>
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.server.databasePerformance }}</h3>
+              <p class="panel-description">{{ locale.server.databasePerformanceDetail }}</p>
+            </div>
           </div>
-        </div>
-        <dl class="detail-grid detail-grid--wide">
-          <div v-for="item in databasePerformanceDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
-        </dl>
+          <dl class="detail-grid">
+            <div v-for="item in databasePerformanceDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
+        </article>
       </section>
 
       <section class="panel overflow-hidden">
@@ -267,24 +284,6 @@
             <tbody><tr v-for="item in schemaTables" :key="item"><td>{{ item }}</td><td>--</td><td>--</td></tr></tbody>
           </table>
         </div>
-      </section>
-
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.server.memoryDetails }}</h3></div>
-          <div class="status-list">
-            <div v-for="item in memoryDetails" :key="item">
-              <div class="flex items-center justify-between gap-4"><span>{{ item }}</span><strong>--</strong></div>
-              <div class="empty-progress"><span /></div>
-            </div>
-          </div>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.server.instanceDetails }}</h3></div>
-          <dl class="detail-grid detail-grid--compact">
-            <div v-for="item in instanceDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
-          </dl>
-        </article>
       </section>
     </template>
 
@@ -327,6 +326,114 @@
       </section>
     </template>
 
+    <template v-else-if="activeGroup === 'analytics'">
+      <section class="metric-grid">
+        <article v-for="item in analysisMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="metric-label">{{ item.label }}</span>
+          </div>
+          <strong class="metric-value">--</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel xl:col-span-4">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.analytics.engagementDistribution }}</h3>
+              <p class="panel-description">{{ locale.analytics.engagementDistributionDetail }}</p>
+            </div>
+          </div>
+          <div class="analysis-donut-wrap">
+            <div class="analysis-donut"><strong>--</strong><span>{{ locale.analytics.totalUsers }}</span></div>
+          </div>
+          <div class="analysis-legend">
+            <div v-for="item in analysisEngagementSegments" :key="item.label">
+              <span><i :class="item.tone" />{{ item.label }}</span><strong>--</strong>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel xl:col-span-8">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.analytics.requestTrend }}</h3>
+              <p class="panel-description">{{ locale.analytics.requestTrendDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.analytics.lastThirtyDays }}</span>
+          </div>
+          <div class="analysis-chart-placeholder">
+            <div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div>
+            <span>{{ locale.noData }}</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel overflow-hidden xl:col-span-7">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.analytics.semesterComparison }}</h3>
+              <p class="panel-description">{{ locale.analytics.semesterComparisonDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[660px]">
+              <thead><tr><th>{{ locale.analytics.semester }}</th><th>{{ locale.analytics.totalSongs }}</th><th>{{ locale.analytics.scheduledSongs }}</th><th>{{ locale.analytics.votedSongs }}</th><th>{{ locale.analytics.semesterStatus }}</th></tr></thead>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel xl:col-span-5">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.analytics.engagementSummary }}</h3>
+              <p class="panel-description">{{ locale.analytics.engagementSummaryDetail }}</p>
+            </div>
+          </div>
+          <dl class="detail-grid">
+            <div v-for="item in analysisEngagementDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel overflow-hidden xl:col-span-8">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.analytics.topSongs }}</h3>
+              <p class="panel-description">{{ locale.analytics.topSongsDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[680px]">
+              <thead><tr><th>{{ locale.analytics.rank }}</th><th>{{ locale.analytics.song }}</th><th>{{ locale.analytics.artist }}</th><th>{{ locale.analytics.requester }}</th><th>{{ locale.analytics.votesOrReplays }}</th></tr></thead>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel xl:col-span-4">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.analytics.peakHours }}</h3>
+              <p class="panel-description">{{ locale.analytics.peakHoursDetail }}</p>
+            </div>
+          </div>
+          <div class="peak-list">
+            <div v-for="item in analysisPeakHours" :key="item">
+              <span><Icon name="clock" :size="13" />{{ item }}</span><strong>--</strong>
+            </div>
+          </div>
+        </article>
+      </section>
+    </template>
+
     <template v-else-if="activeGroup === 'audit'">
       <section class="metric-grid">
         <article v-for="item in auditMetrics" :key="item.label" class="metric-card">
@@ -339,98 +446,98 @@
         </article>
       </section>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <h3 class="panel-title">{{ locale.audit.statusLogs }}</h3>
-          <span class="item-count">{{ locale.itemCount }} --</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="data-table min-w-[760px]">
-            <thead>
-              <tr>
-                <th>{{ locale.logs.time }}</th>
-                <th>{{ locale.audit.account }}</th>
-                <th>{{ locale.audit.statusTransition }}</th>
-                <th>{{ locale.audit.operator }}</th>
-                <th>{{ locale.audit.reason }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr>
-            </tbody>
-          </table>
-        </div>
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel xl:col-span-7">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.audit.pendingRiskDistribution }}</h3>
+              <p class="panel-description">{{ locale.audit.pendingRiskDistributionDetail }}</p>
+            </div>
+            <span class="risk-badge">{{ locale.audit.pending }}</span>
+          </div>
+          <div class="risk-distribution">
+            <div class="risk-total">
+              <span class="risk-total__icon"><Icon name="warning" :size="18" /></span>
+              <strong>--</strong>
+              <p>{{ locale.audit.unresolvedEvents }}</p>
+            </div>
+            <div class="risk-levels">
+              <div v-for="item in riskLevels" :key="item.label" class="risk-level-row">
+                <span class="risk-level-name"><i :class="item.tone" />{{ item.label }}</span>
+                <strong>--</strong>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel overflow-hidden xl:col-span-5">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.audit.highRiskIps }}</h3>
+              <p class="panel-description">{{ locale.audit.highRiskIpsDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[480px]">
+              <thead><tr><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.lastTriggered }}</th></tr></thead>
+              <tbody><tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
       </section>
 
       <section class="panel overflow-hidden">
         <div class="panel-header">
           <div>
-            <h3 class="panel-title">{{ locale.audit.apiAccessLogs }}</h3>
-            <p class="panel-description">{{ locale.audit.apiAccessLogsDetail }}</p>
+            <h3 class="panel-title">{{ locale.audit.recentHighRiskEvents }}</h3>
+            <p class="panel-description">{{ locale.audit.recentHighRiskEventsDetail }}</p>
           </div>
-          <span class="item-count">{{ locale.itemCount }} --</span>
+          <span class="risk-badge">{{ locale.audit.highRisk }}</span>
         </div>
         <div class="overflow-x-auto">
           <table class="data-table min-w-[760px]">
-            <thead>
-              <tr>
-                <th>{{ locale.logs.time }}</th>
-                <th>{{ locale.audit.endpoint }}</th>
-                <th>{{ locale.audit.method }}</th>
-                <th>{{ locale.audit.statusCode }}</th>
-                <th>{{ locale.audit.responseTime }}</th>
-                <th>{{ locale.audit.ip }}</th>
-              </tr>
-            </thead>
+            <thead><tr><th>{{ locale.audit.eventTitle }}</th><th>{{ locale.audit.riskLevel }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.lastTriggered }}</th></tr></thead>
             <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
           </table>
         </div>
       </section>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
+      <section class="panel audit-events overflow-hidden">
+        <div class="panel-header audit-events__header">
           <div>
-            <h3 class="panel-title">{{ locale.audit.apiLogSummary }}</h3>
-            <p class="panel-description">{{ locale.audit.apiLogSummaryDetail }}</p>
+            <h3 class="panel-title">{{ locale.audit.eventList }}</h3>
+            <p class="panel-description">{{ locale.audit.eventListDetail }}</p>
           </div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
         </div>
-        <dl class="detail-grid detail-grid--wide">
-          <div v-for="item in apiLogDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
-        </dl>
-      </section>
-
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.audit.sources }}</h3></div>
-          <div class="service-list">
-            <div v-for="item in auditSources" :key="item" class="service-row">
-              <span class="service-row__icon"><Icon name="history" :size="15" /></span>
-              <span class="flex-1 text-sm font-semibold text-zinc-300">{{ item }}</span>
-              <span class="text-xs text-zinc-600">--</span>
-            </div>
-          </div>
-        </article>
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <h3 class="panel-title">{{ locale.audit.loginRecords }}</h3>
-            <span class="item-count">{{ locale.itemCount }} --</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[520px]">
-              <thead>
-                <tr>
-                  <th>{{ locale.audit.account }}</th>
-                  <th>{{ locale.audit.ip }}</th>
-                  <th>{{ locale.audit.accountStatus }}</th>
-                  <th>{{ locale.logs.time }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </article>
+        <div class="audit-filters">
+          <label class="filter-field filter-field--wide">
+            <Icon name="search" :size="13" />
+            <input type="text" :placeholder="locale.audit.keywordFilter" disabled />
+          </label>
+          <button type="button" class="filter-field" disabled><span>{{ locale.audit.allRiskLevels }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.audit.allHandlingStatuses }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-action" disabled><Icon name="search" :size="13" />{{ locale.audit.query }}</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[1120px]">
+            <thead>
+              <tr>
+                <th>{{ locale.audit.eventId }}</th>
+                <th>{{ locale.audit.eventTitle }}</th>
+                <th>{{ locale.audit.riskLevel }}</th>
+                <th>{{ locale.audit.handlingStatus }}</th>
+                <th>{{ locale.audit.riskScore }}</th>
+                <th>{{ locale.audit.relatedUser }}</th>
+                <th>{{ locale.audit.sourceIp }}</th>
+                <th>{{ locale.audit.triggerCount }}</th>
+                <th>{{ locale.audit.lastTriggered }}</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
       </section>
     </template>
   </div>
@@ -447,74 +554,44 @@ const activeGroup = ref('overview')
 
 const monitorGroups = computed(() => [
   { icon: 'monitoring', label: locale.value.groups?.overview, value: 'overview' },
+  { icon: 'chart-line', label: locale.value.groups?.analyticsDashboard, value: 'analytics' },
   { icon: 'users', label: locale.value.groups?.onlineUsers, value: 'online' },
   { icon: 'server', label: locale.value.groups?.serverMonitoring, value: 'server' },
   { icon: 'database', label: locale.value.groups?.cacheMonitoring, value: 'cache' },
   { icon: 'warning', label: locale.value.groups?.securityAudit, value: 'audit' }
 ])
 
-const healthDependencies = computed(() => [
-  { icon: 'monitoring', label: locale.value.services?.application },
-  { icon: 'database', label: locale.value.services?.postgresql },
-  { icon: 'server', label: locale.value.services?.redis },
-  { icon: 'activity', label: locale.value.server?.telemetry }
-])
-
 const overviewSignals = computed(() => [
-  { icon: 'clock', label: locale.value.server?.uptime, detail: locale.value.server?.uptimeDetail },
-  { icon: 'activity', label: locale.value.server?.heapUsed, detail: locale.value.server?.memoryDetail },
-  { icon: 'activity', label: locale.value.server?.heapTotal, detail: locale.value.server?.memoryDetail },
   {
-    icon: 'database',
-    label: locale.value.server?.poolActive,
-    detail: locale.value.server?.poolDetail
+    icon: 'activity',
+    label: locale.value.overview?.cpuStatus,
+    detail: locale.value.overview?.cpuStatusDetail
   },
-  {
-    icon: 'database',
-    label: locale.value.server?.poolTotal,
-    detail: locale.value.server?.poolDetail
-  },
-  {
-    icon: 'server',
-    label: locale.value.cache?.ready,
-    detail: locale.value.cache?.readyDetail
-  }
-])
-
-const overviewResources = computed(() => [
-  { icon: 'monitoring', label: locale.value.server?.nodeVersion },
-  { icon: 'terminal', label: locale.value.runtime?.platform },
-  { icon: 'settings', label: locale.value.runtime?.architecture },
-  { icon: 'activity', label: locale.value.server?.externalMemory },
-  { icon: 'database', label: locale.value.server?.probe },
-  { icon: 'server', label: locale.value.runtime?.instanceId }
-])
-
-const serviceRows = computed(() => [
   {
     icon: 'monitoring',
-    label: locale.value.services?.application,
-    detail: locale.value.overview?.applicationDetail
+    label: locale.value.overview?.memoryStatus,
+    detail: locale.value.overview?.memoryStatusDetail
   },
   {
     icon: 'database',
-    label: locale.value.services?.postgresql,
-    detail: locale.value.overview?.databaseDetail
+    label: locale.value.overview?.databaseStatus,
+    detail: locale.value.overview?.databaseStatusDetail
   },
   {
     icon: 'server',
-    label: locale.value.services?.redis,
-    detail: locale.value.overview?.redisDetail
+    label: locale.value.overview?.redisStatus,
+    detail: locale.value.overview?.redisStatusDetail
+  },
+  {
+    icon: 'settings',
+    label: locale.value.overview?.coroutineStatus,
+    detail: locale.value.overview?.coroutineStatusDetail
+  },
+  {
+    icon: 'clock',
+    label: locale.value.overview?.backgroundTaskStatus,
+    detail: locale.value.overview?.backgroundTaskStatusDetail
   }
-])
-
-const runtimeDetails = computed(() => [
-  locale.value.runtime?.platform,
-  locale.value.runtime?.architecture,
-  locale.value.runtime?.nodeVersion,
-  locale.value.runtime?.instanceId,
-  locale.value.server?.uptime,
-  locale.value.server?.telemetry
 ])
 
 const onlineMetrics = computed(() => [
@@ -568,48 +645,100 @@ const onlineAccountDetails = computed(() => [
   locale.value.online?.graduatedAccounts
 ])
 
+const serverSummaryDetails = computed(() => [
+  locale.value.runtime?.hostname,
+  locale.value.runtime?.platform,
+  locale.value.runtime?.systemUptime,
+  locale.value.runtime?.processPid
+])
+
 const serverMetrics = computed(() => [
-  { icon: 'clock', label: locale.value.server?.uptime, detail: locale.value.server?.uptimeDetail },
   {
     icon: 'activity',
-    label: locale.value.server?.memory,
-    detail: locale.value.server?.memoryDetail
+    label: locale.value.metrics?.cpuUsage,
+    detail: locale.value.server?.cpuUsageDetail
   },
   {
     icon: 'monitoring',
-    label: locale.value.server?.nodeVersion,
-    detail: locale.value.server?.runtimeDetail
+    label: locale.value.metrics?.systemMemory,
+    detail: locale.value.server?.systemMemoryDetail
   },
   {
     icon: 'database',
-    label: locale.value.server?.databasePool,
-    detail: locale.value.server?.poolDetail
+    label: locale.value.metrics?.diskUsage,
+    detail: locale.value.server?.diskUsageDetail
   },
   {
+    icon: 'server',
+    label: locale.value.metrics?.networkInterfaces,
+    detail: locale.value.server?.networkInterfacesMetricDetail
+  }
+])
+
+const serverHealthDetails = computed(() => [
+  locale.value.server?.healthLevel,
+  locale.value.server?.alertCount,
+  locale.value.server?.collectedAt
+])
+
+const serverRuntimeDetails = computed(() => [
+  locale.value.server?.platformRelease,
+  locale.value.runtime?.architecture,
+  locale.value.runtime?.nodeVersion,
+  locale.value.runtime?.processUptime,
+  locale.value.runtime?.instanceId,
+  locale.value.server?.telemetry
+])
+
+const serverResourcePanels = computed(() => [
+  {
     icon: 'activity',
-    label: locale.value.server?.responseTime,
-    detail: locale.value.server?.databasePerformanceDetail
+    title: locale.value.server?.cpuDetails,
+    detail: locale.value.server?.cpuDetailsDetail,
+    items: [
+      locale.value.server?.cpuModel,
+      locale.value.server?.cpuCores,
+      locale.value.server?.loadAverage1,
+      locale.value.server?.loadAverage5,
+      locale.value.server?.loadAverage15
+    ]
+  },
+  {
+    icon: 'monitoring',
+    title: locale.value.server?.systemMemoryDetails,
+    detail: locale.value.server?.systemMemoryDetailsDetail,
+    items: [
+      locale.value.server?.systemMemoryTotal,
+      locale.value.server?.systemMemoryUsed,
+      locale.value.server?.systemMemoryAvailable
+    ]
   },
   {
     icon: 'database',
-    label: locale.value.server?.poolUtilization,
-    detail: locale.value.server?.poolDetail
+    title: locale.value.server?.diskDetails,
+    detail: locale.value.server?.diskDetailsDetail,
+    items: [
+      locale.value.server?.diskTotal,
+      locale.value.server?.diskAvailable,
+      locale.value.server?.partitionCount
+    ]
   },
   {
-    icon: 'success',
-    label: locale.value.server?.cacheHitRatio,
-    detail: locale.value.server?.databasePerformanceDetail
-  },
-  {
-    icon: 'activity',
-    label: locale.value.server?.transactionsCommitted,
-    detail: locale.value.server?.databasePerformanceDetail
+    icon: 'server',
+    title: locale.value.server?.nodeProcessDetails,
+    detail: locale.value.server?.nodeProcessDetailsDetail,
+    items: [
+      locale.value.server?.rssMemory,
+      locale.value.server?.nodeHeapUtilization,
+      locale.value.server?.heapUsed,
+      locale.value.server?.heapTotal,
+      locale.value.server?.externalMemory
+    ]
   }
 ])
 
 const databaseDetails = computed(() => [
   locale.value.server?.connection,
-  locale.value.server?.responseTime,
   locale.value.server?.poolMax,
   locale.value.server?.poolActive,
   locale.value.server?.poolTotal,
@@ -631,19 +760,6 @@ const schemaTables = computed(() => [
   locale.value.server?.scheduleTable,
   locale.value.server?.notificationsTable,
   locale.value.server?.totalUsers
-])
-
-const memoryDetails = computed(() => [
-  locale.value.server?.heapUsed,
-  locale.value.server?.heapTotal,
-  locale.value.server?.externalMemory
-])
-
-const instanceDetails = computed(() => [
-  locale.value.runtime?.platform,
-  locale.value.runtime?.architecture,
-  locale.value.runtime?.instanceId,
-  locale.value.server?.telemetry
 ])
 
 const cacheMetrics = computed(() => [
@@ -687,47 +803,76 @@ const cacheUsageScopes = computed(() => [
   }
 ])
 
-const auditMetrics = computed(() => [
+const analysisMetrics = computed(() => [
   {
-    icon: 'warning',
-    label: locale.value.audit?.statusChanges,
-    detail: locale.value.audit?.statusChangesDetail
+    icon: 'users',
+    label: locale.value.analytics?.totalUsers,
+    detail: locale.value.analytics?.totalUsersDetail
   },
   {
-    icon: 'history',
-    label: locale.value.audit?.apiSuccessRequests,
-    detail: locale.value.audit?.apiSuccessRequestsDetail
+    icon: 'music',
+    label: locale.value.analytics?.totalSongs,
+    detail: locale.value.analytics?.totalSongsDetail
   },
   {
-    icon: 'clock',
-    label: locale.value.audit?.apiErrorRequests,
-    detail: locale.value.audit?.apiErrorRequestsDetail
+    icon: 'calendar',
+    label: locale.value.analytics?.totalSchedules,
+    detail: locale.value.analytics?.totalSchedulesDetail
   },
   {
-    icon: 'activity',
-    label: locale.value.audit?.apiAverageResponse,
-    detail: locale.value.audit?.apiAverageResponseDetail
-  },
-  {
-    icon: 'clock',
-    label: locale.value.audit?.apiMaxResponse,
-    detail: locale.value.audit?.apiMaxResponseDetail
+    icon: 'heart',
+    label: locale.value.analytics?.weeklyRequests,
+    detail: locale.value.analytics?.weeklyRequestsDetail
   }
 ])
 
-const apiLogDetails = computed(() => [
-  locale.value.audit?.apiRequests,
-  locale.value.audit?.apiSuccessRequests,
-  locale.value.audit?.apiErrorRequests,
-  locale.value.audit?.apiAverageResponse,
-  locale.value.audit?.apiMinResponse,
-  locale.value.audit?.apiMaxResponse
+const analysisEngagementSegments = computed(() => [
+  { label: locale.value.analytics?.activeContributors, tone: 'analysis-tone--active' },
+  { label: locale.value.analytics?.recentActiveUsers, tone: 'analysis-tone--recent' },
+  { label: locale.value.analytics?.inactiveUsers, tone: 'analysis-tone--inactive' }
 ])
 
-const auditSources = computed(() => [
-  locale.value.audit?.userStatus,
-  locale.value.audit?.userLogin,
-  locale.value.audit?.apiKeyAccess
+const analysisEngagementDetails = computed(() => [
+  locale.value.analytics?.activeContributors,
+  locale.value.analytics?.recentActiveUsers,
+  locale.value.analytics?.activeUserPercentage,
+  locale.value.analytics?.recentActivePercentage
+])
+
+const analysisPeakHours = computed(() => [
+  locale.value.analytics?.firstPeak,
+  locale.value.analytics?.secondPeak,
+  locale.value.analytics?.thirdPeak
+])
+
+const auditMetrics = computed(() => [
+  {
+    icon: 'warning',
+    label: locale.value.audit?.unresolvedEvents,
+    detail: locale.value.audit?.unresolvedEventsDetail
+  },
+  {
+    icon: 'warning',
+    label: locale.value.audit?.criticalPending,
+    detail: locale.value.audit?.criticalPendingDetail
+  },
+  {
+    icon: 'clock',
+    label: locale.value.audit?.newToday,
+    detail: locale.value.audit?.newTodayDetail
+  },
+  {
+    icon: 'success',
+    label: locale.value.audit?.resolvedToday,
+    detail: locale.value.audit?.resolvedTodayDetail
+  }
+])
+
+const riskLevels = computed(() => [
+  { label: locale.value.audit?.critical, tone: 'risk-tone--critical' },
+  { label: locale.value.audit?.high, tone: 'risk-tone--high' },
+  { label: locale.value.audit?.medium, tone: 'risk-tone--medium' },
+  { label: locale.value.audit?.low, tone: 'risk-tone--low' }
 ])
 </script>
 
@@ -822,7 +967,7 @@ const auditSources = computed(() => [
 .panel,
 .signal-card,
 .metric-card,
-.resource-strip {
+.server-summary-strip {
   border: 1px solid rgb(39 39 42);
   border-radius: 8px;
   background: rgb(24 24 27 / 0.44);
@@ -830,8 +975,50 @@ const auditSources = computed(() => [
 
 .panel,
 .signal-card,
-.metric-card {
+.metric-card,
+.server-summary-strip {
   min-width: 0;
+}
+
+.server-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.server-summary-strip > div {
+  min-width: 0;
+  min-height: 5rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-summary-strip > div:nth-child(odd) {
+  border-right: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-summary-strip > div:nth-child(n + 3) {
+  border-bottom: 0;
+}
+
+.server-summary-strip span,
+.server-summary-strip strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-summary-strip span {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.server-summary-strip strong {
+  margin-top: 0.75rem;
+  color: rgb(228 228 231);
+  font-size: 0.875rem;
 }
 
 .panel-header {
@@ -883,6 +1070,15 @@ const auditSources = computed(() => [
   justify-content: center;
 }
 
+.health-layout--score-only {
+  align-items: center;
+  justify-content: center;
+}
+
+.health-layout--score-only .health-score-wrap {
+  width: 100%;
+}
+
 .health-score-wrap > p {
   margin-top: 0.75rem;
   color: rgb(82 82 91);
@@ -912,49 +1108,6 @@ const auditSources = computed(() => [
   color: rgb(113 113 122);
   font-size: 0.625rem;
   font-weight: 600;
-}
-
-.health-dependencies {
-  min-width: 0;
-  flex: 1;
-  align-self: stretch;
-  border-top: 1px solid rgb(39 39 42);
-}
-
-.health-dependencies__title {
-  display: flex;
-  min-height: 2.5rem;
-  align-items: center;
-  gap: 0.5rem;
-  border-bottom: 1px solid rgb(39 39 42 / 0.75);
-  color: rgb(161 161 170);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.dependency-row {
-  display: flex;
-  min-height: 3rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid rgb(39 39 42 / 0.75);
-}
-
-.dependency-name {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.55rem;
-  color: rgb(161 161 170);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.dependency-value {
-  color: rgb(82 82 91);
-  font-size: 0.75rem;
-  font-weight: 700;
 }
 
 .signal-card,
@@ -1002,32 +1155,74 @@ const auditSources = computed(() => [
   line-height: 1.4;
 }
 
-.resource-strip {
+.server-health-layout {
+  display: flex;
+  min-height: 15rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.25rem;
+}
+
+.server-health-details {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  overflow: hidden;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.resource-item {
+.server-health-details > div {
   min-width: 0;
-  min-height: 6.5rem;
-  padding: 1rem;
-  font-size: 0.75rem;
-}
-
-.resource-item:nth-child(odd) {
-  border-right: 1px solid rgb(39 39 42 / 0.75);
-}
-
-.resource-item:nth-child(-n + 4) {
+  padding: 0.8rem 0;
   border-bottom: 1px solid rgb(39 39 42 / 0.75);
 }
 
-.resource-item strong {
-  display: block;
-  margin-top: 1rem;
-  color: rgb(228 228 231);
-  font-size: 1rem;
+.server-health-details dt {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.server-health-details dd {
+  margin-top: 0.45rem;
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.server-resource-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.server-resource-list {
+  padding: 0 1rem;
+}
+
+.server-resource-list > div {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.server-resource-list > div:last-child {
+  border-bottom: 0;
+}
+
+.server-resource-list dt {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.server-resource-list dd {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .service-list {
@@ -1142,10 +1337,320 @@ const auditSources = computed(() => [
   border-bottom: 1px solid rgb(39 39 42 / 0.75);
 }
 
+.analysis-donut-wrap {
+  display: flex;
+  min-height: 14rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.analysis-donut {
+  display: flex;
+  width: 9.5rem;
+  height: 9.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1.1rem solid rgb(39 39 42);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(9 9 11 / 0.7);
+}
+
+.analysis-donut strong {
+  color: rgb(244 244 245);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.analysis-donut span {
+  margin-top: 0.5rem;
+  color: rgb(113 113 122);
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.analysis-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: 1px solid rgb(39 39 42);
+}
+
+.analysis-legend > div {
+  display: flex;
+  min-width: 0;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.analysis-legend span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+}
+
+.analysis-legend i {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.analysis-legend strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
+.analysis-tone--active {
+  background: rgb(59 130 246);
+}
+
+.analysis-tone--recent {
+  background: rgb(16 185 129);
+}
+
+.analysis-tone--inactive {
+  background: rgb(113 113 122);
+}
+
+.analysis-chart-placeholder {
+  position: relative;
+  display: flex;
+  min-height: 18rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.analysis-chart-placeholder > span {
+  position: relative;
+  z-index: 1;
+  color: rgb(82 82 91);
+  font-size: 0.75rem;
+}
+
+.analysis-chart-grid {
+  position: absolute;
+  inset: 1.5rem;
+  display: grid;
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+}
+
+.analysis-chart-grid i {
+  border-bottom: 1px dashed rgb(39 39 42 / 0.8);
+}
+
+.peak-list {
+  padding: 0 1rem;
+}
+
+.peak-list > div {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.peak-list > div:last-child {
+  border-bottom: 0;
+}
+
+.peak-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.peak-list strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
 .item-count {
   flex: 0 0 auto;
   color: rgb(82 82 91);
   font-size: 0.625rem;
+}
+
+.risk-badge {
+  flex: 0 0 auto;
+  border: 1px solid rgb(239 68 68 / 0.24);
+  border-radius: 5px;
+  padding: 0.25rem 0.5rem;
+  color: rgb(248 113 113);
+  background: rgb(239 68 68 / 0.08);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.risk-distribution {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.risk-total {
+  display: flex;
+  min-height: 11rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.risk-total__icon {
+  display: inline-flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: rgb(248 113 113);
+  background: rgb(239 68 68 / 0.1);
+}
+
+.risk-total strong {
+  margin-top: 1rem;
+  color: rgb(244 244 245);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.risk-total p {
+  margin-top: 0.65rem;
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+}
+
+.risk-levels {
+  padding: 0 1rem;
+}
+
+.risk-level-row {
+  display: flex;
+  min-height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.risk-level-row:last-child {
+  border-bottom: 0;
+}
+
+.risk-level-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.risk-level-name i {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+}
+
+.risk-level-row strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+}
+
+.risk-tone--critical {
+  background: rgb(239 68 68);
+}
+
+.risk-tone--high {
+  background: rgb(249 115 22);
+}
+
+.risk-tone--medium {
+  background: rgb(234 179 8);
+}
+
+.risk-tone--low {
+  background: rgb(16 185 129);
+}
+
+.audit-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.filter-field,
+.filter-action {
+  display: flex;
+  min-width: 0;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(39 39 42);
+  border-radius: 6px;
+  padding: 0 0.75rem;
+  color: rgb(113 113 122);
+  background: rgb(24 24 27 / 0.6);
+  font-size: 0.6875rem;
+}
+
+.filter-field {
+  justify-content: space-between;
+}
+
+.filter-field--wide {
+  justify-content: flex-start;
+}
+
+.filter-field input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: rgb(161 161 170);
+  background: transparent;
+  font: inherit;
+}
+
+.filter-field input::placeholder {
+  color: rgb(113 113 122);
+  opacity: 1;
+}
+
+.filter-field:disabled,
+.filter-field input:disabled {
+  cursor: not-allowed;
+}
+
+.filter-action {
+  justify-content: center;
+  color: rgb(96 165 250);
+  border-color: rgb(59 130 246 / 0.24);
+  background: rgb(59 130 246 / 0.08);
+  font-weight: 700;
+}
+
+.filter-action:disabled {
+  cursor: not-allowed;
 }
 
 .data-table {
@@ -1184,27 +1689,12 @@ const auditSources = computed(() => [
     width: 10rem;
   }
 
-  .health-dependencies {
-    border-top: 0;
-    border-left: 1px solid rgb(39 39 42);
-    padding-left: 1.25rem;
+  .server-health-layout {
+    flex-direction: row;
   }
 
-  .resource-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .resource-item {
-    border-right: 0;
-    border-bottom: 0;
-  }
-
-  .resource-item:not(:nth-child(3n)) {
-    border-right: 1px solid rgb(39 39 42 / 0.75);
-  }
-
-  .resource-item:nth-child(-n + 3) {
-    border-bottom: 1px solid rgb(39 39 42 / 0.75);
+  .server-health-details {
+    flex: 1;
   }
 
   .metric-grid {
@@ -1230,24 +1720,61 @@ const auditSources = computed(() => [
   .scope-row:nth-child(odd) {
     border-right: 1px solid rgb(39 39 42 / 0.75);
   }
-}
 
-@media (min-width: 1280px) {
-  .resource-strip {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+  .analysis-legend {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .resource-item,
-  .resource-item:nth-child(-n + 3) {
+  .analysis-legend > div {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
     border-bottom: 0;
   }
 
-  .resource-item:not(:last-child) {
+  .analysis-legend > div:last-child {
+    border-right: 0;
+  }
+
+  .server-resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .risk-distribution {
+    grid-template-columns: 11rem minmax(0, 1fr);
+  }
+
+  .risk-total {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+    border-bottom: 0;
+  }
+
+  .audit-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .server-summary-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .server-summary-strip > div {
+    border-bottom: 0;
+  }
+
+  .server-summary-strip > div:not(:last-child) {
     border-right: 1px solid rgb(39 39 42 / 0.75);
   }
 
   .metric-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .server-resource-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .audit-filters {
+    grid-template-columns: minmax(15rem, 2fr) minmax(10rem, 1fr) minmax(10rem, 1fr) auto;
   }
 }
 </style>
