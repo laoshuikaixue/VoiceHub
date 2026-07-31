@@ -27,7 +27,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
-import { desc, lt, sql } from 'drizzle-orm'
+import { desc, eq, lt, sql } from 'drizzle-orm'
 
 /** 自动备份配置结构 */
 export interface AutoBackupConfig {
@@ -259,64 +259,57 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
     { key: 'email' as const, name: 'Email', fn: () => doEmailSend(config.methods.email, json, filename) }
   ]
 
-  // 并行上传到所有启用的备份方式
-  const tasks = methods
-    .filter(({ key }) => config.methods[key].enabled)
-    .map(async ({ key, name, fn }) => {
-      try {
-        await fn()
-        return { method: name, success: true }
-      } catch (error: any) {
-        console.error(`${name} 备份失败:`, error)
-        return { method: name, success: false, error: error.message }
-      }
-    })
+  const enabledMethods = methods.filter(({ key }) => config.methods[key].enabled)
 
-  const results: Array<{ method: string; success: boolean; error?: string }> = await Promise.all(tasks)
-
-  if (results.length === 0) {
+  if (enabledMethods.length === 0) {
     throw createApiError(400, SERVER_ERROR_CODES.NO_BACKUP_METHOD_ENABLED, '没有启用任何备份方式')
   }
 
-  const overallSuccess = results.some(r => r.success)
-
-  // 记录备份历史
-  await recordBackupHistory({
+  // 先写入初始记录（全部标记为超时），确保 60s 超时中断也有历史
+  const backupSize = Buffer.byteLength(json)
+  const initialResults = enabledMethods.map(({ name }) => ({
+    method: name,
+    success: false,
+    error: '上传超时'
+  }))
+  const [inserted] = await db.insert(backupHistory).values({
     filename,
     totalRecords: metadata.totalRecords,
-    backupSize: Buffer.byteLength(json),
-    success: overallSuccess,
-    methods: results,
+    backupSize,
+    success: false,
+    methods: JSON.stringify(initialResults),
     triggeredBy
+  }).returning({ id: backupHistory.id })
+  const historyId = inserted.id
+
+  // 并行上传到所有启用的备份方式
+  const tasks = enabledMethods.map(async ({ key, name, fn }) => {
+    try {
+      await fn()
+      return { method: name, success: true }
+    } catch (error: any) {
+      console.error(`${name} 备份失败:`, error)
+      return { method: name, success: false, error: error.message }
+    }
   })
+
+  const results: Array<{ method: string; success: boolean; error?: string }> = await Promise.all(tasks)
+
+  const overallSuccess = results.some(r => r.success)
+
+  // 更新历史记录为实际结果
+  await db.update(backupHistory)
+    .set({
+      success: overallSuccess,
+      methods: JSON.stringify(results)
+    })
+    .where(eq(backupHistory.id, historyId))
+
+  console.log(`备份历史已更新: ${filename}`)
 
   return {
     success: overallSuccess,
     results
-  }
-}
-
-/** 记录备份历史 */
-async function recordBackupHistory(record: {
-  filename: string
-  totalRecords: number
-  backupSize: number
-  success: boolean
-  methods: Array<{ method: string; success: boolean; error?: string }>
-  triggeredBy: string
-}): Promise<void> {
-  try {
-    await db.insert(backupHistory).values({
-      filename: record.filename,
-      totalRecords: record.totalRecords,
-      backupSize: record.backupSize,
-      success: record.success,
-      methods: JSON.stringify(record.methods),
-      triggeredBy: record.triggeredBy
-    })
-    console.log(`备份历史已记录: ${record.filename}`)
-  } catch (error) {
-    console.error('记录备份历史失败:', error)
   }
 }
 
