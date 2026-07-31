@@ -47,13 +47,19 @@
             </div>
             <span class="status-badge">{{ locale.health.waiting }}</span>
           </div>
-          <div class="health-layout health-layout--score-only">
+          <div class="health-layout">
             <div class="health-score-wrap">
               <div class="health-score-ring">
                 <strong>--</strong>
                 <span>{{ locale.overview.healthScore }}</span>
               </div>
               <p>{{ locale.noData }}</p>
+            </div>
+            <div class="health-live-details">
+              <div class="health-live-details__title">{{ locale.overview.healthRealtime }}</div>
+              <div v-for="item in healthLiveDetails" :key="item" class="health-live-row">
+                <span>{{ item }}</span><strong>--</strong>
+              </div>
             </div>
           </div>
         </article>
@@ -67,6 +73,114 @@
             <strong class="metric-value">--</strong>
             <p class="metric-detail">{{ item.detail }}</p>
           </article>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.overview.sourceStatus }}</h3>
+              <p class="panel-description">{{ locale.overview.sourceStatusDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="service-list">
+            <div v-for="item in sourceRows" :key="item.label" class="service-row">
+              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
+                <p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p>
+              </div>
+              <span class="text-xs font-semibold text-zinc-600">--</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.overview.serviceDependencies }}</h3>
+              <p class="panel-description">{{ locale.overview.serviceDependenciesDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="service-list">
+            <div v-for="item in dependencyRows" :key="item.label" class="service-row">
+              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
+                <p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p>
+              </div>
+              <span class="text-xs font-semibold text-zinc-600">--</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">{{ locale.overview.warningEvents }}</h3>
+            <p class="panel-description">{{ locale.overview.warningEventsDetail }}</p>
+          </div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="overview-event-filters">
+          <button type="button" class="filter-field" disabled><span>{{ locale.overview.lastTwentyFourHours }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.overview.allAlertLevels }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-field" disabled><span>{{ locale.overview.allAlertStatuses }}</span><Icon name="chevron-down" :size="13" /></button>
+          <button type="button" class="filter-action" disabled><Icon name="refresh" :size="13" />{{ locale.actions.refresh }}</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[1120px]">
+            <thead>
+              <tr>
+                <th>{{ locale.logs.time }}</th>
+                <th>{{ locale.logs.level }}</th>
+                <th>{{ locale.overview.alertStatus }}</th>
+                <th>{{ locale.overview.alertSource }}</th>
+                <th>{{ locale.overview.alertContent }}</th>
+                <th>{{ locale.overview.recoveryDuration }}</th>
+                <th>{{ locale.overview.alertMetric }}</th>
+                <th>{{ locale.overview.alertAction }}</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">{{ locale.overview.systemLogs }}</h3>
+            <p class="panel-description">{{ locale.overview.systemLogsDetail }}</p>
+          </div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="log-config">
+          <div class="log-config__title">{{ locale.overview.logArchiveSettings }}</div>
+          <div class="log-config__fields">
+            <label class="filter-field"><span>{{ locale.overview.logLevel }}</span><Icon name="chevron-down" :size="13" /></label>
+            <label class="filter-field"><span>{{ locale.overview.logScope }}</span><Icon name="chevron-down" :size="13" /></label>
+            <label class="filter-field"><span>{{ locale.overview.logSampleRate }}</span><strong>--</strong></label>
+            <label class="filter-field"><span>{{ locale.overview.logRetentionDays }}</span><strong>--</strong></label>
+            <button type="button" class="filter-action" disabled><Icon name="settings" :size="13" />{{ locale.overview.saveLogSettings }}</button>
+          </div>
+        </div>
+        <div class="overview-log-filters">
+          <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input type="text" :placeholder="locale.overview.logKeyword" disabled /></label>
+          <label class="filter-field"><span>{{ locale.overview.logTimeRange }}</span><Icon name="chevron-down" :size="13" /></label>
+          <label class="filter-field"><span>{{ locale.overview.logLevel }}</span><Icon name="chevron-down" :size="13" /></label>
+          <label class="filter-field"><span>{{ locale.overview.logScope }}</span><Icon name="chevron-down" :size="13" /></label>
+          <button type="button" class="filter-action" disabled><Icon name="search" :size="13" />{{ locale.overview.queryLogs }}</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[980px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.overview.logHost }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.logs.message }}</th><th>{{ locale.overview.logRequestId }}</th></tr></thead>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
         </div>
       </section>
     </template>
@@ -594,6 +708,53 @@ const overviewSignals = computed(() => [
   }
 ])
 
+const healthLiveDetails = computed(() => [
+  locale.value.overview?.healthLevel,
+  locale.value.overview?.alertCount,
+  locale.value.overview?.lastChecked
+])
+
+const sourceRows = computed(() => [
+  {
+    icon: 'music',
+    label: locale.value.overview?.neteaseSource,
+    detail: locale.value.overview?.sourceCheckDetail
+  },
+  {
+    icon: 'music',
+    label: locale.value.overview?.tencentSource,
+    detail: locale.value.overview?.sourceCheckDetail
+  },
+  {
+    icon: 'music',
+    label: locale.value.overview?.bilibiliSource,
+    detail: locale.value.overview?.sourceCheckDetail
+  }
+])
+
+const dependencyRows = computed(() => [
+  {
+    icon: 'monitoring',
+    label: locale.value.services?.application,
+    detail: locale.value.overview?.applicationDetail
+  },
+  {
+    icon: 'database',
+    label: locale.value.services?.postgresql,
+    detail: locale.value.overview?.databaseDetail
+  },
+  {
+    icon: 'server',
+    label: locale.value.services?.redis,
+    detail: locale.value.overview?.redisDetail
+  },
+  {
+    icon: 'activity',
+    label: locale.value.server?.telemetry,
+    detail: locale.value.overview?.telemetryDetail
+  }
+])
+
 const onlineMetrics = computed(() => [
   {
     icon: 'activity',
@@ -1070,15 +1231,6 @@ const riskLevels = computed(() => [
   justify-content: center;
 }
 
-.health-layout--score-only {
-  align-items: center;
-  justify-content: center;
-}
-
-.health-layout--score-only .health-score-wrap {
-  width: 100%;
-}
-
 .health-score-wrap > p {
   margin-top: 0.75rem;
   color: rgb(82 82 91);
@@ -1108,6 +1260,42 @@ const riskLevels = computed(() => [
   color: rgb(113 113 122);
   font-size: 0.625rem;
   font-weight: 600;
+}
+
+.health-live-details {
+  min-width: 0;
+  width: 100%;
+  flex: 1;
+  align-self: stretch;
+  border-top: 1px solid rgb(39 39 42);
+}
+
+.health-live-details__title {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  color: rgb(161 161 170);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.health-live-row {
+  display: flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.health-live-row span {
+  color: rgb(113 113 122);
+  font-size: 0.6875rem;
+}
+
+.health-live-row strong {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
 }
 
 .signal-card,
@@ -1598,6 +1786,35 @@ const riskLevels = computed(() => [
   background: rgb(9 9 11 / 0.2);
 }
 
+.overview-event-filters,
+.overview-log-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.log-config {
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 1rem;
+  background: rgb(9 9 11 / 0.2);
+}
+
+.log-config__title {
+  margin-bottom: 0.75rem;
+  color: rgb(161 161 170);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.log-config__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
 .filter-field,
 .filter-action {
   display: flex;
@@ -1689,6 +1906,12 @@ const riskLevels = computed(() => [
     width: 10rem;
   }
 
+  .health-live-details {
+    border-top: 0;
+    border-left: 1px solid rgb(39 39 42);
+    padding-left: 1.25rem;
+  }
+
   .server-health-layout {
     flex-direction: row;
   }
@@ -1750,6 +1973,15 @@ const riskLevels = computed(() => [
   .audit-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .overview-event-filters,
+  .overview-log-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .log-config__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1280px) {
@@ -1775,6 +2007,18 @@ const riskLevels = computed(() => [
 
   .audit-filters {
     grid-template-columns: minmax(15rem, 2fr) minmax(10rem, 1fr) minmax(10rem, 1fr) auto;
+  }
+
+  .overview-event-filters {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .overview-log-filters {
+    grid-template-columns: minmax(15rem, 2fr) repeat(3, minmax(10rem, 1fr)) auto;
+  }
+
+  .log-config__fields {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
   }
 }
 </style>
