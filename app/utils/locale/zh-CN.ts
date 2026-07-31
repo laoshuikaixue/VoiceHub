@@ -1712,12 +1712,13 @@ export const admin = {
     awaitingConnection: '等待监控数据',
     lastUpdated: '刷新时间：',
     noData: '暂无监控数据',
-    details: '明细',
     logCount: '日志数：',
+    itemCount: '项目数：',
     filters: {
-      allScopes: '全部服务',
-      application: '应用服务',
-      database: '数据库',
+      allScopes: '全部范围',
+      server: '服务器',
+      services: '依赖服务',
+      business: '业务数据',
       allLevels: '全部级别',
       errors: '仅错误',
       warnings: '警告及以上',
@@ -1726,60 +1727,73 @@ export const admin = {
       lastDay: '近 24 小时'
     },
     actions: {
-      refresh: '刷新',
-      alertRules: '预警规则',
-      settings: '设置',
-      fullscreen: '全屏'
+      refresh: '刷新监控'
     },
     health: {
-      score: '健康度',
+      server: '服务器',
       status: '健康状况',
       waiting: '待检测',
-      realtime: '实时信息',
-      current: '当前',
-      peak: '峰值',
-      average: '平均'
+      environment: '运行环境'
+    },
+    runtime: {
+      hostname: '主机名',
+      platform: '系统平台',
+      architecture: '系统架构',
+      systemUptime: '系统运行时长',
+      processPid: '进程 PID',
+      processUptime: '进程运行时长',
+      nodeVersion: 'Node 版本',
+      instanceId: '实例 ID'
     },
     metrics: {
-      requests: '请求',
-      sla: 'SLA',
-      errorRate: '请求错误率',
-      responseTime: '请求时长',
-      ttft: '首包时长',
-      upstreamErrors: '上游错误率',
-      requestCount: '请求数',
-      exceptions: '异常数',
-      errorCount: '错误数',
-      p95: 'P95',
-      p99: 'P99',
-      upstreamCount: '上游错误数'
+      cpuUsage: 'CPU 使用率',
+      systemMemory: '系统内存',
+      diskUsage: '磁盘占用',
+      nodeHeap: 'Node 堆内存',
+      networkInterfaces: '网络接口',
+      databaseConnections: '数据库连接',
+      loadAverage: '系统负载',
+      memoryAvailable: '可用内存',
+      diskAvailable: '可用空间',
+      rssMemory: '进程 RSS',
+      networkTraffic: '累计接收 / 发送',
+      connectionPool: '活跃 / 空闲'
     },
-    infrastructure: {
-      cpu: 'CPU',
-      memory: '内存',
-      database: '数据库',
-      redis: 'Redis',
-      concurrency: '并发',
-      backgroundTasks: '后台任务',
-      utilization: '使用率 / 告警阈值',
-      usedTotal: '已用 / 总量',
-      connections: '连接 / 活跃 / 空闲',
-      cache: '缓存连接 / 命中率',
-      activePeak: '当前 / 峰值',
-      taskSummary: '总计 / 告警'
-    },
-    panels: {
-      dependencies: '服务与依赖',
-      latencyTrend: '平均响应时长趋势',
-      requestTrend: '吞吐趋势',
-      runtimeLogs: '系统运行日志',
-      dataSnapshot: '当前数据快照'
-    },
-    dependencies: {
+    services: {
+      application: '应用服务',
       postgresql: 'PostgreSQL',
       redis: 'Redis',
       musicSources: '音乐源服务',
-      smtp: 'SMTP 服务'
+      smtp: 'SMTP',
+      sentry: 'Sentry',
+      nodeProcess: 'Node.js 进程',
+      database: '数据库连接',
+      cache: '缓存服务',
+      providers: '网易云 / QQ / Bilibili',
+      mail: '邮件发送服务',
+      errorTracking: '错误追踪'
+    },
+    panels: {
+      cpuTrend: 'CPU 与系统负载趋势',
+      memoryDiskTrend: '内存与磁盘趋势',
+      networkTrend: '网络流量趋势',
+      diskPartitions: '磁盘分区',
+      networkInterfaces: '网络接口',
+      runtimeLogs: '系统运行日志',
+      businessSnapshot: '业务数据快照'
+    },
+    disk: {
+      mount: '挂载点',
+      filesystem: '文件系统',
+      used: '已用',
+      available: '可用',
+      usage: '占用率'
+    },
+    network: {
+      name: '接口',
+      address: '地址',
+      received: '累计接收',
+      sent: '累计发送'
     },
     logs: {
       time: '时间',
@@ -1791,10 +1805,10 @@ export const admin = {
     snapshots: {
       activeSemester: '当前学期',
       todaySchedule: '今日排期',
+      todaySongs: '今日歌曲投稿',
+      pendingSongs: '待审核歌曲',
       playWindow: '当前播出时段',
-      requestWindow: '当前投稿时段',
-      musicSource: '当前音乐源',
-      cacheState: '缓存状态'
+      requestWindow: '当前投稿时段'
     }
   },
   blacklist: {

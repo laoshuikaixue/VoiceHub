@@ -1703,12 +1703,13 @@ export const admin = {
     awaitingConnection: 'Awaiting monitoring data',
     lastUpdated: 'Updated:',
     noData: 'No monitoring data',
-    details: 'Details',
     logCount: 'Logs:',
+    itemCount: 'Items:',
     filters: {
-      allScopes: 'All Services',
-      application: 'Application',
-      database: 'Database',
+      allScopes: 'All Areas',
+      server: 'Server',
+      services: 'Dependencies',
+      business: 'Business Data',
       allLevels: 'All Levels',
       errors: 'Errors Only',
       warnings: 'Warnings and Above',
@@ -1717,60 +1718,73 @@ export const admin = {
       lastDay: 'Last 24 Hours'
     },
     actions: {
-      refresh: 'Refresh',
-      alertRules: 'Alert Rules',
-      settings: 'Settings',
-      fullscreen: 'Fullscreen'
+      refresh: 'Refresh'
     },
     health: {
-      score: 'Health',
+      server: 'Server',
       status: 'Health Status',
       waiting: 'Pending',
-      realtime: 'Real-time Metrics',
-      current: 'Current',
-      peak: 'Peak',
-      average: 'Average'
+      environment: 'Runtime Environment'
+    },
+    runtime: {
+      hostname: 'Hostname',
+      platform: 'Platform',
+      architecture: 'Architecture',
+      systemUptime: 'System Uptime',
+      processPid: 'Process PID',
+      processUptime: 'Process Uptime',
+      nodeVersion: 'Node Version',
+      instanceId: 'Instance ID'
     },
     metrics: {
-      requests: 'Requests',
-      sla: 'SLA',
-      errorRate: 'Request Error Rate',
-      responseTime: 'Response Time',
-      ttft: 'Time to First Byte',
-      upstreamErrors: 'Upstream Error Rate',
-      requestCount: 'Request Count',
-      exceptions: 'Exceptions',
-      errorCount: 'Error Count',
-      p95: 'P95',
-      p99: 'P99',
-      upstreamCount: 'Upstream Errors'
+      cpuUsage: 'CPU Usage',
+      systemMemory: 'System Memory',
+      diskUsage: 'Disk Usage',
+      nodeHeap: 'Node Heap',
+      networkInterfaces: 'Network Interfaces',
+      databaseConnections: 'Database Connections',
+      loadAverage: 'System Load',
+      memoryAvailable: 'Available Memory',
+      diskAvailable: 'Available Space',
+      rssMemory: 'Process RSS',
+      networkTraffic: 'Received / Sent',
+      connectionPool: 'Active / Idle'
     },
-    infrastructure: {
-      cpu: 'CPU',
-      memory: 'Memory',
-      database: 'Database',
-      redis: 'Redis',
-      concurrency: 'Concurrency',
-      backgroundTasks: 'Background Tasks',
-      utilization: 'Usage / Alert Threshold',
-      usedTotal: 'Used / Total',
-      connections: 'Connections / Active / Idle',
-      cache: 'Cache Connection / Hit Rate',
-      activePeak: 'Current / Peak',
-      taskSummary: 'Total / Alerts'
-    },
-    panels: {
-      dependencies: 'Services and Dependencies',
-      latencyTrend: 'Average Response Time',
-      requestTrend: 'Throughput Trend',
-      runtimeLogs: 'System Runtime Logs',
-      dataSnapshot: 'Current Data Snapshot'
-    },
-    dependencies: {
+    services: {
+      application: 'Application',
       postgresql: 'PostgreSQL',
       redis: 'Redis',
       musicSources: 'Music Sources',
-      smtp: 'SMTP Service'
+      smtp: 'SMTP',
+      sentry: 'Sentry',
+      nodeProcess: 'Node.js Process',
+      database: 'Database Connection',
+      cache: 'Cache Service',
+      providers: 'NetEase / QQ / Bilibili',
+      mail: 'Mail Delivery',
+      errorTracking: 'Error Tracking'
+    },
+    panels: {
+      cpuTrend: 'CPU and Load Trend',
+      memoryDiskTrend: 'Memory and Disk Trend',
+      networkTrend: 'Network Traffic Trend',
+      diskPartitions: 'Disk Partitions',
+      networkInterfaces: 'Network Interfaces',
+      runtimeLogs: 'System Runtime Logs',
+      businessSnapshot: 'Business Snapshot'
+    },
+    disk: {
+      mount: 'Mount',
+      filesystem: 'Filesystem',
+      used: 'Used',
+      available: 'Available',
+      usage: 'Usage'
+    },
+    network: {
+      name: 'Interface',
+      address: 'Address',
+      received: 'Received',
+      sent: 'Sent'
     },
     logs: {
       time: 'Time',
@@ -1782,10 +1796,10 @@ export const admin = {
     snapshots: {
       activeSemester: 'Active Semester',
       todaySchedule: 'Today Schedule',
+      todaySongs: 'Songs Submitted Today',
+      pendingSongs: 'Pending Songs',
       playWindow: 'Current Play Window',
-      requestWindow: 'Current Request Window',
-      musicSource: 'Current Music Source',
-      cacheState: 'Cache State'
+      requestWindow: 'Current Request Window'
     }
   },
   blacklist: {
