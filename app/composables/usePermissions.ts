@@ -54,6 +54,7 @@ export const usePermissions = () => {
           'semesters',
           'blacklist',
           'site-config',
+          'operations',
           'database',
           'api-keys',
           'data-analysis'

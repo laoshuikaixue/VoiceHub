@@ -167,6 +167,14 @@
               <LazyAdminDatabaseManager />
             </div>
 
+            <!-- 运维监控 -->
+            <div
+              v-if="activeTab === 'operations' && permissions.canAccessPage('operations')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <AdminOperationsDashboard />
+            </div>
+
             <!-- API密钥管理 -->
             <div
               v-if="activeTab === 'api-keys' && permissions.canAccessPage('api-keys')"
@@ -196,6 +204,7 @@ import logo from '~~/public/images/logo.svg'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
+import AdminOperationsDashboard from '~/components/Admin/OperationsDashboard.vue'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()

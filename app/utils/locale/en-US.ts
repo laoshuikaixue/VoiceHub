@@ -425,6 +425,7 @@ export const pages = {
       semesters: 'Semester Management',
       blacklist: 'Blacklist Management',
       'site-config': 'Site Configuration',
+      operations: 'Operations Monitor',
       database: 'Database Operations',
       'api-keys': 'API Key Management'
     },
@@ -1639,6 +1640,7 @@ export const admin = {
       blacklist: 'Blacklist',
       cardCodes: 'Request Cards',
       siteConfig: 'Site Config',
+      operations: 'Operations Monitor',
       database: 'Database',
       password: 'Change Password'
     },
@@ -1694,6 +1696,96 @@ export const admin = {
       schedule: 'Schedule Update',
       user: 'User Action',
       system: 'System Event'
+    }
+  },
+  operations: {
+    title: 'Operations Monitor',
+    awaitingConnection: 'Awaiting monitoring data',
+    lastUpdated: 'Updated:',
+    noData: 'No monitoring data',
+    details: 'Details',
+    logCount: 'Logs:',
+    filters: {
+      allScopes: 'All Services',
+      application: 'Application',
+      database: 'Database',
+      allLevels: 'All Levels',
+      errors: 'Errors Only',
+      warnings: 'Warnings and Above',
+      lastHour: 'Last Hour',
+      lastSixHours: 'Last 6 Hours',
+      lastDay: 'Last 24 Hours'
+    },
+    actions: {
+      refresh: 'Refresh',
+      alertRules: 'Alert Rules',
+      settings: 'Settings',
+      fullscreen: 'Fullscreen'
+    },
+    health: {
+      score: 'Health',
+      status: 'Health Status',
+      waiting: 'Pending',
+      realtime: 'Real-time Metrics',
+      current: 'Current',
+      peak: 'Peak',
+      average: 'Average'
+    },
+    metrics: {
+      requests: 'Requests',
+      sla: 'SLA',
+      errorRate: 'Request Error Rate',
+      responseTime: 'Response Time',
+      ttft: 'Time to First Byte',
+      upstreamErrors: 'Upstream Error Rate',
+      requestCount: 'Request Count',
+      exceptions: 'Exceptions',
+      errorCount: 'Error Count',
+      p95: 'P95',
+      p99: 'P99',
+      upstreamCount: 'Upstream Errors'
+    },
+    infrastructure: {
+      cpu: 'CPU',
+      memory: 'Memory',
+      database: 'Database',
+      redis: 'Redis',
+      concurrency: 'Concurrency',
+      backgroundTasks: 'Background Tasks',
+      utilization: 'Usage / Alert Threshold',
+      usedTotal: 'Used / Total',
+      connections: 'Connections / Active / Idle',
+      cache: 'Cache Connection / Hit Rate',
+      activePeak: 'Current / Peak',
+      taskSummary: 'Total / Alerts'
+    },
+    panels: {
+      dependencies: 'Services and Dependencies',
+      latencyTrend: 'Average Response Time',
+      requestTrend: 'Throughput Trend',
+      runtimeLogs: 'System Runtime Logs',
+      dataSnapshot: 'Current Data Snapshot'
+    },
+    dependencies: {
+      postgresql: 'PostgreSQL',
+      redis: 'Redis',
+      musicSources: 'Music Sources',
+      smtp: 'SMTP Service'
+    },
+    logs: {
+      time: 'Time',
+      level: 'Level',
+      scope: 'Scope',
+      message: 'Message',
+      requestId: 'Request ID'
+    },
+    snapshots: {
+      activeSemester: 'Active Semester',
+      todaySchedule: 'Today Schedule',
+      playWindow: 'Current Play Window',
+      requestWindow: 'Current Request Window',
+      musicSource: 'Current Music Source',
+      cacheState: 'Cache State'
     }
   },
   blacklist: {

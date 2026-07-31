@@ -436,6 +436,7 @@ export const pages = {
       semesters: '学期管理',
       blacklist: '黑名单管理',
       'site-config': '站点配置',
+      operations: '运维监控',
       database: '数据库操作',
       'api-keys': 'API密钥管理'
     },
@@ -1648,6 +1649,7 @@ export const admin = {
       blacklist: '黑名单管理',
       cardCodes: '点歌券管理',
       siteConfig: '站点配置',
+      operations: '运维监控',
       database: '数据库操作',
       password: '修改密码'
     },
@@ -1703,6 +1705,96 @@ export const admin = {
       schedule: '排期更新',
       user: '用户操作',
       system: '系统事件'
+    }
+  },
+  operations: {
+    title: '运维监控',
+    awaitingConnection: '等待监控数据',
+    lastUpdated: '刷新时间：',
+    noData: '暂无监控数据',
+    details: '明细',
+    logCount: '日志数：',
+    filters: {
+      allScopes: '全部服务',
+      application: '应用服务',
+      database: '数据库',
+      allLevels: '全部级别',
+      errors: '仅错误',
+      warnings: '警告及以上',
+      lastHour: '近 1 小时',
+      lastSixHours: '近 6 小时',
+      lastDay: '近 24 小时'
+    },
+    actions: {
+      refresh: '刷新',
+      alertRules: '预警规则',
+      settings: '设置',
+      fullscreen: '全屏'
+    },
+    health: {
+      score: '健康度',
+      status: '健康状况',
+      waiting: '待检测',
+      realtime: '实时信息',
+      current: '当前',
+      peak: '峰值',
+      average: '平均'
+    },
+    metrics: {
+      requests: '请求',
+      sla: 'SLA',
+      errorRate: '请求错误率',
+      responseTime: '请求时长',
+      ttft: '首包时长',
+      upstreamErrors: '上游错误率',
+      requestCount: '请求数',
+      exceptions: '异常数',
+      errorCount: '错误数',
+      p95: 'P95',
+      p99: 'P99',
+      upstreamCount: '上游错误数'
+    },
+    infrastructure: {
+      cpu: 'CPU',
+      memory: '内存',
+      database: '数据库',
+      redis: 'Redis',
+      concurrency: '并发',
+      backgroundTasks: '后台任务',
+      utilization: '使用率 / 告警阈值',
+      usedTotal: '已用 / 总量',
+      connections: '连接 / 活跃 / 空闲',
+      cache: '缓存连接 / 命中率',
+      activePeak: '当前 / 峰值',
+      taskSummary: '总计 / 告警'
+    },
+    panels: {
+      dependencies: '服务与依赖',
+      latencyTrend: '平均响应时长趋势',
+      requestTrend: '吞吐趋势',
+      runtimeLogs: '系统运行日志',
+      dataSnapshot: '当前数据快照'
+    },
+    dependencies: {
+      postgresql: 'PostgreSQL',
+      redis: 'Redis',
+      musicSources: '音乐源服务',
+      smtp: 'SMTP 服务'
+    },
+    logs: {
+      time: '时间',
+      level: '级别',
+      scope: '模块',
+      message: '日志内容',
+      requestId: '请求 ID'
+    },
+    snapshots: {
+      activeSemester: '当前学期',
+      todaySchedule: '今日排期',
+      playWindow: '当前播出时段',
+      requestWindow: '当前投稿时段',
+      musicSource: '当前音乐源',
+      cacheState: '缓存状态'
     }
   },
   blacklist: {
