@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
@@ -38,12 +38,9 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const { user, isAuthenticated } = useAuth()
 const {
-  notification: importantNotification,
   checkImportantNotification,
   resetImportantNotification
 } = useImportantNotification()
-const IMPORTANT_NOTIFICATION_POLL_INTERVAL = 30_000
-let importantNotificationPollTimer = null
 const pageViewRouteName = computed(() => {
   if (typeof route.name === 'string' && route.name) {
     return route.name
@@ -204,49 +201,13 @@ const setupHarmonyOSListeners = () => {
   window.addEventListener('harmonyos-previous', handleHarmonyOSPrevious)
 }
 
-const stopImportantNotificationPolling = () => {
-  if (!importantNotificationPollTimer) return
-  window.clearInterval(importantNotificationPollTimer)
-  importantNotificationPollTimer = null
-}
-
-const pollImportantNotification = () => {
-  if (
-    document.visibilityState !== 'visible' ||
-    !isAuthenticated.value ||
-    !user.value?.id ||
-    user.value?.requirePasswordChange === true ||
-    importantNotification.value
-  ) {
-    return
-  }
-  checkImportantNotification(true, { silent: true })
-}
-
-const startImportantNotificationPolling = () => {
-  if (importantNotificationPollTimer) return
-  importantNotificationPollTimer = window.setInterval(
-    pollImportantNotification,
-    IMPORTANT_NOTIFICATION_POLL_INTERVAL
-  )
-}
-
-const handleVisibilityChange = () => {
-  if (document.visibilityState === 'visible') pollImportantNotification()
-}
-
 // 在组件挂载后初始化认证（只会在客户端执行）
 onMounted(async () => {
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
-  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
-onBeforeUnmount(() => {
-  stopImportantNotificationPolling()
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-})
-
+// 重要通知仅在登录或会话恢复时检查一次，不做轮询，避免增加服务器负担
 watch(
   [
     () => isAuthenticated.value,
@@ -256,27 +217,12 @@ watch(
   async ([authenticated, userId, requirePasswordChange]) => {
     if (import.meta.server) return
 
-    if (!authenticated || !userId) {
-      stopImportantNotificationPolling()
-      resetImportantNotification()
-      return
-    }
-
-    if (requirePasswordChange === true) {
-      stopImportantNotificationPolling()
+    if (!authenticated || !userId || requirePasswordChange === true) {
       resetImportantNotification()
       return
     }
 
     await checkImportantNotification()
-    if (
-      !isAuthenticated.value ||
-      user.value?.id !== userId ||
-      user.value?.requirePasswordChange === true
-    ) {
-      return
-    }
-    startImportantNotificationPolling()
   },
   { immediate: true }
 )

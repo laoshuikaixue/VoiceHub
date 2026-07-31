@@ -44,10 +44,8 @@ export const useImportantNotification = () => {
     inFlightUserId = null
   }
 
-  const checkImportantNotification = async (force = false, options: { silent?: boolean } = {}) => {
+  const checkImportantNotification = async (force = false) => {
     if (import.meta.server) return null
-
-    const silent = options.silent === true
 
     const currentUserId = user.value?.id
     if (!isAuthenticated.value || !currentUserId || user.value?.requirePasswordChange === true) {
@@ -88,8 +86,7 @@ export const useImportantNotification = () => {
         if (activeRequestVersion !== requestVersion) return null
 
         error.value = localizeServerError(fetchError, locale.value.loadFailed)
-        // 轮询等静默场景下不弹错误提示，避免断网/服务异常时反复打扰
-        if (!silent) toast.error(error.value)
+        toast.error(error.value)
         return null
       })
       .finally(() => {
