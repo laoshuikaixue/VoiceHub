@@ -3,7 +3,7 @@ import { db } from '~/drizzle/db'
 import { notifications } from '~/drizzle/schema'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
-import { createNotificationReadUpdate } from '~~/server/utils/important-notification-policy'
+import { createNotificationReadUpdate, serializeNotificationSender } from '~~/server/utils/important-notification-policy'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -56,9 +56,18 @@ export default defineEventHandler(async (event) => {
       .returning()
       .then((result) => result[0])
 
-    return updatedNotification
+    // 与 /api/notifications 列表接口保持同一序列化契约，发送人原始列折叠为 sender 对象
+    if (!updatedNotification) {
+      throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
+    }
+    const { senderId, senderName, senderUsername, ...data } = updatedNotification
+    return {
+      ...data,
+      sender: serializeNotificationSender({ senderId, senderName, senderUsername })
+    }
   } catch (error) {
     console.error('标记通知失败:', error)
+    if ((error as { statusCode?: number })?.statusCode === 404) throw error
     throw createApiError(500, SERVER_ERROR_CODES.NOTIFICATION_MARK_READ_FAILED, '标记通知失败')
   }
 })

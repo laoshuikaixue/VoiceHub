@@ -2869,7 +2869,7 @@ export const admin = {
       editContent: '通知正文',
       editContentPlaceholder: '请输入 Markdown 通知正文',
       editImportant: '重要通知弹窗提醒',
-      editImportantDescription: '修改后保留现有已读状态，未读的重要通知仍会弹窗展示',
+      editImportantDescription: '保存后将生成新的通知批次，所有接收用户（含已读和已删除该通知的用户）会重置为未读并重新收到弹窗提醒',
       preview: 'Markdown 预览',
       cancel: '取消',
       save: '保存修改',

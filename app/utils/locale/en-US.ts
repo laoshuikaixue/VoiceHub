@@ -2860,7 +2860,7 @@ export const admin = {
       editContent: 'Notification Content',
       editContentPlaceholder: 'Enter Markdown notification content',
       editImportant: 'Important Notification Pop-up',
-      editImportantDescription: 'Existing read status is preserved; unread important notices still appear in a pop-up',
+      editImportantDescription: 'Saving creates a new batch: all recipients (including those who read or deleted it) are reset to unread and see the pop-up again',
       preview: 'Markdown Preview',
       cancel: 'Cancel',
       save: 'Save Changes',

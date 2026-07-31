@@ -1512,7 +1512,8 @@ export default defineEventHandler(async (event) => {
                           }
                         })
 
-                        // senderId 需要重新映射到目标库的用户 ID，映射失败时置空，保留快照字段展示
+                        // senderId 需要重新映射到目标库的用户 ID；映射未命中时回查同 ID 用户并比对用户名快照，
+                        // 不一致则置空，避免跨库恢复时将发送人归属到错误用户，展示仍靠快照字段
                         if (Object.prototype.hasOwnProperty.call(record, 'senderId')) {
                           if (record.senderId) {
                             const mappedSenderId = userIdMapping.get(record.senderId)
@@ -1520,12 +1521,15 @@ export default defineEventHandler(async (event) => {
                               notificationData.senderId = mappedSenderId
                             } else {
                               const senderExists = await tx
-                                .select({ id: users.id })
+                                .select({ id: users.id, username: users.username })
                                 .from(users)
                                 .where(eq(users.id, record.senderId))
                                 .limit(1)
                               notificationData.senderId =
-                                senderExists.length > 0 ? record.senderId : null
+                                senderExists.length > 0 &&
+                                senderExists[0].username === record.senderUsername
+                                  ? record.senderId
+                                  : null
                             }
                           } else {
                             notificationData.senderId = null

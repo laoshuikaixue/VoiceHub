@@ -129,6 +129,16 @@ export const useImportantNotification = () => {
       await checkImportantNotification(true)
       return true
     } catch (fetchError) {
+      // 通知已被管理员编辑重发或删除时旧 ID 会 404，按已不存在处理，避免弹窗无法关闭
+      const notFoundError = fetchError as { statusCode?: number; response?: { status?: number } }
+      if (notFoundError?.statusCode === 404 || notFoundError?.response?.status === 404) {
+        if (notification.value?.id === currentNotification.id) {
+          notification.value = null
+        }
+        checkedUserId.value = null
+        await checkImportantNotification(true)
+        return true
+      }
       error.value = localizeServerError(fetchError, locale.value.closeFailed)
       return false
     } finally {

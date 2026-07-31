@@ -958,7 +958,8 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) notificationData[field] = record[field]
             })
-            // senderId 需要重新映射到目标库的用户 ID，映射失败时置空，保留快照字段展示
+            // senderId 需要重新映射到目标库的用户 ID；映射未命中时回查同 ID 用户并比对用户名快照，
+            // 不一致则置空，避免跨库恢复时将发送人归属到错误用户，展示仍靠快照字段
             if (Object.prototype.hasOwnProperty.call(record, 'senderId')) {
               if (record.senderId) {
                 const mappedSenderId = userIdMapping.get(record.senderId)
@@ -968,7 +969,10 @@ export default defineEventHandler(async (event) => {
                   const senderExists = await tx.query.users.findFirst({
                     where: eq(users.id, record.senderId)
                   })
-                  notificationData.senderId = senderExists ? record.senderId : null
+                  notificationData.senderId =
+                    senderExists && senderExists.username === record.senderUsername
+                      ? record.senderId
+                      : null
                 }
               } else {
                 notificationData.senderId = null
