@@ -144,7 +144,7 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   const filename = `auto-backup-${timestamp}.json`
 
-  return { json: JSON.stringify(backupData, null, 2), filename }
+  return { json: JSON.stringify(backupData, null, 2), filename, metadata: backupData.metadata }
 }
 
 /** 上传到 S3 */
