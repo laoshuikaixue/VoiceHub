@@ -59,8 +59,13 @@
                     <PasswordField :label="locale.methods.s3.secretKey" :placeholder="locale.methods.s3.secretKeyPlaceholder" v-model="methods.s3.secretKey" />
                   </div>
                   <div class="flex gap-2">
-                    <button class="flex-1 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-bold rounded-xl transition-all uppercase tracking-widest" @click="testConnection('s3')">
-                      {{ locale.methods.s3.testConnection }}
+                    <button
+                      class="flex-1 py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                      :class="testing === 's3' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                      :disabled="testing !== null"
+                      @click="testConnection('s3')"
+                    >
+                      {{ testing === 's3' ? '测试中...' : locale.methods.s3.testConnection }}
                     </button>
                   </div>
                 </div>
@@ -82,8 +87,13 @@
                     <PasswordField :label="locale.methods.webdav.password" :placeholder="locale.methods.webdav.passwordPlaceholder" v-model="methods.webdav.password" />
                   </div>
                   <InputField :label="locale.methods.webdav.path" :placeholder="locale.methods.webdav.pathPlaceholder" v-model="methods.webdav.path" />
-                  <button class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-bold rounded-xl transition-all uppercase tracking-widest" @click="testConnection('webdav')">
-                    {{ locale.methods.webdav.testConnection }}
+                  <button
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    :class="testing === 'webdav' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                    :disabled="testing !== null"
+                    @click="testConnection('webdav')"
+                  >
+                    {{ testing === 'webdav' ? '测试中...' : locale.methods.webdav.testConnection }}
                   </button>
                 </div>
               </MethodCard>
@@ -100,8 +110,13 @@
                 <div class="space-y-3">
                   <PasswordField :label="locale.methods.telegram.botToken" :placeholder="locale.methods.telegram.botTokenPlaceholder" v-model="methods.telegram.botToken" />
                   <InputField :label="locale.methods.telegram.chatId" :placeholder="locale.methods.telegram.chatIdPlaceholder" v-model="methods.telegram.chatId" />
-                  <button class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-bold rounded-xl transition-all uppercase tracking-widest" @click="testConnection('telegram')">
-                    {{ locale.methods.telegram.testSend }}
+                  <button
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    :class="testing === 'telegram' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                    :disabled="testing !== null"
+                    @click="testConnection('telegram')"
+                  >
+                    {{ testing === 'telegram' ? '发送中...' : locale.methods.telegram.testSend }}
                   </button>
                 </div>
               </MethodCard>
@@ -121,8 +136,13 @@
                     <p class="text-[11px] text-zinc-400 leading-relaxed">{{ locale.methods.email.smtpHint }}</p>
                   </div>
                   <InputField :label="locale.methods.email.recipient" :placeholder="locale.methods.email.recipientPlaceholder" v-model="methods.email.recipient" />
-                  <button class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-xs font-bold rounded-xl transition-all uppercase tracking-widest" @click="testConnection('email')">
-                    {{ locale.methods.email.testSend }}
+                  <button
+                    class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
+                    :class="testing === 'email' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                    :disabled="testing !== null"
+                    @click="testConnection('email')"
+                  >
+                    {{ testing === 'email' ? '发送中...' : locale.methods.email.testSend }}
                   </button>
                 </div>
               </MethodCard>
@@ -307,6 +327,7 @@ const locale = computed(() => admin.value?.databaseManager?.autoBackup || {})
 
 const saving = ref(false)
 const loading = ref(false)
+const testing = ref(null)
 const historyLoading = ref(false)
 const historyRecords = ref([])
 
@@ -441,13 +462,14 @@ const copyCronCommand = () => {
 }
 
 const testConnection = async (type) => {
+  if (testing.value) return
   const testLabels = {
     s3: locale.value?.methods?.s3?.testConnection || '测试连接',
     webdav: locale.value?.methods?.webdav?.testConnection || '测试连接',
     telegram: locale.value?.methods?.telegram?.testSend || '测试发送',
     email: locale.value?.methods?.email?.testSend || '测试发送'
   }
-  showToast(testLabels[type] + '...', 'info')
+  testing.value = type
   try {
     const result = await $fetch(`/api/admin/backup/test-${type}`, {
       method: 'POST',
@@ -460,6 +482,8 @@ const testConnection = async (type) => {
     }
   } catch (err) {
     showToast(err?.data?.message || err?.message || '测试失败', 'error')
+  } finally {
+    testing.value = null
   }
 }
 
