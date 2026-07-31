@@ -77,17 +77,14 @@ test('通知批次引用支持新批次和历史单条记录', () => {
     batchId: null,
     notificationId: 42
   })
-  assert.deepEqual(
-    resolveNotificationBatchReference('legacy-group-550e8400e29b41d4a716446655440000'),
-    {
-      batchId: 'legacy-group-550e8400e29b41d4a716446655440000',
-      notificationId: null
-    }
-  )
 })
 
 test('通知批次引用拒绝无效值', () => {
   assert.equal(resolveNotificationBatchReference('legacy-0'), null)
+  assert.equal(
+    resolveNotificationBatchReference('legacy-group-550e8400e29b41d4a716446655440000'),
+    null
+  )
   assert.equal(resolveNotificationBatchReference('not-a-batch'), null)
   assert.equal(resolveNotificationBatchReference(undefined), null)
 })

@@ -5,13 +5,6 @@ export const NOTIFICATION_SOURCES = {
   ADMIN_MANUAL: 'ADMIN_MANUAL'
 } as const
 
-export type ImportantNotificationCandidate = {
-  id: number
-  createdAt: Date | string
-  important: boolean
-  read: boolean
-}
-
 export type NotificationSenderInput = {
   id: number
   name?: string | null
@@ -66,20 +59,6 @@ export const shouldDeliverSystemNotification = (
 
 export const shouldRetainNotificationHistory = (type: string, source: string): boolean =>
   type === 'SYSTEM_NOTICE' && source === NOTIFICATION_SOURCES.ADMIN_MANUAL
-
-export const selectNextImportantNotification = <T extends ImportantNotificationCandidate>(
-  candidates: T[]
-): T | null => {
-  const pending = candidates.filter((candidate) => candidate.important && !candidate.read)
-
-  pending.sort((left, right) => {
-    const createdAtDifference =
-      new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
-    return createdAtDifference || left.id - right.id
-  })
-
-  return pending[0] || null
-}
 
 export const createNotificationReadUpdate = (updatedAt = new Date()) => ({
   read: true as const,

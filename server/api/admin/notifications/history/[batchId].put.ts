@@ -85,16 +85,6 @@ export default defineEventHandler(async (event) => {
 
   if (important) {
     try {
-      const recipients = await db
-        .select({ userId: notifications.userId })
-        .from(notifications)
-        .where(baseCondition)
-
-      if (recipients.length === 0) {
-        throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
-      }
-
-      const recipientUserIds = [...new Set(recipients.map(({ userId }) => userId))]
       const batchId = randomUUID()
       const createdAt = new Date()
       const senderSnapshot = createNotificationSenderSnapshot({
@@ -103,22 +93,40 @@ export default defineEventHandler(async (event) => {
         username: user.username
       })
 
-      await db.insert(notifications).values(
-        recipientUserIds.map((userId) => ({
-          userId,
-          type: 'SYSTEM_NOTICE',
-          batchId,
-          source: NOTIFICATION_SOURCES.ADMIN_MANUAL,
-          ...senderSnapshot,
-          title,
-          message: content,
-          important: true,
-          read: false,
-          userDeleted: false,
-          createdAt,
-          updatedAt: createdAt
-        }))
-      )
+      // 同一事务内删除旧批次并重新下发，避免旧内容继续弹窗、历史列表残留重复记录
+      const recipientUserIds = await db.transaction(async (tx) => {
+        const recipients = await tx
+          .delete(notifications)
+          .where(baseCondition)
+          .returning({ userId: notifications.userId })
+
+        if (recipients.length === 0) {
+          return []
+        }
+
+        const userIds = [...new Set(recipients.map(({ userId }) => userId))]
+        await tx.insert(notifications).values(
+          userIds.map((userId) => ({
+            userId,
+            type: 'SYSTEM_NOTICE',
+            batchId,
+            source: NOTIFICATION_SOURCES.ADMIN_MANUAL,
+            ...senderSnapshot,
+            title,
+            message: content,
+            important: true,
+            read: false,
+            userDeleted: false,
+            createdAt,
+            updatedAt: createdAt
+          }))
+        )
+        return userIds
+      })
+
+      if (recipientUserIds.length === 0) {
+        throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
+      }
 
       return {
         success: true,

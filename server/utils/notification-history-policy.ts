@@ -86,19 +86,11 @@ export const resolveNotificationHistoryPagination = (
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const LEGACY_BATCH_PATTERN = /^legacy-([1-9]\d*)$/
-const LEGACY_GROUP_PATTERN = /^legacy-group-[0-9a-f]{32}$/
 
 export const resolveNotificationBatchReference = (value: unknown) => {
   if (typeof value !== 'string') return null
 
   const normalized = value.trim()
-  if (LEGACY_GROUP_PATTERN.test(normalized)) {
-    return {
-      batchId: normalized,
-      notificationId: null
-    }
-  }
-
   const legacyMatch = normalized.match(LEGACY_BATCH_PATTERN)
   if (legacyMatch) {
     return {

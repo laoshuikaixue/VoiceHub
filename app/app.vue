@@ -220,7 +220,7 @@ const pollImportantNotification = () => {
   ) {
     return
   }
-  checkImportantNotification(true)
+  checkImportantNotification(true, { silent: true })
 }
 
 const startImportantNotificationPolling = () => {

@@ -948,7 +948,6 @@ export default defineEventHandler(async (event) => {
             const fields = [
               'batchId',
               'source',
-              'senderId',
               'senderName',
               'senderUsername',
               'title',
@@ -959,8 +958,24 @@ export default defineEventHandler(async (event) => {
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) notificationData[field] = record[field]
             })
+            // senderId 需要重新映射到目标库的用户 ID，映射失败时置空，保留快照字段展示
+            if (Object.prototype.hasOwnProperty.call(record, 'senderId')) {
+              if (record.senderId) {
+                const mappedSenderId = userIdMapping.get(record.senderId)
+                if (mappedSenderId) {
+                  notificationData.senderId = mappedSenderId
+                } else {
+                  const senderExists = await tx.query.users.findFirst({
+                    where: eq(users.id, record.senderId)
+                  })
+                  notificationData.senderId = senderExists ? record.senderId : null
+                }
+              } else {
+                notificationData.senderId = null
+              }
+            }
             notificationData.read = record.hasOwnProperty('read') ? record.read : false
-            notificationData.important = record.hasOwnProperty('important')
+            notificationData.important = Object.prototype.hasOwnProperty.call(record, 'important')
               ? record.important
               : false
             notificationData.createdAt = record.createdAt ? new Date(record.createdAt) : new Date()

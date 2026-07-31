@@ -3529,10 +3529,6 @@ export const admin = {
       complete: (created: number, failed: number) => `导入完成：成功导入 ${created} 个，失败 ${failed} 个`,
       batchFailed: (batch: number, message: string) => `第 ${batch} 批请求失败: ${message}`,
       rowError: (row: string | number, name: string, reason: string) => `第${row}行${name}: ${reason}`
-    },
-    permissionNotification: {
-      title: '权限变更通知',
-      message: (oldRole: string, newRole: string) => `您的账户权限已由超级管理员更新：${oldRole} → ${newRole}`
     }
   },
   apiKeys: {

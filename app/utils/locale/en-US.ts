@@ -3520,10 +3520,6 @@ export const admin = {
       complete: (created: number, failed: number) => `Import complete: ${created} imported, ${failed} failed`,
       batchFailed: (batch: number, message: string) => `Batch ${batch} request failed: ${message}`,
       rowError: (row: string | number, name: string, reason: string) => `Row ${row}${name}: ${reason}`
-    },
-    permissionNotification: {
-      title: 'Permission Change Notification',
-      message: (oldRole: string, newRole: string) => `Your account permission was updated by a super admin: ${oldRole} → ${newRole}`
     }
   },
   apiKeys: {

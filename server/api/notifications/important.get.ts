@@ -11,7 +11,7 @@ import {
 export default defineEventHandler(async (event) => {
   const user = event.context.user
 
-  if (!shouldCheckImportantNotification(Boolean(user), user?.id)) {
+  if (!shouldCheckImportantNotification(Boolean(user), user?.id, user?.requirePasswordChange === true)) {
     throw createApiError(
       401,
       SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED,

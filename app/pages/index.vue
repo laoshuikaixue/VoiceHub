@@ -472,10 +472,15 @@
                           </div>
                         </div>
                         <div class="notification-card-body">
+                          <!-- 仅管理员手动发送的通知渲染 Markdown，系统自动通知含用户可控内容，保持纯文本 -->
                           <div
+                            v-if="isAdminManualNotification(notification)"
                             class="notification-text markdown-body"
-                            v-html="renderMarkdown(notification.message)"
+                            v-html="renderedNotificationMessages[notification.id]"
                           />
+                          <div v-else class="notification-text">
+                            {{ notification.message }}
+                          </div>
 
                           <!-- 联合投稿邀请操作按�?-->
                           <div
@@ -1217,6 +1222,20 @@ const getNotificationSenderName = (notification) =>
   notification?.sender?.name?.trim() ||
   notification?.sender?.username?.trim() ||
   locale.value.systemSender
+
+// 只有管理员手动发送的通知才允许 Markdown 渲染
+const isAdminManualNotification = (notification) => notification?.source === 'ADMIN_MANUAL'
+
+// 预计算已清洗的 Markdown HTML，避免模板内重复解析
+const renderedNotificationMessages = computed(() => {
+  const rendered = {}
+  for (const notification of userNotifications.value) {
+    if (isAdminManualNotification(notification)) {
+      rendered[notification.id] = renderMarkdown(notification.message)
+    }
+  }
+  return rendered
+})
 
 // 格式化通知时间
 const formatNotificationTime = (timeString) => {

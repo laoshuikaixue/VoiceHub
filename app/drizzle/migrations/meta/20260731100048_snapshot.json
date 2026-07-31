@@ -1,6 +1,6 @@
 {
-  "id": "68315fa7-197b-4549-8453-252dcdf942c8",
-  "prevId": "f73cd872-da38-4031-b8c8-eff8edd28574",
+  "id": "819a0221-a4c5-4ff2-bd7e-710dd1c39700",
+  "prevId": "3217bc20-a7f0-46ad-9e45-3757b77c7b79",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -691,6 +691,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'SYSTEM'"
+        },
         "senderId": {
           "name": "senderId",
           "type": "integer",
@@ -735,6 +742,13 @@
           "notNull": true,
           "default": false
         },
+        "userDeleted": {
+          "name": "userDeleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "userId": {
           "name": "userId",
           "type": "integer",
@@ -754,6 +768,12 @@
           "columns": [
             {
               "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "userDeleted",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

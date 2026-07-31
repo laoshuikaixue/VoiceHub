@@ -19,8 +19,9 @@ export default defineEventHandler(async (event) => {
       eq(notifications.userId, user.id),
       eq(notifications.userDeleted, false)
     )!
-    const [retainedNotifications, deletedNotifications] = await Promise.all([
-      db
+    // 同一事务内先软删后硬删，避免部分失败时状态不一致
+    const { retainedNotifications, deletedNotifications } = await db.transaction(async (tx) => {
+      const retained = await tx
         .update(notifications)
         .set(createNotificationUserDeleteUpdate())
         .where(
@@ -30,8 +31,8 @@ export default defineEventHandler(async (event) => {
             eq(notifications.source, NOTIFICATION_SOURCES.ADMIN_MANUAL)
           )
         )
-        .returning({ id: notifications.id }),
-      db
+        .returning({ id: notifications.id })
+      const deleted = await tx
         .delete(notifications)
         .where(
           and(
@@ -43,7 +44,8 @@ export default defineEventHandler(async (event) => {
           )
         )
         .returning({ id: notifications.id })
-    ])
+      return { retainedNotifications: retained, deletedNotifications: deleted }
+    })
 
     return {
       success: true,

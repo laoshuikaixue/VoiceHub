@@ -85,12 +85,17 @@ export default defineEventHandler(async (event) => {
 
   const targetUserId = body?.userId
   if (targetUserId !== undefined) {
-    if (!Number.isInteger(targetUserId) || Number(targetUserId) <= 0) {
+    // 兼容旧调用方传入数字字符串的情况
+    const normalizedUserId =
+      typeof targetUserId === 'string' && targetUserId.trim()
+        ? Number(targetUserId.trim())
+        : targetUserId
+    if (!Number.isInteger(normalizedUserId) || Number(normalizedUserId) <= 0) {
       throw createApiError(400, SERVER_ERROR_CODES.NOTIFICATION_USER_ID_INVALID, '无效的用户 ID')
     }
 
     const result = await createSystemNotification(
-      Number(targetUserId),
+      Number(normalizedUserId),
       title,
       content,
       important,
