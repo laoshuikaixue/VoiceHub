@@ -295,6 +295,16 @@ crontab -e
                 </div>
               </div>
             </div>
+            <div v-if="historyRecords.length > 0" class="flex justify-end pt-2">
+              <button
+                class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-zinc-500 hover:text-red-400 bg-zinc-950/50 border border-zinc-800 hover:border-red-500/20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="clearingHistory"
+                @click="clearHistory"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+                {{ clearingHistory ? '清空中...' : locale.history.clear || '清空历史' }}
+              </button>
+            </div>
           </CollapsibleSection>
         </div>
 
@@ -314,7 +324,7 @@ crontab -e
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail } from '@lucide/vue'
+import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
 import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'
@@ -337,6 +347,7 @@ const loading = ref(false)
 const testing = ref(null)
 const configuredSecrets = ref({})
 const historyLoading = ref(false)
+const clearingHistory = ref(false)
 const historyRecords = ref([])
 
 // 总开关
@@ -471,6 +482,19 @@ const loadHistory = async () => {
     console.error('加载备份历史失败:', err)
   } finally {
     historyLoading.value = false
+  }
+}
+
+const clearHistory = async () => {
+  clearingHistory.value = true
+  try {
+    const result = await $fetch('/api/admin/backup/history-clear', { method: 'POST' })
+    showToast(result.message || '备份历史已清空', 'success')
+    historyRecords.value = []
+  } catch (err) {
+    showToast(err?.data?.message || '清空失败', 'error')
+  } finally {
+    clearingHistory.value = false
   }
 }
 

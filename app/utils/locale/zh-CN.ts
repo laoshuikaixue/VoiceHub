@@ -3102,6 +3102,7 @@ export const admin = {
         title: '备份历史',
         empty: '暂无备份记录',
         emptyHint: '触发一次备份后，记录将显示在此处',
+        clear: '清空历史',
       },
 
       messages: {

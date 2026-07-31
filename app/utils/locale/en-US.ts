@@ -3093,6 +3093,7 @@ export const admin = {
         title: 'Backup History',
         empty: 'No backup records yet',
         emptyHint: 'Records will appear here after triggering a backup',
+        clear: 'Clear History',
       },
 
       messages: {
