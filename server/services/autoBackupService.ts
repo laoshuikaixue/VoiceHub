@@ -343,6 +343,13 @@ export async function getBackupHistory(limit: number = 50): Promise<Array<{
 
 /** 清理 30 天前的备份历史记录 */
 export async function cleanupOldHistory(retentionDays: number = 30): Promise<number> {
+  if (retentionDays <= 0) {
+    const result = await db.delete(backupHistory)
+    const count = result.rowCount ?? 0
+    if (count > 0) console.log(`清理了全部 ${count} 条备份历史记录`)
+    return count
+  }
+
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
   const result = await db.delete(backupHistory).where(lt(backupHistory.createdAt, cutoff))
   if (result.rowCount && result.rowCount > 0) {
