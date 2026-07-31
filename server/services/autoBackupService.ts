@@ -251,7 +251,6 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
   }
 
   const { json, filename, metadata } = await exportBackupData()
-  const results: Array<{ method: string; success: boolean; error?: string }> = []
 
   const methods = [
     { key: 's3' as const, name: 'S3', fn: () => doS3Upload(config.methods.s3, json, filename) },
@@ -260,17 +259,20 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
     { key: 'email' as const, name: 'Email', fn: () => doEmailSend(config.methods.email, json, filename) }
   ]
 
-  for (const { key, name, fn } of methods) {
-    if (!config.methods[key].enabled) continue
+  // 并行上传到所有启用的备份方式
+  const tasks = methods
+    .filter(({ key }) => config.methods[key].enabled)
+    .map(async ({ key, name, fn }) => {
+      try {
+        await fn()
+        return { method: name, success: true }
+      } catch (error: any) {
+        console.error(`${name} 备份失败:`, error)
+        return { method: name, success: false, error: error.message }
+      }
+    })
 
-    try {
-      await fn()
-      results.push({ method: name, success: true })
-    } catch (error: any) {
-      console.error(`${name} 备份失败:`, error)
-      results.push({ method: name, success: false, error: error.message })
-    }
-  }
+  const results: Array<{ method: string; success: boolean; error?: string }> = await Promise.all(tasks)
 
   if (results.length === 0) {
     throw createApiError(400, SERVER_ERROR_CODES.NO_BACKUP_METHOD_ENABLED, '没有启用任何备份方式')
