@@ -27,7 +27,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
-import { desc, lt } from 'drizzle-orm'
+import { desc, lt, sql } from 'drizzle-orm'
 
 /** 自动备份配置结构 */
 export interface AutoBackupConfig {
@@ -341,19 +341,27 @@ export async function getBackupHistory(limit: number = 50): Promise<Array<{
   }))
 }
 
-/** 清理 30 天前的备份历史记录 */
+/** 清理备份历史记录 */
 export async function cleanupOldHistory(retentionDays: number = 30): Promise<number> {
   if (retentionDays <= 0) {
-    const result = await db.delete(backupHistory)
-    const count = result.rowCount ?? 0
-    if (count > 0) console.log(`清理了全部 ${count} 条备份历史记录`)
+    const [{ cnt }] = await db.select({ cnt: sql<number>`count(*)::int` }).from(backupHistory)
+    const count = cnt ?? 0
+    if (count > 0) {
+      await db.delete(backupHistory)
+      console.log(`清理了全部 ${count} 条备份历史记录`)
+    }
     return count
   }
 
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
-  const result = await db.delete(backupHistory).where(lt(backupHistory.createdAt, cutoff))
-  if (result.rowCount && result.rowCount > 0) {
-    console.log(`清理了 ${result.rowCount} 条过期备份历史记录`)
+  const [{ cnt }] = await db
+    .select({ cnt: sql<number>`count(*)::int` })
+    .from(backupHistory)
+    .where(lt(backupHistory.createdAt, cutoff))
+  const count = cnt ?? 0
+  if (count > 0) {
+    await db.delete(backupHistory).where(lt(backupHistory.createdAt, cutoff))
+    console.log(`清理了 ${count} 条过期备份历史记录`)
   }
-  return result.rowCount ?? 0
+  return count
 }
