@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -9,7 +10,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { botToken, chatId } = body
+  let { botToken, chatId } = body
+
+  // botToken 为空时从已保存配置中获取
+  if (!botToken) {
+    const config = await getAutoBackupConfig()
+    botToken = config?.methods?.telegram?.botToken || ''
+    chatId = chatId || config?.methods?.telegram?.chatId || ''
+  }
 
   if (!botToken || !chatId) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：botToken, chatId')

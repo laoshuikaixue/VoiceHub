@@ -1,6 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -9,7 +10,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const { url, username, password, path: dirPath } = body
+  let { url, username, password, path: dirPath } = body
+
+  // 密码为空时从已保存配置中获取
+  if (!password) {
+    const config = await getAutoBackupConfig()
+    password = config?.methods?.webdav?.password || ''
+    username = username || config?.methods?.webdav?.username || ''
+    url = url || config?.methods?.webdav?.url || ''
+    dirPath = dirPath || config?.methods?.webdav?.path || ''
+  }
 
   if (!url || !username || !password) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '缺少必要参数：url, username, password')

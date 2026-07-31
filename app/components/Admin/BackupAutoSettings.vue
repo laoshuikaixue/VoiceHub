@@ -531,9 +531,15 @@ const testConnection = async (type) => {
   }
   testing.value = type
   try {
+    const payload = { ...methods[type] }
+    // 哨兵值不发送，由后端从已存储配置中获取真实密钥
+    if (type === 's3' && payload.secretKey === SECRET_SENTINEL) delete payload.secretKey
+    if (type === 'webdav' && payload.password === SECRET_SENTINEL) delete payload.password
+    if (type === 'telegram' && payload.botToken === SECRET_SENTINEL) delete payload.botToken
+
     const result = await $fetch(`/api/admin/backup/test-${type}`, {
       method: 'POST',
-      body: methods[type]
+      body: payload
     })
     if (result.success) {
       showToast(result.message || '测试成功', 'success')
