@@ -251,7 +251,7 @@
   -d '{"type": "full"}'</code></pre>
                   <button
                     class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors"
-                    @click="copyToClipboard(`curl -X POST \"${triggerEndpointUrl}\" \\\n  -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\": \"full\"}'`)"
+                    @click="copyCurlCommand"
                   >
                     <Copy class="w-3.5 h-3.5" />
                   </button>
@@ -293,7 +293,7 @@
               <!-- GitHub Actions -->
               <div v-if="activeTriggerMethod === 'github'" class="space-y-3">
                 <div class="relative">
-                  <pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code>name: Auto Backup
+                  <pre v-pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code>name: Auto Backup
 on:
   schedule:
     - cron: '0 3 * * *'  # 每天凌晨3点
@@ -303,13 +303,13 @@ jobs:
     steps:
       - name: Trigger Backup
         run: |
-          curl -X POST "${{ '{{' }} secrets.BACKUP_URL }}" \
-            -H "Authorization: Bearer ${{ '{{' }} secrets.API_KEY }}" \
+          curl -X POST "${{ secrets.BACKUP_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"type": "full"}'</code></pre>
                   <button
                     class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors"
-                    @click="copyToClipboard(`name: Auto Backup\non:\n  schedule:\n    - cron: '0 3 * * *'\njobs:\n  backup:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Trigger Backup\n        run: |\n          curl -X POST \"\${ secrets.BACKUP_URL }\" \\\n            -H \"Authorization: Bearer \${ secrets.API_KEY }\" \\\n            -H \"Content-Type: application/json\" \\\n            -d '{\"type\": \"full\"}'`)"
+                    @click="copyGithubAction"
                   >
                     <Copy class="w-3.5 h-3.5" />
                   </button>
@@ -330,7 +330,7 @@ crontab -e
   -d '{"type": "full"}'</code></pre>
                   <button
                     class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors"
-                    @click="copyToClipboard(`0 3 * * * curl -X POST \"${triggerEndpointUrl}\" \\\n  -H \"Authorization: Bearer YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\": \"full\"}'`)"
+                    @click="copyCronCommand"
                   >
                     <Copy class="w-3.5 h-3.5" />
                   </button>
@@ -499,6 +499,21 @@ const copyToClipboard = async (text) => {
   } catch {
     showToast(locale.value?.messages?.copyFailed || '复制失败', 'error')
   }
+}
+
+// 各触发方式的复制内容
+const copyCurlCommand = () => {
+  const url = triggerEndpointUrl.value
+  copyToClipboard(`curl -X POST "${url}" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "full"}'`)
+}
+
+const copyGithubAction = () => {
+  copyToClipboard(`name: Auto Backup\non:\n  schedule:\n    - cron: '0 3 * * *'\njobs:\n  backup:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Trigger Backup\n        run: |\n          curl -X POST "\${ secrets.BACKUP_URL }" \\\n            -H "Authorization: Bearer \${ secrets.API_KEY }" \\\n            -H "Content-Type: application/json" \\\n            -d '{"type": "full"}'`)
+}
+
+const copyCronCommand = () => {
+  const url = triggerEndpointUrl.value
+  copyToClipboard(`0 3 * * * curl -X POST "${url}" \\\n  -H "Authorization: Bearer YOUR_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"type": "full"}'`)
 }
 
 // 测试 S3 连接
