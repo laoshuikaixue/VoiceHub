@@ -14,9 +14,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   /** 根据主题更新 theme-color meta */
   function updateMeta(theme) {
+    const cs = getComputedStyle(document.documentElement)
     const colorMap = {
-      dark: '#111111',
-      light: '#ffffff'
+      dark: cs.getPropertyValue('--bg-primary').trim() || '#111111',
+      light: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff'
     }
     let meta = document.querySelector("meta[name='theme-color']")
     if (!meta) {
@@ -24,7 +25,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       meta.setAttribute('name', 'theme-color')
       document.head.appendChild(meta)
     }
-    meta.setAttribute('content', colorMap[theme] || '#111111')
+    meta.setAttribute('content', colorMap[theme] || cs.getPropertyValue('--bg-primary').trim() || '#111111')
   }
 
   // 应用 saved theme

@@ -38,12 +38,12 @@ button {
 
 /* 保护选中文本颜色 */
 ::selection {
-  background-color: rgba(79, 70, 229, 0.3);
+  background-color: var(--selection-bg, rgba(79, 70, 229, 0.3));
   color: inherit;
 }
 
 ::-moz-selection {
-  background-color: rgba(79, 70, 229, 0.3);
+  background-color: var(--selection-bg, rgba(79, 70, 229, 0.3));
   color: inherit;
 }
 

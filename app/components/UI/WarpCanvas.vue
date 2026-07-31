@@ -125,7 +125,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
 
 // 光晕颜色 — 跟随主题色（统一用 hex 格式）
 const glowColors = {
-  color: '',       // hex: #6366f1
+  color: '',       // hex: --brand-indigo (#6366f1)
   overlayEnd: '',  // rgba string for gradient end
   load() {
     const cs = getComputedStyle(document.documentElement)

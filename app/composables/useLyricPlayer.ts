@@ -40,7 +40,7 @@ export const useLyricPlayer = () => {
   const defaultConfig: LyricRenderConfig = {
     fontSize: 24,
     lineHeight: 1.6,
-    activeColor: '#ffffff',
+    activeColor: 'var(--text-primary)',
     inactiveColor: 'var(--overlay-60)',
     passedColor: 'var(--overlay-40)',
     enableBlur: true,
@@ -52,18 +52,18 @@ export const useLyricPlayer = () => {
   // 将 config 中的 CSS 变量替换为实际颜色值（Canvas 无法直接解析 CSS 变量）
   const resolveCssVariables = (cfg: LyricRenderConfig): LyricRenderConfig => {
     const style = getComputedStyle(document.documentElement)
-    const resolve = (color: string) => {
+    const resolve = (color: string, fallback = '#ffffff') => {
       if (!color.startsWith('var(')) return color
       const varName = color.match(/var\(--([a-z0-9-]+)\)/)?.[1]
       if (!varName) return color
       const resolved = style.getPropertyValue(varName).trim()
-      return resolved || color
+      return resolved || fallback
     }
     return {
       ...cfg,
-      inactiveColor: resolve(cfg.inactiveColor),
-      passedColor: resolve(cfg.passedColor),
-      activeColor: resolve(cfg.activeColor)
+      inactiveColor: resolve(cfg.inactiveColor, '#cccccc'),
+      passedColor: resolve(cfg.passedColor, '#888888'),
+      activeColor: resolve(cfg.activeColor, '#ffffff')
     }
   }
 
@@ -320,11 +320,11 @@ export const useLyricPlayer = () => {
   // 监听主题切换：CSS 变量值变化时重新解析颜色
   if (import.meta.client) {
     const observer = new MutationObserver((mutations) => {
-      if (mutations.some(m => m.attributeName === 'data-theme')) {
+      if (mutations.some(m => m.attributeName === 'data-theme' || m.attributeName === 'style')) {
         applyConfig()
       }
     })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'style'] })
     onUnmounted(() => observer.disconnect())
   }
 
