@@ -56,7 +56,7 @@
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <InputField :label="locale.methods.s3.accessKey" :placeholder="locale.methods.s3.accessKeyPlaceholder" v-model="methods.s3.accessKey" />
-                    <PasswordField :label="locale.methods.s3.secretKey" :placeholder="locale.methods.s3.secretKeyPlaceholder" v-model="methods.s3.secretKey" />
+                    <PasswordField :label="locale.methods.s3.secretKey" :placeholder="s3SecretKeyPlaceholder" v-model="methods.s3.secretKey" />
                   </div>
                   <div class="flex gap-2">
                     <button
@@ -84,7 +84,7 @@
                   <InputField :label="locale.methods.webdav.url" :placeholder="locale.methods.webdav.urlPlaceholder" v-model="methods.webdav.url" />
                   <div class="grid grid-cols-2 gap-3">
                     <InputField :label="locale.methods.webdav.username" :placeholder="locale.methods.webdav.usernamePlaceholder" v-model="methods.webdav.username" />
-                    <PasswordField :label="locale.methods.webdav.password" :placeholder="locale.methods.webdav.passwordPlaceholder" v-model="methods.webdav.password" />
+                    <PasswordField :label="locale.methods.webdav.password" :placeholder="webdavPasswordPlaceholder" v-model="methods.webdav.password" />
                   </div>
                   <InputField :label="locale.methods.webdav.path" :placeholder="locale.methods.webdav.pathPlaceholder" v-model="methods.webdav.path" />
                   <button
@@ -108,7 +108,7 @@
               >
                 <template #icon><Send class="w-5 h-5" /></template>
                 <div class="space-y-3">
-                  <PasswordField :label="locale.methods.telegram.botToken" :placeholder="locale.methods.telegram.botTokenPlaceholder" v-model="methods.telegram.botToken" />
+                  <PasswordField :label="locale.methods.telegram.botToken" :placeholder="telegramBotTokenPlaceholder" v-model="methods.telegram.botToken" />
                   <InputField :label="locale.methods.telegram.chatId" :placeholder="locale.methods.telegram.chatIdPlaceholder" v-model="methods.telegram.chatId" />
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
@@ -335,6 +335,7 @@ const locale = computed(() => admin.value?.databaseManager?.autoBackup || {})
 const saving = ref(false)
 const loading = ref(false)
 const testing = ref(null)
+const configuredSecrets = ref({})
 const historyLoading = ref(false)
 const historyRecords = ref([])
 
@@ -386,6 +387,18 @@ const triggerEndpointUrl = computed(() => {
   return 'https://your-domain.com/api/open/backup/auto'
 })
 
+// 密钥占位符：已配置时显示圆点，未配置时显示 locale 原文
+const SECRET_PLACEHOLDER = '••••••••••••••••'
+const s3SecretKeyPlaceholder = computed(() =>
+  configuredSecrets.value.s3SecretKey && !methods.s3.secretKey ? SECRET_PLACEHOLDER : locale.value?.methods?.s3?.secretKeyPlaceholder || ''
+)
+const webdavPasswordPlaceholder = computed(() =>
+  configuredSecrets.value.webdavPassword && !methods.webdav.password ? SECRET_PLACEHOLDER : locale.value?.methods?.webdav?.passwordPlaceholder || ''
+)
+const telegramBotTokenPlaceholder = computed(() =>
+  configuredSecrets.value.telegramBotToken && !methods.telegram.botToken ? SECRET_PLACEHOLDER : locale.value?.methods?.telegram?.botTokenPlaceholder || ''
+)
+
 // 加载已有配置
 const loadConfig = async () => {
   loading.value = true
@@ -395,6 +408,7 @@ const loadConfig = async () => {
       masterEnabled.value = data.enabled
       if (data.config) {
         const cfg = data.config
+        configuredSecrets.value = cfg.configuredSecrets || {}
         if (cfg.methods) {
           for (const key of ['s3', 'webdav', 'telegram', 'email']) {
             if (cfg.methods[key]) {

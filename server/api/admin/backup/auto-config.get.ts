@@ -21,18 +21,24 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-/** 移除敏感信息后返回 */
+/** 移除敏感信息后返回，参考 OAuth 配置的密钥保护模式 */
 function sanitizeConfig(config: any) {
   const sanitized = JSON.parse(JSON.stringify(config))
-  // 隐藏密钥
+  const configuredSecrets: Record<string, boolean> = {}
+
   if (sanitized.methods?.s3) {
-    sanitized.methods.s3.secretKey = sanitized.methods.s3.secretKey ? '****' : ''
+    configuredSecrets.s3SecretKey = !!sanitized.methods.s3.secretKey
+    sanitized.methods.s3.secretKey = ''
   }
   if (sanitized.methods?.webdav) {
-    sanitized.methods.webdav.password = sanitized.methods.webdav.password ? '****' : ''
+    configuredSecrets.webdavPassword = !!sanitized.methods.webdav.password
+    sanitized.methods.webdav.password = ''
   }
   if (sanitized.methods?.telegram) {
-    sanitized.methods.telegram.botToken = sanitized.methods.telegram.botToken ? '****' : ''
+    configuredSecrets.telegramBotToken = !!sanitized.methods.telegram.botToken
+    sanitized.methods.telegram.botToken = ''
   }
+
+  sanitized.configuredSecrets = configuredSecrets
   return sanitized
 }
