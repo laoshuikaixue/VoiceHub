@@ -3,6 +3,7 @@ import { createError } from 'h3'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -20,7 +21,9 @@ export default defineEventHandler(async (event) => {
   const [existing] = await db.select({ id: systemSettings.id }).from(systemSettings).limit(1)
 
   if (!existing) {
+    // 表为空时，用系统默认值创建完整行，避免部分字段缺失
     await db.insert(systemSettings).values({
+      ...SYSTEM_SETTINGS_DEFAULTS,
       autoBackupEnabled: enabled,
       autoBackupConfig: config ? JSON.stringify(config) : null
     })
