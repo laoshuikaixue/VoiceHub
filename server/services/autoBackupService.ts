@@ -282,13 +282,35 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
   }).returning({ id: backupHistory.id })
   const historyId = inserted.id
 
-  // 并行上传到所有启用的备份方式
-  const tasks = enabledMethods.map(async ({ key, name, fn }) => {
+  // 串行化 DB 更新，避免并行写入时的竞态条件
+  let updateChain: Promise<void> = Promise.resolve()
+
+  function updateMethodResult(index: number, result: { method: string; success: boolean; error?: string }) {
+    const prev = updateChain
+    updateChain = prev.then(async () => {
+      const [record] = await db
+        .select({ methods: backupHistory.methods })
+        .from(backupHistory)
+        .where(eq(backupHistory.id, historyId))
+      if (!record) return
+      const methods = JSON.parse(record.methods)
+      methods[index] = result
+      await db.update(backupHistory)
+        .set({ methods: JSON.stringify(methods) })
+        .where(eq(backupHistory.id, historyId))
+    })
+    return updateChain
+  }
+
+  // 并行上传，每个完成后立即更新对应方法的结果
+  const tasks = enabledMethods.map(async ({ key, name, fn }, index) => {
     try {
       await fn()
+      await updateMethodResult(index, { method: name, success: true })
       return { method: name, success: true }
     } catch (error: any) {
       console.error(`${name} 备份失败:`, error)
+      await updateMethodResult(index, { method: name, success: false, error: error.message })
       return { method: name, success: false, error: error.message }
     }
   })
@@ -297,12 +319,9 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
 
   const overallSuccess = results.some(r => r.success)
 
-  // 更新历史记录为实际结果
+  // 更新整体成功状态
   await db.update(backupHistory)
-    .set({
-      success: overallSuccess,
-      methods: JSON.stringify(results)
-    })
+    .set({ success: overallSuccess })
     .where(eq(backupHistory.id, historyId))
 
   console.log(`备份历史已更新: ${filename}`)
