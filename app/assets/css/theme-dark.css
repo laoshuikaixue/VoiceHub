@@ -549,12 +549,18 @@
   --mask-85: rgba(0, 0, 0, 0.85);
   --mask-95: rgba(0, 0, 0, 0.95);
 
-  /* 打印专用变量（覆盖主题配色） */
-  --print-bg: #f0f0f0;
-  --print-text-primary: #000;
-  --print-text-secondary: #333;
-  --print-text-tertiary: #666;
-  --print-border: #ccc;
+  /* 打印专用变量（覆盖主题配色，白底黑字） */
+  --print-bg: #ffffff;
+  --print-bg-subtle: #f8f9fa;
+  --print-bg-subtler: #f3f4f6;
+  --print-bg-deep: #f0f0f0;
+  --print-bg-darker: #f5f5f5;
+  --print-text-primary: #1a1a1a;
+  --print-text-secondary: #3a3a3c;
+  --print-text-tertiary: #636366;
+  --print-border: #d1d5db;
+  --print-border-light: #e5e5ea;
+  --print-muted: #6c757d;
   /* Year Review 专用变量 */
   --year-review-text-tertiary: #6b7280;
   --year-review-text-yellow: #fde047;

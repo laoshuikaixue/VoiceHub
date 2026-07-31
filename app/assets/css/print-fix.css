@@ -52,8 +52,8 @@
     box-sizing: border-box !important;
     margin: 0 auto !important;
     padding: 20mm !important;
-    background: white !important;
-    color: black !important;
+    background: var(--print-bg) !important;
+    color: var(--print-text-primary) !important;
   }
 
   /* 排期内容容器 */

@@ -82,7 +82,9 @@ function loadBrandColors(root: Element = document.documentElement) {
   }
 }
 
-loadBrandColors()
+if (typeof document !== 'undefined') {
+  loadBrandColors()
+}
 
 /** 将任意 CSS 颜色值统一转为 hex (#RRGGBB) */
 function toHexValue(color: string): string {
@@ -137,7 +139,9 @@ const glowColors = {
     }
   }
 }
-glowColors.load()
+if (typeof document !== 'undefined') {
+  glowColors.load()
+}
 
 function getRandomColor(base: string): string {
   const cold = ['brand-indigo', 'brand-purple', 'brand-blue-light', 'text-primary', 'brand-purple-light']

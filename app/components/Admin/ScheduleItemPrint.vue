@@ -105,7 +105,7 @@ const handleImageError = (event) => {
   display: flex;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid var(--panel-border-light);
+  border-bottom: 1px solid var(--print-border);
   page-break-inside: avoid;
   break-inside: avoid;
 }
@@ -121,14 +121,14 @@ const handleImageError = (event) => {
 .sequence-number {
   width: 30px;
   height: 30px;
-  background: var(--panel-surface-deep);
+  background: var(--print-bg-deep);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   font-size: 14px;
-  color: var(--text-primary);
+  color: var(--print-text-primary);
   flex-shrink: 0;
 }
 
@@ -148,12 +148,12 @@ const handleImageError = (event) => {
 .cover-placeholder {
   width: 100%;
   height: 100%;
-  background: var(--panel-surface-darker);
+  background: var(--print-bg-darker);
   border-radius: 4px;
   display: none;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--print-muted);
 }
 
 .cover-placeholder.show {
@@ -173,7 +173,7 @@ const handleImageError = (event) => {
 .song-title {
   font-weight: bold;
   font-size: 16px;
-  color: var(--text-primary);
+  color: var(--print-text-primary);
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -187,7 +187,7 @@ const handleImageError = (event) => {
 .replay-badge-print {
   display: inline-block;
   padding: 1px 4px;
-  background: var(--panel-surface-overlay);
+  background: var(--print-bg-subtle);
   border: 1px solid var(--brand-blue);
   border-radius: 3px;
   color: var(--brand-blue-hover);
@@ -200,9 +200,9 @@ const handleImageError = (event) => {
 .cross-semester-badge-print {
   display: inline-block;
   padding: 1px 4px;
-  background: var(--panel-surface-darker);
-  border: 1px solid var(--text-primary-lighter);
-  color: var(--text-tertiary);
+  background: var(--print-bg-darker);
+  border: 1px solid var(--print-border);
+  color: var(--print-text-tertiary);
   font-size: 10px;
   border-radius: 2px;
   font-weight: normal;
@@ -213,7 +213,7 @@ const handleImageError = (event) => {
 
 .song-artist {
   font-size: 14px;
-  color: var(--text-tertiary);
+  color: var(--print-text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -224,7 +224,7 @@ const handleImageError = (event) => {
   display: flex;
   align-items: center;
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--print-text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -238,7 +238,7 @@ const handleImageError = (event) => {
 }
 
 .value {
-  color: var(--text-primary);
+  color: var(--print-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -246,8 +246,8 @@ const handleImageError = (event) => {
 /* 打印样式 */
 @media print {
   .schedule-item-print {
-    color: var(--bg-primary) !important;
-    background: var(--text-primary) !important;
+    color: var(--print-text-primary) !important;
+    background: var(--print-bg) !important;
     width: 100% !important;
     max-width: none !important;
     box-sizing: border-box !important;
@@ -262,8 +262,8 @@ const handleImageError = (event) => {
   }
 
   .sequence-number {
-    background: var(--panel-surface-deep) !important;
-    color: var(--bg-primary) !important;
+    background: var(--print-bg-deep) !important;
+    color: var(--print-text-primary) !important;
     width: 30px !important;
     height: 30px !important;
     flex-shrink: 0 !important;
@@ -281,7 +281,7 @@ const handleImageError = (event) => {
   }
 
   .song-title {
-    color: var(--bg-primary) !important;
+    color: var(--print-text-primary) !important;
     font-size: 16px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
@@ -291,11 +291,11 @@ const handleImageError = (event) => {
   .song-artist,
   .label,
   .value {
-    color: var(--text-primary) !important;
+    color: var(--print-text-secondary) !important;
   }
 
   .time-range {
-    color: var(--text-tertiary) !important;
+    color: var(--print-text-tertiary) !important;
   }
 
   .requester-info,
