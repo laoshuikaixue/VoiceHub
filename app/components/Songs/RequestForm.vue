@@ -2868,7 +2868,12 @@ const getAudioUrl = async (result) => {
             mediaId:
               result.sourceInfo?.strMediaMid ||
               result.sourceInfo?.mediaId ||
-              result.sourceInfo?.mediaMid
+              result.sourceInfo?.mediaMid,
+            musicInfo: {
+              name: result.title,
+              artist: result.artist,
+              album: result.album || undefined
+            }
           }
         )
         if (fallbackUrl) {
