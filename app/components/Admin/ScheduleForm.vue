@@ -1,6 +1,6 @@
 <template>
   <div
-    class="backdrop-blur-md p-6 rounded-xl border border-primary-10 bg-bg-tertiary-70 shadow-2xl max-w-[400px] mx-auto text-text-primary transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]"
+    class="backdrop-blur-md p-6 rounded-xl border border-primary-10 bg-bg-tertiary-70 shadow-2xl max-w-[400px] mx-auto text-text-primary transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_var(--modal-hover-shadow)]"
   >
     <h3 class="mb-6 pb-2 border-b border-primary-10 text-text-primary font-bold text-lg">
       {{ scheduleTitle }}

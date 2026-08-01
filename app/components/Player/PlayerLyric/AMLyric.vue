@@ -179,7 +179,7 @@ const jumpSeek = (line: LyricLineMouseEvent) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--amll-lp-color, var(--text-primary-lighter, #e4e4e7));
+  color: var(--amll-lp-color, var(--text-primary-lighter, var(--lyric-msg-fallback-text, #e4e4e7)));
   gap: 16px;
   opacity: 0.8;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

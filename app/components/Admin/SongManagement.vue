@@ -415,7 +415,7 @@
     >
       <div
         v-if="selectedSongs.length > 0"
-        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
+        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_var(--mobile-table-shadow)] backdrop-blur-xl flex items-center justify-between"
       >
         <div class="px-3 flex flex-col">
           <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>

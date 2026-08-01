@@ -691,4 +691,25 @@
   /* OAuth 第三方平台品牌色 */
   --oauth-casdoor-green: #67c23a;
   --oauth-kuaishou-orange: #ff4906;
+
+  /* === 用途化变量 — 背景纹理光晕（body::before） === */
+  --bg-texture-warm-glow: transparent;
+
+  /* === 用途化变量 — 按钮阴影 === */
+  --btn-primary-shadow: rgba(99, 102, 241, 0.4);
+
+  /* === 用途化变量 — Canvas 动画背景叠加色 === */
+  --canvas-bg-overlay: rgba(7, 7, 9, 0.18);
+
+  /* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
+  --canvas-glow-overlay-end: rgba(5, 5, 7, 0.92);
+
+  /* === 用途化变量 — 歌词消息 fallback === */
+  --lyric-msg-fallback-text: #ffffff;
+
+  /* === 用途化变量 — 模态框阴影 === */
+  --modal-hover-shadow: rgba(0, 0, 0, 0.25);
+
+  /* === 用途化变量 — 移动端表格阴影 === */
+  --mobile-table-shadow: rgba(0, 0, 0, 0.6);
 }

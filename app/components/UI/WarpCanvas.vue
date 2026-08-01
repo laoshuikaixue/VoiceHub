@@ -132,11 +132,7 @@ const glowColors = {
     const raw = cs.getPropertyValue('--brand-indigo').trim() || '#6366f1'
     this.color = toHexValue(raw)
     // 根据主题决定暗色遮罩末端颜色
-    if (isDark.value) {
-      this.overlayEnd = 'rgba(5, 5, 7, 0.92)'
-    } else {
-      this.overlayEnd = 'rgba(245, 245, 247, 0.7)'
-    }
+    this.overlayEnd = 'var(--canvas-glow-overlay-end)'
   }
 }
 if (typeof document !== 'undefined') {
@@ -260,7 +256,10 @@ onMounted(() => {
     pointer.y += (pointer.targetY - pointer.y) * 0.08
 
     ctx.save()
-    ctx.fillStyle = 'rgba(7, 7, 9, 0.18)'
+    // 从 CSS 变量读取背景叠加色
+    const bgOverlay = getComputedStyle(document.documentElement)
+      .getPropertyValue('--canvas-bg-overlay').trim()
+    ctx.fillStyle = bgOverlay || 'rgba(7, 7, 9, 0.18)'
     ctx.fillRect(0, 0, width, height)
 
     const centerX = width / 2 + pointer.x * (width * 0.12)
