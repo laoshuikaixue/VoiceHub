@@ -235,10 +235,15 @@ async function doEmailSend(config: AutoBackupConfig['methods']['email'], data: s
   }
 }
 
-/** 执行一次完整的自动备份 */
-export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
-  success: boolean
-  results: Array<{ method: string; success: boolean; error?: string }>
+/** 准备备份：校验、导出数据、写入初始记录，返回上下文供后续上传使用 */
+export async function prepareBackup(triggeredBy: string = 'api'): Promise<{
+  historyId: number
+  json: string
+  filename: string
+  metadata: { totalRecords: number }
+  backupSize: number
+  config: AutoBackupConfig
+  enabledMethods: Array<{ key: string; name: string; fn: () => Promise<void> }>
 }> {
   const enabled = await isAutoBackupEnabled()
   if (!enabled) {
@@ -265,12 +270,12 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
     throw createApiError(400, SERVER_ERROR_CODES.NO_BACKUP_METHOD_ENABLED, '没有启用任何备份方式')
   }
 
-  // 先写入初始记录（全部标记为超时），确保 60s 超时中断也有历史
+  // 写入初始记录（error 为 null 表示未完成），确保超时中断也有历史
   const backupSize = Buffer.byteLength(json)
   const initialResults = enabledMethods.map(({ name }) => ({
     method: name,
     success: false,
-    error: '上传超时'
+    error: null
   }))
   const [inserted] = await db.insert(backupHistory).values({
     filename,
@@ -280,7 +285,32 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
     methods: JSON.stringify(initialResults),
     triggeredBy
   }).returning({ id: backupHistory.id })
-  const historyId = inserted.id
+
+  console.log(`备份初始记录已写入: ${filename} (id=${inserted.id})`)
+
+  return {
+    historyId: inserted.id,
+    json,
+    filename,
+    metadata,
+    backupSize,
+    config,
+    enabledMethods
+  }
+}
+
+/** 执行上传并更新历史记录 */
+export async function executeUploads(prepared: {
+  historyId: number
+  json: string
+  filename: string
+  config: AutoBackupConfig
+  enabledMethods: Array<{ key: string; name: string; fn: () => Promise<void> }>
+}): Promise<{
+  success: boolean
+  results: Array<{ method: string; success: boolean; error?: string }>
+}> {
+  const { historyId, filename, config, enabledMethods } = prepared
 
   // 串行化 DB 更新，避免并行写入时的竞态条件
   let updateChain: Promise<void> = Promise.resolve()
@@ -330,6 +360,15 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
     success: overallSuccess,
     results
   }
+}
+
+/** 执行一次完整的自动备份（prepareBackup + executeUploads） */
+export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
+  success: boolean
+  results: Array<{ method: string; success: boolean; error?: string }>
+}> {
+  const prepared = await prepareBackup(triggeredBy)
+  return executeUploads(prepared)
 }
 
 /** 获取备份历史列表 */
