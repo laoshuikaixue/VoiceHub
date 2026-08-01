@@ -20,7 +20,10 @@ const needsCorsProxy = (url: string): boolean => {
       h.endsWith('.y.gtimg.cn') ||
       h === 'y.gtimg.cn' ||
       h.endsWith('.music.126.net') ||
-      h === 'music.126.net'
+      h === 'music.126.net' ||
+      h.endsWith('.musicapp.migu.cn') ||
+      h === 'd.musicapp.migu.cn' ||
+      h.endsWith('.migu.cn')
     )
   } catch {
     return false

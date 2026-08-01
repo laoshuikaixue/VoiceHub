@@ -1358,7 +1358,8 @@ export const pages = {
       platforms: {
         netease: 'NetEase Cloud Music',
         tencent: 'QQ Music',
-        bilibili: 'Bilibili'
+        bilibili: 'Bilibili',
+        migu: 'Migu Music'
       },
       refreshing: 'Refreshing',
       neteaseLoginTitle: 'Sign in to NetEase for the full experience',
@@ -1994,7 +1995,8 @@ export const admin = {
     platforms: {
       netease: 'NetEase Cloud Music',
       tencent: 'QQ Music',
-      bilibili: 'Bilibili'
+      bilibili: 'Bilibili',
+      migu: 'Migu Music'
     },
     timeAgo: {
       justNow: 'Just now',

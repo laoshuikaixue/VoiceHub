@@ -3,6 +3,7 @@ import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useLyrics } from '~/composables/useLyrics'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useLocale } from '~/utils/locale'
+import type { MusicTrackMeta } from '~/utils/musicUrl'
 
 // 单例状态
 const audioPlayer = ref<HTMLAudioElement | null>(null)
@@ -255,7 +256,14 @@ export const useAudioPlayerControl = () => {
             songUrlOrSong.sourceInfo?.type === 'voice' ||
             (songUrlOrSong.sourceInfo?.source === 'netease-backup' &&
               songUrlOrSong.sourceInfo?.type === 'voice')
-          const options = isPodcast ? { unblock: false } : {}
+          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+            ? { unblock: false }
+            : {}
+          options.musicInfo = {
+            name: songUrlOrSong.title,
+            artist: songUrlOrSong.artist,
+            album: songUrlOrSong.album || undefined
+          }
 
           songUrl = await getMusicUrl(
             songUrlOrSong.musicPlatform,
@@ -368,10 +376,18 @@ export const useAudioPlayerControl = () => {
       saveQuality(platform, qualityValue)
 
       // 获取新音质的URL
+      const currentSongForQuality = globalAudioPlayer.getCurrentSong().value
       const newUrl = await getMusicUrl(
         platform,
         musicId,
-        globalAudioPlayer.getCurrentSong().value?.playUrl
+        currentSongForQuality?.playUrl,
+        {
+          musicInfo: {
+            name: currentSongForQuality?.title,
+            artist: currentSongForQuality?.artist,
+            album: currentSongForQuality?.album || undefined
+          }
+        }
       )
       if (!newUrl) {
         throw new Error('获取新音质URL失败')
@@ -427,6 +443,7 @@ export const useAudioPlayerControl = () => {
     options?: {
       unblock?: boolean
       quality?: number
+      musicInfo?: MusicTrackMeta
     }
   ): Promise<string | null> => {
     try {

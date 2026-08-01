@@ -24,7 +24,12 @@ export const useAudioVisualizer = () => {
   }
 
   const initialize = (audioElement: HTMLMediaElement) => {
-    if (isInitialized.value || !audioElement) return
+    if (!audioElement) return
+
+    // 如果已经初始化过同一个音频元素，跳过
+    if (isInitialized.value && source.value && sourceCache.has(audioElement)) {
+      return
+    }
 
     try {
       const ctx = getAudioContext()
@@ -41,23 +46,44 @@ export const useAudioVisualizer = () => {
         analyser.value.smoothingTimeConstant = 0.8
       }
 
-      // 获取或创建源
+      // 检查是否已经有缓存的源
       if (sourceCache.has(audioElement)) {
-        source.value = sourceCache.get(audioElement)!
-      } else {
-        // 连接源到分析器和目标（以听到声音）
-        // 注意：如果音频元素已连接到其他目标（默认），
-        // 创建 MediaElementSource 会断开其与默认输出的连接。
-        // 所以必须将其连回 ctx.destination。
+        const cachedSource = sourceCache.get(audioElement)!
+        source.value = cachedSource
 
-        // 假设目前只有我们在做可视化。
+        // 尝试重新连接
+        try {
+          // 先断开所有现有连接
+          try {
+            cachedSource.disconnect()
+          } catch (e) {
+            // 可能已经断开
+          }
 
-        // 检查是否设置了 crossOrigin，CDN 音频需要
-        // 注意：在 src 设置之前应设置 crossOrigin="anonymous"。
-        if (!audioElement.crossOrigin) {
-          audioElement.crossOrigin = 'anonymous'
+          // 重新连接：源 -> 分析器 -> 目标
+          cachedSource.connect(analyser.value)
+          // 先断开分析器现有输出，避免重复连接导致信号叠加
+          try {
+            analyser.value.disconnect()
+          } catch (e) {
+            // 可能尚未连接
+          }
+          analyser.value.connect(ctx.destination)
+          isInitialized.value = true
+        } catch (e) {
+          console.warn('[AudioVisualizer] 重新连接失败，可能是不支持 CORS 的音频源，跳过可视化')
+          // 如果重新连接失败，尝试恢复到直接输出
+          try {
+            cachedSource.disconnect()
+            cachedSource.connect(ctx.destination)
+          } catch (e2) {
+            console.error('[AudioVisualizer] 恢复直接输出也失败:', e2)
+          }
+          isInitialized.value = false
         }
-
+      } else {
+        // 创建新的 MediaElementSource
+        // 注意：这会断开音频元素的默认输出连接
         try {
           const src = ctx.createMediaElementSource(audioElement)
           sourceCache.set(audioElement, src)
@@ -65,29 +91,23 @@ export const useAudioVisualizer = () => {
 
           // 连接链：源 -> 分析器 -> 目标
           src.connect(analyser.value)
+          // 先断开分析器现有输出，避免重复连接导致信号叠加
+          try {
+            analyser.value.disconnect()
+          } catch (e) {
+            // 可能尚未连接
+          }
           analyser.value.connect(ctx.destination)
+
+          isInitialized.value = true
         } catch (e) {
-          console.error('创建 MediaElementSource 失败，可能是 CORS 问题:', e)
-          // 如果 CORS 失败，无法可视化，但必须确保音频继续播放。
-          // 因为 createMediaElementSource 失败，默认连接应该没断，
-          // 所以这里不做额外处理。
+          console.warn('[AudioVisualizer] 创建 MediaElementSource 失败，可能是不支持 CORS 的音频源（如咪咕音乐），跳过可视化')
+          // createMediaElementSource 失败时，音频元素的默认连接应该保持不变
+          // 不需要额外处理
           isInitialized.value = false
           return
         }
       }
-
-      // 如果源是缓存的，可能需要重新连接
-      // 连接源 -> 分析器 -> 目标
-      if (source.value && analyser.value) {
-        try {
-          source.value.connect(analyser.value)
-          analyser.value.connect(ctx.destination)
-        } catch (e) {
-          // 已连接或其他错误
-        }
-      }
-
-      isInitialized.value = true
 
       // 如果上下文被挂起（浏览器策略），恢复它
       if (ctx.state === 'suspended') {

@@ -17,14 +17,16 @@ export const QUALITY_OPTIONS = {
     { value: 11, key: 'tencentHiRes' },
     { value: 14, key: 'tencentMaster' }
   ],
-  bilibili: [{ value: 1, key: 'bilibiliDefault' }]
+  bilibili: [{ value: 1, key: 'bilibiliDefault' }],
+  migu: [{ value: 1, key: 'standard' }]
 }
 
 // 默认音质设置
 const DEFAULT_QUALITY = {
   netease: 4, // HQ极高 (320k)
   tencent: 8, // HQ高音质
-  bilibili: 1
+  bilibili: 1,
+  migu: 1 // 标准音质（咪咕匿名仅提供 128k）
 }
 
 // 全局音质状态，确保所有组件共享同一个状态
@@ -98,7 +100,15 @@ export function useAudioQuality() {
       platform = 'netease'
     }
 
-    return audioQuality.value[platform] || DEFAULT_QUALITY[platform]
+    const stored = audioQuality.value[platform]
+    // 已保存的音质值不再存在于选项列表时（如咪咕音质收敛后残留旧值），回落默认值
+    const platformOptions =
+      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string }>>)[platform] || []
+    const isValid = platformOptions.some((option) => option.value === stored)
+    if (isValid) {
+      return stored
+    }
+    return (DEFAULT_QUALITY as Record<string, number>)[platform]
   }
 
   // 获取指定平台的音质选项
