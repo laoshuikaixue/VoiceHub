@@ -1184,7 +1184,12 @@ export default defineEventHandler(async (event) => {
                           'customOAuthEmailField',
                           'customOAuthAvatarField',
                           'captchaEnabled',
-                          'captchaMaxFailures'
+                          'captchaMaxFailures',
+                          'captchaProvider',
+                          'turnstileSiteKey',
+                          'turnstileSecretKey',
+                          'autoBackupEnabled',
+                          'autoBackupConfig'
                         ]
 
                         // 只添加备份数据中存在的字段
@@ -1495,7 +1500,16 @@ export default defineEventHandler(async (event) => {
 
                         // 动态构建通知数据，自动跳过不存在的字段
                         const notificationData = { userId: validNotificationUserId }
-                        const notificationDataFields = ['title', 'message', 'type']
+                        const notificationDataFields = [
+                          'batchId',
+                          'source',
+                          'senderName',
+                          'senderUsername',
+                          'title',
+                          'message',
+                          'type',
+                          'userDeleted'
+                        ]
 
                         notificationDataFields.forEach((field) => {
                           if (record.hasOwnProperty(field)) {
@@ -1503,8 +1517,38 @@ export default defineEventHandler(async (event) => {
                           }
                         })
 
+                        // senderId 需要重新映射到目标库的用户 ID；映射未命中时回查同 ID 用户并比对用户名快照，
+                        // 不一致则置空，避免跨库恢复时将发送人归属到错误用户，展示仍靠快照字段
+                        if (Object.prototype.hasOwnProperty.call(record, 'senderId')) {
+                          if (record.senderId) {
+                            const mappedSenderId = userIdMapping.get(record.senderId)
+                            if (mappedSenderId) {
+                              notificationData.senderId = mappedSenderId
+                            } else {
+                              const senderExists = await tx
+                                .select({ id: users.id, username: users.username })
+                                .from(users)
+                                .where(eq(users.id, record.senderId))
+                                .limit(1)
+                              notificationData.senderId =
+                                senderExists.length > 0 &&
+                                senderExists[0].username === record.senderUsername
+                                  ? record.senderId
+                                  : null
+                            }
+                          } else {
+                            notificationData.senderId = null
+                          }
+                        }
+
                         // 布尔字段，提供默认值
                         notificationData.read = record.hasOwnProperty('read') ? record.read : false
+                        notificationData.important = Object.prototype.hasOwnProperty.call(
+                          record,
+                          'important'
+                        )
+                          ? record.important
+                          : false
 
                         // 日期字段
                         notificationData.createdAt = record.createdAt

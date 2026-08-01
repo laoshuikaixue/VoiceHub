@@ -1563,7 +1563,12 @@ const getMusicUrl = async (song) => {
 
   const options = {
     unblock: isPodcast ? false : undefined,
-    mediaId: sourceInfo?.strMediaMid || sourceInfo?.mediaId || sourceInfo?.mediaMid
+    mediaId: sourceInfo?.strMediaMid || sourceInfo?.mediaId || sourceInfo?.mediaMid,
+    musicInfo: {
+      name: song.title,
+      artist: song.artist,
+      album: song.album || undefined
+    }
   }
   return resolveMusicUrl(platform, musicId, undefined, options)
 }

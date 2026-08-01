@@ -1,7 +1,20 @@
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, or } from 'drizzle-orm'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { db } from '~/drizzle/db'
 import { notifications, songCollaborators, songs } from '~/drizzle/schema'
+import { serializeNotificationSender } from '~~/server/utils/important-notification-policy'
+
+const serializeNotification = <T extends {
+  senderId: number | null
+  senderName: string | null
+  senderUsername: string | null
+}>(notification: T) => {
+  const { senderId, senderName, senderUsername, ...data } = notification
+  return {
+    ...data,
+    sender: serializeNotificationSender({ senderId, senderName, senderUsername })
+  }
+}
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证
@@ -20,12 +33,27 @@ export default defineEventHandler(async (event) => {
     const page = Math.max(1, parseInt(query.page as string) || 1)
     const limit = Math.min(50, Math.max(1, parseInt(query.limit as string) || 10))
     const offset = (page - 1) * limit
+    const unreadOnly = query.filter === 'unread'
+    const search = typeof query.search === 'string' ? query.search.trim().slice(0, 100) : ''
+    const escapedSearch = search.replace(/[\\%_]/g, '\\$&')
+    const searchCondition = escapedSearch
+      ? or(
+          ilike(notifications.title, `%${escapedSearch}%`),
+          ilike(notifications.message, `%${escapedSearch}%`)
+        )
+      : undefined
+    const notificationCondition = and(
+      eq(notifications.userId, user.id),
+      eq(notifications.userDeleted, false),
+      unreadOnly ? eq(notifications.read, false) : undefined,
+      searchCondition
+    )
 
     // 获取总通知数量
     const totalCountResult = await db
       .select({ count: count() })
       .from(notifications)
-      .where(eq(notifications.userId, user.id))
+      .where(notificationCondition)
     const totalCount = totalCountResult[0]?.count || 0
     const totalPages = Math.ceil(totalCount / limit)
 
@@ -33,7 +61,7 @@ export default defineEventHandler(async (event) => {
     const userNotifications = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, user.id))
+      .where(notificationCondition)
       .orderBy(desc(notifications.createdAt))
       .limit(limit)
       .offset(offset)
@@ -41,6 +69,7 @@ export default defineEventHandler(async (event) => {
     // 丰富通知数据，特别是对于联合投稿邀请
     const enrichedNotifications = await Promise.all(
       userNotifications.map(async (notification) => {
+        const serializedNotification = serializeNotification(notification)
         if (notification.type === 'COLLABORATION_INVITE' && notification.songId) {
           // 1. 检查歌曲是否存在
           const songExists = await db
@@ -52,7 +81,7 @@ export default defineEventHandler(async (event) => {
 
           if (!songExists) {
             return {
-              ...notification,
+              ...serializedNotification,
               handled: true,
               status: 'INVALID',
               isValid: false,
@@ -74,7 +103,7 @@ export default defineEventHandler(async (event) => {
 
           if (collab.length > 0) {
             return {
-              ...notification,
+              ...serializedNotification,
               handled: collab[0].status !== 'PENDING',
               status: collab[0].status,
               isValid: true,
@@ -83,7 +112,7 @@ export default defineEventHandler(async (event) => {
           } else {
             // 如果找不到邀请记录，说明可能已经被撤回或删除
             return {
-              ...notification,
+              ...serializedNotification,
               handled: true,
               status: 'INVALID',
               isValid: false,
@@ -92,7 +121,7 @@ export default defineEventHandler(async (event) => {
           }
         }
         return {
-          ...notification,
+          ...serializedNotification,
           handled: false, // 默认未处理，或者不适用
           isValid: true
         }
@@ -103,7 +132,13 @@ export default defineEventHandler(async (event) => {
     const unreadCountResult = await db
       .select({ count: count() })
       .from(notifications)
-      .where(and(eq(notifications.userId, user.id), eq(notifications.read, false)))
+      .where(
+        and(
+          eq(notifications.userId, user.id),
+          eq(notifications.userDeleted, false),
+          eq(notifications.read, false)
+        )
+      )
 
     const unreadCount = unreadCountResult[0]?.count || 0
 

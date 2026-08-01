@@ -112,11 +112,28 @@ export const notifications = pgTable('Notification', {
   createdAt: timestamp('createdAt').defaultNow().notNull(),
   updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   type: text('type').notNull(),
+  batchId: text('batchId'),
+  source: text('source').default('SYSTEM').notNull(),
+  senderId: integer('senderId'),
+  senderName: text('senderName'),
+  senderUsername: text('senderUsername'),
+  title: text('title'),
   message: text('message').notNull(),
+  important: boolean('important').default(false).notNull(),
   read: boolean('read').default(false).notNull(),
+  userDeleted: boolean('userDeleted').default(false).notNull(),
   userId: integer('userId').notNull(),
   songId: integer('songId'),
-});
+}, (table) => [
+  index('notification_user_important_read_created_idx').on(
+    table.userId,
+    table.userDeleted,
+    table.important,
+    table.read,
+    table.createdAt
+  ),
+  index('notification_batch_id_idx').on(table.batchId)
+]);
 
 // 通知设置表
 export const notificationSettings = pgTable('NotificationSettings', {
@@ -231,6 +248,10 @@ export const systemSettings = pgTable('SystemSettings', {
   // 图形验证码
   captchaEnabled: boolean('captchaEnabled').default(false).notNull(),
   captchaMaxFailures: integer('captchaMaxFailures').default(3).notNull(),
+
+  // 自动备份配置
+  autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
+  autoBackupConfig: text('autoBackupConfig'),
 });
 
 // 歌曲黑名单表
@@ -628,3 +649,20 @@ export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
 
 export type CardCode = typeof cardCodes.$inferSelect;
 export type NewCardCode = typeof cardCodes.$inferInsert;
+
+// 自动备份历史记录表
+export const backupHistory = pgTable('BackupHistory', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  filename: text('filename').notNull(),
+  totalRecords: integer('totalRecords').default(0).notNull(),
+  backupSize: integer('backupSize').default(0).notNull(),
+  methods: text('methods').notNull(), // JSON: { method: string; success: boolean; error?: string }[]
+  success: boolean('success').default(false).notNull(),
+  triggeredBy: text('triggeredBy'), // 'api' | 'manual'
+}, (table) => [
+  index('backup_history_created_at_idx').on(table.createdAt)
+]);
+
+export type BackupHistory = typeof backupHistory.$inferSelect;
+export type NewBackupHistory = typeof backupHistory.$inferInsert;

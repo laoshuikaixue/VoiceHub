@@ -1141,9 +1141,14 @@ watch(
         window.addEventListener('popstate', handlePopState)
       }
 
+      // 只对支持 CORS 的音频初始化可视化器
+      // 咪咕音乐等不支持 CORS 的音源不应该初始化可视化器
       const audioElements = document.querySelectorAll('audio')
       for (const audio of audioElements) {
-        if (audio.src) {
+        if (audio.src && audio.crossOrigin === 'anonymous') {
+          // 只有当音频元素已设置 crossOrigin 时才初始化可视化器
+          // 这表示音频源支持 CORS（如网易云、QQ音乐）
+          // 咪咕音乐不支持 CORS，audio.crossOrigin 为空
           audioVisualizer.initialize(audio)
           break
         }

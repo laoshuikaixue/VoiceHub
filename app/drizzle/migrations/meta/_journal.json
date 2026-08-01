@@ -253,6 +253,20 @@
       "when": 1785239348895,
       "tag": "20260728114908_add_password_security",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1785492048291,
+      "tag": "20260731100048_notification-announcement",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1785578400000,
+      "tag": "20260801000000_add_auto_backup",
+      "breakpoints": true
     }
   ]
 }

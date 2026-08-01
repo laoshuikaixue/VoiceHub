@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { useAudioQuality } from './useAudioQuality'
+import type { MusicTrackMeta } from '~/utils/musicUrl'
 
 export const useAudioPlayerEnhanced = () => {
   const { getQuality, getQualityOptions, saveQuality } = useAudioQuality()
@@ -39,7 +40,7 @@ export const useAudioPlayerEnhanced = () => {
     platform,
     musicId,
     qualityOrPlayUrl,
-    options?: { unblock?: boolean; quality?: number }
+    options?: { unblock?: boolean; quality?: number; musicInfo?: MusicTrackMeta }
   ) => {
     try {
       const requestOptions =
@@ -88,7 +89,14 @@ export const useAudioPlayerEnhanced = () => {
         song.musicPlatform === 'netease-podcast' ||
         song.sourceInfo?.type === 'voice' ||
         (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-      const options = isPodcast ? { unblock: false } : {}
+      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+        ? { unblock: false }
+        : {}
+      options.musicInfo = {
+        name: song.title,
+        artist: song.artist,
+        album: song.album || undefined
+      }
 
       const result = await getMusicUrl(platform, song.musicId, newQuality, options)
       if (result.success) {
@@ -121,7 +129,14 @@ export const useAudioPlayerEnhanced = () => {
         song.musicPlatform === 'netease-podcast' ||
         song.sourceInfo?.type === 'voice' ||
         (song.sourceInfo?.source === 'netease-backup' && song.sourceInfo?.type === 'voice')
-      const options = isPodcast ? { unblock: false } : {}
+      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+        ? { unblock: false }
+        : {}
+      options.musicInfo = {
+        name: song.title,
+        artist: song.artist,
+        album: song.album || undefined
+      }
 
       const result = await getMusicUrl(platform, song.musicId, newQuality, options)
       if (result.success) {
@@ -265,7 +280,13 @@ export const useAudioPlayerEnhanced = () => {
       console.log(`尝试切换到音质: ${newQuality}`)
 
       // 先尝试获取新音质的链接（传入整数音质值）
-      const result = await getMusicUrl(song.musicPlatform, song.musicId, newQuality)
+      const result = await getMusicUrl(song.musicPlatform, song.musicId, newQuality, {
+        musicInfo: {
+          name: song.title,
+          artist: song.artist,
+          album: song.album || undefined
+        }
+      })
 
       if (result.success) {
         // 保存音质设置

@@ -194,6 +194,14 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       priority: 7,
       enabled: true,
       timeout: 10000
+    },
+    {
+      id: 'migu',
+      name: '咪咕音乐',
+      baseUrl: '/api/native-api/migu/playurl',
+      priority: 8,
+      enabled: true,
+      timeout: 10000
     }
   ]
 }

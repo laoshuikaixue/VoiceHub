@@ -46,7 +46,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   captchaMaxFailures: 3, //触发阈值
   captchaProvider: 'graphic', // 默认使用图形验证码
   turnstileSiteKey: null,
-  turnstileSecretKey: null
+  turnstileSecretKey: null,
+  // 自动备份
+  autoBackupEnabled: false,
+  autoBackupConfig: null,
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [

@@ -233,6 +233,13 @@
               >
                 {{ locale.platforms.bilibili }}
               </button>
+              <button
+                :class="['platform-btn', { active: platform === 'migu' }]"
+                type="button"
+                @click="switchPlatform('migu')"
+              >
+                {{ locale.platforms.migu }}
+              </button>
             </div>
 
             <!-- 网易云音乐登录状态和选项 -->
@@ -2861,7 +2868,12 @@ const getAudioUrl = async (result) => {
             mediaId:
               result.sourceInfo?.strMediaMid ||
               result.sourceInfo?.mediaId ||
-              result.sourceInfo?.mediaMid
+              result.sourceInfo?.mediaMid,
+            musicInfo: {
+              name: result.title,
+              artist: result.artist,
+              album: result.album || undefined
+            }
           }
         )
         if (fallbackUrl) {

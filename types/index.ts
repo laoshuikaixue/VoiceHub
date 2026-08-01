@@ -77,15 +77,27 @@ export interface Schedule {
 
 export type NotificationType = 'SONG_SELECTED' | 'SONG_PLAYED' | 'SONG_VOTED' | 'SYSTEM_NOTICE'
 
+export interface NotificationSender {
+  id: number
+  name: string | null
+  username: string | null
+}
+
 export interface Notification {
   id: number
   createdAt: string
   updatedAt: string
   userId: number
   type: string
+  batchId?: string | null
+  source: 'SYSTEM' | 'ADMIN_MANUAL'
+  title?: string | null
   message: string
   songId?: number | null
+  important: boolean
   read: boolean
+  userDeleted: boolean
+  sender: NotificationSender | null
 }
 
 // 前端使用的通知设置接口
