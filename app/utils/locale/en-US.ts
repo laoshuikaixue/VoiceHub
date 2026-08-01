@@ -1707,11 +1707,11 @@ export const admin = {
     itemCount: 'Items:',
     groups: {
       overview: 'Monitoring Overview',
-      analyticsDashboard: 'Analytics Dashboard',
-      onlineUsers: 'Online Users',
-      serverMonitoring: 'Server Monitoring',
-      cacheMonitoring: 'Cache Monitoring',
-      securityAudit: 'Security Audit'
+      performance: 'Application Performance',
+      business: 'Business Health',
+      database: 'Database',
+      infra: 'Infrastructure',
+      security: 'Security Audit'
     },
     overview: {
       systemHealth: 'System Health',
@@ -1769,6 +1769,22 @@ export const admin = {
       queryLogs: 'Query Logs',
       logHost: 'Host',
       logRequestId: 'Request ID',
+      alertRules: 'Core Alert Rules',
+      alertRulesDetail: 'P0 to P3 priorities based on service impact.',
+      ruleServerErrors: 'Server Error Rate',
+      ruleServerErrorsDetail: '5xx error rate above 5% for 2 minutes',
+      ruleDatabaseConnections: 'Database Connections Near Limit',
+      ruleDatabaseConnectionsDetail: 'Pool utilization above 90% of the maximum',
+      ruleResponseP99: 'Slow API P99',
+      ruleResponseP99Detail: 'P99 response time above 3 seconds for 5 minutes',
+      ruleMusicSources: 'External Music Source Failures',
+      ruleMusicSourcesDetail: 'Any music provider error rate above 30%',
+      ruleMemory: 'High Memory Usage',
+      ruleMemoryDetail: 'System memory usage above 85%',
+      ruleDisk: 'Low Disk Space',
+      ruleDiskDetail: 'Disk utilization above 80%',
+      ruleLoginFailures: 'Abnormal Login Failures',
+      ruleLoginFailuresDetail: 'Failure count rising unusually for an IP or account',
       eventType: 'Event Type',
       eventContent: 'Event Details',
       eventSource: 'Source',
@@ -1795,6 +1811,31 @@ export const admin = {
       snapshot: 'Current Data Snapshot',
       recentUsers: 'Active Users in the Last Hour',
       recentLogins: 'Recently Logged-in Users'
+    },
+    application: {
+      httpQps: 'HTTP Request QPS', httpQpsDetail: 'Requests per second grouped by route',
+      clientErrorRate: '4xx Error Rate', clientErrorRateDetail: 'Share of client request errors',
+      serverErrorRate: '5xx Error Rate', serverErrorRateDetail: 'Share of server errors',
+      ssrRenderTime: 'SSR Render Time', ssrRenderTimeDetail: 'Nuxt server-side rendering duration',
+      realtimeConnections: 'WebSocket / SSE Connections', realtimeConnectionsDetail: 'Number of real-time notification connections',
+      eventLoopDelay: 'Event Loop Delay', eventLoopDelayDetail: 'Node.js event loop blocking',
+      activeHandles: 'Active Handles', activeHandlesDetail: 'Useful for finding connection and resource leaks',
+      gcPause: 'GC Pause Time', gcPauseDetail: 'Node.js garbage collection pause duration',
+      routePerformance: 'Route Performance', routePerformanceDetail: 'Throughput, percentile latency, and errors by route', route: 'Route', qps: 'QPS',
+      latencyDistribution: 'Response Latency Distribution', latencyDistributionDetail: 'P50, P95, P99, and maximum latency for key APIs', responseP50: 'P50 Response Time', responseP95: 'P95 Response Time', responseP99: 'P99 Response Time', responseMax: 'Maximum Response Time',
+      authentication: 'Authentication Metrics', authenticationDetail: 'JWT and OAuth authentication pipeline', jwtIssued: 'JWT Issued', jwtVerified: 'JWT Verified', invalidTokens: 'Invalid Token Requests', oauthSuccessRate: 'OAuth Success Rate',
+      fileAndRealtime: 'Files and Real-time', fileAndRealtimeDetail: 'Upload processing and real-time channel state', uploadCount: 'File Uploads', uploadBytes: 'Uploaded Bytes', uploadDuration: 'Upload Duration', websocketConnections: 'WebSocket Connections', sseConnections: 'SSE Connections',
+      requestLifecycle: 'Request Lifecycle', requestLifecycleDetail: 'Request, error, SSR, and GC counters', requestTotal: 'Total Requests', clientErrorCount: '4xx Errors', serverErrorCount: '5xx Errors', ssrRenderCount: 'SSR Renders', gcCount: 'GC Count',
+      externalDependencies: 'External Dependencies', externalDependenciesDetail: 'Availability of music, OAuth, and database dependencies', dependency: 'Dependency', availability: 'Availability', latency: 'Latency', errorRate: 'Error Rate', coldStart: 'Cold Start', githubOAuth: 'GitHub OAuth', casdoorOAuth: 'Casdoor OAuth', neonDatabase: 'Neon PostgreSQL'
+    },
+    database: {
+      postgresql: 'PostgreSQL Monitoring', postgresqlDetail: 'Connection, query, transaction, and capacity metrics', connectionStatus: 'Connection Status', connectionStatusDetail: 'Database connection probe result', poolUtilizationDetail: 'Current connection pool utilization', queryQps: 'Query QPS', queryQpsDetail: 'Database queries executed per second',
+      slowQueryCount: 'Slow Query Count', slowQueryCountDetail: 'Queries exceeding the threshold', rollbackRate: 'Transaction Rollback Rate', rollbackRateDetail: 'Rolled back transactions as a share of all transactions', cacheHitRatioDetail: 'PostgreSQL cache hit ratio', databaseSize: 'Database Size', databaseSizeDetail: 'Current database storage usage', replicaLag: 'Replication Lag', replicaLagDetail: 'Read replica synchronization delay, if configured', indexHitRatio: 'Index Hit Ratio', tableBloat: 'Table Bloat', poolWaitTime: 'Pool Wait Time', databaseGrowthRate: 'Database Growth Rate',
+      sizeTrend: 'Database Size Trend', sizeTrendDetail: 'Capacity growth over time', slowQueries: 'Slow Query Details', slowQueriesDetail: 'Slow queries grouped by fingerprint', queryFingerprint: 'Query Fingerprint', executions: 'Executions', averageDuration: 'Average Duration', maximumDuration: 'Maximum Duration', redis: 'Redis Monitoring', redisDetail: 'Cache hits, memory, connections, and command latency'
+    },
+    business: {
+      goldMetrics: 'Business Golden Metrics', goldMetricsDetail: 'Core metrics for requests, sources, notifications, and growth', requestWorkflow: 'Request and Voting Workflow', requestWorkflowDetail: 'Business conversion from request to schedule', songAndVoteRequests: 'Song / Vote Requests', requestSuccessRate: 'Request Success Rate', scheduleOperations: 'Schedule Operations', quotaTriggers: 'Submission Quota Triggers', dedupHits: 'Deduplication Hits', replayRequests: 'Replay Requests',
+      mediaPipeline: 'Music Source and Media Pipeline', mediaPipelineDetail: 'Search, playback, and download quality by source', neteaseLatencyAndErrors: 'NetEase Latency / Errors', tencentLatencyAndErrors: 'QQ Music Latency / Errors', bilibiliLatencyAndErrors: 'Bilibili Latency / Errors', playUrlFailures: 'Play URL Failure Rate', qualitySwitches: 'Quality Switch Requests', downloadCountAndBytes: 'Downloads / Bytes', growthAndDelivery: 'Notifications and User Growth', growthAndDeliveryDetail: 'Notification delivery and user activity growth', notificationPushes: 'Notification Pushes', notificationDeliveryRate: 'Notification Delivery Rate', dailyActiveUsers: 'DAU', newUsers: 'New Users', oauthSuccessRate: 'OAuth Success Rate'
     },
     online: {
       recentActive: 'Active in the Last Hour',
@@ -1838,6 +1879,10 @@ export const admin = {
       alertCount: 'Alerts',
       collectedAt: 'Collected At',
       cpuUsageDetail: 'Overall processor utilization',
+      networkIngress: 'Network Ingress', networkIngressDetail: 'Cumulative bytes received by network interfaces',
+      networkEgress: 'Network Egress', networkEgressDetail: 'Cumulative bytes sent by network interfaces',
+      diskIo: 'Disk I/O', diskIoDetail: 'Disk read/write throughput and wait',
+      containerRestarts: 'Container Restarts', containerRestartsDetail: 'Container restarts and OOM records',
       systemMemoryDetail: 'Host memory utilization',
       diskUsageDetail: 'Overall disk capacity utilization',
       networkInterfacesMetricDetail: 'Network interface and external address counts',
@@ -1885,6 +1930,7 @@ export const admin = {
       responseTime: 'Database Response Time',
       poolMax: 'Maximum Connections',
       poolTotal: 'Total Connections',
+      poolAvailable: 'Available Connections',
       poolUtilization: 'Pool Utilization',
       transactionsCommitted: 'Committed Transactions',
       transactionsRolledBack: 'Rolled-back Transactions',
@@ -1936,7 +1982,8 @@ export const admin = {
       captcha: 'Captcha State',
       captchaDetail: 'Captcha creation and consumption state',
       managerCache: 'Database Manager Cache',
-      managerCacheDetail: 'Database status and connection information cache'
+      managerCacheDetail: 'Database status and connection information cache',
+      hitRatio: 'Cache Hit Ratio', hitRatioDetail: 'Share of Redis commands served from cache', memoryUsed: 'Memory Usage', memoryUsedDetail: 'Current Redis memory usage', connections: 'Connections', connectionsDetail: 'Redis client connection count', commandP99: 'Command P99 Latency', commandP99Detail: 'Tail latency of Redis commands', evictions: 'Evictions', evictionsDetail: 'Keys evicted by the memory policy', rateLimitTriggers: 'Rate-limit Triggers', rateLimitTriggersDetail: 'Requests blocked by Redis rate limiting', evictionPolicy: 'Eviction Policy', commandMetrics: 'Redis Command Metrics', commandMetricsDetail: 'Calls, latency, and errors by command', command: 'Command', calls: 'Calls', commandErrors: 'Errors'
     },
     audit: {
       unresolvedEvents: 'Unresolved Risk Events',
@@ -1973,7 +2020,8 @@ export const admin = {
       critical: 'Critical',
       high: 'High',
       medium: 'Medium',
-      low: 'Low'
+      low: 'Low',
+      securitySignals: 'Security Signals', securitySignalsDetail: 'Authentication failures, invalid tokens, rate limits, and blacklist hits', loginFailures: 'Login Failures', loginFailuresDetail: 'Number of failed login requests', accountLockouts: 'Account Lockouts', accountLockoutsDetail: 'Number of account lockout triggers', strongAuthFailures: '2FA / WebAuthn Failures', strongAuthFailuresDetail: 'Failed step-up authentication attempts', invalidTokenRequests: 'Invalid JWT Requests', invalidTokenRequestsDetail: 'Requests with invalid or expired tokens', rateLimitTriggers: 'Rate-limit Triggers', rateLimitTriggersDetail: 'Requests blocked by rate limiting', blacklistHits: 'Blacklist Hits', blacklistHitsDetail: 'Requests matching an IP or content blacklist'
     },
     analytics: {
       totalUsers: 'Total Users',

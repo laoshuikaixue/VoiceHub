@@ -1716,11 +1716,11 @@ export const admin = {
     itemCount: '项目数：',
     groups: {
       overview: '监控总览',
-      analyticsDashboard: '分析看板',
-      onlineUsers: '在线用户',
-      serverMonitoring: '服务器监控',
-      cacheMonitoring: '缓存监控',
-      securityAudit: '安全审计'
+      performance: '应用性能',
+      business: '业务健康',
+      database: '数据库',
+      infra: '基础设施',
+      security: '安全审计'
     },
     overview: {
       systemHealth: '系统健康',
@@ -1778,6 +1778,22 @@ export const admin = {
       queryLogs: '查询日志',
       logHost: 'Host',
       logRequestId: '请求 ID',
+      alertRules: '核心告警规则',
+      alertRulesDetail: '按照服务影响程度划分 P0 至 P3 告警优先级。',
+      ruleServerErrors: '服务端错误率',
+      ruleServerErrorsDetail: '5xx 错误率超过 5% 并持续 2 分钟',
+      ruleDatabaseConnections: '数据库连接接近上限',
+      ruleDatabaseConnectionsDetail: '连接池使用率超过最大连接数的 90%',
+      ruleResponseP99: '接口 P99 响应过慢',
+      ruleResponseP99Detail: 'P99 响应时间超过 3 秒并持续 5 分钟',
+      ruleMusicSources: '外部音源大量失败',
+      ruleMusicSourcesDetail: '任一音乐平台错误率超过 30%',
+      ruleMemory: '内存使用率过高',
+      ruleMemoryDetail: '系统内存使用率超过 85%',
+      ruleDisk: '磁盘空间不足',
+      ruleDiskDetail: '磁盘使用率超过 80%',
+      ruleLoginFailures: '登录失败异常飙升',
+      ruleLoginFailuresDetail: '同一 IP 或账号的失败次数异常增长',
       eventType: '事件类型',
       eventContent: '事件内容',
       eventSource: '事件来源',
@@ -1804,6 +1820,31 @@ export const admin = {
       snapshot: '当前数据快照',
       recentUsers: '近一小时活跃用户',
       recentLogins: '最近登录用户'
+    },
+    application: {
+      httpQps: 'HTTP 请求 QPS', httpQpsDetail: '按路由统计的每秒请求量',
+      clientErrorRate: '4xx 错误率', clientErrorRateDetail: '客户端请求错误占比',
+      serverErrorRate: '5xx 错误率', serverErrorRateDetail: '服务端错误占比，关注持续升高',
+      ssrRenderTime: 'SSR 渲染耗时', ssrRenderTimeDetail: 'Nuxt 服务端渲染耗时',
+      realtimeConnections: 'WebSocket / SSE 连接', realtimeConnectionsDetail: '实时通知长连接数量',
+      eventLoopDelay: '事件循环延迟', eventLoopDelayDetail: 'Node.js 事件循环阻塞情况',
+      activeHandles: '活跃句柄数', activeHandlesDetail: '排查连接和资源泄漏',
+      gcPause: 'GC 暂停时间', gcPauseDetail: 'Node.js 垃圾回收暂停耗时',
+      routePerformance: '接口路由性能', routePerformanceDetail: '按路由查看吞吐、分位延迟和错误率', route: '路由', qps: 'QPS',
+      latencyDistribution: '响应延迟分布', latencyDistributionDetail: '核心接口 P50、P95、P99 与最大值', responseP50: 'P50 响应时间', responseP95: 'P95 响应时间', responseP99: 'P99 响应时间', responseMax: '最大响应时间',
+      authentication: '认证指标', authenticationDetail: 'JWT 与 OAuth 认证链路', jwtIssued: 'JWT 签发次数', jwtVerified: 'JWT 验证次数', invalidTokens: '无效 Token 请求', oauthSuccessRate: 'OAuth 登录成功率',
+      fileAndRealtime: '文件与实时连接', fileAndRealtimeDetail: '上传处理和实时通道状态', uploadCount: '文件上传次数', uploadBytes: '上传数据量', uploadDuration: '上传耗时', websocketConnections: 'WebSocket 连接数', sseConnections: 'SSE 连接数',
+      requestLifecycle: '请求生命周期', requestLifecycleDetail: '请求、错误、SSR 与 GC 计数', requestTotal: '请求总量', clientErrorCount: '4xx 错误数', serverErrorCount: '5xx 错误数', ssrRenderCount: 'SSR 渲染次数', gcCount: 'GC 次数',
+      externalDependencies: '外部依赖', externalDependenciesDetail: '音乐源、OAuth 和数据库依赖可用性', dependency: '依赖', availability: '可用率', latency: '延迟', errorRate: '错误率', coldStart: '冷启动耗时', githubOAuth: 'GitHub OAuth', casdoorOAuth: 'Casdoor OAuth', neonDatabase: 'Neon PostgreSQL'
+    },
+    database: {
+      postgresql: 'PostgreSQL 监控', postgresqlDetail: '连接、查询、事务和容量指标', connectionStatus: '连接状态', connectionStatusDetail: '数据库连接探测结果', poolUtilizationDetail: '连接池当前使用比例', queryQps: '查询 QPS', queryQpsDetail: '每秒执行的数据库查询数',
+      slowQueryCount: '慢查询数量', slowQueryCountDetail: '超过阈值的查询数量', rollbackRate: '事务回滚率', rollbackRateDetail: '回滚事务占总事务比例', cacheHitRatioDetail: 'PostgreSQL 缓存命中率', databaseSize: '数据库大小', databaseSizeDetail: '数据库当前占用空间', replicaLag: '复制延迟', replicaLagDetail: '只读副本同步延迟（如有）', indexHitRatio: '索引命中率', tableBloat: '表膨胀', poolWaitTime: '连接池等待时间', databaseGrowthRate: '数据库增长率',
+      sizeTrend: '数据库大小趋势', sizeTrendDetail: '按时间查看容量增长', slowQueries: '慢查询明细', slowQueriesDetail: '按查询指纹汇总慢查询', queryFingerprint: '查询指纹', executions: '执行次数', averageDuration: '平均耗时', maximumDuration: '最大耗时', redis: 'Redis 监控', redisDetail: '缓存命中、内存、连接和命令延迟指标'
+    },
+    business: {
+      goldMetrics: '业务黄金指标', goldMetricsDetail: '围绕点歌、音源、通知和用户增长的核心指标', requestWorkflow: '点歌与投票流程', requestWorkflowDetail: '从请求到排期的业务转化', songAndVoteRequests: '点歌 / 投票请求量', requestSuccessRate: '点歌成功率', scheduleOperations: '排期操作次数', quotaTriggers: '投稿限额触发次数', dedupHits: '去重命中次数', replayRequests: '重播申请量',
+      mediaPipeline: '音源与媒体链路', mediaPipelineDetail: '各平台搜索、播放和下载质量', neteaseLatencyAndErrors: '网易云延迟 / 失败率', tencentLatencyAndErrors: 'QQ 音乐延迟 / 失败率', bilibiliLatencyAndErrors: '哔哩哔哩延迟 / 失败率', playUrlFailures: '播放链接获取失败率', qualitySwitches: '音质切换请求量', downloadCountAndBytes: '下载量 / 下载大小', growthAndDelivery: '通知与用户增长', growthAndDeliveryDetail: '通知送达与用户活跃增长', notificationPushes: '通知推送量', notificationDeliveryRate: '通知送达率', dailyActiveUsers: 'DAU', newUsers: '新注册用户数', oauthSuccessRate: 'OAuth 登录成功率'
     },
     online: {
       recentActive: '近一小时活跃用户',
@@ -1847,6 +1888,10 @@ export const admin = {
       alertCount: '告警数量',
       collectedAt: '采集时间',
       cpuUsageDetail: '处理器整体使用率',
+      networkIngress: '网络入流量', networkIngressDetail: '网络接口累计接收流量',
+      networkEgress: '网络出流量', networkEgressDetail: '网络接口累计发送流量',
+      diskIo: '磁盘 I/O', diskIoDetail: '磁盘读写吞吐与等待',
+      containerRestarts: '容器重启次数', containerRestartsDetail: '容器重启与 OOM 记录',
       systemMemoryDetail: '整机内存占用状态',
       diskUsageDetail: '磁盘总体容量占用',
       networkInterfacesMetricDetail: '网络接口与外部地址数量',
@@ -1894,6 +1939,7 @@ export const admin = {
       responseTime: '数据库响应时间',
       poolMax: '最大连接数',
       poolTotal: '总连接数',
+      poolAvailable: '可用连接',
       poolUtilization: '连接池利用率',
       transactionsCommitted: '已提交事务',
       transactionsRolledBack: '已回滚事务',
@@ -1945,7 +1991,8 @@ export const admin = {
       captcha: '验证码状态',
       captchaDetail: '验证码生成和消费状态',
       managerCache: '数据库管理器缓存',
-      managerCacheDetail: '数据库状态与连接信息缓存'
+      managerCacheDetail: '数据库状态与连接信息缓存',
+      hitRatio: '缓存命中率', hitRatioDetail: 'Redis 命令命中比例', memoryUsed: '内存使用', memoryUsedDetail: 'Redis 当前内存占用', connections: '连接数', connectionsDetail: 'Redis 客户端连接数', commandP99: '命令 P99 延迟', commandP99Detail: 'Redis 命令尾部延迟', evictions: '淘汰次数', evictionsDetail: '达到内存策略后淘汰的 Key 数量', rateLimitTriggers: '限流触发次数', rateLimitTriggersDetail: 'Redis 限流规则触发次数', evictionPolicy: '淘汰策略', commandMetrics: 'Redis 命令统计', commandMetricsDetail: '按命令查看调用次数、延迟和错误', command: '命令', calls: '调用次数', commandErrors: '错误数'
     },
     audit: {
       unresolvedEvents: '未关闭风险事件',
@@ -1982,7 +2029,8 @@ export const admin = {
       critical: '严重',
       high: '高',
       medium: '中',
-      low: '低'
+      low: '低',
+      securitySignals: '安全信号', securitySignalsDetail: '认证失败、无效令牌、限流和黑名单命中', loginFailures: '登录失败次数', loginFailuresDetail: '登录失败请求数量', accountLockouts: '账户锁定次数', accountLockoutsDetail: '触发账户锁定的次数', strongAuthFailures: '2FA / WebAuthn 失败', strongAuthFailuresDetail: '强化认证失败次数', invalidTokenRequests: '无效 JWT 请求', invalidTokenRequestsDetail: '携带无效或过期 Token 的请求', rateLimitTriggers: '限流触发', rateLimitTriggersDetail: '触发请求限流的次数', blacklistHits: '黑名单命中', blacklistHitsDetail: '命中 IP 或内容黑名单的次数'
     },
     analytics: {
       totalUsers: '用户总数',
