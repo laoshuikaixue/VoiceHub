@@ -363,6 +363,10 @@ function getRequiredPermission(pathname: string, method: string): string | null 
     return 'songs:read'
   }
 
+  if (normalizedPathname.startsWith('/api/open/backup')) {
+    return 'backup:execute'
+  }
+
   return null
 }
 

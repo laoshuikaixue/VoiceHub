@@ -248,6 +248,10 @@ export const systemSettings = pgTable('SystemSettings', {
   // 图形验证码
   captchaEnabled: boolean('captchaEnabled').default(false).notNull(),
   captchaMaxFailures: integer('captchaMaxFailures').default(3).notNull(),
+
+  // 自动备份配置
+  autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
+  autoBackupConfig: text('autoBackupConfig'),
 });
 
 // 歌曲黑名单表
@@ -645,3 +649,20 @@ export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
 
 export type CardCode = typeof cardCodes.$inferSelect;
 export type NewCardCode = typeof cardCodes.$inferInsert;
+
+// 自动备份历史记录表
+export const backupHistory = pgTable('BackupHistory', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  filename: text('filename').notNull(),
+  totalRecords: integer('totalRecords').default(0).notNull(),
+  backupSize: integer('backupSize').default(0).notNull(),
+  methods: text('methods').notNull(), // JSON: { method: string; success: boolean; error?: string }[]
+  success: boolean('success').default(false).notNull(),
+  triggeredBy: text('triggeredBy'), // 'api' | 'manual'
+}, (table) => [
+  index('backup_history_created_at_idx').on(table.createdAt)
+]);
+
+export type BackupHistory = typeof backupHistory.$inferSelect;
+export type NewBackupHistory = typeof backupHistory.$inferInsert;

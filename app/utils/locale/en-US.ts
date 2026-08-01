@@ -3059,7 +3059,8 @@ export const admin = {
       backup: { title: 'Create Backup', desc: 'Export all current database data to a file for backup or migration.', button: 'Create Backup File' },
       restore: { title: 'Restore Backup', desc: 'Restore system data from a previously exported backup file.', button: 'Select Backup File' },
       resetSeq: { title: 'Reset Sequences', desc: 'Fix table auto-increment ID sequences so new records start from the correct values.', button: 'Start Sequence Reset' },
-      resetDb: { title: 'Reset Database', desc: 'Clear all system data except administrator accounts. This cannot be undone.', button: 'Reset Database Now' }
+      resetDb: { title: 'Reset Database', desc: 'Clear all system data except administrator accounts. This cannot be undone.', button: 'Reset Database Now' },
+      autoBackup: { title: 'Auto Backup', desc: 'Configure multiple backup methods, triggered externally for scheduled auto backup', button: 'Configure Auto Backup' }
     },
     backupOptions: {
       songs: { label: 'Songs & Schedules', desc: 'Includes song library, user submissions, and historical broadcast schedules' },
@@ -3125,6 +3126,97 @@ export const admin = {
       resetFailed: 'Reset failed',
       resetSequenceFailedWithMessage: (message: string) => `Failed to reset sequence: ${message}`,
       resetDatabaseFailedWithMessage: (message: string) => `Failed to reset database: ${message}`
+    },
+    autoBackup: {
+      title: 'Auto Backup Settings',
+      cancel: 'Cancel',
+      saveAll: 'Save All',
+
+      masterSwitch: {
+        label: 'Enable Auto Backup',
+        desc: 'When API is triggered, no backup runs if master switch is off; only enabled methods run when master switch is on',
+      },
+
+      methods: {
+        title: 'Backup Methods',
+        s3: {
+          name: 'S3 Compatible Storage',
+          desc: 'Supports R2 / S3 / B2 / MinIO',
+          endpoint: 'Endpoint',
+          endpointPlaceholder: 'https://xxx.r2.cloudflarestorage.com',
+          bucket: 'Bucket',
+          bucketPlaceholder: 'my-backups',
+          region: 'Region',
+          regionPlaceholder: 'auto',
+          pathPrefix: 'Path Prefix',
+          pathPrefixPlaceholder: 'voicehub-backups/',
+          accessKey: 'Access Key ID',
+          accessKeyPlaceholder: 'Enter Access Key ID',
+          secretKey: 'Secret Access Key',
+          secretKeyPlaceholder: 'Enter Secret Access Key',
+          testConnection: 'Test Connection',
+        },
+        webdav: {
+          name: 'WebDAV',
+          desc: 'Supports Nextcloud / Synology / ownCloud',
+          url: 'Server URL',
+          urlPlaceholder: 'https://example.com/remote.php/dav/files/user/',
+          username: 'Username',
+          usernamePlaceholder: 'Enter username',
+          password: 'Password',
+          passwordPlaceholder: 'Enter password',
+          path: 'Upload Path',
+          pathPlaceholder: 'voicehub-backups/',
+          testConnection: 'Test Connection',
+        },
+        telegram: {
+          name: 'Telegram Bot',
+          desc: 'Send backup files to a chat via Bot',
+          botToken: 'Bot Token',
+          botTokenPlaceholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
+          chatId: 'Chat ID',
+          chatIdPlaceholder: '123456789',
+          testSend: 'Test Send',
+        },
+        email: {
+          name: 'Email Attachment',
+          desc: 'Send backup file to specified email',
+          recipient: 'Recipient Email',
+          recipientPlaceholder: 'admin@example.com',
+          testSend: 'Test Send',
+          smtpHint: 'Uses the site\'s configured email service. Only the recipient email is required.',
+        },
+      },
+
+      endpoint: {
+        title: 'API Trigger Endpoint',
+        hint: 'First create an API key in "API Key Manager" with the "Auto Backup" permission, then call this endpoint from an external scheduler to trigger backups.',
+        url: 'Backup Endpoint URL',
+        methods: 'Trigger Method',
+        curlTab: 'cURL',
+        cronjobTab: 'cron-job.org',
+        githubTab: 'GitHub Actions',
+        cronTab: 'Linux Cron',
+        curlHint: 'Replace YOUR_API_KEY with your API key and run in terminal to trigger a backup.',
+        cronjobLink: 'Visit cron-job.org to create a free scheduled task',
+        githubHint: 'Configure BACKUP_URL and API_KEY in GitHub repo Settings → Secrets, then save the above as .github/workflows/backup.yml.',
+        cronHint: 'Replace YOUR_API_KEY with your API key, run crontab -e on your server, and add the above line.',
+      },
+
+      history: {
+        title: 'Backup History',
+        empty: 'No backup records yet',
+        emptyHint: 'Records will appear here after triggering a backup',
+        clear: 'Clear History',
+      },
+
+      messages: {
+        copied: 'Copied to clipboard',
+        copyFailed: 'Copy failed',
+        testConnection: 'Testing connection...',
+        testSend: 'Testing send...',
+        allSaved: 'All settings saved',
+      }
     }
   },
   userManager: {
@@ -3595,7 +3687,8 @@ export const admin = {
       songsWrite: { label: 'Song Management', description: 'Update song status' },
       cardCodesRead: { label: 'Request Card Read', description: 'View request card list and statistics' },
       cardCodesWrite: { label: 'Request Card Management', description: 'Create and update request cards' },
-      cardCodesDelete: { label: 'Request Card Delete', description: 'Delete request cards' }
+      cardCodesDelete: { label: 'Request Card Delete', description: 'Delete request cards' },
+      backupExecute: { label: 'Auto Backup', description: 'Trigger automatic backup tasks' }
     },
     loadFailed: 'Failed to load API keys',
     nameRequired: 'Enter key name',
@@ -3809,6 +3902,11 @@ export const serverErrors = {
   USER_CODE_EXPIRED_RESEND: 'The verification code has expired. Please resend.',
   USER_CODE_INVALID: 'Incorrect verification code',
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
+  BACKUP_DISABLED: 'Auto backup is disabled',
+  BACKUP_NOT_CONFIGURED: 'Auto backup is not configured',
+  NO_BACKUP_METHOD_ENABLED: 'No backup methods enabled',
+  BACKUP_FAILED: 'Backup execution failed',
+  SMTP_NOT_CONFIGURED: 'Email service is not configured',
   NOTIFICATION_AUTH_REQUIRED: 'Please sign in before working with notifications',
   NOTIFICATION_ADMIN_REQUIRED: 'Only administrators can send system notifications',
   NOTIFICATION_IMPORTANT_INVALID: 'The important notice flag must be a boolean',
