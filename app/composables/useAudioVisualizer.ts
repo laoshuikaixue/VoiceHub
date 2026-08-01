@@ -62,6 +62,12 @@ export const useAudioVisualizer = () => {
 
           // 重新连接：源 -> 分析器 -> 目标
           cachedSource.connect(analyser.value)
+          // 先断开分析器现有输出，避免重复连接导致信号叠加
+          try {
+            analyser.value.disconnect()
+          } catch (e) {
+            // 可能尚未连接
+          }
           analyser.value.connect(ctx.destination)
           isInitialized.value = true
         } catch (e) {
@@ -85,6 +91,12 @@ export const useAudioVisualizer = () => {
 
           // 连接链：源 -> 分析器 -> 目标
           src.connect(analyser.value)
+          // 先断开分析器现有输出，避免重复连接导致信号叠加
+          try {
+            analyser.value.disconnect()
+          } catch (e) {
+            // 可能尚未连接
+          }
           analyser.value.connect(ctx.destination)
 
           isInitialized.value = true

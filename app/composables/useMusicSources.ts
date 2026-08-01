@@ -28,9 +28,14 @@ const LYRIC_CACHE_TTL = 60 * 1000
 // 服务器位置检测（模块级单例，避免多次实例化导致重复请求）
 const globalIsServerInChina = ref<boolean | null>(null)
 let locationCheckPromise: Promise<void> | null = null
+// 检测失败后的冷却时间（5 分钟），避免瞬时失败导致长期锁死
+const LOCATION_CHECK_RETRY_TTL = 5 * 60 * 1000
+let locationCheckFailAt = 0
 
 const checkServerLocationGlobal = async () => {
   if (globalIsServerInChina.value !== null) return
+  // 检测失败后冷却期内不再重试
+  if (locationCheckFailAt && Date.now() < locationCheckFailAt) return
   // 并发调用时合并为一次请求
   if (locationCheckPromise) return locationCheckPromise
 
@@ -39,13 +44,15 @@ const checkServerLocationGlobal = async () => {
       const data = await $fetch('/api/system/location')
       if (data && data.success) {
         globalIsServerInChina.value = data.data.isInChina
+        locationCheckFailAt = 0
         console.log(
           `[useMusicSources] 服务器位置检测: ${globalIsServerInChina.value ? '中国' : '海外'}`
         )
       }
     } catch (e) {
-      console.warn('[useMusicSources] 服务器位置检测失败，默认为海外:', e)
-      globalIsServerInChina.value = false
+      // 失败时保持未知状态（null），进入冷却期，避免把一次瞬时失败永久判定为海外
+      locationCheckFailAt = Date.now() + LOCATION_CHECK_RETRY_TTL
+      console.warn('[useMusicSources] 服务器位置检测失败，稍后重试:', e)
     } finally {
       locationCheckPromise = null
     }
@@ -490,6 +497,19 @@ export const useMusicSources = () => {
           candidateData: { lrc?: string; yrc?: string; ttml?: string },
           format: 'ttml' | 'yrc'
         ) => {
+          // 无基准歌词时（如咪咕官方歌词获取失败）无法做内容匹配，仅校验时长差异
+          if (!currentData.lrc && !currentData.yrc) {
+            if (meta.duration && best.duration) {
+              const durationDiffMs = Math.abs(meta.duration - best.duration)
+              if (durationDiffMs > Math.max(8000, meta.duration * 0.04)) {
+                console.info(
+                  `[getLyrics] ${targetPlatform}:${matchedTrack.musicId} ${format} rejected/duration_mismatch`
+                )
+                return false
+              }
+            }
+            return true
+          }
           const decision = evaluateLyricDataMatch(
             { lrc: currentData.lrc, yrc: currentData.yrc },
             candidateData,
@@ -836,6 +856,15 @@ export const useMusicSources = () => {
           }
         }
 
+        // 咪咕官方歌词获取失败时（海外部署官方接口不可用），仍尝试跨平台升级作为兜底
+        if (platform === 'migu' && !hasResult) {
+          const upgraded = await tryUpgradeLyric(platform, resultData, meta)
+          if (upgraded) {
+            hasResult = true
+            emitProgress('upgrade')
+          }
+        }
+
         if (hasResult) {
           return { success: true, data: resultData }
         }
@@ -1044,7 +1073,7 @@ export const useMusicSources = () => {
           cover: item.img,
           album: item.albumName,
           albumId: item.albumId,
-          duration: isNetease ? item.duration * 1000 : item.duration, // Netease uses ms, Tencent uses s
+          duration: isNetease || isMigu ? item.duration * 1000 : item.duration, // 网易/咪咕使用 ms，腾讯使用 s
           musicPlatform: platform,
           musicId: id?.toString(),
           url: undefined,
@@ -1176,7 +1205,8 @@ export const useMusicSources = () => {
         const neteaseSources = enabledSources.filter((s) => s.id.includes('netease-backup'))
         const vkeysSource = enabledSources.find((s) => s.id === 'vkeys')
         const otherSources = enabledSources.filter(
-          (s) => !s.id.includes('netease-backup') && s.id !== 'vkeys'
+          (s) =>
+            !s.id.includes('netease-backup') && s.id !== 'vkeys' && s.id !== 'migu'
         )
 
         sourcesToTry = [...neteaseSources, ...(vkeysSource ? [vkeysSource] : []), ...otherSources]

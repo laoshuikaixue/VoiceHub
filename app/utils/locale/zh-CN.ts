@@ -2004,7 +2004,8 @@ export const admin = {
     platforms: {
       netease: '网易云音乐',
       tencent: 'QQ音乐',
-      bilibili: '哔哩哔哩'
+      bilibili: '哔哩哔哩',
+      migu: '咪咕音乐'
     },
     timeAgo: {
       justNow: '刚刚',

@@ -35,7 +35,7 @@ async function mr(ab: ArrayBuffer): Promise<any> {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const contentId = query.contentId as string;
-  const toneFlag = query.toneFlag as string || 'PQ';
+  const toneFlag = encodeURIComponent((query.toneFlag as string) || 'PQ');
 
   if (!contentId) throw createError({ statusCode: 400, message: 'Missing contentId' });
 
@@ -55,7 +55,16 @@ export default defineEventHandler(async (event) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
     const ab = await res.arrayBuffer(), data = await mr(ab);
-    const url = (data?.data?.url || '')?.split('?')[0] || ''
+    // 保留完整 URL（含 Tim/Key/playSessionId 签名参数），并统一为 https 避免混合内容拦截
+    const url = (data?.data?.url || '').replace(/^http:\/\//, 'https://')
+
+    if (!url) {
+      return {
+        success: false,
+        url: '',
+        source: 'migu'
+      }
+    }
 
     return {
       success: true,

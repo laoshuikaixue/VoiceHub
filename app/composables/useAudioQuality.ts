@@ -100,7 +100,15 @@ export function useAudioQuality() {
       platform = 'netease'
     }
 
-    return audioQuality.value[platform] || DEFAULT_QUALITY[platform]
+    const stored = audioQuality.value[platform]
+    // 已保存的音质值不再存在于选项列表时（如咪咕音质收敛后残留旧值），回落默认值
+    const platformOptions =
+      (QUALITY_OPTIONS as Record<string, Array<{ value: number; key: string }>>)[platform] || []
+    const isValid = platformOptions.some((option) => option.value === stored)
+    if (isValid) {
+      return stored
+    }
+    return (DEFAULT_QUALITY as Record<string, number>)[platform]
   }
 
   // 获取指定平台的音质选项
