@@ -92,6 +92,7 @@ export default defineEventHandler(async (event) => {
           copyrightId: item.copyrightId || '',
           img: cover,
           lrc: item.lrcUrl || null,
+          mrcUrl: item.mrcurl || null,
           types: formats,
           _types: {},
           typeUrl: {}
