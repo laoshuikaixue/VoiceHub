@@ -754,6 +754,7 @@ VoiceHub/
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
 │   │   │   ├── DuplicateSongsModal.vue # 重复歌曲检测弹窗
+│   │   │   ├── DrilldownLink.vue      # 运维诊断钻取链接
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   │   ├── MusicSourceController.vue # 音源控制管理
 │   │   │   ├── MusicSourcePlugins.vue # LX Music 与 MusicFree 插件音源管理

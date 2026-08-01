@@ -17,9 +17,23 @@
           <span>{{ locale.lastUpdated }} --</span>
         </div>
       </div>
-      <button type="button" class="refresh-button" disabled>
-        <Icon name="refresh" :size="14" />{{ locale.actions.refresh }}
-      </button>
+      <div class="header-actions">
+        <form class="request-id-shortcut" @submit.prevent="openRequestDiagnosis()">
+          <Icon name="search" :size="14" />
+          <input
+            v-model.trim="globalRequestId"
+            type="text"
+            :aria-label="locale.requestIdQuick"
+            :placeholder="locale.requestIdQuickPlaceholder"
+          >
+          <button type="submit" :disabled="!globalRequestId">
+            {{ locale.goToDiagnosis }}
+          </button>
+        </form>
+        <button type="button" class="refresh-button" disabled>
+          <Icon name="refresh" :size="14" />{{ locale.actions.refresh }}
+        </button>
+      </div>
     </header>
 
     <nav class="group-navigation" :aria-label="locale.title">
@@ -93,13 +107,16 @@
             <span class="item-count">{{ locale.itemCount }} --</span>
           </div>
           <div class="service-list">
-            <div v-for="item in sourceRows" :key="item.label" class="service-row">
-              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
+            <div class="service-row">
+              <span class="service-row__icon"><Icon name="layers" :size="15" /></span>
               <div class="min-w-0 flex-1">
-                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
-                <p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p>
+                <p class="text-sm font-semibold text-zinc-300">{{ locale.overview.externalDependencySummary }}</p>
+                <p class="mt-1 text-xs text-zinc-600">{{ locale.overview.externalDependencySummaryDetail }}</p>
               </div>
-              <span class="text-xs font-semibold text-zinc-600">--</span>
+              <span class="status-badge">--</span>
+              <button type="button" class="panel-link" @click="activeGroup = 'dependencies'">
+                {{ locale.overview.viewDependencyDetails }}
+              </button>
             </div>
           </div>
         </article>
@@ -165,9 +182,36 @@
                 <th>{{ locale.overview.recoveryDuration }}</th>
                 <th>{{ locale.overview.alertMetric }}</th>
                 <th>{{ locale.overview.alertAction }}</th>
+                <th>{{ locale.debug.drilldown }}</th>
               </tr>
             </thead>
-            <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">{{ locale.overview.recentErrorLogs }}</h3>
+            <p class="panel-description">{{ locale.overview.recentErrorLogsDetail }}</p>
+          </div>
+          <button type="button" class="panel-link" @click="activeGroup = 'logs'">
+            {{ locale.overview.viewAllLogs }}
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[860px]">
+            <thead>
+              <tr>
+                <th>{{ locale.logs.time }}</th>
+                <th>{{ locale.logs.scope }}</th>
+                <th>{{ locale.logs.message }}</th>
+                <th>{{ locale.overview.logRequestId }}</th>
+                <th>{{ locale.debug.drilldown }}</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -197,8 +241,8 @@
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[760px]">
-              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>5xx</th></tr></thead>
-              <tbody><tr><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>5xx</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
             </table>
           </div>
         </article>
@@ -249,6 +293,13 @@
         </article>
       </section>
 
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">1h</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+      </section>
+
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <article class="panel xl:col-span-5">
           <div class="panel-header">
@@ -294,6 +345,16 @@
         </article>
       </section>
 
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.server.restartEvents }}</h3><p class="panel-description">{{ locale.server.restartEventsDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[820px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.server.restartReason }}</th><th>{{ locale.server.exitCode }}</th><th>{{ locale.server.oomKilled }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
     </template>
 
     <template v-else-if="activeGroup === 'database'">
@@ -335,9 +396,18 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
-          <div class="panel-header">
-            <div><h3 class="panel-title">{{ locale.database.sizeTrend }}</h3><p class="panel-description">{{ locale.database.sizeTrendDetail }}</p></div>
-          </div>
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.queryTrend }}</h3><p class="panel-description">{{ locale.database.queryTrendDetail }}</p></div><span class="status-badge">1h</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.connectionTrend }}</h3><p class="panel-description">{{ locale.database.connectionTrendDetail }}</p></div><span class="status-badge">1h</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">1h</span></div>
           <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
         </article>
         <article class="panel overflow-hidden">
@@ -346,28 +416,56 @@
             <span class="item-count">{{ locale.itemCount }} --</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="data-table min-w-[680px]">
-              <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            <table class="data-table min-w-[1040px]">
+              <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
             </table>
           </div>
         </article>
       </section>
 
       <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <div>
-            <h3 class="panel-title">{{ locale.server.schemaStatus }}</h3>
-            <p class="panel-description">{{ locale.server.schemaStatusDetail }}</p>
-          </div>
-          <span class="item-count">{{ locale.itemCount }} --</span>
-        </div>
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.activeQueries }}</h3><p class="panel-description">{{ locale.database.activeQueriesDetail }}</p></div><span class="risk-badge">{{ locale.database.liveSnapshot }}</span></div>
         <div class="overflow-x-auto">
-          <table class="data-table min-w-[560px]">
-            <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.server.tableStatus }}</th><th>{{ locale.server.tableValue }}</th></tr></thead>
-            <tbody><tr v-for="item in schemaTables" :key="item"><td>{{ item }}</td><td>--</td><td>--</td></tr></tbody>
+          <table class="data-table min-w-[1080px]">
+            <thead><tr><th>{{ locale.database.pid }}</th><th>{{ locale.database.query }}</th><th>{{ locale.database.duration }}</th><th>{{ locale.database.waitEvent }}</th><th>{{ locale.database.blockedBy }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+            <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
           </table>
         </div>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.database.tableHealth }}</h3>
+              <p class="panel-description">{{ locale.database.tableHealthDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[480px]">
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.server.tableStatus }}</th><th>{{ locale.database.lastChecked }}</th></tr></thead>
+              <tbody><tr v-for="item in schemaHealthTables" :key="item"><td>{{ item }}</td><td>--</td><td>--</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">{{ locale.database.tableScale }}</h3>
+              <p class="panel-description">{{ locale.database.tableScaleDetail }}</p>
+            </div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[680px]">
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }}</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
+              <tbody><tr v-for="item in schemaScaleTables" :key="item"><td>{{ item }}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr></tbody>
+            </table>
+          </div>
+        </article>
       </section>
 
       <section class="subsection-heading">
@@ -512,8 +610,8 @@
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[680px]">
-              <thead><tr><th>{{ locale.analytics.rank }}</th><th>{{ locale.analytics.song }}</th><th>{{ locale.analytics.artist }}</th><th>{{ locale.analytics.requester }}</th><th>{{ locale.analytics.votesOrReplays }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <thead><tr><th>{{ locale.analytics.rank }}</th><th>{{ locale.analytics.song }}</th><th>{{ locale.analytics.artist }}</th><th>{{ locale.analytics.requester }}</th><th>{{ locale.analytics.votesOrReplays }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody><tr><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
             </table>
           </div>
         </article>
@@ -585,6 +683,7 @@
               </div>
             </div>
           </div>
+          <p class="panel-copy mt-4">{{ locale.audit.riskScoreFormula }}</p>
         </article>
 
         <article class="panel overflow-hidden xl:col-span-5">
@@ -596,9 +695,9 @@
             <span class="item-count">{{ locale.itemCount }} --</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="data-table min-w-[480px]">
-              <thead><tr><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.lastTriggered }}</th></tr></thead>
-              <tbody><tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            <table class="data-table min-w-[620px]">
+              <thead><tr><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
             </table>
           </div>
         </article>
@@ -617,6 +716,11 @@
         </article>
       </section>
 
+      <section class="panel">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.audit.signalRate }}</h3><p class="panel-description">{{ locale.audit.signalRateDetail }}</p></div><span class="status-badge">1h</span></div>
+        <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 10" :key="index" /></div><span>{{ locale.noData }}</span></div>
+      </section>
+
       <section class="panel overflow-hidden">
         <div class="panel-header">
           <div>
@@ -626,9 +730,9 @@
           <span class="risk-badge">{{ locale.audit.highRisk }}</span>
         </div>
         <div class="overflow-x-auto">
-          <table class="data-table min-w-[760px]">
-            <thead><tr><th>{{ locale.audit.eventTitle }}</th><th>{{ locale.audit.riskLevel }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.lastTriggered }}</th></tr></thead>
-            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          <table class="data-table min-w-[880px]">
+            <thead><tr><th>{{ locale.audit.eventTitle }}</th><th>{{ locale.audit.riskLevel }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+            <tbody><tr><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -663,9 +767,20 @@
                 <th>{{ locale.audit.sourceIp }}</th>
                 <th>{{ locale.audit.triggerCount }}</th>
                 <th>{{ locale.audit.lastTriggered }}</th>
+                <th>{{ locale.audit.securityAction }}</th>
               </tr>
             </thead>
-            <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            <tbody><tr><td colspan="10" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.audit.ipBehaviorTimeline }}</h3><p class="panel-description">{{ locale.audit.ipBehaviorTimelineDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[920px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.matchedRule }}</th><th>{{ locale.audit.relatedUser }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -680,18 +795,18 @@
           </div>
           <span class="status-badge">{{ locale.debug.allPanelsLinked }}</span>
         </div>
-        <div class="diagnostic-search-grid">
+        <form class="diagnostic-search-grid" @submit.prevent="openRequestDiagnosis(debugRequestId)">
           <label class="filter-field filter-field--wide">
             <Icon name="search" :size="13" />
-            <input type="text" :placeholder="locale.debug.requestIdPlaceholder" disabled>
+            <input v-model.trim="debugRequestId" type="text" :placeholder="locale.debug.requestIdPlaceholder">
           </label>
           <button type="button" class="filter-field" disabled><span>{{ locale.debug.allUsers }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.debug.allRoutes }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.debug.serverErrors }}</span><Icon name="chevron-down" :size="13" /></button>
           <label class="filter-field"><span>{{ locale.debug.minimumDuration }}</span><strong>--</strong></label>
           <button type="button" class="filter-field" disabled><span>{{ locale.filters.lastHour }}</span><Icon name="chevron-down" :size="13" /></button>
-          <button type="button" class="filter-action" disabled><Icon name="search" :size="13" />{{ locale.debug.diagnose }}</button>
-        </div>
+          <button type="submit" class="filter-action" :disabled="!debugRequestId"><Icon name="search" :size="13" />{{ locale.debug.diagnose }}</button>
+        </form>
       </section>
 
       <section class="subsection-heading">
@@ -707,6 +822,31 @@
         </article>
       </section>
 
+      <div class="diagnosis-result diagnosis-result--banner">
+        <span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span><strong>--</strong>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.debug.traceWaterfall }}</h3><p class="panel-description">{{ locale.debug.traceWaterfallDetail }}</p></div>
+          <span class="status-badge">{{ locale.debug.traceWaterfallMode }}</span>
+        </div>
+        <div v-if="traceSpans.length" class="trace-waterfall">
+          <div v-for="span in traceSpans" :key="span.id" class="trace-waterfall__row" :style="{ paddingLeft: `${span.depth * 14}px` }">
+            <span class="trace-waterfall__label">{{ span.module }}</span>
+            <div class="trace-waterfall__track">
+              <div class="trace-waterfall__bar" :class="`trace-waterfall__bar--${span.status}`" :style="waterfallBarStyle(span)">
+                <span>{{ span.durationMs }}ms</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="trace-waterfall__empty">
+          <Icon name="activity" :size="16" />
+          <p>{{ debugRequestId ? locale.debug.traceNotCollected : locale.debug.traceEnterRequestId }}</p>
+        </div>
+      </section>
+
       <section class="panel overflow-hidden">
         <div class="panel-header">
           <div><h3 class="panel-title">{{ locale.debug.requestLogChain }}</h3><p class="panel-description">{{ locale.debug.requestLogChainDetail }}</p></div>
@@ -715,10 +855,9 @@
         <div class="overflow-x-auto">
           <table class="data-table min-w-[960px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.debug.elapsed }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.debug.eventName }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.debug.structuredFields }}</th></tr></thead>
-            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.debug.enterRequestId }}</td></tr></tbody>
+            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.debug.enterRequestId }} <DrilldownLink :label="locale.debug.openLogCenter" @activate="activeGroup = 'logs'" /></td></tr></tbody>
           </table>
         </div>
-        <div class="diagnosis-result"><span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span><strong>--</strong></div>
       </section>
 
       <section class="subsection-heading">
@@ -807,7 +946,7 @@
         <div class="overflow-x-auto">
           <table class="data-table min-w-[1260px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.user }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.overview.logHost }}</th><th>{{ locale.logs.message }}</th></tr></thead>
-            <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.overview.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr></tbody>
           </table>
         </div>
       </section>
@@ -921,11 +1060,32 @@
 <script setup>
 import { computed, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import DrilldownLink from '~/components/Admin/DrilldownLink.vue'
 import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.operations || {})
 const activeGroup = ref('overview')
+const globalRequestId = ref('')
+const debugRequestId = ref('')
+const traceSpans = computed(() => [])
+
+const waterfallBarStyle = (span) => {
+  const totalDuration = traceSpans.value.reduce((total, item) => Math.max(total, item.offsetMs + item.durationMs), 0)
+  if (!totalDuration) return {}
+  return {
+    left: `${(span.offsetMs / totalDuration) * 100}%`,
+    width: `${Math.max((span.durationMs / totalDuration) * 100, 0.6)}%`
+  }
+}
+
+const openRequestDiagnosis = (requestId = globalRequestId.value) => {
+  const normalizedRequestId = String(requestId || '').trim()
+  if (!normalizedRequestId) return
+  globalRequestId.value = normalizedRequestId
+  debugRequestId.value = normalizedRequestId
+  activeGroup.value = 'debug'
+}
 
 const monitorSections = computed(() => [
   {
@@ -974,8 +1134,8 @@ const overviewSignals = computed(() => [
   },
   {
     icon: 'settings',
-    label: locale.value.overview?.coroutineStatus,
-    detail: locale.value.overview?.coroutineStatusDetail
+    label: locale.value.overview?.eventLoopStatus,
+    detail: locale.value.overview?.eventLoopStatusDetail
   },
   {
     icon: 'clock',
@@ -988,24 +1148,6 @@ const healthLiveDetails = computed(() => [
   locale.value.overview?.healthLevel,
   locale.value.overview?.alertCount,
   locale.value.overview?.lastChecked
-])
-
-const sourceRows = computed(() => [
-  {
-    icon: 'music',
-    label: locale.value.overview?.neteaseSource,
-    detail: locale.value.overview?.sourceCheckDetail
-  },
-  {
-    icon: 'music',
-    label: locale.value.overview?.tencentSource,
-    detail: locale.value.overview?.sourceCheckDetail
-  },
-  {
-    icon: 'music',
-    label: locale.value.overview?.bilibiliSource,
-    detail: locale.value.overview?.sourceCheckDetail
-  }
 ])
 
 const dependencyRows = computed(() => [
@@ -1026,8 +1168,8 @@ const dependencyRows = computed(() => [
   },
   {
     icon: 'activity',
-    label: locale.value.server?.telemetry,
-    detail: locale.value.overview?.telemetryDetail
+    label: locale.value.server?.collectionReporting,
+    detail: locale.value.overview?.collectionReportingDetail
   }
 ])
 
@@ -1147,13 +1289,20 @@ const serverHealthDetails = computed(() => [
   locale.value.server?.collectedAt
 ])
 
+const infraTrendPanels = computed(() => [
+  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail },
+  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail },
+  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail },
+  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail }
+])
+
 const serverRuntimeDetails = computed(() => [
   locale.value.server?.platformRelease,
   locale.value.runtime?.architecture,
   locale.value.runtime?.nodeVersion,
   locale.value.runtime?.processUptime,
   locale.value.runtime?.instanceId,
-  locale.value.server?.telemetry
+  locale.value.server?.collectionReporting
 ])
 
 const serverResourcePanels = computed(() => [
@@ -1198,7 +1347,10 @@ const serverResourcePanels = computed(() => [
       locale.value.server?.nodeHeapUtilization,
       locale.value.server?.heapUsed,
       locale.value.server?.heapTotal,
-      locale.value.server?.externalMemory
+      locale.value.server?.externalMemory,
+      locale.value.server?.gcCount,
+      locale.value.server?.gcPause,
+      locale.value.server?.eventLoopP99Lag
     ]
   }
 ])
@@ -1232,13 +1384,20 @@ const databasePerformanceDetails = computed(() => [
   locale.value.database?.databaseGrowthRate
 ])
 
-const schemaTables = computed(() => [
+const schemaHealthTables = computed(() => [
   locale.value.server?.usersTable,
   locale.value.server?.songsTable,
   locale.value.server?.votesTable,
   locale.value.server?.scheduleTable,
-  locale.value.server?.notificationsTable,
-  locale.value.server?.totalUsers
+  locale.value.server?.notificationsTable
+])
+
+const schemaScaleTables = computed(() => [
+  locale.value.server?.usersTable,
+  locale.value.server?.songsTable,
+  locale.value.server?.votesTable,
+  locale.value.server?.scheduleTable,
+  locale.value.server?.notificationsTable
 ])
 
 const cacheMetrics = computed(() => [
@@ -1367,9 +1526,7 @@ const businessMetricGroups = computed(() => [
     title: locale.value.business?.mediaPipeline,
     detail: locale.value.business?.mediaPipelineDetail,
     items: [
-      locale.value.business?.neteaseLatencyAndErrors,
-      locale.value.business?.tencentLatencyAndErrors,
-      locale.value.business?.bilibiliLatencyAndErrors,
+      locale.value.business?.musicSearchApiAvailability,
       locale.value.business?.playUrlFailures,
       locale.value.business?.qualitySwitches,
       locale.value.business?.downloadCountAndBytes
@@ -1583,6 +1740,65 @@ const riskLevels = computed(() => [
 .refresh-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.request-id-shortcut {
+  display: flex;
+  min-width: 0;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(63 63 70);
+  border-radius: 6px;
+  padding-left: 0.65rem;
+  color: rgb(96 165 250);
+  background: rgb(9 9 11 / 0.55);
+}
+
+.request-id-shortcut input {
+  min-width: 10rem;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: rgb(228 228 231);
+  background: transparent;
+  font-size: 0.75rem;
+}
+
+.request-id-shortcut input::placeholder {
+  color: rgb(82 82 91);
+}
+
+.request-id-shortcut button {
+  height: 100%;
+  border-left: 1px solid rgb(63 63 70);
+  padding: 0 0.7rem;
+  color: rgb(147 197 253);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.request-id-shortcut button:disabled {
+  cursor: not-allowed;
+  color: rgb(82 82 91);
+}
+
+.panel-link {
+  flex: 0 0 auto;
+  color: rgb(96 165 250);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.panel-link:hover {
+  color: rgb(147 197 253);
 }
 
 .group-navigation {
@@ -2543,6 +2759,74 @@ const riskLevels = computed(() => [
   min-height: 9.5rem;
 }
 
+.trace-waterfall {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.trace-waterfall__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.trace-waterfall__label {
+  overflow: hidden;
+  color: rgb(161 161 170);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trace-waterfall__track {
+  position: relative;
+  height: 1.5rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, rgb(39 39 42 / 0.5) 0, rgb(39 39 42 / 0.5) 1px, transparent 1px, transparent 20%);
+}
+
+.trace-waterfall__bar {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  display: flex;
+  min-width: 1.5rem;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 3px;
+  padding: 0 0.35rem;
+  color: rgb(255 255 255 / 0.92);
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.trace-waterfall__bar--ok { background: rgb(16 185 129 / 0.72); }
+.trace-waterfall__bar--slow { background: rgb(234 179 8 / 0.78); }
+.trace-waterfall__bar--error { background: rgb(239 68 68 / 0.78); }
+
+.trace-waterfall__empty {
+  display: flex;
+  min-height: 10rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  color: rgb(82 82 91);
+  text-align: center;
+}
+
+.trace-waterfall__empty p {
+  max-width: 30rem;
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+
 .diagnosis-result {
   display: flex;
   min-height: 3.75rem;
@@ -2552,6 +2836,12 @@ const riskLevels = computed(() => [
   border-top: 1px solid rgb(39 39 42);
   padding: 0.85rem 1rem;
   background: rgb(59 130 246 / 0.04);
+}
+
+.diagnosis-result--banner {
+  margin-bottom: 1rem;
+  border: 1px solid rgb(59 130 246 / 0.18);
+  border-radius: 6px;
 }
 
 .diagnosis-result span {
@@ -2835,6 +3125,11 @@ const riskLevels = computed(() => [
 }
 
 @media (min-width: 1280px) {
+  .header-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
   .server-summary-strip {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
