@@ -2,30 +2,6 @@ import { createHash } from 'node:crypto'
 import { formatPlayTime } from '../../../utils/native_common'
 import { getServerLocation } from '../../../utils/geo'
 
-// 咪咕 v3 搜索签名
-function createSignature(time: string, str: string) {
-  const deviceId = '963B7AA0D21511ED807EE5846EC87D20'
-  const signatureMd5 = '6cdc72a439cef99a3418d2a78aa28c73'
-  const sign = createHash('md5')
-    .update(`${str}${signatureMd5}yyapp2d16148780a1dcc7408e06336b98cfd50${deviceId}${time}`)
-    .digest('hex')
-  return { sign, deviceId }
-}
-
-// 仅搜索歌曲
-const MIGU_SEARCH_SWITCH = JSON.stringify({
-  song: 1,
-  album: 0,
-  singer: 0,
-  tagSong: 1,
-  mvSong: 0,
-  bestShow: 1,
-  songlist: 0,
-  lyricSong: 0
-})
-
-const MIGU_ANDROID_UA =
-  'Mozilla/5.0 (Linux; U; Android 11.0.0; zh-cn; MI 11 Build/OPR1.170623.032) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30'
 
 // 咪咕歌曲信息缓存（封面兜底用），避免重复请求
 const mgSongInfoCache = new Map<string, { expiresAt: number; img: string }>()
@@ -46,8 +22,8 @@ async function getMgCover(contentId: string): Promise<string> {
       `https://app.c.nf.migu.cn/resource/song/by-contentids/v2.0?contentId=${contentId}`,
       { timeout: 10000 }
     )
-    const song = res?.data?.[0]
-    const img = song?.img || song?.albumImgs?.[0] || song?.bigImage || ''
+    const song = res?.data?.[0];
+    const img = song?.img2 || song?.img3 || song?.img1 || ''
     if (img) {
       mgSongInfoCache.set(contentId, { expiresAt: Date.now() + MG_INFO_CACHE_TTL, img })
     }
@@ -58,49 +34,41 @@ async function getMgCover(contentId: string): Promise<string> {
 }
 
 /**
- * 咪咕 v3 搜索接口（jadeite，带 MD5 签名，仅国内服务器可访问）
+ * 咪咕网页 v5 搜索接口
  */
-async function searchV3(str: string, page: number, limit: number) {
-  const time = Date.now().toString()
-  const { sign, deviceId } = createSignature(time, str)
+async function searchPC(str: string, page: number, limit: number) {
   const response: any = await $fetch(
-    `https://jadeite.migu.cn/music_search/v3/search/searchAll` +
-      `?isCorrect=0&isCopyright=1&searchSwitch=${encodeURIComponent(MIGU_SEARCH_SWITCH)}` +
-      `&pageSize=${limit}&text=${encodeURIComponent(str)}&pageNo=${page}&sort=0&sid=USS`,
+    `https://app.u.nf.migu.cn/pc/resource/song/item/search/v1.0?text=${encodeURIComponent(str)}&` +
+      `&pageSize=${limit}&pageNo=${page}`,
     {
       headers: {
-        uiVersion: 'A_music_3.6.1',
-        deviceId,
-        timestamp: time,
-        sign,
-        channel: '0146921',
-        'User-Agent': MIGU_ANDROID_UA
-      },
+        "Origin": "https://music.migu.cn",
+        "Referer": "https://music.migu.cn/v5",
+        "birth": "h5page",
+        "channel": "014X031"
+    },
       timeout: 10000
     }
   )
 
-  if (!response || response.code !== '000000') {
-    throw createError({ statusCode: 502, message: 'Migu API Error' })
-  }
+  if (!response) throw createError({ statusCode: 502, message: 'Migu API Error' })
 
-  // resultList 为分组结构（每组一个数组），需拍平
-  const groups = response.songResultData?.resultList || []
+  const groups = response || []
 
   // 处理歌曲列表（封面缺失时兜底查询）
   const list = await Promise.all(
     groups
       .flatMap((group: any[]) => group)
-      .filter((item: any) => item?.contentId || item?.songId)
+      .filter((item: any) => item?.contentId)
       .map(async (item: any) => {
         // 歌手列表处理
         const singerList = item.singerList || []
         const singer = singerList.map((s: any) => s.name).join('/') || '未知艺术家'
 
         // 封面图（相对路径补全域名；缺失时经歌曲信息接口兜底）
-        const img = item.img3 || item.img2 || item.img1 || ''
+        const img = item.img2 || item.img3 || item.img1 || ''
         const cover = img && !/^https?:/.test(img) ? `https://d.musicapp.migu.cn${img}` : img
-        const contentId = item.contentId || item.songId
+        const contentId = item.contentId;
         const finalCover = cover || (contentId ? await getMgCover(contentId) : '')
 
         // 音质格式列表
@@ -133,9 +101,9 @@ async function searchV3(str: string, page: number, limit: number) {
 }
 
 /**
- * 咪咕旧版搜索接口（app.c.nf.migu.cn，海外服务器可访问）
+ * 咪咕移动端搜索接口（app.c.nf.migu.cn，海外服务器可访问）
  */
-async function searchLegacy(str: string, page: number, limit: number) {
+async function searchMobile(str: string, page: number, limit: number) {
   const response: any = await $fetch('https://app.c.nf.migu.cn/bmw/search/song/v1.0', {
     params: {
       pageNo: page,
@@ -152,7 +120,9 @@ async function searchLegacy(str: string, page: number, limit: number) {
 
   // 处理歌曲列表（封面缺失时兜底查询）
   const list = await Promise.all(
-    items.map(async (item: any) => {
+    items
+    .filter((item: any) => item?.contentId)
+    .map(async (item: any) => {
       const song = item.song
       if (!song) return null
 
@@ -211,13 +181,13 @@ export default defineEventHandler(async (event) => {
     let result
     if (isInChina) {
       try {
-        result = await searchV3(str, page, limit)
+        result = await searchPC(str, page, limit)
       } catch (err) {
-        console.warn('[mg.get] V3 接口请求失败，回退到旧版接口:', err)
-        result = await searchLegacy(str, page, limit)
+        console.warn('[mg.get] V3 接口请求失败，回退到移动端接口:', err)
+        result = await searchMobile(str, page, limit)
       }
     } else {
-      result = await searchLegacy(str, page, limit)
+      result = await searchMobile(str, page, limit)
     }
 
     return {
