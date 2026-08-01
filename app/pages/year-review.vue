@@ -316,7 +316,7 @@ const handleTouchEnd = (e) => {
   background: var(--brand-purple);
   border-radius: 9999px;
   font-weight: 700;
-  box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 10px 15px -3px var(--year-review-home-btn-shadow);
   transition: background 0.2s;
 }
 

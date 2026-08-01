@@ -1152,11 +1152,11 @@ const formatDateShort = (dateStr) => {
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(79, 70, 229, 0.3);
+  background: var(--data-analysis-scroll-thumb);
   border-radius: 3px;
   transition: background 0.3s ease;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(79, 70, 229, 0.5);
+  background: var(--data-analysis-scroll-thumb-hover);
 }
 </style>

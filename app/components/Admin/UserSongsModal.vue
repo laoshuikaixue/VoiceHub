@@ -482,12 +482,12 @@ watch(
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(113, 113, 122, 0.3); /* zinc-500/30 */
+  background-color: var(--usersongs-scroll-thumb);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(113, 113, 122, 0.5);
+  background-color: var(--usersongs-scroll-thumb-hover);
 }
 
 /* 标签页隐藏滚动条 */

@@ -54,7 +54,7 @@ const { yearReview } = useLocale()
   inset: 0;
   background: radial-gradient(
     ellipse at top right,
-    rgba(30, 58, 138, 0.4),
+    var(--year-review-stats-bg-gradient),
     transparent,
     transparent
   );
@@ -98,7 +98,7 @@ const { yearReview } = useLocale()
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.5));
+  filter: drop-shadow(0 0 30px var(--year-review-stat-number-shadow));
 }
 
 .suffix {

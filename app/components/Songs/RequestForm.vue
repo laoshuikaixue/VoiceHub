@@ -4147,7 +4147,7 @@ defineExpose({
 
 .audio-match-btn:hover:not(:disabled) {
   background: var(--primary-18);
-  border-color: rgba(96, 165, 250, 0.35);
+  border-color: var(--requestform-audio-match-hover-border);
   color: var(--text-primary);
 }
 
@@ -4579,11 +4579,11 @@ defineExpose({
 
 .qq-login-btn {
   background: linear-gradient(135deg, var(--brand-teal) 0%, var(--brand-teal) 100%);
-  box-shadow: 0 4px 10px rgba(6, 182, 212, 0.15);
+  box-shadow: 0 4px 10px var(--requestform-qq-login-shadow);
 }
 
 .qq-login-btn:hover {
-  box-shadow: 0 5px 14px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 5px 14px var(--requestform-qq-login-shadow-hover);
 }
 
 .header-actions {
@@ -4675,8 +4675,8 @@ defineExpose({
   flex-shrink: 0;
   border-radius: 50%;
   color: var(--brand-cyan);
-  background: rgba(6, 182, 212, 0.12);
-  border: 1.5px solid rgba(6, 182, 212, 0.22);
+  background: var(--requestform-user-icon-bg);
+  border: 1.5px solid var(--requestform-user-icon-border);
 }
 
 .user-name {
@@ -4780,12 +4780,12 @@ defineExpose({
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px var(--requestform-login-btn-hover-shadow);
 }
 
 .audio-match-primary-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 20px var(--requestform-login-btn-hover-shadow-lg);
 }
 
 .audio-match-primary-btn:disabled {
@@ -4804,7 +4804,7 @@ defineExpose({
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+  box-shadow: 0 4px 14px var(--requestform-like-btn-hover-shadow);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -4812,7 +4812,7 @@ defineExpose({
 
 .audio-match-record-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+  box-shadow: 0 6px 20px var(--requestform-like-btn-hover-shadow-lg);
 }
 
 .recording-dot {
@@ -4867,7 +4867,7 @@ defineExpose({
 
 .audio-match-result-item:hover {
   background: var(--primary-10);
-  border-color: rgba(96, 165, 250, 0.22);
+  border-color: var(--requestform-audio-match-hover-border-light);
   transform: translateY(-1px);
 }
 
@@ -5000,8 +5000,8 @@ defineExpose({
 }
 
 .source-item.healthy {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.3);
+  background: var(--requestform-source-healthy-bg);
+  border-color: var(--requestform-source-healthy-border);
   color: var(--brand-green-light);
 }
 
@@ -5012,8 +5012,8 @@ defineExpose({
 }
 
 .source-item.checking {
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.3);
+  background: var(--requestform-source-checking-bg);
+  border-color: var(--requestform-source-checking-border);
   color: var(--brand-yellow-light);
 }
 
@@ -5035,7 +5035,7 @@ defineExpose({
 
 .source-item.healthy .source-indicator {
   background: var(--brand-green-hover);
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 6px var(--requestform-source-healthy-glow);
 }
 
 .source-item.unhealthy .source-indicator {
@@ -5045,7 +5045,7 @@ defineExpose({
 
 .source-item.checking .source-indicator {
   background: var(--brand-yellow-light);
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+  box-shadow: 0 0 6px var(--requestform-source-checking-glow);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -5521,7 +5521,7 @@ defineExpose({
 }
 
 .modal-content {
-  background: rgba(20, 20, 25, 0.95);
+  background: var(--requestform-modal-overlay-bg);
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
@@ -5621,7 +5621,7 @@ defineExpose({
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 67, 248, 0.4);
+  box-shadow: 0 6px 16px var(--requestform-submit-btn-hover-shadow);
 }
 
 .btn-primary:disabled {
@@ -5800,14 +5800,14 @@ defineExpose({
 
 .cloud-disk-btn:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(236, 65, 65, 0.5);
+  box-shadow: 0 4px 12px var(--requestform-delete-btn-hover-shadow);
   background: linear-gradient(180deg, var(--brand-red-hover) 0%, var(--brand-red-hover) 100%);
   border-color: var(--overlay-40);
 }
 
 .cloud-disk-btn:active {
   transform: translateY(0) scale(0.95);
-  box-shadow: 0 2px 4px rgba(236, 65, 65, 0.3);
+  box-shadow: 0 2px 4px var(--requestform-delete-btn-hover-shadow-sm);
 }
 
 .similar-song-info {
@@ -5890,8 +5890,8 @@ defineExpose({
 }
 
 .replay-btn {
-  background: rgba(0, 117, 248, 0.1);
-  border: 1px solid rgba(0, 117, 248, 0.3);
+  background: var(--requestform-replay-btn-bg);
+  border: 1px solid var(--requestform-replay-btn-border);
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
   color: var(--brand-blue-light);
@@ -5907,8 +5907,8 @@ defineExpose({
 }
 
 .replay-btn:hover:not(:disabled) {
-  background: rgba(0, 117, 248, 0.2);
-  border-color: rgba(0, 117, 248, 0.5);
+  background: var(--requestform-replay-btn-bg-hover);
+  border-color: var(--requestform-replay-btn-border-hover);
   color: var(--brand-blue-light);
   transform: translateY(-1px);
 }
@@ -6355,9 +6355,9 @@ defineExpose({
     gap: 0.35rem;
     min-height: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(113, 113, 122, 0.45);
-    background: rgba(39, 39, 42, 0.75);
-    color: rgba(212, 212, 216, 0.9);
+    border: 1px solid var(--requestform-mobile-chip-border);
+    background: var(--requestform-mobile-chip-bg);
+    color: var(--requestform-mobile-chip-text);
     padding: 0.25rem 0.55rem;
     font-size: 11px;
     font-weight: 800;
@@ -6372,9 +6372,9 @@ defineExpose({
     width: 100%;
     min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgba(113, 113, 122, 0.4);
+    border: 1px solid var(--requestform-mobile-chip-border-sm);
     background: var(--panel-surface-overlay);
-    color: rgba(228, 228, 231, 0.9);
+    color: var(--requestform-mobile-button-text);
     padding: 0.65rem 0.85rem;
     font-size: 13px;
     font-weight: 800;
@@ -6382,28 +6382,28 @@ defineExpose({
 
   .mobile-card-code-chip.is-required,
   .mobile-card-code-button.is-required {
-    border-color: rgba(234, 179, 8, 0.35);
-    background: rgba(234, 179, 8, 0.1);
+    border-color: var(--requestform-chip-required-border);
+    background: var(--requestform-chip-required-bg);
     color: var(--brand-yellow-light);
   }
 
   .mobile-card-code-chip.has-code,
   .mobile-card-code-button.has-code {
-    border-color: rgba(234, 179, 8, 0.3);
+    border-color: var(--requestform-chip-required-border-sm);
     color: var(--brand-yellow-light);
   }
 
   .mobile-card-code-chip.is-valid,
   .mobile-card-code-button.is-valid {
-    border-color: rgba(16, 185, 129, 0.35);
+    border-color: var(--requestform-chip-valid-border);
     background: var(--success-10);
     color: var(--brand-green-light);
   }
 
   .mobile-card-code-chip.is-invalid,
   .mobile-card-code-button.is-invalid {
-    border-color: rgba(248, 113, 113, 0.35);
-    background: rgba(248, 113, 113, 0.1);
+    border-color: var(--requestform-chip-invalid-border);
+    background: var(--requestform-chip-invalid-bg);
     color: var(--brand-red-light);
   }
 

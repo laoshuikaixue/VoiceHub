@@ -19,7 +19,7 @@
             :class="[
               inputClass,
               error
-                ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
                 : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showCurrentPassword ? 'text' : 'password'"
@@ -60,7 +60,7 @@
             :class="[
               inputClass,
               error
-                ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
                 : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showNewPassword ? 'text' : 'password'"
@@ -121,7 +121,7 @@
             :class="[
               inputClass,
               error || (confirmPassword && newPassword !== confirmPassword)
-                ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
                 : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showConfirmPassword ? 'text' : 'password'"

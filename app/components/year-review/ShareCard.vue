@@ -77,8 +77,8 @@ defineExpose({
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 20% 30%, var(--index-card-glow) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, var(--year-review-gradient-overlay-end) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, var(--primary-10) 0%, transparent 60%);
 }
 

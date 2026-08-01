@@ -2067,8 +2067,8 @@ const vRipple = {
   text-shadow:
     0px 20px 30px var(--primary-50),
     0px 8px 15px var(--primary-50),
-    0px 4px 10px rgba(0, 179, 248, 0.3),
-    0px 2px 10px rgba(0, 179, 248, 0.2),
+    0px 4px 10px var(--schedule-list-title-shadow),
+    0px 2px 10px var(--schedule-list-title-shadow-sm),
     inset 3px 3px 10px var(--overlay-40),
     inset -1px -1px 15px var(--overlay-40);
 }

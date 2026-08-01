@@ -2797,7 +2797,7 @@ onBeforeUnmount(() => {
 .tree-branch {
   margin-left: 1rem;
   padding-left: 0.75rem;
-  border-left: 1px solid rgba(63, 63, 70, 0.55);
+  border-left: 1px solid var(--user-manager-tree-line);
 }
 
 .tree-toggle {
@@ -2840,7 +2840,7 @@ onBeforeUnmount(() => {
 
 .tree-label-active {
   color: var(--brand-blue-light);
-  background: rgba(37, 99, 235, 0.16);
+  background: var(--user-manager-tree-active-bg);
 }
 
 .tree-count {

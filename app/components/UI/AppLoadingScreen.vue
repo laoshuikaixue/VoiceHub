@@ -166,12 +166,12 @@ const warpSettings = computed(() => ({
 
 .ring-fill {
   stroke: var(--brand-indigo);
-  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
+  filter: drop-shadow(0 0 8px var(--app-loading-ring-shadow));
   transition: stroke-dashoffset 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 400ms ease;
 }
 
 .ring-fill.accelerating {
-  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.8)) brightness(1.3);
+  filter: drop-shadow(0 0 20px var(--app-loading-ring-shadow-accelerating)) brightness(1.3);
 }
 
 .ring-label {
@@ -228,7 +228,7 @@ const warpSettings = computed(() => ({
   font-size: 10px;
   font-family: ui-monospace, monospace;
   letter-spacing: 0.2em;
-  color: rgba(129, 140, 248, 0.8);
+  color: var(--app-loading-text-color);
   text-transform: uppercase;
 }
 
@@ -239,7 +239,7 @@ const warpSettings = computed(() => ({
   height: 3px;
   z-index: 20;
   background: linear-gradient(90deg, var(--brand-indigo), var(--brand-purple-light));
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.6), 0 0 40px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 0 12px var(--app-loading-progress-shadow), 0 0 40px var(--app-loading-progress-shadow-lg);
   transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

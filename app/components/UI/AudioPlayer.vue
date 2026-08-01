@@ -1955,7 +1955,7 @@ const getFirstChar = (text) => {
   padding: 0 12px;
   flex-direction: row;
   align-items: center;
-  background: rgba(20, 20, 25, 0.85);
+  background: var(--audio-player-bar-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   border: 1px solid var(--overlay-8);
@@ -2081,7 +2081,7 @@ const getFirstChar = (text) => {
   flex-shrink: 0;
   align-items: center;
   border-radius: 7px;
-  background: rgba(74, 74, 74, 0.39);
+  background: var(--audio-player-progress-track-bg);
   height: 7px;
   width: 100%;
   max-width: 376px;
@@ -2112,7 +2112,7 @@ const getFirstChar = (text) => {
   align-items: flex-start;
   border-radius: 22px;
   /* 不支持毛玻璃时使用深色背景，避免只剩低透明度底色 */
-  background: rgba(20, 20, 25, 0.85);
+  background: var(--audio-player-bar-bg);
   padding: 10px 7px 10px 13px;
   width: 400px;
   height: 165px;
@@ -2839,7 +2839,7 @@ const getFirstChar = (text) => {
   transform: translateX(-50%);
   background:
     linear-gradient(135deg, var(--overlay-25), var(--overlay-15)),
-    rgba(128, 128, 128, 0.85);
+    var(--audio-player-dropdown-bg-fallback);
   border-radius: 12px;
   padding: 8px 0;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
@@ -2900,16 +2900,16 @@ const getFirstChar = (text) => {
 .quality-option.active {
   color: var(--brand-blue);
   background:
-    linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
-    rgba(0, 122, 255, 0.1);
-  border: 1px solid rgba(0, 122, 255, 0.6);
+    linear-gradient(135deg, var(--audio-player-quality-active-bg-start), var(--audio-player-quality-active-bg-mid)),
+    var(--audio-player-quality-active-bg-end);
+  border: 1px solid var(--audio-player-quality-active-border);
   font-weight: 600;
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(0, 122, 255, 0.4),
-    0 2px 8px rgba(0, 122, 255, 0.3),
+    0 6px 20px var(--audio-player-quality-active-shadow-lg),
+    0 2px 8px var(--audio-player-quality-active-shadow),
     inset 0 1px 0 var(--overlay-30),
-    0 0 0 1px rgba(0, 122, 255, 0.2);
+    0 0 0 1px var(--audio-player-quality-active-ring);
 }
 
 /* 音质下拉动画 - 向上弹出优化 */
@@ -2942,7 +2942,7 @@ const getFirstChar = (text) => {
   .music-widget {
     background:
       linear-gradient(135deg, var(--overlay-10), var(--overlay-5)),
-      rgba(128, 128, 128, 0.25);
+      var(--audio-player-liquid-glass-bg-fallback);
   }
 }
 </style>

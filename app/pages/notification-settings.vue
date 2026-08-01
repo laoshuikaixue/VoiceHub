@@ -239,7 +239,7 @@
                       :class="[
                         'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                         emailCodeError
-                          ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                          ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
                           : 'border-border-secondary focus:border-primary-30'
                       ]"
                       @input="handleEmailCodeInput"
@@ -370,7 +370,7 @@
                         :class="[
                           'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                           verificationCodeError
-                            ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                            ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
                             : 'border-border-secondary focus:border-primary-30'
                         ]"
                         @input="handleVerificationCodeInput"

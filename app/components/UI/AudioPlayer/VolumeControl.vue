@@ -235,7 +235,7 @@ const handleClickOutside = (e: Event) => {
 }
 
 .muted-icon {
-  color: rgba(255, 100, 100, 0.9);
+  color: var(--volume-control-muted-color);
 }
 
 .volume-text {
@@ -264,7 +264,7 @@ const handleClickOutside = (e: Event) => {
   width: 36px;
   height: 120px;
   background: linear-gradient(135deg, var(--overlay-15), var(--overlay-5)),
-    rgba(30, 30, 35, 0.85);
+    var(--volume-control-panel-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   border: 1px solid var(--overlay-10);

@@ -514,7 +514,7 @@ const updateLayoutCache = () => {
     el.style.transformOrigin = '0 0'
     el.style.zIndex = '100'
     el.style.borderRadius = '12px'
-    el.style.boxShadow = '0 16px 36px rgba(0,0,0,0.4)'
+    el.style.boxShadow = '0 16px 36px var(--lyrics-modal-enter-shadow)'
     // 确保硬件加速
     el.style.transform = 'translate3d(0, 0, 0)'
     el.style.willChange = 'transform, border-radius'
@@ -1240,8 +1240,8 @@ onUnmounted(() => {
   z-index: 0;
   opacity: 0;
   background:
-    radial-gradient(circle at 30% 30%, rgba(84, 130, 255, 0.32), transparent 34%),
-    radial-gradient(circle at 70% 40%, rgba(255, 88, 126, 0.25), transparent 32%),
+    radial-gradient(circle at 30% 30%, var(--lyrics-modal-bg-accent-blue), transparent 34%),
+    radial-gradient(circle at 70% 40%, var(--lyrics-modal-bg-accent-pink), transparent 32%),
     linear-gradient(135deg, var(--panel-surface-subtle) 0%, var(--panel-surface-deepest) 100%);
   background-size: 180% 180%;
   transition: opacity 0.5s ease;
@@ -1835,7 +1835,7 @@ onUnmounted(() => {
   transform: translateX(-50%) scale(0.9);
   margin-bottom: 12px; /* 底部间距 */
   margin-top: 0;
-  background: rgba(245, 245, 245, 0.9);
+  background: var(--lyrics-modal-badge-menu-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;

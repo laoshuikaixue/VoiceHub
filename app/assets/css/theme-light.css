@@ -273,6 +273,117 @@
 
   --brand-orange-glow: rgba(251, 146, 60, 0.4);
 
+  /* 用途化变量 — 请求表单（RequestForm） */
+  --requestform-audio-match-hover-border: rgba(96, 165, 250, 0.35);
+  --requestform-audio-match-hover-border-light: rgba(96, 165, 250, 0.22);
+  --requestform-qq-login-shadow: rgba(6, 182, 212, 0.15);
+  --requestform-qq-login-shadow-hover: rgba(6, 182, 212, 0.25);
+  --requestform-user-icon-bg: rgba(6, 182, 212, 0.12);
+  --requestform-user-icon-border: rgba(6, 182, 212, 0.22);
+  --requestform-login-btn-hover-shadow: rgba(37, 99, 235, 0.35);
+  --requestform-login-btn-hover-shadow-lg: rgba(37, 99, 235, 0.45);
+  --requestform-like-btn-hover-shadow: rgba(220, 38, 38, 0.35);
+  --requestform-like-btn-hover-shadow-lg: rgba(220, 38, 38, 0.45);
+  --requestform-source-healthy-bg: rgba(34, 197, 94, 0.15);
+  --requestform-source-healthy-border: rgba(34, 197, 94, 0.3);
+  --requestform-source-healthy-glow: rgba(34, 197, 94, 0.6);
+  --requestform-source-checking-bg: rgba(251, 191, 36, 0.15);
+  --requestform-source-checking-border: rgba(251, 191, 36, 0.3);
+  --requestform-source-checking-glow: rgba(251, 191, 36, 0.6);
+  --requestform-modal-overlay-bg: rgba(20, 20, 25, 0.95);
+  --requestform-submit-btn-hover-shadow: rgba(0, 67, 248, 0.4);
+  --requestform-delete-btn-hover-shadow: rgba(236, 65, 65, 0.5);
+  --requestform-delete-btn-hover-shadow-sm: rgba(236, 65, 65, 0.3);
+  --requestform-replay-btn-bg: rgba(0, 117, 248, 0.1);
+  --requestform-replay-btn-bg-hover: rgba(0, 117, 248, 0.2);
+  --requestform-replay-btn-border: rgba(0, 117, 248, 0.3);
+  --requestform-replay-btn-border-hover: rgba(0, 117, 248, 0.5);
+  --requestform-mobile-chip-border: rgba(113, 113, 122, 0.45);
+  --requestform-mobile-chip-border-sm: rgba(113, 113, 122, 0.4);
+  --requestform-mobile-chip-bg: rgba(39, 39, 42, 0.75);
+  --requestform-mobile-chip-text: rgba(212, 212, 216, 0.9);
+  --requestform-mobile-button-text: rgba(228, 228, 231, 0.9);
+  --requestform-chip-required-bg: rgba(234, 179, 8, 0.1);
+  --requestform-chip-required-border: rgba(234, 179, 8, 0.35);
+  --requestform-chip-required-border-sm: rgba(234, 179, 8, 0.3);
+  --requestform-chip-valid-border: rgba(16, 185, 129, 0.35);
+  --requestform-chip-invalid-bg: rgba(248, 113, 113, 0.1);
+  --requestform-chip-invalid-border: rgba(248, 113, 113, 0.35);
+
+  /* 用途化变量 — 音频播放器（AudioPlayer） */
+  --audio-player-bar-bg: rgba(20, 20, 25, 0.85);
+  --audio-player-progress-track-bg: rgba(74, 74, 74, 0.39);
+  --audio-player-quality-active-bg-start: rgba(0, 122, 255, 0.25);
+  --audio-player-quality-active-bg-mid: rgba(0, 122, 255, 0.15);
+  --audio-player-quality-active-bg-end: rgba(0, 122, 255, 0.1);
+  --audio-player-quality-active-border: rgba(0, 122, 255, 0.6);
+  --audio-player-quality-active-shadow-lg: rgba(0, 122, 255, 0.4);
+  --audio-player-quality-active-shadow: rgba(0, 122, 255, 0.3);
+  --audio-player-quality-active-ring: rgba(0, 122, 255, 0.2);
+
+  /* 用途化变量 — 音量控制（VolumeControl） */
+  --volume-control-panel-bg: rgba(30, 30, 35, 0.85);
+  --volume-control-muted-color: rgba(255, 100, 100, 0.9);
+
+  /* 用途化变量 — 备份管理器（BackupManager） */
+  --backup-manager-danger-bg: rgba(211, 47, 47, 0.1);
+  --backup-manager-file-remove-bg: rgba(211, 47, 47, 0.2);
+  --backup-manager-file-remove-bg-hover: rgba(211, 47, 47, 0.3);
+  --backup-manager-warning-box-bg: rgba(255, 152, 0, 0.1);
+
+  /* 用途化变量 — 用户歌曲模态框滚动条（UserSongsModal） */
+  --usersongs-scroll-thumb: rgba(113, 113, 122, 0.3);
+  --usersongs-scroll-thumb-hover: rgba(113, 113, 122, 0.5);
+
+  /* 用途化变量 — 用户管理器（UserManager） */
+  --user-manager-tree-line: rgba(63, 63, 70, 0.55);
+  --user-manager-tree-active-bg: rgba(37, 99, 235, 0.16);
+
+  /* 用途化变量 — 数据分析面板滚动条（DataAnalysisPanel） */
+  --data-analysis-scroll-thumb: rgba(79, 70, 229, 0.3);
+  --data-analysis-scroll-thumb-hover: rgba(79, 70, 229, 0.5);
+
+  /* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
+  --schedule-list-divider: rgba(217, 217, 217, 0.5);
+  --schedule-list-title-shadow: rgba(0, 179, 248, 0.3);
+  --schedule-list-title-shadow-sm: rgba(0, 179, 248, 0.2);
+
+  /* 用途化变量 — 认证模块（Auth） */
+  --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
+
+  --index-footer-bg: rgba(28, 28, 30, 0.9);
+  --index-visualizer-bg: rgba(30, 41, 59, 0.5);
+  --index-card-glow: rgba(139, 92, 246, 0.15);
+  --index-brand-badge-bg: rgba(139, 92, 246, 0.1);
+  --index-brand-badge-border: rgba(139, 92, 246, 0.2);
+  --index-main-icon-shadow: rgba(139, 92, 246, 0.5);
+  --index-pulsing-ring-shadow: rgba(0, 122, 255, 0.4);
+
+  /* 用途化变量 — 年度回顾（year-review） */
+  --year-review-home-btn-shadow: rgba(139, 92, 246, 0.2);
+  --year-review-blob-1-bg: rgba(139, 92, 246, 0.4);
+  --year-review-blob-2-bg: rgba(244, 114, 182, 0.2);
+  --year-review-gradient-overlay-end: rgba(244, 114, 182, 0.15);
+  --year-review-stat-number-shadow: rgba(37, 99, 235, 0.5);
+  --year-review-artist-label-border: rgba(168, 85, 247, 0.3);
+  --year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
+  --year-review-stats-bg-gradient: rgba(30, 58, 138, 0.4);
+  --app-loading-ring-shadow: rgba(99, 102, 241, 0.4);
+  --app-loading-ring-shadow-accelerating: rgba(99, 102, 241, 0.8);
+  --app-loading-text-color: rgba(129, 140, 248, 0.8);
+  --app-loading-progress-shadow: rgba(99, 102, 241, 0.6);
+  --app-loading-progress-shadow-lg: rgba(99, 102, 241, 0.25);
+
+  /* 用途化变量 — 音频播放器（AudioPlayer）fallback */
+  --audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.85);
+  --audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.25);
+
+  /* 用途化变量 — 歌词模态框（LyricsModal） */
+  --lyrics-modal-badge-menu-bg: rgba(245, 245, 245, 0.9);
+  --lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
+  --lyrics-modal-bg-accent-blue: rgba(84, 130, 255, 0.32);
+  --lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.25);
+
   /* 用途化变量 — 面板背景色（浅色模式） */
   --panel-surface: #ffffff;
   --panel-surface-alt: #f8f9fa;
@@ -293,6 +404,11 @@
   --panel-surface-flat: #ffffff;
   --panel-surface-raised: #ffffff;
   --panel-surface-inset: #f8f9fa;
+
+  /* 通用表面色（无 panel 前缀） */
+  --surface-secondary: #e9ecef;
+  --surface-tertiary: #dee2e6;
+  --table-row-bg: #f8f9fa;
 
   /* 用途化变量 — 文字灰度（浅色模式） */
   --text-muted: #6c757d;
@@ -345,8 +461,12 @@
   /* === Alpha (--primary) === */
   --primary-5: rgba(59, 130, 246, 0.05);
   --primary-10: rgba(59, 130, 246, 0.1);
+  --primary-15: rgba(59, 130, 246, 0.15);
+  --primary-18: rgba(59, 130, 246, 0.18);
   --primary-20: rgba(59, 130, 246, 0.2);
+  --primary-25: rgba(59, 130, 246, 0.25);
   --primary-30: rgba(59, 130, 246, 0.3);
+  --primary-35: rgba(59, 130, 246, 0.35);
   --primary-40: rgba(59, 130, 246, 0.4);
   --primary-60: rgba(59, 130, 246, 0.6);
   --primary-80: rgba(59, 130, 246, 0.8);
@@ -482,6 +602,8 @@
   --text-error-60: rgba(239, 68, 68, 0.6);
   --text-error-70: rgba(239, 68, 68, 0.7);
   --text-error-80: rgba(239, 68, 68, 0.8);
+  /* === 通用深色文字（浅色模式） === */
+  --light: rgba(17, 17, 17, 0.95);
   /* === Alpha (--text-success) === */
   --text-success-50: rgba(16, 185, 129, 0.5);
   --text-success-70: rgba(16, 185, 129, 0.7);

@@ -889,7 +889,7 @@ const formatFileSize = (bytes) => {
 
 .checkbox-option.danger {
   border-color: var(--brand-red-hover);
-  background: rgba(211, 47, 47, 0.1);
+  background: var(--backup-manager-danger-bg);
 }
 
 .checkbox-option.danger span {
@@ -985,7 +985,7 @@ const formatFileSize = (bytes) => {
 }
 
 .remove-file-btn {
-  background: rgba(211, 47, 47, 0.2);
+  background: var(--backup-manager-file-remove-bg);
   border: none;
   padding: 0.75rem;
   border-radius: 8px;
@@ -995,7 +995,7 @@ const formatFileSize = (bytes) => {
 }
 
 .remove-file-btn:hover {
-  background: rgba(211, 47, 47, 0.3);
+  background: var(--backup-manager-file-remove-bg-hover);
 }
 
 .remove-file-btn svg {
@@ -1005,7 +1005,7 @@ const formatFileSize = (bytes) => {
 
 /* 警告框 */
 .warning-box {
-  background: rgba(255, 152, 0, 0.1);
+  background: var(--backup-manager-warning-box-bg);
   border: 1px solid var(--brand-orange);
   border-radius: 8px;
   padding: 1.5rem;

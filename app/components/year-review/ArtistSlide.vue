@@ -78,7 +78,7 @@ const { yearReview } = useLocale()
   margin-bottom: 1.5rem;
   font-size: 0.875rem;
   font-weight: 700;
-  border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+  border-bottom: 1px solid var(--year-review-artist-label-border);
   padding-bottom: 0.5rem;
 }
 
@@ -101,7 +101,7 @@ const { yearReview } = useLocale()
   transform: translate(-50%, -50%);
   width: 120%;
   height: 120%;
-  background: rgba(168, 85, 247, 0.2);
+  background: var(--year-review-artist-bg-blur);
   filter: blur(60px);
   border-radius: 50%;
 }

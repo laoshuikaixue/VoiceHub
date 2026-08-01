@@ -3164,7 +3164,7 @@ if (
     gap: 0;
     padding: 0 0.5rem;
     height: 64px;
-    background: rgba(28, 28, 30, 0.9);
+    background: var(--index-footer-bg);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--overlay-10);
@@ -3575,7 +3575,7 @@ if (
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--index-card-glow) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -3621,8 +3621,8 @@ if (
 .brand-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: var(--index-brand-badge-bg);
+  border: 1px solid var(--index-brand-badge-border);
   border-radius: 99px;
   color: var(--brand-purple-light);
   font-size: 12px;
@@ -3649,7 +3649,7 @@ if (
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
-  box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 10px 25px -5px var(--index-main-icon-shadow);
   z-index: 2;
   transform: rotate(-5deg);
 }
@@ -3851,15 +3851,15 @@ if (
 @keyframes pulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4);
+    box-shadow: 0 0 0 0 var(--index-pulsing-ring-shadow);
   }
   70% {
     transform: scale(1.05);
-    box-shadow: 0 0 0 5px rgba(0, 122, 255, 0);
+    box-shadow: 0 0 0 5px transparent;
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 
@@ -3883,7 +3883,7 @@ if (
   text-align: center;
   max-width: 400px;
   padding: 30px;
-  background-color: rgba(30, 41, 59, 0.5);
+  background-color: var(--index-visualizer-bg);
   border-radius: 12px;
   border: 1px solid var(--overlay-10);
   box-shadow: 0 5px 20px var(--mask-20);

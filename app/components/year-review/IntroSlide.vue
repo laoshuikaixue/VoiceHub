@@ -49,7 +49,7 @@ const { yearReview } = useLocale()
   left: -10%;
   width: 500px;
   height: 500px;
-  background: rgba(139, 92, 246, 0.4); /* brand-purple */
+  background: var(--year-review-blob-1-bg);
   animation: spin 20s linear infinite;
 }
 
@@ -58,7 +58,7 @@ const { yearReview } = useLocale()
   right: -10%;
   width: 600px;
   height: 600px;
-  background: rgba(244, 114, 182, 0.2); /* brand-pink */
+  background: var(--year-review-blob-2-bg);
   animation: reverse-spin 25s linear infinite;
 }
 

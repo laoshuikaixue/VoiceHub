@@ -1,5 +1,10 @@
 /* 全局样式与媒体查询（设计变量已拆分到 theme-dark.css / theme-light.css） */
 
+/* 品牌色 RGB 值（用于 rgba() 动态组合） */
+:root {
+  --brand-indigo-rgb: 99 102 241;
+}
+
 /* 高对比度模式支持 */
 @media (prefers-contrast: high) {
   :root {
