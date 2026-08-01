@@ -389,7 +389,7 @@ export async function executeUploads(prepared: {
   success: boolean
   results: Array<{ method: string; success: boolean; error?: string }>
 }> {
-  const { historyId, filename, config, enabledMethods } = prepared
+  const { historyId, filename, enabledMethods } = prepared
 
   // 串行化 DB 更新，避免并行写入时的竞态条件
   let updateChain: Promise<void> = Promise.resolve()
@@ -414,7 +414,7 @@ export async function executeUploads(prepared: {
   }
 
   // 并行上传，每个完成后立即更新对应方法的结果
-  const tasks = enabledMethods.map(async ({ key, name, fn }, index) => {
+  const tasks = enabledMethods.map(async ({ name, fn }, index) => {
     try {
       await fn()
       await updateMethodResult(index, { method: name, success: true })

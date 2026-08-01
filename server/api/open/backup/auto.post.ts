@@ -3,24 +3,25 @@ import { prepareBackup, executeUploads, acquireBackupLock, releaseBackupLock } f
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async () => {
+  acquireBackupLock()
   try {
-    acquireBackupLock()
     const prepared = await prepareBackup()
-
-    // 后台执行上传，不阻塞响应
-    executeUploads(prepared)
-      .catch(err => console.error('后台备份失败:', err))
-      .finally(() => releaseBackupLock())
+    // 必须等待上传完成再返回响应：
+    // Vercel Serverless 在响应返回后会冻结/回收函数实例，
+    // 若以 fire-and-forget 后台执行，上传会被中途掐断（socket closed）。
+    const result = await executeUploads(prepared)
 
     return {
-      success: true,
-      message: '备份任务已触发',
-      backupId: prepared.historyId
+      success: result.success,
+      message: result.success ? '备份完成' : '备份部分或全部失败',
+      backupId: prepared.historyId,
+      results: result.results
     }
   } catch (error: any) {
-    releaseBackupLock()
     if (error.statusCode) throw error
     throw createApiError(500, SERVER_ERROR_CODES.BACKUP_FAILED, error.message || '备份执行失败')
+  } finally {
+    releaseBackupLock()
   }
 })
