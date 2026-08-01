@@ -1,5 +1,8 @@
 import { createHash, createHmac } from 'crypto'
 
+/** S3 请求超时（毫秒） */
+const S3_TIMEOUT = 120_000
+
 /** AWS Signature V4 签名工具 */
 export function sha256(data: string): string {
   return createHash('sha256').update(data).digest('hex')
@@ -67,7 +70,8 @@ export async function uploadToS3(
       'x-amz-date': amzDate,
       'Authorization': authorization
     },
-    body
+    body: typeof body === 'string' ? body : new Uint8Array(body),
+    signal: AbortSignal.timeout(S3_TIMEOUT)
   })
 
   if (!response.ok) {
@@ -110,7 +114,8 @@ export async function deleteFromS3(
       'x-amz-content-sha256': payloadHash,
       'x-amz-date': amzDate,
       'Authorization': authorization
-    }
+    },
+    signal: AbortSignal.timeout(S3_TIMEOUT)
   })
 
   if (!response.ok && response.status !== 404) {

@@ -1,10 +1,42 @@
 import { defineEventHandler, readBody } from 'h3'
+import { z } from 'zod'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+
+/** 备份配置结构校验 */
+const backupConfigSchema = z.object({
+  methods: z.object({
+    s3: z.object({
+      enabled: z.boolean(),
+      endpoint: z.string(),
+      bucket: z.string(),
+      region: z.string(),
+      pathPrefix: z.string(),
+      accessKey: z.string(),
+      secretKey: z.string().optional()
+    }),
+    webdav: z.object({
+      enabled: z.boolean(),
+      url: z.string(),
+      username: z.string(),
+      password: z.string().optional(),
+      path: z.string()
+    }),
+    telegram: z.object({
+      enabled: z.boolean(),
+      botToken: z.string().optional(),
+      chatId: z.string()
+    }),
+    email: z.object({
+      enabled: z.boolean(),
+      recipient: z.string()
+    })
+  })
+})
 
 /** 密钥字段映射：前端留空时保留数据库中的现有值 */
 const SECRET_FIELDS: Record<string, string[]> = {
@@ -38,6 +70,14 @@ export default defineEventHandler(async (event) => {
 
   if (typeof enabled !== 'boolean') {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, 'enabled 字段必填')
+  }
+
+  // 校验 config 结构，防止畸形配置导致备份执行时崩溃
+  if (config) {
+    const parsed = backupConfigSchema.safeParse(config)
+    if (!parsed.success) {
+      throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, `备份配置结构无效: ${parsed.error.issues[0]?.message || '未知错误'}`)
+    }
   }
 
   const [existing] = await db.select({

@@ -337,7 +337,7 @@ export default defineNuxtConfig({
       ? {
           vercel: {
             functions: {
-              maxDuration: 60
+              'api/open/backup/**': { maxDuration: 60 }
             }
           }
         }

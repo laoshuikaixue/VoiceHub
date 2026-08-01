@@ -29,6 +29,25 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 
+/** 外部服务调用超时（毫秒） */
+const UPLOAD_TIMEOUT = 120_000
+
+/** 并发互斥锁，防止同时触发多次备份 */
+let backupRunning = false
+
+/** 获取备份锁，若已在执行则抛出 409 */
+export function acquireBackupLock(): void {
+  if (backupRunning) {
+    throw createApiError(409, SERVER_ERROR_CODES.BACKUP_FAILED, '备份任务正在执行中，请稍后再试')
+  }
+  backupRunning = true
+}
+
+/** 释放备份锁 */
+export function releaseBackupLock(): void {
+  backupRunning = false
+}
+
 /** 自动备份配置结构 */
 export interface AutoBackupConfig {
   methods: {
@@ -122,7 +141,22 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
     apiKeyPermissions: { query: () => db.select().from(apiKeyPermissions), description: 'API密钥权限' },
     apiLogs: { query: () => db.select().from(apiLogs), description: 'API访问日志' },
     emailTemplates: { query: () => db.select().from(emailTemplates), description: '邮件模板' },
-    systemSettings: { query: () => db.select().from(systemSettings), description: '系统设置' }
+    systemSettings: {
+      query: async () => {
+        const rows = await db.select().from(systemSettings)
+        // 脱敏：移除敏感凭据字段，避免备份文件泄露密钥
+        const SENSITIVE_FIELDS = [
+          'smtpPassword', 'oauthStateSecret', 'githubClientSecret',
+          'casdoorClientSecret', 'googleClientSecret', 'customOAuthClientSecret',
+          'turnstileSecretKey', 'aggregateOAuthAppKey', 'autoBackupConfig'
+        ]
+        return rows.map(row => {
+          const entries = Object.entries(row).filter(([k]) => !SENSITIVE_FIELDS.includes(k))
+          return Object.fromEntries(entries)
+        })
+      },
+      description: '系统设置（已脱敏）'
+    }
   }
 
   let totalRecords = 0
@@ -149,7 +183,8 @@ export async function exportBackupData(): Promise<{ json: string; filename: stri
 
 /** 上传到 S3 */
 async function doS3Upload(config: AutoBackupConfig['methods']['s3'], data: string, filename: string): Promise<void> {
-  const key = `${config.pathPrefix.replace(/\/$/, '')}/${filename}`
+  const prefix = (config.pathPrefix || '').replace(/\/+$/, '')
+  const key = prefix ? `${prefix}/${filename}` : filename
   await uploadToS3(config.endpoint, config.bucket, config.region, config.accessKey, config.secretKey, key, data)
   console.log(`S3 上传完成: ${filename}`)
 }
@@ -171,10 +206,14 @@ async function ensureWebDAVDir(baseUrl: string, auth: string, dirPath: string): 
     currentPath += `/${segment}`
     const response = await fetch(currentPath, {
       method: 'MKCOL',
-      headers: { Authorization: `Basic ${auth}` }
+      headers: { Authorization: `Basic ${auth}` },
+      signal: AbortSignal.timeout(UPLOAD_TIMEOUT)
     })
-    // 201 Created = 成功，405/409 = 目录已存在
-    if (!response.ok && response.status !== 405 && response.status !== 409) {
+    // 201 Created = 成功，405 = 目录已存在
+    if (response.status === 409) {
+      throw new Error(`WebDAV 父目录不存在，无法创建: ${currentPath}`)
+    }
+    if (!response.ok && response.status !== 405) {
       throw new Error(`创建 WebDAV 目录失败: ${currentPath} (${response.status})`)
     }
   }
@@ -196,7 +235,8 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
       'Authorization': `Basic ${auth}`,
       'Content-Type': 'application/json'
     },
-    body: data
+    body: data,
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT)
   })
 
   if (!response.ok) {
@@ -219,7 +259,8 @@ async function doTelegramSend(config: AutoBackupConfig['methods']['telegram'], d
 
   const response = await fetch(`https://api.telegram.org/bot${config.botToken}/sendDocument`, {
     method: 'POST',
-    body: formData
+    body: formData,
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT)
   })
 
   const result = await response.json() as any
@@ -320,6 +361,10 @@ export async function prepareBackup(triggeredBy: string = 'api'): Promise<{
     triggeredBy
   }).returning({ id: backupHistory.id })
 
+  if (!inserted) {
+    throw createApiError(500, SERVER_ERROR_CODES.BACKUP_FAILED, '写入备份记录失败')
+  }
+
   console.log(`备份初始记录已写入: ${filename} (id=${inserted.id})`)
 
   return {
@@ -362,6 +407,8 @@ export async function executeUploads(prepared: {
       await db.update(backupHistory)
         .set({ methods: JSON.stringify(methods) })
         .where(eq(backupHistory.id, historyId))
+    }).catch(err => {
+      console.error(`更新备份方法结果失败 (index=${index}):`, err)
     })
     return updateChain
   }
@@ -374,8 +421,9 @@ export async function executeUploads(prepared: {
       return { method: name, success: true }
     } catch (error: any) {
       console.error(`${name} 备份失败:`, error)
-      await updateMethodResult(index, { method: name, success: false, error: error.message })
-      return { method: name, success: false, error: error.message }
+      const errMsg = error.message || String(error) || 'Unknown error'
+      await updateMethodResult(index, { method: name, success: false, error: errMsg })
+      return { method: name, success: false, error: errMsg }
     }
   })
 
@@ -387,6 +435,9 @@ export async function executeUploads(prepared: {
   await db.update(backupHistory)
     .set({ success: overallSuccess })
     .where(eq(backupHistory.id, historyId))
+
+  // 自动清理 30 天前的历史记录
+  cleanupOldHistory(30).catch(err => console.error('自动清理备份历史失败:', err))
 
   console.log(`备份历史已更新: ${filename}`)
 
@@ -401,8 +452,13 @@ export async function executeAutoBackup(triggeredBy: string = 'api'): Promise<{
   success: boolean
   results: Array<{ method: string; success: boolean; error?: string }>
 }> {
-  const prepared = await prepareBackup(triggeredBy)
-  return executeUploads(prepared)
+  acquireBackupLock()
+  try {
+    const prepared = await prepareBackup(triggeredBy)
+    return await executeUploads(prepared)
+  } finally {
+    releaseBackupLock()
+  }
 }
 
 /** 获取备份历史列表 */
@@ -431,8 +487,8 @@ export async function getBackupHistory(limit: number = 50): Promise<Array<{
 /** 清理备份历史记录 */
 export async function cleanupOldHistory(retentionDays: number = 30): Promise<number> {
   if (retentionDays <= 0) {
-    const [{ cnt }] = await db.select({ cnt: sql<number>`count(*)::int` }).from(backupHistory)
-    const count = cnt ?? 0
+    const result = await db.select({ cnt: sql<number>`count(*)::int` }).from(backupHistory)
+    const count = result[0]?.cnt ?? 0
     if (count > 0) {
       await db.delete(backupHistory)
       console.log(`清理了全部 ${count} 条备份历史记录`)
@@ -441,11 +497,11 @@ export async function cleanupOldHistory(retentionDays: number = 30): Promise<num
   }
 
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
-  const [{ cnt }] = await db
+  const result = await db
     .select({ cnt: sql<number>`count(*)::int` })
     .from(backupHistory)
     .where(lt(backupHistory.createdAt, cutoff))
-  const count = cnt ?? 0
+  const count = result[0]?.cnt ?? 0
   if (count > 0) {
     await db.delete(backupHistory).where(lt(backupHistory.createdAt, cutoff))
     console.log(`清理了 ${count} 条过期备份历史记录`)
