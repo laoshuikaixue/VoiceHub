@@ -27,6 +27,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 ### 2.3. 后端
 - 导入: 项目根用 `~~/`，app 目录用 `~/`
 - 错误: 用户可见的业务错误统一用 `createApiError(statusCode, code, message, data?)`（`~~/server/utils/apiError.ts`），code 取自 `SERVER_ERROR_CODES`；认证错误 401
+- 时间戳: 服务端取当前时间统一用 `getServerTimestamp()` / `getServerDate()`（`~~/server/utils/serverTime.ts`），禁止直接写 `Date.now()` / `new Date()`
 
 ### 2.4. 第三方库
 - otplib: `import otplib from 'otplib'` 然后 `const { authenticator } = otplib`

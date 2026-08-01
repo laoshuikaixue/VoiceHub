@@ -7,7 +7,11 @@ export const EXPECTED_UPSTREAM_MUSIC_ERROR_PATTERNS = [
   'Huibq 返回',
   'Huibq 未返回播放链接',
   'qq-music-api 未返回歌词',
-  '[tx.lyric] qq-music-api 歌词接口失败'
+  '[tx.lyric] qq-music-api 歌词接口失败',
+  'The operation was aborted due to timeout',
+  'request timed out',
+  'timeout exceeded',
+  'TimeoutError'
 ]
 
 type SentryLikeEvent = {
