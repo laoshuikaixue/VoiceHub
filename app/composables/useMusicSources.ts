@@ -25,6 +25,34 @@ const lyricCache = new Map<string, Promise<any>>()
 const lyricProgressSubscribers = new Map<string, Set<LyricProgressCallback>>()
 const LYRIC_CACHE_TTL = 60 * 1000
 
+// 服务器位置检测（模块级单例，避免多次实例化导致重复请求）
+const globalIsServerInChina = ref<boolean | null>(null)
+let locationCheckPromise: Promise<void> | null = null
+
+const checkServerLocationGlobal = async () => {
+  if (globalIsServerInChina.value !== null) return
+  // 并发调用时合并为一次请求
+  if (locationCheckPromise) return locationCheckPromise
+
+  locationCheckPromise = (async () => {
+    try {
+      const data = await $fetch('/api/system/location')
+      if (data && data.success) {
+        globalIsServerInChina.value = data.data.isInChina
+        console.log(
+          `[useMusicSources] 服务器位置检测: ${globalIsServerInChina.value ? '中国' : '海外'}`
+        )
+      }
+    } catch (e) {
+      console.warn('[useMusicSources] 服务器位置检测失败，默认为海外:', e)
+      globalIsServerInChina.value = false
+    } finally {
+      locationCheckPromise = null
+    }
+  })()
+  return locationCheckPromise
+}
+
 type LyricProgressStage = 'official' | 'qm' | 'amll' | 'upgrade' | 'meting'
 
 type LyricProgressPayload = {
@@ -1041,24 +1069,11 @@ export const useMusicSources = () => {
     }
   }
 
-  // 服务器是否在中国
-  const isServerInChina = ref<boolean | null>(null)
+  // 服务器是否在中国（模块级单例共享）
+  const isServerInChina = globalIsServerInChina
 
   // 检测服务器位置
-  const checkServerLocation = async () => {
-    if (isServerInChina.value !== null) return
-
-    try {
-      const data = await $fetch('/api/system/location')
-      if (data && data.success) {
-        isServerInChina.value = data.data.isInChina
-        console.log(`[useMusicSources] 服务器位置检测: ${isServerInChina.value ? '中国' : '海外'}`)
-      }
-    } catch (e) {
-      console.warn('[useMusicSources] 服务器位置检测失败，默认为海外:', e)
-      isServerInChina.value = false
-    }
-  }
+  const checkServerLocation = checkServerLocationGlobal
 
   /**
    * 搜索歌曲（带故障转移）
