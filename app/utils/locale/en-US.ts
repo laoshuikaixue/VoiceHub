@@ -986,10 +986,7 @@ export const pages = {
         tencentSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
         tencentHiRes: { label: 'Hi-Res', description: 'High-resolution quality' },
         tencentMaster: { label: 'Master 2.0', description: 'Highest quality' },
-        bilibiliDefault: { label: 'Default', description: 'Default quality' },
-        miguHq: { label: 'HQ High', description: 'High-quality music experience' },
-        miguSq: { label: 'SQ Lossless', description: 'Lossless quality, larger files' },
-        miguHiRes: { label: 'Hi-Res', description: 'High-resolution quality' }
+        bilibiliDefault: { label: 'Default', description: 'Default quality' }
       }
     },
     bilibiliIframe: {

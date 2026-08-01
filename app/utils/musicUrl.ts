@@ -28,6 +28,49 @@ export type MusicUrlResolveResult = {
 
 export const INVALID_QQ_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
 
+// 星海音源（咪咕备用通道）：由国内服务器代理获取链接，规避咪咕对海外 IP 的屏蔽
+const XINGHAI_BASE_URL = 'https://yy.zddyr.top/lx/api/'
+// 星海播放链接缓存（10 分钟），规避星海后端每分钟 10 次的限流
+const XINGHAI_CACHE_TTL = 10 * 60 * 1000
+const xinghaiUrlCache = new Map<string, { url: string; expireAt: number }>()
+
+/**
+ * 通过星海音源获取咪咕播放链接
+ */
+const fetchXinghaiMiguUrl = async (contentId: string): Promise<string | null> => {
+  const cacheKey = `migu:${contentId}`
+  const cached = xinghaiUrlCache.get(cacheKey)
+  if (cached && cached.expireAt > Date.now()) {
+    return cached.url
+  }
+
+  try {
+    const params = {
+      source: 'migu',
+      songmid: contentId,
+      quality: '128k'
+    }
+    const query = Object.entries(params)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+      .join('&')
+    const response: any = await $fetch(`${XINGHAI_BASE_URL}?${query}`, {
+      timeout: 8000
+    })
+
+    if (response?.code === 200 && response?.url) {
+      let url = response.url
+      if (url.startsWith('http://')) {
+        url = url.replace('http://', 'https://')
+      }
+      xinghaiUrlCache.set(cacheKey, { url, expireAt: Date.now() + XINGHAI_CACHE_TTL })
+      return url
+    }
+  } catch (error) {
+    console.warn('[musicUrl] 星海音源获取咪咕播放链接失败:', error)
+  }
+  return null
+}
+
 const musicUrlSourceCache = new Map<string, string>()
 
 const normalizeCacheUrl = (url: string) => {
@@ -240,6 +283,23 @@ export async function getMusicUrlResult(
 
   // 咪咕音乐特殊处理
   if (platform === 'migu') {
+    // 服务器位于海外时直接使用星海音源（咪咕官方接口屏蔽海外 IP）
+    const { isServerInChina, checkServerLocation } = useMusicSources()
+    if (isServerInChina.value === null) {
+      await checkServerLocation()
+    }
+    if (isServerInChina.value === false) {
+      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId))
+      if (xinghaiUrl) {
+        rememberMusicUrlSource(xinghaiUrl, 'xinghai')
+        return {
+          url: xinghaiUrl,
+          source: 'xinghai'
+        }
+      }
+      throw new Error('咪咕音乐播放链接获取失败（星海音源不可用）')
+    }
+
     try {
       const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
         params: {
@@ -258,6 +318,16 @@ export async function getMusicUrlResult(
       }
     } catch (error) {
       console.error('[musicUrl] 咪咕播放链接获取失败:', error)
+    }
+
+    // 官方接口失败时回退星海音源
+    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId))
+    if (xinghaiUrl) {
+      rememberMusicUrlSource(xinghaiUrl, 'xinghai')
+      return {
+        url: xinghaiUrl,
+        source: 'xinghai'
+      }
     }
     throw new Error('咪咕音乐播放链接获取失败')
   }

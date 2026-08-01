@@ -1790,19 +1790,18 @@ export const useMusicSources = () => {
             url = result.url
           } else if (source.id === 'migu') {
             try {
-              // 将数字音质转换为咪咕 toneFlag
-              let toneFlag = 'PQ';
-              if (quality !== undefined && quality !== null) {
-                const qualityNum = Number(quality)
-                if (qualityNum === 1) toneFlag = 'PQ'
-                  else if (qualityNum === 2) toneFlag = 'HQ'
-                  else if (qualityNum === 3 || qualityNum === 4) toneFlag = 'SQ'
+              // 服务器位于海外时咪咕官方接口不可用，交由上层使用星海音源
+              if (isServerInChina.value === null) {
+                await checkServerLocation()
               }
-
+              if (isServerInChina.value === false) {
+                throw new Error('服务器位于海外，咪咕播放链接改用第三方音源')
+              }
+              // 咪咕匿名仅提供 128k，固定使用 PQ
               const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
                 params: {
                   contentId: idParam,
-                  toneFlag
+                  toneFlag: 'PQ'
                 },
                 timeout: source.timeout || 10000
               })
@@ -2573,6 +2572,7 @@ export const useMusicSources = () => {
     sourceStatus: readonly(sourceStatus),
     isSearching: readonly(isSearching),
     lastUsedSource: readonly(lastUsedSource),
+    isServerInChina: readonly(isServerInChina),
 
     // 计算属性
     sourceStatusSummary: getSourceStatusSummary,
@@ -2586,6 +2586,7 @@ export const useMusicSources = () => {
     getMetingSongInfo,
     updateSourceStatus,
     validatePlayUrl,
-    getDjPrograms
+    getDjPrograms,
+    checkServerLocation
   }
 }

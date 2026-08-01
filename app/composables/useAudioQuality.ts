@@ -18,11 +18,7 @@ export const QUALITY_OPTIONS = {
     { value: 14, key: 'tencentMaster' }
   ],
   bilibili: [{ value: 1, key: 'bilibiliDefault' }],
-  migu: [
-    { value: 1, key: 'standard' },
-    { value: 2, key: 'miguHq' },
-    { value: 3, key: 'miguSq' },
-  ]
+  migu: [{ value: 1, key: 'standard' }]
 }
 
 // 默认音质设置
@@ -30,7 +26,7 @@ const DEFAULT_QUALITY = {
   netease: 4, // HQ极高 (320k)
   tencent: 8, // HQ高音质
   bilibili: 1,
-  migu: 2 // HQ高音质
+  migu: 1 // 标准音质（咪咕匿名仅提供 128k）
 }
 
 // 全局音质状态，确保所有组件共享同一个状态
