@@ -26,6 +26,36 @@ const MIGU_SEARCH_SWITCH = JSON.stringify({
 const MIGU_ANDROID_UA =
   'Mozilla/5.0 (Linux; U; Android 11.0.0; zh-cn; MI 11 Build/OPR1.170623.032) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30'
 
+// 咪咕歌曲信息缓存（封面兜底用），避免重复请求
+const mgSongInfoCache = new Map<string, { expiresAt: number; img: string }>()
+const MG_INFO_CACHE_TTL = 6 * 60 * 60 * 1000
+
+/**
+ * 搜索结果封面缺失时，通过歌曲信息接口兜底取大图
+ */
+async function getMgCover(contentId: string): Promise<string> {
+  const cached = mgSongInfoCache.get(contentId)
+  if (cached) {
+    if (cached.expiresAt > Date.now()) return cached.img
+    mgSongInfoCache.delete(contentId)
+  }
+
+  try {
+    const res: any = await $fetch(
+      `https://app.c.nf.migu.cn/resource/song/by-contentids/v2.0?contentId=${contentId}`,
+      { timeout: 10000 }
+    )
+    const song = res?.data?.[0]
+    const img = song?.img || song?.albumImgs?.[0] || song?.bigImage || ''
+    if (img) {
+      mgSongInfoCache.set(contentId, { expiresAt: Date.now() + MG_INFO_CACHE_TTL, img })
+    }
+    return img
+  } catch {
+    return ''
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const str = query.str as string
@@ -64,40 +94,44 @@ export default defineEventHandler(async (event) => {
     // resultList 为分组结构（每组一个数组），需拍平
     const groups = response.songResultData?.resultList || []
 
-    // 处理歌曲列表
-    const list = groups
-      .flatMap((group: any[]) => group)
-      .filter((item: any) => item?.contentId || item?.songId)
-      .map((item: any) => {
-        // 歌手列表处理
-        const singerList = item.singerList || []
-        const singer = singerList.map((s: any) => s.name).join('/') || '未知艺术家'
+    // 处理歌曲列表（封面缺失时兑底查询）
+    const list = await Promise.all(
+      groups
+        .flatMap((group: any[]) => group)
+        .filter((item: any) => item?.contentId || item?.songId)
+        .map(async (item: any) => {
+          // 歌手列表处理
+          const singerList = item.singerList || []
+          const singer = singerList.map((s: any) => s.name).join('/') || '未知艺术家'
 
-        // 封面图（相对路径补全域名）
-        const img = item.img3 || item.img2 || item.img1 || ''
-        const cover = img && !/^https?:/.test(img) ? `https://d.musicapp.migu.cn${img}` : img
+          // 封面图（相对路径补全域名；缺失时经歌曲信息接口兑底）
+          const img = item.img3 || item.img2 || item.img1 || ''
+          const cover = img && !/^https?:/.test(img) ? `https://d.musicapp.migu.cn${img}` : img
+          const contentId = item.contentId || item.songId
+          const finalCover = cover || (contentId ? await getMgCover(contentId) : '')
 
-        // 音质格式列表
-        const formats = item.audioFormats?.map((f: any) => f.formatType) || []
+          // 音质格式列表
+          const formats = item.audioFormats?.map((f: any) => f.formatType) || []
 
-        return {
-          singer,
-          name: item.name || item.songName || '',
-          albumName: item.album || '',
-          albumId: item.albumId || '',
-          source: 'mg',
-          interval: formatPlayTime(item.duration || 0),
-          duration: item.duration || 0,
-          songmid: item.contentId || item.songId,
-          copyrightId: item.copyrightId || '',
-          img: cover,
-          lrc: item.lrcUrl || null,
-          mrcUrl: item.mrcurl || null,
-          types: formats,
-          _types: {},
-          typeUrl: {}
-        }
-      })
+          return {
+            singer,
+            name: item.name || item.songName || '',
+            albumName: item.album || '',
+            albumId: item.albumId || '',
+            source: 'mg',
+            interval: formatPlayTime(item.duration || 0),
+            duration: item.duration || 0,
+            songmid: contentId,
+            copyrightId: item.copyrightId || '',
+            img: finalCover,
+            lrc: item.lrcUrl || null,
+            mrcUrl: item.mrcurl || null,
+            types: formats,
+            _types: {},
+            typeUrl: {}
+          }
+        })
+    )
 
     return {
       list,

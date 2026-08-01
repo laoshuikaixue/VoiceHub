@@ -79,52 +79,44 @@ const txSongDetailCache = new Map<
   }
 >()
 
+/**
+ * PC 客户端版 searchid：32 位大写十六进制 GUID + 5 位补零随机数（37 字符）
+ */
+const getTxSearchId = () => {
+  let guid = ''
+  for (let i = 0; i < 32; i++) guid += Math.floor(Math.random() * 16).toString(16)
+  return guid.toUpperCase() + String(Math.floor(Math.random() * 100000)).padStart(5, '0')
+}
+
 export const createTxSearchBody = (str: string, page: number, limit: number) => {
   return {
     comm: {
-      ct: '11',
-      cv: '14090508',
-      v: '14090508',
+      _channelid: '0',
+      _os_version: '6.2.9200-2',
+      ct: '19',
+      cv: '2151',
+      guid: '1F70E520B2EAA7D25E11760783C53CA9',
+      patch: '118',
+      psrf_access_token_expiresAt: 0,
+      psrf_qqaccess_token: '',
+      psrf_qqopenid: '',
+      psrf_qqunionid: '',
       tmeAppID: 'qqmusic',
-      phonetype: 'EBG-AN10',
-      deviceScore: '553.47',
-      devicelevel: '50',
-      newdevicelevel: '20',
-      rom: 'HuaWei/EMOTION/EmotionUI_14.2.0',
-      os_ver: '12',
-      OpenUDID: '0',
-      OpenUDID2: '0',
-      QIMEI36: '0',
-      udid: '0',
-      chid: '0',
-      aid: '0',
-      oaid: '0',
-      taid: '0',
-      tid: '0',
-      wid: '0',
-      uid: '0',
-      sid: '0',
-      modeSwitch: '6',
-      teenMode: '0',
-      ui_mode: '2',
-      nettype: '1020',
-      v4ip: ''
+      tmeLoginType: 0,
+      uin: '0',
+      wid: '7223299733393904640'
     },
-    req: {
+    'music.search.SearchCgiService': {
       module: 'music.search.SearchCgiService',
-      method: 'DoSearchForQQMusicMobile',
+      method: 'DoSearchForQQMusicDesktop',
       param: {
-        search_type: 0,
-        query: str,
-        page_num: page,
-        num_per_page: limit,
-        highlight: 0,
-        nqc_flag: 0,
-        multi_zhida: 0,
-        cat: 2,
         grp: 1,
-        sin: 0,
-        sem: 0
+        num_per_page: limit,
+        page_num: page,
+        query: str,
+        remoteplace: 'txt.newclient.top',
+        search_type: 0,
+        searchid: getTxSearchId()
       }
     }
   }

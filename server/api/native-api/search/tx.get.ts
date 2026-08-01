@@ -97,11 +97,13 @@ export default defineEventHandler(async (event) => {
       result = await txRequest('https://u.y.qq.com/cgi-bin/musicu.fcg', body)
     }
 
-    if (result.code !== 0 || result.req?.code !== 0) {
+    const service = result?.['music.search.SearchCgiService']
+
+    if (result.code !== 0 || service?.code !== 0) {
       throw createError({ statusCode: 502, message: 'Tencent API Error' })
     }
 
-    const rawList = result.req.data.body.item_song || []
+    const rawList = service?.data?.body?.song?.list || []
 
     const list = []
     for (const item of rawList) {
@@ -167,7 +169,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       list,
-      total: result.req.data.meta.estimate_sum,
+      total: service?.data?.meta?.sum ?? list.length,
       page,
       limit,
       source: 'tx'
