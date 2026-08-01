@@ -1969,6 +1969,8 @@ export const admin = {
     dependencies: {
       healthMatrix: 'Dependency Health Matrix',
       healthMatrixDetail: 'Status, success rate, P95, circuit breaker, and last success for four music sources plus auth, database, and cache.',
+      availability: 'Availability',
+      errorRate: 'Error Rate',
       circuitBreakerState: 'Circuit Breaker', lastSuccess: 'Last Success', coldStartP95: 'Cold-start P95', callVolumeTrend: 'External Call Volume', callVolumeTrendDetail: 'Pair volume with error rate so a denominator collapse is not mistaken for health.', uptimeStrip: '24-hour Uptime Strip', uptimeStripDetail: 'Hourly dependency availability; blank means metrics have not been collected.', uptimeUnavailable: 'Not collected', uptimeWindow: 'Last 24 hours',
       p95LatencyShort: 'P95 Latency',
       oauth: 'OAuth',
@@ -2323,6 +2325,12 @@ export const admin = {
       threshold: 'Alert Threshold Reference',
       collection: 'Collection Method / Tool',
       description: 'Description',
+      overview: [
+        { metric: 'SLO Availability (Core Business)', threshold: 'Target 99.9%, P0 below 99.5%', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Measures the system ability to serve users; prioritize when the error budget burns too fast.' },
+        { metric: 'Health Score', threshold: 'Score < 60 considered unhealthy', collection: 'Health check aggregation', description: 'Weighted score from CPU, memory, database, Redis, and event loop signals.' },
+        { metric: 'Music Source Availability', threshold: 'Failure rate > 5% or P95 > 2s', collection: 'Business instrumentation (Prometheus Histogram / Counter)', description: 'Availability of NetEase, QQ Music, Bilibili, and Migu; triggers source fallback when abnormal.' },
+        { metric: 'Core Dependency Connectivity', threshold: 'Alert immediately on DB / Redis connection failure', collection: 'Service probes / postgres_exporter / redis_exporter', description: 'Connectivity and latency of database, Redis, OAuth, and other critical dependencies.' }
+      ],
       performance: [
         { metric: 'Request Latency (P95 / P99)', threshold: 'P95 > 1s, P99 > 2s (Web API)', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Reflects user-perceived API performance.' },
         { metric: 'Error Rate (4xx / 5xx)', threshold: '5xx error rate > 1% for 5 minutes', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Server errors need immediate attention; use 4xx to identify abnormal requests.' },

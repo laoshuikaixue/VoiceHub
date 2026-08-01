@@ -1978,6 +1978,8 @@ export const admin = {
     dependencies: {
       healthMatrix: '依赖健康矩阵',
       healthMatrixDetail: '集中查看四个音乐源及认证、数据库、缓存的状态、成功率、P95、熔断器和最近成功时间。',
+      availability: '可用率',
+      errorRate: '错误率',
       circuitBreakerState: '熔断器状态', lastSuccess: '最近成功', coldStartP95: '冷启动 P95', callVolumeTrend: '外部调用量趋势', callVolumeTrendDetail: '结合错误率观察分母变化，避免将调用量骤降误判为健康。', uptimeStrip: '24 小时可用性色带', uptimeStripDetail: '按小时查看依赖可用性窗口，空白表示尚未采集。', uptimeUnavailable: '未采集', uptimeWindow: '最近 24 小时',
       p95LatencyShort: 'P95 延迟',
       oauth: 'OAuth',
@@ -2332,6 +2334,12 @@ export const admin = {
       threshold: '告警阈值参考',
       collection: '采集方式 / 工具',
       description: '说明',
+      overview: [
+        { metric: 'SLO 可用性（核心业务）', threshold: '目标 99.9%，跌破 99.5% 触发 P0', collection: '应用埋点（Prometheus Client）/ Grafana', description: '衡量系统对外提供服务的能力，错误预算消耗过快时优先处置。' },
+        { metric: '健康评分', threshold: '评分 < 60 视为不健康', collection: '健康检查聚合', description: '由 CPU、内存、数据库、Redis、事件循环等信号加权计算。' },
+        { metric: '音乐源可用性', threshold: '失败率 > 5% 或 P95 > 2s', collection: '业务埋点（Prometheus Histogram / Counter）', description: '网易云、QQ 音乐、Bilibili 与咪咕的可用性，异常时触发音源降级。' },
+        { metric: '核心依赖连通性', threshold: '数据库 / Redis 连接失败立即告警', collection: '服务探针 / postgres_exporter / redis_exporter', description: '数据库、Redis、OAuth 等关键依赖的连通性与延迟。' }
+      ],
       performance: [
         { metric: '请求响应时间（P95 / P99）', threshold: 'P95 > 1s，P99 > 2s（Web API）', collection: '应用埋点（Prometheus Client）/ Grafana', description: '反映用户感知的接口性能。' },
         { metric: '错误率（4xx / 5xx）', threshold: '5xx 错误率 > 1%，持续 5 分钟', collection: '应用埋点（Prometheus Client）/ Grafana', description: '服务端错误需要立即关注，4xx 用于识别异常请求。' },
