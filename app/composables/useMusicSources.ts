@@ -1799,7 +1799,7 @@ export const useMusicSources = () => {
                   else if (qualityNum === 3 || qualityNum === 4) toneFlag = 'SQ'
               }
 
-              const miguResponse: any = await $fetch('/api/migu/playurl', {
+              const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
                 params: {
                   contentId: idParam,
                   toneFlag

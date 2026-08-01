@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
 
       // 歌手列表处理
       const singerList = song.singerList || []
-      const singer = singerList.map((s: any) => s.name).join(',') || '未知艺术家'
+      const singer = singerList.map((s: any) => s.name).join('/') || '未知艺术家'
 
       // mid image
       const img = song.img2 ? `https://d.musicapp.migu.cn${song.img2}` : ''

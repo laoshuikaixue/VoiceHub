@@ -3,9 +3,10 @@
     ref="audioPlayer"
     :key="audioKey"
     :src="audioSrc"
+    :crossorigin="crossOriginVal"
+    :referrerpolicy="referrerPolicyVal"
     playsinline
     preload="auto"
-    referrerpolicy="no-referrer"
     webkit-playsinline
     @canplay="$emit('canplay', $event)"
     @ended="$emit('ended', $event)"
@@ -41,6 +42,12 @@ const emit = defineEmits([
 
 const audioPlayer = ref(null)
 
+const crossOriginVal = computed(() => {
+  return props.song?.musicPlatform === 'migu' ? null : 'anonymous'
+})
+const referrerPolicyVal = computed(() => {
+  return props.song?.musicPlatform === 'migu' ? null : 'no-referrer'
+})
 const audioSrc = computed(() => {
   return props.song?.musicUrl || undefined
 })

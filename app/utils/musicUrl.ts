@@ -243,7 +243,8 @@ export async function getMusicUrlResult(
     try {
       const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
         params: {
-          contentId: String(musicId)
+          contentId: String(musicId),
+          toneFlag: 'PQ'
         },
         timeout: 10000
       })
