@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { formatPlayTime } from '../../../utils/native_common'
 import { getServerLocation } from '../../../utils/geo'
+import { getServerTimestamp } from '../../../utils/serverTime'
 
 // 咪咕 v3 搜索签名
 function createSignature(time: string, str: string) {
@@ -37,7 +38,7 @@ const MG_INFO_CACHE_TTL = 6 * 60 * 60 * 1000
 async function getMgCover(contentId: string): Promise<string> {
   const cached = mgSongInfoCache.get(contentId)
   if (cached) {
-    if (cached.expiresAt > Date.now()) return cached.img
+    if (cached.expiresAt > getServerTimestamp()) return cached.img
     mgSongInfoCache.delete(contentId)
   }
 
@@ -49,7 +50,7 @@ async function getMgCover(contentId: string): Promise<string> {
     const song = res?.data?.[0]
     const img = song?.img || song?.albumImgs?.[0] || song?.bigImage || ''
     if (img) {
-      mgSongInfoCache.set(contentId, { expiresAt: Date.now() + MG_INFO_CACHE_TTL, img })
+      mgSongInfoCache.set(contentId, { expiresAt: getServerTimestamp() + MG_INFO_CACHE_TTL, img })
     }
     return img
   } catch {
@@ -61,7 +62,7 @@ async function getMgCover(contentId: string): Promise<string> {
  * 咪咕 v3 搜索接口（jadeite，带 MD5 签名，仅国内服务器可访问）
  */
 async function searchV3(str: string, page: number, limit: number) {
-  const time = Date.now().toString()
+  const time = getServerTimestamp().toString()
   const { sign, deviceId } = createSignature(time, str)
   const response: any = await $fetch(
     `https://jadeite.migu.cn/music_search/v3/search/searchAll` +
