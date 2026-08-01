@@ -35,7 +35,13 @@ export const useSongPlayer = () => {
         url = song.playUrl.trim()
       } else if (!isBilibiliSong(song)) {
         // 如果不是哔哩哔哩歌曲且没有手动 playUrl，通过 API 获取 URL
-        url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl)
+        url = await getMusicUrl(song.musicPlatform, song.musicId, song.playUrl, {
+          musicInfo: {
+            name: song.title,
+            artist: song.artist,
+            album: song.album || undefined
+          }
+        })
       }
       // 如果是哔哩哔哩歌曲且没有手动 playUrl，url 保持为 null，播放器会处理
 

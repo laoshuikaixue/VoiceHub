@@ -506,7 +506,12 @@ const buildFallbackResolveOptions = (song, excludeSources) => {
     quality: getQuality(song.musicPlatform),
     mediaId: song.sourceInfo?.strMediaMid || song.sourceInfo?.mediaId || song.sourceInfo?.mediaMid,
     excludeSources,
-    ignoreProvidedUrl: true
+    ignoreProvidedUrl: true,
+    musicInfo: {
+      name: song.title,
+      artist: song.artist,
+      album: song.album || undefined
+    }
   }
 }
 

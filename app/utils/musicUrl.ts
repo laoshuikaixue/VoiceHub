@@ -17,6 +17,16 @@ export type MusicUrlResolveOptions = {
   mediaId?: string
   excludeSources?: string[]
   ignoreProvidedUrl?: boolean
+  musicInfo?: MusicTrackMeta
+}
+
+/**
+ * 歌曲元信息
+ */
+export type MusicTrackMeta = {
+  name?: string
+  artist?: string
+  album?: string
 }
 
 export type MusicUrlResolveResult = {
@@ -37,7 +47,10 @@ const xinghaiUrlCache = new Map<string, { url: string; expireAt: number }>()
 /**
  * 通过星海音源获取咪咕播放链接
  */
-const fetchXinghaiMiguUrl = async (contentId: string): Promise<string | null> => {
+const fetchXinghaiMiguUrl = async (
+  contentId: string,
+  meta?: MusicTrackMeta
+): Promise<string | null> => {
   const cacheKey = `migu:${contentId}`
   const cached = xinghaiUrlCache.get(cacheKey)
   if (cached && cached.expireAt > Date.now()) {
@@ -45,11 +58,15 @@ const fetchXinghaiMiguUrl = async (contentId: string): Promise<string | null> =>
   }
 
   try {
-    const params = {
+    const params: Record<string, string> = {
       source: 'migu',
       songmid: contentId,
       quality: '128k'
     }
+    if (meta?.name) params.name = meta.name
+    if (meta?.artist) params.singer = meta.artist
+    if (meta?.album) params.albumName = meta.album
+
     const query = Object.entries(params)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join('&')
@@ -80,7 +97,7 @@ const normalizeCacheUrl = (url: string) => {
 export const isKnownInvalidQqAudioUrl = (url: string | null | undefined) => {
   if (!url) return false
   const normalizedUrl = normalizeCacheUrl(url)
-  const urlWithoutParams = normalizedUrl.split('?')[0].split('#')[0];
+  const urlWithoutParams = normalizedUrl.split('?')[0] ?? normalizedUrl
   return urlWithoutParams.endsWith(INVALID_QQ_AUDIO_URL_SUFFIX)
 }
 
@@ -289,7 +306,7 @@ export async function getMusicUrlResult(
       await checkServerLocation()
     }
     if (isServerInChina.value === false) {
-      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId))
+      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo)
       if (xinghaiUrl) {
         rememberMusicUrlSource(xinghaiUrl, 'xinghai')
         return {
@@ -321,7 +338,7 @@ export async function getMusicUrlResult(
     }
 
     // 官方接口失败时回退星海音源
-    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId))
+    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo)
     if (xinghaiUrl) {
       rememberMusicUrlSource(xinghaiUrl, 'xinghai')
       return {

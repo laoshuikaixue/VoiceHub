@@ -1,6 +1,7 @@
 import { computed, readonly, ref } from 'vue'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { useMusicSources } from '~/composables/useMusicSources'
+import type { MusicTrackMeta } from '~/utils/musicUrl'
 
 export interface PlayableSong {
   id: number | string
@@ -129,7 +130,14 @@ export function useAudioPlayer() {
             nextSong.sourceInfo?.type === 'voice' ||
             (nextSong.sourceInfo?.source === 'netease-backup' &&
               nextSong.sourceInfo?.type === 'voice')
-          const options = isPodcast ? { unblock: false } : {}
+          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+            ? { unblock: false }
+            : {}
+          options.musicInfo = {
+            name: nextSong.title,
+            artist: nextSong.artist,
+            album: nextSong.album || undefined
+          }
 
           const url = await getMusicUrl(
             nextSong.musicPlatform,
@@ -212,7 +220,14 @@ export function useAudioPlayer() {
             prevSong.sourceInfo?.type === 'voice' ||
             (prevSong.sourceInfo?.source === 'netease-backup' &&
               prevSong.sourceInfo?.type === 'voice')
-          const options = isPodcast ? { unblock: false } : {}
+          const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+            ? { unblock: false }
+            : {}
+          options.musicInfo = {
+            name: prevSong.title,
+            artist: prevSong.artist,
+            album: prevSong.album || undefined
+          }
 
           const url = await getMusicUrl(
             prevSong.musicPlatform,
@@ -344,7 +359,14 @@ export function useAudioPlayer() {
         nextSong.sourceInfo?.type === 'voice' ||
         (nextSong.sourceInfo?.source === 'netease-backup' &&
           nextSong.sourceInfo?.type === 'voice')
-      const options = isPodcast ? { unblock: false } : {}
+      const options: { unblock?: boolean; musicInfo?: MusicTrackMeta } = isPodcast
+        ? { unblock: false }
+        : {}
+      options.musicInfo = {
+        name: nextSong.title,
+        artist: nextSong.artist,
+        album: nextSong.album || undefined
+      }
 
       const url = await getMusicUrl(
         nextSong.musicPlatform,

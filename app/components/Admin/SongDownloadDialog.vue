@@ -707,9 +707,17 @@ const getDownloadResolveOptions = (song, quality, excludeSources = [], ignorePro
   return {
     unblock: isPodcast ? false : undefined,
     quality,
-    mediaId: song?.sourceInfo?.strMediaMid || song?.sourceInfo?.mediaId || song?.sourceInfo?.mediaMid,
+    mediaId:
+      song?.sourceInfo?.strMediaMid ||
+      song?.sourceInfo?.mediaId ||
+      song?.sourceInfo?.mediaMid,
     excludeSources,
-    ignoreProvidedUrl
+    ignoreProvidedUrl,
+    musicInfo: {
+      name: song?.title,
+      artist: song?.artist,
+      album: song?.album || undefined
+    }
   }
 }
 
