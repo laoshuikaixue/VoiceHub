@@ -1,8 +1,8 @@
 <template>
   <audio
     ref="audioPlayer"
-    :src="song?.musicUrl || undefined"
-    crossorigin="anonymous"
+    :key="audioKey"
+    :src="audioSrc"
     playsinline
     preload="auto"
     referrerpolicy="no-referrer"
@@ -15,11 +15,11 @@
     @pause="$emit('pause', $event)"
     @play="$emit('play', $event)"
     @timeupdate="$emit('timeupdate', $event)"
-  />
+  ></audio>
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 
 const props = defineProps({
   song: {
@@ -40,6 +40,14 @@ const emit = defineEmits([
 ])
 
 const audioPlayer = ref(null)
+
+const audioSrc = computed(() => {
+  return props.song?.musicUrl || undefined
+})
+const audioKey = computed(() => {
+  // 当平台改变时，使用不同的 key 强制重新创建元素
+  return props.song?.musicPlatform || 'default'
+})
 
 // 错误消息常量，避免使用魔法字符串
 const ERROR_MESSAGES = {

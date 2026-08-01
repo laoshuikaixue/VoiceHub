@@ -378,7 +378,8 @@ export const MUSIC_PLATFORMS = {
   NETEASE: 'netease',
   TENCENT: 'tencent',
   KUGOU: 'kugou',
-  KUWO: 'kuwo'
+  KUWO: 'kuwo',
+  MIGU: 'migu'
 } as const
 
 export const RISK_CONTROL_CONSTANTS = {

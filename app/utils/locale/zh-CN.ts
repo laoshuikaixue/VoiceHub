@@ -997,7 +997,10 @@ export const pages = {
         tencentSq: { label: 'SQ无损', description: '无损音质，文件较大' },
         tencentHiRes: { label: 'Hi-Res', description: '高解析度音质' },
         tencentMaster: { label: '臻品母带2.0', description: '最高音质' },
-        bilibiliDefault: { label: '默认', description: '默认音质' }
+        bilibiliDefault: { label: '默认', description: '默认音质' },
+        miguHq: { label: 'HQ高音质', description: '高品质音乐体验' },
+        miguSq: { label: 'SQ无损', description: '无损音质，文件较大' },
+        miguHiRes: { label: 'Hi-Res', description: '高解析度音质' }
       }
     },
     bilibiliIframe: {
@@ -1367,7 +1370,8 @@ export const pages = {
       platforms: {
         netease: '网易云音乐',
         tencent: 'QQ音乐',
-        bilibili: '哔哩哔哩'
+        bilibili: '哔哩哔哩',
+        migu: '咪咕音乐'
       },
       refreshing: '刷新中',
       neteaseLoginTitle: '登录网易云获取完整体验',

@@ -230,10 +230,35 @@ export async function getMusicUrlResult(
       ? 'netease'
       : platform === 'tencent'
         ? 'tencent'
-        : null
+        : platform === 'migu'
+          ? 'migu'
+          : null
 
   if (!endpoint) {
     throw new Error('不支持的音乐平台')
+  }
+
+  // 咪咕音乐特殊处理
+  if (platform === 'migu') {
+    try {
+      const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
+        params: {
+          contentId: String(musicId)
+        },
+        timeout: 10000
+      })
+
+      if (miguResponse?.success && miguResponse?.url) {
+        rememberMusicUrlSource(miguResponse.url, 'migu')
+        return {
+          url: miguResponse.url,
+          source: 'migu'
+        }
+      }
+    } catch (error) {
+      console.error('[musicUrl] 咪咕播放链接获取失败:', error)
+    }
+    throw new Error('咪咕音乐播放链接获取失败')
   }
 
   for (const candidateQuality of qualityCandidates) {

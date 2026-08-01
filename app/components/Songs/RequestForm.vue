@@ -233,6 +233,13 @@
               >
                 {{ locale.platforms.bilibili }}
               </button>
+              <button
+                :class="['platform-btn', { active: platform === 'migu' }]"
+                type="button"
+                @click="switchPlatform('migu')"
+              >
+                {{ locale.platforms.migu }}
+              </button>
             </div>
 
             <!-- 网易云音乐登录状态和选项 -->
