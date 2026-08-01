@@ -758,6 +758,7 @@ VoiceHub/
 │   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
+│   │   │   ├── DrilldownLink.vue      # 运维诊断钻取链接
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
