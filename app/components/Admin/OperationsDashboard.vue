@@ -118,6 +118,20 @@
         </article>
       </section>
 
+      <section class="panel">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.overview.alertRules }}</h3><p class="panel-description">{{ locale.overview.alertRulesDetail }}</p></div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="alert-rule-list">
+          <div v-for="item in alertRules" :key="item.label">
+            <span class="alert-priority" :class="item.tone">{{ item.priority }}</span>
+            <div class="min-w-0 flex-1"><p>{{ item.label }}</p><small>{{ item.detail }}</small></div>
+            <strong>--</strong>
+          </div>
+        </div>
+      </section>
+
       <section class="panel overflow-hidden">
         <div class="panel-header">
           <div>
@@ -170,7 +184,7 @@
           </div>
         </div>
         <div class="overview-log-filters">
-          <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input type="text" :placeholder="locale.overview.logKeyword" disabled /></label>
+          <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input type="text" :placeholder="locale.overview.logKeyword" disabled></label>
           <label class="filter-field"><span>{{ locale.overview.logTimeRange }}</span><Icon name="chevron-down" :size="13" /></label>
           <label class="filter-field"><span>{{ locale.overview.logLevel }}</span><Icon name="chevron-down" :size="13" /></label>
           <label class="filter-field"><span>{{ locale.overview.logScope }}</span><Icon name="chevron-down" :size="13" /></label>
@@ -185,9 +199,9 @@
       </section>
     </template>
 
-    <template v-else-if="activeGroup === 'online'">
+    <template v-else-if="activeGroup === 'performance'">
       <section class="metric-grid">
-        <article v-for="item in onlineMetrics" :key="item.label" class="metric-card">
+        <article v-for="item in applicationMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top">
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
@@ -197,80 +211,69 @@
         </article>
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <article class="panel overflow-hidden xl:col-span-8">
           <div class="panel-header">
-            <h3 class="panel-title">{{ locale.online.activitySummary }}</h3>
-          </div>
-          <dl class="summary-grid">
-            <div v-for="item in onlineActivityDetails" :key="item">
-              <dt>{{ item }}</dt>
-              <dd>--</dd>
+            <div>
+              <h3 class="panel-title">{{ locale.application.routePerformance }}</h3>
+              <p class="panel-description">{{ locale.application.routePerformanceDetail }}</p>
             </div>
-          </dl>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[760px]">
+              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>5xx</th></tr></thead>
+              <tbody><tr><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
         </article>
-        <article class="panel">
+
+        <article class="panel xl:col-span-4">
           <div class="panel-header">
-            <h3 class="panel-title">{{ locale.online.accountSummary }}</h3>
-          </div>
-          <div class="status-list">
-            <div v-for="item in onlineAccountDetails" :key="item">
-              <div class="flex items-center justify-between gap-4">
-                <span>{{ item }}</span><strong>--</strong>
-              </div>
-              <div class="empty-progress"><span /></div>
+            <div>
+              <h3 class="panel-title">{{ locale.application.latencyDistribution }}</h3>
+              <p class="panel-description">{{ locale.application.latencyDistributionDetail }}</p>
             </div>
           </div>
+          <dl class="detail-grid detail-grid--compact">
+            <div v-for="item in applicationLatencyDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
         </article>
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel overflow-hidden">
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <article v-for="panel in applicationDetailPanels" :key="panel.title" class="panel">
           <div class="panel-header">
-            <h3 class="panel-title">{{ locale.online.activeRanking }}</h3>
-            <span class="item-count">{{ locale.itemCount }} --</span>
+            <div>
+              <h3 class="panel-title">{{ panel.title }}</h3>
+              <p class="panel-description">{{ panel.detail }}</p>
+            </div>
+            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
           </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[520px]">
-              <thead>
-                <tr>
-                  <th class="w-44">{{ locale.online.user }}</th>
-                  <th>{{ locale.online.contributions }}</th>
-                  <th>{{ locale.online.likes }}</th>
-                  <th>{{ locale.online.activityScore }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr>
-              </tbody>
-            </table>
-          </div>
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
         </article>
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <h3 class="panel-title">{{ locale.online.recentLoginUsers }}</h3>
-            <span class="item-count">{{ locale.itemCount }} --</span>
+      </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">{{ locale.application.externalDependencies }}</h3>
+            <p class="panel-description">{{ locale.application.externalDependenciesDetail }}</p>
           </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[560px]">
-              <thead>
-                <tr>
-                  <th class="w-40">{{ locale.online.account }}</th>
-                  <th>{{ locale.online.ip }}</th>
-                  <th>{{ locale.online.accountStatus }}</th>
-                  <th>{{ locale.online.lastLogin }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </article>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[860px]">
+            <thead><tr><th>{{ locale.application.dependency }}</th><th>{{ locale.application.availability }}</th><th>{{ locale.application.latency }}</th><th>{{ locale.application.errorRate }}</th><th>{{ locale.application.coldStart }}</th><th>{{ locale.overview.lastChecked }}</th></tr></thead>
+            <tbody><tr v-for="item in externalDependencies" :key="item"><td>{{ item }}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr></tbody>
+          </table>
+        </div>
       </section>
     </template>
 
-    <template v-else-if="activeGroup === 'server'">
+    <template v-else-if="activeGroup === 'infra'">
       <section class="server-summary-strip">
         <div v-for="item in serverSummaryDetails" :key="item"><span>{{ item }}</span><strong>--</strong></div>
       </section>
@@ -364,6 +367,25 @@
         </article>
       </section>
 
+    </template>
+
+    <template v-else-if="activeGroup === 'database'">
+      <section class="subsection-heading">
+        <div><h3>{{ locale.database.postgresql }}</h3><p>{{ locale.database.postgresqlDetail }}</p></div>
+        <Icon name="database" :size="16" />
+      </section>
+
+      <section class="metric-grid">
+        <article v-for="item in databaseMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="metric-label">{{ item.label }}</span>
+          </div>
+          <strong class="metric-value">--</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><h3 class="panel-title">{{ locale.server.database }}</h3></div>
@@ -384,6 +406,27 @@
         </article>
       </section>
 
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <article class="panel">
+          <div class="panel-header">
+            <div><h3 class="panel-title">{{ locale.database.sizeTrend }}</h3><p class="panel-description">{{ locale.database.sizeTrendDetail }}</p></div>
+          </div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        </article>
+        <article class="panel overflow-hidden">
+          <div class="panel-header">
+            <div><h3 class="panel-title">{{ locale.database.slowQueries }}</h3><p class="panel-description">{{ locale.database.slowQueriesDetail }}</p></div>
+            <span class="item-count">{{ locale.itemCount }} --</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table min-w-[680px]">
+              <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th></tr></thead>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
       <section class="panel overflow-hidden">
         <div class="panel-header">
           <div>
@@ -399,9 +442,12 @@
           </table>
         </div>
       </section>
-    </template>
 
-    <template v-else-if="activeGroup === 'cache'">
+      <section class="subsection-heading">
+        <div><h3>{{ locale.database.redis }}</h3><p>{{ locale.database.redisDetail }}</p></div>
+        <Icon name="server" :size="16" />
+      </section>
+
       <section class="metric-grid">
         <article v-for="item in cacheMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top">
@@ -438,9 +484,22 @@
           </div>
         </div>
       </section>
+
+      <section class="panel overflow-hidden">
+        <div class="panel-header">
+          <div><h3 class="panel-title">{{ locale.cache.commandMetrics }}</h3><p class="panel-description">{{ locale.cache.commandMetricsDetail }}</p></div>
+          <span class="item-count">{{ locale.itemCount }} --</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="data-table min-w-[680px]">
+            <thead><tr><th>{{ locale.cache.command }}</th><th>{{ locale.cache.calls }}</th><th>P50</th><th>P99</th><th>{{ locale.cache.commandErrors }}</th></tr></thead>
+            <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+          </table>
+        </div>
+      </section>
     </template>
 
-    <template v-else-if="activeGroup === 'analytics'">
+    <template v-else-if="activeGroup === 'business'">
       <section class="metric-grid">
         <article v-for="item in analysisMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top">
@@ -546,9 +605,26 @@
           </div>
         </article>
       </section>
+
+      <section class="subsection-heading">
+        <div><h3>{{ locale.business.goldMetrics }}</h3><p>{{ locale.business.goldMetricsDetail }}</p></div>
+        <Icon name="music" :size="16" />
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <article v-for="panel in businessMetricGroups" :key="panel.title" class="panel">
+          <div class="panel-header">
+            <div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div>
+            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
+          </div>
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
+        </article>
+      </section>
     </template>
 
-    <template v-else-if="activeGroup === 'audit'">
+    <template v-else-if="activeGroup === 'security'">
       <section class="metric-grid">
         <article v-for="item in auditMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top">
@@ -601,6 +677,19 @@
         </article>
       </section>
 
+      <section class="subsection-heading">
+        <div><h3>{{ locale.audit.securitySignals }}</h3><p>{{ locale.audit.securitySignalsDetail }}</p></div>
+        <Icon name="warning" :size="16" />
+      </section>
+
+      <section class="metric-grid">
+        <article v-for="item in securitySignalMetrics" :key="item.label" class="metric-card">
+          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
+          <strong class="metric-value">--</strong>
+          <p class="metric-detail">{{ item.detail }}</p>
+        </article>
+      </section>
+
       <section class="panel overflow-hidden">
         <div class="panel-header">
           <div>
@@ -628,7 +717,7 @@
         <div class="audit-filters">
           <label class="filter-field filter-field--wide">
             <Icon name="search" :size="13" />
-            <input type="text" :placeholder="locale.audit.keywordFilter" disabled />
+            <input type="text" :placeholder="locale.audit.keywordFilter" disabled>
           </label>
           <button type="button" class="filter-field" disabled><span>{{ locale.audit.allRiskLevels }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.audit.allHandlingStatuses }}</span><Icon name="chevron-down" :size="13" /></button>
@@ -668,11 +757,11 @@ const activeGroup = ref('overview')
 
 const monitorGroups = computed(() => [
   { icon: 'monitoring', label: locale.value.groups?.overview, value: 'overview' },
-  { icon: 'chart-line', label: locale.value.groups?.analyticsDashboard, value: 'analytics' },
-  { icon: 'users', label: locale.value.groups?.onlineUsers, value: 'online' },
-  { icon: 'server', label: locale.value.groups?.serverMonitoring, value: 'server' },
-  { icon: 'database', label: locale.value.groups?.cacheMonitoring, value: 'cache' },
-  { icon: 'warning', label: locale.value.groups?.securityAudit, value: 'audit' }
+  { icon: 'activity', label: locale.value.groups?.performance, value: 'performance' },
+  { icon: 'music', label: locale.value.groups?.business, value: 'business' },
+  { icon: 'database', label: locale.value.groups?.database, value: 'database' },
+  { icon: 'server', label: locale.value.groups?.infra, value: 'infra' },
+  { icon: 'warning', label: locale.value.groups?.security, value: 'security' }
 ])
 
 const overviewSignals = computed(() => [
@@ -755,55 +844,79 @@ const dependencyRows = computed(() => [
   }
 ])
 
-const onlineMetrics = computed(() => [
+const alertRules = computed(() => [
+  { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleServerErrors, detail: locale.value.overview?.ruleServerErrorsDetail },
+  { priority: 'P0', tone: 'alert-priority--critical', label: locale.value.overview?.ruleDatabaseConnections, detail: locale.value.overview?.ruleDatabaseConnectionsDetail },
+  { priority: 'P1', tone: 'alert-priority--high', label: locale.value.overview?.ruleResponseP99, detail: locale.value.overview?.ruleResponseP99Detail },
+  { priority: 'P1', tone: 'alert-priority--high', label: locale.value.overview?.ruleMusicSources, detail: locale.value.overview?.ruleMusicSourcesDetail },
+  { priority: 'P2', tone: 'alert-priority--medium', label: locale.value.overview?.ruleMemory, detail: locale.value.overview?.ruleMemoryDetail },
+  { priority: 'P2', tone: 'alert-priority--medium', label: locale.value.overview?.ruleDisk, detail: locale.value.overview?.ruleDiskDetail },
+  { priority: 'P3', tone: 'alert-priority--low', label: locale.value.overview?.ruleLoginFailures, detail: locale.value.overview?.ruleLoginFailuresDetail }
+])
+
+const applicationMetrics = computed(() => [
+  { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail },
+  { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail },
+  { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail },
+  { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail },
+  { icon: 'users', label: locale.value.application?.realtimeConnections, detail: locale.value.application?.realtimeConnectionsDetail },
+  { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail },
+  { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail },
+  { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail }
+])
+
+const applicationLatencyDetails = computed(() => [
+  locale.value.application?.responseP50,
+  locale.value.application?.responseP95,
+  locale.value.application?.responseP99,
+  locale.value.application?.responseMax
+])
+
+const applicationDetailPanels = computed(() => [
   {
-    icon: 'activity',
-    label: locale.value.online?.recentActive,
-    detail: locale.value.online?.recentActiveDetail
+    icon: 'success',
+    title: locale.value.application?.authentication,
+    detail: locale.value.application?.authenticationDetail,
+    items: [
+      locale.value.application?.jwtIssued,
+      locale.value.application?.jwtVerified,
+      locale.value.application?.invalidTokens,
+      locale.value.application?.oauthSuccessRate
+    ]
   },
   {
     icon: 'music',
-    label: locale.value.online?.todayRequests,
-    detail: locale.value.online?.todayRequestsDetail
+    title: locale.value.application?.fileAndRealtime,
+    detail: locale.value.application?.fileAndRealtimeDetail,
+    items: [
+      locale.value.application?.uploadCount,
+      locale.value.application?.uploadBytes,
+      locale.value.application?.uploadDuration,
+      locale.value.application?.websocketConnections,
+      locale.value.application?.sseConnections
+    ]
   },
   {
-    icon: 'users',
-    label: locale.value.online?.activeContributors,
-    detail: locale.value.online?.activeContributorsDetail
-  },
-  {
-    icon: 'settings',
-    label: locale.value.online?.totalUsers,
-    detail: locale.value.online?.totalUsersDetail
-  },
-  {
-    icon: 'activity',
-    label: locale.value.online?.activeUserPercentage,
-    detail: locale.value.online?.activeUserPercentageDetail
-  },
-  {
-    icon: 'music',
-    label: locale.value.online?.averageSongsPerUser,
-    detail: locale.value.online?.averageSongsPerUserDetail
-  },
-  {
-    icon: 'clock',
-    label: locale.value.online?.peakHours,
-    detail: locale.value.online?.peakHoursDetail
+    icon: 'monitoring',
+    title: locale.value.application?.requestLifecycle,
+    detail: locale.value.application?.requestLifecycleDetail,
+    items: [
+      locale.value.application?.requestTotal,
+      locale.value.application?.clientErrorCount,
+      locale.value.application?.serverErrorCount,
+      locale.value.application?.ssrRenderCount,
+      locale.value.application?.gcCount
+    ]
   }
 ])
 
-const onlineActivityDetails = computed(() => [
-  locale.value.online?.recentActive,
-  locale.value.online?.todayRequests,
-  locale.value.online?.activeContributors,
-  locale.value.online?.peakHours
-])
-
-const onlineAccountDetails = computed(() => [
-  locale.value.online?.activeAccounts,
-  locale.value.online?.withdrawnAccounts,
-  locale.value.online?.graduatedAccounts
+const externalDependencies = computed(() => [
+  locale.value.overview?.neteaseSource,
+  locale.value.overview?.tencentSource,
+  locale.value.overview?.bilibiliSource,
+  locale.value.application?.githubOAuth,
+  locale.value.application?.casdoorOAuth,
+  locale.value.application?.neonDatabase
 ])
 
 const serverSummaryDetails = computed(() => [
@@ -833,6 +946,26 @@ const serverMetrics = computed(() => [
     icon: 'server',
     label: locale.value.metrics?.networkInterfaces,
     detail: locale.value.server?.networkInterfacesMetricDetail
+  },
+  {
+    icon: 'activity',
+    label: locale.value.server?.networkIngress,
+    detail: locale.value.server?.networkIngressDetail
+  },
+  {
+    icon: 'activity',
+    label: locale.value.server?.networkEgress,
+    detail: locale.value.server?.networkEgressDetail
+  },
+  {
+    icon: 'database',
+    label: locale.value.server?.diskIo,
+    detail: locale.value.server?.diskIoDetail
+  },
+  {
+    icon: 'refresh',
+    label: locale.value.server?.containerRestarts,
+    detail: locale.value.server?.containerRestartsDetail
   }
 ])
 
@@ -898,20 +1031,33 @@ const serverResourcePanels = computed(() => [
   }
 ])
 
+const databaseMetrics = computed(() => [
+  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail },
+  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail },
+  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail },
+  { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail },
+  { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail },
+  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail },
+  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail },
+  { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail }
+])
+
 const databaseDetails = computed(() => [
-  locale.value.server?.connection,
   locale.value.server?.poolMax,
   locale.value.server?.poolActive,
   locale.value.server?.poolTotal,
-  locale.value.server?.poolUtilization,
+  locale.value.server?.poolAvailable,
   locale.value.server?.probe
 ])
 
 const databasePerformanceDetails = computed(() => [
+  locale.value.server?.responseTime,
   locale.value.server?.transactionsCommitted,
   locale.value.server?.transactionsRolledBack,
-  locale.value.server?.cacheHitRatio,
-  locale.value.server?.responseTime
+  locale.value.database?.indexHitRatio,
+  locale.value.database?.tableBloat,
+  locale.value.database?.poolWaitTime,
+  locale.value.database?.databaseGrowthRate
 ])
 
 const schemaTables = computed(() => [
@@ -925,24 +1071,28 @@ const schemaTables = computed(() => [
 
 const cacheMetrics = computed(() => [
   {
-    icon: 'database',
-    label: locale.value.cache?.configured,
-    detail: locale.value.cache?.configuredDetail
+    icon: 'success',
+    label: locale.value.cache?.ready,
+    detail: locale.value.cache?.readyDetail
   },
-  { icon: 'success', label: locale.value.cache?.ready, detail: locale.value.cache?.readyDetail },
   {
-    icon: 'settings',
-    label: locale.value.cache?.keyPrefix,
-    detail: locale.value.cache?.prefixDetail
+    icon: 'activity',
+    label: locale.value.cache?.hitRatio,
+    detail: locale.value.cache?.hitRatioDetail
   },
-  { icon: 'clock', label: locale.value.cache?.lastConnected, detail: locale.value.cache?.connectionDetail },
+  { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail },
+  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail },
+  { icon: 'clock', label: locale.value.cache?.commandP99, detail: locale.value.cache?.commandP99Detail },
+  { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail },
+  { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail },
   { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail }
 ])
 
 const cacheDetails = computed(() => [
+  locale.value.cache?.configured,
   locale.value.cache?.keyPrefix,
   locale.value.cache?.lastConnected,
-  locale.value.cache?.lastError
+  locale.value.cache?.evictionPolicy
 ])
 
 const cacheUsageScopes = computed(() => [
@@ -984,6 +1134,26 @@ const analysisMetrics = computed(() => [
     icon: 'heart',
     label: locale.value.analytics?.weeklyRequests,
     detail: locale.value.analytics?.weeklyRequestsDetail
+  },
+  {
+    icon: 'activity',
+    label: locale.value.online?.recentActive,
+    detail: locale.value.online?.recentActiveDetail
+  },
+  {
+    icon: 'music',
+    label: locale.value.online?.todayRequests,
+    detail: locale.value.online?.todayRequestsDetail
+  },
+  {
+    icon: 'users',
+    label: locale.value.online?.activeContributors,
+    detail: locale.value.online?.activeContributorsDetail
+  },
+  {
+    icon: 'chart-line',
+    label: locale.value.online?.activeUserPercentage,
+    detail: locale.value.online?.activeUserPercentageDetail
   }
 ])
 
@@ -1004,6 +1174,47 @@ const analysisPeakHours = computed(() => [
   locale.value.analytics?.firstPeak,
   locale.value.analytics?.secondPeak,
   locale.value.analytics?.thirdPeak
+])
+
+const businessMetricGroups = computed(() => [
+  {
+    icon: 'music',
+    title: locale.value.business?.requestWorkflow,
+    detail: locale.value.business?.requestWorkflowDetail,
+    items: [
+      locale.value.business?.songAndVoteRequests,
+      locale.value.business?.requestSuccessRate,
+      locale.value.business?.scheduleOperations,
+      locale.value.business?.quotaTriggers,
+      locale.value.business?.dedupHits,
+      locale.value.business?.replayRequests
+    ]
+  },
+  {
+    icon: 'activity',
+    title: locale.value.business?.mediaPipeline,
+    detail: locale.value.business?.mediaPipelineDetail,
+    items: [
+      locale.value.business?.neteaseLatencyAndErrors,
+      locale.value.business?.tencentLatencyAndErrors,
+      locale.value.business?.bilibiliLatencyAndErrors,
+      locale.value.business?.playUrlFailures,
+      locale.value.business?.qualitySwitches,
+      locale.value.business?.downloadCountAndBytes
+    ]
+  },
+  {
+    icon: 'users',
+    title: locale.value.business?.growthAndDelivery,
+    detail: locale.value.business?.growthAndDeliveryDetail,
+    items: [
+      locale.value.business?.notificationPushes,
+      locale.value.business?.notificationDeliveryRate,
+      locale.value.business?.dailyActiveUsers,
+      locale.value.business?.newUsers,
+      locale.value.business?.oauthSuccessRate
+    ]
+  }
 ])
 
 const auditMetrics = computed(() => [
@@ -1027,6 +1238,15 @@ const auditMetrics = computed(() => [
     label: locale.value.audit?.resolvedToday,
     detail: locale.value.audit?.resolvedTodayDetail
   }
+])
+
+const securitySignalMetrics = computed(() => [
+  { icon: 'warning', label: locale.value.audit?.loginFailures, detail: locale.value.audit?.loginFailuresDetail },
+  { icon: 'warning', label: locale.value.audit?.accountLockouts, detail: locale.value.audit?.accountLockoutsDetail },
+  { icon: 'warning', label: locale.value.audit?.strongAuthFailures, detail: locale.value.audit?.strongAuthFailuresDetail },
+  { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: locale.value.audit?.invalidTokenRequestsDetail },
+  { icon: 'activity', label: locale.value.audit?.rateLimitTriggers, detail: locale.value.audit?.rateLimitTriggersDetail },
+  { icon: 'warning', label: locale.value.audit?.blacklistHits, detail: locale.value.audit?.blacklistHitsDetail }
 ])
 
 const riskLevels = computed(() => [
@@ -1203,6 +1423,28 @@ const riskLevels = computed(() => [
   color: rgb(82 82 91);
   font-size: 0.6875rem;
   line-height: 1.4;
+}
+
+.subsection-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgb(39 39 42);
+  padding: 0.25rem 0 0.85rem;
+  color: rgb(96 165 250);
+}
+
+.subsection-heading h3 {
+  color: rgb(228 228 231);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.subsection-heading p {
+  margin-top: 0.3rem;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
 }
 
 .status-badge {
@@ -1415,6 +1657,77 @@ const riskLevels = computed(() => [
 
 .service-list {
   padding: 0 1rem;
+}
+
+.alert-rule-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.alert-rule-list > div {
+  display: flex;
+  min-width: 0;
+  min-height: 4.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.alert-rule-list p {
+  color: rgb(212 212 216);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.alert-rule-list small {
+  display: block;
+  margin-top: 0.3rem;
+  color: rgb(82 82 91);
+  font-size: 0.625rem;
+}
+
+.alert-rule-list strong {
+  flex: 0 0 auto;
+  color: rgb(82 82 91);
+  font-size: 0.6875rem;
+}
+
+.alert-priority {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid;
+  border-radius: 5px;
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+
+.alert-priority--critical {
+  color: rgb(248 113 113);
+  border-color: rgb(239 68 68 / 0.24);
+  background: rgb(239 68 68 / 0.08);
+}
+
+.alert-priority--high {
+  color: rgb(251 146 60);
+  border-color: rgb(249 115 22 / 0.24);
+  background: rgb(249 115 22 / 0.08);
+}
+
+.alert-priority--medium {
+  color: rgb(250 204 21);
+  border-color: rgb(234 179 8 / 0.24);
+  background: rgb(234 179 8 / 0.08);
+}
+
+.alert-priority--low {
+  color: rgb(52 211 153);
+  border-color: rgb(16 185 129 / 0.24);
+  background: rgb(16 185 129 / 0.08);
 }
 
 .service-row {
@@ -1933,6 +2246,14 @@ const riskLevels = computed(() => [
   }
 
   .summary-grid > div:not(:last-child) {
+    border-right: 1px solid rgb(39 39 42 / 0.75);
+  }
+
+  .alert-rule-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .alert-rule-list > div:nth-child(odd) {
     border-right: 1px solid rgb(39 39 42 / 0.75);
   }
 
