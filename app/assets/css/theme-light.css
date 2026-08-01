@@ -1,104 +1,105 @@
 /* 亮色主题 — 全部设计变量 */
 :root[data-theme="light"] {
-  /* 主色调 */
+
+/* 主色调 */
   --primary: #3b82f6;
   --primary-hover: #2563eb;
   --primary-light: rgba(59, 130, 246, 0.1);
   --primary-border: rgba(59, 130, 246, 0.2);
 
-  /* 控件强调色（与 --primary 一致，供 accent-color 使用） */
+/* 控件强调色（与 --primary 一致，供 accent-color 使用） */
   --accent-color: #3b82f6;
 
-  /* 主色光晕（供阴影 glow 使用） */
+/* 主色光晕（供阴影 glow 使用） */
   --primary-glow: rgba(59, 130, 246, 0.2);
   --primary-glow-5: rgba(59, 130, 246, 0.05);
   --primary-glow-10: rgba(59, 130, 246, 0.1);
   --primary-glow-20: rgba(59, 130, 246, 0.2);
   --primary-glow-40: rgba(59, 130, 246, 0.4);
 
-  /* 成功色光晕 */
+/* 成功色光晕 */
   --success-glow: rgba(16, 185, 129, 0.2);
   --success-glow-5: rgba(16, 185, 129, 0.05);
   --success-glow-10: rgba(16, 185, 129, 0.1);
   --success-glow-20: rgba(16, 185, 129, 0.2);
 
-  /* 警告色光晕 */
+/* 警告色光晕 */
   --warning-glow: rgba(245, 158, 11, 0.2);
   --warning-glow-5: rgba(245, 158, 11, 0.05);
   --warning-glow-10: rgba(245, 158, 11, 0.1);
   --warning-glow-20: rgba(245, 158, 11, 0.2);
 
-  /* 错误色光晕 */
+/* 错误色光晕 */
   --error-glow: rgba(239, 68, 68, 0.2);
   --error-glow-5: rgba(239, 68, 68, 0.05);
   --error-glow-10: rgba(239, 68, 68, 0.1);
   --error-glow-20: rgba(239, 68, 68, 0.2);
 
-  /* 成功色 */
+/* 成功色 */
   --success: #10b981;
   --success-hover: #059669;
   --success-light: rgba(16, 185, 129, 0.1);
   --success-border: rgba(16, 185, 129, 0.2);
 
-  /* 警告色 */
+/* 警告色 */
   --warning: #f59e0b;
   --warning-hover: #d97706;
   --warning-light: rgba(245, 158, 11, 0.1);
   --warning-border: rgba(245, 158, 11, 0.2);
 
-  /* 错误色 */
+/* 错误色 */
   --error: #ef4444;
   --error-hover: #dc2626;
   --error-light: rgba(239, 68, 68, 0.1);
   --error-border: rgba(239, 68, 68, 0.2);
 
-  /* 信息色 */
+/* 信息色光晕 */
   --info: #3b82f6;
   --info-hover: #2563eb;
   --info-light: rgba(59, 130, 246, 0.1);
   --info-border: rgba(59, 130, 246, 0.2);
 
-  /* 信息色光晕（紫色系，与 info 品牌色一致） */
+/* 信息色光晕（紫色系，与 info 品牌色一致） */
   --info-glow: rgba(139, 92, 246, 0.2);
   --info-glow-5: rgba(139, 92, 246, 0.05);
   --info-glow-10: rgba(139, 92, 246, 0.1);
   --info-glow-20: rgba(139, 92, 246, 0.2);
 
-  /* 背景色 */
+/* 背景色 */
   --bg-primary: #f5f5f7;
   --bg-secondary: #ffffff;
   --bg-tertiary: #e5e5ea;
   --bg-quaternary: #d1d1d6;
   --bg-hover: #ececf1;
 
-  /* 文字颜色 */
+/* 文字颜色 */
   --text-primary: #1a1a1a;
   --text-secondary: #3a3a3c;
   --text-tertiary: #636366;
   --text-quaternary: #8e8e93;
   --text-disabled: #c7c7cc;
 
-  /* 边框颜色 */
+/* 边框颜色 */
   --border-primary: #e5e5ea;
   --border-secondary: #d1d1d6;
   --border-tertiary: #c7c7cc;
   --border-quaternary: #8e8e93;
   --border-color: var(--border-quaternary);
 
-  /* 阴影 */
+/* 阴影 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
 
-  /* 圆角 */
+/* 圆角 */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-2xl: 16px;
 
-  /* 间距 */
+/* 间距 */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
@@ -107,7 +108,7 @@
   --spacing-2xl: 24px;
   --spacing-3xl: 32px;
 
-  /* 字体大小 */
+/* 字体大小 */
   --text-xs: 12px;
   --text-sm: 14px;
   --text-base: 16px;
@@ -116,18 +117,18 @@
   --text-2xl: 24px;
   --text-3xl: 30px;
 
-  /* 字体粗细 */
+/* 字体粗细 */
   --font-normal: 400;
   --font-medium: 500;
   --font-semibold: 600;
   --font-bold: 700;
 
-  /* 过渡动画 */
+/* 过渡动画 */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.2s ease;
   --transition-slow: 0.3s ease;
 
-  /* Z-index层级 */
+/* Z-index层级 */
   --z-dropdown: 100;
   --z-sticky: 200;
   --z-fixed: 300;
@@ -138,7 +139,7 @@
   --z-toast: 800;
   --z-app-loader: 9000;
 
-  /* 特殊状态颜色 */
+/* 特殊状态颜色 */
   --status-pending: #f59e0b;
   --status-pending-light: rgba(245, 158, 11, 0.1);
   --status-approved: #10b981;
@@ -146,58 +147,58 @@
   --status-played: #8e8e93;
   --status-played-light: rgba(142, 142, 147, 0.1);
 
-  /* 投票相关颜色 */
+/* 投票相关颜色 */
   --vote-heart: #ef4444;
   --vote-heart-hover: #dc2626;
   --vote-count: var(--text-tertiary);
 
-  /* 拖拽状态颜色 */
+/* 拖拽状态颜色 */
   --drag-over: var(--primary-light);
   --drag-over-border: var(--primary);
   --dragging-opacity: 0.5;
 
-  /* 表格颜色 */
+/* 表格颜色 */
   --table-header-bg: var(--bg-tertiary);
   --table-row-hover: var(--bg-hover);
   --table-border: var(--border-secondary);
   --table-selected: var(--primary-light);
 
-  /* 卡片颜色 */
+/* 卡片颜色 */
   --card-bg: var(--bg-secondary);
   --card-border: var(--border-secondary);
   --card-hover-border: var(--border-tertiary);
   --card-shadow: var(--shadow-md);
 
-  /* 按钮颜色 */
+
+
+
+
+
+/* 按钮颜色 */
   --btn-primary-bg: var(--primary);
   --btn-primary-hover: var(--primary-hover);
   --btn-primary-text: #ffffff;
   --btn-primary-border: var(--primary-border);
-
   --btn-secondary-bg: #e5e5ea;
   --btn-secondary-hover: #d1d1d6;
   --btn-secondary-text: var(--text-primary);
   --btn-secondary-border: #c7c7cc;
-
   --btn-success-bg: var(--success);
   --btn-success-hover: var(--success-hover);
   --btn-success-text: #ffffff;
   --btn-success-border: var(--success-border);
-
   --btn-warning-bg: var(--warning);
   --btn-warning-hover: var(--warning-hover);
   --btn-warning-text: #ffffff;
   --btn-warning-border: var(--warning-border);
-
   --btn-error-bg: var(--error);
   --btn-error-hover: var(--error-hover);
   --btn-error-text: #ffffff;
   --btn-error-border: var(--error-border);
-
   --btn-disabled-bg: var(--bg-tertiary);
   --btn-disabled-text: var(--text-disabled);
 
-  /* 输入框颜色 */
+/* 输入框颜色 */
   --input-bg: var(--bg-tertiary);
   --input-border: var(--border-tertiary);
   --input-border-focus: var(--primary);
@@ -205,40 +206,40 @@
   --input-placeholder: var(--text-quaternary);
   --input-shadow-focus: 0 0 0 3px var(--primary-light);
 
-  /* 模态框颜色 */
+/* 模态框颜色 */
   --modal-backdrop: rgba(0, 0, 0, 0.4);
   --modal-bg: var(--bg-secondary);
   --modal-border: var(--border-secondary);
   --modal-header-border: var(--border-secondary);
   --modal-footer-border: var(--border-secondary);
 
-  /* 通知颜色 */
+
+
+
+/* 通知颜色 */
   --notification-success-bg: var(--success-light);
   --notification-success-border: var(--success-border);
   --notification-success-text: var(--success);
-
   --notification-warning-bg: var(--warning-light);
   --notification-warning-border: var(--warning-border);
   --notification-warning-text: var(--warning);
-
   --notification-error-bg: var(--error-light);
   --notification-error-border: var(--error-border);
   --notification-error-text: var(--error);
-
   --notification-info-bg: var(--info-light);
   --notification-info-border: var(--info-border);
   --notification-info-text: var(--info);
 
-  /* 加载动画颜色 */
+/* 加载动画颜色 */
   --spinner-primary: var(--primary);
   --spinner-secondary: var(--bg-tertiary);
 
-  /* 滚动条颜色 */
+/* 滚动条颜色 */
   --scrollbar-track: var(--bg-tertiary);
   --scrollbar-thumb: var(--bg-quaternary);
   --scrollbar-thumb-hover: #8e8e93;
 
-  /* 用途化变量 — 品牌色 */
+/* 用途化变量 — 品牌色 */
   --brand-blue: #0b5afe;
   --brand-blue-light: #3b82f6;
   --brand-blue-hover: #2563eb;
@@ -257,8 +258,9 @@
   --brand-yellow-hover: #d97706;
   --brand-orange: #fb923c;
   --brand-orange-hover: #ff6900;
-  
-  /* === Alpha (--brand-blue) === */
+
+
+/* === Alpha (--brand-blue) === */
   --brand-blue-10: rgba(11, 90, 254, 0.08);
   --brand-blue-12: rgba(11, 90, 254, 0.10);
   --brand-blue-15: rgba(11, 90, 254, 0.12);
@@ -270,10 +272,9 @@
   --brand-blue-50: rgba(11, 90, 254, 0.40);
   --brand-blue-60: rgba(11, 90, 254, 0.50);
   --brand-blue-80: rgba(11, 90, 254, 0.60);
-
   --brand-orange-glow: rgba(251, 146, 60, 0.4);
 
-  /* 用途化变量 — 请求表单（RequestForm） */
+/* 用途化变量 — 请求表单（RequestForm） */
   --requestform-audio-match-hover-border: rgba(96, 165, 250, 0.35);
   --requestform-audio-match-hover-border-light: rgba(96, 165, 250, 0.22);
   --requestform-qq-login-shadow: rgba(6, 182, 212, 0.15);
@@ -310,7 +311,7 @@
   --requestform-chip-invalid-bg: rgba(248, 113, 113, 0.1);
   --requestform-chip-invalid-border: rgba(248, 113, 113, 0.35);
 
-  /* 用途化变量 — 音频播放器（AudioPlayer） */
+/* 用途化变量 — 音频播放器（AudioPlayer） */
   --audio-player-bar-bg: rgba(20, 20, 25, 0.85);
   --audio-player-progress-track-bg: rgba(74, 74, 74, 0.39);
   --audio-player-quality-active-bg-start: rgba(0, 122, 255, 0.25);
@@ -321,70 +322,37 @@
   --audio-player-quality-active-shadow: rgba(0, 122, 255, 0.3);
   --audio-player-quality-active-ring: rgba(0, 122, 255, 0.2);
 
-  /* 用途化变量 — 音量控制（VolumeControl） */
+/* 用途化变量 — 音量控制（VolumeControl） */
   --volume-control-panel-bg: rgba(30, 30, 35, 0.85);
   --volume-control-muted-color: rgba(255, 100, 100, 0.9);
 
-  /* 用途化变量 — 备份管理器（BackupManager） */
+/* 用途化变量 — 备份管理器（BackupManager） */
   --backup-manager-danger-bg: rgba(211, 47, 47, 0.1);
   --backup-manager-file-remove-bg: rgba(211, 47, 47, 0.2);
   --backup-manager-file-remove-bg-hover: rgba(211, 47, 47, 0.3);
   --backup-manager-warning-box-bg: rgba(255, 152, 0, 0.1);
 
-  /* 用途化变量 — 用户歌曲模态框滚动条（UserSongsModal） */
+/* 用途化变量 — 用户歌曲模态框滚动条（UserSongsModal） */
   --usersongs-scroll-thumb: rgba(113, 113, 122, 0.3);
   --usersongs-scroll-thumb-hover: rgba(113, 113, 122, 0.5);
 
-  /* 用途化变量 — 用户管理器（UserManager） */
+/* 用途化变量 — 用户管理器（UserManager） */
   --user-manager-tree-line: rgba(63, 63, 70, 0.55);
   --user-manager-tree-active-bg: rgba(37, 99, 235, 0.16);
 
-  /* 用途化变量 — 数据分析面板滚动条（DataAnalysisPanel） */
+/* 用途化变量 — 数据分析面板滚动条（DataAnalysisPanel） */
   --data-analysis-scroll-thumb: rgba(79, 70, 229, 0.3);
   --data-analysis-scroll-thumb-hover: rgba(79, 70, 229, 0.5);
 
-  /* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
+/* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
   --schedule-list-divider: rgba(217, 217, 217, 0.5);
   --schedule-list-title-shadow: rgba(0, 179, 248, 0.3);
   --schedule-list-title-shadow-sm: rgba(0, 179, 248, 0.2);
 
-  /* 用途化变量 — 认证模块（Auth） */
+/* 用途化变量 — 认证模块（Auth） */
   --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
 
-  --index-footer-bg: rgba(28, 28, 30, 0.9);
-  --index-visualizer-bg: rgba(30, 41, 59, 0.5);
-  --index-card-glow: rgba(139, 92, 246, 0.15);
-  --index-brand-badge-bg: rgba(139, 92, 246, 0.1);
-  --index-brand-badge-border: rgba(139, 92, 246, 0.2);
-  --index-main-icon-shadow: rgba(139, 92, 246, 0.5);
-  --index-pulsing-ring-shadow: rgba(0, 122, 255, 0.4);
-
-  /* 用途化变量 — 年度回顾（year-review） */
-  --year-review-home-btn-shadow: rgba(139, 92, 246, 0.2);
-  --year-review-blob-1-bg: rgba(139, 92, 246, 0.4);
-  --year-review-blob-2-bg: rgba(244, 114, 182, 0.2);
-  --year-review-gradient-overlay-end: rgba(244, 114, 182, 0.15);
-  --year-review-stat-number-shadow: rgba(37, 99, 235, 0.5);
-  --year-review-artist-label-border: rgba(168, 85, 247, 0.3);
-  --year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
-  --year-review-stats-bg-gradient: rgba(30, 58, 138, 0.4);
-  --app-loading-ring-shadow: rgba(99, 102, 241, 0.4);
-  --app-loading-ring-shadow-accelerating: rgba(99, 102, 241, 0.8);
-  --app-loading-text-color: rgba(129, 140, 248, 0.8);
-  --app-loading-progress-shadow: rgba(99, 102, 241, 0.6);
-  --app-loading-progress-shadow-lg: rgba(99, 102, 241, 0.25);
-
-  /* 用途化变量 — 音频播放器（AudioPlayer）fallback */
-  --audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.85);
-  --audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.25);
-
-  /* 用途化变量 — 歌词模态框（LyricsModal） */
-  --lyrics-modal-badge-menu-bg: rgba(245, 245, 245, 0.9);
-  --lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
-  --lyrics-modal-bg-accent-blue: rgba(84, 130, 255, 0.32);
-  --lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.25);
-
-  /* 用途化变量 — 面板背景色（浅色模式） */
+/* 用途化变量 — 面板背景色（浅色模式） */
   --panel-surface: #ffffff;
   --panel-surface-alt: #f8f9fa;
   --panel-surface-hover: #e9ecef;
@@ -405,12 +373,12 @@
   --panel-surface-raised: #ffffff;
   --panel-surface-inset: #f8f9fa;
 
-  /* 通用表面色（无 panel 前缀） */
+/* 通用表面色（无 panel 前缀） */
   --surface-secondary: #e9ecef;
   --surface-tertiary: #dee2e6;
   --table-row-bg: #f8f9fa;
 
-  /* 用途化变量 — 文字灰度（浅色模式） */
+/* 用途化变量 — 文字灰度（浅色模式） */
   --text-muted: #6c757d;
   --text-muted-light: #495057;
   --text-muted-dark: #6c757d;
@@ -421,7 +389,7 @@
   --text-link-hover: #0952e8;
   --text-highlight: #856404;
 
-  /* 用途化变量 — 边框与分割线（浅色模式） */
+/* 用途化变量 — 边框与分割线（浅色模式） */
   --panel-border: #dee2e6;
   --panel-border-active: #0b5afe;
   --panel-border-subtle: #e9ecef;
@@ -432,7 +400,7 @@
   --panel-border-brand: #0b5afe;
   --panel-border-error: #ef4444;
 
-  /* 用途化变量 — 状态色（浅色模式） */
+/* 用途化变量 — 状态色（浅色模式） */
   --status-info-bg: #e7f5ff;
   --status-info-border: #0b5afe;
   --status-info-glow: rgba(11, 90, 254, 0.15);
@@ -442,7 +410,7 @@
   --status-error-icon: #ff4d4f;
   --status-error-deep: #d32f2f;
 
-  /* 用途化变量 — 品牌渐变辅助色 */
+/* 用途化变量 — 品牌渐变辅助色 */
   --brand-purple: #8b5cf6;
   --brand-purple-hover: #7c3aed;
   --brand-purple-light: #a78bfa;
@@ -454,11 +422,10 @@
   --brand-indigo: #6366f1;
   --brand-indigo-hover: #4f46e5;
 
-  /* 用途化变量 — 滚动条与轨道 */
+/* 用途化变量 — 滚动条与轨道 */
   --scrollbar-track-dark: #e9ecef;
   --scrollbar-track-hover: #f8f9fa;
-
-  /* === Alpha (--primary) === */
+/* === Alpha (--primary) === */
   --primary-5: rgba(59, 130, 246, 0.05);
   --primary-10: rgba(59, 130, 246, 0.1);
   --primary-15: rgba(59, 130, 246, 0.15);
@@ -471,12 +438,12 @@
   --primary-60: rgba(59, 130, 246, 0.6);
   --primary-80: rgba(59, 130, 246, 0.8);
   --primary-50: rgba(59, 130, 246, 0.5);
-  /* === Alpha (--primary-hover) === */
+/* === Alpha (--primary-hover) === */
   --primary-hover-5: rgba(37, 99, 235, 0.05);
   --primary-hover-10: rgba(37, 99, 235, 0.1);
   --primary-hover-20: rgba(37, 99, 235, 0.2);
   --primary-hover-30: rgba(37, 99, 235, 0.3);
-  /* === Alpha (--success) === */
+/* === Alpha (--success) === */
   --success-5: rgba(16, 185, 129, 0.05);
   --success-10: rgba(16, 185, 129, 0.1);
   --success-20: rgba(16, 185, 129, 0.2);
@@ -485,11 +452,11 @@
   --success-70: rgba(16, 185, 129, 0.7);
   --success-80: rgba(16, 185, 129, 0.8);
   --success-30: rgba(16, 185, 129, 0.3);
-  /* === Alpha (--success-hover) === */
+/* === Alpha (--success-hover) === */
   --success-hover-5: rgba(5, 150, 105, 0.05);
   --success-hover-10: rgba(5, 150, 105, 0.1);
   --success-hover-20: rgba(5, 150, 105, 0.2);
-  /* === Alpha (--warning) === */
+/* === Alpha (--warning) === */
   --warning-5: rgba(245, 158, 11, 0.05);
   --warning-10: rgba(245, 158, 11, 0.1);
   --warning-15: rgba(245, 158, 11, 0.15);
@@ -501,7 +468,7 @@
   --warning-80: rgba(245, 158, 11, 0.8);
   --warning-200: rgba(245, 158, 11, 0.2);
   --warning-300: rgba(245, 158, 11, 0.3);
-  /* === Alpha (--warning-hover) === */
+/* === Alpha (--warning-hover) === */
   --warning-hover-5: rgba(217, 119, 6, 0.05);
   --warning-hover-10: rgba(217, 119, 6, 0.1);
   --warning-hover-15: rgba(217, 119, 6, 0.15);
@@ -510,7 +477,7 @@
   --warning-hover-30: rgba(217, 119, 6, 0.3);
   --warning-hover-40: rgba(217, 119, 6, 0.4);
   --warning-hover-50: rgba(217, 119, 6, 0.5);
-  /* === Alpha (--error) === */
+/* === Alpha (--error) === */
   --error-5: rgba(239, 68, 68, 0.05);
   --error-10: rgba(239, 68, 68, 0.1);
   --error-15: rgba(239, 68, 68, 0.15);
@@ -521,27 +488,27 @@
   --error-60: rgba(239, 68, 68, 0.6);
   --error-70: rgba(239, 68, 68, 0.7);
   --error-80: rgba(239, 68, 68, 0.8);
-  /* === Alpha (--error-hover) === */
+/* === Alpha (--error-hover) === */
   --error-hover-5: rgba(220, 38, 38, 0.05);
   --error-hover-10: rgba(220, 38, 38, 0.1);
   --error-hover-15: rgba(220, 38, 38, 0.15);
   --error-hover-20: rgba(220, 38, 38, 0.2);
   --error-hover-30: rgba(220, 38, 38, 0.3);
-  /* === Alpha (--info) === */
+/* === Alpha (--info) === */
   --info-5: rgba(59, 130, 246, 0.05);
   --info-10: rgba(59, 130, 246, 0.1);
   --info-20: rgba(59, 130, 246, 0.2);
   --info-30: rgba(59, 130, 246, 0.3);
   --info-40: rgba(59, 130, 246, 0.4);
   --info-50: rgba(59, 130, 246, 0.5);
-  /* === Alpha (--info-hover) === */
+/* === Alpha (--info-hover) === */
   --info-hover-5: rgba(37, 99, 235, 0.05);
   --info-hover-10: rgba(37, 99, 235, 0.1);
   --info-hover-20: rgba(37, 99, 235, 0.2);
   --info-hover-30: rgba(37, 99, 235, 0.3);
   --info-hover-40: rgba(37, 99, 235, 0.4);
   --info-hover-50: rgba(37, 99, 235, 0.5);
-  /* === Alpha (--bg-primary) === */
+/* === Alpha (--bg-primary) === */
   --bg-primary-5: rgba(245, 245, 247, 0.05);
   --bg-primary-10: rgba(245, 245, 247, 0.1);
   --bg-primary-20: rgba(245, 245, 247, 0.2);
@@ -556,7 +523,7 @@
   --bg-primary-85: rgba(245, 245, 247, 0.85);
   --bg-primary-90: rgba(245, 245, 247, 0.9);
   --bg-primary-95: rgba(245, 245, 247, 0.95);
-  /* === Alpha (--bg-secondary) === */
+/* === Alpha (--bg-secondary) === */
   --bg-secondary-5: rgba(255, 255, 255, 0.05);
   --bg-secondary-10: rgba(255, 255, 255, 0.1);
   --bg-secondary-15: rgba(255, 255, 255, 0.15);
@@ -569,7 +536,7 @@
   --bg-secondary-80: rgba(255, 255, 255, 0.8);
   --bg-secondary-90: rgba(255, 255, 255, 0.9);
   --bg-secondary-95: rgba(255, 255, 255, 0.95);
-  /* === Alpha (--bg-tertiary) === */
+/* === Alpha (--bg-tertiary) === */
   --bg-tertiary-5: rgba(229, 229, 234, 0.05);
   --bg-tertiary-10: rgba(229, 229, 234, 0.1);
   --bg-tertiary-20: rgba(229, 229, 234, 0.2);
@@ -579,38 +546,72 @@
   --bg-tertiary-60: rgba(229, 229, 234, 0.6);
   --bg-tertiary-70: rgba(229, 229, 234, 0.7);
   --bg-tertiary-80: rgba(229, 229, 234, 0.8);
-  /* === Alpha (--bg-quaternary) === */
+/* === Alpha (--bg-quaternary) === */
   --bg-quaternary-50: rgba(209, 209, 214, 0.5);
-  /* === Alpha (--border-secondary) === */
+/* === Alpha (--border-secondary) === */
   --border-secondary-30: rgba(209, 209, 214, 0.3);
   --border-secondary-40: rgba(209, 209, 214, 0.4);
   --border-secondary-50: rgba(209, 209, 214, 0.5);
   --border-secondary-60: rgba(209, 209, 214, 0.6);
   --border-secondary-70: rgba(209, 209, 214, 0.7);
   --border-secondary-80: rgba(209, 209, 214, 0.8);
-  /* === Alpha (--border-tertiary) === */
+/* === Alpha (--border-tertiary) === */
   --border-tertiary-30: rgba(199, 199, 204, 0.3);
   --border-tertiary-50: rgba(199, 199, 204, 0.5);
-  /* === Alpha (--text-primary) === */
+/* === Alpha (--text-primary) === */
   --text-primary-10: rgba(26, 26, 26, 0.1);
   --text-primary-20: rgba(26, 26, 26, 0.2);
   --text-primary-60: rgba(26, 26, 26, 0.6);
   --text-primary-80: rgba(26, 26, 26, 0.8);
-  /* === Alpha (--text-error) === */
+/* === Alpha (--text-error) === */
   --text-error-20: rgba(239, 68, 68, 0.2);
   --text-error-50: rgba(239, 68, 68, 0.5);
   --text-error-60: rgba(239, 68, 68, 0.6);
   --text-error-70: rgba(239, 68, 68, 0.7);
   --text-error-80: rgba(239, 68, 68, 0.8);
-  /* === 通用深色文字（浅色模式） === */
+/* === 通用浅色文字（浅色模式） === */
   --light: rgba(17, 17, 17, 0.95);
-  /* === Alpha (--text-success) === */
+/* === Alpha (--text-success) === */
   --text-success-50: rgba(16, 185, 129, 0.5);
   --text-success-70: rgba(16, 185, 129, 0.7);
   --text-success-80: rgba(16, 185, 129, 0.8);
-  /* === Alpha (--text-warning) === */
+
+/* === Alpha (--text-warning) === */
   --text-warning-80: rgba(245, 158, 11, 0.8);
-  /* === Overlay / 遮罩层半透明色（浅色模式 = 黑色半透明） === */
+
+/* 用途化变量 — 首页（index） */
+  --index-footer-bg: rgba(28, 28, 30, 0.9);
+  --index-visualizer-bg: rgba(30, 41, 59, 0.5);
+  --index-card-glow: rgba(139, 92, 246, 0.15);
+  --index-brand-badge-bg: rgba(139, 92, 246, 0.1);
+  --index-brand-badge-border: rgba(139, 92, 246, 0.2);
+  --index-main-icon-shadow: rgba(139, 92, 246, 0.5);
+  --index-pulsing-ring-shadow: rgba(0, 122, 255, 0.4);
+
+/* 用途化变量 — 年度回顾（year-review） */
+  --year-review-home-btn-shadow: rgba(139, 92, 246, 0.2);
+  --year-review-blob-1-bg: rgba(139, 92, 246, 0.4);
+  --year-review-blob-2-bg: rgba(244, 114, 182, 0.2);
+  --year-review-gradient-overlay-end: rgba(244, 114, 182, 0.15);
+  --year-review-stat-number-shadow: rgba(37, 99, 235, 0.5);
+  --year-review-artist-label-border: rgba(168, 85, 247, 0.3);
+  --year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
+  --year-review-stats-bg-gradient: rgba(30, 58, 138, 0.4);
+  --app-loading-ring-shadow: rgba(99, 102, 241, 0.4);
+  --app-loading-ring-shadow-accelerating: rgba(99, 102, 241, 0.8);
+  --app-loading-text-color: rgba(129, 140, 248, 0.8);
+  --app-loading-progress-shadow: rgba(99, 102, 241, 0.6);
+  --app-loading-progress-shadow-lg: rgba(99, 102, 241, 0.25);
+
+/* 用途化变量 — 模态框通用（Modal shared） */
+  --lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
+  --lyrics-modal-bg-accent-blue: rgba(84, 130, 255, 0.32);
+  --lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.25);
+  --lyrics-modal-badge-menu-bg: rgba(245, 245, 245, 0.9);
+  --audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.85);
+  --audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.25);
+
+/* === Overlay / 遮罩层半透明色（浅色模式 = 黑色半透明） === */
   --overlay-1: rgba(0, 0, 0, 0.01);
   --overlay-2: rgba(0, 0, 0, 0.02);
   --overlay-3: rgba(0, 0, 0, 0.03);
@@ -648,7 +649,7 @@
   --overlay-92: rgba(0, 0, 0, 0.92);
   --overlay-95: rgba(0, 0, 0, 0.95);
 
-  /* === Mask / 暗色遮罩（浅色模式 = 更淡） === */
+/* === Mask / 暗色遮罩（浅色模式 = 更淡） === */
   --mask-2: rgba(0, 0, 0, 0.01);
   --mask-4: rgba(0, 0, 0, 0.02);
   --mask-5: rgba(0, 0, 0, 0.03);
@@ -670,8 +671,7 @@
   --mask-80: rgba(0, 0, 0, 0.5);
   --mask-85: rgba(0, 0, 0, 0.6);
   --mask-95: rgba(0, 0, 0, 0.7);
-
-  /* 打印专用变量（覆盖主题配色，白底黑字） */
+/* 打印专用变量（覆盖主题配色，白底黑字） */
   --print-bg: #ffffff;
   --print-bg-subtle: #f8f9fa;
   --print-bg-subtler: #f3f4f6;
@@ -683,33 +683,33 @@
   --print-border: #d1d5db;
   --print-border-light: #e5e5ea;
   --print-muted: #6c757d;
-  /* Year Review 专用变量 */
+
+/* Year Review 专用变量 */
   --year-review-text-tertiary: #6b7280;
   --year-review-text-yellow: #fde047;
   --year-review-text-cyan: #67e8f9;
 
-  /* OAuth 第三方平台品牌色 */
+/* OAuth 第三方平台品牌色 */
   --oauth-casdoor-green: #67c23a;
   --oauth-kuaishou-orange: #ff4906;
 
-  /* === 用途化变量 — 背景纹理光晕（body::before） === */
+/* === 用途化变量 — 背景纹理光晕（body::before） === */
   --bg-texture-warm-glow: rgba(255, 255, 255, 0.01);
 
-  /* === 用途化变量 — 按钮阴影 === */
+/* === 用途化变量 — 按钮阴影 === */
   --btn-primary-shadow: rgba(99, 102, 241, 0.3);
 
-  /* === 用途化变量 — Canvas 动画背景叠加色 === */
+/* === 用途化变量 — Canvas 动画背景叠加色 === */
   --canvas-bg-overlay: rgba(7, 7, 9, 0.18);
 
-  /* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
+/* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
   --canvas-glow-overlay-end: rgba(245, 245, 247, 0.7);
 
-  /* === 用途化变量 — 歌词消息 fallback === */
+/* === 用途化变量 — 歌词消息 fallback === */
   --lyric-msg-fallback-text: #e4e4e7;
 
-  /* === 用途化变量 — 模态框阴影 === */
+/* === 用途化变量 — 模态框阴影 === */
   --modal-hover-shadow: rgba(0, 0, 0, 0.2);
-
-  /* === 用途化变量 — 移动端表格阴影 === */
+/* === 用途化变量 — 移动端表格阴影 === */
   --mobile-table-shadow: rgba(0, 0, 0, 0.5);
 }
