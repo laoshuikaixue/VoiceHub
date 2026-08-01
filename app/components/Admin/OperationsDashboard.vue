@@ -973,7 +973,7 @@
         <div class="overflow-x-auto">
           <table class="data-table min-w-[1260px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.user }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.overview.logHost }}</th><th>{{ locale.logs.message }}</th></tr></thead>
-          <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.overview.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr></tbody>
+          <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr></tbody>
           </table>
         </div>
       </section>
