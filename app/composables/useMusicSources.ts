@@ -398,7 +398,7 @@ export const useMusicSources = () => {
    *  3. meta 提供了 title + artist 以便搜索
    *
    * 升级策略：
-   *  - 目标平台为对侧（netease ↔ tencent）
+   *  - 目标平台为对侧（netease ↔ tencent，migu → netease）
    *  - 对侧结果必须比当前格式更高阶才接受
    *  - TTML 需要 enableOnlineTTMLLyric 开启才接受
    */
@@ -407,8 +407,6 @@ export const useMusicSources = () => {
     currentData: LyricResultData,
     meta?: LyricUpgradeMeta
   ): Promise<boolean> => {
-    // 咪咕平台不支持跨平台升级（只有LRC格式）
-    if (platform === 'migu') return false
     if (meta?.allowCrossPlatformUpgrade === false) return false
     if (!meta?.title || !meta?.artist) return false
     if (currentData.ttml) return false
