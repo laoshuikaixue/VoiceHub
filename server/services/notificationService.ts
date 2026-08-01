@@ -14,6 +14,13 @@ import { sendBatchMeowNotifications, sendMeowNotificationToUser } from './meowNo
 import { sendBatchEmailNotifications, sendEmailNotificationToUser } from './smtpService'
 import { formatDateTime, getBeijingTime } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import {
+  createNotificationSenderSnapshot,
+  resolveNotificationSource,
+  shouldDeliverSystemNotification,
+  type NotificationSenderInput
+} from '~~/server/utils/important-notification-policy'
+import { randomUUID } from 'node:crypto'
 
 /**
  * 创建联合投稿邀请通知
@@ -61,7 +68,7 @@ export async function createCollaborationInvitationNotification(
         'notification.collaborationInvite',
         {
           inviterName: inviter?.name || '未知用户',
-          songTitle,
+          songTitle
         }
       )
     } catch (error) {
@@ -442,7 +449,7 @@ export async function createSongPlayedNotification(songId: number) {
             undefined,
             'notification.songPlayed',
             {
-              songTitle: song.title,
+              songTitle: song.title
             }
           )
         } catch (error) {
@@ -462,10 +469,7 @@ export async function createSongPlayedNotification(songId: number) {
 /**
  * 创建歌曲获得投票的通知
  */
-export async function createSongVotedNotification(
-  songId: number,
-  voterId: number
-) {
+export async function createSongVotedNotification(songId: number, voterId: number) {
   try {
     // 获取歌曲信息
     const songResult = await db.select().from(songs).where(eq(songs.id, songId)).limit(1)
@@ -573,7 +577,7 @@ export async function createSongVotedNotification(
         'notification.songVoted',
         {
           songTitle: song.title,
-          votesCount: songVotes.length,
+          votesCount: songVotes.length
         }
       )
     } catch (error) {
@@ -664,7 +668,9 @@ export async function createSubmissionNoteClearedNotification(
   reason?: string
 ) {
   try {
-    const uniqueUserIds = [...new Set(userIds.filter((userId) => Number.isInteger(userId) && userId > 0))]
+    const uniqueUserIds = [
+      ...new Set(userIds.filter((userId) => Number.isInteger(userId) && userId > 0))
+    ]
 
     if (uniqueUserIds.length === 0) {
       return []
@@ -688,9 +694,14 @@ export async function createSubmissionNoteClearedNotification(
 export async function createSystemNotification(
   userId: number,
   title: string,
-  content: string
+  content: string,
+  important = false,
+  sender: NotificationSenderInput | null = null
 ) {
   try {
+    const batchId = randomUUID()
+    const senderSnapshot = createNotificationSenderSnapshot(sender)
+    const source = resolveNotificationSource(sender)
     // 获取用户通知设置
     const settingsResult = await db
       .select()
@@ -700,7 +711,7 @@ export async function createSystemNotification(
     const settings = settingsResult[0]
 
     // 如果用户关闭了通知，则不发送
-    if (settings && !settings.enabled) {
+    if (!shouldDeliverSystemNotification(important, settings?.enabled)) {
       return null
     }
 
@@ -710,7 +721,12 @@ export async function createSystemNotification(
       .values({
         userId: userId,
         type: 'SYSTEM_NOTICE',
-        message: content
+        batchId,
+        source,
+        ...senderSnapshot,
+        title,
+        message: content,
+        important
       })
       .returning()
     const notification = notificationResult[0]
@@ -724,11 +740,7 @@ export async function createSystemNotification(
 
     // 同步发送邮件通知
     try {
-      await sendEmailNotificationToUser(
-        userId,
-        title,
-        content
-      )
+      await sendEmailNotificationToUser(userId, title, content)
     } catch (error) {
       console.error('发送邮件通知失败:', error)
     }
@@ -745,12 +757,18 @@ export async function createSystemNotification(
 export async function createBatchSystemNotifications(
   userIds: number[],
   title: string,
-  content: string
+  content: string,
+  important = false,
+  sender: NotificationSenderInput | null = null
 ) {
   try {
     if (!userIds.length) {
       return []
     }
+
+    const batchId = randomUUID()
+    const senderSnapshot = createNotificationSenderSnapshot(sender)
+    const source = resolveNotificationSource(sender)
 
     // 获取用户通知设置
     const userSettings = await db
@@ -771,14 +789,19 @@ export async function createBatchSystemNotifications(
       const settings = settingsMap.get(userId)
 
       // 如果用户关闭了通知，则不发送
-      if (settings && !settings.enabled) {
+      if (!shouldDeliverSystemNotification(important, settings?.enabled)) {
         continue
       }
 
       notificationsToCreate.push({
         userId,
         type: 'SYSTEM_NOTICE',
-        message: content
+        batchId,
+        source,
+        ...senderSnapshot,
+        title,
+        message: content,
+        important
       })
     }
 
@@ -805,11 +828,7 @@ export async function createBatchSystemNotifications(
     // 同步发送邮件通知
     let emailResults = { success: 0, failed: 0 }
     try {
-      emailResults = await sendBatchEmailNotifications(
-        userIds,
-        title,
-        content
-      )
+      emailResults = await sendBatchEmailNotifications(userIds, title, content)
     } catch (error) {
       console.error('批量发送邮件通知失败:', error)
     }

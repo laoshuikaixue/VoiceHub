@@ -6,6 +6,8 @@
     <!-- 全局通知容器组件 -->
     <LazyUINotificationContainer ref="notificationContainer" />
 
+    <ImportantNotificationModal />
+
     <!-- 全局音频播放器 - 使用isPlayerVisible控制显示/隐藏 -->
     <LazyUIAudioPlayer
       v-show="isPlayerVisible"
@@ -29,11 +31,16 @@ import { computed, onMounted, ref, watch } from 'vue'
 // 导入通知容器组件和音频播放器
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAuth } from '~/composables/useAuth'
+import { useImportantNotification } from '~/composables/useImportantNotification'
+import ImportantNotificationModal from '~/components/UI/ImportantNotificationModal.vue'
 import { useRoute } from 'vue-router'
 
-// 获取运行时配置
-const config = useRuntimeConfig()
 const route = useRoute()
+const { user, isAuthenticated } = useAuth()
+const {
+  checkImportantNotification,
+  resetImportantNotification
+} = useImportantNotification()
 const pageViewRouteName = computed(() => {
   if (typeof route.name === 'string' && route.name) {
     return route.name
@@ -127,10 +134,6 @@ const handlePlayerSongChange = (song) => {
   audioPlayer.playSong(song)
 }
 
-// 使用onMounted确保只在客户端初始化认证
-let auth = null
-let isAuthenticated = false
-
 // 设置鸿蒙系统控制事件监听
 const setupHarmonyOSListeners = () => {
   if (typeof window === 'undefined') return
@@ -200,21 +203,29 @@ const setupHarmonyOSListeners = () => {
 
 // 在组件挂载后初始化认证（只会在客户端执行）
 onMounted(async () => {
-  auth = useAuth()
-  isAuthenticated = auth.isAuthenticated.value
-
   // 初始化鸿蒙系统控制事件监听
   setupHarmonyOSListeners()
 })
 
-// 使用计算属性确保安全地访问auth对象
-const safeIsAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
+// 重要通知仅在登录或会话恢复时检查一次，不做轮询，避免增加服务器负担
+watch(
+  [
+    () => isAuthenticated.value,
+    () => user.value?.id,
+    () => user.value?.requirePasswordChange
+  ],
+  async ([authenticated, userId, requirePasswordChange]) => {
+    if (import.meta.server) return
 
-const handleLogout = () => {
-  if (auth) {
-    auth.logout()
-  }
-}
+    if (!authenticated || !userId || requirePasswordChange === true) {
+      resetImportantNotification()
+      return
+    }
+
+    await checkImportantNotification()
+  },
+  { immediate: true }
+)
 </script>
 
 <style>

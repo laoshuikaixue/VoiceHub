@@ -1,32 +1,39 @@
-import { and, db, eq, notifications } from '~/drizzle/db'
+import { and, eq } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { notifications } from '~/drizzle/schema'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { createApiError } from '~~/server/utils/apiError'
+import { createNotificationReadUpdate } from '~~/server/utils/important-notification-policy'
 
 export default defineEventHandler(async (event) => {
-  // 检查用户认证
   const user = event.context.user
-
   if (!user) {
-    throw createError({
-      statusCode: 401,
-      message: '需要登录才能标记通知'
-    })
+    throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '需要登录才能标记通知')
   }
 
   try {
-    // 标记该用户的所有未读通知为已读
-    const result = await db
+    const updatedNotifications = await db
       .update(notifications)
-      .set({ read: true })
-      .where(and(eq(notifications.userId, user.id), eq(notifications.read, false)))
+      .set(createNotificationReadUpdate())
+      .where(
+        and(
+          eq(notifications.userId, user.id),
+          eq(notifications.userDeleted, false),
+          eq(notifications.read, false)
+        )
+      )
+      .returning({ id: notifications.id })
 
     return {
       success: true,
-      count: result.count
+      count: updatedNotifications.length
     }
-  } catch (err) {
-    console.error('标记所有通知失败:', err)
-    throw createError({
-      statusCode: 500,
-      message: '标记所有通知失败'
-    })
+  } catch (error) {
+    console.error('标记所有通知失败:', error)
+    throw createApiError(
+      500,
+      SERVER_ERROR_CODES.NOTIFICATION_MARK_READ_FAILED,
+      '标记所有通知失败'
+    )
   }
 })

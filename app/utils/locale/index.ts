@@ -6,7 +6,7 @@ export const supportedLocales = [
   { code: 'en-US', label: 'English' }
 ] as const
 
-export type Locale = typeof supportedLocales[number]['code']
+export type Locale = (typeof supportedLocales)[number]['code']
 type LocaleValue<T> = T extends (...args: infer Args) => infer Return
   ? (...args: Args) => Return
   : T extends readonly (infer Item)[]
@@ -224,6 +224,7 @@ export function useLocale() {
     admin: withFallback('admin'),
     yearReview: withFallback('yearReview'),
     serverErrors: withFallback('serverErrors'),
-    theme: withFallback('theme') as unknown as typeof import('./zh-CN').theme
+    theme: withFallback('theme') as unknown as typeof import('./zh-CN').theme,
+    importantNotification: withFallback('importantNotification')
   }
 }
