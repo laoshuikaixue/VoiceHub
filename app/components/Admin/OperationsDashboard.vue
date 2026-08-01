@@ -294,39 +294,6 @@
         </article>
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.server.diskPartitions }}</h3>
-              <p class="panel-description">{{ locale.server.diskPartitionsDetail }}</p>
-            </div>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[620px]">
-              <thead><tr><th>{{ locale.disk.mount }}</th><th>{{ locale.disk.filesystem }}</th><th>{{ locale.disk.used }}</th><th>{{ locale.disk.available }}</th><th>{{ locale.disk.usage }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.server.networkInterfaces }}</h3>
-              <p class="panel-description">{{ locale.server.networkInterfacesDetail }}</p>
-            </div>
-            <span class="item-count">{{ locale.server.externalAddressCount }} --</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[620px]">
-              <thead><tr><th>{{ locale.network.name }}</th><th>{{ locale.network.address }}</th><th>{{ locale.server.addressFamily }}</th><th>{{ locale.server.addressScope }}</th></tr></thead>
-              <tbody><tr><td colspan="4" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
     </template>
 
     <template v-else-if="activeGroup === 'database'">
@@ -918,6 +885,36 @@
         </article>
       </section>
     </template>
+
+    <section v-if="monitoringReferenceRows.length" class="panel overflow-hidden">
+      <div class="panel-header">
+        <div>
+          <h3 class="panel-title">{{ locale.references.title }}</h3>
+          <p class="panel-description">{{ locale.references.detail }}</p>
+        </div>
+        <span class="status-badge">{{ locale.references.referenceOnly }}</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data-table min-w-[980px]">
+          <thead>
+            <tr>
+              <th>{{ locale.references.metric }}</th>
+              <th>{{ locale.references.threshold }}</th>
+              <th>{{ locale.references.collection }}</th>
+              <th>{{ locale.references.description }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in monitoringReferenceRows" :key="item.metric">
+              <td>{{ item.metric }}</td>
+              <td>{{ item.threshold }}</td>
+              <td>{{ item.collection }}</td>
+              <td>{{ item.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -951,6 +948,8 @@ const monitorSections = computed(() => [
     ]
   }
 ])
+
+const monitoringReferenceRows = computed(() => locale.value.references?.[activeGroup.value] || [])
 
 const overviewSignals = computed(() => [
   {
@@ -1074,14 +1073,13 @@ const applicationDetailPanels = computed(() => [
   },
   {
     icon: 'music',
-    title: locale.value.application?.fileAndRealtime,
-    detail: locale.value.application?.fileAndRealtimeDetail,
+    title: locale.value.application?.musicSyncReliability,
+    detail: locale.value.application?.musicSyncReliabilityDetail,
     items: [
-      locale.value.application?.uploadCount,
-      locale.value.application?.uploadBytes,
-      locale.value.application?.uploadDuration,
-      locale.value.application?.websocketConnections,
-      locale.value.application?.sseConnections
+      locale.value.application?.musicSyncReconnects,
+      locale.value.application?.musicSyncLatency,
+      locale.value.application?.musicSyncHeartbeatTimeouts,
+      locale.value.application?.musicSyncDeliveryFailures
     ]
   },
   {
@@ -1120,11 +1118,6 @@ const serverMetrics = computed(() => [
     icon: 'database',
     label: locale.value.metrics?.diskUsage,
     detail: locale.value.server?.diskUsageDetail
-  },
-  {
-    icon: 'server',
-    label: locale.value.metrics?.networkInterfaces,
-    detail: locale.value.server?.networkInterfacesMetricDetail
   },
   {
     icon: 'activity',
