@@ -1,4 +1,30 @@
+import { createHash } from 'node:crypto'
 import { formatPlayTime } from '../../../utils/native_common'
+
+// 咪咕 v3 搜索签名
+function createSignature(time: string, str: string) {
+  const deviceId = '963B7AA0D21511ED807EE5846EC87D20'
+  const signatureMd5 = '6cdc72a439cef99a3418d2a78aa28c73'
+  const sign = createHash('md5')
+    .update(`${str}${signatureMd5}yyapp2d16148780a1dcc7408e06336b98cfd50${deviceId}${time}`)
+    .digest('hex')
+  return { sign, deviceId }
+}
+
+// 仅搜索歌曲
+const MIGU_SEARCH_SWITCH = JSON.stringify({
+  song: 1,
+  album: 0,
+  singer: 0,
+  tagSong: 1,
+  mvSong: 0,
+  bestShow: 1,
+  songlist: 0,
+  lyricSong: 0
+})
+
+const MIGU_ANDROID_UA =
+  'Mozilla/5.0 (Linux; U; Android 11.0.0; zh-cn; MI 11 Build/OPR1.170623.032) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -11,55 +37,70 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 咪咕音乐搜索 API
-    const response: any = await $fetch('http://app.c.nf.migu.cn/bmw/search/song/v1.0', {
-      params: {
-        pageNo: page,
-        text: str
-      },
-      timeout: 10000
-    })
+    // 咪咕音乐 v3 搜索接口（jadeite，带 MD5 签名）
+    const time = Date.now().toString()
+    const { sign, deviceId } = createSignature(time, str)
+    const response: any = await $fetch(
+      `https://jadeite.migu.cn/music_search/v3/search/searchAll` +
+        `?isCorrect=0&isCopyright=1&searchSwitch=${encodeURIComponent(MIGU_SEARCH_SWITCH)}` +
+        `&pageSize=${limit}&text=${encodeURIComponent(str)}&pageNo=${page}&sort=0&sid=USS`,
+      {
+        headers: {
+          uiVersion: 'A_music_3.6.1',
+          deviceId,
+          timestamp: time,
+          sign,
+          channel: '0146921',
+          'User-Agent': MIGU_ANDROID_UA
+        },
+        timeout: 10000
+      }
+    )
 
-    if (!response || !response.data) {
+    if (!response || response.code !== '000000') {
       throw createError({ statusCode: 502, message: 'Migu API Error' })
     }
 
-    const items = response.data.items || []
+    // resultList 为分组结构（每组一个数组），需拍平
+    const groups = response.songResultData?.resultList || []
 
     // 处理歌曲列表
-    const list = items.map((item: any) => {
-      const song = item.song
-      if (!song) return null
+    const list = groups
+      .flatMap((group: any[]) => group)
+      .filter((item: any) => item?.contentId || item?.songId)
+      .map((item: any) => {
+        // 歌手列表处理
+        const singerList = item.singerList || []
+        const singer = singerList.map((s: any) => s.name).join('/') || '未知艺术家'
 
-      // 歌手列表处理
-      const singerList = song.singerList || []
-      const singer = singerList.map((s: any) => s.name).join('/') || '未知艺术家'
+        // 封面图（相对路径补全域名）
+        const img = item.img3 || item.img2 || item.img1 || ''
+        const cover = img && !/^https?:/.test(img) ? `https://d.musicapp.migu.cn${img}` : img
 
-      // mid image
-      const img = song.img2 ? `https://d.musicapp.migu.cn${song.img2}` : ''
+        // 音质格式列表
+        const formats = item.audioFormats?.map((f: any) => f.formatType) || []
 
-      const formats = song.audioFormats?.map((f: any) => f.formatType) || []
-
-      return {
-        singer,
-        name: song.songName || '',
-        albumName: song.album || '',
-        albumId: song.albumId || '',
-        source: 'mg',
-        interval: formatPlayTime(song.duration || 0),
-        duration: song.duration || 0,
-        songmid: song.contentId,
-        img,
-        lrc: song.lrcUrl || null,
-        types: formats,
-        _types: {},
-        typeUrl: {}
-      }
-    }).filter(Boolean)
+        return {
+          singer,
+          name: item.name || item.songName || '',
+          albumName: item.album || '',
+          albumId: item.albumId || '',
+          source: 'mg',
+          interval: formatPlayTime(item.duration || 0),
+          duration: item.duration || 0,
+          songmid: item.contentId || item.songId,
+          copyrightId: item.copyrightId || '',
+          img: cover,
+          lrc: item.lrcUrl || null,
+          types: formats,
+          _types: {},
+          typeUrl: {}
+        }
+      })
 
     return {
       list,
-      total: response.data.totalCount || list.length,
+      total: response.songResultData?.totalCount || list.length,
       page,
       limit,
       source: 'mg'
