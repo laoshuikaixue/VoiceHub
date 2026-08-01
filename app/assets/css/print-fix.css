@@ -52,8 +52,8 @@
     box-sizing: border-box !important;
     margin: 0 auto !important;
     padding: 20mm !important;
-    background: var(--print-bg) !important;
-    color: var(--print-text-primary) !important;
+    background: #ffffff !important;
+    color: #1a1a1a !important;
   }
 
   /* 排期内容容器 */
@@ -91,7 +91,7 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: var(--print-bg) !important;
+    background: #ffffff !important;
     border-radius: 50% !important;
     font-weight: bold !important;
     font-size: 14px !important;
@@ -121,7 +121,7 @@
   .schedule-item-print .song-title {
     font-size: 16px !important;
     font-weight: 600 !important;
-    color: var(--print-text-primary) !important;
+    color: #1a1a1a !important;
     margin-bottom: 2px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
@@ -130,7 +130,7 @@
 
   .schedule-item-print .song-artist {
     font-size: 14px !important;
-    color: var(--print-text-secondary) !important;
+    color: #3a3a3c !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -143,7 +143,7 @@
     display: flex !important;
     align-items: center !important;
     font-size: 12px !important;
-    color: var(--print-text-tertiary) !important;
+    color: #636366 !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
     margin-left: 8px !important;
@@ -155,7 +155,7 @@
   }
 
   .schedule-item-print .value {
-    color: var(--print-text-secondary) !important;
+    color: #3a3a3c !important;
   }
 
   /* 页面头部和尾部 */
@@ -163,7 +163,7 @@
   .page-footer {
     width: 100% !important;
     box-sizing: border-box !important;
-    color: var(--print-text-primary) !important;
+    color: #1a1a1a !important;
   }
 
   /* 学校Logo */
@@ -179,16 +179,16 @@
     text-align: center !important;
     margin-bottom: 20px !important;
     padding-bottom: 10px !important;
-    border-bottom: 2px solid var(--print-text-primary) !important;
+    border-bottom: 2px solid #1a1a1a !important;
   }
 
   .page-footer {
     text-align: center !important;
     margin-top: 20px !important;
     padding-top: 10px !important;
-    border-top: 1px solid var(--print-border) !important;
+    border-top: 1px solid #d1d5db !important;
     font-size: 12px !important;
-    color: var(--print-text-tertiary) !important;
+    color: #636366 !important;
   }
 
   /* 隐藏不需要打印的元素 */

@@ -1751,19 +1751,19 @@ watch(
 /* 预览区域和打印样式的核心CSS - 保持原生CSS以确保精确控制 */
 
 .preview-content {
-  background: var(--print-bg);
+  background: #ffffff;
   padding: 0;
   position: relative;
 }
 
 /* 打印页面样式 */
 .print-page {
-  background: var(--print-bg);
-  color: var(--print-text-primary);
+  background: #ffffff;
+  color: #1a1a1a;
   width: 100%;
   margin: 0 auto;
   padding: 30px;
-  box-shadow: 0 4px 6px var(--mask-10);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   overflow: visible;
   position: relative;
@@ -1775,7 +1775,7 @@ watch(
   align-items: flex-start;
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 2px solid var(--print-border);
+  border-bottom: 2px solid #d1d5db;
 }
 
 .logo-section {
@@ -1794,7 +1794,7 @@ watch(
 .logo-divider {
   width: 2px;
   height: 60px;
-  background: linear-gradient(to bottom, var(--print-border), var(--print-text-tertiary), var(--print-border));
+  background: linear-gradient(to bottom, #d1d5db, #636366, #d1d5db);
   border-radius: 1px;
   margin: 0 4px;
 }
@@ -1813,19 +1813,19 @@ watch(
   font-size: 24px;
   font-weight: normal;
   margin: 0 0 4px 0;
-  color: var(--print-text-primary);
+  color: #1a1a1a;
 }
 
 .title-section h2 {
   font-size: 18px;
   font-weight: 500;
   margin: 0;
-  color: var(--print-text-tertiary);
+  color: #636366;
 }
 
 .date-info {
   font-size: 14px;
-  color: var(--print-text-tertiary);
+  color: #636366;
   text-align: right;
   display: flex;
   align-items: flex-start;
@@ -1845,7 +1845,7 @@ watch(
 .no-data-message {
   text-align: center;
   padding: 60px 20px;
-  color: var(--print-text-tertiary);
+  color: #636366;
   column-span: all;
 }
 
@@ -1853,7 +1853,7 @@ watch(
   width: 64px;
   height: 64px;
   margin: 0 auto 20px;
-  color: var(--print-border);
+  color: #d1d5db;
 }
 
 .no-data-icon svg {
@@ -1865,7 +1865,7 @@ watch(
   font-size: 18px;
   font-weight: 500;
   margin: 0 0 12px 0;
-  color: var(--print-text-primary);
+  color: #1a1a1a;
 }
 
 .no-data-message p {
@@ -1885,28 +1885,28 @@ watch(
   font-weight: bold;
   margin: 0 0 12px 0;
   padding: 8px 12px;
-  border-bottom: 2px solid var(--print-border);
-  background: var(--print-bg-subtler);
-  color: var(--print-text-primary);
+  border-bottom: 2px solid #d1d5db;
+  background: #f3f4f6;
+  color: #1a1a1a;
   border-radius: 4px 4px 0 0;
 }
 
 .playtime-group .group-title {
-  background: var(--print-bg-subtle);
-  border-bottom-color: var(--brand-blue);
-  color: var(--brand-blue-hover);
+  background: #f8f9fa;
+  border-bottom-color: #0b5afe;
+  color: #2563eb;
 }
 
 .date-group .group-title {
-  background: var(--print-bg-subtle);
-  border-bottom-color: var(--brand-purple);
-  color: var(--brand-purple-hover);
+  background: #f8f9fa;
+  border-bottom-color: #8b5cf6;
+  color: #7c3aed;
 }
 
 .group-count {
   font-size: 14px;
   font-weight: normal;
-  color: var(--print-text-tertiary);
+  color: #636366;
   margin-left: 8px;
 }
 
@@ -1923,16 +1923,16 @@ watch(
   font-weight: bold;
   margin: 0 0 8px 0;
   padding: 6px 10px;
-  background: var(--print-bg-subtle);
-  border-left: 3px solid var(--brand-blue);
-  color: var(--brand-blue-hover);
+  background: #f8f9fa;
+  border-left: 3px solid #0b5afe;
+  color: #2563eb;
   border-radius: 0 4px 4px 0;
 }
 
 .playtime-count {
   font-size: 12px;
   font-weight: normal;
-  color: var(--print-text-tertiary);
+  color: #636366;
   margin-left: 6px;
 }
 
@@ -1949,9 +1949,9 @@ watch(
   justify-content: space-between;
   align-items: flex-start;
   padding-top: 16px;
-  border-top: 1px solid var(--print-border);
+  border-top: 1px solid #d1d5db;
   font-size: 12px;
-  color: var(--print-text-tertiary);
+  color: #636366;
 }
 
 .footer-left {
@@ -1966,7 +1966,7 @@ watch(
 
 .remark-text {
   font-size: 11px;
-  color: var(--print-text-tertiary);
+  color: #636366;
   max-width: 400px;
   word-wrap: break-word;
   line-height: 1.3;
