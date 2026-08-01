@@ -154,12 +154,43 @@ async function doS3Upload(config: AutoBackupConfig['methods']['s3'], data: strin
   console.log(`S3 上传完成: ${filename}`)
 }
 
+/** 规范化路径，去除首尾空格和多余斜杠 */
+function normalizePath(p: string): string {
+  return (p || '').trim().replace(/^\/+|\/+$/g, '')
+}
+
+/** 递归创建 WebDAV 目录 */
+async function ensureWebDAVDir(baseUrl: string, auth: string, dirPath: string): Promise<void> {
+  const normalized = normalizePath(dirPath)
+  if (!normalized) return
+
+  const segments = normalized.split('/')
+  let currentPath = baseUrl.replace(/\/$/, '')
+
+  for (const segment of segments) {
+    currentPath += `/${segment}`
+    const response = await fetch(currentPath, {
+      method: 'MKCOL',
+      headers: { Authorization: `Basic ${auth}` }
+    })
+    // 201 Created = 成功，405/409 = 目录已存在
+    if (!response.ok && response.status !== 405 && response.status !== 409) {
+      throw new Error(`创建 WebDAV 目录失败: ${currentPath} (${response.status})`)
+    }
+  }
+}
+
 /** 上传到 WebDAV */
 async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], data: string, filename: string): Promise<void> {
-  const fullPath = `${config.url.replace(/\/$/, '')}/${config.path.replace(/\/$/, '')}/${filename}`
+  const baseUrl = config.url.replace(/\/$/, '')
+  const dirPath = normalizePath(config.path)
   const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64')
 
-  const response = await fetch(fullPath, {
+  // 确保目录存在
+  await ensureWebDAVDir(baseUrl, auth, dirPath)
+
+  const filePath = dirPath ? `${baseUrl}/${dirPath}/${filename}` : `${baseUrl}/${filename}`
+  const response = await fetch(filePath, {
     method: 'PUT',
     headers: {
       'Authorization': `Basic ${auth}`,
@@ -174,6 +205,9 @@ async function doWebDAVUpload(config: AutoBackupConfig['methods']['webdav'], dat
 
   console.log(`WebDAV 上传完成: ${filename}`)
 }
+
+/** 导出 ensureWebDAVDir 供测试端点使用 */
+export { ensureWebDAVDir }
 
 /** 通过 Telegram Bot 发送 */
 async function doTelegramSend(config: AutoBackupConfig['methods']['telegram'], data: string, filename: string): Promise<void> {
