@@ -1838,7 +1838,7 @@ export const admin = {
       routePerformance: '接口路由性能', routePerformanceDetail: '按路由查看吞吐、分位延迟和错误率', route: '路由', qps: 'QPS',
       latencyDistribution: '响应延迟分布', latencyDistributionDetail: '核心接口 P50、P95、P99 与最大值', responseP50: 'P50 响应时间', responseP95: 'P95 响应时间', responseP99: 'P99 响应时间', responseMax: '最大响应时间',
       authentication: '认证指标', authenticationDetail: 'JWT 与 OAuth 认证链路', jwtIssued: 'JWT 签发次数', jwtVerified: 'JWT 验证次数', invalidTokens: '无效 Token 请求', oauthSuccessRate: 'OAuth 登录成功率',
-      fileAndRealtime: '文件与实时连接', fileAndRealtimeDetail: '上传处理和实时通道状态', uploadCount: '文件上传次数', uploadBytes: '上传数据量', uploadDuration: '上传耗时', websocketConnections: 'WebSocket 连接数', sseConnections: 'SSE 连接数',
+      musicSyncReliability: '音乐状态同步可靠性', musicSyncReliabilityDetail: '面向播放器状态同步的 SSE 通道健康度，不包含管理端文件上传。', musicSyncReconnects: '状态同步重连次数', musicSyncLatency: '状态同步 P95 延迟', musicSyncHeartbeatTimeouts: '心跳超时次数', musicSyncDeliveryFailures: '状态消息投递失败',
       requestLifecycle: '请求生命周期', requestLifecycleDetail: '请求、错误、SSR 与 GC 计数', requestTotal: '请求总量', clientErrorCount: '4xx 错误数', serverErrorCount: '5xx 错误数', ssrRenderCount: 'SSR 渲染次数', gcCount: 'GC 次数',
       externalDependencies: '外部依赖', externalDependenciesDetail: '音乐源、OAuth 和数据库依赖可用性', dependency: '依赖', availability: '可用率', latency: '延迟', errorRate: '错误率', coldStart: '冷启动耗时', githubOAuth: 'GitHub OAuth', casdoorOAuth: 'Casdoor OAuth', neonDatabase: 'Neon PostgreSQL'
     },
@@ -2022,7 +2022,6 @@ export const admin = {
       containerRestarts: '容器重启次数', containerRestartsDetail: '容器重启与 OOM 记录',
       systemMemoryDetail: '整机内存占用状态',
       diskUsageDetail: '磁盘总体容量占用',
-      networkInterfacesMetricDetail: '网络接口与外部地址数量',
       platformRelease: '操作系统版本',
       cpuDetails: 'CPU 详情',
       cpuDetailsDetail: '处理器型号、核心数和系统负载。',
@@ -2045,13 +2044,6 @@ export const admin = {
       nodeProcessDetailsDetail: 'Node 进程 RSS 与堆内存状态。',
       rssMemory: '进程 RSS',
       nodeHeapUtilization: 'Node 堆内存使用率',
-      diskPartitions: '磁盘分区',
-      diskPartitionsDetail: '各挂载点的文件系统、容量和占用率。',
-      networkInterfaces: '网络接口',
-      networkInterfacesDetail: '当前网络接口及其绑定地址。',
-      externalAddressCount: '外部地址',
-      addressFamily: '地址族',
-      addressScope: '地址范围',
       uptime: '系统运行时长',
       memory: '进程内存',
       nodeVersion: 'Node 版本',
@@ -2240,7 +2232,6 @@ export const admin = {
       systemMemory: '系统内存',
       diskUsage: '磁盘占用',
       nodeHeap: 'Node 堆内存',
-      networkInterfaces: '网络接口',
       databaseConnections: '数据库连接',
       loadAverage: '系统负载',
       memoryAvailable: '可用内存',
@@ -2267,23 +2258,8 @@ export const admin = {
       cpuTrend: 'CPU 与系统负载趋势',
       memoryDiskTrend: '内存与磁盘趋势',
       networkTrend: '网络流量趋势',
-      diskPartitions: '磁盘分区',
-      networkInterfaces: '网络接口',
       runtimeLogs: '系统运行日志',
       businessSnapshot: '业务数据快照'
-    },
-    disk: {
-      mount: '挂载点',
-      filesystem: '文件系统',
-      used: '已用',
-      available: '可用',
-      usage: '占用率'
-    },
-    network: {
-      name: '接口',
-      address: '地址',
-      received: '累计接收',
-      sent: '累计发送'
     },
     logs: {
       time: '时间',
@@ -2299,6 +2275,51 @@ export const admin = {
       pendingSongs: '待审核歌曲',
       playWindow: '当前播出时段',
       requestWindow: '当前投稿时段'
+    },
+    references: {
+      title: '监控口径与告警参考',
+      detail: '每项指标只在其归属页面定义阈值与采集方式，实时数值以页面上方卡片、图表和明细为准。',
+      referenceOnly: '阈值需按实际负载调整',
+      metric: '核心指标',
+      threshold: '告警阈值参考',
+      collection: '采集方式 / 工具',
+      description: '说明',
+      performance: [
+        { metric: '请求响应时间（P95 / P99）', threshold: 'P95 > 1s，P99 > 2s（Web API）', collection: '应用埋点（Prometheus Client）/ Grafana', description: '反映用户感知的接口性能。' },
+        { metric: '错误率（4xx / 5xx）', threshold: '5xx 错误率 > 1%，持续 5 分钟', collection: '应用埋点（Prometheus Client）/ Grafana', description: '服务端错误需要立即关注，4xx 用于识别异常请求。' },
+        { metric: '吞吐量（QPS / RPS）', threshold: '突降或超过历史峰值 20%', collection: '应用埋点（Prometheus Client）/ Grafana', description: '观察每秒处理请求数与容量变化。' },
+        { metric: '并发连接数', threshold: '超过预设最大值', collection: '应用埋点（Prometheus Client）/ Grafana', description: '监控 WebSocket、SSE 与 HTTP 并发处理压力。' },
+        { metric: '页面加载时间（TTI）', threshold: '首页 > 3s，复杂页 > 5s', collection: '前端性能监控（Lighthouse / Sentry）', description: '衡量用户打开页面并可交互的速度。' }
+      ],
+      infra: [
+        { metric: 'CPU 使用率', threshold: '> 85%，持续 5 分钟', collection: 'Node Exporter / Prometheus', description: '服务器 CPU 负载与处理器饱和度。' },
+        { metric: '内存使用率', threshold: '> 90%，持续 5 分钟', collection: 'Node Exporter / Prometheus', description: '服务器物理内存消耗，防止 OOM。' },
+        { metric: '磁盘空间使用率', threshold: '根分区 > 80%，数据分区 > 90%', collection: 'Node Exporter / Prometheus', description: '避免磁盘写满导致下载、日志或服务异常。' },
+        { metric: '磁盘 I/O 等待', threshold: '> 20%，持续出现', collection: 'Node Exporter / Prometheus', description: '判断磁盘 I/O 是否成为服务瓶颈。' },
+        { metric: '网络带宽（入站 / 出站）', threshold: '> 实际带宽的 80%', collection: 'Node Exporter / Prometheus', description: '监控音频代理、下载等流量是否接近链路上限。' }
+      ],
+      business: [
+        { metric: '点歌请求成功率', threshold: '< 95%，持续出现', collection: '业务埋点（Prometheus Counter）', description: '确认点歌主流程是否正常完成。' },
+        { metric: '音乐搜索 API 可用性', threshold: '失败率 > 5% 或响应时间 > 2s', collection: '业务埋点（Prometheus Histogram / Counter）', description: '检测网易云、QQ 音乐和 Bilibili 音源健康度。' },
+        { metric: '投票请求成功率', threshold: '< 95%，持续出现', collection: '业务埋点（Prometheus Counter）', description: '确认投票功能是否正常。' },
+        { metric: '排期更新操作耗时', threshold: 'P95 > 500ms', collection: '业务埋点（Prometheus Histogram）', description: '衡量管理员拖拽排期、保存与发布的流畅度。' }
+      ],
+      database: [
+        { metric: '数据库连接数', threshold: '> 最大连接数的 80%', collection: 'postgres_exporter / 数据库监控', description: '预防连接池耗尽而拒绝新请求。' },
+        { metric: '查询耗时（P95）', threshold: '简单查询 > 100ms，复杂查询 > 1s', collection: 'postgres_exporter / 慢查询日志', description: '定位慢 SQL 与需要优化的查询。' },
+        { metric: '死锁 / 锁等待次数', threshold: '持续出现', collection: 'postgres_exporter / 数据库监控', description: '识别事务冲突与锁竞争。' },
+        { metric: '缓冲区命中率', threshold: '< 99%，持续出现', collection: 'postgres_exporter', description: '判断数据库内存与缓存效率是否下降。' }
+      ],
+      dependencies: [
+        { metric: '认证服务（JWT）可用性', threshold: '失败率 > 1%', collection: '业务埋点（Prometheus Counter）', description: '保障用户登录、Token 校验和权限验证。' },
+        { metric: '通知服务成功率', threshold: '< 90%，持续出现', collection: '业务埋点（Prometheus Counter）', description: '确认站内通知、邮件或外部推送能正常送达。' }
+      ],
+      logs: [
+        { metric: '错误日志率', threshold: '相对基线突然增加', collection: '日志聚合系统（Loki / ELK）', description: '聚合前端与后端错误，识别异常爆发。' }
+      ],
+      debug: [
+        { metric: 'API 请求分布', threshold: '按路由基线与容量规划观察', collection: '应用埋点（Prometheus Histogram）', description: '识别热点接口，为资源分配和性能优化提供依据。' }
+      ]
     }
   },
   blacklist: {

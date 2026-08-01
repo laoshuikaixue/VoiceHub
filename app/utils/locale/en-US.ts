@@ -1829,7 +1829,7 @@ export const admin = {
       routePerformance: 'Route Performance', routePerformanceDetail: 'Throughput, percentile latency, and errors by route', route: 'Route', qps: 'QPS',
       latencyDistribution: 'Response Latency Distribution', latencyDistributionDetail: 'P50, P95, P99, and maximum latency for key APIs', responseP50: 'P50 Response Time', responseP95: 'P95 Response Time', responseP99: 'P99 Response Time', responseMax: 'Maximum Response Time',
       authentication: 'Authentication Metrics', authenticationDetail: 'JWT and OAuth authentication pipeline', jwtIssued: 'JWT Issued', jwtVerified: 'JWT Verified', invalidTokens: 'Invalid Token Requests', oauthSuccessRate: 'OAuth Success Rate',
-      fileAndRealtime: 'Files and Real-time', fileAndRealtimeDetail: 'Upload processing and real-time channel state', uploadCount: 'File Uploads', uploadBytes: 'Uploaded Bytes', uploadDuration: 'Upload Duration', websocketConnections: 'WebSocket Connections', sseConnections: 'SSE Connections',
+      musicSyncReliability: 'Music State Sync Reliability', musicSyncReliabilityDetail: 'SSE channel health for player state sync; excludes administrator file uploads.', musicSyncReconnects: 'State Sync Reconnects', musicSyncLatency: 'State Sync P95 Latency', musicSyncHeartbeatTimeouts: 'Heartbeat Timeouts', musicSyncDeliveryFailures: 'State Message Delivery Failures',
       requestLifecycle: 'Request Lifecycle', requestLifecycleDetail: 'Request, error, SSR, and GC counters', requestTotal: 'Total Requests', clientErrorCount: '4xx Errors', serverErrorCount: '5xx Errors', ssrRenderCount: 'SSR Renders', gcCount: 'GC Count',
       externalDependencies: 'External Dependencies', externalDependenciesDetail: 'Availability of music, OAuth, and database dependencies', dependency: 'Dependency', availability: 'Availability', latency: 'Latency', errorRate: 'Error Rate', coldStart: 'Cold Start', githubOAuth: 'GitHub OAuth', casdoorOAuth: 'Casdoor OAuth', neonDatabase: 'Neon PostgreSQL'
     },
@@ -2013,7 +2013,6 @@ export const admin = {
       containerRestarts: 'Container Restarts', containerRestartsDetail: 'Container restarts and OOM records',
       systemMemoryDetail: 'Host memory utilization',
       diskUsageDetail: 'Overall disk capacity utilization',
-      networkInterfacesMetricDetail: 'Network interface and external address counts',
       platformRelease: 'Operating System Release',
       cpuDetails: 'CPU Details',
       cpuDetailsDetail: 'Processor model, logical cores, and system load.',
@@ -2036,13 +2035,6 @@ export const admin = {
       nodeProcessDetailsDetail: 'Node process RSS and heap memory state.',
       rssMemory: 'Process RSS',
       nodeHeapUtilization: 'Node Heap Utilization',
-      diskPartitions: 'Disk Partitions',
-      diskPartitionsDetail: 'Filesystem, capacity, and utilization for each mount point.',
-      networkInterfaces: 'Network Interfaces',
-      networkInterfacesDetail: 'Current network interfaces and bound addresses.',
-      externalAddressCount: 'External Addresses',
-      addressFamily: 'Address Family',
-      addressScope: 'Scope',
       uptime: 'System Uptime',
       memory: 'Process Memory',
       nodeVersion: 'Node Version',
@@ -2231,7 +2223,6 @@ export const admin = {
       systemMemory: 'System Memory',
       diskUsage: 'Disk Usage',
       nodeHeap: 'Node Heap',
-      networkInterfaces: 'Network Interfaces',
       databaseConnections: 'Database Connections',
       loadAverage: 'System Load',
       memoryAvailable: 'Available Memory',
@@ -2258,23 +2249,8 @@ export const admin = {
       cpuTrend: 'CPU and Load Trend',
       memoryDiskTrend: 'Memory and Disk Trend',
       networkTrend: 'Network Traffic Trend',
-      diskPartitions: 'Disk Partitions',
-      networkInterfaces: 'Network Interfaces',
       runtimeLogs: 'System Runtime Logs',
       businessSnapshot: 'Business Snapshot'
-    },
-    disk: {
-      mount: 'Mount',
-      filesystem: 'Filesystem',
-      used: 'Used',
-      available: 'Available',
-      usage: 'Usage'
-    },
-    network: {
-      name: 'Interface',
-      address: 'Address',
-      received: 'Received',
-      sent: 'Sent'
     },
     logs: {
       time: 'Time',
@@ -2290,6 +2266,51 @@ export const admin = {
       pendingSongs: 'Pending Songs',
       playWindow: 'Current Play Window',
       requestWindow: 'Current Request Window'
+    },
+    references: {
+      title: 'Monitoring Scope and Alert References',
+      detail: 'Each metric defines its threshold and collection method only on its owning page. Use the cards, charts, and details above for live values.',
+      referenceOnly: 'Adjust thresholds to actual load',
+      metric: 'Core Metric',
+      threshold: 'Alert Threshold Reference',
+      collection: 'Collection Method / Tool',
+      description: 'Description',
+      performance: [
+        { metric: 'Request Latency (P95 / P99)', threshold: 'P95 > 1s, P99 > 2s (Web API)', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Reflects user-perceived API performance.' },
+        { metric: 'Error Rate (4xx / 5xx)', threshold: '5xx error rate > 1% for 5 minutes', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Server errors need immediate attention; use 4xx to identify abnormal requests.' },
+        { metric: 'Throughput (QPS / RPS)', threshold: 'Sudden drop or 20% above historic peak', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Tracks requests handled per second and capacity shifts.' },
+        { metric: 'Concurrent Connections', threshold: 'Exceeds the configured maximum', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Tracks WebSocket, SSE, and HTTP concurrency pressure.' },
+        { metric: 'Page Load Time (TTI)', threshold: 'Home > 3s, complex page > 5s', collection: 'Frontend performance monitoring (Lighthouse / Sentry)', description: 'Measures how quickly a page becomes interactive.' }
+      ],
+      infra: [
+        { metric: 'CPU Usage', threshold: '> 85% for 5 minutes', collection: 'Node Exporter / Prometheus', description: 'Server CPU load and processor saturation.' },
+        { metric: 'Memory Usage', threshold: '> 90% for 5 minutes', collection: 'Node Exporter / Prometheus', description: 'Physical memory consumption to prevent OOM.' },
+        { metric: 'Disk Space Usage', threshold: 'Root > 80%, data partition > 90%', collection: 'Node Exporter / Prometheus', description: 'Prevents full disks from breaking downloads, logs, or services.' },
+        { metric: 'Disk I/O Wait', threshold: '> 20% continuously', collection: 'Node Exporter / Prometheus', description: 'Determines whether disk I/O is the service bottleneck.' },
+        { metric: 'Network Bandwidth (Ingress / Egress)', threshold: '> 80% of actual bandwidth', collection: 'Node Exporter / Prometheus', description: 'Tracks whether audio proxy and download traffic approaches link capacity.' }
+      ],
+      business: [
+        { metric: 'Song Request Success Rate', threshold: '< 95% continuously', collection: 'Business instrumentation (Prometheus Counter)', description: 'Confirms the primary request flow completes normally.' },
+        { metric: 'Music Search API Availability', threshold: 'Failure rate > 5% or latency > 2s', collection: 'Business instrumentation (Prometheus Histogram / Counter)', description: 'Checks NetEase, QQ Music, and Bilibili source health.' },
+        { metric: 'Vote Request Success Rate', threshold: '< 95% continuously', collection: 'Business instrumentation (Prometheus Counter)', description: 'Confirms voting works normally.' },
+        { metric: 'Schedule Update Latency', threshold: 'P95 > 500ms', collection: 'Business instrumentation (Prometheus Histogram)', description: 'Measures the responsiveness of schedule drag, save, and publish actions.' }
+      ],
+      database: [
+        { metric: 'Database Connections', threshold: '> 80% of maximum connections', collection: 'postgres_exporter / database monitoring', description: 'Prevents the connection pool from being exhausted.' },
+        { metric: 'Query Latency (P95)', threshold: 'Simple > 100ms, complex > 1s', collection: 'postgres_exporter / slow-query logs', description: 'Finds slow SQL and queries that need optimization.' },
+        { metric: 'Deadlocks / Lock Waits', threshold: 'Continues to occur', collection: 'postgres_exporter / database monitoring', description: 'Identifies transaction conflicts and lock contention.' },
+        { metric: 'Buffer Cache Hit Rate', threshold: '< 99% continuously', collection: 'postgres_exporter', description: 'Indicates declining database memory and cache efficiency.' }
+      ],
+      dependencies: [
+        { metric: 'Authentication Service (JWT) Availability', threshold: 'Failure rate > 1%', collection: 'Business instrumentation (Prometheus Counter)', description: 'Protects login, token validation, and authorization.' },
+        { metric: 'Notification Delivery Success Rate', threshold: '< 90% continuously', collection: 'Business instrumentation (Prometheus Counter)', description: 'Confirms in-app notifications, email, or external delivery succeeds.' }
+      ],
+      logs: [
+        { metric: 'Error Log Rate', threshold: 'Sudden rise against baseline', collection: 'Log aggregation (Loki / ELK)', description: 'Aggregates frontend and backend errors to identify bursts.' }
+      ],
+      debug: [
+        { metric: 'API Request Distribution', threshold: 'Observe against route baseline and capacity plan', collection: 'Application instrumentation (Prometheus Histogram)', description: 'Identifies hot routes for resource allocation and performance work.' }
+      ]
     }
   },
   blacklist: {
