@@ -891,7 +891,7 @@ VoiceHub/
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
-│   │   ├── useSyncedTime.ts    # 时间同步hooks
+│   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
 │   │   ├── useToast.ts         # Toast提示hooks
 │   │   └── useUserFilters.ts  # 用户过滤器hooks
 │   ├── drizzle/               # 数据库相关
@@ -921,7 +921,7 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
-│   │   └── time-sync.client.ts # 客户端时间同步插件
+│   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
 │   │   │   ├── logo.png       # PNG格式Logo
@@ -1247,8 +1247,7 @@ VoiceHub/
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
-│   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
-│   │   └── time-sync.ts    # 服务器时间同步插件
+│   │   └── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
@@ -1296,7 +1295,7 @@ VoiceHub/
 │   │   ├── request-utils.ts # 请求处理通用工具
 │   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
-│   │   ├── serverTime.ts   # 服务器时间管理工具
+│   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
