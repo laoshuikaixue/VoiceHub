@@ -60,7 +60,7 @@
     "@types/lodash-es": "^4.17.12",
     "@types/multer": "^2.2.0",
     "@types/nodemailer": "^8.0.1",
-    "@types/pg": "^8.20.0",
+    "@types/pg": "^8.20.3",
     "@ungap/structured-clone": "^1.3.3",
     "@vercel/speed-insights": "^1.3.1",
     "axios": "^1.19.0",

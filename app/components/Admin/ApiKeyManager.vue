@@ -779,6 +779,11 @@ const availablePermissions = computed(() => [
     value: 'card-codes:delete',
     label: getPermissionOptionText('cardCodesDelete', 'label'),
     description: getPermissionOptionText('cardCodesDelete', 'description')
+  },
+  {
+    value: 'backup:execute',
+    label: getPermissionOptionText('backupExecute', 'label'),
+    description: getPermissionOptionText('backupExecute', 'description')
   }
 ])
 

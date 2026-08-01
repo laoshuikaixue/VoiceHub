@@ -754,6 +754,7 @@ VoiceHub/
 │   ├── components/            # Vue组件目录
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
+│   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
 │   │   │   ├── BlacklistManager.vue   # 黑名单管理
@@ -831,11 +832,15 @@ VoiceHub/
 │   │   │   │   ├── PlayerInfo.vue     # 播放器信息组件
 │   │   │   │   └── VolumeControl.vue  # 播放器音量控制组件
 │   │   │   ├── Common/        # 通用UI组件
+│   │   │   │   ├── CollapsibleSection.vue # 可折叠区域组件
 │   │   │   │   ├── CustomSelect.vue   # 自定义选择器
 │   │   │   │   ├── DataTable.vue      # 通用数据表格组件
 │   │   │   │   ├── ErrorBoundary.vue  # 错误边界组件
+│   │   │   │   ├── InputField.vue     # 通用输入框组件
 │   │   │   │   ├── LoadingState.vue   # 加载状态组件
+│   │   │   │   ├── MethodCard.vue     # 可展开卡片组件（带开关）
 │   │   │   │   ├── Pagination.vue     # 翻页组件
+│   │   │   │   ├── PasswordField.vue  # 密码输入框组件
 │   │   │   │   ├── Popover.vue        # 弹出框组件
 │   │   │   │   ├── SearchFilter.vue   # 搜索过滤组件
 │   │   │   │   └── StatCard.vue       # 统计卡片组件
@@ -888,7 +893,7 @@ VoiceHub/
 │   │   ├── useSiteConfig.js    # 站点配置hooks
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSongs.ts         # 歌曲管理hooks
-│   │   ├── useSyncedTime.ts    # 时间同步hooks
+│   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
 │   │   ├── useToast.ts         # Toast提示hooks
 │   │   └── useUserFilters.ts  # 用户过滤器hooks
 │   ├── drizzle/               # 数据库相关
@@ -918,7 +923,7 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
-│   │   └── time-sync.client.ts # 客户端时间同步插件
+│   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
 │   │   │   ├── logo.png       # PNG格式Logo
@@ -972,12 +977,20 @@ VoiceHub/
 │   │   │   │   │   └── [filename].delete.ts
 │   │   │   │   ├── download/        # 下载备份子目录
 │   │   │   │   │   └── [filename].get.ts
+│   │   │   │   ├── auto-config.get.ts   # 获取自动备份配置
+│   │   │   │   ├── auto-config.put.ts   # 更新自动备份配置
 │   │   │   │   ├── clear.post.ts    # 清空备份历史
 │   │   │   │   ├── download.get.ts  # 下载备份
 │   │   │   │   ├── export.post.ts   # 创建备份
+│   │   │   │   ├── history.get.ts   # 获取备份历史
+│   │   │   │   ├── history-clear.post.ts # 清空备份历史记录
 │   │   │   │   ├── list.get.ts      # 获取备份列表
 │   │   │   │   ├── restore-chunk.post.ts # 恢复备份分片
 │   │   │   │   ├── restore.post.ts  # 恢复备份
+│   │   │   │   ├── test-email.post.ts  # 测试邮件发送
+│   │   │   │   ├── test-s3.post.ts     # 测试 S3 连接
+│   │   │   │   ├── test-telegram.post.ts # 测试 Telegram Bot
+│   │   │   │   ├── test-webdav.post.ts  # 测试 WebDAV 连接
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   │   ├── [id].delete.ts   # 删除黑名单项
@@ -1157,6 +1170,8 @@ VoiceHub/
 │   │   │   ├── songs/               # 歌曲相关开放API
 │   │   │   │   ├── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   │   └── request.post.ts  # 使用个人集成令牌投稿歌曲
+│   │   │   ├── backup/              # 自动备份开放API
+│   │   │   │   └── auto.post.ts     # 触发自动备份（需 API Key）
 │   │   │   ├── schedules.get.ts     # 获取公开排期
 │   │   │   └── songs.get.ts         # 获取公开歌曲列表
 │   │   ├── play-times/     # 播放时间API
@@ -1234,10 +1249,10 @@ VoiceHub/
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
 │   │   ├── error-handler.ts # 错误处理插件
-│   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
-│   │   └── time-sync.ts    # 服务器时间同步插件
+│   │   └── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
+│   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
 │   │   ├── cardCodeLifecycleService.ts # 点歌券生命周期服务
 │   │   ├── meowNotificationService.ts # MeoW通知服务
@@ -1280,8 +1295,9 @@ VoiceHub/
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
 │   │   ├── redis.ts        # 可选Redis连接与命名空间工具
 │   │   ├── request-utils.ts # 请求处理通用工具
+│   │   ├── s3Client.ts     # S3 兼容存储客户端（AWS Signature V4）
 │   │   ├── scheduleReplayBinding.ts # 排期发布时履行并绑定重播申请
-│   │   ├── serverTime.ts   # 服务器时间管理工具
+│   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── siteUtils.ts    # 站点工具函数
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具

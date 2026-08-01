@@ -22,8 +22,7 @@ export const getSyncedDate = (): Date => {
 export function useSyncedTime() {
   /**
    * 同步服务器时间
-   * 直接调用本站后端提供的 API（/api/sys/time），以彻底解决任何第三方 API 的 CORS 拦截问题。
-   * 此方法最可靠，并且能够直接对齐后端服务器时间。
+   * 直接调用本站后端提供的 API（/api/sys/time），返回服务器本机时间。
    */
   const syncTime = async () => {
     // 服务端本身的时间就是服务器时间，不需要同步

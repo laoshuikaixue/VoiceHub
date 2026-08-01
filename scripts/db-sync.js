@@ -180,6 +180,7 @@ async function checkSchemaConsistency(sql) {
     'api_keys',
     'api_key_permissions',
     'api_logs',
+    'BackupHistory',
     'CardCode',
     'CardCodeRedeemLog',
     'PasswordAuditLog',
@@ -253,7 +254,9 @@ async function checkSchemaConsistency(sql) {
       'customOAuthEmailField',
       'customOAuthAvatarField',
       'captchaEnabled',
-      'captchaMaxFailures'
+      'captchaMaxFailures',
+      'autoBackupEnabled',
+      'autoBackupConfig'
     ],
     PasswordAuditLog: [
       'userId',

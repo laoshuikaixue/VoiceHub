@@ -3068,7 +3068,8 @@ export const admin = {
       backup: { title: '创建备份', desc: '导出当前数据库的所有数据到文件，用于安全备份或迁移。', button: '创建备份文件' },
       restore: { title: '恢复备份', desc: '从之前导出的备份文件中恢复系统数据。', button: '选择备份文件' },
       resetSeq: { title: '重置序列', desc: '修复数据表的自增ID序列，确保新记录的ID从正确值开始。', button: '开始重置序列' },
-      resetDb: { title: '重置数据库', desc: '清空除管理员账号外的所有系统数据。此操作不可撤销。', button: '立即重置数据库' }
+      resetDb: { title: '重置数据库', desc: '清空除管理员账号外的所有系统数据。此操作不可撤销。', button: '立即重置数据库' },
+      autoBackup: { title: '自动备份', desc: '配置多种备份方式，通过外部触发实现定时自动备份', button: '配置自动备份' }
     },
     backupOptions: {
       songs: { label: '歌曲与排期数据', desc: '包含所有歌曲库、用户投稿记录及历史播音排期' },
@@ -3134,6 +3135,97 @@ export const admin = {
       resetFailed: '重置失败',
       resetSequenceFailedWithMessage: (message: string) => `重置序列失败: ${message}`,
       resetDatabaseFailedWithMessage: (message: string) => `重置数据库失败: ${message}`
+    },
+    autoBackup: {
+      title: '自动备份设置',
+      cancel: '取消',
+      saveAll: '保存全部',
+
+      masterSwitch: {
+        label: '启用自动备份',
+        desc: 'API 被触发时，总开关关闭则不执行任何备份；开启时仅执行已启用的备份方式',
+      },
+
+      methods: {
+        title: '备份方式',
+        s3: {
+          name: 'S3 兼容存储',
+          desc: '支持 R2 / S3 / B2 / MinIO 等',
+          endpoint: 'Endpoint',
+          endpointPlaceholder: 'https://xxx.r2.cloudflarestorage.com',
+          bucket: 'Bucket',
+          bucketPlaceholder: 'my-backups',
+          region: 'Region',
+          regionPlaceholder: 'auto',
+          pathPrefix: '路径前缀',
+          pathPrefixPlaceholder: 'voicehub-backups/',
+          accessKey: 'Access Key ID',
+          accessKeyPlaceholder: '请输入 Access Key ID',
+          secretKey: 'Secret Access Key',
+          secretKeyPlaceholder: '请输入 Secret Access Key',
+          testConnection: '测试连接',
+        },
+        webdav: {
+          name: 'WebDAV',
+          desc: '支持 Nextcloud / 群晖 / ownCloud',
+          url: '服务器地址',
+          urlPlaceholder: 'https://example.com/remote.php/dav/files/user/',
+          username: '用户名',
+          usernamePlaceholder: '请输入用户名',
+          password: '密码',
+          passwordPlaceholder: '请输入密码',
+          path: '上传路径',
+          pathPlaceholder: 'voicehub-backups/',
+          testConnection: '测试连接',
+        },
+        telegram: {
+          name: 'Telegram Bot',
+          desc: '通过 Bot 将备份文件发送至聊天',
+          botToken: 'Bot Token',
+          botTokenPlaceholder: '123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11',
+          chatId: 'Chat ID',
+          chatIdPlaceholder: '123456789',
+          testSend: '测试发送',
+        },
+        email: {
+          name: '邮件附件',
+          desc: '将备份文件发送至指定邮箱',
+          recipient: '收件人邮箱',
+          recipientPlaceholder: 'admin@example.com',
+          testSend: '测试发送',
+          smtpHint: '使用站点已配置的邮件服务发送，只需填写收件人邮箱即可',
+        },
+      },
+
+      endpoint: {
+        title: 'API 触发端点',
+        hint: '请先在「API 密钥管理」页面创建一个密钥，勾选「自动备份」权限，然后从外部定时调用此端点即可触发备份。',
+        url: '备份端点 URL',
+        methods: '触发方式',
+        curlTab: 'cURL',
+        cronjobTab: 'cron-job.org',
+        githubTab: 'GitHub Actions',
+        cronTab: 'Linux Cron',
+        curlHint: '将 YOUR_API_KEY 替换为你的 API 密钥，在终端中运行即可触发一次备份。',
+        cronjobLink: '访问 cron-job.org 免费创建定时任务',
+        githubHint: '在 GitHub 仓库 Settings → Secrets 中配置 BACKUP_URL 和 API_KEY，将上述内容保存为 .github/workflows/backup.yml。',
+        cronHint: '将 YOUR_API_KEY 替换为实际的 API 密钥，在服务器上执行 crontab -e 并添加上述内容。',
+      },
+
+      history: {
+        title: '备份历史',
+        empty: '暂无备份记录',
+        emptyHint: '触发一次备份后，记录将显示在此处',
+        clear: '清空历史',
+      },
+
+      messages: {
+        copied: '已复制到剪贴板',
+        copyFailed: '复制失败',
+        testConnection: '正在测试连接...',
+        testSend: '正在测试发送...',
+        allSaved: '全部配置已保存',
+      }
     }
   },
   userManager: {
@@ -3604,7 +3696,8 @@ export const admin = {
       songsWrite: { label: '歌曲管理', description: '更新歌曲状态' },
       cardCodesRead: { label: '点歌券查询', description: '查看点歌券列表和统计' },
       cardCodesWrite: { label: '点歌券管理', description: '创建和更新点歌券' },
-      cardCodesDelete: { label: '点歌券删除', description: '删除点歌券' }
+      cardCodesDelete: { label: '点歌券删除', description: '删除点歌券' },
+      backupExecute: { label: '自动备份', description: '触发自动备份任务' }
     },
     loadFailed: '加载API密钥失败',
     nameRequired: '请输入密钥名称',
@@ -3825,6 +3918,11 @@ export const serverErrors = {
   USER_CODE_EXPIRED_RESEND: '验证码已过期，请重新发送',
   USER_CODE_INVALID: '验证码错误',
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
+  BACKUP_DISABLED: '自动备份未启用',
+  BACKUP_NOT_CONFIGURED: '自动备份未配置',
+  NO_BACKUP_METHOD_ENABLED: '没有启用任何备份方式',
+  BACKUP_FAILED: '备份执行失败',
+  SMTP_NOT_CONFIGURED: '邮件服务未配置',
   NOTIFICATION_AUTH_REQUIRED: '请先登录后再操作通知',
   NOTIFICATION_ADMIN_REQUIRED: '只有管理员可以发送系统通知',
   NOTIFICATION_IMPORTANT_INVALID: '重要通知标记必须是布尔值',
