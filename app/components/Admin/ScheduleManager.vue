@@ -608,7 +608,7 @@
                   'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
                   schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '',
-                  schedule.song && schedule.song.cardCodeId
+                  schedule.song && (schedule.song.cardCodeId || schedule.song.usedCardCode)
                     ? 'border-amber-500/30 bg-amber-500/5'
                     : ''
                 ]"
@@ -695,7 +695,7 @@
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
                       <span
-                        v-if="schedule.song.cardCodeId"
+                        v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
@@ -2464,6 +2464,10 @@ const removeSongFromSchedule = (schedule) => {
 
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
+      // songs.value 与 publicSchedules 中是不同引用，需同时清除两部标记
+      const songInList = songs.value.find((s) => s.id === removed.song.id)
+      if (songInList) songInList.scheduled = false
+      removed.song.scheduled = false
     }
 
     // 重新排序
@@ -3214,6 +3218,10 @@ const handleTouchReturnToDraggable = async () => {
 
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
+      // songs.value 与 publicSchedules 中是不同引用，需同时清除两部标记
+      const songInList = songs.value.find((s) => s.id === removed.song.id)
+      if (songInList) songInList.scheduled = false
+      removed.song.scheduled = false
     }
 
     // 重新排序
@@ -3224,6 +3232,8 @@ const handleTouchReturnToDraggable = async () => {
     hasChanges.value = true
   }
 }
+
+// 托放返回待排区域结束
 </script>
 
 <style scoped>
