@@ -22,6 +22,7 @@ export const QUALITY_OPTIONS = {
     { value: 1, key: 'standard' },
     { value: 2, key: 'miguHq' },
     { value: 3, key: 'miguSq' },
+    { value: 4, key: 'miguZq24' },
   ]
 }
 
