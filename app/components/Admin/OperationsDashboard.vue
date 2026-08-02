@@ -11,10 +11,10 @@
         <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
           <span class="inline-flex items-center gap-1.5">
             <span class="h-1.5 w-1.5 rounded-full bg-zinc-600" />
-            {{ locale.awaitingConnection }}
+            {{ collectionStatusText }}
           </span>
           <span class="text-zinc-700">/</span>
-          <span>{{ locale.lastUpdated }} --</span>
+          <span>{{ locale.lastUpdated }} {{ formattedLastUpdated }}</span>
         </div>
       </div>
       <div class="header-actions">
@@ -30,7 +30,7 @@
             {{ locale.goToDiagnosis }}
           </button>
         </form>
-        <button type="button" class="refresh-button" disabled>
+        <button type="button" class="refresh-button" :disabled="operationsLoading" @click="loadOperationsData()">
           <Icon name="refresh" :size="14" />{{ locale.actions.refresh }}
         </button>
       </div>
@@ -66,20 +66,20 @@
               <h3 class="panel-title">{{ locale.overview.sloAvailability }}</h3>
               <p class="panel-description">{{ locale.overview.sloAvailabilityDetail }}</p>
             </div>
-            <span class="status-badge">{{ locale.health.waiting }}</span>
+            <span class="status-badge">{{ collectionStatusText }}</span>
           </div>
           <div class="health-layout">
             <div class="health-score-wrap">
               <div class="health-score-ring">
-                <strong>--</strong>
+                <strong>{{ availabilitySli }}</strong>
                 <span>{{ locale.overview.availabilitySli }}</span>
               </div>
-              <p>{{ locale.noData }}</p>
+              <p>{{ availabilitySli === '--' ? locale.noData : locale.overview.availabilitySli }}</p>
             </div>
             <div class="health-live-details">
               <div class="health-live-details__title">{{ locale.overview.healthRealtime }}</div>
-              <div v-for="item in healthLiveDetails" :key="item" class="health-live-row">
-                <span>{{ item }}</span><strong>--</strong>
+              <div v-for="item in healthLiveDetails" :key="item.label" class="health-live-row">
+                <span>{{ item.label }}</span><strong>{{ item.value }}</strong>
               </div>
             </div>
           </div>
@@ -92,7 +92,7 @@
               <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
               <span class="metric-label">{{ item.label }}</span>
             </div>
-            <strong class="metric-value">--</strong>
+            <strong class="metric-value">{{ item.value }}</strong>
             <p class="metric-detail">{{ item.detail }}</p>
           </article>
         </div>
@@ -106,7 +106,7 @@
         <div class="deployment-mode-grid">
           <div v-for="item in deploymentModeRows" :key="item.label" class="deployment-mode-card">
             <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-            <strong>{{ locale.overview.detectionPending }}</strong>
+            <strong>{{ item.value }}</strong>
             <p>{{ item.detail }}</p>
           </div>
         </div>
@@ -118,12 +118,12 @@
           <span class="status-badge">{{ locale.overview.referenceOnly }}</span>
         </div>
         <dl class="detail-grid">
-          <div v-for="item in backupStatusFields" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          <div v-for="item in backupStatusFields" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
         </dl>
         <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-4">
           <div v-for="target in backupTargetPanels" :key="target.title" class="deployment-mode-card">
             <div class="metric-card__top"><span class="metric-icon"><Icon name="database" :size="14" /></span><span class="metric-label">{{ target.title }}</span></div>
-            <strong>--</strong>
+            <strong>{{ target.value }}</strong>
             <p>{{ target.detail }}</p>
           </div>
         </div>
@@ -139,14 +139,13 @@
             <span class="item-count">{{ locale.itemCount }} --</span>
           </div>
           <div class="service-list">
-            <div class="service-row">
-              <span class="service-row__icon"><Icon name="layers" :size="15" /></span>
+            <div v-for="item in overviewDependencyPreview" :key="item.label" class="service-row">
+              <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
               <div class="min-w-0 flex-1">
-                <p class="text-sm font-semibold text-zinc-300">{{ locale.overview.externalDependencySummary }}</p>
-                <p class="mt-1 text-xs text-zinc-600">{{ locale.overview.externalDependencySummaryDetail }}</p>
+                <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
+                <p class="mt-1 text-xs text-zinc-600">{{ item.preview }}</p>
               </div>
-              <span class="status-badge">--</span>
-              <button type="button" class="panel-link" @click="activeGroup = 'dependencies'">{{ locale.overview.viewDependencyDetails }}</button>
+              <span class="status-badge">{{ item.value }}</span>
             </div>
           </div>
         </article>
@@ -166,7 +165,7 @@
                 <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
                 <p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p>
               </div>
-              <span class="text-xs font-semibold text-zinc-600">--</span>
+              <span class="text-xs font-semibold text-zinc-600">{{ item.value }}</span>
             </div>
           </div>
         </article>
@@ -255,7 +254,7 @@
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
           </div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -373,7 +372,7 @@
             </div>
           </div>
           <dl class="detail-grid">
-            <div v-for="item in serverRuntimeDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in serverRuntimeDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
       </section>
@@ -429,7 +428,7 @@
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
           </div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -1120,7 +1119,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import DrilldownLink from '~/components/Admin/DrilldownLink.vue'
 import { useLocale } from '~/utils/locale'
@@ -1131,6 +1130,56 @@ const activeGroup = ref('overview')
 const globalRequestId = ref('')
 const debugRequestId = ref('')
 const traceSpans = computed(() => [])
+const operationsLoading = ref(true)
+const operationsError = ref(false)
+const operationsLastUpdated = ref(null)
+const operationsData = ref({ status: null, pool: null, performance: null, backups: [] })
+
+const loadOperationsData = async () => {
+  operationsLoading.value = true
+  operationsError.value = false
+
+  const [statusResult, poolResult, performanceResult, backupResult] = await Promise.allSettled([
+    $fetch('/api/system/status'),
+    $fetch('/api/admin/database/pool-status'),
+    $fetch('/api/admin/database/performance'),
+    $fetch('/api/admin/backup/history')
+  ])
+
+  if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
+  if (poolResult.status === 'fulfilled') operationsData.value.pool = poolResult.value
+  if (performanceResult.status === 'fulfilled') operationsData.value.performance = performanceResult.value
+  if (backupResult.status === 'fulfilled') operationsData.value.backups = backupResult.value?.data || []
+
+  operationsError.value = statusResult.status === 'rejected'
+  operationsLastUpdated.value = new Date()
+  operationsLoading.value = false
+}
+
+let operationsRefreshTimer = null
+onMounted(() => {
+  loadOperationsData()
+  operationsRefreshTimer = window.setInterval(loadOperationsData, 30000)
+})
+
+onBeforeUnmount(() => {
+  if (operationsRefreshTimer) window.clearInterval(operationsRefreshTimer)
+})
+
+const systemSnapshot = computed(() => operationsData.value.status?.system || null)
+const databaseSnapshot = computed(() => operationsData.value.status?.database || null)
+const latestBackup = computed(() => operationsData.value.backups?.[0] || null)
+const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
+const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : 'UP')
+const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
+const formatBytes = (value) => {
+  const bytes = Number(value)
+  if (!Number.isFinite(bytes) || bytes < 0) return '--'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+const formatTimestamp = (value) => value ? new Date(value).toLocaleString() : '--'
 
 const waterfallBarStyle = (span) => {
   const totalDuration = traceSpans.value.reduce((total, item) => Math.max(total, item.offsetMs + item.durationMs), 0)
@@ -1179,87 +1228,92 @@ const overviewSignals = computed(() => [
   {
     icon: 'activity',
     label: locale.value.overview?.cpuStatus,
-    detail: locale.value.overview?.cpuStatusDetail
+    detail: locale.value.overview?.cpuStatusDetail, value: '--'
   },
   {
     icon: 'monitoring',
     label: locale.value.overview?.memoryStatus,
-    detail: locale.value.overview?.memoryStatusDetail
+    detail: locale.value.overview?.memoryStatusDetail, value: systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
   },
   {
     icon: 'database',
     label: locale.value.overview?.databaseStatus,
-    detail: locale.value.overview?.databaseStatusDetail
+    detail: locale.value.overview?.databaseStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--'
   },
   {
     icon: 'server',
     label: locale.value.overview?.redisStatus,
-    detail: locale.value.overview?.redisStatusDetail
+    detail: locale.value.overview?.redisStatusDetail, value: '--'
   },
   {
     icon: 'settings',
     label: locale.value.overview?.eventLoopStatus,
-    detail: locale.value.overview?.eventLoopStatusDetail
+    detail: locale.value.overview?.eventLoopStatusDetail, value: '--'
   },
   {
     icon: 'clock',
     label: locale.value.overview?.backgroundTaskStatus,
-    detail: locale.value.overview?.backgroundTaskStatusDetail
+    detail: locale.value.overview?.backgroundTaskStatusDetail, value: '--'
   }
 ])
 
 const healthLiveDetails = computed(() => [
-  locale.value.overview?.sloBudget,
-  locale.value.overview?.errorBudgetBurn,
-  locale.value.overview?.collectionStatus
+  { label: locale.value.overview?.sloBudget, value: '--' },
+  { label: locale.value.overview?.errorBudgetBurn, value: '--' },
+  { label: locale.value.overview?.collectionStatus, value: collectionStatusText.value }
 ])
 
 const backupStatusFields = computed(() => [
-  locale.value.overview?.lastBackupAt,
-  locale.value.overview?.lastBackupResult,
-  locale.value.overview?.lastBackupSize,
-  locale.value.overview?.backupStorageUsage,
-  locale.value.overview?.backupExportedTables,
-  locale.value.overview?.backupSkippedTables,
-  locale.value.overview?.backupIntegrityCheck,
-  locale.value.overview?.lastRestoreDrill,
-  locale.value.overview?.lastBackupScheduleAt,
-  locale.value.overview?.expectedBackupInterval,
-  locale.value.overview?.backupScheduleMisses
+  { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
+  { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? 'SUCCESS' : 'FAILED') : '--' },
+  { label: locale.value.overview?.lastBackupSize, value: formatBytes(latestBackup.value?.backupSize) },
+  { label: locale.value.overview?.backupStorageUsage, value: '--' },
+  { label: locale.value.overview?.backupExportedTables, value: '--' },
+  { label: locale.value.overview?.backupSkippedTables, value: '--' },
+  { label: locale.value.overview?.backupIntegrityCheck, value: '--' },
+  { label: locale.value.overview?.lastRestoreDrill, value: '--' },
+  { label: locale.value.overview?.lastBackupScheduleAt, value: latestBackup.value ? formatTimestamp(latestBackup.value.createdAt) : '--' },
+  { label: locale.value.overview?.expectedBackupInterval, value: '--' },
+  { label: locale.value.overview?.backupScheduleMisses, value: '--' }
 ])
 
 const backupTargetPanels = computed(() => [
-  { title: locale.value.overview?.backupTargetS3, detail: locale.value.overview?.backupTargetDetail },
-  { title: locale.value.overview?.backupTargetWebdav, detail: locale.value.overview?.backupTargetDetail },
-  { title: locale.value.overview?.backupTargetTelegram, detail: locale.value.overview?.backupTargetDetail },
-  { title: locale.value.overview?.backupTargetEmail, detail: locale.value.overview?.backupTargetDetail }
+  { title: locale.value.overview?.backupTargetS3, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('S3') },
+  { title: locale.value.overview?.backupTargetWebdav, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('WebDAV') },
+  { title: locale.value.overview?.backupTargetTelegram, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('Telegram') },
+  { title: locale.value.overview?.backupTargetEmail, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('Email') }
 ])
 
+const backupTargetValue = (target) => {
+  const method = latestBackup.value?.methods?.find(item => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
+  return method ? (method.success ? 'SUCCESS' : 'FAILED') : '--'
+}
+
 const deploymentModeRows = computed(() => [
-  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail },
-  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail }
+  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? 'DETECTED' : locale.value.overview?.detectionPending },
+  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: 'N/A' }
 ])
 
 const dependencyRows = computed(() => [
   {
     icon: 'monitoring',
     label: locale.value.services?.application,
-    detail: locale.value.overview?.applicationDetail
+    detail: locale.value.overview?.applicationDetail, value: 'UP'
   },
   {
     icon: 'database',
     label: locale.value.services?.postgresql,
-    detail: locale.value.overview?.databaseDetail
+    detail: locale.value.overview?.databaseDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--'
   },
   {
     icon: 'server',
     label: locale.value.services?.redis,
-    detail: locale.value.overview?.redisDetail
+    detail: locale.value.overview?.redisDetail, value: '--'
   },
   {
     icon: 'activity',
     label: locale.value.server?.collectionReporting,
-    detail: locale.value.overview?.collectionReportingDetail
+    detail: locale.value.overview?.collectionReportingDetail, value: collectionStatusText.value
   }
 ])
 
@@ -1410,15 +1464,15 @@ const infraTrendPanels = computed(() => [
 ])
 
 const serverRuntimeDetails = computed(() => [
-  locale.value.server?.platformRelease,
-  locale.value.runtime?.architecture,
-  locale.value.runtime?.nodeVersion,
-  locale.value.runtime?.processUptime,
-  locale.value.runtime?.instanceId,
-  locale.value.server?.appVersion,
-  locale.value.server?.commitSha,
-  locale.value.server?.deployedAt,
-  locale.value.server?.collectionReporting
+  { label: locale.value.server?.platformRelease, value: systemSnapshot.value?.platform || '--' },
+  { label: locale.value.runtime?.architecture, value: systemSnapshot.value?.arch || '--' },
+  { label: locale.value.runtime?.nodeVersion, value: systemSnapshot.value?.nodeVersion || '--' },
+  { label: locale.value.runtime?.processUptime, value: systemSnapshot.value?.uptime ? `${Math.round(systemSnapshot.value.uptime)}s` : '--' },
+  { label: locale.value.runtime?.instanceId, value: operationsData.value.status?.instance?.instanceId || '--' },
+  { label: locale.value.server?.appVersion, value: '--' },
+  { label: locale.value.server?.commitSha, value: '--' },
+  { label: locale.value.server?.deployedAt, value: '--' },
+  { label: locale.value.server?.collectionReporting, value: collectionStatusText.value }
 ])
 
 const serverResourcePanels = computed(() => [
@@ -1506,13 +1560,13 @@ const runtimeGuardPanels = computed(() => [
 ])
 
 const databaseMetrics = computed(() => [
-  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail },
-  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail },
-  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail },
+  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--' },
+  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: operationsData.value.pool?.utilization ? `${operationsData.value.pool.utilization}%` : '--' },
+  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: '--' },
   { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail },
   { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail },
-  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail },
-  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail },
+  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
+  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: '--' },
   { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail },
   { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail },
   { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail }
@@ -1790,6 +1844,11 @@ const musicSourceHealthDetails = computed(() => [
   locale.value.dependencies?.circuitBreakerState,
   locale.value.dependencies?.lastSuccess
 ])
+
+const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map(item => ({
+  ...item,
+  preview: item.details.slice(0, 3).map(detail => `${detail} --`).join(' · ')
+})))
 
 const dependencyErrorPanels = computed(() => [
   {
