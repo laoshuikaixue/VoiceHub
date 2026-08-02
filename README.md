@@ -964,6 +964,7 @@ VoiceHub/
 │       └── url.ts             # URL处理工具
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
+│   │   ├── metrics.get.ts   # Prometheus 文本格式指标出口
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── api-keys/            # API密钥管理API
 │   │   │   │   ├── [id].delete.ts   # 删除API密钥

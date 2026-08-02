@@ -27,6 +27,7 @@ import {
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3 } from '~~/server/utils/s3Client'
+import { recordBackupTarget } from '~~/server/utils/operations-metrics'
 import { desc, eq, lt, sql } from 'drizzle-orm'
 
 /** 外部服务调用超时（毫秒） */
@@ -415,11 +416,14 @@ export async function executeUploads(prepared: {
 
   // 并行上传，每个完成后立即更新对应方法的结果
   const tasks = enabledMethods.map(async ({ name, fn }, index) => {
+    const startedAt = Date.now()
     try {
       await fn()
+      recordBackupTarget(name, true, Date.now() - startedAt)
       await updateMethodResult(index, { method: name, success: true })
       return { method: name, success: true }
     } catch (error: any) {
+      recordBackupTarget(name, false, Date.now() - startedAt)
       console.error(`${name} 备份失败:`, error)
       const errMsg = error.message || String(error) || 'Unknown error'
       await updateMethodResult(index, { method: name, success: false, error: errMsg })

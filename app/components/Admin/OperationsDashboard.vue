@@ -1081,7 +1081,7 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in dependencyProtectionPanels" :key="panel.title" class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span></div>
-          <dl class="server-resource-list"><div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div></dl>
+          <dl class="server-resource-list"><div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ dependencyProtectionValue(panel.title, item) }}</dd></div></dl>
         </article>
       </section>
     </template>
@@ -1222,6 +1222,17 @@ const securityMetricValue = (label) => {
   if (label === locale.value.audit?.turnstileValidationSuccessRate) return turnstileMetrics.value.calls ? `${(turnstileMetrics.value.successes / turnstileMetrics.value.calls * 100).toFixed(1)}%` : '--'
   if (label === locale.value.audit?.turnstileUpstreamFailures) return String(turnstileMetrics.value.upstreamFailures)
   if (label === locale.value.audit?.turnstileConfiguration) return '--'
+  return '--'
+}
+const dependencyProtectionValue = (title, item) => {
+  const notifications = runtimeMetrics.value?.notifications
+  if (title !== locale.value.dependencies?.notificationDelivery || !notifications) return '--'
+  if (item === locale.value.dependencies?.smtpAcceptedRate) return String(notifications.smtpAccepted)
+  if (item === locale.value.dependencies?.meowEligibleTargets) return String(notifications.meowEligible)
+  if (item === locale.value.dependencies?.meowSkippedTargets) return String(notifications.meowSkipped)
+  if (item === locale.value.dependencies?.meowTransportFailureRate) {
+    return notifications.meowEligible ? `${(notifications.meowTransportFailures / notifications.meowEligible * 100).toFixed(1)}%` : '--'
+  }
   return '--'
 }
 
