@@ -1050,6 +1050,8 @@ VoiceHub/
 │   │   │   │   ├── test-s3.post.ts     # 测试 S3 连接
 │   │   │   │   ├── test-telegram.post.ts # 测试 Telegram Bot
 │   │   │   │   ├── test-webdav.post.ts  # 测试 WebDAV 连接
+│   │   │   ├── operations/          # 运维监控 API
+│   │   │   │   └── metrics.get.ts   # 管理员运行指标快照
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   │   ├── [id].delete.ts   # 删除黑名单项
@@ -1380,6 +1382,7 @@ VoiceHub/
 │   ├── plugins/            # 服务端插件
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
+│   │   ├── 02.operations-metrics.ts # 运行指标采集插件
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   │   └── statistics-code.ts # 站点统计代码注入插件
@@ -1448,6 +1451,7 @@ VoiceHub/
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth-identity.ts # OAuth身份绑定与头像同步工具
 │   │   ├── oauth.ts        # OAuth通用工具
+│   │   ├── operations-metrics.ts # 进程内运行指标聚合
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qqComment.ts    # QQ音乐评论数据归一化
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装

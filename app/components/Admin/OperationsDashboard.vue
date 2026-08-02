@@ -317,7 +317,7 @@
             <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
           </div>
           <dl class="server-resource-list">
-            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in panel.items" :key="item.label || item"><dt>{{ item.label || item }}</dt><dd>{{ item.value || '--' }}</dd></div>
           </dl>
         </article>
       </section>
@@ -335,7 +335,7 @@
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
           </div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -399,7 +399,7 @@
             <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
           </div>
           <dl class="server-resource-list">
-            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in panel.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
       </section>
@@ -538,7 +538,7 @@
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
           </div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -1133,23 +1133,30 @@ const traceSpans = computed(() => [])
 const operationsLoading = ref(true)
 const operationsError = ref(false)
 const operationsLastUpdated = ref(null)
-const operationsData = ref({ status: null, pool: null, performance: null, backups: [] })
+const operationsData = ref({ status: null, pool: null, performance: null, backups: [], metrics: null })
 
 const loadOperationsData = async () => {
   operationsLoading.value = true
   operationsError.value = false
 
-  const [statusResult, poolResult, performanceResult, backupResult] = await Promise.allSettled([
+  const [statusResult, poolResult, performanceResult, backupResult, metricsResult] = await Promise.allSettled([
     $fetch('/api/system/status'),
     $fetch('/api/admin/database/pool-status'),
     $fetch('/api/admin/database/performance'),
-    $fetch('/api/admin/backup/history')
+    $fetch('/api/admin/backup/history'),
+    $fetch('/api/admin/operations/metrics')
   ])
 
   if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
   if (poolResult.status === 'fulfilled') operationsData.value.pool = poolResult.value
   if (performanceResult.status === 'fulfilled') operationsData.value.performance = performanceResult.value
   if (backupResult.status === 'fulfilled') operationsData.value.backups = backupResult.value?.data || []
+  if (metricsResult.status === 'fulfilled') {
+    const metrics = metricsResult.value?.data || {}
+    operationsData.value.metrics = metrics
+    if (metrics.database?.pool) operationsData.value.pool = metrics.database.pool
+    if (metrics.database?.performance) operationsData.value.performance = metrics.database.performance
+  }
 
   operationsError.value = statusResult.status === 'rejected'
   operationsLastUpdated.value = new Date()
@@ -1169,6 +1176,11 @@ onBeforeUnmount(() => {
 const systemSnapshot = computed(() => operationsData.value.status?.system || null)
 const databaseSnapshot = computed(() => operationsData.value.status?.database || null)
 const latestBackup = computed(() => operationsData.value.backups?.[0] || null)
+const runtimeMetrics = computed(() => operationsData.value.metrics?.metrics || null)
+const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
+const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
+const runtimeSseMetrics = computed(() => operationsData.value.metrics?.sse || null)
+const runtimeRedisMetrics = computed(() => operationsData.value.metrics?.redis || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : 'UP')
 const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
@@ -1243,7 +1255,7 @@ const overviewSignals = computed(() => [
   {
     icon: 'server',
     label: locale.value.overview?.redisStatus,
-    detail: locale.value.overview?.redisStatusDetail, value: '--'
+    detail: locale.value.overview?.redisStatusDetail, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? 'UP' : runtimeRedisMetrics.value.configured ? 'DOWN' : 'N/A') : '--'
   },
   {
     icon: 'settings',
@@ -1328,14 +1340,14 @@ const alertRules = computed(() => [
 ])
 
 const applicationMetrics = computed(() => [
-  { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail },
-  { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail },
-  { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail },
+  { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail, value: runtimeHttpMetrics.value?.requestsPerSecond != null ? String(runtimeHttpMetrics.value.requestsPerSecond) : '--' },
+  { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail, value: runtimeHttpMetrics.value?.recent4xx != null ? String(runtimeHttpMetrics.value.recent4xx) : '--' },
+  { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: runtimeHttpMetrics.value?.recent5xx != null ? String(runtimeHttpMetrics.value.recent5xx) : '--' },
   { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail },
-  { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail },
+  { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' },
   { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail },
   { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail },
-  { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail },
+  { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
   { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail },
   { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail },
   { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail },
@@ -1397,10 +1409,10 @@ const applicationDetailPanels = computed(() => [
     title: locale.value.application?.adminProgressSse,
     detail: locale.value.application?.adminProgressSseDetail,
     items: [
-      locale.value.application?.adminProgressSseActiveConnections,
-      locale.value.application?.adminProgressSseHeartbeatFailures,
-      locale.value.application?.adminProgressSseAverageLifetime,
-      locale.value.application?.adminProgressSseUnclosedConnections
+      { label: locale.value.application?.adminProgressSseActiveConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' },
+      { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: '--' },
+      { label: locale.value.application?.adminProgressSseAverageLifetime, value: '--' },
+      { label: locale.value.application?.adminProgressSseUnclosedConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' }
     ]
   }
 ])
@@ -1416,12 +1428,14 @@ const serverMetrics = computed(() => [
   {
     icon: 'activity',
     label: locale.value.metrics?.cpuUsage,
-    detail: locale.value.server?.cpuUsageDetail
+    detail: locale.value.server?.cpuUsageDetail,
+    value: '--'
   },
   {
     icon: 'monitoring',
     label: locale.value.metrics?.systemMemory,
-    detail: locale.value.server?.systemMemoryDetail
+    detail: locale.value.server?.systemMemoryDetail,
+    value: runtimeMetrics.value?.process?.memory?.rss ? `${Math.round(runtimeMetrics.value.process.memory.rss / 1024 / 1024)} MB RSS` : '--'
   },
   {
     icon: 'database',
@@ -1446,7 +1460,8 @@ const serverMetrics = computed(() => [
   {
     icon: 'refresh',
     label: locale.value.server?.containerRestarts,
-    detail: locale.value.server?.containerRestartsDetail
+    detail: locale.value.server?.containerRestartsDetail,
+    value: '--'
   }
 ])
 
@@ -1531,10 +1546,10 @@ const runtimeGuardPanels = computed(() => [
     title: locale.value.server?.redisRuntimeGuard,
     detail: locale.value.server?.redisRuntimeGuardDetail,
     items: [
-      locale.value.server?.redisConfigured,
-      locale.value.server?.redisConnected,
-      locale.value.server?.redisFallbackMode,
-      locale.value.server?.redisLastError
+      { label: locale.value.server?.redisConfigured, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.configured ? 'YES' : 'NO') : '--' },
+      { label: locale.value.server?.redisConnected, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN') : '--' },
+      { label: locale.value.server?.redisFallbackMode, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured || !runtimeRedisMetrics.value.connected ? 'ACTIVE' : 'INACTIVE') : '--' },
+      { label: locale.value.server?.redisLastError, value: runtimeRedisMetrics.value?.lastError || '--' }
     ]
   },
   {
@@ -1542,9 +1557,9 @@ const runtimeGuardPanels = computed(() => [
     title: locale.value.server?.ssrWarmup,
     detail: locale.value.server?.ssrWarmupDetail,
     items: [
-      locale.value.server?.ssrWarmupLastResult,
-      locale.value.server?.ssrWarmupDuration,
-      locale.value.server?.ssrWarmupFailures
+      { label: locale.value.server?.ssrWarmupLastResult, value: '--' },
+      { label: locale.value.server?.ssrWarmupDuration, value: '--' },
+      { label: locale.value.server?.ssrWarmupFailures, value: '--' }
     ]
   },
   {
@@ -1552,9 +1567,9 @@ const runtimeGuardPanels = computed(() => [
     title: locale.value.server?.egressLocation,
     detail: locale.value.server?.egressLocationDetail,
     items: [
-      locale.value.server?.egressLastLocation,
-      locale.value.server?.egressCacheAge,
-      locale.value.server?.egressLookupFailures
+      { label: locale.value.server?.egressLastLocation, value: '--' },
+      { label: locale.value.server?.egressCacheAge, value: '--' },
+      { label: locale.value.server?.egressLookupFailures, value: '--' }
     ]
   }
 ])
@@ -1569,7 +1584,7 @@ const databaseMetrics = computed(() => [
   { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: '--' },
   { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail },
   { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail },
-  { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail }
+  { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail, value: '--' }
 ])
 
 const databaseDetails = computed(() => [
@@ -1612,19 +1627,21 @@ const cacheMetrics = computed(() => [
   {
     icon: 'success',
     label: locale.value.cache?.ready,
-    detail: locale.value.cache?.readyDetail
+    detail: locale.value.cache?.readyDetail,
+    value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN') : '--'
   },
   {
     icon: 'activity',
     label: locale.value.cache?.hitRatio,
-    detail: locale.value.cache?.hitRatioDetail
+    detail: locale.value.cache?.hitRatioDetail,
+    value: '--'
   },
-  { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail },
-  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail },
+  { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail, value: '--' },
+  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? '1' : '0') : '--' },
   { icon: 'clock', label: locale.value.cache?.commandP99, detail: locale.value.cache?.commandP99Detail },
   { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail },
   { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail },
-  { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail },
+  { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail, value: runtimeRedisMetrics.value?.lastError ? 'ERROR' : '--' },
   { icon: 'activity', label: locale.value.cache?.memoryFragmentation, detail: locale.value.cache?.memoryFragmentationDetail }
 ])
 
