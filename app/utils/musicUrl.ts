@@ -54,9 +54,33 @@ const xinghaiRequestTimes: number[] = []
 /**
  * 通过星海音源获取咪咕播放链接
  */
+const miguQuality = {
+  //maps: { 1: 'PQ', 2: 'HQ', 3: 'SQ' },
+  upgradeUrl(url: string, flag: number){
+    url = encodeURIComponent(url);
+    switch (flag) {
+      case 2: //HQ
+        url = url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
+        break
+      case 3: //SQ
+        url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac');
+        url = url.replace('mp3', 'flac');
+        break
+      case 4: //ZQ24 / ZQ
+        url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac_24bit');
+        url = url.replace('mp3', 'flac');
+        break
+      case 1:
+      default:
+        return url
+    }
+    return decodeURIComponent(url)
+  }
+}
 const fetchXinghaiMiguUrl = async (
   contentId: string,
-  meta?: MusicTrackMeta
+  meta?: MusicTrackMeta,
+  miguFlag?: number
 ): Promise<string | null> => {
   const cacheKey = `migu:${contentId}`
   const cached = xinghaiUrlCache.get(cacheKey)
@@ -108,7 +132,7 @@ const fetchXinghaiMiguUrl = async (
       })
 
       if (response?.code === 200 && response?.url) {
-        let url = response.url
+        let url = miguQuality.upgradeUrl(response.url.split('?')[0], miguFlag || 1);
         if (url.startsWith('http://')) {
           url = url.replace('http://', 'https://')
         }
@@ -127,7 +151,6 @@ const fetchXinghaiMiguUrl = async (
   })
   return promise
 }
-
 const musicUrlSourceCache = new Map<string, string>()
 
 const normalizeCacheUrl = (url: string) => {
@@ -346,7 +369,7 @@ export async function getMusicUrlResult(
       await checkServerLocation()
     }
     if (isServerInChina.value === false) {
-      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo)
+      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo, quality)
       if (xinghaiUrl) {
         rememberMusicUrlSource(xinghaiUrl, 'xinghai')
         return {
@@ -361,13 +384,13 @@ export async function getMusicUrlResult(
       const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
         params: {
           contentId: String(musicId),
-          toneFlag: 'PQ'
+          toneFlag: 'PQ' //PQ 获取基础音源
         },
         timeout: 10000
       })
 
       if (miguResponse?.success && miguResponse?.url) {
-        let miguUrl = miguResponse.url
+        let miguUrl = miguQuality.upgradeUrl(miguResponse.url, quality)
         // 与星海分支保持一致，避免 http 链接在 https 部署下被混合内容策略拦截
         if (miguUrl.startsWith('http://')) {
           miguUrl = miguUrl.replace('http://', 'https://')
@@ -383,7 +406,7 @@ export async function getMusicUrlResult(
     }
 
     // 官方接口失败时回退星海音源
-    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo)
+    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo, quality)
     if (xinghaiUrl) {
       rememberMusicUrlSource(xinghaiUrl, 'xinghai')
       return {

@@ -1,3 +1,20 @@
+function upgradeUrl(url: string, quality: string){
+  switch (quality) {
+    case 'HQ':
+      return url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
+    case 'SQ':
+      url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac');
+      return url.replace('mp3', 'flac');
+    case 'ZQ':
+    case 'ZQ24':
+      url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac_24bit');
+      return url.replace('mp3', 'flac');
+    case 'PQ':
+    default:
+      return url
+  }
+}
+
 function strToUtf8Bytes(str: string): Uint8Array {
   return new TextEncoder().encode(str)
 }
@@ -47,7 +64,7 @@ export default defineEventHandler(async (event) => {
       'location-data': '30.6698676660,104.1229614820',
       'location-info': '',
     }, baseUrl = 'http://c.musicapp.migu.cn', strategyU = '/listen-url/h5',
-    params = `contentId=${contentId}&copyrightId=&resourceType=2&netType=01&toneFlag=${toneFlag}&scene=&lowerQualityContentId=${contentId}`;
+    params = `contentId=${contentId}&copyrightId=&resourceType=2&netType=01&toneFlag=PQ&scene=&lowerQualityContentId=${contentId}`;
     const res = await fetch(
       `${baseUrl}/strategy${strategyU}/v2.4?${params}`
       ,{headers}
@@ -56,7 +73,9 @@ export default defineEventHandler(async (event) => {
 
     const ab = await res.arrayBuffer(), data = await mr(ab);
     // 保留完整 URL（含 Tim/Key/playSessionId 签名参数），并统一为 https 避免混合内容拦截
-    const url = (data?.data?.url || '').replace(/^http:\/\//, 'https://')
+    let url = (data?.data?.url || '').replace(/^http:\/\//, 'https://')
+    url = url.split('?')[0];
+    url = upgradeUrl(url, toneFlag)
 
     if (!url) {
       return {

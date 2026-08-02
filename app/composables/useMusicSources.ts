@@ -1832,6 +1832,7 @@ export const useMusicSources = () => {
             const result = await getBilibiliTrackUrl(idParam, options?.bilibiliCid)
             url = result.url
           } else if (source.id === 'migu') {
+            const miguQualityFlag = quality === 1 ? 'PQ' : quality === 2 ? 'HQ' : 'SQ'
             try {
               // 服务器位于海外时咪咕官方接口不可用，交由上层使用星海音源
               if (isServerInChina.value === null) {
@@ -1844,7 +1845,7 @@ export const useMusicSources = () => {
               const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
                 params: {
                   contentId: idParam,
-                  toneFlag: 'PQ'
+                  toneFlag: miguQualityFlag
                 },
                 timeout: source.timeout || 10000
               })
