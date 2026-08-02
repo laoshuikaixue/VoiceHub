@@ -750,7 +750,7 @@
       <section class="metric-grid">
         <article v-for="item in securitySignalMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ securityMetricValue(item.label) }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -1015,8 +1015,8 @@
       <section class="dependency-matrix">
         <article v-for="item in dependencyHealthCards" :key="item.label" class="dependency-card">
           <div class="dependency-card__header"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span>{{ item.label }}</span></div>
-          <div class="dependency-card__status"><i class="dependency-status-dot" /><strong>--</strong></div>
-          <dl><div v-for="detail in item.details" :key="detail"><dt>{{ detail }}</dt><dd>--</dd></div></dl>
+          <div class="dependency-card__status"><i class="dependency-status-dot" /><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
+          <dl><div v-for="detail in item.details" :key="detail"><dt>{{ detail }}</dt><dd>{{ dependencyMetricValue(item.label, detail) }}</dd></div></dl>
         </article>
       </section>
 
@@ -1181,6 +1181,8 @@ const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
 const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
 const runtimeSseMetrics = computed(() => operationsData.value.metrics?.sse || null)
 const runtimeRedisMetrics = computed(() => operationsData.value.metrics?.redis || null)
+const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
+const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : 'UP')
 const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
@@ -1192,6 +1194,36 @@ const formatBytes = (value) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 const formatTimestamp = (value) => value ? new Date(value).toLocaleString() : '--'
+const dependencySourceForLabel = (label) => {
+  const labels = {
+    [locale.value.overview?.neteaseSource]: 'netease',
+    [locale.value.overview?.tencentSource]: 'tencent',
+    [locale.value.overview?.miguSource]: 'migu'
+  }
+  return labels[label]
+}
+const dependencyStatusValue = (label) => {
+  const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
+  if (!metric) return '--'
+  return metric.successRate === 100 ? 'UP' : metric.successRate === 0 ? 'DOWN' : 'DEGRADED'
+}
+const dependencyMetricValue = (label, detail) => {
+  const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
+  if (!metric) return '--'
+  if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : `${metric.successRate}%`
+  if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : `${metric.emptyResultRate}%`
+  if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : `${metric.semanticFailureRate}%`
+  if (detail === locale.value.dependencies?.p95LatencyShort) return metric.averageDurationMs == null ? '--' : `${metric.averageDurationMs} ms`
+  return '--'
+}
+const securityMetricValue = (label) => {
+  if (!turnstileMetrics.value) return '--'
+  if (label === locale.value.audit?.turnstileValidationRequests) return String(turnstileMetrics.value.calls)
+  if (label === locale.value.audit?.turnstileValidationSuccessRate) return turnstileMetrics.value.calls ? `${(turnstileMetrics.value.successes / turnstileMetrics.value.calls * 100).toFixed(1)}%` : '--'
+  if (label === locale.value.audit?.turnstileUpstreamFailures) return String(turnstileMetrics.value.upstreamFailures)
+  if (label === locale.value.audit?.turnstileConfiguration) return '--'
+  return '--'
+}
 
 const waterfallBarStyle = (span) => {
   const totalDuration = traceSpans.value.reduce((total, item) => Math.max(total, item.offsetMs + item.durationMs), 0)

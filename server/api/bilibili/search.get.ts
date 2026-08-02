@@ -4,6 +4,7 @@
  */
 import { defineEventHandler, getQuery, createError } from 'h3'
 import xss from 'xss'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 interface SongInfo {
   id: number
@@ -90,6 +91,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const target_url = `https://api.bilibili.com/x/web-interface/search/type`
+  const startedAt = Date.now()
 
   try {
     const resp = await $fetch<SearchRes>(target_url, {
@@ -116,6 +118,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!resp.data?.result) {
+      recordDependencyCall('bilibili', { success: false, emptyResult: true, durationMs: Date.now() - startedAt })
       return []
     }
 
@@ -147,8 +150,10 @@ export default defineEventHandler(async (event) => {
       })
     )
 
+    recordDependencyCall('bilibili', { success: results.length > 0, emptyResult: results.length === 0, durationMs: Date.now() - startedAt })
     return results
   } catch (error: any) {
+    recordDependencyCall('bilibili', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: error.message || String(error) })
     console.error('Bilibili search error:', error)
     throw createError({
       statusCode: 500,

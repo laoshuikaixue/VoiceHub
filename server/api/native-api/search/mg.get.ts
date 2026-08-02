@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { formatPlayTime } from '../../../utils/native_common'
 import { getServerLocation } from '../../../utils/geo'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 // 咪咕 v3 搜索签名
 function createSignature(time: string, str: string) {
@@ -41,6 +42,7 @@ async function getMgCover(contentId: string): Promise<string> {
     mgSongInfoCache.delete(contentId)
   }
 
+  const startedAt = Date.now()
   try {
     const res: any = await $fetch(
       `https://app.c.nf.migu.cn/resource/song/by-contentids/v2.0?contentId=${contentId}`,
@@ -220,6 +222,8 @@ export default defineEventHandler(async (event) => {
       result = await searchLegacy(str, page, limit)
     }
 
+    const list = result?.list || []
+    recordDependencyCall('migu', { success: list.length > 0, emptyResult: list.length === 0, durationMs: Date.now() - startedAt })
     return {
       ...result,
       page,
@@ -227,6 +231,7 @@ export default defineEventHandler(async (event) => {
       source: 'mg'
     }
   } catch (err: any) {
+    recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: err?.message || String(err) })
     console.error('[mg.get] 咪咕搜索失败:', err)
     throw createError({
       statusCode: err.statusCode || 500,

@@ -1,6 +1,7 @@
 import { createTxSearchBody, txRequest, txSignedRequest } from '../../../utils/native_tx'
 import { decodeName, formatPlayTime, sizeFormate } from '../../../utils/native_common'
 import { searchQqMusic } from '~~/server/utils/qq_music_sdk'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 const stripHtml = (value: unknown) => String(value ?? '').replace(/[<>]/g, '')
 
@@ -69,6 +70,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = createTxSearchBody(str, page, limit)
+  const startedAt = Date.now()
 
   let result: any
   try {
@@ -78,6 +80,7 @@ export default defineEventHandler(async (event) => {
       const list = formatSdkSearchList(sdkList)
 
       if (list.length > 0) {
+        recordDependencyCall('tencent', { success: true, durationMs: Date.now() - startedAt })
         return {
           list,
           total: sdkResult?.song?.totalnum || sdkResult?.data?.song?.totalnum || list.length,
@@ -167,6 +170,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    recordDependencyCall('tencent', { success: list.length > 0, emptyResult: list.length === 0, durationMs: Date.now() - startedAt })
     return {
       list,
       total: service?.data?.meta?.sum ?? list.length,
@@ -175,6 +179,7 @@ export default defineEventHandler(async (event) => {
       source: 'tx'
     }
   } catch (err) {
+    recordDependencyCall('tencent', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: err instanceof Error ? err.message : String(err) })
     console.error(err)
     throw createError({ statusCode: 500, message: 'Internal Server Error' })
   }
