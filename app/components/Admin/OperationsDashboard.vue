@@ -101,7 +101,7 @@
       <section class="panel">
         <div class="panel-header">
           <div><h3 class="panel-title">{{ locale.overview.deploymentMode }}</h3><p class="panel-description">{{ locale.overview.deploymentModeDetail }}</p></div>
-          <span class="status-badge">{{ locale.overview.detectionPending }}</span>
+          <span class="status-badge">{{ deploymentModeLabel }}</span>
         </div>
         <div class="deployment-mode-grid">
           <div v-for="item in deploymentModeRows" :key="item.label" class="deployment-mode-card">
@@ -266,12 +266,15 @@
               <h3 class="panel-title">{{ locale.application.routePerformance }}</h3>
               <p class="panel-description">{{ locale.application.routePerformanceDetail }}</p>
             </div>
-            <span class="item-count">{{ locale.itemCount }} --</span>
+            <span class="item-count">{{ locale.itemCount }} {{ routePerformanceRows.length }}</span>
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1080px]">
-              <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
-              <tbody><tr><td colspan="12" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>403</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in routePerformanceRows" :key="item.route"><td>{{ item.method }}</td><td>{{ item.route }}</td><td>{{ item.qps }}</td><td>{{ item.p50 }}</td><td>{{ item.p95 }}</td><td>{{ item.p99 }}</td><td>{{ item.clientErrors }}</td><td>{{ item.status401 }}</td><td>{{ item.status403 }}</td><td>{{ item.status429 }}</td><td>{{ item.serverErrors }}</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
+                <tr v-if="!routePerformanceRows.length"><td colspan="13" class="empty-cell">{{ locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -297,11 +300,14 @@
           </dl>
         </article>
         <article class="panel overflow-hidden">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.application.musicApiPerformance }}</h3><p class="panel-description">{{ locale.application.musicApiPerformanceDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
+          <div class="panel-header"><div><h3 class="panel-title">{{ locale.application.musicApiPerformance }}</h3><p class="panel-description">{{ locale.application.musicApiPerformanceDetail }}</p></div><span class="item-count">{{ locale.itemCount }} {{ musicApiRows.length }}</span></div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[720px]">
-              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>P95</th><th>{{ locale.application.successRate }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>{{ locale.application.averageDuration || '平均耗时' }}</th><th>{{ locale.application.httpSuccessRate || 'HTTP 成功率' }}</th><th>{{ locale.application.semanticSuccessRate || '解析成功率' }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in musicApiRows" :key="item.source"><td>/api/music/*</td><td>{{ item.source }}</td><td>{{ item.averageDuration }}</td><td>{{ item.httpSuccessRate }}</td><td>{{ item.semanticSuccessRate }}</td><td>{{ item.timeouts }}</td></tr>
+                <tr v-if="!musicApiRows.length"><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -502,15 +508,18 @@
         <article class="panel overflow-hidden">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">{{ locale.database.tableHealth }}</h3>
-              <p class="panel-description">{{ locale.database.tableHealthDetail }}</p>
+              <h3 class="panel-title">{{ locale.database.tableHealth }} · 容量与活跃度</h3>
+              <p class="panel-description">使用 pg_class 估算行数，避免对业务表执行高频 COUNT(*)。</p>
             </div>
             <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="data-table min-w-[480px]">
-              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.server.tableStatus }}</th><th>{{ locale.database.lastChecked }}</th></tr></thead>
-              <tbody><tr v-for="item in schemaHealthTables" :key="item.name"><td>{{ item.label }}</td><td>{{ databaseTableNames.has(item.name) ? 'UP' : databaseDiagnostics?.tables?.available ? 'DOWN' : 'N/A' }}</td><td>{{ databaseDiagnostics?.collectedAt ? formatTimestamp(databaseDiagnostics.collectedAt) : '--' }}</td></tr></tbody>
+            <table class="data-table min-w-[680px]">
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
+              <tbody>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ item.dead_row_ratio != null ? `${item.dead_row_ratio}%` : 'N/A' }}</td><td>N/A</td></tr>
+                <tr v-if="!databaseTableRows.length"><td colspan="5" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -709,38 +718,37 @@
         <article class="panel xl:col-span-7">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">{{ locale.audit.pendingRiskDistribution }}</h3>
-              <p class="panel-description">{{ locale.audit.pendingRiskDistributionDetail }}</p>
+              <h3 class="panel-title">当前活跃风险</h3>
+              <p class="panel-description">只展示需要立即关注的认证、验证码和限流信号。</p>
             </div>
-            <span class="risk-badge">{{ locale.audit.pending }}</span>
+            <span class="risk-badge">ACTIVE</span>
           </div>
           <div class="risk-distribution">
             <div class="risk-total">
               <span class="risk-total__icon"><Icon name="warning" :size="18" /></span>
-              <strong>--</strong>
-              <p>{{ locale.audit.unresolvedEvents }}</p>
+              <strong>{{ activeRiskCount }}</strong>
+              <p>当前活跃风险</p>
             </div>
             <div class="risk-levels">
-              <div v-for="item in riskLevels" :key="item.label" class="risk-level-row">
-                <span class="risk-level-name"><i :class="item.tone" />{{ item.label }}</span>
-                <strong>--</strong>
-              </div>
+              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--critical" />5xx 服务错误</span><strong>{{ runtimeHttpMetrics?.recent5xx || 0 }}</strong></div>
+              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--high" />429 限流触发</span><strong>{{ runtimeHttpMetrics?.status429 || 0 }}</strong></div>
+              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--medium" />验证码拦截</span><strong>{{ turnstileMetrics?.upstreamFailures || 0 }}</strong></div>
             </div>
           </div>
-          <p class="panel-copy mt-4">{{ locale.audit.riskScoreFormula }}</p>
+          <p class="panel-copy mt-4">风险计数来自当前 5 分钟采集窗口，不进行复杂风险评分。</p>
         </article>
 
         <article class="panel overflow-hidden xl:col-span-5">
           <div class="panel-header">
             <div>
-              <h3 class="panel-title">{{ locale.audit.highRiskIps }}</h3>
-              <p class="panel-description">{{ locale.audit.highRiskIpsDetail }}</p>
+              <h3 class="panel-title">异常行为账户</h3>
+              <p class="panel-description">按用户维度识别短时刷歌、刷票和投稿限额触发。</p>
             </div>
             <span class="item-count">{{ locale.itemCount }} --</span>
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[620px]">
-              <thead><tr><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
+              <thead><tr><th>{{ locale.audit.relatedUser }}</th><th>限额触发</th><th>点歌/投票请求</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
               <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
             </table>
           </div>
@@ -1146,14 +1154,16 @@ import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.operations || {})
+const publicRuntimeConfig = useRuntimeConfig().public || {}
 const activeGroup = ref('overview')
 const globalRequestId = ref('')
 const debugRequestId = ref('')
+const diagnosticLoading = ref(false)
 const logKeyword = ref('')
 const logRequestId = ref('')
 const traceSpans = computed(() => {
   const requestId = debugRequestId.value
-  const samples = operationsData.value?.metrics?.metrics?.recentErrors || []
+  const samples = operationsData.value?.metrics?.diagnostic?.entries || operationsData.value?.metrics?.metrics?.recentErrors || []
   const request = samples.find((item) => item.requestId === requestId)
   if (!request) return []
   return [{ id: request.requestId, module: request.route, depth: 0, offsetMs: 0, durationMs: request.durationMs, status: request.status >= 500 ? 'error' : request.status >= 400 ? 'slow' : 'ok' }]
@@ -1209,6 +1219,7 @@ const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
 const runtimeTimeline = computed(() => runtimeDatabaseMetrics.value?.timeline?.length ? runtimeDatabaseMetrics.value.timeline : (runtimeMetrics.value?.timeline || []))
 const recentErrorRequests = computed(() => {
   const errors = [
+    ...(operationsData.value.metrics?.diagnostic?.entries || []),
     ...(runtimeMetrics.value?.recentErrors || []),
     ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
   ]
@@ -1219,7 +1230,11 @@ const selectedDebugRequest = computed(() => {
   if (!debugRequestId.value) return null
   return recentErrorRequests.value.find((item) => item.requestId === debugRequestId.value) || null
 })
-const diagnosticLogEntries = computed(() => selectedDebugRequest.value ? [selectedDebugRequest.value] : [])
+const diagnosticLogEntries = computed(() => {
+  const entries = operationsData.value.metrics?.diagnostic?.entries || []
+  if (entries.length) return entries.map((item) => ({ ...item, level: Number(item.status) >= 500 ? 'error' : 'warn' }))
+  return selectedDebugRequest.value ? [selectedDebugRequest.value] : []
+})
 const logEntries = computed(() => {
   const keyword = logKeyword.value.toLowerCase()
   const requestId = logRequestId.value.toLowerCase()
@@ -1246,6 +1261,50 @@ const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.busin
 const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
 const backupSnapshot = computed(() => runtimeMetrics.value?.backupSnapshot || null)
 const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
+const routePerformanceRows = computed(() => {
+  const samples = [
+    ...(runtimeMetrics.value?.recentErrors || []),
+    ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
+  ].filter((item) => item && item.route)
+  const grouped = new Map()
+  for (const sample of samples) {
+    const route = String(sample.route)
+    const bucket = grouped.get(route) || { route, method: String(sample.method || 'HTTP'), samples: [], requestId: null }
+    bucket.samples.push(sample)
+    if (!bucket.requestId && sample.requestId) bucket.requestId = sample.requestId
+    grouped.set(route, bucket)
+  }
+  const percentileValue = (values, ratio) => {
+    const sorted = values.filter(Number.isFinite).sort((a, b) => a - b)
+    return sorted.length ? `${Math.round(sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * ratio) - 1)])} ms` : 'N/A'
+  }
+  return [...grouped.values()].map((bucket) => {
+    const statuses = bucket.samples.map((item) => Number(item.status))
+    const durations = bucket.samples.map((item) => Number(item.durationMs))
+    const clientErrors = statuses.filter((status) => status >= 400 && status < 500).length
+    return {
+      method: bucket.method,
+      route: bucket.route,
+      qps: 'N/A',
+      p50: percentileValue(durations, 0.5),
+      p95: percentileValue(durations, 0.95),
+      p99: percentileValue(durations, 0.99),
+      clientErrors,
+      status401: statuses.filter((status) => status === 401).length,
+      status403: statuses.filter((status) => status === 403).length,
+      status429: statuses.filter((status) => status === 429).length,
+      serverErrors: statuses.filter((status) => status >= 500).length,
+      requestId: bucket.requestId
+    }
+  }).sort((a, b) => (b.serverErrors + b.clientErrors) - (a.serverErrors + a.clientErrors))
+})
+const musicApiRows = computed(() => Object.entries(dependencyMetrics.value || {}).map(([source, metric]) => ({
+  source: ({ netease: locale.value.overview?.neteaseSource, tencent: locale.value.overview?.tencentSource, bilibili: locale.value.overview?.bilibiliSource, migu: locale.value.overview?.miguSource }[source] || source),
+  averageDuration: metric?.averageDurationMs != null ? `${metric.averageDurationMs} ms` : 'N/A',
+  httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
+  semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(2)}%` : 'N/A',
+  timeouts: 'N/A'
+})))
 const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : 'UP')
@@ -1278,6 +1337,10 @@ const dependencyStatusValue = (label) => {
   return metric.successRate === 100 ? 'UP' : metric.successRate === 0 ? 'DOWN' : 'DEGRADED'
 }
 const dependencyMetricValue = (label, detail) => {
+  if (label === locale.value.dependencies?.neonPostgresql && detail === locale.value.dependencies?.coldStartP95) {
+    const connectionInfo = databaseSnapshot.value?.connectionInfo
+    return connectionInfo?.serverlessMode ? 'N/A · auto-suspend enabled' : 'N/A'
+  }
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
   if (!metric) return '--'
   if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : `${metric.successRate}%`
@@ -1287,6 +1350,9 @@ const dependencyMetricValue = (label, detail) => {
   return '--'
 }
 const securityMetricValue = (label) => {
+  if (label === locale.value.audit?.invalidTokenRequests) return runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : 'N/A'
+  if (label === locale.value.audit?.rateLimitTriggers) return runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : 'N/A'
+  if (label === locale.value.audit?.strongAuthFailures) return runtimeOAuthMetrics.value?.successRate != null ? `${(100 - runtimeOAuthMetrics.value.successRate).toFixed(2)}%` : 'N/A'
   if (!turnstileMetrics.value) return '--'
   if (label === locale.value.audit?.turnstileValidationRequests) return String(turnstileMetrics.value.calls)
   if (label === locale.value.audit?.turnstileValidationSuccessRate) return turnstileMetrics.value.calls ? `${(turnstileMetrics.value.successes / turnstileMetrics.value.calls * 100).toFixed(1)}%` : '--'
@@ -1338,12 +1404,22 @@ const waterfallBarStyle = (span) => {
   }
 }
 
-const openRequestDiagnosis = (requestId = globalRequestId.value) => {
+const openRequestDiagnosis = async (requestId = globalRequestId.value) => {
   const normalizedRequestId = String(requestId || '').trim()
   if (!normalizedRequestId) return
   globalRequestId.value = normalizedRequestId
   debugRequestId.value = normalizedRequestId
   activeGroup.value = 'debug'
+  diagnosticLoading.value = true
+  try {
+    const response = await $fetch('/api/admin/operations/metrics', { query: { requestId: normalizedRequestId } })
+    const metrics = response?.data || {}
+    operationsData.value.metrics = { ...operationsData.value.metrics, diagnostic: metrics.diagnostic }
+  } catch {
+    operationsError.value = true
+  } finally {
+    diagnosticLoading.value = false
+  }
 }
 
 const monitorSections = computed(() => [
@@ -1381,7 +1457,10 @@ const overviewSignals = computed(() => [
   {
     icon: 'monitoring',
     label: locale.value.overview?.memoryStatus,
-    detail: locale.value.overview?.memoryStatusDetail, value: systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
+    detail: locale.value.overview?.memoryStatusDetail,
+    value: runtimeMetrics.value?.process?.memory
+      ? `RSS ${formatBytes(runtimeMetrics.value.process.memory.rss)} · Heap ${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)} · External ${formatBytes(runtimeMetrics.value.process.memory.external)}`
+      : systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
   },
   {
     icon: 'database',
@@ -1403,7 +1482,14 @@ const overviewSignals = computed(() => [
     label: locale.value.overview?.backgroundTaskStatus,
     detail: locale.value.overview?.backgroundTaskStatusDetail, value: '--'
   }
-])
+].filter((item) => !isServerlessRuntime.value || ![locale.value.overview?.cpuStatus, locale.value.overview?.memoryStatus].includes(item.label)))
+
+const isServerlessRuntime = computed(() => {
+  const mode = String(runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || '').toLowerCase()
+  if (publicRuntimeConfig.isNetlify) return true
+  return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
+})
+const deploymentModeLabel = computed(() => isServerlessRuntime.value ? 'SERVERLESS' : systemSnapshot.value?.platform ? 'NODE SERVER' : locale.value.overview?.detectionPending)
 
 const healthLiveDetails = computed(() => [
   { label: locale.value.overview?.sloBudget, value: '--' },
@@ -1434,12 +1520,12 @@ const backupTargetPanels = computed(() => [
 
 const backupTargetValue = (target) => {
   const method = latestBackup.value?.methods?.find(item => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
-  return method ? (method.success ? 'SUCCESS' : 'FAILED') : '--'
+  return method ? (method.success ? 'SUCCESS' : 'FAILED') : '未启用'
 }
 
 const deploymentModeRows = computed(() => [
   { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? 'DETECTED' : locale.value.overview?.detectionPending },
-  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: 'N/A' }
+  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? 'DETECTED' : 'N/A' }
 ])
 
 const dependencyRows = computed(() => [
@@ -1462,6 +1548,12 @@ const dependencyRows = computed(() => [
     icon: 'activity',
     label: locale.value.server?.collectionReporting,
     detail: locale.value.overview?.collectionReportingDetail, value: collectionStatusText.value
+  },
+  {
+    icon: 'users',
+    label: locale.value.application?.sseActiveConnections || '实时连接',
+    detail: locale.value.application?.sseActiveConnectionsDetail || '音乐状态 SSE 当前活跃连接数',
+    value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--'
   }
 ])
 
@@ -1478,6 +1570,9 @@ const alertRules = computed(() => [
 const applicationMetrics = computed(() => [
   { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail, value: runtimeHttpMetrics.value?.requestsPerSecond != null ? String(runtimeHttpMetrics.value.requestsPerSecond) : '--' },
   { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail, value: runtimeHttpMetrics.value?.recent4xx != null ? String(runtimeHttpMetrics.value.recent4xx) : '--' },
+  { icon: 'warning', label: locale.value.application?.unauthorized401, detail: 'JWT 校验失败请求数', value: runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : '--' },
+  { icon: 'warning', label: locale.value.application?.forbidden403, detail: '权限拒绝请求数', value: runtimeHttpMetrics.value?.status403 != null ? String(runtimeHttpMetrics.value.status403) : '--' },
+  { icon: 'activity', label: locale.value.application?.rateLimited429, detail: '限流触发次数，不计入 5xx 告警', value: runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : '--' },
   { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: runtimeHttpMetrics.value?.recent5xx != null ? String(runtimeHttpMetrics.value.recent5xx) : '--' },
   { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
   { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' },
@@ -1522,10 +1617,10 @@ const applicationDetailPanels = computed(() => [
     title: locale.value.application?.musicSyncReliability,
     detail: locale.value.application?.musicSyncReliabilityDetail,
     items: [
-      locale.value.application?.musicSyncReconnects,
-      locale.value.application?.musicSyncLatency,
-      locale.value.application?.musicSyncHeartbeatTimeouts,
-      locale.value.application?.musicSyncDeliveryFailures
+      { label: locale.value.application?.musicSyncReconnects, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
+      { label: locale.value.application?.musicSyncLatency, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : 'N/A' },
+      { label: locale.value.application?.musicSyncHeartbeatTimeouts, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
+      { label: locale.value.application?.musicSyncDeliveryFailures, value: 'N/A' }
     ]
   },
   {
@@ -1560,7 +1655,12 @@ const serverSummaryDetails = computed(() => [
   { label: locale.value.runtime?.processPid, value: 'N/A' }
 ])
 
-const serverMetrics = computed(() => [
+const serverMetrics = computed(() => (isServerlessRuntime.value ? [
+  { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : 'N/A' },
+  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: runtimeMetrics.value?.http?.p95Ms != null ? `${runtimeMetrics.value.http.p95Ms} ms` : 'N/A' },
+  { icon: 'refresh', label: '冷启动次数', detail: '当前实例可见的冷启动次数', value: 'N/A' },
+  { icon: 'warning', label: '内存超限错误', detail: '函数因内存限制终止的次数', value: 'N/A' }
+] : [
   {
     icon: 'activity',
     label: locale.value.metrics?.cpuUsage,
@@ -1599,7 +1699,7 @@ const serverMetrics = computed(() => [
     detail: locale.value.server?.containerRestartsDetail,
     value: '--'
   }
-])
+]))
 
 const serverHealthDetails = computed(() => [
   { label: locale.value.server?.healthLevel, value: healthScore.value === 'N/A' ? 'N/A' : healthScore.value },
@@ -1607,21 +1707,25 @@ const serverHealthDetails = computed(() => [
   { label: locale.value.server?.collectedAt, value: formattedLastUpdated.value }
 ])
 
-const infraTrendPanels = computed(() => [
+const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
+  { title: '函数调用量趋势', detail: 'Serverless 函数调用量按时间聚合。' },
+  { title: '函数执行时长 P95', detail: 'Serverless 函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。' }
+] : [
   { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail },
   { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail },
   { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail },
   { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail }
-])
+]))
 
 const serverRuntimeDetails = computed(() => [
+  { label: 'NITRO_PRESET', value: runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || (publicRuntimeConfig.isNetlify ? 'netlify' : 'node-server') },
   { label: locale.value.server?.platformRelease, value: systemSnapshot.value?.platform || '--' },
   { label: locale.value.runtime?.architecture, value: systemSnapshot.value?.arch || '--' },
   { label: locale.value.runtime?.nodeVersion, value: systemSnapshot.value?.nodeVersion || '--' },
   { label: locale.value.runtime?.processUptime, value: systemSnapshot.value?.uptime ? `${Math.round(systemSnapshot.value.uptime)}s` : '--' },
   { label: locale.value.runtime?.instanceId, value: operationsData.value.status?.instance?.instanceId || '--' },
   { label: locale.value.server?.appVersion, value: '--' },
-  { label: locale.value.server?.commitSha, value: '--' },
+  { label: locale.value.server?.commitSha, value: runtimeMetrics.value?.runtime?.commitSha || runtimeMetrics.value?.commitSha || publicRuntimeConfig.sentry?.release || 'N/A' },
   { label: locale.value.server?.deployedAt, value: '--' },
   { label: locale.value.server?.collectionReporting, value: collectionStatusText.value }
 ])
@@ -1701,7 +1805,7 @@ const runtimeGuardPanels = computed(() => [
     detail: locale.value.server?.redisRuntimeGuardDetail,
     items: [
       { label: locale.value.server?.redisConfigured, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.configured ? 'YES' : 'NO') : '--' },
-      { label: locale.value.server?.redisConnected, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN') : '--' },
+      { label: locale.value.server?.redisConnected, value: !runtimeRedisMetrics.value ? '--' : !runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN' },
       { label: locale.value.server?.redisFallbackMode, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured || !runtimeRedisMetrics.value.connected ? 'ACTIVE' : 'INACTIVE') : '--' },
       { label: locale.value.server?.redisLastError, value: runtimeRedisMetrics.value?.lastError || '--' }
     ]
@@ -1794,7 +1898,7 @@ const cacheMetrics = computed(() => [
     icon: 'success',
     label: locale.value.cache?.ready,
     detail: locale.value.cache?.readyDetail,
-    value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN') : '--'
+    value: redisStatusValue.value
   },
   {
     icon: 'activity',
@@ -1803,13 +1907,19 @@ const cacheMetrics = computed(() => [
     value: '--'
   },
   { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail, value: '--' },
-  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? '1' : '0') : '--' },
+  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail, value: runtimeRedisMetrics.value?.configured ? (runtimeRedisMetrics.value.connected ? '1' : '0') : 'N/A' },
   { icon: 'clock', label: locale.value.cache?.commandP99, detail: locale.value.cache?.commandP99Detail },
   { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail },
   { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail },
   { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail, value: runtimeRedisMetrics.value?.lastError ? 'ERROR' : '--' },
   { icon: 'activity', label: locale.value.cache?.memoryFragmentation, detail: locale.value.cache?.memoryFragmentationDetail }
 ])
+
+const redisStatusValue = computed(() => {
+  if (!runtimeRedisMetrics.value) return '--'
+  if (!runtimeRedisMetrics.value.configured) return '未启用'
+  return runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN'
+})
 
 const cacheDetails = computed(() => [
   locale.value.cache?.configured,
@@ -1945,17 +2055,15 @@ const auditMetrics = computed(() => [
   }
 ])
 
+const activeRiskCount = computed(() => Number(runtimeHttpMetrics.value?.recent5xx || 0) + Number(runtimeHttpMetrics.value?.status429 || 0) + Number(turnstileMetrics.value?.upstreamFailures || 0))
+
 const securitySignalMetrics = computed(() => [
-  { icon: 'warning', label: locale.value.audit?.loginFailures, detail: locale.value.audit?.loginFailuresDetail },
-  { icon: 'warning', label: locale.value.audit?.accountLockouts, detail: locale.value.audit?.accountLockoutsDetail },
-  { icon: 'warning', label: locale.value.audit?.strongAuthFailures, detail: locale.value.audit?.strongAuthFailuresDetail },
-  { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: locale.value.audit?.invalidTokenRequestsDetail },
-  { icon: 'activity', label: locale.value.audit?.rateLimitTriggers, detail: locale.value.audit?.rateLimitTriggersDetail },
-  { icon: 'warning', label: locale.value.audit?.blacklistHits, detail: locale.value.audit?.blacklistHitsDetail },
+  { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: 'JWT 校验失败与过期 Token 请求数' },
+  { icon: 'warning', label: locale.value.audit?.strongAuthFailures, detail: 'OAuth 回调失败率；仅在配置 OAuth 时有数据' },
+  { icon: 'activity', label: locale.value.audit?.rateLimitTriggers, detail: '429 限流触发次数，不计入 5xx 故障' },
   { icon: 'success', label: locale.value.audit?.turnstileValidationRequests, detail: locale.value.audit?.turnstileValidationRequestsDetail },
   { icon: 'success', label: locale.value.audit?.turnstileValidationSuccessRate, detail: locale.value.audit?.turnstileValidationSuccessRateDetail },
-  { icon: 'warning', label: locale.value.audit?.turnstileUpstreamFailures, detail: locale.value.audit?.turnstileUpstreamFailuresDetail },
-  { icon: 'settings', label: locale.value.audit?.turnstileConfiguration, detail: locale.value.audit?.turnstileConfigurationDetail }
+  { icon: 'warning', label: locale.value.audit?.turnstileUpstreamFailures, detail: locale.value.audit?.turnstileUpstreamFailuresDetail }
 ])
 
 const requestSummaryItems = computed(() => [
@@ -2081,7 +2189,7 @@ const musicSourceHealthDetails = computed(() => [
 
 const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map(item => ({
   ...item,
-  preview: item.details.slice(0, 3).map(detail => `${detail} --`).join(' · ')
+  preview: item.details.slice(0, 3).map(detail => `${detail} ${dependencyMetricValue(item.label, detail)}`).join(' · ')
 })))
 
 const dependencyErrorPanels = computed(() => [

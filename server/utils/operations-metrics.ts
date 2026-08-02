@@ -73,6 +73,9 @@ export const getOperationsMetrics = () => {
   const recentRequests = state.samples.length
   const recent5xx = state.samples.filter((sample) => sample.status >= 500).length
   const recent4xx = state.samples.filter((sample) => sample.status >= 400 && sample.status < 500).length
+  const status401 = state.samples.filter((sample) => sample.status === 401).length
+  const status403 = state.samples.filter((sample) => sample.status === 403).length
+  const status429 = state.samples.filter((sample) => sample.status === 429).length
   const business = Object.fromEntries(['song_request', 'schedule_save', 'vote'].map((operation) => {
     const samples = state.businessSamples.filter((sample) => sample.operation === operation)
     const successes = samples.filter((sample) => sample.success).length
@@ -108,6 +111,9 @@ export const getOperationsMetrics = () => {
       recentRequests,
       requestsPerSecond: Number((recentRequests / (WINDOW_MS / 1000)).toFixed(3)),
       recent4xx,
+      status401,
+      status403,
+      status429,
       recent5xx,
       p50Ms: percentile(durations, 0.5),
       p95Ms: percentile(durations, 0.95),
