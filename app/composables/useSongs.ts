@@ -165,6 +165,7 @@ export const useSongs = () => {
             cover: schedule.song.cover || null,
             musicPlatform: schedule.song.musicPlatform || null,
             musicId: schedule.song.musicId || null,
+            cardCodeId: schedule.song.usedCardCode ? 1 : null,
             hasSubmissionNote: schedule.song.hasSubmissionNote === true,
             submissionNote: schedule.song.submissionNote || null,
             submissionNotePublic: schedule.song.submissionNotePublic === true
