@@ -10,7 +10,8 @@ const state = {
   clientErrors: 0,
   serverErrors: 0,
   activeRequests: 0,
-  samples: [] as Array<{ at: number; status: number; durationMs: number }>,
+  samples: [] as Array<{ at: number; status: number; durationMs: number; route?: string; requestId?: string }>,
+  requestContext: new Map<number, { route?: string; requestId?: string }>(),
   businessSamples: [] as Array<{ at: number; operation: string; success: boolean }>,
   oauthSamples: [] as Array<{ at: number; success: boolean }>,
   dependencies: new Map<string, { calls: number; successes: number; emptyResults: number; semanticFailures: number; durationMs: number; lastError: string | null }>(),
@@ -42,13 +43,19 @@ export const startOperationRequest = () => {
   return performance.now()
 }
 
+export const setOperationRequestContext = (startedAt: number, context: { route?: string; requestId?: string }) => {
+  state.requestContext.set(startedAt, context)
+}
+
 export const finishOperationRequest = (startedAt: number, statusCode: number) => {
   const durationMs = Math.max(0, performance.now() - startedAt)
   state.activeRequests = Math.max(0, state.activeRequests - 1)
   state.totalRequests += 1
   if (statusCode >= 400 && statusCode < 500) state.clientErrors += 1
   if (statusCode >= 500) state.serverErrors += 1
-  state.samples.push({ at: Date.now(), status: statusCode, durationMs })
+  const context = state.requestContext.get(startedAt)
+  state.requestContext.delete(startedAt)
+  state.samples.push({ at: Date.now(), status: statusCode, durationMs, ...context })
   if (state.samples.length > 5000) state.samples = state.samples.slice(-5000)
   prune()
 }
@@ -75,6 +82,18 @@ export const getOperationsMetrics = () => {
     }]
   }))
   const oauthSuccesses = state.oauthSamples.filter((sample) => sample.success).length
+  const bucketSize = WINDOW_MS / 12
+  const timeline = Array.from({ length: 12 }, (_, index) => {
+    const start = Date.now() - WINDOW_MS + index * bucketSize
+    const bucket = state.samples.filter((sample) => sample.at >= start && sample.at < start + bucketSize)
+    const errors = bucket.filter((sample) => sample.status >= 500).length
+    return {
+      at: new Date(start + bucketSize).toISOString(),
+      requests: bucket.length,
+      errors,
+      p95Ms: percentile(bucket.map((sample) => sample.durationMs), 0.95)
+    }
+  })
   const histogram = eventLoopHistogram
   const result = {
     process: {
@@ -93,6 +112,12 @@ export const getOperationsMetrics = () => {
       p95Ms: percentile(durations, 0.95),
       p99Ms: percentile(durations, 0.99)
     },
+    timeline,
+    recentErrors: state.samples
+      .filter((sample) => sample.status >= 400)
+      .slice(-20)
+      .reverse()
+      .map((sample) => ({ at: new Date(sample.at).toISOString(), status: sample.status, durationMs: Math.round(sample.durationMs), route: sample.route || 'unknown', requestId: sample.requestId || null })),
     eventLoop: {
       meanMs: histogram.count ? Number((Number(histogram.mean) / 1e6).toFixed(2)) : null,
       maxMs: histogram.count ? Number((Number(histogram.max) / 1e6).toFixed(2)) : null,

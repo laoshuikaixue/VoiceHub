@@ -666,3 +666,17 @@ export const backupHistory = pgTable('BackupHistory', {
 
 export type BackupHistory = typeof backupHistory.$inferSelect;
 export type NewBackupHistory = typeof backupHistory.$inferInsert;
+
+// 分钟级运行指标，供运维面板在跨实例、重启后读取趋势。
+export const operationsMetricBuckets = pgTable('operations_metric_buckets', {
+  bucketStart: timestamp('bucket_start', { withTimezone: true }).notNull(),
+  instanceId: varchar('instance_id', { length: 128 }).notNull(),
+  requestCount: integer('request_count').default(0).notNull(),
+  clientErrorCount: integer('client_error_count').default(0).notNull(),
+  serverErrorCount: integer('server_error_count').default(0).notNull(),
+  totalDurationMs: integer('total_duration_ms').default(0).notNull(),
+  maxDurationMs: integer('max_duration_ms').default(0).notNull()
+}, (table) => [
+  unique('operations_metric_buckets_instance_bucket_unique').on(table.bucketStart, table.instanceId),
+  index('operations_metric_buckets_bucket_start_idx').on(table.bucketStart)
+]);

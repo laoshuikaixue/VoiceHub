@@ -301,7 +301,11 @@
           <div class="overflow-x-auto">
             <table class="data-table min-w-[720px]">
               <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>P95</th><th>{{ locale.application.successRate }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <tbody>
+                <tr v-for="item in recentErrorRequests" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }}</td><td>1</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>{{ formatTimestamp(item.at) }}</td></tr>
+                <tr v-for="item in sentryIssues" :key="`sentry-${item.id}`"><td>{{ item.title }}</td><td>{{ item.count }}</td><td>N/A</td><td class="font-mono">Sentry #{{ item.id }}</td><td>{{ formatTimestamp(item.lastSeen) }}</td></tr>
+                <tr v-if="!recentErrorRequests.length && !sentryIssues.length"><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -343,7 +347,7 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">1h</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
         </article>
       </section>
 
@@ -467,7 +471,7 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">1h</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars runtime-bars--error"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.errors, 'errors')}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
         </article>
         <article class="panel overflow-hidden">
           <div class="panel-header">
@@ -624,10 +628,7 @@
             </div>
             <span class="item-count">{{ locale.analytics.lastThirtyDays }}</span>
           </div>
-          <div class="analysis-chart-placeholder">
-            <div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div>
-            <span>{{ locale.noData }}</span>
-          </div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
         </article>
       </section>
 
@@ -1186,6 +1187,20 @@ const databaseSnapshot = computed(() => operationsData.value.status?.database ||
 const latestBackup = computed(() => operationsData.value.backups?.[0] || null)
 const runtimeMetrics = computed(() => operationsData.value.metrics?.metrics || null)
 const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
+const runtimeTimeline = computed(() => runtimeDatabaseMetrics.value?.timeline?.length ? runtimeDatabaseMetrics.value.timeline : (runtimeMetrics.value?.timeline || []))
+const recentErrorRequests = computed(() => {
+  const errors = [
+    ...(runtimeMetrics.value?.recentErrors || []),
+    ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
+  ]
+  if (!debugRequestId.value) return errors
+  return errors.filter((item) => item.requestId === debugRequestId.value)
+})
+const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
+const runtimeBarHeight = (value, field = 'requests') => {
+  const max = Math.max(...runtimeTimeline.value.map((point) => Number(point[field] || 0)), 1)
+  return Math.max(8, Math.round((Number(value || 0) / max) * 100))
+}
 const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
 const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
 const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
@@ -2851,6 +2866,25 @@ const riskLevels = computed(() => [
   color: rgb(82 82 91);
   font-size: 0.75rem;
 }
+
+.runtime-bars {
+  position: absolute;
+  inset: 1rem 1rem 1.2rem;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.runtime-bars i {
+  flex: 1;
+  min-height: 0.35rem;
+  border-radius: 2px 2px 0 0;
+  background: #60a5fa;
+  opacity: 0.8;
+}
+
+.runtime-bars--error i { background: #f87171; }
 
 .analysis-chart-grid {
   position: absolute;
