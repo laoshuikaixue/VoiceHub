@@ -2040,6 +2040,7 @@ export const admin = {
       neteaseErrorCodes: 'NetEase Error Code Distribution',
       tencentErrorCodes: 'QQ Music Error Code Distribution',
       bilibiliErrorCodes: 'Bilibili Error Code Distribution',
+      miguErrorCodes: 'Migu Error Code Distribution',
       errorCodePanelDetail: 'Failed requests grouped by response code and timeout type.',
       rateLimited: '403 / Rate Limited',
       notFound: '404 / API Changed',

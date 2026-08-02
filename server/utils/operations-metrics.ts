@@ -19,6 +19,7 @@ const state = {
   notifications: { smtpAccepted: 0, smtpFailures: 0, meowEligible: 0, meowSkipped: 0, meowTransportFailures: 0 },
   backups: new Map<string, { successes: number; failures: number; durationMs: number }>(),
   backupSnapshot: null as null | { exportedTables: number; skippedTables: number; checksum: string; collectedAt: string },
+  cache: { hits: 0, misses: 0, evictions: 0 },
   gc: { count: 0, durationMs: 0 },
   ssrPrewarm: { attempts: 0, successes: 0, failures: 0, lastDurationMs: null as number | null, lastResult: null as string | null }
 }
@@ -147,6 +148,7 @@ export const getOperationsMetrics = () => {
     notifications: { ...state.notifications },
     backups: Object.fromEntries(state.backups),
     backupSnapshot: state.backupSnapshot,
+    cache: { ...state.cache },
     collectedAt: new Date().toISOString()
   }
   histogram.reset()
@@ -192,6 +194,15 @@ export const recordBackupTarget = (target: string, success: boolean, durationMs:
 
 export const recordBackupSnapshot = (snapshot: { exportedTables: number; skippedTables: number; checksum: string }) => {
   state.backupSnapshot = { ...snapshot, collectedAt: new Date().toISOString() }
+}
+
+export const recordCacheAccess = (hit: boolean) => {
+  if (hit) state.cache.hits += 1
+  else state.cache.misses += 1
+}
+
+export const recordCacheEviction = () => {
+  state.cache.evictions += 1
 }
 
 export const recordSsrPrewarm = (success: boolean, durationMs: number) => {

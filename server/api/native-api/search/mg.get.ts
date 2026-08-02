@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { formatPlayTime } from '../../../utils/native_common'
 import { getServerLocation } from '../../../utils/geo'
-import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+import { recordCacheAccess, recordCacheEviction, recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 // 咪咕 v3 搜索签名
 function createSignature(time: string, str: string) {
@@ -38,8 +38,15 @@ const MG_INFO_CACHE_TTL = 6 * 60 * 60 * 1000
 async function getMgCover(contentId: string): Promise<string> {
   const cached = mgSongInfoCache.get(contentId)
   if (cached) {
-    if (cached.expiresAt > Date.now()) return cached.img
+    if (cached.expiresAt > Date.now()) {
+      recordCacheAccess(true)
+      return cached.img
+    }
+    recordCacheAccess(false)
+    recordCacheEviction()
     mgSongInfoCache.delete(contentId)
+  } else {
+    recordCacheAccess(false)
   }
 
   const startedAt = Date.now()

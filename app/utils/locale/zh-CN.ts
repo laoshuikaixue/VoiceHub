@@ -2049,6 +2049,7 @@ export const admin = {
       neteaseErrorCodes: '网易云错误码分布',
       tencentErrorCodes: 'QQ 音乐错误码分布',
       bilibiliErrorCodes: '哔哩哔哩错误码分布',
+      miguErrorCodes: '咪咕音乐错误码分布',
       errorCodePanelDetail: '按响应码和超时类型统计失败请求。',
       rateLimited: '403 / 限流',
       notFound: '404 / 接口变化',

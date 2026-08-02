@@ -284,7 +284,7 @@
             </div>
           </div>
           <dl class="detail-grid detail-grid--compact">
-            <div v-for="item in applicationLatencyDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in applicationLatencyDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
       </section>
@@ -293,7 +293,7 @@
         <article class="panel overflow-hidden">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.application.latencyBreakdown }}</h3><p class="panel-description">{{ locale.application.latencyBreakdownDetail }}</p></div><span class="status-badge">P95</span></div>
           <dl class="detail-grid">
-            <div v-for="item in applicationLatencyBreakdown" :key="item.label"><dt>{{ item.label }}</dt><dd>--</dd></div>
+            <div v-for="item in applicationLatencyBreakdown" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
         <article class="panel overflow-hidden">
@@ -301,11 +301,7 @@
           <div class="overflow-x-auto">
             <table class="data-table min-w-[720px]">
               <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>P95</th><th>{{ locale.application.successRate }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
-              <tbody>
-                <tr v-for="item in recentErrorRequests" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }}</td><td>1</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>{{ formatTimestamp(item.at) }}</td></tr>
-                <tr v-for="item in sentryIssues" :key="`sentry-${item.id}`"><td>{{ item.title }}</td><td>{{ item.count }}</td><td>N/A</td><td class="font-mono">Sentry #{{ item.id }}</td><td>{{ formatTimestamp(item.lastSeen) }}</td></tr>
-                <tr v-if="!recentErrorRequests.length && !sentryIssues.length"><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr>
-              </tbody>
+              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
             </table>
           </div>
         </article>
@@ -330,7 +326,7 @@
 
     <template v-else-if="activeGroup === 'infra'">
       <section class="server-summary-strip">
-        <div v-for="item in serverSummaryDetails" :key="item"><span>{{ item }}</span><strong>--</strong></div>
+        <div v-for="item in serverSummaryDetails" :key="item.label"><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div>
       </section>
 
       <section class="metric-grid">
@@ -361,9 +357,9 @@
             <span class="status-badge">{{ locale.health.waiting }}</span>
           </div>
           <div class="server-health-layout">
-            <div class="health-score-ring"><strong>--</strong><span>{{ locale.overview.healthScore }}</span></div>
+            <div class="health-score-ring"><strong>{{ healthScore }}</strong><span>{{ locale.overview.healthScore }}</span></div>
             <dl class="server-health-details">
-              <div v-for="item in serverHealthDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+              <div v-for="item in serverHealthDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
             </dl>
           </div>
         </article>
@@ -391,7 +387,7 @@
             <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
           </div>
           <dl class="server-resource-list">
-            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ resourceValue(item) }}</dd></div>
           </dl>
         </article>
       </section>
@@ -441,7 +437,7 @@
         <article class="panel">
           <div class="panel-header"><h3 class="panel-title">{{ locale.server.database }}</h3></div>
           <dl class="detail-grid">
-            <div v-for="item in databaseDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in databaseDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
         <article class="panel">
@@ -452,7 +448,7 @@
             </div>
           </div>
           <dl class="detail-grid">
-            <div v-for="item in databasePerformanceDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in databasePerformanceDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
       </section>
@@ -559,7 +555,7 @@
         <article class="panel">
           <div class="panel-header"><h3 class="panel-title">{{ locale.cache.connection }}</h3></div>
           <dl class="detail-grid">
-            <div v-for="item in cacheDetails" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in cacheDetails" :key="item"><dt>{{ item }}</dt><dd>{{ cacheDetailValue(item) }}</dd></div>
           </dl>
         </article>
         <article class="panel">
@@ -655,7 +651,7 @@
             </div>
           </div>
           <dl class="detail-grid">
-            <div v-for="item in businessCapacityMetrics" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in businessCapacityMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
         </article>
       </section>
@@ -691,7 +687,7 @@
             <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
           </div>
           <dl class="server-resource-list">
-            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ businessGroupValue(item) }}</dd></div>
           </dl>
         </article>
       </section>
@@ -704,7 +700,7 @@
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
           </div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || 'N/A' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -865,13 +861,13 @@
       <section class="diagnostic-summary-grid">
         <article v-for="item in requestSummaryItems" :key="item.label" class="metric-card diagnostic-summary-card">
           <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || 'N/A' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
 
       <div class="diagnosis-result diagnosis-result--banner">
-        <span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span><strong>--</strong>
+        <span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span><strong>{{ selectedDebugRequest ? `${selectedDebugRequest.status} ${selectedDebugRequest.durationMs} ms` : 'N/A' }}</strong>
       </div>
 
       <section class="panel">
@@ -903,7 +899,10 @@
         <div class="overflow-x-auto">
           <table class="data-table min-w-[960px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.debug.elapsed }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.debug.eventName }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.debug.structuredFields }}</th></tr></thead>
-            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.debug.enterRequestId }} <DrilldownLink :label="locale.debug.openLogCenter" @activate="activeGroup = 'logs'" /></td></tr></tbody>
+            <tbody>
+              <tr v-for="item in diagnosticLogEntries" :key="`${item.at}-${item.requestId}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.durationMs }} ms</td><td>{{ item.level }}</td><td>{{ item.route }}</td><td>server</td><td>status={{ item.status }} requestId={{ item.requestId || 'N/A' }}</td></tr>
+              <tr v-if="!diagnosticLogEntries.length"><td colspan="6" class="empty-cell">{{ locale.debug.enterRequestId }} <DrilldownLink :label="locale.debug.openLogCenter" @activate="activeGroup = 'logs'" /></td></tr>
+            </tbody>
           </table>
         </div>
       </section>
@@ -919,7 +918,11 @@
           <div class="overflow-x-auto">
             <table class="data-table min-w-[640px]">
               <thead><tr><th>{{ locale.debug.errorMessage }}</th><th>{{ locale.debug.occurrences }}</th><th>{{ locale.debug.affectedUsers }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.lastOccurred }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <tbody>
+                <tr v-for="item in recentErrorRequests" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }}</td><td>1</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>{{ formatTimestamp(item.at) }}</td></tr>
+                <tr v-for="item in sentryIssues" :key="`sentry-${item.id}`"><td>{{ item.title }}</td><td>{{ item.count }}</td><td>N/A</td><td class="font-mono">Sentry #{{ item.id }}</td><td>{{ formatTimestamp(item.lastSeen) }}</td></tr>
+                <tr v-if="!recentErrorRequests.length && !sentryIssues.length"><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -970,31 +973,34 @@
       <section class="metric-grid">
         <article v-for="item in logCenterMetrics" :key="item.label" class="metric-card">
           <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-          <strong class="metric-value">--</strong><p class="metric-detail">{{ item.detail }}</p>
+          <strong class="metric-value">{{ item.value || 'N/A' }}</strong><p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
 
       <section class="panel overflow-hidden">
         <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.structuredQuery }}</h3><p class="panel-description">{{ locale.logCenter.structuredQueryDetail }}</p></div><span class="status-badge">{{ locale.logCenter.fullTextSearch }}</span></div>
         <div class="log-search-grid">
-          <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input type="text" :placeholder="locale.logCenter.keywordPlaceholder" disabled></label>
-          <label class="filter-field filter-field--wide"><Icon name="layers" :size="13" /><input type="text" :placeholder="locale.logCenter.requestIdPlaceholder" disabled></label>
+          <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input v-model.trim="logKeyword" type="text" :placeholder="locale.logCenter.keywordPlaceholder"></label>
+          <label class="filter-field filter-field--wide"><Icon name="layers" :size="13" /><input v-model.trim="logRequestId" type="text" :placeholder="locale.logCenter.requestIdPlaceholder"></label>
           <button type="button" class="filter-field" disabled><span>{{ locale.logCenter.allUsers }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.logCenter.allRoutes }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.filters.allLevels }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.filters.allScopes }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.logCenter.allStatusCodes }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-field" disabled><span>{{ locale.filters.lastHour }}</span><Icon name="chevron-down" :size="13" /></button>
-          <button type="button" class="filter-action" disabled><Icon name="search" :size="13" />{{ locale.logCenter.query }}</button>
+          <button type="button" class="filter-action" @click="loadOperationsData()"><Icon name="search" :size="13" />{{ locale.logCenter.query }}</button>
         </div>
       </section>
 
       <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logResults }}</h3><p class="panel-description">{{ locale.logCenter.logResultsDetail }}</p></div><span class="item-count">{{ locale.logCount }} --</span></div>
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logResults }}</h3><p class="panel-description">{{ locale.logCenter.logResultsDetail }}</p></div><span class="item-count">{{ locale.logCount }} {{ logEntries.length }}</span></div>
         <div class="overflow-x-auto">
           <table class="data-table min-w-[1260px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.user }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.overview.logHost }}</th><th>{{ locale.logs.message }}</th></tr></thead>
-          <tbody><tr><td colspan="9" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr></tbody>
+          <tbody>
+            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.level }}</td><td>server</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>N/A</td><td>{{ item.message }}</td></tr>
+            <tr v-if="!logEntries.length"><td colspan="9" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr>
+          </tbody>
           </table>
         </div>
       </section>
@@ -1003,13 +1009,13 @@
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logContext }}</h3><p class="panel-description">{{ locale.logCenter.logContextDetail }}</p></div></div>
           <dl class="detail-grid">
-            <div v-for="item in logContextFields" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in logContextFields" :key="item"><dt>{{ item }}</dt><dd>{{ logContextValue(item) }}</dd></div>
           </dl>
         </article>
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.archiveSettings }}</h3><p class="panel-description">{{ locale.logCenter.archiveSettingsDetail }}</p></div></div>
           <dl class="detail-grid">
-            <div v-for="item in logArchiveFields" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in logArchiveFields" :key="item"><dt>{{ item }}</dt><dd>{{ logArchiveValue(item) }}</dd></div>
           </dl>
         </article>
       </section>
@@ -1062,7 +1068,12 @@
         </article>
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.uptimeStrip }}</h3><p class="panel-description">{{ locale.dependencies.uptimeStripDetail }}</p></div><span class="status-badge">24h</span></div>
-          <div class="uptime-strip"><i v-for="(slot, index) in dependencyUptimeSlots" :key="index" :class="`uptime-strip__slot uptime-strip__slot--${slot}`" /></div>
+          <div class="dependency-uptime-list">
+            <div v-for="row in dependencyUptimeRows" :key="row.source" class="dependency-uptime-row">
+              <span class="dependency-uptime-row__label">{{ row.label }}</span>
+              <div class="uptime-strip"><i v-for="(slot, index) in row.slots" :key="`${row.source}-${index}`" :class="`uptime-strip__slot uptime-strip__slot--${slot}`" /></div>
+            </div>
+          </div>
           <div class="uptime-strip__legend"><span>{{ locale.dependencies.uptimeUnavailable }}</span><span>{{ locale.dependencies.uptimeWindow }}</span></div>
         </article>
       </section>
@@ -1138,7 +1149,15 @@ const locale = computed(() => admin.value?.operations || {})
 const activeGroup = ref('overview')
 const globalRequestId = ref('')
 const debugRequestId = ref('')
-const traceSpans = computed(() => [])
+const logKeyword = ref('')
+const logRequestId = ref('')
+const traceSpans = computed(() => {
+  const requestId = debugRequestId.value
+  const samples = operationsData.value?.metrics?.metrics?.recentErrors || []
+  const request = samples.find((item) => item.requestId === requestId)
+  if (!request) return []
+  return [{ id: request.requestId, module: request.route, depth: 0, offsetMs: 0, durationMs: request.durationMs, status: request.status >= 500 ? 'error' : request.status >= 400 ? 'slow' : 'ok' }]
+})
 const operationsLoading = ref(true)
 const operationsError = ref(false)
 const operationsLastUpdated = ref(null)
@@ -1196,6 +1215,19 @@ const recentErrorRequests = computed(() => {
   if (!debugRequestId.value) return errors
   return errors.filter((item) => item.requestId === debugRequestId.value)
 })
+const selectedDebugRequest = computed(() => {
+  if (!debugRequestId.value) return null
+  return recentErrorRequests.value.find((item) => item.requestId === debugRequestId.value) || null
+})
+const diagnosticLogEntries = computed(() => selectedDebugRequest.value ? [selectedDebugRequest.value] : [])
+const logEntries = computed(() => {
+  const keyword = logKeyword.value.toLowerCase()
+  const requestId = logRequestId.value.toLowerCase()
+  return [...(runtimeMetrics.value?.recentErrors || []), ...(runtimeDatabaseMetrics.value?.persistedRequests || [])]
+    .filter((item) => !requestId || String(item.requestId || '').toLowerCase().includes(requestId))
+    .filter((item) => !keyword || `${item.route} ${item.status} ${item.requestId}`.toLowerCase().includes(keyword))
+    .map((item) => ({ ...item, level: item.status >= 500 ? 'error' : 'warn', message: item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }))
+})
 const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
 const runtimeBarHeight = (value, field = 'requests') => {
   const max = Math.max(...runtimeTimeline.value.map((point) => Number(point[field] || 0)), 1)
@@ -1218,6 +1250,11 @@ const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : 'UP')
 const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
+const healthScore = computed(() => {
+  const total = runtimeHttpMetrics.value?.recentRequests || 0
+  const errors = runtimeHttpMetrics.value?.recent5xx || 0
+  return total ? `${Math.max(0, (1 - errors / total) * 100).toFixed(2)}%` : 'N/A'
+})
 const formatBytes = (value) => {
   const bytes = Number(value)
   if (!Number.isFinite(bytes) || bytes < 0) return '--'
@@ -1230,6 +1267,7 @@ const dependencySourceForLabel = (label) => {
   const labels = {
     [locale.value.overview?.neteaseSource]: 'netease',
     [locale.value.overview?.tencentSource]: 'tencent',
+    [locale.value.overview?.bilibiliSource]: 'bilibili',
     [locale.value.overview?.miguSource]: 'migu'
   }
   return labels[label]
@@ -1258,6 +1296,29 @@ const securityMetricValue = (label) => {
 }
 const dependencyProtectionValue = (title, item) => {
   const notifications = runtimeMetrics.value?.notifications
+  const cache = runtimeMetrics.value?.cache
+  if (title === locale.value.dependencies?.searchCacheHitRate && cache) {
+    if (item === locale.value.dependencies?.cacheHits) return String(cache.hits)
+    if (item === locale.value.dependencies?.cacheMisses) return String(cache.misses)
+    if (item === locale.value.dependencies?.cacheEvictions) return String(cache.evictions)
+    if (item === locale.value.dependencies?.cacheResponseP95) {
+      const durations = Object.values(dependencyMetrics.value).map((metric) => Number(metric?.averageDurationMs || 0)).filter(Boolean)
+      return durations.length ? `${Math.max(...durations)} ms` : 'N/A'
+    }
+    if (item === locale.value.dependencies?.cacheHitRate) {
+      const total = cache.hits + cache.misses
+      return total ? `${(cache.hits / total * 100).toFixed(1)}%` : 'N/A'
+    }
+  }
+  if (title === locale.value.dependencies?.fallbackHits) {
+    if (item === locale.value.dependencies?.providerFallbacks) return 'N/A'
+    if (item === locale.value.dependencies?.retryAttempts) return 'N/A'
+    if (item === locale.value.dependencies?.circuitBreakerOpens) return 'N/A'
+    if (item === locale.value.dependencies?.cachedResponseFallbacks) return cache ? String(cache.misses) : '--'
+    if ([locale.value.overview?.neteaseSource, locale.value.overview?.tencentSource, locale.value.overview?.bilibiliSource, locale.value.overview?.miguSource].includes(item)) {
+      return dependencyMetricValue(item, locale.value.dependencies?.semanticFailureRate)
+    }
+  }
   if (title !== locale.value.dependencies?.notificationDelivery || !notifications) return '--'
   if (item === locale.value.dependencies?.smtpAcceptedRate) return String(notifications.smtpAccepted)
   if (item === locale.value.dependencies?.meowEligibleTargets) return String(notifications.meowEligible)
@@ -1431,17 +1492,17 @@ const applicationMetrics = computed(() => [
 ])
 
 const applicationLatencyBreakdown = computed(() => [
-  { label: locale.value.application?.middlewareDuration },
-  { label: locale.value.application?.drizzleDuration },
-  { label: locale.value.application?.externalApiDuration },
-  { label: locale.value.application?.businessDuration }
+  { label: locale.value.application?.middlewareDuration, value: 'N/A' },
+  { label: locale.value.application?.drizzleDuration, value: 'N/A' },
+  { label: locale.value.application?.externalApiDuration, value: 'N/A' },
+  { label: locale.value.application?.businessDuration, value: 'N/A' }
 ])
 
 const applicationLatencyDetails = computed(() => [
-  locale.value.application?.responseP50,
-  locale.value.application?.responseP95,
-  locale.value.application?.responseP99,
-  locale.value.application?.responseMax
+  { label: locale.value.application?.responseP50, value: runtimeHttpMetrics.value?.p50Ms != null ? `${runtimeHttpMetrics.value.p50Ms} ms` : '--' },
+  { label: locale.value.application?.responseP95, value: runtimeHttpMetrics.value?.p95Ms != null ? `${runtimeHttpMetrics.value.p95Ms} ms` : '--' },
+  { label: locale.value.application?.responseP99, value: runtimeHttpMetrics.value?.p99Ms != null ? `${runtimeHttpMetrics.value.p99Ms} ms` : '--' },
+  { label: locale.value.application?.responseMax, value: runtimeTimeline.value.length ? `${Math.max(...runtimeTimeline.value.map((item) => Number(item.max_duration_ms || item.p95Ms || 0)))} ms` : '--' }
 ])
 
 const applicationDetailPanels = computed(() => [
@@ -1493,10 +1554,10 @@ const applicationDetailPanels = computed(() => [
 ])
 
 const serverSummaryDetails = computed(() => [
-  locale.value.runtime?.hostname,
-  locale.value.runtime?.platform,
-  locale.value.runtime?.systemUptime,
-  locale.value.runtime?.processPid
+  { label: locale.value.runtime?.hostname, value: import.meta.client ? window.location.hostname : 'N/A' },
+  { label: locale.value.runtime?.platform, value: systemSnapshot.value?.platform || '--' },
+  { label: locale.value.runtime?.systemUptime, value: systemSnapshot.value?.uptime ? `${Math.round(systemSnapshot.value.uptime)}s` : '--' },
+  { label: locale.value.runtime?.processPid, value: 'N/A' }
 ])
 
 const serverMetrics = computed(() => [
@@ -1541,9 +1602,9 @@ const serverMetrics = computed(() => [
 ])
 
 const serverHealthDetails = computed(() => [
-  locale.value.server?.healthLevel,
-  locale.value.server?.alertCount,
-  locale.value.server?.collectedAt
+  { label: locale.value.server?.healthLevel, value: healthScore.value === 'N/A' ? 'N/A' : healthScore.value },
+  { label: locale.value.server?.alertCount, value: runtimeHttpMetrics.value ? String(runtimeHttpMetrics.value.recent5xx || 0) : '--' },
+  { label: locale.value.server?.collectedAt, value: formattedLastUpdated.value }
 ])
 
 const infraTrendPanels = computed(() => [
@@ -1615,6 +1676,24 @@ const serverResourcePanels = computed(() => [
   }
 ])
 
+const resourceValue = (label) => {
+  const memory = runtimeMetrics.value?.process?.memory
+  const systemMemory = systemSnapshot.value?.memory
+  const values = new Map([
+    [locale.value.server?.rssMemory, memory?.rss != null ? formatBytes(memory.rss) : '--'],
+    [locale.value.server?.heapUsed, memory?.heapUsed != null ? formatBytes(memory.heapUsed) : '--'],
+    [locale.value.server?.heapTotal, memory?.heapTotal != null ? formatBytes(memory.heapTotal) : '--'],
+    [locale.value.server?.externalMemory, memory?.external != null ? formatBytes(memory.external) : '--'],
+    [locale.value.server?.gcCount, runtimeGcMetrics.value?.count != null ? String(runtimeGcMetrics.value.count) : '--'],
+    [locale.value.server?.gcPause, runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--'],
+    [locale.value.server?.eventLoopP99Lag, runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--'],
+    [locale.value.server?.systemMemoryTotal, systemMemory?.total != null ? `${systemMemory.total} MB` : 'N/A'],
+    [locale.value.server?.systemMemoryUsed, systemMemory?.used != null ? `${systemMemory.used} MB` : 'N/A'],
+    [locale.value.server?.systemMemoryAvailable, systemMemory?.total != null && systemMemory?.used != null ? `${Math.max(0, systemMemory.total - systemMemory.used)} MB` : 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
 const runtimeGuardPanels = computed(() => [
   {
     icon: 'database',
@@ -1632,9 +1711,9 @@ const runtimeGuardPanels = computed(() => [
     title: locale.value.server?.ssrWarmup,
     detail: locale.value.server?.ssrWarmupDetail,
     items: [
-      { label: locale.value.server?.ssrWarmupLastResult, value: '--' },
-      { label: locale.value.server?.ssrWarmupDuration, value: '--' },
-      { label: locale.value.server?.ssrWarmupFailures, value: '--' }
+      { label: locale.value.server?.ssrWarmupLastResult, value: runtimeSsrPrewarm.value?.lastResult || '--' },
+      { label: locale.value.server?.ssrWarmupDuration, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
+      { label: locale.value.server?.ssrWarmupFailures, value: runtimeSsrPrewarm.value?.failures != null ? String(runtimeSsrPrewarm.value.failures) : '--' }
     ]
   },
   {
@@ -1652,34 +1731,34 @@ const runtimeGuardPanels = computed(() => [
 const databaseMetrics = computed(() => [
   { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--' },
   { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: operationsData.value.pool?.utilization ? `${operationsData.value.pool.utilization}%` : '--' },
-  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: '--' },
-  { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail },
-  { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail },
+  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: runtimeTimeline.value.length ? String(runtimeTimeline.value[runtimeTimeline.value.length - 1].requests || 0) : '--' },
+  { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail, value: databaseDiagnostics.value?.activity?.data ? String(databaseDiagnostics.value.activity.data.filter((item) => Number(item.duration) > 100).length) : '--' },
+  { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail, value: operationsData.value.performance?.transactionsRolledBack != null ? String(operationsData.value.performance.transactionsRolledBack) : '--' },
   { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
   { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: databaseDiagnostics.value?.size?.available ? databaseDiagnostics.value.size.data?.[0]?.database_size || '--' : 'N/A' },
-  { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail },
-  { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail },
-  { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail, value: '--' }
+  { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail, value: 'N/A' },
+  { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
+  { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail, value: 'N/A' }
 ])
 
 const databaseDetails = computed(() => [
-  locale.value.server?.poolMax,
-  locale.value.server?.poolActive,
-  locale.value.server?.poolTotal,
-  locale.value.server?.poolAvailable,
-  locale.value.server?.probe,
-  locale.value.database?.poolerWaitQueue,
-  locale.value.database?.neonColdStart
+  { label: locale.value.server?.poolMax, value: operationsData.value.pool?.maxConnections ?? '--' },
+  { label: locale.value.server?.poolActive, value: operationsData.value.pool?.activeConnections ?? '--' },
+  { label: locale.value.server?.poolTotal, value: operationsData.value.pool?.totalConnections ?? '--' },
+  { label: locale.value.server?.poolAvailable, value: operationsData.value.pool ? Math.max(0, Number(operationsData.value.pool.maxConnections || 0) - Number(operationsData.value.pool.totalConnections || 0)) : '--' },
+  { label: locale.value.server?.probe, value: databaseSnapshot.value?.connected ? 'UP' : '--' },
+  { label: locale.value.database?.poolerWaitQueue, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
+  { label: locale.value.database?.neonColdStart, value: 'N/A' }
 ])
 
 const databasePerformanceDetails = computed(() => [
-  locale.value.server?.responseTime,
-  locale.value.server?.transactionsCommitted,
-  locale.value.server?.transactionsRolledBack,
-  locale.value.database?.indexHitRatio,
-  locale.value.database?.tableBloat,
-  locale.value.database?.poolWaitTime,
-  locale.value.database?.databaseGrowthRate
+  { label: locale.value.server?.responseTime, value: operationsData.value.performance?.responseTime != null ? `${operationsData.value.performance.responseTime} ms` : '--' },
+  { label: locale.value.server?.transactionsCommitted, value: operationsData.value.performance?.transactionsCommitted ?? '--' },
+  { label: locale.value.server?.transactionsRolledBack, value: operationsData.value.performance?.transactionsRolledBack ?? '--' },
+  { label: locale.value.database?.indexHitRatio, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
+  { label: locale.value.database?.tableBloat, value: databaseTableRows.value.length ? `${Math.max(...databaseTableRows.value.map((item) => Number(item.dead_row_ratio || 0)))}%` : '--' },
+  { label: locale.value.database?.poolWaitTime, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
+  { label: locale.value.database?.databaseGrowthRate, value: 'N/A' }
 ])
 
 const schemaHealthTables = computed(() => [
@@ -1740,6 +1819,19 @@ const cacheDetails = computed(() => [
   locale.value.cache?.memoryFragmentation
 ])
 
+const cacheDetailValue = (label) => {
+  const redis = runtimeRedisMetrics.value
+  if (!redis) return '--'
+  const values = new Map([
+    [locale.value.cache?.configured, redis.configured ? 'YES' : 'NO'],
+    [locale.value.cache?.keyPrefix, redis.keyPrefix || 'N/A'],
+    [locale.value.cache?.lastConnected, redis.lastConnectedAt ? formatTimestamp(redis.lastConnectedAt) : 'N/A'],
+    [locale.value.cache?.evictionPolicy, 'N/A'],
+    [locale.value.cache?.memoryFragmentation, 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
 const cacheUsageScopes = computed(() => [
   {
     icon: 'activity',
@@ -1774,10 +1866,10 @@ const businessQueueMetrics = computed(() => [
 ])
 
 const businessCapacityMetrics = computed(() => [
-  locale.value.business?.peakRequestQps,
-  locale.value.business?.peakScheduleQps,
-  locale.value.business?.dbPoolHeadroom,
-  locale.value.business?.serverlessConcurrencyHeadroom
+  { label: locale.value.business?.peakRequestQps, value: runtimeTimeline.value.length ? String(Math.max(...runtimeTimeline.value.map((item) => Number(item.requests || 0)))) : '--' },
+  { label: locale.value.business?.peakScheduleQps, value: runtimeBusinessMetrics.value.schedule_save?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.schedule_save.requestsPerSecond) : '--' },
+  { label: locale.value.business?.dbPoolHeadroom, value: operationsData.value.pool?.utilization != null ? `${Math.max(0, 100 - Number(operationsData.value.pool.utilization)).toFixed(1)}%` : '--' },
+  { label: locale.value.business?.serverlessConcurrencyHeadroom, value: 'N/A' }
 ])
 
 const businessMetricGroups = computed(() => [
@@ -1818,6 +1910,18 @@ const businessMetricGroups = computed(() => [
   }
 ])
 
+const businessGroupValue = (label) => {
+  const request = runtimeBusinessMetrics.value.song_request
+  const schedule = runtimeBusinessMetrics.value.schedule_save
+  const values = new Map([
+    [locale.value.business?.requestSuccessRate, request?.successRate != null ? `${request.successRate}%` : '--'],
+    [locale.value.business?.songAndVoteRequests, request?.calls != null ? String(request.calls) : '--'],
+    [locale.value.business?.scheduleOperations, schedule?.calls != null ? String(schedule.calls) : '--'],
+    [locale.value.business?.musicSearchApiAvailability, dependencyMetrics.value ? `${Object.values(dependencyMetrics.value).filter((item) => item?.successRate != null && item.successRate >= 95).length}` : '--']
+  ])
+  return values.get(label) || 'N/A'
+}
+
 const auditMetrics = computed(() => [
   {
     icon: 'warning',
@@ -1855,19 +1959,19 @@ const securitySignalMetrics = computed(() => [
 ])
 
 const requestSummaryItems = computed(() => [
-  { icon: 'warning', label: locale.value.debug?.statusCode, detail: locale.value.debug?.statusCodeDetail },
-  { icon: 'clock', label: locale.value.debug?.duration, detail: locale.value.debug?.durationDetail },
-  { icon: 'user', label: locale.value.debug?.user, detail: locale.value.debug?.userDetail },
-  { icon: 'layers', label: locale.value.application?.route, detail: locale.value.debug?.routeDetail },
-  { icon: 'clock', label: locale.value.debug?.occurredAt, detail: locale.value.debug?.occurredAtDetail },
-  { icon: 'external-link', label: locale.value.debug?.relatedLinks, detail: locale.value.debug?.relatedLinksDetail }
+  { icon: 'warning', label: locale.value.debug?.statusCode, detail: locale.value.debug?.statusCodeDetail, value: selectedDebugRequest.value?.status ?? 'N/A' },
+  { icon: 'clock', label: locale.value.debug?.duration, detail: locale.value.debug?.durationDetail, value: selectedDebugRequest.value ? `${selectedDebugRequest.value.durationMs} ms` : 'N/A' },
+  { icon: 'user', label: locale.value.debug?.user, detail: locale.value.debug?.userDetail, value: 'N/A' },
+  { icon: 'layers', label: locale.value.application?.route, detail: locale.value.debug?.routeDetail, value: selectedDebugRequest.value?.route || 'N/A' },
+  { icon: 'clock', label: locale.value.debug?.occurredAt, detail: locale.value.debug?.occurredAtDetail, value: selectedDebugRequest.value ? formatTimestamp(selectedDebugRequest.value.at) : 'N/A' },
+  { icon: 'external-link', label: locale.value.debug?.relatedLinks, detail: locale.value.debug?.relatedLinksDetail, value: selectedDebugRequest.value?.requestId || 'N/A' }
 ])
 
 const logCenterMetrics = computed(() => [
-  { icon: 'terminal', label: locale.value.logCenter?.totalLogs, detail: locale.value.logCenter?.totalLogsDetail },
-  { icon: 'warning', label: locale.value.logCenter?.errorLogs, detail: locale.value.logCenter?.errorLogsDetail },
-  { icon: 'warning', label: locale.value.logCenter?.warningLogs, detail: locale.value.logCenter?.warningLogsDetail },
-  { icon: 'layers', label: locale.value.logCenter?.requestTraces, detail: locale.value.logCenter?.requestTracesDetail }
+  { icon: 'terminal', label: locale.value.logCenter?.totalLogs, detail: locale.value.logCenter?.totalLogsDetail, value: String(logEntries.value.length) },
+  { icon: 'warning', label: locale.value.logCenter?.errorLogs, detail: locale.value.logCenter?.errorLogsDetail, value: String(logEntries.value.filter((item) => item.status >= 500).length) },
+  { icon: 'warning', label: locale.value.logCenter?.warningLogs, detail: locale.value.logCenter?.warningLogsDetail, value: String(logEntries.value.filter((item) => item.status >= 400 && item.status < 500).length) },
+  { icon: 'layers', label: locale.value.logCenter?.requestTraces, detail: locale.value.logCenter?.requestTracesDetail, value: String(new Set(logEntries.value.map((item) => item.requestId).filter(Boolean)).size) }
 ])
 
 const logContextFields = computed(() => [
@@ -1889,6 +1993,32 @@ const logArchiveFields = computed(() => [
   locale.value.logCenter?.archiveSize,
   locale.value.logCenter?.lastArchivedAt
 ])
+
+const logContextValue = (label) => {
+  const item = selectedDebugRequest.value
+  if (!item) return 'N/A'
+  const values = new Map([
+    [locale.value.overview?.logRequestId, item.requestId || 'N/A'],
+    [locale.value.application?.route, item.route || 'N/A'],
+    [locale.value.debug?.statusCode, item.status ?? 'N/A'],
+    [locale.value.overview?.logHost, 'N/A'],
+    [locale.value.debug?.user, 'N/A'],
+    [locale.value.logCenter?.sourceIp, 'N/A'],
+    [locale.value.logCenter?.traceId, 'N/A'],
+    [locale.value.logCenter?.instanceId, operationsData.value.status?.instance?.instanceId || 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
+
+const logArchiveValue = (label) => {
+  const values = new Map([
+    [locale.value.overview?.logSampleRate, '错误/慢请求 100%'],
+    [locale.value.overview?.logRetentionDays, '由 api_logs 保留策略决定'],
+    [locale.value.logCenter?.lastArchivedAt, 'N/A'],
+    [locale.value.logCenter?.archiveSize, 'N/A']
+  ])
+  return values.get(label) || 'N/A'
+}
 
 const dependencyHealthCards = computed(() => [
   {
@@ -1966,10 +2096,27 @@ const dependencyErrorPanels = computed(() => [
   {
     title: locale.value.dependencies?.bilibiliErrorCodes,
     detail: locale.value.dependencies?.errorCodePanelDetail
+  },
+  {
+    title: locale.value.dependencies?.miguErrorCodes,
+    detail: locale.value.dependencies?.errorCodePanelDetail
   }
 ])
 
-const dependencyUptimeSlots = computed(() => Array.from({ length: 24 }, () => 'unknown'))
+const dependencyUptimeRows = computed(() => [
+  { source: 'netease', label: locale.value.overview?.neteaseSource || '网易云音乐' },
+  { source: 'tencent', label: locale.value.overview?.tencentSource || 'QQ 音乐' },
+  { source: 'bilibili', label: locale.value.overview?.bilibiliSource || 'Bilibili' },
+  { source: 'migu', label: locale.value.overview?.miguSource || '咪咕音乐' }
+].map((item) => {
+  const metric = dependencyMetrics.value[item.source]
+  const current = !metric || metric.calls === 0
+    ? 'unknown'
+    : metric.successRate >= 95 ? 'up' : metric.successRate > 0 ? 'degraded' : 'down'
+  const slots = Array.from({ length: 24 }, () => 'unknown')
+  if (current !== 'unknown') slots[23] = current
+  return { ...item, slots }
+}))
 
 const dependencyErrorCodes = computed(() => [
   locale.value.dependencies?.rateLimited,
@@ -1987,7 +2134,11 @@ const dependencyProtectionPanels = computed(() => [
       locale.value.dependencies?.providerFallbacks,
       locale.value.dependencies?.retryAttempts,
       locale.value.dependencies?.circuitBreakerOpens,
-      locale.value.dependencies?.cachedResponseFallbacks
+      locale.value.dependencies?.cachedResponseFallbacks,
+      locale.value.overview?.neteaseSource,
+      locale.value.overview?.tencentSource,
+      locale.value.overview?.bilibiliSource,
+      locale.value.overview?.miguSource
     ]
   },
   {
@@ -1998,7 +2149,8 @@ const dependencyProtectionPanels = computed(() => [
       locale.value.dependencies?.cacheHits,
       locale.value.dependencies?.cacheMisses,
       locale.value.dependencies?.cacheEvictions,
-      locale.value.dependencies?.cacheResponseP95
+      locale.value.dependencies?.cacheResponseP95,
+      locale.value.dependencies?.cacheHitRate
     ]
   },
   {
@@ -2885,6 +3037,10 @@ const riskLevels = computed(() => [
 }
 
 .runtime-bars--error i { background: #f87171; }
+
+.dependency-uptime-list { display: grid; gap: 0.7rem; width: 100%; }
+.dependency-uptime-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr); align-items: center; gap: 0.75rem; }
+.dependency-uptime-row__label { color: rgb(161 161 170); font-size: 0.72rem; font-weight: 600; }
 
 .analysis-chart-grid {
   position: absolute;
