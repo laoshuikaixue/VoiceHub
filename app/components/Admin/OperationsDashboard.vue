@@ -31,10 +31,15 @@
           </button>
         </form>
         <button type="button" class="refresh-button" :disabled="operationsLoading" @click="loadOperationsData()">
-          <Icon name="refresh" :size="14" />{{ locale.actions.refresh }}
+          <Icon name="refresh" :size="14" :class="{ 'icon-spin': operationsLoading }" />{{ operationsLoading ? '正在刷新' : locale.actions.refresh }}
         </button>
       </div>
     </header>
+
+    <div v-if="initialOperationsLoading" class="operations-loading-state" role="status" aria-live="polite">
+      <span class="operations-loading-state__spinner"><Icon name="refresh" :size="16" /></span>
+      <div><strong>正在读取运维数据</strong><p>正在连接监控接口，页面数据加载完成后会自动显示。</p></div>
+    </div>
 
     <nav class="group-navigation" :aria-label="locale.title">
       <div class="group-navigation__scroll">
@@ -303,10 +308,10 @@
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.application.musicApiPerformance }}</h3><p class="panel-description">{{ locale.application.musicApiPerformanceDetail }}</p></div><span class="item-count">{{ locale.itemCount }} {{ musicApiRows.length }}</span></div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[720px]">
-              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>{{ locale.application.averageDuration || '平均耗时' }}</th><th>{{ locale.application.httpSuccessRate || 'HTTP 成功率' }}</th><th>{{ locale.application.semanticSuccessRate || '解析成功率' }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
+              <thead><tr><th>{{ locale.application.route }}</th><th>{{ locale.application.source }}</th><th>自动探测</th><th>{{ locale.application.averageDuration || '平均耗时' }}</th><th>{{ locale.application.httpSuccessRate || 'HTTP 成功率' }}</th><th>{{ locale.application.semanticSuccessRate || '解析成功率' }}</th><th>{{ locale.application.timeouts }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in musicApiRows" :key="item.source"><td>/api/music/*</td><td>{{ item.source }}</td><td>{{ item.averageDuration }}</td><td>{{ item.httpSuccessRate }}</td><td>{{ item.semanticSuccessRate }}</td><td>{{ item.timeouts }}</td></tr>
-                <tr v-if="!musicApiRows.length"><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr>
+                <tr v-for="item in musicApiRows" :key="item.source"><td>/api/music/*</td><td>{{ item.source }}</td><td>{{ item.status }}</td><td>{{ item.averageDuration }}</td><td>{{ item.httpSuccessRate }}</td><td>{{ item.semanticSuccessRate }}</td><td>{{ item.timeouts }}</td></tr>
+                <tr v-if="!musicApiRows.length"><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr>
               </tbody>
             </table>
           </div>
@@ -348,8 +353,8 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">1h</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">1h · {{ panel.unit }}</span></div>
+          <div class="analysis-chart-placeholder"><span class="chart-axis-label chart-axis-label--top">高</span><span class="chart-axis-label chart-axis-label--bottom">低</span><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :title="`${point.at}：${point.requests} ${panel.unit}`" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
         </article>
       </section>
 
@@ -363,7 +368,7 @@
             <span class="status-badge">{{ locale.health.waiting }}</span>
           </div>
           <div class="server-health-layout">
-            <div class="health-score-ring"><strong>{{ healthScore }}</strong><span>{{ locale.overview.healthScore }}</span></div>
+            <div class="health-score-ring" :class="`health-score-ring--${healthScoreTone}`"><strong>{{ healthScore }}</strong><span>{{ locale.overview.healthScore }}</span></div>
             <dl class="server-health-details">
               <div v-for="item in serverHealthDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
             </dl>
@@ -721,7 +726,7 @@
               <h3 class="panel-title">当前活跃风险</h3>
               <p class="panel-description">只展示需要立即关注的认证、验证码和限流信号。</p>
             </div>
-            <span class="risk-badge">ACTIVE</span>
+            <span class="risk-badge">当前生效</span>
           </div>
           <div class="risk-distribution">
             <div class="risk-total">
@@ -1169,8 +1174,10 @@ const traceSpans = computed(() => {
   return [{ id: request.requestId, module: request.route, depth: 0, offsetMs: 0, durationMs: request.durationMs, status: request.status >= 500 ? 'error' : request.status >= 400 ? 'slow' : 'ok' }]
 })
 const operationsLoading = ref(true)
+const initialOperationsLoading = ref(true)
 const operationsError = ref(false)
 const operationsLastUpdated = ref(null)
+const runtimeNow = ref(Date.now())
 const operationsData = ref({ status: null, pool: null, performance: null, backups: [], metrics: null })
 
 const loadOperationsData = async () => {
@@ -1199,16 +1206,20 @@ const loadOperationsData = async () => {
   operationsError.value = statusResult.status === 'rejected'
   operationsLastUpdated.value = new Date()
   operationsLoading.value = false
+  initialOperationsLoading.value = false
 }
 
 let operationsRefreshTimer = null
+let runtimeClockTimer = null
 onMounted(() => {
   loadOperationsData()
   operationsRefreshTimer = window.setInterval(loadOperationsData, 30000)
+  runtimeClockTimer = window.setInterval(() => { runtimeNow.value = Date.now() }, 1000)
 })
 
 onBeforeUnmount(() => {
   if (operationsRefreshTimer) window.clearInterval(operationsRefreshTimer)
+  if (runtimeClockTimer) window.clearInterval(runtimeClockTimer)
 })
 
 const systemSnapshot = computed(() => operationsData.value.status?.system || null)
@@ -1298,21 +1309,35 @@ const routePerformanceRows = computed(() => {
     }
   }).sort((a, b) => (b.serverErrors + b.clientErrors) - (a.serverErrors + a.clientErrors))
 })
-const musicApiRows = computed(() => Object.entries(dependencyMetrics.value || {}).map(([source, metric]) => ({
-  source: ({ netease: locale.value.overview?.neteaseSource, tencent: locale.value.overview?.tencentSource, bilibili: locale.value.overview?.bilibiliSource, migu: locale.value.overview?.miguSource }[source] || source),
-  averageDuration: metric?.averageDurationMs != null ? `${metric.averageDurationMs} ms` : 'N/A',
-  httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
-  semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(2)}%` : 'N/A',
-  timeouts: 'N/A'
-})))
+const musicApiRows = computed(() => [
+  { key: 'netease', source: locale.value.overview?.neteaseSource },
+  { key: 'tencent', source: locale.value.overview?.tencentSource },
+  { key: 'bilibili', source: locale.value.overview?.bilibiliSource },
+  { key: 'migu', source: locale.value.overview?.miguSource }
+].map(({ key, source }) => {
+  const metric = dependencyMetrics.value?.[key]
+  return {
+    source: source || key,
+    status: metric?.calls == null || metric.calls === 0 ? '未探测' : metric.successRate >= 95 ? '已连接' : metric.successRate > 0 ? '部分异常' : '不可用',
+    averageDuration: metric?.averageDurationMs != null ? `${metric.averageDurationMs} ms` : '未采集调用',
+    httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
+    semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(2)}%` : 'N/A',
+    timeouts: 'N/A'
+  }
+}))
 const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
-const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : 'UP')
+const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : '采集正常')
 const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
 const healthScore = computed(() => {
   const total = runtimeHttpMetrics.value?.recentRequests || 0
   const errors = runtimeHttpMetrics.value?.recent5xx || 0
   return total ? `${Math.max(0, (1 - errors / total) * 100).toFixed(2)}%` : 'N/A'
+})
+const healthScoreTone = computed(() => {
+  const score = Number.parseFloat(healthScore.value)
+  if (!Number.isFinite(score)) return 'unknown'
+  return score >= 99 ? 'good' : score >= 95 ? 'warn' : 'critical'
 })
 const formatBytes = (value) => {
   const bytes = Number(value)
@@ -1322,6 +1347,15 @@ const formatBytes = (value) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 const formatTimestamp = (value) => value ? new Date(value).toLocaleString() : '--'
+const formatDuration = (seconds) => {
+  if (!Number.isFinite(seconds)) return '--'
+  const total = Math.max(0, Math.floor(seconds))
+  const days = Math.floor(total / 86400)
+  const hours = Math.floor((total % 86400) / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const secs = total % 60
+  return days ? `${days}天 ${hours}小时 ${minutes}分 ${secs}秒` : `${hours}小时 ${minutes}分 ${secs}秒`
+}
 const dependencySourceForLabel = (label) => {
   const labels = {
     [locale.value.overview?.neteaseSource]: 'netease',
@@ -1334,7 +1368,7 @@ const dependencySourceForLabel = (label) => {
 const dependencyStatusValue = (label) => {
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
   if (!metric) return '--'
-  return metric.successRate === 100 ? 'UP' : metric.successRate === 0 ? 'DOWN' : 'DEGRADED'
+  return metric.successRate === 100 ? '已连接' : metric.successRate === 0 ? '不可用' : '部分异常'
 }
 const dependencyMetricValue = (label, detail) => {
   if (label === locale.value.dependencies?.neonPostgresql && detail === locale.value.dependencies?.coldStartP95) {
@@ -1342,7 +1376,7 @@ const dependencyMetricValue = (label, detail) => {
     return connectionInfo?.serverlessMode ? 'N/A · auto-suspend enabled' : 'N/A'
   }
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
-  if (!metric) return '--'
+  if (!metric) return dependencySourceForLabel(label) ? '未采集调用' : '--'
   if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : `${metric.successRate}%`
   if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : `${metric.emptyResultRate}%`
   if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : `${metric.semanticFailureRate}%`
@@ -1459,18 +1493,18 @@ const overviewSignals = computed(() => [
     label: locale.value.overview?.memoryStatus,
     detail: locale.value.overview?.memoryStatusDetail,
     value: runtimeMetrics.value?.process?.memory
-      ? `RSS ${formatBytes(runtimeMetrics.value.process.memory.rss)} · Heap ${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)} · External ${formatBytes(runtimeMetrics.value.process.memory.external)}`
+      ? `常驻内存 ${formatBytes(runtimeMetrics.value.process.memory.rss)} · 已用堆 ${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / 堆总量 ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)} · 外部内存 ${formatBytes(runtimeMetrics.value.process.memory.external)}`
       : systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
   },
   {
     icon: 'database',
     label: locale.value.overview?.databaseStatus,
-    detail: locale.value.overview?.databaseStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--'
+    detail: locale.value.overview?.databaseStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--'
   },
   {
     icon: 'server',
     label: locale.value.overview?.redisStatus,
-    detail: locale.value.overview?.redisStatusDetail, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.connected ? 'UP' : runtimeRedisMetrics.value.configured ? 'DOWN' : 'N/A') : '--'
+    detail: locale.value.overview?.redisStatusDetail, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? '已连接' : '不可用') : '--'
   },
   {
     icon: 'settings',
@@ -1489,7 +1523,7 @@ const isServerlessRuntime = computed(() => {
   if (publicRuntimeConfig.isNetlify) return true
   return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
 })
-const deploymentModeLabel = computed(() => isServerlessRuntime.value ? 'SERVERLESS' : systemSnapshot.value?.platform ? 'NODE SERVER' : locale.value.overview?.detectionPending)
+const deploymentModeLabel = computed(() => isServerlessRuntime.value ? '无服务器部署' : systemSnapshot.value?.platform ? 'Node 服务部署' : locale.value.overview?.detectionPending)
 
 const healthLiveDetails = computed(() => [
   { label: locale.value.overview?.sloBudget, value: '--' },
@@ -1499,7 +1533,7 @@ const healthLiveDetails = computed(() => [
 
 const backupStatusFields = computed(() => [
   { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
-  { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? 'SUCCESS' : 'FAILED') : '--' },
+  { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? '成功' : '失败') : '--' },
   { label: locale.value.overview?.lastBackupSize, value: formatBytes(latestBackup.value?.backupSize) },
   { label: locale.value.overview?.backupStorageUsage, value: 'N/A' },
   { label: locale.value.overview?.backupExportedTables, value: backupSnapshot.value?.exportedTables != null ? String(backupSnapshot.value.exportedTables) : '--' },
@@ -1520,24 +1554,24 @@ const backupTargetPanels = computed(() => [
 
 const backupTargetValue = (target) => {
   const method = latestBackup.value?.methods?.find(item => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
-  return method ? (method.success ? 'SUCCESS' : 'FAILED') : '未启用'
+  return method ? (method.success ? '成功' : '失败') : '未启用'
 }
 
 const deploymentModeRows = computed(() => [
-  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? 'DETECTED' : locale.value.overview?.detectionPending },
-  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? 'DETECTED' : 'N/A' }
+  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? '已检测到' : locale.value.overview?.detectionPending },
+  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? '已检测到' : '不适用' }
 ])
 
 const dependencyRows = computed(() => [
   {
     icon: 'monitoring',
     label: locale.value.services?.application,
-    detail: locale.value.overview?.applicationDetail, value: 'UP'
+    detail: locale.value.overview?.applicationDetail, value: '正常'
   },
   {
     icon: 'database',
     label: locale.value.services?.postgresql,
-    detail: locale.value.overview?.databaseDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--'
+    detail: locale.value.overview?.databaseDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--'
   },
   {
     icon: 'server',
@@ -1651,7 +1685,7 @@ const applicationDetailPanels = computed(() => [
 const serverSummaryDetails = computed(() => [
   { label: locale.value.runtime?.hostname, value: import.meta.client ? window.location.hostname : 'N/A' },
   { label: locale.value.runtime?.platform, value: systemSnapshot.value?.platform || '--' },
-  { label: locale.value.runtime?.systemUptime, value: systemSnapshot.value?.uptime ? `${Math.round(systemSnapshot.value.uptime)}s` : '--' },
+  { label: locale.value.runtime?.systemUptime, value: systemSnapshot.value?.uptime ? formatDuration(Math.max(0, Number(systemSnapshot.value.uptime) + (runtimeNow.value - Date.parse(systemSnapshot.value.timestamp || '')) / 1000)) : '--' },
   { label: locale.value.runtime?.processPid, value: 'N/A' }
 ])
 
@@ -1671,7 +1705,7 @@ const serverMetrics = computed(() => (isServerlessRuntime.value ? [
     icon: 'monitoring',
     label: locale.value.metrics?.systemMemory,
     detail: locale.value.server?.systemMemoryDetail,
-    value: runtimeMetrics.value?.process?.memory?.rss ? `${Math.round(runtimeMetrics.value.process.memory.rss / 1024 / 1024)} MB RSS` : '--'
+    value: runtimeMetrics.value?.process?.memory?.rss ? `${Math.round(runtimeMetrics.value.process.memory.rss / 1024 / 1024)} MB 常驻内存` : '--'
   },
   {
     icon: 'database',
@@ -1708,17 +1742,17 @@ const serverHealthDetails = computed(() => [
 ])
 
 const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
-  { title: '函数调用量趋势', detail: 'Serverless 函数调用量按时间聚合。' },
-  { title: '函数执行时长 P95', detail: 'Serverless 函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。' }
+  { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次' },
+  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: '毫秒' }
 ] : [
-  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail },
-  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail },
-  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail },
-  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail }
+  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '百分比' },
+  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB' },
+  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail, unit: 'MB/秒' },
+  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail, unit: 'MB/秒' }
 ]))
 
 const serverRuntimeDetails = computed(() => [
-  { label: 'NITRO_PRESET', value: runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || (publicRuntimeConfig.isNetlify ? 'netlify' : 'node-server') },
+  { label: '部署运行模式', value: runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || (publicRuntimeConfig.isNetlify ? '无服务器（Netlify）' : 'Node 服务') },
   { label: locale.value.server?.platformRelease, value: systemSnapshot.value?.platform || '--' },
   { label: locale.value.runtime?.architecture, value: systemSnapshot.value?.arch || '--' },
   { label: locale.value.runtime?.nodeVersion, value: systemSnapshot.value?.nodeVersion || '--' },
@@ -1804,9 +1838,9 @@ const runtimeGuardPanels = computed(() => [
     title: locale.value.server?.redisRuntimeGuard,
     detail: locale.value.server?.redisRuntimeGuardDetail,
     items: [
-      { label: locale.value.server?.redisConfigured, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.configured ? 'YES' : 'NO') : '--' },
-      { label: locale.value.server?.redisConnected, value: !runtimeRedisMetrics.value ? '--' : !runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN' },
-      { label: locale.value.server?.redisFallbackMode, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured || !runtimeRedisMetrics.value.connected ? 'ACTIVE' : 'INACTIVE') : '--' },
+      { label: locale.value.server?.redisConfigured, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.configured ? '已配置' : '未配置') : '--' },
+      { label: locale.value.server?.redisConnected, value: !runtimeRedisMetrics.value ? '--' : !runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? '已连接' : '不可用' },
+      { label: locale.value.server?.redisFallbackMode, value: runtimeRedisMetrics.value ? (!runtimeRedisMetrics.value.configured || !runtimeRedisMetrics.value.connected ? '已启用降级' : '未启用降级') : '--' },
       { label: locale.value.server?.redisLastError, value: runtimeRedisMetrics.value?.lastError || '--' }
     ]
   },
@@ -1833,7 +1867,7 @@ const runtimeGuardPanels = computed(() => [
 ])
 
 const databaseMetrics = computed(() => [
-  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? 'UP' : 'DOWN') : '--' },
+  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--' },
   { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: operationsData.value.pool?.utilization ? `${operationsData.value.pool.utilization}%` : '--' },
   { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: runtimeTimeline.value.length ? String(runtimeTimeline.value[runtimeTimeline.value.length - 1].requests || 0) : '--' },
   { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail, value: databaseDiagnostics.value?.activity?.data ? String(databaseDiagnostics.value.activity.data.filter((item) => Number(item.duration) > 100).length) : '--' },
@@ -1850,7 +1884,7 @@ const databaseDetails = computed(() => [
   { label: locale.value.server?.poolActive, value: operationsData.value.pool?.activeConnections ?? '--' },
   { label: locale.value.server?.poolTotal, value: operationsData.value.pool?.totalConnections ?? '--' },
   { label: locale.value.server?.poolAvailable, value: operationsData.value.pool ? Math.max(0, Number(operationsData.value.pool.maxConnections || 0) - Number(operationsData.value.pool.totalConnections || 0)) : '--' },
-  { label: locale.value.server?.probe, value: databaseSnapshot.value?.connected ? 'UP' : '--' },
+  { label: locale.value.server?.probe, value: databaseSnapshot.value?.connected ? '已连接' : '--' },
   { label: locale.value.database?.poolerWaitQueue, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
   { label: locale.value.database?.neonColdStart, value: 'N/A' }
 ])
@@ -1911,14 +1945,14 @@ const cacheMetrics = computed(() => [
   { icon: 'clock', label: locale.value.cache?.commandP99, detail: locale.value.cache?.commandP99Detail },
   { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail },
   { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail },
-  { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail, value: runtimeRedisMetrics.value?.lastError ? 'ERROR' : '--' },
+  { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail, value: runtimeRedisMetrics.value?.lastError ? '连接错误' : '--' },
   { icon: 'activity', label: locale.value.cache?.memoryFragmentation, detail: locale.value.cache?.memoryFragmentationDetail }
 ])
 
 const redisStatusValue = computed(() => {
   if (!runtimeRedisMetrics.value) return '--'
   if (!runtimeRedisMetrics.value.configured) return '未启用'
-  return runtimeRedisMetrics.value.connected ? 'UP' : 'DOWN'
+  return runtimeRedisMetrics.value.connected ? '已连接' : '不可用'
 })
 
 const cacheDetails = computed(() => [
@@ -1933,7 +1967,7 @@ const cacheDetailValue = (label) => {
   const redis = runtimeRedisMetrics.value
   if (!redis) return '--'
   const values = new Map([
-    [locale.value.cache?.configured, redis.configured ? 'YES' : 'NO'],
+    [locale.value.cache?.configured, redis.configured ? '已配置' : '未配置'],
     [locale.value.cache?.keyPrefix, redis.keyPrefix || 'N/A'],
     [locale.value.cache?.lastConnected, redis.lastConnectedAt ? formatTimestamp(redis.lastConnectedAt) : 'N/A'],
     [locale.value.cache?.evictionPolicy, 'N/A'],
@@ -2288,6 +2322,23 @@ const riskLevels = computed(() => [
   width: 100%;
   letter-spacing: 0;
 }
+
+.operations-loading-state {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 4.5rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgb(59 130 246 / 0.28);
+  border-radius: 0.45rem;
+  background: rgb(30 41 59 / 0.42);
+  color: rgb(191 219 254);
+}
+.operations-loading-state strong { font-size: 0.8rem; font-weight: 650; }
+.operations-loading-state p { margin-top: 0.2rem; color: rgb(148 163 184); font-size: 0.7rem; }
+.operations-loading-state__spinner { display: inline-flex; color: #60a5fa; animation: icon-spin 0.9s linear infinite; }
+.icon-spin { animation: icon-spin 0.9s linear infinite; }
+@keyframes icon-spin { to { transform: rotate(360deg); } }
 
 .title-icon,
 .metric-icon,
@@ -2680,6 +2731,11 @@ const riskLevels = computed(() => [
   box-shadow: inset 0 0 0 1px rgb(9 9 11 / 0.7);
 }
 
+.health-score-ring--good { border-color: #34d399; box-shadow: 0 0 24px rgb(52 211 153 / 0.22), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
+.health-score-ring--warn { border-color: #fbbf24; box-shadow: 0 0 24px rgb(251 191 36 / 0.2), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
+.health-score-ring--critical { border-color: #f87171; box-shadow: 0 0 24px rgb(248 113 113 / 0.24), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
+.health-score-ring--unknown { border-color: rgb(82 82 91); }
+
 .health-score-ring strong {
   color: rgb(244 244 245);
   font-size: 1.75rem;
@@ -2736,6 +2792,13 @@ const riskLevels = computed(() => [
   flex-direction: column;
   padding: 1rem;
 }
+
+.metric-card:nth-child(4n + 1) { --metric-accent: #60a5fa; }
+.metric-card:nth-child(4n + 2) { --metric-accent: #34d399; }
+.metric-card:nth-child(4n + 3) { --metric-accent: #fbbf24; }
+.metric-card:nth-child(4n) { --metric-accent: #c084fc; }
+.metric-card .metric-icon { color: var(--metric-accent, #60a5fa); background: color-mix(in srgb, var(--metric-accent, #60a5fa) 12%, transparent); border-color: color-mix(in srgb, var(--metric-accent, #60a5fa) 28%, transparent); }
+.metric-card .metric-value { color: color-mix(in srgb, var(--metric-accent, #60a5fa) 72%, white); }
 
 .signal-card__header,
 .metric-card__top {
@@ -3118,7 +3181,12 @@ const riskLevels = computed(() => [
   justify-content: center;
   overflow: hidden;
   padding: 1.5rem;
+  background: linear-gradient(180deg, rgb(24 24 27 / 0.55), rgb(9 9 11 / 0.2));
 }
+
+.chart-axis-label { position: absolute; left: 0.55rem; z-index: 2; color: rgb(113 113 122); font-size: 0.58rem; }
+.chart-axis-label--top { top: 1.45rem; }
+.chart-axis-label--bottom { bottom: 1.1rem; }
 
 .analysis-chart-placeholder > span {
   position: relative;
@@ -3140,9 +3208,19 @@ const riskLevels = computed(() => [
   flex: 1;
   min-height: 0.35rem;
   border-radius: 2px 2px 0 0;
-  background: #60a5fa;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
   opacity: 0.8;
+  transform-origin: bottom;
+  animation: trend-bar-in 0.55s ease-out both;
+  transition: height 0.45s ease, opacity 0.2s ease;
 }
+
+.runtime-bars i:nth-child(3n) { background: linear-gradient(180deg, #34d399, #059669); }
+.runtime-bars i:nth-child(5n) { background: linear-gradient(180deg, #fbbf24, #d97706); }
+
+.runtime-bars i:nth-child(2n) { animation-delay: 0.04s; }
+.runtime-bars i:nth-child(3n) { animation-delay: 0.08s; }
+@keyframes trend-bar-in { from { transform: scaleY(0); opacity: 0.15; } to { transform: scaleY(1); opacity: 0.8; } }
 
 .runtime-bars--error i { background: #f87171; }
 
