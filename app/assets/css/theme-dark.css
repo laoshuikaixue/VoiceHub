@@ -58,11 +58,11 @@
 --info-light: rgba(59, 130, 246, 0.1);
 --info-border: rgba(59, 130, 246, 0.2);
 
-/* 信息色光晕（紫色系，与 info 品牌色一致） */
---info-glow: rgba(139, 92, 246, 0.2);
---info-glow-5: rgba(139, 92, 246, 0.05);
---info-glow-10: rgba(139, 92, 246, 0.1);
---info-glow-20: rgba(139, 92, 246, 0.2);
+/* 信息色光晕（蓝色系，与 info 品牌色一致） */
+--info-glow: rgba(59, 130, 246, 0.2);
+--info-glow-5: rgba(59, 130, 246, 0.05);
+--info-glow-10: rgba(59, 130, 246, 0.1);
+--info-glow-20: rgba(59, 130, 246, 0.2);
 
 /* 背景色 */
 --bg-primary: #111111;
@@ -255,9 +255,12 @@
 --brand-yellow: #f59e0b;
 --brand-yellow-light: #fbbf24;
 --brand-yellow-hover: #d97706;
+--brand-yellow-glow: rgba(245, 158, 11, 0.6);
 --brand-orange: #fb923c;
+--brand-orange-light: #fdba74;
 --brand-orange-hover: #ff6900;
-  
+--brand-orange-glow: rgba(251, 146, 60, 0.6);
+
 /* === Alpha (--brand-blue) === */
 --brand-blue-10: rgba(11, 90, 254, 0.1);
 --brand-blue-12: rgba(11, 90, 254, 0.12);
@@ -270,8 +273,6 @@
 --brand-blue-50: rgba(11, 90, 254, 0.5);
 --brand-blue-60: rgba(11, 90, 254, 0.6);
 --brand-blue-80: rgba(11, 90, 254, 0.8);
-
---brand-orange-glow: rgba(251, 146, 60, 0.6);
 
 /* 用途化变量 — 请求表单（RequestForm） */
 --requestform-audio-match-hover-border: rgba(96, 165, 250, 0.35);
@@ -718,3 +719,4 @@
 /* === 用途化变量 — 移动端表格阴影 === */
 --mobile-table-shadow: rgba(0, 0, 0, 0.6);
 }
+
