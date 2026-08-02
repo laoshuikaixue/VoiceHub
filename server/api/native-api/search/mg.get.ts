@@ -1,37 +1,4 @@
-import { createHash } from 'node:crypto'
 import { formatPlayTime } from '../../../utils/native_common'
-import { getServerLocation } from '../../../utils/geo'
-
-
-// 咪咕歌曲信息缓存（封面兜底用），避免重复请求
-const mgSongInfoCache = new Map<string, { expiresAt: number; img: string }>()
-const MG_INFO_CACHE_TTL = 6 * 60 * 60 * 1000
-
-/**
- * 搜索结果封面缺失时，通过歌曲信息接口兜底取大图
- */
-async function getMgCover(contentId: string): Promise<string> {
-  const cached = mgSongInfoCache.get(contentId)
-  if (cached) {
-    if (cached.expiresAt > Date.now()) return cached.img
-    mgSongInfoCache.delete(contentId)
-  }
-
-  try {
-    const res: any = await $fetch(
-      `https://app.c.nf.migu.cn/resource/song/by-contentids/v2.0?contentId=${contentId}`,
-      { timeout: 10000 }
-    )
-    const song = res?.data?.[0];
-    const img = song?.img2 || song?.img3 || song?.img1 || ''
-    if (img) {
-      mgSongInfoCache.set(contentId, { expiresAt: Date.now() + MG_INFO_CACHE_TTL, img })
-    }
-    return img
-  } catch {
-    return ''
-  }
-}
 
 /**
  * 咪咕网页 v5 搜索接口
@@ -51,7 +18,7 @@ async function searchPC(str: string, page: number, limit: number) {
     }
   )
 
-  if (!response) throw createError({ statusCode: 502, message: 'Migu API Error' })
+  if (!response) throw createError({ statusCode: 502, message: 'Migu PC API Error' })
 
   const groups = response || []
 
@@ -69,7 +36,6 @@ async function searchPC(str: string, page: number, limit: number) {
         const img = item.img2 || item.img3 || item.img1 || ''
         const cover = img && !/^https?:/.test(img) ? `https://d.musicapp.migu.cn${img}` : img
         const contentId = item.contentId;
-        const finalCover = cover || (contentId ? await getMgCover(contentId) : '')
 
         // 音质格式列表
         const formats = item.audioFormats?.map((f: any) => f.formatType) || []
@@ -84,7 +50,7 @@ async function searchPC(str: string, page: number, limit: number) {
           duration: item.duration || 0,
           songmid: contentId,
           copyrightId: item.copyrightId || '',
-          img: finalCover,
+          img: cover,
           lrc: item.lrcUrl || null,
           mrcUrl: item.mrcurl || null,
           types: formats,
@@ -113,7 +79,7 @@ async function searchMobile(str: string, page: number, limit: number) {
   })
 
   if (!response?.data) {
-    throw createError({ statusCode: 502, message: 'Migu API Error' })
+    throw createError({ statusCode: 502, message: 'Migu Mobile API Error' })
   }
 
   const items = response.data.items || []
@@ -133,7 +99,6 @@ async function searchMobile(str: string, page: number, limit: number) {
       // 封面图（缺失时经歌曲信息接口兜底）
       const img = song.img2 ? `https://d.musicapp.migu.cn${song.img2}` : ''
       const contentId = song.contentId
-      const finalCover = img || (contentId ? await getMgCover(contentId) : '')
 
       // 音质格式列表
       const formats = song.audioFormats?.map((f: any) => f.formatType) || []
@@ -148,7 +113,7 @@ async function searchMobile(str: string, page: number, limit: number) {
         duration: song.duration || 0,
         songmid: contentId,
         copyrightId: '',
-        img: finalCover,
+        img: img,
         lrc: song.lrcUrl || null,
         mrcUrl: null,
         types: formats,
@@ -175,20 +140,14 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // V3 接口会拦截海外服务器请求，按服务器地域选择接口
-    const { isInChina } = await getServerLocation()
-
     let result
-    if (isInChina) {
-      try {
-        result = await searchPC(str, page, limit)
-      } catch (err) {
-        console.warn('[mg.get] V3 接口请求失败，回退到移动端接口:', err)
-        result = await searchMobile(str, page, limit)
-      }
-    } else {
+    try {
+      result = await searchPC(str, page, limit)
+    } catch (err) {
+      console.warn('[mg.get] 咪咕网页 v5 接口请求失败，回退到移动端接口:', err)
       result = await searchMobile(str, page, limit)
     }
+    if (!result) throw createError({ statusCode: 502, message: 'Migu API Error' })
 
     return {
       ...result,
