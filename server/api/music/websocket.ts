@@ -8,6 +8,10 @@ import { createApiError } from '~~/server/utils/apiError'
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()
 
+export const getMusicSseStats = () => ({
+  activeConnections: musicConnections.size
+})
+
 // 音乐状态接口
 interface MusicState {
   songId?: number

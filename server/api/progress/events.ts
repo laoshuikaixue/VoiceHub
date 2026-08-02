@@ -5,6 +5,10 @@ import { db } from '~/drizzle/db'
 // 存储活跃的连接及其ID
 const connections = new Map()
 
+export const getProgressSseStats = () => ({
+  activeConnections: connections.size
+})
+
 // 为每个操作生成唯一ID
 export function generateProgressId() {
   return `progress_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
