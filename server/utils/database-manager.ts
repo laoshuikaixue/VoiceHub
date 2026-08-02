@@ -218,7 +218,7 @@ export class DatabaseManager {
       SELECT count(*)::int AS calls,
         count(*) FILTER (WHERE "status_code" >= 400)::int AS failures
       FROM api_logs
-      WHERE "created_at" >= now() - interval '5 minutes'
+      WHERE "created_at" >= now() - interval '5 minutes' AND "api_key_id" IS NOT NULL
     `)
     const row = result[0] as { calls?: number | string; failures?: number | string } | undefined
     const calls = Number(row?.calls || 0)
@@ -227,6 +227,34 @@ export class DatabaseManager {
       calls,
       failureRate: calls ? Number((failures / calls * 100).toFixed(2)) : null
     }
+  }
+
+  async getPersistedRequestSamples() {
+    const result = await db.execute(sql`
+      SELECT "created_at" AS at, "endpoint" AS route, "status_code" AS status,
+        "response_time_ms" AS "durationMs",
+        substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
+      FROM api_logs
+      WHERE "api_key_id" IS NULL
+        AND "error_message" LIKE '%requestId=%'
+      ORDER BY "created_at" DESC
+      LIMIT 50
+    `)
+    return result
+  }
+
+  async getOperationsMetricTimeline() {
+    return await db.execute(sql`
+      SELECT bucket_start AS at,
+        sum(request_count)::int AS requests,
+        sum(server_error_count)::int AS errors,
+        round(sum(total_duration_ms)::numeric / nullif(sum(request_count), 0), 2) AS average_duration_ms,
+        max(max_duration_ms)::int AS max_duration_ms
+      FROM operations_metric_buckets
+      WHERE bucket_start >= now() - interval '60 minutes'
+      GROUP BY bucket_start
+      ORDER BY bucket_start ASC
+    `)
   }
 
   /**

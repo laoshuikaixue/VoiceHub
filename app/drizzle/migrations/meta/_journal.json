@@ -372,6 +372,13 @@
       "when": 1790488086779,
       "tag": "20260927054806_add_astrbot_notification",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1785669366654,
+      "tag": "20260802180000_add_operations_metric_buckets",
+      "breakpoints": true
     }
   ]
 }
