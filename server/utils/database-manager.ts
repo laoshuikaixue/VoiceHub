@@ -243,6 +243,20 @@ export class DatabaseManager {
     return result
   }
 
+  async getRequestDiagnostics(requestId: string) {
+    const normalized = String(requestId || '').trim()
+    if (!normalized) return []
+    return await db.execute(sql`
+      SELECT "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
+        "response_time_ms" AS "durationMs", "error_message" AS "errorMessage",
+        substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
+      FROM api_logs
+      WHERE "error_message" LIKE ${`%requestId=${normalized}%`}
+      ORDER BY "created_at" ASC
+      LIMIT 100
+    `)
+  }
+
   async getOperationsMetricTimeline() {
     return await db.execute(sql`
       SELECT bucket_start AS at,

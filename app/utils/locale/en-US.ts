@@ -1898,7 +1898,7 @@ export const admin = {
     },
     application: {
       httpQps: 'HTTP Request QPS', httpQpsDetail: 'Requests per second grouped by route',
-      clientErrorRate: '4xx Error Rate', clientErrorRateDetail: 'Share of client request errors',
+      clientErrorRate: '4xx Error Rate', clientErrorRateDetail: 'Share of client request errors', unauthorized401: '401 Auth Failures', forbidden403: '403 Forbidden', rateLimited429: '429 Rate Limits',
       serverErrorRate: '5xx Error Rate', serverErrorRateDetail: 'Share of server errors',
       ssrRenderTime: 'SSR Render Time', ssrRenderTimeDetail: 'Nuxt server-side rendering duration',
       realtimeConnections: 'WebSocket / SSE Connections', realtimeConnectionsDetail: 'Number of real-time notification connections',

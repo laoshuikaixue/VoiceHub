@@ -1907,7 +1907,7 @@ export const admin = {
     },
     application: {
       httpQps: 'HTTP 请求 QPS', httpQpsDetail: '按路由统计的每秒请求量',
-      clientErrorRate: '4xx 错误率', clientErrorRateDetail: '客户端请求错误占比',
+      clientErrorRate: '4xx 错误率', clientErrorRateDetail: '客户端请求错误占比', unauthorized401: '401 鉴权失败', forbidden403: '403 权限拒绝', rateLimited429: '429 限流触发',
       serverErrorRate: '5xx 错误率', serverErrorRateDetail: '服务端错误占比，关注持续升高',
       ssrRenderTime: 'SSR 渲染耗时', ssrRenderTimeDetail: 'Nuxt 服务端渲染耗时',
       realtimeConnections: 'WebSocket / SSE 连接', realtimeConnectionsDetail: '实时通知长连接数量',

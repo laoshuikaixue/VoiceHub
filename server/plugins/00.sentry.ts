@@ -211,6 +211,11 @@ export default defineNitroPlugin((nitroApp) => {
     return globalThis.__voicehubSentryServerInitializing
   }
 
+  // 在请求开始前初始化，确保正常请求也能进入 Sentry Performance 采样链路。
+  nitroApp.hooks.hook('request', async () => {
+    await ensureSentryInitialized()
+  })
+
   nitroApp.hooks.hook('error', async (error, context) => {
     if (!shouldCaptureServerError(error)) {
       return

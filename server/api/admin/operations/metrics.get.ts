@@ -1,4 +1,4 @@
-import { defineEventHandler, createError } from 'h3'
+import { defineEventHandler, createError, getQuery } from 'h3'
 import { verifyAdminAuth } from '~~/server/utils/auth'
 import { getOperationsMetrics } from '~~/server/utils/operations-metrics'
 import { getRedisStats } from '~~/server/utils/redis'
@@ -46,7 +46,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: authResult.message })
   }
 
-  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, timeline, sentry] = await Promise.allSettled([
+  const requestId = String(getQuery(event).requestId || '').trim()
+
+  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, timeline, sentry, requestDiagnostics] = await Promise.allSettled([
     databaseManager.getConnectionPoolStatus(),
     databaseManager.getPerformanceMetrics(),
     databaseManager.getDiagnostics(),
@@ -54,7 +56,8 @@ export default defineEventHandler(async (event) => {
     databaseManager.getApiKeyUsageStats(),
     databaseManager.getPersistedRequestSamples(),
     databaseManager.getOperationsMetricTimeline(),
-    getSentryIssues()
+    getSentryIssues(),
+    requestId ? databaseManager.getRequestDiagnostics(requestId) : Promise.resolve([])
   ])
 
   return {
@@ -75,7 +78,8 @@ export default defineEventHandler(async (event) => {
         persistedRequests: persistedRequests.status === 'fulfilled' ? persistedRequests.value : null,
         timeline: timeline.status === 'fulfilled' ? timeline.value : null
       },
-      sentry: sentry.status === 'fulfilled' ? sentry.value : { configured: false, issues: [] }
+      sentry: sentry.status === 'fulfilled' ? sentry.value : { configured: false, issues: [] },
+      diagnostic: requestDiagnostics.status === 'fulfilled' ? { requestId, entries: requestDiagnostics.value } : { requestId, entries: [] }
     }
   }
 })

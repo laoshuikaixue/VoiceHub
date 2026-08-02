@@ -62,6 +62,7 @@ export default defineNitroPlugin((nitroApp) => {
           responseTimeMs: Math.round(durationMs),
           errorMessage: `${event.node.res.statusCode >= 400 ? 'request_error' : 'slow_request'} requestId=${requestId}`
         }).catch(() => {})
+      }
     }
   })
 })
