@@ -2253,7 +2253,7 @@ if (
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: var(--overlay-80);
+  color: var(--text-secondary);
   border: 2px solid var(--panel-surface-raised);
   border-bottom: none;
   cursor: pointer;
@@ -2385,7 +2385,7 @@ if (
   transform: none; /* 移除上浮效果 */
   background-color: transparent; /* 移除背景�?*/
   box-shadow: none; /* 移除内阴�?*/
-  color: var(--overlay-90);
+  color: var(--text-primary);
 }
 
 .section-tab.active:hover {
