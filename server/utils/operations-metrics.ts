@@ -10,7 +10,9 @@ const state = {
   clientErrors: 0,
   serverErrors: 0,
   activeRequests: 0,
-  samples: [] as Array<{ at: number; status: number; durationMs: number }>
+  samples: [] as Array<{ at: number; status: number; durationMs: number }>,
+  dependencies: new Map<string, { calls: number; successes: number; emptyResults: number; semanticFailures: number; durationMs: number; lastError: string | null }>(),
+  turnstile: { calls: 0, successes: 0, upstreamFailures: 0, validationFailures: 0 }
 }
 
 const prune = () => {
@@ -68,8 +70,37 @@ export const getOperationsMetrics = () => {
       maxMs: histogram.count ? Number((Number(histogram.max) / 1e6).toFixed(2)) : null,
       p99Ms: histogram.count ? Number((Number(histogram.percentile(99)) / 1e6).toFixed(2)) : null
     },
+    dependencies: Object.fromEntries([...state.dependencies.entries()].map(([source, item]) => ({
+      [source]: {
+        calls: item.calls,
+        successRate: item.calls ? Number((item.successes / item.calls * 100).toFixed(2)) : null,
+        emptyResultRate: item.calls ? Number((item.emptyResults / item.calls * 100).toFixed(2)) : null,
+        semanticFailureRate: item.calls ? Number((item.semanticFailures / item.calls * 100).toFixed(2)) : null,
+        averageDurationMs: item.calls ? Number((item.durationMs / item.calls).toFixed(2)) : null,
+        lastError: item.lastError
+      }
+    }))),
+    turnstile: { ...state.turnstile },
     collectedAt: new Date().toISOString()
   }
   histogram.reset()
   return result
+}
+
+export const recordDependencyCall = (source: string, result: { success: boolean; emptyResult?: boolean; semanticFailure?: boolean; durationMs: number; error?: string }) => {
+  const current = state.dependencies.get(source) || { calls: 0, successes: 0, emptyResults: 0, semanticFailures: 0, durationMs: 0, lastError: null }
+  current.calls += 1
+  if (result.success) current.successes += 1
+  if (result.emptyResult) current.emptyResults += 1
+  if (result.semanticFailure) current.semanticFailures += 1
+  current.durationMs += Math.max(0, result.durationMs)
+  current.lastError = result.error || current.lastError
+  state.dependencies.set(source, current)
+}
+
+export const recordTurnstileValidation = (result: 'success' | 'validation_failure' | 'upstream_failure') => {
+  state.turnstile.calls += 1
+  if (result === 'success') state.turnstile.successes += 1
+  if (result === 'validation_failure') state.turnstile.validationFailures += 1
+  if (result === 'upstream_failure') state.turnstile.upstreamFailures += 1
 }
