@@ -12,7 +12,9 @@ const state = {
   activeRequests: 0,
   samples: [] as Array<{ at: number; status: number; durationMs: number }>,
   dependencies: new Map<string, { calls: number; successes: number; emptyResults: number; semanticFailures: number; durationMs: number; lastError: string | null }>(),
-  turnstile: { calls: 0, successes: 0, upstreamFailures: 0, validationFailures: 0 }
+  turnstile: { calls: 0, successes: 0, upstreamFailures: 0, validationFailures: 0 },
+  notifications: { smtpAccepted: 0, smtpFailures: 0, meowEligible: 0, meowSkipped: 0, meowTransportFailures: 0 },
+  backups: new Map<string, { successes: number; failures: number; durationMs: number }>()
 }
 
 const prune = () => {
@@ -81,6 +83,8 @@ export const getOperationsMetrics = () => {
       }
     }))),
     turnstile: { ...state.turnstile },
+    notifications: { ...state.notifications },
+    backups: Object.fromEntries(state.backups),
     collectedAt: new Date().toISOString()
   }
   histogram.reset()
@@ -103,4 +107,23 @@ export const recordTurnstileValidation = (result: 'success' | 'validation_failur
   if (result === 'success') state.turnstile.successes += 1
   if (result === 'validation_failure') state.turnstile.validationFailures += 1
   if (result === 'upstream_failure') state.turnstile.upstreamFailures += 1
+}
+
+export const recordNotificationDelivery = (channel: 'smtp' | 'meow', result: 'accepted' | 'eligible' | 'skipped' | 'failure') => {
+  if (channel === 'smtp') {
+    if (result === 'accepted') state.notifications.smtpAccepted += 1
+    if (result === 'failure') state.notifications.smtpFailures += 1
+    return
+  }
+  if (result === 'eligible') state.notifications.meowEligible += 1
+  if (result === 'skipped') state.notifications.meowSkipped += 1
+  if (result === 'failure') state.notifications.meowTransportFailures += 1
+}
+
+export const recordBackupTarget = (target: string, success: boolean, durationMs: number) => {
+  const current = state.backups.get(target) || { successes: 0, failures: 0, durationMs: 0 }
+  if (success) current.successes += 1
+  else current.failures += 1
+  current.durationMs += Math.max(0, durationMs)
+  state.backups.set(target, current)
 }
