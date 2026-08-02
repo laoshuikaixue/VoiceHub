@@ -12,9 +12,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: authResult.message })
   }
 
-  const [pool, database] = await Promise.allSettled([
+  const [pool, database, diagnostics, businessQueue, apiKeyUsage] = await Promise.allSettled([
     databaseManager.getConnectionPoolStatus(),
-    databaseManager.getPerformanceMetrics()
+    databaseManager.getPerformanceMetrics(),
+    databaseManager.getDiagnostics(),
+    databaseManager.getBusinessQueueStats(),
+    databaseManager.getApiKeyUsageStats()
   ])
 
   return {
@@ -28,7 +31,10 @@ export default defineEventHandler(async (event) => {
       },
       database: {
         pool: pool.status === 'fulfilled' ? pool.value : null,
-        performance: database.status === 'fulfilled' ? database.value : null
+        performance: database.status === 'fulfilled' ? database.value : null,
+        diagnostics: diagnostics.status === 'fulfilled' ? diagnostics.value : null,
+        businessQueue: businessQueue.status === 'fulfilled' ? businessQueue.value : null,
+        apiKeyUsage: apiKeyUsage.status === 'fulfilled' ? apiKeyUsage.value : null
       }
     }
   }

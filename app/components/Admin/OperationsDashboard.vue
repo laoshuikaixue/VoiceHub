@@ -488,7 +488,12 @@
         <div class="overflow-x-auto">
           <table class="data-table min-w-[1080px]">
             <thead><tr><th>{{ locale.database.pid }}</th><th>{{ locale.database.query }}</th><th>{{ locale.database.duration }}</th><th>{{ locale.database.waitEvent }}</th><th>{{ locale.database.blockedBy }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
-            <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            <tbody>
+              <tr v-for="item in activeDatabaseQueries" :key="item.pid">
+                <td class="font-mono">{{ item.pid }}</td><td class="max-w-[380px] truncate font-mono">{{ item.query }}</td><td>{{ item.duration }}</td><td>{{ item.waitEvent }}</td><td>{{ item.blockedBy }}</td><td>N/A</td><td>N/A</td><td>N/A</td>
+              </tr>
+              <tr v-if="!activeDatabaseQueries.length"><td colspan="8" class="empty-cell">{{ databaseDiagnostics?.activity?.available === false ? 'N/A' : locale.noData }}</td></tr>
+            </tbody>
           </table>
         </div>
       </section>
@@ -500,12 +505,12 @@
               <h3 class="panel-title">{{ locale.database.tableHealth }}</h3>
               <p class="panel-description">{{ locale.database.tableHealthDetail }}</p>
             </div>
-            <span class="item-count">{{ locale.itemCount }} --</span>
+            <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[480px]">
               <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.server.tableStatus }}</th><th>{{ locale.database.lastChecked }}</th></tr></thead>
-              <tbody><tr v-for="item in schemaHealthTables" :key="item"><td>{{ item }}</td><td>--</td><td>--</td></tr></tbody>
+              <tbody><tr v-for="item in schemaHealthTables" :key="item.name"><td>{{ item.label }}</td><td>{{ databaseTableNames.has(item.name) ? 'UP' : databaseDiagnostics?.tables?.available ? 'DOWN' : 'N/A' }}</td><td>{{ databaseDiagnostics?.collectedAt ? formatTimestamp(databaseDiagnostics.collectedAt) : '--' }}</td></tr></tbody>
             </table>
           </div>
         </article>
@@ -516,12 +521,15 @@
               <h3 class="panel-title">{{ locale.database.tableScale }}</h3>
               <p class="panel-description">{{ locale.database.tableScaleDetail }}</p>
             </div>
-            <span class="item-count">{{ locale.itemCount }} --</span>
+            <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[680px]">
               <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }}</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
-              <tbody><tr v-for="item in schemaScaleTables" :key="item"><td>{{ item }}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr></tbody>
+              <tbody>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio }}%</td><td>N/A</td></tr>
+                <tr v-if="!databaseTableRows.length"><td colspan="6" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -590,7 +598,7 @@
             <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
             <span class="metric-label">{{ item.label }}</span>
           </div>
-          <strong class="metric-value">--</strong>
+          <strong class="metric-value">{{ item.value || '--' }}</strong>
           <p class="metric-detail">{{ item.detail }}</p>
         </article>
       </section>
@@ -604,7 +612,7 @@
             </div>
           </div>
           <dl class="detail-grid">
-            <div v-for="item in businessQueueMetrics" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+            <div v-for="item in businessQueueMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value || '--' }}</dd></div>
           </dl>
         </article>
 
@@ -1179,8 +1187,17 @@ const latestBackup = computed(() => operationsData.value.backups?.[0] || null)
 const runtimeMetrics = computed(() => operationsData.value.metrics?.metrics || null)
 const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
 const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
+const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
+const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
+const runtimeBusinessMetrics = computed(() => runtimeMetrics.value?.business || {})
+const runtimeOAuthMetrics = computed(() => runtimeMetrics.value?.oauth || null)
 const runtimeSseMetrics = computed(() => operationsData.value.metrics?.sse || null)
 const runtimeRedisMetrics = computed(() => operationsData.value.metrics?.redis || null)
+const runtimeDatabaseMetrics = computed(() => operationsData.value.metrics?.database || null)
+const databaseDiagnostics = computed(() => runtimeDatabaseMetrics.value?.diagnostics || null)
+const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.businessQueue || null)
+const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
+const backupSnapshot = computed(() => runtimeMetrics.value?.backupSnapshot || null)
 const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
 const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
@@ -1322,14 +1339,14 @@ const backupStatusFields = computed(() => [
   { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
   { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? 'SUCCESS' : 'FAILED') : '--' },
   { label: locale.value.overview?.lastBackupSize, value: formatBytes(latestBackup.value?.backupSize) },
-  { label: locale.value.overview?.backupStorageUsage, value: '--' },
-  { label: locale.value.overview?.backupExportedTables, value: '--' },
-  { label: locale.value.overview?.backupSkippedTables, value: '--' },
-  { label: locale.value.overview?.backupIntegrityCheck, value: '--' },
-  { label: locale.value.overview?.lastRestoreDrill, value: '--' },
+  { label: locale.value.overview?.backupStorageUsage, value: 'N/A' },
+  { label: locale.value.overview?.backupExportedTables, value: backupSnapshot.value?.exportedTables != null ? String(backupSnapshot.value.exportedTables) : '--' },
+  { label: locale.value.overview?.backupSkippedTables, value: backupSnapshot.value?.skippedTables != null ? String(backupSnapshot.value.skippedTables) : '--' },
+  { label: locale.value.overview?.backupIntegrityCheck, value: backupSnapshot.value?.checksum ? `SHA-256 ${backupSnapshot.value.checksum.slice(0, 12)}...` : '--' },
+  { label: locale.value.overview?.lastRestoreDrill, value: 'N/A' },
   { label: locale.value.overview?.lastBackupScheduleAt, value: latestBackup.value ? formatTimestamp(latestBackup.value.createdAt) : '--' },
-  { label: locale.value.overview?.expectedBackupInterval, value: '--' },
-  { label: locale.value.overview?.backupScheduleMisses, value: '--' }
+  { label: locale.value.overview?.expectedBackupInterval, value: 'N/A' },
+  { label: locale.value.overview?.backupScheduleMisses, value: 'N/A' }
 ])
 
 const backupTargetPanels = computed(() => [
@@ -1386,16 +1403,16 @@ const applicationMetrics = computed(() => [
   { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail, value: runtimeHttpMetrics.value?.requestsPerSecond != null ? String(runtimeHttpMetrics.value.requestsPerSecond) : '--' },
   { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail, value: runtimeHttpMetrics.value?.recent4xx != null ? String(runtimeHttpMetrics.value.recent4xx) : '--' },
   { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: runtimeHttpMetrics.value?.recent5xx != null ? String(runtimeHttpMetrics.value.recent5xx) : '--' },
-  { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail },
+  { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
   { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' },
-  { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail },
-  { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail },
+  { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail, value: runtimeMetrics.value?.process?.activeHandles != null ? String(runtimeMetrics.value.process.activeHandles) : '--' },
+  { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail, value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--' },
   { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
-  { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail },
+  { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : '--' },
   { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail },
-  { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail },
-  { icon: 'settings', label: locale.value.application?.apiKeyUsage, detail: locale.value.application?.apiKeyUsageDetail },
-  { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail }
+  { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
+  { icon: 'settings', label: locale.value.application?.apiKeyUsage, detail: locale.value.application?.apiKeyUsageDetail, value: apiKeyUsageSnapshot.value?.calls != null ? String(apiKeyUsageSnapshot.value.calls) : '--' },
+  { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail, value: apiKeyUsageSnapshot.value?.failureRate != null ? `${apiKeyUsageSnapshot.value.failureRate}%` : '--' }
 ])
 
 const applicationLatencyBreakdown = computed(() => [
@@ -1421,7 +1438,7 @@ const applicationDetailPanels = computed(() => [
       locale.value.application?.jwtIssued,
       locale.value.application?.jwtVerified,
       locale.value.application?.invalidTokens,
-      locale.value.application?.oauthSuccessRate
+      { label: locale.value.application?.oauthSuccessRate, value: runtimeOAuthMetrics.value?.successRate != null ? `${runtimeOAuthMetrics.value.successRate}%` : '--' }
     ]
   },
   {
@@ -1453,8 +1470,8 @@ const applicationDetailPanels = computed(() => [
     detail: locale.value.application?.adminProgressSseDetail,
     items: [
       { label: locale.value.application?.adminProgressSseActiveConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' },
-      { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: '--' },
-      { label: locale.value.application?.adminProgressSseAverageLifetime, value: '--' },
+      { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: runtimeSseMetrics.value?.progress?.heartbeatFailures != null ? String(runtimeSseMetrics.value.progress.heartbeatFailures) : '--' },
+      { label: locale.value.application?.adminProgressSseAverageLifetime, value: runtimeSseMetrics.value?.progress?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.progress.averageLifetimeMs} ms` : '--' },
       { label: locale.value.application?.adminProgressSseUnclosedConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' }
     ]
   }
@@ -1624,7 +1641,7 @@ const databaseMetrics = computed(() => [
   { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail },
   { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail },
   { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
-  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: '--' },
+  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: databaseDiagnostics.value?.size?.available ? databaseDiagnostics.value.size.data?.[0]?.database_size || '--' : 'N/A' },
   { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail },
   { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail },
   { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail, value: '--' }
@@ -1651,11 +1668,11 @@ const databasePerformanceDetails = computed(() => [
 ])
 
 const schemaHealthTables = computed(() => [
-  locale.value.server?.usersTable,
-  locale.value.server?.songsTable,
-  locale.value.server?.votesTable,
-  locale.value.server?.scheduleTable,
-  locale.value.server?.notificationsTable
+  { name: 'user', label: locale.value.server?.usersTable },
+  { name: 'song', label: locale.value.server?.songsTable },
+  { name: 'vote', label: locale.value.server?.votesTable },
+  { name: 'schedule', label: locale.value.server?.scheduleTable },
+  { name: 'notification', label: locale.value.server?.notificationsTable }
 ])
 
 const schemaScaleTables = computed(() => [
@@ -1665,6 +1682,18 @@ const schemaScaleTables = computed(() => [
   locale.value.server?.scheduleTable,
   locale.value.server?.notificationsTable
 ])
+
+const databaseTableRows = computed(() => databaseDiagnostics.value?.tables?.data || [])
+const databaseTableNames = computed(() => new Set(databaseTableRows.value.map((item) => item.table_name)))
+const activeDatabaseQueries = computed(() => {
+  const lockByBlockedPid = new Map((databaseDiagnostics.value?.locks?.data || []).map((item) => [String(item.blocked_pid), item.blocking_pid]))
+  return (databaseDiagnostics.value?.activity?.data || []).map((item) => ({
+    ...item,
+    duration: item.duration == null ? '--' : String(item.duration),
+    waitEvent: [item.wait_event_type, item.wait_event].filter(Boolean).join(': ') || '--',
+    blockedBy: lockByBlockedPid.get(String(item.pid)) || '--'
+  }))
+})
 
 const cacheMetrics = computed(() => [
   {
@@ -1716,17 +1745,17 @@ const cacheUsageScopes = computed(() => [
 ])
 
 const businessGoldenMetrics = computed(() => [
-  { icon: 'music', label: locale.value.business?.songRequestSuccessRate, detail: locale.value.business?.songRequestSuccessRateDetail },
-  { icon: 'calendar', label: locale.value.business?.scheduleSaveSuccessRate, detail: locale.value.business?.scheduleSaveSuccessRateDetail },
-  { icon: 'activity', label: locale.value.business?.songRequestQps, detail: locale.value.business?.songRequestQpsDetail },
-  { icon: 'calendar', label: locale.value.business?.scheduleOperationQps, detail: locale.value.business?.scheduleOperationQpsDetail }
+  { icon: 'music', label: locale.value.business?.songRequestSuccessRate, detail: locale.value.business?.songRequestSuccessRateDetail, value: runtimeBusinessMetrics.value.song_request?.successRate != null ? `${runtimeBusinessMetrics.value.song_request.successRate}%` : '--' },
+  { icon: 'calendar', label: locale.value.business?.scheduleSaveSuccessRate, detail: locale.value.business?.scheduleSaveSuccessRateDetail, value: runtimeBusinessMetrics.value.schedule_save?.successRate != null ? `${runtimeBusinessMetrics.value.schedule_save.successRate}%` : '--' },
+  { icon: 'activity', label: locale.value.business?.songRequestQps, detail: locale.value.business?.songRequestQpsDetail, value: runtimeBusinessMetrics.value.song_request?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.song_request.requestsPerSecond) : '--' },
+  { icon: 'calendar', label: locale.value.business?.scheduleOperationQps, detail: locale.value.business?.scheduleOperationQpsDetail, value: runtimeBusinessMetrics.value.schedule_save?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.schedule_save.requestsPerSecond) : '--' }
 ])
 
 const businessQueueMetrics = computed(() => [
-  locale.value.business?.pendingQueueLength,
-  locale.value.business?.queueProcessingRate,
-  locale.value.business?.queueOldestAge,
-  locale.value.business?.queueBacklogGrowth
+  { label: locale.value.business?.pendingQueueLength, value: businessQueueSnapshot.value?.pendingCount != null ? String(businessQueueSnapshot.value.pendingCount) : '--' },
+  { label: locale.value.business?.queueProcessingRate, value: 'N/A' },
+  { label: locale.value.business?.queueOldestAge, value: businessQueueSnapshot.value?.oldestCreatedAt ? formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt) : '--' },
+  { label: locale.value.business?.queueBacklogGrowth, value: 'N/A' }
 ])
 
 const businessCapacityMetrics = computed(() => [

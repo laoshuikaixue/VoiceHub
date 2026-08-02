@@ -4,9 +4,14 @@ import { db } from '~/drizzle/db'
 
 // 存储活跃的连接及其ID
 const connections = new Map()
+const progressConnectionStats = { closedConnections: 0, totalLifetimeMs: 0, heartbeatFailures: 0 }
 
 export const getProgressSseStats = () => ({
-  activeConnections: connections.size
+  activeConnections: connections.size,
+  averageLifetimeMs: progressConnectionStats.closedConnections
+    ? Math.round(progressConnectionStats.totalLifetimeMs / progressConnectionStats.closedConnections)
+    : null,
+  heartbeatFailures: progressConnectionStats.heartbeatFailures
 })
 
 // 为每个操作生成唯一ID
@@ -126,24 +131,40 @@ export default defineEventHandler(async (event) => {
   response.write(`data: ${JSON.stringify({ connected: true, id })}\n\n`)
 
   // 存储连接
+  const connectedAt = Date.now()
+  let cleanedUp = false
+  let heartbeatInterval: ReturnType<typeof setInterval> | null = null
   connections.set(id, response)
 
+  const cleanup = () => {
+    if (cleanedUp) return
+    cleanedUp = true
+    if (connections.delete(id)) {
+      progressConnectionStats.closedConnections += 1
+      progressConnectionStats.totalLifetimeMs += Date.now() - connectedAt
+    }
+    if (heartbeatInterval) clearInterval(heartbeatInterval)
+  }
+
   // 监听客户端断开连接
-  response.on('close', () => {
-    connections.delete(id)
-  })
+  response.on('close', cleanup)
+  response.on('error', cleanup)
 
   // 保持连接打开，直到客户端断开
-  event.node.req.on('close', () => {
-    connections.delete(id)
-  })
+  event.node.req.on('close', cleanup)
+  event.node.req.on('error', cleanup)
 
   // 定期发送心跳以保持连接
-  const heartbeatInterval = setInterval(() => {
-    if (connections.has(id)) {
+  heartbeatInterval = setInterval(() => {
+    if (!connections.has(id)) {
+      cleanup()
+      return
+    }
+    try {
       response.write(': heartbeat\n\n')
-    } else {
-      clearInterval(heartbeatInterval)
+    } catch {
+      progressConnectionStats.heartbeatFailures += 1
+      cleanup()
     }
   }, 30000) // 每30秒发送一次心跳
 })

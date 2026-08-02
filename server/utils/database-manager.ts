@@ -2,7 +2,8 @@ import { db, getConnectionStatus } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 import {
   getConnectionPoolStatus,
-  getDatabaseMetrics
+  getDatabaseMetrics,
+  getDatabaseDiagnostics
 } from './database-health'
 import { getServerTimestamp } from './serverTime'
 
@@ -193,6 +194,39 @@ export class DatabaseManager {
    */
   async getPerformanceMetrics() {
     return await getDatabaseMetrics()
+  }
+
+  async getDiagnostics() {
+    return await getDatabaseDiagnostics()
+  }
+
+  async getBusinessQueueStats() {
+    const result = await db.execute(sql`
+      SELECT count(*)::int AS pending_count, min("createdAt") AS oldest_created_at
+      FROM "Song"
+      WHERE played = false
+    `)
+    const row = result[0] as { pending_count?: number | string; oldest_created_at?: Date | string | null } | undefined
+    return {
+      pendingCount: Number(row?.pending_count || 0),
+      oldestCreatedAt: row?.oldest_created_at || null
+    }
+  }
+
+  async getApiKeyUsageStats() {
+    const result = await db.execute(sql`
+      SELECT count(*)::int AS calls,
+        count(*) FILTER (WHERE "status_code" >= 400)::int AS failures
+      FROM api_logs
+      WHERE "created_at" >= now() - interval '5 minutes'
+    `)
+    const row = result[0] as { calls?: number | string; failures?: number | string } | undefined
+    const calls = Number(row?.calls || 0)
+    const failures = Number(row?.failures || 0)
+    return {
+      calls,
+      failureRate: calls ? Number((failures / calls * 100).toFixed(2)) : null
+    }
   }
 
   /**
