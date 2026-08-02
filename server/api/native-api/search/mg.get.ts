@@ -38,7 +38,7 @@ async function searchPC(str: string, page: number, limit: number) {
         const contentId = item.contentId;
 
         // 音质格式列表
-        const formats = item.audioFormats?.map((f: any) => f.formatType) || []
+        const formats = item.audioFormats?.map((f: any) => f.formatType) || ['PQ']
 
         return {
           singer,
@@ -101,7 +101,7 @@ async function searchMobile(str: string, page: number, limit: number) {
       const contentId = song.contentId
 
       // 音质格式列表
-      const formats = song.audioFormats?.map((f: any) => f.formatType) || []
+      const formats = song.audioFormats?.map((f: any) => f.formatType) || ['PQ']
 
       return {
         singer,

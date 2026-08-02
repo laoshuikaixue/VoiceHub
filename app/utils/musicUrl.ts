@@ -57,24 +57,18 @@ const xinghaiRequestTimes: number[] = []
 const miguQuality = {
   //maps: { 1: 'PQ', 2: 'HQ', 3: 'SQ' },
   upgradeUrl(url: string, flag: number){
-    url = encodeURIComponent(url);
+    url = decodeURIComponent(url);
     switch (flag) {
       case 2: //HQ
-        url = url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
-        break
+        return url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
       case 3: //SQ
-        url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac');
-        url = url.replace('mp3', 'flac');
-        break
+        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac').replace('.mp3', '.flac');
       case 4: //ZQ24 / ZQ
-        url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac_24bit');
-        url = url.replace('mp3', 'flac');
-        break
+        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac_24bit').replace('.mp3', '.flac');
       case 1:
       default:
         return url
     }
-    return decodeURIComponent(url)
   }
 }
 const fetchXinghaiMiguUrl = async (

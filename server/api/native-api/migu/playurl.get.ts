@@ -3,12 +3,10 @@ function upgradeUrl(url: string, quality: string){
     case 'HQ':
       return url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
     case 'SQ':
-      url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac');
-      return url.replace('mp3', 'flac');
+      return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac').replace('.mp3', '.flac');
     case 'ZQ':
     case 'ZQ24':
-      url = url.replace('%E6%A0%87%E6%B8%85%E9%AB%98%E6%B8%85/MP3_128_16_Stero', '%E6%AD%8C%E6%9B%B2%E4%B8%8B%E8%BD%BD/flac_24bit');
-      return url.replace('mp3', 'flac');
+      return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac_24bit').replace('.mp3', '.flac');
     case 'PQ':
     default:
       return url
@@ -52,7 +50,7 @@ async function mr(ab: ArrayBuffer): Promise<any> {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const contentId = query.contentId as string;
-  const toneFlag = encodeURIComponent((query.toneFlag as string) || 'PQ');
+  const toneFlag = query.toneFlag as string || 'PQ';
 
   if (!contentId) throw createError({ statusCode: 400, message: 'Missing contentId' });
 
@@ -73,10 +71,7 @@ export default defineEventHandler(async (event) => {
 
     const ab = await res.arrayBuffer(), data = await mr(ab);
     // 保留完整 URL（含 Tim/Key/playSessionId 签名参数），并统一为 https 避免混合内容拦截
-    let url = (data?.data?.url || '').replace(/^http:\/\//, 'https://')
-    url = url.split('?')[0];
-    url = upgradeUrl(url, toneFlag)
-
+    let url = decodeURIComponent(data?.data?.url ?? '');
     if (!url) {
       return {
         success: false,
@@ -84,6 +79,8 @@ export default defineEventHandler(async (event) => {
         source: 'migu'
       }
     }
+    url = (url.split('?')[0] as string).replace(/^http:\/\//, 'https://');
+    url = upgradeUrl(url, toneFlag)
 
     return {
       success: true,

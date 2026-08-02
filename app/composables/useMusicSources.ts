@@ -1073,7 +1073,7 @@ export const useMusicSources = () => {
           cover: item.img,
           album: item.albumName,
           albumId: item.albumId,
-          duration: isNetease || isMigu ? item.duration * 1000 : item.duration, // 网易/咪咕使用 ms，腾讯使用 s
+          duration: isNetease ? item.duration * 1000 : item.duration, // 网易使用 ms，腾讯/咪咕使用 s
           musicPlatform: platform,
           musicId: id?.toString(),
           url: undefined,
@@ -1373,7 +1373,7 @@ export const useMusicSources = () => {
           cover: item.img,
           album: item.albumName,
           albumId: item.albumId,
-          duration: item.duration * 1000, // 转换为毫秒
+          duration: item.duration, //秒
           musicPlatform: 'migu',
           musicId: item.songmid,
           sourceInfo: {
