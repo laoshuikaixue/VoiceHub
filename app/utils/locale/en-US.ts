@@ -1781,6 +1781,7 @@ export const admin = {
       lastBackupResult: 'Latest Result',
       lastBackupSize: 'Latest Backup Size',
       backupStorageUsage: 'Backup Storage Usage',
+      backupExportedTables: 'Exported Tables', backupSkippedTables: 'Skipped Tables', backupIntegrityCheck: 'Integrity Check', lastRestoreDrill: 'Last Restore Drill', lastBackupScheduleAt: 'Last Scheduler Trigger', expectedBackupInterval: 'Expected Trigger Interval', backupScheduleMisses: 'Missed-run Alerts', backupTargetS3: 'S3 Target', backupTargetWebdav: 'WebDAV Target', backupTargetTelegram: 'Telegram Target', backupTargetEmail: 'Email Target', backupTargetDetail: 'Success rate, latest result, and upload duration; awaiting backup-task instrumentation.',
       healthScore: 'Health Score',
       healthFactors: 'Live Status',
       healthRealtime: 'Live Health Information',
@@ -1903,12 +1904,13 @@ export const admin = {
       realtimeConnections: 'WebSocket / SSE Connections', realtimeConnectionsDetail: 'Number of real-time notification connections',
       eventLoopDelay: 'Event Loop Delay', eventLoopDelayDetail: 'Node.js event loop blocking',
       activeHandles: 'Active Handles', activeHandlesDetail: 'Useful for finding connection and resource leaks',
-      gcPause: 'GC Pause Time', gcPauseDetail: 'Node.js garbage collection pause duration', wsActiveConnections: 'Active WebSocket Connections', wsActiveConnectionsDetail: 'Current useMusicWebSocket connection count', wsAverageLifetime: 'Average WebSocket Lifetime', wsAverageLifetimeDetail: 'Average duration from connection to disconnect', wsBroadcastLatency: 'Message Broadcast Latency', wsBroadcastLatencyDetail: 'P95 from server broadcast to client acknowledgement', wsReconnectFailures: 'Reconnect Failures', wsReconnectFailuresDetail: 'WebSocket reconnect attempts that did not recover',
+      gcPause: 'GC Pause Time', gcPauseDetail: 'Node.js garbage collection pause duration', sseActiveConnections: 'Active SSE Connections', sseActiveConnectionsDetail: 'EventSource connections actually created by useMusicWebSocket', sseAverageLifetime: 'Average SSE Lifetime', sseAverageLifetimeDetail: 'Average duration from EventSource open to close', sseBroadcastLatency: 'SSE Event Delivery Latency', sseBroadcastLatencyDetail: 'P95 from server event emission to client acknowledgement', sseReconnectFailures: 'SSE Reconnect Failures', sseReconnectFailuresDetail: 'EventSource reconnect attempts that did not recover',
       apiKeyUsage: 'API Key Request Volume', apiKeyUsageDetail: 'Request volume grouped by API Key and endpoint', apiKeyFailureRate: 'API Key Failure Rate', apiKeyFailureRateDetail: 'Authentication and server failures among API Key requests',
       method: 'Method', source: 'Source', successRate: 'Success Rate', timeouts: 'Timeouts', latencyBreakdown: 'Request Latency Breakdown', latencyBreakdownDetail: 'Splits total response time into Nitro middleware, Drizzle queries, external music APIs, and business logic.', middlewareDuration: 'Nitro Middleware', drizzleDuration: 'Drizzle ORM Query', externalApiDuration: 'External Music API', businessDuration: 'Business Logic', musicApiPerformance: 'Music API External Calls', musicApiPerformanceDetail: 'Focuses on server/api/music/* to separate local processing from upstream latency.', routePerformance: 'Route Performance', routePerformanceDetail: 'Throughput, percentile latency, and errors by method + route', route: 'Route', qps: 'QPS',
       latencyDistribution: 'Response Latency Distribution', latencyDistributionDetail: 'P50, P95, P99, and maximum latency for key APIs', responseP50: 'P50 Response Time', responseP95: 'P95 Response Time', responseP99: 'P99 Response Time', responseMax: 'Maximum Response Time',
       authentication: 'Authentication Metrics', authenticationDetail: 'JWT and OAuth authentication pipeline', jwtIssued: 'JWT Issued', jwtVerified: 'JWT Verified', invalidTokens: 'Invalid Token Requests', oauthSuccessRate: 'OAuth Success Rate',
       musicSyncReliability: 'Music State Sync Reliability', musicSyncReliabilityDetail: 'SSE channel health for player state sync; excludes administrator file uploads.', musicSyncReconnects: 'State Sync Reconnects', musicSyncLatency: 'State Sync P95 Latency', musicSyncHeartbeatTimeouts: 'Heartbeat Timeouts', musicSyncDeliveryFailures: 'State Message Delivery Failures',
+      adminProgressSse: 'Admin Task Progress SSE', adminProgressSseDetail: 'A task-progress event channel separate from music state sync; identifies stalled connections and heartbeat errors.', adminProgressSseActiveConnections: 'Active Connections', adminProgressSseHeartbeatFailures: 'Heartbeat Failures', adminProgressSseAverageLifetime: 'Average Lifetime', adminProgressSseUnclosedConnections: 'Unclosed Connections',
       requestLifecycle: 'Request Lifecycle', requestLifecycleDetail: 'Request, error, SSR, and GC counters', requestTotal: 'Total Requests', clientErrorCount: '4xx Errors', serverErrorCount: '5xx Errors', ssrRenderCount: 'SSR Renders', gcCount: 'GC Count',
       externalDependencies: 'External Dependencies', externalDependenciesDetail: 'Availability of music, OAuth, and database dependencies', dependency: 'Dependency', availability: 'Availability', latency: 'Latency', errorRate: 'Error Rate', coldStart: 'Cold Start', githubOAuth: 'GitHub OAuth', casdoorOAuth: 'Casdoor OAuth', neonDatabase: 'Neon PostgreSQL'
     },
@@ -2032,6 +2034,7 @@ export const admin = {
       latencyThreshold: '3s Threshold',
       platformErrorRate: 'Error Rate by Platform',
       platformErrorRateDetail: 'Error rate trends by platform and error type.',
+      semanticHealth: 'Music Source Semantic Health', semanticHealthDetail: 'An HTTP 200 does not guarantee a working source; parse success, empty results, and semantic failures expose false health.', semanticFailureTrend: 'Source Semantic Failure Rate Trend', semanticFailureTrendDetail: 'Tracks non-HTTP failures by source: parse errors, risk-control responses, empty results, and incompatible fields.', parseSuccessRate: 'Parse Success Rate', emptyResultRate: 'Empty Result Rate', semanticFailureRate: 'Semantic Failure Rate',
       errorCodeDrilldown: 'Error Code Drilldown',
       errorCodeDrilldownDetail: 'Distinguish rate limits, API changes, upstream failures, and network timeouts.',
       neteaseErrorCodes: 'NetEase Error Code Distribution',
@@ -2056,7 +2059,7 @@ export const admin = {
       cacheMisses: 'Cache Misses',
       cacheEvictions: 'Cache Evictions',
       cacheResponseP95: 'Cache Response P95',
-      notificationDelivery: 'Mail and Notification Delivery', notificationDeliveryDetail: 'Availability and backlog for SMTP, in-app notifications, and Meow delivery.', smtpHealth: 'SMTP Connection Health', smtpFailureRate: 'Mail Failure Rate', notificationSuccessRate: 'Notification Delivery Success', notificationQueue: 'Pending Notifications'
+      notificationDelivery: 'Mail and Notification Delivery', notificationDeliveryDetail: 'Separates SMTP acceptance, eligible Meow recipients, intentional skips, and actual transport failures so user preferences are not treated as delivery faults.', smtpHealth: 'SMTP Connection Health', smtpFailureRate: 'Mail Failure Rate', notificationSuccessRate: 'Notification Delivery Success', notificationQueue: 'Pending Notifications', smtpAcceptedRate: 'SMTP Acceptance Rate', meowEligibleTargets: 'Eligible Meow Recipients', meowSkippedTargets: 'Intentional Meow Skips', meowTransportFailureRate: 'Meow Transport Failure Rate'
     },
     online: {
       recentActive: 'Active in the Last Hour',
@@ -2161,6 +2164,7 @@ export const admin = {
       heapTotal: 'Heap Total',
       externalMemory: 'External Memory',
       collectionReporting: 'Collection Reporting',
+      redisRuntimeGuard: 'Redis Runtime Safeguard', redisRuntimeGuardDetail: 'When Redis is absent or unavailable, short-lived state falls back to single-instance memory. This is a deployment risk, not ordinary missing data.', redisConfigured: 'Redis Configuration', redisConnected: 'Redis Connection', redisFallbackMode: 'In-memory Fallback', redisLastError: 'Latest Redis Error', ssrWarmup: 'SSR Warmup', ssrWarmupDetail: 'Startup SSR warmup result and failures; failures may be swallowed by the application startup flow.', ssrWarmupLastResult: 'Latest Warmup Result', ssrWarmupDuration: 'Warmup Duration', ssrWarmupFailures: 'Warmup Failures', egressLocation: 'Egress Location', egressLocationDetail: 'Music-source behavior relies on egress geography. Shows the last resolved location, cache freshness, and lookup failures.', egressLastLocation: 'Last Resolved Location', egressCacheAge: 'Location Cache Age', egressLookupFailures: 'Location Lookup Failures',
       databasePerformance: 'Database Performance',
       databasePerformanceDetail: 'Metrics exposed by the database health and performance endpoints.',
       schemaStatus: 'Database Schema Status',
@@ -2242,7 +2246,7 @@ export const admin = {
       high: 'High',
       medium: 'Medium',
       low: 'Low',
-      securitySignals: 'Security Signals', securitySignalsDetail: 'Authentication failures, invalid tokens, rate limits, and blacklist hits', signalRate: 'Security Signal Rate', signalRateDetail: 'Shows login-failure, rate-limit, and blacklist-hit rates over time to detect attacks.', loginFailures: 'Login Failures', loginFailuresDetail: 'Number of failed login requests', accountLockouts: 'Account Lockouts', accountLockoutsDetail: 'Number of account lockout triggers', strongAuthFailures: '2FA / WebAuthn Failures', strongAuthFailuresDetail: 'Failed step-up authentication attempts', invalidTokenRequests: 'Invalid JWT Requests', invalidTokenRequestsDetail: 'Requests with invalid or expired tokens', rateLimitTriggers: 'Rate-limit Triggers', rateLimitTriggersDetail: 'Requests blocked by rate limiting', blacklistHits: 'Blacklist Hits', blacklistHitsDetail: 'Requests matching an IP or content blacklist', securityAction: 'Response Action', ipBehaviorTimeline: 'IP Behavior Timeline', ipBehaviorTimelineDetail: 'Reconstruct matching rules, related users, and request traces by source IP before continuing in the log center.', matchedRule: 'Matched Rule'
+      securitySignals: 'Security Signals', securitySignalsDetail: 'Authentication failures, invalid tokens, rate limits, and blacklist hits', signalRate: 'Security Signal Rate', signalRateDetail: 'Shows login-failure, rate-limit, and blacklist-hit rates over time to detect attacks.', loginFailures: 'Login Failures', loginFailuresDetail: 'Number of failed login requests', accountLockouts: 'Account Lockouts', accountLockoutsDetail: 'Number of account lockout triggers', strongAuthFailures: '2FA / WebAuthn Failures', strongAuthFailuresDetail: 'Failed step-up authentication attempts', invalidTokenRequests: 'Invalid JWT Requests', invalidTokenRequestsDetail: 'Requests with invalid or expired tokens', rateLimitTriggers: 'Rate-limit Triggers', rateLimitTriggersDetail: 'Requests blocked by rate limiting', blacklistHits: 'Blacklist Hits', blacklistHitsDetail: 'Requests matching an IP or content blacklist', turnstileValidationRequests: 'Turnstile Validation Requests', turnstileValidationRequestsDetail: 'Collected only when Cloudflare Turnstile is enabled.', turnstileValidationSuccessRate: 'Turnstile Validation Success Rate', turnstileValidationSuccessRateDetail: 'Separates user validation failures from siteverify upstream errors.', turnstileUpstreamFailures: 'Turnstile Timeout / Upstream Failures', turnstileUpstreamFailuresDetail: 'Cloudflare siteverify timeouts or error responses.', turnstileConfiguration: 'Turnstile Configuration', turnstileConfigurationDetail: 'Reports disabled when it is not enabled; disabled is not a fault.', securityAction: 'Response Action', ipBehaviorTimeline: 'IP Behavior Timeline', ipBehaviorTimelineDetail: 'Reconstruct matching rules, related users, and request traces by source IP before continuing in the log center.', matchedRule: 'Matched Rule'
     },
     analytics: {
       totalUsers: 'Total Users',
@@ -2386,7 +2390,7 @@ export const admin = {
         { metric: 'Request Latency (P95 / P99)', threshold: 'P95 > 1s, P99 > 2s (Web API)', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Reflects user-perceived API performance.' },
         { metric: 'Error Rate (4xx / 5xx)', threshold: '5xx error rate > 1% for 5 minutes', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Server errors need immediate attention; use 4xx to identify abnormal requests.' },
         { metric: 'Throughput (QPS / RPS)', threshold: 'Sudden drop or 20% above historic peak', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Tracks requests handled per second and capacity shifts.' },
-        { metric: 'Concurrent Connections', threshold: 'Exceeds the configured maximum', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'Tracks WebSocket, SSE, and HTTP concurrency pressure.' },
+        { metric: 'SSE Concurrent Connections', threshold: 'Exceeds the configured maximum', collection: 'Application instrumentation (Prometheus Client) / Grafana', description: 'useMusicWebSocket actually uses EventSource; tracks SSE and HTTP concurrency pressure.' },
         { metric: 'Page Load Time (TTI)', threshold: 'Home > 3s, complex page > 5s', collection: 'Frontend performance monitoring (Lighthouse / Sentry)', description: 'Measures how quickly a page becomes interactive.' }
       ],
       infra: [
@@ -2398,7 +2402,7 @@ export const admin = {
       ],
       business: [
         { metric: 'Song Request Success Rate', threshold: '< 95% continuously', collection: 'Business instrumentation (Prometheus Counter)', description: 'Confirms the primary request flow completes normally.' },
-        { metric: 'Music Search API Availability', threshold: 'Failure rate > 5% or latency > 2s', collection: 'Business instrumentation (Prometheus Histogram / Counter)', description: 'Checks NetEase, QQ Music, and Bilibili source health.' },
+        { metric: 'Music Source Semantic Health', threshold: 'Parse success < 95% or an abnormal rise in empty results / semantic failures', collection: 'Business instrumentation (Prometheus Counter)', description: 'Detects business failures from risk-control pages, empty data, and field changes even with HTTP 200.' },
         { metric: 'Vote Request Success Rate', threshold: '< 95% continuously', collection: 'Business instrumentation (Prometheus Counter)', description: 'Confirms voting works normally.' },
         { metric: 'Schedule Update Latency', threshold: 'P95 > 500ms', collection: 'Business instrumentation (Prometheus Histogram)', description: 'Measures the responsiveness of schedule drag, save, and publish actions.' }
       ],
@@ -2414,7 +2418,9 @@ export const admin = {
         { metric: 'Response Time', threshold: 'Acknowledge critical events within 15 minutes', collection: 'Risk event workflow', description: 'Covers acknowledgement, false-positive marking, IP blocking, and log drill-down.' }
       ],
       dependencies: [
+        { metric: 'Music Source Parse Success / Empty Result Rate', threshold: 'Parse success < 95% or abnormal empty-result growth', collection: 'Business instrumentation (Prometheus Counter)', description: 'HTTP status alone misses risk-control pages, empty data, and API field changes.' },
         { metric: 'Authentication Service (JWT) Availability', threshold: 'Failure rate > 1%', collection: 'Business instrumentation (Prometheus Counter)', description: 'Protects login, token validation, and authorization.' },
+        { metric: 'High-cardinality Diagnostic Fields', threshold: 'Never use as Prometheus labels', collection: 'Structured logs / traces', description: 'Keep requestId, userId, songId, full URLs, and stacks for log and trace drilldown only.' },
         { metric: 'Notification Delivery Success Rate', threshold: '< 90% continuously', collection: 'Business instrumentation (Prometheus Counter)', description: 'Confirms in-app notifications, email, or external delivery succeeds.' }
       ],
       logs: [

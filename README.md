@@ -925,6 +925,7 @@ VoiceHub/
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
 │   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
+│   │   ├── operations-dashboard-preview.html # 运维监控静态预览页
 │   │   ├── images/            # 图片资源
 │   │   │   ├── logo.png       # PNG格式Logo
 │   │   │   ├── logo.svg       # SVG格式Logo

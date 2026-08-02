@@ -1790,6 +1790,7 @@ export const admin = {
       lastBackupResult: '最近备份结果',
       lastBackupSize: '最近备份大小',
       backupStorageUsage: '备份存储占用',
+      backupExportedTables: '已导出表数', backupSkippedTables: '跳过表数', backupIntegrityCheck: '完整性校验', lastRestoreDrill: '最近恢复演练', lastBackupScheduleAt: '最近调度触发', expectedBackupInterval: '预期触发间隔', backupScheduleMisses: '漏执行告警', backupTargetS3: 'S3 目标', backupTargetWebdav: 'WebDAV 目标', backupTargetTelegram: 'Telegram 目标', backupTargetEmail: '邮件目标', backupTargetDetail: '成功率、最近结果与上传耗时；待接入备份任务采集。',
       healthScore: '健康评分',
       healthFactors: '实时状态',
       healthRealtime: '实时健康信息',
@@ -1912,12 +1913,13 @@ export const admin = {
       realtimeConnections: 'WebSocket / SSE 连接', realtimeConnectionsDetail: '实时通知长连接数量',
       eventLoopDelay: '事件循环延迟', eventLoopDelayDetail: 'Node.js 事件循环阻塞情况',
       activeHandles: '活跃句柄数', activeHandlesDetail: '排查连接和资源泄漏',
-      gcPause: 'GC 暂停时间', gcPauseDetail: 'Node.js 垃圾回收暂停耗时', wsActiveConnections: 'WebSocket 活跃连接', wsActiveConnectionsDetail: 'useMusicWebSocket 当前连接数', wsAverageLifetime: 'WebSocket 平均存活时长', wsAverageLifetimeDetail: '连接建立到断开的平均时长', wsBroadcastLatency: '消息广播延迟', wsBroadcastLatencyDetail: '服务端广播到客户端确认的 P95', wsReconnectFailures: '断线重连失败', wsReconnectFailuresDetail: 'WebSocket 重连未成功的次数',
+      gcPause: 'GC 暂停时间', gcPauseDetail: 'Node.js 垃圾回收暂停耗时', sseActiveConnections: 'SSE 活跃连接', sseActiveConnectionsDetail: 'useMusicWebSocket 实际创建的 EventSource 连接数', sseAverageLifetime: 'SSE 平均存活时长', sseAverageLifetimeDetail: 'EventSource 建立到关闭的平均时长', sseBroadcastLatency: 'SSE 事件投递延迟', sseBroadcastLatencyDetail: '服务端事件发出到客户端确认的 P95', sseReconnectFailures: 'SSE 重连失败', sseReconnectFailuresDetail: 'EventSource 重连未成功的次数',
       apiKeyUsage: 'API Key 调用量', apiKeyUsageDetail: '按 API Key 与 endpoint 聚合的请求量', apiKeyFailureRate: 'API Key 失败率', apiKeyFailureRateDetail: 'API Key 请求中认证失败与服务端错误的占比',
       method: 'Method', source: '音源', successRate: '成功率', timeouts: '超时次数', latencyBreakdown: '请求耗时拆解', latencyBreakdownDetail: '将总响应时间拆分为 Nitro 中间件、Drizzle 查询、外部音乐 API 和业务逻辑。', middlewareDuration: 'Nitro 中间件耗时', drizzleDuration: 'Drizzle ORM 查询耗时', externalApiDuration: '外部音乐 API 耗时', businessDuration: '业务逻辑耗时', musicApiPerformance: '音乐 API 外部调用', musicApiPerformanceDetail: '聚焦 server/api/music/*，区分自身处理耗时与第三方接口耗时。', routePerformance: '接口路由性能', routePerformanceDetail: '按 Method + 路由查看吞吐、分位延迟和错误率', route: '路由', qps: 'QPS',
       latencyDistribution: '响应延迟分布', latencyDistributionDetail: '核心接口 P50、P95、P99 与最大值', responseP50: 'P50 响应时间', responseP95: 'P95 响应时间', responseP99: 'P99 响应时间', responseMax: '最大响应时间',
       authentication: '认证指标', authenticationDetail: 'JWT 与 OAuth 认证链路', jwtIssued: 'JWT 签发次数', jwtVerified: 'JWT 验证次数', invalidTokens: '无效 Token 请求', oauthSuccessRate: 'OAuth 登录成功率',
       musicSyncReliability: '音乐状态同步可靠性', musicSyncReliabilityDetail: '面向播放器状态同步的 SSE 通道健康度，不包含管理端文件上传。', musicSyncReconnects: '状态同步重连次数', musicSyncLatency: '状态同步 P95 延迟', musicSyncHeartbeatTimeouts: '心跳超时次数', musicSyncDeliveryFailures: '状态消息投递失败',
+      adminProgressSse: '管理任务进度 SSE', adminProgressSseDetail: '独立于音乐状态同步的管理任务进度事件通道；用于识别滞留连接与心跳异常。', adminProgressSseActiveConnections: '活跃连接数', adminProgressSseHeartbeatFailures: '心跳失败数', adminProgressSseAverageLifetime: '平均存活时长', adminProgressSseUnclosedConnections: '未关闭连接数',
       requestLifecycle: '请求生命周期', requestLifecycleDetail: '请求、错误、SSR 与 GC 计数', requestTotal: '请求总量', clientErrorCount: '4xx 错误数', serverErrorCount: '5xx 错误数', ssrRenderCount: 'SSR 渲染次数', gcCount: 'GC 次数',
       externalDependencies: '外部依赖', externalDependenciesDetail: '音乐源、OAuth 和数据库依赖可用性', dependency: '依赖', availability: '可用率', latency: '延迟', errorRate: '错误率', coldStart: '冷启动耗时', githubOAuth: 'GitHub OAuth', casdoorOAuth: 'Casdoor OAuth', neonDatabase: 'Neon PostgreSQL'
     },
@@ -2041,6 +2043,7 @@ export const admin = {
       latencyThreshold: '阈值 3 秒',
       platformErrorRate: '各平台错误率',
       platformErrorRateDetail: '按平台和错误类型查看错误率趋势。',
+      semanticHealth: '音乐源语义健康', semanticHealthDetail: 'HTTP 200 不代表功能正常；通过解析成功、空结果和语义异常识别“假活”。', semanticFailureTrend: '音源语义异常率趋势', semanticFailureTrendDetail: '按音乐源观察解析失败、风控响应、空结果和字段不兼容等非 HTTP 异常。', parseSuccessRate: '解析成功率', emptyResultRate: '空结果率', semanticFailureRate: '语义异常率',
       errorCodeDrilldown: '错误码下钻',
       errorCodeDrilldownDetail: '通过错误类型区分限流、接口变化、上游故障和网络超时。',
       neteaseErrorCodes: '网易云错误码分布',
@@ -2065,7 +2068,7 @@ export const admin = {
       cacheMisses: '缓存未命中次数',
       cacheEvictions: '缓存淘汰次数',
       cacheResponseP95: '缓存响应 P95',
-      notificationDelivery: '邮件与通知交付', notificationDeliveryDetail: '检查 SMTP、站内通知和 Meow 推送链路的可用性与积压。', smtpHealth: 'SMTP 连接健康', smtpFailureRate: '邮件发送失败率', notificationSuccessRate: '通知送达成功率', notificationQueue: '通知待发送数量'
+      notificationDelivery: '邮件与通知交付', notificationDeliveryDetail: '区分 SMTP 接受、Meow 合资格目标、主动跳过和实际运输失败，避免将用户设置误判为投递故障。', smtpHealth: 'SMTP 连接健康', smtpFailureRate: '邮件发送失败率', notificationSuccessRate: '通知送达成功率', notificationQueue: '通知待发送数量', smtpAcceptedRate: 'SMTP 接受成功率', meowEligibleTargets: 'Meow 合资格目标数', meowSkippedTargets: 'Meow 主动跳过数', meowTransportFailureRate: 'Meow 运输失败率'
     },
     online: {
       recentActive: '近一小时活跃用户',
@@ -2170,6 +2173,7 @@ export const admin = {
       heapTotal: '堆内存总量',
       externalMemory: '外部内存',
       collectionReporting: '采集上报状态',
+      redisRuntimeGuard: 'Redis 运行时保障', redisRuntimeGuardDetail: 'Redis 未配置或不可用时会退化为单实例内存短期状态；这是部署风险而非普通无数据。', redisConfigured: 'Redis 配置状态', redisConnected: 'Redis 连接状态', redisFallbackMode: '内存降级模式', redisLastError: '最近 Redis 错误', ssrWarmup: 'SSR 预热', ssrWarmupDetail: '启动阶段 SSR 预热结果与失败情况；失败可能被应用启动流程吞掉。', ssrWarmupLastResult: '最近预热结果', ssrWarmupDuration: '预热耗时', ssrWarmupFailures: '预热失败数', egressLocation: '出口定位', egressLocationDetail: '音源策略依赖出口地域判断，展示最近解析位置、缓存新鲜度与外部定位失败。', egressLastLocation: '最后解析位置', egressCacheAge: '定位缓存年龄', egressLookupFailures: '定位解析失败数',
       databasePerformance: '数据库性能',
       databasePerformanceDetail: '来自数据库健康检查与性能接口的指标。',
       schemaStatus: '数据库结构状态',
@@ -2251,7 +2255,7 @@ export const admin = {
       high: '高',
       medium: '中',
       low: '低',
-      securitySignals: '安全信号', securitySignalsDetail: '认证失败、无效令牌、限流和黑名单命中', signalRate: '安全信号速率', signalRateDetail: '按时间展示登录失败、限流和黑名单命中的速率，用于识别突发攻击。', loginFailures: '登录失败次数', loginFailuresDetail: '登录失败请求数量', accountLockouts: '账户锁定次数', accountLockoutsDetail: '触发账户锁定的次数', strongAuthFailures: '2FA / WebAuthn 失败', strongAuthFailuresDetail: '强化认证失败次数', invalidTokenRequests: '无效 JWT 请求', invalidTokenRequestsDetail: '携带无效或过期 Token 的请求', rateLimitTriggers: '限流触发', rateLimitTriggersDetail: '触发请求限流的次数', blacklistHits: '黑名单命中', blacklistHitsDetail: '命中 IP 或内容黑名单的次数', securityAction: '处置操作', ipBehaviorTimeline: 'IP 行为时间线', ipBehaviorTimelineDetail: '按来源 IP 还原命中规则、关联用户和请求链路，后续可跳转日志中心继续排查。', matchedRule: '命中规则'
+      securitySignals: '安全信号', securitySignalsDetail: '认证失败、无效令牌、限流和黑名单命中', signalRate: '安全信号速率', signalRateDetail: '按时间展示登录失败、限流和黑名单命中的速率，用于识别突发攻击。', loginFailures: '登录失败次数', loginFailuresDetail: '登录失败请求数量', accountLockouts: '账户锁定次数', accountLockoutsDetail: '触发账户锁定的次数', strongAuthFailures: '2FA / WebAuthn 失败', strongAuthFailuresDetail: '强化认证失败次数', invalidTokenRequests: '无效 JWT 请求', invalidTokenRequestsDetail: '携带无效或过期 Token 的请求', rateLimitTriggers: '限流触发', rateLimitTriggersDetail: '触发请求限流的次数', blacklistHits: '黑名单命中', blacklistHitsDetail: '命中 IP 或内容黑名单的次数', turnstileValidationRequests: 'Turnstile 验证调用量', turnstileValidationRequestsDetail: '仅在启用 Cloudflare Turnstile 时采集。', turnstileValidationSuccessRate: 'Turnstile 验证成功率', turnstileValidationSuccessRateDetail: '区分用户验证失败与 siteverify 上游异常。', turnstileUpstreamFailures: 'Turnstile 超时 / 上游失败', turnstileUpstreamFailuresDetail: 'Cloudflare siteverify 请求超时或返回错误。', turnstileConfiguration: 'Turnstile 配置状态', turnstileConfigurationDetail: '未启用时显示未启用，不能视为故障。', securityAction: '处置操作', ipBehaviorTimeline: 'IP 行为时间线', ipBehaviorTimelineDetail: '按来源 IP 还原命中规则、关联用户和请求链路，后续可跳转日志中心继续排查。', matchedRule: '命中规则'
     },
     analytics: {
       totalUsers: '用户总数',
@@ -2395,7 +2399,7 @@ export const admin = {
         { metric: '请求响应时间（P95 / P99）', threshold: 'P95 > 1s，P99 > 2s（Web API）', collection: '应用埋点（Prometheus Client）/ Grafana', description: '反映用户感知的接口性能。' },
         { metric: '错误率（4xx / 5xx）', threshold: '5xx 错误率 > 1%，持续 5 分钟', collection: '应用埋点（Prometheus Client）/ Grafana', description: '服务端错误需要立即关注，4xx 用于识别异常请求。' },
         { metric: '吞吐量（QPS / RPS）', threshold: '突降或超过历史峰值 20%', collection: '应用埋点（Prometheus Client）/ Grafana', description: '观察每秒处理请求数与容量变化。' },
-        { metric: '并发连接数', threshold: '超过预设最大值', collection: '应用埋点（Prometheus Client）/ Grafana', description: '监控 WebSocket、SSE 与 HTTP 并发处理压力。' },
+        { metric: 'SSE 并发连接数', threshold: '超过预设最大值', collection: '应用埋点（Prometheus Client）/ Grafana', description: 'useMusicWebSocket 实际使用 EventSource；监控 SSE 与 HTTP 并发处理压力。' },
         { metric: '页面加载时间（TTI）', threshold: '首页 > 3s，复杂页 > 5s', collection: '前端性能监控（Lighthouse / Sentry）', description: '衡量用户打开页面并可交互的速度。' }
       ],
       infra: [
@@ -2407,7 +2411,7 @@ export const admin = {
       ],
       business: [
         { metric: '点歌请求成功率', threshold: '< 95%，持续出现', collection: '业务埋点（Prometheus Counter）', description: '确认点歌主流程是否正常完成。' },
-        { metric: '音乐搜索 API 可用性', threshold: '失败率 > 5% 或响应时间 > 2s', collection: '业务埋点（Prometheus Histogram / Counter）', description: '检测网易云、QQ 音乐和 Bilibili 音源健康度。' },
+        { metric: '音乐源语义健康', threshold: '解析成功率 < 95% 或空结果率 / 语义异常率突增', collection: '业务埋点（Prometheus Counter）', description: 'HTTP 200 但风控页面、空数据或字段变更时仍能识别业务失败。' },
         { metric: '投票请求成功率', threshold: '< 95%，持续出现', collection: '业务埋点（Prometheus Counter）', description: '确认投票功能是否正常。' },
         { metric: '排期更新操作耗时', threshold: 'P95 > 500ms', collection: '业务埋点（Prometheus Histogram）', description: '衡量管理员拖拽排期、保存与发布的流畅度。' }
       ],
@@ -2423,7 +2427,9 @@ export const admin = {
         { metric: '处置时效', threshold: '严重事件 15 分钟内确认', collection: '风险事件工作流', description: '覆盖确认、标记误报、封禁 IP 与跳转日志排查的闭环。' }
       ],
       dependencies: [
+        { metric: '音乐源解析成功率 / 空结果率', threshold: '解析成功率 < 95% 或空结果率异常升高', collection: '业务埋点（Prometheus Counter）', description: '仅看 HTTP 状态码会漏掉风控页面、空数据和接口字段变化。' },
         { metric: '认证服务（JWT）可用性', threshold: '失败率 > 1%', collection: '业务埋点（Prometheus Counter）', description: '保障用户登录、Token 校验和权限验证。' },
+        { metric: '高基数排查字段', threshold: '不进入 Prometheus Label', collection: '结构化日志 / Trace', description: 'requestId、userId、songId、完整 URL 与堆栈只用于日志和 Trace 下钻。' },
         { metric: '通知服务成功率', threshold: '< 90%，持续出现', collection: '业务埋点（Prometheus Counter）', description: '确认站内通知、邮件或外部推送能正常送达。' }
       ],
       logs: [
