@@ -97,7 +97,7 @@
               <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
               <span class="metric-label">{{ item.label }}</span>
             </div>
-            <strong class="metric-value">{{ item.value }}</strong>
+            <strong class="metric-value" :class="{ 'metric-value--compact': item.compact }">{{ item.value }}</strong>
             <p class="metric-detail">{{ item.detail }}</p>
           </article>
         </div>
@@ -353,8 +353,8 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">1h · {{ panel.unit }}</span></div>
-          <div class="analysis-chart-placeholder"><span class="chart-axis-label chart-axis-label--top">高</span><span class="chart-axis-label chart-axis-label--bottom">低</span><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :title="`${point.at}：${point.requests} ${panel.unit}`" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && runtimeTimeline.length ? `${trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field)} ${panel.unit}` : '暂无数据' }}</span></div>
+          <div class="analysis-chart-placeholder"><span class="chart-axis-label chart-axis-label--top">高</span><span class="chart-axis-label chart-axis-label--bottom">低</span><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="panel.available && runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :data-tooltip="trendTooltip(point, panel)" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field)}%` }" /></div><span v-else>尚未采集 {{ panel.title }} 历史数据</span><div class="chart-time-labels"><span>1 小时前</span><span>现在</span></div></div>
         </article>
       </section>
 
@@ -478,7 +478,7 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">1h</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars runtime-bars--error"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.errors, 'errors')}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
+          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>尚未采集慢 SQL 历史数据</span></div>
         </article>
         <article class="panel overflow-hidden">
           <div class="panel-header">
@@ -574,7 +574,7 @@
         </article>
         <article class="panel">
           <div class="panel-header"><h3 class="panel-title">{{ locale.cache.note }}</h3></div>
-          <p class="panel-copy">{{ locale.cache.description }}</p>
+          <p class="panel-copy">{{ locale.cache.description || 'Redis 用于验证码、限流和短期状态缓存；当前页面展示连接状态、命中率、内存和淘汰等可采集指标。未配置 Redis 时不会视为系统故障。' }}</p>
         </article>
       </section>
 
@@ -1009,10 +1009,11 @@
         <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logResults }}</h3><p class="panel-description">{{ locale.logCenter.logResultsDetail }}</p></div><span class="item-count">{{ locale.logCount }} {{ logEntries.length }}</span></div>
         <div class="overflow-x-auto">
           <table class="data-table min-w-[1260px]">
-            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.user }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.overview.logHost }}</th><th>{{ locale.logs.message }}</th></tr></thead>
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>耗时</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.logs.message }}</th></tr></thead>
           <tbody>
-            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.level }}</td><td>server</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>N/A</td><td>{{ item.message }}</td></tr>
-            <tr v-if="!logEntries.length"><td colspan="9" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr>
+            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`" class="log-result-row" @click="toggleLogDetails(item)"><td>{{ formatTimestamp(item.at) }}</td><td><span class="log-level" :class="`log-level--${item.level}`">{{ item.level === 'error' ? '错误' : item.level === 'warn' ? '警告' : '信息' }}</span></td><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无数据' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td>{{ item.message }}</td></tr>
+            <template v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}-details`"><tr v-if="isLogExpanded(item)" class="log-detail-row"><td colspan="8"><div class="log-detail-grid"><div><strong>结构化字段</strong><dl><dt>时间</dt><dd>{{ formatTimestamp(item.at) }}</dd><dt>路由</dt><dd>{{ item.route }}</dd><dt>状态码</dt><dd>{{ item.status }}</dd><dt>耗时</dt><dd>{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无数据' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ item.requestId || '暂无' }}</dd></dl></div><pre>{{ formatLogDetails(item) }}</pre></div></td></tr></template>
+            <tr v-if="!logEntries.length"><td colspan="8" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr>
           </tbody>
           </table>
         </div>
@@ -1166,6 +1167,7 @@ const debugRequestId = ref('')
 const diagnosticLoading = ref(false)
 const logKeyword = ref('')
 const logRequestId = ref('')
+const expandedLogKey = ref('')
 const traceSpans = computed(() => {
   const requestId = debugRequestId.value
   const samples = operationsData.value?.metrics?.diagnostic?.entries || operationsData.value?.metrics?.metrics?.recentErrors || []
@@ -1249,16 +1251,29 @@ const diagnosticLogEntries = computed(() => {
 const logEntries = computed(() => {
   const keyword = logKeyword.value.toLowerCase()
   const requestId = logRequestId.value.toLowerCase()
-  return [...(runtimeMetrics.value?.recentErrors || []), ...(runtimeDatabaseMetrics.value?.persistedRequests || [])]
+  return [...(runtimeDatabaseMetrics.value?.recentLogs || []), ...(runtimeMetrics.value?.recentErrors || []), ...(runtimeDatabaseMetrics.value?.persistedRequests || [])]
     .filter((item) => !requestId || String(item.requestId || '').toLowerCase().includes(requestId))
     .filter((item) => !keyword || `${item.route} ${item.status} ${item.requestId}`.toLowerCase().includes(keyword))
-    .map((item) => ({ ...item, level: item.status >= 500 ? 'error' : 'warn', message: item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }))
+    .map((item) => ({
+      ...item,
+      level: item.status >= 500 ? 'error' : item.status >= 400 ? 'warn' : 'info',
+      message: item.errorMessage || (item.status >= 500 ? 'HTTP 服务端错误' : item.status >= 400 ? 'HTTP 客户端错误' : '请求完成')
+    }))
 })
+const logKey = (item) => `${item.at}-${item.requestId || item.route}`
+const toggleLogDetails = (item) => {
+  const key = logKey(item)
+  expandedLogKey.value = expandedLogKey.value === key ? '' : key
+}
+const isLogExpanded = (item) => expandedLogKey.value === logKey(item)
+const formatLogDetails = (item) => JSON.stringify(item, null, 2)
 const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
 const runtimeBarHeight = (value, field = 'requests') => {
   const max = Math.max(...runtimeTimeline.value.map((point) => Number(point[field] || 0)), 1)
   return Math.max(8, Math.round((Number(value || 0) / max) * 100))
 }
+const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
+const trendTooltip = (point, panel) => `${formatTimestamp(point?.at)}\n${panel.title}：${trendValue(point, panel.field)} ${panel.unit}`
 const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
 const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
 const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
@@ -1355,6 +1370,11 @@ const formatDuration = (seconds) => {
   const minutes = Math.floor((total % 3600) / 60)
   const secs = total % 60
   return days ? `${days}天 ${hours}小时 ${minutes}分 ${secs}秒` : `${hours}小时 ${minutes}分 ${secs}秒`
+}
+const formatRequestRate = (count) => {
+  const total = Number(runtimeHttpMetrics.value?.recentRequests)
+  if (!Number.isFinite(total) || total <= 0 || count == null) return '暂无数据'
+  return `${(Number(count) / total * 100).toFixed(2)}%`
 }
 const dependencySourceForLabel = (label) => {
   const labels = {
@@ -1491,7 +1511,7 @@ const overviewSignals = computed(() => [
   {
     icon: 'monitoring',
     label: locale.value.overview?.memoryStatus,
-    detail: locale.value.overview?.memoryStatusDetail,
+    detail: locale.value.overview?.memoryStatusDetail, compact: true,
     value: runtimeMetrics.value?.process?.memory
       ? `常驻内存 ${formatBytes(runtimeMetrics.value.process.memory.rss)} · 已用堆 ${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / 堆总量 ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)} · 外部内存 ${formatBytes(runtimeMetrics.value.process.memory.external)}`
       : systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
@@ -1603,11 +1623,11 @@ const alertRules = computed(() => [
 
 const applicationMetrics = computed(() => [
   { icon: 'activity', label: locale.value.application?.httpQps, detail: locale.value.application?.httpQpsDetail, value: runtimeHttpMetrics.value?.requestsPerSecond != null ? String(runtimeHttpMetrics.value.requestsPerSecond) : '--' },
-  { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail, value: runtimeHttpMetrics.value?.recent4xx != null ? String(runtimeHttpMetrics.value.recent4xx) : '--' },
+  { icon: 'warning', label: locale.value.application?.clientErrorRate, detail: locale.value.application?.clientErrorRateDetail, value: formatRequestRate(runtimeHttpMetrics.value?.recent4xx) },
   { icon: 'warning', label: locale.value.application?.unauthorized401, detail: 'JWT 校验失败请求数', value: runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : '--' },
   { icon: 'warning', label: locale.value.application?.forbidden403, detail: '权限拒绝请求数', value: runtimeHttpMetrics.value?.status403 != null ? String(runtimeHttpMetrics.value.status403) : '--' },
   { icon: 'activity', label: locale.value.application?.rateLimited429, detail: '限流触发次数，不计入 5xx 告警', value: runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : '--' },
-  { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: runtimeHttpMetrics.value?.recent5xx != null ? String(runtimeHttpMetrics.value.recent5xx) : '--' },
+  { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: formatRequestRate(runtimeHttpMetrics.value?.recent5xx) },
   { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
   { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' },
   { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail, value: runtimeMetrics.value?.process?.activeHandles != null ? String(runtimeMetrics.value.process.activeHandles) : '--' },
@@ -1742,13 +1762,13 @@ const serverHealthDetails = computed(() => [
 ])
 
 const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
-  { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次' },
-  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: '毫秒' }
+  { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
+  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: '毫秒', field: 'p95Ms', available: true }
 ] : [
-  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '百分比' },
-  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB' },
-  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail, unit: 'MB/秒' },
-  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail, unit: 'MB/秒' }
+  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '百分比', available: false },
+  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', available: false },
+  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail, unit: 'MB/秒', available: false },
+  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail, unit: 'MB/秒', available: false }
 ]))
 
 const serverRuntimeDetails = computed(() => [
@@ -2799,6 +2819,7 @@ const riskLevels = computed(() => [
 .metric-card:nth-child(4n) { --metric-accent: #c084fc; }
 .metric-card .metric-icon { color: var(--metric-accent, #60a5fa); background: color-mix(in srgb, var(--metric-accent, #60a5fa) 12%, transparent); border-color: color-mix(in srgb, var(--metric-accent, #60a5fa) 28%, transparent); }
 .metric-card .metric-value { color: color-mix(in srgb, var(--metric-accent, #60a5fa) 72%, white); }
+.metric-value--compact { max-width: 100%; font-size: 0.78rem; line-height: 1.65; white-space: normal; word-break: break-word; }
 
 .signal-card__header,
 .metric-card__top {
@@ -3187,6 +3208,7 @@ const riskLevels = computed(() => [
 .chart-axis-label { position: absolute; left: 0.55rem; z-index: 2; color: rgb(113 113 122); font-size: 0.58rem; }
 .chart-axis-label--top { top: 1.45rem; }
 .chart-axis-label--bottom { bottom: 1.1rem; }
+.chart-time-labels { position: absolute; right: 1rem; bottom: 0.28rem; left: 1.7rem; z-index: 2; display: flex; justify-content: space-between; color: rgb(113 113 122); font-size: 0.58rem; }
 
 .analysis-chart-placeholder > span {
   position: relative;
@@ -3205,6 +3227,7 @@ const riskLevels = computed(() => [
 }
 
 .runtime-bars i {
+  position: relative;
   flex: 1;
   min-height: 0.35rem;
   border-radius: 2px 2px 0 0;
@@ -3215,6 +3238,36 @@ const riskLevels = computed(() => [
   transition: height 0.45s ease, opacity 0.2s ease;
 }
 
+.runtime-bars i::after {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  z-index: 4;
+  width: max-content;
+  max-width: 15rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgb(82 82 91);
+  border-radius: 0.35rem;
+  background: rgb(24 24 27 / 0.96);
+  color: rgb(228 228 231);
+  content: attr(data-tooltip);
+  font-size: 0.66rem;
+  line-height: 1.45;
+  white-space: pre-line;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0.25rem);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.runtime-bars i:hover::after { opacity: 1; transform: translate(-50%, 0); }
+
+/* 数据中心式密度：边界清晰、单位固定、状态颜色只承担语义。 */
+.panel { border-radius: 5px; border-color: rgb(63 63 70 / 0.9); background: rgb(18 18 21 / 0.78); box-shadow: 0 8px 24px rgb(0 0 0 / 0.12); }
+.panel-header { border-bottom-color: rgb(63 63 70 / 0.7); }
+.panel-title { letter-spacing: 0; }
+.metric-card, .signal-card, .server-summary-strip { border-radius: 5px; background: rgb(18 18 21 / 0.86); }
+.metric-value { font-variant-numeric: tabular-nums; }
+
 .runtime-bars i:nth-child(3n) { background: linear-gradient(180deg, #34d399, #059669); }
 .runtime-bars i:nth-child(5n) { background: linear-gradient(180deg, #fbbf24, #d97706); }
 
@@ -3223,6 +3276,19 @@ const riskLevels = computed(() => [
 @keyframes trend-bar-in { from { transform: scaleY(0); opacity: 0.15; } to { transform: scaleY(1); opacity: 0.8; } }
 
 .runtime-bars--error i { background: #f87171; }
+.log-result-row { cursor: pointer; transition: background 0.16s ease; }
+.log-result-row:hover { background: rgb(39 39 42 / 0.55); }
+.log-level { display: inline-flex; min-width: 2.6rem; justify-content: center; border-radius: 0.2rem; padding: 0.15rem 0.35rem; font-size: 0.65rem; font-weight: 650; }
+.log-level--error { background: rgb(248 113 113 / 0.14); color: #fca5a5; }
+.log-level--warn { background: rgb(251 191 36 / 0.14); color: #fcd34d; }
+.log-level--info { background: rgb(96 165 250 / 0.14); color: #93c5fd; }
+.log-detail-row td { padding: 0.85rem 1rem; background: rgb(24 24 27 / 0.72); }
+.log-detail-grid { display: grid; grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1.2fr); gap: 1rem; }
+.log-detail-grid strong { color: rgb(212 212 216); font-size: 0.72rem; }
+.log-detail-grid dl { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: 0.35rem 0.6rem; margin-top: 0.55rem; font-size: 0.68rem; }
+.log-detail-grid dt { color: rgb(113 113 122); }
+.log-detail-grid dd { min-width: 0; overflow-wrap: anywhere; color: rgb(212 212 216); }
+.log-detail-grid pre { max-height: 12rem; overflow: auto; margin: 0; padding: 0.75rem; border: 1px solid rgb(63 63 70); border-radius: 0.3rem; background: rgb(9 9 11 / 0.8); color: rgb(161 161 170); font: 0.67rem/1.55 ui-monospace, Consolas, monospace; white-space: pre-wrap; }
 
 .dependency-uptime-list { display: grid; gap: 0.7rem; width: 100%; }
 .dependency-uptime-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr); align-items: center; gap: 0.75rem; }
