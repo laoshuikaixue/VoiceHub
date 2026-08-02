@@ -561,8 +561,13 @@
 /* === Alpha (--text-primary) === */
 --text-primary-10: rgba(38, 38, 38, 0.1);
 --text-primary-20: rgba(38, 38, 38, 0.2);
+--text-primary-30: rgba(38, 38, 38, 0.3);
+--text-primary-40: rgba(38, 38, 38, 0.4);
+--text-primary-50: rgba(38, 38, 38, 0.5);
 --text-primary-60: rgba(38, 38, 38, 0.6);
+--text-primary-70: rgba(38, 38, 38, 0.7);
 --text-primary-80: rgba(38, 38, 38, 0.8);
+--text-primary-90: rgba(38, 38, 38, 0.9);
 /* === Alpha (--text-error) === */
 --text-error-20: rgba(239, 68, 68, 0.2);
 --text-error-50: rgba(239, 68, 68, 0.5);
