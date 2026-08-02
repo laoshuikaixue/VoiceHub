@@ -48,13 +48,14 @@ export default defineEventHandler(async (event) => {
 
   const requestId = String(getQuery(event).requestId || '').trim()
 
-  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, timeline, sentry, requestDiagnostics] = await Promise.allSettled([
+  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, sentry, requestDiagnostics] = await Promise.allSettled([
     databaseManager.getConnectionPoolStatus(),
     databaseManager.getPerformanceMetrics(),
     databaseManager.getDiagnostics(),
     databaseManager.getBusinessQueueStats(),
     databaseManager.getApiKeyUsageStats(),
     databaseManager.getPersistedRequestSamples(),
+    databaseManager.getRecentApiLogs(),
     databaseManager.getOperationsMetricTimeline(),
     getSentryIssues(),
     requestId ? databaseManager.getRequestDiagnostics(requestId) : Promise.resolve([])
@@ -76,6 +77,7 @@ export default defineEventHandler(async (event) => {
         businessQueue: businessQueue.status === 'fulfilled' ? businessQueue.value : null,
         apiKeyUsage: apiKeyUsage.status === 'fulfilled' ? apiKeyUsage.value : null,
         persistedRequests: persistedRequests.status === 'fulfilled' ? persistedRequests.value : null,
+        recentLogs: recentLogs.status === 'fulfilled' ? recentLogs.value : null,
         timeline: timeline.status === 'fulfilled' ? timeline.value : null
       },
       sentry: sentry.status === 'fulfilled' ? sentry.value : { configured: false, issues: [] },
