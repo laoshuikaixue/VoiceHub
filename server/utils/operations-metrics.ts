@@ -1,4 +1,4 @@
-import { monitorEventLoopDelay, performance } from 'node:perf_hooks'
+import { PerformanceObserver, monitorEventLoopDelay, performance } from 'node:perf_hooks'
 
 const WINDOW_MS = 5 * 60 * 1000
 const eventLoopHistogram = monitorEventLoopDelay({ resolution: 20 })
@@ -11,15 +11,30 @@ const state = {
   serverErrors: 0,
   activeRequests: 0,
   samples: [] as Array<{ at: number; status: number; durationMs: number }>,
+  businessSamples: [] as Array<{ at: number; operation: string; success: boolean }>,
+  oauthSamples: [] as Array<{ at: number; success: boolean }>,
   dependencies: new Map<string, { calls: number; successes: number; emptyResults: number; semanticFailures: number; durationMs: number; lastError: string | null }>(),
   turnstile: { calls: 0, successes: 0, upstreamFailures: 0, validationFailures: 0 },
   notifications: { smtpAccepted: 0, smtpFailures: 0, meowEligible: 0, meowSkipped: 0, meowTransportFailures: 0 },
-  backups: new Map<string, { successes: number; failures: number; durationMs: number }>()
+  backups: new Map<string, { successes: number; failures: number; durationMs: number }>(),
+  backupSnapshot: null as null | { exportedTables: number; skippedTables: number; checksum: string; collectedAt: string },
+  gc: { count: 0, durationMs: 0 },
+  ssrPrewarm: { attempts: 0, successes: 0, failures: 0, lastDurationMs: null as number | null, lastResult: null as string | null }
 }
+
+const gcObserver = new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    state.gc.count += 1
+    state.gc.durationMs += entry.duration
+  }
+})
+gcObserver.observe({ entryTypes: ['gc'] })
 
 const prune = () => {
   const cutoff = Date.now() - WINDOW_MS
   state.samples = state.samples.filter((sample) => sample.at >= cutoff)
+  state.businessSamples = state.businessSamples.filter((sample) => sample.at >= cutoff)
+  state.oauthSamples = state.oauthSamples.filter((sample) => sample.at >= cutoff)
 }
 
 export const startOperationRequest = () => {
@@ -50,12 +65,23 @@ export const getOperationsMetrics = () => {
   const recentRequests = state.samples.length
   const recent5xx = state.samples.filter((sample) => sample.status >= 500).length
   const recent4xx = state.samples.filter((sample) => sample.status >= 400 && sample.status < 500).length
+  const business = Object.fromEntries(['song_request', 'schedule_save', 'vote'].map((operation) => {
+    const samples = state.businessSamples.filter((sample) => sample.operation === operation)
+    const successes = samples.filter((sample) => sample.success).length
+    return [operation, {
+      calls: samples.length,
+      successRate: samples.length ? Number((successes / samples.length * 100).toFixed(2)) : null,
+      requestsPerSecond: Number((samples.length / (WINDOW_MS / 1000)).toFixed(3))
+    }]
+  }))
+  const oauthSuccesses = state.oauthSamples.filter((sample) => sample.success).length
   const histogram = eventLoopHistogram
   const result = {
     process: {
       uptimeSeconds: process.uptime(),
       memory: process.memoryUsage(),
-      activeRequests: state.activeRequests
+      activeRequests: state.activeRequests,
+      activeHandles: typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo().length : null
     },
     http: {
       windowSeconds: WINDOW_MS / 1000,
@@ -72,6 +98,16 @@ export const getOperationsMetrics = () => {
       maxMs: histogram.count ? Number((Number(histogram.max) / 1e6).toFixed(2)) : null,
       p99Ms: histogram.count ? Number((Number(histogram.percentile(99)) / 1e6).toFixed(2)) : null
     },
+    gc: {
+      count: state.gc.count,
+      averagePauseMs: state.gc.count ? Number((state.gc.durationMs / state.gc.count).toFixed(2)) : null
+    },
+    ssrPrewarm: { ...state.ssrPrewarm },
+    business,
+    oauth: {
+      calls: state.oauthSamples.length,
+      successRate: state.oauthSamples.length ? Number((oauthSuccesses / state.oauthSamples.length * 100).toFixed(2)) : null
+    },
     dependencies: Object.fromEntries([...state.dependencies.entries()].map(([source, item]) => ({
       [source]: {
         calls: item.calls,
@@ -85,6 +121,7 @@ export const getOperationsMetrics = () => {
     turnstile: { ...state.turnstile },
     notifications: { ...state.notifications },
     backups: Object.fromEntries(state.backups),
+    backupSnapshot: state.backupSnapshot,
     collectedAt: new Date().toISOString()
   }
   histogram.reset()
@@ -126,4 +163,26 @@ export const recordBackupTarget = (target: string, success: boolean, durationMs:
   else current.failures += 1
   current.durationMs += Math.max(0, durationMs)
   state.backups.set(target, current)
+}
+
+export const recordBackupSnapshot = (snapshot: { exportedTables: number; skippedTables: number; checksum: string }) => {
+  state.backupSnapshot = { ...snapshot, collectedAt: new Date().toISOString() }
+}
+
+export const recordSsrPrewarm = (success: boolean, durationMs: number) => {
+  state.ssrPrewarm.attempts += 1
+  if (success) state.ssrPrewarm.successes += 1
+  else state.ssrPrewarm.failures += 1
+  state.ssrPrewarm.lastDurationMs = Math.max(0, Math.round(durationMs))
+  state.ssrPrewarm.lastResult = success ? 'success' : 'failure'
+}
+
+export const recordBusinessOperation = (operation: 'song_request' | 'schedule_save' | 'vote', success: boolean) => {
+  state.businessSamples.push({ at: Date.now(), operation, success })
+  prune()
+}
+
+export const recordOAuthOperation = (success: boolean) => {
+  state.oauthSamples.push({ at: Date.now(), success })
+  prune()
 }

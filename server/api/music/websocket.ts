@@ -7,9 +7,14 @@ import { createApiError } from '~~/server/utils/apiError'
 
 // 存储WebSocket连接
 const musicConnections = new Map<string, any>()
+const musicConnectionStats = { closedConnections: 0, totalLifetimeMs: 0, heartbeatFailures: 0 }
 
 export const getMusicSseStats = () => ({
-  activeConnections: musicConnections.size
+  activeConnections: musicConnections.size,
+  averageLifetimeMs: musicConnectionStats.closedConnections
+    ? Math.round(musicConnectionStats.totalLifetimeMs / musicConnectionStats.closedConnections)
+    : null,
+  heartbeatFailures: musicConnectionStats.heartbeatFailures
 })
 
 // 音乐状态接口
@@ -181,12 +186,15 @@ export default defineEventHandler(async (event) => {
   )
 
   // 存储连接
+  const connectedAt = Date.now()
   musicConnections.set(connectionId, response)
 
   // 监听客户端断开连接（改进错误处理）
   const cleanup = () => {
     if (musicConnections.has(connectionId)) {
       musicConnections.delete(connectionId)
+      musicConnectionStats.closedConnections += 1
+      musicConnectionStats.totalLifetimeMs += Date.now() - connectedAt
     }
     if (heartbeatInterval) {
       clearInterval(heartbeatInterval)
@@ -232,6 +240,7 @@ export default defineEventHandler(async (event) => {
         })}\n\n`
       )
     } catch (error) {
+      musicConnectionStats.heartbeatFailures += 1
       // 忽略常见的连接错误
       if (error.code !== 'ECONNRESET' && error.code !== 'EPIPE') {
         console.error(`Heartbeat failed for connection ${connectionId}:`, error.message)
