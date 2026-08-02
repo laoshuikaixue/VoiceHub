@@ -120,6 +120,13 @@
         <dl class="detail-grid">
           <div v-for="item in backupStatusFields" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
         </dl>
+        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-4">
+          <div v-for="target in backupTargetPanels" :key="target.title" class="deployment-mode-card">
+            <div class="metric-card__top"><span class="metric-icon"><Icon name="database" :size="14" /></span><span class="metric-label">{{ target.title }}</span></div>
+            <strong>--</strong>
+            <p>{{ target.detail }}</p>
+          </div>
+        </div>
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -378,6 +385,18 @@
               <h3 class="panel-title">{{ panel.title }}</h3>
               <p class="panel-description">{{ panel.detail }}</p>
             </div>
+            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
+          </div>
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>--</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="server-resource-grid">
+        <article v-for="panel in runtimeGuardPanels" :key="panel.title" class="panel">
+          <div class="panel-header">
+            <div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div>
             <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
           </div>
           <dl class="server-resource-list">
@@ -1003,6 +1022,16 @@
       </section>
 
       <section class="subsection-heading">
+        <div><h3>{{ locale.dependencies.semanticHealth }}</h3><p>{{ locale.dependencies.semanticHealthDetail }}</p></div>
+        <Icon name="music" :size="16" />
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.semanticFailureTrend }}</h3><p class="panel-description">{{ locale.dependencies.semanticFailureTrendDetail }}</p></div><span class="status-badge">1h</span></div>
+        <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+      </section>
+
+      <section class="subsection-heading">
         <div><h3>{{ locale.dependencies.latencyAndErrors }}</h3><p>{{ locale.dependencies.latencyAndErrorsDetail }}</p></div>
         <Icon name="activity" :size="16" />
       </section>
@@ -1189,7 +1218,21 @@ const backupStatusFields = computed(() => [
   locale.value.overview?.lastBackupAt,
   locale.value.overview?.lastBackupResult,
   locale.value.overview?.lastBackupSize,
-  locale.value.overview?.backupStorageUsage
+  locale.value.overview?.backupStorageUsage,
+  locale.value.overview?.backupExportedTables,
+  locale.value.overview?.backupSkippedTables,
+  locale.value.overview?.backupIntegrityCheck,
+  locale.value.overview?.lastRestoreDrill,
+  locale.value.overview?.lastBackupScheduleAt,
+  locale.value.overview?.expectedBackupInterval,
+  locale.value.overview?.backupScheduleMisses
+])
+
+const backupTargetPanels = computed(() => [
+  { title: locale.value.overview?.backupTargetS3, detail: locale.value.overview?.backupTargetDetail },
+  { title: locale.value.overview?.backupTargetWebdav, detail: locale.value.overview?.backupTargetDetail },
+  { title: locale.value.overview?.backupTargetTelegram, detail: locale.value.overview?.backupTargetDetail },
+  { title: locale.value.overview?.backupTargetEmail, detail: locale.value.overview?.backupTargetDetail }
 ])
 
 const deploymentModeRows = computed(() => [
@@ -1238,10 +1281,10 @@ const applicationMetrics = computed(() => [
   { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail },
   { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail },
   { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail },
-  { icon: 'users', label: locale.value.application?.wsActiveConnections, detail: locale.value.application?.wsActiveConnectionsDetail },
-  { icon: 'clock', label: locale.value.application?.wsAverageLifetime, detail: locale.value.application?.wsAverageLifetimeDetail },
-  { icon: 'activity', label: locale.value.application?.wsBroadcastLatency, detail: locale.value.application?.wsBroadcastLatencyDetail },
-  { icon: 'warning', label: locale.value.application?.wsReconnectFailures, detail: locale.value.application?.wsReconnectFailuresDetail },
+  { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail },
+  { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail },
+  { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail },
+  { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail },
   { icon: 'settings', label: locale.value.application?.apiKeyUsage, detail: locale.value.application?.apiKeyUsageDetail },
   { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail }
 ])
@@ -1293,6 +1336,17 @@ const applicationDetailPanels = computed(() => [
       locale.value.application?.serverErrorCount,
       locale.value.application?.ssrRenderCount,
       locale.value.application?.gcCount
+    ]
+  },
+  {
+    icon: 'activity',
+    title: locale.value.application?.adminProgressSse,
+    detail: locale.value.application?.adminProgressSseDetail,
+    items: [
+      locale.value.application?.adminProgressSseActiveConnections,
+      locale.value.application?.adminProgressSseHeartbeatFailures,
+      locale.value.application?.adminProgressSseAverageLifetime,
+      locale.value.application?.adminProgressSseUnclosedConnections
     ]
   }
 ])
@@ -1413,6 +1467,40 @@ const serverResourcePanels = computed(() => [
       locale.value.server?.gcCount,
       locale.value.server?.gcPause,
       locale.value.server?.eventLoopP99Lag
+    ]
+  }
+])
+
+const runtimeGuardPanels = computed(() => [
+  {
+    icon: 'database',
+    title: locale.value.server?.redisRuntimeGuard,
+    detail: locale.value.server?.redisRuntimeGuardDetail,
+    items: [
+      locale.value.server?.redisConfigured,
+      locale.value.server?.redisConnected,
+      locale.value.server?.redisFallbackMode,
+      locale.value.server?.redisLastError
+    ]
+  },
+  {
+    icon: 'activity',
+    title: locale.value.server?.ssrWarmup,
+    detail: locale.value.server?.ssrWarmupDetail,
+    items: [
+      locale.value.server?.ssrWarmupLastResult,
+      locale.value.server?.ssrWarmupDuration,
+      locale.value.server?.ssrWarmupFailures
+    ]
+  },
+  {
+    icon: 'monitoring',
+    title: locale.value.server?.egressLocation,
+    detail: locale.value.server?.egressLocationDetail,
+    items: [
+      locale.value.server?.egressLastLocation,
+      locale.value.server?.egressCacheAge,
+      locale.value.server?.egressLookupFailures
     ]
   }
 ])
@@ -1601,7 +1689,11 @@ const securitySignalMetrics = computed(() => [
   { icon: 'warning', label: locale.value.audit?.strongAuthFailures, detail: locale.value.audit?.strongAuthFailuresDetail },
   { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: locale.value.audit?.invalidTokenRequestsDetail },
   { icon: 'activity', label: locale.value.audit?.rateLimitTriggers, detail: locale.value.audit?.rateLimitTriggersDetail },
-  { icon: 'warning', label: locale.value.audit?.blacklistHits, detail: locale.value.audit?.blacklistHitsDetail }
+  { icon: 'warning', label: locale.value.audit?.blacklistHits, detail: locale.value.audit?.blacklistHitsDetail },
+  { icon: 'success', label: locale.value.audit?.turnstileValidationRequests, detail: locale.value.audit?.turnstileValidationRequestsDetail },
+  { icon: 'success', label: locale.value.audit?.turnstileValidationSuccessRate, detail: locale.value.audit?.turnstileValidationSuccessRateDetail },
+  { icon: 'warning', label: locale.value.audit?.turnstileUpstreamFailures, detail: locale.value.audit?.turnstileUpstreamFailuresDetail },
+  { icon: 'settings', label: locale.value.audit?.turnstileConfiguration, detail: locale.value.audit?.turnstileConfigurationDetail }
 ])
 
 const requestSummaryItems = computed(() => [
@@ -1644,22 +1736,22 @@ const dependencyHealthCards = computed(() => [
   {
     icon: 'music',
     label: locale.value.overview?.neteaseSource,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.p95LatencyShort, locale.value.dependencies?.errorRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+    details: musicSourceHealthDetails.value
   },
   {
     icon: 'music',
     label: locale.value.overview?.tencentSource,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.p95LatencyShort, locale.value.dependencies?.errorRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+    details: musicSourceHealthDetails.value
   },
   {
     icon: 'music',
     label: locale.value.overview?.bilibiliSource,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.p95LatencyShort, locale.value.dependencies?.errorRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+    details: musicSourceHealthDetails.value
   },
   {
     icon: 'music',
     label: locale.value.overview?.miguSource,
-    details: [locale.value.dependencies?.availability, locale.value.dependencies?.p95LatencyShort, locale.value.dependencies?.errorRate, locale.value.dependencies?.circuitBreakerState, locale.value.dependencies?.lastSuccess]
+    details: musicSourceHealthDetails.value
   },
   {
     icon: 'success',
@@ -1686,6 +1778,17 @@ const dependencyHealthCards = computed(() => [
     label: locale.value.dependencies?.notificationService,
     details: [locale.value.dependencies?.availability, locale.value.dependencies?.notificationSuccessRate, locale.value.dependencies?.notificationQueue, locale.value.dependencies?.lastSuccess]
   }
+])
+
+const musicSourceHealthDetails = computed(() => [
+  locale.value.dependencies?.availability,
+  locale.value.dependencies?.p95LatencyShort,
+  locale.value.dependencies?.errorRate,
+  locale.value.dependencies?.parseSuccessRate,
+  locale.value.dependencies?.emptyResultRate,
+  locale.value.dependencies?.semanticFailureRate,
+  locale.value.dependencies?.circuitBreakerState,
+  locale.value.dependencies?.lastSuccess
 ])
 
 const dependencyErrorPanels = computed(() => [
@@ -1740,9 +1843,10 @@ const dependencyProtectionPanels = computed(() => [
     title: locale.value.dependencies?.notificationDelivery,
     detail: locale.value.dependencies?.notificationDeliveryDetail,
     items: [
-      locale.value.dependencies?.smtpHealth,
-      locale.value.dependencies?.smtpFailureRate,
-      locale.value.dependencies?.notificationSuccessRate,
+      locale.value.dependencies?.smtpAcceptedRate,
+      locale.value.dependencies?.meowEligibleTargets,
+      locale.value.dependencies?.meowSkippedTargets,
+      locale.value.dependencies?.meowTransportFailureRate,
       locale.value.dependencies?.notificationQueue
     ]
   }
