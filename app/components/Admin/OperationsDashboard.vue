@@ -4,63 +4,30 @@
       <div class="ops-status-spine__summary">
         <span class="ops-status-spine__dot" :class="`ops-status-spine__dot--${overallStatus}`" />
         <div>
-          <p class="ops-status-spine__eyebrow">{{ locale.title }}</p>
           <h2 :class="`ops-status-spine__headline ops-tone--${overallStatus}`">{{ overallStatusText }}</h2>
-          <p class="ops-status-spine__meta">运行 {{ formatDuration(systemSnapshot?.uptime) }} · {{ operationsData.status?.instance?.instanceId || '实例标识未提供' }} · {{ lastUpdatedRelative }}</p>
+          <p class="ops-status-spine__meta">{{ abnormalModuleCount }} 异常 · {{ warningModuleCount }} 警告 · 运行 {{ formatDuration(systemSnapshot?.uptime) }}</p>
         </div>
       </div>
-      <div class="ops-status-spine__metrics">
-        <div class="ops-status-count ops-status-count--error"><span>异常模块</span><strong>{{ abnormalModuleCount }}</strong></div>
-        <div class="ops-status-count ops-status-count--warning"><span>警告模块</span><strong>{{ warningModuleCount }}</strong></div>
-        <div class="ops-status-count"><span>上次更新</span><strong>{{ formattedLastUpdated }}</strong></div>
-      </div>
       <div class="ops-status-spine__actions">
+        <span class="ops-status-spine__updated">{{ formattedLastUpdated }} · {{ autoRefreshEnabled ? `下次自动刷新 ${refreshCountdownText}` : '自动刷新已暂停' }}</span>
         <button type="button" class="auto-refresh-toggle" :aria-pressed="autoRefreshEnabled" @click="toggleAutoRefresh">
           <span :class="{ 'is-enabled': autoRefreshEnabled }" />自动刷新{{ autoRefreshEnabled ? '已开启' : '已暂停' }}
         </button>
+        <CustomSelect
+          v-model="autoRefreshInterval"
+          :options="autoRefreshIntervalOptions"
+          label-key="label"
+          value-key="value"
+          class-name="ops-refresh-interval w-[5.5rem]"
+          :disabled="!autoRefreshEnabled"
+          @change="changeAutoRefreshInterval"
+        />
         <button type="button" class="refresh-button" :disabled="operationsLoading" @click="loadOperationsData()">
           <Icon name="refresh" :size="14" :class="{ 'icon-spin': operationsLoading }" />{{ operationsLoading ? '正在刷新' : locale.actions.refresh }}
         </button>
       </div>
       <i class="ops-status-spine__countdown" :style="{ width: `${refreshProgress}%` }" />
     </header>
-
-    <section class="ops-key-metrics" aria-label="关键运行指标">
-      <div v-for="item in keyMetricSummaries" :key="item.label" class="ops-key-metric" :class="`ops-key-metric--${item.status}`">
-        <span>{{ item.label }}</span>
-        <strong>{{ item.value }}<small v-if="item.unit">{{ item.unit }}</small></strong>
-        <p>{{ item.detail }}</p>
-        <i v-if="item.ratio != null" class="ops-key-metric__meter"><b :style="{ width: `${Math.min(100, Math.max(0, item.ratio * 100))}%` }" /></i>
-      </div>
-    </section>
-
-    <section class="ops-module-summary" aria-label="模块健康摘要">
-      <OpsPanel
-        v-for="item in moduleSummaries"
-        :key="item.key"
-        :title="item.title"
-        :subtitle="item.subtitle"
-        :status="item.status"
-        :updated-at="lastUpdatedRelative"
-        :pending="initialOperationsLoading"
-        :error="item.error"
-        :empty="item.empty"
-        :stale="item.error && !!item.value"
-        @refresh="loadOperationsData"
-      >
-        <div class="ops-module-summary__value" :class="`ops-tone--${item.status}`">{{ item.value }}</div>
-        <p>{{ item.detail }}</p>
-      </OpsPanel>
-    </section>
-
-    <div class="ops-toolbar">
-      <form class="request-id-shortcut" @submit.prevent="openRequestDiagnosis()">
-        <Icon name="search" :size="14" />
-        <input v-model.trim="globalRequestId" type="text" :aria-label="locale.requestIdQuick" :placeholder="locale.requestIdQuickPlaceholder">
-        <button type="submit" :disabled="!globalRequestId">{{ locale.goToDiagnosis }}</button>
-      </form>
-      <span class="ops-toolbar__hint">{{ autoRefreshEnabled ? `下次自动刷新 ${refreshCountdownText}` : '自动刷新已暂停' }}</span>
-    </div>
 
     <div v-if="initialOperationsLoading" class="operations-loading-state" role="status" aria-live="polite">
       <span class="operations-loading-state__spinner"><Icon name="refresh" :size="16" /></span>
@@ -83,6 +50,7 @@
             >
               <Icon :name="group.icon" :size="14" />
               <span>{{ group.label }}</span>
+              <i class="group-tab__status" :class="`group-tab__status--${groupTabStatus(group.value)}`" />
             </button>
           </div>
         </div>
@@ -269,8 +237,18 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && runtimeTimeline.length ? `${trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field)} ${panel.unit}` : '暂无数据' }}</span></div>
-          <div class="analysis-chart-placeholder"><span class="chart-axis-label chart-axis-label--top">高</span><span class="chart-axis-label chart-axis-label--bottom">低</span><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><div v-if="panel.available && runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :data-tooltip="trendTooltip(point, panel)" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field)}%` }" /></div><span v-else>尚未采集 {{ panel.title }} 历史数据</span><div class="chart-time-labels"><span>近 5 分钟</span><span>现在</span></div></div>
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && hasTimelineMetric(panel.field) ? `${formatChartValue(trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field))} ${panel.unit}` : '暂无数据' }}</span></div>
+          <div v-if="panel.available && hasTimelineMetric(panel.field)" class="ops-time-chart">
+            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks(panel.field)" :key="tick">{{ tick }} {{ panel.unit }}</span></div>
+            <div class="ops-time-chart__plot">
+              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks(panel.field)" :key="tick" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field)}%` }" @mouseenter="showChartTooltip(panel.field, panel.title, point, trendValue(point, panel.field), panel.unit, index, runtimeTimeline.length)" @mouseleave="hideChartTooltip" /></div>
+              <i v-if="chartTooltip.visible && chartTooltip.key === panel.field" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
+              <div v-if="chartTooltip.visible && chartTooltip.key === panel.field" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
+            </div>
+            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(runtimeTimeline[0]?.at) }}</span><span>{{ formatChartTime(runtimeTimeline[runtimeTimeline.length - 1]?.at) }}</span></div>
+          </div>
+          <div v-else class="analysis-chart-placeholder"><span>尚未采集 {{ panel.title }} 历史数据</span></div>
         </article>
       </section>
 
@@ -541,7 +519,17 @@
         </OpsPanel>
 
         <OpsPanel class="xl:col-span-8" :title="locale.business.requestRateTrend" subtitle="近 5 分钟请求样本" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><div v-if="runtimeTimeline.length" class="runtime-bars"><i v-for="point in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests)}%` }" /></div><span v-else>{{ locale.noData }}</span></div>
+          <div v-if="hasTimelineMetric('requests')" class="ops-time-chart">
+            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('requests')" :key="tick">{{ tick }} 次</span></div>
+            <div class="ops-time-chart__plot">
+              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('requests')" :key="tick" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests, 'requests')}%` }" @mouseenter="showChartTooltip('business-requests', '请求数', point, point.requests, '次', index, runtimeTimeline.length)" @mouseleave="hideChartTooltip" /></div>
+              <i v-if="chartTooltip.visible && chartTooltip.key === 'business-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
+              <div v-if="chartTooltip.visible && chartTooltip.key === 'business-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
+            </div>
+            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(runtimeTimeline[0]?.at) }}</span><span>{{ formatChartTime(runtimeTimeline[runtimeTimeline.length - 1]?.at) }}</span></div>
+          </div>
+          <div v-else class="analysis-chart-placeholder"><span>{{ locale.noData }}</span></div>
         </OpsPanel>
       </section>
 
@@ -1033,6 +1021,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import DrilldownLink from '~/components/Admin/DrilldownLink.vue'
 import OpsPanel from '~/components/Admin/Ops/OpsPanel.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
 const { admin } = useLocale()
@@ -1060,6 +1049,13 @@ const operationsLastUpdated = ref(null)
 const runtimeNow = ref(Date.now())
 const operationsData = ref({ status: null, pool: null, performance: null, backups: [], metrics: null })
 const autoRefreshEnabled = ref(true)
+const autoRefreshInterval = ref(30_000)
+const autoRefreshIntervalOptions = [
+  { label: '10 秒', value: 10_000 },
+  { label: '30 秒', value: 30_000 },
+  { label: '60 秒', value: 60_000 },
+  { label: '5 分钟', value: 300_000 }
+]
 const moduleFetchErrors = ref({ system: false, pool: false, performance: false, backups: false, metrics: false })
 
 const loadOperationsData = async () => {
@@ -1103,7 +1099,7 @@ let operationsRefreshTimer = null
 let runtimeClockTimer = null
 const startAutoRefresh = () => {
   if (operationsRefreshTimer || !autoRefreshEnabled.value) return
-  operationsRefreshTimer = window.setInterval(loadOperationsData, 30000)
+  operationsRefreshTimer = window.setInterval(loadOperationsData, Number(autoRefreshInterval.value))
 }
 const stopAutoRefresh = () => {
   if (!operationsRefreshTimer) return
@@ -1114,6 +1110,10 @@ const toggleAutoRefresh = () => {
   autoRefreshEnabled.value = !autoRefreshEnabled.value
   if (autoRefreshEnabled.value) startAutoRefresh()
   else stopAutoRefresh()
+}
+const changeAutoRefreshInterval = () => {
+  stopAutoRefresh()
+  if (autoRefreshEnabled.value) startAutoRefresh()
 }
 onMounted(() => {
   loadOperationsData()
@@ -1195,12 +1195,36 @@ const redactSensitiveText = (value) => String(value)
   .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer ***')
 const formatLogDetails = (item) => redactSensitiveText(JSON.stringify(item, null, 2))
 const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
+const chartTooltip = ref({ visible: false, key: '', time: '', series: '', value: '', unit: '', left: 50 })
 const runtimeBarHeight = (value, field = 'requests') => {
   const max = Math.max(...runtimeTimeline.value.map((point) => Number(point[field] || 0)), 1)
-  return Math.max(8, Math.round((Number(value || 0) / max) * 100))
+  const numericValue = Number(value || 0)
+  if (numericValue <= 0) return 0
+  return Math.max(4, Math.round((numericValue / max) * 100))
 }
 const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
 const trendTooltip = (point, panel) => `${formatTimestamp(point?.at)}\n${panel.title}：${trendValue(point, panel.field)} ${panel.unit}`
+const hasTimelineMetric = (field) => runtimeTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
+const chartTicks = (field) => {
+  const maximum = Math.max(...runtimeTimeline.value.map((point) => Number(point?.[field] || 0)), 0)
+  const top = Math.max(1, Math.ceil(maximum))
+  return [...new Set([top, Math.round(top / 2), 0])]
+}
+const formatChartTime = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'
+const formatChartValue = (value) => Number.isFinite(Number(value)) ? String(Math.round(Number(value))) : '--'
+const showChartTooltip = (key, series, point, value, unit, index, total) => {
+  const left = ((index + 0.5) / Math.max(total, 1)) * 100
+  chartTooltip.value = {
+    visible: true,
+    key,
+    time: formatChartTime(point?.at),
+    series,
+    value: formatChartValue(value),
+    unit,
+    left: Math.min(90, Math.max(10, left))
+  }
+}
+const hideChartTooltip = () => { chartTooltip.value.visible = false }
 const runtimeEventLoopMetrics = computed(() => runtimeMetrics.value?.eventLoop || null)
 const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
 const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
@@ -1281,9 +1305,9 @@ const lastUpdatedRelative = computed(() => {
 })
 const refreshProgress = computed(() => {
   if (!autoRefreshEnabled.value || !operationsLastUpdated.value) return 0
-  return Math.max(0, 100 - ((runtimeNow.value - operationsLastUpdated.value.getTime()) / 30000 * 100))
+  return Math.max(0, 100 - ((runtimeNow.value - operationsLastUpdated.value.getTime()) / Number(autoRefreshInterval.value) * 100))
 })
-const refreshCountdownText = computed(() => `${Math.max(0, Math.ceil(refreshProgress.value / 100 * 30))} 秒后`)
+const refreshCountdownText = computed(() => `${Math.max(0, Math.ceil(refreshProgress.value / 100 * Number(autoRefreshInterval.value) / 1000))} 秒后`)
 const keyMetricSummaries = computed(() => {
   const items = []
   const memory = systemSnapshot.value?.memory
@@ -1293,7 +1317,7 @@ const keyMetricSummaries = computed(() => {
   }
   const dbLatency = operationsData.value.performance?.responseTime
   if (isNumber(dbLatency)) items.push({ label: '数据库探测延迟', value: Number(dbLatency), unit: 'ms', status: Number(dbLatency) >= 1500 ? 'error' : Number(dbLatency) >= 500 ? 'warning' : 'ok', detail: 'SELECT 1 探测' })
-  if (httpErrorRate.value != null) items.push({ label: '5xx 错误率', value: Number((httpErrorRate.value * 100).toFixed(2)), unit: '%', status: httpErrorRate.value >= .05 ? 'error' : httpErrorRate.value >= .01 ? 'warning' : 'ok', detail: `近 5 分钟 ${runtimeHttpMetrics.value.recent5xx || 0} 次` })
+  if (httpErrorRate.value != null) items.push({ label: '5xx 错误率', value: Number((httpErrorRate.value * 100).toFixed(1)), unit: '%', status: httpErrorRate.value >= .05 ? 'error' : httpErrorRate.value >= .01 ? 'warning' : 'ok', detail: `近 5 分钟 ${runtimeHttpMetrics.value.recent5xx || 0} 次` })
   const knownSources = musicSourceStatuses.value.filter((item) => item.status !== 'unknown')
   if (knownSources.length) items.push({ label: '音乐源健康', value: knownSources.filter((item) => item.status === 'ok').length, unit: `/${knownSources.length}`, status: dependenciesModuleStatus.value, detail: '已有调用观测' })
   if (businessQueueSnapshot.value?.pendingCount != null) items.push({ label: '待处理队列', value: Number(businessQueueSnapshot.value.pendingCount), unit: '项', status: Number(businessQueueSnapshot.value.pendingCount) === 0 ? 'ok' : 'unknown', detail: businessQueueSnapshot.value.oldestCreatedAt ? `最早 ${formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt)} · 未提供积压阈值` : '暂无积压' })
@@ -1360,7 +1384,7 @@ const musicApiRows = computed(() => [
     status: metric?.calls == null || metric.calls === 0 ? '未探测' : metric.successRate >= 95 ? '已连接' : metric.successRate > 0 ? '部分异常' : '不可用',
     averageDuration: metric?.averageDurationMs != null ? `${metric.averageDurationMs} ms` : '未采集调用',
     httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
-    semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(2)}%` : 'N/A',
+    semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(1)}%` : 'N/A',
     timeouts: 'N/A'
   }
 }))
@@ -1371,7 +1395,7 @@ const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' 
 const healthScore = computed(() => {
   const total = runtimeHttpMetrics.value?.recentRequests || 0
   const errors = runtimeHttpMetrics.value?.recent5xx || 0
-  return total ? `${Math.max(0, (1 - errors / total) * 100).toFixed(2)}%` : 'N/A'
+  return total ? `${Math.max(0, (1 - errors / total) * 100).toFixed(1)}%` : 'N/A'
 })
 const healthScoreTone = computed(() => {
   const score = Number.parseFloat(healthScore.value)
@@ -1398,7 +1422,7 @@ const formatDuration = (seconds) => {
 const formatRequestRate = (count) => {
   const total = Number(runtimeHttpMetrics.value?.recentRequests)
   if (!Number.isFinite(total) || total <= 0 || count == null) return '暂无数据'
-  return `${(Number(count) / total * 100).toFixed(2)}%`
+  return `${(Number(count) / total * 100).toFixed(1)}%`
 }
 const durationTone = (duration) => {
   const value = Number(duration || 0)
@@ -1449,7 +1473,7 @@ const dependencyMetricValue = (label, detail) => {
 const securityMetricValue = (label) => {
   if (label === locale.value.audit?.invalidTokenRequests) return runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : 'N/A'
   if (label === locale.value.audit?.rateLimitTriggers) return runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : 'N/A'
-  if (label === locale.value.audit?.strongAuthFailures) return runtimeOAuthMetrics.value?.successRate != null ? `${(100 - runtimeOAuthMetrics.value.successRate).toFixed(2)}%` : 'N/A'
+  if (label === locale.value.audit?.strongAuthFailures) return runtimeOAuthMetrics.value?.successRate != null ? `${(100 - runtimeOAuthMetrics.value.successRate).toFixed(1)}%` : 'N/A'
   if (!turnstileMetrics.value) return '--'
   if (label === locale.value.audit?.turnstileValidationRequests) return String(turnstileMetrics.value.calls)
   if (label === locale.value.audit?.turnstileValidationSuccessRate) return turnstileMetrics.value.calls ? `${(turnstileMetrics.value.successes / turnstileMetrics.value.calls * 100).toFixed(1)}%` : '--'
@@ -1518,6 +1542,15 @@ const openRequestDiagnosis = async (requestId = globalRequestId.value) => {
     diagnosticLoading.value = false
   }
 }
+
+const groupTabStatus = (group) => ({
+  overview: overallStatus.value,
+  performance: performanceModuleStatus.value,
+  database: databaseModuleStatus.value,
+  dependencies: dependenciesModuleStatus.value,
+  security: securityModuleStatus.value,
+  infra: systemModuleStatus.value
+}[group] || 'unknown')
 
 const monitorSections = computed(() => [
   {
@@ -1806,7 +1839,7 @@ const serverHealthDetails = computed(() => [
 
 const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
   { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
-  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: '毫秒', field: 'p95Ms', available: true }
+  { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: 'ms', field: 'p95Ms', available: true }
 ] : [
   { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '百分比', available: false },
   { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', available: false },
@@ -2561,6 +2594,18 @@ const riskLevels = computed(() => [
   white-space: nowrap;
   transition: color 150ms ease;
 }
+
+.group-tab__status {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: 0 0 auto;
+  margin-left: 0.1rem;
+  border-radius: 50%;
+  background: var(--ops-unknown, #94a3b8);
+}
+.group-tab__status--ok { background: var(--ops-ok, #34d399); }
+.group-tab__status--warning { background: var(--ops-warning, #fbbf24); }
+.group-tab__status--error { background: var(--ops-error, #fb7185); }
 
 .group-tab::after {
   position: absolute;
@@ -3885,12 +3930,12 @@ const riskLevels = computed(() => [
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
+  gap: .75rem;
   overflow: hidden;
   border: 1px solid var(--ops-line-strong);
   border-radius: 6px;
   background: var(--ops-panel);
-  padding: 1rem;
+  padding: .65rem .75rem;
 }
 
 .ops-status-spine__summary { display: flex; min-width: 0; align-items: flex-start; gap: .8rem; }
@@ -3899,8 +3944,8 @@ const riskLevels = computed(() => [
 .ops-status-spine__dot--warning { background: var(--ops-warning); }
 .ops-status-spine__dot--error { background: var(--ops-error); box-shadow: none; }
 .ops-status-spine__eyebrow { margin: 0 0 .25rem; color: var(--ops-text-3); font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.ops-status-spine__headline { margin: 0; font-family: var(--ops-mono); font-size: clamp(1.65rem, 3vw, 2.35rem); font-weight: 700; letter-spacing: -.03em; line-height: 1; }
-.ops-status-spine__meta { margin: .55rem 0 0; overflow: hidden; color: var(--ops-text-2); font-family: var(--ops-mono); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.ops-status-spine__headline { margin: 0; font-family: var(--ops-mono); font-size: 1rem; font-weight: 650; letter-spacing: 0; line-height: 1.2; }
+.ops-status-spine__meta { margin: .18rem 0 0; overflow: hidden; color: var(--ops-text-2); font-family: var(--ops-mono); font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
 .ops-status-spine__metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--ops-line); border-radius: 4px; }
 .ops-status-count { min-width: 0; padding: .6rem .7rem; border-right: 1px solid var(--ops-line); }
 .ops-status-count:last-child { border-right: 0; }
@@ -3908,10 +3953,17 @@ const riskLevels = computed(() => [
 .ops-status-count strong { display: block; margin-top: .28rem; color: var(--ops-text-1); font-family: var(--ops-mono); font-size: .95rem; font-weight: 650; }
 .ops-status-count--error strong { color: var(--ops-error); }.ops-status-count--warning strong { color: var(--ops-warning); }
 .ops-status-spine__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.ops-status-spine__updated { color: var(--ops-text-2); font-family: var(--ops-mono); font-size: .68rem; white-space: nowrap; }
 .auto-refresh-toggle { display: inline-flex; height: 1.875rem; align-items: center; gap: .45rem; border: 1px solid var(--ops-line); border-radius: 6px; padding: 0 .65rem; color: var(--ops-text-1); background: #0e1217; font-size: .7rem; cursor: pointer; }
 .auto-refresh-toggle:hover { border-color: rgba(34, 211, 238, .5); }
+.ops-refresh-interval { flex: 0 0 auto; }
+:deep(.ops-refresh-interval > div) { height: 1.875rem; min-height: 1.875rem; border-color: var(--ops-line); border-radius: 6px; padding: 0 .55rem; background: #0e1217; }
+:deep(.ops-refresh-interval > div:hover),
+:deep(.ops-refresh-interval > div.bg-blue-600\/5) { border-color: rgba(34, 211, 238, .5); background: #0e1217; }
+:deep(.ops-refresh-interval > div > div > span:last-child) { color: var(--ops-text-1); }
+:deep(.ops-refresh-interval > div.opacity-50) { cursor: not-allowed; border-color: var(--ops-line); }
 .auto-refresh-toggle > span { width: .45rem; height: .45rem; border-radius: 50%; background: var(--ops-unknown); }.auto-refresh-toggle > span.is-enabled { background: var(--ops-info); }
-.ops-status-spine__countdown { position: absolute; right: auto; bottom: 0; left: 0; height: 2px; background: var(--ops-info); transition: width .95s linear; }
+.ops-status-spine__countdown { display: none; }
 .ops-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 .ops-toolbar__hint { color: var(--ops-text-3); font-family: var(--ops-mono); font-size: .67rem; }
 
@@ -3991,7 +4043,25 @@ const riskLevels = computed(() => [
 .request-id-shortcut:focus-within,
 .log-level-filter button:hover { border-color: rgba(34, 211, 238, 0.5); }
 
-@media (min-width: 1024px) { .ops-status-spine { grid-template-columns: minmax(18rem, 1.3fr) minmax(19rem, 1fr) auto; align-items: center; }.ops-status-spine__metrics { align-self: stretch; }.ops-status-spine__actions { justify-content: flex-end; } }
+.ops-time-chart { position: relative; min-height: 13rem; padding: .5rem .25rem .3rem 2.65rem; }
+.ops-time-chart__y-axis { position: absolute; top: .5rem; bottom: 1.65rem; left: 0; display: flex; width: 2.25rem; flex-direction: column; justify-content: space-between; color: #94a3b8; font-size: .6875rem; text-align: right; }
+.ops-time-chart__plot { position: relative; height: 10.75rem; }
+.ops-time-chart__grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.ops-time-chart__grid i { display: block; border-top: 1px solid rgba(148, 163, 184, .1); }
+.ops-time-chart__bars { position: absolute; inset: 0; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; align-items: end; gap: .35rem; padding: 0 .25rem; }
+.ops-time-chart__bars i { display: block; min-height: 0; border-radius: 3px 3px 0 0; background: #38bdf8; cursor: crosshair; transition: background-color .15s ease; }
+.ops-time-chart__bars i:hover { background: #22d3ee; }
+.ops-time-chart__guide { position: absolute; top: 0; bottom: 0; z-index: 2; border-left: 1px dashed rgba(148, 163, 184, .55); pointer-events: none; }
+.ops-chart-tooltip { position: absolute; top: .45rem; z-index: 3; min-width: 10rem; transform: translateX(-50%); border: 1px solid rgba(148, 163, 184, .2); border-radius: 6px; padding: .5rem .6rem; background: #11151b; color: #e5e7eb; box-shadow: none; pointer-events: none; }
+.ops-chart-tooltip time { display: block; margin-bottom: .35rem; color: #94a3b8; font-size: .6875rem; }
+.ops-chart-tooltip dl,
+.ops-chart-tooltip dl div { margin: 0; }
+.ops-chart-tooltip dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: center; }
+.ops-chart-tooltip dt { overflow: hidden; color: #94a3b8; font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
+.ops-chart-tooltip dd { margin: 0; color: #f8fafc; font-family: var(--ops-mono); font-size: .6875rem; font-weight: 600; text-align: right; white-space: nowrap; }
+.ops-time-chart__x-axis { display: flex; justify-content: space-between; margin-top: .45rem; color: #94a3b8; font-size: .6875rem; }
+
+@media (min-width: 1024px) { .ops-status-spine { grid-template-columns: minmax(18rem, 1fr) auto; align-items: center; }.ops-status-spine__actions { justify-content: flex-end; } }
 @media (prefers-reduced-motion: reduce) { .operations-dashboard *, .operations-dashboard *::before, .operations-dashboard *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
 
 .error-code-chart {
