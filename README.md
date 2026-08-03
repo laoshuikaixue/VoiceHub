@@ -752,6 +752,8 @@ VoiceHub/
 │   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       └── year-review.css    # 年度回顾样式
 │   ├── components/            # Vue组件目录
+│   │   ├── Account/           # 账号管理组件
+│   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
@@ -1347,6 +1349,7 @@ VoiceHub/
 #### 核心目录 (app/)
 
 - **`app/components/`**: Vue组件库，按功能模块组织
+  - **`Account/`**: 账号管理组件（社交账号绑定等）
   - **`Admin/`**: 管理后台组件（排期、用户、数据分析等）
   - **`Admin_Backup/`**: 管理组件备份目录
   - **`AMLL/`**: Apple Music-Like Lyrics歌词播放器组件

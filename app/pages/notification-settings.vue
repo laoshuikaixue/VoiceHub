@@ -409,40 +409,20 @@
             </div>
           </div>
         </section>
+
       </div>
     </div>
-
-    <!-- 确认对话框 -->
-    <ConfirmDialog
-      v-model:show="showConfirmDialog"
-      :loading="confirmDialog.loading"
-      :message="confirmDialog.message"
-      :title="confirmDialog.title"
-      :type="confirmDialog.type"
-      @cancel="confirmDialog.onCancel"
-      @confirm="confirmDialog.onConfirm"
-    />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import {
-  Bell,
-  Mail,
-  Link,
-  ArrowLeft,
-  Save,
-  AlertCircle,
-  Loader2,
-  Smartphone
-} from '@lucide/vue'
-import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
+import { Bell, ArrowLeft, Save, Loader2 } from '@lucide/vue'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 
-const { siteTitle, smtpEnabled, initSiteConfig } = useSiteConfig()
+const { siteTitle, initSiteConfig } = useSiteConfig()
 const { showToast } = useToast()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.notificationSettings || {})
@@ -457,7 +437,6 @@ const itemClass =
 // 页面状态
 const loading = ref(true)
 const saving = ref(false)
-const binding = ref(false)
 
 // 通知设置
 const localSettings = ref({
@@ -466,35 +445,7 @@ const localSettings = ref({
   songVotedNotify: true,
   songVotedThreshold: 5,
   systemNotify: true,
-  refreshInterval: 60,
-  meowUserId: ''
-})
-
-// MeoW 绑定相关
-const meowUserId = ref('')
-const verificationSent = ref(false)
-const verificationCode = ref('')
-const verificationCodeError = ref(false)
-
-// 邮箱绑定相关
-const userEmail = ref('')
-const emailVerified = ref(false)
-const newEmail = ref('')
-const bindingEmail = ref(false)
-const resendingEmail = ref(false)
-const unbindingEmail = ref(false)
-const emailCode = ref('')
-const emailCodeError = ref(false)
-
-// 确认对话框相关
-const showConfirmDialog = ref(false)
-const confirmDialog = ref({
-  title: '',
-  message: '',
-  type: 'warning',
-  loading: false,
-  onConfirm: () => {},
-  onCancel: () => {}
+  refreshInterval: 60
 })
 
 // 通知显示函数
@@ -519,22 +470,6 @@ onMounted(async () => {
   await loadSettings()
 })
 
-// 处理验证码输入
-const handleVerificationCodeInput = (event) => {
-  const value = event.target.value.replace(/[^0-9]/g, '')
-  verificationCode.value = value
-  if (verificationCodeError.value) {
-    verificationCodeError.value = false
-  }
-}
-
-// 处理验证码输入键盘事件
-const handleVerificationCodeKeydown = (event) => {
-  if (event.key === 'Enter' && verificationCode.value.length === 6) {
-    verifyAndBind()
-  }
-}
-
 // 加载设置
 const loadSettings = async () => {
   try {
@@ -548,275 +483,14 @@ const loadSettings = async () => {
         songVotedNotify: response.data.songVotedNotify || false,
         songVotedThreshold: response.data.songVotedThreshold || 5,
         systemNotify: response.data.systemNotify || true,
-        refreshInterval: response.data.refreshInterval || 60,
-        meowUserId: response.data.meowUserId || ''
+        refreshInterval: response.data.refreshInterval || 60
       }
-
-      userEmail.value = response.data.userEmail || ''
-      emailVerified.value = response.data.emailVerified || false
     }
   } catch (err) {
     console.error(locale.value.loadFailedLog, err)
     showNotification(locale.value.loadFailed, 'error')
   } finally {
     loading.value = false
-  }
-}
-
-// 发送验证码
-const sendVerificationCode = async () => {
-  if (!meowUserId.value.trim()) {
-    showNotification(locale.value.meowIdRequired, 'error')
-    return
-  }
-
-  try {
-    binding.value = true
-    const response = await $fetch('/api/meow/bind', {
-      method: 'POST',
-      body: {
-        action: 'send_verification',
-        meowId: meowUserId.value.trim()
-      }
-    })
-
-    if (response.success) {
-      verificationSent.value = true
-      showNotification(locale.value.meowCodeSent, 'success')
-    } else {
-      showNotification(response.message || locale.value.sendCodeFailed, 'error')
-    }
-  } catch (err) {
-    showNotification(err.data?.message || locale.value.sendCodeFailed, 'error')
-  } finally {
-    binding.value = false
-  }
-}
-
-// 验证并绑定
-const verifyAndBind = async () => {
-  if (!verificationCode.value || verificationCode.value.length !== 6) {
-    showNotification(locale.value.codeRequired, 'error')
-    verificationCodeError.value = true
-    return
-  }
-
-  try {
-    binding.value = true
-    const response = await $fetch('/api/meow/bind', {
-      method: 'POST',
-      body: {
-        action: 'verify_and_bind',
-        meowId: meowUserId.value.trim(),
-        verificationCode: verificationCode.value
-      }
-    })
-
-    if (response.success) {
-      localSettings.value.meowUserId = meowUserId.value.trim()
-      meowUserId.value = ''
-      verificationCode.value = ''
-      verificationSent.value = false
-      showNotification(locale.value.meowBindSuccess, 'success')
-    } else {
-      showNotification(response.message || locale.value.verifyFailed, 'error')
-      verificationCodeError.value = true
-    }
-  } catch (err) {
-    showNotification(err.data?.message || locale.value.verifyFailed, 'error')
-    verificationCodeError.value = true
-  } finally {
-    binding.value = false
-  }
-}
-
-// 取消验证
-const cancelVerification = () => {
-  verificationSent.value = false
-  verificationCode.value = ''
-  meowUserId.value = ''
-}
-
-// 显示解绑确认对话框
-const showUnbindConfirm = () => {
-  confirmDialog.value = {
-    title: locale.value.unbindMeowTitle,
-    message: locale.value.unbindMeowMessage,
-    type: 'danger',
-    loading: false,
-    onConfirm: performUnbind,
-    onCancel: () => {
-      showConfirmDialog.value = false
-    }
-  }
-  showConfirmDialog.value = true
-}
-
-// 执行解绑操作
-const performUnbind = async () => {
-  try {
-    confirmDialog.value.loading = true
-    const response = await $fetch('/api/meow/unbind', { method: 'POST' })
-
-    if (response.success) {
-      localSettings.value.meowUserId = ''
-      showNotification(locale.value.meowUnbound, 'success')
-      showConfirmDialog.value = false
-    } else {
-      showNotification(response.message || locale.value.unbindFailed, 'error')
-    }
-  } catch (err) {
-    showNotification(err.data?.message || locale.value.unbindFailed, 'error')
-  } finally {
-    confirmDialog.value.loading = false
-  }
-}
-
-// 邮箱绑定相关方法
-const bindEmail = async () => {
-  if (!newEmail.value) {
-    showNotification(locale.value.emailRequired, 'error')
-    return
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(newEmail.value)) {
-    showNotification(locale.value.emailInvalid, 'error')
-    return
-  }
-
-  bindingEmail.value = true
-  try {
-    const response = await $fetch('/api/user/email/bind', {
-      method: 'POST',
-      body: { email: newEmail.value }
-    })
-
-    if (response.success) {
-      userEmail.value = newEmail.value
-      emailVerified.value = false
-      newEmail.value = ''
-      showNotification(locale.value.emailCodeSent, 'success')
-    } else {
-      showNotification(response.message || locale.value.bindFailed, 'error')
-    }
-  } catch (err) {
-    showNotification(err.data?.message || locale.value.bindFailed, 'error')
-  } finally {
-    bindingEmail.value = false
-  }
-}
-
-const handleEmailCodeInput = (event) => {
-  const value = event.target.value.replace(/[^0-9]/g, '')
-  emailCode.value = value
-  if (emailCodeError.value) emailCodeError.value = false
-}
-
-const handleEmailCodeKeydown = (event) => {
-  if (event.key === 'Enter' && emailCode.value.length === 6) verifyEmailCode()
-}
-
-const verifyEmailCode = async () => {
-  if (emailCode.value.length !== 6) {
-    emailCodeError.value = true
-    showNotification(locale.value.codeRequired, 'error')
-    return
-  }
-  try {
-    bindingEmail.value = true
-    const response = await $fetch('/api/user/email/verify-code', {
-      method: 'POST',
-      body: { email: userEmail.value, code: emailCode.value }
-    })
-    if (response.success) {
-      emailVerified.value = true
-      emailCode.value = ''
-      showNotification(locale.value.emailVerifySuccess, 'success')
-    } else {
-      emailCodeError.value = true
-      showNotification(response.message || locale.value.verifyFailed, 'error')
-    }
-  } catch (err) {
-    emailCodeError.value = true
-    showNotification(err.data?.message || locale.value.verifyFailed, 'error')
-  } finally {
-    bindingEmail.value = false
-  }
-}
-
-const changeEmail = () => {
-  confirmDialog.value = {
-    title: locale.value.changeEmailTitle,
-    message: locale.value.changeEmailMessage,
-    type: 'warning',
-    loading: false,
-    onConfirm: performChangeEmail,
-    onCancel: () => {
-      showConfirmDialog.value = false
-    }
-  }
-  showConfirmDialog.value = true
-}
-
-const performChangeEmail = () => {
-  userEmail.value = ''
-  emailVerified.value = false
-  newEmail.value = ''
-  emailCode.value = ''
-  emailCodeError.value = false
-  showConfirmDialog.value = false
-  showNotification(locale.value.emailCleared, 'info')
-}
-
-const resendVerificationEmail = async () => {
-  try {
-    resendingEmail.value = true
-    const response = await $fetch('/api/user/email/resend-verification', { method: 'POST' })
-    if (response.success) {
-      emailCode.value = ''
-      emailCodeError.value = false
-      showNotification(locale.value.emailCodeResent, 'success')
-    } else {
-      showNotification(response.message || locale.value.sendFailed, 'error')
-    }
-  } catch (err) {
-    showNotification(err.data?.message || locale.value.sendFailed, 'error')
-  } finally {
-    resendingEmail.value = false
-  }
-}
-
-const unbindEmail = async () => {
-  confirmDialog.value = {
-    title: locale.value.unbindEmailTitle,
-    message: locale.value.unbindEmailMessage,
-    type: 'warning',
-    loading: false,
-    onConfirm: performEmailUnbind,
-    onCancel: () => {
-      showConfirmDialog.value = false
-    }
-  }
-  showConfirmDialog.value = true
-}
-
-const performEmailUnbind = async () => {
-  try {
-    confirmDialog.value.loading = true
-    const response = await $fetch('/api/user/email/unbind', { method: 'POST' })
-    if (response.success) {
-      userEmail.value = ''
-      emailVerified.value = false
-      showNotification(locale.value.emailUnbound, 'success')
-      showConfirmDialog.value = false
-    } else {
-      showNotification(response.message || locale.value.unbindFailed, 'error')
-    }
-  } catch (err) {
-    showNotification(err.data?.message || locale.value.unbindFailed, 'error')
-  } finally {
-    confirmDialog.value.loading = false
   }
 }
 

@@ -202,6 +202,14 @@
                           >
                             <Icon name="repeat" :size="14" />
                           </span>
+                          <!-- 点歌券标识 -->
+                          <span
+                            v-if="schedule.song.usedCardCode"
+                            class="card-code-tag"
+                            :title="locale.cardCodeUsed"
+                          >
+                            {{ locale.cardCodeUsed }}
+                          </span>
                           <button
                             v-if="schedule.song?.hasSubmissionNote && schedule.song?.submissionNote"
                             class="submission-note-trigger"
@@ -2890,6 +2898,21 @@ const vRipple = {
 .replay-badge:hover {
   background: var(--brand-blue-25);
   border-color: var(--brand-blue-50);
+}
+
+/* 点歌券标识 */
+.card-code-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 4px;
+  color: #fcd34d;
+  font-size: 0.7rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .song-meta {
