@@ -765,6 +765,8 @@ VoiceHub/
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
 │   │   │   ├── OperationsDashboard.vue # 运维监控面板
+│   │   │   ├── Ops/                     # 运维看板通用展示组件
+│   │   │   │   └── OpsPanel.vue          # 统一状态面板壳
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
