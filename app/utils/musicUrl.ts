@@ -55,8 +55,9 @@ const xinghaiRequestTimes: number[] = []
  * 通过星海音源获取咪咕播放链接
  */
 const miguQuality = {
-  //maps: { 1: 'PQ', 2: 'HQ', 3: 'SQ' },
-  upgradeUrl(url: string, flag: number){
+  // 音质数值 → 服务端 toneFlag 映射
+  flagMap: { 1: 'PQ', 2: 'HQ', 3: 'SQ', 4: 'ZQ24' } as Record<number, string>,
+  upgradeUrl(url: string, flag: number) {
     url = decodeURIComponent(url);
     switch (flag) {
       case 2: //HQ
@@ -71,12 +72,14 @@ const miguQuality = {
     }
   }
 }
+
 const fetchXinghaiMiguUrl = async (
   contentId: string,
   meta?: MusicTrackMeta,
   miguFlag?: number
 ): Promise<string | null> => {
-  const cacheKey = `migu:${contentId}`
+  // 缓存需区分音质，避免不同音质请求互相命中返回错误音质的链接
+  const cacheKey = `migu:${contentId}:${miguFlag || 1}`
   const cached = xinghaiUrlCache.get(cacheKey)
   if (cached && cached.expireAt > Date.now()) {
     return cached.url
@@ -145,6 +148,7 @@ const fetchXinghaiMiguUrl = async (
   })
   return promise
 }
+
 const musicUrlSourceCache = new Map<string, string>()
 
 const normalizeCacheUrl = (url: string) => {
@@ -375,16 +379,17 @@ export async function getMusicUrlResult(
     }
 
     try {
+      // 服务端以 PQ 取链后按 toneFlag 升级音质路径，客户端不再二次处理
       const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
         params: {
           contentId: String(musicId),
-          toneFlag: 'PQ' //PQ 获取基础音源
+          toneFlag: miguQuality.flagMap[quality as number] || 'PQ'
         },
         timeout: 10000
       })
 
       if (miguResponse?.success && miguResponse?.url) {
-        let miguUrl = miguQuality.upgradeUrl(miguResponse.url, quality)
+        let miguUrl = miguResponse.url
         // 与星海分支保持一致，避免 http 链接在 https 部署下被混合内容策略拦截
         if (miguUrl.startsWith('http://')) {
           miguUrl = miguUrl.replace('http://', 'https://')

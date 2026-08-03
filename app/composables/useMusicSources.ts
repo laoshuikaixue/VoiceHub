@@ -1832,7 +1832,8 @@ export const useMusicSources = () => {
             const result = await getBilibiliTrackUrl(idParam, options?.bilibiliCid)
             url = result.url
           } else if (source.id === 'migu') {
-            const miguQualityFlag = quality === 1 ? 'PQ' : quality === 2 ? 'HQ' : 'SQ'
+            const miguQualityFlag =
+              quality === 2 ? 'HQ' : quality === 3 ? 'SQ' : quality === 4 ? 'ZQ24' : 'PQ'
             try {
               // 服务器位于海外时咪咕官方接口不可用，交由上层使用星海音源
               if (isServerInChina.value === null) {
@@ -1841,7 +1842,7 @@ export const useMusicSources = () => {
               if (isServerInChina.value === false) {
                 throw new Error('服务器位于海外，咪咕播放链接改用第三方音源')
               }
-              // 咪咕匿名仅提供 128k，固定使用 PQ
+              // 服务端以 PQ 取链后按 toneFlag 升级音质路径
               const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
                 params: {
                   contentId: idParam,
