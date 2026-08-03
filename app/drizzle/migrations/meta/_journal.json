@@ -281,6 +281,13 @@
       "when": 1785738600000,
       "tag": "20260803143000_add_operations_dependency_buckets",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1785763825061,
+      "tag": "20260803235900_add_admin_operation_logs",
+      "breakpoints": true
     }
   ]
 }

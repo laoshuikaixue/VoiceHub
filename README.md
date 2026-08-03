@@ -1259,6 +1259,7 @@ VoiceHub/
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   └── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   ├── services/           # 业务服务层
+│   │   ├── adminOperationLogService.ts # 管理操作审计写入与脱敏服务
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务

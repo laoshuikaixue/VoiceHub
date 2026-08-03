@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -306,6 +306,31 @@ export const apiLogs = pgTable('api_logs', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   errorMessage: text('error_message'),
 });
+
+// 管理操作审计日志表：仅追加，不提供更新或删除能力
+export const adminOperationLogs = pgTable('admin_operation_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  actorId: integer('actor_id').notNull(),
+  actorRole: varchar('actor_role', { length: 32 }).notNull(),
+  action: varchar('action', { length: 100 }).notNull(),
+  targetType: varchar('target_type', { length: 64 }).notNull(),
+  targetId: text('target_id'),
+  targetLabel: varchar('target_label', { length: 255 }),
+  result: varchar('result', { length: 16 }).notNull(),
+  summary: text('summary').notNull(),
+  failureCode: varchar('failure_code', { length: 100 }),
+  changes: jsonb('changes').$type<Record<string, unknown> | null>(),
+  ipAddress: text('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  requestId: varchar('request_id', { length: 128 }),
+}, (table) => [
+  index('admin_operation_logs_created_at_idx').on(table.createdAt),
+  index('admin_operation_logs_actor_created_at_idx').on(table.actorId, table.createdAt),
+  index('admin_operation_logs_action_created_at_idx').on(table.action, table.createdAt),
+  index('admin_operation_logs_target_created_at_idx').on(table.targetType, table.targetId, table.createdAt),
+  index('admin_operation_logs_request_id_idx').on(table.requestId),
+]);
 
 // 用户状态变更日志表
 export const userStatusLogs = pgTable('user_status_logs', {
