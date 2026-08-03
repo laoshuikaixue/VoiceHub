@@ -740,17 +740,20 @@ VoiceHub/
 │   │   └── css/               # CSS样式文件
 │   │       ├── components.css      # 组件样式
 │   │       ├── lyric-player.module.css  # 歌词播放器样式
-│   │       ├── main.css           # 主样式文件
+│   │       ├── main.css           # 主样式文件（含主题引入）
 │   │       ├── markdown.css       # Markdown样式
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
-│   │       ├── theme-dark.css     # 暗色主题设计变量
-│   │       ├── theme-light.css    # 亮色主题设计变量
-│   │       ├── theme-protection.css # 主题保护样式
+│   │       ├── theme-protection.css # 主题保护样式（浏览器兼容性）
 │   │       ├── transitions.css    # 过渡动画样式
 │   │       ├── variables.css      # 全局基础样式与媒体查询
-│   │       └── year-review.css    # 年度回顾样式
+│   │       ├── year-review.css    # 年度回顾样式
+│   │       └── themes/            # 主题目录
+│   │           ├── light/
+│   │           │   └── index.css  # 亮色主题设计变量
+│   │           └── dark/
+│   │               └── index.css  # 深色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
@@ -1393,6 +1396,35 @@ VoiceHub/
 
 - **`app/public/`**: 静态文件
 - **`app/public/images/`**: 图片资源，包含Logo和图标文件
+
+### 主题系统
+
+VoiceHub 采用 CSS 变量驱动的主题架构，支持深色/亮色两种主题模式。主题文件按功能模块组织在 `app/assets/css/themes/` 目录下：
+
+#### 目录结构
+
+```
+app/assets/css/themes/
+├── dark/
+│   └── index.css           # 深色主题设计变量（:root[data-theme="dark"]）
+└── light/
+    └── index.css           # 亮色主题设计变量（:root[data-theme="light"]）
+```
+
+#### 架构说明
+
+- **CSS 变量分离**：每个主题在独立的 `index.css` 文件中定义 `:root[data-theme="主题名"]` 选择器，包含所有设计变量（颜色、背景、文字、边框等）
+- **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入 `themes/dark/index.css` 和 `themes/light/index.css`，亮色主题覆盖深色主题
+- **切换机制**：通过 `useTheme()` composable 和 `theme.client.ts` 插件实现主题切换与 localStorage 持久化
+
+#### 自定义主题
+
+如需新增自定义主题：
+
+1. 在 `app/assets/css/themes/` 下创建新主题文件夹（如 `app/assets/css/themes/ocean/`）
+2. 创建 `index.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
+3. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
+5. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
 
 ## 使用说明
 
