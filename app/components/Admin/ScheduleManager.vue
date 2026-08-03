@@ -2505,6 +2505,8 @@ const handleReturnToDraggable = async (event) => {
         // 如果是本地新增的，直接移除；如果是已存在的，需要记录删除操作（这里简化为本地移除，保存时处理）
         if (removed.song) {
           scheduledSongIds.value.delete(removed.song.id)
+          // 同步清除歌曲列表中的已排期标记，否则已发布歌曲移出后会从待排列表中消失
+          setSongScheduledFlag(removed.song.id, false)
         }
 
         // 重新排序
