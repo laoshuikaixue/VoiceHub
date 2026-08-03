@@ -997,7 +997,10 @@ export const pages = {
         tencentSq: { label: 'SQ无损', description: '无损音质，文件较大' },
         tencentHiRes: { label: 'Hi-Res', description: '高解析度音质' },
         tencentMaster: { label: '臻品母带2.0', description: '最高音质' },
-        bilibiliDefault: { label: '默认', description: '默认音质' }
+        bilibiliDefault: { label: '默认', description: '默认音质' },
+        miguHq: { label: 'HQ高音质', description: '高品质音乐体验' },
+        miguSq: { label: 'SQ无损', description: '无损音质，文件较大' },
+        miguZq24: { label: 'ZQ24无损', description: '高解析度音质，文件更大，需要更多流量' }
       }
     },
     bilibiliIframe: {
