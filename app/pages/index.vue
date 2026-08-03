@@ -14,7 +14,7 @@
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" :src="logo" />
+            <img alt="VoiceHub Logo" class="logo-image" :src="getLogo()" />
           </NuxtLink>
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider-container">
@@ -718,8 +718,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-
-import logo from '~~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
@@ -730,6 +728,7 @@ import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 import { useTheme } from '~/composables/useTheme'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 // 获取运行时配�?
 const config = useRuntimeConfig()
@@ -755,7 +754,7 @@ const {
 const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 const auth = useAuth()
-
+const { getLogo } = useThemeImage()
 const isClientAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
 const isAdmin = computed(() => auth?.isAdmin?.value || false)
 const user = computed(() => auth?.user?.value || null)

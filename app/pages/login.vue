@@ -29,8 +29,8 @@
 <script setup>
 import { onMounted, computed, ref } from 'vue'
 import LoginForm from '~/components/Auth/LoginForm.vue'
-import logo from '~~/public/images/logo.svg'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 // 使用站点配置
 const {
@@ -43,10 +43,11 @@ const {
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.login || {})
 // 主品牌Logo优先使用SVG，其次使用站点配置中非ICO的地址
+const { getLogo } = useThemeImage()
 const brandLogoSrc = computed(() => {
   const url = logoUrl.value
   if (url && !url.endsWith('.ico')) return url
-  return logo
+  return getLogo()
 })
 
 // 在组件挂载后初始化站点配置

@@ -5,7 +5,7 @@
       <div class="info-section">
         <div class="info-content">
           <div class="logo-section">
-            <img alt="VoiceHub Logo" class="brand-logo" :src="logo" />
+            <img alt="VoiceHub Logo" class="brand-logo" :src="getLogo()" />
             <h1 v-if="siteTitle" class="brand-title">{{ siteTitle }}</h1>
           </div>
 
@@ -97,13 +97,13 @@
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import Icon from '~/components/UI/Icon.vue'
-import { computed } from 'vue'
-import logo from '~~/public/images/logo.svg'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const { changePassword: locale } = useLocale()
+const { getLogo } = useThemeImage()
 
 const auth = useAuth()
 const router = useRouter()

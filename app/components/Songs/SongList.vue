@@ -303,7 +303,7 @@
                     class="like-button"
                     @click.stop="handleVote(song)"
                   >
-                    <img :alt="locale.likeAlt" class="like-icon" :src="thumbsUp" >
+                    <img :alt="locale.likeAlt" class="like-icon" :src="getThumbsUpIcon()" >
                   </button>
                 </div>
               </div>
@@ -410,12 +410,13 @@ import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import { useLocale } from '~/utils/locale'
-import thumbsUp from '~~/public/images/thumbs-up.svg'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 
+const { getThumbsUpIcon } = useThemeImage()
 const props = defineProps({
   songs: {
     type: Array,

@@ -12,7 +12,7 @@
         <NuxtLink to="/" class="flex items-center gap-2.5 group">
           <!-- Logo 图标 -->
           <div class="flex-shrink-0 group-hover:scale-110 transition-all duration-300">
-            <img :src="logo" alt="VoiceHub Logo" class="w-8 h-8 object-contain" >
+            <img :src="getLogoPng()" alt="VoiceHub Logo" class="w-8 h-8 object-contain" >
           </div>
           <!-- 品牌文字 -->
           <div class="flex flex-col justify-center">
@@ -135,10 +135,11 @@ import {
   Lock,
   Ticket
 } from '@lucide/vue'
-import logo from '~~/public/images/logo.png'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 const avatarError = ref(false)
+const { getLogoPng } = useThemeImage()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.sidebar || {})
 

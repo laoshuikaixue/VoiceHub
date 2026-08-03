@@ -20,7 +20,7 @@ const siteDescription =
   customSeoConfig.description ||
   process.env.NUXT_PUBLIC_SITE_DESCRIPTION ||
   '校园广播站点歌系统 - 让你的声音被听见'
-const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/images/logo.png'
+const siteLogo = customSeoConfig.logo || process.env.NUXT_PUBLIC_SITE_LOGO || '/themes/light/logo.svg'
 
 const readNumberEnv = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
@@ -765,13 +765,13 @@ export default defineNuxtConfig({
       start_url: '/',
       icons: [
         {
-          src: '/images/logo.png',
+          src: '/themes/light/logo.png',
           sizes: '128x128',
           type: 'image/png',
           purpose: 'any'
         },
         {
-          src: '/images/logo-144.png',
+          src: '/themes/light/logo-144.png',
           sizes: '144x144',
           type: 'image/png',
           purpose: 'any'

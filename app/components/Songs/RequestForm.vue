@@ -802,7 +802,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="searchIcon" >
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" >
                 </div>
               </div>
             </Transition>
@@ -1362,9 +1362,9 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import searchIcon from '~~/public/images/search.svg'
 import { X, Lock, Loader2, Check, Edit3, Music, Play } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
+import { useThemeImage } from '~/composables/useThemeImage'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -1403,6 +1403,7 @@ const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const { t: callLocale } = useLocaleText(locale)
 const { localize: localizeServerError } = useServerErrors()
+const { getSearchIcon } = useThemeImage()
 
 // 站点配置
 const {

@@ -438,13 +438,14 @@ import { useLocale } from '~/utils/locale'
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
 import ScheduleTablePrint from './ScheduleTablePrint.vue'
-import logoPng from '~~/public/images/logo.png'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 // 学期管理
 import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.schedulePrinter || {})
+const { getLogoPng } = useThemeImage()
 const { format: formatLocale } = useLocaleText(locale)
 const generatedAtText = computed(() => {
   const nowText = new Date().toLocaleString(currentLocale.value)
@@ -468,7 +469,7 @@ const { siteTitle, schoolLogoPrintUrl, schoolLogoPrintDisplayUrl, initSiteConfig
 const config = useRuntimeConfig()
 
 // Logo URL处理
-const logoUrl = computed(() => logoPng)
+const logoUrl = computed(() => getLogoPng())
 
 // 响应式数据
 const schedules = ref([])
