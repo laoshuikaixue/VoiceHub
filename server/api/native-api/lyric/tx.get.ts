@@ -1,5 +1,6 @@
 import { resolveQqNativeLyric, resolveQqSdkLyric } from '~~/server/utils/qq_music_sdk'
 import { getTxSongPlayableInfo } from '~~/server/utils/native_tx'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -74,7 +75,7 @@ export default defineEventHandler(async (event) => {
   const params = new URLSearchParams({
     format: 'json',
     outCharset: 'utf-8',
-    pcachetime: String(Date.now()),
+    pcachetime: String(getServerTimestamp()),
     loginUin: '0',
     ...(resolvedSongmid ? { songmid: resolvedSongmid } : {}),
     ...(resolvedSongId ? { songid: resolvedSongId } : {})

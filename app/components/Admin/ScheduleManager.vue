@@ -608,7 +608,7 @@
                   'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
                   dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
                   schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '',
-                  schedule.song && schedule.song.cardCodeId
+                  schedule.song && (schedule.song.cardCodeId || schedule.song.usedCardCode)
                     ? 'border-amber-500/30 bg-amber-500/5'
                     : ''
                 ]"
@@ -695,7 +695,7 @@
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
                       <span
-                        v-if="schedule.song.cardCodeId"
+                        v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
@@ -2355,6 +2355,7 @@ const dropToSequence = async (event) => {
       }
 
       scheduledSongIds.value.add(songId)
+      setSongScheduledFlag(songId, true)
       localScheduledSongs.value.push(newSchedule)
       hasChanges.value = true
     }
@@ -2415,6 +2416,7 @@ const dropReorder = async (event, dropIndex) => {
       }
 
       scheduledSongIds.value.add(songId)
+      setSongScheduledFlag(songId, true)
 
       const newOrder = [...localScheduledSongs.value]
       newOrder.splice(dropIndex, 0, newSchedule)
@@ -2433,6 +2435,12 @@ const dropReorder = async (event, dropIndex) => {
   draggedSchedule.value = null
 }
 
+// 同步歌曲列表中对应歌曲的已排期标记（排期与歌曲列表中的歌曲是不同引用）
+const setSongScheduledFlag = (songId, scheduled) => {
+  const songInList = songs.value.find((s) => s.id === songId)
+  if (songInList) songInList.scheduled = scheduled
+}
+
 // 添加歌曲到排期（点击方式）
 const addSongToSchedule = (song) => {
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
@@ -2449,6 +2457,7 @@ const addSongToSchedule = (song) => {
   }
 
   scheduledSongIds.value.add(song.id)
+  setSongScheduledFlag(song.id, true)
   localScheduledSongs.value.push(newSchedule)
   hasChanges.value = true
 
@@ -2464,6 +2473,7 @@ const removeSongFromSchedule = (schedule) => {
 
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
+      setSongScheduledFlag(removed.song.id, false)
     }
 
     // 重新排序
@@ -2495,6 +2505,8 @@ const handleReturnToDraggable = async (event) => {
         // 如果是本地新增的，直接移除；如果是已存在的，需要记录删除操作（这里简化为本地移除，保存时处理）
         if (removed.song) {
           scheduledSongIds.value.delete(removed.song.id)
+          // 同步清除歌曲列表中的已排期标记，否则已发布歌曲移出后会从待排列表中消失
+          setSongScheduledFlag(removed.song.id, false)
         }
 
         // 重新排序
@@ -3175,6 +3187,7 @@ const handleTouchDropToSequence = async (targetElement) => {
   }
 
   scheduledSongIds.value.add(song.id)
+  setSongScheduledFlag(song.id, true)
   localScheduledSongs.value.splice(insertIndex, 0, newSchedule)
 
   // 更新序列号
@@ -3214,6 +3227,7 @@ const handleTouchReturnToDraggable = async () => {
 
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
+      setSongScheduledFlag(removed.song.id, false)
     }
 
     // 重新排序

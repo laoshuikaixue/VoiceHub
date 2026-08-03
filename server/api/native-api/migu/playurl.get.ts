@@ -1,4 +1,67 @@
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+// 将 PQ 基础链接的路径替换为高音质资源路径
+function upgradeUrl(url: string, quality: string) {
+  let upgraded = url
+  switch (quality) {
+    case 'HQ':
+      upgraded = url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
+      break
+    case 'SQ':
+      upgraded = url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac').replace('.mp3', '.flac')
+      break
+    case 'ZQ':
+    case 'ZQ24':
+      upgraded = url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac_24bit').replace('.mp3', '.flac')
+      break
+    case 'PQ':
+    default:
+      return url
+  }
+  // 路径片段未命中时替换不生效，实际仍为基础音质，记录日志便于排查
+  if (upgraded === url) {
+    console.warn(`[migu/playurl.get] 音质升级未命中（目标 ${quality}），回退为基础音质链接`)
+  }
+  return upgraded
+}
+
+// 高音质资源可能缺失（404），按降级链逐级回退：ZQ24 → SQ → HQ → PQ
+const QUALITY_FALLBACK_CHAIN: Record<string, string[]> = {
+  ZQ24: ['ZQ24', 'SQ', 'HQ', 'PQ'],
+  ZQ: ['ZQ24', 'SQ', 'HQ', 'PQ'],
+  SQ: ['SQ', 'HQ', 'PQ'],
+  HQ: ['HQ', 'PQ'],
+  PQ: ['PQ']
+}
+
+/**
+ * HEAD 探测链接可用性，探测失败时保守视为可用，避免误降级
+ */
+async function isUrlAvailable(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+    return res.ok
+  } catch {
+    return true
+  }
+}
+
+/**
+ * 按降级链逐级升级并探测，返回第一个可用的链接与实际音质
+ */
+async function resolveAvailableUrl(baseUrl: string, toneFlag: string): Promise<{ url: string; quality: string }> {
+  const chain = QUALITY_FALLBACK_CHAIN[toneFlag] || ['PQ']
+  for (const level of chain) {
+    const candidate = upgradeUrl(baseUrl, level)
+    // PQ 为官方接口直出链接，无需探测
+    if (level === 'PQ' || (await isUrlAvailable(candidate))) {
+      if (level !== toneFlag) {
+        console.warn(`[migu/playurl.get] ${toneFlag} 音质链接不可用，已降级为 ${level}`)
+      }
+      return { url: candidate, quality: level }
+    }
+  }
+  return { url: baseUrl, quality: 'PQ' }
+}
 
 function strToUtf8Bytes(str: string): Uint8Array {
   return new TextEncoder().encode(str)
@@ -37,7 +100,9 @@ async function mr(ab: ArrayBuffer): Promise<any> {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const contentId = query.contentId as string;
-  const toneFlag = encodeURIComponent((query.toneFlag as string) || 'PQ');
+  // 白名单校验，非法值回退为基础音质
+  const VALID_TONE_FLAGS = ['PQ', 'HQ', 'SQ', 'ZQ', 'ZQ24']
+  const toneFlag = VALID_TONE_FLAGS.includes(query.toneFlag as string) ? (query.toneFlag as string) : 'PQ';
 
   if (!contentId) throw createError({ statusCode: 400, message: 'Missing contentId' });
   const startedAt = Date.now()
@@ -50,7 +115,8 @@ export default defineEventHandler(async (event) => {
       'location-data': '30.6698676660,104.1229614820',
       'location-info': '',
     }, baseUrl = 'http://c.musicapp.migu.cn', strategyU = '/listen-url/h5',
-    params = `contentId=${contentId}&copyrightId=&resourceType=2&netType=01&toneFlag=${toneFlag}&scene=&lowerQualityContentId=${contentId}`;
+    // 匿名请求上游仅提供基础音质，固定以 PQ 取链后再本地升级路径
+    params = `contentId=${contentId}&copyrightId=&resourceType=2&netType=01&toneFlag=PQ&scene=&lowerQualityContentId=${contentId}`;
     const res = await fetch(
       `${baseUrl}/strategy${strategyU}/v2.4?${params}`
       ,{headers}
@@ -58,9 +124,7 @@ export default defineEventHandler(async (event) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
     const ab = await res.arrayBuffer(), data = await mr(ab);
-    // 保留完整 URL（含 Tim/Key/playSessionId 签名参数），并统一为 https 避免混合内容拦截
-    const url = (data?.data?.url || '').replace(/^http:\/\//, 'https://')
-
+    let url = decodeURIComponent(data?.data?.url ?? '');
     if (!url) {
       recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: '播放链接为空' })
       return {
@@ -69,11 +133,16 @@ export default defineEventHandler(async (event) => {
         source: 'migu'
       }
     }
+    // 移除查询参数后统一为 https 避免混合内容拦截，再按降级链升级并探测可用性
+    url = (url.split('?')[0] as string).replace(/^http:\/\//, 'https://');
+    const { url: finalUrl, quality: actualQuality } = await resolveAvailableUrl(url, toneFlag)
 
     recordDependencyCall('migu', { success: true, durationMs: Date.now() - startedAt })
     return {
       success: true,
-      url,
+      url: finalUrl,
+      // 实际提供的音质（高音质资源缺失时会低于请求值）
+      quality: actualQuality,
       source: 'migu'
     }
   } catch (err: any) {
