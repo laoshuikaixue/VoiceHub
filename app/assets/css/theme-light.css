@@ -207,7 +207,7 @@
 --input-shadow-focus: 0 0 0 3px var(--primary-light);
 
 /* 模态框颜色 */
---modal-backdrop: rgba(0, 0, 0, 0.25);
+--modal-backdrop: rgba(0, 0, 0, 0.45);
 --modal-bg: var(--bg-secondary);
 --modal-border: var(--border-secondary);
 --modal-header-border: var(--border-secondary);
