@@ -350,6 +350,11 @@
 --schedule-list-title-shadow: rgba(0, 179, 248, 0.3);
 --schedule-list-title-shadow-sm: rgba(0, 179, 248, 0.2);
 
+/* 用途化变量 — 点歌券标识（CardCodeTag） */
+--card-code-bg: rgba(245, 158, 11, 0.1);
+--card-code-border: rgba(245, 158, 11, 0.25);
+--card-code-text: #d97706;
+
 /* 用途化变量 — 认证模块（Auth） */
 --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
 

@@ -2905,10 +2905,10 @@ const vRipple = {
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--card-code-bg);
+  border: 1px solid var(--card-code-border);
   border-radius: 4px;
-  color: #fcd34d;
+  color: var(--card-code-text);
   font-size: 0.7rem;
   font-weight: 500;
   flex-shrink: 0;

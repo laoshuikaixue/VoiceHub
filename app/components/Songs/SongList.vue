@@ -2184,11 +2184,11 @@ const vRipple = {
   display: inline-flex;
   align-items: center;
   padding: 0.15rem 0.4rem;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--card-code-bg);
+  border: 1px solid var(--card-code-border);
   border-radius: 4px;
   font-size: 0.7rem;
-  color: #fcd34d;
+  color: var(--card-code-text);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;
