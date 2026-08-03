@@ -18,7 +18,12 @@ export const QUALITY_OPTIONS = {
     { value: 14, key: 'tencentMaster' }
   ],
   bilibili: [{ value: 1, key: 'bilibiliDefault' }],
-  migu: [{ value: 1, key: 'standard' }]
+  migu: [
+    { value: 1, key: 'standard' },
+    { value: 2, key: 'miguHq' },
+    { value: 3, key: 'miguSq' },
+    { value: 4, key: 'miguZq24' },
+  ]
 }
 
 // 默认音质设置
