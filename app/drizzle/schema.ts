@@ -680,3 +680,23 @@ export const operationsMetricBuckets = pgTable('operations_metric_buckets', {
   unique('operations_metric_buckets_instance_bucket_unique').on(table.bucketStart, table.instanceId),
   index('operations_metric_buckets_bucket_start_idx').on(table.bucketStart)
 ]);
+
+// 按音乐源聚合的分钟级调用指标，避免将用户、歌曲等高基数字段写入监控表。
+export const operationsDependencyBuckets = pgTable('operations_dependency_buckets', {
+  bucketStart: timestamp('bucket_start', { withTimezone: true }).notNull(),
+  instanceId: varchar('instance_id', { length: 128 }).notNull(),
+  source: varchar('source', { length: 32 }).notNull(),
+  callCount: integer('call_count').default(0).notNull(),
+  successCount: integer('success_count').default(0).notNull(),
+  emptyResultCount: integer('empty_result_count').default(0).notNull(),
+  semanticFailureCount: integer('semantic_failure_count').default(0).notNull(),
+  timeoutCount: integer('timeout_count').default(0).notNull(),
+  retryCount: integer('retry_count').default(0).notNull(),
+  fallbackCount: integer('fallback_count').default(0).notNull(),
+  totalDurationMs: integer('total_duration_ms').default(0).notNull(),
+  maxDurationMs: integer('max_duration_ms').default(0).notNull()
+}, (table) => [
+  unique('operations_dependency_buckets_instance_source_bucket_unique').on(table.bucketStart, table.instanceId, table.source),
+  index('operations_dependency_buckets_bucket_start_idx').on(table.bucketStart),
+  index('operations_dependency_buckets_source_bucket_start_idx').on(table.source, table.bucketStart)
+]);

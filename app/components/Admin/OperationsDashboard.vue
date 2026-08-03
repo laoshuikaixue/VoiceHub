@@ -81,8 +81,13 @@
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-7 xl:grid-cols-3">
           <div v-for="item in overviewSignals" :key="item.label" class="ops-metric-item ops-metric-item--overview">
             <div class="ops-metric-item__head"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="ops-metric-item__label">{{ item.label }}</span></div>
-            <strong class="ops-metric-item__value" :class="{ 'metric-value--compact': item.compact }">{{ item.value }}</strong>
-            <p class="ops-metric-item__detail">{{ item.detail }}</p>
+            <div v-if="item.memoryRows" class="ops-memory-rows">
+              <div v-for="row in item.memoryRows" :key="row.label" class="ops-memory-row"><span>{{ row.label }}</span><strong>{{ row.value }}</strong></div>
+            </div>
+            <template v-else>
+              <strong class="ops-metric-item__value" :class="{ 'metric-value--compact': item.compact }">{{ item.value }}</strong>
+              <p class="ops-metric-item__detail">{{ item.detail }}</p>
+            </template>
           </div>
         </div>
       </section>
@@ -142,9 +147,17 @@
         </OpsPanel>
       </section>
 
-      <OpsPanel :title="locale.overview.alertRules" :subtitle="locale.overview.alertRulesDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
+      <OpsPanel :title="locale.overview.alertRules" :subtitle="locale.overview.alertRulesDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!alertRules.length && !initialOperationsLoading" :refreshable="false">
+        <div class="service-list">
+          <div v-for="item in alertRules" :key="item.label" class="service-row"><div class="min-w-0 flex-1"><p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p><p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p></div><span class="status-badge">{{ item.priority }}</span></div>
+        </div>
+      </OpsPanel>
 
-      <OpsPanel :title="locale.overview.warningEvents" :subtitle="locale.overview.warningEventsDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
+      <OpsPanel :title="locale.overview.warningEvents" :subtitle="locale.overview.warningEventsDetail" :status="runtimeAlertStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!runtimeAlerts.length && !initialOperationsLoading" :refreshable="false">
+        <div class="service-list">
+          <div v-for="item in runtimeAlerts" :key="item.code" class="service-row"><div class="min-w-0 flex-1"><p class="text-sm font-semibold text-zinc-300">{{ item.message }}</p><p class="mt-1 text-xs text-zinc-600">{{ item.code }} · {{ item.threshold }}</p></div><span class="status-badge">{{ item.value }}</span></div>
+        </div>
+      </OpsPanel>
 
       <OpsPanel :title="locale.overview.recentErrorLogs" :subtitle="locale.overview.recentErrorLogsDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorRequests.length && !initialOperationsLoading" :refreshable="false">
         <div class="overflow-x-auto">
@@ -377,12 +390,15 @@
         <article class="panel overflow-hidden">
           <div class="panel-header">
             <div><h3 class="panel-title">{{ locale.database.slowQueries }}</h3><p class="panel-description">{{ locale.database.slowQueriesDetail }}</p></div>
-            <span class="item-count">{{ locale.itemCount }} --</span>
+            <span class="item-count">{{ locale.itemCount }} {{ slowQueryRows.length || '--' }}</span>
           </div>
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1040px]">
               <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
-              <tbody><tr><td colspan="8" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+              <tbody>
+                <tr v-for="item in slowQueryRows" :key="item.query_id"><td class="max-w-[300px] truncate font-mono">{{ item.query }}</td><td>--</td><td>{{ item.calls }}</td><td>{{ item.average_duration_ms }} ms</td><td>{{ item.maximum_duration_ms }} ms</td><td>{{ formatTimestamp(databaseDiagnostics?.collectedAt) }}</td><td>--</td><td>--</td></tr>
+                <tr v-if="!slowQueryRows.length"><td colspan="8" class="empty-cell">{{ databaseDiagnostics?.slowQueries?.available === false ? 'N/A' : locale.noData }}</td></tr>
+              </tbody>
             </table>
           </div>
         </article>
@@ -1334,7 +1350,15 @@ const databaseDiagnostics = computed(() => runtimeDatabaseMetrics.value?.diagnos
 const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.businessQueue || null)
 const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
 const backupSnapshot = computed(() => runtimeMetrics.value?.backupSnapshot || null)
+const backupMonitorStatus = computed(() => operationsData.value.metrics?.backup || null)
+const latestBackupRestore = computed(() => (runtimeDatabaseMetrics.value?.recentLogs || []).find((item) => item?.route === '/api/admin/backup/restore') || null)
 const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
+const dependencyMetricTimeline = computed(() => runtimeDatabaseMetrics.value?.dependencyTimeline || [])
+const runtimeAlerts = computed(() => runtimeMetrics.value?.alerts || [])
+const runtimeAlertStatus = computed(() => {
+  if (runtimeAlerts.value.some((item) => item.severity === 'critical')) return 'error'
+  return runtimeAlerts.value.length ? 'warning' : 'ok'
+})
 const routePerformanceRows = computed(() => {
   const samples = [
     ...(runtimeMetrics.value?.recentErrors || []),
@@ -1382,16 +1406,21 @@ const musicApiRows = computed(() => [
   return {
     source: source || key,
     status: metric?.calls == null || metric.calls === 0 ? '未探测' : metric.successRate >= 95 ? '已连接' : metric.successRate > 0 ? '部分异常' : '不可用',
-    averageDuration: metric?.averageDurationMs != null ? `${metric.averageDurationMs} ms` : '未采集调用',
+    averageDuration: metric?.p95DurationMs != null ? `${Math.round(Number(metric.p95DurationMs))} ms` : '未采集调用',
     httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
     semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(1)}%` : 'N/A',
-    timeouts: 'N/A'
+    timeouts: metric?.timeouts != null ? String(metric.timeouts) : 'N/A'
   }
 }))
 const turnstileMetrics = computed(() => runtimeMetrics.value?.turnstile || null)
 const formattedLastUpdated = computed(() => operationsLastUpdated.value ? operationsLastUpdated.value.toLocaleTimeString() : '--')
 const collectionStatusText = computed(() => operationsLoading.value ? locale.value.awaitingConnection : operationsError.value ? locale.value.noData : '采集正常')
-const availabilitySli = computed(() => databaseSnapshot.value?.connected ? '--' : databaseSnapshot.value ? '0%' : '--')
+const availabilitySli = computed(() => {
+  const total = Number(runtimeHttpMetrics.value?.recentRequests)
+  const errors = Number(runtimeHttpMetrics.value?.recent5xx)
+  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(errors)) return '--'
+  return `${Math.max(0, (1 - errors / total) * 100).toFixed(1)}%`
+})
 const healthScore = computed(() => {
   const total = runtimeHttpMetrics.value?.recentRequests || 0
   const errors = runtimeHttpMetrics.value?.recent5xx || 0
@@ -1409,6 +1438,7 @@ const formatBytes = (value) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
+const formatPercent = (value) => Number.isFinite(Number(value)) ? `${Number(value).toFixed(1)}%` : '--'
 const formatTimestamp = (value) => value ? new Date(value).toLocaleString() : '--'
 const formatDuration = (seconds) => {
   if (!Number.isFinite(seconds)) return '--'
@@ -1467,7 +1497,7 @@ const dependencyMetricValue = (label, detail) => {
   if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : `${metric.successRate}%`
   if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : `${metric.emptyResultRate}%`
   if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : `${metric.semanticFailureRate}%`
-  if (detail === locale.value.dependencies?.p95LatencyShort) return metric.averageDurationMs == null ? '--' : `${metric.averageDurationMs} ms`
+  if (detail === locale.value.dependencies?.p95LatencyShort) return metric.p95DurationMs == null ? '--' : `${Math.round(Number(metric.p95DurationMs))} ms`
   return '--'
 }
 const securityMetricValue = (label) => {
@@ -1498,8 +1528,8 @@ const dependencyProtectionValue = (title, item) => {
     }
   }
   if (title === locale.value.dependencies?.fallbackHits) {
-    if (item === locale.value.dependencies?.providerFallbacks) return 'N/A'
-    if (item === locale.value.dependencies?.retryAttempts) return 'N/A'
+    if (item === locale.value.dependencies?.providerFallbacks) return String(Object.values(dependencyMetrics.value).reduce((total, metric) => total + Number(metric?.fallbacks || 0), 0))
+    if (item === locale.value.dependencies?.retryAttempts) return String(Object.values(dependencyMetrics.value).reduce((total, metric) => total + Number(metric?.retries || 0), 0))
     if (item === locale.value.dependencies?.circuitBreakerOpens) return 'N/A'
     if (item === locale.value.dependencies?.cachedResponseFallbacks) return cache ? String(cache.misses) : '--'
     if ([locale.value.overview?.neteaseSource, locale.value.overview?.tencentSource, locale.value.overview?.bilibiliSource, locale.value.overview?.miguSource].includes(item)) {
@@ -1582,15 +1612,17 @@ const overviewSignals = computed(() => [
   {
     icon: 'activity',
     label: locale.value.overview?.cpuStatus,
-    detail: locale.value.overview?.cpuStatusDetail, value: '--'
+    detail: locale.value.overview?.cpuStatusDetail,
+    value: runtimeMetrics.value?.process?.cpuUsagePercent != null ? `${formatPercent(runtimeMetrics.value.process.cpuUsagePercent)}` : '--'
   },
   {
     icon: 'monitoring',
     label: locale.value.overview?.memoryStatus,
-    detail: locale.value.overview?.memoryStatusDetail, compact: true,
-    value: runtimeMetrics.value?.process?.memory
-      ? `常驻内存 ${formatBytes(runtimeMetrics.value.process.memory.rss)} · 已用堆 ${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / 堆总量 ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)} · 外部内存 ${formatBytes(runtimeMetrics.value.process.memory.external)}`
-      : systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used} / ${systemSnapshot.value.memory.total} MB` : '--'
+    memoryRows: [
+      { label: '常驻内存', value: runtimeMetrics.value?.process?.memory?.rss != null ? formatBytes(runtimeMetrics.value.process.memory.rss) : '--' },
+      { label: '堆内存', value: runtimeMetrics.value?.process?.memory ? `${formatBytes(runtimeMetrics.value.process.memory.heapUsed)} / ${formatBytes(runtimeMetrics.value.process.memory.heapTotal)}` : systemSnapshot.value?.memory ? `${systemSnapshot.value.memory.used ?? '--'} MB / ${systemSnapshot.value.memory.total ?? '--'} MB` : '--' },
+      { label: '外部内存', value: runtimeMetrics.value?.process?.memory?.external != null ? formatBytes(runtimeMetrics.value.process.memory.external) : systemSnapshot.value?.memory?.external != null ? `${systemSnapshot.value.memory.external} MB` : '--' }
+    ]
   },
   {
     icon: 'database',
@@ -1605,12 +1637,14 @@ const overviewSignals = computed(() => [
   {
     icon: 'settings',
     label: locale.value.overview?.eventLoopStatus,
-    detail: locale.value.overview?.eventLoopStatusDetail, value: '--'
+    detail: locale.value.overview?.eventLoopStatusDetail,
+    value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${Math.round(Number(runtimeEventLoopMetrics.value.p99Ms))} ms` : '--'
   },
   {
     icon: 'clock',
     label: locale.value.overview?.backgroundTaskStatus,
-    detail: locale.value.overview?.backgroundTaskStatusDetail, value: '--'
+    detail: locale.value.overview?.backgroundTaskStatusDetail,
+    value: runtimeSsrPrewarm.value?.lastResult === 'success' ? '成功' : runtimeSsrPrewarm.value?.lastResult === 'failure' ? '失败' : '--'
   }
 ].filter((item) => !isServerlessRuntime.value || ![locale.value.overview?.cpuStatus, locale.value.overview?.memoryStatus].includes(item.label)))
 
@@ -1635,7 +1669,7 @@ const backupStatusFields = computed(() => [
   { label: locale.value.overview?.backupExportedTables, value: backupSnapshot.value?.exportedTables != null ? String(backupSnapshot.value.exportedTables) : '--' },
   { label: locale.value.overview?.backupSkippedTables, value: backupSnapshot.value?.skippedTables != null ? String(backupSnapshot.value.skippedTables) : '--' },
   { label: locale.value.overview?.backupIntegrityCheck, value: backupSnapshot.value?.checksum ? `SHA-256 ${backupSnapshot.value.checksum.slice(0, 12)}...` : '--' },
-  { label: locale.value.overview?.lastRestoreDrill, value: 'N/A' },
+  { label: locale.value.overview?.lastRestoreDrill, value: latestBackupRestore.value ? formatTimestamp(latestBackupRestore.value.at) : 'N/A' },
   { label: locale.value.overview?.lastBackupScheduleAt, value: latestBackup.value ? formatTimestamp(latestBackup.value.createdAt) : '--' },
   { label: locale.value.overview?.expectedBackupInterval, value: 'N/A' },
   { label: locale.value.overview?.backupScheduleMisses, value: 'N/A' }
@@ -1650,7 +1684,9 @@ const backupTargetPanels = computed(() => [
 
 const backupTargetValue = (target) => {
   const method = latestBackup.value?.methods?.find(item => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
-  return method ? (method.success ? '成功' : '失败') : '未启用'
+  if (method) return method.success ? '成功' : '失败'
+  const targetKey = target.toLowerCase()
+  return backupMonitorStatus.value?.targets?.[targetKey] ? '已配置，尚未执行' : '未启用'
 }
 
 const deploymentModeRows = computed(() => [
@@ -1672,7 +1708,7 @@ const dependencyRows = computed(() => [
   {
     icon: 'server',
     label: locale.value.services?.redis,
-    detail: locale.value.overview?.redisDetail, value: '--'
+    detail: locale.value.overview?.redisDetail, value: redisStatusValue.value
   },
   {
     icon: 'activity',
@@ -1710,7 +1746,7 @@ const applicationMetrics = computed(() => [
   { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail, value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--' },
   { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
   { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : '--' },
-  { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail },
+  { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail, value: runtimeSseMetrics.value?.music?.averageBroadcastWriteMs != null ? `${Math.round(Number(runtimeSseMetrics.value.music.averageBroadcastWriteMs))} ms` : '--' },
   { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
   { icon: 'settings', label: locale.value.application?.apiKeyUsage, detail: locale.value.application?.apiKeyUsageDetail, value: apiKeyUsageSnapshot.value?.calls != null ? String(apiKeyUsageSnapshot.value.calls) : '--' },
   { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail, value: apiKeyUsageSnapshot.value?.failureRate != null ? `${apiKeyUsageSnapshot.value.failureRate}%` : '--' }
@@ -1779,10 +1815,10 @@ const applicationDetailPanels = computed(() => [
 ])
 
 const serverSummaryDetails = computed(() => [
-  { label: locale.value.runtime?.hostname, value: import.meta.client ? window.location.hostname : 'N/A' },
+  { label: locale.value.runtime?.hostname, value: runtimeMetrics.value?.runtime?.hostname || '--' },
   { label: locale.value.runtime?.platform, value: systemSnapshot.value?.platform || '--' },
   { label: locale.value.runtime?.systemUptime, value: systemSnapshot.value?.uptime ? formatDuration(Math.max(0, Number(systemSnapshot.value.uptime) + (runtimeNow.value - Date.parse(systemSnapshot.value.timestamp || '')) / 1000)) : '--' },
-  { label: locale.value.runtime?.processPid, value: 'N/A' }
+  { label: locale.value.runtime?.processPid, value: runtimeMetrics.value?.runtime?.processId != null ? String(runtimeMetrics.value.runtime.processId) : '--' }
 ])
 
 const serverMetrics = computed(() => (isServerlessRuntime.value ? [
@@ -1795,7 +1831,7 @@ const serverMetrics = computed(() => (isServerlessRuntime.value ? [
     icon: 'activity',
     label: locale.value.metrics?.cpuUsage,
     detail: locale.value.server?.cpuUsageDetail,
-    value: '--'
+    value: runtimeMetrics.value?.process?.cpuUsagePercent != null ? formatPercent(runtimeMetrics.value.process.cpuUsagePercent) : '--'
   },
   {
     icon: 'monitoring',
@@ -1854,9 +1890,9 @@ const serverRuntimeDetails = computed(() => [
   { label: locale.value.runtime?.nodeVersion, value: systemSnapshot.value?.nodeVersion || '--' },
   { label: locale.value.runtime?.processUptime, value: systemSnapshot.value?.uptime ? `${Math.round(systemSnapshot.value.uptime)}s` : '--' },
   { label: locale.value.runtime?.instanceId, value: operationsData.value.status?.instance?.instanceId || '--' },
-  { label: locale.value.server?.appVersion, value: '--' },
-  { label: locale.value.server?.commitSha, value: runtimeMetrics.value?.runtime?.commitSha || runtimeMetrics.value?.commitSha || publicRuntimeConfig.sentry?.release || 'N/A' },
-  { label: locale.value.server?.deployedAt, value: '--' },
+  { label: locale.value.server?.appVersion, value: runtimeMetrics.value?.runtime?.appVersion || '--' },
+  { label: locale.value.server?.commitSha, value: runtimeMetrics.value?.runtime?.release || publicRuntimeConfig.sentry?.release || 'N/A' },
+  { label: locale.value.server?.deployedAt, value: runtimeMetrics.value?.runtime?.startedAt ? formatTimestamp(runtimeMetrics.value.runtime.startedAt) : '--' },
   { label: locale.value.server?.collectionReporting, value: collectionStatusText.value }
 ])
 
@@ -1964,11 +2000,11 @@ const runtimeGuardPanels = computed(() => [
 
 const databaseMetrics = computed(() => [
   { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--' },
-  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: operationsData.value.pool?.utilization ? `${operationsData.value.pool.utilization}%` : '--' },
+  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: formatPercent(operationsData.value.pool?.utilization) },
   { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: runtimeTimeline.value.length ? String(runtimeTimeline.value[runtimeTimeline.value.length - 1].requests || 0) : '--' },
   { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail, value: databaseDiagnostics.value?.activity?.data ? String(databaseDiagnostics.value.activity.data.filter((item) => Number(item.duration) > 100).length) : '--' },
   { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail, value: operationsData.value.performance?.transactionsRolledBack != null ? String(operationsData.value.performance.transactionsRolledBack) : '--' },
-  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
+  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: formatPercent(operationsData.value.performance?.cacheHitRatio) },
   { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: databaseDiagnostics.value?.size?.available ? databaseDiagnostics.value.size.data?.[0]?.database_size || '--' : 'N/A' },
   { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail, value: 'N/A' },
   { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
@@ -1989,8 +2025,8 @@ const databasePerformanceDetails = computed(() => [
   { label: locale.value.server?.responseTime, value: operationsData.value.performance?.responseTime != null ? `${operationsData.value.performance.responseTime} ms` : '--' },
   { label: locale.value.server?.transactionsCommitted, value: operationsData.value.performance?.transactionsCommitted ?? '--' },
   { label: locale.value.server?.transactionsRolledBack, value: operationsData.value.performance?.transactionsRolledBack ?? '--' },
-  { label: locale.value.database?.indexHitRatio, value: operationsData.value.performance?.cacheHitRatio ? `${operationsData.value.performance.cacheHitRatio}%` : '--' },
-  { label: locale.value.database?.tableBloat, value: databaseTableRows.value.length ? `${Math.max(...databaseTableRows.value.map((item) => Number(item.dead_row_ratio || 0)))}%` : '--' },
+  { label: locale.value.database?.indexHitRatio, value: formatPercent(operationsData.value.performance?.cacheHitRatio) },
+  { label: locale.value.database?.tableBloat, value: databaseTableRows.value.length ? formatPercent(Math.max(...databaseTableRows.value.map((item) => Number(item.dead_row_ratio || 0)))) : '--' },
   { label: locale.value.database?.poolWaitTime, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
   { label: locale.value.database?.databaseGrowthRate, value: 'N/A' }
 ])
@@ -2012,6 +2048,7 @@ const schemaScaleTables = computed(() => [
 ])
 
 const databaseTableRows = computed(() => databaseDiagnostics.value?.tables?.data || [])
+const slowQueryRows = computed(() => databaseDiagnostics.value?.slowQueries?.data || [])
 const databaseTableNames = computed(() => new Set(databaseTableRows.value.map((item) => item.table_name)))
 const activeDatabaseQueries = computed(() => {
   const lockByBlockedPid = new Map((databaseDiagnostics.value?.locks?.data || []).map((item) => [String(item.blocked_pid), item.blocking_pid]))
@@ -2034,15 +2071,15 @@ const cacheMetrics = computed(() => [
     icon: 'activity',
     label: locale.value.cache?.hitRatio,
     detail: locale.value.cache?.hitRatioDetail,
-    value: '--'
+    value: runtimeRedisMetrics.value?.metrics?.hitRate != null ? formatPercent(runtimeRedisMetrics.value.metrics.hitRate) : '--'
   },
-  { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail, value: '--' },
-  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail, value: runtimeRedisMetrics.value?.configured ? (runtimeRedisMetrics.value.connected ? '1' : '0') : 'N/A' },
+  { icon: 'monitoring', label: locale.value.cache?.memoryUsed, detail: locale.value.cache?.memoryUsedDetail, value: runtimeRedisMetrics.value?.metrics?.memoryUsedBytes != null ? formatBytes(runtimeRedisMetrics.value.metrics.memoryUsedBytes) : '--' },
+  { icon: 'server', label: locale.value.cache?.connections, detail: locale.value.cache?.connectionsDetail, value: runtimeRedisMetrics.value?.metrics?.connectedClients != null ? String(runtimeRedisMetrics.value.metrics.connectedClients) : '--' },
   { icon: 'clock', label: locale.value.cache?.commandP99, detail: locale.value.cache?.commandP99Detail },
-  { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail },
-  { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail },
+  { icon: 'warning', label: locale.value.cache?.evictions, detail: locale.value.cache?.evictionsDetail, value: runtimeRedisMetrics.value?.metrics?.evictedKeys != null ? String(runtimeRedisMetrics.value.metrics.evictedKeys) : '--' },
+  { icon: 'warning', label: locale.value.cache?.rateLimitTriggers, detail: locale.value.cache?.rateLimitTriggersDetail, value: runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : '--' },
   { icon: 'warning', label: locale.value.cache?.lastError, detail: locale.value.cache?.errorDetail, value: runtimeRedisMetrics.value?.lastError ? '连接错误' : '--' },
-  { icon: 'activity', label: locale.value.cache?.memoryFragmentation, detail: locale.value.cache?.memoryFragmentationDetail }
+  { icon: 'activity', label: locale.value.cache?.memoryFragmentation, detail: locale.value.cache?.memoryFragmentationDetail, value: runtimeRedisMetrics.value?.metrics?.memoryFragmentationRatio != null ? `${Number(runtimeRedisMetrics.value.metrics.memoryFragmentationRatio).toFixed(2)}x` : '--' }
 ])
 
 const redisStatusValue = computed(() => {
@@ -2066,8 +2103,8 @@ const cacheDetailValue = (label) => {
     [locale.value.cache?.configured, redis.configured ? '已配置' : '未配置'],
     [locale.value.cache?.keyPrefix, redis.keyPrefix || 'N/A'],
     [locale.value.cache?.lastConnected, redis.lastConnectedAt ? formatTimestamp(redis.lastConnectedAt) : 'N/A'],
-    [locale.value.cache?.evictionPolicy, 'N/A'],
-    [locale.value.cache?.memoryFragmentation, 'N/A']
+    [locale.value.cache?.evictionPolicy, redis.metrics?.evictionPolicy || 'N/A'],
+    [locale.value.cache?.memoryFragmentation, redis.metrics?.memoryFragmentationRatio != null ? `${Number(redis.metrics.memoryFragmentationRatio).toFixed(2)}x` : 'N/A']
   ])
   return values.get(label) || 'N/A'
 }
@@ -2351,7 +2388,22 @@ const dependencyUptimeRows = computed(() => [
   const current = !metric || metric.calls === 0
     ? 'unknown'
     : metric.successRate >= 95 ? 'up' : metric.successRate > 0 ? 'degraded' : 'down'
-  const slots = [current]
+  const hourly = new Map()
+  for (const point of dependencyMetricTimeline.value.filter((entry) => entry.source === item.source)) {
+    const hour = Math.floor(new Date(point.at).getTime() / 3_600_000)
+    const bucket = hourly.get(hour) || { calls: 0, successes: 0 }
+    bucket.calls += Number(point.calls || 0)
+    bucket.successes += Number(point.successes || 0)
+    hourly.set(hour, bucket)
+  }
+  const nowHour = Math.floor(Date.now() / 3_600_000)
+  const slots = Array.from({ length: 24 }, (_, index) => {
+    const bucket = hourly.get(nowHour - 23 + index)
+    if (!bucket?.calls) return 'unknown'
+    const successRate = bucket.successes / bucket.calls * 100
+    return successRate >= 95 ? 'up' : successRate > 0 ? 'degraded' : 'down'
+  })
+  if (slots[slots.length - 1] === 'unknown' && current !== 'unknown') slots[slots.length - 1] = current
   return { ...item, slots }
 }))
 
@@ -3986,6 +4038,11 @@ const riskLevels = computed(() => [
 .ops-metric-item__label { color: var(--ops-text-3); font-size: .66rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .ops-metric-item__value { color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 1.15rem; font-weight: 650; line-height: 1.15; }
 .ops-metric-item__detail { margin: 0; color: var(--ops-text-3); font-size: .66rem; line-height: 1.55; }
+.ops-memory-rows { display: grid; margin-top: .1rem; border-top: 1px solid rgba(148, 163, 184, .08); }
+.ops-memory-row { display: flex; min-height: 1.65rem; align-items: center; justify-content: space-between; gap: .75rem; border-bottom: 1px solid rgba(148, 163, 184, .08); }
+.ops-memory-row:last-child { border-bottom: 0; }
+.ops-memory-row span { color: #94a3b8; font-size: .6875rem; }
+.ops-memory-row strong { color: #f8fafc; font-family: var(--ops-mono); font-size: .6875rem; font-weight: 600; text-align: right; white-space: nowrap; }
 .ops-unknown-note { margin: .8rem 0 0; color: var(--ops-text-3); font-size: .65rem; line-height: 1.45; }
 
 /* 保留既有结构，统一其视觉外壳，避免各分区各自定义卡片。 */

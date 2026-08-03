@@ -27,9 +27,11 @@ import {
 import { promises as fs } from 'fs'
 import path from 'path'
 import { SmtpService } from '../../../services/smtpService'
+import { ApiLogService } from '~~/server/services/apiLogService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
 
 export default defineEventHandler(async (event) => {
+  const restoreStartedAt = Date.now()
   try {
     // 验证管理员权限
     const user = event.context.user
@@ -2535,8 +2537,28 @@ export default defineEventHandler(async (event) => {
       restoreResults.details.warnings.push('重载SMTP配置失败')
     }
 
+    void ApiLogService.logAccess({
+      apiKeyId: null,
+      endpoint: '/api/admin/backup/restore',
+      method: event.node.req.method || 'POST',
+      ipAddress: event.node.req.socket?.remoteAddress || 'unknown',
+      userAgent: String(event.node.req.headers['user-agent'] || '').slice(0, 500),
+      statusCode: restoreResults.success ? 200 : 500,
+      responseTimeMs: Math.max(0, Date.now() - restoreStartedAt),
+      errorMessage: `backup_restore mode=${mode} restored=${restoreResults.details.recordsRestored || 0} errors=${restoreResults.details.errors.length}`
+    })
     return restoreResults
   } catch (error) {
+    void ApiLogService.logAccess({
+      apiKeyId: null,
+      endpoint: '/api/admin/backup/restore',
+      method: event.node.req.method || 'POST',
+      ipAddress: event.node.req.socket?.remoteAddress || 'unknown',
+      userAgent: String(event.node.req.headers['user-agent'] || '').slice(0, 500),
+      statusCode: Number(error?.statusCode) || 500,
+      responseTimeMs: Math.max(0, Date.now() - restoreStartedAt),
+      errorMessage: `backup_restore_failed mode=${mode} reason=${String(error?.message || 'unknown').slice(0, 300)}`
+    })
     console.error('恢复数据库备份失败:', error)
     throw createError({
       statusCode: error.statusCode || 500,

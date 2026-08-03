@@ -5,6 +5,7 @@
  * 同时转发客户端 IP，解决海外服务器获取到错误 CDN 节点导致访问慢的问题
  */
 import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 interface CidRes {
   code: number
@@ -41,6 +42,7 @@ export default defineEventHandler(async (event) => {
       message: '缺少 id 参数'
     })
   }
+  const startedAt = Date.now()
 
   // 提取客户端真实 IP，用于转发给 Bilibili 接口，以便分配最快 CDN 节点
   const forwardedFor = getRequestHeader(event, 'x-forwarded-for')
@@ -97,11 +99,18 @@ export default defineEventHandler(async (event) => {
 
     if (resp2.data?.durl?.length > 0) {
       const url = resp2.data.durl[0].url
+      recordDependencyCall('bilibili', { success: true, durationMs: Date.now() - startedAt })
       return { url, pay: false }
     } else {
       throw new Error(`获取歌曲链接失败: ${resp2.message || '未知错误'}`)
     }
   } catch (error: any) {
+    recordDependencyCall('bilibili', {
+      success: false,
+      semanticFailure: true,
+      durationMs: Date.now() - startedAt,
+      error: error?.message || String(error)
+    })
     console.error('Bilibili playurl error:', error)
     throw createError({
       statusCode: 500,

@@ -274,6 +274,13 @@
       "when": 1785669366654,
       "tag": "20260802180000_add_operations_metric_buckets",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1785738600000,
+      "tag": "20260803143000_add_operations_dependency_buckets",
+      "breakpoints": true
     }
   ]
 }

@@ -150,14 +150,15 @@ const diagnosticQuery = async (query: ReturnType<typeof sql>) => {
 }
 
 export async function getDatabaseDiagnostics() {
-  const [activity, locks, tables, size] = await Promise.all([
+  const [activity, locks, tables, size, slowQueries] = await Promise.all([
     diagnosticQuery(sql`SELECT pid, usename AS user_name, state, wait_event_type, wait_event, now() - query_start AS duration, left(query, 300) AS query FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid() AND state <> 'idle' ORDER BY query_start ASC LIMIT 20`),
     diagnosticQuery(sql`SELECT blocked.pid AS blocked_pid, blocker.pid AS blocking_pid, now() - blocked.query_start AS wait_duration, left(blocked.query, 220) AS blocked_query, left(blocker.query, 220) AS blocking_query FROM pg_locks blocked_lock JOIN pg_stat_activity blocked ON blocked.pid = blocked_lock.pid JOIN pg_locks blocker_lock ON blocker_lock.locktype = blocked_lock.locktype AND blocker_lock.database IS NOT DISTINCT FROM blocked_lock.database AND blocker_lock.relation IS NOT DISTINCT FROM blocked_lock.relation AND blocker_lock.page IS NOT DISTINCT FROM blocked_lock.page AND blocker_lock.tuple IS NOT DISTINCT FROM blocked_lock.tuple AND blocker_lock.transactionid IS NOT DISTINCT FROM blocked_lock.transactionid AND blocker_lock.pid <> blocked_lock.pid JOIN pg_stat_activity blocker ON blocker.pid = blocker_lock.pid WHERE NOT blocked_lock.granted AND blocker_lock.granted LIMIT 20`),
     diagnosticQuery(sql`SELECT relname AS table_name, n_live_tup AS live_rows, n_dead_tup AS dead_rows, pg_total_relation_size(relid) AS total_bytes, pg_indexes_size(relid) AS index_bytes, CASE WHEN n_live_tup > 0 THEN round(n_dead_tup::numeric / n_live_tup * 100, 2) ELSE 0 END AS dead_row_ratio FROM pg_stat_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 20`),
-    diagnosticQuery(sql`SELECT pg_database_size(current_database()) AS database_bytes, pg_size_pretty(pg_database_size(current_database())) AS database_size`)
+    diagnosticQuery(sql`SELECT pg_database_size(current_database()) AS database_bytes, pg_size_pretty(pg_database_size(current_database())) AS database_size`),
+    diagnosticQuery(sql`SELECT queryid::text AS query_id, left(query, 300) AS query, calls, round(mean_exec_time::numeric, 2) AS average_duration_ms, round(max_exec_time::numeric, 2) AS maximum_duration_ms FROM pg_stat_statements WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database()) ORDER BY mean_exec_time DESC LIMIT 20`)
   ])
 
-  return { activity, locks, tables, size, collectedAt: new Date().toISOString() }
+  return { activity, locks, tables, size, slowQueries, collectedAt: new Date().toISOString() }
 }
 
 // 数据库备份状态检查（模拟）

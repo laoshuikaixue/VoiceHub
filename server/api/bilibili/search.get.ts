@@ -2,7 +2,7 @@
  * Bilibili 搜索接口
  * 代码参考 https://github.com/ljk743121/Sound-of-experiment/blob/v4/server/utils/plugins/bilibili.ts
  */
-import { defineEventHandler, getQuery, createError } from 'h3'
+import { defineEventHandler, getQuery, createError, getRequestHeader } from 'h3'
 import xss from 'xss'
 import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
@@ -85,6 +85,7 @@ function bi_convert_song(song_info: SongInfo, pages?: VideoPage[]) {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const keyword = query.keyword as string
+  const isOperationsProbe = getRequestHeader(event, 'x-voicehub-operations-probe') === '1'
 
   if (!keyword) {
     return []
@@ -99,7 +100,7 @@ export default defineEventHandler(async (event) => {
       params: {
         __refresh__: true,
         page: 1,
-        page_size: 15,
+        page_size: isOperationsProbe ? 1 : 15,
         platform: 'pc',
         highlight: 1,
         single_column: 0,

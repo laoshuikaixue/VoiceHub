@@ -1,4 +1,4 @@
-import { startOperationRequest, finishOperationRequest, setOperationRequestContext, recordBusinessOperation, recordOAuthOperation } from '~~/server/utils/operations-metrics'
+import { startOperationRequest, finishOperationRequest, setOperationRequestContext, recordBusinessOperation, recordOAuthOperation, setMusicSourceProbeRunner } from '~~/server/utils/operations-metrics'
 import { randomUUID } from 'node:crypto'
 import { performance } from 'node:perf_hooks'
 import { db } from '~/drizzle/db'
@@ -7,6 +7,31 @@ import { sql } from 'drizzle-orm'
 import { getInstanceId } from '~~/server/utils/instance-id'
 
 const getPathname = (url = '') => url.split('?')[0]
+const MUSIC_SOURCE_PROBE_HEADER = 'x-voicehub-operations-probe'
+const MUSIC_SOURCE_PROBE_INTERVAL_MS = Math.min(60 * 60 * 1000, Math.max(60 * 1000, Number(process.env.VOICEHUB_MUSIC_SOURCE_PROBE_INTERVAL_MS) || 5 * 60 * 1000))
+const MUSIC_SOURCE_PROBE_QUERY = process.env.VOICEHUB_MUSIC_SOURCE_PROBE_QUERY?.trim() || '周杰伦'
+const musicSourceProbeTargets = [
+  { source: 'netease', path: `/api/native-api/search/wy?str=${encodeURIComponent(MUSIC_SOURCE_PROBE_QUERY)}&page=1&limit=1` },
+  { source: 'tencent', path: `/api/native-api/search/tx?str=${encodeURIComponent(MUSIC_SOURCE_PROBE_QUERY)}&page=1&limit=1` },
+  { source: 'bilibili', path: `/api/bilibili/search?keyword=${encodeURIComponent(MUSIC_SOURCE_PROBE_QUERY)}` },
+  { source: 'migu', path: `/api/native-api/search/mg?str=${encodeURIComponent(MUSIC_SOURCE_PROBE_QUERY)}&page=1&limit=1` }
+]
+let musicSourceProbeInFlight: Promise<void> | null = null
+let lastMusicSourceProbeAt = 0
+
+const isMusicSourceProbeRequest = (event: any) => String(event.node.req.headers[MUSIC_SOURCE_PROBE_HEADER] || '') === '1'
+const isMonitoringRequest = (url = '') => [
+  '/api/admin/operations/',
+  '/api/system/status',
+  '/api/admin/database/pool-status',
+  '/api/admin/database/performance',
+  '/api/admin/backup/history'
+].some((prefix) => url.startsWith(prefix))
+
+const isServerlessRuntime = () => {
+  const preset = process.env.NITRO_PRESET || (process.env.VERCEL ? 'vercel' : process.env.NETLIFY === 'true' ? 'netlify' : 'node-server')
+  return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => preset.toLowerCase().includes(name))
+}
 
 const persistMinuteBucket = (statusCode: number, durationMs: number) => {
   void getInstanceId().then((instanceId) => db.execute(sql`
@@ -27,11 +52,54 @@ const persistMinuteBucket = (statusCode: number, durationMs: number) => {
 }
 
 export default defineNitroPlugin((nitroApp) => {
+  const runMusicSourceProbe = async () => {
+    if (process.env.VOICEHUB_MUSIC_SOURCE_PROBE_ENABLED === 'false') return
+    if (musicSourceProbeInFlight || Date.now() - lastMusicSourceProbeAt < MUSIC_SOURCE_PROBE_INTERVAL_MS) return musicSourceProbeInFlight || undefined
+
+    lastMusicSourceProbeAt = Date.now()
+    musicSourceProbeInFlight = (async () => {
+      let recentlyObserved = new Set<string>()
+      try {
+        const rows = await db.execute(sql`
+          SELECT DISTINCT source
+          FROM operations_dependency_buckets
+          WHERE bucket_start >= now() - (${Math.floor(MUSIC_SOURCE_PROBE_INTERVAL_MS / 1000)} * interval '1 second')
+        `)
+        recentlyObserved = new Set(rows.map((row: any) => String(row.source)))
+      } catch {
+        // 数据库迁移尚未执行或数据库暂不可用时，仍继续探测以便产生日志和内存指标。
+      }
+
+      for (const target of musicSourceProbeTargets) {
+        if (recentlyObserved.has(target.source)) continue
+        try {
+          await nitroApp.localFetch(target.path, {
+            headers: { [MUSIC_SOURCE_PROBE_HEADER]: '1' }
+          })
+        } catch {
+          // 各源接口已写入失败指标；调度器不额外抛错以免影响下一平台探测。
+        }
+      }
+    })().finally(() => {
+      musicSourceProbeInFlight = null
+    })
+
+    return musicSourceProbeInFlight
+  }
+
+  setMusicSourceProbeRunner(runMusicSourceProbe)
+  if (!isServerlessRuntime()) {
+    void runMusicSourceProbe()
+    const timer = setInterval(() => { void runMusicSourceProbe() }, MUSIC_SOURCE_PROBE_INTERVAL_MS)
+    timer.unref?.()
+  }
+
   nitroApp.hooks.hook('request', (event) => {
-    if (event.node.req.url?.startsWith('/api/admin/operations/metrics')) return
+    if (isMonitoringRequest(event.node.req.url) || isMusicSourceProbeRequest(event)) return
     const startedAt = startOperationRequest()
     event.context.operationsMetricsStartedAt = startedAt
     const requestId = String(event.node.req.headers['x-request-id'] || event.node.req.headers['x-correlation-id'] || randomUUID())
+    event.node.res.setHeader('x-request-id', requestId)
     event.context.operationsMetricsRequestId = requestId
     setOperationRequestContext(startedAt, {
       route: event.node.req.url?.split('?')[0],

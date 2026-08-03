@@ -1,3 +1,5 @@
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
+
 function strToUtf8Bytes(str: string): Uint8Array {
   return new TextEncoder().encode(str)
 }
@@ -38,6 +40,7 @@ export default defineEventHandler(async (event) => {
   const toneFlag = encodeURIComponent((query.toneFlag as string) || 'PQ');
 
   if (!contentId) throw createError({ statusCode: 400, message: 'Missing contentId' });
+  const startedAt = Date.now()
 
   try {
     const headers = {
@@ -59,6 +62,7 @@ export default defineEventHandler(async (event) => {
     const url = (data?.data?.url || '').replace(/^http:\/\//, 'https://')
 
     if (!url) {
+      recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, error: '播放链接为空' })
       return {
         success: false,
         url: '',
@@ -66,12 +70,19 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    recordDependencyCall('migu', { success: true, durationMs: Date.now() - startedAt })
     return {
       success: true,
       url,
       source: 'migu'
     }
   } catch (err: any) {
+    recordDependencyCall('migu', {
+      success: false,
+      semanticFailure: true,
+      durationMs: Date.now() - startedAt,
+      error: err?.message || String(err)
+    })
     console.error('[migu/playurl.get] 获取播放链接失败:', err)
     throw createError({
       statusCode: err.statusCode || 500,

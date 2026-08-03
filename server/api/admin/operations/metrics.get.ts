@@ -1,10 +1,11 @@
 import { defineEventHandler, createError, getQuery } from 'h3'
 import { verifyAdminAuth } from '~~/server/utils/auth'
-import { getOperationsMetrics } from '~~/server/utils/operations-metrics'
-import { getRedisStats } from '~~/server/utils/redis'
+import { getOperationsMetrics, triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
+import { getRedisMetrics, getRedisStats } from '~~/server/utils/redis'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getMusicSseStats } from '~~/server/api/music/websocket'
 import { getProgressSseStats } from '~~/server/api/progress/events'
+import { getAutoBackupConfig, isAutoBackupEnabled } from '~~/server/services/autoBackupService'
 
 let sentryCache: { expiresAt: number; value: any } | null = null
 
@@ -40,6 +41,14 @@ const getSentryIssues = async () => {
   }
 }
 
+const getBackupMonitorStatus = async () => {
+  const [enabled, config] = await Promise.all([isAutoBackupEnabled(), getAutoBackupConfig()])
+  return {
+    enabled,
+    targets: Object.fromEntries(Object.entries(config?.methods || {}).map(([name, target]) => [name, target?.enabled === true]))
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const authResult = await verifyAdminAuth(event)
   if (!authResult.success) {
@@ -47,8 +56,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const requestId = String(getQuery(event).requestId || '').trim()
+  void triggerMusicSourceProbe()
 
-  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, sentry, requestDiagnostics] = await Promise.allSettled([
+  const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, dependencyTimeline, redis, backup, sentry, requestDiagnostics] = await Promise.allSettled([
     databaseManager.getConnectionPoolStatus(),
     databaseManager.getPerformanceMetrics(),
     databaseManager.getDiagnostics(),
@@ -57,6 +67,9 @@ export default defineEventHandler(async (event) => {
     databaseManager.getPersistedRequestSamples(),
     databaseManager.getRecentApiLogs(),
     databaseManager.getOperationsMetricTimeline(),
+    databaseManager.getDependencyMetricTimeline(),
+    getRedisMetrics(),
+    getBackupMonitorStatus(),
     getSentryIssues(),
     requestId ? databaseManager.getRequestDiagnostics(requestId) : Promise.resolve([])
   ])
@@ -65,7 +78,8 @@ export default defineEventHandler(async (event) => {
     success: true,
     data: {
       metrics: getOperationsMetrics(),
-      redis: getRedisStats(),
+      redis: redis.status === 'fulfilled' ? redis.value : { ...getRedisStats(), metrics: null },
+      backup: backup.status === 'fulfilled' ? backup.value : null,
       sse: {
         music: getMusicSseStats(),
         progress: getProgressSseStats()
@@ -78,7 +92,8 @@ export default defineEventHandler(async (event) => {
         apiKeyUsage: apiKeyUsage.status === 'fulfilled' ? apiKeyUsage.value : null,
         persistedRequests: persistedRequests.status === 'fulfilled' ? persistedRequests.value : null,
         recentLogs: recentLogs.status === 'fulfilled' ? recentLogs.value : null,
-        timeline: timeline.status === 'fulfilled' ? timeline.value : null
+        timeline: timeline.status === 'fulfilled' ? timeline.value : null,
+        dependencyTimeline: dependencyTimeline.status === 'fulfilled' ? dependencyTimeline.value : null
       },
       sentry: sentry.status === 'fulfilled' ? sentry.value : { configured: false, issues: [] },
       diagnostic: requestDiagnostics.status === 'fulfilled' ? { requestId, entries: requestDiagnostics.value } : { requestId, entries: [] }

@@ -231,7 +231,7 @@ export class DatabaseManager {
 
   async getPersistedRequestSamples() {
     const result = await db.execute(sql`
-      SELECT "created_at" AS at, "endpoint" AS route, "status_code" AS status,
+      SELECT "created_at" AS at, "endpoint" AS route, "method", "status_code" AS status,
         "response_time_ms" AS "durationMs",
         substring("error_message" from 'requestId=([^ ]+)') AS "requestId"
       FROM api_logs
@@ -276,8 +276,27 @@ export class DatabaseManager {
         round(sum(total_duration_ms)::numeric / nullif(sum(request_count), 0), 2) AS average_duration_ms,
         max(max_duration_ms)::int AS max_duration_ms
       FROM operations_metric_buckets
-      WHERE bucket_start >= now() - interval '60 minutes'
+      WHERE bucket_start >= now() - interval '24 hours'
       GROUP BY bucket_start
+      ORDER BY bucket_start ASC
+    `)
+  }
+
+  async getDependencyMetricTimeline() {
+    return await db.execute(sql`
+      SELECT bucket_start AS at, source,
+        sum(call_count)::int AS calls,
+        sum(success_count)::int AS successes,
+        sum(empty_result_count)::int AS empty_results,
+        sum(semantic_failure_count)::int AS semantic_failures,
+        sum(timeout_count)::int AS timeouts,
+        sum(retry_count)::int AS retries,
+        sum(fallback_count)::int AS fallbacks,
+        round(sum(total_duration_ms)::numeric / nullif(sum(call_count), 0), 2) AS average_duration_ms,
+        max(max_duration_ms)::int AS max_duration_ms
+      FROM operations_dependency_buckets
+      WHERE bucket_start >= now() - interval '24 hours'
+      GROUP BY bucket_start, source
       ORDER BY bucket_start ASC
     `)
   }

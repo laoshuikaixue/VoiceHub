@@ -1,8 +1,16 @@
 import { PerformanceObserver, monitorEventLoopDelay, performance } from 'node:perf_hooks'
+import { hostname } from 'node:os'
+import { sql } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { getInstanceId } from '~~/server/utils/instance-id'
 
 const WINDOW_MS = 5 * 60 * 1000
 const eventLoopHistogram = monitorEventLoopDelay({ resolution: 20 })
 eventLoopHistogram.enable()
+let cpuUsageSnapshot = {
+  usage: process.cpuUsage(),
+  collectedAt: performance.now()
+}
 
 const state = {
   startedAt: Date.now(),
@@ -14,7 +22,18 @@ const state = {
   requestContext: new Map<number, { route?: string; requestId?: string }>(),
   businessSamples: [] as Array<{ at: number; operation: string; success: boolean }>,
   oauthSamples: [] as Array<{ at: number; success: boolean }>,
-  dependencies: new Map<string, { calls: number; successes: number; emptyResults: number; semanticFailures: number; durationMs: number; lastError: string | null }>(),
+  dependencies: new Map<string, {
+    calls: number
+    successes: number
+    emptyResults: number
+    semanticFailures: number
+    timeouts: number
+    retries: number
+    fallbacks: number
+    durationMs: number
+    durations: number[]
+    lastError: string | null
+  }>(),
   turnstile: { calls: 0, successes: 0, upstreamFailures: 0, validationFailures: 0 },
   notifications: { smtpAccepted: 0, smtpFailures: 0, meowEligible: 0, meowSkipped: 0, meowTransportFailures: 0 },
   backups: new Map<string, { successes: number; failures: number; durationMs: number }>(),
@@ -23,6 +42,14 @@ const state = {
   gc: { count: 0, durationMs: 0 },
   ssrPrewarm: { attempts: 0, successes: 0, failures: 0, lastDurationMs: null as number | null, lastResult: null as string | null }
 }
+
+let musicSourceProbeRunner: (() => Promise<void>) | null = null
+
+export const setMusicSourceProbeRunner = (runner: (() => Promise<void>) | null) => {
+  musicSourceProbeRunner = runner
+}
+
+export const triggerMusicSourceProbe = () => musicSourceProbeRunner?.()
 
 const gcObserver = new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
@@ -67,6 +94,31 @@ const percentile = (values: number[], ratio: number) => {
   return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * ratio) - 1)]
 }
 
+const getRuntimeDescriptor = () => {
+  const nitroPreset = process.env.NITRO_PRESET || (process.env.VERCEL ? 'vercel' : process.env.NETLIFY === 'true' ? 'netlify' : 'node-server')
+  const serverless = ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => nitroPreset.toLowerCase().includes(name))
+  return {
+    nitroPreset,
+    serverless,
+    hostname: process.env.HOSTNAME || hostname(),
+    processId: process.pid,
+    release: process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || process.env.NETLIFY_COMMIT_REF || null,
+    appVersion: process.env.APP_VERSION || process.env.npm_package_version || null,
+    startedAt: new Date(state.startedAt).toISOString()
+  }
+}
+
+const getProcessCpuUsage = () => {
+  const collectedAt = performance.now()
+  const elapsedMs = collectedAt - cpuUsageSnapshot.collectedAt
+  const usage = process.cpuUsage(cpuUsageSnapshot.usage)
+  cpuUsageSnapshot = { usage: process.cpuUsage(), collectedAt }
+
+  if (elapsedMs <= 0) return null
+  const cpuMs = (usage.user + usage.system) / 1000
+  return Number((cpuMs / elapsedMs * 100).toFixed(2))
+}
+
 export const getOperationsMetrics = () => {
   prune()
   const durations = state.samples.map((sample) => sample.durationMs)
@@ -99,13 +151,53 @@ export const getOperationsMetrics = () => {
     }
   })
   const histogram = eventLoopHistogram
+  const eventLoop = {
+    meanMs: histogram.count ? Number((Number(histogram.mean) / 1e6).toFixed(2)) : null,
+    maxMs: histogram.count ? Number((Number(histogram.max) / 1e6).toFixed(2)) : null,
+    p99Ms: histogram.count ? Number((Number(histogram.percentile(99)) / 1e6).toFixed(2)) : null
+  }
+  const dependencies = Object.fromEntries([...state.dependencies.entries()].map(([source, item]) => [
+    source,
+    {
+      calls: item.calls,
+      successRate: item.calls ? Number((item.successes / item.calls * 100).toFixed(2)) : null,
+      emptyResultRate: item.calls ? Number((item.emptyResults / item.calls * 100).toFixed(2)) : null,
+      semanticFailureRate: item.calls ? Number((item.semanticFailures / item.calls * 100).toFixed(2)) : null,
+      averageDurationMs: item.calls ? Number((item.durationMs / item.calls).toFixed(2)) : null,
+      p95DurationMs: percentile(item.durations, 0.95) == null ? null : Number(percentile(item.durations, 0.95)?.toFixed(2)),
+      timeouts: item.timeouts,
+      retries: item.retries,
+      fallbacks: item.fallbacks,
+      lastError: item.lastError
+    }
+  ])) as Record<string, { calls: number; successRate: number | null; p95DurationMs: number | null; lastError: string | null }>
+  const alerts: Array<{ code: string; severity: 'warning' | 'critical'; message: string; value: number; threshold: number }> = []
+  const serverErrorRate = recentRequests ? recent5xx / recentRequests * 100 : null
+  if (serverErrorRate != null && serverErrorRate >= 1) {
+    alerts.push({ code: 'http_5xx_rate', severity: serverErrorRate >= 5 ? 'critical' : 'warning', message: 'HTTP 5xx 错误率超过阈值', value: Number(serverErrorRate.toFixed(2)), threshold: 1 })
+  }
+  const p95Ms = percentile(durations, 0.95)
+  if (p95Ms != null && p95Ms >= 1500) {
+    alerts.push({ code: 'http_p95_latency', severity: 'warning', message: 'HTTP P95 响应延迟超过阈值', value: Number(p95Ms.toFixed(2)), threshold: 1500 })
+  }
+  if (eventLoop.p99Ms != null && eventLoop.p99Ms >= 50) {
+    alerts.push({ code: 'event_loop_p99', severity: eventLoop.p99Ms >= 200 ? 'critical' : 'warning', message: '事件循环 P99 延迟超过阈值', value: eventLoop.p99Ms, threshold: 50 })
+  }
+  for (const [source, dependency] of Object.entries(dependencies)) {
+    if (!dependency.calls || dependency.successRate == null) continue
+    if (dependency.successRate < 95) {
+      alerts.push({ code: `dependency_${source}_success_rate`, severity: dependency.successRate === 0 ? 'critical' : 'warning', message: `${source} 音乐源成功率低于阈值`, value: dependency.successRate, threshold: 95 })
+    }
+  }
   const result = {
     process: {
       uptimeSeconds: process.uptime(),
       memory: process.memoryUsage(),
+      cpuUsagePercent: getProcessCpuUsage(),
       activeRequests: state.activeRequests,
       activeHandles: typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo().length : null
     },
+    runtime: getRuntimeDescriptor(),
     http: {
       windowSeconds: WINDOW_MS / 1000,
       recentRequests,
@@ -116,7 +208,7 @@ export const getOperationsMetrics = () => {
       status429,
       recent5xx,
       p50Ms: percentile(durations, 0.5),
-      p95Ms: percentile(durations, 0.95),
+      p95Ms,
       p99Ms: percentile(durations, 0.99)
     },
     timeline,
@@ -125,11 +217,7 @@ export const getOperationsMetrics = () => {
       .slice(-20)
       .reverse()
       .map((sample) => ({ at: new Date(sample.at).toISOString(), status: sample.status, durationMs: Math.round(sample.durationMs), route: sample.route || 'unknown', requestId: sample.requestId || null })),
-    eventLoop: {
-      meanMs: histogram.count ? Number((Number(histogram.mean) / 1e6).toFixed(2)) : null,
-      maxMs: histogram.count ? Number((Number(histogram.max) / 1e6).toFixed(2)) : null,
-      p99Ms: histogram.count ? Number((Number(histogram.percentile(99)) / 1e6).toFixed(2)) : null
-    },
+    eventLoop,
     gc: {
       count: state.gc.count,
       averagePauseMs: state.gc.count ? Number((state.gc.durationMs / state.gc.count).toFixed(2)) : null
@@ -140,16 +228,8 @@ export const getOperationsMetrics = () => {
       calls: state.oauthSamples.length,
       successRate: state.oauthSamples.length ? Number((oauthSuccesses / state.oauthSamples.length * 100).toFixed(2)) : null
     },
-    dependencies: Object.fromEntries([...state.dependencies.entries()].map(([source, item]) => ({
-      [source]: {
-        calls: item.calls,
-        successRate: item.calls ? Number((item.successes / item.calls * 100).toFixed(2)) : null,
-        emptyResultRate: item.calls ? Number((item.emptyResults / item.calls * 100).toFixed(2)) : null,
-        semanticFailureRate: item.calls ? Number((item.semanticFailures / item.calls * 100).toFixed(2)) : null,
-        averageDurationMs: item.calls ? Number((item.durationMs / item.calls).toFixed(2)) : null,
-        lastError: item.lastError
-      }
-    }))),
+    dependencies,
+    alerts,
     turnstile: { ...state.turnstile },
     notifications: { ...state.notifications },
     backups: Object.fromEntries(state.backups),
@@ -161,15 +241,79 @@ export const getOperationsMetrics = () => {
   return result
 }
 
-export const recordDependencyCall = (source: string, result: { success: boolean; emptyResult?: boolean; semanticFailure?: boolean; durationMs: number; error?: string }) => {
-  const current = state.dependencies.get(source) || { calls: 0, successes: 0, emptyResults: 0, semanticFailures: 0, durationMs: 0, lastError: null }
+const isTimeoutError = (error?: string) => /timeout|timed out|etimedout|aborterror/i.test(error || '')
+
+const persistDependencyMinuteBucket = (source: string, result: {
+  success: boolean
+  emptyResult?: boolean
+  semanticFailure?: boolean
+  durationMs: number
+  retries?: number
+  fallbacks?: number
+  error?: string
+}) => {
+  const durationMs = Math.max(0, Math.round(result.durationMs))
+  const timeoutCount = isTimeoutError(result.error) ? 1 : 0
+  const retries = Math.max(0, Math.round(result.retries || 0))
+  const fallbacks = Math.max(0, Math.round(result.fallbacks || 0))
+  void getInstanceId().then((instanceId) => db.execute(sql`
+    INSERT INTO operations_dependency_buckets (
+      bucket_start, instance_id, source, call_count, success_count,
+      empty_result_count, semantic_failure_count, timeout_count,
+      retry_count, fallback_count, total_duration_ms, max_duration_ms
+    ) VALUES (
+      date_trunc('minute', now()), ${instanceId}, ${source.slice(0, 32)}, 1,
+      ${result.success ? 1 : 0}, ${result.emptyResult ? 1 : 0},
+      ${result.semanticFailure ? 1 : 0}, ${timeoutCount}, ${retries},
+      ${fallbacks}, ${durationMs}, ${durationMs}
+    ) ON CONFLICT (bucket_start, instance_id, source) DO UPDATE SET
+      call_count = operations_dependency_buckets.call_count + 1,
+      success_count = operations_dependency_buckets.success_count + EXCLUDED.success_count,
+      empty_result_count = operations_dependency_buckets.empty_result_count + EXCLUDED.empty_result_count,
+      semantic_failure_count = operations_dependency_buckets.semantic_failure_count + EXCLUDED.semantic_failure_count,
+      timeout_count = operations_dependency_buckets.timeout_count + EXCLUDED.timeout_count,
+      retry_count = operations_dependency_buckets.retry_count + EXCLUDED.retry_count,
+      fallback_count = operations_dependency_buckets.fallback_count + EXCLUDED.fallback_count,
+      total_duration_ms = operations_dependency_buckets.total_duration_ms + EXCLUDED.total_duration_ms,
+      max_duration_ms = GREATEST(operations_dependency_buckets.max_duration_ms, EXCLUDED.max_duration_ms)
+  `)).catch(() => {})
+}
+
+export const recordDependencyCall = (source: string, result: {
+  success: boolean
+  emptyResult?: boolean
+  semanticFailure?: boolean
+  durationMs: number
+  retries?: number
+  fallbacks?: number
+  error?: string
+}) => {
+  const current = state.dependencies.get(source) || {
+    calls: 0,
+    successes: 0,
+    emptyResults: 0,
+    semanticFailures: 0,
+    timeouts: 0,
+    retries: 0,
+    fallbacks: 0,
+    durationMs: 0,
+    durations: [],
+    lastError: null
+  }
   current.calls += 1
   if (result.success) current.successes += 1
   if (result.emptyResult) current.emptyResults += 1
   if (result.semanticFailure) current.semanticFailures += 1
-  current.durationMs += Math.max(0, result.durationMs)
-  current.lastError = result.error || current.lastError
+  if (isTimeoutError(result.error)) current.timeouts += 1
+  current.retries += Math.max(0, Math.round(result.retries || 0))
+  current.fallbacks += Math.max(0, Math.round(result.fallbacks || 0))
+  const durationMs = Math.max(0, result.durationMs)
+  current.durationMs += durationMs
+  current.durations.push(durationMs)
+  if (current.durations.length > 500) current.durations.splice(0, current.durations.length - 500)
+  current.lastError = result.success ? null : result.error || current.lastError
   state.dependencies.set(source, current)
+  persistDependencyMinuteBucket(source, result)
 }
 
 export const recordTurnstileValidation = (result: 'success' | 'validation_failure' | 'upstream_failure') => {
