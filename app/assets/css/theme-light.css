@@ -418,7 +418,7 @@
 
 /* 用途化变量 — 品牌渐变辅助色 */
 --brand-purple: #3b82f6;
---brand-purple-hover: #2563eb;
+--brand-purple-hover: #a78bfa;
 --brand-purple-light: #60a5fa;
 --brand-purple-lighter: #dbeafe;
 --brand-purple-glow: rgba(59, 130, 246, 0.3);
@@ -426,7 +426,7 @@
 --brand-cyan: #22d3ee;
 --brand-teal: #06b6d4;
 --brand-indigo: #2563eb;
---brand-indigo-hover: #2563eb;
+--brand-indigo-hover: #818cf8;
 
 /* === WarpCanvas 星空配色（用途命名，替代 --brand-purple/indigo 语义歧义） === */
 --warp-canvas-primary: #3b82f6;
