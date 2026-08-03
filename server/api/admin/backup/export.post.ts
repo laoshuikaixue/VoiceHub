@@ -26,6 +26,7 @@ import {
 } from '~/drizzle/schema'
 import { promises as fs } from 'fs'
 import path from 'path'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -520,12 +521,24 @@ export default defineEventHandler(async (event) => {
     const isNetlify = process.env.NETLIFY
     const isServerless = isVercel || isNetlify
 
+    const recordExportSuccess = () => recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'BACKUP.EXPORT',
+      targetType: 'BACKUP',
+      targetId: filename,
+      targetLabel: filename,
+      result: 'SUCCESS',
+      summary: '管理员导出了数据库备份',
+      changes: { filename, count: totalRecords }
+    })
+
     if (isServerless) {
       // 在无服务器环境中，直接返回备份数据供前端下载
       console.log('🌐 检测到无服务器环境，直接返回备份数据')
 
       // 计算数据大小（估算）
       const dataSize = JSON.stringify(backupData).length
+      await recordExportSuccess()
 
       return {
         success: true,
@@ -550,6 +563,8 @@ export default defineEventHandler(async (event) => {
 
         const filepath = path.join(backupDir, filename)
         await fs.writeFile(filepath, JSON.stringify(backupData, null, 2), 'utf8')
+        const fileStats = await fs.stat(filepath)
+        await recordExportSuccess()
 
         return {
           success: true,
@@ -557,13 +572,24 @@ export default defineEventHandler(async (event) => {
           backup: {
             filename,
             filepath,
-            size: (await fs.stat(filepath)).size,
+            size: fileStats.size,
             metadata: backupData.metadata,
             downloadMode: 'file' // 标识为文件下载模式
           }
         }
       } catch (fsError) {
         console.warn('文件系统操作失败，回退到直接返回模式:', fsError.message)
+        await recordAdminOperation(event, {
+          actor: { id: user.id, role: user.role },
+          action: 'BACKUP.EXPORT',
+          targetType: 'BACKUP',
+          targetId: filename,
+          targetLabel: filename,
+          result: 'FAILURE',
+          summary: '管理员导出备份时写入文件失败，已回退为直接下载',
+          failureCode: 'BACKUP_FILE_WRITE_FAILED',
+          changes: { filename, count: totalRecords }
+        })
 
         // 如果文件系统操作失败，回退到直接返回模式
         const dataSize = JSON.stringify(backupData).length
@@ -582,6 +608,16 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error('创建数据库备份失败:', error)
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'BACKUP.EXPORT',
+        targetType: 'BACKUP',
+        result: 'FAILURE',
+        summary: '管理员导出数据库备份失败',
+        failureCode: getAdminOperationFailureCode(error, 'BACKUP_EXPORT_FAILED')
+      })
+    }
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || '创建数据库备份失败'

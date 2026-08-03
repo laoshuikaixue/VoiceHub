@@ -998,6 +998,9 @@ VoiceHub/
 │   │   │   │   ├── test-webdav.post.ts  # 测试 WebDAV 连接
 │   │   │   ├── operations/          # 运维监控 API
 │   │   │   │   └── metrics.get.ts   # 管理员运行指标快照
+│   │   │   ├── operation-logs/      # 管理操作审计查询 API
+│   │   │   │   ├── [id].get.ts      # 获取操作记录详情
+│   │   │   │   └── index.get.ts     # 分页查询操作记录
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   │   ├── [id].delete.ts   # 删除黑名单项

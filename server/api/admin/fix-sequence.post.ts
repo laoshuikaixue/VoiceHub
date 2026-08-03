@@ -1,5 +1,6 @@
 import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
+import { getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -93,6 +94,7 @@ async function fixTableSequence(table: string, dbTableName: string) {
 }
 
 export default defineEventHandler(async (event) => {
+  let requestedTable = 'all'
   try {
     // 验证管理员权限
     const user = event.context.user
@@ -105,6 +107,7 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event)
     const { table } = body
+    requestedTable = table || 'all'
 
     // 支持的表列表和表名映射
     const supportedTables = [
@@ -179,7 +182,7 @@ export default defineEventHandler(async (event) => {
         }
       }
 
-      return {
+      const response = {
         success: !hasError,
         message: hasError ? `序列修复完成，但有 ${errorCount} 个表失败` : `所有表序列修复完成`,
         summary: {
@@ -190,9 +193,30 @@ export default defineEventHandler(async (event) => {
         },
         results: results
       }
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'DB.SEQUENCE_REPAIR',
+        targetType: 'DATABASE',
+        targetId: 'all',
+        result: response.success ? 'SUCCESS' : 'FAILURE',
+        summary: response.success ? '管理员修复了全部数据库序列' : '管理员修复数据库序列时存在失败',
+        failureCode: response.success ? null : 'SEQUENCE_REPAIR_PARTIAL_FAILURE',
+        changes: { target: 'all', count: fixedCount }
+      })
+      return response
     }
 
     if (!supportedTables.includes(table)) {
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'DB.SEQUENCE_REPAIR',
+        targetType: 'DATABASE_TABLE',
+        targetId: table,
+        result: 'FAILURE',
+        summary: '管理员请求修复不支持的数据库序列',
+        failureCode: 'SEQUENCE_REPAIR_UNSUPPORTED_TABLE',
+        changes: { target: table }
+      })
       return {
         success: false,
         error: `不支持的表名。支持的表: ${supportedTables.join(', ')}, 或使用 'all' 修复所有表`
@@ -202,9 +226,31 @@ export default defineEventHandler(async (event) => {
     const dbTableName = tableNameMap[table]
 
     // 使用辅助函数修复单个表
-    return await fixTableSequence(table, dbTableName)
+    const response = await fixTableSequence(table, dbTableName)
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'DB.SEQUENCE_REPAIR',
+      targetType: 'DATABASE_TABLE',
+      targetId: table,
+      result: response.success ? 'SUCCESS' : 'FAILURE',
+      summary: response.success ? '管理员修复了数据库序列' : '管理员修复数据库序列失败',
+      failureCode: response.success ? null : 'SEQUENCE_REPAIR_FAILED',
+      changes: { target: table }
+    })
+    return response
   } catch (error) {
     console.error('Fix sequence error:', error)
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'DB.SEQUENCE_REPAIR',
+        targetType: requestedTable === 'all' ? 'DATABASE' : 'DATABASE_TABLE',
+        targetId: requestedTable,
+        result: 'FAILURE',
+        summary: '管理员修复数据库序列失败',
+        failureCode: getAdminOperationFailureCode(error, 'SEQUENCE_REPAIR_EXCEPTION')
+      })
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : '未知错误'

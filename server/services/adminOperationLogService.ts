@@ -38,6 +38,26 @@ const ALLOWED_CHANGE_FIELDS = new Set([
   'destination'
 ])
 
+// 只追加审计表不得被管理端清库、重置或恢复流程删除。
+export const PROTECTED_ADMIN_TABLES = new Set(['admin_operation_logs'])
+
+export function assertAdminOperationTablesProtected(tableNames: string[]): void {
+  const protectedTable = tableNames.find((tableName) => PROTECTED_ADMIN_TABLES.has(tableName))
+  if (protectedTable) {
+    throw new Error(`受保护的审计表不能被管理操作删除: ${protectedTable}`)
+  }
+}
+
+export function shouldRecordAdminOperationFailure(error: unknown): boolean {
+  return !(error && typeof error === 'object' && 'statusCode' in error && Number(error.statusCode) === 400)
+}
+
+export function getAdminOperationFailureCode(error: unknown, fallback: string): string {
+  return error && typeof error === 'object' && 'statusCode' in error
+    ? `HTTP_${error.statusCode}`
+    : fallback
+}
+
 export interface AdminOperationActor {
   id: number
   role: string
@@ -111,7 +131,7 @@ export function sanitizeAdminOperationChanges(changes: Record<string, unknown> |
 }
 
 /**
- * 写入管理操作审计日志。调用方必须传入已完成管理员认证的操作者信息。
+ * 写入管理操作审计日志。调用方必须传入认证中间件或 verifyAdminAuth 已确认的操作者信息。
  */
 export async function recordAdminOperation(event: H3Event, input: RecordAdminOperationInput): Promise<void> {
   try {

@@ -10,6 +10,7 @@ import {
 } from '~~/server/services/passwordSecurityService'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -188,6 +189,15 @@ export default defineEventHandler(async (event) => {
           ...getPasswordAuditContext(event)
         }
       })
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'ADMIN.PASSWORD_RESET',
+        targetType: 'USER',
+        targetId: targetUser.id,
+        targetLabel: targetUser.username || targetUser.name,
+        result: 'SUCCESS',
+        summary: '管理员重置了用户密码'
+      })
     }
 
     // 更新用户其他信息
@@ -234,6 +244,32 @@ export default defineEventHandler(async (event) => {
       if (!notification) {
         console.warn(`未向用户 ${targetUser.id} 发送权限变更通知`)
       }
+    }
+
+    if (status && status !== targetUser.status) {
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'USER.STATUS_CHANGE',
+        targetType: 'USER',
+        targetId: targetUser.id,
+        targetLabel: targetUser.username || targetUser.name,
+        result: 'SUCCESS',
+        summary: '管理员更新了用户状态',
+        changes: { previousStatus: targetUser.status, status }
+      })
+    }
+
+    if (validRole !== targetUser.role) {
+      await recordAdminOperation(event, {
+        actor: { id: user.id, role: user.role },
+        action: 'USER.ROLE_CHANGE',
+        targetType: 'USER',
+        targetId: targetUser.id,
+        targetLabel: targetUser.username || targetUser.name,
+        result: 'SUCCESS',
+        summary: '管理员更新了用户角色',
+        changes: { previousRole: targetUser.role, role: validRole }
+      })
     }
 
     return {

@@ -4,6 +4,7 @@ import { users, userStatusLogs } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { getStatusText } from '~~/server/utils/user'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -97,6 +98,17 @@ export default defineEventHandler(async (event) => {
         operatorId: user.id,
         createdAt: currentTime
       })
+    })
+
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'USER.STATUS_CHANGE',
+      targetType: 'USER',
+      targetId: targetUser.id,
+      targetLabel: targetUser.username || targetUser.name,
+      result: 'SUCCESS',
+      summary: '管理员更新了用户状态',
+      changes: { previousStatus: oldStatus, status }
     })
 
     return {

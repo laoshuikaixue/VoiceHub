@@ -28,7 +28,11 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { SmtpService } from '../../../services/smtpService'
 import { ApiLogService } from '~~/server/services/apiLogService'
+import { assertAdminOperationTablesProtected, getAdminOperationFailureCode, recordAdminOperation, shouldRecordAdminOperationFailure } from '~~/server/services/adminOperationLogService'
 import { and, eq, inArray, isNull, notInArray, or } from 'drizzle-orm'
+
+// 此列表必须与恢复前清理的业务表同步；审计表不属于备份恢复数据，也不可删除。
+const BACKUP_RESTORE_CLEAR_TARGET_TABLES = ['api_logs', 'api_key_permissions', 'api_keys', 'card_code_redeem_logs', 'notifications', 'notification_settings', 'user_status_logs', 'user_identities', 'users', 'collaboration_logs', 'song_collaborators', 'song_replay_requests', 'schedules', 'votes', 'songs', 'card_codes', 'song_blacklists', 'email_templates', 'play_times', 'semesters', 'request_times', 'system_settings']
 
 export default defineEventHandler(async (event) => {
   const restoreStartedAt = Date.now()
@@ -178,6 +182,7 @@ export default defineEventHandler(async (event) => {
     if (clearExisting) {
       console.log('清空现有数据...')
       try {
+        assertAdminOperationTablesProtected(BACKUP_RESTORE_CLEAR_TARGET_TABLES)
         if (shouldOverwriteSuperAdmin) {
           await db.delete(apiLogs)
           await db.delete(apiKeyPermissions)
@@ -2547,8 +2552,29 @@ export default defineEventHandler(async (event) => {
       responseTimeMs: Math.max(0, Date.now() - restoreStartedAt),
       errorMessage: `backup_restore mode=${mode} restored=${restoreResults.details.recordsRestored || 0} errors=${restoreResults.details.errors.length}`
     })
+    await recordAdminOperation(event, {
+      actor: { id: user.id, role: user.role },
+      action: 'BACKUP.RESTORE',
+      targetType: 'BACKUP',
+      targetId: mode,
+      result: restoreResults.success ? 'SUCCESS' : 'FAILURE',
+      summary: restoreResults.success ? '管理员完成了备份恢复' : '管理员执行备份恢复但存在错误',
+      failureCode: restoreResults.success ? null : 'RESTORE_PARTIAL_FAILURE',
+      changes: { mode, count: restoreResults.details.recordsRestored || 0 }
+    })
     return restoreResults
   } catch (error) {
+    if (shouldRecordAdminOperationFailure(error)) {
+      await recordAdminOperation(event, {
+        actor: event.context.user,
+        action: 'BACKUP.RESTORE',
+        targetType: 'BACKUP',
+        targetId: mode,
+        result: 'FAILURE',
+        summary: '管理员执行备份恢复失败',
+        failureCode: getAdminOperationFailureCode(error, 'RESTORE_FAILED')
+      })
+    }
     void ApiLogService.logAccess({
       apiKeyId: null,
       endpoint: '/api/admin/backup/restore',

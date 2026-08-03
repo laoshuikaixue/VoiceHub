@@ -46,7 +46,7 @@
               class="group-tab"
               :class="{ 'group-tab--active': activeGroup === group.value }"
               :aria-selected="activeGroup === group.value"
-              @click="activeGroup = group.value"
+              @click="selectMonitorGroup(group.value)"
             >
               <Icon :name="group.icon" :size="14" />
               <span>{{ group.label }}</span>
@@ -102,22 +102,64 @@
         </div>
       </OpsPanel>
 
-      <section class="panel">
-        <div class="panel-header">
-          <div><h3 class="panel-title">{{ locale.overview.backupStatus }}</h3><p class="panel-description">{{ locale.overview.backupStatusDetail }}</p></div>
-          <span class="status-badge">{{ locale.overview.referenceOnly }}</span>
+      <OpsPanel :title="locale.overview.backupStatus" :subtitle="locale.overview.backupStatusDetail" :status="backupStatusPanelStatus" :updated-at="backupUpdatedAt" :pending="initialOperationsLoading" :error="backupAccessState === 'error'" :empty="false" :refreshable="false" @refresh="loadOperationsData">
+        <div v-if="backupAccessState === 'forbidden'" class="operation-log-state">
+          <Icon name="warning" :size="16" />
+          <span>仅超级管理员可查看备份记录。</span>
         </div>
-        <dl class="detail-grid">
-          <div v-for="item in backupStatusFields" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+        <div v-else-if="backupMonitorStatus?.enabled === false" class="operation-log-state">自动备份未启用。</div>
+        <template v-else>
+          <dl class="detail-grid">
+            <div v-for="item in backupStatusFields" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+          <dl class="server-resource-list mt-3">
+            <div v-for="target in backupTargetPanels" :key="target.title">
+              <dt>{{ target.title }}</dt>
+              <dd>
+                <span>{{ target.value }}</span>
+                <small v-if="target.error" class="text-rose-400">{{ target.error }}</small>
+              </dd>
+            </div>
+          </dl>
+          <p v-if="latestBackupFailureReason" class="mt-3 text-xs text-rose-400">失败原因：{{ latestBackupFailureReason }}</p>
+        </template>
+      </OpsPanel>
+
+      <OpsPanel title="备份历史" subtitle="最近的自动备份执行记录" :status="backupHistoryPanelStatus" :updated-at="backupUpdatedAt" :pending="initialOperationsLoading" :error="backupAccessState === 'error'" :empty="false" :refreshable="false" @refresh="loadOperationsData">
+        <div v-if="backupAccessState === 'forbidden'" class="operation-log-state">
+          <Icon name="warning" :size="16" />
+          <span>仅超级管理员可查看备份记录。</span>
+        </div>
+        <div v-else-if="!operationsData.backups.length" class="operation-log-state">暂无备份记录。</div>
+        <div v-else class="overflow-x-auto">
+          <table class="data-table min-w-[920px]">
+            <thead><tr><th>时间</th><th>文件名</th><th>结果</th><th>记录数</th><th>大小</th><th>触发方式</th><th>目标与失败原因</th></tr></thead>
+            <tbody>
+              <tr v-for="item in operationsData.backups" :key="item.id">
+                <td class="whitespace-nowrap">{{ formatTimestamp(item.createdAt) }}</td>
+                <td class="max-w-[220px] truncate font-mono" :title="item.filename">{{ item.filename || '--' }}</td>
+                <td><span class="operation-log-result" :class="backupResultClass(item)">{{ backupResultText(item) }}</span></td>
+                <td>{{ item.totalRecords ?? '--' }}</td>
+                <td>{{ formatBytes(item.backupSize) }}</td>
+                <td>{{ item.triggeredBy || '--' }}</td>
+                <td class="max-w-[360px]" :title="backupMethodSummary(item)">{{ backupMethodSummary(item) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </OpsPanel>
+
+      <OpsPanel title="自动备份配置" subtitle="当前启用状态与备份目标" :status="backupConfigPanelStatus" :updated-at="backupUpdatedAt" :pending="initialOperationsLoading" :error="backupAccessState === 'error'" :empty="false" :refreshable="false" @refresh="loadOperationsData">
+        <div v-if="backupAccessState === 'forbidden'" class="operation-log-state">
+          <Icon name="warning" :size="16" />
+          <span>仅超级管理员可查看备份记录。</span>
+        </div>
+        <div v-else-if="!backupMonitorStatus" class="operation-log-state">暂无真实采集数据。</div>
+        <div v-else-if="backupMonitorStatus.enabled === false" class="operation-log-state">自动备份未启用。</div>
+        <dl v-else class="detail-grid">
+          <div v-for="item in backupConfigFields" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
         </dl>
-        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-4">
-          <div v-for="target in backupTargetPanels" :key="target.title" class="deployment-mode-card">
-            <div class="metric-card__top"><span class="metric-icon"><Icon name="database" :size="14" /></span><span class="metric-label">{{ target.title }}</span></div>
-            <strong>{{ target.value }}</strong>
-            <p>{{ target.detail }}</p>
-          </div>
-        </div>
-      </section>
+      </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <OpsPanel :title="locale.overview.sourceStatus" :subtitle="locale.overview.sourceStatusDetail" :status="dependenciesModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!musicSourceStatuses.some((item) => item.status !== 'unknown') && !initialOperationsLoading" :refreshable="false">
@@ -233,20 +275,17 @@
     </template>
 
     <template v-else-if="activeGroup === 'infra'">
-      <section class="server-summary-strip">
-        <div v-for="item in serverSummaryDetails" :key="item.label"><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div>
-      </section>
+      <OpsPanel title="服务器摘要" subtitle="当前实例与进程概览" :status="infraCombinedStatus" :updated-at="infraCombinedUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!systemSnapshot && !runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <dl class="detail-grid">
+          <div v-for="item in serverSummaryDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+        </dl>
+      </OpsPanel>
 
-      <section class="metric-grid">
-        <article v-for="item in serverMetrics" :key="item.label" class="metric-card">
-          <div class="metric-card__top">
-            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
-            <span class="metric-label">{{ item.label }}</span>
-          </div>
-          <strong class="metric-value">{{ item.value || '--' }}</strong>
-          <p class="metric-detail">{{ item.detail }}</p>
-        </article>
-      </section>
+      <OpsPanel title="运行指标" subtitle="CPU、进程内存与 Node.js 运行指标" :status="infraMetricsStatus" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <dl class="detail-grid">
+          <div v-for="item in serverMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value || '--' }}</dd></div>
+        </dl>
+      </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
@@ -282,55 +321,30 @@
           </div>
         </article>
 
-        <article class="panel xl:col-span-7">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.server.runtime }}</h3>
-              <p class="panel-description">{{ locale.server.runtimeEnvironmentDetail }}</p>
-            </div>
-          </div>
+        <OpsPanel class="xl:col-span-7" :title="locale.server.runtime" :subtitle="locale.server.runtimeEnvironmentDetail" :status="infraCombinedStatus" :updated-at="infraCombinedUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!systemSnapshot && !runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="detail-grid">
             <div v-for="item in serverRuntimeDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
-        </article>
+        </OpsPanel>
       </section>
 
       <section class="server-resource-grid">
-        <article v-for="panel in serverResourcePanels" :key="panel.title" class="panel">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ panel.title }}</h3>
-              <p class="panel-description">{{ panel.detail }}</p>
-            </div>
-            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
-          </div>
-          <dl class="server-resource-list">
-            <div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ resourceValue(item) }}</dd></div>
-          </dl>
-        </article>
-      </section>
-
-      <section class="server-resource-grid">
-        <article v-for="panel in runtimeGuardPanels" :key="panel.title" class="panel">
-          <div class="panel-header">
-            <div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div>
-            <span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span>
-          </div>
+        <OpsPanel v-for="panel in serverResourcePanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="infraDetailPanelStatus(panel)" :updated-at="infraDetailPanelUpdatedAt(panel)" :pending="initialOperationsLoading" :error="infraDetailPanelError(panel)" :empty="panel.empty && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="server-resource-list">
             <div v-for="item in panel.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
-        </article>
+        </OpsPanel>
       </section>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.server.restartEvents }}</h3><p class="panel-description">{{ locale.server.restartEventsDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
-        <div class="overflow-x-auto">
-          <table class="data-table min-w-[820px]">
-            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.server.restartReason }}</th><th>{{ locale.server.exitCode }}</th><th>{{ locale.server.oomKilled }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
-            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-          </table>
-        </div>
+      <section class="server-resource-grid">
+        <OpsPanel v-for="panel in runtimeGuardPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="infraDetailPanelStatus(panel)" :updated-at="infraDetailPanelUpdatedAt(panel)" :pending="initialOperationsLoading" :error="infraDetailPanelError(panel)" :empty="panel.empty && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <dl class="server-resource-list">
+            <div v-for="item in panel.items" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </OpsPanel>
       </section>
+
+      <OpsPanel :title="locale.server.restartEvents" :subtitle="locale.server.restartEventsDetail" status="unknown" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :empty="!initialOperationsLoading" :refreshable="false" />
 
     </template>
 
@@ -340,36 +354,24 @@
         <Icon name="database" :size="16" />
       </section>
 
-      <section class="metric-grid">
-        <article v-for="item in databaseMetrics" :key="item.label" class="metric-card">
-          <div class="metric-card__top">
-            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
-            <span class="metric-label">{{ item.label }}</span>
-          </div>
-          <strong class="metric-value">{{ item.value || '--' }}</strong>
-          <p class="metric-detail">{{ item.detail }}</p>
-        </article>
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <OpsPanel :title="locale.server.database" subtitle="连接池当前快照" :status="databasePoolPanelStatus" :updated-at="databasePoolUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.pool" :empty="!operationsData.pool && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <dl class="detail-grid">
+            <div v-for="item in databasePoolDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </OpsPanel>
+        <OpsPanel :title="locale.server.databasePerformance" :subtitle="locale.server.databasePerformanceDetail" :status="databasePerformancePanelStatus" :updated-at="databasePerformanceUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.performance" :empty="!operationsData.performance && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <dl class="detail-grid">
+            <div v-for="item in databasePerformanceSourceDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+          </dl>
+        </OpsPanel>
       </section>
 
-      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.server.database }}</h3></div>
-          <dl class="detail-grid">
-            <div v-for="item in databaseDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
-          </dl>
-        </article>
-        <article class="panel">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.server.databasePerformance }}</h3>
-              <p class="panel-description">{{ locale.server.databasePerformanceDetail }}</p>
-            </div>
-          </div>
-          <dl class="detail-grid">
-            <div v-for="item in databasePerformanceDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
-          </dl>
-        </article>
-      </section>
+      <OpsPanel title="数据库诊断详情" subtitle="活动、锁等待、容量与慢查询采集能力" :status="databaseDiagnosticsPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <dl class="detail-grid">
+          <div v-for="item in databaseDiagnosticsDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+        </dl>
+      </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
@@ -387,11 +389,7 @@
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
           <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>尚未采集慢 SQL 历史数据</span></div>
         </article>
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <div><h3 class="panel-title">{{ locale.database.slowQueries }}</h3><p class="panel-description">{{ locale.database.slowQueriesDetail }}</p></div>
-            <span class="item-count">{{ locale.itemCount }} {{ slowQueryRows.length || '--' }}</span>
-          </div>
+        <OpsPanel :title="locale.database.slowQueries" :subtitle="locale.database.slowQueriesDetail" :status="databaseSlowQueriesPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics?.slowQueries?.available || !slowQueryRows.length" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1040px]">
               <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
@@ -401,11 +399,10 @@
               </tbody>
             </table>
           </div>
-        </article>
+        </OpsPanel>
       </section>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.activeQueries }}</h3><p class="panel-description">{{ locale.database.activeQueriesDetail }}</p></div><span class="risk-badge">{{ locale.database.liveSnapshot }}</span></div>
+      <OpsPanel :title="locale.database.activeQueries" :subtitle="locale.database.activeQueriesDetail" :status="databaseActivityPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics?.activity?.available || !activeDatabaseQueries.length" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto">
           <table class="data-table min-w-[1080px]">
             <thead><tr><th>{{ locale.database.pid }}</th><th>{{ locale.database.query }}</th><th>{{ locale.database.duration }}</th><th>{{ locale.database.waitEvent }}</th><th>{{ locale.database.blockedBy }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
@@ -417,46 +414,20 @@
             </tbody>
           </table>
         </div>
-      </section>
+      </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.database.tableHealth }} · 容量与活跃度</h3>
-              <p class="panel-description">使用 pg_class 估算行数，避免对业务表执行高频 COUNT(*)。</p>
-            </div>
-            <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
-          </div>
+        <OpsPanel class="xl:col-span-2" :title="`${locale.database.tableHealth} · 容量与活跃度`" subtitle="使用 PostgreSQL 统计视图估算行数，避免对业务表执行高频 COUNT(*)。" :status="databaseTablesPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics?.tables?.available || !databaseTableRows.length" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[680px]">
-              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
+              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ item.dead_row_ratio != null ? `${item.dead_row_ratio}%` : 'N/A' }}</td><td>N/A</td></tr>
-                <tr v-if="!databaseTableRows.length"><td colspan="5" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="panel overflow-hidden">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.database.tableScale }}</h3>
-              <p class="panel-description">{{ locale.database.tableScaleDetail }}</p>
-            </div>
-            <span class="item-count">{{ locale.itemCount }} {{ databaseTableRows.length || '--' }}</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[680px]">
-              <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }}</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
-              <tbody>
-                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio }}%</td><td>N/A</td></tr>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio != null ? `${item.dead_row_ratio}%` : 'N/A' }}</td><td>N/A</td></tr>
                 <tr v-if="!databaseTableRows.length"><td colspan="6" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
               </tbody>
             </table>
           </div>
-        </article>
+        </OpsPanel>
       </section>
 
       <section class="subsection-heading">
@@ -714,6 +685,100 @@
           </table>
         </div>
       </section>
+    </template>
+
+    <template v-else-if="activeGroup === 'operation-logs'">
+      <OpsPanel
+        title="操作记录"
+        subtitle="仅超级管理员可查看高风险管理操作"
+        :status="operationLogsLoading || !operationLogsUpdatedAt || operationLogsForbidden ? 'unknown' : operationLogsError || operationLogsUnauthorized ? 'error' : 'ok'"
+        :updated-at="operationLogsUpdatedAt ? formatTimestamp(operationLogsUpdatedAt) : '尚未读取'"
+        :refreshable="!operationLogsForbidden"
+        @refresh="loadOperationLogs()"
+      >
+        <div v-if="operationLogsLoading" class="operation-log-skeleton" aria-label="正在读取操作记录">
+          <i v-for="index in 7" :key="index" />
+        </div>
+
+        <div v-else-if="operationLogsForbidden" class="operation-log-state">
+          <Icon name="warning" :size="16" />
+          <span>仅超级管理员可查看操作记录。</span>
+        </div>
+
+        <div v-else-if="operationLogsUnauthorized" class="operation-log-state operation-log-state--error">
+          <Icon name="warning" :size="16" />
+          <span>登录已失效，请重新登录。</span>
+        </div>
+
+        <div v-else-if="operationLogsError" class="operation-log-state operation-log-state--error">
+          <span>{{ operationLogsError }}</span>
+          <button type="button" class="filter-action" @click="loadOperationLogs()"><Icon name="refresh" :size="13" />重试</button>
+        </div>
+
+        <template v-else>
+          <section class="operation-log-filters">
+            <label class="filter-field">
+              <span>开始时间</span>
+              <input v-model="operationLogFilters.startAt" type="datetime-local">
+            </label>
+            <label class="filter-field">
+              <span>结束时间</span>
+              <input v-model="operationLogFilters.endAt" type="datetime-local">
+            </label>
+            <label class="filter-field">
+              <span>操作者 ID</span>
+              <input v-model="operationLogFilters.actorId" type="number" min="1" placeholder="全部">
+            </label>
+            <CustomSelect v-model="operationLogFilters.action" :options="operationLogActionOptions" placeholder="全部动作" class-name="operation-log-select" />
+            <CustomSelect v-model="operationLogFilters.targetType" :options="operationLogTargetTypeOptions" placeholder="全部对象" class-name="operation-log-select" />
+            <CustomSelect v-model="operationLogFilters.result" :options="operationLogResultOptions" placeholder="全部结果" class-name="operation-log-select" />
+            <label class="filter-field filter-field--wide">
+              <Icon name="search" :size="13" />
+              <input v-model="operationLogFilters.keyword" type="search" placeholder="关键词" @keyup.enter="applyOperationLogFilters">
+            </label>
+            <label class="filter-field filter-field--wide">
+              <span>Request ID</span>
+              <input v-model="operationLogRequestId" type="search" placeholder="精确匹配" @keyup.enter="applyOperationLogFilters">
+            </label>
+            <button type="button" class="filter-action" @click="applyOperationLogFilters"><Icon name="search" :size="13" />查询</button>
+          </section>
+
+          <div v-if="!operationLogs.length" class="operation-log-state">暂无操作记录。</div>
+          <div v-else class="overflow-x-auto">
+            <table class="data-table min-w-[1120px] operation-log-table">
+              <thead><tr><th>时间</th><th>操作者</th><th>动作</th><th>对象</th><th>结果</th><th>来源 IP</th><th>摘要</th></tr></thead>
+              <tbody>
+                <template v-for="item in operationLogs" :key="item.id">
+                  <tr class="operation-log-row" :class="{ 'operation-log-row--expanded': expandedOperationLogId === item.id }" @click="toggleOperationLogDetail(item)">
+                    <td class="whitespace-nowrap">{{ formatTimestamp(item.createdAt) }}</td>
+                    <td><div class="operation-log-actor"><strong>{{ item.actorName || '已删除用户' }}</strong><small>{{ item.actorRole || '--' }}</small></div></td>
+                    <td class="font-mono text-xs">{{ item.action }}</td>
+                    <td><span class="block max-w-[190px] truncate" :title="operationLogTarget(item)">{{ operationLogTarget(item) }}</span></td>
+                    <td><span class="operation-log-result" :class="`operation-log-result--${String(item.result || '').toLowerCase()}`">{{ item.result === 'SUCCESS' ? '成功' : '失败' }}</span></td>
+                    <td class="font-mono">{{ item.ipAddress || '--' }}</td>
+                    <td><span class="block max-w-[280px] truncate" :title="item.summary || '--'">{{ item.summary || '--' }}</span></td>
+                  </tr>
+                  <tr v-if="expandedOperationLogId === item.id" class="operation-log-detail-row">
+                    <td colspan="7">
+                      <div v-if="operationLogDetailLoading" class="operation-log-detail-state">正在读取详情...</div>
+                      <div v-else-if="operationLogDetailError" class="operation-log-detail-state operation-log-detail-state--error"><span>{{ operationLogDetailError }}</span><button type="button" class="table-action" @click.stop="loadOperationLogDetail(item.id)">重试</button></div>
+                      <div v-else-if="operationLogDetail" class="operation-log-detail-grid">
+                        <dl><dt>完整 IP</dt><dd class="font-mono">{{ operationLogDetail.ipAddress || '--' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ operationLogDetail.requestId || '--' }}</dd><dt>失败代码</dt><dd>{{ operationLogDetail.failureCode || '--' }}</dd></dl>
+                        <div><strong>变更摘要</strong><pre>{{ formatOperationLogChanges(operationLogDetail.changes) }}</pre></div>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <footer v-if="operationLogsPagination.totalPages > 1" class="operation-log-pagination">
+            <span>第 {{ operationLogsPagination.page }} / {{ operationLogsPagination.totalPages }} 页，共 {{ operationLogsPagination.total }} 条</span>
+            <div><button type="button" class="table-action" :disabled="operationLogsPagination.page <= 1" @click="changeOperationLogPage(operationLogsPagination.page - 1)">上一页</button><button type="button" class="table-action" :disabled="operationLogsPagination.page >= operationLogsPagination.totalPages" @click="changeOperationLogPage(operationLogsPagination.page + 1)">下一页</button></div>
+          </footer>
+        </template>
+      </OpsPanel>
     </template>
 
     <template v-else-if="activeGroup === 'debug'">
@@ -1051,6 +1116,50 @@ const logKeyword = ref('')
 const logRequestId = ref('')
 const logLevelFilter = ref('all')
 const expandedLogKey = ref('')
+const operationLogs = ref([])
+const operationLogsPagination = ref({ page: 1, limit: 20, total: 0, totalPages: 0 })
+const operationLogsLoading = ref(false)
+const operationLogsError = ref('')
+const operationLogsForbidden = ref(false)
+const operationLogsUnauthorized = ref(false)
+const operationLogsUpdatedAt = ref(null)
+const operationLogFilters = ref({ startAt: '', endAt: '', actorId: '', action: '', targetType: '', result: '', keyword: '' })
+const operationLogRequestId = ref('')
+const expandedOperationLogId = ref('')
+const operationLogDetail = ref(null)
+const operationLogDetailLoading = ref(false)
+const operationLogDetailError = ref('')
+const operationLogActionOptions = [
+  { label: '全部动作', value: '' },
+  { label: '用户状态变更', value: 'USER.STATUS_CHANGE' },
+  { label: '用户角色变更', value: 'USER.ROLE_CHANGE' },
+  { label: '管理员重置密码', value: 'ADMIN.PASSWORD_RESET' },
+  { label: '创建 API Key', value: 'API_KEY.CREATE' },
+  { label: '修改 API Key 权限', value: 'API_KEY.UPDATE' },
+  { label: '禁用 API Key', value: 'API_KEY.DISABLE' },
+  { label: '删除 API Key', value: 'API_KEY.DELETE' },
+  { label: '保存系统设置', value: 'SETTINGS.SAVE' },
+  { label: '更新备份配置', value: 'BACKUP_CONFIG.UPDATE' },
+  { label: '导出备份', value: 'BACKUP.EXPORT' },
+  { label: '上传备份', value: 'BACKUP.UPLOAD' },
+  { label: '删除备份', value: 'BACKUP.DELETE' },
+  { label: '恢复备份', value: 'BACKUP.RESTORE' },
+  { label: '清理数据库', value: 'DB.CLEANUP' },
+  { label: '重置数据库', value: 'DB.RESET' },
+  { label: '修复数据库序列', value: 'DB.SEQUENCE_REPAIR' }
+]
+const operationLogTargetTypeOptions = [
+  { label: '全部对象', value: '' },
+  { label: '用户', value: 'USER' },
+  { label: '批量用户', value: 'USER_BATCH' },
+  { label: 'API Key', value: 'API_KEY' },
+  { label: '系统设置', value: 'SETTINGS' },
+  { label: '系统设置（备份）', value: 'SYSTEM_SETTINGS' },
+  { label: '备份文件', value: 'BACKUP' },
+  { label: '数据库', value: 'DATABASE' },
+  { label: '数据库表', value: 'DATABASE_TABLE' }
+]
+const operationLogResultOptions = [{ label: '全部结果', value: '' }, { label: '成功', value: 'SUCCESS' }, { label: '失败', value: 'FAILURE' }]
 const traceSpans = computed(() => {
   const requestId = debugRequestId.value
   const samples = operationsData.value?.metrics?.diagnostic?.entries || operationsData.value?.metrics?.metrics?.recentErrors || []
@@ -1073,6 +1182,8 @@ const autoRefreshIntervalOptions = [
   { label: '5 分钟', value: 300_000 }
 ]
 const moduleFetchErrors = ref({ system: false, pool: false, performance: false, backups: false, metrics: false })
+const backupAccessState = ref('idle')
+const backupLastUpdated = ref(null)
 
 const loadOperationsData = async () => {
   operationsLoading.value = true
@@ -1089,7 +1200,16 @@ const loadOperationsData = async () => {
   if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
   if (poolResult.status === 'fulfilled') operationsData.value.pool = poolResult.value
   if (performanceResult.status === 'fulfilled') operationsData.value.performance = performanceResult.value
-  if (backupResult.status === 'fulfilled') operationsData.value.backups = backupResult.value?.data || []
+  if (backupResult.status === 'fulfilled') {
+    operationsData.value.backups = backupResult.value?.data || []
+    backupAccessState.value = 'ok'
+    backupLastUpdated.value = new Date()
+  } else {
+    const backupStatusCode = backupResult.reason?.statusCode || backupResult.reason?.status || backupResult.reason?.response?.status || backupResult.reason?.data?.statusCode
+    operationsData.value.backups = []
+    backupLastUpdated.value = null
+    backupAccessState.value = Number(backupStatusCode) === 403 ? 'forbidden' : 'error'
+  }
   if (metricsResult.status === 'fulfilled') {
     const metrics = metricsResult.value?.data || {}
     operationsData.value.metrics = metrics
@@ -1101,7 +1221,7 @@ const loadOperationsData = async () => {
     system: statusResult.status === 'rejected',
     pool: poolResult.status === 'rejected',
     performance: performanceResult.status === 'rejected',
-    backups: backupResult.status === 'rejected',
+    backups: backupResult.status === 'rejected' && backupAccessState.value !== 'forbidden',
     metrics: metricsResult.status === 'rejected'
   }
 
@@ -1110,6 +1230,77 @@ const loadOperationsData = async () => {
   operationsLoading.value = false
   initialOperationsLoading.value = false
 }
+
+const operationLogErrorMessage = (error) => {
+  const message = error?.data?.message || error?.statusMessage || error?.message
+  return message && !String(message).includes('FetchError') ? String(message) : '操作记录暂时无法读取。'
+}
+const loadOperationLogs = async (page = operationLogsPagination.value.page) => {
+  operationLogsLoading.value = true
+  operationLogsError.value = ''
+  operationLogsForbidden.value = false
+  operationLogsUnauthorized.value = false
+  expandedOperationLogId.value = ''
+  operationLogDetail.value = null
+
+  const filters = operationLogFilters.value
+  const query = { page, limit: operationLogsPagination.value.limit }
+  const filterKeys = ['startAt', 'endAt', 'actorId', 'action', 'targetType', 'result', 'keyword']
+  filterKeys.forEach((key) => {
+    if (filters[key]) query[key] = filters[key]
+  })
+  if (operationLogRequestId.value) query.requestId = operationLogRequestId.value
+
+  try {
+    const response = await $fetch('/api/admin/operation-logs', { query })
+    operationLogs.value = Array.isArray(response?.logs) ? response.logs : []
+    operationLogsPagination.value = response?.pagination || { page, limit: operationLogsPagination.value.limit, total: 0, totalPages: 0 }
+    operationLogsUpdatedAt.value = new Date()
+  } catch (error) {
+    const statusCode = error?.statusCode || error?.response?.status
+    operationLogs.value = []
+    if (statusCode === 403) operationLogsForbidden.value = true
+    else if (statusCode === 401) operationLogsUnauthorized.value = true
+    else operationLogsError.value = operationLogErrorMessage(error)
+  } finally {
+    operationLogsLoading.value = false
+  }
+}
+const applyOperationLogFilters = () => loadOperationLogs(1)
+const changeOperationLogPage = (page) => {
+  if (page < 1 || page > operationLogsPagination.value.totalPages || operationLogsLoading.value) return
+  loadOperationLogs(page)
+}
+const loadOperationLogDetail = async (id) => {
+  operationLogDetailLoading.value = true
+  operationLogDetailError.value = ''
+  operationLogDetail.value = null
+  try {
+    const response = await $fetch(`/api/admin/operation-logs/${encodeURIComponent(id)}`)
+    operationLogDetail.value = response?.log || null
+  } catch (error) {
+    operationLogDetailError.value = operationLogErrorMessage(error)
+  } finally {
+    operationLogDetailLoading.value = false
+  }
+}
+const toggleOperationLogDetail = (item) => {
+  if (expandedOperationLogId.value === item.id) {
+    expandedOperationLogId.value = ''
+    operationLogDetail.value = null
+    return
+  }
+  expandedOperationLogId.value = item.id
+  loadOperationLogDetail(item.id)
+}
+const selectMonitorGroup = (group) => {
+  activeGroup.value = group
+  if (group === 'operation-logs' && !operationLogsLoading.value && !operationLogsUpdatedAt.value && !operationLogsForbidden.value) loadOperationLogs(1)
+}
+const operationLogTarget = (item) => [item?.targetType, item?.targetLabel || item?.targetId].filter(Boolean).join(' · ') || '--'
+const formatOperationLogChanges = (changes) => changes && Object.keys(changes).length
+  ? redactSensitiveText(JSON.stringify(changes, null, 2))
+  : '未记录变更摘要。'
 
 let operationsRefreshTimer = null
 let runtimeClockTimer = null
@@ -1145,6 +1336,24 @@ onBeforeUnmount(() => {
 const systemSnapshot = computed(() => operationsData.value.status?.system || null)
 const databaseSnapshot = computed(() => operationsData.value.status?.database || null)
 const latestBackup = computed(() => operationsData.value.backups?.[0] || null)
+const backupRecordHasFailure = (record) => Array.isArray(record?.methods) && record.methods.some((method) => method?.error)
+const backupRecordPending = (record) => !record?.success && Array.isArray(record?.methods) && record.methods.some((method) => !method?.success && !method?.error)
+const backupFailureReason = (record) => Array.isArray(record?.methods)
+  ? record.methods.filter((method) => method?.error).map((method) => `${method.method || '备份目标'}：${method.error}`).join('；')
+  : ''
+const latestBackupFailureReason = computed(() => backupFailureReason(latestBackup.value))
+const backupResultText = (record) => {
+  if (backupRecordHasFailure(record) && record?.success) return '部分成功'
+  if (record?.success) return '成功'
+  return backupRecordHasFailure(record) ? '失败' : backupRecordPending(record) ? '执行中' : '未知'
+}
+const backupResultClass = (record) => {
+  if (backupRecordHasFailure(record)) return 'operation-log-result--failure'
+  return record?.success ? 'operation-log-result--success' : ''
+}
+const backupMethodSummary = (record) => Array.isArray(record?.methods) && record.methods.length
+  ? record.methods.map((method) => `${method.method || '备份目标'}：${method.success ? '成功' : method.error ? `失败（${method.error}）` : '执行中'}`).join('；')
+  : '--'
 const runtimeMetrics = computed(() => operationsData.value.metrics?.metrics || null)
 const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
 const runtimeTimeline = computed(() => runtimeDatabaseMetrics.value?.timeline?.length ? runtimeDatabaseMetrics.value.timeline : (runtimeMetrics.value?.timeline || []))
@@ -1268,6 +1477,49 @@ const performanceModuleStatus = computed(() => {
   if ((httpErrorRate.value ?? 0) >= 0.01 || Number(http.p95Ms || 0) >= 500 || Number(http.status429 || 0) > 0) return 'warning'
   return 'ok'
 })
+const infraSystemStatus = computed(() => moduleFetchErrors.value.system ? 'error' : systemModuleStatus.value)
+const infraMetricsStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!runtimeMetrics.value) return 'unknown'
+  if (isServerlessRuntime.value) return performanceModuleStatus.value
+
+  const statuses = []
+  const cpuUsageValue = runtimeMetrics.value.process?.cpuUsagePercent
+  const cpuUsage = Number(cpuUsageValue)
+  if (cpuUsageValue != null && Number.isFinite(cpuUsage)) statuses.push(cpuUsage >= 95 ? 'error' : cpuUsage >= 80 ? 'warning' : 'ok')
+
+  const heapUsedValue = runtimeMetrics.value.process?.memory?.heapUsed
+  const heapTotalValue = runtimeMetrics.value.process?.memory?.heapTotal
+  const heapUsed = Number(heapUsedValue)
+  const heapTotal = Number(heapTotalValue)
+  if (heapUsedValue != null && heapTotalValue != null && Number.isFinite(heapUsed) && Number.isFinite(heapTotal) && heapTotal > 0) {
+    const heapRatio = heapUsed / heapTotal
+    statuses.push(heapRatio >= .95 ? 'error' : heapRatio >= .85 ? 'warning' : 'ok')
+  }
+
+  const eventLoopP99Value = runtimeEventLoopMetrics.value?.p99Ms
+  const eventLoopP99 = Number(eventLoopP99Value)
+  if (eventLoopP99Value != null && Number.isFinite(eventLoopP99)) statuses.push(eventLoopP99 >= 200 ? 'error' : eventLoopP99 >= 50 ? 'warning' : 'ok')
+  return statuses.length ? maxStatus(...statuses) : 'unknown'
+})
+const infraCombinedStatus = computed(() => {
+  const statuses = [infraSystemStatus.value, infraMetricsStatus.value]
+  if (statuses.includes('error')) return 'error'
+  if (statuses.includes('warning')) return 'warning'
+  if (statuses.includes('unknown')) return 'unknown'
+  return 'ok'
+})
+const infraSystemUpdatedAt = computed(() => formatTimestamp(systemSnapshot.value?.timestamp))
+const infraMetricsUpdatedAt = computed(() => formatTimestamp(runtimeMetrics.value?.collectedAt))
+const infraCombinedUpdatedAt = computed(() => `系统 ${infraSystemUpdatedAt.value} · 指标 ${infraMetricsUpdatedAt.value}`)
+const infraDetailPanelStatus = (panel) => {
+  const parentStatus = panel.source === 'system' ? infraSystemStatus.value : infraMetricsStatus.value
+  if (parentStatus === 'error') return 'error'
+  if (panel.empty) return 'unknown'
+  return panel.status || parentStatus
+}
+const infraDetailPanelUpdatedAt = (panel) => panel.source === 'system' ? infraSystemUpdatedAt.value : infraMetricsUpdatedAt.value
+const infraDetailPanelError = (panel) => panel.source === 'system' ? moduleFetchErrors.value.system : moduleFetchErrors.value.metrics
 const databaseModuleStatus = computed(() => {
   if (!databaseSnapshot.value || !operationsData.value.pool) return 'unknown'
   if (!databaseSnapshot.value.connected) return 'error'
@@ -1347,11 +1599,74 @@ const moduleSummaries = computed(() => [
   { key: 'security', title: '访问与风控', subtitle: '认证、限流与验证', status: securityModuleStatus.value, value: securityModuleStatus.value === 'ok' ? '未发现风险' : securityModuleStatus.value === 'warning' ? '存在需关注事件' : securityModuleStatus.value === 'error' ? '存在异常请求' : '等待数据', detail: runtimeHttpMetrics.value ? `401 ${runtimeHttpMetrics.value.status401 || 0} · 403 ${runtimeHttpMetrics.value.status403 || 0} · 429 ${runtimeHttpMetrics.value.status429 || 0}` : '等待安全采样', error: moduleFetchErrors.value.metrics, empty: !runtimeHttpMetrics.value && !initialOperationsLoading.value }
 ])
 const databaseDiagnostics = computed(() => runtimeDatabaseMetrics.value?.diagnostics || null)
+const databasePoolPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.pool) return 'error'
+  const pool = operationsData.value.pool
+  if (!pool) return 'unknown'
+  const utilization = Number(pool.utilization)
+  if (!Number.isFinite(utilization)) return 'unknown'
+  if (utilization >= 95) return 'error'
+  if (utilization >= 80) return 'warning'
+  return 'ok'
+})
+const databasePerformancePanelStatus = computed(() => {
+  if (moduleFetchErrors.value.performance) return 'error'
+  const performance = operationsData.value.performance
+  if (!performance) return 'unknown'
+  const responseTime = Number(performance.responseTime)
+  if (!Number.isFinite(responseTime)) return 'unknown'
+  if (responseTime >= 1500) return 'error'
+  if (responseTime >= 500) return 'warning'
+  return 'ok'
+})
+const databaseDiagnosticsPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  const diagnostics = databaseDiagnostics.value
+  if (!diagnostics) return 'unknown'
+  const sources = [diagnostics.activity, diagnostics.locks, diagnostics.tables, diagnostics.size, diagnostics.slowQueries]
+  if (!sources.some((source) => source?.available)) return 'unknown'
+  if (Number(diagnostics.locks?.data?.length || 0) > 0) return 'warning'
+  return 'ok'
+})
+const databaseDiagnosticSourceStatus = (source) => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!databaseDiagnostics.value?.[source]?.available) return 'unknown'
+  return 'ok'
+}
+const databaseSlowQueriesPanelStatus = computed(() => databaseDiagnosticSourceStatus('slowQueries'))
+const databaseActivityPanelStatus = computed(() => {
+  const status = databaseDiagnosticSourceStatus('activity')
+  if (status !== 'ok') return status
+  return Number(databaseDiagnostics.value?.locks?.data?.length || 0) > 0 ? 'warning' : 'ok'
+})
+const databaseTablesPanelStatus = computed(() => databaseDiagnosticSourceStatus('tables'))
+const databasePoolUpdatedAt = computed(() => formatTimestamp(operationsData.value.pool?.timestamp || operationsLastUpdated.value))
+const databasePerformanceUpdatedAt = computed(() => formatTimestamp(operationsData.value.performance?.timestamp || operationsLastUpdated.value))
+const databaseDiagnosticsUpdatedAt = computed(() => formatTimestamp(databaseDiagnostics.value?.collectedAt))
 const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.businessQueue || null)
 const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
 const backupSnapshot = computed(() => runtimeMetrics.value?.backupSnapshot || null)
 const backupMonitorStatus = computed(() => operationsData.value.metrics?.backup || null)
 const latestBackupRestore = computed(() => (runtimeDatabaseMetrics.value?.recentLogs || []).find((item) => item?.route === '/api/admin/backup/restore') || null)
+const backupUpdatedAt = computed(() => backupLastUpdated.value ? formatTimestamp(backupLastUpdated.value) : '尚未读取')
+const backupStatusPanelStatus = computed(() => {
+  if (backupAccessState.value === 'forbidden') return 'unknown'
+  if (backupAccessState.value === 'error') return 'error'
+  if (backupMonitorStatus.value?.enabled === false || !latestBackup.value) return 'unknown'
+  if (backupRecordHasFailure(latestBackup.value)) return 'error'
+  return backupRecordPending(latestBackup.value) ? 'warning' : 'ok'
+})
+const backupHistoryPanelStatus = computed(() => {
+  if (backupAccessState.value === 'forbidden') return 'unknown'
+  if (backupAccessState.value === 'error') return 'error'
+  if (!operationsData.value.backups.length) return 'unknown'
+  return backupRecordHasFailure(latestBackup.value) ? 'error' : backupRecordPending(latestBackup.value) ? 'warning' : 'ok'
+})
+const backupConfigPanelStatus = computed(() => {
+  if (backupAccessState.value === 'forbidden') return 'unknown'
+  if (backupAccessState.value === 'error') return 'error'
+  return backupMonitorStatus.value?.enabled ? 'ok' : 'unknown'
+})
 const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
 const dependencyMetricTimeline = computed(() => runtimeDatabaseMetrics.value?.dependencyTimeline || [])
 const runtimeAlerts = computed(() => runtimeMetrics.value?.alerts || [])
@@ -1601,7 +1916,8 @@ const monitorSections = computed(() => [
     items: [
       { icon: 'search', label: locale.value.groups?.debug, value: 'debug' },
       { icon: 'terminal', label: locale.value.groups?.logs, value: 'logs' },
-      { icon: 'layers', label: locale.value.groups?.dependencies, value: 'dependencies' }
+      { icon: 'layers', label: locale.value.groups?.dependencies, value: 'dependencies' },
+      { icon: 'terminal', label: '操作记录', value: 'operation-logs' }
     ]
   }
 ])
@@ -1663,7 +1979,7 @@ const healthLiveDetails = computed(() => [
 
 const backupStatusFields = computed(() => [
   { label: locale.value.overview?.lastBackupAt, value: formatTimestamp(latestBackup.value?.createdAt) },
-  { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? (latestBackup.value.success ? '成功' : '失败') : '--' },
+  { label: locale.value.overview?.lastBackupResult, value: latestBackup.value ? backupResultText(latestBackup.value) : '--' },
   { label: locale.value.overview?.lastBackupSize, value: formatBytes(latestBackup.value?.backupSize) },
   { label: locale.value.overview?.backupStorageUsage, value: 'N/A' },
   { label: locale.value.overview?.backupExportedTables, value: backupSnapshot.value?.exportedTables != null ? String(backupSnapshot.value.exportedTables) : '--' },
@@ -1676,18 +1992,35 @@ const backupStatusFields = computed(() => [
 ])
 
 const backupTargetPanels = computed(() => [
-  { title: locale.value.overview?.backupTargetS3, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('S3') },
-  { title: locale.value.overview?.backupTargetWebdav, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('WebDAV') },
-  { title: locale.value.overview?.backupTargetTelegram, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('Telegram') },
-  { title: locale.value.overview?.backupTargetEmail, detail: locale.value.overview?.backupTargetDetail, value: backupTargetValue('Email') }
+  backupTargetPanel('S3', locale.value.overview?.backupTargetS3),
+  backupTargetPanel('WebDAV', locale.value.overview?.backupTargetWebdav),
+  backupTargetPanel('Telegram', locale.value.overview?.backupTargetTelegram),
+  backupTargetPanel('Email', locale.value.overview?.backupTargetEmail)
 ])
+
+const backupTargetPanel = (target, title) => {
+  const method = latestBackup.value?.methods?.find((item) => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
+  return {
+    title,
+    value: backupTargetValue(target),
+    error: method?.error || ''
+  }
+}
 
 const backupTargetValue = (target) => {
   const method = latestBackup.value?.methods?.find(item => String(item.method || '').toLowerCase().includes(target.toLowerCase()))
-  if (method) return method.success ? '成功' : '失败'
+  if (method) return method.success ? '成功' : method.error ? '失败' : '执行中'
   const targetKey = target.toLowerCase()
   return backupMonitorStatus.value?.targets?.[targetKey] ? '已配置，尚未执行' : '未启用'
 }
+
+const backupConfigFields = computed(() => [
+  { label: '自动备份', value: backupMonitorStatus.value?.enabled ? '已启用' : '未启用' },
+  { label: locale.value.overview?.backupTargetS3, value: backupMonitorStatus.value?.targets?.s3 ? '已启用' : '未启用' },
+  { label: locale.value.overview?.backupTargetWebdav, value: backupMonitorStatus.value?.targets?.webdav ? '已启用' : '未启用' },
+  { label: locale.value.overview?.backupTargetTelegram, value: backupMonitorStatus.value?.targets?.telegram ? '已启用' : '未启用' },
+  { label: locale.value.overview?.backupTargetEmail, value: backupMonitorStatus.value?.targets?.email ? '已启用' : '未启用' }
+])
 
 const deploymentModeRows = computed(() => [
   { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? '已检测到' : locale.value.overview?.detectionPending },
@@ -1822,10 +2155,10 @@ const serverSummaryDetails = computed(() => [
 ])
 
 const serverMetrics = computed(() => (isServerlessRuntime.value ? [
-  { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : 'N/A' },
-  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: runtimeMetrics.value?.http?.p95Ms != null ? `${runtimeMetrics.value.http.p95Ms} ms` : 'N/A' },
-  { icon: 'refresh', label: '冷启动次数', detail: '当前实例可见的冷启动次数', value: 'N/A' },
-  { icon: 'warning', label: '内存超限错误', detail: '函数因内存限制终止的次数', value: 'N/A' }
+  { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : '--' },
+  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: runtimeMetrics.value?.http?.p95Ms != null ? `${runtimeMetrics.value.http.p95Ms} ms` : '--' },
+  { icon: 'refresh', label: '冷启动次数', detail: '当前实例可见的冷启动次数', value: '--' },
+  { icon: 'warning', label: '内存超限错误', detail: '函数因内存限制终止的次数', value: '--' }
 ] : [
   {
     icon: 'activity',
@@ -1842,28 +2175,44 @@ const serverMetrics = computed(() => (isServerlessRuntime.value ? [
   {
     icon: 'database',
     label: locale.value.metrics?.diskUsage,
-    detail: locale.value.server?.diskUsageDetail
+    detail: locale.value.server?.diskUsageDetail,
+    value: '--'
   },
   {
     icon: 'activity',
     label: locale.value.server?.networkIngress,
-    detail: locale.value.server?.networkIngressDetail
+    detail: locale.value.server?.networkIngressDetail,
+    value: '--'
   },
   {
     icon: 'activity',
     label: locale.value.server?.networkEgress,
-    detail: locale.value.server?.networkEgressDetail
+    detail: locale.value.server?.networkEgressDetail,
+    value: '--'
   },
   {
     icon: 'database',
     label: locale.value.server?.diskIo,
-    detail: locale.value.server?.diskIoDetail
+    detail: locale.value.server?.diskIoDetail,
+    value: '--'
   },
   {
     icon: 'refresh',
     label: locale.value.server?.containerRestarts,
     detail: locale.value.server?.containerRestartsDetail,
     value: '--'
+  },
+  {
+    icon: 'activity',
+    label: locale.value.application?.eventLoopDelay,
+    detail: locale.value.application?.eventLoopDelayDetail,
+    value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--'
+  },
+  {
+    icon: 'clock',
+    label: locale.value.application?.gcPause,
+    detail: locale.value.application?.gcPauseDetail,
+    value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--'
   }
 ]))
 
@@ -1899,76 +2248,69 @@ const serverRuntimeDetails = computed(() => [
 const serverResourcePanels = computed(() => [
   {
     icon: 'activity',
+    source: 'system',
     title: locale.value.server?.cpuDetails,
     detail: locale.value.server?.cpuDetailsDetail,
+    empty: true,
     items: [
-      locale.value.server?.cpuModel,
-      locale.value.server?.cpuCores,
-      locale.value.server?.loadAverage1,
-      locale.value.server?.loadAverage5,
-      locale.value.server?.loadAverage15
+      { label: locale.value.server?.cpuModel, value: '--' },
+      { label: locale.value.server?.cpuCores, value: '--' },
+      { label: locale.value.server?.loadAverage1, value: '--' },
+      { label: locale.value.server?.loadAverage5, value: '--' },
+      { label: locale.value.server?.loadAverage15, value: '--' }
     ]
   },
   {
     icon: 'monitoring',
+    source: 'system',
     title: locale.value.server?.systemMemoryDetails,
     detail: locale.value.server?.systemMemoryDetailsDetail,
+    empty: !systemSnapshot.value?.memory,
     items: [
-      locale.value.server?.systemMemoryTotal,
-      locale.value.server?.systemMemoryUsed,
-      locale.value.server?.systemMemoryAvailable
+      { label: locale.value.server?.systemMemoryTotal, value: systemSnapshot.value?.memory?.total != null ? `${systemSnapshot.value.memory.total} MB` : '--' },
+      { label: locale.value.server?.systemMemoryUsed, value: systemSnapshot.value?.memory?.used != null ? `${systemSnapshot.value.memory.used} MB` : '--' },
+      { label: locale.value.server?.systemMemoryAvailable, value: systemSnapshot.value?.memory?.total != null && systemSnapshot.value?.memory?.used != null ? `${Math.max(0, systemSnapshot.value.memory.total - systemSnapshot.value.memory.used)} MB` : '--' }
     ]
   },
   {
     icon: 'database',
+    source: 'system',
     title: locale.value.server?.diskDetails,
     detail: locale.value.server?.diskDetailsDetail,
+    empty: true,
     items: [
-      locale.value.server?.diskTotal,
-      locale.value.server?.diskAvailable,
-      locale.value.server?.partitionCount
+      { label: locale.value.server?.diskTotal, value: '--' },
+      { label: locale.value.server?.diskAvailable, value: '--' },
+      { label: locale.value.server?.partitionCount, value: '--' }
     ]
   },
   {
     icon: 'server',
+    source: 'metrics',
     title: locale.value.server?.nodeProcessDetails,
     detail: locale.value.server?.nodeProcessDetailsDetail,
+    empty: !runtimeMetrics.value?.process,
     items: [
-      locale.value.server?.rssMemory,
-      locale.value.server?.nodeHeapUtilization,
-      locale.value.server?.heapUsed,
-      locale.value.server?.heapTotal,
-      locale.value.server?.externalMemory,
-      locale.value.server?.gcCount,
-      locale.value.server?.gcPause,
-      locale.value.server?.eventLoopP99Lag
+      { label: locale.value.server?.rssMemory, value: runtimeMetrics.value?.process?.memory?.rss != null ? formatBytes(runtimeMetrics.value.process.memory.rss) : '--' },
+      { label: locale.value.server?.nodeHeapUtilization, value: runtimeMetrics.value?.process?.memory?.heapTotal ? formatPercent(runtimeMetrics.value.process.memory.heapUsed / runtimeMetrics.value.process.memory.heapTotal * 100) : '--' },
+      { label: locale.value.server?.heapUsed, value: runtimeMetrics.value?.process?.memory?.heapUsed != null ? formatBytes(runtimeMetrics.value.process.memory.heapUsed) : '--' },
+      { label: locale.value.server?.heapTotal, value: runtimeMetrics.value?.process?.memory?.heapTotal != null ? formatBytes(runtimeMetrics.value.process.memory.heapTotal) : '--' },
+      { label: locale.value.server?.externalMemory, value: runtimeMetrics.value?.process?.memory?.external != null ? formatBytes(runtimeMetrics.value.process.memory.external) : '--' },
+      { label: locale.value.server?.gcCount, value: runtimeGcMetrics.value?.count != null ? String(runtimeGcMetrics.value.count) : '--' },
+      { label: locale.value.server?.gcPause, value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--' },
+      { label: locale.value.server?.eventLoopP99Lag, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' }
     ]
   }
 ])
 
-const resourceValue = (label) => {
-  const memory = runtimeMetrics.value?.process?.memory
-  const systemMemory = systemSnapshot.value?.memory
-  const values = new Map([
-    [locale.value.server?.rssMemory, memory?.rss != null ? formatBytes(memory.rss) : '--'],
-    [locale.value.server?.heapUsed, memory?.heapUsed != null ? formatBytes(memory.heapUsed) : '--'],
-    [locale.value.server?.heapTotal, memory?.heapTotal != null ? formatBytes(memory.heapTotal) : '--'],
-    [locale.value.server?.externalMemory, memory?.external != null ? formatBytes(memory.external) : '--'],
-    [locale.value.server?.gcCount, runtimeGcMetrics.value?.count != null ? String(runtimeGcMetrics.value.count) : '--'],
-    [locale.value.server?.gcPause, runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--'],
-    [locale.value.server?.eventLoopP99Lag, runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--'],
-    [locale.value.server?.systemMemoryTotal, systemMemory?.total != null ? `${systemMemory.total} MB` : 'N/A'],
-    [locale.value.server?.systemMemoryUsed, systemMemory?.used != null ? `${systemMemory.used} MB` : 'N/A'],
-    [locale.value.server?.systemMemoryAvailable, systemMemory?.total != null && systemMemory?.used != null ? `${Math.max(0, systemMemory.total - systemMemory.used)} MB` : 'N/A']
-  ])
-  return values.get(label) || 'N/A'
-}
-
 const runtimeGuardPanels = computed(() => [
   {
     icon: 'database',
+    source: 'metrics',
     title: locale.value.server?.redisRuntimeGuard,
     detail: locale.value.server?.redisRuntimeGuardDetail,
+    empty: !runtimeRedisMetrics.value,
+    status: !runtimeRedisMetrics.value || !runtimeRedisMetrics.value.configured ? 'unknown' : runtimeRedisMetrics.value.connected ? 'ok' : 'error',
     items: [
       { label: locale.value.server?.redisConfigured, value: runtimeRedisMetrics.value ? (runtimeRedisMetrics.value.configured ? '已配置' : '未配置') : '--' },
       { label: locale.value.server?.redisConnected, value: !runtimeRedisMetrics.value ? '--' : !runtimeRedisMetrics.value.configured ? '未启用' : runtimeRedisMetrics.value.connected ? '已连接' : '不可用' },
@@ -1978,8 +2320,10 @@ const runtimeGuardPanels = computed(() => [
   },
   {
     icon: 'activity',
+    source: 'metrics',
     title: locale.value.server?.ssrWarmup,
     detail: locale.value.server?.ssrWarmupDetail,
+    empty: !runtimeSsrPrewarm.value || !Number(runtimeSsrPrewarm.value.attempts),
     items: [
       { label: locale.value.server?.ssrWarmupLastResult, value: runtimeSsrPrewarm.value?.lastResult || '--' },
       { label: locale.value.server?.ssrWarmupDuration, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
@@ -1988,8 +2332,10 @@ const runtimeGuardPanels = computed(() => [
   },
   {
     icon: 'monitoring',
+    source: 'metrics',
     title: locale.value.server?.egressLocation,
     detail: locale.value.server?.egressLocationDetail,
+    empty: true,
     items: [
       { label: locale.value.server?.egressLastLocation, value: '--' },
       { label: locale.value.server?.egressCacheAge, value: '--' },
@@ -1998,58 +2344,32 @@ const runtimeGuardPanels = computed(() => [
   }
 ])
 
-const databaseMetrics = computed(() => [
-  { icon: 'success', label: locale.value.database?.connectionStatus, detail: locale.value.database?.connectionStatusDetail, value: databaseSnapshot.value ? (databaseSnapshot.value.connected ? '已连接' : '不可用') : '--' },
-  { icon: 'database', label: locale.value.server?.poolUtilization, detail: locale.value.database?.poolUtilizationDetail, value: formatPercent(operationsData.value.pool?.utilization) },
-  { icon: 'activity', label: locale.value.database?.queryQps, detail: locale.value.database?.queryQpsDetail, value: runtimeTimeline.value.length ? String(runtimeTimeline.value[runtimeTimeline.value.length - 1].requests || 0) : '--' },
-  { icon: 'clock', label: locale.value.database?.slowQueryCount, detail: locale.value.database?.slowQueryCountDetail, value: databaseDiagnostics.value?.activity?.data ? String(databaseDiagnostics.value.activity.data.filter((item) => Number(item.duration) > 100).length) : '--' },
-  { icon: 'warning', label: locale.value.database?.rollbackRate, detail: locale.value.database?.rollbackRateDetail, value: operationsData.value.performance?.transactionsRolledBack != null ? String(operationsData.value.performance.transactionsRolledBack) : '--' },
-  { icon: 'success', label: locale.value.server?.cacheHitRatio, detail: locale.value.database?.cacheHitRatioDetail, value: formatPercent(operationsData.value.performance?.cacheHitRatio) },
-  { icon: 'database', label: locale.value.database?.databaseSize, detail: locale.value.database?.databaseSizeDetail, value: databaseDiagnostics.value?.size?.available ? databaseDiagnostics.value.size.data?.[0]?.database_size || '--' : 'N/A' },
-  { icon: 'clock', label: locale.value.database?.replicaLag, detail: locale.value.database?.replicaLagDetail, value: 'N/A' },
-  { icon: 'clock', label: locale.value.database?.poolerWaitQueue, detail: locale.value.database?.poolerWaitQueueDetail, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
-  { icon: 'activity', label: locale.value.database?.neonColdStart, detail: locale.value.database?.neonColdStartDetail, value: 'N/A' }
-])
-
-const databaseDetails = computed(() => [
+const databasePoolDetails = computed(() => [
+  { label: locale.value.server?.poolUtilization, value: formatPercent(operationsData.value.pool?.utilization) },
   { label: locale.value.server?.poolMax, value: operationsData.value.pool?.maxConnections ?? '--' },
   { label: locale.value.server?.poolActive, value: operationsData.value.pool?.activeConnections ?? '--' },
   { label: locale.value.server?.poolTotal, value: operationsData.value.pool?.totalConnections ?? '--' },
-  { label: locale.value.server?.poolAvailable, value: operationsData.value.pool ? Math.max(0, Number(operationsData.value.pool.maxConnections || 0) - Number(operationsData.value.pool.totalConnections || 0)) : '--' },
-  { label: locale.value.server?.probe, value: databaseSnapshot.value?.connected ? '已连接' : '--' },
-  { label: locale.value.database?.poolerWaitQueue, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
-  { label: locale.value.database?.neonColdStart, value: 'N/A' }
+  { label: locale.value.server?.poolAvailable, value: operationsData.value.pool ? Math.max(0, Number(operationsData.value.pool.maxConnections || 0) - Number(operationsData.value.pool.totalConnections || 0)) : '--' }
 ])
 
-const databasePerformanceDetails = computed(() => [
-  { label: locale.value.server?.responseTime, value: operationsData.value.performance?.responseTime != null ? `${operationsData.value.performance.responseTime} ms` : '--' },
+const databasePerformanceSourceDetails = computed(() => [
+  { label: locale.value.server?.responseTime, value: operationsData.value.performance?.responseTime != null ? `${Math.round(Number(operationsData.value.performance.responseTime))} ms` : '--' },
+  { label: locale.value.server?.poolActive, value: operationsData.value.performance?.activeConnections ?? '--' },
   { label: locale.value.server?.transactionsCommitted, value: operationsData.value.performance?.transactionsCommitted ?? '--' },
   { label: locale.value.server?.transactionsRolledBack, value: operationsData.value.performance?.transactionsRolledBack ?? '--' },
-  { label: locale.value.database?.indexHitRatio, value: formatPercent(operationsData.value.performance?.cacheHitRatio) },
-  { label: locale.value.database?.tableBloat, value: databaseTableRows.value.length ? formatPercent(Math.max(...databaseTableRows.value.map((item) => Number(item.dead_row_ratio || 0)))) : '--' },
-  { label: locale.value.database?.poolWaitTime, value: databaseDiagnostics.value?.locks?.data ? String(databaseDiagnostics.value.locks.data.length) : '--' },
-  { label: locale.value.database?.databaseGrowthRate, value: 'N/A' }
+  { label: locale.value.database?.indexHitRatio, value: formatPercent(operationsData.value.performance?.cacheHitRatio) }
 ])
 
-const schemaHealthTables = computed(() => [
-  { name: 'user', label: locale.value.server?.usersTable },
-  { name: 'song', label: locale.value.server?.songsTable },
-  { name: 'vote', label: locale.value.server?.votesTable },
-  { name: 'schedule', label: locale.value.server?.scheduleTable },
-  { name: 'notification', label: locale.value.server?.notificationsTable }
-])
-
-const schemaScaleTables = computed(() => [
-  locale.value.server?.usersTable,
-  locale.value.server?.songsTable,
-  locale.value.server?.votesTable,
-  locale.value.server?.scheduleTable,
-  locale.value.server?.notificationsTable
+const databaseDiagnosticsDetails = computed(() => [
+  { label: locale.value.database?.activeQueries, value: databaseDiagnostics.value?.activity?.available ? String(activeDatabaseQueries.value.length) : '--' },
+  { label: locale.value.database?.poolerWaitQueue, value: databaseDiagnostics.value?.locks?.available ? String(databaseDiagnostics.value.locks.data?.length || 0) : '--' },
+  { label: locale.value.database?.slowQueryCount, value: databaseDiagnostics.value?.slowQueries?.available ? String(slowQueryRows.value.length) : '--' },
+  { label: locale.value.database?.databaseSize, value: databaseDiagnostics.value?.size?.available ? databaseDiagnostics.value.size.data?.[0]?.database_size || '--' : '--' },
+  { label: locale.value.database?.tableScale, value: databaseDiagnostics.value?.tables?.available ? String(databaseTableRows.value.length) : '--' }
 ])
 
 const databaseTableRows = computed(() => databaseDiagnostics.value?.tables?.data || [])
 const slowQueryRows = computed(() => databaseDiagnostics.value?.slowQueries?.data || [])
-const databaseTableNames = computed(() => new Set(databaseTableRows.value.map((item) => item.table_name)))
 const activeDatabaseQueries = computed(() => {
   const lockByBlockedPid = new Map((databaseDiagnostics.value?.locks?.data || []).map((item) => [String(item.blocked_pid), item.blocking_pid]))
   return (databaseDiagnostics.value?.activity?.data || []).map((item) => ({
@@ -4363,4 +4683,40 @@ const riskLevels = computed(() => [
     grid-template-columns: repeat(9, minmax(0, 1fr));
   }
 }
+
+.operation-log-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .55rem; margin-bottom: .875rem; }
+.operation-log-filters .filter-field { min-width: 0; height: 1.875rem; padding: 0 .55rem; border-color: var(--ops-line); border-radius: 6px; background: #0e1217; }
+.operation-log-filters .filter-field > span { flex: 0 0 auto; color: var(--ops-text-3); font-size: .65rem; }
+.operation-log-filters .filter-field input { min-width: 0; color: var(--ops-text-1); font-family: var(--ops-mono); font-size: .68rem; background: transparent; }
+.operation-log-filters .filter-field input::-webkit-calendar-picker-indicator { opacity: .55; }
+.operation-log-filters .filter-action { height: 1.875rem; justify-content: center; border-radius: 6px; }
+:deep(.operation-log-select > div) { min-height: 1.875rem; height: 1.875rem; border-color: var(--ops-line); border-radius: 6px; padding: 0 .55rem; background: #0e1217; }
+:deep(.operation-log-select > div:hover), :deep(.operation-log-select > div.bg-blue-600\/5) { border-color: rgba(34, 211, 238, .5); background: #0e1217; }
+:deep(.operation-log-select > div > div > span:last-child) { color: var(--ops-text-1); font-size: .68rem; }
+.operation-log-state { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .5rem; color: var(--ops-text-2); font-size: .75rem; }
+.operation-log-state--error { color: var(--ops-error); }
+.operation-log-skeleton { display: grid; gap: .5rem; }
+.operation-log-skeleton i { display: block; height: 2.5rem; border-radius: 3px; background: rgba(148, 163, 184, .08); }
+.operation-log-skeleton i:nth-child(2n) { width: 82%; }
+.operation-log-row { cursor: pointer; }
+.operation-log-row:hover, .operation-log-row--expanded { background: rgba(148, 163, 184, .06); }
+.operation-log-actor { display: grid; gap: .15rem; }
+.operation-log-actor strong { color: var(--ops-text-1); font-size: .72rem; font-weight: 600; }
+.operation-log-actor small { color: var(--ops-text-3); font-family: var(--ops-mono); font-size: .62rem; }
+.operation-log-result { display: inline-flex; border-radius: 3px; padding: .18rem .38rem; font-size: .65rem; font-weight: 600; }
+.operation-log-result--success { color: var(--ops-ok); background: color-mix(in srgb, var(--ops-ok) 10%, transparent); }
+.operation-log-result--failure { color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 10%, transparent); }
+.operation-log-detail-row td { padding: 0; background: #0e1217; }
+.operation-log-detail-grid { display: grid; grid-template-columns: minmax(12rem, .7fr) minmax(0, 1.3fr); gap: 1rem; padding: .8rem .95rem; border-top: 1px solid var(--ops-line); }
+.operation-log-detail-grid dl { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; gap: .5rem .75rem; margin: 0; }
+.operation-log-detail-grid dt { color: var(--ops-text-3); font-size: .68rem; }
+.operation-log-detail-grid dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--ops-text-1); font-size: .7rem; }
+.operation-log-detail-grid strong { color: var(--ops-text-2); font-size: .68rem; font-weight: 600; }
+.operation-log-detail-grid pre { max-height: 14rem; margin: .45rem 0 0; overflow: auto; border: 1px solid var(--ops-line); border-radius: 4px; padding: .6rem; color: var(--ops-text-2); font-family: var(--ops-mono); font-size: .65rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.operation-log-detail-state { display: flex; min-height: 4.5rem; align-items: center; justify-content: center; gap: .55rem; color: var(--ops-text-2); font-size: .72rem; }
+.operation-log-detail-state--error { color: var(--ops-error); }
+.operation-log-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; margin-top: .75rem; color: var(--ops-text-3); font-family: var(--ops-mono); font-size: .68rem; }
+.operation-log-pagination > div { display: flex; gap: .45rem; }
+@media (min-width: 1280px) { .operation-log-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(13rem, 1.3fr) auto; }.operation-log-filters .filter-field--wide { grid-column: span 2; } }
+@media (max-width: 640px) { .operation-log-detail-grid { grid-template-columns: 1fr; }.operation-log-filters .filter-field--wide { min-width: 100%; } }
 </style>
