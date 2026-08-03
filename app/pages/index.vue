@@ -846,11 +846,19 @@ const finishBootLoading = async (startedAt) => {
 const toggleUserActions = (event) => {
   event.stopPropagation()
   showUserActions.value = !showUserActions.value
+  if (showUserActions.value) {
+    showLanguageMenu.value = false
+    showThemeMenu.value = false
+  }
 }
 
 const toggleLanguageMenu = (event) => {
   event.stopPropagation()
   showLanguageMenu.value = !showLanguageMenu.value
+  if (showLanguageMenu.value) {
+    showUserActions.value = false
+    showThemeMenu.value = false
+  }
 }
 
 const selectLocale = (code) => {
@@ -864,6 +872,10 @@ const { currentTheme, themes, setTheme: setThemeFn } = useTheme()
 const toggleThemeMenu = (event) => {
   event.stopPropagation()
   showThemeMenu.value = !showThemeMenu.value
+  if (showThemeMenu.value) {
+    showUserActions.value = false
+    showLanguageMenu.value = false
+  }
 }
 
 const closeThemeMenu = () => {
