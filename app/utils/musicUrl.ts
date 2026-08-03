@@ -70,6 +70,38 @@ const miguQuality = {
       default:
         return url
     }
+  },
+  // 高音质资源可能缺失（404），按降级链逐级回退：ZQ24 → SQ → HQ → PQ
+  fallbackChain: { 4: [4, 3, 2, 1], 3: [3, 2, 1], 2: [2, 1], 1: [1] } as Record<number, number[]>,
+  /**
+   * 按降级链逐级升级并探测，返回第一个可用的链接
+   */
+  async resolveAvailableUrl(rawUrl: string, flag: number): Promise<string> {
+    const base = decodeURIComponent(rawUrl)
+    const chain = this.fallbackChain[flag] || [1]
+    for (const level of chain) {
+      const candidate = this.upgradeUrl(rawUrl, level)
+      // PQ 为接口直出链接，无需探测
+      if (level === 1 || (await isMiguUrlAvailable(candidate))) {
+        if (level !== flag) {
+          console.warn(`[musicUrl] 咪咕 ${flag} 音质链接不可用，已降级为 ${level}`)
+        }
+        return candidate
+      }
+    }
+    return base
+  }
+}
+
+/**
+ * HEAD 探测链接可用性；跨域受限或网络异常时保守视为可用，避免误降级
+ */
+async function isMiguUrlAvailable(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+    return res.ok
+  } catch {
+    return true
   }
 }
 
@@ -129,7 +161,7 @@ const fetchXinghaiMiguUrl = async (
       })
 
       if (response?.code === 200 && response?.url) {
-        let url = miguQuality.upgradeUrl(response.url.split('?')[0], miguFlag || 1);
+        let url = await miguQuality.resolveAvailableUrl(response.url.split('?')[0], miguFlag || 1);
         if (url.startsWith('http://')) {
           url = url.replace('http://', 'https://')
         }

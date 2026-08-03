@@ -23,6 +23,45 @@ function upgradeUrl(url: string, quality: string) {
   return upgraded
 }
 
+// 高音质资源可能缺失（404），按降级链逐级回退：ZQ24 → SQ → HQ → PQ
+const QUALITY_FALLBACK_CHAIN: Record<string, string[]> = {
+  ZQ24: ['ZQ24', 'SQ', 'HQ', 'PQ'],
+  ZQ: ['ZQ24', 'SQ', 'HQ', 'PQ'],
+  SQ: ['SQ', 'HQ', 'PQ'],
+  HQ: ['HQ', 'PQ'],
+  PQ: ['PQ']
+}
+
+/**
+ * HEAD 探测链接可用性，探测失败时保守视为可用，避免误降级
+ */
+async function isUrlAvailable(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+    return res.ok
+  } catch {
+    return true
+  }
+}
+
+/**
+ * 按降级链逐级升级并探测，返回第一个可用的链接与实际音质
+ */
+async function resolveAvailableUrl(baseUrl: string, toneFlag: string): Promise<{ url: string; quality: string }> {
+  const chain = QUALITY_FALLBACK_CHAIN[toneFlag] || ['PQ']
+  for (const level of chain) {
+    const candidate = upgradeUrl(baseUrl, level)
+    // PQ 为官方接口直出链接，无需探测
+    if (level === 'PQ' || (await isUrlAvailable(candidate))) {
+      if (level !== toneFlag) {
+        console.warn(`[migu/playurl.get] ${toneFlag} 音质链接不可用，已降级为 ${level}`)
+      }
+      return { url: candidate, quality: level }
+    }
+  }
+  return { url: baseUrl, quality: 'PQ' }
+}
+
 function strToUtf8Bytes(str: string): Uint8Array {
   return new TextEncoder().encode(str)
 }
@@ -91,13 +130,15 @@ export default defineEventHandler(async (event) => {
         source: 'migu'
       }
     }
-    // 移除查询参数后统一为 https 避免混合内容拦截，再按请求音质升级路径
+    // 移除查询参数后统一为 https 避免混合内容拦截，再按降级链升级并探测可用性
     url = (url.split('?')[0] as string).replace(/^http:\/\//, 'https://');
-    url = upgradeUrl(url, toneFlag)
+    const { url: finalUrl, quality: actualQuality } = await resolveAvailableUrl(url, toneFlag)
 
     return {
       success: true,
-      url,
+      url: finalUrl,
+      // 实际提供的音质（高音质资源缺失时会低于请求值）
+      quality: actualQuality,
       source: 'migu'
     }
   } catch (err: any) {
