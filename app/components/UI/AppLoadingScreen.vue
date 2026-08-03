@@ -54,7 +54,7 @@
   </section>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, ref, watch } from 'vue'
 import WarpCanvas from './WarpCanvas.vue'
 import { useLocale } from '~/utils/locale'
@@ -63,10 +63,10 @@ const { auth } = useLocale()
 const locale = computed(() => auth.value?.appLoadingScreen || {})
 const DEFAULT_PROGRESS = 8
 
-const props = defineProps<{
-  message?: string
-  progress?: number
-}>()
+const props = defineProps({
+  message: { type: String },
+  progress: { type: Number }
+})
 
 const displayMessage = computed(() => props.message || locale.value.message)
 
@@ -98,8 +98,7 @@ watch(() => props.progress, () => {
 })
 
 const warpSettings = computed(() => ({
-  themeColor: 'indigo',
-  pattern: 'hyperdrive' as const,
+  pattern: 'hyperdrive',
   speedMultiplier: safeProgress.value >= 100 ? 0.3 : 1.3,
   particleCount: 220,
   glowEffect: true,
@@ -165,13 +164,13 @@ const warpSettings = computed(() => ({
 }
 
 .ring-fill {
-  stroke: var(--brand-indigo);
-  filter: drop-shadow(0 0 8px var(--app-loading-ring-shadow));
+  stroke: var(--app-loading-brand-primary);
+  filter: drop-shadow(0 0 8px var(--app-loading-primary-glow));
   transition: stroke-dashoffset 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 400ms ease;
 }
 
 .ring-fill.accelerating {
-  filter: drop-shadow(0 0 20px var(--app-loading-ring-shadow-accelerating)) brightness(1.3);
+  filter: drop-shadow(0 0 20px var(--app-loading-primary-glow-accelerating)) brightness(1.3);
 }
 
 .ring-label {
@@ -238,8 +237,8 @@ const warpSettings = computed(() => ({
   left: 0;
   height: 3px;
   z-index: 20;
-  background: linear-gradient(90deg, var(--brand-indigo), var(--brand-purple-light));
-  box-shadow: 0 0 12px var(--app-loading-progress-shadow), 0 0 40px var(--app-loading-progress-shadow-lg);
+  background: linear-gradient(90deg, var(--app-loading-brand-primary), var(--app-loading-brand-secondary));
+  box-shadow: 0 0 12px var(--app-loading-primary-glow), 0 0 40px var(--app-loading-secondary-glow);
   transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

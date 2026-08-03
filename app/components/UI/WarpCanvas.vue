@@ -6,33 +6,24 @@
     />
     <div
       class="absolute inset-0 pointer-events-none"
-      :style="{ background: `radial-gradient(circle_at_center,transparent_45%,${glowColors.overlayEnd}_100%)` }"
+      :style="{ background: `radial-gradient(circle_at_center,transparent_45%,${glowColors.overlayEnd} 100%)` }"
     />
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useTheme } from '~/composables/useTheme'
 
-interface WarpSettings {
-  themeColor: string
-  pattern: 'hyperdrive' | 'nebula' | 'grid' | 'vortex'
-  speedMultiplier: number
-  particleCount: number
-  glowEffect: boolean
-  interactive: boolean
-}
-
-const props = defineProps<{
-  settings: WarpSettings
-  isAccelerating: boolean
-  currentProgress: number
-}>()
+const props = defineProps({
+  settings: { type: Object, required: true },
+  isAccelerating: { type: Boolean, required: true },
+  currentProgress: { type: Number, required: true }
+})
 
 const { isDark } = useTheme()
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
+const canvasRef = ref(null)
 
 const settingsRef = ref(props.settings)
 const isAcceleratingRef = ref(props.isAccelerating)
@@ -53,22 +44,13 @@ watch(isDark, () => {
 const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 }
 
 // Canvas 动画所需的状态，提升为模块级以便主题切换时重绘
-const stars: Star[] = []
-
-interface Star {
-  x: number
-  y: number
-  z: number
-  prevZ: number
-  color: string
-  size: number
-  angle: number
-}
+const stars = []
 
 // Canvas 2D API 不识别 CSS 变量，此处从 CSS 变量动态读取实际色值
-const BRAND_COLORS: Record<string, string> = {}
+const BRAND_COLORS = {}
 
-function loadBrandColors(root: Element = document.documentElement) {
+function loadBrandColors(root) {
+  root = root || document.documentElement
   const cs = getComputedStyle(root)
   const keys = [
     'brand-indigo', 'brand-purple', 'brand-purple-light', 'brand-blue-light',
@@ -87,7 +69,7 @@ if (typeof document !== 'undefined') {
 }
 
 /** 将任意 CSS 颜色值统一转为 hex (#RRGGBB) */
-function toHexValue(color: string): string {
+function toHexValue(color) {
   if (color.startsWith('#')) {
     // #RGB 展开为 #RRGGBB
     if (color.length === 4) {
@@ -108,7 +90,7 @@ function toHexValue(color: string): string {
 }
 
 /** 将 hex 颜色转为 rgba 数组 [r, g, b, a] */
-function hexToRgba(hex: string): [number, number, number, number] {
+function hexToRgba(hex) {
   let h = hex.replace('#', '')
   if (h.length === 3) h = `${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`
   const r = parseInt(h.substring(0, 2), 16)
@@ -118,28 +100,30 @@ function hexToRgba(hex: string): [number, number, number, number] {
 }
 
 /** 将 hex 颜色 + alpha 转为 rgba() 字符串 */
-function hexWithAlpha(hex: string, alpha: number): string {
+function hexWithAlpha(hex, alpha) {
   const [r, g, b] = hexToRgba(hex)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-// 光晕颜色 — 跟随主题色（统一用 hex 格式）
+// 光晕颜色 — 统一从 CSS 变量 --app-loading-brand-primary 读取
 const glowColors = {
-  color: '',       // hex: --brand-indigo (#6366f1)
-  overlayEnd: '',  // rgba string for gradient end
+  color: '',       // hex
+  overlayEnd: '',  // 解析后的 rgba 字符串
   load() {
     const cs = getComputedStyle(document.documentElement)
-    const raw = cs.getPropertyValue('--brand-indigo').trim() || '#6366f1'
-    this.color = toHexValue(raw)
-    // 根据主题决定暗色遮罩末端颜色
-    this.overlayEnd = 'var(--canvas-glow-overlay-end)'
+    const raw = cs.getPropertyValue('--app-loading-brand-primary').trim()
+    // 回退值与 SSR 默认主题（dark）的主色对齐
+    this.color = raw ? toHexValue(raw) : '#6366f1'
+    // 解析 --canvas-glow-overlay-end 的实际 rgba 值
+    const rawOverlay = cs.getPropertyValue('--canvas-glow-overlay-end').trim()
+    this.overlayEnd = rawOverlay || 'rgba(245, 245, 247, 0.7)'
   }
 }
 if (typeof document !== 'undefined') {
   glowColors.load()
 }
 
-function getRandomColor(base: string): string {
+function getRandomColor(base) {
   const cold = ['brand-indigo', 'brand-purple', 'brand-blue-light', 'text-primary', 'brand-purple-light']
   if (base === 'emerald') {
     const greens = ['brand-green', 'brand-green-light', 'brand-cyan']
@@ -156,14 +140,15 @@ function getRandomColor(base: string): string {
   return toHex(cold[Math.floor(Math.random() * cold.length)])
 }
 
-function toHex(color: string): string {
+function toHex(color) {
   // 已经是 hex 直接返回
   if (color.startsWith('#')) return color
   // 从映射表取（已统一为 hex）
-  return BRAND_COLORS[color as keyof typeof BRAND_COLORS] ?? glowColors.color
+  return BRAND_COLORS[color] ?? glowColors.color
 }
 
-function initStar(partial: Partial<Star> = {}): Star {
+function initStar(partial) {
+  partial = partial || {}
   return {
     x: partial.x ?? (Math.random() - 0.5) * 1000,
     y: partial.y ?? (Math.random() - 0.5) * 1000,
@@ -181,7 +166,7 @@ onMounted(() => {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  let animationId: number
+  let animationId
   let width = 0
   let height = 0
 
@@ -210,14 +195,14 @@ onMounted(() => {
   let glowFactor = 0.12
   let radialGlowOpacity = 0.2
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = (e) => {
     const halfW = window.innerWidth / 2
     const halfH = window.innerHeight / 2
     pointer.targetX = (e.clientX - halfW) / halfW
     pointer.targetY = (e.clientY - halfH) / halfH
   }
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = (e) => {
     if (e.touches.length > 0) {
       const touch = e.touches[0]
       const halfW = window.innerWidth / 2
