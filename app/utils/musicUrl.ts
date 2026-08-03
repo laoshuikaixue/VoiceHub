@@ -54,11 +54,64 @@ const xinghaiRequestTimes: number[] = []
 /**
  * 通过星海音源获取咪咕播放链接
  */
+const miguQuality = {
+  // 音质数值 → 服务端 toneFlag 映射
+  flagMap: { 1: 'PQ', 2: 'HQ', 3: 'SQ', 4: 'ZQ24' } as Record<number, string>,
+  upgradeUrl(url: string, flag: number) {
+    url = decodeURIComponent(url);
+    switch (flag) {
+      case 2: //HQ
+        return url.replace('MP3_128_16_Stero', 'MP3_320_16_Stero')
+      case 3: //SQ
+        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac').replace('.mp3', '.flac');
+      case 4: //ZQ24 / ZQ
+        return url.replace('标清高清/MP3_128_16_Stero', '歌曲下载/flac_24bit').replace('.mp3', '.flac');
+      case 1:
+      default:
+        return url
+    }
+  },
+  // 高音质资源可能缺失（404），按降级链逐级回退：ZQ24 → SQ → HQ → PQ
+  fallbackChain: { 4: [4, 3, 2, 1], 3: [3, 2, 1], 2: [2, 1], 1: [1] } as Record<number, number[]>,
+  /**
+   * 按降级链逐级升级并探测，返回第一个可用的链接
+   */
+  async resolveAvailableUrl(rawUrl: string, flag: number): Promise<string> {
+    const base = decodeURIComponent(rawUrl)
+    const chain = this.fallbackChain[flag] || [1]
+    for (const level of chain) {
+      const candidate = this.upgradeUrl(rawUrl, level)
+      // PQ 为接口直出链接，无需探测
+      if (level === 1 || (await isMiguUrlAvailable(candidate))) {
+        if (level !== flag) {
+          console.warn(`[musicUrl] 咪咕 ${flag} 音质链接不可用，已降级为 ${level}`)
+        }
+        return candidate
+      }
+    }
+    return base
+  }
+}
+
+/**
+ * HEAD 探测链接可用性；跨域受限或网络异常时保守视为可用，避免误降级
+ */
+async function isMiguUrlAvailable(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+    return res.ok
+  } catch {
+    return true
+  }
+}
+
 const fetchXinghaiMiguUrl = async (
   contentId: string,
-  meta?: MusicTrackMeta
+  meta?: MusicTrackMeta,
+  miguFlag?: number
 ): Promise<string | null> => {
-  const cacheKey = `migu:${contentId}`
+  // 缓存需区分音质，避免不同音质请求互相命中返回错误音质的链接
+  const cacheKey = `migu:${contentId}:${miguFlag || 1}`
   const cached = xinghaiUrlCache.get(cacheKey)
   if (cached && cached.expireAt > Date.now()) {
     return cached.url
@@ -108,7 +161,7 @@ const fetchXinghaiMiguUrl = async (
       })
 
       if (response?.code === 200 && response?.url) {
-        let url = response.url
+        let url = await miguQuality.resolveAvailableUrl(response.url.split('?')[0], miguFlag || 1);
         if (url.startsWith('http://')) {
           url = url.replace('http://', 'https://')
         }
@@ -346,7 +399,7 @@ export async function getMusicUrlResult(
       await checkServerLocation()
     }
     if (isServerInChina.value === false) {
-      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo)
+      const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo, quality)
       if (xinghaiUrl) {
         rememberMusicUrlSource(xinghaiUrl, 'xinghai')
         return {
@@ -358,10 +411,11 @@ export async function getMusicUrlResult(
     }
 
     try {
+      // 服务端以 PQ 取链后按 toneFlag 升级音质路径，客户端不再二次处理
       const miguResponse: any = await $fetch('/api/native-api/migu/playurl', {
         params: {
           contentId: String(musicId),
-          toneFlag: 'PQ'
+          toneFlag: miguQuality.flagMap[quality as number] || 'PQ'
         },
         timeout: 10000
       })
@@ -383,7 +437,7 @@ export async function getMusicUrlResult(
     }
 
     // 官方接口失败时回退星海音源
-    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo)
+    const xinghaiUrl = await fetchXinghaiMiguUrl(String(musicId), options?.musicInfo, quality)
     if (xinghaiUrl) {
       rememberMusicUrlSource(xinghaiUrl, 'xinghai')
       return {
