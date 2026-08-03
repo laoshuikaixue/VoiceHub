@@ -91,6 +91,9 @@
             <AuthOAuthBindingCard />
           </section>
 
+          <!-- 社交账号绑定 -->
+          <AccountSocialBindings />
+
           <!-- 个人 API Key -->
           <section :class="sectionClass">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/50 pb-5 mb-6">
@@ -400,6 +403,7 @@ import {
   User,
   X
 } from '@lucide/vue'
+import AccountSocialBindings from '~/components/Account/SocialBindings.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
