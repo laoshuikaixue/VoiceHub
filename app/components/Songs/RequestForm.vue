@@ -3974,7 +3974,7 @@ defineExpose({
 }
 
 .rules-section {
-  background: var(--mask-20);
+  background: var(--mask-5);
   border-radius: 13px;
   padding: 1.25rem;
   flex: 0 0 35%; /* 稍微缩小规则区域占比 */
@@ -4885,7 +4885,7 @@ defineExpose({
 
 .search-type-switch {
   display: flex;
-  background: var(--mask-20);
+  background: var(--mask-5);
   border-radius: 6px;
   padding: 2px;
   border: 1px solid var(--overlay-5);
@@ -5089,7 +5089,7 @@ defineExpose({
 /* 搜索结果容器样式 */
 .search-results-container {
   flex: 1;
-  background: var(--mask-20);
+  background: var(--mask-5);
   border-radius: 13px;
   display: flex;
   flex-direction: column;

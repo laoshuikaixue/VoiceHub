@@ -3,7 +3,7 @@
 
 /* 主色调 */
 --primary: #3b82f6;
---primary-hover: #2563eb;
+--primary-hover: #3b82f6;
 --primary-light: rgba(59, 130, 246, 0.1);
 --primary-border: rgba(59, 130, 246, 0.2);
 
@@ -55,7 +55,7 @@
 
 /* 信息色光晕 */
 --info: #3b82f6;
---info-hover: #2563eb;
+--info-hover: #3b82f6;
 --info-light: rgba(59, 130, 246, 0.1);
 --info-border: rgba(59, 130, 246, 0.2);
 
@@ -179,7 +179,7 @@
 --btn-primary-hover: var(--primary-hover);
 --btn-primary-text: #ffffff;
 --btn-primary-border: var(--primary-border);
---btn-secondary-bg: #f0f0f0;
+--btn-secondary-bg: #f5f5f5;
 --btn-secondary-hover: #e5e5e5;
 --btn-secondary-text: var(--text-primary);
 --btn-secondary-border: #d4d4d4;
@@ -243,7 +243,7 @@
 --brand-blue: #0b5afe;
 --brand-blue-light: #3b82f6;
 --brand-blue-hover: #2563eb;
---brand-blue-light-hover: #1d4ed8;
+--brand-blue-light-hover: #2563eb;
 --brand-blue-glow: rgba(11, 90, 254, 0.4);
 --brand-red: #ef4444;
 --brand-red-light: #f87171;
@@ -259,7 +259,7 @@
 --brand-yellow-glow: rgba(245, 158, 11, 0.4);
 --brand-orange: #fb923c;
 --brand-orange-light: #fdba74;
---brand-orange-hover: #ff6900;
+--brand-orange-hover: #f97316;
 --brand-orange-glow: rgba(251, 146, 60, 0.4);
 
 /* === Alpha (--brand-blue) === */
@@ -392,7 +392,7 @@
 --text-primary-light: #171717;
 --text-primary-lighter: #262626;
 --text-link: #0b5afe;
---text-link-hover: #0952e8;
+--text-link-hover: #2563eb;
 --text-highlight: #856404;
 
 /* 用途化变量 — 边框与分割线（浅色模式） */
@@ -426,7 +426,7 @@
 --brand-cyan: #22d3ee;
 --brand-teal: #06b6d4;
 --brand-indigo: #2563eb;
---brand-indigo-hover: #1d4ed8;
+--brand-indigo-hover: #2563eb;
 
 /* === WarpCanvas 星空配色（用途命名，替代 --brand-purple/indigo 语义歧义） === */
 --warp-canvas-primary: #3b82f6;
@@ -726,7 +726,7 @@
 --lyric-msg-fallback-text: #e4e4e7;
 
 /* === 用途化变量 — 模态框阴影 === */
---modal-hover-shadow: rgba(0, 0, 0, 0.1);
+--modal-hover-shadow: rgba(0, 0, 0, 0.08);
 /* === 用途化变量 — 移动端表格阴影 === */
 --mobile-table-shadow: rgba(0, 0, 0, 0.5);
 }
