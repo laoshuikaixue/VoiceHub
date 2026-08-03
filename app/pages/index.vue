@@ -2105,19 +2105,20 @@ if (
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
   color: var(--overlay-70);
   font-size: 14px;
   transition: all 0.2s;
   text-decoration: none;
-  background: transparent;
   width: 100%;
   text-align: left;
 }
 
 .action-item:hover {
   background: var(--overlay-5);
-  color: white;
+  color: var(--text-primary);
 }
 
 .action-item.logout:hover {
