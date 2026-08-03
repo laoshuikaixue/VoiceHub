@@ -246,7 +246,7 @@
                   <span v-else-if="song.isReplay" :title="locale.replaySong" class="replay-tag"> {{ locale.replay }} </span>
                   <!-- 点歌券标识 -->
                   <span
-                    v-if="song.cardCodeId"
+                    v-if="song.cardCodeId || song.usedCardCode"
                     class="card-code-tag"
                     :title="locale.cardCodeUsed"
                   >
@@ -2179,7 +2179,7 @@ const vRipple = {
   align-self: center;
 }
 
-/* 点歌券标识（复刻后台 amber 调色方案） */
+/* 点歌券标识 */
 .card-code-tag {
   display: inline-flex;
   align-items: center;

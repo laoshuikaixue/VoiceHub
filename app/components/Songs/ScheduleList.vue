@@ -2900,7 +2900,7 @@ const vRipple = {
   border-color: rgba(11, 90, 254, 0.5);
 }
 
-/* 点歌券标识（复刻后台 amber 调色方案） */
+/* 点歌券标识 */
 .card-code-tag {
   display: inline-flex;
   align-items: center;

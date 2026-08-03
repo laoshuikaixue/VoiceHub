@@ -2355,6 +2355,7 @@ const dropToSequence = async (event) => {
       }
 
       scheduledSongIds.value.add(songId)
+      setSongScheduledFlag(songId, true)
       localScheduledSongs.value.push(newSchedule)
       hasChanges.value = true
     }
@@ -2415,6 +2416,7 @@ const dropReorder = async (event, dropIndex) => {
       }
 
       scheduledSongIds.value.add(songId)
+      setSongScheduledFlag(songId, true)
 
       const newOrder = [...localScheduledSongs.value]
       newOrder.splice(dropIndex, 0, newSchedule)
@@ -2433,6 +2435,12 @@ const dropReorder = async (event, dropIndex) => {
   draggedSchedule.value = null
 }
 
+// 同步歌曲列表中对应歌曲的已排期标记（排期与歌曲列表中的歌曲是不同引用）
+const setSongScheduledFlag = (songId, scheduled) => {
+  const songInList = songs.value.find((s) => s.id === songId)
+  if (songInList) songInList.scheduled = scheduled
+}
+
 // 添加歌曲到排期（点击方式）
 const addSongToSchedule = (song) => {
   const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
@@ -2449,6 +2457,7 @@ const addSongToSchedule = (song) => {
   }
 
   scheduledSongIds.value.add(song.id)
+  setSongScheduledFlag(song.id, true)
   localScheduledSongs.value.push(newSchedule)
   hasChanges.value = true
 
@@ -2464,10 +2473,7 @@ const removeSongFromSchedule = (schedule) => {
 
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
-      // songs.value 与 publicSchedules 中是不同引用，需同时清除两部标记
-      const songInList = songs.value.find((s) => s.id === removed.song.id)
-      if (songInList) songInList.scheduled = false
-      removed.song.scheduled = false
+      setSongScheduledFlag(removed.song.id, false)
     }
 
     // 重新排序
@@ -3179,6 +3185,7 @@ const handleTouchDropToSequence = async (targetElement) => {
   }
 
   scheduledSongIds.value.add(song.id)
+  setSongScheduledFlag(song.id, true)
   localScheduledSongs.value.splice(insertIndex, 0, newSchedule)
 
   // 更新序列号
@@ -3218,10 +3225,7 @@ const handleTouchReturnToDraggable = async () => {
 
     if (removed.song) {
       scheduledSongIds.value.delete(removed.song.id)
-      // songs.value 与 publicSchedules 中是不同引用，需同时清除两部标记
-      const songInList = songs.value.find((s) => s.id === removed.song.id)
-      if (songInList) songInList.scheduled = false
-      removed.song.scheduled = false
+      setSongScheduledFlag(removed.song.id, false)
     }
 
     // 重新排序
@@ -3232,8 +3236,6 @@ const handleTouchReturnToDraggable = async () => {
     hasChanges.value = true
   }
 }
-
-// 托放返回待排区域结束
 </script>
 
 <style scoped>
