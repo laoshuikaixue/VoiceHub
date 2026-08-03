@@ -417,16 +417,21 @@
 --status-error-deep: #d32f2f;
 
 /* 用途化变量 — 品牌渐变辅助色 */
---brand-purple: #8b5cf6;
---brand-purple-hover: #7c3aed;
---brand-purple-light: #a78bfa;
---brand-purple-lighter: #e9d5ff;
---brand-purple-glow: rgba(139, 92, 246, 0.3);
+--brand-purple: #3b82f6;
+--brand-purple-hover: #2563eb;
+--brand-purple-light: #60a5fa;
+--brand-purple-lighter: #dbeafe;
+--brand-purple-glow: rgba(59, 130, 246, 0.3);
 --brand-pink: #f472b6;
 --brand-cyan: #22d3ee;
 --brand-teal: #06b6d4;
---brand-indigo: #6366f1;
---brand-indigo-hover: #4f46e5;
+--brand-indigo: #2563eb;
+--brand-indigo-hover: #1d4ed8;
+
+/* === WarpCanvas 星空配色（用途命名，替代 --brand-purple/indigo 语义歧义） === */
+--warp-canvas-primary: #3b82f6;
+--warp-canvas-primary-light: #60a5fa;
+--warp-canvas-indigo: #2563eb;
 
 /* 用途化变量 — 滚动条与轨道 */
 --scrollbar-track-dark: #f0f0f0;
@@ -608,12 +613,12 @@
 --year-review-artist-label-border: rgba(168, 85, 247, 0.3);
 --year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
 --year-review-stats-bg-gradient: rgba(30, 58, 138, 0.4);
---app-loading-brand-primary: #8b5cf6;
---app-loading-brand-secondary: #6366f1;
---app-loading-primary-glow: rgba(139, 92, 246, 0.42);
---app-loading-primary-glow-accelerating: rgba(139, 92, 246, 0.8);
---app-loading-secondary-glow: rgba(99, 102, 241, 0.28);
---app-loading-text-color: rgba(109, 40, 217, 0.85);
+--app-loading-brand-primary: #3b82f6;
+--app-loading-brand-secondary: #2563eb;
+--app-loading-primary-glow: rgba(59, 130, 246, 0.2);
+--app-loading-primary-glow-accelerating: rgba(59, 130, 246, 0.65);
+--app-loading-secondary-glow: rgba(37, 99, 235, 0.18);
+--app-loading-text-color: rgba(37, 99, 235, 0.9);
 
 /* 用途化变量 — 模态框通用（Modal shared） */
 --lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
@@ -712,7 +717,7 @@
 --btn-primary-shadow: rgba(99, 102, 241, 0.2);
 
 /* === 用途化变量 — Canvas 动画背景叠加色 === */
---canvas-bg-overlay: rgba(7, 7, 9, 0.18);
+--canvas-bg-overlay: rgba(250, 250, 252, 0.92);
 
 /* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
 --canvas-glow-overlay-end: rgba(245, 245, 247, 0.7);

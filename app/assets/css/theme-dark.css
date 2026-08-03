@@ -427,6 +427,11 @@
 --brand-indigo: #6366f1;
 --brand-indigo-hover: #4f46e5;
 
+/* === WarpCanvas 星空配色（用途命名，替代 --brand-purple/indigo 语义歧义） === */
+--warp-canvas-primary: #8b5cf6;
+--warp-canvas-primary-light: #a78bfa;
+--warp-canvas-indigo: #6366f1;
+
 /* 用途化变量 — 滚动条与轨道 */
 --scrollbar-track-dark: #1a1a1f;
 --scrollbar-track-hover: #27272a;

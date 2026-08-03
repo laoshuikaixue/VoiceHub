@@ -53,7 +53,7 @@ function loadBrandColors(root) {
   root = root || document.documentElement
   const cs = getComputedStyle(root)
   const keys = [
-    'brand-indigo', 'brand-purple', 'brand-purple-light', 'brand-blue-light',
+    'warp-canvas-indigo', 'warp-canvas-primary', 'warp-canvas-primary-light', 'brand-blue-light',
     'brand-green', 'brand-green-light', 'brand-red', 'brand-pink',
     'brand-teal', 'brand-orange', 'brand-yellow-light',
     'text-primary', 'text-primary-lighter', 'brand-cyan',
@@ -124,13 +124,13 @@ if (typeof document !== 'undefined') {
 }
 
 function getRandomColor(base) {
-  const cold = ['brand-indigo', 'brand-purple', 'brand-blue-light', 'text-primary', 'brand-purple-light']
+  const cold = ['warp-canvas-indigo', 'warp-canvas-primary', 'brand-blue-light', 'text-primary', 'warp-canvas-primary-light']
   if (base === 'emerald') {
     const greens = ['brand-green', 'brand-green-light', 'brand-cyan']
     return toHex(greens[Math.floor(Math.random() * greens.length)])
   }
   if (base === 'cyberpunk') {
-    const pinks = ['brand-red', 'brand-pink', 'brand-purple', 'brand-teal']
+    const pinks = ['brand-red', 'brand-pink', 'warp-canvas-primary', 'brand-teal']
     return toHex(pinks[Math.floor(Math.random() * pinks.length)])
   }
   if (base === 'sunset') {
