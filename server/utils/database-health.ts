@@ -122,12 +122,26 @@ export async function getDatabaseMetrics() {
     `)
 
     const stat = stats[0] || {}
+    let queriesExecuted: number | null = null
+    try {
+      const queryStats = await db.execute(sql`
+        SELECT COALESCE(SUM(calls), 0)::bigint AS query_calls
+        FROM pg_stat_statements
+        WHERE dbid = (SELECT oid FROM pg_database WHERE datname = current_database())
+      `)
+      const queryStatsRow = queryStats[0] as { query_calls?: number | string } | undefined
+      const queryCalls = Number(queryStatsRow?.query_calls)
+      queriesExecuted = Number.isFinite(queryCalls) ? queryCalls : null
+    } catch {
+      // 未安装 pg_stat_statements 时保留未知，不将事务数当作查询数。
+    }
 
     return {
       responseTime,
       activeConnections: stat.active_connections || 0,
       transactionsCommitted: stat.transactions_committed || 0,
       transactionsRolledBack: stat.transactions_rolled_back || 0,
+      queriesExecuted,
       cacheHitRatio:
         stat.blocks_read && stat.blocks_hit
           ? ((stat.blocks_hit / (stat.blocks_hit + stat.blocks_read)) * 100).toFixed(2)

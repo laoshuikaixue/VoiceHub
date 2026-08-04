@@ -305,7 +305,12 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-5" :title="locale.server.healthScore" subtitle="后端当前未提供服务器健康评分字段。" :status="moduleFetchErrors.metrics ? 'error' : 'unknown'" updated-at="未采集" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" empty-text="后端未提供服务器健康评分数据。" :refreshable="false" @refresh="loadOperationsData" />
+        <OpsPanel class="xl:col-span-5" :title="locale.server.healthScore" subtitle="后端根据近 5 分钟 HTTP 可用率采集。" :status="healthScorePanelStatus" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRuntimeHealthScore && !initialOperationsLoading" empty-text="暂无真实健康评分数据。" :refreshable="false" @refresh="loadOperationsData">
+          <div class="server-health-layout">
+            <div class="health-score-ring" :class="`health-score-ring--${healthScoreTone}`"><strong>{{ formatPercent(runtimeHealthScore.value) }}</strong><span>后端健康评分</span></div>
+            <dl class="server-health-details"><div><dt>评分来源</dt><dd>{{ runtimeHealthScore.source || 'HTTP 可用率' }}</dd></div><div><dt>评分状态</dt><dd>{{ healthScoreStatusLabel }}</dd></div></dl>
+          </div>
+        </OpsPanel>
 
         <OpsPanel class="xl:col-span-7" :title="locale.server.runtime" :subtitle="locale.server.runtimeEnvironmentDetail" :status="infraCombinedStatus" :updated-at="infraCombinedUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!systemSnapshot && !runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="detail-grid">
@@ -360,21 +365,21 @@
       </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.queryTrend }}</h3><p class="panel-description">{{ locale.database.queryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.connectionTrend }}</h3><p class="panel-description">{{ locale.database.connectionTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-        </article>
+        <OpsPanel v-for="panel in databaseTrendPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="databaseTrendStatus(panel)" :updated-at="databaseTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasDatabaseTimelineMetric(panel.field) && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
+          <div class="ops-time-chart">
+            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks(panel.field, databaseTimeline)" :key="tick">{{ tick }} {{ panel.unit }}</span></div>
+            <div class="ops-time-chart__plot">
+              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks(panel.field, databaseTimeline)" :key="tick" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in databaseTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field, databaseTimeline)}%` }" @mouseenter="showChartTooltip(`database-${panel.field}`, panel.title, point, trendValue(point, panel.field), panel.unit, index, databaseTimeline.length)" @mouseleave="hideChartTooltip" /></div>
+              <i v-if="chartTooltip.visible && chartTooltip.key === `database-${panel.field}`" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
+              <div v-if="chartTooltip.visible && chartTooltip.key === `database-${panel.field}`" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
+            </div>
+            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(databaseTimeline[0]?.at) }}</span><span>{{ formatChartTime(databaseTimeline[databaseTimeline.length - 1]?.at) }}</span></div>
+          </div>
+        </OpsPanel>
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-        </article>
         <OpsPanel :title="locale.database.slowQueries" :subtitle="locale.database.slowQueriesDetail" :status="databaseSlowQueriesPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics?.slowQueries?.available || !slowQueryRows.length" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1040px]">
@@ -454,11 +459,11 @@
         </div>
       </OpsPanel>
 
-      <OpsPanel :title="locale.cache.commandMetrics" :subtitle="locale.cache.commandMetricsDetail" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :empty-text="redisPanelEmpty ? 'Redis 未配置，暂无可采集数据。' : '暂无真实采集数据。'" :refreshable="false" @refresh="loadOperationsData">
+      <OpsPanel :title="locale.cache.commandMetrics" :subtitle="locale.cache.commandMetricsDetail" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!redisCommandMetrics.length && !initialOperationsLoading" :empty-text="redisPanelEmpty ? 'Redis 未配置，暂无可采集数据。' : '暂无真实采集数据。'" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto">
           <table class="data-table min-w-[680px]">
             <thead><tr><th>{{ locale.cache.command }}</th><th>{{ locale.cache.calls }}</th><th>P50</th><th>P99</th><th>{{ locale.cache.commandErrors }}</th></tr></thead>
-            <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
+            <tbody><tr v-for="item in redisCommandMetrics" :key="item.command"><td class="font-mono">{{ item.command }}</td><td>{{ item.calls }}</td><td>{{ item.p50LatencyUs != null ? `${item.p50LatencyUs} μs` : '--' }}</td><td>{{ item.p99LatencyUs != null ? `${item.p99LatencyUs} μs` : '--' }}</td><td :class="{ 'text-rose-400': item.errors > 0 }">{{ item.errors }}</td></tr><tr v-if="!redisCommandMetrics.length"><td colspan="5" class="empty-cell">暂无真实采集数据。</td></tr></tbody>
           </table>
         </div>
       </OpsPanel>
@@ -499,7 +504,9 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-7" :title="locale.business.scheduleRateTrend" :subtitle="locale.business.scheduleRateTrendDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+        <OpsPanel class="xl:col-span-7" :title="locale.business.scheduleRateTrend" :subtitle="locale.business.scheduleRateTrendDetail" :status="businessTimelinePanelStatus" :updated-at="businessTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasBusinessTimelineMetric('schedules_created') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
+          <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.schedules_created, 'schedules_created', businessOperationTimeline)}%` }" @mouseenter="showChartTooltip('schedule-created', '新增排期', point, point.schedules_created, '次', index, businessOperationTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
+        </OpsPanel>
 
         <OpsPanel class="xl:col-span-5" :title="locale.business.capacityPlanning" :subtitle="locale.business.capacityPlanningDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
           <dl class="detail-grid">
@@ -510,7 +517,10 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-8" :title="locale.business.operationOutcomes" :subtitle="locale.business.operationOutcomesDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+        <OpsPanel class="xl:col-span-8" :title="locale.business.operationOutcomes" :subtitle="locale.business.operationOutcomesDetail" :status="businessTimelinePanelStatus" :updated-at="businessTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!businessOperationTimeline.length && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
+          <div v-if="hasBusinessTimelineMetric('schedules_played')" class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.schedules_played, 'schedules_played', businessOperationTimeline)}%` }" @mouseenter="showChartTooltip('schedule-played', '已播排期', point, point.schedules_played, '次', index, businessOperationTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
+          <dl class="detail-grid"><div v-for="item in businessOutcomeTotals" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div></dl>
+        </OpsPanel>
 
       </section>
 
@@ -570,11 +580,17 @@
 
       <OpsPanel :title="locale.audit.signalRate" :subtitle="locale.audit.signalRateDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
 
-      <OpsPanel :title="locale.audit.recentHighRiskEvents" :subtitle="locale.audit.recentHighRiskEventsDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+      <OpsPanel :title="locale.audit.recentHighRiskEvents" :subtitle="locale.audit.recentHighRiskEventsDetail" :status="securityAuditPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!highRiskSecurityEvents.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <dl class="server-resource-list"><div v-for="item in highRiskSecurityEvents.slice(0, 10)" :key="`${item.at}-${item.event}`"><dt>{{ item.event }}<small class="block">{{ item.summary }}</small></dt><dd>{{ formatTimestamp(item.at) }}</dd></div></dl>
+      </OpsPanel>
 
-      <OpsPanel :title="locale.audit.eventList" :subtitle="locale.audit.eventListDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+      <OpsPanel :title="locale.audit.eventList" :subtitle="locale.audit.eventListDetail" :status="securityAuditPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!securityAuditEvents.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <div class="overflow-x-auto"><table class="data-table min-w-[900px]"><thead><tr><th>时间</th><th>来源</th><th>事件</th><th>结果</th><th>IP</th><th>Request ID</th><th>摘要</th></tr></thead><tbody><tr v-for="item in securityAuditEvents.slice(0, 50)" :key="`${item.at}-${item.event}-${item.requestId || ''}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.source }}</td><td class="font-mono">{{ item.event }}</td><td>{{ item.severity }}</td><td class="font-mono">{{ maskIpAddress(item.ip) }}</td><td class="font-mono">{{ item.requestId || '--' }}</td><td>{{ item.summary }}</td></tr></tbody></table></div>
+      </OpsPanel>
 
-      <OpsPanel :title="locale.audit.ipBehaviorTimeline" :subtitle="locale.audit.ipBehaviorTimelineDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+      <OpsPanel :title="locale.audit.ipBehaviorTimeline" :subtitle="locale.audit.ipBehaviorTimelineDetail" :status="ipBehaviorPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!ipBehaviorRows.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <div class="overflow-x-auto"><table class="data-table min-w-[760px]"><thead><tr><th>IP</th><th>请求数</th><th>4xx</th><th>5xx</th><th>最近路由</th><th>首次出现</th><th>最近出现</th></tr></thead><tbody><tr v-for="item in ipBehaviorRows" :key="item.ip"><td class="font-mono">{{ maskIpAddress(item.ip) }}</td><td>{{ item.requests }}</td><td>{{ item.client_errors }}</td><td :class="{ 'text-rose-400': Number(item.server_errors) > 0 }">{{ item.server_errors }}</td><td>{{ item.last_route }}</td><td>{{ formatTimestamp(item.first_seen) }}</td><td>{{ formatTimestamp(item.last_seen) }}</td></tr></tbody></table></div>
+      </OpsPanel>
     </template>
 
     <template v-else-if="activeGroup === 'operation-logs'">
@@ -714,7 +730,14 @@
         </details>
       </OpsPanel>
 
-      <OpsPanel :title="locale.debug.traceWaterfall" :subtitle="debugRequestId ? locale.debug.traceNotCollected : locale.debug.traceEnterRequestId" status="unknown" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="!diagnosticLoading" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)" />
+      <OpsPanel :title="locale.debug.traceWaterfall" :subtitle="debugRequestId ? '来自 Sentry transaction 的真实 span 层级。' : locale.debug.traceEnterRequestId" :status="tracePanelStatus" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="!traceSpanRows.length && !diagnosticLoading" empty-text="未找到该 Request ID 对应的真实 Trace span。" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)">
+        <div class="trace-waterfall">
+          <div v-for="span in traceSpanRows" :key="span.spanId" class="trace-waterfall__row">
+            <div class="trace-waterfall__label" :style="{ paddingLeft: `${span.depth * 12}px` }" :title="span.description">{{ span.operation }} · {{ span.description }}</div>
+            <div class="trace-waterfall__track"><span class="trace-waterfall__bar" :class="span.tone" :style="{ left: `${span.left}%`, width: `${span.width}%` }">{{ formatMilliseconds(span.durationMs) }}</span></div>
+          </div>
+        </div>
+      </OpsPanel>
 
       <OpsPanel :title="locale.debug.requestLogChain" :subtitle="locale.debug.requestLogChainDetail" :status="diagnosticPanelStatus" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="!diagnosticLogEntries.length && !diagnosticLoading" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)">
         <div class="overflow-x-auto">
@@ -744,10 +767,9 @@
             </table>
           </div>
         </OpsPanel>
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.errorTrend }}</h3><p class="panel-description">{{ locale.debug.errorTrendDetail }}</p></div></div>
-          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-        </article>
+        <OpsPanel :title="locale.debug.errorTrend" :subtitle="locale.debug.errorTrendDetail" :status="requestTrendPanelStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('errors') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
+          <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.errors, 'errors', requestBehaviorTimeline)}%` }" @mouseenter="showChartTooltip('request-errors', '错误请求', point, point.errors, '次', index, requestBehaviorTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
+        </OpsPanel>
       </section>
 
       <section class="subsection-heading">
@@ -776,11 +798,9 @@
         <Icon name="user" :size="16" />
       </section>
 
-      <section class="ops-empty-panel">
-        <h3>{{ locale.debug.userRequestTimeline }}</h3>
-        <p>{{ locale.debug.userRequestTimelineDetail }}</p>
-        <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-      </section>
+      <OpsPanel :title="locale.debug.userRequestTimeline" :subtitle="locale.debug.userRequestTimelineDetail" :status="requestTrendPanelStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('user_requests') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
+        <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.user_requests, 'user_requests', requestBehaviorTimeline)}%` }" @mouseenter="showChartTooltip('user-requests', '用户侧请求', point, point.user_requests, '次', index, requestBehaviorTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
+      </OpsPanel>
     </template>
 
     <template v-else-if="activeGroup === 'logs'">
@@ -824,7 +844,17 @@
             <div v-for="item in logContextFields" :key="item"><dt>{{ item }}</dt><dd>{{ logContextValue(item) }}</dd></div>
           </dl>
         </OpsPanel>
-        <OpsPanel :title="locale.logCenter.archiveSettings" :subtitle="locale.logCenter.archiveSettingsDetail" status="unknown" updated-at="未采集" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+        <OpsPanel :title="locale.logCenter.archiveSettings" :subtitle="locale.logCenter.archiveSettingsDetail" :status="logArchivePanelStatus" :updated-at="logArchiveUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasLogArchiveData && !initialOperationsLoading" empty-text="暂无真实采集数据。" :refreshable="false" @refresh="loadOperationsData">
+          <dl class="detail-grid">
+            <div><dt>{{ locale.logCenter.archiveSize }}</dt><dd>{{ formatBytes(logArchiveSnapshot.archiveSize) }}</dd></div>
+            <div><dt>当前日志文件</dt><dd class="truncate" :title="logArchiveSnapshot.currentLogFile">{{ logArchiveSnapshot.currentLogFile }}</dd></div>
+            <div><dt>日志文件数</dt><dd>{{ logArchiveSnapshot.totalLogFiles }}</dd></div>
+            <div><dt>已归档文件数</dt><dd>{{ logArchiveSnapshot.archivedFiles }}</dd></div>
+            <div><dt>{{ locale.logCenter.lastArchivedAt }}</dt><dd>{{ formatTimestamp(logArchiveSnapshot.lastArchivedAt) }}</dd></div>
+            <div><dt>最近日志</dt><dd>{{ formatTimestamp(logArchiveSnapshot.newestLog) }}</dd></div>
+            <div><dt>最早日志</dt><dd>{{ formatTimestamp(logArchiveSnapshot.oldestLog) }}</dd></div>
+          </dl>
+        </OpsPanel>
       </section>
     </template>
 
@@ -1197,8 +1227,21 @@ const backupMethodSummary = (record) => Array.isArray(record?.methods) && record
   ? record.methods.map((method) => `${method.method || '备份目标'}：${method.success ? '成功' : method.error ? `失败（${method.error}）` : '执行中'}`).join('；')
   : '--'
 const runtimeMetrics = computed(() => operationsData.value.metrics?.metrics || null)
+const runtimeHealthScore = computed(() => runtimeMetrics.value?.healthScore || null)
+const hasRuntimeHealthScore = computed(() => runtimeHealthScore.value?.value != null && Number.isFinite(Number(runtimeHealthScore.value.value)))
+const healthScorePanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!hasRuntimeHealthScore.value) return 'unknown'
+  return runtimeHealthScore.value?.status || 'unknown'
+})
+const healthScoreTone = computed(() => ({ ok: 'good', warning: 'warn', error: 'critical', unknown: 'unknown' }[runtimeHealthScore.value?.status] || 'unknown'))
+const healthScoreStatusLabel = computed(() => ({ ok: '正常', warning: '需要关注', error: '异常', unknown: '未知' }[healthScorePanelStatus.value] || '未知'))
 const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
-const runtimeTimeline = computed(() => runtimeDatabaseMetrics.value?.timeline?.length ? runtimeDatabaseMetrics.value.timeline : (runtimeMetrics.value?.timeline || []))
+const runtimeTimeline = computed(() => {
+  const persistedTimeline = runtimeDatabaseMetrics.value?.timeline || []
+  if (isServerlessRuntime.value) return runtimeMetrics.value?.timeline?.length ? runtimeMetrics.value.timeline : persistedTimeline
+  return persistedTimeline.length ? persistedTimeline : (runtimeMetrics.value?.timeline || [])
+})
 const recentErrorRequests = computed(() => {
   const errors = [
     ...(operationsData.value.metrics?.diagnostic?.entries || []),
@@ -1231,6 +1274,58 @@ const diagnosticLogEntries = computed(() => {
   if (entries.length) return entries.map((item) => ({ ...item, level: Number(item.status) >= 500 ? 'error' : 'warn' }))
   return selectedDebugRequest.value ? [selectedDebugRequest.value] : []
 })
+const diagnosticTrace = computed(() => operationsData.value.metrics?.diagnostic?.trace || null)
+const traceSpanRows = computed(() => {
+  const toMilliseconds = (value) => {
+    const numeric = Number(value)
+    if (Number.isFinite(numeric)) return numeric < 1_000_000_000_000 ? numeric * 1000 : numeric
+    const parsed = Date.parse(value || '')
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  const spans = (diagnosticTrace.value?.spans || []).map((span) => ({
+    ...span,
+    description: redactSensitiveText(span.description || span.operation || '未命名 span'),
+    startedMs: toMilliseconds(span.startedAt),
+    endedMs: toMilliseconds(span.endedAt)
+  })).filter((span) => span.spanId && span.startedMs != null && span.endedMs != null && span.endedMs >= span.startedMs)
+  if (!spans.length) return []
+  const ids = new Set(spans.map((span) => span.spanId))
+  const children = new Map()
+  spans.forEach((span) => {
+    const parent = ids.has(span.parentSpanId) ? span.parentSpanId : null
+    const list = children.get(parent) || []
+    list.push(span)
+    children.set(parent, list)
+  })
+  const ordered = []
+  const append = (parentId, depth) => {
+    const items = (children.get(parentId) || []).sort((left, right) => left.startedMs - right.startedMs)
+    items.forEach((span) => {
+      ordered.push({ ...span, depth })
+      append(span.spanId, depth + 1)
+    })
+  }
+  append(null, 0)
+  const minimum = Math.min(...spans.map((span) => span.startedMs))
+  const maximum = Math.max(...spans.map((span) => span.endedMs))
+  const range = Math.max(1, maximum - minimum)
+  return ordered.map((span) => {
+    const durationMs = Math.max(0, span.endedMs - span.startedMs)
+    const status = String(span.status || '').toLowerCase()
+    return {
+      ...span,
+      durationMs,
+      left: Math.max(0, (span.startedMs - minimum) / range * 100),
+      width: Math.max(1, durationMs / range * 100),
+      tone: status.includes('error') || status.includes('internal') ? 'trace-waterfall__bar--error' : durationMs >= 1000 ? 'trace-waterfall__bar--slow' : 'trace-waterfall__bar--ok'
+    }
+  })
+})
+const tracePanelStatus = computed(() => {
+  if (diagnosticError.value) return 'error'
+  if (!traceSpanRows.value.length) return 'unknown'
+  return traceSpanRows.value.some((span) => span.tone === 'trace-waterfall__bar--error') ? 'error' : traceSpanRows.value.some((span) => span.tone === 'trace-waterfall__bar--slow') ? 'warning' : 'ok'
+})
 const diagnosticUpdatedAtText = computed(() => diagnosticUpdatedAt.value ? formatTimestamp(diagnosticUpdatedAt.value) : '尚未查询')
 const diagnosticPanelStatus = computed(() => {
   if (diagnosticError.value) return 'error'
@@ -1242,7 +1337,8 @@ const diagnosticPanelStatus = computed(() => {
 const diagnosticResultEmpty = computed(() => !diagnosticUpdatedAt.value || (!selectedDebugRequest.value && !diagnosticLogEntries.value.length))
 const diagnosticRawJson = computed(() => redactSensitiveText(JSON.stringify({
   requestId: operationsData.value.metrics?.diagnostic?.requestId || debugRequestId.value || null,
-  entries: diagnosticLogEntries.value
+  entries: diagnosticLogEntries.value,
+  trace: diagnosticTrace.value
 }, null, 2)))
 const diagnosticMetricsUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
 const errorAggregationPanelStatus = computed(() => {
@@ -1308,6 +1404,13 @@ const logContextPanelStatus = computed(() => {
   if (selectedLogEntry.value.level === 'warn') return 'warning'
   return 'ok'
 })
+const logArchiveSnapshot = computed(() => runtimeDatabaseMetrics.value?.logArchive || null)
+const hasLogArchiveData = computed(() => Boolean(logArchiveSnapshot.value && (logArchiveSnapshot.value.totalLogFiles || logArchiveSnapshot.value.archivedFiles || logArchiveSnapshot.value.newestLog || logArchiveSnapshot.value.oldestLog)))
+const logArchiveUpdatedAt = computed(() => logArchiveSnapshot.value?.lastArchivedAt ? formatTimestamp(logArchiveSnapshot.value.lastArchivedAt) : logUpdatedAt.value)
+const logArchivePanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  return hasLogArchiveData.value ? 'ok' : 'unknown'
+})
 const redactSensitiveText = (value) => String(value)
   .replace(/((?:token|password|secret|authorization|cookie|api[_-]?key)"?\s*[:=]\s*"?)[^",\s}&]+/gi, '$1***')
   .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer ***')
@@ -1357,16 +1460,16 @@ const copyDiagnosticRequestId = async () => {
 }
 const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
 const chartTooltip = ref({ visible: false, key: '', time: '', series: '', value: '', unit: '', left: 50 })
-const runtimeBarHeight = (value, field = 'requests') => {
-  const max = Math.max(...runtimeTimeline.value.map((point) => Number(point[field] || 0)), 1)
+const runtimeBarHeight = (value, field = 'requests', points = runtimeTimeline.value) => {
+  const max = Math.max(...points.map((point) => Number(point[field] || 0)), 1)
   const numericValue = Number(value || 0)
   if (numericValue <= 0) return 0
   return Math.max(4, Math.round((numericValue / max) * 100))
 }
 const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
 const hasTimelineMetric = (field) => runtimeTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
-const chartTicks = (field) => {
-  const maximum = Math.max(...runtimeTimeline.value.map((point) => Number(point?.[field] || 0)), 0)
+const chartTicks = (field, points = runtimeTimeline.value) => {
+  const maximum = Math.max(...points.map((point) => Number(point?.[field] || 0)), 0)
   const top = Math.max(1, Math.ceil(maximum))
   return [...new Set([top, Math.round(top / 2), 0])]
 }
@@ -1564,6 +1667,62 @@ const databasePerformanceUpdatedAt = computed(() => operationsData.value.perform
   ? formatTimestamp(operationsData.value.performance.timestamp)
   : operationsLastUpdated.value ? `页面更新时间 ${formatTimestamp(operationsLastUpdated.value)}` : '尚未更新')
 const databaseDiagnosticsUpdatedAt = computed(() => formatTimestamp(databaseDiagnostics.value?.collectedAt))
+const databaseTimeline = computed(() => runtimeDatabaseMetrics.value?.timeline || [])
+const databaseTimelineUpdatedAt = computed(() => databaseTimeline.value.length ? formatTimestamp(databaseTimeline.value[databaseTimeline.value.length - 1]?.at) : databaseDiagnosticsUpdatedAt.value)
+const databaseTrendPanels = computed(() => [
+  { title: locale.value.database?.queryTrend, detail: locale.value.database?.queryTrendDetail, field: 'database_queries', unit: '次' },
+  { title: locale.value.database?.connectionTrend, detail: locale.value.database?.connectionTrendDetail, field: 'database_active_connections', unit: '连接' },
+  { title: locale.value.database?.slowQueryTrend, detail: locale.value.database?.slowQueryTrendDetail, field: 'database_slow_query_count', unit: '次' }
+])
+const hasDatabaseTimelineMetric = (field) => databaseTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
+const databaseTrendStatus = (panel) => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  return hasDatabaseTimelineMetric(panel.field) ? 'ok' : 'unknown'
+}
+const securityAuditEvents = computed(() => runtimeDatabaseMetrics.value?.securityEvents || [])
+const highRiskSecurityEvents = computed(() => securityAuditEvents.value.filter((item) => ['FAILURE', 'ERROR', 'WARNING'].includes(String(item.severity).toUpperCase())))
+const ipBehaviorRows = computed(() => runtimeDatabaseMetrics.value?.ipBehavior || [])
+const maskIpAddress = (value) => {
+  const ip = String(value || '')
+  if (!ip) return '--'
+  if (ip.includes(':')) return `${ip.split(':').filter(Boolean).slice(0, 3).join(':')}::*`
+  const parts = ip.split('.')
+  return parts.length === 4 ? `${parts[0]}.${parts[1]}.*.*` : ip
+}
+const securityEventsUpdatedAt = computed(() => securityAuditEvents.value.length ? formatTimestamp(securityAuditEvents.value[0]?.at) : securityUpdatedAt.value)
+const securityAuditPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!securityAuditEvents.value.length) return 'unknown'
+  return highRiskSecurityEvents.value.some((item) => String(item.severity).toUpperCase() === 'ERROR' || String(item.severity).toUpperCase() === 'FAILURE') ? 'error' : highRiskSecurityEvents.value.length ? 'warning' : 'ok'
+})
+const ipBehaviorPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!ipBehaviorRows.value.length) return 'unknown'
+  if (ipBehaviorRows.value.some((item) => Number(item.server_errors) > 0)) return 'error'
+  return ipBehaviorRows.value.some((item) => Number(item.client_errors) > 0) ? 'warning' : 'ok'
+})
+const requestBehaviorTimeline = computed(() => runtimeDatabaseMetrics.value?.requestBehaviorTimeline || [])
+const requestBehaviorUpdatedAt = computed(() => requestBehaviorTimeline.value.length ? formatTimestamp(requestBehaviorTimeline.value[requestBehaviorTimeline.value.length - 1]?.at) : diagnosticMetricsUpdatedAt.value)
+const hasRequestBehaviorMetric = (field) => requestBehaviorTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
+const requestTrendPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!requestBehaviorTimeline.value.length) return 'unknown'
+  return requestBehaviorTimeline.value.some((point) => Number(point.server_errors) > 0) ? 'error' : requestBehaviorTimeline.value.some((point) => Number(point.errors) > 0) ? 'warning' : 'ok'
+})
+const businessOperationTimeline = computed(() => runtimeDatabaseMetrics.value?.businessTimeline || [])
+const businessTimelineUpdatedAt = computed(() => businessOperationTimeline.value.length ? formatTimestamp(businessOperationTimeline.value[businessOperationTimeline.value.length - 1]?.at) : diagnosticMetricsUpdatedAt.value)
+const hasBusinessTimelineMetric = (field) => businessOperationTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
+const businessTimelinePanelStatus = computed(() => moduleFetchErrors.value.metrics ? 'error' : businessOperationTimeline.value.length ? 'ok' : 'unknown')
+const businessOutcomeTotals = computed(() => {
+  const total = (field) => businessOperationTimeline.value.reduce((sum, point) => sum + Number(point?.[field] || 0), 0)
+  return [
+    { label: '点歌提交', value: String(total('song_requests')) },
+    { label: '新增排期', value: String(total('schedules_created')) },
+    { label: '已发布排期', value: String(total('schedules_published')) },
+    { label: '已播排期', value: String(total('schedules_played')) },
+    { label: '投票', value: String(total('votes')) }
+  ]
+})
 const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.businessQueue || null)
 const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
 const backupSnapshot = computed(() => runtimeMetrics.value?.backupSnapshot || null)
@@ -2092,31 +2251,31 @@ const serverMetrics = computed(() => (isServerlessRuntime.value ? [
     icon: 'monitoring',
     label: locale.value.metrics?.systemMemory,
     detail: locale.value.server?.systemMemoryDetail,
-    value: runtimeMetrics.value?.process?.memory?.rss ? `${Math.round(runtimeMetrics.value.process.memory.rss / 1024 / 1024)} MB 常驻内存` : '--'
+    value: runtimeMetrics.value?.resources?.memoryUsedBytes != null ? `${formatBytes(runtimeMetrics.value.resources.memoryUsedBytes)} 常驻内存` : '--'
   },
   {
     icon: 'database',
     label: locale.value.metrics?.diskUsage,
     detail: locale.value.server?.diskUsageDetail,
-    value: '--'
+    value: runtimeMetrics.value?.resources?.diskUsedBytes != null ? `${formatBytes(runtimeMetrics.value.resources.diskUsedBytes)} 已用` : '--'
   },
   {
     icon: 'activity',
     label: locale.value.server?.networkIngress,
     detail: locale.value.server?.networkIngressDetail,
-    value: '--'
+    value: runtimeMetrics.value?.resources?.networkRxBytes != null ? `${formatBytes(runtimeMetrics.value.resources.networkRxBytes)} 累计` : '--'
   },
   {
     icon: 'activity',
     label: locale.value.server?.networkEgress,
     detail: locale.value.server?.networkEgressDetail,
-    value: '--'
+    value: runtimeMetrics.value?.resources?.networkTxBytes != null ? `${formatBytes(runtimeMetrics.value.resources.networkTxBytes)} 累计` : '--'
   },
   {
     icon: 'database',
     label: locale.value.server?.diskIo,
     detail: locale.value.server?.diskIoDetail,
-    value: '--'
+    value: runtimeMetrics.value?.resources?.diskTotalBytes != null ? formatBytes(runtimeMetrics.value.resources.diskTotalBytes) : '--'
   },
   {
     icon: 'refresh',
@@ -2142,10 +2301,10 @@ const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
   { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
   { title: '函数执行时长 P95', detail: '无服务器函数执行长尾趋势；当前实例无历史持久化时显示暂无数据。', unit: 'ms', field: 'p95Ms', available: true }
 ] : [
-  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '百分比', available: false },
-  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', available: false },
-  { title: locale.value.server?.diskIoTrend, detail: locale.value.server?.diskIoTrendDetail, unit: 'MB/秒', available: false },
-  { title: locale.value.server?.networkTrend, detail: locale.value.server?.networkTrendDetail, unit: 'MB/秒', available: false }
+  { title: locale.value.server?.cpuTrend, detail: locale.value.server?.cpuTrendDetail, unit: '%', field: 'cpu_usage_percent', available: true },
+  { title: locale.value.server?.memoryTrend, detail: locale.value.server?.memoryTrendDetail, unit: 'MB', field: 'memory_used_mb', available: true },
+  { title: '磁盘使用趋势', detail: '服务器工作目录所在文件系统的已用容量。', unit: 'MB', field: 'disk_used_mb', available: true },
+  { title: locale.value.server?.networkTrend, detail: 'Linux 网络接口每分钟接收流量；其他运行平台保持未采集。', unit: 'MB/分钟', field: 'network_rx_mb', available: true }
 ]))
 
 const serverRuntimeDetails = computed(() => [
@@ -2273,6 +2432,7 @@ const databasePerformanceSourceDetails = computed(() => [
   { label: locale.value.server?.poolActive, value: operationsData.value.performance?.activeConnections ?? '--' },
   { label: locale.value.server?.transactionsCommitted, value: operationsData.value.performance?.transactionsCommitted ?? '--' },
   { label: locale.value.server?.transactionsRolledBack, value: operationsData.value.performance?.transactionsRolledBack ?? '--' },
+  { label: '累计查询调用', value: operationsData.value.performance?.queriesExecuted ?? '--' },
   { label: locale.value.database?.indexHitRatio, value: formatPercent(operationsData.value.performance?.cacheHitRatio) }
 ])
 
@@ -2330,6 +2490,7 @@ const redisPanelStatus = computed(() => {
 })
 const redisPanelEmpty = computed(() => !runtimeRedisMetrics.value?.configured)
 const redisUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : '尚未采集')
+const redisCommandMetrics = computed(() => runtimeRedisMetrics.value?.metrics?.commandMetrics || [])
 
 const cacheDetails = computed(() => [
   locale.value.cache?.configured,

@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, index, integer, jsonb, pgEnum, pgTable, real, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -700,7 +700,18 @@ export const operationsMetricBuckets = pgTable('operations_metric_buckets', {
   clientErrorCount: integer('client_error_count').default(0).notNull(),
   serverErrorCount: integer('server_error_count').default(0).notNull(),
   totalDurationMs: integer('total_duration_ms').default(0).notNull(),
-  maxDurationMs: integer('max_duration_ms').default(0).notNull()
+  maxDurationMs: integer('max_duration_ms').default(0).notNull(),
+  cpuUsagePercent: real('cpu_usage_percent'),
+  memoryUsedBytes: bigint('memory_used_bytes', { mode: 'number' }),
+  memoryTotalBytes: bigint('memory_total_bytes', { mode: 'number' }),
+  diskUsedBytes: bigint('disk_used_bytes', { mode: 'number' }),
+  diskTotalBytes: bigint('disk_total_bytes', { mode: 'number' }),
+  networkRxBytes: bigint('network_rx_bytes', { mode: 'number' }),
+  networkTxBytes: bigint('network_tx_bytes', { mode: 'number' }),
+  databaseQueryTotal: bigint('database_query_total', { mode: 'number' }),
+  databaseActiveConnections: integer('database_active_connections'),
+  databaseTotalConnections: integer('database_total_connections'),
+  databaseSlowQueryCount: integer('database_slow_query_count')
 }, (table) => [
   unique('operations_metric_buckets_instance_bucket_unique').on(table.bucketStart, table.instanceId),
   index('operations_metric_buckets_bucket_start_idx').on(table.bucketStart)

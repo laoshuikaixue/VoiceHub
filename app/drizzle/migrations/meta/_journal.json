@@ -288,6 +288,13 @@
       "when": 1785763825061,
       "tag": "20260803235900_add_admin_operation_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1785844800000,
+      "tag": "20260804120000_add_resource_metrics",
+      "breakpoints": true
     }
   ]
 }

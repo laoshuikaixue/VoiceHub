@@ -1,5 +1,6 @@
 import { PerformanceObserver, monitorEventLoopDelay, performance } from 'node:perf_hooks'
-import { hostname } from 'node:os'
+import { hostname, totalmem } from 'node:os'
+import { readFileSync, statfsSync } from 'node:fs'
 import { sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { getInstanceId } from '~~/server/utils/instance-id'
@@ -119,8 +120,102 @@ const getProcessCpuUsage = () => {
   return Number((cpuMs / elapsedMs * 100).toFixed(2))
 }
 
+const getNetworkBytes = () => {
+  if (process.platform !== 'linux') return { rxBytes: null, txBytes: null }
+  try {
+    const rows = readFileSync('/proc/net/dev', 'utf8').split('\n').slice(2)
+    return rows.reduce((result, row) => {
+      const [, payload] = row.split(':')
+      if (!payload) return result
+      const values = payload.trim().split(/\s+/).map(Number)
+      if (values.length < 9) return result
+      const rxBytes = values[0] ?? 0
+      const txBytes = values[8] ?? 0
+      result.rxBytes += Number.isFinite(rxBytes) ? rxBytes : 0
+      result.txBytes += Number.isFinite(txBytes) ? txBytes : 0
+      return result
+    }, { rxBytes: 0, txBytes: 0 })
+  } catch {
+    return { rxBytes: null, txBytes: null }
+  }
+}
+
+const getDiskBytes = () => {
+  try {
+    const stats = statfsSync(process.cwd())
+    const totalBytes = Number(stats.blocks) * Number(stats.bsize)
+    const freeBytes = Number(stats.bavail) * Number(stats.bsize)
+    if (!Number.isFinite(totalBytes) || !Number.isFinite(freeBytes)) return { usedBytes: null, totalBytes: null }
+    return { usedBytes: Math.max(0, totalBytes - freeBytes), totalBytes }
+  } catch {
+    return { usedBytes: null, totalBytes: null }
+  }
+}
+
+const getSystemResourceSnapshot = (cpuUsagePercent: number | null) => {
+  const memory = process.memoryUsage()
+  const disk = getDiskBytes()
+  const network = getNetworkBytes()
+  return {
+    cpuUsagePercent,
+    memoryUsedBytes: Number.isFinite(memory.rss) ? memory.rss : null,
+    memoryTotalBytes: Number.isFinite(totalmem()) ? totalmem() : null,
+    diskUsedBytes: disk.usedBytes,
+    diskTotalBytes: disk.totalBytes,
+    networkRxBytes: network.rxBytes,
+    networkTxBytes: network.txBytes
+  }
+}
+
+export const persistOperationsResourceSnapshot = (snapshot: ReturnType<typeof getSystemResourceSnapshot>) => {
+  void getInstanceId().then((instanceId) => db.execute(sql`
+    INSERT INTO operations_metric_buckets (
+      bucket_start, instance_id, cpu_usage_percent, memory_used_bytes,
+      memory_total_bytes, disk_used_bytes, disk_total_bytes,
+      network_rx_bytes, network_tx_bytes
+    ) VALUES (
+      date_trunc('minute', now()), ${instanceId}, ${snapshot.cpuUsagePercent},
+      ${snapshot.memoryUsedBytes}, ${snapshot.memoryTotalBytes},
+      ${snapshot.diskUsedBytes}, ${snapshot.diskTotalBytes},
+      ${snapshot.networkRxBytes}, ${snapshot.networkTxBytes}
+    ) ON CONFLICT (bucket_start, instance_id) DO UPDATE SET
+      cpu_usage_percent = COALESCE(EXCLUDED.cpu_usage_percent, operations_metric_buckets.cpu_usage_percent),
+      memory_used_bytes = COALESCE(EXCLUDED.memory_used_bytes, operations_metric_buckets.memory_used_bytes),
+      memory_total_bytes = COALESCE(EXCLUDED.memory_total_bytes, operations_metric_buckets.memory_total_bytes),
+      disk_used_bytes = COALESCE(EXCLUDED.disk_used_bytes, operations_metric_buckets.disk_used_bytes),
+      disk_total_bytes = COALESCE(EXCLUDED.disk_total_bytes, operations_metric_buckets.disk_total_bytes),
+      network_rx_bytes = COALESCE(EXCLUDED.network_rx_bytes, operations_metric_buckets.network_rx_bytes),
+      network_tx_bytes = COALESCE(EXCLUDED.network_tx_bytes, operations_metric_buckets.network_tx_bytes)
+  `)).catch(() => {})
+}
+
+export const persistOperationsDatabaseSnapshot = (snapshot: {
+  queriesExecuted?: number | string | null
+  activeConnections?: number | string | null
+  totalConnections?: number | string | null
+  slowQueryCount?: number | string | null
+}) => {
+  void getInstanceId().then((instanceId) => db.execute(sql`
+    INSERT INTO operations_metric_buckets (
+      bucket_start, instance_id, database_query_total, database_active_connections,
+      database_total_connections, database_slow_query_count
+    ) VALUES (
+      date_trunc('minute', now()), ${instanceId}, ${snapshot.queriesExecuted ?? null},
+      ${snapshot.activeConnections ?? null}, ${snapshot.totalConnections ?? null},
+      ${snapshot.slowQueryCount ?? null}
+    ) ON CONFLICT (bucket_start, instance_id) DO UPDATE SET
+      database_query_total = COALESCE(EXCLUDED.database_query_total, operations_metric_buckets.database_query_total),
+      database_active_connections = COALESCE(EXCLUDED.database_active_connections, operations_metric_buckets.database_active_connections),
+      database_total_connections = COALESCE(EXCLUDED.database_total_connections, operations_metric_buckets.database_total_connections),
+      database_slow_query_count = COALESCE(EXCLUDED.database_slow_query_count, operations_metric_buckets.database_slow_query_count)
+  `)).catch(() => {})
+}
+
 export const getOperationsMetrics = () => {
   prune()
+  const cpuUsagePercent = getProcessCpuUsage()
+  const resources = getSystemResourceSnapshot(cpuUsagePercent)
+  persistOperationsResourceSnapshot(resources)
   const durations = state.samples.map((sample) => sample.durationMs)
   const recentRequests = state.samples.length
   const recent5xx = state.samples.filter((sample) => sample.status >= 500).length
@@ -173,6 +268,7 @@ export const getOperationsMetrics = () => {
   ])) as Record<string, { calls: number; successRate: number | null; p95DurationMs: number | null; lastError: string | null }>
   const alerts: Array<{ code: string; severity: 'warning' | 'critical'; message: string; value: number; threshold: number }> = []
   const serverErrorRate = recentRequests ? recent5xx / recentRequests * 100 : null
+  const healthScore = serverErrorRate == null ? null : Number(Math.max(0, 100 - serverErrorRate).toFixed(1))
   if (serverErrorRate != null && serverErrorRate >= 1) {
     alerts.push({ code: 'http_5xx_rate', severity: serverErrorRate >= 5 ? 'critical' : 'warning', message: 'HTTP 5xx 错误率超过阈值', value: Number(serverErrorRate.toFixed(2)), threshold: 1 })
   }
@@ -193,11 +289,17 @@ export const getOperationsMetrics = () => {
     process: {
       uptimeSeconds: process.uptime(),
       memory: process.memoryUsage(),
-      cpuUsagePercent: getProcessCpuUsage(),
+      cpuUsagePercent,
       activeRequests: state.activeRequests,
       activeHandles: typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo().length : null
     },
     runtime: getRuntimeDescriptor(),
+    resources,
+    healthScore: {
+      value: healthScore,
+      status: healthScore == null ? 'unknown' : healthScore < 95 ? 'error' : healthScore < 99 ? 'warning' : 'ok',
+      source: '近 5 分钟 HTTP 可用率'
+    },
     http: {
       windowSeconds: WINDOW_MS / 1000,
       recentRequests,
