@@ -59,7 +59,7 @@
 
     <template v-if="activeGroup === 'overview'">
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="overallStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!operationsData.status && !initialOperationsLoading" :refreshable="false">
+        <OpsPanel class="xl:col-span-5" :title="locale.overview.sloAvailability" :subtitle="locale.overview.sloAvailabilityDetail" :status="sloAvailabilityStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!operationsData.status && !initialOperationsLoading" :refreshable="false">
           <div class="health-layout">
             <div class="health-score-wrap">
               <div class="health-score-ring">
@@ -190,8 +190,12 @@
       </section>
 
       <OpsPanel :title="locale.overview.alertRules" :subtitle="locale.overview.alertRulesDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :empty="!alertRules.length && !initialOperationsLoading" :refreshable="false">
-        <div class="service-list">
-          <div v-for="item in alertRules" :key="item.label" class="service-row"><div class="min-w-0 flex-1"><p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p><p class="mt-1 text-xs text-zinc-600">{{ item.detail }}</p></div><span class="status-badge">{{ item.priority }}</span></div>
+        <div class="alert-rule-list">
+          <div v-for="item in alertRules" :key="item.label" class="alert-rule-row" :class="`alert-rule-row--${item.priority.toLowerCase()}`">
+            <span class="alert-priority" :class="item.tone" :title="`${item.priority} 告警规则`"><Icon :name="item.priority === 'P0' ? 'alert-triangle' : item.priority === 'P1' ? 'warning' : 'info'" :size="13" /></span>
+            <div class="min-w-0 flex-1"><p>{{ item.label }}</p><small>{{ item.detail }}</small></div>
+            <strong class="alert-rule-level" :class="item.tone">{{ item.priority }}</strong>
+          </div>
         </div>
       </OpsPanel>
 
@@ -201,7 +205,7 @@
         </div>
       </OpsPanel>
 
-      <OpsPanel :title="locale.overview.recentErrorLogs" :subtitle="locale.overview.recentErrorLogsDetail" :status="logPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorRequests.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+      <OpsPanel :title="locale.overview.recentErrorLogs" :subtitle="locale.overview.recentErrorLogsDetail" :status="logPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorLogEntries.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto">
           <table class="data-table min-w-[860px]">
             <thead>
@@ -213,7 +217,7 @@
                 <th>{{ locale.debug.drilldown }}</th>
               </tr>
             </thead>
-            <tbody><tr v-for="item in recentErrorRequests.slice(0, 10)" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ formatTimestamp(item.at) }}</td><td>HTTP</td><td>{{ item.status >= 500 ? 'HTTP 服务端错误' : 'HTTP 客户端错误' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr></tbody>
+            <tbody><tr v-for="item in recentErrorLogEntries" :key="logKey(item)"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.source === 'sentry' ? 'Sentry' : 'HTTP' }}</td><td>{{ redactSensitiveText(item.message) }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr></tbody>
           </table>
         </div>
       </OpsPanel>
@@ -232,7 +236,7 @@
       </OpsPanel>
 
       <section>
-        <OpsPanel :title="locale.application.routePerformance" :subtitle="locale.application.routePerformanceDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!routePerformanceRows.length && !initialOperationsLoading" :refreshable="false">
+        <OpsPanel :title="locale.application.routePerformance" :subtitle="locale.application.routePerformanceDetail" :status="routePerformancePanelStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!routePerformanceRows.length && !initialOperationsLoading" :refreshable="false">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1080px]">
               <thead><tr><th>{{ locale.application.method }}</th><th>{{ locale.application.route }}</th><th>{{ locale.application.qps }}</th><th>P50</th><th>P95</th><th>P99</th><th>4xx</th><th>401</th><th>403</th><th>429</th><th>5xx</th><th>{{ locale.logCenter.traceId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
@@ -243,7 +247,7 @@
           </div>
         </OpsPanel>
 
-        <OpsPanel class="xl:col-span-4" :title="locale.application.latencyDistribution" :subtitle="locale.application.latencyDistributionDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false">
+        <OpsPanel class="xl:col-span-4" :title="locale.application.latencyDistribution" :subtitle="locale.application.latencyDistributionDetail" :status="applicationLatencyStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false">
           <dl class="detail-grid detail-grid--compact">
             <div v-for="item in applicationLatencyDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
           </dl>
@@ -251,7 +255,7 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <OpsPanel :title="locale.application.latencyBreakdown" :subtitle="locale.application.latencyBreakdownDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
+        <OpsPanel :title="locale.application.latencyBreakdown" :subtitle="locale.application.latencyBreakdownDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="true" :refreshable="false" />
         <OpsPanel :title="locale.application.musicApiPerformance" :subtitle="locale.application.musicApiPerformanceDetail" :status="dependenciesModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!musicApiRows.some((item) => item.status !== '未探测') && !initialOperationsLoading" :refreshable="false">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[720px]">
@@ -265,7 +269,7 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <OpsPanel v-for="panel in applicationDetailPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false">
+        <OpsPanel v-for="panel in applicationDetailPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="panel.status" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="panel.empty && !initialOperationsLoading" :refreshable="false">
           <dl class="server-resource-list">
             <div v-for="item in panel.items" :key="item.label || item"><dt>{{ item.label || item }}</dt><dd>{{ item.value || '--' }}</dd></div>
           </dl>
@@ -831,8 +835,8 @@
           <table class="data-table min-w-[1320px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>耗时</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.logs.message }}</th><th>{{ locale.logCenter.action }}</th></tr></thead>
           <tbody>
-            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`" class="log-result-row" @click="toggleLogDetails(item)"><td>{{ formatTimestamp(item.at) }}</td><td><span class="log-level" :class="`log-level--${item.level}`">{{ item.level === 'error' ? '错误' : item.level === 'warn' ? '警告' : '信息' }}</span></td><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无数据' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><span class="block max-w-[25rem] truncate" :title="redactSensitiveText(item.message)">{{ redactSensitiveText(item.message) }}</span></td><td><button type="button" class="table-action" @click.stop="copyLogEntry(item)">{{ locale.logCenter.copy }}</button></td></tr>
-            <template v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}-details`"><tr v-if="isLogExpanded(item)" class="log-detail-row"><td colspan="9"><div class="log-detail-grid"><div><strong>结构化字段</strong><dl><dt>时间</dt><dd>{{ formatTimestamp(item.at) }}</dd><dt>路由</dt><dd>{{ item.route }}</dd><dt>状态码</dt><dd>{{ item.status }}</dd><dt>耗时</dt><dd>{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无数据' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ item.requestId || '暂无' }}</dd></dl></div><pre>{{ formatLogDetails(item) }}</pre></div></td></tr></template>
+            <tr v-for="item in logEntries" :key="logKey(item)" class="log-result-row" @click="toggleLogDetails(item)"><td>{{ formatTimestamp(item.at) }}</td><td><span class="log-level" :class="`log-level--${item.level}`">{{ item.level === 'error' ? '错误' : item.level === 'warn' ? '警告' : '信息' }}</span></td><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无数据' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><span class="block max-w-[25rem] truncate" :title="redactSensitiveText(item.message)">{{ redactSensitiveText(item.message) }}</span></td><td><button type="button" class="table-action" @click.stop="copyLogEntry(item)">{{ locale.logCenter.copy }}</button></td></tr>
+            <template v-for="item in logEntries" :key="`${logKey(item)}-details`"><tr v-if="isLogExpanded(item)" class="log-detail-row"><td colspan="9"><div class="log-detail-grid"><div><strong>结构化字段</strong><dl><dt>时间</dt><dd>{{ formatTimestamp(item.at) }}</dd><dt>{{ locale.logs.scope }}</dt><dd>{{ item.source === 'sentry' ? 'Sentry' : 'HTTP' }}</dd><dt>路由</dt><dd>{{ item.route }}</dd><dt>状态码</dt><dd>{{ item.status }}</dd><dt>{{ locale.debug.occurrences }}</dt><dd>{{ item.occurrenceCount ?? 1 }}</dd><dt>耗时</dt><dd>{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无数据' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ item.requestId || '暂无' }}</dd></dl></div><pre>{{ formatLogDetails(item) }}</pre></div></td></tr></template>
           </tbody>
           </table>
         </div>
@@ -1341,10 +1345,36 @@ const diagnosticRawJson = computed(() => redactSensitiveText(JSON.stringify({
   trace: diagnosticTrace.value
 }, null, 2)))
 const diagnosticMetricsUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
+const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
+const normalizeSentryLevel = (level) => {
+  const normalized = String(level || 'error').toLowerCase()
+  if (normalized === 'fatal' || normalized === 'error') return 'error'
+  if (normalized === 'warning' || normalized === 'warn') return 'warn'
+  return 'info'
+}
+const sentryLogEntries = computed(() => sentryIssues.value.map((issue) => {
+  const occurrenceCount = Number(issue.count || 0)
+  const title = issue.title || `Sentry Issue #${issue.id}`
+  return {
+    id: `sentry-${issue.id}`,
+    at: issue.lastSeen || null,
+    source: 'sentry',
+    method: 'SENTRY',
+    route: `Sentry #${issue.id}`,
+    status: String(issue.level || 'error').toUpperCase(),
+    durationMs: null,
+    requestId: null,
+    level: normalizeSentryLevel(issue.level),
+    message: title,
+    sentryIssueId: String(issue.id || ''),
+    occurrenceCount
+  }
+}))
 const errorAggregationPanelStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
   if (!recentErrorRequests.value.length && !sentryIssues.value.length) return 'unknown'
-  return recentErrorRequests.value.some((item) => Number(item.status) >= 500) ? 'error' : 'warning'
+  if (recentErrorRequests.value.some((item) => Number(item.status) >= 500) || sentryLogEntries.value.some((item) => item.level === 'error')) return 'error'
+  return 'warning'
 })
 const slowRequestsPanelStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
@@ -1355,22 +1385,36 @@ const slowRequestsPanelStatus = computed(() => {
 const logSourceEntries = computed(() => [
   ...(runtimeDatabaseMetrics.value?.recentLogs || []),
   ...(runtimeMetrics.value?.recentErrors || []),
-  ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
+  ...(runtimeDatabaseMetrics.value?.persistedRequests || []),
+  ...sentryLogEntries.value
 ])
+const normalizeLogEntry = (item) => {
+  const status = Number(item.status)
+  return {
+    ...item,
+    source: item.source || 'http',
+    level: item.level || (status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info'),
+    message: item.message || item.errorMessage || (status >= 500 ? 'HTTP 服务端错误' : status >= 400 ? 'HTTP 客户端错误' : '请求完成')
+  }
+}
+const normalizedLogEntries = computed(() => logSourceEntries.value.map(normalizeLogEntry))
+const logKey = (item) => item.id || `${item.source || 'http'}-${item.at}-${item.requestId || item.route}`
+const recentErrorLogEntries = computed(() => normalizedLogEntries.value
+  .filter((item) => item.level === 'error' || item.level === 'warn')
+  .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
+  .slice(0, 10))
 const logEntries = computed(() => {
   const keyword = logKeyword.value.toLowerCase()
   const requestId = logRequestId.value.toLowerCase()
-  return logSourceEntries.value
+  const filtered = normalizedLogEntries.value
     .filter((item) => !requestId || String(item.requestId || '').toLowerCase().includes(requestId))
-    .filter((item) => !keyword || `${item.route} ${item.status} ${item.requestId}`.toLowerCase().includes(keyword))
-    .map((item) => ({
-      ...item,
-      level: item.status >= 500 ? 'error' : item.status >= 400 ? 'warn' : 'info',
-      message: item.errorMessage || (item.status >= 500 ? 'HTTP 服务端错误' : item.status >= 400 ? 'HTTP 客户端错误' : '请求完成')
-    }))
+    .filter((item) => !keyword || `${item.source} ${item.route} ${item.status} ${item.requestId} ${item.message} ${item.sentryIssueId || ''}`.toLowerCase().includes(keyword))
     .filter((item) => logLevelFilter.value === 'all' || item.level === logLevelFilter.value)
     .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
-    .slice(0, 50)
+  const sentryEntries = filtered.filter((item) => item.source === 'sentry').slice(0, 10)
+  const regularEntries = filtered.filter((item) => item.source !== 'sentry').slice(0, Math.max(0, 50 - sentryEntries.length))
+  return [...sentryEntries, ...regularEntries]
+    .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
 })
 const logFiltersActive = computed(() => Boolean(logKeyword.value || logRequestId.value || logLevelFilter.value !== 'all'))
 const logResultsEmptyText = computed(() => logSourceEntries.value.length && logFiltersActive.value
@@ -1382,7 +1426,6 @@ const logLevelOptions = [
   { value: 'warn', label: '警告' },
   { value: 'info', label: '信息' }
 ]
-const logKey = (item) => `${item.at}-${item.requestId || item.route}`
 const toggleLogDetails = (item) => {
   const key = logKey(item)
   expandedLogKey.value = expandedLogKey.value === key ? '' : key
@@ -1392,9 +1435,9 @@ const selectedLogEntry = computed(() => logEntries.value.find((item) => isLogExp
 const logUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
 const logPanelStatus = computed(() => {
   if (moduleFetchErrors.value.metrics) return 'error'
-  if (!logSourceEntries.value.length) return 'unknown'
-  if (logSourceEntries.value.some((item) => Number(item.status) >= 500)) return 'error'
-  if (logSourceEntries.value.some((item) => Number(item.status) >= 400)) return 'warning'
+  if (!normalizedLogEntries.value.length) return 'unknown'
+  if (normalizedLogEntries.value.some((item) => item.level === 'error')) return 'error'
+  if (normalizedLogEntries.value.some((item) => item.level === 'warn')) return 'warning'
   return 'ok'
 })
 const logContextPanelStatus = computed(() => {
@@ -1458,7 +1501,6 @@ const copyDiagnosticRequestId = async () => {
     textarea?.remove()
   }
 }
-const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
 const chartTooltip = ref({ visible: false, key: '', time: '', series: '', value: '', unit: '', left: 50 })
 const runtimeBarHeight = (value, field = 'requests', points = runtimeTimeline.value) => {
   const max = Math.max(...points.map((point) => Number(point[field] || 0)), 1)
@@ -1503,16 +1545,47 @@ const httpErrorRate = computed(() => {
   if (!http || !Number(http.recentRequests)) return null
   return Number(http.recent5xx || 0) / Number(http.recentRequests)
 })
+const applicationHttpStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (httpErrorRate.value == null) return 'unknown'
+  if (httpErrorRate.value >= 0.05) return 'error'
+  if (httpErrorRate.value >= 0.01) return 'warning'
+  return 'ok'
+})
+const applicationLatencyStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  const p95Value = runtimeHttpMetrics.value?.p95Ms
+  const p99Value = runtimeHttpMetrics.value?.p99Ms
+  const p95 = Number(p95Value)
+  const p99 = Number(p99Value)
+  const hasP95 = p95Value != null && Number.isFinite(p95)
+  const hasP99 = p99Value != null && Number.isFinite(p99)
+  if (!hasP95 && !hasP99) return 'unknown'
+  return (hasP95 && p95 >= 1500) || (hasP99 && p99 >= 3000) ? 'warning' : 'ok'
+})
+const applicationEventLoopStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  const p99Value = runtimeEventLoopMetrics.value?.p99Ms
+  const p99 = Number(p99Value)
+  if (p99Value == null || !Number.isFinite(p99)) return 'unknown'
+  if (p99 >= 200) return 'error'
+  if (p99 >= 50) return 'warning'
+  return 'ok'
+})
 const systemModuleStatus = computed(() => {
   if (initialOperationsLoading.value || !operationsData.value.status) return 'unknown'
   return operationsData.value.status.status === 'ok' ? 'ok' : 'error'
 })
+const sloAvailabilityStatus = computed(() => {
+  if (initialOperationsLoading.value) return 'unknown'
+  if (systemModuleStatus.value === 'error' || healthScorePanelStatus.value === 'error') return 'error'
+  if (systemModuleStatus.value === 'unknown' || healthScorePanelStatus.value === 'unknown') return 'unknown'
+  return healthScorePanelStatus.value
+})
 const performanceModuleStatus = computed(() => {
-  const http = runtimeHttpMetrics.value
-  if (!http) return 'unknown'
-  if ((httpErrorRate.value ?? 0) >= 0.05 || Number(http.p95Ms || 0) >= 1500) return 'error'
-  if ((httpErrorRate.value ?? 0) >= 0.01 || Number(http.p95Ms || 0) >= 500 || Number(http.status429 || 0) > 0) return 'warning'
-  return 'ok'
+  const statuses = [applicationHttpStatus.value, applicationLatencyStatus.value, applicationEventLoopStatus.value]
+  const knownStatuses = statuses.filter((status) => status !== 'unknown')
+  return knownStatuses.length ? maxStatus(...knownStatuses) : 'unknown'
 })
 const infraSystemStatus = computed(() => moduleFetchErrors.value.system ? 'error' : systemModuleStatus.value)
 const infraMetricsStatus = computed(() => {
@@ -1790,6 +1863,11 @@ const routePerformanceRows = computed(() => {
       requestId: bucket.requestId
     }
   }).sort((a, b) => (b.serverErrors + b.clientErrors) - (a.serverErrors + a.clientErrors))
+})
+const routePerformancePanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!routePerformanceRows.value.length) return 'unknown'
+  return applicationHttpStatus.value
 })
 const musicApiRows = computed(() => [
   { key: 'netease', source: locale.value.overview?.neteaseSource },
@@ -2180,15 +2258,35 @@ const applicationLatencyDetails = computed(() => [
   { label: locale.value.application?.responseMax, value: runtimeTimeline.value.length ? formatMilliseconds(Math.max(...runtimeTimeline.value.map((item) => Number(item.max_duration_ms || item.p95Ms || 0)))) : '--' }
 ])
 
+const applicationAuthenticationStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  const http = runtimeHttpMetrics.value
+  const oauth = runtimeOAuthMetrics.value
+  if (!http && !oauth) return 'unknown'
+  const oauthCalls = Number(oauth?.calls || 0)
+  const oauthSuccessRate = oauth?.successRate
+  if (oauthCalls > 0 && oauthSuccessRate != null && Number(oauthSuccessRate) === 0) return 'error'
+  if (Number(http?.status401 || 0) > 0 || (oauthCalls > 0 && oauthSuccessRate != null && Number(oauthSuccessRate) < 100)) return 'warning'
+  if (oauthCalls > 0 && oauthSuccessRate == null) return 'unknown'
+  return 'ok'
+})
+const applicationSseStatus = (metrics) => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!metrics) return 'unknown'
+  return Number(metrics.heartbeatFailures || 0) > 0 || Number(metrics.broadcastFailures || 0) > 0 ? 'warning' : 'ok'
+}
+
 const applicationDetailPanels = computed(() => [
   {
     icon: 'success',
     title: locale.value.application?.authentication,
     detail: locale.value.application?.authenticationDetail,
+    status: applicationAuthenticationStatus.value,
+    empty: !runtimeHttpMetrics.value && !runtimeOAuthMetrics.value,
     items: [
-      locale.value.application?.jwtIssued,
-      locale.value.application?.jwtVerified,
-      locale.value.application?.invalidTokens,
+      { label: locale.value.application?.jwtIssued, value: '--' },
+      { label: locale.value.application?.jwtVerified, value: '--' },
+      { label: locale.value.application?.invalidTokens, value: runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : '--' },
       { label: locale.value.application?.oauthSuccessRate, value: runtimeOAuthMetrics.value?.successRate != null ? formatPercent(runtimeOAuthMetrics.value.successRate) : '--' }
     ]
   },
@@ -2196,34 +2294,40 @@ const applicationDetailPanels = computed(() => [
     icon: 'music',
     title: locale.value.application?.musicSyncReliability,
     detail: locale.value.application?.musicSyncReliabilityDetail,
+    status: applicationSseStatus(runtimeSseMetrics.value?.music),
+    empty: !runtimeSseMetrics.value?.music,
     items: [
-      { label: locale.value.application?.musicSyncReconnects, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
-      { label: locale.value.application?.musicSyncLatency, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? formatMilliseconds(runtimeSseMetrics.value.music.averageLifetimeMs) : 'N/A' },
+      { label: locale.value.application?.musicSyncReconnects, value: '--' },
+      { label: locale.value.application?.musicSyncLatency, value: '--' },
       { label: locale.value.application?.musicSyncHeartbeatTimeouts, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
-      { label: locale.value.application?.musicSyncDeliveryFailures, value: 'N/A' }
+      { label: locale.value.application?.musicSyncDeliveryFailures, value: runtimeSseMetrics.value?.music?.broadcastFailures != null ? String(runtimeSseMetrics.value.music.broadcastFailures) : '--' }
     ]
   },
   {
     icon: 'monitoring',
     title: locale.value.application?.requestLifecycle,
     detail: locale.value.application?.requestLifecycleDetail,
+    status: applicationHttpStatus.value,
+    empty: !runtimeHttpMetrics.value,
     items: [
-      locale.value.application?.requestTotal,
-      locale.value.application?.clientErrorCount,
-      locale.value.application?.serverErrorCount,
-      locale.value.application?.ssrRenderCount,
-      locale.value.application?.gcCount
+      { label: locale.value.application?.requestTotal, value: runtimeHttpMetrics.value?.recentRequests != null ? String(runtimeHttpMetrics.value.recentRequests) : '--' },
+      { label: locale.value.application?.clientErrorCount, value: runtimeHttpMetrics.value?.recent4xx != null ? String(runtimeHttpMetrics.value.recent4xx) : '--' },
+      { label: locale.value.application?.serverErrorCount, value: runtimeHttpMetrics.value?.recent5xx != null ? String(runtimeHttpMetrics.value.recent5xx) : '--' },
+      { label: locale.value.application?.ssrRenderCount, value: runtimeSsrPrewarm.value?.attempts != null ? String(runtimeSsrPrewarm.value.attempts) : '--' },
+      { label: locale.value.application?.gcCount, value: runtimeGcMetrics.value?.count != null ? String(runtimeGcMetrics.value.count) : '--' }
     ]
   },
   {
     icon: 'activity',
     title: locale.value.application?.adminProgressSse,
     detail: locale.value.application?.adminProgressSseDetail,
+    status: applicationSseStatus(runtimeSseMetrics.value?.progress),
+    empty: !runtimeSseMetrics.value?.progress,
     items: [
       { label: locale.value.application?.adminProgressSseActiveConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' },
       { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: runtimeSseMetrics.value?.progress?.heartbeatFailures != null ? String(runtimeSseMetrics.value.progress.heartbeatFailures) : '--' },
       { label: locale.value.application?.adminProgressSseAverageLifetime, value: formatMilliseconds(runtimeSseMetrics.value?.progress?.averageLifetimeMs) },
-      { label: locale.value.application?.adminProgressSseUnclosedConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' }
+      { label: locale.value.application?.adminProgressSseUnclosedConnections, value: '--' }
     ]
   }
 ])
@@ -2687,8 +2791,8 @@ const requestSummaryItems = computed(() => [
 
 const logCenterMetrics = computed(() => [
   { icon: 'terminal', label: locale.value.logCenter?.totalLogs, detail: locale.value.logCenter?.totalLogsDetail, value: String(logEntries.value.length) },
-  { icon: 'warning', label: locale.value.logCenter?.errorLogs, detail: locale.value.logCenter?.errorLogsDetail, value: String(logEntries.value.filter((item) => item.status >= 500).length) },
-  { icon: 'warning', label: locale.value.logCenter?.warningLogs, detail: locale.value.logCenter?.warningLogsDetail, value: String(logEntries.value.filter((item) => item.status >= 400 && item.status < 500).length) },
+  { icon: 'warning', label: locale.value.logCenter?.errorLogs, detail: locale.value.logCenter?.errorLogsDetail, value: String(logEntries.value.filter((item) => item.level === 'error').length) },
+  { icon: 'warning', label: locale.value.logCenter?.warningLogs, detail: locale.value.logCenter?.warningLogsDetail, value: String(logEntries.value.filter((item) => item.level === 'warn').length) },
   { icon: 'layers', label: locale.value.logCenter?.requestTraces, detail: locale.value.logCenter?.requestTracesDetail, value: String(new Set(logEntries.value.map((item) => item.requestId).filter(Boolean)).size) }
 ])
 
@@ -3547,7 +3651,31 @@ const dependencyProtectionPanelStatus = (panel) => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.8rem 1rem;
+  border-left: 3px solid transparent;
   border-bottom: 1px solid rgb(39 39 42 / 0.75);
+}
+
+.alert-rule-row {
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.alert-rule-row--p0 {
+  border-left-color: var(--ops-error);
+  background: color-mix(in srgb, var(--ops-error) 5%, transparent);
+}
+
+.alert-rule-row--p1 {
+  border-left-color: var(--ops-warning);
+  background: color-mix(in srgb, var(--ops-warning) 4%, transparent);
+}
+
+.alert-rule-row--p2 {
+  border-left-color: rgb(250 204 21 / 0.72);
+  background: rgb(250 204 21 / 0.025);
+}
+
+.alert-rule-row:hover {
+  background-color: rgb(148 163 184 / 0.06);
 }
 
 .alert-rule-list p {
@@ -3567,6 +3695,34 @@ const dependencyProtectionPanelStatus = (panel) => {
   flex: 0 0 auto;
   color: rgb(82 82 91);
   font-size: 0.6875rem;
+}
+
+.alert-rule-level {
+  min-width: 2.25rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.18rem 0.42rem;
+  font-family: var(--ops-mono);
+  line-height: 1;
+  text-align: center;
+}
+
+.alert-rule-level.alert-priority--critical {
+  color: var(--ops-error);
+  border-color: color-mix(in srgb, var(--ops-error) 32%, transparent);
+  background: color-mix(in srgb, var(--ops-error) 9%, transparent);
+}
+
+.alert-rule-level.alert-priority--high {
+  color: var(--ops-warning);
+  border-color: color-mix(in srgb, var(--ops-warning) 32%, transparent);
+  background: color-mix(in srgb, var(--ops-warning) 9%, transparent);
+}
+
+.alert-rule-level.alert-priority--medium {
+  color: rgb(250 204 21);
+  border-color: rgb(250 204 21 / 0.28);
+  background: rgb(250 204 21 / 0.07);
 }
 
 .alert-priority {
@@ -4569,23 +4725,25 @@ const dependencyProtectionPanelStatus = (panel) => {
 .request-id-shortcut:focus-within,
 .log-level-filter button:hover { border-color: rgba(34, 211, 238, 0.5); }
 
-.ops-time-chart { position: relative; min-height: 13rem; padding: .5rem .25rem .3rem 2.65rem; }
-.ops-time-chart__y-axis { position: absolute; top: .5rem; bottom: 1.65rem; left: 0; display: flex; width: 2.25rem; flex-direction: column; justify-content: space-between; color: #94a3b8; font-size: .6875rem; text-align: right; }
-.ops-time-chart__plot { position: relative; height: 10.75rem; }
+.ops-time-chart { position: relative; min-height: 14.5rem; padding: .65rem .35rem .35rem 2.85rem; }
+.ops-time-chart__y-axis { position: absolute; top: .65rem; bottom: 1.75rem; left: 0; display: flex; width: 2.45rem; flex-direction: column; justify-content: space-between; color: #94a3b8; font-family: var(--ops-mono); font-size: .6875rem; font-weight: 500; text-align: right; }
+.ops-time-chart__plot { position: relative; height: 12rem; border-bottom: 1px solid rgba(148, 163, 184, .2); background: rgba(148, 163, 184, .018); }
 .ops-time-chart__grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
-.ops-time-chart__grid i { display: block; border-top: 1px solid rgba(148, 163, 184, .1); }
-.ops-time-chart__bars { position: absolute; inset: 0; display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; align-items: end; gap: .35rem; padding: 0 .25rem; }
-.ops-time-chart__bars i { display: block; min-height: 0; border-radius: 3px 3px 0 0; background: #38bdf8; cursor: crosshair; transition: background-color .15s ease; }
-.ops-time-chart__bars i:hover { background: #22d3ee; }
-.ops-time-chart__guide { position: absolute; top: 0; bottom: 0; z-index: 2; border-left: 1px dashed rgba(148, 163, 184, .55); pointer-events: none; }
-.ops-chart-tooltip { position: absolute; top: .45rem; z-index: 3; min-width: 10rem; transform: translateX(-50%); border: 1px solid rgba(148, 163, 184, .2); border-radius: 6px; padding: .5rem .6rem; background: #11151b; color: #e5e7eb; box-shadow: none; pointer-events: none; }
+.ops-time-chart__grid i { display: block; border-top: 1px dashed rgba(148, 163, 184, .13); }
+.ops-time-chart__bars { position: absolute; inset: 0; display: grid; grid-auto-columns: minmax(3px, 1fr); grid-auto-flow: column; align-items: end; gap: clamp(.18rem, .6vw, .42rem); padding: 0 .35rem; }
+.ops-time-chart__bars i { position: relative; display: block; min-height: 0; overflow: hidden; border: 1px solid rgba(56, 189, 248, .34); border-bottom: 0; border-radius: 4px 4px 0 0; background: rgba(56, 189, 248, .78); cursor: crosshair; transform-origin: bottom center; transition: opacity .14s ease, background-color .14s ease, border-color .14s ease, transform .14s ease; }
+.ops-time-chart__bars i::after { position: absolute; inset: 0 0 auto; height: 2px; background: rgba(248, 250, 252, .48); content: ''; }
+.ops-time-chart__bars:has(i:hover) i:not(:hover) { opacity: .38; }
+.ops-time-chart__bars i:hover { z-index: 1; border-color: rgba(34, 211, 238, .8); background: #22d3ee; transform: translateY(-2px) scaleX(1.04); }
+.ops-time-chart__guide { position: absolute; top: 0; bottom: 0; z-index: 2; border-left: 1px dashed rgba(34, 211, 238, .72); pointer-events: none; }
+.ops-chart-tooltip { position: absolute; top: .45rem; z-index: 3; min-width: 10rem; transform: translateX(-50%); border: 1px solid rgba(34, 211, 238, .28); border-radius: 6px; padding: .55rem .65rem; background: #11151b; color: #e5e7eb; box-shadow: 0 8px 20px rgba(0, 0, 0, .22); pointer-events: none; }
 .ops-chart-tooltip time { display: block; margin-bottom: .35rem; color: #94a3b8; font-size: .6875rem; }
 .ops-chart-tooltip dl,
 .ops-chart-tooltip dl div { margin: 0; }
 .ops-chart-tooltip dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: center; }
 .ops-chart-tooltip dt { overflow: hidden; color: #94a3b8; font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
-.ops-chart-tooltip dd { margin: 0; color: #f8fafc; font-family: var(--ops-mono); font-size: .6875rem; font-weight: 600; text-align: right; white-space: nowrap; }
-.ops-time-chart__x-axis { display: flex; justify-content: space-between; margin-top: .45rem; color: #94a3b8; font-size: .6875rem; }
+.ops-chart-tooltip dd { margin: 0; color: #f8fafc; font-family: var(--ops-mono); font-size: .75rem; font-weight: 700; text-align: right; white-space: nowrap; }
+.ops-time-chart__x-axis { display: flex; justify-content: space-between; margin-top: .5rem; color: #94a3b8; font-family: var(--ops-mono); font-size: .6875rem; }
 
 @media (min-width: 1024px) { .ops-status-spine { grid-template-columns: minmax(18rem, 1fr) auto; align-items: center; }.ops-status-spine__actions { justify-content: flex-end; } }
 @media (prefers-reduced-motion: reduce) { .operations-dashboard *, .operations-dashboard *::before, .operations-dashboard *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
