@@ -70,7 +70,7 @@ defineEmits(['close'])
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 4px 16px var(--mask-40);
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   color: var(--text-primary);
   max-width: 400px;
   min-width: 300px;
@@ -79,15 +79,15 @@ defineEmits(['close'])
 }
 
 .notification.success {
-  border-left: 4px solid var(--brand-green);
+  border-left: 4px solid var(--color-brand-green);
 }
 
 .notification.error {
-  border-left: 4px solid var(--brand-red);
+  border-left: 4px solid var(--color-brand-red);
 }
 
 .notification.info {
-  border-left: 4px solid var(--brand-blue);
+  border-left: 4px solid var(--color-brand-blue);
 }
 
 .notification-icon {
@@ -104,17 +104,17 @@ defineEmits(['close'])
 
 .success .notification-icon {
   background: var(--success-20);
-  color: var(--brand-green);
+  color: var(--color-brand-green);
 }
 
 .error .notification-icon {
   background: var(--error-20);
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .info .notification-icon {
-  background: var(--brand-blue-20);
-  color: var(--brand-blue);
+  background: var(--color-brand-blue-20);
+  color: var(--color-brand-blue);
 }
 
 .notification-content {
@@ -161,15 +161,15 @@ defineEmits(['close'])
 }
 
 .success .notification-progress-bar {
-  background-color: var(--brand-green);
+  background-color: var(--color-brand-green);
 }
 
 .error .notification-progress-bar {
-  background-color: var(--brand-red);
+  background-color: var(--color-brand-red);
 }
 
 .info .notification-progress-bar {
-  background-color: var(--brand-blue);
+  background-color: var(--color-brand-blue);
 }
 
 @keyframes progress-shrink {

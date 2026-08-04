@@ -2,7 +2,7 @@
 
 /* 品牌色 RGB 值（用于 rgba() 动态组合） */
 :root {
-  --brand-indigo-rgb: 99 102 241;
+  --color-brand-indigo-rgb: 99 102 241;
 }
 
 /* 高对比度模式支持 */

@@ -56,14 +56,14 @@ defineProps({
 
 .progress-bar {
   height: 8px;
-  background-color: var(--panel-surface-hover);
+  background-color: var(--panel-bg-hover);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: var(--brand-blue);
+  background-color: var(--color-brand-blue);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -71,7 +71,7 @@ defineProps({
 .progress-fill.indeterminate {
   width: 30% !important;
   animation: progress-indeterminate 1.5s ease-in-out infinite;
-  background-image: linear-gradient(to right, var(--brand-blue), var(--brand-green), var(--brand-blue));
+  background-image: linear-gradient(to right, var(--color-brand-blue), var(--color-brand-green), var(--color-brand-blue));
   background-size: 200% 100%;
 }
 

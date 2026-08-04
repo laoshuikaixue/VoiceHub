@@ -51,7 +51,7 @@
             class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
             :class="
               card.isDanger
-                ? 'bg-bg-primary border border-error-30 text-error hover:bg-error hover:text-text-primary hover:border-rose-600 shadow-lg shadow-rose-900/5'
+                ? 'bg-bg-primary border border-error-30 text-error hover:bg-error hover:text-text-primary hover:border-error shadow-lg shadow-rose-900/5'
                 : ''
             "
             @click="openModal(card.id)"

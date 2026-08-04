@@ -72,7 +72,7 @@ onMounted(async () => {
   justify-content: flex-start;
   padding: 20px;
   /* 响应式尺寸变量 */
-  --brand-logo-size: clamp(48px, 8vw, 96px);
+  --color-brand-logo-size: clamp(48px, 8vw, 96px);
   --school-logo-size: clamp(96px, 16vw, 160px);
   --logo-gap: clamp(12px, 2vw, 24px);
   --divider-height: clamp(32px, 10vw, 96px);
@@ -224,8 +224,8 @@ onMounted(async () => {
 }
 
 .brand-logo-center {
-  width: var(--brand-logo-size);
-  height: var(--brand-logo-size);
+  width: var(--color-brand-logo-size);
+  height: var(--color-brand-logo-size);
   margin: 0;
   object-fit: contain;
   max-width: 100%;

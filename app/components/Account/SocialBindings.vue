@@ -1,8 +1,8 @@
 <template>
   <section :class="sectionClass">
     <div class="flex items-center gap-3 border-b border-border-secondary pb-5 mb-6">
-      <div class="p-2.5 bg-purple-500/10 rounded-xl">
-        <Share2 :size="20" class="text-purple-500" />
+      <div class="p-2.5 bg-color-brand-purple/10 rounded-xl">
+        <Share2 :size="20" class="text-color-brand-purple" />
       </div>
       <div>
         <h2 class="text-base font-black text-text-primary">{{ locale.title }}</h2>
@@ -40,8 +40,8 @@
                 :class="[
                   'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
                   emailVerified
-                    ? 'bg-emerald-500/10 text-emerald-500'
-                    : 'bg-amber-500/10 text-amber-500'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-warning/10 text-warning'
                 ]"
               >
                 {{ emailVerified ? locale.verified : locale.pendingVerify }}
@@ -73,9 +73,9 @@
           <!-- 待验证状态 -->
           <div v-else-if="!emailVerified" class="space-y-4 pt-2">
             <div
-              class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+              class="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3"
             >
-              <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
+              <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
               <p class="text-[11px] text-text-tertiary leading-relaxed">
                 {{ locale.emailCodeSentTip }}
               </p>
@@ -90,7 +90,7 @@
                 :class="[
                   'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                   emailCodeError
-                    ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                    ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                     : 'border-border-secondary focus:border-primary/30'
                 ]"
                 @input="handleEmailCodeInput"
@@ -131,7 +131,7 @@
             </button>
             <button
               :disabled="unbindingEmail"
-              class="flex-1 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+              class="flex-1 py-2.5 bg-error/10 border border-error/20 hover:bg-error/20 text-error text-xs font-black rounded-xl transition-all"
               @click="unbindEmail"
             >
               {{ unbindingEmail ? locale.unbinding : locale.unbindEmail }}
@@ -141,11 +141,11 @@
       </div>
 
       <!-- MeoW 账号绑定 -->
-      <div :class="[cardClass, 'border-blue-500/20 bg-blue-500/[0.02]']">
+      <div :class="[cardClass, 'border-primary/20 bg-primary/[0.02]']">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-              <Smartphone :size="16" class="text-blue-500" />
+            <div class="p-2 bg-primary/10 rounded-lg border border-primary/20">
+              <Smartphone :size="16" class="text-primary" />
             </div>
             <h3 class="text-sm font-bold text-text-primary">{{ locale.meowPushTitle }}</h3>
           </div>
@@ -154,7 +154,7 @@
         <div class="space-y-4">
           <div
             v-if="meowUserIdBound"
-            class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl"
+            class="p-3 bg-primary/10 border border-primary/20 rounded-xl"
           >
             <div class="flex items-center justify-between">
               <div>
@@ -163,12 +163,12 @@
                 >
                   {{ locale.currentBoundId }}
                 </p>
-                <p class="text-sm font-black text-blue-500 tracking-tight">
+                <p class="text-sm font-black text-primary tracking-tight">
                   {{ meowUserIdBound }}
                 </p>
               </div>
               <div
-                class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider"
+                class="px-2 py-0.5 bg-primary text-white rounded-full text-[10px] font-black uppercase tracking-wider"
               >
                 {{ locale.connected }}
               </div>
@@ -202,9 +202,9 @@
             <!-- 第二步：输入验证码 -->
             <div v-else class="space-y-4">
               <div
-                class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+                class="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-3"
               >
-                <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
+                <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
                 <p class="text-[11px] text-text-tertiary leading-relaxed">
                   {{ locale.meowCodeSentPrefix }}
                   <span class="font-bold text-text-primary">{{ meowUserId }}</span
@@ -221,7 +221,7 @@
                   :class="[
                     'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                     verificationCodeError
-                      ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                      ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
                       : 'border-border-secondary focus:border-primary/30'
                   ]"
                   @input="handleVerificationCodeInput"
@@ -250,7 +250,7 @@
           <!-- 已绑定状态 -->
           <div v-else class="pt-2">
             <button
-              class="w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+              class="w-full py-2.5 bg-error/10 border border-error/20 hover:bg-error/20 text-error text-xs font-black rounded-xl transition-all"
               @click="showUnbindConfirm"
             >
               {{ locale.unbindMeow }}

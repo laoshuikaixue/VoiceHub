@@ -87,7 +87,7 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-panel-surface-dark/50">
+          <tbody class="divide-y divide-panel-bg-dark/50">
             <tr v-if="!loading && data.length === 0">
               <td :colspan="totalColumns" class="p-20 text-center">
                 <slot name="empty">
@@ -153,7 +153,7 @@
       </div>
 
       <!-- 移动端卡片列表 -->
-      <div class="md:hidden divide-y divide-panel-surface-dark">
+      <div class="md:hidden divide-y divide-panel-bg-dark">
         <div v-if="!loading && data.length === 0" class="p-20 text-center">
           <slot name="empty">
             <div class="flex flex-col items-center gap-3 text-text-secondary">

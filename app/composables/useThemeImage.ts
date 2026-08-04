@@ -2,7 +2,7 @@
  * 主题图片 composable。
  * 提供与主题绑定的 SVG 图片路径，方便组件根据当前主题选择正确的图片。
  *
- * 图片存放在 public/themes/{light,dark}/ 目录下，运行时通过 data-theme attribute 动态选择。
+ * 图片存放在 public/themes/{经典浅色,经典深色}/ 目录下，运行时通过 data-theme attribute 动态选择。
  */
 import { useTheme } from '~/composables/useTheme'
 

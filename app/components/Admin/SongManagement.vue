@@ -206,7 +206,7 @@
       </div>
 
       <!-- 列表内容 -->
-      <div v-else class="divide-y divide-panel-surface-dark/40">
+      <div v-else class="divide-y divide-panel-bg-dark/40">
         <div
           v-for="song in paginatedSongs"
           :key="song.id"
@@ -321,12 +321,12 @@
                   :class="[
                     'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
                     song.voteCount > 0
-                      ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer'
+                      ? 'bg-color-brand-pink/10 text-color-brand-pink hover:bg-color-brand-pink/10 cursor-pointer'
                       : 'bg-bg-primary-30 text-text-secondary cursor-default'
                   ]"
                   @click="showVoters(song.id)"
                 >
-                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-pink-500/20' : ''" />
+                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-brand-pink/20' : ''" />
                   {{ song.voteCount || 0 }}
                 </button>
               </div>
@@ -2339,10 +2339,10 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--panel-surface-alt);
+  background: var(--panel-bg-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--panel-surface-hover);
+  background: var(--panel-bg-hover);
 }
 </style>

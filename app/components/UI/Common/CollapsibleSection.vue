@@ -1,7 +1,7 @@
 <template>
-  <div class="border border-panel-surface-dark rounded-2xl overflow-hidden">
+  <div class="border border-panel-bg-dark rounded-2xl overflow-hidden">
     <button
-      class="w-full flex items-center justify-between px-5 py-4 hover:bg-panel-surface-darkest/50 transition-colors"
+      class="w-full flex items-center justify-between px-5 py-4 hover:bg-panel-bg-darkest/50 transition-colors"
       @click="open = !open"
     >
       <span class="text-xs font-black text-text-muted uppercase tracking-widest">{{ title }}</span>

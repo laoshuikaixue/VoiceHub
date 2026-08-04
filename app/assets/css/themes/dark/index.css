@@ -1,4 +1,4 @@
-/* 深色主题 — 全部设计变量 */
+/* 经典深色主题 — 全部设计变量 */
 :root[data-theme="dark"] {
 /* 主色调 */
 --primary: #3b82f6;
@@ -239,40 +239,40 @@
 --scrollbar-thumb-hover: #4a4a4a;
 
 /* 用途化变量 — 品牌色 */
---brand-blue: #0b5afe;
---brand-blue-light: #3b82f6;
---brand-blue-hover: #2563eb;
---brand-blue-light-hover: #1d4ed8;
---brand-blue-glow: rgba(11, 90, 254, 0.4);
---brand-red: #ef4444;
---brand-red-light: #f87171;
---brand-red-hover: #dc2626;
---brand-red-glow: rgba(239, 68, 68, 0.4);
---brand-green: #10b981;
---brand-green-light: #4ade80;
---brand-green-hover: #22c55e;
---brand-green-glow: rgba(34, 197, 94, 0.4);
---brand-yellow: #f59e0b;
---brand-yellow-light: #fbbf24;
---brand-yellow-hover: #d97706;
---brand-yellow-glow: rgba(245, 158, 11, 0.4);
---brand-orange: #fb923c;
---brand-orange-light: #fdba74;
---brand-orange-hover: #ff6900;
---brand-orange-glow: rgba(251, 146, 60, 0.4);
+--color-brand-blue: #0b5afe;
+--color-brand-blue-light: #3b82f6;
+--color-brand-blue-hover: #2563eb;
+--color-brand-blue-light-hover: #1d4ed8;
+--color-brand-blue-glow: rgba(11, 90, 254, 0.4);
+--color-brand-red: #ef4444;
+--color-brand-red-light: #f87171;
+--color-brand-red-hover: #dc2626;
+--color-brand-red-glow: rgba(239, 68, 68, 0.4);
+--color-brand-green: #10b981;
+--color-brand-green-light: #4ade80;
+--color-brand-green-hover: #22c55e;
+--color-brand-green-glow: rgba(34, 197, 94, 0.4);
+--color-brand-yellow: #f59e0b;
+--color-brand-yellow-light: #fbbf24;
+--color-brand-yellow-hover: #d97706;
+--color-brand-yellow-glow: rgba(245, 158, 11, 0.4);
+--color-brand-orange: #fb923c;
+--color-brand-orange-light: #fdba74;
+--color-brand-orange-hover: #ff6900;
+--color-brand-orange-glow: rgba(251, 146, 60, 0.4);
 
-/* === Alpha (--brand-blue) === */
---brand-blue-10: rgba(11, 90, 254, 0.08);
---brand-blue-12: rgba(11, 90, 254, 0.12);
---brand-blue-15: rgba(11, 90, 254, 0.15);
---brand-blue-18: rgba(11, 90, 254, 0.18);
---brand-blue-20: rgba(11, 90, 254, 0.16);
---brand-blue-25: rgba(11, 90, 254, 0.25);
---brand-blue-30: rgba(11, 90, 254, 0.25);
---brand-blue-40: rgba(11, 90, 254, 0.3);
---brand-blue-50: rgba(11, 90, 254, 0.4);
---brand-blue-60: rgba(11, 90, 254, 0.5);
---brand-blue-80: rgba(11, 90, 254, 0.6);
+/* === Alpha (--color-brand-blue) === */
+--color-brand-blue-10: rgba(11, 90, 254, 0.08);
+--color-brand-blue-12: rgba(11, 90, 254, 0.12);
+--color-brand-blue-15: rgba(11, 90, 254, 0.15);
+--color-brand-blue-18: rgba(11, 90, 254, 0.18);
+--color-brand-blue-20: rgba(11, 90, 254, 0.16);
+--color-brand-blue-25: rgba(11, 90, 254, 0.25);
+--color-brand-blue-30: rgba(11, 90, 254, 0.25);
+--color-brand-blue-40: rgba(11, 90, 254, 0.3);
+--color-brand-blue-50: rgba(11, 90, 254, 0.4);
+--color-brand-blue-60: rgba(11, 90, 254, 0.5);
+--color-brand-blue-80: rgba(11, 90, 254, 0.6);
 
 /* 用途化变量 — 请求表单（RequestForm） */
 --requestform-audio-match-hover-border: rgba(96, 165, 250, 0.35);
@@ -358,29 +358,29 @@
 --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
 
 /* 用途化变量 — 面板背景色（深色模式） */
---panel-surface: #21242d;
---panel-surface-alt: #27272a;
---panel-surface-hover: #3f3f46;
---panel-surface-deep: #1a1a1a;
---panel-surface-deepest: #0a0a0a;
---panel-surface-overlay: #1a1d24;
---panel-surface-elevated: #1e1e24;
---panel-surface-dialog: #18181b;
---panel-surface-subtle: #141418;
---panel-surface-tertiary: #1a1a2e;
---panel-surface-quaternary: #040e15;
---panel-surface-contrast: #2a2e38;
---panel-surface-dark: #111827;
---panel-surface-darker: #12121a;
---panel-surface-darkest: #0a0a0f;
---panel-surface-compact: #2a2a2a;
---panel-surface-flat: #2a2a2a;
---panel-surface-raised: #282830;
---panel-surface-inset: #1a1a20;
+--panel-bg: #21242d;
+--panel-bg-alt: #27272a;
+--panel-bg-hover: #3f3f46;
+--panel-bg-deep: #1a1a1a;
+--panel-bg-deepest: #0a0a0a;
+--panel-bg-overlay: #1a1d24;
+--panel-bg-elevated: #1e1e24;
+--panel-bg-dialog: #18181b;
+--panel-bg-subtle: #141418;
+--panel-bg-tertiary: #1a1a2e;
+--panel-bg-quaternary: #040e15;
+--panel-bg-contrast: #2a2e38;
+--panel-bg-dark: #111827;
+--panel-bg-darker: #12121a;
+--panel-bg-darkest: #0a0a0f;
+--panel-bg-compact: #2a2a2a;
+--panel-bg-flat: #2a2a2a;
+--panel-bg-raised: #282830;
+--panel-bg-inset: #1a1a20;
 
 /* 通用表面色（无 panel 前缀） */
---surface-secondary: #2a2a35;
---surface-tertiary: #333340;
+--panel-bg-secondary: #2a2a35;
+--panel-bg-tertiary: #333340;
 --table-row-bg: #1a1a25;
 
 /* 用途化变量 — 文字灰度（深色模式） */
@@ -416,18 +416,18 @@
 --status-error-deep: #cf0a2c;
 
 /* 用途化变量 — 品牌渐变辅助色 */
---brand-purple: #8b5cf6;
---brand-purple-hover: #7c3aed;
---brand-purple-light: #a78bfa;
---brand-purple-lighter: #e9d5ff;
---brand-purple-glow: rgba(139, 92, 246, 0.3);
---brand-pink: #f472b6;
---brand-cyan: #22d3ee;
---brand-teal: #06b6d4;
---brand-indigo: #6366f1;
---brand-indigo-hover: #4f46e5;
+--color-brand-purple: #8b5cf6;
+--color-brand-purple-hover: #7c3aed;
+--color-brand-purple-light: #a78bfa;
+--color-brand-purple-lighter: #e9d5ff;
+--color-brand-purple-glow: rgba(139, 92, 246, 0.3);
+--color-brand-pink: #f472b6;
+--color-brand-cyan: #22d3ee;
+--color-brand-teal: #06b6d4;
+--color-brand-indigo: #6366f1;
+--color-brand-indigo-hover: #4f46e5;
 
-/* === WarpCanvas 星空配色（用途命名，替代 --brand-purple/indigo 语义歧义） === */
+/* === WarpCanvas 星空配色（用途命名，替代 --color-brand-purple/indigo 语义歧义） === */
 --warp-canvas-primary: #8b5cf6;
 --warp-canvas-primary-light: #a78bfa;
 --warp-canvas-indigo: #6366f1;

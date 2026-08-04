@@ -91,9 +91,9 @@ body::before {
   width: 100%;
   height: 100%;
   background:
-    radial-gradient(circle at 20% 50%, rgba(var(--brand-indigo-rgb), 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 20% 50%, rgba(var(--color-brand-indigo-rgb), 0.03) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, var(--bg-texture-warm-glow) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(var(--brand-indigo-rgb), 0.02) 0%, transparent 50%);
+    radial-gradient(circle at 40% 80%, rgba(var(--color-brand-indigo-rgb), 0.02) 0%, transparent 50%);
   z-index: -1;
   pointer-events: none;
 }

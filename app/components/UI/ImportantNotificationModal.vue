@@ -10,7 +10,7 @@
     >
       <div
         v-if="notification"
-        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-panel-surface-darkest/80 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest/80 p-4 backdrop-blur-sm"
         @keydown="handleKeydown"
       >
         <section
@@ -20,33 +20,33 @@
           :aria-labelledby="titleId"
           :aria-describedby="contentId"
           tabindex="-1"
-          class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-surface-dark bg-panel-surface-deepest shadow-2xl"
+          class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
         >
-          <header class="relative border-b border-panel-surface-dark/50 px-5 py-5 sm:px-8 sm:py-6">
+          <header class="relative border-b border-panel-bg-dark/50 px-5 py-5 sm:px-8 sm:py-6">
             <div
               class="absolute right-5 top-5 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold sm:right-8 sm:top-6"
               :class="
                 notification.read
-                  ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
-                  : 'border-amber-400/30 bg-amber-400/10 text-amber-300'
+                  ? 'border-success-light/20 bg-success-light/20 text-success-light'
+                  : 'border-warning/20 bg-warning-light/20 text-warning-light'
               "
             >
               <span
                 class="h-2 w-2 rounded-full"
-                :class="notification.read ? 'bg-emerald-400' : 'bg-amber-400'"
+                :class="notification.read ? 'bg-success-light' : 'bg-warning-light'"
               />
               {{ notification.read ? locale.read : locale.unread }}
             </div>
 
             <div class="flex items-start gap-4 pr-20 sm:pr-24">
               <div
-                class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-amber-400/30 bg-amber-400/10 text-amber-300"
+                class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-warning/20 bg-warning-light/20 text-warning-light"
                 aria-hidden="true"
               >
                 <Icon name="bell-ring" :size="22" />
               </div>
               <div class="min-w-0 flex-1">
-                <span class="text-xs font-bold text-amber-300">{{ locale.label }}</span>
+                <span class="text-xs font-bold text-warning-light">{{ locale.label }}</span>
                 <h2
                   :id="titleId"
                   class="mt-1 break-words text-xl font-black text-text-primary-lighter sm:text-2xl"
@@ -80,11 +80,11 @@
           />
 
           <footer
-            class="flex flex-col items-end gap-3 border-t border-panel-surface-dark/50 bg-panel-surface-deepest/50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
+            class="flex flex-col items-end gap-3 border-t border-panel-bg-dark/50 bg-panel-bg-deepest/50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
           >
             <p
               v-if="error"
-              class="w-full min-w-0 flex-1 break-words text-xs font-medium text-red-400"
+              class="w-full min-w-0 flex-1 break-words text-xs font-medium text-error"
               role="alert"
             >
               {{ error }}
@@ -94,7 +94,7 @@
               ref="closeButtonRef"
               type="button"
               :disabled="closing"
-              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-panel-surface-deepest disabled:cursor-wait disabled:opacity-60"
+              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-panel-bg-deepest disabled:cursor-wait disabled:opacity-60"
               @click="markAsReadAndClose"
             >
               <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />

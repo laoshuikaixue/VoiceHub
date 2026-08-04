@@ -12,10 +12,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   const { currentTheme, setTheme } = useTheme()
 
-  /** 根据主题更新 theme-color meta */
+  /** 根据主题（经典深色/经典浅色）更新 theme-color meta */
   function updateMeta(theme) {
     const cs = getComputedStyle(document.documentElement)
     const colorMap = {
+      // 经典深色 -> 经典浅色
       dark: cs.getPropertyValue('--bg-primary').trim() || '#111111',
       light: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff'
     }

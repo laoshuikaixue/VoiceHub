@@ -87,7 +87,7 @@
                         v-if="currentLocale === localeOption.code"
                         name="check"
                         :size="16"
-                        color="var(--brand-blue)"
+                        color="var(--color-brand-blue)"
                       />
                     </button>
                   </div>
@@ -323,37 +323,37 @@
                             <Icon
                               v-if="notification.type === 'SONG_SELECTED'"
                               :size="20"
-                              color="var(--brand-indigo-hover)"
+                              color="var(--color-brand-indigo-hover)"
                               name="check"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_PLAYED'"
                               :size="20"
-                              color="var(--brand-green)"
+                              color="var(--color-brand-green)"
                               name="play"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_VOTED'"
                               :size="20"
-                              color="var(--brand-yellow)"
+                              color="var(--color-brand-yellow)"
                               name="thumbs-up"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_REJECTED'"
                               :size="20"
-                              color="var(--brand-red)"
+                              color="var(--color-brand-red)"
                               name="x-circle"
                             />
                             <Icon
                               v-else-if="notification.type === 'COLLABORATION_INVITE'"
                               :size="20"
-                              color="var(--brand-blue)"
+                              color="var(--color-brand-blue)"
                               name="users"
                             />
                             <Icon
                               v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
                               :size="20"
-                              color="var(--brand-purple)"
+                              color="var(--color-brand-purple)"
                               name="message-circle"
                             />
                             <Icon v-else :size="20" color="var(--text-muted)" name="bell" />
@@ -1757,7 +1757,7 @@ if (
 .home {
   width: 100%;
   flex: 1;
-  background-color: var(--panel-surface-darker);
+  background-color: var(--panel-bg-darker);
   padding: 1.5rem;
   color: var(--text-primary);
   display: flex;
@@ -1785,8 +1785,8 @@ if (
   height: 309px;
   background: radial-gradient(
     ellipse at center,
-    var(--brand-blue-30) 0%,
-    var(--brand-blue-15) 30%,
+    var(--color-brand-blue-30) 0%,
+    var(--color-brand-blue-15) 30%,
     transparent 70%
   );
   z-index: 0;
@@ -1911,7 +1911,7 @@ if (
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 8px;
@@ -1997,7 +1997,7 @@ if (
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 8px;
@@ -2057,7 +2057,7 @@ if (
 
 .user-badge.admin {
   background: var(--primary-20);
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
 }
 
 .user-avatar-wrapper {
@@ -2088,7 +2088,7 @@ if (
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 8px;
@@ -2122,7 +2122,7 @@ if (
 
 .action-item.logout:hover {
   background: var(--error-10);
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .notification-badge {
@@ -2132,7 +2132,7 @@ if (
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
-  background-color: var(--brand-red);
+  background-color: var(--color-brand-red);
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -2173,7 +2173,7 @@ if (
 
 .login-options .login-btn :deep(.icon),
 .login-options .login-btn i {
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
   transition: all 0.3s ease;
 }
 
@@ -2218,9 +2218,9 @@ if (
 .title-divider {
   width: 40px;
   height: 4px;
-  background: var(--brand-blue);
+  background: var(--color-brand-blue);
   border-radius: 2px;
-  box-shadow: 0 0 15px var(--brand-blue-60);
+  box-shadow: 0 0 15px var(--color-brand-blue-60);
 }
 
 .sub-title {
@@ -2259,21 +2259,21 @@ if (
 }
 
 .section-tab {
-  background: var(--panel-surface-overlay);
+  background: var(--panel-bg-overlay);
   border-radius: 15px 15px 0 0;
   padding: 15px 24px;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
   color: var(--text-secondary);
-  border: 2px solid var(--panel-surface-raised);
+  border: 2px solid var(--panel-bg-raised);
   border-bottom: none;
   cursor: pointer;
   flex: 0 0 auto;
 }
 
 .section-tab.active {
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   color: var(--text-primary);
   position: relative;
   z-index: 1;
@@ -2367,9 +2367,9 @@ if (
   right: -8px;
   width: 6px;
   height: 6px;
-  background: var(--brand-blue);
+  background: var(--color-brand-blue);
   border-radius: 50%;
-  box-shadow: 0 0 5px var(--brand-blue-50);
+  box-shadow: 0 0 5px var(--color-brand-blue-50);
 }
 
 .section-tab::after {
@@ -2379,7 +2379,7 @@ if (
   left: 50%;
   width: 0;
   height: 2px;
-  background: var(--brand-blue);
+  background: var(--color-brand-blue);
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
@@ -2408,8 +2408,8 @@ if (
 
 /* 内容容器 */
 .tab-content-container {
-  background: var(--panel-surface-overlay);
-  border: 2px solid var(--panel-surface-raised);
+  background: var(--panel-bg-overlay);
+  border: 2px solid var(--panel-bg-raised);
   border-radius: 0 15px 15px 15px;
   padding: 1.5rem;
   margin-top: -2px; /* 使内容容器与标签连接 */
@@ -2633,7 +2633,7 @@ if (
   width: 32px;
   height: 32px;
   border: 3px solid var(--overlay-10);
-  border-top-color: var(--brand-blue-light);
+  border-top-color: var(--color-brand-blue-light);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -2685,7 +2685,7 @@ if (
   width: 40px;
   height: 40px;
   background: var(--primary-10);
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
   border-radius: 12px;
   margin-right: 1rem;
   flex-shrink: 0;
@@ -2728,7 +2728,7 @@ if (
 
 .action-button.delete {
   background: var(--error-5);
-  color: var(--brand-red);
+  color: var(--color-brand-red);
   border: 1px solid var(--error-10);
   padding: 0.4rem 0.75rem;
   border-radius: 8px;
@@ -2769,7 +2769,7 @@ if (
 }
 
 .action-button-large.danger {
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .action-button-large.danger:hover {
@@ -2902,8 +2902,8 @@ if (
 }
 
 .page-number-button.active:hover {
-  background-color: var(--brand-blue);
-  border-color: var(--brand-blue);
+  background-color: var(--color-brand-blue);
+  border-color: var(--color-brand-blue);
 }
 
 .page-number-button:disabled {
@@ -2986,7 +2986,7 @@ if (
 }
 
 .action-button-large.danger {
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .action-button-large.danger:hover {
@@ -3010,7 +3010,7 @@ if (
 @media (max-width: 768px) {
   .home {
     padding: 0;
-    background-color: var(--panel-surface-darkest);
+    background-color: var(--panel-bg-darkest);
   }
 
   .main-content {
@@ -3029,7 +3029,7 @@ if (
     align-items: center;
     padding: 10px 12px;
     margin: 0;
-    background: linear-gradient(180deg, var(--brand-blue-10) 0%, transparent 100%);
+    background: linear-gradient(180deg, var(--color-brand-blue-10) 0%, transparent 100%);
     border-bottom: 1px solid var(--overlay-5);
   }
 
@@ -3141,7 +3141,7 @@ if (
   }
 
   .login-options .login-btn :deep(.icon) {
-    color: var(--brand-blue-light);
+    color: var(--color-brand-blue-light);
   }
 
   .login-options .login-btn:active {
@@ -3219,7 +3219,7 @@ if (
   }
 
   .section-tab.active {
-    color: var(--brand-blue-light) !important; /* text-primary - Force blue */
+    color: var(--color-brand-blue-light) !important; /* text-primary - Force blue */
     background: transparent !important;
     transform: none !important;
     text-shadow: 0 0 12px var(--primary-60); /* Text Glow */
@@ -3227,7 +3227,7 @@ if (
 
   /* Prevent hover from turning it white on mobile */
   .section-tab.active:hover {
-    color: var(--brand-blue-light) !important;
+    color: var(--color-brand-blue-light) !important;
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -3285,10 +3285,10 @@ if (
     right: 0;
     width: 8px;
     height: 8px;
-    background: var(--brand-blue);
+    background: var(--color-brand-blue);
     border-radius: 50%;
-    border: 1.5px solid var(--panel-surface-darkest);
-    box-shadow: 0 0 5px var(--brand-blue-40);
+    border: 1.5px solid var(--panel-bg-darkest);
+    box-shadow: 0 0 5px var(--color-brand-blue-40);
     z-index: 2;
   }
 
@@ -3347,8 +3347,8 @@ if (
     padding: 6px 14px;
     font-size: 12px;
     border-radius: 6px;
-    background: var(--brand-blue-15);
-    border: 1px solid var(--brand-blue-30);
+    background: var(--color-brand-blue-15);
+    border: 1px solid var(--color-brand-blue-30);
   }
 }
 
@@ -3434,7 +3434,7 @@ if (
 
 /* 弹窗内容 */
 .modal-content {
-  background: linear-gradient(135deg, var(--panel-surface-overlay) 0%, var(--panel-surface-darker) 100%);
+  background: linear-gradient(135deg, var(--panel-bg-overlay) 0%, var(--panel-bg-darker) 100%);
   border-radius: 20px;
   border: 1px solid var(--overlay-10);
   box-shadow: 0 25px 50px -12px var(--mask-50);
@@ -3528,7 +3528,7 @@ if (
 }
 
 .rules-icon {
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
 }
 
 .rules-text {
@@ -3573,7 +3573,7 @@ if (
   position: relative;
   width: 90%;
   max-width: 400px;
-  background: var(--panel-surface-darker);
+  background: var(--panel-bg-darker);
   border-radius: 32px;
   overflow: hidden;
   border: 1px solid var(--overlay-10);
@@ -3636,7 +3636,7 @@ if (
   background: var(--index-brand-badge-bg);
   border: 1px solid var(--index-brand-badge-border);
   border-radius: 99px;
-  color: var(--brand-purple-light);
+  color: var(--color-brand-purple-light);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -3655,7 +3655,7 @@ if (
 .main-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, var(--brand-purple) 0%, var(--brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-brand-purple) 0%, var(--color-brand-purple-hover) 100%);
   border-radius: 24px;
   display: flex;
   align-items: center;
@@ -3677,7 +3677,7 @@ if (
 
 .bar {
   width: 4px;
-  background: var(--brand-purple);
+  background: var(--color-brand-purple);
   border-radius: 2px;
   animation: bar-dance 1.2s ease-in-out infinite;
 }
@@ -3754,7 +3754,7 @@ if (
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px var(--overlay-10);
-  background: var(--panel-surface-deep);
+  background: var(--panel-bg-deep);
 }
 
 .btn-primary:active {
@@ -3855,7 +3855,7 @@ if (
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--brand-blue);
+  background-color: var(--color-brand-blue);
   display: inline-block;
   z-index: 2;
 }
@@ -3918,7 +3918,7 @@ if (
 }
 
 .login-button {
-  background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
   border: none;
   color: white;
   padding: 10px 20px;

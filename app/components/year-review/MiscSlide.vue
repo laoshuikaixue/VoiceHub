@@ -49,7 +49,7 @@ const formatPlatform = (platform) => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: var(--panel-surface-dark); /* gray-900 */
+  background-color: var(--panel-bg-dark); /* gray-900 */
 }
 
 .bg-gradient {
@@ -94,7 +94,7 @@ const formatPlatform = (platform) => {
 .platform-value {
   font-size: 1.5rem; /* text-2xl */
   font-weight: 700;
-  background-image: linear-gradient(to right, var(--brand-red-light), var(--brand-orange));
+  background-image: linear-gradient(to right, var(--color-brand-red-light), var(--color-brand-orange));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

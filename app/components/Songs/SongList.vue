@@ -1574,7 +1574,7 @@ const vRipple = {
 
   .mobile-search-input:focus {
     background: var(--overlay-8);
-    border-color: var(--brand-blue-light);
+    border-color: var(--color-brand-blue-light);
     outline: none;
     box-shadow: 0 0 0 2px var(--primary-10);
   }
@@ -1600,7 +1600,7 @@ const vRipple = {
   }
 
   .mobile-tab-btn.active {
-    color: var(--brand-blue-light);
+    color: var(--color-brand-blue-light);
   }
 
   .active-indicator {
@@ -1609,7 +1609,7 @@ const vRipple = {
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--brand-blue-light);
+    background: var(--color-brand-blue-light);
     border-radius: 2px;
     box-shadow: 0 0 8px var(--primary-50);
   }
@@ -1662,7 +1662,7 @@ const vRipple = {
 
 .tab-button.active {
   color: var(--text-primary);
-  border-bottom-color: var(--brand-blue);
+  border-bottom-color: var(--color-brand-blue);
   transform: none;
   box-shadow: none;
   background-color: transparent;
@@ -1676,7 +1676,7 @@ const vRipple = {
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--brand-blue-30) 0%, var(--overlay-10) 70%);
+  background: radial-gradient(circle, var(--color-brand-blue-30) 0%, var(--overlay-10) 70%);
   transform: scale(0);
   animation: ripple 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: none;
@@ -1710,7 +1710,7 @@ const vRipple = {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
@@ -1721,17 +1721,17 @@ const vRipple = {
 }
 
 .semester-toggle-btn:hover {
-  background: var(--panel-surface-contrast);
+  background: var(--panel-bg-contrast);
   transform: translateY(-2px);
   box-shadow: 0 2px 8px var(--mask-20);
-  color: var(--brand-blue);
+  color: var(--color-brand-blue);
 }
 
 .semester-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: var(--panel-surface-overlay);
+  background: var(--panel-bg-overlay);
   border: 1px solid var(--overlay-10);
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--mask-30);
@@ -1754,13 +1754,13 @@ const vRipple = {
 }
 
 .semester-option:hover {
-  background: var(--brand-blue-10);
+  background: var(--color-brand-blue-10);
   color: var(--text-primary);
 }
 
 .semester-option.active {
-  background: var(--brand-blue-20);
-  color: var(--brand-blue);
+  background: var(--color-brand-blue-20);
+  color: var(--color-brand-blue);
   font-weight: 600;
 }
 
@@ -1770,7 +1770,7 @@ const vRipple = {
 }
 
 .search-input {
-  background: var(--panel-surface-quaternary);
+  background: var(--panel-bg-quaternary);
   border: 1px solid var(--panel-border-active);
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -1784,7 +1784,7 @@ const vRipple = {
 
 .search-input:focus {
   outline: none;
-  border-color: var(--brand-blue);
+  border-color: var(--color-brand-blue);
 }
 
 .search-icon {
@@ -1801,7 +1801,7 @@ const vRipple = {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
@@ -1810,7 +1810,7 @@ const vRipple = {
 }
 
 .refresh-button:hover {
-  background: var(--panel-surface-contrast);
+  background: var(--panel-bg-contrast);
   transform: translateY(-2px);
   box-shadow: 0 2px 8px var(--mask-20);
 }
@@ -1863,8 +1863,8 @@ const vRipple = {
   height: 40px;
   margin-bottom: 1rem;
   border-radius: 50%;
-  border: 3px solid var(--brand-blue-20);
-  border-top-color: var(--brand-blue);
+  border: 3px solid var(--color-brand-blue-20);
+  border-top-color: var(--color-brand-blue);
   animation: spin 1s linear infinite;
 }
 
@@ -1876,7 +1876,7 @@ const vRipple = {
 }
 
 .error {
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .songs-container {
@@ -1904,7 +1904,7 @@ const vRipple = {
 
 .song-card-main {
   padding: 1rem 0 1rem 1rem; /* 移除右侧内边距，保留左侧、上下内边距 */
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   box-shadow: 0px 4px 4px var(--mask-25);
   position: relative;
   height: 100px; /* 减小卡片高度 */
@@ -1952,7 +1952,7 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
+  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
   color: var(--text-primary);
   font-size: 28px;
   font-weight: bold;
@@ -1984,7 +1984,7 @@ const vRipple = {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--brand-blue-80);
+  background: var(--color-brand-blue-80);
   border: none;
   display: flex;
   align-items: center;
@@ -2077,7 +2077,7 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: var(--brand-blue);
+  color: var(--color-brand-blue);
   text-shadow:
     0px 20px 30px var(--primary-50),
     0px 8px 15px var(--primary-50),
@@ -2107,7 +2107,7 @@ const vRipple = {
   justify-content: center;
   width: 48px;
   height: 45px;
-  background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
@@ -2115,7 +2115,7 @@ const vRipple = {
 }
 
 .like-button.liked {
-  background: var(--panel-surface-overlay);
+  background: var(--panel-bg-overlay);
   border-color: var(--panel-border-active);
   background-image: none;
 }
@@ -2148,7 +2148,7 @@ const vRipple = {
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: var(--brand-green);
+  color: var(--color-brand-green);
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
@@ -2161,7 +2161,7 @@ const vRipple = {
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: var(--brand-green);
+  color: var(--color-brand-green);
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
@@ -2174,7 +2174,7 @@ const vRipple = {
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;
@@ -2200,7 +2200,7 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--panel-surface);
+  background: var(--panel-bg);
   border-radius: 0 0 10px 10px;
   padding: 0.5rem 1rem;
   width: 95%;
@@ -2219,7 +2219,7 @@ const vRipple = {
 }
 
 .withdraw-button {
-  background: linear-gradient(180deg, var(--brand-red-light) 0%, var(--brand-red-light) 100%);
+  background: linear-gradient(180deg, var(--color-brand-red-light) 0%, var(--color-brand-red-light) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.25rem 0.75rem;
@@ -2244,7 +2244,7 @@ const vRipple = {
 }
 
 .replay-cancel-btn {
-  background: linear-gradient(180deg, var(--brand-blue) 0%, var(--brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
   min-width: 75px;
 }
 
@@ -2280,8 +2280,8 @@ button:disabled {
 }
 
 .page-number.active {
-  background: var(--brand-blue);
-  border-color: var(--brand-blue);
+  background: var(--color-brand-blue);
+  border-color: var(--color-brand-blue);
 }
 
 .page-info {
@@ -2318,7 +2318,7 @@ button:disabled {
 
 .jump-input:focus {
   outline: none;
-  border-color: var(--brand-blue);
+  border-color: var(--color-brand-blue);
   background: var(--overlay-15);
 }
 
@@ -2402,8 +2402,8 @@ button:disabled {
   }
 
   .tab-button.active {
-    background: var(--brand-blue-15);
-    color: var(--brand-blue);
+    background: var(--color-brand-blue-15);
+    color: var(--color-brand-blue);
     border-bottom: none;
     box-shadow: none;
   }
@@ -2459,7 +2459,7 @@ button:disabled {
   }
 
   .semester-dropdown {
-    background: var(--panel-surface);
+    background: var(--panel-bg);
     border: none;
     border-radius: 12px;
     box-shadow: 0 10px 40px var(--mask-40);
@@ -2508,14 +2508,14 @@ button:disabled {
   }
 
   .song-card.playing {
-    background: var(--brand-blue-12);
-    border-color: var(--brand-blue-40);
-    box-shadow: 0 0 20px var(--brand-blue-20);
+    background: var(--color-brand-blue-12);
+    border-color: var(--color-brand-blue-40);
+    box-shadow: 0 0 20px var(--color-brand-blue-20);
   }
 
   .song-card.playing .song-title {
-    color: var(--brand-blue);
-    text-shadow: 0 0 10px var(--brand-blue-30);
+    color: var(--color-brand-blue);
+    text-shadow: 0 0 10px var(--color-brand-blue-30);
   }
 
   .song-card:active {
@@ -2694,8 +2694,8 @@ button:disabled {
   }
 
   .page-number.active {
-    background: var(--brand-blue-15);
-    color: var(--brand-blue);
+    background: var(--color-brand-blue-15);
+    color: var(--color-brand-blue);
   }
 
   .page-info {
@@ -2839,7 +2839,7 @@ button:disabled {
 
   .mobile-page-input:focus {
     outline: none;
-    color: var(--brand-blue);
+    color: var(--color-brand-blue);
   }
 
   .page-selector .divider {
@@ -2856,7 +2856,7 @@ button:disabled {
 
 .page-nav-btn:hover:not(:disabled) {
   background: var(--overlay-10);
-  border-color: var(--brand-blue-light);
+  border-color: var(--color-brand-blue-light);
 }
 
 .page-nav-btn:disabled {
@@ -2874,7 +2874,7 @@ button:disabled {
 
 .page-indicator .current {
   font-size: 18px;
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
 }
 
 .page-indicator .divider {
@@ -2923,7 +2923,7 @@ button:disabled {
   border: 1px solid var(--primary-30);
   border-radius: 999px;
   background: var(--primary-10);
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 0 transparent;
@@ -2939,7 +2939,7 @@ button:disabled {
 .submission-note-modal {
   width: 100%;
   max-width: 400px;
-  background: var(--panel-surface-overlay);
+  background: var(--panel-bg-overlay);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--overlay-8);
@@ -3006,13 +3006,13 @@ button:disabled {
 
 .visibility-public {
   background: var(--primary-15);
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
   border: 1px solid var(--primary-20);
 }
 
 .visibility-private {
   background: var(--warning-15);
-  color: var(--brand-yellow-light);
+  color: var(--color-brand-yellow-light);
   border: 1px solid var(--warning-20);
 }
 

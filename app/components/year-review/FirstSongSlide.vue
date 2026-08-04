@@ -111,7 +111,7 @@ const formatDate = (dateStr) => {
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
   letter-spacing: 0.1em;
-  color: var(--brand-pink); /* brand-pink */
+  color: var(--color-brand-pink); /* brand-pink */
   font-weight: 600;
 }
 
@@ -144,7 +144,7 @@ const formatDate = (dateStr) => {
   overflow: hidden;
   box-shadow: 0 25px 50px -12px var(--mask-50);
   border: 1px solid var(--overlay-10);
-  background: var(--panel-surface-dark);
+  background: var(--panel-bg-dark);
   display: flex;
   align-items: center;
   justify-content: center;

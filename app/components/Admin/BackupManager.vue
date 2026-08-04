@@ -525,7 +525,7 @@ const formatFileSize = (bytes) => {
 /* 主容器 */
 .backup-manager {
   min-height: 100vh;
-  background: var(--panel-surface-deep);
+  background: var(--panel-bg-deep);
   color: var(--panel-border-light);
   padding: 2rem;
   position: relative;
@@ -634,11 +634,11 @@ const formatFileSize = (bytes) => {
 }
 
 .action-btn.primary {
-  background: var(--brand-blue);
+  background: var(--color-brand-blue);
 }
 
 .action-btn.primary:hover {
-  background: var(--brand-blue);
+  background: var(--color-brand-blue);
 }
 
 .action-btn.secondary {
@@ -696,7 +696,7 @@ const formatFileSize = (bytes) => {
 
 .current-status h4 {
   margin: 0 0 15px 0;
-  color: var(--brand-blue);
+  color: var(--color-brand-blue);
   font-size: 18px;
 }
 
@@ -716,7 +716,7 @@ const formatFileSize = (bytes) => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--brand-blue), var(--brand-blue));
+  background: linear-gradient(90deg, var(--color-brand-blue), var(--color-brand-blue));
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -757,9 +757,9 @@ const formatFileSize = (bytes) => {
 
 .error-item {
   padding: 4px 0;
-  color: var(--brand-red-light);
+  color: var(--color-brand-red-light);
   font-size: 13px;
-  border-bottom: 1px solid var(--panel-surface-darker);
+  border-bottom: 1px solid var(--panel-bg-darker);
 }
 
 .error-item:last-child {
@@ -861,7 +861,7 @@ const formatFileSize = (bytes) => {
   width: 1.25rem;
   height: 1.25rem;
   margin: 0;
-  accent-color: var(--brand-blue);
+  accent-color: var(--color-brand-blue);
   cursor: pointer;
 }
 
@@ -888,16 +888,16 @@ const formatFileSize = (bytes) => {
 }
 
 .checkbox-option.danger {
-  border-color: var(--brand-red-hover);
+  border-color: var(--color-brand-red-hover);
   background: var(--backup-manager-danger-bg);
 }
 
 .checkbox-option.danger span {
-  color: var(--brand-red-light);
+  color: var(--color-brand-red-light);
 }
 
 .checkbox-option.danger small {
-  color: var(--brand-red-light);
+  color: var(--color-brand-red-light);
 }
 
 /* 文件上传区域 */
@@ -917,14 +917,14 @@ const formatFileSize = (bytes) => {
 
 .upload-area:hover,
 .upload-area.drag-over {
-  border-color: var(--brand-blue);
+  border-color: var(--color-brand-blue);
   background: var(--panel-border-dark);
 }
 
 .upload-area svg {
   width: 4rem;
   height: 4rem;
-  color: var(--brand-blue);
+  color: var(--color-brand-blue);
   margin-bottom: 1.5rem;
 }
 
@@ -962,7 +962,7 @@ const formatFileSize = (bytes) => {
 .file-info svg {
   width: 1.5rem;
   height: 1.5rem;
-  color: var(--brand-blue);
+  color: var(--color-brand-blue);
   flex-shrink: 0;
 }
 
@@ -991,7 +991,7 @@ const formatFileSize = (bytes) => {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--brand-red-light);
+  color: var(--color-brand-red-light);
 }
 
 .remove-file-btn:hover {
@@ -1006,7 +1006,7 @@ const formatFileSize = (bytes) => {
 /* 警告框 */
 .warning-box {
   background: var(--backup-manager-warning-box-bg);
-  border: 1px solid var(--brand-orange);
+  border: 1px solid var(--color-brand-orange);
   border-radius: 8px;
   padding: 1.5rem;
   display: flex;
@@ -1018,7 +1018,7 @@ const formatFileSize = (bytes) => {
 .warning-box svg {
   width: 1.5rem;
   height: 1.5rem;
-  color: var(--brand-orange);
+  color: var(--color-brand-orange);
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
@@ -1028,14 +1028,14 @@ const formatFileSize = (bytes) => {
 }
 
 .warning-box h4 {
-  color: var(--brand-orange);
+  color: var(--color-brand-orange);
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
 }
 
 .warning-box p {
-  color: var(--brand-orange);
+  color: var(--color-brand-orange);
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -1061,23 +1061,23 @@ const formatFileSize = (bytes) => {
 }
 
 .notification.success {
-  background: var(--brand-green);
-  border: 1px solid var(--brand-green);
+  background: var(--color-brand-green);
+  border: 1px solid var(--color-brand-green);
 }
 
 .notification.error {
-  background: var(--brand-red-hover);
-  border: 1px solid var(--brand-red);
+  background: var(--color-brand-red-hover);
+  border: 1px solid var(--color-brand-red);
 }
 
 .notification.warning {
-  background: var(--brand-orange);
-  border: 1px solid var(--brand-orange);
+  background: var(--color-brand-orange);
+  border: 1px solid var(--color-brand-orange);
 }
 
 .notification.info {
-  background: var(--brand-blue-hover);
-  border: 1px solid var(--brand-blue);
+  background: var(--color-brand-blue-hover);
+  border: 1px solid var(--color-brand-blue);
 }
 
 @keyframes slideInRight {

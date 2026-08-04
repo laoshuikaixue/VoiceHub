@@ -40,7 +40,7 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: var(--panel-surface-tertiary);
+  background-color: var(--panel-bg-tertiary);
 }
 
 .bg-overlay {
@@ -56,7 +56,7 @@ const { yearReview } = useLocale()
   top: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, var(--brand-purple-hover), var(--bg-primary));
+  background: linear-gradient(to bottom, var(--color-brand-purple-hover), var(--bg-primary));
   opacity: 0.5;
   animation: pulse 8s infinite;
 }
@@ -72,7 +72,7 @@ const { yearReview } = useLocale()
 }
 
 .label {
-  color: var(--brand-purple-light); /* purple-300 */
+  color: var(--color-brand-purple-light); /* purple-300 */
   letter-spacing: 0.3em;
   text-transform: uppercase;
   margin-bottom: 1.5rem;
@@ -112,7 +112,7 @@ const { yearReview } = useLocale()
   font-weight: 900;
   font-style: italic;
   letter-spacing: -0.05em;
-  background-image: linear-gradient(to bottom right, var(--brand-purple-light), var(--brand-pink), var(--brand-orange));
+  background-image: linear-gradient(to bottom right, var(--color-brand-purple-light), var(--color-brand-pink), var(--color-brand-orange));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

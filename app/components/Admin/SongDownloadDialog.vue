@@ -2010,11 +2010,11 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--panel-surface-alt);
+  background: var(--panel-bg-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--panel-surface-hover);
+  background: var(--panel-bg-hover);
 }
 
 .fade-enter-active,

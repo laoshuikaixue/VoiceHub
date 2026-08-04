@@ -214,7 +214,7 @@ input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 18px;
   height: 18px;
-  background: var(--brand-blue-hover); /* blue-600 */
+  background: var(--color-brand-blue-hover); /* blue-600 */
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -223,7 +223,7 @@ input[type='range']::-webkit-slider-thumb {
 input[type='range']::-moz-range-thumb {
   width: 18px;
   height: 18px;
-  background: var(--brand-blue-hover);
+  background: var(--color-brand-blue-hover);
   border-radius: 50%;
   cursor: pointer;
   border: none;

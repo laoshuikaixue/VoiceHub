@@ -1247,7 +1247,7 @@ onUnmounted(() => {
   background:
     radial-gradient(circle at 30% 30%, var(--lyrics-modal-bg-accent-blue), transparent 34%),
     radial-gradient(circle at 70% 40%, var(--lyrics-modal-bg-accent-pink), transparent 32%),
-    linear-gradient(135deg, var(--panel-surface-subtle) 0%, var(--panel-surface-deepest) 100%);
+    linear-gradient(135deg, var(--panel-bg-subtle) 0%, var(--panel-bg-deepest) 100%);
   background-size: 180% 180%;
   transition: opacity 0.5s ease;
 }
@@ -1828,7 +1828,7 @@ onUnmounted(() => {
 .setting-item input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: var(--brand-red);
+  accent-color: var(--color-brand-red);
 }
 
 /* 音质菜单动画 */
@@ -1902,7 +1902,7 @@ onUnmounted(() => {
 }
 
 .badge-quality-option.active {
-  color: var(--brand-blue); /* 蓝色字 */
+  color: var(--color-brand-blue); /* 蓝色字 */
   background: var(--text-primary);
   font-weight: 600;
   box-shadow: 0 2px 8px var(--mask-8);

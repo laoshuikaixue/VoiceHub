@@ -130,7 +130,7 @@ onMounted(async () => {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--panel-surface-deepest);
+  background: var(--panel-bg-deepest);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -153,7 +153,7 @@ onMounted(async () => {
 }
 
 .info-section {
-  background: linear-gradient(135deg, var(--brand-indigo-hover) 0%, var(--brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-brand-indigo-hover) 0%, var(--color-brand-purple-hover) 100%);
   padding: 60px 40px;
   display: flex;
   align-items: center;
@@ -195,7 +195,7 @@ onMounted(async () => {
   font-size: 36px;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--panel-surface-deep) 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--panel-bg-deep) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -253,7 +253,7 @@ onMounted(async () => {
 .tip-icon {
   width: 16px;
   height: 16px;
-  color: var(--brand-green);
+  color: var(--color-brand-green);
   flex-shrink: 0;
 }
 
@@ -311,7 +311,7 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: var(--panel-surface-deep);
+  background: var(--panel-bg-deep);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   color: var(--text-secondary);

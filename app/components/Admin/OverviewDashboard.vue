@@ -16,7 +16,7 @@
                 : stat.color === 'emerald'
                   ? 'bg-success-10 text-success border-success-20'
                   : stat.color === 'pink'
-                    ? 'bg-pink-500/10 text-pink-500 border-pink-500/20'
+                    ? 'bg-color-brand-pink/10 text-color-brand-pink border-color-brand-pink/20'
                     : 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20'
             ]"
           >
@@ -320,7 +320,7 @@ const formatNumber = (num) => {
 const getActivityStyle = (type) => {
   const styles = {
     song: { icon: Music, bg: 'bg-info-10 text-info border-info-20' },
-    user: { icon: Users, bg: 'bg-pink-500/10 text-pink-500 border-pink-500/20' },
+    user: { icon: Users, bg: 'bg-color-brand-pink/10 text-color-brand-pink border-color-brand-pink/20' },
     schedule: { icon: Calendar, bg: 'bg-primary-10 text-primary border-primary-20' }
   }
 
@@ -448,10 +448,10 @@ onMounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--panel-surface-alt);
+  background: var(--panel-bg-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--panel-surface-hover);
+  background: var(--panel-bg-hover);
 }
 </style>

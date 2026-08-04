@@ -303,17 +303,17 @@ const itemClass =
 
 const aggregateIconClass = (loginType) => {
   const classes = {
-    qq: 'text-[var(--brand-cyan)]',
-    wx: 'text-[var(--brand-green)]',
-    alipay: 'text-[var(--brand-blue)]',
-    sina: 'text-[var(--brand-red-hover)]',
-    baidu: 'text-[var(--brand-indigo)]',
-    douyin: 'text-[var(--brand-cyan)]',
-    huawei: 'text-[var(--brand-red-hover)]',
-    xiaomi: 'text-[var(--brand-orange-hover)]',
-    gitee: 'text-[var(--brand-red-hover)]',
-    gitea: 'text-text-primary [--gitea-cutout:var(--panel-surface-dialog)]',
-    bilibili: 'text-[var(--brand-teal)]',
+    qq: 'text-[var(--color-brand-cyan)]',
+    wx: 'text-[var(--color-brand-green)]',
+    alipay: 'text-[var(--color-brand-blue)]',
+    sina: 'text-[var(--color-brand-red-hover)]',
+    baidu: 'text-[var(--color-brand-indigo)]',
+    douyin: 'text-[var(--color-brand-cyan)]',
+    huawei: 'text-[var(--color-brand-red-hover)]',
+    xiaomi: 'text-[var(--color-brand-orange-hover)]',
+    gitee: 'text-[var(--color-brand-red-hover)]',
+    gitea: 'text-text-primary [--gitea-cutout:var(--panel-bg-dialog)]',
+    bilibili: 'text-[var(--color-brand-teal)]',
     kuaishou: 'text-[var(--oauth-kuaishou-orange)]'
   }
   return classes[loginType] || 'text-text-primary'

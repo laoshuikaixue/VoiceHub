@@ -120,7 +120,7 @@
   width: 60px;
   height: 60px;
   border: 3px solid var(--overlay-10);
-  border-top: 3px solid var(--brand-indigo);
+  border-top: 3px solid var(--color-brand-indigo);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

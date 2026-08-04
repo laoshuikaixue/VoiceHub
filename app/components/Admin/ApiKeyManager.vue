@@ -1127,7 +1127,7 @@ onMounted(() => {
   width: 24px;
   height: 24px;
   border: 2px solid var(--overlay-10);
-  border-top-color: var(--brand-blue-light);
+  border-top-color: var(--color-brand-blue-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -1145,11 +1145,11 @@ onMounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--panel-surface-alt);
+  background: var(--panel-bg-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--panel-surface-hover);
+  background: var(--panel-bg-hover);
 }
 
 /* 模态框动画 */

@@ -17,13 +17,13 @@
         maxlength="4"
         autocomplete="off"
         :placeholder="locale.placeholder"
-        class="flex-1 px-3 py-2 border border-border-secondary dark:border-border-tertiary rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-primary bg-bg-secondary dark:bg-bg-tertiary text-text-primary dark:text-text-primary-lighter placeholder-text-muted dark:placeholder-text-tertiary"
+        class="flex-1 px-3 py-2 border border-border-secondary dark:border-border-tertiary rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-bg-secondary dark:bg-bg-tertiary text-text-primary dark:text-text-primary-lighter placeholder-text-muted dark:placeholder-text-tertiary"
         @input="handleInput"
       >
       <!-- 刷新按钮（也可直接点图片，这里提供文字按钮辅助） -->
       <button
         type="button"
-        class="px-2 py-1 text-xs text-primary-hover hover:text-blue-800 dark:text-primary"
+        class="px-2 py-1 text-xs text-primary-hover hover:text-primary-hover dark:text-primary"
         @click="refreshCaptcha"
       >
         {{ locale.refresh }}
@@ -103,6 +103,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--panel-surface-overlay); /* 浅灰背景，与你的设计一致 */
+  background-color: var(--panel-bg-overlay); /* 浅灰背景，与你的设计一致 */
 }
 </style>

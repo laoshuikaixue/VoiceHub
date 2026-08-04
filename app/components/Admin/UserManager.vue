@@ -262,7 +262,7 @@
                 <th class="px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-panel-surface-dark/40">
+            <tbody class="divide-y divide-panel-bg-dark/40">
               <tr
                 v-for="user in users"
                 :key="user.id"
@@ -1008,7 +1008,7 @@
                         <th class="px-4 py-3 font-medium">{{ locale.importModal.gradeClass }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-panel-surface-deepest">
+                    <tbody class="divide-y divide-panel-bg-deepest">
                       <tr
                         v-for="(row, index) in previewData.slice(0, 5)"
                         :key="index"
@@ -1438,7 +1438,7 @@
                   >
                     <div v-for="log in statusLogs" :key="log.id" class="relative">
                       <div
-                        class="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-bg-secondary border-2 border-border-tertiary ring-4 ring-panel-surface-deepest"
+                        class="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-bg-secondary border-2 border-border-tertiary ring-4 ring-panel-bg-deepest"
                       />
                       <div
                         class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-3"
@@ -2813,8 +2813,8 @@ onBeforeUnmount(() => {
 }
 
 .tree-toggle:hover {
-  color: var(--brand-blue-light);
-  background: var(--panel-surface-deep);
+  color: var(--color-brand-blue-light);
+  background: var(--panel-bg-deep);
 }
 
 .tree-label {
@@ -2835,17 +2835,17 @@ onBeforeUnmount(() => {
 
 .tree-label:hover {
   color: var(--text-primary-lighter);
-  background: var(--panel-surface-deep);
+  background: var(--panel-bg-deep);
 }
 
 .tree-label-active {
-  color: var(--brand-blue-light);
+  color: var(--color-brand-blue-light);
   background: var(--user-manager-tree-active-bg);
 }
 
 .tree-count {
   flex-shrink: 0;
-  color: var(--panel-surface-hover);
+  color: var(--panel-bg-hover);
   font-size: 0.6875rem;
   font-weight: 900;
 }
@@ -2873,6 +2873,6 @@ onBeforeUnmount(() => {
 }
 
 .tree-user:hover {
-  background: var(--panel-surface-deep);
+  background: var(--panel-bg-deep);
 }
 </style>

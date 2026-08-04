@@ -1019,7 +1019,7 @@ const handleWebAuthnLogin = async () => {
 .webauthn-btn {
   width: 100%;
   padding: 14px;
-  background: var(--surface-secondary);
+  background: var(--panel-bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--input-border);
   border-radius: var(--radius-lg);
@@ -1034,7 +1034,7 @@ const handleWebAuthnLogin = async () => {
 }
 
 .webauthn-btn:hover:not(:disabled) {
-  background: var(--surface-tertiary);
+  background: var(--panel-bg-tertiary);
   border-color: var(--input-border-focus);
 }
 
@@ -1096,7 +1096,7 @@ const handleWebAuthnLogin = async () => {
 .mode-btn {
   flex: 1;
   padding: 12px 16px;
-  background: var(--surface-secondary);
+  background: var(--panel-bg-secondary);
   color: var(--text-secondary);
   border: 2px solid var(--input-border);
   border-radius: var(--radius-lg);
@@ -1118,7 +1118,7 @@ const handleWebAuthnLogin = async () => {
 }
 
 .mode-btn:hover:not(.active) {
-  background: var(--surface-tertiary);
+  background: var(--panel-bg-tertiary);
   border-color: var(--input-border-focus);
   color: var(--text-primary);
 }

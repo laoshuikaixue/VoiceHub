@@ -1,10 +1,10 @@
 import { ref, computed, type Ref } from 'vue'
 
-/** 主题类型 */
+/** 主题类型（'dark' = 经典深色，'light' = 经典浅色）*/
 export type Theme = 'dark' | 'light'
 
 /** 可用主题列表 */
-export const THEMES: Theme[] = ['dark', 'light']
+export const THEMES: Theme[] = ['dark', 'light'] // [经典深色, 经典浅色]
 
 let current: Ref<Theme> | null = null
 
@@ -14,7 +14,7 @@ let current: Ref<Theme> | null = null
  */
 export function useTheme() {
   if (!current) {
-    // 初始化状态，SSR 时默认 dark
+    // 初始化状态，SSR 时默认经典深色
     let saved = null
     if (typeof window !== 'undefined') {
       try {

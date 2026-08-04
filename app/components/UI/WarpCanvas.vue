@@ -112,7 +112,7 @@ const glowColors = {
   load() {
     const cs = getComputedStyle(document.documentElement)
     const raw = cs.getPropertyValue('--app-loading-brand-primary').trim()
-    // 回退值与 SSR 默认主题（dark）的主色对齐
+    // 回退值与 SSR 默认主题（经典深色）的主色对齐
     this.color = raw ? toHexValue(raw) : '#6366f1'
     // 解析 --canvas-glow-overlay-end 的实际 rgba 值
     const rawOverlay = cs.getPropertyValue('--canvas-glow-overlay-end').trim()

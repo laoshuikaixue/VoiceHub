@@ -213,7 +213,7 @@ watch(
 }
 
 .modal-content {
-  background: var(--panel-surface-deep);
+  background: var(--panel-bg-deep);
   border-radius: 16px;
   border: 1px solid var(--panel-border);
   width: 100%;
@@ -294,11 +294,11 @@ watch(
 .heart-icon {
   width: 20px;
   height: 20px;
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .vote-count {
-  color: var(--brand-red);
+  color: var(--color-brand-red);
   font-weight: 600;
   font-size: 16px;
 }
@@ -316,7 +316,7 @@ watch(
   width: 32px;
   height: 32px;
   border: 3px solid var(--panel-border-light);
-  border-top: 3px solid var(--brand-blue);
+  border-top: 3px solid var(--color-brand-blue);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -342,17 +342,17 @@ watch(
 .error-icon {
   width: 48px;
   height: 48px;
-  color: var(--brand-red);
+  color: var(--color-brand-red);
 }
 
 .error-message {
-  color: var(--brand-red);
+  color: var(--color-brand-red);
   text-align: center;
   margin: 0;
 }
 
 .retry-btn {
-  background: var(--brand-blue);
+  background: var(--color-brand-blue);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -363,7 +363,7 @@ watch(
 }
 
 .retry-btn:hover {
-  background: var(--brand-indigo);
+  background: var(--color-brand-indigo);
 }
 
 .voters-list {
@@ -421,7 +421,7 @@ watch(
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-blue), var(--brand-purple-hover));
+  background: linear-gradient(135deg, var(--color-brand-blue), var(--color-brand-purple-hover));
   display: flex;
   align-items: center;
   justify-content: center;

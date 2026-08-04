@@ -46,7 +46,7 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: var(--panel-surface-darkest); /* gray-950 */
+  background-color: var(--panel-bg-darkest); /* gray-950 */
 }
 
 .bg-gradient {
@@ -69,7 +69,7 @@ const { yearReview } = useLocale()
 
 .label {
   margin-bottom: 1rem;
-  color: var(--brand-blue-light); /* brand-blue */
+  color: var(--color-brand-blue-light); /* brand-blue */
   font-weight: 700;
   letter-spacing: 0.05em;
   font-size: 1.125rem;
@@ -94,7 +94,7 @@ const { yearReview } = useLocale()
   font-size: 10rem;
   font-weight: 900;
   line-height: 1;
-  background-image: linear-gradient(to bottom, var(--brand-blue-light), var(--brand-blue-light-hover));
+  background-image: linear-gradient(to bottom, var(--color-brand-blue-light), var(--color-brand-blue-light-hover));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -131,7 +131,7 @@ const { yearReview } = useLocale()
 .highlight-green {
   font-size: 1.875rem;
   font-weight: 700;
-  color: var(--brand-green-light);
+  color: var(--color-brand-green-light);
   margin: 0 0.25rem;
 }
 

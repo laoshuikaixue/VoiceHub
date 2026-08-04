@@ -40,7 +40,7 @@
                   v-model="inputValue"
                   :type="inputType"
                   :placeholder="inputPlaceholder"
-                  class="w-full bg-bg-tertiary-50 border border-border-tertiary-50 rounded-xl px-4 py-3 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all text-sm"
+                  class="w-full bg-bg-tertiary-50 border border-border-tertiary-50 rounded-xl px-4 py-3 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm"
                   @keyup.enter="handleConfirm"
                 />
               </div>

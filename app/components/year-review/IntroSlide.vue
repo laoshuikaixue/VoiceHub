@@ -34,7 +34,7 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: radial-gradient(circle at center, var(--panel-surface-dark), var(--bg-primary));
+  background: radial-gradient(circle at center, var(--panel-bg-dark), var(--bg-primary));
 }
 
 .blob {

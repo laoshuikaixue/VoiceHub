@@ -141,7 +141,7 @@ const toggleDetails = () => {
 .error-icon {
   width: 64px;
   height: 64px;
-  color: var(--brand-red);
+  color: var(--color-brand-red);
   margin-bottom: 16px;
 }
 
@@ -176,7 +176,7 @@ const toggleDetails = () => {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, var(--brand-indigo-hover), var(--brand-purple-hover));
+  background: linear-gradient(135deg, var(--color-brand-indigo-hover), var(--color-brand-purple-hover));
   border: none;
   border-radius: 8px;
   color: white;
@@ -186,7 +186,7 @@ const toggleDetails = () => {
 }
 
 .retry-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--brand-indigo), var(--brand-purple));
+  background: linear-gradient(135deg, var(--color-brand-indigo), var(--color-brand-purple));
   transform: translateY(-1px);
 }
 

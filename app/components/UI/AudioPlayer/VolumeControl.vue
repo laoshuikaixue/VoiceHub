@@ -314,7 +314,7 @@ const handleClickOutside = (e: Event) => {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: linear-gradient(to top, var(--brand-blue-light), var(--brand-cyan));
+  background: linear-gradient(to top, var(--color-brand-blue-light), var(--color-brand-cyan));
   border-radius: 3px;
   transition: height 0.1s linear;
 }
