@@ -1,9 +1,10 @@
 import type { H3Event } from 'h3'
-import { getClientIP, getRequestHeader, getRequestURL } from 'h3'
+import { getRequestHeader, getRequestURL } from 'h3'
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { userSessions } from '~/drizzle/schema'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
+import { getClientIP } from '~~/server/utils/ip-utils'
 
 export const USER_SESSION_ACTIVE_WINDOW_MS = 5 * 60 * 1000
 const SESSION_CHECK_INTERVAL_MS = 30 * 1000
