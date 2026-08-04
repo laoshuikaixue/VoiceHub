@@ -867,6 +867,7 @@ const selectLocale = (code) => {
 
 // ==================== 主题切换 ====================
 const { currentTheme, themes, setTheme: setThemeFn } = useTheme()
+const { theme: themeLocale } = useLocale()
 
 const toggleThemeMenu = (event) => {
   event.stopPropagation()
@@ -887,7 +888,7 @@ const selectTheme = (theme) => {
 }
 
 const getThemeLabel = (theme) => {
-  return theme === 'ClassicDark' ? '经典深色' : '经典浅色'
+  return themeLocale.value[theme]
 }
 
 // 监听用户头像变化，重置错误状�?
