@@ -546,7 +546,7 @@
                         <th class="px-5 py-4 whitespace-nowrap text-right">{{ locale.preview.matchStatus }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-900">
+                    <tbody class="divide-y divide-panel-surface-deepest">
                       <tr
                         v-for="(row, index) in filteredPreviewData.slice(0, 10)"
                         :key="index"

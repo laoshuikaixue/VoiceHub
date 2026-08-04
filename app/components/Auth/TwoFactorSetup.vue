@@ -84,7 +84,7 @@
                 type="text"
                 :placeholder="locale.codePlaceholder"
                 maxlength="6"
-                class="flex-1 bg-bg-secondary border border-border-secondary rounded-lg px-4 py-2 text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all font-mono text-center tracking-widest"
+                class="flex-1 bg-bg-secondary border border-border-secondary rounded-lg px-4 py-2 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all font-mono text-center tracking-widest"
                 @keyup.enter="enable2FA"
               />
               <button

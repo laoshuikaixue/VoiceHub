@@ -51,7 +51,7 @@
               <input
                 ref="searchInput"
                 v-model="searchQuery"
-                class="w-full pl-12 pr-12 py-4 bg-bg-primary border border-border-secondary rounded-2xl text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary-30 transition-all"
+                class="w-full pl-12 pr-12 py-4 bg-bg-primary border border-border-secondary rounded-2xl text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary-30 transition-all"
                 :placeholder="locale.searchUsersPlaceholder"
                 type="text"
                 @input="handleSearch"

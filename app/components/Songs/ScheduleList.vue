@@ -106,7 +106,7 @@
           <div v-else-if="!schedules || schedules.length === 0" key="empty-all" class="empty">
             <div class="icon mb-4">🎵</div>
             <p>{{ locale.emptyAll }}</p>
-            <p class="text-sm text-gray">{{ locale.emptyAllDesc }}</p>
+            <p class="text-sm text-text-muted">{{ locale.emptyAllDesc }}</p>
           </div>
 
           <div v-else-if="currentDateSchedules.length === 0" key="empty-date" class="empty">
@@ -363,7 +363,7 @@
                 class="flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-2xl"
               >
                 <div
-                  class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-zinc-700/50"
+                  class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-panel-surface-hover/50"
                 >
                   <img
                     v-if="neteaseUser.avatarUrl"
@@ -446,7 +446,7 @@
                   <div class="flex gap-3">
                     <input
                       v-model="newPlaylistName"
-                      class="flex-1 px-5 py-3.5 bg-bg-primary border border-border-secondary rounded-xl text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary-30 transition-all"
+                      class="flex-1 px-5 py-3.5 bg-bg-primary border border-border-secondary rounded-xl text-text-primary text-sm placeholder-text-disabled focus:outline-none focus:border-primary-30 transition-all"
                       :placeholder="locale.newPlaylistPlaceholder"
                       type="text"
                     >

@@ -10,7 +10,7 @@
     >
       <div
         v-if="notification"
-        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-zinc-950/80 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-panel-surface-darkest/80 p-4 backdrop-blur-sm"
         @keydown="handleKeydown"
       >
         <section
@@ -20,9 +20,9 @@
           :aria-labelledby="titleId"
           :aria-describedby="contentId"
           tabindex="-1"
-          class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+          class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-surface-dark bg-panel-surface-deepest shadow-2xl"
         >
-          <header class="relative border-b border-zinc-800/50 px-5 py-5 sm:px-8 sm:py-6">
+          <header class="relative border-b border-panel-surface-dark/50 px-5 py-5 sm:px-8 sm:py-6">
             <div
               class="absolute right-5 top-5 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold sm:right-8 sm:top-6"
               :class="
@@ -49,23 +49,23 @@
                 <span class="text-xs font-bold text-amber-300">{{ locale.label }}</span>
                 <h2
                   :id="titleId"
-                  class="mt-1 break-words text-xl font-black text-zinc-50 sm:text-2xl"
+                  class="mt-1 break-words text-xl font-black text-text-primary-lighter sm:text-2xl"
                 >
                   {{ notification.title || locale.label }}
                 </h2>
                 <time
                   v-if="formattedCreatedAt"
                   :datetime="notification.createdAt"
-                  class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-zinc-500"
+                  class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-text-tertiary"
                 >
-                  <span class="inline-flex items-center gap-1 font-semibold text-zinc-400">
+                  <span class="inline-flex items-center gap-1 font-semibold text-text-muted">
                     <Icon name="clock" :size="13" class="shrink-0" aria-hidden="true" />
                     {{ relativeCreatedAt }}
                   </span>
                   <span aria-hidden="true">&middot;</span>
                   <span>{{ formattedCreatedAt }}</span>
                 </time>
-                <p class="mt-2 flex items-center gap-1.5 text-xs text-zinc-400">
+                <p class="mt-2 flex items-center gap-1.5 text-xs text-text-muted">
                   <Icon name="user" :size="13" class="shrink-0" aria-hidden="true" />
                   <span>{{ locale.sender }}：{{ senderDisplayName }}</span>
                 </p>
@@ -75,12 +75,12 @@
 
           <div
             :id="contentId"
-            class="important-notification-content markdown-body min-h-0 flex-1 overflow-y-auto px-5 py-6 text-sm text-zinc-300 sm:p-8 sm:text-base"
+            class="important-notification-content markdown-body min-h-0 flex-1 overflow-y-auto px-5 py-6 text-sm text-text-secondary sm:p-8 sm:text-base"
             v-html="renderedMessage"
           />
 
           <footer
-            class="flex flex-col items-end gap-3 border-t border-zinc-800/50 bg-zinc-900/50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
+            class="flex flex-col items-end gap-3 border-t border-panel-surface-dark/50 bg-panel-surface-deepest/50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
           >
             <p
               v-if="error"
@@ -94,7 +94,7 @@
               ref="closeButtonRef"
               type="button"
               :disabled="closing"
-              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-zinc-900 disabled:cursor-wait disabled:opacity-60"
+              class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-panel-surface-deepest disabled:cursor-wait disabled:opacity-60"
               @click="markAsReadAndClose"
             >
               <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />

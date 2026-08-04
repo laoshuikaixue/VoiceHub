@@ -35,7 +35,7 @@
                   v-model="emailInput"
                   type="email"
                   :placeholder="locale.emailPlaceholder"
-                  class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-4 py-3 text-text-primary placeholder-zinc-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
+                  class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-4 py-3 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
                   :disabled="emailSent && cooldown > 0"
                   @keyup.enter="!emailSent && sendEmailCode()"
                 />
@@ -50,7 +50,7 @@
                   type="text"
                   maxlength="6"
                   placeholder="000000"
-                  class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-4 py-3 text-center text-2xl font-mono tracking-widest text-text-primary placeholder-zinc-700 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
+                  class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-4 py-3 text-center text-2xl font-mono tracking-widest text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
                   @keyup.enter="handleVerify"
                   ref="inputRef"
                 />

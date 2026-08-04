@@ -970,7 +970,7 @@
                 ref="cardCodeInputRef"
                 v-model="cardCodeDraft"
                 :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-zinc-600 transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
+                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
               />
@@ -1008,7 +1008,7 @@
               </button>
               <button
                 :disabled="cardCodeValidation.checking"
-                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-zinc-950 transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
+                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-text-primary transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 @click="saveCardCode"
               >
@@ -1218,7 +1218,7 @@
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
-                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary-30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary-30 transition-all"
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
@@ -1237,7 +1237,7 @@
                       id="modal-cover"
                       v-model="manualCover"
                       :class="[
-                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none transition-all',
+                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
                           ? 'border-error/50 focus:border-error/50'
                           : 'border-border-secondary focus:border-primary-30'
@@ -1286,7 +1286,7 @@
                       id="modal-play-url"
                       v-model="manualPlayUrl"
                       :class="[
-                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-zinc-600 focus:outline-none transition-all',
+                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
                           ? 'border-error/50 focus:border-error/50'
                           : 'border-border-secondary focus:border-primary-30'

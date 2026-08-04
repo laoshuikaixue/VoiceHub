@@ -926,7 +926,7 @@
         </div>
       </div>
       <div class="p-0 overflow-y-auto max-h-[60vh]">
-        <div class="divide-y divide-zinc-800/50">
+        <div class="divide-y divide-panel-surface-dark/50">
           <div
             v-for="(req, idx) in replayModalRequests"
             :key="idx"

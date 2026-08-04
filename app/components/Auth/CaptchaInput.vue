@@ -17,7 +17,7 @@
         maxlength="4"
         autocomplete="off"
         :placeholder="locale.placeholder"
-        class="flex-1 px-3 py-2 border border-border-secondary dark:border-border-tertiary rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-primary bg-bg-secondary dark:bg-bg-tertiary text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+        class="flex-1 px-3 py-2 border border-border-secondary dark:border-border-tertiary rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-primary bg-bg-secondary dark:bg-bg-tertiary text-text-primary dark:text-text-primary-lighter placeholder-text-muted dark:placeholder-text-tertiary"
         @input="handleInput"
       >
       <!-- 刷新按钮（也可直接点图片，这里提供文字按钮辅助） -->

@@ -377,7 +377,7 @@
                       type="number"
                       min="1"
                       :placeholder="locale.captchaMaxFailuresPlaceholder"
-                      class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
+                      class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
                     />
                     <p class="text-[10px] text-text-tertiary mt-1">
                       {{ locale.captchaMaxFailuresDesc }}
@@ -392,7 +392,7 @@
                         v-model="formData.turnstileSiteKey"
                         type="text"
                         :placeholder="locale.turnstileSiteKeyPlaceholder"
-                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
+                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
                       />
                     </div>
                     <div>
@@ -401,7 +401,7 @@
                         v-model="formData.turnstileSecretKey"
                         type="password"
                         :placeholder="locale.turnstileSecretKeyPlaceholder"
-                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
+                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-blue-500 transition-all"
                       />
                       <p class="text-[10px] text-text-tertiary mt-1">
                         {{ locale.turnstileSecretKeyDesc }}

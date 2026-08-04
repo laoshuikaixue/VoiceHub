@@ -2,39 +2,39 @@
   <Teleport to="body">
     <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="$emit('close')" />
-      <div class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
+      <div class="relative bg-panel-surface-deepest border border-panel-surface-dark rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
         <!-- 标题栏 -->
-        <div class="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-sm px-6 py-5 border-b border-zinc-800 flex items-center justify-between rounded-t-3xl">
-          <h3 class="text-lg font-black text-zinc-100 tracking-tight">{{ locale.title }}</h3>
-          <button class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200" @click="$emit('close')">
+        <div class="sticky top-0 z-10 bg-panel-surface-deepest/95 backdrop-blur-sm px-6 py-5 border-b border-panel-surface-dark flex items-center justify-between rounded-t-3xl">
+          <h3 class="text-lg font-black text-text-primary-lighter tracking-tight">{{ locale.title }}</h3>
+          <button class="p-2 hover:bg-panel-surface-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light" @click="$emit('close')">
             <X class="w-5 h-5" />
           </button>
         </div>
 
         <div class="px-6 py-5 space-y-6">
           <!-- 总开关 -->
-          <div class="bg-zinc-950/50 border border-zinc-800 rounded-2xl p-5">
+          <div class="bg-panel-surface-darkest/50 border border-panel-surface-dark rounded-2xl p-5">
             <div class="flex items-center justify-between">
               <div class="space-y-0.5">
-                <p class="text-sm font-bold text-zinc-200">{{ locale.masterSwitch.label }}</p>
-                <p class="text-[11px] text-zinc-500 leading-relaxed">{{ locale.masterSwitch.desc }}</p>
+                <p class="text-sm font-bold text-text-primary-light">{{ locale.masterSwitch.label }}</p>
+                <p class="text-[11px] text-text-tertiary leading-relaxed">{{ locale.masterSwitch.desc }}</p>
               </div>
               <button
                 type="button"
                 role="switch"
                 :aria-checked="masterEnabled"
-                :class="masterEnabled ? 'bg-blue-600' : 'bg-zinc-700'"
+                :class="masterEnabled ? 'bg-blue-600' : 'bg-panel-surface-compact'"
                 class="relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200"
                 @click="masterEnabled = !masterEnabled"
               >
-                <span :class="masterEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'" class="inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 mt-0.5" />
+                <span :class="masterEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'" class="inline-block h-5 w-5 rounded-full bg-panel-surface-raised shadow-sm transition-transform duration-200 mt-0.5" />
               </button>
             </div>
           </div>
 
           <!-- 备份方式 -->
           <div>
-            <h4 class="text-xs font-black text-zinc-500 uppercase tracking-widest mb-3">{{ locale.methods.title }}</h4>
+            <h4 class="text-xs font-black text-text-tertiary uppercase tracking-widest mb-3">{{ locale.methods.title }}</h4>
             <div class="space-y-3">
               <!-- S3 -->
               <MethodCard
@@ -61,7 +61,7 @@
                   <div class="flex gap-2">
                     <button
                       class="flex-1 py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
-                      :class="testing === 's3' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                      :class="testing === 's3' ? 'bg-panel-surface-compact text-text-secondary' : 'bg-panel-surface-dark hover:bg-panel-surface-compact text-text-muted hover:text-text-primary-light'"
                       :disabled="testing !== null"
                       @click="testConnection('s3')"
                     >
@@ -89,7 +89,7 @@
                   <InputField :label="locale.methods.webdav.path" :placeholder="locale.methods.webdav.pathPlaceholder" v-model="methods.webdav.path" />
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
-                    :class="testing === 'webdav' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                    :class="testing === 'webdav' ? 'bg-panel-surface-compact text-text-secondary' : 'bg-panel-surface-dark hover:bg-panel-surface-compact text-text-muted hover:text-text-primary-light'"
                     :disabled="testing !== null"
                     @click="testConnection('webdav')"
                   >
@@ -112,7 +112,7 @@
                   <InputField :label="locale.methods.telegram.chatId" :placeholder="locale.methods.telegram.chatIdPlaceholder" v-model="methods.telegram.chatId" />
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
-                    :class="testing === 'telegram' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                    :class="testing === 'telegram' ? 'bg-panel-surface-compact text-text-secondary' : 'bg-panel-surface-dark hover:bg-panel-surface-compact text-text-muted hover:text-text-primary-light'"
                     :disabled="testing !== null"
                     @click="testConnection('telegram')"
                   >
@@ -133,12 +133,12 @@
                 <div class="space-y-3">
                   <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-2.5">
                     <Info class="text-blue-500 shrink-0 mt-0.5 w-3.5 h-3.5" />
-                    <p class="text-[11px] text-zinc-400 leading-relaxed">{{ locale.methods.email.smtpHint }}</p>
+                    <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.methods.email.smtpHint }}</p>
                   </div>
                   <InputField :label="locale.methods.email.recipient" :placeholder="locale.methods.email.recipientPlaceholder" v-model="methods.email.recipient" />
                   <button
                     class="w-full py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed"
-                    :class="testing === 'email' ? 'bg-zinc-700 text-zinc-300' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'"
+                    :class="testing === 'email' ? 'bg-panel-surface-compact text-text-secondary' : 'bg-panel-surface-dark hover:bg-panel-surface-compact text-text-muted hover:text-text-primary-light'"
                     :disabled="testing !== null"
                     @click="testConnection('email')"
                   >
@@ -155,28 +155,28 @@
               <!-- 提示 -->
               <div class="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-2.5">
                 <Info class="text-amber-500 shrink-0 mt-0.5 w-3.5 h-3.5" />
-                <p class="text-[11px] text-zinc-400 leading-relaxed">{{ locale.endpoint.hint }}</p>
+                <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.endpoint.hint }}</p>
               </div>
 
               <!-- 端点 URL -->
               <div class="space-y-1.5">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.endpoint.url }}</label>
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.endpoint.url }}</label>
                 <div class="flex gap-2">
-                  <code class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-blue-400 font-mono break-all select-all">
+                  <code class="flex-1 bg-panel-surface-darkest border border-panel-surface-dark rounded-xl px-4 py-2.5 text-xs text-blue-400 font-mono break-all select-all">
                     {{ triggerEndpointUrl }}
                   </code>
-                  <button class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-xl transition-colors shrink-0" @click="copyToClipboard(triggerEndpointUrl)">
+                  <button class="px-3 py-2 bg-panel-surface-dark hover:bg-panel-surface-compact text-text-muted hover:text-text-primary-light rounded-xl transition-colors shrink-0" @click="copyToClipboard(triggerEndpointUrl)">
                     <Copy class="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               <!-- 触发方式选项卡 -->
-              <div class="flex gap-2 bg-zinc-950 border border-zinc-800 rounded-xl p-1">
+              <div class="flex gap-2 bg-panel-surface-darkest border border-panel-surface-dark rounded-xl p-1">
                 <button
                   v-for="method in triggerMethods"
                   :key="method.id"
-                  :class="['flex-1 py-2 text-[11px] font-bold rounded-lg transition-all', activeTriggerMethod === method.id ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300']"
+                  :class="['flex-1 py-2 text-[11px] font-bold rounded-lg transition-all', activeTriggerMethod === method.id ? 'bg-panel-surface-dark text-text-primary-lighter' : 'text-text-tertiary hover:text-text-secondary']"
                   @click="activeTriggerMethod = method.id"
                 >
                   {{ method.label }}
@@ -185,36 +185,36 @@
 
               <!-- curl -->
               <div v-if="activeTriggerMethod === 'curl'" class="relative">
-                <pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code>curl -X POST "{{ triggerEndpointUrl }}" \
+                <pre class="bg-panel-surface-darkest border border-panel-surface-dark rounded-xl p-4 text-xs text-text-secondary font-mono overflow-x-auto"><code>curl -X POST "{{ triggerEndpointUrl }}" \
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"type": "full"}'</code></pre>
-                <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyCurlCommand">
+                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-surface-dark hover:bg-panel-surface-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors" @click="copyCurlCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <!-- cron-job.org -->
               <div v-if="activeTriggerMethod === 'cronjob'">
-                <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
-                  <div class="flex items-center gap-2 text-[11px] text-zinc-400">
-                    <span class="text-zinc-600 shrink-0">URL:</span>
+                <div class="bg-panel-surface-darkest border border-panel-surface-dark rounded-xl p-4 space-y-2.5">
+                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                    <span class="text-text-disabled shrink-0">URL:</span>
                     <code class="text-blue-400 font-mono text-[10px] break-all">{{ triggerEndpointUrl }}</code>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-zinc-400">
-                    <span class="text-zinc-600 shrink-0">Method:</span>
-                    <span class="text-zinc-300 font-mono">POST</span>
+                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                    <span class="text-text-disabled shrink-0">Method:</span>
+                    <span class="text-text-secondary font-mono">POST</span>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-zinc-400">
-                    <span class="text-zinc-600 shrink-0">Header:</span>
+                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                    <span class="text-text-disabled shrink-0">Header:</span>
                     <code class="text-emerald-400 font-mono text-[10px]">X-API-Key: YOUR_API_KEY</code>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-zinc-400">
-                    <span class="text-zinc-600 shrink-0"></span>
+                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                    <span class="text-text-disabled shrink-0"></span>
                     <code class="text-emerald-400 font-mono text-[10px]">Content-Type: application/json</code>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-zinc-400">
-                    <span class="text-zinc-600 shrink-0">Body:</span>
+                  <div class="flex items-center gap-2 text-[11px] text-text-muted">
+                    <span class="text-text-disabled shrink-0">Body:</span>
                     <code class="text-amber-400 font-mono text-[10px]">{"type": "full"}</code>
                   </div>
                 </div>
@@ -226,7 +226,7 @@
 
               <!-- GitHub Actions -->
               <div v-if="activeTriggerMethod === 'github'" class="relative">
-                <pre v-pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code>name: Auto Backup
+                <pre v-pre class="bg-panel-surface-darkest border border-panel-surface-dark rounded-xl p-4 text-xs text-text-secondary font-mono overflow-x-auto"><code>name: Auto Backup
 on:
   schedule:
     - cron: '0 3 * * *'
@@ -240,14 +240,14 @@ jobs:
             -H "X-API-Key: ${{ secrets.API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"type": "full"}'</code></pre>
-                <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyGithubAction">
+                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-surface-dark hover:bg-panel-surface-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors" @click="copyGithubAction">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <!-- Linux cron -->
               <div v-if="activeTriggerMethod === 'cron'" class="relative">
-                <pre class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs text-zinc-300 font-mono overflow-x-auto"><code># 编辑 crontab
+                <pre class="bg-panel-surface-darkest border border-panel-surface-dark rounded-xl p-4 text-xs text-text-secondary font-mono overflow-x-auto"><code># 编辑 crontab
 crontab -e
 
 # 添加以下行（每天凌晨3点执行备份）
@@ -255,7 +255,7 @@ crontab -e
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"type": "full"}'</code></pre>
-                <button class="absolute top-3 right-3 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-200 rounded-lg transition-colors" @click="copyCronCommand">
+                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-surface-dark hover:bg-panel-surface-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors" @click="copyCronCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -264,40 +264,40 @@ crontab -e
 
           <!-- 备份历史（可折叠） -->
           <CollapsibleSection :title="locale.history.title">
-            <div v-if="historyLoading" class="p-6 text-center text-zinc-600">
+            <div v-if="historyLoading" class="p-6 text-center text-text-disabled">
               <p class="text-xs">加载中...</p>
             </div>
-            <div v-else-if="historyRecords.length === 0" class="p-6 text-center text-zinc-600">
+            <div v-else-if="historyRecords.length === 0" class="p-6 text-center text-text-disabled">
               <Clock class="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p class="text-xs font-medium">{{ locale.history.empty }}</p>
-              <p class="text-[10px] text-zinc-700 mt-1">{{ locale.history.emptyHint }}</p>
+              <p class="text-[10px] text-text-disabled mt-1">{{ locale.history.emptyHint }}</p>
             </div>
             <div v-else class="space-y-2">
-              <div v-for="record in historyRecords" :key="record.id" class="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3">
+              <div v-for="record in historyRecords" :key="record.id" class="bg-panel-surface-darkest/50 border border-panel-surface-dark rounded-xl p-3">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
                     <span :class="getStatusInfo(record).cls" class="px-2 py-0.5 text-[10px] font-bold rounded-md border">
                       {{ getStatusInfo(record).text }}
                     </span>
-                    <span class="text-[11px] text-zinc-400 font-mono">{{ record.filename }}</span>
+                    <span class="text-[11px] text-text-muted font-mono">{{ record.filename }}</span>
                   </div>
-                  <span class="text-[10px] text-zinc-600">{{ formatTime(record.createdAt) }}</span>
+                  <span class="text-[10px] text-text-disabled">{{ formatTime(record.createdAt) }}</span>
                 </div>
-                <div class="flex items-center gap-4 text-[10px] text-zinc-500">
+                <div class="flex items-center gap-4 text-[10px] text-text-tertiary">
                   <span>{{ record.totalRecords }} 条记录</span>
                   <span>{{ formatSize(record.backupSize) }}</span>
                   <span>{{ record.triggeredBy === 'api' ? 'API 触发' : record.triggeredBy || '未知' }}</span>
                 </div>
                 <div v-if="record.methods && record.methods.length" class="flex gap-2 mt-2">
                   <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-emerald-500' : 'text-red-500'" class="text-[10px]">
-                    {{ m.method }} {{ m.success ? '✓' : '✗' }}<span v-if="!m.success && m.error" class="text-zinc-500 ml-0.5">({{ formatMethodError(m.error) }})</span>
+                    {{ m.method }} {{ m.success ? '✓' : '✗' }}<span v-if="!m.success && m.error" class="text-text-tertiary ml-0.5">({{ formatMethodError(m.error) }})</span>
                   </span>
                 </div>
               </div>
             </div>
             <div v-if="historyRecords.length > 0" class="flex justify-end pt-2">
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-zinc-500 hover:text-red-400 bg-zinc-950/50 border border-zinc-800 hover:border-red-500/20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-text-tertiary hover:text-red-400 bg-panel-surface-darkest/50 border border-panel-surface-dark hover:border-red-500/20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 :disabled="clearingHistory"
                 @click="clearHistory"
               >
@@ -309,8 +309,8 @@ crontab -e
         </div>
 
         <!-- 底部操作栏 -->
-        <div class="sticky bottom-0 bg-zinc-950/95 backdrop-blur-sm px-6 py-4 border-t border-zinc-800 rounded-b-3xl flex gap-3 justify-end">
-          <button class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest" @click="$emit('close')">
+        <div class="sticky bottom-0 bg-panel-surface-darkest/95 backdrop-blur-sm px-6 py-4 border-t border-panel-surface-dark rounded-b-3xl flex gap-3 justify-end">
+          <button class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest" @click="$emit('close')">
             {{ locale.cancel }}
           </button>
           <button class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed" :disabled="saving" @click="saveAll">

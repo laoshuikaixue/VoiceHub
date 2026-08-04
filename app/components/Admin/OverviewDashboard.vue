@@ -267,7 +267,7 @@ const statCards = computed(() => [
     label: locale.value.statCards?.todaySchedules || '今日排班',
     value: formatNumber(stats.value.todaySchedules),
     icon: Calendar,
-    color: 'zinc'
+    color: 'muted'
   },
   {
     label: locale.value.statCards?.weeklyRequests || '本周点歌',

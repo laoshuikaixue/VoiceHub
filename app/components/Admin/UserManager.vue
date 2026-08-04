@@ -262,7 +262,7 @@
                 <th class="px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-800/40">
+            <tbody class="divide-y divide-panel-surface-dark/40">
               <tr
                 v-for="user in users"
                 :key="user.id"
@@ -1008,7 +1008,7 @@
                         <th class="px-4 py-3 font-medium">{{ locale.importModal.gradeClass }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-900">
+                    <tbody class="divide-y divide-panel-surface-deepest">
                       <tr
                         v-for="(row, index) in previewData.slice(0, 5)"
                         :key="index"
@@ -1438,7 +1438,7 @@
                   >
                     <div v-for="log in statusLogs" :key="log.id" class="relative">
                       <div
-                        class="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-bg-secondary border-2 border-border-tertiary ring-4 ring-zinc-900"
+                        class="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-bg-secondary border-2 border-border-tertiary ring-4 ring-panel-surface-deepest"
                       />
                       <div
                         class="p-4 bg-bg-primary-50 border border-border-secondary-50 rounded-2xl space-y-3"

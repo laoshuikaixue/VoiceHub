@@ -81,7 +81,7 @@
                 v-model="searchQuery"
                 type="text"
                 :placeholder="locale.searchPlaceholder"
-                class="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-tertiary-60 border border-border-tertiary-50 text-text-primary text-sm placeholder-zinc-600 focus:outline-none focus:border-primary-50 focus:bg-bg-tertiary transition-all"
+                class="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-tertiary-60 border border-border-tertiary-50 text-text-primary text-sm placeholder-text-disabled focus:outline-none focus:border-primary-50 focus:bg-bg-tertiary transition-all"
               >
               <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
             </div>
