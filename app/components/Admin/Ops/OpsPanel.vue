@@ -20,7 +20,7 @@
       <div v-else-if="error" class="ops-panel__state ops-panel__state--error">
         <span>数据暂时无法读取</span><button type="button" @click="$emit('refresh')">重试</button>
       </div>
-      <div v-else-if="empty" class="ops-panel__state">暂无真实采集数据。</div>
+      <div v-else-if="empty" class="ops-panel__state">{{ emptyText }}</div>
       <slot v-else />
     </div>
   </section>
@@ -38,6 +38,7 @@ defineProps({
   pending: { type: Boolean, default: false },
   error: { type: Boolean, default: false },
   empty: { type: Boolean, default: false },
+  emptyText: { type: String, default: '暂无真实采集数据。' },
   stale: { type: Boolean, default: false },
   refreshable: { type: Boolean, default: true }
 })

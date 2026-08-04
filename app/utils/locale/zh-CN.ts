@@ -2003,6 +2003,10 @@ export const admin = {
       selectUser: '选择用户后展示请求时间线'
     },
     logCenter: {
+      metricsTitle: '日志指标',
+      metricsDetail: '当前日志查询结果摘要',
+      action: '操作',
+      copy: '复制',
       totalLogs: '日志总量',
       totalLogsDetail: '当前查询时间范围内的日志数量',
       errorLogs: '错误日志',

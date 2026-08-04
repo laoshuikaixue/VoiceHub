@@ -201,7 +201,7 @@
         </div>
       </OpsPanel>
 
-      <OpsPanel :title="locale.overview.recentErrorLogs" :subtitle="locale.overview.recentErrorLogsDetail" :status="performanceModuleStatus" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorRequests.length && !initialOperationsLoading" :refreshable="false">
+      <OpsPanel :title="locale.overview.recentErrorLogs" :subtitle="locale.overview.recentErrorLogsDetail" :status="logPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorRequests.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto">
           <table class="data-table min-w-[860px]">
             <thead>
@@ -300,26 +300,12 @@
             </div>
             <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(runtimeTimeline[0]?.at) }}</span><span>{{ formatChartTime(runtimeTimeline[runtimeTimeline.length - 1]?.at) }}</span></div>
           </div>
-          <div v-else class="analysis-chart-placeholder"><span>尚未采集 {{ panel.title }} 历史数据</span></div>
+          <div v-else class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <article class="panel xl:col-span-5">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">{{ locale.server.healthScore }}</h3>
-              <p class="panel-description">{{ locale.server.healthScoreDetail }}</p>
-            </div>
-            <span class="status-badge">{{ locale.health.waiting }}</span>
-          </div>
-          <div class="server-health-layout">
-            <div class="health-score-ring" :class="`health-score-ring--${healthScoreTone}`"><strong>{{ healthScore }}</strong><span>{{ locale.overview.healthScore }}</span></div>
-            <dl class="server-health-details">
-              <div v-for="item in serverHealthDetails" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
-            </dl>
-          </div>
-        </article>
+        <OpsPanel class="xl:col-span-5" :title="locale.server.healthScore" subtitle="后端当前未提供服务器健康评分字段。" :status="moduleFetchErrors.metrics ? 'error' : 'unknown'" updated-at="未采集" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" empty-text="后端未提供服务器健康评分数据。" :refreshable="false" @refresh="loadOperationsData" />
 
         <OpsPanel class="xl:col-span-7" :title="locale.server.runtime" :subtitle="locale.server.runtimeEnvironmentDetail" :status="infraCombinedStatus" :updated-at="infraCombinedUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.system || moduleFetchErrors.metrics" :empty="!systemSnapshot && !runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="detail-grid">
@@ -376,25 +362,25 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.queryTrend }}</h3><p class="panel-description">{{ locale.database.queryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.connectionTrend }}</h3><p class="panel-description">{{ locale.database.connectionTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.database.slowQueryTrend }}</h3><p class="panel-description">{{ locale.database.slowQueryTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>尚未采集慢 SQL 历史数据</span></div>
+          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
         <OpsPanel :title="locale.database.slowQueries" :subtitle="locale.database.slowQueriesDetail" :status="databaseSlowQueriesPanelStatus" :updated-at="databaseDiagnosticsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!databaseDiagnostics?.slowQueries?.available || !slowQueryRows.length" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[1040px]">
               <thead><tr><th>{{ locale.database.queryFingerprint }}</th><th>{{ locale.database.callerRoute }}</th><th>{{ locale.database.executions }}</th><th>{{ locale.database.averageDuration }}</th><th>{{ locale.database.maximumDuration }}</th><th>{{ locale.overview.lastChecked }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in slowQueryRows" :key="item.query_id"><td class="max-w-[300px] truncate font-mono">{{ item.query }}</td><td>--</td><td>{{ item.calls }}</td><td>{{ item.average_duration_ms }} ms</td><td>{{ item.maximum_duration_ms }} ms</td><td>{{ formatTimestamp(databaseDiagnostics?.collectedAt) }}</td><td>--</td><td>--</td></tr>
+                <tr v-for="item in slowQueryRows" :key="item.query_id"><td class="max-w-[300px] truncate font-mono">{{ item.query }}</td><td>--</td><td>{{ item.calls }}</td><td>{{ formatMilliseconds(item.average_duration_ms) }}</td><td>{{ formatMilliseconds(item.maximum_duration_ms) }}</td><td>{{ formatTimestamp(databaseDiagnostics?.collectedAt) }}</td><td>--</td><td>--</td></tr>
                 <tr v-if="!slowQueryRows.length"><td colspan="8" class="empty-cell">{{ databaseDiagnostics?.slowQueries?.available === false ? 'N/A' : locale.noData }}</td></tr>
               </tbody>
             </table>
@@ -422,7 +408,7 @@
             <table class="data-table min-w-[680px]">
               <thead><tr><th>{{ locale.server.tableName }}</th><th>{{ locale.database.rowCount }} (估算)</th><th>{{ locale.database.tableSize }}</th><th>{{ locale.database.indexSize }}</th><th>{{ locale.database.bloatRate }}</th><th>{{ locale.database.lastWrite }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio != null ? `${item.dead_row_ratio}%` : 'N/A' }}</td><td>N/A</td></tr>
+                <tr v-for="item in databaseTableRows" :key="item.table_name"><td>{{ item.table_name }}</td><td>{{ item.live_rows ?? 'N/A' }}</td><td>{{ formatBytes(item.total_bytes) }}</td><td>{{ formatBytes(item.index_bytes) }}</td><td>{{ item.dead_row_ratio != null ? formatPercent(item.dead_row_ratio) : 'N/A' }}</td><td>N/A</td></tr>
                 <tr v-if="!databaseTableRows.length"><td colspan="6" class="empty-cell">{{ databaseDiagnostics?.tables?.available === false ? 'N/A' : locale.noData }}</td></tr>
               </tbody>
             </table>
@@ -435,32 +421,28 @@
         <Icon name="server" :size="16" />
       </section>
 
-      <section class="metric-grid">
-        <article v-for="item in cacheMetrics" :key="item.label" class="metric-card">
-          <div class="metric-card__top">
-            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
-            <span class="metric-label">{{ item.label }}</span>
+      <OpsPanel :title="locale.cache.ready" :subtitle="locale.database.redisDetail" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="redisPanelEmpty && !initialOperationsLoading" empty-text="Redis 未配置，暂无可采集数据。" :refreshable="false" @refresh="loadOperationsData">
+        <section class="ops-metric-grid">
+          <div v-for="item in cacheMetrics" :key="item.label" class="ops-metric-item">
+            <div class="ops-metric-item__head"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="ops-metric-item__label">{{ item.label }}</span></div>
+            <strong class="ops-metric-item__value">{{ item.value || '--' }}</strong>
+            <p class="ops-metric-item__detail">{{ item.detail }}</p>
           </div>
-          <strong class="metric-value">{{ item.value || '--' }}</strong>
-          <p class="metric-detail">{{ item.detail }}</p>
-        </article>
-      </section>
+        </section>
+      </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.cache.connection }}</h3></div>
+        <OpsPanel :title="locale.cache.connection" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="redisPanelEmpty && !initialOperationsLoading" empty-text="Redis 未配置，暂无可采集数据。" :refreshable="false" @refresh="loadOperationsData">
           <dl class="detail-grid">
             <div v-for="item in cacheDetails" :key="item"><dt>{{ item }}</dt><dd>{{ cacheDetailValue(item) }}</dd></div>
           </dl>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><h3 class="panel-title">{{ locale.cache.note }}</h3></div>
+        </OpsPanel>
+        <OpsPanel :title="locale.cache.note" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="redisPanelEmpty && !initialOperationsLoading" empty-text="Redis 未配置，暂无可采集数据。" :refreshable="false" @refresh="loadOperationsData">
           <p class="panel-copy">{{ locale.cache.description || 'Redis 用于验证码、限流和短期状态缓存；当前页面展示连接状态、命中率、内存和淘汰等可采集指标。未配置 Redis 时不会视为系统故障。' }}</p>
-        </article>
+        </OpsPanel>
       </section>
 
-      <section class="panel">
-        <div class="panel-header"><h3 class="panel-title">{{ locale.cache.usageScope }}</h3></div>
+      <OpsPanel :title="locale.cache.usageScope" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="redisPanelEmpty && !initialOperationsLoading" empty-text="Redis 未配置，暂无可采集数据。" :refreshable="false" @refresh="loadOperationsData">
         <div class="scope-grid">
           <div v-for="item in cacheUsageScopes" :key="item.label" class="scope-row">
             <span class="service-row__icon"><Icon :name="item.icon" :size="15" /></span>
@@ -470,20 +452,16 @@
             </div>
           </div>
         </div>
-      </section>
+      </OpsPanel>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <div><h3 class="panel-title">{{ locale.cache.commandMetrics }}</h3><p class="panel-description">{{ locale.cache.commandMetricsDetail }}</p></div>
-          <span class="item-count">{{ locale.itemCount }} --</span>
-        </div>
+      <OpsPanel :title="locale.cache.commandMetrics" :subtitle="locale.cache.commandMetricsDetail" :status="redisPanelStatus" :updated-at="redisUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :empty-text="redisPanelEmpty ? 'Redis 未配置，暂无可采集数据。' : '暂无真实采集数据。'" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto">
           <table class="data-table min-w-[680px]">
             <thead><tr><th>{{ locale.cache.command }}</th><th>{{ locale.cache.calls }}</th><th>P50</th><th>P99</th><th>{{ locale.cache.commandErrors }}</th></tr></thead>
             <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
           </table>
         </div>
-      </section>
+      </OpsPanel>
     </template>
 
     <template v-else-if="activeGroup === 'business'">
@@ -516,7 +494,7 @@
             </div>
             <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(runtimeTimeline[0]?.at) }}</span><span>{{ formatChartTime(runtimeTimeline[runtimeTimeline.length - 1]?.at) }}</span></div>
           </div>
-          <div v-else class="analysis-chart-placeholder"><span>{{ locale.noData }}</span></div>
+          <div v-else class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </OpsPanel>
       </section>
 
@@ -552,56 +530,28 @@
     </template>
 
     <template v-else-if="activeGroup === 'security'">
-      <section class="metric-grid">
-        <article v-for="item in auditMetrics" :key="item.label" class="metric-card">
-          <div class="metric-card__top">
-            <span class="metric-icon"><Icon :name="item.icon" :size="14" /></span>
-            <span class="metric-label">{{ item.label }}</span>
-          </div>
-          <strong class="metric-value">{{ item.value || 'N/A' }}</strong>
-          <p class="metric-detail">{{ item.detail }}</p>
-        </article>
-      </section>
+      <OpsPanel title="风险事件摘要" subtitle="风险事件处置统计尚无独立采集来源。" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <article class="panel xl:col-span-7">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">当前活跃风险</h3>
-              <p class="panel-description">只展示需要立即关注的认证、验证码和限流信号。</p>
-            </div>
-            <span class="risk-badge">当前生效</span>
-          </div>
+        <OpsPanel class="xl:col-span-7" title="当前活跃风险" subtitle="优先展示当前采集窗口内需要关注的认证、验证码和限流信号。" :status="securityModuleStatus" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="risk-distribution">
             <div class="risk-total">
               <span class="risk-total__icon"><Icon name="warning" :size="18" /></span>
-              <strong>{{ activeRiskCount }}</strong>
-              <p>当前活跃风险</p>
+              <strong>{{ activeRiskCount || '未发现风险' }}</strong>
+              <p>{{ activeRiskCount ? '当前活跃风险信号' : '当前采集窗口内未发现风险' }}</p>
             </div>
             <div class="risk-levels">
-              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--critical" />5xx 服务错误</span><strong>{{ runtimeHttpMetrics?.recent5xx || 0 }}</strong></div>
-              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--high" />429 限流触发</span><strong>{{ runtimeHttpMetrics?.status429 || 0 }}</strong></div>
-              <div class="risk-level-row"><span class="risk-level-name"><i class="risk-tone--medium" />验证码拦截</span><strong>{{ turnstileMetrics?.upstreamFailures || 0 }}</strong></div>
+              <p v-if="!prioritizedSecurityRiskRows.length" class="panel-copy py-6">未发现风险</p>
+              <div v-for="item in prioritizedSecurityRiskRows" :key="item.label" class="risk-level-row">
+                <span class="risk-level-name"><i :class="`dependency-status-dot--${item.status}`" />{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
             </div>
           </div>
           <p class="panel-copy mt-4">风险计数来自当前 5 分钟采集窗口，不进行复杂风险评分。</p>
-        </article>
+        </OpsPanel>
 
-        <article class="panel overflow-hidden xl:col-span-5">
-          <div class="panel-header">
-            <div>
-              <h3 class="panel-title">异常行为账户</h3>
-              <p class="panel-description">按用户维度识别短时刷歌、刷票和投稿限额触发。</p>
-            </div>
-            <span class="item-count">{{ locale.itemCount }} --</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="data-table min-w-[620px]">
-              <thead><tr><th>{{ locale.audit.relatedUser }}</th><th>限额触发</th><th>点歌/投票请求</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
-              <tbody><tr><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-            </table>
-          </div>
-        </article>
+        <OpsPanel class="xl:col-span-5" title="异常行为账户" subtitle="按用户维度识别短时刷歌、刷票和投稿限额触发。" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
       </section>
 
       <section class="subsection-heading">
@@ -609,82 +559,22 @@
         <Icon name="warning" :size="16" />
       </section>
 
-      <section class="metric-grid">
-        <article v-for="item in securitySignalMetrics" :key="item.label" class="metric-card">
-          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-          <strong class="metric-value">{{ securityMetricValue(item.label) }}</strong>
-          <p class="metric-detail">{{ item.detail }}</p>
-        </article>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.audit.signalRate }}</h3><p class="panel-description">{{ locale.audit.signalRateDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-        <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 10" :key="index" /></div><span>{{ locale.noData }}</span></div>
-      </section>
-
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <div>
-            <h3 class="panel-title">{{ locale.audit.recentHighRiskEvents }}</h3>
-            <p class="panel-description">{{ locale.audit.recentHighRiskEventsDetail }}</p>
+      <OpsPanel :title="locale.audit.securitySignals" :subtitle="locale.audit.securitySignalsDetail" :status="securitySignalsPanelStatus" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <dl class="server-resource-list">
+          <div v-for="item in prioritizedSecuritySignalMetrics" :key="item.label">
+            <dt>{{ item.label }}<small class="block">{{ item.detail }}</small></dt>
+            <dd>{{ securityMetricValue(item.label) }}</dd>
           </div>
-          <span class="risk-badge">{{ locale.audit.highRisk }}</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="data-table min-w-[880px]">
-            <thead><tr><th>{{ locale.audit.eventTitle }}</th><th>{{ locale.audit.riskLevel }}</th><th>{{ locale.audit.riskScore }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.triggerCount }}</th><th>{{ locale.audit.lastTriggered }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
-            <tbody><tr><td colspan="7" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-          </table>
-        </div>
-      </section>
+        </dl>
+      </OpsPanel>
 
-      <section class="panel audit-events overflow-hidden">
-        <div class="panel-header audit-events__header">
-          <div>
-            <h3 class="panel-title">{{ locale.audit.eventList }}</h3>
-            <p class="panel-description">{{ locale.audit.eventListDetail }}</p>
-          </div>
-          <span class="item-count">{{ locale.itemCount }} --</span>
-        </div>
-        <div class="audit-filters">
-          <label class="filter-field filter-field--wide">
-            <Icon name="search" :size="13" />
-            <input type="text" :placeholder="locale.audit.keywordFilter" disabled>
-          </label>
-          <button type="button" class="filter-field" disabled><span>{{ locale.audit.allRiskLevels }}</span><Icon name="chevron-down" :size="13" /></button>
-          <button type="button" class="filter-field" disabled><span>{{ locale.audit.allHandlingStatuses }}</span><Icon name="chevron-down" :size="13" /></button>
-          <button type="button" class="filter-action" disabled><Icon name="search" :size="13" />{{ locale.audit.query }}</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="data-table min-w-[1120px]">
-            <thead>
-              <tr>
-                <th>{{ locale.audit.eventId }}</th>
-                <th>{{ locale.audit.eventTitle }}</th>
-                <th>{{ locale.audit.riskLevel }}</th>
-                <th>{{ locale.audit.handlingStatus }}</th>
-                <th>{{ locale.audit.riskScore }}</th>
-                <th>{{ locale.audit.relatedUser }}</th>
-                <th>{{ locale.audit.sourceIp }}</th>
-                <th>{{ locale.audit.triggerCount }}</th>
-                <th>{{ locale.audit.lastTriggered }}</th>
-                <th>{{ locale.audit.securityAction }}</th>
-              </tr>
-            </thead>
-            <tbody><tr><td colspan="10" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-          </table>
-        </div>
-      </section>
+      <OpsPanel :title="locale.audit.signalRate" :subtitle="locale.audit.signalRateDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.audit.ipBehaviorTimeline }}</h3><p class="panel-description">{{ locale.audit.ipBehaviorTimelineDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
-        <div class="overflow-x-auto">
-          <table class="data-table min-w-[920px]">
-            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.audit.sourceIp }}</th><th>{{ locale.audit.matchedRule }}</th><th>{{ locale.audit.relatedUser }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.audit.securityAction }}</th></tr></thead>
-            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.noData }}</td></tr></tbody>
-          </table>
-        </div>
-      </section>
+      <OpsPanel :title="locale.audit.recentHighRiskEvents" :subtitle="locale.audit.recentHighRiskEventsDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+
+      <OpsPanel :title="locale.audit.eventList" :subtitle="locale.audit.eventListDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+
+      <OpsPanel :title="locale.audit.ipBehaviorTimeline" :subtitle="locale.audit.ipBehaviorTimelineDetail" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
     </template>
 
     <template v-else-if="activeGroup === 'operation-logs'">
@@ -782,14 +672,7 @@
     </template>
 
     <template v-else-if="activeGroup === 'debug'">
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <div>
-            <h3 class="panel-title">{{ locale.debug.requestSearch }}</h3>
-            <p class="panel-description">{{ locale.debug.requestSearchDetail }}</p>
-          </div>
-          <span class="status-badge">{{ locale.debug.allPanelsLinked }}</span>
-        </div>
+      <OpsPanel :title="locale.debug.requestSearch" :subtitle="locale.debug.requestSearchDetail" :status="runtimeMetrics ? 'ok' : 'unknown'" :updated-at="diagnosticMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="false" :refreshable="Boolean(debugRequestId) && !diagnosticLoading" @refresh="openRequestDiagnosis(debugRequestId)">
         <form class="diagnostic-search-grid" @submit.prevent="openRequestDiagnosis(debugRequestId)">
           <label class="filter-field filter-field--wide">
             <Icon name="search" :size="13" />
@@ -800,63 +683,49 @@
           <button type="button" class="filter-field" disabled><span>{{ locale.debug.serverErrors }}</span><Icon name="chevron-down" :size="13" /></button>
           <label class="filter-field"><span>{{ locale.debug.minimumDuration }}</span><strong>--</strong></label>
           <button type="button" class="filter-field" disabled><span>{{ locale.filters.lastHour }}</span><Icon name="chevron-down" :size="13" /></button>
-          <button type="submit" class="filter-action" :disabled="!debugRequestId"><Icon name="search" :size="13" />{{ locale.debug.diagnose }}</button>
+          <button type="submit" class="filter-action" :disabled="!debugRequestId || diagnosticLoading"><Icon name="search" :size="13" />{{ diagnosticLoading ? '正在诊断' : locale.debug.diagnose }}</button>
         </form>
-      </section>
+      </OpsPanel>
 
       <section class="subsection-heading">
         <div><h3>{{ locale.debug.singleRequestTrace }}</h3><p>{{ locale.debug.singleRequestTraceDetail }}</p></div>
         <Icon name="layers" :size="16" />
       </section>
 
-      <section class="diagnostic-summary-grid">
-        <article v-for="item in requestSummaryItems" :key="item.label" class="metric-card diagnostic-summary-card">
-          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-          <strong class="metric-value">{{ item.value || 'N/A' }}</strong>
-          <p class="metric-detail">{{ item.detail }}</p>
-        </article>
-      </section>
-
-      <div class="diagnosis-result diagnosis-result--banner">
-        <span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span><strong>{{ selectedDebugRequest ? `${selectedDebugRequest.status} ${selectedDebugRequest.durationMs} ms` : 'N/A' }}</strong>
-      </div>
-
-      <section class="panel">
-        <div class="panel-header">
-          <div><h3 class="panel-title">{{ locale.debug.traceWaterfall }}</h3><p class="panel-description">{{ locale.debug.traceWaterfallDetail }}</p></div>
-          <span class="status-badge">{{ locale.debug.traceWaterfallMode }}</span>
-        </div>
-        <div v-if="traceSpans.length" class="trace-waterfall">
-          <div v-for="span in traceSpans" :key="span.id" class="trace-waterfall__row" :style="{ paddingLeft: `${span.depth * 14}px` }">
-            <span class="trace-waterfall__label">{{ span.module }}</span>
-            <div class="trace-waterfall__track">
-              <div class="trace-waterfall__bar" :class="`trace-waterfall__bar--${span.status}`" :style="waterfallBarStyle(span)">
-                <span>{{ span.durationMs }}ms</span>
-              </div>
-            </div>
+      <OpsPanel :title="locale.debug.singleRequestTrace" :subtitle="locale.debug.singleRequestTraceDetail" :status="diagnosticPanelStatus" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="diagnosticResultEmpty && !diagnosticLoading" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)">
+        <section class="ops-metric-grid">
+          <div v-for="item in requestSummaryItems" :key="item.label" class="ops-metric-item">
+            <div class="ops-metric-item__head"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="ops-metric-item__label">{{ item.label }}</span></div>
+            <strong class="ops-metric-item__value">{{ item.value || 'N/A' }}</strong>
+            <p class="ops-metric-item__detail">{{ item.detail }}</p>
           </div>
-        </div>
-        <div v-else class="trace-waterfall__empty">
-          <Icon name="activity" :size="16" />
-          <p>{{ debugRequestId ? locale.debug.traceNotCollected : locale.debug.traceEnterRequestId }}</p>
-        </div>
-      </section>
+        </section>
+      </OpsPanel>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header">
-          <div><h3 class="panel-title">{{ locale.debug.requestLogChain }}</h3><p class="panel-description">{{ locale.debug.requestLogChainDetail }}</p></div>
-          <span class="item-count">{{ locale.itemCount }} --</span>
+      <OpsPanel :title="locale.debug.diagnosisResult" :subtitle="locale.debug.singleRequestTraceDetail" :status="diagnosticPanelStatus" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="diagnosticResultEmpty && !diagnosticLoading" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)">
+        <div class="diagnosis-result diagnosis-result--banner">
+          <span><Icon name="activity" :size="14" />{{ locale.debug.diagnosisResult }}</span>
+          <strong>{{ selectedDebugRequest ? `${selectedDebugRequest.status} ${formatMilliseconds(selectedDebugRequest.durationMs)}` : 'N/A' }}</strong>
+          <button type="button" class="table-action" :disabled="!debugRequestId" @click="copyDiagnosticRequestId">复制 Request ID</button>
         </div>
+        <details class="diagnostic-raw-details">
+          <summary>原始 JSON / 诊断详情</summary>
+          <pre>{{ diagnosticRawJson }}</pre>
+        </details>
+      </OpsPanel>
+
+      <OpsPanel :title="locale.debug.traceWaterfall" :subtitle="debugRequestId ? locale.debug.traceNotCollected : locale.debug.traceEnterRequestId" status="unknown" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="!diagnosticLoading" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)" />
+
+      <OpsPanel :title="locale.debug.requestLogChain" :subtitle="locale.debug.requestLogChainDetail" :status="diagnosticPanelStatus" :updated-at="diagnosticUpdatedAtText" :pending="diagnosticLoading" :error="diagnosticError" :empty="!diagnosticLogEntries.length && !diagnosticLoading" :refreshable="false" @refresh="openRequestDiagnosis(debugRequestId)">
         <div class="overflow-x-auto">
           <table class="data-table min-w-[960px]">
             <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.debug.elapsed }}</th><th>{{ locale.logs.level }}</th><th>{{ locale.debug.eventName }}</th><th>{{ locale.logs.scope }}</th><th>{{ locale.debug.structuredFields }}</th></tr></thead>
             <tbody>
-              <tr v-for="item in diagnosticLogEntries" :key="`${item.at}-${item.requestId}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ item.durationMs }} ms</td><td>{{ item.level }}</td><td>{{ item.route }}</td><td>server</td><td>status={{ item.status }} requestId={{ item.requestId || 'N/A' }}</td></tr>
-              <tr v-if="!diagnosticLogEntries.length"><td colspan="6" class="empty-cell">{{ locale.debug.enterRequestId }} <DrilldownLink :label="locale.debug.openLogCenter" @activate="activeGroup = 'logs'" /></td></tr>
+              <tr v-for="item in diagnosticLogEntries" :key="`${item.at}-${item.requestId}`"><td>{{ formatTimestamp(item.at) }}</td><td>{{ formatMilliseconds(item.durationMs) }}</td><td>{{ item.level }}</td><td>{{ item.route }}</td><td>server</td><td>status={{ item.status }} requestId={{ item.requestId || 'N/A' }}</td></tr>
             </tbody>
           </table>
         </div>
-      </section>
+      </OpsPanel>
 
       <section class="subsection-heading">
         <div><h3>{{ locale.debug.errorAggregation }}</h3><p>{{ locale.debug.errorAggregationDetail }}</p></div>
@@ -864,22 +733,20 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel overflow-hidden">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.topErrors }}</h3><p class="panel-description">{{ locale.debug.topErrorsDetail }}</p></div><span class="item-count">Top 10</span></div>
+        <OpsPanel :title="locale.debug.topErrors" :subtitle="locale.debug.topErrorsDetail" :status="errorAggregationPanelStatus" :updated-at="diagnosticMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentErrorRequests.length && !sentryIssues.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[640px]">
               <thead><tr><th>{{ locale.debug.errorMessage }}</th><th>{{ locale.debug.occurrences }}</th><th>{{ locale.debug.affectedUsers }}</th><th>{{ locale.debug.sampleRequestId }}</th><th>{{ locale.debug.lastOccurred }}</th></tr></thead>
               <tbody>
                 <tr v-for="item in recentErrorRequests" :key="`${item.at}-${item.requestId || item.route}`"><td>{{ item.status >= 500 ? 'HTTP server error' : 'HTTP client error' }}</td><td>1</td><td>N/A</td><td class="font-mono">{{ item.requestId || 'N/A' }}</td><td>{{ formatTimestamp(item.at) }}</td></tr>
                 <tr v-for="item in sentryIssues" :key="`sentry-${item.id}`"><td>{{ item.title }}</td><td>{{ item.count }}</td><td>N/A</td><td class="font-mono">Sentry #{{ item.id }}</td><td>{{ formatTimestamp(item.lastSeen) }}</td></tr>
-                <tr v-if="!recentErrorRequests.length && !sentryIssues.length"><td colspan="5" class="empty-cell">{{ locale.noData }}</td></tr>
               </tbody>
             </table>
           </div>
-        </article>
+        </OpsPanel>
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.errorTrend }}</h3><p class="panel-description">{{ locale.debug.errorTrendDetail }}</p></div></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
+          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
       </section>
 
@@ -889,22 +756,19 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel overflow-hidden">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.topSlowRequests }}</h3><p class="panel-description">基于当前已采集的异常与持久化请求样本，不伪造历史趋势。</p></div><span class="item-count">Top {{ recentDiagnosticRequests.length }}</span></div>
+        <OpsPanel :title="locale.debug.topSlowRequests" subtitle="基于当前已采集的异常与持久化请求样本，不伪造历史趋势。" :status="slowRequestsPanelStatus" :updated-at="diagnosticMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!recentDiagnosticRequests.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="overflow-x-auto">
             <table class="data-table min-w-[760px]">
               <thead><tr><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.duration }}</th><th>{{ locale.logs.time }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.drilldown }}</th></tr></thead>
               <tbody>
-                <tr v-for="item in recentDiagnosticRequests" :key="`${item.at}-${item.requestId || item.route}`" :class="{ 'request-row--error': item.status >= 500 }"><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route || '未知路由' }}</td><td>{{ item.status ?? '—' }}</td><td><span class="duration-value" :class="durationTone(item.durationMs)">{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无耗时' }}</span></td><td>{{ formatTimestamp(item.at) }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
-                <tr v-if="!recentDiagnosticRequests.length"><td colspan="7" class="empty-cell">暂无异常或慢请求样本</td></tr>
+                <tr v-for="item in recentDiagnosticRequests" :key="`${item.at}-${item.requestId || item.route}`" :class="{ 'request-row--error': item.status >= 500 }"><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route || '未知路由' }}</td><td>{{ item.status ?? '—' }}</td><td><span class="duration-value" :class="durationTone(item.durationMs)">{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无耗时' }}</span></td><td>{{ formatTimestamp(item.at) }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><button type="button" class="table-action" :disabled="!item.requestId" @click="openRequestDiagnosis(item.requestId)">{{ locale.debug.drilldown }}</button></td></tr>
               </tbody>
             </table>
           </div>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.durationDistribution }}</h3><p class="panel-description">{{ locale.debug.durationDistributionDetail }}</p></div></div>
-          <div class="diagnostic-duration-summary"><strong>{{ runtimeHttpMetrics?.p95Ms != null ? `${runtimeHttpMetrics.p95Ms} ms` : '暂无 P95 数据' }}</strong><span>近 5 分钟 P95 响应时间</span><p>当前数据源未提供完整耗时分桶，页面不绘制伪造直方图。</p></div>
-        </article>
+        </OpsPanel>
+        <OpsPanel :title="locale.debug.durationDistribution" :subtitle="locale.debug.durationDistributionDetail" :status="performanceModuleStatus" :updated-at="diagnosticMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <div class="diagnostic-duration-summary"><strong>{{ runtimeHttpMetrics?.p95Ms != null ? formatMilliseconds(runtimeHttpMetrics.p95Ms) : '暂无 P95 数据' }}</strong><span>近 5 分钟 P95 响应时间</span><p>当前数据源未提供完整耗时分桶，页面不绘制伪造直方图。</p></div>
+        </OpsPanel>
       </section>
 
       <section class="subsection-heading">
@@ -912,27 +776,21 @@
         <Icon name="user" :size="16" />
       </section>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.debug.userRequestTimeline }}</h3><p class="panel-description">{{ locale.debug.userRequestTimelineDetail }}</p></div><span class="item-count">{{ locale.itemCount }} --</span></div>
-        <div class="overflow-x-auto">
-          <table class="data-table min-w-[820px]">
-            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>{{ locale.debug.duration }}</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.debug.eventName }}</th></tr></thead>
-            <tbody><tr><td colspan="6" class="empty-cell">{{ locale.debug.selectUser }}</td></tr></tbody>
-          </table>
-        </div>
+      <section class="ops-empty-panel">
+        <h3>{{ locale.debug.userRequestTimeline }}</h3>
+        <p>{{ locale.debug.userRequestTimelineDetail }}</p>
+        <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
       </section>
     </template>
 
     <template v-else-if="activeGroup === 'logs'">
-      <section class="metric-grid">
-        <article v-for="item in logCenterMetrics" :key="item.label" class="metric-card">
-          <div class="metric-card__top"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span class="metric-label">{{ item.label }}</span></div>
-          <strong class="metric-value">{{ item.value || 'N/A' }}</strong><p class="metric-detail">{{ item.detail }}</p>
-        </article>
-      </section>
+      <OpsPanel :title="locale.logCenter.metricsTitle" :subtitle="locale.logCenter.metricsDetail" :status="logPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!logSourceEntries.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+        <dl class="detail-grid">
+          <div v-for="item in logCenterMetrics" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div>
+        </dl>
+      </OpsPanel>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.structuredQuery }}</h3><p class="panel-description">{{ locale.logCenter.structuredQueryDetail }}</p></div><span class="status-badge">{{ locale.logCenter.fullTextSearch }}</span></div>
+      <OpsPanel :title="locale.logCenter.structuredQuery" :subtitle="locale.logCenter.structuredQueryDetail" :status="logPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <div class="log-search-grid">
           <label class="filter-field filter-field--wide"><Icon name="search" :size="13" /><input v-model.trim="logKeyword" type="text" :placeholder="locale.logCenter.keywordPlaceholder"></label>
           <label class="filter-field filter-field--wide"><Icon name="layers" :size="13" /><input v-model.trim="logRequestId" type="text" :placeholder="locale.logCenter.requestIdPlaceholder"></label>
@@ -946,35 +804,27 @@
           <button type="button" class="filter-field" disabled><span>{{ locale.filters.lastHour }}</span><Icon name="chevron-down" :size="13" /></button>
           <button type="button" class="filter-action" @click="loadOperationsData()"><Icon name="search" :size="13" />{{ locale.logCenter.query }}</button>
         </div>
-      </section>
+      </OpsPanel>
 
-      <section class="panel overflow-hidden">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logResults }}</h3><p class="panel-description">{{ locale.logCenter.logResultsDetail }}</p></div><span class="item-count">{{ locale.logCount }} {{ logEntries.length }}</span></div>
+      <OpsPanel :title="locale.logCenter.logResults" :subtitle="`${locale.logCenter.logResultsDetail} · ${locale.logCount} ${logEntries.length}`" :status="logPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!logEntries.length && !initialOperationsLoading" :empty-text="logResultsEmptyText" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto">
-          <table class="data-table min-w-[1260px]">
-            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>耗时</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.logs.message }}</th></tr></thead>
+          <table class="data-table min-w-[1320px]">
+            <thead><tr><th>{{ locale.logs.time }}</th><th>{{ locale.logs.level }}</th><th>Method</th><th>{{ locale.application.route }}</th><th>{{ locale.debug.statusCode }}</th><th>耗时</th><th>{{ locale.overview.logRequestId }}</th><th>{{ locale.logs.message }}</th><th>{{ locale.logCenter.action }}</th></tr></thead>
           <tbody>
-            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`" class="log-result-row" @click="toggleLogDetails(item)"><td>{{ formatTimestamp(item.at) }}</td><td><span class="log-level" :class="`log-level--${item.level}`">{{ item.level === 'error' ? '错误' : item.level === 'warn' ? '警告' : '信息' }}</span></td><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无数据' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td>{{ redactSensitiveText(item.message) }}</td></tr>
-            <template v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}-details`"><tr v-if="isLogExpanded(item)" class="log-detail-row"><td colspan="8"><div class="log-detail-grid"><div><strong>结构化字段</strong><dl><dt>时间</dt><dd>{{ formatTimestamp(item.at) }}</dd><dt>路由</dt><dd>{{ item.route }}</dd><dt>状态码</dt><dd>{{ item.status }}</dd><dt>耗时</dt><dd>{{ item.durationMs != null ? `${item.durationMs} ms` : '暂无数据' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ item.requestId || '暂无' }}</dd></dl></div><pre>{{ formatLogDetails(item) }}</pre></div></td></tr></template>
-            <tr v-if="!logEntries.length"><td colspan="8" class="empty-cell">{{ locale.noData }} <DrilldownLink :label="locale.goToDiagnosis" @activate="activeGroup = 'debug'" /></td></tr>
+            <tr v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}`" class="log-result-row" @click="toggleLogDetails(item)"><td>{{ formatTimestamp(item.at) }}</td><td><span class="log-level" :class="`log-level--${item.level}`">{{ item.level === 'error' ? '错误' : item.level === 'warn' ? '警告' : '信息' }}</span></td><td>{{ item.method || 'HTTP' }}</td><td>{{ item.route }}</td><td>{{ item.status }}</td><td>{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无数据' }}</td><td class="font-mono">{{ item.requestId || '暂无' }}</td><td><span class="block max-w-[25rem] truncate" :title="redactSensitiveText(item.message)">{{ redactSensitiveText(item.message) }}</span></td><td><button type="button" class="table-action" @click.stop="copyLogEntry(item)">{{ locale.logCenter.copy }}</button></td></tr>
+            <template v-for="item in logEntries" :key="`${item.at}-${item.requestId || item.route}-details`"><tr v-if="isLogExpanded(item)" class="log-detail-row"><td colspan="9"><div class="log-detail-grid"><div><strong>结构化字段</strong><dl><dt>时间</dt><dd>{{ formatTimestamp(item.at) }}</dd><dt>路由</dt><dd>{{ item.route }}</dd><dt>状态码</dt><dd>{{ item.status }}</dd><dt>耗时</dt><dd>{{ item.durationMs != null ? formatMilliseconds(item.durationMs) : '暂无数据' }}</dd><dt>Request ID</dt><dd class="font-mono">{{ item.requestId || '暂无' }}</dd></dl></div><pre>{{ formatLogDetails(item) }}</pre></div></td></tr></template>
           </tbody>
           </table>
         </div>
-      </section>
+      </OpsPanel>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.logContext }}</h3><p class="panel-description">{{ locale.logCenter.logContextDetail }}</p></div></div>
+        <OpsPanel :title="locale.logCenter.logContext" :subtitle="locale.logCenter.logContextDetail" :status="logContextPanelStatus" :updated-at="logUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!selectedLogEntry && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="detail-grid">
             <div v-for="item in logContextFields" :key="item"><dt>{{ item }}</dt><dd>{{ logContextValue(item) }}</dd></div>
           </dl>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.logCenter.archiveSettings }}</h3><p class="panel-description">{{ locale.logCenter.archiveSettingsDetail }}</p></div></div>
-          <dl class="detail-grid">
-            <div v-for="item in logArchiveFields" :key="item"><dt>{{ item }}</dt><dd>{{ logArchiveValue(item) }}</dd></div>
-          </dl>
-        </article>
+        </OpsPanel>
+        <OpsPanel :title="locale.logCenter.archiveSettings" :subtitle="locale.logCenter.archiveSettingsDetail" status="unknown" updated-at="未采集" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
       </section>
     </template>
 
@@ -985,13 +835,11 @@
       </section>
 
       <section class="dependency-matrix">
-        <article v-for="item in dependencyHealthCards" :key="item.label" class="dependency-card" :class="`dependency-card--${dependencyCardStatus(item.label)}`">
-          <div class="dependency-card__header"><span class="metric-icon"><Icon :name="item.icon" :size="14" /></span><span>{{ item.label }}</span></div>
+        <OpsPanel v-for="item in dependencyHealthCards" :key="item.label" :title="item.label" :status="dependencyCardStatus(item.label)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencyCardEmpty(item.label) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="dependency-card__status"><i class="dependency-status-dot" :class="`dependency-status-dot--${dependencyCardStatus(item.label)}`" /><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
-          <p v-if="dependencySourceForLabel(item.label)" class="dependency-card__observed">最近观测：{{ lastUpdatedRelative }}</p>
           <p v-if="dependencyFailureReason(item.label)" class="dependency-card__failure">最近失败：{{ dependencyFailureReason(item.label) }}</p>
           <dl><div v-for="detail in item.details" :key="detail"><dt>{{ detail }}</dt><dd>{{ dependencyMetricValue(item.label, detail) }}</dd></div></dl>
-        </article>
+        </OpsPanel>
       </section>
 
       <section class="subsection-heading">
@@ -1001,7 +849,7 @@
 
       <section class="panel">
         <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.semanticFailureTrend }}</h3><p class="panel-description">{{ locale.dependencies.semanticFailureTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-        <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+        <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
       </section>
 
       <section class="subsection-heading">
@@ -1010,31 +858,24 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.p95Latency }}</h3><p class="panel-description">{{ locale.dependencies.p95LatencyDetail }}</p></div><span class="risk-badge">{{ locale.dependencies.latencyThreshold }}</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
-        </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.platformErrorRate }}</h3><p class="panel-description">{{ locale.dependencies.platformErrorRateDetail }}</p></div></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 5" :key="index" /></div><span>{{ locale.noData }}</span></div>
-        </article>
+        <OpsPanel :title="locale.dependencies.p95Latency" :subtitle="locale.dependencies.p95LatencyDetail" status="unknown" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
+        <OpsPanel :title="locale.dependencies.platformErrorRate" :subtitle="locale.dependencies.platformErrorRateDetail" status="unknown" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article class="panel">
           <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.callVolumeTrend }}</h3><p class="panel-description">{{ locale.dependencies.callVolumeTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="analysis-chart-placeholder"><div class="analysis-chart-grid"><i v-for="index in 8" :key="index" /></div><span>{{ locale.noData }}</span></div>
+          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
         </article>
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">当前调用健康度</h3><p class="panel-description">仅表示本实例当前采集周期的被动调用结果，不代表 24 小时可用性。</p></div><span class="status-badge">当前周期</span></div>
+        <OpsPanel title="当前调用健康度" subtitle="仅表示本实例当前采集周期的被动调用结果，不代表 24 小时可用性。" :status="dependenciesModuleStatus" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!knownMusicSourceStatuses.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="dependency-uptime-list">
             <div v-for="row in dependencyUptimeRows" :key="row.source" class="dependency-uptime-row">
               <span class="dependency-uptime-row__label">{{ row.label }}</span>
-              <div class="uptime-strip"><i v-for="(slot, index) in row.slots" :key="`${row.source}-${index}`" :class="`uptime-strip__slot uptime-strip__slot--${slot}`" /></div>
+              <div class="uptime-strip"><i v-for="(slot, index) in row.slots" :key="`${row.source}-${index}`" :class="`uptime-strip__slot uptime-strip__slot--${slot}`" :data-tooltip="dependencySlotTooltip(row, index)" :title="dependencySlotTooltip(row, index)" :aria-label="dependencySlotTooltip(row, index)" /></div>
             </div>
           </div>
           <div class="uptime-strip__legend"><span>未采集调用时显示灰色</span><span>非长期可用性数据</span></div>
-        </article>
+        </OpsPanel>
       </section>
 
       <section class="subsection-heading">
@@ -1043,13 +884,11 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article v-for="panel in dependencyErrorPanels" :key="panel.title" class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div></div>
+        <OpsPanel v-for="panel in dependencyErrorPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="dependencySourceStatus(panel.source)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencySourceEmpty(panel.source) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="error-code-layout">
-            <div class="error-code-chart"><span>{{ locale.noData }}</span></div>
-            <dl class="error-code-legend"><div v-for="item in dependencyErrorCodes" :key="item"><dt>{{ item }}</dt><dd>--</dd></div></dl>
+            <dl class="error-code-legend"><div v-for="item in dependencyErrorCodes" :key="item"><dt>{{ item }}</dt><dd>{{ dependencyErrorCodeValue(panel.source, item) }}</dd></div></dl>
           </div>
-        </article>
+        </OpsPanel>
       </section>
 
       <section class="subsection-heading">
@@ -1058,22 +897,15 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article v-for="panel in dependencyProtectionPanels" :key="panel.title" class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="metric-icon"><Icon :name="panel.icon" :size="14" /></span></div>
+        <OpsPanel v-for="panel in dependencyProtectionPanels" :key="panel.title" :title="panel.title" :subtitle="panel.detail" :status="dependencyProtectionPanelStatus(panel)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencyProtectionPanelEmpty(panel) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <dl class="server-resource-list"><div v-for="item in panel.items" :key="item"><dt>{{ item }}</dt><dd>{{ dependencyProtectionValue(panel.title, item) }}</dd></div></dl>
-        </article>
+        </OpsPanel>
       </section>
     </template>
 
-    <section v-if="monitoringReferenceRows.length" class="panel overflow-hidden">
-      <div class="panel-header">
-        <div>
-          <h3 class="panel-title">{{ locale.references.title }}</h3>
-          <p class="panel-description">{{ locale.references.detail }}</p>
-        </div>
-        <span class="status-badge">{{ locale.references.referenceOnly }}</span>
-      </div>
-      <div class="overflow-x-auto">
+    <details v-if="monitoringReferenceRows.length" class="monitoring-reference">
+      <summary><span>{{ locale.references.title }}</span><small>{{ locale.references.detail }}</small></summary>
+      <div class="monitoring-reference__content overflow-x-auto">
         <table class="data-table min-w-[980px]">
           <thead>
             <tr>
@@ -1093,14 +925,13 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </details>
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
-import DrilldownLink from '~/components/Admin/DrilldownLink.vue'
 import OpsPanel from '~/components/Admin/Ops/OpsPanel.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
@@ -1112,6 +943,8 @@ const activeGroup = ref('overview')
 const globalRequestId = ref('')
 const debugRequestId = ref('')
 const diagnosticLoading = ref(false)
+const diagnosticError = ref(false)
+const diagnosticUpdatedAt = ref(null)
 const logKeyword = ref('')
 const logRequestId = ref('')
 const logLevelFilter = ref('all')
@@ -1160,13 +993,6 @@ const operationLogTargetTypeOptions = [
   { label: '数据库表', value: 'DATABASE_TABLE' }
 ]
 const operationLogResultOptions = [{ label: '全部结果', value: '' }, { label: '成功', value: 'SUCCESS' }, { label: '失败', value: 'FAILURE' }]
-const traceSpans = computed(() => {
-  const requestId = debugRequestId.value
-  const samples = operationsData.value?.metrics?.diagnostic?.entries || operationsData.value?.metrics?.metrics?.recentErrors || []
-  const request = samples.find((item) => item.requestId === requestId)
-  if (!request) return []
-  return [{ id: request.requestId, module: request.route, depth: 0, offsetMs: 0, durationMs: request.durationMs, status: request.status >= 500 ? 'error' : request.status >= 400 ? 'slow' : 'ok' }]
-})
 const operationsLoading = ref(true)
 const initialOperationsLoading = ref(true)
 const operationsError = ref(false)
@@ -1184,51 +1010,59 @@ const autoRefreshIntervalOptions = [
 const moduleFetchErrors = ref({ system: false, pool: false, performance: false, backups: false, metrics: false })
 const backupAccessState = ref('idle')
 const backupLastUpdated = ref(null)
+let operationsRequestInFlight = false
 
 const loadOperationsData = async () => {
+  if (operationsRequestInFlight) return
+  operationsRequestInFlight = true
   operationsLoading.value = true
   operationsError.value = false
 
-  const [statusResult, poolResult, performanceResult, backupResult, metricsResult] = await Promise.allSettled([
-    $fetch('/api/system/status'),
-    $fetch('/api/admin/database/pool-status'),
-    $fetch('/api/admin/database/performance'),
-    $fetch('/api/admin/backup/history'),
-    $fetch('/api/admin/operations/metrics')
-  ])
+  try {
+    const [statusResult, poolResult, performanceResult, backupResult, metricsResult] = await Promise.allSettled([
+      $fetch('/api/system/status'),
+      $fetch('/api/admin/database/pool-status'),
+      $fetch('/api/admin/database/performance'),
+      $fetch('/api/admin/backup/history'),
+      $fetch('/api/admin/operations/metrics')
+    ])
 
-  if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
-  if (poolResult.status === 'fulfilled') operationsData.value.pool = poolResult.value
-  if (performanceResult.status === 'fulfilled') operationsData.value.performance = performanceResult.value
-  if (backupResult.status === 'fulfilled') {
-    operationsData.value.backups = backupResult.value?.data || []
-    backupAccessState.value = 'ok'
-    backupLastUpdated.value = new Date()
-  } else {
-    const backupStatusCode = backupResult.reason?.statusCode || backupResult.reason?.status || backupResult.reason?.response?.status || backupResult.reason?.data?.statusCode
-    operationsData.value.backups = []
-    backupLastUpdated.value = null
-    backupAccessState.value = Number(backupStatusCode) === 403 ? 'forbidden' : 'error'
-  }
-  if (metricsResult.status === 'fulfilled') {
-    const metrics = metricsResult.value?.data || {}
-    operationsData.value.metrics = metrics
-    if (metrics.database?.pool) operationsData.value.pool = metrics.database.pool
-    if (metrics.database?.performance) operationsData.value.performance = metrics.database.performance
-  }
+    if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
+    if (poolResult.status === 'fulfilled') operationsData.value.pool = poolResult.value
+    if (performanceResult.status === 'fulfilled') operationsData.value.performance = performanceResult.value
+    if (backupResult.status === 'fulfilled') {
+      operationsData.value.backups = backupResult.value?.data || []
+      backupAccessState.value = 'ok'
+      backupLastUpdated.value = new Date()
+    } else {
+      const backupStatusCode = backupResult.reason?.statusCode || backupResult.reason?.status || backupResult.reason?.response?.status || backupResult.reason?.data?.statusCode
+      operationsData.value.backups = []
+      backupLastUpdated.value = null
+      backupAccessState.value = Number(backupStatusCode) === 403 ? 'forbidden' : 'error'
+    }
+    if (metricsResult.status === 'fulfilled') {
+      const metrics = metricsResult.value?.data || {}
+      const currentDiagnostic = operationsData.value.metrics?.diagnostic
+      operationsData.value.metrics = currentDiagnostic?.requestId ? { ...metrics, diagnostic: currentDiagnostic } : metrics
+      if (metrics.database?.pool) operationsData.value.pool = metrics.database.pool
+      if (metrics.database?.performance) operationsData.value.performance = metrics.database.performance
+    }
 
-  moduleFetchErrors.value = {
-    system: statusResult.status === 'rejected',
-    pool: poolResult.status === 'rejected',
-    performance: performanceResult.status === 'rejected',
-    backups: backupResult.status === 'rejected' && backupAccessState.value !== 'forbidden',
-    metrics: metricsResult.status === 'rejected'
-  }
+    moduleFetchErrors.value = {
+      system: statusResult.status === 'rejected',
+      pool: poolResult.status === 'rejected',
+      performance: performanceResult.status === 'rejected',
+      backups: backupResult.status === 'rejected' && backupAccessState.value !== 'forbidden',
+      metrics: metricsResult.status === 'rejected'
+    }
 
-  operationsError.value = statusResult.status === 'rejected'
-  operationsLastUpdated.value = new Date()
-  operationsLoading.value = false
-  initialOperationsLoading.value = false
+    operationsError.value = statusResult.status === 'rejected'
+    operationsLastUpdated.value = new Date()
+  } finally {
+    operationsLoading.value = false
+    initialOperationsLoading.value = false
+    operationsRequestInFlight = false
+  }
 }
 
 const operationLogErrorMessage = (error) => {
@@ -1305,8 +1139,10 @@ const formatOperationLogChanges = (changes) => changes && Object.keys(changes).l
 let operationsRefreshTimer = null
 let runtimeClockTimer = null
 const startAutoRefresh = () => {
-  if (operationsRefreshTimer || !autoRefreshEnabled.value) return
-  operationsRefreshTimer = window.setInterval(loadOperationsData, Number(autoRefreshInterval.value))
+  if (operationsRefreshTimer || !autoRefreshEnabled.value || document.hidden) return
+  operationsRefreshTimer = window.setInterval(() => {
+    if (!document.hidden) loadOperationsData()
+  }, Number(autoRefreshInterval.value))
 }
 const stopAutoRefresh = () => {
   if (!operationsRefreshTimer) return
@@ -1322,14 +1158,20 @@ const changeAutoRefreshInterval = () => {
   stopAutoRefresh()
   if (autoRefreshEnabled.value) startAutoRefresh()
 }
+const handleVisibilityChange = () => {
+  if (document.hidden) stopAutoRefresh()
+  else startAutoRefresh()
+}
 onMounted(() => {
   loadOperationsData()
   startAutoRefresh()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   runtimeClockTimer = window.setInterval(() => { runtimeNow.value = Date.now() }, 1000)
 })
 
 onBeforeUnmount(() => {
   stopAutoRefresh()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (runtimeClockTimer) window.clearInterval(runtimeClockTimer)
 })
 
@@ -1384,14 +1226,45 @@ const selectedDebugRequest = computed(() => {
   return recentErrorRequests.value.find((item) => item.requestId === debugRequestId.value) || null
 })
 const diagnosticLogEntries = computed(() => {
+  if (!diagnosticUpdatedAt.value) return []
   const entries = operationsData.value.metrics?.diagnostic?.entries || []
   if (entries.length) return entries.map((item) => ({ ...item, level: Number(item.status) >= 500 ? 'error' : 'warn' }))
   return selectedDebugRequest.value ? [selectedDebugRequest.value] : []
 })
+const diagnosticUpdatedAtText = computed(() => diagnosticUpdatedAt.value ? formatTimestamp(diagnosticUpdatedAt.value) : '尚未查询')
+const diagnosticPanelStatus = computed(() => {
+  if (diagnosticError.value) return 'error'
+  if (!diagnosticUpdatedAt.value || !selectedDebugRequest.value) return 'unknown'
+  if (Number(selectedDebugRequest.value.status) >= 500) return 'error'
+  if (Number(selectedDebugRequest.value.status) >= 400 || Number(selectedDebugRequest.value.durationMs || 0) >= 500) return 'warning'
+  return 'ok'
+})
+const diagnosticResultEmpty = computed(() => !diagnosticUpdatedAt.value || (!selectedDebugRequest.value && !diagnosticLogEntries.value.length))
+const diagnosticRawJson = computed(() => redactSensitiveText(JSON.stringify({
+  requestId: operationsData.value.metrics?.diagnostic?.requestId || debugRequestId.value || null,
+  entries: diagnosticLogEntries.value
+}, null, 2)))
+const diagnosticMetricsUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
+const errorAggregationPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!recentErrorRequests.value.length && !sentryIssues.value.length) return 'unknown'
+  return recentErrorRequests.value.some((item) => Number(item.status) >= 500) ? 'error' : 'warning'
+})
+const slowRequestsPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!recentDiagnosticRequests.value.length) return 'unknown'
+  const maximum = Math.max(...recentDiagnosticRequests.value.map((item) => Number(item.durationMs || 0)))
+  return maximum >= 1500 ? 'error' : maximum >= 500 ? 'warning' : 'ok'
+})
+const logSourceEntries = computed(() => [
+  ...(runtimeDatabaseMetrics.value?.recentLogs || []),
+  ...(runtimeMetrics.value?.recentErrors || []),
+  ...(runtimeDatabaseMetrics.value?.persistedRequests || [])
+])
 const logEntries = computed(() => {
   const keyword = logKeyword.value.toLowerCase()
   const requestId = logRequestId.value.toLowerCase()
-  return [...(runtimeDatabaseMetrics.value?.recentLogs || []), ...(runtimeMetrics.value?.recentErrors || []), ...(runtimeDatabaseMetrics.value?.persistedRequests || [])]
+  return logSourceEntries.value
     .filter((item) => !requestId || String(item.requestId || '').toLowerCase().includes(requestId))
     .filter((item) => !keyword || `${item.route} ${item.status} ${item.requestId}`.toLowerCase().includes(keyword))
     .map((item) => ({
@@ -1403,6 +1276,10 @@ const logEntries = computed(() => {
     .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())
     .slice(0, 50)
 })
+const logFiltersActive = computed(() => Boolean(logKeyword.value || logRequestId.value || logLevelFilter.value !== 'all'))
+const logResultsEmptyText = computed(() => logSourceEntries.value.length && logFiltersActive.value
+  ? '当前筛选范围暂无统计数据。'
+  : '暂无真实采集数据。')
 const logLevelOptions = [
   { value: 'all', label: '全部' },
   { value: 'error', label: '错误' },
@@ -1415,10 +1292,69 @@ const toggleLogDetails = (item) => {
   expandedLogKey.value = expandedLogKey.value === key ? '' : key
 }
 const isLogExpanded = (item) => expandedLogKey.value === logKey(item)
+const selectedLogEntry = computed(() => logEntries.value.find((item) => isLogExpanded(item)) || null)
+const logUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
+const logPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!logSourceEntries.value.length) return 'unknown'
+  if (logSourceEntries.value.some((item) => Number(item.status) >= 500)) return 'error'
+  if (logSourceEntries.value.some((item) => Number(item.status) >= 400)) return 'warning'
+  return 'ok'
+})
+const logContextPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!selectedLogEntry.value) return 'unknown'
+  if (selectedLogEntry.value.level === 'error') return 'error'
+  if (selectedLogEntry.value.level === 'warn') return 'warning'
+  return 'ok'
+})
 const redactSensitiveText = (value) => String(value)
   .replace(/((?:token|password|secret|authorization|cookie|api[_-]?key)"?\s*[:=]\s*"?)[^",\s}&]+/gi, '$1***')
   .replace(/\bBearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer ***')
 const formatLogDetails = (item) => redactSensitiveText(JSON.stringify(item, null, 2))
+const copyLogEntry = async (item) => {
+  const text = formatLogDetails(item)
+  let textarea = null
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+    textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+  } catch (error) {
+    console.error('复制日志失败:', error)
+  } finally {
+    textarea?.remove()
+  }
+}
+const copyDiagnosticRequestId = async () => {
+  const requestId = String(selectedDebugRequest.value?.requestId || debugRequestId.value || '').trim()
+  if (!requestId) return
+  let textarea = null
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(requestId)
+      return
+    }
+    textarea = document.createElement('textarea')
+    textarea.value = requestId
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+  } catch (error) {
+    console.error('复制 Request ID 失败:', error)
+  } finally {
+    textarea?.remove()
+  }
+}
 const sentryIssues = computed(() => operationsData.value.metrics?.sentry?.issues || [])
 const chartTooltip = ref({ visible: false, key: '', time: '', series: '', value: '', unit: '', left: 50 })
 const runtimeBarHeight = (value, field = 'requests') => {
@@ -1428,7 +1364,6 @@ const runtimeBarHeight = (value, field = 'requests') => {
   return Math.max(4, Math.round((numericValue / max) * 100))
 }
 const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
-const trendTooltip = (point, panel) => `${formatTimestamp(point?.at)}\n${panel.title}：${trendValue(point, panel.field)} ${panel.unit}`
 const hasTimelineMetric = (field) => runtimeTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
 const chartTicks = (field) => {
   const maximum = Math.max(...runtimeTimeline.value.map((point) => Number(point?.[field] || 0)), 0)
@@ -1460,7 +1395,6 @@ const runtimeRedisMetrics = computed(() => operationsData.value.metrics?.redis |
 const runtimeDatabaseMetrics = computed(() => operationsData.value.metrics?.database || null)
 const statusRank = { unknown: 0, ok: 1, warning: 2, error: 3 }
 const maxStatus = (...statuses) => statuses.reduce((current, status) => (statusRank[status] > statusRank[current] ? status : current), 'unknown')
-const isNumber = (value) => Number.isFinite(Number(value))
 const httpErrorRate = computed(() => {
   const http = runtimeHttpMetrics.value
   if (!http || !Number(http.recentRequests)) return null
@@ -1532,12 +1466,15 @@ const databaseModuleStatus = computed(() => {
 const musicSourceStatuses = computed(() => ['netease', 'tencent', 'bilibili', 'migu'].map((source) => {
   const metric = dependencyMetrics.value[source]
   if (!metric || !Number(metric.calls)) return { source, status: 'unknown', metric: null }
-  if (Number(metric.successRate) === 0 || metric.lastError) return { source, status: 'error', metric }
-  if (Number(metric.successRate) < 95 || Number(metric.averageDurationMs || 0) >= 1500) return { source, status: 'warning', metric }
+  if (metric.successRate == null) return { source, status: 'unknown', metric }
+  if (Number(metric.successRate) === 0 || metric.lastError || metric.error || Number(metric.timeouts || 0) > 0) return { source, status: 'error', metric }
+  if (Number(metric.successRate) < 95 || Math.max(Number(metric.averageDurationMs || 0), Number(metric.p95DurationMs || 0)) >= 1500) return { source, status: 'warning', metric }
   return { source, status: 'ok', metric }
 }))
+const knownMusicSourceStatuses = computed(() => musicSourceStatuses.value.filter((item) => item.status !== 'unknown'))
 const dependenciesModuleStatus = computed(() => {
-  const known = musicSourceStatuses.value.filter((item) => item.status !== 'unknown')
+  if (moduleFetchErrors.value.metrics) return 'error'
+  const known = knownMusicSourceStatuses.value
   if (!known.length) return 'unknown'
   if (known.some((item) => item.status === 'error')) return 'error'
   if (known.some((item) => item.status === 'warning')) return 'warning'
@@ -1553,8 +1490,10 @@ const overviewServiceStatus = computed(() => {
 const securityModuleStatus = computed(() => {
   const http = runtimeHttpMetrics.value
   if (!http) return 'unknown'
-  if (Number(http.recent5xx || 0) > 0 || Number(turnstileMetrics.value?.upstreamFailures || 0) > 0) return 'error'
-  if (Number(http.status401 || 0) > 0 || Number(http.status403 || 0) > 0 || Number(http.status429 || 0) > 0) return 'warning'
+  const oauthCalls = Number(runtimeOAuthMetrics.value?.calls || 0)
+  const oauthSuccessRate = runtimeOAuthMetrics.value?.successRate
+  if (Number(http.recent5xx || 0) > 0 || Number(turnstileMetrics.value?.upstreamFailures || 0) > 0 || (oauthCalls > 0 && Number(oauthSuccessRate) === 0)) return 'error'
+  if (Number(http.status401 || 0) > 0 || Number(http.status403 || 0) > 0 || Number(http.status429 || 0) > 0 || Number(turnstileMetrics.value?.validationFailures || 0) > 0 || (oauthCalls > 0 && oauthSuccessRate != null && Number(oauthSuccessRate) < 100)) return 'warning'
   return 'ok'
 })
 const overallStatus = computed(() => {
@@ -1567,37 +1506,15 @@ const overallStatusText = computed(() => ({ ok: '系统正常', warning: '系统
 const abnormalModuleCount = computed(() => [systemModuleStatus.value, performanceModuleStatus.value, databaseModuleStatus.value, dependenciesModuleStatus.value, securityModuleStatus.value].filter((status) => status === 'error').length)
 const warningModuleCount = computed(() => [systemModuleStatus.value, performanceModuleStatus.value, databaseModuleStatus.value, dependenciesModuleStatus.value, securityModuleStatus.value].filter((status) => status === 'warning').length)
 const lastUpdatedRelative = computed(() => {
-  if (!operationsLastUpdated.value) return '尚未完成首次采集'
+  if (!operationsLastUpdated.value) return '页面尚未完成首次采集'
   const seconds = Math.max(0, Math.floor((runtimeNow.value - operationsLastUpdated.value.getTime()) / 1000))
-  return seconds < 2 ? '刚刚更新' : `${seconds} 秒前更新`
+  return seconds < 2 ? '页面刚刚更新' : `页面 ${seconds} 秒前更新`
 })
 const refreshProgress = computed(() => {
   if (!autoRefreshEnabled.value || !operationsLastUpdated.value) return 0
   return Math.max(0, 100 - ((runtimeNow.value - operationsLastUpdated.value.getTime()) / Number(autoRefreshInterval.value) * 100))
 })
 const refreshCountdownText = computed(() => `${Math.max(0, Math.ceil(refreshProgress.value / 100 * Number(autoRefreshInterval.value) / 1000))} 秒后`)
-const keyMetricSummaries = computed(() => {
-  const items = []
-  const memory = systemSnapshot.value?.memory
-  if (memory && isNumber(memory.used) && isNumber(memory.total) && Number(memory.total) > 0) {
-    const ratio = Number(memory.used) / Number(memory.total)
-    items.push({ label: '进程内存', value: Number(memory.used), unit: 'MB', ratio, status: ratio >= .92 ? 'error' : ratio >= .8 ? 'warning' : 'ok', detail: `总计 ${memory.total} MB` })
-  }
-  const dbLatency = operationsData.value.performance?.responseTime
-  if (isNumber(dbLatency)) items.push({ label: '数据库探测延迟', value: Number(dbLatency), unit: 'ms', status: Number(dbLatency) >= 1500 ? 'error' : Number(dbLatency) >= 500 ? 'warning' : 'ok', detail: 'SELECT 1 探测' })
-  if (httpErrorRate.value != null) items.push({ label: '5xx 错误率', value: Number((httpErrorRate.value * 100).toFixed(1)), unit: '%', status: httpErrorRate.value >= .05 ? 'error' : httpErrorRate.value >= .01 ? 'warning' : 'ok', detail: `近 5 分钟 ${runtimeHttpMetrics.value.recent5xx || 0} 次` })
-  const knownSources = musicSourceStatuses.value.filter((item) => item.status !== 'unknown')
-  if (knownSources.length) items.push({ label: '音乐源健康', value: knownSources.filter((item) => item.status === 'ok').length, unit: `/${knownSources.length}`, status: dependenciesModuleStatus.value, detail: '已有调用观测' })
-  if (businessQueueSnapshot.value?.pendingCount != null) items.push({ label: '待处理队列', value: Number(businessQueueSnapshot.value.pendingCount), unit: '项', status: Number(businessQueueSnapshot.value.pendingCount) === 0 ? 'ok' : 'unknown', detail: businessQueueSnapshot.value.oldestCreatedAt ? `最早 ${formatTimestamp(businessQueueSnapshot.value.oldestCreatedAt)} · 未提供积压阈值` : '暂无积压' })
-  return items
-})
-const moduleSummaries = computed(() => [
-  { key: 'system', title: '运行状态', subtitle: '运行环境与实例', status: systemModuleStatus.value, value: systemModuleStatus.value === 'ok' ? '服务正常' : systemModuleStatus.value === 'error' ? '服务异常' : '等待数据', detail: `${systemSnapshot.value?.nodeVersion || 'Node 版本未提供'} · ${formatDuration(systemSnapshot.value?.uptime)}`, error: moduleFetchErrors.value.system, empty: !operationsData.value.status && !initialOperationsLoading.value },
-  { key: 'performance', title: '应用性能', subtitle: '近 5 分钟请求观测', status: performanceModuleStatus.value, value: runtimeHttpMetrics.value?.p95Ms != null ? `${runtimeHttpMetrics.value.p95Ms} ms` : '暂无延迟数据', detail: runtimeHttpMetrics.value?.recentRequests != null ? `${runtimeHttpMetrics.value.recentRequests} 次请求 · 5xx ${runtimeHttpMetrics.value.recent5xx || 0} 次` : '等待请求采样', error: moduleFetchErrors.value.metrics, empty: !runtimeHttpMetrics.value && !initialOperationsLoading.value },
-  { key: 'database', title: '数据库', subtitle: '连接与探测状态', status: databaseModuleStatus.value, value: databaseSnapshot.value?.connected ? '已连接' : databaseSnapshot.value ? '不可用' : '等待数据', detail: operationsData.value.pool ? `连接池 ${operationsData.value.pool.totalConnections}/${operationsData.value.pool.maxConnections} · 探测 ${operationsData.value.performance?.responseTime ?? '—'} ms` : '连接池数据未返回', error: moduleFetchErrors.value.pool || moduleFetchErrors.value.performance, empty: !databaseSnapshot.value && !initialOperationsLoading.value },
-  { key: 'dependencies', title: '外部音乐源', subtitle: '被动调用观测', status: dependenciesModuleStatus.value, value: musicSourceStatuses.value.some((item) => item.status !== 'unknown') ? `${musicSourceStatuses.value.filter((item) => item.status === 'ok').length}/${musicSourceStatuses.value.filter((item) => item.status !== 'unknown').length} 正常` : '尚未观测', detail: dependenciesModuleStatus.value === 'unknown' ? '尚无真实调用样本' : '查看依赖页了解单源状态', error: moduleFetchErrors.value.metrics, empty: !musicSourceStatuses.value.some((item) => item.status !== 'unknown') && !initialOperationsLoading.value },
-  { key: 'security', title: '访问与风控', subtitle: '认证、限流与验证', status: securityModuleStatus.value, value: securityModuleStatus.value === 'ok' ? '未发现风险' : securityModuleStatus.value === 'warning' ? '存在需关注事件' : securityModuleStatus.value === 'error' ? '存在异常请求' : '等待数据', detail: runtimeHttpMetrics.value ? `401 ${runtimeHttpMetrics.value.status401 || 0} · 403 ${runtimeHttpMetrics.value.status403 || 0} · 429 ${runtimeHttpMetrics.value.status429 || 0}` : '等待安全采样', error: moduleFetchErrors.value.metrics, empty: !runtimeHttpMetrics.value && !initialOperationsLoading.value }
-])
 const databaseDiagnostics = computed(() => runtimeDatabaseMetrics.value?.diagnostics || null)
 const databasePoolPanelStatus = computed(() => {
   if (moduleFetchErrors.value.pool) return 'error'
@@ -1640,8 +1557,12 @@ const databaseActivityPanelStatus = computed(() => {
   return Number(databaseDiagnostics.value?.locks?.data?.length || 0) > 0 ? 'warning' : 'ok'
 })
 const databaseTablesPanelStatus = computed(() => databaseDiagnosticSourceStatus('tables'))
-const databasePoolUpdatedAt = computed(() => formatTimestamp(operationsData.value.pool?.timestamp || operationsLastUpdated.value))
-const databasePerformanceUpdatedAt = computed(() => formatTimestamp(operationsData.value.performance?.timestamp || operationsLastUpdated.value))
+const databasePoolUpdatedAt = computed(() => operationsData.value.pool?.timestamp
+  ? formatTimestamp(operationsData.value.pool.timestamp)
+  : operationsLastUpdated.value ? `页面更新时间 ${formatTimestamp(operationsLastUpdated.value)}` : '尚未更新')
+const databasePerformanceUpdatedAt = computed(() => operationsData.value.performance?.timestamp
+  ? formatTimestamp(operationsData.value.performance.timestamp)
+  : operationsLastUpdated.value ? `页面更新时间 ${formatTimestamp(operationsLastUpdated.value)}` : '尚未更新')
 const databaseDiagnosticsUpdatedAt = computed(() => formatTimestamp(databaseDiagnostics.value?.collectedAt))
 const businessQueueSnapshot = computed(() => runtimeDatabaseMetrics.value?.businessQueue || null)
 const apiKeyUsageSnapshot = computed(() => runtimeDatabaseMetrics.value?.apiKeyUsage || null)
@@ -1722,7 +1643,7 @@ const musicApiRows = computed(() => [
     source: source || key,
     status: metric?.calls == null || metric.calls === 0 ? '未探测' : metric.successRate >= 95 ? '已连接' : metric.successRate > 0 ? '部分异常' : '不可用',
     averageDuration: metric?.p95DurationMs != null ? `${Math.round(Number(metric.p95DurationMs))} ms` : '未采集调用',
-    httpSuccessRate: metric?.successRate != null ? `${metric.successRate}%` : 'N/A',
+    httpSuccessRate: metric?.successRate != null ? formatPercent(metric.successRate) : 'N/A',
     semanticSuccessRate: metric?.semanticFailureRate != null ? `${(100 - Number(metric.semanticFailureRate)).toFixed(1)}%` : 'N/A',
     timeouts: metric?.timeouts != null ? String(metric.timeouts) : 'N/A'
   }
@@ -1736,16 +1657,6 @@ const availabilitySli = computed(() => {
   if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(errors)) return '--'
   return `${Math.max(0, (1 - errors / total) * 100).toFixed(1)}%`
 })
-const healthScore = computed(() => {
-  const total = runtimeHttpMetrics.value?.recentRequests || 0
-  const errors = runtimeHttpMetrics.value?.recent5xx || 0
-  return total ? `${Math.max(0, (1 - errors / total) * 100).toFixed(1)}%` : 'N/A'
-})
-const healthScoreTone = computed(() => {
-  const score = Number.parseFloat(healthScore.value)
-  if (!Number.isFinite(score)) return 'unknown'
-  return score >= 99 ? 'good' : score >= 95 ? 'warn' : 'critical'
-})
 const formatBytes = (value) => {
   const bytes = Number(value)
   if (!Number.isFinite(bytes) || bytes < 0) return '--'
@@ -1754,6 +1665,7 @@ const formatBytes = (value) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 const formatPercent = (value) => Number.isFinite(Number(value)) ? `${Number(value).toFixed(1)}%` : '--'
+const formatMilliseconds = (value) => Number.isFinite(Number(value)) ? `${Math.round(Number(value))} ms` : '--'
 const formatTimestamp = (value) => value ? new Date(value).toLocaleString() : '--'
 const formatDuration = (seconds) => {
   if (!Number.isFinite(seconds)) return '--'
@@ -1786,10 +1698,13 @@ const dependencySourceForLabel = (label) => {
 }
 const dependencyStatusValue = (label) => {
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
-  if (!metric) return '--'
-  return metric.successRate === 100 ? '已连接' : metric.successRate === 0 ? '不可用' : '部分异常'
+  if (!metric || !Number(metric.calls)) return '未调用'
+  if (metric.successRate == null) return '未知'
+  const status = dependencySourceStatus(dependencySourceForLabel(label))
+  return status === 'ok' ? '已连接' : status === 'warning' ? '需要关注' : status === 'error' ? '不可用' : '未知'
 }
 const dependencyCardStatus = (label) => {
+  if (moduleFetchErrors.value.metrics) return 'error'
   const source = dependencySourceForLabel(label)
   if (source) return musicSourceStatuses.value.find((item) => item.source === source)?.status || 'unknown'
   if (label === locale.value.dependencies?.neonPostgresql) return databaseModuleStatus.value
@@ -1799,8 +1714,8 @@ const dependencyCardStatus = (label) => {
 }
 const dependencyFailureReason = (label) => {
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
-  if (!metric?.lastError) return ''
-  return redactSensitiveText(metric.lastError).slice(0, 120)
+  if (metric?.lastError) return redactSensitiveText(metric.lastError).slice(0, 120)
+  return Number(metric?.timeouts || 0) > 0 ? `发生 ${metric.timeouts} 次超时` : ''
 }
 const dependencyMetricValue = (label, detail) => {
   if (label === locale.value.dependencies?.neonPostgresql && detail === locale.value.dependencies?.coldStartP95) {
@@ -1809,11 +1724,29 @@ const dependencyMetricValue = (label, detail) => {
   }
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
   if (!metric) return dependencySourceForLabel(label) ? '未采集调用' : '--'
-  if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : `${metric.successRate}%`
-  if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : `${metric.emptyResultRate}%`
-  if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : `${metric.semanticFailureRate}%`
+  if (!Number(metric.calls)) return '未调用'
+  if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.parseSuccessRate) return metric.successRate == null ? '--' : formatPercent(metric.successRate)
+  if (detail === locale.value.dependencies?.emptyResultRate) return metric.emptyResultRate == null ? '--' : formatPercent(metric.emptyResultRate)
+  if (detail === locale.value.dependencies?.semanticFailureRate) return metric.semanticFailureRate == null ? '--' : formatPercent(metric.semanticFailureRate)
   if (detail === locale.value.dependencies?.p95LatencyShort) return metric.p95DurationMs == null ? '--' : `${Math.round(Number(metric.p95DurationMs))} ms`
   return '--'
+}
+const dependencyUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
+const dependencySourceStatus = (source) => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  return musicSourceStatuses.value.find((item) => item.source === source)?.status || 'unknown'
+}
+const dependencySourceEmpty = (source) => {
+  const metric = dependencyMetrics.value[source]
+  return !metric || !Number(metric.calls) || metric.successRate == null
+}
+const dependencyCardEmpty = (label) => {
+  const source = dependencySourceForLabel(label)
+  if (source) return dependencySourceEmpty(source)
+  if (label === locale.value.dependencies?.oauth) return runtimeOAuthMetrics.value?.successRate == null
+  if (label === locale.value.dependencies?.neonPostgresql) return !databaseSnapshot.value
+  if (label === locale.value.services?.redis) return !runtimeRedisMetrics.value
+  return true
 }
 const securityMetricValue = (label) => {
   if (label === locale.value.audit?.invalidTokenRequests) return runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : 'N/A'
@@ -1835,7 +1768,7 @@ const dependencyProtectionValue = (title, item) => {
     if (item === locale.value.dependencies?.cacheEvictions) return String(cache.evictions)
     if (item === locale.value.dependencies?.cacheResponseP95) {
       const durations = Object.values(dependencyMetrics.value).map((metric) => Number(metric?.averageDurationMs || 0)).filter(Boolean)
-      return durations.length ? `${Math.max(...durations)} ms` : 'N/A'
+      return durations.length ? formatMilliseconds(Math.max(...durations)) : 'N/A'
     }
     if (item === locale.value.dependencies?.cacheHitRate) {
       const total = cache.hits + cache.misses
@@ -1861,15 +1794,6 @@ const dependencyProtectionValue = (title, item) => {
   return '--'
 }
 
-const waterfallBarStyle = (span) => {
-  const totalDuration = traceSpans.value.reduce((total, item) => Math.max(total, item.offsetMs + item.durationMs), 0)
-  if (!totalDuration) return {}
-  return {
-    left: `${(span.offsetMs / totalDuration) * 100}%`,
-    width: `${Math.max((span.durationMs / totalDuration) * 100, 0.6)}%`
-  }
-}
-
 const openRequestDiagnosis = async (requestId = globalRequestId.value) => {
   const normalizedRequestId = String(requestId || '').trim()
   if (!normalizedRequestId) return
@@ -1877,12 +1801,19 @@ const openRequestDiagnosis = async (requestId = globalRequestId.value) => {
   debugRequestId.value = normalizedRequestId
   activeGroup.value = 'debug'
   diagnosticLoading.value = true
+  diagnosticError.value = false
+  diagnosticUpdatedAt.value = null
+  operationsData.value.metrics = {
+    ...operationsData.value.metrics,
+    diagnostic: { requestId: normalizedRequestId, entries: [] }
+  }
   try {
     const response = await $fetch('/api/admin/operations/metrics', { query: { requestId: normalizedRequestId } })
     const metrics = response?.data || {}
     operationsData.value.metrics = { ...operationsData.value.metrics, diagnostic: metrics.diagnostic }
+    diagnosticUpdatedAt.value = metrics.metrics?.collectedAt || null
   } catch {
-    operationsError.value = true
+    diagnosticError.value = true
   } finally {
     diagnosticLoading.value = false
   }
@@ -1969,8 +1900,6 @@ const isServerlessRuntime = computed(() => {
   if (publicRuntimeConfig.isNetlify) return true
   return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
 })
-const deploymentModeLabel = computed(() => isServerlessRuntime.value ? '无服务器部署' : systemSnapshot.value?.platform ? 'Node 服务部署' : locale.value.overview?.detectionPending)
-
 const healthLiveDetails = computed(() => [
   { label: locale.value.overview?.sloBudget, value: '--' },
   { label: locale.value.overview?.errorBudgetBurn, value: '--' },
@@ -2073,30 +2002,23 @@ const applicationMetrics = computed(() => [
   { icon: 'warning', label: locale.value.application?.forbidden403, detail: '权限拒绝请求数', value: runtimeHttpMetrics.value?.status403 != null ? String(runtimeHttpMetrics.value.status403) : '--' },
   { icon: 'activity', label: locale.value.application?.rateLimited429, detail: '限流触发次数，不计入 5xx 告警', value: runtimeHttpMetrics.value?.status429 != null ? String(runtimeHttpMetrics.value.status429) : '--' },
   { icon: 'warning', label: locale.value.application?.serverErrorRate, detail: locale.value.application?.serverErrorRateDetail, value: formatRequestRate(runtimeHttpMetrics.value?.recent5xx) },
-  { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
-  { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' },
+  { icon: 'clock', label: locale.value.application?.ssrRenderTime, detail: locale.value.application?.ssrRenderTimeDetail, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? formatMilliseconds(runtimeSsrPrewarm.value.lastDurationMs) : '--' },
+  { icon: 'activity', label: locale.value.application?.eventLoopDelay, detail: locale.value.application?.eventLoopDelayDetail, value: runtimeEventLoopMetrics.value?.p99Ms != null ? formatMilliseconds(runtimeEventLoopMetrics.value.p99Ms) : '--' },
   { icon: 'settings', label: locale.value.application?.activeHandles, detail: locale.value.application?.activeHandlesDetail, value: runtimeMetrics.value?.process?.activeHandles != null ? String(runtimeMetrics.value.process.activeHandles) : '--' },
-  { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail, value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--' },
+  { icon: 'clock', label: locale.value.application?.gcPause, detail: locale.value.application?.gcPauseDetail, value: runtimeGcMetrics.value?.averagePauseMs != null ? formatMilliseconds(runtimeGcMetrics.value.averagePauseMs) : '--' },
   { icon: 'users', label: locale.value.application?.sseActiveConnections, detail: locale.value.application?.sseActiveConnectionsDetail, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
-  { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : '--' },
+  { icon: 'clock', label: locale.value.application?.sseAverageLifetime, detail: locale.value.application?.sseAverageLifetimeDetail, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? formatMilliseconds(runtimeSseMetrics.value.music.averageLifetimeMs) : '--' },
   { icon: 'activity', label: locale.value.application?.sseBroadcastLatency, detail: locale.value.application?.sseBroadcastLatencyDetail, value: runtimeSseMetrics.value?.music?.averageBroadcastWriteMs != null ? `${Math.round(Number(runtimeSseMetrics.value.music.averageBroadcastWriteMs))} ms` : '--' },
   { icon: 'warning', label: locale.value.application?.sseReconnectFailures, detail: locale.value.application?.sseReconnectFailuresDetail, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
   { icon: 'settings', label: locale.value.application?.apiKeyUsage, detail: locale.value.application?.apiKeyUsageDetail, value: apiKeyUsageSnapshot.value?.calls != null ? String(apiKeyUsageSnapshot.value.calls) : '--' },
-  { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail, value: apiKeyUsageSnapshot.value?.failureRate != null ? `${apiKeyUsageSnapshot.value.failureRate}%` : '--' }
-])
-
-const applicationLatencyBreakdown = computed(() => [
-  { label: locale.value.application?.middlewareDuration, value: 'N/A' },
-  { label: locale.value.application?.drizzleDuration, value: 'N/A' },
-  { label: locale.value.application?.externalApiDuration, value: 'N/A' },
-  { label: locale.value.application?.businessDuration, value: 'N/A' }
+  { icon: 'warning', label: locale.value.application?.apiKeyFailureRate, detail: locale.value.application?.apiKeyFailureRateDetail, value: apiKeyUsageSnapshot.value?.failureRate != null ? formatPercent(apiKeyUsageSnapshot.value.failureRate) : '--' }
 ])
 
 const applicationLatencyDetails = computed(() => [
-  { label: locale.value.application?.responseP50, value: runtimeHttpMetrics.value?.p50Ms != null ? `${runtimeHttpMetrics.value.p50Ms} ms` : '--' },
-  { label: locale.value.application?.responseP95, value: runtimeHttpMetrics.value?.p95Ms != null ? `${runtimeHttpMetrics.value.p95Ms} ms` : '--' },
-  { label: locale.value.application?.responseP99, value: runtimeHttpMetrics.value?.p99Ms != null ? `${runtimeHttpMetrics.value.p99Ms} ms` : '--' },
-  { label: locale.value.application?.responseMax, value: runtimeTimeline.value.length ? `${Math.max(...runtimeTimeline.value.map((item) => Number(item.max_duration_ms || item.p95Ms || 0)))} ms` : '--' }
+  { label: locale.value.application?.responseP50, value: formatMilliseconds(runtimeHttpMetrics.value?.p50Ms) },
+  { label: locale.value.application?.responseP95, value: formatMilliseconds(runtimeHttpMetrics.value?.p95Ms) },
+  { label: locale.value.application?.responseP99, value: formatMilliseconds(runtimeHttpMetrics.value?.p99Ms) },
+  { label: locale.value.application?.responseMax, value: runtimeTimeline.value.length ? formatMilliseconds(Math.max(...runtimeTimeline.value.map((item) => Number(item.max_duration_ms || item.p95Ms || 0)))) : '--' }
 ])
 
 const applicationDetailPanels = computed(() => [
@@ -2108,7 +2030,7 @@ const applicationDetailPanels = computed(() => [
       locale.value.application?.jwtIssued,
       locale.value.application?.jwtVerified,
       locale.value.application?.invalidTokens,
-      { label: locale.value.application?.oauthSuccessRate, value: runtimeOAuthMetrics.value?.successRate != null ? `${runtimeOAuthMetrics.value.successRate}%` : '--' }
+      { label: locale.value.application?.oauthSuccessRate, value: runtimeOAuthMetrics.value?.successRate != null ? formatPercent(runtimeOAuthMetrics.value.successRate) : '--' }
     ]
   },
   {
@@ -2117,7 +2039,7 @@ const applicationDetailPanels = computed(() => [
     detail: locale.value.application?.musicSyncReliabilityDetail,
     items: [
       { label: locale.value.application?.musicSyncReconnects, value: runtimeSseMetrics.value?.music?.activeConnections != null ? String(runtimeSseMetrics.value.music.activeConnections) : '--' },
-      { label: locale.value.application?.musicSyncLatency, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.music.averageLifetimeMs} ms` : 'N/A' },
+      { label: locale.value.application?.musicSyncLatency, value: runtimeSseMetrics.value?.music?.averageLifetimeMs != null ? formatMilliseconds(runtimeSseMetrics.value.music.averageLifetimeMs) : 'N/A' },
       { label: locale.value.application?.musicSyncHeartbeatTimeouts, value: runtimeSseMetrics.value?.music?.heartbeatFailures != null ? String(runtimeSseMetrics.value.music.heartbeatFailures) : '--' },
       { label: locale.value.application?.musicSyncDeliveryFailures, value: 'N/A' }
     ]
@@ -2141,7 +2063,7 @@ const applicationDetailPanels = computed(() => [
     items: [
       { label: locale.value.application?.adminProgressSseActiveConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' },
       { label: locale.value.application?.adminProgressSseHeartbeatFailures, value: runtimeSseMetrics.value?.progress?.heartbeatFailures != null ? String(runtimeSseMetrics.value.progress.heartbeatFailures) : '--' },
-      { label: locale.value.application?.adminProgressSseAverageLifetime, value: runtimeSseMetrics.value?.progress?.averageLifetimeMs != null ? `${runtimeSseMetrics.value.progress.averageLifetimeMs} ms` : '--' },
+      { label: locale.value.application?.adminProgressSseAverageLifetime, value: formatMilliseconds(runtimeSseMetrics.value?.progress?.averageLifetimeMs) },
       { label: locale.value.application?.adminProgressSseUnclosedConnections, value: runtimeSseMetrics.value?.progress?.activeConnections != null ? String(runtimeSseMetrics.value.progress.activeConnections) : '--' }
     ]
   }
@@ -2156,7 +2078,7 @@ const serverSummaryDetails = computed(() => [
 
 const serverMetrics = computed(() => (isServerlessRuntime.value ? [
   { icon: 'activity', label: '函数调用次数', detail: 'Serverless 函数调用量（当前实例可见范围）', value: runtimeMetrics.value?.http?.recentRequests != null ? String(runtimeMetrics.value.http.recentRequests) : '--' },
-  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: runtimeMetrics.value?.http?.p95Ms != null ? `${runtimeMetrics.value.http.p95Ms} ms` : '--' },
+  { icon: 'clock', label: '函数执行时长 P95', detail: 'Serverless 函数执行长尾耗时', value: formatMilliseconds(runtimeMetrics.value?.http?.p95Ms) },
   { icon: 'refresh', label: '冷启动次数', detail: '当前实例可见的冷启动次数', value: '--' },
   { icon: 'warning', label: '内存超限错误', detail: '函数因内存限制终止的次数', value: '--' }
 ] : [
@@ -2206,21 +2128,15 @@ const serverMetrics = computed(() => (isServerlessRuntime.value ? [
     icon: 'activity',
     label: locale.value.application?.eventLoopDelay,
     detail: locale.value.application?.eventLoopDelayDetail,
-    value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--'
+    value: formatMilliseconds(runtimeEventLoopMetrics.value?.p99Ms)
   },
   {
     icon: 'clock',
     label: locale.value.application?.gcPause,
     detail: locale.value.application?.gcPauseDetail,
-    value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--'
+    value: formatMilliseconds(runtimeGcMetrics.value?.averagePauseMs)
   }
 ]))
-
-const serverHealthDetails = computed(() => [
-  { label: locale.value.server?.healthLevel, value: healthScore.value === 'N/A' ? 'N/A' : healthScore.value },
-  { label: locale.value.server?.alertCount, value: runtimeHttpMetrics.value ? String(runtimeHttpMetrics.value.recent5xx || 0) : '--' },
-  { label: locale.value.server?.collectedAt, value: formattedLastUpdated.value }
-])
 
 const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
   { title: '函数调用量趋势', detail: '无服务器函数调用量按时间聚合。', unit: '次', field: 'requests', available: true },
@@ -2297,8 +2213,8 @@ const serverResourcePanels = computed(() => [
       { label: locale.value.server?.heapTotal, value: runtimeMetrics.value?.process?.memory?.heapTotal != null ? formatBytes(runtimeMetrics.value.process.memory.heapTotal) : '--' },
       { label: locale.value.server?.externalMemory, value: runtimeMetrics.value?.process?.memory?.external != null ? formatBytes(runtimeMetrics.value.process.memory.external) : '--' },
       { label: locale.value.server?.gcCount, value: runtimeGcMetrics.value?.count != null ? String(runtimeGcMetrics.value.count) : '--' },
-      { label: locale.value.server?.gcPause, value: runtimeGcMetrics.value?.averagePauseMs != null ? `${runtimeGcMetrics.value.averagePauseMs} ms` : '--' },
-      { label: locale.value.server?.eventLoopP99Lag, value: runtimeEventLoopMetrics.value?.p99Ms != null ? `${runtimeEventLoopMetrics.value.p99Ms} ms` : '--' }
+      { label: locale.value.server?.gcPause, value: formatMilliseconds(runtimeGcMetrics.value?.averagePauseMs) },
+      { label: locale.value.server?.eventLoopP99Lag, value: formatMilliseconds(runtimeEventLoopMetrics.value?.p99Ms) }
     ]
   }
 ])
@@ -2326,7 +2242,7 @@ const runtimeGuardPanels = computed(() => [
     empty: !runtimeSsrPrewarm.value || !Number(runtimeSsrPrewarm.value.attempts),
     items: [
       { label: locale.value.server?.ssrWarmupLastResult, value: runtimeSsrPrewarm.value?.lastResult || '--' },
-      { label: locale.value.server?.ssrWarmupDuration, value: runtimeSsrPrewarm.value?.lastDurationMs != null ? `${runtimeSsrPrewarm.value.lastDurationMs} ms` : '--' },
+      { label: locale.value.server?.ssrWarmupDuration, value: formatMilliseconds(runtimeSsrPrewarm.value?.lastDurationMs) },
       { label: locale.value.server?.ssrWarmupFailures, value: runtimeSsrPrewarm.value?.failures != null ? String(runtimeSsrPrewarm.value.failures) : '--' }
     ]
   },
@@ -2407,6 +2323,13 @@ const redisStatusValue = computed(() => {
   if (!runtimeRedisMetrics.value.configured) return '未启用'
   return runtimeRedisMetrics.value.connected ? '已连接' : '不可用'
 })
+const redisPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!runtimeRedisMetrics.value?.configured) return 'unknown'
+  return runtimeRedisMetrics.value.connected ? 'ok' : 'error'
+})
+const redisPanelEmpty = computed(() => !runtimeRedisMetrics.value?.configured)
+const redisUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : '尚未采集')
 
 const cacheDetails = computed(() => [
   locale.value.cache?.configured,
@@ -2449,8 +2372,8 @@ const cacheUsageScopes = computed(() => [
 ])
 
 const businessGoldenMetrics = computed(() => [
-  { icon: 'music', label: locale.value.business?.songRequestSuccessRate, detail: locale.value.business?.songRequestSuccessRateDetail, value: runtimeBusinessMetrics.value.song_request?.successRate != null ? `${runtimeBusinessMetrics.value.song_request.successRate}%` : '--' },
-  { icon: 'calendar', label: locale.value.business?.scheduleSaveSuccessRate, detail: locale.value.business?.scheduleSaveSuccessRateDetail, value: runtimeBusinessMetrics.value.schedule_save?.successRate != null ? `${runtimeBusinessMetrics.value.schedule_save.successRate}%` : '--' },
+  { icon: 'music', label: locale.value.business?.songRequestSuccessRate, detail: locale.value.business?.songRequestSuccessRateDetail, value: formatPercent(runtimeBusinessMetrics.value.song_request?.successRate) },
+  { icon: 'calendar', label: locale.value.business?.scheduleSaveSuccessRate, detail: locale.value.business?.scheduleSaveSuccessRateDetail, value: formatPercent(runtimeBusinessMetrics.value.schedule_save?.successRate) },
   { icon: 'activity', label: locale.value.business?.songRequestQps, detail: locale.value.business?.songRequestQpsDetail, value: runtimeBusinessMetrics.value.song_request?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.song_request.requestsPerSecond) : '--' },
   { icon: 'calendar', label: locale.value.business?.scheduleOperationQps, detail: locale.value.business?.scheduleOperationQpsDetail, value: runtimeBusinessMetrics.value.schedule_save?.requestsPerSecond != null ? String(runtimeBusinessMetrics.value.schedule_save.requestsPerSecond) : '--' }
 ])
@@ -2511,7 +2434,7 @@ const businessGroupValue = (label) => {
   const request = runtimeBusinessMetrics.value.song_request
   const schedule = runtimeBusinessMetrics.value.schedule_save
   const values = new Map([
-    [locale.value.business?.requestSuccessRate, request?.successRate != null ? `${request.successRate}%` : '--'],
+    [locale.value.business?.requestSuccessRate, formatPercent(request?.successRate)],
     [locale.value.business?.songAndVoteRequests, request?.calls != null ? String(request.calls) : '--'],
     [locale.value.business?.scheduleOperations, schedule?.calls != null ? String(schedule.calls) : '--'],
     [locale.value.business?.musicSearchApiAvailability, dependencyMetrics.value ? `${Object.values(dependencyMetrics.value).filter((item) => item?.successRate != null && item.successRate >= 95).length}` : '--']
@@ -2519,30 +2442,44 @@ const businessGroupValue = (label) => {
   return values.get(label) || 'N/A'
 }
 
-const auditMetrics = computed(() => [
-  {
-    icon: 'warning',
-    label: locale.value.audit?.unresolvedEvents,
-    detail: locale.value.audit?.unresolvedEventsDetail
-  },
-  {
-    icon: 'warning',
-    label: locale.value.audit?.criticalPending,
-    detail: locale.value.audit?.criticalPendingDetail
-  },
-  {
-    icon: 'clock',
-    label: locale.value.audit?.newToday,
-    detail: locale.value.audit?.newTodayDetail
-  },
-  {
-    icon: 'success',
-    label: locale.value.audit?.resolvedToday,
-    detail: locale.value.audit?.resolvedTodayDetail
-  }
-])
+const securityUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
+const oauthFailureCount = computed(() => {
+  const calls = Number(runtimeOAuthMetrics.value?.calls || 0)
+  const successRate = runtimeOAuthMetrics.value?.successRate
+  if (!calls || successRate == null) return 0
+  return Math.max(0, Math.round(calls * (100 - Number(successRate)) / 100))
+})
+const activeRiskCount = computed(() => [
+  runtimeHttpMetrics.value?.recent5xx,
+  runtimeHttpMetrics.value?.status401,
+  runtimeHttpMetrics.value?.status403,
+  runtimeHttpMetrics.value?.status429,
+  turnstileMetrics.value?.validationFailures,
+  turnstileMetrics.value?.upstreamFailures,
+  oauthFailureCount.value
+].reduce((total, value) => total + Number(value || 0), 0))
 
-const activeRiskCount = computed(() => Number(runtimeHttpMetrics.value?.recent5xx || 0) + Number(runtimeHttpMetrics.value?.status429 || 0) + Number(turnstileMetrics.value?.upstreamFailures || 0))
+const securityRiskRows = computed(() => {
+  const oauthCalls = Number(runtimeOAuthMetrics.value?.calls || 0)
+  const oauthSuccessRate = runtimeOAuthMetrics.value?.successRate
+  const turnstileCalls = Number(turnstileMetrics.value?.calls || 0)
+  return [
+    { label: '5xx 服务错误', value: Number(runtimeHttpMetrics.value?.recent5xx || 0), status: Number(runtimeHttpMetrics.value?.recent5xx || 0) > 0 ? 'error' : 'ok' },
+    { label: '无效 JWT 请求', value: Number(runtimeHttpMetrics.value?.status401 || 0), status: Number(runtimeHttpMetrics.value?.status401 || 0) > 0 ? 'warning' : 'ok' },
+    { label: '权限拒绝请求', value: Number(runtimeHttpMetrics.value?.status403 || 0), status: Number(runtimeHttpMetrics.value?.status403 || 0) > 0 ? 'warning' : 'ok' },
+    { label: '429 限流触发', value: Number(runtimeHttpMetrics.value?.status429 || 0), status: Number(runtimeHttpMetrics.value?.status429 || 0) > 0 ? 'warning' : 'ok' },
+    { label: '验证码拦截', value: turnstileCalls ? Number(turnstileMetrics.value?.validationFailures || 0) : '--', status: !turnstileCalls ? 'unknown' : Number(turnstileMetrics.value?.validationFailures || 0) > 0 ? 'warning' : 'ok' },
+    { label: 'Turnstile 上游失败', value: turnstileCalls ? Number(turnstileMetrics.value?.upstreamFailures || 0) : '--', status: !turnstileCalls ? 'unknown' : Number(turnstileMetrics.value?.upstreamFailures || 0) > 0 ? 'error' : 'ok' },
+    {
+      label: 'OAuth 回调失败率',
+      value: oauthCalls && oauthSuccessRate != null ? `${(100 - Number(oauthSuccessRate)).toFixed(1)}%` : '--',
+      status: !oauthCalls || oauthSuccessRate == null ? 'unknown' : Number(oauthSuccessRate) === 0 ? 'error' : Number(oauthSuccessRate) < 100 ? 'warning' : 'ok'
+    }
+  ]
+})
+const prioritizedSecurityRiskRows = computed(() => securityRiskRows.value
+  .filter((item) => item.status === 'warning' || item.status === 'error')
+  .sort((left, right) => statusRank[right.status] - statusRank[left.status]))
 
 const securitySignalMetrics = computed(() => [
   { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: 'JWT 校验失败与过期 Token 请求数' },
@@ -2552,10 +2489,35 @@ const securitySignalMetrics = computed(() => [
   { icon: 'success', label: locale.value.audit?.turnstileValidationSuccessRate, detail: locale.value.audit?.turnstileValidationSuccessRateDetail },
   { icon: 'warning', label: locale.value.audit?.turnstileUpstreamFailures, detail: locale.value.audit?.turnstileUpstreamFailuresDetail }
 ])
+const securitySignalStatus = (item) => {
+  if (item.label === locale.value.audit?.invalidTokenRequests) return Number(runtimeHttpMetrics.value?.status401 || 0) > 0 ? 'warning' : runtimeHttpMetrics.value ? 'ok' : 'unknown'
+  if (item.label === locale.value.audit?.rateLimitTriggers) return Number(runtimeHttpMetrics.value?.status429 || 0) > 0 ? 'warning' : runtimeHttpMetrics.value ? 'ok' : 'unknown'
+  if (item.label === locale.value.audit?.strongAuthFailures) {
+    const calls = Number(runtimeOAuthMetrics.value?.calls || 0)
+    const successRate = runtimeOAuthMetrics.value?.successRate
+    if (!calls || successRate == null) return 'unknown'
+    if (Number(successRate) === 0) return 'error'
+    return Number(successRate) < 100 ? 'warning' : 'ok'
+  }
+  if (!turnstileMetrics.value || !Number(turnstileMetrics.value.calls || 0)) return 'unknown'
+  if (item.label === locale.value.audit?.turnstileUpstreamFailures) return Number(turnstileMetrics.value.upstreamFailures || 0) > 0 ? 'error' : 'ok'
+  if (item.label === locale.value.audit?.turnstileValidationSuccessRate) {
+    if (Number(turnstileMetrics.value.upstreamFailures || 0) > 0) return 'error'
+    return Number(turnstileMetrics.value.validationFailures || 0) > 0 ? 'warning' : 'ok'
+  }
+  return 'ok'
+}
+const prioritizedSecuritySignalMetrics = computed(() => [...securitySignalMetrics.value].sort((left, right) => statusRank[securitySignalStatus(right)] - statusRank[securitySignalStatus(left)]))
+const securitySignalsPanelStatus = computed(() => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (!runtimeMetrics.value) return 'unknown'
+  const statuses = securitySignalMetrics.value.map(securitySignalStatus)
+  return statuses.some((status) => status !== 'unknown') ? maxStatus(...statuses) : 'unknown'
+})
 
 const requestSummaryItems = computed(() => [
   { icon: 'warning', label: locale.value.debug?.statusCode, detail: locale.value.debug?.statusCodeDetail, value: selectedDebugRequest.value?.status ?? 'N/A' },
-  { icon: 'clock', label: locale.value.debug?.duration, detail: locale.value.debug?.durationDetail, value: selectedDebugRequest.value ? `${selectedDebugRequest.value.durationMs} ms` : 'N/A' },
+  { icon: 'clock', label: locale.value.debug?.duration, detail: locale.value.debug?.durationDetail, value: selectedDebugRequest.value ? formatMilliseconds(selectedDebugRequest.value.durationMs) : 'N/A' },
   { icon: 'user', label: locale.value.debug?.user, detail: locale.value.debug?.userDetail, value: 'N/A' },
   { icon: 'layers', label: locale.value.application?.route, detail: locale.value.debug?.routeDetail, value: selectedDebugRequest.value?.route || 'N/A' },
   { icon: 'clock', label: locale.value.debug?.occurredAt, detail: locale.value.debug?.occurredAtDetail, value: selectedDebugRequest.value ? formatTimestamp(selectedDebugRequest.value.at) : 'N/A' },
@@ -2580,17 +2542,8 @@ const logContextFields = computed(() => [
   locale.value.logCenter?.sourceIp
 ])
 
-const logArchiveFields = computed(() => [
-  locale.value.overview?.logLevel,
-  locale.value.overview?.logScope,
-  locale.value.overview?.logSampleRate,
-  locale.value.overview?.logRetentionDays,
-  locale.value.logCenter?.archiveSize,
-  locale.value.logCenter?.lastArchivedAt
-])
-
 const logContextValue = (label) => {
-  const item = selectedDebugRequest.value
+  const item = selectedLogEntry.value
   if (!item) return 'N/A'
   const values = new Map([
     [locale.value.overview?.logRequestId, item.requestId || 'N/A'],
@@ -2601,16 +2554,6 @@ const logContextValue = (label) => {
     [locale.value.logCenter?.sourceIp, 'N/A'],
     [locale.value.logCenter?.traceId, 'N/A'],
     [locale.value.logCenter?.instanceId, operationsData.value.status?.instance?.instanceId || 'N/A']
-  ])
-  return values.get(label) || 'N/A'
-}
-
-const logArchiveValue = (label) => {
-  const values = new Map([
-    [locale.value.overview?.logSampleRate, '错误/慢请求 100%'],
-    [locale.value.overview?.logRetentionDays, '由 api_logs 保留策略决定'],
-    [locale.value.logCenter?.lastArchivedAt, 'N/A'],
-    [locale.value.logCenter?.archiveSize, 'N/A']
   ])
   return values.get(label) || 'N/A'
 }
@@ -2681,18 +2624,22 @@ const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map
 
 const dependencyErrorPanels = computed(() => [
   {
+    source: 'netease',
     title: locale.value.dependencies?.neteaseErrorCodes,
     detail: locale.value.dependencies?.errorCodePanelDetail
   },
   {
+    source: 'tencent',
     title: locale.value.dependencies?.tencentErrorCodes,
     detail: locale.value.dependencies?.errorCodePanelDetail
   },
   {
+    source: 'bilibili',
     title: locale.value.dependencies?.bilibiliErrorCodes,
     detail: locale.value.dependencies?.errorCodePanelDetail
   },
   {
+    source: 'migu',
     title: locale.value.dependencies?.miguErrorCodes,
     detail: locale.value.dependencies?.errorCodePanelDetail
   }
@@ -2704,10 +2651,8 @@ const dependencyUptimeRows = computed(() => [
   { source: 'bilibili', label: locale.value.overview?.bilibiliSource || 'Bilibili' },
   { source: 'migu', label: locale.value.overview?.miguSource || '咪咕音乐' }
 ].map((item) => {
-  const metric = dependencyMetrics.value[item.source]
-  const current = !metric || metric.calls === 0
-    ? 'unknown'
-    : metric.successRate >= 95 ? 'up' : metric.successRate > 0 ? 'degraded' : 'down'
+  const sourceStatus = dependencySourceStatus(item.source)
+  const current = sourceStatus === 'ok' ? 'up' : sourceStatus === 'warning' ? 'degraded' : sourceStatus === 'error' ? 'down' : 'unknown'
   const hourly = new Map()
   for (const point of dependencyMetricTimeline.value.filter((entry) => entry.source === item.source)) {
     const hour = Math.floor(new Date(point.at).getTime() / 3_600_000)
@@ -2717,15 +2662,32 @@ const dependencyUptimeRows = computed(() => [
     hourly.set(hour, bucket)
   }
   const nowHour = Math.floor(Date.now() / 3_600_000)
-  const slots = Array.from({ length: 24 }, (_, index) => {
+  const slotDetails = Array.from({ length: 24 }, (_, index) => {
     const bucket = hourly.get(nowHour - 23 + index)
-    if (!bucket?.calls) return 'unknown'
+    const at = new Date((nowHour - 23 + index) * 3_600_000).toISOString()
+    if (!bucket?.calls) return { at, status: 'unknown', calls: null, successRate: null }
     const successRate = bucket.successes / bucket.calls * 100
-    return successRate >= 95 ? 'up' : successRate > 0 ? 'degraded' : 'down'
+    return { at, status: successRate >= 95 ? 'up' : successRate > 0 ? 'degraded' : 'down', calls: bucket.calls, successRate }
   })
-  if (slots[slots.length - 1] === 'unknown' && current !== 'unknown') slots[slots.length - 1] = current
-  return { ...item, slots }
+  if (slotDetails[slotDetails.length - 1].status === 'unknown' && current !== 'unknown') {
+    const metric = dependencyMetrics.value[item.source]
+    slotDetails[slotDetails.length - 1] = {
+      ...slotDetails[slotDetails.length - 1],
+      status: current,
+      calls: Number(metric?.calls || 0) || null,
+      successRate: metric?.successRate != null ? Number(metric.successRate) : null,
+      currentSample: true
+    }
+  }
+  return { ...item, slots: slotDetails.map((detail) => detail.status), slotDetails }
 }))
+const dependencySlotTooltip = (row, index) => {
+  const detail = row.slotDetails?.[index]
+  if (!detail) return `${row.label} · 未采集`
+  const status = detail.status === 'up' ? '正常' : detail.status === 'degraded' ? '需要关注' : detail.status === 'down' ? '异常' : '未采集'
+  const value = detail.calls == null ? '' : `\n调用：${detail.calls} 次${detail.successRate == null ? '' : ` · 成功率：${detail.successRate.toFixed(1)}%`}`
+  return `时间：${formatTimestamp(detail.at)}\n音源：${row.label}\n状态：${status}${value}`
+}
 
 const dependencyErrorCodes = computed(() => [
   locale.value.dependencies?.rateLimited,
@@ -2733,10 +2695,17 @@ const dependencyErrorCodes = computed(() => [
   locale.value.dependencies?.upstreamErrors,
   locale.value.dependencies?.timeoutErrors
 ])
+const dependencyErrorCodeValue = (source, item) => {
+  const metric = dependencyMetrics.value[source]
+  if (!metric || !Number(metric.calls)) return '--'
+  if (item === locale.value.dependencies?.timeoutErrors) return String(metric.timeouts || 0)
+  return '--'
+}
 
 const dependencyProtectionPanels = computed(() => [
   {
     icon: 'layers',
+    source: 'dependencies',
     title: locale.value.dependencies?.fallbackHits,
     detail: locale.value.dependencies?.fallbackHitsDetail,
     items: [
@@ -2752,6 +2721,7 @@ const dependencyProtectionPanels = computed(() => [
   },
   {
     icon: 'database',
+    source: 'cache',
     title: locale.value.dependencies?.searchCacheHitRate,
     detail: locale.value.dependencies?.searchCacheHitRateDetail,
     items: [
@@ -2764,6 +2734,7 @@ const dependencyProtectionPanels = computed(() => [
   },
   {
     icon: 'bell',
+    source: 'notifications',
     title: locale.value.dependencies?.notificationDelivery,
     detail: locale.value.dependencies?.notificationDeliveryDetail,
     items: [
@@ -2775,13 +2746,24 @@ const dependencyProtectionPanels = computed(() => [
     ]
   }
 ])
+const dependencyProtectionPanelEmpty = (panel) => {
+  if (panel.source === 'dependencies') return !knownMusicSourceStatuses.value.length
+  if (panel.source === 'cache') return !runtimeMetrics.value?.cache
+  if (panel.source === 'notifications') return !runtimeMetrics.value?.notifications
+  return true
+}
+const dependencyProtectionPanelStatus = (panel) => {
+  if (moduleFetchErrors.value.metrics) return 'error'
+  if (dependencyProtectionPanelEmpty(panel)) return 'unknown'
+  if (panel.source === 'dependencies') return dependenciesModuleStatus.value
+  if (panel.source === 'notifications') {
+    const notifications = runtimeMetrics.value.notifications
+    if (Number(notifications.smtpFailures || 0) > 0 || Number(notifications.meowTransportFailures || 0) > 0) return 'error'
+    if (Number(notifications.smtpAccepted || 0) > 0 || Number(notifications.meowEligible || 0) > 0) return 'ok'
+  }
+  return 'unknown'
+}
 
-const riskLevels = computed(() => [
-  { label: locale.value.audit?.critical, tone: 'risk-tone--critical' },
-  { label: locale.value.audit?.high, tone: 'risk-tone--high' },
-  { label: locale.value.audit?.medium, tone: 'risk-tone--medium' },
-  { label: locale.value.audit?.low, tone: 'risk-tone--low' }
-])
 </script>
 
 <style scoped>
@@ -3210,13 +3192,8 @@ const riskLevels = computed(() => [
   justify-content: center;
   border: 10px solid rgb(39 39 42);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgb(9 9 11 / 0.7);
+  box-shadow: none;
 }
-
-.health-score-ring--good { border-color: #34d399; box-shadow: 0 0 24px rgb(52 211 153 / 0.22), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
-.health-score-ring--warn { border-color: #fbbf24; box-shadow: 0 0 24px rgb(251 191 36 / 0.2), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
-.health-score-ring--critical { border-color: #f87171; box-shadow: 0 0 24px rgb(248 113 113 / 0.24), inset 0 0 0 1px rgb(9 9 11 / 0.7); }
-.health-score-ring--unknown { border-color: rgb(82 82 91); }
 
 .health-score-ring strong {
   color: rgb(244 244 245);
@@ -3659,28 +3636,10 @@ const riskLevels = computed(() => [
   background: rgb(113 113 122);
 }
 
-.analysis-chart-placeholder {
-  position: relative;
-  display: flex;
-  min-height: 18rem;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 1.5rem;
-  background: linear-gradient(180deg, rgb(24 24 27 / 0.55), rgb(9 9 11 / 0.2));
-}
-
 .chart-axis-label { position: absolute; left: 0.55rem; z-index: 2; color: rgb(113 113 122); font-size: 0.58rem; }
 .chart-axis-label--top { top: 1.45rem; }
 .chart-axis-label--bottom { bottom: 1.1rem; }
 .chart-time-labels { position: absolute; right: 1rem; bottom: 0.28rem; left: 1.7rem; z-index: 2; display: flex; justify-content: space-between; color: rgb(113 113 122); font-size: 0.58rem; }
-
-.analysis-chart-placeholder > span {
-  position: relative;
-  z-index: 1;
-  color: rgb(82 82 91);
-  font-size: 0.75rem;
-}
 
 .runtime-bars {
   position: absolute;
@@ -3743,17 +3702,6 @@ const riskLevels = computed(() => [
 .dependency-uptime-list { display: grid; gap: 0.7rem; width: 100%; }
 .dependency-uptime-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr); align-items: center; gap: 0.75rem; }
 .dependency-uptime-row__label { color: rgb(161 161 170); font-size: 0.72rem; font-weight: 600; }
-
-.analysis-chart-grid {
-  position: absolute;
-  inset: 1.5rem;
-  display: grid;
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-}
-
-.analysis-chart-grid i {
-  border-bottom: 1px dashed rgb(39 39 42 / 0.8);
-}
 
 .peak-list {
   padding: 0 1rem;
@@ -4150,6 +4098,32 @@ const riskLevels = computed(() => [
   font-size: 0.75rem;
 }
 
+.diagnostic-raw-details {
+  border-top: 1px solid var(--ops-line);
+  padding-top: 0.75rem;
+}
+
+.diagnostic-raw-details summary {
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.diagnostic-raw-details pre {
+  max-height: 20rem;
+  margin: 0.75rem 0 0;
+  overflow: auto;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.75rem;
+  background: var(--ops-control, #0e1217);
+  color: var(--ops-text-2);
+  font: 0.6875rem/1.6 var(--ops-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .histogram-placeholder {
   position: relative;
   display: flex;
@@ -4263,10 +4237,14 @@ const riskLevels = computed(() => [
 }
 
 .uptime-strip__slot {
+  position: relative;
   height: 2rem;
+  cursor: help;
   border-radius: 2px;
   background: rgb(63 63 70);
 }
+.uptime-strip__slot::after { position: absolute; bottom: calc(100% + .45rem); left: 50%; z-index: 4; width: max-content; max-width: 15rem; transform: translate(-50%, .2rem); border: 1px solid var(--ops-line); border-radius: 4px; padding: .4rem .5rem; color: var(--ops-text-1); background: var(--ops-panel); content: attr(data-tooltip); font-size: .64rem; line-height: 1.45; white-space: pre-line; pointer-events: none; opacity: 0; transition: opacity .12s ease, transform .12s ease; }
+.uptime-strip__slot:hover::after, .uptime-strip__slot:focus-visible::after { transform: translate(-50%, 0); opacity: 1; }
 
 .uptime-strip__slot--up { background: rgb(16 185 129 / 0.72); }
 .uptime-strip__slot--degraded { background: rgb(234 179 8 / 0.72); }
@@ -4280,6 +4258,12 @@ const riskLevels = computed(() => [
   color: rgb(82 82 91);
   font-size: 0.625rem;
 }
+
+.ops-empty-copy { display: flex; min-height: 4.25rem; align-items: center; justify-content: center; padding: .8rem; color: var(--ops-text-2); font-size: .72rem; text-align: center; }
+.ops-empty-panel { border: 1px solid var(--ops-line); border-radius: 6px; padding: .8rem .9rem; background: var(--ops-panel); }
+.ops-empty-panel h3 { margin: 0; color: var(--ops-text-1); font-size: .8rem; font-weight: 600; }
+.ops-empty-panel p { margin: .25rem 0 0; color: var(--ops-text-3); font-size: .7rem; }
+.ops-empty-panel .ops-empty-copy { min-height: 3rem; padding: .55rem 0 0; }
 
 /* 运维看板统一状态令牌与顶部状态脊。 */
 .operations-dashboard {
@@ -4403,15 +4387,19 @@ const riskLevels = computed(() => [
 .operations-loading-state,
 .empty-progress,
 .histogram-placeholder,
-.analysis-chart-placeholder { box-shadow: none; }
 .operations-loading-state__spinner,
 .icon-spin { animation: none; }
 .health-score-ring,
-.health-score-ring--good,
-.health-score-ring--warn,
-.health-score-ring--critical,
 .dependency-status-dot { box-shadow: none; }
 .dependency-status-dot { width: .4375rem; height: .4375rem; }
+.log-level--error { color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 10%, transparent); }
+.log-level--warn { color: var(--ops-warning); background: color-mix(in srgb, var(--ops-warning) 10%, transparent); }
+.uptime-strip__slot--up { background: color-mix(in srgb, var(--ops-ok) 72%, transparent); }
+.uptime-strip__slot--degraded { background: color-mix(in srgb, var(--ops-warning) 72%, transparent); }
+.uptime-strip__slot--down { background: color-mix(in srgb, var(--ops-error) 72%, transparent); }
+.uptime-strip__slot--unknown { background: color-mix(in srgb, var(--ops-unknown) 72%, transparent); }
+.diagnosis-result { border-color: var(--ops-line); color: var(--ops-text-1); background: var(--ops-control); }
+.diagnosis-result span { color: var(--ops-text-2); }
 .table-action,
 .request-id-shortcut button,
 .log-level-filter,
@@ -4440,33 +4428,6 @@ const riskLevels = computed(() => [
 
 @media (min-width: 1024px) { .ops-status-spine { grid-template-columns: minmax(18rem, 1fr) auto; align-items: center; }.ops-status-spine__actions { justify-content: flex-end; } }
 @media (prefers-reduced-motion: reduce) { .operations-dashboard *, .operations-dashboard *::before, .operations-dashboard *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
-
-.error-code-chart {
-  position: relative;
-  display: flex;
-  min-height: 12rem;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid rgb(39 39 42 / 0.75);
-  color: rgb(82 82 91);
-  font-size: 0.75rem;
-}
-
-.error-code-chart::before {
-  position: absolute;
-  right: 1.5rem;
-  bottom: 1.5rem;
-  left: 1.5rem;
-  height: 55%;
-  border-bottom: 2px solid rgb(59 130 246 / 0.12);
-  background: repeating-linear-gradient(to right, rgb(59 130 246 / 0.08) 0 12%, transparent 12% 18%);
-  content: '';
-}
-
-.error-code-chart span {
-  position: relative;
-  z-index: 1;
-}
 
 .error-code-legend {
   padding: 0 1rem;
@@ -4617,10 +4578,6 @@ const riskLevels = computed(() => [
     grid-template-columns: minmax(0, 1.15fr) minmax(12rem, 0.85fr);
   }
 
-  .error-code-chart {
-    border-right: 1px solid rgb(39 39 42 / 0.75);
-    border-bottom: 0;
-  }
 }
 
 @media (min-width: 1280px) {
@@ -4717,6 +4674,12 @@ const riskLevels = computed(() => [
 .operation-log-detail-state--error { color: var(--ops-error); }
 .operation-log-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .65rem; margin-top: .75rem; color: var(--ops-text-3); font-family: var(--ops-mono); font-size: .68rem; }
 .operation-log-pagination > div { display: flex; gap: .45rem; }
+.monitoring-reference { overflow: hidden; border: 1px solid var(--ops-line); border-radius: 6px; color: var(--ops-text-2); background: var(--ops-control); }
+.monitoring-reference summary { display: flex; min-height: 2.75rem; cursor: pointer; align-items: center; gap: .65rem; padding: .55rem .75rem; font-size: .75rem; }
+.monitoring-reference summary::marker { color: var(--ops-text-3); }
+.monitoring-reference summary span { color: var(--ops-text-1); font-weight: 600; }
+.monitoring-reference summary small { color: var(--ops-text-3); font-size: .68rem; }
+.monitoring-reference__content { border-top: 1px solid var(--ops-line); }
 @media (min-width: 1280px) { .operation-log-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(13rem, 1.3fr) auto; }.operation-log-filters .filter-field--wide { grid-column: span 2; } }
 @media (max-width: 640px) { .operation-log-detail-grid { grid-template-columns: 1fr; }.operation-log-filters .filter-field--wide { min-width: 100%; } }
 </style>

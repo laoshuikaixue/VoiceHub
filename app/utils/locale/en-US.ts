@@ -1994,6 +1994,10 @@ export const admin = {
       selectUser: 'Select a user to display the request timeline'
     },
     logCenter: {
+      metricsTitle: 'Log Metrics',
+      metricsDetail: 'Summary of the current log query results',
+      action: 'Action',
+      copy: 'Copy',
       totalLogs: 'Total Logs',
       totalLogsDetail: 'Logs in the current query time range',
       errorLogs: 'Error Logs',
