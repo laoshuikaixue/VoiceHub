@@ -3730,8 +3730,8 @@ export const admin = {
 // ==================== 主题 ====================
 export const theme = {
   select: '选择主题',
-  dark: '经典深色',
-  light: '经典浅色'
+  ClassicDark: '经典深色',
+  ClassicLight: '经典浅色'
 } as const
 
 // 服务端业务错误码本地化文案（按 server/config/constants.ts 的 SERVER_ERROR_CODES 键入）。

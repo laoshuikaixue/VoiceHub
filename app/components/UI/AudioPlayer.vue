@@ -278,7 +278,7 @@ const { audioPlayer: audioPlayerLocale } = useLocale()
 // 歌词非活跃行颜色 — 随主题切换
 const theme = useTheme()
 const inactiveColor = computed(() =>
-  theme.currentTheme.value === 'dark'
+  theme.currentTheme.value === 'ClassicDark'
     ? 'var(--overlay-60)'
     : 'var(--mask-60)'
 )

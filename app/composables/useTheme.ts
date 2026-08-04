@@ -1,10 +1,10 @@
 import { ref, computed, type Ref } from 'vue'
 
-/** 主题类型（'dark' = 经典深色，'light' = 经典浅色）*/
-export type Theme = 'dark' | 'light'
+/** 主题类型（'ClassicDark' = 经典深色，'ClassicLight' = 经典浅色）*/
+export type Theme = 'ClassicDark' | 'ClassicLight'
 
 /** 可用主题列表 */
-export const THEMES: Theme[] = ['dark', 'light'] // [经典深色, 经典浅色]
+export const THEMES: Theme[] = ['ClassicDark', 'ClassicLight'] // [经典深色, 经典浅色]
 
 let current: Ref<Theme> | null = null
 
@@ -24,7 +24,7 @@ export function useTheme() {
         saved = null
       }
     }
-    const resolved: Theme = (THEMES.includes(saved as Theme) ? saved : null) ?? 'dark'
+    const resolved: Theme = (THEMES.includes(saved as Theme) ? saved : null) ?? 'ClassicDark'
 
     current = ref<Theme>(resolved)
 
@@ -37,7 +37,7 @@ export function useTheme() {
   const theme = current!
 
   const currentTheme = computed(() => theme.value)
-  const isDark = computed(() => theme.value === 'dark')
+  const isDark = computed(() => theme.value === 'ClassicDark')
 
   /** 设置主题并持久化到 localStorage */
   const setTheme = (t: Theme) => {

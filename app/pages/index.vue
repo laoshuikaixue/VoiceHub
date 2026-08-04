@@ -887,7 +887,7 @@ const selectTheme = (theme) => {
 }
 
 const getThemeLabel = (theme) => {
-  return theme === 'dark' ? '经典深色' : '经典浅色'
+  return theme === 'ClassicDark' ? '经典深色' : '经典浅色'
 }
 
 // 监听用户头像变化，重置错误状�?

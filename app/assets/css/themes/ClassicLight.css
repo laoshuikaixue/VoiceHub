@@ -1,5 +1,5 @@
 /* 经典浅色主题 — 全部设计变量 */
-:root[data-theme="light"] {
+:root[data-theme="ClassicLight"] {
 /* 主色调 */
 --primary: #3b82f6;
 --primary-hover: #3b82f6;

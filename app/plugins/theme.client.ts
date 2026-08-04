@@ -17,8 +17,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     const cs = getComputedStyle(document.documentElement)
     const colorMap = {
       // 经典深色 -> 经典浅色
-      dark: cs.getPropertyValue('--bg-primary').trim() || '#111111',
-      light: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff'
+      ClassicDark: cs.getPropertyValue('--bg-primary').trim() || '#111111',
+      ClassicLight: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff'
     }
     let meta = document.querySelector("meta[name='theme-color']")
     if (!meta) {

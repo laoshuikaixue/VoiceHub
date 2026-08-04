@@ -3721,8 +3721,8 @@ export const admin = {
 // ==================== Theme ====================
 export const theme = {
   select: 'Choose theme',
-  dark: 'Classic Dark',
-  light: 'Classic Light'
+  ClassicDark: 'Classic Dark',
+  ClassicLight: 'Classic Light'
 } as const
 
 // Localized copy for server-side business error codes (keyed by SERVER_ERROR_CODES in server/config/constants.ts).

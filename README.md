@@ -1398,7 +1398,7 @@ VoiceHub/
 - **`public/`**: 静态文件
 - **`public/images/`**: 备案图标等与主题无关的图片
 - **`public/assets/`**: 不随主题切换的公共资源（如 `logo.png`）
-- **`public/themes/{light,dark}/`**: 随主题切换的 SVG 图片资源（Logo、搜索图标、点赞图标）
+- **`public/themes/{ClassicDark,ClassicLight}/`**: 随主题切换的 SVG 图片资源（Logo、搜索图标、点赞图标）
 
 ### 主题系统
 
@@ -1408,21 +1408,21 @@ VoiceHub 采用 CSS 变量驱动的主题架构，支持深色/亮色两种主�
 
 ```
 app/assets/css/themes/
-├── dark.css           # 深色主题设计变量（:root[data-theme="dark"]）
-└── light.css           # 亮色主题设计变量（:root[data-theme="light"]）
+├── ClassicDark.css       # 深色主题设计变量（:root[data-theme="ClassicDark"]）
+└── ClassicLight.css      # 亮色主题设计变量（:root[data-theme="ClassicLight"]）
 ```
 
 #### 架构说明
 
-- **CSS 变量分离**：每个主题在独立的 `index.css` 文件中定义 `:root[data-theme="主题名"]` 选择器，包含所有设计变量（颜色、背景、文字、边框等）
-- **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入 `themes/dark/index.css` 和 `themes/light/index.css`，亮色主题覆盖深色主题
+- **CSS 变量分离**：每个主题在独立的 CSS 文件中定义 `:root[data-theme="主题名"]` 选择器，包含所有设计变量（颜色、背景、文字、边框等）
+- **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入 `themes/ClassicDark.css` 和 `themes/ClassicLight.css`，亮色主题覆盖深色主题
 - **切换机制**：通过 `useTheme()` composable 和 `theme.client.ts` 插件实现主题切换与 localStorage 持久化
 
 #### 主题图片管理
 
-主题相关的图片资源：**SVG 图片**（随主题切换，存放在 `public/themes/{light,dark}/`）
+主题相关的图片资源：**SVG 图片**（随主题切换，存放在 `public/themes/{ClassicDark,ClassicLight}/`）
 
-- **SVG 主题图片存放位置**：`public/themes/light/`（亮色主题）和 `public/themes/dark/`（暗色主题）
+- **SVG 主题图片存放位置**：`public/themes/ClassicLight/`（亮色主题）和 `public/themes/ClassicDark/`（深色主题）
 - **管理方式**：SVG 图片通过 `useThemeImage()` composable 统一获取，PNG 图片直接使用静态路径
 - **使用示例**：
   ```vue
@@ -1444,7 +1444,7 @@ app/assets/css/themes/
 1. 在 `app/assets/css/themes/` 下创建新主题，如 `ocean.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
 3. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
 4. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
-5. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `light/` 和 `dark/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
+5. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `ClassicDark/` 和 `ClassicLight/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
 
 ## 使用说明
 
