@@ -750,10 +750,8 @@ VoiceHub/
 │   │       ├── variables.css      # 全局基础样式与媒体查询
 │   │       ├── year-review.css    # 年度回顾样式
 │   │       └── themes/            # 主题目录
-│   │           ├── light/
-│   │           │   └── index.css  # 亮色主题设计变量
-│   │           └── dark/
-│   │               └── index.css  # 深色主题设计变量
+│   │           ├── dark.css         # 深色主题设计变量
+│   │           └── light.css        # 亮色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
@@ -1410,10 +1408,8 @@ VoiceHub 采用 CSS 变量驱动的主题架构，支持深色/亮色两种主�
 
 ```
 app/assets/css/themes/
-├── dark/
-│   └── index.css           # 深色主题设计变量（:root[data-theme="dark"]）
-└── light/
-    └── index.css           # 亮色主题设计变量（:root[data-theme="light"]）
+├── dark.css           # 深色主题设计变量（:root[data-theme="dark"]）
+└── light.css           # 亮色主题设计变量（:root[data-theme="light"]）
 ```
 
 #### 架构说明
@@ -1424,10 +1420,9 @@ app/assets/css/themes/
 
 #### 主题图片管理
 
-主题相关的图片资源分为两类：**SVG 图片**（随主题切换，存放在 `public/themes/{light,dark}/`）和 **PNG 图片**（公共资源，不随主题切换，存放在 `public/assets/`）。
+主题相关的图片资源：**SVG 图片**（随主题切换，存放在 `public/themes/{light,dark}/`）
 
 - **SVG 主题图片存放位置**：`public/themes/light/`（亮色主题）和 `public/themes/dark/`（暗色主题）
-- **PNG 公共资源存放位置**：`public/assets/`（如 `logo.png`）
 - **管理方式**：SVG 图片通过 `useThemeImage()` composable 统一获取，PNG 图片直接使用静态路径
 - **使用示例**：
   ```vue
@@ -1446,8 +1441,7 @@ app/assets/css/themes/
 
 如需新增自定义主题：
 
-1. 在 `app/assets/css/themes/` 下创建新主题文件夹（如 `app/assets/css/themes/ocean/`）
-2. 创建 `index.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
+1. 在 `app/assets/css/themes/` 下创建新主题，如 `ocean.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
 3. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
 4. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
 5. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `light/` 和 `dark/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
