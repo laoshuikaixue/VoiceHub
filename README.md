@@ -932,11 +932,9 @@ VoiceHub/
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
 │   │   │   └── beian.png      # 备案图标
-│   │   ├── themes/            # 主题图片（按主题分目录）
+│   │   ├── themes/            # 主题图片（按主题分目录，仅 SVG 随主题切换）
 │   │   │   ├── dark/          # 暗色主题图片
-│   │   │   │   ├── logo.png   # PNG格式Logo（侧边栏/打印等）
 │   │   │   │   ├── logo.svg   # SVG格式Logo（首页/登录页等）
-│   │   │   │   └── logo-144.png # PWA 图标
 │   │   │   │   ├── search.svg # 搜索图标
 │   │   │   │   └── thumbs-up.svg # 点赞图标
 │   │   │   └── light/         # 亮色主题图片（结构与 dark 完全相同）
@@ -1401,7 +1399,8 @@ VoiceHub/
 
 - **`public/`**: 静态文件
 - **`public/images/`**: 备案图标等与主题无关的图片
-- **`public/themes/{light,dark}/`**: 按主题分类的图片资源（Logo、图标等）
+- **`public/assets/`**: 不随主题切换的公共资源（如 `logo.png`）
+- **`public/themes/{light,dark}/`**: 随主题切换的 SVG 图片资源（Logo、搜索图标、点赞图标）
 
 ### 主题系统
 
@@ -1425,10 +1424,11 @@ app/assets/css/themes/
 
 #### 主题图片管理
 
-主题相关的图片资源（Logo、图标等）按主题分类存放在 `public/themes/{light,dark}/` 目录下，确保视觉风格与主题 CSS 变量保持一致。
+主题相关的图片资源分为两类：**SVG 图片**（随主题切换，存放在 `public/themes/{light,dark}/`）和 **PNG 图片**（公共资源，不随主题切换，存放在 `public/assets/`）。
 
-- **存放位置**：`public/themes/light/`（亮色主题）和 `public/themes/dark/`（暗色主题）
-- **管理方式**：通过 `useThemeImage()` composable 统一获取，组件根据当前主题自动选择对应图片路径
+- **SVG 主题图片存放位置**：`public/themes/light/`（亮色主题）和 `public/themes/dark/`（暗色主题）
+- **PNG 公共资源存放位置**：`public/assets/`（如 `logo.png`）
+- **管理方式**：SVG 图片通过 `useThemeImage()` composable 统一获取，PNG 图片直接使用静态路径
 - **使用示例**：
   ```vue
   <script setup>
@@ -1437,9 +1437,10 @@ app/assets/css/themes/
   </script>
   <template>
     <img :src="getLogo()" alt="Logo" />
+    <img src="/assets/logo.png" alt="Logo PNG" />
   </template>
   ```
-- **同步规则**：新增主题时需在 `app/assets/css/themes/` 下创建对应的 CSS 文件，**同时**在 `public/themes/` 下创建对应的图片目录并放入相同的图片文件。如果只新增 CSS 主题而未同步图片，组件将无法加载主题图片。
+- **同步规则**：新增主题时需在 `app/assets/css/themes/` 下创建对应的 CSS 文件，**同时**在 `public/themes/` 下创建对应的图片目录并放入 SVG 文件。如果只新增 CSS 主题而未同步图片，组件将无法加载主题图片。
 
 #### 自定义主题
 
@@ -1449,7 +1450,7 @@ app/assets/css/themes/
 2. 创建 `index.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
 3. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
 4. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
-5. 在 `public/themes/` 下创建对应主题的图片文件夹（如 `public/themes/ocean/`），**放入与 `light/` 和 `dark/` 相同的图片文件**，否则使用该主题时组件无法加载图片。
+5. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `light/` 和 `dark/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
 
 ## 使用说明
 

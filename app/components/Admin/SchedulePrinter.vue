@@ -296,7 +296,7 @@
                 <!-- 页面头部 -->
                 <div class="page-header">
                   <div class="logo-section">
-                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
+                    <img src="/assets/logo.png" alt="VoiceHub Logo" class="logo" />
                     <!-- 竖线分割 -->
                     <div class="logo-divider" />
                     <!-- 学校logo -->
@@ -438,14 +438,12 @@ import { useLocale } from '~/utils/locale'
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
 import ScheduleTablePrint from './ScheduleTablePrint.vue'
-import { useThemeImage } from '~/composables/useThemeImage'
 
 // 学期管理
 import { useSemesters } from '~/composables/useSemesters'
 const { currentSemester, fetchCurrentSemester } = useSemesters()
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => admin.value?.schedulePrinter || {})
-const { getLogoPng } = useThemeImage()
 const { format: formatLocale } = useLocaleText(locale)
 const generatedAtText = computed(() => {
   const nowText = new Date().toLocaleString(currentLocale.value)
@@ -468,8 +466,7 @@ const { siteTitle, schoolLogoPrintUrl, schoolLogoPrintDisplayUrl, initSiteConfig
 // 配置
 const config = useRuntimeConfig()
 
-// Logo URL处理
-const logoUrl = computed(() => getLogoPng())
+
 
 // 响应式数据
 const schedules = ref([])
