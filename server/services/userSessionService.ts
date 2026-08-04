@@ -6,7 +6,8 @@ import { userSessions } from '~/drizzle/schema'
 import { getServerDate, getServerTimestamp } from '~~/server/utils/serverTime'
 import { getClientIP } from '~~/server/utils/ip-utils'
 
-export const USER_SESSION_ACTIVE_WINDOW_MS = 5 * 60 * 1000
+// 客户端每 30 秒上报一次，2 分钟未收到活动即不再视为在线。
+export const USER_SESSION_ACTIVE_WINDOW_MS = 2 * 60 * 1000
 const SESSION_CHECK_INTERVAL_MS = 30 * 1000
 const SESSION_CACHE_LIMIT = 5000
 

@@ -1,6 +1,7 @@
 import { db, eq, and, userIdentities } from '~/drizzle/db'
 import { getWebAuthnConfig } from '~~/server/utils/webauthn-config'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -35,6 +36,18 @@ export default defineEventHandler(async (event) => {
         rpId: rpID
       }))
     : []
+
+  if (removedIdentities.length > 0) {
+    await recordAdminOperation(event, {
+      actor: user,
+      action: 'ACCOUNT.UNBIND',
+      targetType: 'USER_IDENTITY',
+      targetLabel: String(provider),
+      result: 'SUCCESS',
+      summary: '用户解绑第三方账号',
+      changes: { provider: String(provider), count: removedIdentities.length }
+    })
+  }
 
   return { success: true, passkeyCleanup }
 })

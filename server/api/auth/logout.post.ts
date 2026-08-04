@@ -1,3 +1,4 @@
+import { getRequestHeader, getRequestURL, setCookie } from 'h3'
 import { revokeCurrentUserSession } from '~~/server/services/userSessionService'
 
 export default defineEventHandler(async (event) => {

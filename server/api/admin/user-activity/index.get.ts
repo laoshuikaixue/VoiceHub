@@ -79,9 +79,9 @@ export default defineEventHandler(async (event) => {
       db.select({ value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(where),
       db.select({ value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))),
       db.select({ value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, lt(userSessions.lastActiveAt, activeSince))),
-      db.execute(sql`SELECT count(DISTINCT s.user_id)::int AS value FROM user_sessions s INNER JOIN "User" u ON u.id = s.user_id WHERE s.revoked_at IS NULL AND s.expires_at > now() AND s.token_version = u."tokenVersion"`),
-      db.select({ label: userSessions.browser, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(isNull(userSessions.revokedAt), gt(userSessions.expiresAt, now), sql`${userSessions.tokenVersion} = ${users.tokenVersion}`)).groupBy(userSessions.browser).orderBy(desc(count())),
-      db.select({ label: userSessions.deviceType, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(isNull(userSessions.revokedAt), gt(userSessions.expiresAt, now), sql`${userSessions.tokenVersion} = ${users.tokenVersion}`)).groupBy(userSessions.deviceType).orderBy(desc(count()))
+      db.execute(sql`SELECT count(DISTINCT s.user_id)::int AS value FROM user_sessions s INNER JOIN "User" u ON u.id = s.user_id WHERE s.revoked_at IS NULL AND s.expires_at > now() AND s.last_active_at >= ${activeSince} AND s.token_version = u."tokenVersion"`),
+      db.select({ label: userSessions.browser, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))).groupBy(userSessions.browser).orderBy(desc(count())),
+      db.select({ label: userSessions.deviceType, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))).groupBy(userSessions.deviceType).orderBy(desc(count()))
     ])
 
     const maskedIp = (ip: string) => ip.includes('.')

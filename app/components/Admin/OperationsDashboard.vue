@@ -1074,7 +1074,13 @@ const operationLogActionOptions = [
   { label: '清理数据库', value: 'DB.CLEANUP' },
   { label: '重置数据库', value: 'DB.RESET' },
   { label: '修复数据库序列', value: 'DB.SEQUENCE_REPAIR' },
-  { label: '强制下线会话', value: 'SESSION.REVOKE' }
+  { label: '强制下线会话', value: 'SESSION.REVOKE' },
+  { label: '用户投稿', value: 'SONG.REQUEST_CREATE' },
+  { label: '用户点赞', value: 'SONG.VOTE' },
+  { label: '取消点赞', value: 'SONG.VOTE_REMOVE' },
+  { label: '绑定第三方账号', value: 'ACCOUNT.BIND' },
+  { label: '解绑第三方账号', value: 'ACCOUNT.UNBIND' },
+  { label: '绑定 MeoW 账号', value: 'ACCOUNT.MEOW_BIND' }
 ]
 const operationLogTargetTypeOptions = [
   { label: '全部对象', value: '' },
@@ -1086,7 +1092,10 @@ const operationLogTargetTypeOptions = [
   { label: '备份文件', value: 'BACKUP' },
   { label: '数据库', value: 'DATABASE' },
   { label: '数据库表', value: 'DATABASE_TABLE' },
-  { label: '用户会话', value: 'USER_SESSION' }
+  { label: '用户会话', value: 'USER_SESSION' },
+  { label: '歌曲', value: 'SONG' },
+  { label: '用户身份', value: 'USER_IDENTITY' },
+  { label: 'MeoW 账号', value: 'MEOW_ACCOUNT' }
 ]
 const operationLogResultOptions = [{ label: '全部结果', value: '' }, { label: '成功', value: 'SUCCESS' }, { label: '失败', value: 'FAILURE' }]
 const operationsLoading = ref(true)

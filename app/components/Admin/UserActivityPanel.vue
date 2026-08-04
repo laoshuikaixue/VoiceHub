@@ -20,7 +20,7 @@
         <section class="activity-kpis">
           <article><span>有效会话</span><strong>{{ stats.totalSessions }}</strong><small>未过期且未撤销</small><i><b :style="{ width: '100%' }" /></i></article>
           <article><span>在线用户</span><strong>{{ stats.onlineUsers }}</strong><small>按账号去重</small><i><b :style="{ width: `${ratio(stats.onlineUsers, stats.totalSessions)}%` }" /></i></article>
-          <article class="activity-kpi--warning"><span>闲置占比</span><strong>{{ formatPercent(ratio(stats.idleSessions, stats.totalSessions)) }}</strong><small>超过 5 分钟无活动</small><i><b :style="{ width: `${ratio(stats.idleSessions, stats.totalSessions)}%` }" /></i></article>
+          <article class="activity-kpi--warning"><span>闲置占比</span><strong>{{ formatPercent(ratio(stats.idleSessions, stats.totalSessions)) }}</strong><small>超过 2 分钟无活动</small><i><b :style="{ width: `${ratio(stats.idleSessions, stats.totalSessions)}%` }" /></i></article>
           <article><span>浏览器来源</span><strong>{{ stats.browsers.length }}</strong><small>{{ primaryBrowserText }}</small><i><b :style="{ width: `${primaryBrowserShare}%` }" /></i></article>
         </section>
       </template>
@@ -33,9 +33,9 @@
             <div class="browser-distribution">
               <div class="browser-distribution__heading"><strong>浏览器分布</strong><span>{{ stats.browsers.length }} 类</span></div>
               <div class="browser-distribution__content">
-                <div class="browser-donut" :style="browserDonutStyle"><span><strong>{{ stats.totalSessions }}</strong><small>总会话</small></span></div>
+                <div class="browser-donut" :style="browserDonutStyle"><span><strong>{{ stats.activeSessions }}</strong><small>活跃会话</small></span></div>
                 <ol>
-                  <li v-for="(item, index) in stats.browsers" :key="item.label"><i :style="{ background: chartColors[index % chartColors.length] }" /><span>{{ item.label }}</span><strong>{{ item.value }}</strong><small>{{ formatPercent(ratio(item.value, stats.totalSessions)) }}</small></li>
+                  <li v-for="(item, index) in stats.browsers" :key="item.label"><i :style="{ background: chartColors[index % chartColors.length] }" /><span>{{ item.label }}</span><strong>{{ item.value }}</strong><small>{{ formatPercent(ratio(item.value, stats.activeSessions)) }}</small></li>
                 </ol>
               </div>
             </div>
@@ -43,8 +43,8 @@
               <div class="device-distribution__heading"><strong>设备来源</strong><span>{{ stats.devices.length }} 类</span></div>
               <div v-if="stats.devices.length" class="device-distribution__rows">
                 <div v-for="item in stats.devices" :key="item.label">
-                  <p><span><Icon :name="deviceIcon(item.label)" :size="13" />{{ deviceLabel(item.label) }}</span><strong>{{ item.value }} <small>{{ formatPercent(ratio(item.value, stats.totalSessions)) }}</small></strong></p>
-                  <i><b :style="{ width: `${ratio(item.value, stats.totalSessions)}%` }" /></i>
+                  <p><span><Icon :name="deviceIcon(item.label)" :size="13" />{{ deviceLabel(item.label) }}</span><strong>{{ item.value }} <small>{{ formatPercent(ratio(item.value, stats.activeSessions)) }}</small></strong></p>
+                  <i><b :style="{ width: `${ratio(item.value, stats.activeSessions)}%` }" /></i>
                 </div>
               </div>
               <div v-else class="activity-empty">暂无真实采集数据。</div>
@@ -131,21 +131,21 @@ const panelStatus = computed(() => {
 })
 const recommendationStatus = computed(() => recommendations.value.some((item) => item.status === 'warning') ? 'warning' : 'ok')
 const primaryBrowser = computed(() => stats.value.browsers[0] || null)
-const primaryBrowserShare = computed(() => ratio(primaryBrowser.value?.value || 0, stats.value.totalSessions))
+const primaryBrowserShare = computed(() => ratio(primaryBrowser.value?.value || 0, stats.value.activeSessions))
 const primaryBrowserText = computed(() => primaryBrowser.value ? `主力 ${primaryBrowser.value.label}，占 ${formatPercent(primaryBrowserShare.value)}` : '暂无浏览器数据')
 const browserDonutStyle = computed(() => {
-  if (!stats.value.totalSessions || !stats.value.browsers.length) return { background: 'rgba(148,163,184,.12)' }
+  if (!stats.value.activeSessions || !stats.value.browsers.length) return { background: 'rgba(148,163,184,.12)' }
   let cursor = 0
   const segments = stats.value.browsers.map((item, index) => {
     const start = cursor
-    cursor += ratio(item.value, stats.value.totalSessions)
+    cursor += ratio(item.value, stats.value.activeSessions)
     return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`
   })
   return { background: `conic-gradient(${segments.join(', ')})` }
 })
 const recommendations = computed(() => {
   const items = []
-  if (stats.value.idleSessions > 0) items.push({ icon: 'clock', status: ratio(stats.value.idleSessions, stats.value.totalSessions) >= 50 ? 'warning' : 'unknown', title: '复核长期闲置会话', detail: `当前有 ${stats.value.idleSessions} 个有效会话超过 5 分钟无活动，可结合在线时长逐条确认。`, tag: `${stats.value.idleSessions} 个待关注` })
+  if (stats.value.idleSessions > 0) items.push({ icon: 'clock', status: ratio(stats.value.idleSessions, stats.value.totalSessions) >= 50 ? 'warning' : 'unknown', title: '复核长期闲置会话', detail: `当前有 ${stats.value.idleSessions} 个有效会话超过 2 分钟无活动，可结合在线时长逐条确认。`, tag: `${stats.value.idleSessions} 个待关注` })
   if (stats.value.totalSessions > stats.value.onlineUsers) items.push({ icon: 'users', status: 'warning', title: '检查账号多会话', detail: '同一账号存在多个有效会话时，应复核是否为正常的跨设备登录。', tag: '建议复核' })
   const unknownClients = stats.value.browsers.find((item) => item.label === 'Unknown')?.value || 0
   if (unknownClients) items.push({ icon: 'warning', status: 'unknown', title: '识别未知客户端', detail: `有 ${unknownClients} 个会话无法识别浏览器，可结合脱敏 IP 与最近页面继续排查。`, tag: '信息不足' })

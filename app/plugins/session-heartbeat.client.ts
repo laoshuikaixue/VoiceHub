@@ -30,7 +30,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     void sendHeartbeat()
   })
   document.addEventListener('visibilitychange', onVisibilityChange)
-  timer = window.setInterval(() => void sendHeartbeat(), 60 * 1000)
+  timer = window.setInterval(() => void sendHeartbeat(), 30 * 1000)
 
   nuxtApp.hook('app:beforeUnmount', () => {
     stopUserWatch()
