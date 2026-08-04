@@ -141,7 +141,7 @@
       </div>
 
       <!-- MeoW 账号绑定 -->
-      <div :class="cardClass">
+      <div :class="[cardClass, 'border-blue-500/20 bg-blue-500/[0.02]']">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
             <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
@@ -289,7 +289,7 @@ const locale = computed(() => pages.value?.account?.social || {})
 // 样式类常量
 const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
 const cardClass =
-  'rounded-2xl border border-border-secondary-70 bg-bg-primary-45 p-4 transition-all'
+  'rounded-2xl border border-border-secondary-70 bg-bg-primary-45 p-4 transition-all hover:border-border-tertiary'
 
 // 页面状态
 const loading = ref(true)
