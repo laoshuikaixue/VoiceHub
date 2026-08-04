@@ -1,10 +1,10 @@
 import { ref, computed, type Ref } from 'vue'
 
-/** 主题类型（'ClassicDark' = 经典深色，'ClassicLight' = 经典浅色）*/
-export type Theme = 'ClassicDark' | 'ClassicLight'
+/** 主题类型（'ClassicDark' = 经典深色，'ClassicLight' = 经典浅色，'ModernLight' = 现代浅色）*/
+export type Theme = 'ClassicDark' | 'ClassicLight' | 'ModernLight'
 
 /** 可用主题列表 */
-export const THEMES: Theme[] = ['ClassicDark', 'ClassicLight'] // [经典深色, 经典浅色]
+export const THEMES: Theme[] = ['ClassicDark', 'ClassicLight', 'ModernLight'] // [经典深色, 经典浅色, 现代浅色]
 
 let current: Ref<Theme> | null = null
 

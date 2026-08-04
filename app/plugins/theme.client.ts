@@ -12,13 +12,14 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   const { currentTheme, setTheme } = useTheme()
 
-  /** 根据主题（经典深色/经典浅色）更新 theme-color meta */
+  /** 根据主题（经典深色/经典浅色/现代浅色）更新 theme-color meta */
   function updateMeta(theme) {
     const cs = getComputedStyle(document.documentElement)
     const colorMap = {
-      // 经典深色 -> 经典浅色
+      // 经典深色 -> 经典浅色 -> 现代浅色
       ClassicDark: cs.getPropertyValue('--bg-primary').trim() || '#111111',
-      ClassicLight: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff'
+      ClassicLight: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff',
+      ModernLight: cs.getPropertyValue('--bg-secondary').trim() || '#f5f5f5'
     }
     let meta = document.querySelector("meta[name='theme-color']")
     if (!meta) {

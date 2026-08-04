@@ -1,0 +1,733 @@
+/* 现代浅色主题 — 全部设计变量 */
+:root[data-theme="ModernLight"] {
+/* 主色调 — 紫色 */
+--primary: #7c3aed;
+--primary-hover: #6d28d9;
+--primary-light: rgba(124, 58, 237, 0.1);
+--primary-border: rgba(124, 58, 237, 0.2);
+
+/* 控件强调色（与 --primary 一致，供 accent-color 使用） */
+--accent-color: #7c3aed;
+
+/* 主色光晕（供阴影 glow 使用） */
+--primary-glow: rgba(124, 58, 237, 0.15);
+--primary-glow-5: rgba(124, 58, 237, 0.05);
+--primary-glow-10: rgba(124, 58, 237, 0.1);
+--primary-glow-20: rgba(124, 58, 237, 0.15);
+--primary-glow-40: rgba(124, 58, 237, 0.3);
+
+/* 成功色光晕 */
+--success-glow: rgba(16, 185, 129, 0.15);
+--success-glow-5: rgba(16, 185, 129, 0.05);
+--success-glow-10: rgba(16, 185, 129, 0.1);
+--success-glow-20: rgba(16, 185, 129, 0.15);
+
+/* 警告色光晕 */
+--warning-glow: rgba(245, 158, 11, 0.15);
+--warning-glow-5: rgba(245, 158, 11, 0.05);
+--warning-glow-10: rgba(245, 158, 11, 0.1);
+--warning-glow-20: rgba(245, 158, 11, 0.15);
+
+/* 错误色光晕 */
+--error-glow: rgba(239, 68, 68, 0.15);
+--error-glow-5: rgba(239, 68, 68, 0.05);
+--error-glow-10: rgba(239, 68, 68, 0.1);
+--error-glow-20: rgba(239, 68, 68, 0.15);
+
+/* 成功色 */
+--success: #10b981;
+--success-hover: #059669;
+--success-light: rgba(16, 185, 129, 0.1);
+--success-border: rgba(16, 185, 129, 0.2);
+
+/* 警告色 */
+--warning: #f59e0b;
+--warning-hover: #d97706;
+--warning-light: rgba(245, 158, 11, 0.1);
+--warning-border: rgba(245, 158, 11, 0.2);
+
+/* 错误色 */
+--error: #ef4444;
+--error-hover: #dc2626;
+--error-light: rgba(239, 68, 68, 0.1);
+--error-border: rgba(239, 68, 68, 0.2);
+
+/* 信息色 — 天蓝 */
+--info: #0ea5e9;
+--info-hover: #0284c7;
+--info-light: rgba(14, 165, 233, 0.1);
+--info-border: rgba(14, 165, 233, 0.2);
+
+/* 信息色光晕 */
+--info-glow: rgba(14, 165, 233, 0.15);
+--info-glow-5: rgba(14, 165, 233, 0.05);
+--info-glow-10: rgba(14, 165, 233, 0.1);
+--info-glow-20: rgba(14, 165, 233, 0.15);
+
+/* 背景色 */
+--bg-primary: #ffffff;
+--bg-secondary: #f5f5f5;
+--bg-tertiary: #f0f0f0;
+--bg-quaternary: #e5e5e5;
+--bg-hover: #f3f3f3;
+
+/* 文字颜色 */
+--text-primary: #1e1e1e;
+--text-secondary: #616161;
+--text-tertiary: #808080;
+--text-quaternary: #a0a0a0;
+--text-disabled: #cccccc;
+
+/* 边框颜色 */
+--border-primary: #e5e5e5;
+--border-secondary: #e0e0e0;
+--border-tertiary: #d4d4d4;
+--border-quaternary: #c0c0c0;
+--border-color: var(--border-tertiary);
+
+/* 阴影 */
+--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+--shadow-md: 0 2px 6px rgba(0, 0, 0, 0.06);
+--shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.08);
+--shadow-xl: 0 12px 28px rgba(0, 0, 0, 0.1);
+
+/* 圆角 */
+--radius-sm: 4px;
+--radius-md: 6px;
+--radius-lg: 8px;
+--radius-xl: 12px;
+--radius-2xl: 16px;
+
+/* 间距 */
+--spacing-xs: 4px;
+--spacing-sm: 8px;
+--spacing-md: 12px;
+--spacing-lg: 16px;
+--spacing-xl: 20px;
+--spacing-2xl: 24px;
+--spacing-3xl: 32px;
+
+/* 字体大小 */
+--text-xs: 12px;
+--text-sm: 14px;
+--text-base: 16px;
+--text-lg: 18px;
+--text-xl: 20px;
+--text-2xl: 24px;
+--text-3xl: 30px;
+
+/* 字体粗细 */
+--font-normal: 400;
+--font-medium: 500;
+--font-semibold: 600;
+--font-bold: 700;
+
+/* 过渡动画 */
+--transition-fast: 0.15s ease;
+--transition-normal: 0.2s ease;
+--transition-slow: 0.3s ease;
+
+/* Z-index层级 */
+--z-dropdown: 100;
+--z-sticky: 200;
+--z-fixed: 300;
+--z-modal-backdrop: 400;
+--z-modal: 500;
+--z-popover: 600;
+--z-tooltip: 700;
+--z-toast: 800;
+--z-app-loader: 9000;
+
+/* 特殊状态颜色 */
+--status-pending: #f59e0b;
+--status-pending-light: rgba(245, 158, 11, 0.1);
+--status-approved: #10b981;
+--status-approved-light: rgba(16, 185, 129, 0.1);
+--status-played: #8e8e93;
+--status-played-light: rgba(142, 142, 147, 0.1);
+
+/* 投票相关颜色 */
+--vote-heart: #ef4444;
+--vote-heart-hover: #dc2626;
+--vote-count: var(--text-tertiary);
+
+/* 拖拽状态颜色 */
+--drag-over: var(--primary-light);
+--drag-over-border: var(--primary);
+--dragging-opacity: 0.5;
+
+/* 表格颜色 */
+--table-header-bg: var(--bg-tertiary);
+--table-row-hover: var(--bg-hover);
+--table-border: var(--border-secondary);
+--table-selected: var(--primary-light);
+
+/* 卡片颜色 */
+--card-bg: var(--bg-secondary);
+--card-border: var(--border-secondary);
+--card-hover-border: var(--border-tertiary);
+--card-shadow: var(--shadow-md);
+
+/* 按钮颜色 */
+--btn-primary-bg: var(--primary);
+--btn-primary-hover: var(--primary-hover);
+--btn-primary-text: #ffffff;
+--btn-primary-border: var(--primary-border);
+
+--btn-secondary-bg: #f5f5f5;
+--btn-secondary-hover: #e5e5e5;
+--btn-secondary-text: var(--text-primary);
+--btn-secondary-border: #d4d4d4;
+
+--btn-success-bg: var(--success);
+--btn-success-hover: var(--success-hover);
+--btn-success-text: #ffffff;
+--btn-success-border: var(--success-border);
+
+--btn-warning-bg: var(--warning);
+--btn-warning-hover: var(--warning-hover);
+--btn-warning-text: #ffffff;
+--btn-warning-border: var(--warning-border);
+
+--btn-error-bg: var(--error);
+--btn-error-hover: var(--error-hover);
+--btn-error-text: #ffffff;
+--btn-error-border: var(--error-border);
+
+--btn-disabled-bg: var(--bg-tertiary);
+--btn-disabled-text: var(--text-disabled);
+
+/* 输入框颜色 */
+--input-bg: var(--bg-tertiary);
+--input-border: var(--border-tertiary);
+--input-border-focus: var(--primary);
+--input-text: var(--text-primary);
+--input-placeholder: var(--text-quaternary);
+--input-shadow-focus: 0 0 0 3px var(--primary-light);
+
+/* 模态框颜色 */
+--modal-backdrop: rgba(0, 0, 0, 0.45);
+--modal-bg: var(--bg-secondary);
+--modal-border: var(--border-secondary);
+--modal-header-border: var(--border-secondary);
+--modal-footer-border: var(--border-secondary);
+
+/* 通知颜色 */
+--notification-success-bg: var(--success-light);
+--notification-success-border: var(--success-border);
+--notification-success-text: var(--success);
+
+--notification-warning-bg: var(--warning-light);
+--notification-warning-border: var(--warning-border);
+--notification-warning-text: var(--warning);
+
+--notification-error-bg: var(--error-light);
+--notification-error-border: var(--error-border);
+--notification-error-text: var(--error);
+
+--notification-info-bg: var(--info-light);
+--notification-info-border: var(--info-border);
+--notification-info-text: var(--info);
+
+/* 加载动画颜色 */
+--spinner-primary: var(--primary);
+--spinner-secondary: var(--bg-tertiary);
+
+/* 滚动条颜色 */
+--scrollbar-track: var(--bg-tertiary);
+--scrollbar-thumb: var(--bg-quaternary);
+--scrollbar-thumb-hover: #a0a0a0;
+
+/* 用途化变量 — 品牌色 */
+--color-brand-blue: #0b5afe;
+--color-brand-blue-light: #3b82f6;
+--color-brand-blue-hover: #2563eb;
+--color-brand-blue-light-hover: #1d4ed8;
+--color-brand-blue-glow: rgba(11, 90, 254, 0.4);
+--color-brand-red: #ef4444;
+--color-brand-red-light: #f87171;
+--color-brand-red-hover: #dc2626;
+--color-brand-red-glow: rgba(239, 68, 68, 0.4);
+--color-brand-green: #10b981;
+--color-brand-green-light: #4ade80;
+--color-brand-green-hover: #22c55e;
+--color-brand-green-glow: rgba(34, 197, 94, 0.4);
+--color-brand-yellow: #f59e0b;
+--color-brand-yellow-light: #fbbf24;
+--color-brand-yellow-hover: #d97706;
+--color-brand-yellow-glow: rgba(245, 158, 11, 0.4);
+--color-brand-orange: #fb923c;
+--color-brand-orange-light: #fdba74;
+--color-brand-orange-hover: #f97316;
+--color-brand-orange-glow: rgba(251, 146, 60, 0.4);
+
+/* === Alpha (--color-brand-blue) === */
+--color-brand-blue-10: rgba(11, 90, 254, 0.08);
+--color-brand-blue-12: rgba(11, 90, 254, 0.12);
+--color-brand-blue-15: rgba(11, 90, 254, 0.15);
+--color-brand-blue-18: rgba(11, 90, 254, 0.18);
+--color-brand-blue-20: rgba(11, 90, 254, 0.16);
+--color-brand-blue-25: rgba(11, 90, 254, 0.25);
+--color-brand-blue-30: rgba(11, 90, 254, 0.25);
+--color-brand-blue-40: rgba(11, 90, 254, 0.3);
+--color-brand-blue-50: rgba(11, 90, 254, 0.4);
+--color-brand-blue-60: rgba(11, 90, 254, 0.5);
+--color-brand-blue-80: rgba(11, 90, 254, 0.6);
+
+/* 用途化变量 — 请求表单（RequestForm） */
+--requestform-audio-match-hover-border: rgba(167, 139, 250, 0.35);
+--requestform-audio-match-hover-border-light: rgba(167, 139, 250, 0.22);
+--requestform-qq-login-shadow: rgba(6, 182, 212, 0.15);
+--requestform-qq-login-shadow-hover: rgba(6, 182, 212, 0.25);
+--requestform-user-icon-bg: rgba(6, 182, 212, 0.12);
+--requestform-user-icon-border: rgba(6, 182, 212, 0.22);
+--requestform-login-btn-hover-shadow: rgba(124, 58, 237, 0.35);
+--requestform-login-btn-hover-shadow-lg: rgba(124, 58, 237, 0.45);
+--requestform-like-btn-hover-shadow: rgba(220, 38, 38, 0.35);
+--requestform-like-btn-hover-shadow-lg: rgba(220, 38, 38, 0.45);
+--requestform-source-healthy-bg: rgba(34, 197, 94, 0.15);
+--requestform-source-healthy-border: rgba(34, 197, 94, 0.3);
+--requestform-source-healthy-glow: rgba(34, 197, 94, 0.6);
+--requestform-source-checking-bg: rgba(251, 191, 36, 0.15);
+--requestform-source-checking-border: rgba(251, 191, 36, 0.3);
+--requestform-source-checking-glow: rgba(251, 191, 36, 0.6);
+--requestform-modal-overlay-bg: rgba(30, 30, 35, 0.95);
+--requestform-submit-btn-hover-shadow: rgba(124, 58, 237, 0.4);
+--requestform-delete-btn-hover-shadow: rgba(236, 65, 65, 0.5);
+--requestform-delete-btn-hover-shadow-sm: rgba(236, 65, 65, 0.3);
+--requestform-replay-btn-bg: rgba(124, 58, 237, 0.1);
+--requestform-replay-btn-bg-hover: rgba(124, 58, 237, 0.2);
+--requestform-replay-btn-border: rgba(124, 58, 237, 0.3);
+--requestform-replay-btn-border-hover: rgba(124, 58, 237, 0.5);
+--requestform-mobile-chip-border: rgba(160, 160, 160, 0.45);
+--requestform-mobile-chip-border-sm: rgba(160, 160, 160, 0.4);
+--requestform-mobile-chip-bg: rgba(243, 243, 243, 0.75);
+--requestform-mobile-chip-text: rgba(30, 30, 30, 0.9);
+--requestform-mobile-button-text: rgba(30, 30, 30, 0.9);
+--requestform-chip-required-bg: rgba(245, 158, 11, 0.1);
+--requestform-chip-required-border: rgba(245, 158, 11, 0.35);
+--requestform-chip-required-border-sm: rgba(245, 158, 11, 0.3);
+--requestform-chip-valid-border: rgba(16, 185, 129, 0.35);
+--requestform-chip-invalid-bg: rgba(248, 113, 113, 0.1);
+--requestform-chip-invalid-border: rgba(248, 113, 113, 0.35);
+
+/* 用途化变量 — 音频播放器（AudioPlayer） */
+--audio-player-bar-bg: rgba(30, 30, 35, 0.85);
+--audio-player-progress-track-bg: rgba(160, 160, 160, 0.39);
+--audio-player-quality-active-bg-start: rgba(124, 58, 237, 0.25);
+--audio-player-quality-active-bg-mid: rgba(124, 58, 237, 0.15);
+--audio-player-quality-active-bg-end: rgba(124, 58, 237, 0.1);
+--audio-player-quality-active-border: rgba(124, 58, 237, 0.6);
+--audio-player-quality-active-shadow-lg: rgba(124, 58, 237, 0.4);
+--audio-player-quality-active-shadow: rgba(124, 58, 237, 0.3);
+--audio-player-quality-active-ring: rgba(124, 58, 237, 0.2);
+
+/* 用途化变量 — 音量控制（VolumeControl） */
+--volume-control-panel-bg: rgba(245, 245, 245, 0.85);
+--volume-control-muted-color: rgba(255, 100, 100, 0.9);
+
+/* 用途化变量 — 备份管理器（BackupManager） */
+--backup-manager-danger-bg: rgba(211, 47, 47, 0.1);
+--backup-manager-file-remove-bg: rgba(211, 47, 47, 0.2);
+--backup-manager-file-remove-bg-hover: rgba(211, 47, 47, 0.3);
+--backup-manager-warning-box-bg: rgba(255, 152, 0, 0.1);
+
+/* 用途化变量 — 用户歌曲模态框滚动条（UserSongsModal） */
+--usersongs-scroll-thumb: rgba(160, 160, 160, 0.3);
+--usersongs-scroll-thumb-hover: rgba(160, 160, 160, 0.5);
+
+/* 用途化变量 — 用户管理器（UserManager） */
+--user-manager-tree-line: rgba(160, 160, 160, 0.55);
+--user-manager-tree-active-bg: rgba(124, 58, 237, 0.12);
+
+/* 用途化变量 — 数据分析面板滚动条（DataAnalysisPanel） */
+--data-analysis-scroll-thumb: rgba(124, 58, 237, 0.3);
+--data-analysis-scroll-thumb-hover: rgba(124, 58, 237, 0.5);
+
+/* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
+--schedule-list-divider: rgba(160, 160, 160, 0.5);
+--schedule-list-title-shadow: rgba(124, 58, 237, 0.3);
+--schedule-list-title-shadow-sm: rgba(124, 58, 237, 0.2);
+
+/* 用途化变量 — 点歌券标识（CardCodeTag） */
+--card-code-bg: rgba(245, 158, 11, 0.1);
+--card-code-border: rgba(245, 158, 11, 0.25);
+--card-code-text: #d97706;
+
+/* 用途化变量 — 认证模块（Auth） */
+--auth-error-input-shadow: rgba(244, 63, 94, 0.1);
+
+/* 用途化变量 — 面板背景色（亮色模式） */
+--panel-bg: #ffffff;
+--panel-bg-alt: #f5f5f5;
+--panel-bg-hover: #f0f0f0;
+--panel-bg-deep: #e5e5e5;
+--panel-bg-deepest: #f0f0f0;
+--panel-bg-overlay: #f5f5f5;
+--panel-bg-elevated: #ffffff;
+--panel-bg-dialog: #ffffff;
+--panel-bg-subtle: #f5f5f5;
+--panel-bg-tertiary: #e5e5e5;
+--panel-bg-quaternary: #f0f0f0;
+--panel-bg-contrast: #f5f5f5;
+--panel-bg-dark: #e5e5e5;
+--panel-bg-darker: #f0f0f0;
+--panel-bg-darkest: #e5e5e5;
+--panel-bg-compact: #f5f5f5;
+--panel-bg-flat: #ffffff;
+--panel-bg-raised: #ffffff;
+--panel-bg-inset: #f0f0f0;
+
+/* 通用表面色（无 panel 前缀） */
+--panel-bg-secondary: #f0f0f0;
+--panel-bg-tertiary: #e5e5e5;
+--table-row-bg: #ffffff;
+
+/* 用途化变量 — 文字灰度（亮色模式） */
+--text-muted: #808080;
+--text-muted-light: #a0a0a0;
+--text-muted-dark: #4a4a4a;
+--text-tertiary-hover: #4a4a4a;
+--text-primary-light: #1e1e1e;
+--text-primary-lighter: #2e2e2e;
+--text-link: #7c3aed;
+--text-link-hover: #6d28d9;
+--text-highlight: #856404;
+
+/* 用途化变量 — 边框与分割线（亮色模式） */
+--panel-border: #e5e5e5;
+--panel-border-active: #7c3aed;
+--panel-border-subtle: #f0f0f0;
+--panel-border-10: rgba(240, 240, 240, 0.1);
+--panel-border-light: #e0e0e0;
+--panel-border-dark: #c0c0c0;
+--panel-border-highlight: #d4d4d4;
+--panel-border-brand: #7c3aed;
+--panel-border-error: #ef4444;
+
+/* 用途化变量 — 状态色（亮色模式） */
+--status-info-bg: #f0f9ff;
+--status-info-border: #0ea5e9;
+--status-info-glow: rgba(14, 165, 233, 0.15);
+--status-info-icon: #0ea5e9;
+--status-success-icon: #07c160;
+--status-warning-icon: #fadb14;
+--status-error-icon: #ff4d4f;
+--status-error-deep: #d32f2f;
+
+/* 用途化变量 — 品牌渐变辅助色 */
+--color-brand-purple: #7c3aed;
+--color-brand-purple-hover: #6d28d9;
+--color-brand-purple-light: #a78bfa;
+--color-brand-purple-lighter: #ede9fe;
+--color-brand-purple-glow: rgba(124, 58, 237, 0.3);
+--color-brand-pink: #f472b6;
+--color-brand-cyan: #22d3ee;
+--color-brand-teal: #06b6d4;
+--color-brand-indigo: #6366f1;
+--color-brand-indigo-hover: #818cf8;
+
+/* === WarpCanvas 星空配色 === */
+--warp-canvas-primary: #7c3aed;
+--warp-canvas-primary-light: #a78bfa;
+--warp-canvas-indigo: #6366f1;
+
+/* 用途化变量 — 滚动条与轨道 */
+--scrollbar-track-dark: #f0f0f0;
+--scrollbar-track-hover: #fafafa;
+
+/* === Alpha (--primary) === */
+--primary-5: rgba(124, 58, 237, 0.05);
+--primary-10: rgba(124, 58, 237, 0.1);
+--primary-15: rgba(124, 58, 237, 0.15);
+--primary-18: rgba(124, 58, 237, 0.18);
+--primary-20: rgba(124, 58, 237, 0.2);
+--primary-25: rgba(124, 58, 237, 0.25);
+--primary-30: rgba(124, 58, 237, 0.3);
+--primary-35: rgba(124, 58, 237, 0.35);
+--primary-40: rgba(124, 58, 237, 0.4);
+--primary-60: rgba(124, 58, 237, 0.6);
+--primary-80: rgba(124, 58, 237, 0.8);
+--primary-50: rgba(124, 58, 237, 0.5);
+/* === Alpha (--primary-hover) === */
+--primary-hover-5: rgba(109, 40, 217, 0.05);
+--primary-hover-10: rgba(109, 40, 217, 0.1);
+--primary-hover-20: rgba(109, 40, 217, 0.2);
+--primary-hover-30: rgba(109, 40, 217, 0.3);
+/* === Alpha (--success) === */
+--success-5: rgba(16, 185, 129, 0.05);
+--success-10: rgba(16, 185, 129, 0.1);
+--success-20: rgba(16, 185, 129, 0.2);
+--success-40: rgba(16, 185, 129, 0.4);
+--success-50: rgba(16, 185, 129, 0.5);
+--success-70: rgba(16, 185, 129, 0.7);
+--success-80: rgba(16, 185, 129, 0.8);
+--success-30: rgba(16, 185, 129, 0.3);
+/* === Alpha (--success-hover) === */
+--success-hover-5: rgba(5, 150, 105, 0.05);
+--success-hover-10: rgba(5, 150, 105, 0.1);
+--success-hover-20: rgba(5, 150, 105, 0.2);
+/* === Alpha (--warning) === */
+--warning-5: rgba(245, 158, 11, 0.05);
+--warning-10: rgba(245, 158, 11, 0.1);
+--warning-15: rgba(245, 158, 11, 0.15);
+--warning-20: rgba(245, 158, 11, 0.2);
+--warning-25: rgba(245, 158, 11, 0.25);
+--warning-30: rgba(245, 158, 11, 0.3);
+--warning-40: rgba(245, 158, 11, 0.4);
+--warning-50: rgba(245, 158, 11, 0.5);
+--warning-80: rgba(245, 158, 11, 0.8);
+--warning-200: rgba(245, 158, 11, 0.2);
+--warning-300: rgba(245, 158, 11, 0.3);
+/* === Alpha (--warning-hover) === */
+--warning-hover-5: rgba(217, 119, 6, 0.05);
+--warning-hover-10: rgba(217, 119, 6, 0.1);
+--warning-hover-15: rgba(217, 119, 6, 0.15);
+--warning-hover-20: rgba(217, 119, 6, 0.2);
+--warning-hover-25: rgba(217, 119, 6, 0.25);
+--warning-hover-30: rgba(217, 119, 6, 0.3);
+--warning-hover-40: rgba(217, 119, 6, 0.4);
+--warning-hover-50: rgba(217, 119, 6, 0.5);
+/* === Alpha (--error) === */
+--error-5: rgba(239, 68, 68, 0.05);
+--error-10: rgba(239, 68, 68, 0.1);
+--error-15: rgba(239, 68, 68, 0.15);
+--error-20: rgba(239, 68, 68, 0.2);
+--error-30: rgba(239, 68, 68, 0.3);
+--error-40: rgba(239, 68, 68, 0.4);
+--error-50: rgba(239, 68, 68, 0.5);
+--error-60: rgba(239, 68, 68, 0.6);
+--error-70: rgba(239, 68, 68, 0.7);
+--error-80: rgba(239, 68, 68, 0.8);
+/* === Alpha (--error-hover) === */
+--error-hover-5: rgba(220, 38, 38, 0.05);
+--error-hover-10: rgba(220, 38, 38, 0.1);
+--error-hover-15: rgba(220, 38, 38, 0.15);
+--error-hover-20: rgba(220, 38, 38, 0.2);
+--error-hover-30: rgba(220, 38, 38, 0.3);
+/* === Alpha (--info) === */
+--info-5: rgba(14, 165, 233, 0.05);
+--info-10: rgba(14, 165, 233, 0.1);
+--info-20: rgba(14, 165, 233, 0.2);
+--info-30: rgba(14, 165, 233, 0.3);
+--info-40: rgba(14, 165, 233, 0.4);
+--info-50: rgba(14, 165, 233, 0.5);
+/* === Alpha (--info-hover) === */
+--info-hover-5: rgba(2, 132, 199, 0.05);
+--info-hover-10: rgba(2, 132, 199, 0.1);
+--info-hover-20: rgba(2, 132, 199, 0.2);
+--info-hover-30: rgba(2, 132, 199, 0.3);
+--info-hover-40: rgba(2, 132, 199, 0.4);
+--info-hover-50: rgba(2, 132, 199, 0.5);
+/* === Alpha (--bg-primary) === */
+--bg-primary-5: rgba(250, 250, 250, 0.05);
+--bg-primary-10: rgba(250, 250, 250, 0.1);
+--bg-primary-20: rgba(250, 250, 250, 0.2);
+--bg-primary-25: rgba(250, 250, 250, 0.25);
+--bg-primary-30: rgba(250, 250, 250, 0.3);
+--bg-primary-40: rgba(250, 250, 250, 0.4);
+--bg-primary-45: rgba(250, 250, 250, 0.45);
+--bg-primary-50: rgba(250, 250, 250, 0.5);
+--bg-primary-60: rgba(250, 250, 250, 0.6);
+--bg-primary-70: rgba(250, 250, 250, 0.7);
+--bg-primary-80: rgba(250, 250, 250, 0.8);
+--bg-primary-85: rgba(250, 250, 250, 0.85);
+--bg-primary-90: rgba(250, 250, 250, 0.9);
+--bg-primary-95: rgba(250, 250, 250, 0.95);
+/* === Alpha (--bg-secondary) === */
+--bg-secondary-5: rgba(255, 255, 255, 0.05);
+--bg-secondary-10: rgba(255, 255, 255, 0.1);
+--bg-secondary-15: rgba(255, 255, 255, 0.15);
+--bg-secondary-20: rgba(255, 255, 255, 0.2);
+--bg-secondary-30: rgba(255, 255, 255, 0.3);
+--bg-secondary-40: rgba(255, 255, 255, 0.4);
+--bg-secondary-50: rgba(255, 255, 255, 0.5);
+--bg-secondary-60: rgba(255, 255, 255, 0.6);
+--bg-secondary-70: rgba(255, 255, 255, 0.7);
+--bg-secondary-80: rgba(255, 255, 255, 0.8);
+--bg-secondary-90: rgba(255, 255, 255, 0.9);
+--bg-secondary-95: rgba(255, 255, 255, 0.95);
+/* === Alpha (--bg-tertiary) === */
+--bg-tertiary-5: rgba(240, 240, 240, 0.05);
+--bg-tertiary-10: rgba(240, 240, 240, 0.1);
+--bg-tertiary-20: rgba(240, 240, 240, 0.2);
+--bg-tertiary-30: rgba(240, 240, 240, 0.3);
+--bg-tertiary-40: rgba(240, 240, 240, 0.4);
+--bg-tertiary-50: rgba(240, 240, 240, 0.5);
+--bg-tertiary-60: rgba(240, 240, 240, 0.6);
+--bg-tertiary-70: rgba(240, 240, 240, 0.7);
+--bg-tertiary-80: rgba(240, 240, 240, 0.8);
+/* === Alpha (--bg-quaternary) === */
+--bg-quaternary-50: rgba(229, 229, 229, 0.5);
+/* === Alpha (--border-secondary) === */
+--border-secondary-30: rgba(229, 229, 229, 0.3);
+--border-secondary-40: rgba(229, 229, 229, 0.4);
+--border-secondary-50: rgba(229, 229, 229, 0.5);
+--border-secondary-60: rgba(229, 229, 229, 0.6);
+--border-secondary-70: rgba(229, 229, 229, 0.7);
+--border-secondary-80: rgba(229, 229, 229, 0.8);
+/* === Alpha (--border-tertiary) === */
+--border-tertiary-30: rgba(212, 212, 212, 0.3);
+--border-tertiary-50: rgba(212, 212, 212, 0.5);
+/* === Alpha (--text-primary) === */
+--text-primary-10: rgba(30, 30, 30, 0.1);
+--text-primary-20: rgba(30, 30, 30, 0.2);
+--text-primary-30: rgba(30, 30, 30, 0.3);
+--text-primary-40: rgba(30, 30, 30, 0.4);
+--text-primary-50: rgba(30, 30, 30, 0.5);
+--text-primary-60: rgba(30, 30, 30, 0.6);
+--text-primary-70: rgba(30, 30, 30, 0.7);
+--text-primary-80: rgba(30, 30, 30, 0.8);
+--text-primary-90: rgba(30, 30, 30, 0.9);
+/* === Alpha (--text-error) === */
+--text-error-20: rgba(239, 68, 68, 0.2);
+--text-error-50: rgba(239, 68, 68, 0.5);
+--text-error-60: rgba(239, 68, 68, 0.6);
+--text-error-70: rgba(239, 68, 68, 0.7);
+--text-error-80: rgba(239, 68, 68, 0.8);
+/* === 通用浅色文字（亮色模式） === */
+--light: rgba(30, 30, 30, 0.95);
+/* === Alpha (--text-success) === */
+--text-success-50: rgba(16, 185, 129, 0.5);
+--text-success-70: rgba(16, 185, 129, 0.7);
+--text-success-80: rgba(16, 185, 129, 0.8);
+/* === Alpha (--text-warning) === */
+--text-warning-80: rgba(245, 158, 11, 0.8);
+
+/* 用途化变量 — 首页（index） */
+--index-footer-bg: rgba(245, 245, 245, 0.9);
+--index-visualizer-bg: rgba(240, 240, 250, 0.5);
+--index-card-glow: rgba(124, 58, 237, 0.15);
+--index-brand-badge-bg: rgba(124, 58, 237, 0.1);
+--index-brand-badge-border: rgba(124, 58, 237, 0.2);
+--index-main-icon-shadow: rgba(124, 58, 237, 0.5);
+--index-pulsing-ring-shadow: rgba(124, 58, 237, 0.4);
+
+/* 用途化变量 — 年度回顾（year-review） */
+--year-review-home-btn-shadow: rgba(124, 58, 237, 0.2);
+--year-review-blob-1-bg: rgba(124, 58, 237, 0.4);
+--year-review-blob-2-bg: rgba(244, 114, 182, 0.2);
+--year-review-gradient-overlay-end: rgba(244, 114, 182, 0.15);
+--year-review-stat-number-shadow: rgba(124, 58, 237, 0.5);
+--year-review-artist-label-border: rgba(168, 85, 247, 0.3);
+--year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
+--year-review-stats-bg-gradient: rgba(124, 58, 237, 0.4);
+--app-loading-brand-primary: #7c3aed;
+--app-loading-brand-secondary: #a78bfa;
+--app-loading-primary-glow: rgba(124, 58, 237, 0.2);
+--app-loading-primary-glow-accelerating: rgba(124, 58, 237, 0.65);
+--app-loading-secondary-glow: rgba(167, 139, 250, 0.18);
+--app-loading-text-color: rgba(124, 58, 237, 0.9);
+
+/* 用途化变量 — 模态框通用（Modal shared） */
+--lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
+--lyrics-modal-bg-accent-blue: rgba(84, 130, 255, 0.32);
+--lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.25);
+--lyrics-modal-badge-menu-bg: rgba(245, 245, 245, 0.9);
+--audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.85);
+--audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.25);
+
+/* === Overlay / 遮罩层半透明色（浅色模式 = 黑色半透明） === */
+--overlay-1: rgba(0, 0, 0, 0.01);
+--overlay-2: rgba(0, 0, 0, 0.02);
+--overlay-3: rgba(0, 0, 0, 0.03);
+--overlay-4: rgba(0, 0, 0, 0.04);
+--overlay-5: rgba(0, 0, 0, 0.05);
+--overlay-6: rgba(0, 0, 0, 0.06);
+--overlay-7: rgba(0, 0, 0, 0.07);
+--overlay-8: rgba(0, 0, 0, 0.08);
+--overlay-10: rgba(0, 0, 0, 0.1);
+--overlay-12: rgba(0, 0, 0, 0.12);
+--overlay-14: rgba(0, 0, 0, 0.14);
+--overlay-15: rgba(0, 0, 0, 0.15);
+--overlay-16: rgba(0, 0, 0, 0.16);
+--overlay-18: rgba(0, 0, 0, 0.18);
+--overlay-20: rgba(0, 0, 0, 0.2);
+--overlay-22: rgba(0, 0, 0, 0.22);
+--overlay-25: rgba(0, 0, 0, 0.25);
+--overlay-30: rgba(0, 0, 0, 0.3);
+--overlay-40: rgba(0, 0, 0, 0.4);
+--overlay-42: rgba(0, 0, 0, 0.42);
+--overlay-45: rgba(0, 0, 0, 0.45);
+--overlay-50: rgba(0, 0, 0, 0.5);
+--overlay-52: rgba(0, 0, 0, 0.52);
+--overlay-55: rgba(0, 0, 0, 0.55);
+--overlay-58: rgba(0, 0, 0, 0.58);
+--overlay-60: rgba(0, 0, 0, 0.6);
+--overlay-62: rgba(0, 0, 0, 0.62);
+--overlay-70: rgba(0, 0, 0, 0.7);
+--overlay-78: rgba(0, 0, 0, 0.78);
+--overlay-80: rgba(0, 0, 0, 0.8);
+--overlay-85: rgba(0, 0, 0, 0.85);
+--overlay-86: rgba(0, 0, 0, 0.86);
+--overlay-88: rgba(0, 0, 0, 0.88);
+--overlay-90: rgba(0, 0, 0, 0.9);
+--overlay-92: rgba(0, 0, 0, 0.92);
+--overlay-95: rgba(0, 0, 0, 0.95);
+
+/* === Mask / 暗色遮罩（浅色模式 = 更淡） === */
+--mask-2: rgba(0, 0, 0, 0.01);
+--mask-4: rgba(0, 0, 0, 0.02);
+--mask-5: rgba(0, 0, 0, 0.03);
+--mask-6: rgba(0, 0, 0, 0.04);
+--mask-8: rgba(0, 0, 0, 0.05);
+--mask-10: rgba(0, 0, 0, 0.06);
+--mask-15: rgba(0, 0, 0, 0.08);
+--mask-18: rgba(0, 0, 0, 0.09);
+--mask-20: rgba(0, 0, 0, 0.1);
+--mask-25: rgba(0, 0, 0, 0.12);
+--mask-30: rgba(0, 0, 0, 0.15);
+--mask-35: rgba(0, 0, 0, 0.17);
+--mask-40: rgba(0, 0, 0, 0.2);
+--mask-45: rgba(0, 0, 0, 0.22);
+--mask-50: rgba(0, 0, 0, 0.25);
+--mask-60: rgba(0, 0, 0, 0.3);
+--mask-70: rgba(0, 0, 0, 0.35);
+--mask-75: rgba(0, 0, 0, 0.4);
+--mask-80: rgba(0, 0, 0, 0.5);
+--mask-85: rgba(0, 0, 0, 0.6);
+--mask-95: rgba(0, 0, 0, 0.7);
+
+/* 打印专用变量（覆盖主题配色，白底黑字） */
+--print-bg: #ffffff;
+--print-bg-subtle: #fafafa;
+--print-bg-subtler: #f5f5f5;
+--print-bg-deep: #f0f0f0;
+--print-bg-darker: #f5f5f5;
+--print-text-primary: #262626;
+--print-text-secondary: #404040;
+--print-text-tertiary: #5c5c5c;
+--print-border: #e5e5e5;
+--print-border-light: #f0f0f0;
+--print-muted: #737373;
+/* Year Review 专用变量 */
+--year-review-text-tertiary: #737373;
+--year-review-text-yellow: #fde047;
+--year-review-text-cyan: #67e8f9;
+
+/* OAuth 第三方平台品牌色 */
+--oauth-casdoor-green: #67c23a;
+--oauth-kuaishou-orange: #ff4906;
+
+/* === 用途化变量 — 背景纹理光晕（body::before） === */
+--bg-texture-warm-glow: rgba(240, 240, 250, 0.01);
+
+/* === 用途化变量 — 按钮阴影 === */
+--btn-primary-shadow: rgba(124, 58, 237, 0.2);
+
+/* === 用途化变量 — Canvas 动画背景叠加色 === */
+--canvas-bg-overlay: rgba(255, 255, 255, 0.92);
+
+/* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
+--canvas-glow-overlay-end: rgba(245, 245, 250, 0.7);
+
+/* === 用途化变量 — 歌词消息 fallback === */
+--lyric-msg-fallback-text: #1e1e1e;
+
+/* === 用途化变量 — 模态框阴影 === */
+--modal-hover-shadow: rgba(0, 0, 0, 0.08);
+
+/* === 用途化变量 — 移动端表格阴影 === */
+--mobile-table-shadow: rgba(0, 0, 0, 0.5);
+}
+

@@ -4,6 +4,7 @@
 /* 导入主题变量（亮色覆盖暗色，由 data-theme 控制） */
 @import url('./themes/ClassicDark.css');
 @import url('./themes/ClassicLight.css');
+@import url('./themes/ModernLight.css');
 
 @unocss;
 

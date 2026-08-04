@@ -751,7 +751,8 @@ VoiceHub/
 │   │       ├── year-review.css    # 年度回顾样式
 │   │       └── themes/            # 主题目录
 │   │           ├── dark.css         # 深色主题设计变量
-│   │           └── light.css        # 亮色主题设计变量
+│   │           ├── light.css        # 亮色主题设计变量
+│   │           └── ModernLight.css # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
@@ -1402,27 +1403,28 @@ VoiceHub/
 
 ### 主题系统
 
-VoiceHub 采用 CSS 变量驱动的主题架构，支持深色/亮色两种主题模式。主题文件按功能模块组织在 `app/assets/css/themes/` 目录下：
+VoiceHub 采用 CSS 变量驱动的主题架构，支持深色与亮色两种主题模式，包含经典与现代两种设计风格。主题文件按功能模块组织在 `app/assets/css/themes/` 目录下：
 
 #### 目录结构
 
 ```
 app/assets/css/themes/
 ├── ClassicDark.css       # 深色主题设计变量（:root[data-theme="ClassicDark"]）
-└── ClassicLight.css      # 亮色主题设计变量（:root[data-theme="ClassicLight"]）
+├── ClassicLight.css      # 亮色主题设计变量（:root[data-theme="ClassicLight"]）
+└── ModernLight.css       # 现代浅色主题设计变量（:root[data-theme="ModernLight"]）
 ```
 
 #### 架构说明
 
 - **CSS 变量分离**：每个主题在独立的 CSS 文件中定义 `:root[data-theme="主题名"]` 选择器，包含所有设计变量（颜色、背景、文字、边框等）
-- **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入 `themes/ClassicDark.css` 和 `themes/ClassicLight.css`，亮色主题覆盖深色主题
+- **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入主题文件，各主题按需引入
 - **切换机制**：通过 `useTheme()` composable 和 `theme.client.ts` 插件实现主题切换与 localStorage 持久化
 
 #### 主题图片管理
 
-主题相关的图片资源：**SVG 图片**（随主题切换，存放在 `public/themes/{ClassicDark,ClassicLight}/`）
+主题相关的图片资源：**SVG 图片**（随主题切换，存放在 `public/themes/{ClassicDark,ClassicLight,ModernLight}/`）
 
-- **SVG 主题图片存放位置**：`public/themes/ClassicLight/`（亮色主题）和 `public/themes/ClassicDark/`（深色主题）
+- **SVG 主题图片存放位置**：`public/themes/ClassicLight/`（亮色主题）、`public/themes/ClassicDark/`（深色主题）和 `public/themes/ModernLight/`（现代浅色主题）
 - **管理方式**：SVG 图片通过 `useThemeImage()` composable 统一获取，PNG 图片直接使用静态路径
 - **使用示例**：
   ```vue
