@@ -295,6 +295,13 @@
       "when": 1785844800000,
       "tag": "20260804120000_add_resource_metrics",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1785853800000,
+      "tag": "20260804223000_add_user_sessions",
+      "breakpoints": true
     }
   ]
 }

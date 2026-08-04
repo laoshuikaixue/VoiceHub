@@ -38,6 +38,30 @@ export const users = pgTable('User', {
   statusChangedBy: integer('statusChangedBy'),
 });
 
+// 用户登录会话：用于在线状态、设备来源与单会话撤销。
+export const userSessions = pgTable('user_sessions', {
+  id: uuid('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  tokenVersion: integer('token_version').default(0).notNull(),
+  ipAddress: text('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  browser: varchar('browser', { length: 64 }).default('Unknown').notNull(),
+  deviceType: varchar('device_type', { length: 32 }).default('unknown').notNull(),
+  lastPath: varchar('last_path', { length: 500 }),
+  startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revokedBy: integer('revoked_by'),
+  revocationReason: varchar('revocation_reason', { length: 255 })
+}, (table) => [
+  index('user_sessions_user_active_idx').on(table.userId, table.lastActiveAt),
+  index('user_sessions_last_active_idx').on(table.lastActiveAt),
+  index('user_sessions_expires_at_idx').on(table.expiresAt),
+  index('user_sessions_browser_idx').on(table.browser),
+  index('user_sessions_device_type_idx').on(table.deviceType)
+]);
+
 // 播出时段表
 export const playTimes = pgTable('PlayTime', {
   id: serial('id').primaryKey(),
@@ -449,10 +473,18 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   statusLogs: many(userStatusLogs),
     collaborations: many(songCollaborators),
   replayRequests: many(songReplayRequests),
+  sessions: many(userSessions),
   statusChangedByUser: one(users, {
     fields: [users.statusChangedBy],
     references: [users.id],
   }),
+}));
+
+export const userSessionsRelations = relations(userSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [userSessions.userId],
+    references: [users.id]
+  })
 }));
 
 export const userIdentitiesRelations = relations(userIdentities, ({ one }) => ({
@@ -644,6 +676,8 @@ export type NewEmailTemplate = typeof emailTemplates.$inferInsert;export type Re
 export type NewRequestTime = typeof requestTimes.$inferInsert;
 export type UserIdentity = typeof userIdentities.$inferSelect;
 export type NewUserIdentity = typeof userIdentities.$inferInsert;
+export type UserSession = typeof userSessions.$inferSelect;
+export type NewUserSession = typeof userSessions.$inferInsert;
 // 卡密表
 export const cardCodes = pgTable('CardCode', {
   id: serial('id').primaryKey(),

@@ -7,8 +7,12 @@ import { getMusicSseStats } from '~~/server/api/music/websocket'
 import { getProgressSseStats } from '~~/server/api/progress/events'
 import { getAutoBackupConfig, isAutoBackupEnabled } from '~~/server/services/autoBackupService'
 import { logManager } from '~~/server/utils/log-manager'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 let sentryCache: { expiresAt: number; value: any } | null = null
+let sentryRequestInFlight: Promise<any> | null = null
+const SENTRY_CACHE_TTL_MS = 2 * 60 * 1000
+const SENTRY_FAILURE_CACHE_TTL_MS = 15 * 1000
 
 const maskIpAddress = (value: unknown) => {
   const ip = String(value || '')
@@ -26,27 +30,36 @@ const getSentryIssues = async () => {
     return { configured: false, issues: [] }
   }
 
-  if (sentryCache && sentryCache.expiresAt > Date.now()) return sentryCache.value
+  if (sentryCache && sentryCache.expiresAt > getServerTimestamp()) return sentryCache.value
+  if (sentryRequestInFlight) return await sentryRequestInFlight
+
+  sentryRequestInFlight = (async () => {
+    try {
+      const baseUrl = (process.env.SENTRY_API_URL || 'https://sentry.io/api/0').replace(/\/$/, '')
+      const response = await fetch(`${baseUrl}/projects/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/issues/?query=is%3Aunresolved&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(3000)
+      })
+      if (!response.ok) throw new Error(`Sentry API ${response.status}`)
+      const issues = await response.json() as Array<any>
+      const value = {
+        configured: true,
+        available: true,
+        issues: issues.map((issue) => ({ id: issue.id, title: issue.title, level: issue.level, count: issue.count, lastSeen: issue.lastSeen }))
+      }
+      sentryCache = { value, expiresAt: getServerTimestamp() + SENTRY_CACHE_TTL_MS }
+      return value
+    } catch (error) {
+      const value = { configured: true, available: false, error: error instanceof Error ? error.message : 'Sentry 查询失败', issues: [] }
+      sentryCache = { value, expiresAt: getServerTimestamp() + SENTRY_FAILURE_CACHE_TTL_MS }
+      return value
+    }
+  })()
 
   try {
-    const baseUrl = (process.env.SENTRY_API_URL || 'https://sentry.io/api/0').replace(/\/$/, '')
-    const response = await fetch(`${baseUrl}/projects/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/issues/?query=is%3Aunresolved&limit=10`, {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(5000)
-    })
-    if (!response.ok) throw new Error(`Sentry API ${response.status}`)
-    const issues = await response.json() as Array<any>
-    const value = {
-      configured: true,
-      available: true,
-      issues: issues.map((issue) => ({ id: issue.id, title: issue.title, level: issue.level, count: issue.count, lastSeen: issue.lastSeen }))
-    }
-    sentryCache = { value, expiresAt: Date.now() + 30_000 }
-    return value
-  } catch (error) {
-    const value = { configured: true, available: false, error: error instanceof Error ? error.message : 'Sentry 查询失败', issues: [] }
-    sentryCache = { value, expiresAt: Date.now() + 30_000 }
-    return value
+    return await sentryRequestInFlight
+  } finally {
+    sentryRequestInFlight = null
   }
 }
 
@@ -117,7 +130,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: authResult.message })
   }
 
-  const requestId = String(getQuery(event).requestId || '').trim()
+  const query = getQuery(event)
+  if (String(query.sentryOnly || '') === '1') {
+    return { success: true, data: { sentry: await getSentryIssues() } }
+  }
+
+  const requestId = String(query.requestId || '').trim()
+  const includeSentry = String(query.includeSentry || '') !== '0'
   void triggerMusicSourceProbe()
 
   const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, dependencyTimeline, redis, backup, sentry, requestDiagnostics, securityEvents, ipBehavior, requestBehaviorTimeline, businessTimeline, sentryTrace] = await Promise.allSettled([
@@ -132,7 +151,7 @@ export default defineEventHandler(async (event) => {
     databaseManager.getDependencyMetricTimeline(),
     getRedisMetrics(),
     getBackupMonitorStatus(),
-    getSentryIssues(),
+    includeSentry ? getSentryIssues() : Promise.resolve({ configured: false, issues: [] }),
     requestId ? databaseManager.getRequestDiagnostics(requestId) : Promise.resolve([]),
     databaseManager.getSecurityAuditEvents(),
     databaseManager.getIpBehaviorTimeline(),

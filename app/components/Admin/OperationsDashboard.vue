@@ -309,10 +309,40 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
-        <OpsPanel class="xl:col-span-5" :title="locale.server.healthScore" subtitle="后端根据近 5 分钟 HTTP 可用率采集。" :status="healthScorePanelStatus" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRuntimeHealthScore && !initialOperationsLoading" empty-text="暂无真实健康评分数据。" :refreshable="false" @refresh="loadOperationsData">
+        <OpsPanel class="health-score-panel xl:col-span-5" :title="locale.server.healthScore" subtitle="后端根据近 5 分钟 HTTP 可用率采集。" :status="healthScorePanelStatus" :updated-at="infraMetricsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRuntimeHealthScore && !initialOperationsLoading" empty-text="暂无真实健康评分数据。" :refreshable="false" @refresh="loadOperationsData">
           <div class="server-health-layout">
-            <div class="health-score-ring" :class="`health-score-ring--${healthScoreTone}`"><strong>{{ formatPercent(runtimeHealthScore.value) }}</strong><span>后端健康评分</span></div>
-            <dl class="server-health-details"><div><dt>评分来源</dt><dd>{{ runtimeHealthScore.source || 'HTTP 可用率' }}</dd></div><div><dt>评分状态</dt><dd>{{ healthScoreStatusLabel }}</dd></div></dl>
+            <aside class="server-health-score" :class="`server-health-score--${healthScoreTone}`">
+              <div class="server-health-score__eyebrow">
+                <span class="server-health-score__icon"><Icon name="activity" :size="16" /></span>
+                <span>实时巡检</span>
+              </div>
+              <strong class="server-health-score__value">{{ healthScoreDisplay }}</strong>
+              <span class="server-health-score__unit">综合评分 / 100</span>
+              <div class="server-health-score__track" role="progressbar" aria-label="服务器健康评分" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="healthScoreProgress">
+                <i :style="{ width: `${healthScoreProgress}%` }" />
+              </div>
+              <div class="server-health-score__scale"><span>风险</span><span>关注</span><span>健康</span></div>
+              <p>{{ healthScoreSummary }}</p>
+            </aside>
+
+            <div class="server-health-inspection">
+              <div class="server-health-inspection__heading">
+                <div>
+                  <h4>健康评分</h4>
+                  <p>基于近 5 分钟 HTTP 可用率，生成当前实例的巡检结论。</p>
+                </div>
+                <span class="server-health-inspection__badge" :class="`server-health-inspection__badge--${healthScorePanelStatus}`">{{ healthScoreStatusLabel }}</span>
+              </div>
+              <dl class="server-health-details">
+                <div><dt>健康等级</dt><dd>{{ healthScoreStatusLabel }}</dd></div>
+                <div><dt>异常 / 警告</dt><dd>{{ abnormalModuleCount }} / {{ warningModuleCount }}</dd></div>
+                <div><dt>采样时间</dt><dd>{{ infraMetricsUpdatedAt }}</dd></div>
+              </dl>
+              <div class="server-health-inspection__note">
+                <Icon name="bell" :size="14" />
+                <span>{{ healthScoreInspectionNote }}</span>
+              </div>
+            </div>
           </div>
         </OpsPanel>
 
@@ -549,20 +579,45 @@
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <OpsPanel class="xl:col-span-7" title="当前活跃风险" subtitle="优先展示当前采集窗口内需要关注的认证、验证码和限流信号。" :status="securityModuleStatus" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeHttpMetrics && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="risk-distribution">
-            <div class="risk-total">
-              <span class="risk-total__icon"><Icon name="warning" :size="18" /></span>
-              <strong>{{ activeRiskCount || '未发现风险' }}</strong>
-              <p>{{ activeRiskCount ? '当前活跃风险信号' : '当前采集窗口内未发现风险' }}</p>
-            </div>
-            <div class="risk-levels">
-              <p v-if="!prioritizedSecurityRiskRows.length" class="panel-copy py-6">未发现风险</p>
-              <div v-for="item in prioritizedSecurityRiskRows" :key="item.label" class="risk-level-row">
-                <span class="risk-level-name"><i :class="`dependency-status-dot--${item.status}`" />{{ item.label }}</span>
-                <strong>{{ item.value }}</strong>
+            <aside class="risk-total" :class="{ 'risk-total--active': activeRiskCount }">
+              <div class="risk-total__eyebrow">
+                <span class="risk-total__icon"><Icon name="warning" :size="16" /></span>
+                <span>{{ activeRiskCount ? '待处理' : '当前窗口' }}</span>
+              </div>
+              <div class="risk-total__value"><strong>{{ activeRiskCount }}</strong><span>个风险事件</span></div>
+              <p>{{ activeRiskCount ? '存在尚需关注的风险信号，建议按错误级别优先排查。' : '当前采集窗口内未发现需要处理的风险信号。' }}</p>
+              <div class="risk-total__track" aria-hidden="true">
+                <i class="risk-total__track-error" :style="{ width: `${securityRiskShare('error')}%` }" />
+                <i class="risk-total__track-warning" :style="{ width: `${securityRiskShare('warning')}%` }" />
+              </div>
+              <div class="risk-total__legend">
+                <span>错误 {{ securityRiskStatusTotal('error') }}</span>
+                <span>警告 {{ securityRiskStatusTotal('warning') }}</span>
+                <span>总量 {{ activeRiskCount }}</span>
+              </div>
+              <div class="risk-total__priority">
+                <span>优先处置</span>
+                <strong>{{ securityRiskPriorityLabel }}</strong>
+                <em :class="`risk-total__priority--${securityModuleStatus}`">{{ activeRiskCount ? '存在活跃风险' : '未发现风险' }}</em>
+              </div>
+            </aside>
+
+            <div class="risk-breakdown">
+              <dl class="risk-summary-grid">
+                <div v-for="item in securityRiskSummary" :key="item.label"><dt>{{ item.label }}</dt><dd :class="`ops-tone--${item.status}`">{{ item.value }}</dd></div>
+              </dl>
+              <div class="risk-levels">
+                <p v-if="!prioritizedSecurityRiskRows.length" class="risk-levels__empty">未发现风险</p>
+                <div v-for="item in prioritizedSecurityRiskRows" :key="item.label" class="risk-level-row">
+                  <div class="risk-level-row__head">
+                    <span class="risk-level-name" :class="`risk-level-name--${item.status}`">{{ item.label }}</span>
+                    <strong>{{ item.value }}</strong>
+                  </div>
+                  <div class="risk-level-row__track"><i :class="`risk-level-row__track--${item.status}`" :style="{ width: `${securityRiskItemShare(item)}%` }" /></div>
+                </div>
               </div>
             </div>
           </div>
-          <p class="panel-copy mt-4">风险计数来自当前 5 分钟采集窗口，不进行复杂风险评分。</p>
         </OpsPanel>
 
         <OpsPanel class="xl:col-span-5" title="异常行为账户" subtitle="按用户维度识别短时刷歌、刷票和投稿限额触发。" status="unknown" :updated-at="securityUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData" />
@@ -595,6 +650,10 @@
       <OpsPanel :title="locale.audit.ipBehaviorTimeline" :subtitle="locale.audit.ipBehaviorTimelineDetail" :status="ipBehaviorPanelStatus" :updated-at="securityEventsUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!ipBehaviorRows.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
         <div class="overflow-x-auto"><table class="data-table min-w-[760px]"><thead><tr><th>IP</th><th>请求数</th><th>4xx</th><th>5xx</th><th>最近路由</th><th>首次出现</th><th>最近出现</th></tr></thead><tbody><tr v-for="item in ipBehaviorRows" :key="item.ip"><td class="font-mono">{{ maskIpAddress(item.ip) }}</td><td>{{ item.requests }}</td><td>{{ item.client_errors }}</td><td :class="{ 'text-rose-400': Number(item.server_errors) > 0 }">{{ item.server_errors }}</td><td>{{ item.last_route }}</td><td>{{ formatTimestamp(item.first_seen) }}</td><td>{{ formatTimestamp(item.last_seen) }}</td></tr></tbody></table></div>
       </OpsPanel>
+    </template>
+
+    <template v-else-if="activeGroup === 'user-activity'">
+      <UserActivityPanel :refresh-token="userActivityRefreshToken" />
     </template>
 
     <template v-else-if="activeGroup === 'operation-logs'">
@@ -967,6 +1026,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
 import OpsPanel from '~/components/Admin/Ops/OpsPanel.vue'
+import UserActivityPanel from '~/components/Admin/UserActivityPanel.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
 
@@ -1013,7 +1073,8 @@ const operationLogActionOptions = [
   { label: '恢复备份', value: 'BACKUP.RESTORE' },
   { label: '清理数据库', value: 'DB.CLEANUP' },
   { label: '重置数据库', value: 'DB.RESET' },
-  { label: '修复数据库序列', value: 'DB.SEQUENCE_REPAIR' }
+  { label: '修复数据库序列', value: 'DB.SEQUENCE_REPAIR' },
+  { label: '强制下线会话', value: 'SESSION.REVOKE' }
 ]
 const operationLogTargetTypeOptions = [
   { label: '全部对象', value: '' },
@@ -1024,7 +1085,8 @@ const operationLogTargetTypeOptions = [
   { label: '系统设置（备份）', value: 'SYSTEM_SETTINGS' },
   { label: '备份文件', value: 'BACKUP' },
   { label: '数据库', value: 'DATABASE' },
-  { label: '数据库表', value: 'DATABASE_TABLE' }
+  { label: '数据库表', value: 'DATABASE_TABLE' },
+  { label: '用户会话', value: 'USER_SESSION' }
 ]
 const operationLogResultOptions = [{ label: '全部结果', value: '' }, { label: '成功', value: 'SUCCESS' }, { label: '失败', value: 'FAILURE' }]
 const operationsLoading = ref(true)
@@ -1044,13 +1106,17 @@ const autoRefreshIntervalOptions = [
 const moduleFetchErrors = ref({ system: false, pool: false, performance: false, backups: false, metrics: false })
 const backupAccessState = ref('idle')
 const backupLastUpdated = ref(null)
+const userActivityRefreshToken = ref(0)
 let operationsRequestInFlight = false
+let operationsLoadVersion = 0
 
 const loadOperationsData = async () => {
   if (operationsRequestInFlight) return
   operationsRequestInFlight = true
+  const loadVersion = ++operationsLoadVersion
   operationsLoading.value = true
   operationsError.value = false
+  const sentryResult = $fetch('/api/admin/operations/metrics', { query: { sentryOnly: '1' } }).catch(() => null)
 
   try {
     const [statusResult, poolResult, performanceResult, backupResult, metricsResult] = await Promise.allSettled([
@@ -1058,7 +1124,7 @@ const loadOperationsData = async () => {
       $fetch('/api/admin/database/pool-status'),
       $fetch('/api/admin/database/performance'),
       $fetch('/api/admin/backup/history'),
-      $fetch('/api/admin/operations/metrics')
+      $fetch('/api/admin/operations/metrics', { query: { includeSentry: '0' } })
     ])
 
     if (statusResult.status === 'fulfilled') operationsData.value.status = statusResult.value
@@ -1077,7 +1143,12 @@ const loadOperationsData = async () => {
     if (metricsResult.status === 'fulfilled') {
       const metrics = metricsResult.value?.data || {}
       const currentDiagnostic = operationsData.value.metrics?.diagnostic
-      operationsData.value.metrics = currentDiagnostic?.requestId ? { ...metrics, diagnostic: currentDiagnostic } : metrics
+      const currentSentry = operationsData.value.metrics?.sentry
+      operationsData.value.metrics = {
+        ...metrics,
+        ...(currentSentry ? { sentry: currentSentry } : {}),
+        ...(currentDiagnostic?.requestId ? { diagnostic: currentDiagnostic } : {})
+      }
       if (metrics.database?.pool) operationsData.value.pool = metrics.database.pool
       if (metrics.database?.performance) operationsData.value.performance = metrics.database.performance
     }
@@ -1096,7 +1167,13 @@ const loadOperationsData = async () => {
     operationsLoading.value = false
     initialOperationsLoading.value = false
     operationsRequestInFlight = false
+    userActivityRefreshToken.value += 1
   }
+
+  void sentryResult.then((response) => {
+    if (loadVersion !== operationsLoadVersion || !response?.data?.sentry) return
+    operationsData.value.metrics = { ...(operationsData.value.metrics || {}), sentry: response.data.sentry }
+  })
 }
 
 const operationLogErrorMessage = (error) => {
@@ -1204,6 +1281,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  operationsLoadVersion += 1
   stopAutoRefresh()
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (runtimeClockTimer) window.clearInterval(runtimeClockTimer)
@@ -1240,6 +1318,20 @@ const healthScorePanelStatus = computed(() => {
 })
 const healthScoreTone = computed(() => ({ ok: 'good', warning: 'warn', error: 'critical', unknown: 'unknown' }[runtimeHealthScore.value?.status] || 'unknown'))
 const healthScoreStatusLabel = computed(() => ({ ok: '正常', warning: '需要关注', error: '异常', unknown: '未知' }[healthScorePanelStatus.value] || '未知'))
+const healthScoreProgress = computed(() => hasRuntimeHealthScore.value ? Math.min(100, Math.max(0, Number(runtimeHealthScore.value.value))) : 0)
+const healthScoreDisplay = computed(() => hasRuntimeHealthScore.value ? Number(runtimeHealthScore.value.value).toFixed(1).replace(/\.0$/, '') : '--')
+const healthScoreSummary = computed(() => ({
+  ok: '当前可用率表现稳定，建议持续关注峰值时段。',
+  warning: '当前可用率存在压力，建议关注近期失败请求。',
+  error: '当前可用率异常，请优先检查近期错误请求。',
+  unknown: '当前缺少有效采样，暂时无法生成评分结论。'
+}[healthScorePanelStatus.value] || '当前缺少有效采样，暂时无法生成评分结论。'))
+const healthScoreInspectionNote = computed(() => ({
+  ok: '当前未发现可用率风险，可继续关注峰值时段的请求表现。',
+  warning: '检测到可用率波动，请检查近 5 分钟失败请求与上游依赖。',
+  error: '检测到明确可用率风险，请立即排查错误请求及服务依赖。',
+  unknown: '当前采样不足，待获得真实数据后生成巡检结论。'
+}[healthScorePanelStatus.value] || '当前采样不足，待获得真实数据后生成巡检结论。'))
 const runtimeHttpMetrics = computed(() => runtimeMetrics.value?.http || null)
 const runtimeTimeline = computed(() => {
   const persistedTimeline = runtimeDatabaseMetrics.value?.timeline || []
@@ -2062,7 +2154,8 @@ const groupTabStatus = (group) => ({
   database: databaseModuleStatus.value,
   dependencies: dependenciesModuleStatus.value,
   security: securityModuleStatus.value,
-  infra: systemModuleStatus.value
+  infra: systemModuleStatus.value,
+  'user-activity': 'unknown'
 }[group] || 'unknown')
 
 const monitorSections = computed(() => [
@@ -2075,7 +2168,8 @@ const monitorSections = computed(() => [
       { icon: 'music', label: locale.value.groups?.business, value: 'business' },
       { icon: 'database', label: locale.value.groups?.database, value: 'database' },
       { icon: 'server', label: locale.value.groups?.infra, value: 'infra' },
-      { icon: 'warning', label: locale.value.groups?.security, value: 'security' }
+      { icon: 'warning', label: locale.value.groups?.security, value: 'security' },
+      { icon: 'users', label: locale.value.groups?.userActivity, value: 'user-activity' }
     ]
   },
   {
@@ -2729,15 +2823,16 @@ const securityRiskRows = computed(() => {
   const oauthSuccessRate = runtimeOAuthMetrics.value?.successRate
   const turnstileCalls = Number(turnstileMetrics.value?.calls || 0)
   return [
-    { label: '5xx 服务错误', value: Number(runtimeHttpMetrics.value?.recent5xx || 0), status: Number(runtimeHttpMetrics.value?.recent5xx || 0) > 0 ? 'error' : 'ok' },
-    { label: '无效 JWT 请求', value: Number(runtimeHttpMetrics.value?.status401 || 0), status: Number(runtimeHttpMetrics.value?.status401 || 0) > 0 ? 'warning' : 'ok' },
-    { label: '权限拒绝请求', value: Number(runtimeHttpMetrics.value?.status403 || 0), status: Number(runtimeHttpMetrics.value?.status403 || 0) > 0 ? 'warning' : 'ok' },
-    { label: '429 限流触发', value: Number(runtimeHttpMetrics.value?.status429 || 0), status: Number(runtimeHttpMetrics.value?.status429 || 0) > 0 ? 'warning' : 'ok' },
-    { label: '验证码拦截', value: turnstileCalls ? Number(turnstileMetrics.value?.validationFailures || 0) : '--', status: !turnstileCalls ? 'unknown' : Number(turnstileMetrics.value?.validationFailures || 0) > 0 ? 'warning' : 'ok' },
-    { label: 'Turnstile 上游失败', value: turnstileCalls ? Number(turnstileMetrics.value?.upstreamFailures || 0) : '--', status: !turnstileCalls ? 'unknown' : Number(turnstileMetrics.value?.upstreamFailures || 0) > 0 ? 'error' : 'ok' },
+    { label: '5xx 服务错误', value: Number(runtimeHttpMetrics.value?.recent5xx || 0), count: Number(runtimeHttpMetrics.value?.recent5xx || 0), status: Number(runtimeHttpMetrics.value?.recent5xx || 0) > 0 ? 'error' : 'ok' },
+    { label: '无效 JWT 请求', value: Number(runtimeHttpMetrics.value?.status401 || 0), count: Number(runtimeHttpMetrics.value?.status401 || 0), status: Number(runtimeHttpMetrics.value?.status401 || 0) > 0 ? 'warning' : 'ok' },
+    { label: '权限拒绝请求', value: Number(runtimeHttpMetrics.value?.status403 || 0), count: Number(runtimeHttpMetrics.value?.status403 || 0), status: Number(runtimeHttpMetrics.value?.status403 || 0) > 0 ? 'warning' : 'ok' },
+    { label: '429 限流触发', value: Number(runtimeHttpMetrics.value?.status429 || 0), count: Number(runtimeHttpMetrics.value?.status429 || 0), status: Number(runtimeHttpMetrics.value?.status429 || 0) > 0 ? 'warning' : 'ok' },
+    { label: '验证码拦截', value: turnstileCalls ? Number(turnstileMetrics.value?.validationFailures || 0) : '--', count: turnstileCalls ? Number(turnstileMetrics.value?.validationFailures || 0) : 0, status: !turnstileCalls ? 'unknown' : Number(turnstileMetrics.value?.validationFailures || 0) > 0 ? 'warning' : 'ok' },
+    { label: 'Turnstile 上游失败', value: turnstileCalls ? Number(turnstileMetrics.value?.upstreamFailures || 0) : '--', count: turnstileCalls ? Number(turnstileMetrics.value?.upstreamFailures || 0) : 0, status: !turnstileCalls ? 'unknown' : Number(turnstileMetrics.value?.upstreamFailures || 0) > 0 ? 'error' : 'ok' },
     {
       label: 'OAuth 回调失败率',
       value: oauthCalls && oauthSuccessRate != null ? `${(100 - Number(oauthSuccessRate)).toFixed(1)}%` : '--',
+      count: oauthFailureCount.value,
       status: !oauthCalls || oauthSuccessRate == null ? 'unknown' : Number(oauthSuccessRate) === 0 ? 'error' : Number(oauthSuccessRate) < 100 ? 'warning' : 'ok'
     }
   ]
@@ -2745,6 +2840,20 @@ const securityRiskRows = computed(() => {
 const prioritizedSecurityRiskRows = computed(() => securityRiskRows.value
   .filter((item) => item.status === 'warning' || item.status === 'error')
   .sort((left, right) => statusRank[right.status] - statusRank[left.status]))
+const securityRiskStatusTotal = (status) => securityRiskRows.value
+  .filter((item) => item.status === status)
+  .reduce((total, item) => total + Number(item.count || 0), 0)
+const securityRiskShare = (status) => activeRiskCount.value ? Math.min(100, securityRiskStatusTotal(status) / activeRiskCount.value * 100) : 0
+const securityRiskItemShare = (item) => activeRiskCount.value && item.count
+  ? Math.max(3, Math.min(100, Number(item.count) / activeRiskCount.value * 100))
+  : 0
+const securityRiskSummary = computed(() => [
+  { label: '错误信号', value: securityRiskStatusTotal('error'), status: securityRiskStatusTotal('error') ? 'error' : 'unknown' },
+  { label: '警告信号', value: securityRiskStatusTotal('warning'), status: securityRiskStatusTotal('warning') ? 'warning' : 'unknown' },
+  { label: '风险事件', value: activeRiskCount.value, status: activeRiskCount.value ? securityModuleStatus.value : 'ok' },
+  { label: '未采集项', value: securityRiskRows.value.filter((item) => item.status === 'unknown').length, status: 'unknown' }
+])
+const securityRiskPriorityLabel = computed(() => securityRiskStatusTotal('error') ? '错误信号' : securityRiskStatusTotal('warning') ? '警告信号' : '无需处置')
 
 const securitySignalMetrics = computed(() => [
   { icon: 'warning', label: locale.value.audit?.invalidTokenRequests, detail: 'JWT 校验失败与过期 Token 请求数' },
@@ -3566,38 +3675,194 @@ const dependencyProtectionPanelStatus = (panel) => {
 }
 
 .server-health-layout {
+  display: grid;
+  min-height: 16rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0.65rem;
+}
+
+:deep(.health-score-panel .ops-panel__header) {
+  display: none;
+}
+
+:deep(.health-score-panel .ops-panel__body) {
+  padding: 0;
+}
+
+.server-health-score {
+  --health-accent: var(--ops-unknown);
   display: flex;
-  min-height: 15rem;
+  min-width: 0;
   flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  padding: 1rem;
+  background: #0e1217;
+}
+
+.server-health-score--good { --health-accent: var(--ops-ok); }
+.server-health-score--warn { --health-accent: var(--ops-warning); }
+.server-health-score--critical { --health-accent: var(--ops-error); }
+
+.server-health-score__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.server-health-score__icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  padding: 1.25rem;
+  border-radius: 4px;
+  color: var(--health-accent);
+  background: color-mix(in srgb, var(--health-accent) 10%, transparent);
 }
+
+.server-health-score__value {
+  margin-top: 1.3rem;
+  color: var(--ops-text-1);
+  font-family: var(--ops-mono);
+  font-size: 2.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.server-health-score__unit {
+  margin-top: 0.45rem;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.server-health-score__track {
+  height: 0.5rem;
+  margin-top: 1.7rem;
+  overflow: hidden;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  background: #11151b;
+}
+
+.server-health-score__track i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--health-accent);
+  transition: width 0.3s ease;
+}
+
+.server-health-score__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.55rem;
+  color: var(--ops-text-2);
+  font-size: 0.625rem;
+}
+
+.server-health-score > p {
+  margin: 1.1rem 0 0;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+  line-height: 1.55;
+}
+
+.server-health-inspection {
+  min-width: 0;
+  padding: 1rem 0 0;
+}
+
+.server-health-inspection__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.server-health-inspection__heading h4 {
+  margin: 0;
+  color: var(--ops-text-1);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.server-health-inspection__heading p {
+  margin: 0.45rem 0 0;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.server-health-inspection__badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--ops-line);
+  border-radius: 5px;
+  padding: 0.3rem 0.5rem;
+  color: var(--ops-unknown);
+  background: #0e1217;
+  font-size: 0.625rem;
+  font-weight: 650;
+}
+
+.server-health-inspection__badge--ok { border-color: color-mix(in srgb, var(--ops-ok) 35%, transparent); color: var(--ops-ok); }
+.server-health-inspection__badge--warning { border-color: color-mix(in srgb, var(--ops-warning) 35%, transparent); color: var(--ops-warning); }
+.server-health-inspection__badge--error { border-color: color-mix(in srgb, var(--ops-error) 35%, transparent); color: var(--ops-error); }
 
 .server-health-details {
   display: grid;
   width: 100%;
   grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+  margin-top: 1.25rem;
 }
 
 .server-health-details > div {
   min-width: 0;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+  min-height: 4.25rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.7rem;
+  background: #0e1217;
 }
 
 .server-health-details dt {
-  color: rgb(113 113 122);
+  color: var(--ops-text-2);
   font-size: 0.6875rem;
-  font-weight: 600;
 }
 
 .server-health-details dd {
-  margin-top: 0.45rem;
-  color: rgb(212 212 216);
-  font-size: 0.75rem;
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ops-text-1);
+  font-family: var(--ops-mono);
+  font-size: 0.6875rem;
   font-weight: 700;
+}
+
+.server-health-inspection__note {
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.75rem;
+  color: var(--ops-text-1);
+  background: #0e1217;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.server-health-inspection__note svg {
+  flex: 0 0 auto;
+  color: var(--ops-text-2);
 }
 
 .server-resource-grid {
@@ -4071,79 +4336,224 @@ const dependencyProtectionPanelStatus = (panel) => {
 .risk-distribution {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
 }
 
 .risk-total {
+  --risk-accent: var(--ops-ok);
   display: flex;
-  min-height: 11rem;
+  min-width: 0;
   flex-direction: column;
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  padding: 1rem;
+  background: #0e1217;
+}
+
+.risk-total--active {
+  --risk-accent: var(--ops-error);
+}
+
+.risk-total__eyebrow {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid rgb(39 39 42 / 0.75);
-  padding: 1.25rem;
-  text-align: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
 }
 
 .risk-total__icon {
   display: inline-flex;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  color: rgb(248 113 113);
-  background: rgb(239 68 68 / 0.1);
+  border-radius: 4px;
+  color: var(--risk-accent);
+  background: color-mix(in srgb, var(--risk-accent) 10%, transparent);
 }
 
-.risk-total strong {
-  margin-top: 1rem;
-  color: rgb(244 244 245);
-  font-size: 1.75rem;
+.risk-total__value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-top: 1.4rem;
+}
+
+.risk-total__value strong {
+  color: var(--ops-text-1);
+  font-family: var(--ops-mono);
+  font-size: 2.5rem;
+  font-weight: 500;
   line-height: 1;
 }
 
-.risk-total p {
-  margin-top: 0.65rem;
-  color: rgb(113 113 122);
+.risk-total__value span {
+  color: var(--ops-text-2);
   font-size: 0.6875rem;
 }
 
+.risk-total p {
+  margin: 0.8rem 0 0;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+  line-height: 1.55;
+}
+
+.risk-total__track {
+  display: flex;
+  height: 0.5rem;
+  margin-top: 1.4rem;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ops-unknown) 12%, transparent);
+}
+
+.risk-total__track i { display: block; height: 100%; }
+.risk-total__track-error { background: var(--ops-error); }
+.risk-total__track-warning { background: var(--ops-warning); }
+
+.risk-total__legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.55rem;
+  color: var(--ops-text-2);
+  font-family: var(--ops-mono);
+  font-size: 0.625rem;
+}
+
+.risk-total__priority {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem 0.75rem;
+  margin-top: 1.2rem;
+  border-top: 1px solid var(--ops-line);
+  padding-top: 1rem;
+}
+
+.risk-total__priority > span {
+  grid-column: 1 / -1;
+  color: var(--ops-text-2);
+  font-size: 0.625rem;
+}
+
+.risk-total__priority strong {
+  color: var(--ops-text-1);
+  font-size: 0.75rem;
+}
+
+.risk-total__priority em {
+  align-self: center;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.25rem 0.4rem;
+  color: var(--ops-unknown);
+  background: color-mix(in srgb, var(--ops-unknown) 8%, transparent);
+  font-size: 0.625rem;
+  font-style: normal;
+}
+
+.risk-total__priority .risk-total__priority--ok { border-color: color-mix(in srgb, var(--ops-ok) 30%, transparent); color: var(--ops-ok); background: color-mix(in srgb, var(--ops-ok) 8%, transparent); }
+.risk-total__priority .risk-total__priority--warning { border-color: color-mix(in srgb, var(--ops-warning) 30%, transparent); color: var(--ops-warning); background: color-mix(in srgb, var(--ops-warning) 8%, transparent); }
+.risk-total__priority .risk-total__priority--error { border-color: color-mix(in srgb, var(--ops-error) 30%, transparent); color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 8%, transparent); }
+
+.risk-breakdown { min-width: 0; }
+
+.risk-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.risk-summary-grid > div {
+  min-width: 0;
+  min-height: 4.2rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.65rem 0.75rem;
+  background: #0e1217;
+}
+
+.risk-summary-grid dt {
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+}
+
+.risk-summary-grid dd {
+  margin: 0.45rem 0 0;
+  font-family: var(--ops-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
 .risk-levels {
-  padding: 0 1rem;
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.risk-levels__empty {
+  display: flex;
+  min-height: 6rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  color: var(--ops-text-2);
+  background: #0e1217;
+  font-size: 0.75rem;
 }
 
 .risk-level-row {
-  display: flex;
-  min-height: 3.75rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  border-bottom: 1px solid rgb(39 39 42 / 0.75);
+  min-width: 0;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.65rem 0.75rem;
+  background: #0e1217;
 }
 
-.risk-level-row:last-child {
-  border-bottom: 0;
+.risk-level-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .risk-level-name {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  color: rgb(161 161 170);
-  font-size: 0.75rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 4px;
+  padding: 0.2rem 0.35rem;
+  color: var(--ops-text-2);
+  background: color-mix(in srgb, var(--ops-unknown) 7%, transparent);
+  font-size: 0.625rem;
   font-weight: 600;
 }
 
-.risk-level-name i {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-}
+.risk-level-name--error { border-color: color-mix(in srgb, var(--ops-error) 30%, transparent); color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 8%, transparent); }
+.risk-level-name--warning { border-color: color-mix(in srgb, var(--ops-warning) 30%, transparent); color: var(--ops-warning); background: color-mix(in srgb, var(--ops-warning) 8%, transparent); }
 
 .risk-level-row strong {
-  color: rgb(212 212 216);
+  color: var(--ops-text-1);
+  font-family: var(--ops-mono);
   font-size: 0.75rem;
 }
+
+.risk-level-row__track {
+  height: 0.4rem;
+  margin-top: 0.6rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ops-unknown) 10%, transparent);
+}
+
+.risk-level-row__track i { display: block; height: 100%; border-radius: 3px; }
+.risk-level-row__track--error { background: var(--ops-error); }
+.risk-level-row__track--warning { background: var(--ops-warning); }
 
 .risk-tone--critical {
   background: rgb(239 68 68);
@@ -4634,9 +5044,12 @@ const dependencyProtectionPanelStatus = (panel) => {
 :deep(.ops-refresh-interval > div:hover),
 :deep(.ops-refresh-interval > div.bg-blue-600\/5) { border-color: rgba(34, 211, 238, .5); background: #0e1217; }
 :deep(.ops-refresh-interval > div > div > span:last-child) { color: var(--ops-text-1); }
+:deep(.ops-refresh-interval > div > div:last-child svg) { color: var(--ops-text-2); opacity: .9; }
+:deep(.ops-refresh-interval > div:hover > div:last-child svg),
+:deep(.ops-refresh-interval > div.bg-blue-600\/5 > div:last-child svg) { color: var(--ops-info); opacity: 1; }
 :deep(.ops-refresh-interval > div.opacity-50) { cursor: not-allowed; border-color: var(--ops-line); }
 .auto-refresh-toggle > span { width: .45rem; height: .45rem; border-radius: 50%; background: var(--ops-unknown); }.auto-refresh-toggle > span.is-enabled { background: var(--ops-info); }
-.ops-status-spine__countdown { display: none; }
+.ops-status-spine__countdown { position: absolute; bottom: 0; left: 0; display: block; height: 2px; max-width: 100%; background: var(--ops-info); opacity: .85; pointer-events: none; transition: width .8s linear; }
 .ops-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
 .ops-toolbar__hint { color: var(--ops-text-3); font-family: var(--ops-mono); font-size: .67rem; }
 
@@ -4801,11 +5214,15 @@ const dependencyProtectionPanelStatus = (panel) => {
   }
 
   .server-health-layout {
-    flex-direction: row;
+    grid-template-columns: minmax(9rem, 0.8fr) minmax(0, 2fr);
+  }
+
+  .server-health-inspection {
+    padding: 0.35rem 0 0 1rem;
   }
 
   .server-health-details {
-    flex: 1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .metric-grid {
@@ -4866,12 +5283,11 @@ const dependencyProtectionPanelStatus = (panel) => {
   }
 
   .risk-distribution {
-    grid-template-columns: 11rem minmax(0, 1fr);
+    grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 2fr);
   }
 
-  .risk-total {
-    border-right: 1px solid rgb(39 39 42 / 0.75);
-    border-bottom: 0;
+  .risk-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .audit-filters {

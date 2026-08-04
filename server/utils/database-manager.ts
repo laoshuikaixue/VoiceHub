@@ -436,8 +436,9 @@ export class DatabaseManager {
   async cleanupExpiredSessions(): Promise<number> {
     try {
       const result = await db.execute(sql`
-        DELETE FROM session 
+        DELETE FROM user_sessions
         WHERE expires_at < NOW()
+          OR revoked_at < NOW() - interval '30 days'
       `)
 
       // postgres-js returns count in the result array object properties

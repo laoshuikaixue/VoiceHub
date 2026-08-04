@@ -767,6 +767,7 @@ VoiceHub/
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
 │   │   │   ├── OperationsDashboard.vue # 运维监控面板
+│   │   │   ├── UserActivityPanel.vue # 用户活动与在线会话面板
 │   │   │   ├── Ops/                     # 运维看板通用展示组件
 │   │   │   │   └── OpsPanel.vue          # 统一状态面板壳
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
@@ -927,6 +928,7 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
+│   │   ├── session-heartbeat.client.ts # 登录会话活动心跳
 │   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
@@ -1001,6 +1003,9 @@ VoiceHub/
 │   │   │   ├── operation-logs/      # 管理操作审计查询 API
 │   │   │   │   ├── [id].get.ts      # 获取操作记录详情
 │   │   │   │   └── index.get.ts     # 分页查询操作记录
+│   │   │   ├── user-activity/       # 用户活动与在线会话 API
+│   │   │   │   ├── index.get.ts     # 查询会话统计与列表
+│   │   │   │   └── sessions/[id].delete.ts # 强制下线单个会话
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   │   ├── [id].delete.ts   # 删除黑名单项
@@ -1274,6 +1279,7 @@ VoiceHub/
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
+│   │   ├── userSessionService.ts # 用户会话采集与撤销服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略

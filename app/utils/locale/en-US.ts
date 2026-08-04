@@ -1762,9 +1762,10 @@ export const admin = {
       database: '04-Database',
       infra: '05-Infrastructure',
       security: '06-Security',
-      debug: '07-Request Debug',
-      logs: '08-Log Center',
-      dependencies: '09-Dependencies'
+      userActivity: '07-User Activity',
+      debug: '08-Request Debug',
+      logs: '09-Log Center',
+      dependencies: '10-Dependencies'
     },
     overview: {
       systemHealth: 'System Health',
@@ -4448,6 +4449,9 @@ export const serverErrors = {
   AUTH_CAPTCHA_FAILED_OR_EXPIRED: 'Human verification failed or expired. Please try again.',
   AUTH_CAPTCHA_SERVICE_UNAVAILABLE: 'The human verification service is temporarily unavailable',
   AUTH_SESSION_EXPIRED: 'Your session has expired. Please sign in again.',
+  USER_SESSION_NOT_FOUND: 'The session does not exist or is already offline.',
+  USER_SESSION_FETCH_FAILED: 'User activity records are temporarily unavailable.',
+  USER_SESSION_REVOKE_FAILED: 'Failed to force the session offline.',
   AUTH_CREDENTIAL_CORRUPTED: 'Credential data is corrupted',
   AUTH_CREDENTIAL_MISSING: 'Credential data is missing',
   AUTH_CREDENTIAL_MISSING_PUBLICKEY: 'Credential data is missing publicKey',

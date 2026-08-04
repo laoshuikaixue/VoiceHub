@@ -1771,9 +1771,10 @@ export const admin = {
       database: '04-数据库',
       infra: '05-基础设施',
       security: '06-安全审计',
-      debug: '07-请求诊断',
-      logs: '08-日志中心',
-      dependencies: '09-外部依赖'
+      userActivity: '07-用户活动',
+      debug: '08-请求诊断',
+      logs: '09-日志中心',
+      dependencies: '10-外部依赖'
     },
     overview: {
       systemHealth: '系统健康',
@@ -4457,6 +4458,9 @@ export const serverErrors = {
   AUTH_CAPTCHA_FAILED_OR_EXPIRED: '人机验证失败或已过期，请重试',
   AUTH_CAPTCHA_SERVICE_UNAVAILABLE: '人机验证服务暂时不可用',
   AUTH_SESSION_EXPIRED: '会话已失效，请重新登录',
+  USER_SESSION_NOT_FOUND: '会话不存在或已下线',
+  USER_SESSION_FETCH_FAILED: '用户活动记录暂时无法读取',
+  USER_SESSION_REVOKE_FAILED: '强制下线失败',
   AUTH_CREDENTIAL_CORRUPTED: '凭证数据损坏',
   AUTH_CREDENTIAL_MISSING: '凭证数据缺失',
   AUTH_CREDENTIAL_MISSING_PUBLICKEY: '凭证数据缺失 publicKey',
