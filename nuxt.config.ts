@@ -473,6 +473,8 @@ export default defineNuxtConfig({
         'color-collab-glow': 'var(--color-collab-glow)',
         'pink': 'var(--color-pink)',
         'color-pink': 'var(--color-pink)',
+        'color-pink-alpha-10': 'var(--color-pink-alpha-10)',
+        'color-pink-alpha-20': 'var(--color-pink-alpha-20)',
         'cyan': 'var(--color-cyan)',
         'color-cyan': 'var(--color-cyan)',
         'teal': 'var(--color-teal)',

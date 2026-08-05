@@ -321,12 +321,12 @@
                   :class="[
                     'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
                     song.voteCount > 0
-                      ? 'bg-color-pink/10 text-color-pink hover:bg-color-pink/10 cursor-pointer'
+                      ? 'bg-color-pink-alpha-10 text-color-pink hover:bg-color-pink-alpha-10 cursor-pointer'
                       : 'bg-bg-primary-30 text-text-secondary cursor-default'
                   ]"
                   @click="showVoters(song.id)"
                 >
-                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink/20' : ''" />
+                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink-alpha-20' : ''" />
                   {{ song.voteCount || 0 }}
                 </button>
               </div>

@@ -16,7 +16,7 @@
                 : stat.color === 'emerald'
                   ? 'bg-success-10 text-success border-success-20'
                   : stat.color === 'pink'
-                    ? 'bg-color-pink/10 text-color-pink border-color-pink/20'
+                    ? 'bg-color-pink-alpha-10 text-color-pink border-color-pink-alpha-20'
                     : 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20'
             ]"
           >
@@ -320,7 +320,7 @@ const formatNumber = (num) => {
 const getActivityStyle = (type) => {
   const styles = {
     song: { icon: Music, bg: 'bg-info-10 text-info border-info-20' },
-    user: { icon: Users, bg: 'bg-color-pink/10 text-color-pink border-color-pink/20' },
+    user: { icon: Users, bg: 'bg-color-pink-alpha-10 text-color-pink border-color-pink-alpha-20' },
     schedule: { icon: Calendar, bg: 'bg-primary-10 text-primary border-primary-20' }
   }
 

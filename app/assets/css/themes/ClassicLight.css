@@ -499,6 +499,8 @@
 --color-collab-lighter: #dbeafe;
 --color-collab-glow: rgba(59, 130, 246, 0.3);
 --color-pink: #f472b6;
+--color-pink-alpha-10: rgba(244, 114, 182, 0.1);
+--color-pink-alpha-20: rgba(244, 114, 182, 0.2);
 --color-cyan: #22d3ee;
 --color-teal: #06b6d4;
 --color-indigo: #2563eb;
