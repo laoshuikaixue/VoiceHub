@@ -86,13 +86,19 @@
         >
           <div class="flex justify-between items-start">
             <div
-              :class="`p-3 rounded-2xl bg-bg-primary border border-border-secondary text-text-tertiary group-hover:text-${stat.color}-400 group-hover:border-${stat.color}-500/30 transition-all`"
+              :class="[
+                'p-3 rounded-2xl bg-bg-primary border border-border-secondary text-text-tertiary transition-all group-hover:border-border-tertiary',
+                stat.iconColorHoverClass
+              ]"
             >
               <component :is="stat.icon" :size="20" />
             </div>
             <div
               v-if="stat.trend !== 0"
-              :class="`flex items-center gap-1 text-[11px] font-black ${stat.trend < 0 ? 'text-error' : `text-${stat.color}-500`}`"
+              :class="[
+                'flex items-center gap-1 text-[11px] font-black',
+                stat.trendColorClass
+              ]"
             >
               <ArrowDownRight v-if="stat.trend < 0" :size="12" />
               <ArrowUpRight v-else :size="12" />
@@ -112,7 +118,10 @@
           </div>
           <!-- 背景装饰 -->
           <div
-            :class="`absolute -right-4 -bottom-4 w-24 h-24 bg-${stat.color}-500/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity`"
+            :class="[
+              'absolute -right-4 -bottom-4 w-24 h-24 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none',
+              stat.glowColorClass
+            ]"
           />
         </div>
       </div>
@@ -697,28 +706,40 @@ const kpiStats = computed(() => [
     value: analysisData.value.totalUsers,
     trend: analysisData.value.usersChange,
     icon: Users,
-    color: 'blue'
+    color: 'blue',
+    iconColorHoverClass: 'group-hover:text-primary group-hover:border-primary-30',
+    trendColorClass: 'text-primary',
+    glowColorClass: 'bg-primary-5'
   },
   {
     label: locale.value?.kpi?.activeSongs || 'Active songs',
     value: analysisData.value.totalSongs,
     trend: analysisData.value.songsChange,
     icon: Music,
-    color: 'emerald'
+    color: 'emerald',
+    iconColorHoverClass: 'group-hover:text-success group-hover:border-success-30',
+    trendColorClass: 'text-success',
+    glowColorClass: 'bg-success-5'
   },
   {
     label: locale.value?.kpi?.scheduleDays || 'Schedule days',
     value: analysisData.value.totalSchedules,
     trend: analysisData.value.schedulesChange,
     icon: Calendar,
-    color: 'amber'
+    color: 'amber',
+    iconColorHoverClass: 'group-hover:text-warning group-hover:border-warning-30',
+    trendColorClass: 'text-warning',
+    glowColorClass: 'bg-warning-5'
   },
   {
     label: locale.value?.kpi?.totalRequests || 'Total requests',
     value: analysisData.value.totalRequests,
     trend: analysisData.value.requestsChange,
     icon: Heart,
-    color: 'rose'
+    color: 'rose',
+    iconColorHoverClass: 'group-hover:text-error group-hover:border-error-30',
+    trendColorClass: 'text-error',
+    glowColorClass: 'bg-error-5'
   }
 ])
 

@@ -238,7 +238,13 @@
         <div
           :class="[
             'w-12 h-12 rounded-2xl bg-bg-primary border border-border-secondary flex items-center justify-center text-text-tertiary transition-colors',
-            `group-hover:text-${stat.color}-500`
+            stat.color === 'blue'
+              ? 'group-hover:text-primary'
+              : stat.color === 'emerald'
+                ? 'group-hover:text-success'
+                : stat.color === 'amber'
+                  ? 'group-hover:text-warning'
+                  : 'group-hover:text-info'
           ]"
         >
           <component :is="stat.icon" :size="20" />

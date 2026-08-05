@@ -25,7 +25,11 @@
                 'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary transition-all',
                 card.isDanger
                   ? 'text-error border-error-10'
-                  : `text-${card.color}-500 border-${card.color}-500/10 shadow-lg`
+                  : card.colorClass === 'primary'
+                    ? 'text-primary border-primary-20'
+                    : card.colorClass === 'warning'
+                      ? 'text-warning border-warning-20'
+                      : 'text-success border-success-20'
               ]"
             >
               <component :is="card.icon" class="w-6 h-6" />
@@ -65,7 +69,7 @@
         <div
           :class="[
             'absolute -right-4 -bottom-4 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none',
-            card.isDanger ? 'bg-error-5' : `bg-${card.color}-500/5`
+            card.isDanger ? 'bg-error-5' : card.colorClass === 'primary' ? 'bg-primary-5' : card.colorClass === 'warning' ? 'bg-warning-5' : 'bg-success-5'
           ]"
         />
       </div>
@@ -508,7 +512,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.backup?.title ?? '备份数据库',
     desc: locale.value?.cards?.backup?.desc ?? '导出系统数据备份文件',
     icon: Download,
-    color: 'blue',
+    colorClass: 'primary',
     btnText: locale.value?.cards?.backup?.button ?? '创建备份'
   },
   {
@@ -516,7 +520,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.restore?.title ?? '恢复数据库',
     desc: locale.value?.cards?.restore?.desc ?? '从备份文件恢复系统数据',
     icon: Upload,
-    color: 'emerald',
+    colorClass: 'success',
     btnText: locale.value?.cards?.restore?.button ?? '恢复备份'
   },
   {
@@ -524,7 +528,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.resetSeq?.title ?? '修复数据序列',
     desc: locale.value?.cards?.resetSeq?.desc ?? '修复数据表自增序列',
     icon: RotateCw,
-    color: 'amber',
+    colorClass: 'warning',
     btnText: locale.value?.cards?.resetSeq?.button ?? '修复序列'
   },
   {
@@ -532,7 +536,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.resetDb?.title ?? '重置数据库',
     desc: locale.value?.cards?.resetDb?.desc ?? '清空除管理员外的系统数据',
     icon: Trash2,
-    color: 'rose',
+    colorClass: 'error',
     btnText: locale.value?.cards?.resetDb?.button ?? '重置数据库',
     isDanger: true
   },
@@ -541,7 +545,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.autoBackup?.title ?? '自动备份',
     desc: locale.value?.cards?.autoBackup?.desc ?? '配置多种备份方式，通过外部触发实现定时自动备份',
     icon: CloudUpload,
-    color: 'green',
+    colorClass: 'success',
     btnText: locale.value?.cards?.autoBackup?.button ?? '配置自动备份'
   }
 ])
