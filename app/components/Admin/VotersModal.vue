@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="modal-overlay" @click="closeModal">
+  <div v-if="show" class="voters-modal-overlay" @click="closeModal">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3 class="modal-title">{{ locale.title }}</h3>
@@ -198,13 +198,13 @@ watch(
 </script>
 
 <style scoped>
-.modal-overlay {
+.voters-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--mask-70);
+  background: var(--modal-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -516,7 +516,7 @@ watch(
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .modal-overlay {
+  .voters-modal-overlay {
     padding: 10px;
   }
 

@@ -79,6 +79,7 @@ const openLyrics = () => {
   gap: 12px;
   min-width: 0;
   flex: 1;
+  --player-lyrics-overlay: rgba(0, 0, 0, 0.35);
 }
 
 .cover-container {
@@ -107,7 +108,7 @@ const openLyrics = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--mask-70);
+  background: var(--player-lyrics-overlay);
   display: flex;
   flex-direction: column;
   align-items: center;

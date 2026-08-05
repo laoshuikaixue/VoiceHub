@@ -14,7 +14,7 @@
         v-for="card in cards"
         :key="card.id"
         :class="[
-          'group relative bg-bg-secondary-40 border border-border-secondary rounded-2xl p-8 transition-all hover:border-border-tertiary hover:shadow-2xl hover:shadow-[0_25px_50px_var(--color-black-alpha-40)]',
+          'group relative bg-bg-secondary-40 border border-border-secondary rounded-2xl p-8 transition-all hover:border-border-tertiary hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]',
           card.isDanger ? 'hover:border-error-20' : ''
         ]"
       >

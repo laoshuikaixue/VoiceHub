@@ -40,7 +40,7 @@
 
     <!-- 表格主容器 -->
     <div
-      class="relative bg-bg-secondary-50 border border-border-secondary rounded-xl overflow-hidden shadow-2xl shadow-[0_25px_50px_var(--color-black-alpha-20)]"
+      class="relative bg-bg-secondary-50 border border-border-secondary rounded-xl overflow-hidden shadow-2xl shadow-[0_25px_50px_var(--shadow-color)]"
     >
       <!-- 加载状态 -->
       <div

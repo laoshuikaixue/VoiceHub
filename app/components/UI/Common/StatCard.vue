@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative overflow-hidden p-6 bg-bg-secondary border border-border-secondary rounded-xl group hover:border-primary-30 transition-all duration-300 shadow-xl shadow-[0_20px_25px_var(--color-black-alpha-20)]"
+    class="relative overflow-hidden p-6 bg-bg-secondary border border-border-secondary rounded-xl group hover:border-primary-30 transition-all duration-300 shadow-xl shadow-[0_20px_25px_var(--shadow-color)]"
     :class="{ 'opacity-60 grayscale cursor-wait': isLoading }"
   >
     <!-- 背景装饰 -->

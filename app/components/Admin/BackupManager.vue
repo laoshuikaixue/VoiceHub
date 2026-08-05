@@ -54,7 +54,7 @@
     </div>
 
     <!-- 创建备份模态框 -->
-    <div v-if="showCreateModal" class="modal-overlay" @click="showCreateModal = false">
+    <div v-if="showCreateModal" class="backupmanager-modal-overlay" @click="showCreateModal = false">
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>{{ locale.createTitle }}</h3>
@@ -100,7 +100,7 @@
     </div>
 
     <!-- 导入备份模态框 -->
-    <div v-if="showUploadModal" class="modal-overlay" @click="showUploadModal = false">
+    <div v-if="showUploadModal" class="backupmanager-modal-overlay" @click="showUploadModal = false">
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>{{ locale.importFileTitle }}</h3>
@@ -662,13 +662,13 @@ const formatFileSize = (bytes) => {
 }
 
 /* 模态框样式 */
-.modal-overlay {
+.backupmanager-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--mask-70);
+  background: var(--modal-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

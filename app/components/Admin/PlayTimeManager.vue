@@ -94,7 +94,7 @@
           v-for="playTime in playTimes"
           :key="playTime.id"
           :class="[
-            'group relative bg-bg-secondary-30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--color-black-alpha-40)]',
+            'group relative bg-bg-secondary-30 border rounded-xl p-8 transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]',
             playTime.enabled ? 'border-border-secondary-80' : 'border-border-secondary-40 opacity-60'
           ]"
         >

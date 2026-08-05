@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <div v-if="visible" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-[var(--color-black-alpha-80)] backdrop-blur-sm" @click="$emit('close')" />
+      <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="$emit('close')" />
       <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
         <!-- 标题栏 -->
         <div class="sticky top-0 z-10 bg-panel-bg-deepest/95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
