@@ -87,7 +87,7 @@
                         v-if="currentLocale === localeOption.code"
                         name="check"
                         :size="16"
-                        color="var(--color-brand-blue)"
+                        color="var(--color-accent)"
                       />
                     </button>
                   </div>
@@ -323,37 +323,37 @@
                             <Icon
                               v-if="notification.type === 'SONG_SELECTED'"
                               :size="20"
-                              color="var(--color-brand-indigo-hover)"
+                              color="var(--color-indigo-hover)"
                               name="check"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_PLAYED'"
                               :size="20"
-                              color="var(--color-brand-green)"
+                              color="var(--color-success)"
                               name="play"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_VOTED'"
                               :size="20"
-                              color="var(--color-brand-yellow)"
+                              color="var(--color-warning)"
                               name="thumbs-up"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_REJECTED'"
                               :size="20"
-                              color="var(--color-brand-red)"
+                              color="var(--color-error)"
                               name="x-circle"
                             />
                             <Icon
                               v-else-if="notification.type === 'COLLABORATION_INVITE'"
                               :size="20"
-                              color="var(--color-brand-blue)"
+                              color="var(--color-accent)"
                               name="users"
                             />
                             <Icon
                               v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
                               :size="20"
-                              color="var(--color-brand-purple)"
+                              color="var(--color-collab)"
                               name="message-circle"
                             />
                             <Icon v-else :size="20" color="var(--text-muted)" name="bell" />
@@ -1786,8 +1786,8 @@ if (
   height: 309px;
   background: radial-gradient(
     ellipse at center,
-    var(--color-brand-blue-30) 0%,
-    var(--color-brand-blue-15) 30%,
+    var(--color-accent-alpha-30) 0%,
+    var(--color-accent-alpha-15) 30%,
     transparent 70%
   );
   z-index: 0;
@@ -2058,7 +2058,7 @@ if (
 
 .user-badge.admin {
   background: var(--primary-20);
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
 }
 
 .user-avatar-wrapper {
@@ -2123,7 +2123,7 @@ if (
 
 .action-item.logout:hover {
   background: var(--error-10);
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .notification-badge {
@@ -2133,7 +2133,7 @@ if (
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
-  background-color: var(--color-brand-red);
+  background-color: var(--color-error);
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -2174,7 +2174,7 @@ if (
 
 .login-options .login-btn :deep(.icon),
 .login-options .login-btn i {
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   transition: all 0.3s ease;
 }
 
@@ -2219,9 +2219,9 @@ if (
 .title-divider {
   width: 40px;
   height: 4px;
-  background: var(--color-brand-blue);
+  background: var(--color-accent);
   border-radius: 2px;
-  box-shadow: 0 0 15px var(--color-brand-blue-60);
+  box-shadow: 0 0 15px var(--color-accent-alpha-60);
 }
 
 .sub-title {
@@ -2368,9 +2368,9 @@ if (
   right: -8px;
   width: 6px;
   height: 6px;
-  background: var(--color-brand-blue);
+  background: var(--color-accent);
   border-radius: 50%;
-  box-shadow: 0 0 5px var(--color-brand-blue-50);
+  box-shadow: 0 0 5px var(--color-accent-alpha-50);
 }
 
 .section-tab::after {
@@ -2380,7 +2380,7 @@ if (
   left: 50%;
   width: 0;
   height: 2px;
-  background: var(--color-brand-blue);
+  background: var(--color-accent);
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
@@ -2634,7 +2634,7 @@ if (
   width: 32px;
   height: 32px;
   border: 3px solid var(--overlay-10);
-  border-top-color: var(--color-brand-blue-light);
+  border-top-color: var(--color-accent-light);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -2686,7 +2686,7 @@ if (
   width: 40px;
   height: 40px;
   background: var(--primary-10);
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   border-radius: 12px;
   margin-right: 1rem;
   flex-shrink: 0;
@@ -2729,7 +2729,7 @@ if (
 
 .action-button.delete {
   background: var(--error-5);
-  color: var(--color-brand-red);
+  color: var(--color-error);
   border: 1px solid var(--error-10);
   padding: 0.4rem 0.75rem;
   border-radius: 8px;
@@ -2770,7 +2770,7 @@ if (
 }
 
 .action-button-large.danger {
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .action-button-large.danger:hover {
@@ -2903,8 +2903,8 @@ if (
 }
 
 .page-number-button.active:hover {
-  background-color: var(--color-brand-blue);
-  border-color: var(--color-brand-blue);
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .page-number-button:disabled {
@@ -2987,7 +2987,7 @@ if (
 }
 
 .action-button-large.danger {
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .action-button-large.danger:hover {
@@ -3030,7 +3030,7 @@ if (
     align-items: center;
     padding: 10px 12px;
     margin: 0;
-    background: linear-gradient(180deg, var(--color-brand-blue-10) 0%, transparent 100%);
+    background: linear-gradient(180deg, var(--color-accent-alpha-10) 0%, transparent 100%);
     border-bottom: 1px solid var(--overlay-5);
   }
 
@@ -3142,7 +3142,7 @@ if (
   }
 
   .login-options .login-btn :deep(.icon) {
-    color: var(--color-brand-blue-light);
+    color: var(--color-accent-light);
   }
 
   .login-options .login-btn:active {
@@ -3220,7 +3220,7 @@ if (
   }
 
   .section-tab.active {
-    color: var(--color-brand-blue-light) !important; /* text-primary - Force blue */
+    color: var(--color-accent-light) !important; /* text-primary - Force blue */
     background: transparent !important;
     transform: none !important;
     text-shadow: 0 0 12px var(--primary-60); /* Text Glow */
@@ -3228,7 +3228,7 @@ if (
 
   /* Prevent hover from turning it white on mobile */
   .section-tab.active:hover {
-    color: var(--color-brand-blue-light) !important;
+    color: var(--color-accent-light) !important;
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -3286,10 +3286,10 @@ if (
     right: 0;
     width: 8px;
     height: 8px;
-    background: var(--color-brand-blue);
+    background: var(--color-accent);
     border-radius: 50%;
     border: 1.5px solid var(--panel-bg-darkest);
-    box-shadow: 0 0 5px var(--color-brand-blue-40);
+    box-shadow: 0 0 5px var(--color-accent-alpha-40);
     z-index: 2;
   }
 
@@ -3348,8 +3348,8 @@ if (
     padding: 6px 14px;
     font-size: 12px;
     border-radius: 6px;
-    background: var(--color-brand-blue-15);
-    border: 1px solid var(--color-brand-blue-30);
+    background: var(--color-accent-alpha-15);
+    border: 1px solid var(--color-accent-alpha-30);
   }
 }
 
@@ -3529,7 +3529,7 @@ if (
 }
 
 .rules-icon {
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
 }
 
 .rules-text {
@@ -3637,7 +3637,7 @@ if (
   background: var(--index-brand-badge-bg);
   border: 1px solid var(--index-brand-badge-border);
   border-radius: 99px;
-  color: var(--color-brand-purple-light);
+  color: var(--color-collab-light);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -3656,7 +3656,7 @@ if (
 .main-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, var(--color-brand-purple) 0%, var(--color-brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-collab) 0%, var(--color-collab-hover) 100%);
   border-radius: 24px;
   display: flex;
   align-items: center;
@@ -3678,7 +3678,7 @@ if (
 
 .bar {
   width: 4px;
-  background: var(--color-brand-purple);
+  background: var(--color-collab);
   border-radius: 2px;
   animation: bar-dance 1.2s ease-in-out infinite;
 }
@@ -3856,7 +3856,7 @@ if (
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--color-brand-blue);
+  background-color: var(--color-accent);
   display: inline-block;
   z-index: 2;
 }
@@ -3919,7 +3919,7 @@ if (
 }
 
 .login-button {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: none;
   color: white;
   padding: 10px 20px;

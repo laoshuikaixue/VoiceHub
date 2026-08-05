@@ -63,7 +63,7 @@ defineProps({
 
 .progress-fill {
   height: 100%;
-  background-color: var(--color-brand-blue);
+  background-color: var(--color-accent);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -71,7 +71,7 @@ defineProps({
 .progress-fill.indeterminate {
   width: 30% !important;
   animation: progress-indeterminate 1.5s ease-in-out infinite;
-  background-image: linear-gradient(to right, var(--color-brand-blue), var(--color-brand-green), var(--color-brand-blue));
+  background-image: linear-gradient(to right, var(--color-accent), var(--color-success), var(--color-accent));
   background-size: 200% 100%;
 }
 

@@ -294,11 +294,11 @@ watch(
 .heart-icon {
   width: 20px;
   height: 20px;
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .vote-count {
-  color: var(--color-brand-red);
+  color: var(--color-error);
   font-weight: 600;
   font-size: 16px;
 }
@@ -316,7 +316,7 @@ watch(
   width: 32px;
   height: 32px;
   border: 3px solid var(--panel-border-light);
-  border-top: 3px solid var(--color-brand-blue);
+  border-top: 3px solid var(--color-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -342,17 +342,17 @@ watch(
 .error-icon {
   width: 48px;
   height: 48px;
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .error-message {
-  color: var(--color-brand-red);
+  color: var(--color-error);
   text-align: center;
   margin: 0;
 }
 
 .retry-btn {
-  background: var(--color-brand-blue);
+  background: var(--color-accent);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -363,7 +363,7 @@ watch(
 }
 
 .retry-btn:hover {
-  background: var(--color-brand-indigo);
+  background: var(--color-indigo);
 }
 
 .voters-list {
@@ -421,7 +421,7 @@ watch(
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-brand-blue), var(--color-brand-purple-hover));
+  background: linear-gradient(135deg, var(--color-accent), var(--color-collab-hover));
   display: flex;
   align-items: center;
   justify-content: center;

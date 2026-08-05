@@ -1,8 +1,8 @@
 <template>
   <section :class="sectionClass">
     <div class="flex items-center gap-3 border-b border-border-secondary pb-5 mb-6">
-      <div class="p-2.5 bg-color-brand-purple/10 rounded-xl">
-        <Share2 :size="20" class="text-color-brand-purple" />
+      <div class="p-2.5 bg-color-collab/10 rounded-xl">
+        <Share2 :size="20" class="text-color-collab" />
       </div>
       <div>
         <h2 class="text-base font-black text-text-primary">{{ locale.title }}</h2>

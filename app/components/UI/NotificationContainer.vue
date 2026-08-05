@@ -94,15 +94,15 @@ onMounted(() => {
 }
 
 .notification-item.success {
-  border-left: 4px solid var(--color-brand-green);
+  border-left: 4px solid var(--color-success);
 }
 
 .notification-item.error {
-  border-left: 4px solid var(--color-brand-red);
+  border-left: 4px solid var(--color-error);
 }
 
 .notification-item.info {
-  border-left: 4px solid var(--color-brand-blue);
+  border-left: 4px solid var(--color-accent);
 }
 
 .notification-icon {
@@ -120,17 +120,17 @@ onMounted(() => {
 
 .success .notification-icon {
   background: var(--success-20);
-  color: var(--color-brand-green);
+  color: var(--color-success);
 }
 
 .error .notification-icon {
   background: var(--error-20);
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .info .notification-icon {
-  background: var(--color-brand-blue-20);
-  color: var(--color-brand-blue);
+  background: var(--color-accent-alpha-20);
+  color: var(--color-accent);
 }
 
 .notification-content {
@@ -179,15 +179,15 @@ onMounted(() => {
 }
 
 .success .notification-progress-bar {
-  background-color: var(--color-brand-green);
+  background-color: var(--color-success);
 }
 
 .error .notification-progress-bar {
-  background-color: var(--color-brand-red);
+  background-color: var(--color-error);
 }
 
 .info .notification-progress-bar {
-  background-color: var(--color-brand-blue);
+  background-color: var(--color-accent);
 }
 
 @keyframes progress-shrink {

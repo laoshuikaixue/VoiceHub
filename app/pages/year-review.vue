@@ -241,7 +241,7 @@ const handleTouchEnd = (e) => {
   width: 3rem;
   height: 3rem;
   border: 4px solid var(--overlay-20);
-  border-top-color: var(--color-brand-purple); /* brand-purple */
+  border-top-color: var(--color-collab); /* brand-purple */
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -255,7 +255,7 @@ const handleTouchEnd = (e) => {
 
 .error .icon-warning {
   font-size: 3rem;
-  color: var(--color-brand-red);
+  color: var(--color-error);
   margin-bottom: 1rem;
 }
 
@@ -313,7 +313,7 @@ const handleTouchEnd = (e) => {
 
 .home-btn {
   padding: 0.75rem 2rem;
-  background: var(--color-brand-purple);
+  background: var(--color-collab);
   border-radius: 9999px;
   font-weight: 700;
   box-shadow: 0 10px 15px -3px var(--year-review-home-btn-shadow);
@@ -321,7 +321,7 @@ const handleTouchEnd = (e) => {
 }
 
 .home-btn:hover {
-  background: var(--color-brand-purple-hover);
+  background: var(--color-collab-hover);
 }
 
 /* 幻灯片容器 */

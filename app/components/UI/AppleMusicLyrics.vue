@@ -217,7 +217,7 @@ watch(
 }
 
 .placeholder.error {
-  color: var(--color-brand-red-light);
+  color: var(--color-error-light);
 }
 
 .loading-spinner {

@@ -46,7 +46,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'grade-only'
-                  ? 'bg-info-5 border-info/50 ring-4 ring-color-brand-purple/10'
+                  ? 'bg-info-5 border-info/50 ring-4 ring-color-collab/10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -221,7 +221,7 @@
                         v-model="selectedUserIds"
                         :value="user.id"
                         type="checkbox"
-                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-brand-purple/10"
+                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab/10"
                       >
                       <div class="flex flex-col">
                         <span
@@ -270,7 +270,7 @@
                   <input
                     v-model="keepClass"
                     type="checkbox"
-                    class="w-5 h-5 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-brand-purple/10"
+                    class="w-5 h-5 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab/10"
                   >
                   <span class="text-xs font-bold text-text-secondary">{{ locale.gradeSettings.keepClass }}</span>
                 </label>

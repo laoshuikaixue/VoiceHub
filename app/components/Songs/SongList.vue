@@ -1574,7 +1574,7 @@ const vRipple = {
 
   .mobile-search-input:focus {
     background: var(--overlay-8);
-    border-color: var(--color-brand-blue-light);
+    border-color: var(--color-accent-light);
     outline: none;
     box-shadow: 0 0 0 2px var(--primary-10);
   }
@@ -1600,7 +1600,7 @@ const vRipple = {
   }
 
   .mobile-tab-btn.active {
-    color: var(--color-brand-blue-light);
+    color: var(--color-accent-light);
   }
 
   .active-indicator {
@@ -1609,7 +1609,7 @@ const vRipple = {
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--color-brand-blue-light);
+    background: var(--color-accent-light);
     border-radius: 2px;
     box-shadow: 0 0 8px var(--primary-50);
   }
@@ -1662,7 +1662,7 @@ const vRipple = {
 
 .tab-button.active {
   color: var(--text-primary);
-  border-bottom-color: var(--color-brand-blue);
+  border-bottom-color: var(--color-accent);
   transform: none;
   box-shadow: none;
   background-color: transparent;
@@ -1676,7 +1676,7 @@ const vRipple = {
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--color-brand-blue-30) 0%, var(--overlay-10) 70%);
+  background: radial-gradient(circle, var(--color-accent-alpha-30) 0%, var(--overlay-10) 70%);
   transform: scale(0);
   animation: ripple 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: none;
@@ -1724,7 +1724,7 @@ const vRipple = {
   background: var(--panel-bg-contrast);
   transform: translateY(-2px);
   box-shadow: 0 2px 8px var(--mask-20);
-  color: var(--color-brand-blue);
+  color: var(--color-accent);
 }
 
 .semester-dropdown {
@@ -1754,13 +1754,13 @@ const vRipple = {
 }
 
 .semester-option:hover {
-  background: var(--color-brand-blue-10);
+  background: var(--color-accent-alpha-10);
   color: var(--text-primary);
 }
 
 .semester-option.active {
-  background: var(--color-brand-blue-20);
-  color: var(--color-brand-blue);
+  background: var(--color-accent-alpha-20);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -1784,7 +1784,7 @@ const vRipple = {
 
 .search-input:focus {
   outline: none;
-  border-color: var(--color-brand-blue);
+  border-color: var(--color-accent);
 }
 
 .search-icon {
@@ -1863,8 +1863,8 @@ const vRipple = {
   height: 40px;
   margin-bottom: 1rem;
   border-radius: 50%;
-  border: 3px solid var(--color-brand-blue-20);
-  border-top-color: var(--color-brand-blue);
+  border: 3px solid var(--color-accent-alpha-20);
+  border-top-color: var(--color-accent);
   animation: spin 1s linear infinite;
 }
 
@@ -1876,7 +1876,7 @@ const vRipple = {
 }
 
 .error {
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .songs-container {
@@ -1952,7 +1952,7 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
   color: var(--text-primary);
   font-size: 28px;
   font-weight: bold;
@@ -1984,7 +1984,7 @@ const vRipple = {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--color-brand-blue-80);
+  background: var(--color-accent-alpha-80);
   border: none;
   display: flex;
   align-items: center;
@@ -2077,7 +2077,7 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: var(--color-brand-blue);
+  color: var(--color-accent);
   text-shadow:
     0px 20px 30px var(--primary-50),
     0px 8px 15px var(--primary-50),
@@ -2107,7 +2107,7 @@ const vRipple = {
   justify-content: center;
   width: 48px;
   height: 45px;
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
@@ -2148,7 +2148,7 @@ const vRipple = {
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: var(--color-brand-green);
+  color: var(--color-success);
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
@@ -2161,7 +2161,7 @@ const vRipple = {
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: var(--color-brand-green);
+  color: var(--color-success);
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
@@ -2174,7 +2174,7 @@ const vRipple = {
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;
@@ -2219,7 +2219,7 @@ const vRipple = {
 }
 
 .withdraw-button {
-  background: linear-gradient(180deg, var(--color-brand-red-light) 0%, var(--color-brand-red-light) 100%);
+  background: linear-gradient(180deg, var(--color-error-light) 0%, var(--color-error-light) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.25rem 0.75rem;
@@ -2244,7 +2244,7 @@ const vRipple = {
 }
 
 .replay-cancel-btn {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   min-width: 75px;
 }
 
@@ -2280,8 +2280,8 @@ button:disabled {
 }
 
 .page-number.active {
-  background: var(--color-brand-blue);
-  border-color: var(--color-brand-blue);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .page-info {
@@ -2318,7 +2318,7 @@ button:disabled {
 
 .jump-input:focus {
   outline: none;
-  border-color: var(--color-brand-blue);
+  border-color: var(--color-accent);
   background: var(--overlay-15);
 }
 
@@ -2402,8 +2402,8 @@ button:disabled {
   }
 
   .tab-button.active {
-    background: var(--color-brand-blue-15);
-    color: var(--color-brand-blue);
+    background: var(--color-accent-alpha-15);
+    color: var(--color-accent);
     border-bottom: none;
     box-shadow: none;
   }
@@ -2508,14 +2508,14 @@ button:disabled {
   }
 
   .song-card.playing {
-    background: var(--color-brand-blue-12);
-    border-color: var(--color-brand-blue-40);
-    box-shadow: 0 0 20px var(--color-brand-blue-20);
+    background: var(--color-accent-alpha-12);
+    border-color: var(--color-accent-alpha-40);
+    box-shadow: 0 0 20px var(--color-accent-alpha-20);
   }
 
   .song-card.playing .song-title {
-    color: var(--color-brand-blue);
-    text-shadow: 0 0 10px var(--color-brand-blue-30);
+    color: var(--color-accent);
+    text-shadow: 0 0 10px var(--color-accent-alpha-30);
   }
 
   .song-card:active {
@@ -2694,8 +2694,8 @@ button:disabled {
   }
 
   .page-number.active {
-    background: var(--color-brand-blue-15);
-    color: var(--color-brand-blue);
+    background: var(--color-accent-alpha-15);
+    color: var(--color-accent);
   }
 
   .page-info {
@@ -2839,7 +2839,7 @@ button:disabled {
 
   .mobile-page-input:focus {
     outline: none;
-    color: var(--color-brand-blue);
+    color: var(--color-accent);
   }
 
   .page-selector .divider {
@@ -2856,7 +2856,7 @@ button:disabled {
 
 .page-nav-btn:hover:not(:disabled) {
   background: var(--overlay-10);
-  border-color: var(--color-brand-blue-light);
+  border-color: var(--color-accent-light);
 }
 
 .page-nav-btn:disabled {
@@ -2874,7 +2874,7 @@ button:disabled {
 
 .page-indicator .current {
   font-size: 18px;
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
 }
 
 .page-indicator .divider {
@@ -2923,7 +2923,7 @@ button:disabled {
   border: 1px solid var(--primary-30);
   border-radius: 999px;
   background: var(--primary-10);
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 0 0 0 transparent;
@@ -3006,13 +3006,13 @@ button:disabled {
 
 .visibility-public {
   background: var(--primary-15);
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   border: 1px solid var(--primary-20);
 }
 
 .visibility-private {
   background: var(--warning-15);
-  color: var(--color-brand-yellow-light);
+  color: var(--color-warning-light);
   border: 1px solid var(--warning-20);
 }
 

@@ -94,7 +94,7 @@ const formatPlatform = (platform) => {
 .platform-value {
   font-size: 1.5rem; /* text-2xl */
   font-weight: 700;
-  background-image: linear-gradient(to right, var(--color-brand-red-light), var(--color-brand-orange));
+  background-image: linear-gradient(to right, var(--color-error-light), var(--color-orange));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

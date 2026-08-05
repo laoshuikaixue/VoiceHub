@@ -4022,7 +4022,7 @@ defineExpose({
 }
 
 .rules-icon {
-  color: var(--color-brand-yellow);
+  color: var(--color-warning);
 }
 
 .rules-content {
@@ -4110,11 +4110,11 @@ defineExpose({
 
 .search-input:focus {
   outline: none;
-  border-color: var(--color-brand-blue);
+  border-color: var(--color-accent);
 }
 
 .search-button {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
@@ -4198,8 +4198,8 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--color-brand-blue-10);
-  border: 1px solid var(--color-brand-blue-20);
+  background: var(--color-accent-alpha-10);
+  border: 1px solid var(--color-accent-alpha-20);
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
   font-size: 14px;
@@ -4274,8 +4274,8 @@ defineExpose({
 }
 
 .custom-checkbox-input:checked + .custom-checkbox-box {
-  background: var(--color-brand-blue-light);
-  border-color: var(--color-brand-blue-light);
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-light);
 }
 
 .custom-checkbox-input:checked + .custom-checkbox-box .custom-checkbox-icon {
@@ -4294,7 +4294,7 @@ defineExpose({
 }
 
 .custom-checkbox-wrapper:hover .custom-checkbox-box {
-  border-color: var(--color-brand-blue-light);
+  border-color: var(--color-accent-light);
 }
 
 /* 横向投稿状态样式 */
@@ -4309,7 +4309,7 @@ defineExpose({
 
 .login-required-notice .notice-icon {
   flex-shrink: 0;
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
 }
 
 .login-required-notice .notice-text {
@@ -4323,7 +4323,7 @@ defineExpose({
   border: 1px solid var(--primary-40);
   border-radius: 4px;
   background: var(--primary-20);
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -4376,7 +4376,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
-  color: var(--color-brand-red-light);
+  color: var(--color-error-light);
 }
 
 .status-content-horizontal {
@@ -4404,7 +4404,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: var(--color-brand-blue);
+  color: var(--color-accent);
 }
 
 .status-item-horizontal .status-remaining {
@@ -4412,8 +4412,8 @@ defineExpose({
   font-weight: 500;
   font-size: 12px;
   color: var(--overlay-70);
-  background: var(--color-brand-blue-10);
-  border: 1px solid var(--color-brand-blue-30);
+  background: var(--color-accent-alpha-10);
+  border: 1px solid var(--color-accent-alpha-30);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
 }
@@ -4494,7 +4494,7 @@ defineExpose({
 .form-input:focus,
 .form-select:focus {
   outline: none;
-  border-color: var(--color-brand-blue);
+  border-color: var(--color-accent);
 }
 
 /* 平台选择按钮样式 */
@@ -4570,7 +4570,7 @@ defineExpose({
 }
 
 .login-btn {
-  background: linear-gradient(135deg, var(--color-brand-blue-light) 0%, var(--color-brand-blue-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent-light) 0%, var(--color-accent-hover) 100%);
   color: white;
   border: none;
   padding: 0.45rem 0.85rem;
@@ -4591,7 +4591,7 @@ defineExpose({
 }
 
 .qq-login-btn {
-  background: linear-gradient(135deg, var(--color-brand-teal) 0%, var(--color-brand-teal) 100%);
+  background: linear-gradient(135deg, var(--color-teal) 0%, var(--color-teal) 100%);
   box-shadow: 0 4px 10px var(--requestform-qq-login-shadow);
 }
 
@@ -4687,7 +4687,7 @@ defineExpose({
   height: 24px;
   flex-shrink: 0;
   border-radius: 50%;
-  color: var(--color-brand-cyan);
+  color: var(--color-cyan);
   background: var(--requestform-user-icon-bg);
   border: 1.5px solid var(--requestform-user-icon-border);
 }
@@ -4739,7 +4739,7 @@ defineExpose({
   display: block;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, var(--color-brand-blue-light) 0%, var(--color-brand-blue-light-hover) 100%);
+  background: linear-gradient(180deg, var(--color-accent-light) 0%, var(--color-accent-light-hover) 100%);
   border-radius: 2px;
   animation: wave 1.2s ease-in-out infinite;
 }
@@ -4785,7 +4785,7 @@ defineExpose({
 }
 
 .audio-match-primary-btn {
-  background: linear-gradient(135deg, var(--color-brand-blue-hover) 0%, var(--color-brand-blue-light-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent-hover) 0%, var(--color-accent-light-hover) 100%);
   border: none;
   border-radius: 12px;
   padding: 0.875rem 2rem;
@@ -4809,7 +4809,7 @@ defineExpose({
 }
 
 .audio-match-record-btn {
-  background: linear-gradient(135deg, var(--color-brand-red-hover) 0%, var(--color-brand-red-hover) 100%);
+  background: linear-gradient(135deg, var(--color-error-hover) 0%, var(--color-error-hover) 100%);
   border: none;
   border-radius: 12px;
   padding: 0.875rem 2rem;
@@ -4949,7 +4949,7 @@ defineExpose({
 }
 
 .platform-btn.active {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border-color: var(--overlay-16);
   color: var(--text-primary);
 }
@@ -5015,23 +5015,23 @@ defineExpose({
 .source-item.healthy {
   background: var(--requestform-source-healthy-bg);
   border-color: var(--requestform-source-healthy-border);
-  color: var(--color-brand-green-light);
+  color: var(--color-success-light);
 }
 
 .source-item.unhealthy {
   background: var(--error-15);
   border-color: var(--error-30);
-  color: var(--color-brand-red-light);
+  color: var(--color-error-light);
 }
 
 .source-item.checking {
   background: var(--requestform-source-checking-bg);
   border-color: var(--requestform-source-checking-border);
-  color: var(--color-brand-yellow-light);
+  color: var(--color-warning-light);
 }
 
 .source-item.current {
-  box-shadow: 0 0 0 2px var(--color-brand-blue-40);
+  box-shadow: 0 0 0 2px var(--color-accent-alpha-40);
   transform: scale(1.02);
 }
 
@@ -5047,17 +5047,17 @@ defineExpose({
 }
 
 .source-item.healthy .source-indicator {
-  background: var(--color-brand-green-hover);
+  background: var(--color-success-hover);
   box-shadow: 0 0 6px var(--requestform-source-healthy-glow);
 }
 
 .source-item.unhealthy .source-indicator {
-  background: var(--color-brand-red);
+  background: var(--color-error);
   box-shadow: 0 0 6px var(--error-60);
 }
 
 .source-item.checking .source-indicator {
-  background: var(--color-brand-yellow-light);
+  background: var(--color-warning-light);
   box-shadow: 0 0 6px var(--requestform-source-checking-glow);
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -5081,7 +5081,7 @@ defineExpose({
   background: var(--error-15);
   border: 1px solid var(--error-30);
   border-radius: 6px;
-  color: var(--color-brand-red-light);
+  color: var(--color-error-light);
   font-size: 12px;
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
@@ -5121,8 +5121,8 @@ defineExpose({
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--color-brand-blue-20);
-  border-top-color: var(--color-brand-blue);
+  border: 3px solid var(--color-accent-alpha-20);
+  border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -5277,7 +5277,7 @@ defineExpose({
 }
 
 .submit-button {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
@@ -5314,7 +5314,7 @@ defineExpose({
 }
 
 .alert-icon {
-  color: var(--color-brand-yellow);
+  color: var(--color-warning);
   flex-shrink: 0;
 }
 
@@ -5379,11 +5379,11 @@ defineExpose({
 }
 
 .status-played {
-  color: var(--color-brand-red);
+  color: var(--color-error);
 }
 
 .status-scheduled {
-  color: var(--color-brand-yellow);
+  color: var(--color-warning);
 }
 
 .alert-hint {
@@ -5393,7 +5393,7 @@ defineExpose({
 }
 
 .voted-status {
-  color: var(--color-brand-green);
+  color: var(--color-success);
   font-size: 14px;
   font-weight: 600;
   margin-top: 0.5rem;
@@ -5409,7 +5409,7 @@ defineExpose({
 }
 
 .vote-btn {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -5626,7 +5626,7 @@ defineExpose({
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border-color: var(--overlay-10);
   color: var(--text-primary);
   box-shadow: 0 4px 12px var(--primary-30);
@@ -5792,7 +5792,7 @@ defineExpose({
 }
 
 .cloud-disk-btn {
-  background: linear-gradient(180deg, var(--color-brand-red) 0%, var(--color-brand-red-hover) 100%);
+  background: linear-gradient(180deg, var(--color-error) 0%, var(--color-error-hover) 100%);
   border: 1px solid var(--overlay-20);
   border-radius: 50%;
   width: 32px;
@@ -5814,7 +5814,7 @@ defineExpose({
 .cloud-disk-btn:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow: 0 4px 12px var(--requestform-delete-btn-hover-shadow);
-  background: linear-gradient(180deg, var(--color-brand-red-hover) 0%, var(--color-brand-red-hover) 100%);
+  background: linear-gradient(180deg, var(--color-error-hover) 0%, var(--color-error-hover) 100%);
   border-color: var(--overlay-40);
 }
 
@@ -5839,17 +5839,17 @@ defineExpose({
 }
 
 .similar-text.status-played {
-  color: var(--color-brand-red);
+  color: var(--color-error);
   font-weight: 600;
 }
 
 .similar-text.status-scheduled {
-  color: var(--color-brand-yellow);
+  color: var(--color-warning);
   font-weight: 600;
 }
 
 .like-btn {
-  background: linear-gradient(180deg, var(--color-brand-red) 0%, var(--color-brand-red-hover) 100%);
+  background: linear-gradient(180deg, var(--color-error) 0%, var(--color-error-hover) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
@@ -5890,7 +5890,7 @@ defineExpose({
 }
 
 .select-btn {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -5907,7 +5907,7 @@ defineExpose({
   border: 1px solid var(--requestform-replay-btn-border);
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 12px;
@@ -5922,7 +5922,7 @@ defineExpose({
 .replay-btn:hover:not(:disabled) {
   background: var(--requestform-replay-btn-bg-hover);
   border-color: var(--requestform-replay-btn-border-hover);
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   transform: translateY(-1px);
 }
 
@@ -6008,7 +6008,7 @@ defineExpose({
 }
 
 .manual-confirm-btn {
-  background: linear-gradient(180deg, var(--color-brand-blue) 0%, var(--color-brand-blue) 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
@@ -6111,7 +6111,7 @@ defineExpose({
 
   .rules-icon {
     display: block;
-    color: var(--color-brand-yellow);
+    color: var(--color-warning);
   }
 
   .form-container {
@@ -6297,9 +6297,9 @@ defineExpose({
   }
 
   .platform-btn.active {
-    background: var(--color-brand-blue);
+    background: var(--color-accent);
     color: var(--text-primary);
-    box-shadow: 0 2px 8px var(--color-brand-blue-30);
+    box-shadow: 0 2px 8px var(--color-accent-alpha-30);
   }
 
   /* 移动端音源状态显示 */
@@ -6397,27 +6397,27 @@ defineExpose({
   .mobile-card-code-button.is-required {
     border-color: var(--requestform-chip-required-border);
     background: var(--requestform-chip-required-bg);
-    color: var(--color-brand-yellow-light);
+    color: var(--color-warning-light);
   }
 
   .mobile-card-code-chip.has-code,
   .mobile-card-code-button.has-code {
     border-color: var(--requestform-chip-required-border-sm);
-    color: var(--color-brand-yellow-light);
+    color: var(--color-warning-light);
   }
 
   .mobile-card-code-chip.is-valid,
   .mobile-card-code-button.is-valid {
     border-color: var(--requestform-chip-valid-border);
     background: var(--success-10);
-    color: var(--color-brand-green-light);
+    color: var(--color-success-light);
   }
 
   .mobile-card-code-chip.is-invalid,
   .mobile-card-code-button.is-invalid {
     border-color: var(--requestform-chip-invalid-border);
     background: var(--requestform-chip-invalid-bg);
-    color: var(--color-brand-red-light);
+    color: var(--color-error-light);
   }
 
   .form-group label {
@@ -6609,7 +6609,7 @@ defineExpose({
   width: 16px;
   height: 16px;
   border: 2px solid var(--error-20);
-  border-top-color: var(--color-brand-red);
+  border-top-color: var(--color-error);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -6623,7 +6623,7 @@ defineExpose({
 
 /* URL验证状态样式 */
 .validation-loading {
-  color: var(--color-brand-yellow-light);
+  color: var(--color-warning-light);
   font-size: 0.875rem;
   margin-top: 0.25rem;
   display: flex;
@@ -6632,20 +6632,20 @@ defineExpose({
 }
 
 .validation-error {
-  color: var(--color-brand-red);
+  color: var(--color-error);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
 .validation-success {
-  color: var(--color-brand-green);
+  color: var(--color-success);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
 .form-input.error {
-  border-color: var(--color-brand-red);
-  box-shadow: 0 0 0 1px var(--color-brand-red);
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
 }
 
 .import-semester-btn {
@@ -6773,7 +6773,7 @@ defineExpose({
 }
 
 .clickable-album:hover .album-name {
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   text-decoration: underline;
 }
 

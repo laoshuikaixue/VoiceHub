@@ -32,7 +32,7 @@
 .markdown-body li { margin-bottom: 0.25em; }
 
 .markdown-body a {
-  color: var(--color-brand-blue);
+  color: var(--color-accent);
   text-decoration: underline;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .markdown-body blockquote {
-  border-left: 3px solid var(--color-brand-blue);
+  border-left: 3px solid var(--color-accent);
   padding-left: 1em;
   margin: 0.5em 0;
   color: var(--text-muted);
@@ -128,8 +128,8 @@
 }
 
 .markdown-body input[type='checkbox']:checked {
-  background: var(--color-brand-blue);
-  border-color: var(--color-brand-blue);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .markdown-body input[type='checkbox']:checked::after {

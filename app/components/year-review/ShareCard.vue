@@ -108,7 +108,7 @@ defineExpose({
 .logo {
   font-size: 1.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, var(--color-brand-purple), var(--color-brand-pink));
+  background: linear-gradient(135deg, var(--color-collab), var(--color-pink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -163,7 +163,7 @@ defineExpose({
 .stat-value {
   font-size: 2.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, var(--color-brand-blue-light), var(--color-brand-blue-light));
+  background: linear-gradient(135deg, var(--color-accent-light), var(--color-accent-light));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

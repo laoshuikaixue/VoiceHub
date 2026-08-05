@@ -2813,7 +2813,7 @@ onBeforeUnmount(() => {
 }
 
 .tree-toggle:hover {
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   background: var(--panel-bg-deep);
 }
 
@@ -2839,7 +2839,7 @@ onBeforeUnmount(() => {
 }
 
 .tree-label-active {
-  color: var(--color-brand-blue-light);
+  color: var(--color-accent-light);
   background: var(--user-manager-tree-active-bg);
 }
 

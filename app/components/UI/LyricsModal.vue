@@ -1828,7 +1828,7 @@ onUnmounted(() => {
 .setting-item input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-brand-red);
+  accent-color: var(--color-error);
 }
 
 /* 音质菜单动画 */
@@ -1902,7 +1902,7 @@ onUnmounted(() => {
 }
 
 .badge-quality-option.active {
-  color: var(--color-brand-blue); /* 蓝色字 */
+  color: var(--color-accent); /* 蓝色字 */
   background: var(--text-primary);
   font-weight: 600;
   box-shadow: 0 2px 8px var(--mask-8);

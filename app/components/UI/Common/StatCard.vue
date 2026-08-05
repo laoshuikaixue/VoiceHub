@@ -174,17 +174,17 @@ const trendPoints = computed(() => {
 
 const trendColor = computed(() => {
   if (!props.trendData || props.trendData.length < 2) {
-    if (props.change > 0) return 'var(--color-brand-green)' // emerald-500
-    if (props.change < 0) return 'var(--color-brand-red)' // red-500
-    return 'var(--color-brand-blue-light)' // blue-500
+    if (props.change > 0) return 'var(--color-success)' // emerald-500
+    if (props.change < 0) return 'var(--color-error)' // red-500
+    return 'var(--color-accent-light)' // blue-500
   }
 
   const first = props.trendData[0]
   const last = props.trendData[props.trendData.length - 1]
 
-  if (last > first) return 'var(--color-brand-green)' // emerald-500
-  if (last < first) return 'var(--color-brand-red)' // red-500
-  return 'var(--color-brand-blue-light)' // blue-500
+  if (last > first) return 'var(--color-success)' // emerald-500
+  if (last < first) return 'var(--color-error)' // red-500
+  return 'var(--color-accent-light)' // blue-500
 })
 </script>
 

@@ -1127,7 +1127,7 @@ onMounted(() => {
   width: 24px;
   height: 24px;
   border: 2px solid var(--overlay-10);
-  border-top-color: var(--color-brand-blue-light);
+  border-top-color: var(--color-accent-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

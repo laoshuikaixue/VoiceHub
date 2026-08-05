@@ -1987,8 +1987,8 @@ const getFirstChar = (text) => {
 
 .mobile-top-progress .progress-fill {
   height: 100%;
-  background: var(--color-brand-blue);
-  box-shadow: 0 0 8px var(--color-brand-blue-60);
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent-alpha-60);
   border-radius: 0 1px 1px 0;
 }
 
@@ -2227,7 +2227,7 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-collab-hover) 100%);
   color: var(--text-primary);
   font-size: 18px;
   font-weight: 600;
@@ -2903,7 +2903,7 @@ const getFirstChar = (text) => {
 }
 
 .quality-option.active {
-  color: var(--color-brand-blue);
+  color: var(--color-accent);
   background:
     linear-gradient(135deg, var(--audio-player-quality-active-bg-start), var(--audio-player-quality-active-bg-mid)),
     var(--audio-player-quality-active-bg-end);

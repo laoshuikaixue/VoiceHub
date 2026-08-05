@@ -88,7 +88,7 @@ const openLyrics = () => {
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-collab-hover) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -154,7 +154,7 @@ const openLyrics = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-brand-blue) 0%, var(--color-brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-collab-hover) 100%);
   color: white;
   font-size: 18px;
   font-weight: bold;

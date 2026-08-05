@@ -257,7 +257,7 @@ defineExpose({
   left: 0;
   height: 100%;
   width: var(--progress-width, 0%);
-  background: linear-gradient(90deg, var(--color-brand-blue-light) 0%, var(--color-brand-cyan) 100%);
+  background: linear-gradient(90deg, var(--color-accent-light) 0%, var(--color-cyan) 100%);
   border-radius: 2px;
   transition: width 0.05s linear;
   will-change: width;

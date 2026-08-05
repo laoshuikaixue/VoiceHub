@@ -105,11 +105,11 @@
 }
 
 .bg-gradient-artist {
-  background: linear-gradient(to bottom right, var(--color-brand-purple-lighter), var(--color-brand-pink), var(--color-brand-orange));
+  background: linear-gradient(to bottom right, var(--color-collab-lighter), var(--color-pink), var(--color-orange));
 }
 
 .bg-gradient-numbers {
-  background-image: linear-gradient(to bottom, var(--color-brand-blue-light), var(--color-brand-blue-light-hover));
+  background-image: linear-gradient(to bottom, var(--color-accent-light), var(--color-accent-light-hover));
 }
 
 /* Slide Transitions */

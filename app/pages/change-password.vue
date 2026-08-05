@@ -153,7 +153,7 @@ onMounted(async () => {
 }
 
 .info-section {
-  background: linear-gradient(135deg, var(--color-brand-indigo-hover) 0%, var(--color-brand-purple-hover) 100%);
+  background: linear-gradient(135deg, var(--color-indigo-hover) 0%, var(--color-collab-hover) 100%);
   padding: 60px 40px;
   display: flex;
   align-items: center;
@@ -253,7 +253,7 @@ onMounted(async () => {
 .tip-icon {
   width: 16px;
   height: 16px;
-  color: var(--color-brand-green);
+  color: var(--color-success);
   flex-shrink: 0;
 }
 

@@ -111,7 +111,7 @@ const formatDate = (dateStr) => {
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
   letter-spacing: 0.1em;
-  color: var(--color-brand-pink); /* brand-pink */
+  color: var(--color-pink); /* brand-pink */
   font-weight: 600;
 }
 

@@ -74,19 +74,19 @@ const providerButtonClass = (provider) => {
   }
   if (key === 'aggregate') {
     const aggregateClasses = {
-      qq: 'hover:bg-[var(--color-brand-cyan)] hover:text-text-primary hover:border-[var(--color-brand-cyan)]',
-      wx: 'hover:bg-[var(--color-brand-green)] hover:text-text-primary hover:border-[var(--color-brand-green)]',
-      alipay: 'hover:bg-[var(--color-brand-blue)] hover:text-text-primary hover:border-[var(--color-brand-blue)]',
-      sina: 'hover:bg-[var(--color-brand-red-hover)] hover:text-text-primary hover:border-[var(--color-brand-red-hover)]',
-      baidu: 'hover:bg-[var(--color-brand-indigo)] hover:text-text-primary hover:border-[var(--color-brand-indigo)]',
-      douyin: 'hover:bg-[var(--panel-bg-darkest)] hover:text-text-primary hover:border-[var(--color-brand-cyan)]',
-      huawei: 'hover:bg-[var(--color-brand-red-hover)] hover:text-text-primary hover:border-[var(--color-brand-red-hover)]',
-      xiaomi: 'hover:bg-[var(--color-brand-orange-hover)] hover:text-text-primary hover:border-[var(--color-brand-orange-hover)]',
-      gitee: 'hover:bg-[var(--color-brand-red-hover)] hover:text-text-primary hover:border-[var(--color-brand-red-hover)]',
+      qq: 'hover:bg-[var(--oauth-qq)] hover:text-text-primary hover:border-[var(--oauth-qq)]',
+      wx: 'hover:bg-[var(--oauth-wx)] hover:text-text-primary hover:border-[var(--oauth-wx)]',
+      alipay: 'hover:bg-[var(--oauth-alipay)] hover:text-text-primary hover:border-[var(--oauth-alipay)]',
+      sina: 'hover:bg-[var(--oauth-sina)] hover:text-text-primary hover:border-[var(--oauth-sina)]',
+      baidu: 'hover:bg-[var(--oauth-baidu)] hover:text-text-primary hover:border-[var(--oauth-baidu)]',
+      douyin: 'hover:bg-[var(--panel-bg-darkest)] hover:text-text-primary hover:border-[var(--oauth-douyin)]',
+      huawei: 'hover:bg-[var(--oauth-huawei)] hover:text-text-primary hover:border-[var(--oauth-huawei)]',
+      xiaomi: 'hover:bg-[var(--oauth-xiaomi)] hover:text-text-primary hover:border-[var(--oauth-xiaomi)]',
+      gitee: 'hover:bg-[var(--oauth-gitee)] hover:text-text-primary hover:border-[var(--oauth-gitee)]',
       gitea:
         '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:var(--text-primary)] hover:bg-bg-secondary hover:text-black hover:border-primary',
-      bilibili: 'hover:bg-[var(--color-brand-teal)] hover:text-text-primary hover:border-[var(--color-brand-teal)]',
-      kuaishou: 'hover:bg-[var(--oauth-kuaishou-orange)] hover:text-text-primary hover:border-[var(--oauth-kuaishou-orange)]'
+      bilibili: 'hover:bg-[var(--oauth-bilibili)] hover:text-text-primary hover:border-[var(--oauth-bilibili)]',
+      kuaishou: 'hover:bg-[var(--oauth-kuaishou)] hover:text-text-primary hover:border-[var(--oauth-kuaishou)]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }

@@ -238,43 +238,119 @@
 --scrollbar-thumb: var(--bg-quaternary);
 --scrollbar-thumb-hover: #a0a0a0;
 
-/* 用途化变量 — 品牌色 */
---color-brand-blue: #0b5afe;
---color-brand-blue-light: #3b82f6;
---color-brand-blue-hover: #2563eb;
---color-brand-blue-light-hover: #1d4ed8;
---color-brand-blue-glow: rgba(11, 90, 254, 0.4);
---color-brand-red: #ef4444;
---color-brand-red-light: #f87171;
---color-brand-red-hover: #dc2626;
---color-brand-red-glow: rgba(239, 68, 68, 0.4);
---color-brand-green: #10b981;
---color-brand-green-light: #4ade80;
---color-brand-green-hover: #22c55e;
---color-brand-green-glow: rgba(34, 197, 94, 0.4);
---color-brand-yellow: #f59e0b;
---color-brand-yellow-light: #fbbf24;
---color-brand-yellow-hover: #d97706;
---color-brand-yellow-glow: rgba(245, 158, 11, 0.4);
---color-brand-orange: #fb923c;
---color-brand-orange-light: #fdba74;
---color-brand-orange-hover: #f97316;
---color-brand-orange-glow: rgba(251, 146, 60, 0.4);
+/* 用途化变量 — 品牌色（已语义化：blue=通用强调色, red=错误, green=成功, yellow=警告） */
+--color-accent: #0b5afe;
+--color-accent-light: #3b82f6;
+--color-accent-hover: #2563eb;
+--color-accent-light-hover: #1d4ed8;
+--color-accent-glow: rgba(11, 90, 254, 0.4);
+--color-error: #ef4444;
+--color-error-light: #f87171;
+--color-error-hover: #dc2626;
+--color-error-glow: rgba(239, 68, 68, 0.4);
+--color-success: #10b981;
+--color-success-light: #4ade80;
+--color-success-hover: #22c55e;
+--color-success-glow: rgba(34, 197, 94, 0.4);
+--color-warning: #f59e0b;
+--color-warning-light: #fbbf24;
+--color-warning-hover: #d97706;
+--color-warning-glow: rgba(245, 158, 11, 0.4);
+--color-orange: #fb923c;
+--color-orange-light: #fdba74;
+--color-orange-hover: #f97316;
+--color-orange-glow: rgba(251, 146, 60, 0.4);
 
-/* === Alpha (--color-brand-blue) === */
---color-brand-blue-10: rgba(11, 90, 254, 0.08);
---color-brand-blue-12: rgba(11, 90, 254, 0.12);
---color-brand-blue-15: rgba(11, 90, 254, 0.15);
---color-brand-blue-18: rgba(11, 90, 254, 0.18);
---color-brand-blue-20: rgba(11, 90, 254, 0.16);
---color-brand-blue-25: rgba(11, 90, 254, 0.25);
---color-brand-blue-30: rgba(11, 90, 254, 0.25);
---color-brand-blue-40: rgba(11, 90, 254, 0.3);
---color-brand-blue-50: rgba(11, 90, 254, 0.4);
---color-brand-blue-60: rgba(11, 90, 254, 0.5);
---color-brand-blue-80: rgba(11, 90, 254, 0.6);
+/* === Alpha (--color-accent) ===
+   以下为 --color-accent 的各透明度变体（alpha-前缀 + 透明度百分比）===
+   --color-accent-alpha-10 ~ --color-accent-alpha-80 对应原 --color-accent-* 系列 === */
+--color-accent-alpha-10: rgba(11, 90, 254, 0.08);
+--color-accent-alpha-12: rgba(11, 90, 254, 0.12);
+--color-accent-alpha-15: rgba(11, 90, 254, 0.15);
+--color-accent-alpha-18: rgba(11, 90, 254, 0.18);
+--color-accent-alpha-20: rgba(11, 90, 254, 0.16);
+--color-accent-alpha-25: rgba(11, 90, 254, 0.25);
+--color-accent-alpha-30: rgba(11, 90, 254, 0.25);
+--color-accent-alpha-40: rgba(11, 90, 254, 0.3);
+--color-accent-alpha-50: rgba(11, 90, 254, 0.4);
+--color-accent-alpha-60: rgba(11, 90, 254, 0.5);
+--color-accent-alpha-80: rgba(11, 90, 254, 0.6);
 
-/* 用途化变量 — 请求表单（RequestForm） */
+/* 用途化变量 — 通知/状态/场景语义色（用途命名，替代原 --color-brand-* 颜色命名）
+   ═══════════════════════════════════════════════════════════════
+   新增 --color-accent-alpha-* / --color-collab / --color-indigo 等语义变量后，
+   以下变量供全局 CSS / Vue 组件统一引用，避免直接在业务代码中硬写颜色值。 === */
+
+/* ─── 通知图标颜色（index.vue 通知列表） ─── */
+--color-notif-info: var(--color-accent);
+--color-notif-success: var(--color-success);
+--color-notif-error: var(--color-error);
+--color-notif-warning: var(--color-warning);
+--color-notif-checked: var(--color-accent);
+--color-notif-collab: var(--color-collab);
+--color-notif-indigo: var(--color-indigo);
+
+/* ─── 通知容器/Toast 语义色（Notification.vue / NotificationContainer.vue） ─── */
+--color-toast-success: var(--color-success);
+--color-toast-error: var(--color-error);
+--color-toast-info-bg: var(--color-accent-alpha-20);
+--color-toast-info-text: var(--color-accent);
+
+/* ─── 通用 UI 组件语义色 ─── */
+--color-checked: var(--color-accent);                     /* 勾选框选中颜色 */
+--color-search-focus: var(--color-accent);               /* 搜索框 focus 边框 */
+--color-search-btn-bg: var(--color-accent);              /* 搜索按钮背景 */
+--color-progress-fill: var(--color-accent);              /* 进度条填充色 */
+--color-spinner-border: var(--color-accent);             /* 加载指示器边框 */
+--color-tab-active: var(--color-accent);                 /* Tab 激活下边框 */
+--color-page-btn-active: var(--color-accent);            /* 分页按钮激活态 */
+--color-checkbox-checked: var(--color-accent-light);     /* 勾选框选中态背景 */
+--color-checkbox-checked-border: var(--color-accent-light);
+--color-mobile-page-input: var(--color-accent);          /* 移动端页码输入框 focus */
+--color-page-nav-hover: var(--color-accent-light);       /* 翻页按钮 hover 边框 */
+--color-visibility-public: var(--color-accent-light);    /* 歌曲可见性"公开"标签 */
+--color-text-cover-bg: var(--color-accent);              /* 文字封面背景 */
+--color-like-btn-bg: var(--color-accent);                /* 点赞按钮背景 */
+--color-replay-cancel-bg: var(--color-accent);           /* 重播取消按钮背景 */
+--color-semester-toggle: var(--color-accent);            /* 学期切换按钮文字 */
+--color-admin-badge: var(--color-accent-light);          /* 管理员徽章文字 */
+--color-error-text: var(--color-error);                  /* 错误文本 */
+--color-pending-tag: var(--color-warning-light);         /* 等待中标签 */
+
+/* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
+   每个平台有专属颜色变量，语义清晰，互不干扰。
+   旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */
+--oauth-qq: #22d3ee;
+--oauth-wx: #10b981;
+--oauth-alipay: #0b5afe;
+--oauth-sina: #dc2626;
+--oauth-baidu: #6366f1;
+--oauth-douyin: #fe2c55;
+--oauth-huawei: #dc2626;
+--oauth-xiaomi: #ff6900;
+--oauth-gitee: #dc2626;
+--oauth-bilibili: #06b6d4;
+--oauth-kuaishou: #ff4906;
+--oauth-kuaishou-orange: var(--oauth-kuaishou);
+--oauth-google-blue: #4285f4;
+--oauth-google-red: #ea4335;
+--oauth-google-yellow: #fbbc05;
+--oauth-google-green: #34a853;
+--oauth-casdoor: #67c23a;
+--oauth-casdoor-green: var(--oauth-casdoor);
+
+/* ─── Auth/OAuth 品牌色（旧命名，向后兼容，指向新 --oauth-* 系列）─── */
+--color-oauth-qq: var(--oauth-qq);
+--color-oauth-wx: var(--oauth-wx);
+--color-oauth-alipay: var(--oauth-alipay);
+--color-oauth-sina: var(--oauth-sina);
+--color-oauth-baidu: var(--oauth-baidu);
+--color-oauth-douyin: var(--oauth-douyin);
+--color-oauth-huawei: var(--oauth-huawei);
+--color-oauth-xiaomi: var(--oauth-xiaomi);
+--color-oauth-gitee: var(--oauth-gitee);
+--color-oauth-bilibili: var(--oauth-bilibili);
+--color-oauth-kuaishou: var(--oauth-kuaishou);
 --requestform-audio-match-hover-border: rgba(167, 139, 250, 0.35);
 --requestform-audio-match-hover-border-light: rgba(167, 139, 250, 0.22);
 --requestform-qq-login-shadow: rgba(6, 182, 212, 0.15);
@@ -415,22 +491,25 @@
 --status-error-icon: #ff4d4f;
 --status-error-deep: #d32f2f;
 
-/* 用途化变量 — 品牌渐变辅助色 */
---color-brand-purple: #7c3aed;
---color-brand-purple-hover: #6d28d9;
---color-brand-purple-light: #a78bfa;
---color-brand-purple-lighter: #ede9fe;
---color-brand-purple-glow: rgba(124, 58, 237, 0.3);
---color-brand-pink: #f472b6;
---color-brand-cyan: #22d3ee;
---color-brand-teal: #06b6d4;
---color-brand-indigo: #6366f1;
---color-brand-indigo-hover: #818cf8;
+/* 用途化变量 — 通知/状态语义色与场景渐变辅助色（替代原 --color-collab/pink/cyan/teal/indigo）
+   collab=协作, pink=年度回顾装饰, cyan=QQ/抖音, teal=QQ登录按钮, indigo=选中通知 === */
+--color-collab: #7c3aed;
+--color-collab-hover: #6d28d9;
+--color-collab-light: #a78bfa;
+--color-collab-lighter: #ede9fe;
+--color-collab-glow: rgba(124, 58, 237, 0.3);
+--color-pink: #f472b6;
+--color-cyan: #22d3ee;
+--color-teal: #06b6d4;
+--color-indigo: #6366f1;
+--color-indigo-rgb: 99 102 241;
+--color-indigo-hover: #818cf8;
 
-/* === WarpCanvas 星空配色 === */
---warp-canvas-primary: #7c3aed;
---warp-canvas-primary-light: #a78bfa;
---warp-canvas-indigo: #6366f1;
+/* === WarpCanvas 星空配色（用途命名，替代原 --color-collab/indigo 语义歧义） ===
+   以下变量别名指向 --color-collab / --color-indigo，保持视觉一致性的同时语义更清晰 === */
+--warp-canvas-primary: var(--color-collab);
+--warp-canvas-primary-light: var(--color-collab-light);
+--warp-canvas-indigo: var(--color-indigo);
 
 /* 用途化变量 — 滚动条与轨道 */
 --scrollbar-track-dark: #f0f0f0;
@@ -705,9 +784,7 @@
 --year-review-text-yellow: #fde047;
 --year-review-text-cyan: #67e8f9;
 
-/* OAuth 第三方平台品牌色 */
---oauth-casdoor-green: #67c23a;
---oauth-kuaishou-orange: #ff4906;
+/* OAuth 第三方平台品牌色（--oauth-casdoor-green / --oauth-kuaishou-orange 已在独立变量区定义，此处省略） */
 
 /* === 用途化变量 — 背景纹理光晕（body::before） === */
 --bg-texture-warm-glow: rgba(240, 240, 250, 0.01);
