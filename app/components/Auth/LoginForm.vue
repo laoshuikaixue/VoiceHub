@@ -270,7 +270,7 @@
         <span class="error-message">{{ error }}</span>
       </div>
 
-      <button :disabled="loading" class="submit-btn" type="submit">
+      <button :disabled="loading || isTurnstilePending" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
           <circle
             cx="12"
@@ -379,6 +379,10 @@ const showCaptcha = computed(() => {
   // 否则根据配置显示
   if (!captchaEnabled.value) return false
   return captchaProvider.value === 'turnstile'
+})
+
+const isTurnstilePending = computed(() => {
+  return showCaptcha.value && captchaProvider.value === 'turnstile' && !turnstileToken.value
 })
 
 const getFormTitle = computed(() => {
@@ -505,6 +509,8 @@ watch(showCreateMode, async (enabled) => {
 })
 
 const handleLogin = async () => {
+  if (isTurnstilePending.value) return
+
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return

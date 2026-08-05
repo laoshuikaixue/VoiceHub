@@ -103,7 +103,7 @@ export default defineEventHandler(async (event) => {
     // 验证码校验
     if (needCaptcha) {
       if (captchaProvider === 'turnstile') {
-        const turnstileToken = body.turnstileToken
+        const turnstileToken = typeof body.turnstileToken === 'string' ? body.turnstileToken.trim() : ''
 
         if (!turnstileSecretKey) {
           recordTurnstileValidation('upstream_failure')
@@ -117,9 +117,8 @@ export default defineEventHandler(async (event) => {
 
         const verifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
         const formData = new URLSearchParams()
-        formData.append('secret', turnstileSecretKey)
+        formData.append('secret', turnstileSecretKey.trim())
         formData.append('response', turnstileToken)
-        formData.append('remoteip', clientIp)
 
         try {
           const result: any = await $fetch(verifyUrl, {
