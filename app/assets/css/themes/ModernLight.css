@@ -1,95 +1,95 @@
 /* 现代浅色主题 — 全部设计变量 */
 :root[data-theme="ModernLight"] {
-/* 主色调 — 紫色 */
---primary: #8b5cf6;
---primary-hover: #7c3aed;
---primary-light: rgba(139, 92, 246, 0.1);
---primary-border: rgba(139, 92, 246, 0.25);
+/* 主色调 — 薰衣草紫（更淡雅） */
+--primary: #a78bfa;
+--primary-hover: #9580fa;
+--primary-light: rgba(167, 139, 250, 0.1);
+--primary-border: rgba(167, 139, 250, 0.2);
 
 /* 控件强调色（与 --primary 一致，供 accent-color 使用） */
---accent-color: #8b5cf6;
+--accent-color: #a78bfa;
 
-/* 主色光晕（供阴影 glow 使用） */
---primary-glow: rgba(139, 92, 246, 0.15);
---primary-glow-5: rgba(139, 92, 246, 0.05);
---primary-glow-10: rgba(139, 92, 246, 0.1);
---primary-glow-20: rgba(139, 92, 246, 0.2);
---primary-glow-40: rgba(139, 92, 246, 0.4);
+/* 主色光晕（更淡） */
+--primary-glow: rgba(167, 139, 250, 0.07);
+--primary-glow-5: rgba(167, 139, 250, 0.03);
+--primary-glow-10: rgba(167, 139, 250, 0.06);
+--primary-glow-20: rgba(167, 139, 250, 0.12);
+--primary-glow-40: rgba(167, 139, 250, 0.25);
 
-/* 成功色光晕 */
---success-glow: rgba(16, 185, 129, 0.15);
---success-glow-5: rgba(16, 185, 129, 0.05);
---success-glow-10: rgba(16, 185, 129, 0.1);
---success-glow-20: rgba(16, 185, 129, 0.15);
+/* 成功色光晕（更淡） */
+--success-glow: rgba(52, 211, 153, 0.07);
+--success-glow-5: rgba(52, 211, 153, 0.03);
+--success-glow-10: rgba(52, 211, 153, 0.06);
+--success-glow-20: rgba(52, 211, 153, 0.12);
 
-/* 警告色光晕 */
---warning-glow: rgba(245, 158, 11, 0.15);
---warning-glow-5: rgba(245, 158, 11, 0.05);
---warning-glow-10: rgba(245, 158, 11, 0.1);
---warning-glow-20: rgba(245, 158, 11, 0.15);
+/* 警告色光晕（更淡） */
+--warning-glow: rgba(251, 191, 36, 0.07);
+--warning-glow-5: rgba(251, 191, 36, 0.03);
+--warning-glow-10: rgba(251, 191, 36, 0.06);
+--warning-glow-20: rgba(251, 191, 36, 0.12);
 
-/* 错误色光晕 */
---error-glow: rgba(239, 68, 68, 0.15);
---error-glow-5: rgba(239, 68, 68, 0.05);
---error-glow-10: rgba(239, 68, 68, 0.1);
---error-glow-20: rgba(239, 68, 68, 0.15);
+/* 错误色光晕（更淡） */
+--error-glow: rgba(248, 113, 113, 0.07);
+--error-glow-5: rgba(248, 113, 113, 0.03);
+--error-glow-10: rgba(248, 113, 113, 0.06);
+--error-glow-20: rgba(248, 113, 113, 0.12);
 
-/* 成功色 */
---success: #10b981;
---success-hover: #059669;
---success-light: rgba(16, 185, 129, 0.1);
---success-border: rgba(16, 185, 129, 0.2);
+/* 成功色（更淡雅） */
+--success: #34d399;
+--success-hover: #10b981;
+--success-light: rgba(52, 211, 153, 0.1);
+--success-border: rgba(52, 211, 153, 0.18);
 
-/* 警告色 */
---warning: #f59e0b;
---warning-hover: #d97706;
---warning-light: rgba(245, 158, 11, 0.1);
---warning-border: rgba(245, 158, 11, 0.2);
+/* 警告色（更淡雅） */
+--warning: #fbbf24;
+--warning-hover: #f59e0b;
+--warning-light: rgba(251, 191, 36, 0.1);
+--warning-border: rgba(251, 191, 36, 0.18);
 
-/* 错误色 */
---error: #ef4444;
---error-hover: #dc2626;
---error-light: rgba(239, 68, 68, 0.1);
---error-border: rgba(239, 68, 68, 0.2);
+/* 错误色（更淡雅） */
+--error: #f87171;
+--error-hover: #ef4444;
+--error-light: rgba(248, 113, 113, 0.1);
+--error-border: rgba(248, 113, 113, 0.18);
 
-/* 信息色 — 天蓝 */
---info: #0ea5e9;
---info-hover: #0284c7;
---info-light: rgba(14, 165, 233, 0.1);
---info-border: rgba(14, 165, 233, 0.2);
+/* 信息色 — 天蓝（更淡雅） */
+--info: #38bdf8;
+--info-hover: #0ea5e9;
+--info-light: rgba(56, 189, 248, 0.1);
+--info-border: rgba(56, 189, 248, 0.18);
 
-/* 信息色光晕 */
---info-glow: rgba(14, 165, 233, 0.15);
---info-glow-5: rgba(14, 165, 233, 0.05);
---info-glow-10: rgba(14, 165, 233, 0.1);
---info-glow-20: rgba(14, 165, 233, 0.15);
+/* 信息色光晕（更淡） */
+--info-glow: rgba(56, 189, 248, 0.07);
+--info-glow-5: rgba(56, 189, 248, 0.03);
+--info-glow-10: rgba(56, 189, 248, 0.06);
+--info-glow-20: rgba(56, 189, 248, 0.12);
 
-/* 背景色 */
---bg-primary: #faf9f7;
---bg-secondary: #f5f3f0;
---bg-tertiary: #eeeaf0;
---bg-quaternary: #e5e0ea;
---bg-hover: #f0ece8;
+/* 背景色（更淡、更冷白） */
+--bg-primary: #fcfcfa;
+--bg-secondary: #f9f8f5;
+--bg-tertiary: #f3f2ee;
+--bg-quaternary: #edeae5;
+--bg-hover: #f7f6f2;
 
-/* 文字颜色 */
---text-primary: #29292e;
---text-secondary: #6e6e80;
---text-tertiary: #8b8b99;
---text-quaternary: #a0a0aa;
---text-disabled: #c8c8ce;
+/* 文字颜色（更淡灰） */
+--text-primary: #333338;
+--text-secondary: #7a7a8a;
+--text-tertiary: #9a9aa8;
+--text-quaternary: #adadb8;
+--text-disabled: #d0d0d5;
 
-/* 边框颜色 */
---border-primary: #f0ece8;
---border-secondary: #e8e5f0;
---border-tertiary: #d8d4e0;
---border-quaternary: #c0bcd0;
+/* 边框颜色（更淡） */
+--border-primary: #f5f4f2;
+--border-secondary: #f0eef5;
+--border-tertiary: #e4e1eb;
+--border-quaternary: #ccc9d6;
 --border-color: var(--border-tertiary);
 
-/* 阴影 */
---shadow-sm: 0 1px 2px rgba(139, 92, 246, 0.04);
---shadow-md: 0 2px 6px rgba(139, 92, 246, 0.06);
---shadow-lg: 0 8px 20px rgba(139, 92, 246, 0.1);
---shadow-xl: 0 12px 28px rgba(139, 92, 246, 0.14);
+/* 阴影（大幅降低透明度） */
+--shadow-sm: 0 1px 2px rgba(167, 139, 250, 0.02);
+--shadow-md: 0 2px 6px rgba(167, 139, 250, 0.03);
+--shadow-lg: 0 8px 20px rgba(167, 139, 250, 0.05);
+--shadow-xl: 0 12px 28px rgba(167, 139, 250, 0.07);
 
 /* 圆角 */
 --radius-sm: 4px;
@@ -138,17 +138,17 @@
 --z-toast: 800;
 --z-app-loader: 9000;
 
-/* 特殊状态颜色 */
---status-pending: #f59e0b;
---status-pending-light: rgba(245, 158, 11, 0.1);
---status-approved: #10b981;
---status-approved-light: rgba(16, 185, 129, 0.1);
---status-played: #8e8e93;
---status-played-light: rgba(142, 142, 147, 0.1);
+/* 特殊状态颜色（更淡雅） */
+--status-pending: #fbbf24;
+--status-pending-light: rgba(251, 191, 36, 0.1);
+--status-approved: #34d399;
+--status-approved-light: rgba(52, 211, 153, 0.1);
+--status-played: #aeaeb8;
+--status-played-light: rgba(174, 174, 184, 0.1);
 
-/* 投票相关颜色 */
---vote-heart: #ef4444;
---vote-heart-hover: #dc2626;
+/* 投票相关颜色（更淡） */
+--vote-heart: #f87171;
+--vote-heart-hover: #ef4444;
 --vote-count: var(--text-tertiary);
 
 /* 拖拽状态颜色 */
@@ -168,16 +168,16 @@
 --card-hover-border: var(--border-tertiary);
 --card-shadow: var(--shadow-md);
 
-/* 按钮颜色 */
+/* 按钮颜色（背景更淡） */
 --btn-primary-bg: var(--primary);
 --btn-primary-hover: var(--primary-hover);
 --btn-primary-text: #ffffff;
 --btn-primary-border: var(--primary-border);
 
---btn-secondary-bg: #f5f3f0;
---btn-secondary-hover: #eeeaf0;
+--btn-secondary-bg: #f9f8f5;
+--btn-secondary-hover: #f3f2ee;
 --btn-secondary-text: var(--text-primary);
---btn-secondary-border: #d8d4e0;
+--btn-secondary-border: #e4e1eb;
 
 --btn-success-bg: var(--success);
 --btn-success-hover: var(--success-hover);
@@ -197,7 +197,7 @@
 --btn-disabled-bg: var(--bg-tertiary);
 --btn-disabled-text: var(--text-disabled);
 
-/* 输入框颜色 */
+/* 输入框颜色（更淡） */
 --input-bg: var(--bg-tertiary);
 --input-border: var(--border-tertiary);
 --input-border-focus: var(--primary);
@@ -206,7 +206,7 @@
 --input-shadow-focus: 0 0 0 3px var(--primary-light);
 
 /* 模态框颜色 */
---modal-backdrop: rgba(0, 0, 0, 0.45);
+--modal-backdrop: rgba(0, 0, 0, 0.3);
 --modal-bg: var(--bg-secondary);
 --modal-border: var(--border-secondary);
 --modal-header-border: var(--border-secondary);
@@ -233,48 +233,48 @@
 --spinner-primary: var(--primary);
 --spinner-secondary: var(--bg-tertiary);
 
-/* 滚动条颜色 */
+/* 滚动条颜色（更淡） */
 --scrollbar-track: var(--bg-tertiary);
 --scrollbar-thumb: var(--bg-quaternary);
---scrollbar-thumb-hover: #a0a0a0;
+--scrollbar-thumb-hover: #b0b0b0;
 
-/* 用途化变量 — 品牌色（已语义化：blue=通用强调色, red=错误, green=成功, yellow=警告） */
---color-accent: #8b5cf6;
---color-accent-light: #a78bfa;
---color-accent-hover: #7c3aed;
---color-accent-light-hover: #6d28d9;
---color-accent-glow: rgba(139, 92, 246, 0.4);
---color-error: #ef4444;
---color-error-light: #f87171;
---color-error-hover: #dc2626;
---color-error-glow: rgba(239, 68, 68, 0.4);
---color-success: #10b981;
---color-success-light: #4ade80;
+/* 用途化变量 — 品牌色（更淡雅） */
+--color-accent: #a78bfa;
+--color-accent-light: #c4b5fd;
+--color-accent-hover: #9580fa;
+--color-accent-light-hover: #8b68fa;
+--color-accent-glow: rgba(167, 139, 250, 0.25);
+--color-error: #f87171;
+--color-error-light: #fca5a5;
+--color-error-hover: #ef4444;
+--color-error-glow: rgba(248, 113, 113, 0.25);
+--color-success: #34d399;
+--color-success-light: #6ee7b7;
 --color-success-hover: #22c55e;
---color-success-glow: rgba(34, 197, 94, 0.4);
---color-warning: #f59e0b;
---color-warning-light: #fbbf24;
---color-warning-hover: #d97706;
---color-warning-glow: rgba(245, 158, 11, 0.4);
---color-orange: #fb923c;
---color-orange-light: #fdba74;
---color-orange-hover: #f97316;
---color-orange-glow: rgba(251, 146, 60, 0.4);
+--color-success-glow: rgba(52, 211, 153, 0.25);
+--color-warning: #fbbf24;
+--color-warning-light: #fde047;
+--color-warning-hover: #f59e0b;
+--color-warning-glow: rgba(251, 191, 36, 0.25);
+--color-orange: #fdba74;
+--color-orange-light: #fed7aa;
+--color-orange-hover: #fb923c;
+--color-orange-glow: rgba(251, 146, 60, 0.25);
 
 /* === Alpha (--color-accent) ===
    以下为 --color-accent 的各透明度变体（alpha-前缀 + 透明度百分比）===
    --color-accent-alpha-10 ~ --color-accent-alpha-80 对应原 --color-accent-* 系列 === */
---color-accent-alpha-10: rgba(139, 92, 246, 0.08);
---color-accent-alpha-12: rgba(139, 92, 246, 0.12);
---color-accent-alpha-15: rgba(139, 92, 246, 0.15);
---color-accent-alpha-18: rgba(139, 92, 246, 0.18);
---color-accent-alpha-20: rgba(139, 92, 246, 0.16);
---color-accent-alpha-25: rgba(139, 92, 246, 0.25);
---color-accent-alpha-30: rgba(139, 92, 246, 0.25);
---color-accent-alpha-40: rgba(139, 92, 246, 0.3);
---color-accent-alpha-50: rgba(139, 92, 246, 0.4);
---color-accent-alpha-60: rgba(139, 92, 246, 0.5);
---color-accent-alpha-80: rgba(139, 92, 246, 0.6);
+--color-accent-alpha-10: rgba(167, 139, 250, 0.07);
+--color-accent-alpha-12: rgba(167, 139, 250, 0.1);
+--color-accent-alpha-15: rgba(167, 139, 250, 0.12);
+--color-accent-alpha-18: rgba(167, 139, 250, 0.14);
+--color-accent-alpha-20: rgba(167, 139, 250, 0.13);
+--color-accent-alpha-25: rgba(167, 139, 250, 0.2);
+--color-accent-alpha-30: rgba(167, 139, 250, 0.2);
+--color-accent-alpha-40: rgba(167, 139, 250, 0.25);
+--color-accent-alpha-50: rgba(167, 139, 250, 0.32);
+--color-accent-alpha-60: rgba(167, 139, 250, 0.4);
+--color-accent-alpha-80: rgba(167, 139, 250, 0.48);
 
 /* 用途化变量 — 通知/状态/场景语义色（用途命名，替代原 --color-brand-* 颜色命名）
    ═══════════════════════════════════════════════════════════════
@@ -320,23 +320,23 @@
 /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
    每个平台有专属颜色变量，语义清晰，互不干扰。
    旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */
---oauth-qq: #22d3ee;
---oauth-wx: #10b981;
---oauth-alipay: #0b5afe;
---oauth-sina: #dc2626;
---oauth-baidu: #6366f1;
---oauth-douyin: #fe2c55;
---oauth-huawei: #dc2626;
---oauth-xiaomi: #ff6900;
---oauth-gitee: #dc2626;
---oauth-bilibili: #06b6d4;
---oauth-kuaishou: #ff4906;
+--oauth-qq: #67e8f9;
+--oauth-wx: #34d399;
+--oauth-alipay: #93c5fd;
+--oauth-sina: #fca5a5;
+--oauth-baidu: #c4b5fd;
+--oauth-douyin: #fda4af;
+--oauth-huawei: #fca5a5;
+--oauth-xiaomi: #fed7aa;
+--oauth-gitee: #fca5a5;
+--oauth-bilibili: #22d3ee;
+--oauth-kuaishou: #fd8c6a;
 --oauth-kuaishou-orange: var(--oauth-kuaishou);
---oauth-google-blue: #4285f4;
---oauth-google-red: #ea4335;
---oauth-google-yellow: #fbbc05;
---oauth-google-green: #34a853;
---oauth-casdoor: #67c23a;
+--oauth-google-blue: #93c5fd;
+--oauth-google-red: #fca5a5;
+--oauth-google-yellow: #fde047;
+--oauth-google-green: #86efac;
+--oauth-casdoor: #a3e635;
 --oauth-casdoor-green: var(--oauth-casdoor);
 
 /* ─── Auth/OAuth 品牌色（旧命名，向后兼容，指向新 --oauth-* 系列）─── */
@@ -351,161 +351,161 @@
 --color-oauth-gitee: var(--oauth-gitee);
 --color-oauth-bilibili: var(--oauth-bilibili);
 --color-oauth-kuaishou: var(--oauth-kuaishou);
---requestform-audio-match-hover-border: rgba(167, 139, 250, 0.35);
---requestform-audio-match-hover-border-light: rgba(167, 139, 250, 0.22);
---requestform-qq-login-shadow: rgba(6, 182, 212, 0.15);
---requestform-qq-login-shadow-hover: rgba(6, 182, 212, 0.25);
---requestform-user-icon-bg: rgba(6, 182, 212, 0.12);
---requestform-user-icon-border: rgba(6, 182, 212, 0.22);
---requestform-login-btn-hover-shadow: rgba(124, 58, 237, 0.35);
---requestform-login-btn-hover-shadow-lg: rgba(124, 58, 237, 0.45);
---requestform-like-btn-hover-shadow: rgba(220, 38, 38, 0.35);
---requestform-like-btn-hover-shadow-lg: rgba(220, 38, 38, 0.45);
---requestform-source-healthy-bg: rgba(34, 197, 94, 0.15);
---requestform-source-healthy-border: rgba(34, 197, 94, 0.3);
---requestform-source-healthy-glow: rgba(34, 197, 94, 0.6);
---requestform-source-checking-bg: rgba(251, 191, 36, 0.15);
---requestform-source-checking-border: rgba(251, 191, 36, 0.3);
---requestform-source-checking-glow: rgba(251, 191, 36, 0.6);
+--requestform-audio-match-hover-border: rgba(167, 139, 250, 0.25);
+--requestform-audio-match-hover-border-light: rgba(167, 139, 250, 0.15);
+--requestform-qq-login-shadow: rgba(34, 211, 238, 0.1);
+--requestform-qq-login-shadow-hover: rgba(34, 211, 238, 0.18);
+--requestform-user-icon-bg: rgba(34, 211, 238, 0.1);
+--requestform-user-icon-border: rgba(34, 211, 238, 0.18);
+--requestform-login-btn-hover-shadow: rgba(167, 139, 250, 0.28);
+--requestform-login-btn-hover-shadow-lg: rgba(167, 139, 250, 0.35);
+--requestform-like-btn-hover-shadow: rgba(248, 113, 113, 0.28);
+--requestform-like-btn-hover-shadow-lg: rgba(248, 113, 113, 0.35);
+--requestform-source-healthy-bg: rgba(52, 211, 153, 0.12);
+--requestform-source-healthy-border: rgba(52, 211, 153, 0.25);
+--requestform-source-healthy-glow: rgba(52, 211, 153, 0.48);
+--requestform-source-checking-bg: rgba(251, 191, 36, 0.12);
+--requestform-source-checking-border: rgba(251, 191, 36, 0.25);
+--requestform-source-checking-glow: rgba(251, 191, 36, 0.48);
 --requestform-modal-overlay-bg: rgba(30, 30, 35, 0.95);
---requestform-submit-btn-hover-shadow: rgba(124, 58, 237, 0.4);
---requestform-delete-btn-hover-shadow: rgba(236, 65, 65, 0.5);
---requestform-delete-btn-hover-shadow-sm: rgba(236, 65, 65, 0.3);
---requestform-replay-btn-bg: rgba(124, 58, 237, 0.1);
---requestform-replay-btn-bg-hover: rgba(124, 58, 237, 0.2);
---requestform-replay-btn-border: rgba(124, 58, 237, 0.3);
---requestform-replay-btn-border-hover: rgba(124, 58, 237, 0.5);
---requestform-mobile-chip-border: rgba(160, 160, 160, 0.45);
---requestform-mobile-chip-border-sm: rgba(160, 160, 160, 0.4);
---requestform-mobile-chip-bg: rgba(243, 243, 243, 0.75);
---requestform-mobile-chip-text: rgba(30, 30, 30, 0.9);
---requestform-mobile-button-text: rgba(30, 30, 30, 0.9);
---requestform-chip-required-bg: rgba(245, 158, 11, 0.1);
---requestform-chip-required-border: rgba(245, 158, 11, 0.35);
---requestform-chip-required-border-sm: rgba(245, 158, 11, 0.3);
---requestform-chip-valid-border: rgba(16, 185, 129, 0.35);
---requestform-chip-invalid-bg: rgba(248, 113, 113, 0.1);
---requestform-chip-invalid-border: rgba(248, 113, 113, 0.35);
+--requestform-submit-btn-hover-shadow: rgba(167, 139, 250, 0.3);
+--requestform-delete-btn-hover-shadow: rgba(248, 113, 113, 0.4);
+--requestform-delete-btn-hover-shadow-sm: rgba(248, 113, 113, 0.24);
+--requestform-replay-btn-bg: rgba(167, 139, 250, 0.08);
+--requestform-replay-btn-bg-hover: rgba(167, 139, 250, 0.15);
+--requestform-replay-btn-border: rgba(167, 139, 250, 0.24);
+--requestform-replay-btn-border-hover: rgba(167, 139, 250, 0.4);
+--requestform-mobile-chip-border: rgba(160, 160, 160, 0.38);
+--requestform-mobile-chip-border-sm: rgba(160, 160, 160, 0.32);
+--requestform-mobile-chip-bg: rgba(243, 243, 243, 0.6);
+--requestform-mobile-chip-text: rgba(30, 30, 30, 0.75);
+--requestform-mobile-button-text: rgba(30, 30, 30, 0.75);
+--requestform-chip-required-bg: rgba(251, 191, 36, 0.08);
+--requestform-chip-required-border: rgba(251, 191, 36, 0.28);
+--requestform-chip-required-border-sm: rgba(251, 191, 36, 0.24);
+--requestform-chip-valid-border: rgba(52, 211, 153, 0.28);
+--requestform-chip-invalid-bg: rgba(248, 113, 113, 0.08);
+--requestform-chip-invalid-border: rgba(248, 113, 113, 0.28);
 
 /* 用途化变量 — 音频播放器（AudioPlayer） */
---audio-player-bar-bg: rgba(30, 30, 35, 0.85);
---audio-player-progress-track-bg: rgba(160, 160, 160, 0.39);
---audio-player-quality-active-bg-start: rgba(124, 58, 237, 0.25);
---audio-player-quality-active-bg-mid: rgba(124, 58, 237, 0.15);
---audio-player-quality-active-bg-end: rgba(124, 58, 237, 0.1);
---audio-player-quality-active-border: rgba(124, 58, 237, 0.6);
---audio-player-quality-active-shadow-lg: rgba(124, 58, 237, 0.4);
---audio-player-quality-active-shadow: rgba(124, 58, 237, 0.3);
---audio-player-quality-active-ring: rgba(124, 58, 237, 0.2);
+--audio-player-bar-bg: rgba(30, 30, 35, 0.75);
+--audio-player-progress-track-bg: rgba(160, 160, 160, 0.25);
+--audio-player-quality-active-bg-start: rgba(167, 139, 250, 0.2);
+--audio-player-quality-active-bg-mid: rgba(167, 139, 250, 0.12);
+--audio-player-quality-active-bg-end: rgba(167, 139, 250, 0.08);
+--audio-player-quality-active-border: rgba(167, 139, 250, 0.48);
+--audio-player-quality-active-shadow-lg: rgba(167, 139, 250, 0.32);
+--audio-player-quality-active-shadow: rgba(167, 139, 250, 0.24);
+--audio-player-quality-active-ring: rgba(167, 139, 250, 0.16);
 
 /* 用途化变量 — 音量控制（VolumeControl） */
---volume-control-panel-bg: rgba(245, 245, 245, 0.85);
---volume-control-muted-color: rgba(255, 100, 100, 0.9);
+--volume-control-panel-bg: rgba(245, 245, 245, 0.7);
+--volume-control-muted-color: rgba(255, 100, 100, 0.7);
 
 /* 用途化变量 — 备份管理器（BackupManager） */
---backup-manager-danger-bg: rgba(211, 47, 47, 0.1);
---backup-manager-file-remove-bg: rgba(211, 47, 47, 0.2);
---backup-manager-file-remove-bg-hover: rgba(211, 47, 47, 0.3);
---backup-manager-warning-box-bg: rgba(255, 152, 0, 0.1);
+--backup-manager-danger-bg: rgba(248, 113, 113, 0.08);
+--backup-manager-file-remove-bg: rgba(248, 113, 113, 0.15);
+--backup-manager-file-remove-bg-hover: rgba(248, 113, 113, 0.24);
+--backup-manager-warning-box-bg: rgba(253, 186, 116, 0.1);
 
 /* 用途化变量 — 用户歌曲模态框滚动条（UserSongsModal） */
---usersongs-scroll-thumb: rgba(160, 160, 160, 0.3);
---usersongs-scroll-thumb-hover: rgba(160, 160, 160, 0.5);
+--usersongs-scroll-thumb: rgba(160, 160, 160, 0.24);
+--usersongs-scroll-thumb-hover: rgba(160, 160, 160, 0.4);
 
 /* 用途化变量 — 用户管理器（UserManager） */
---user-manager-tree-line: rgba(160, 160, 160, 0.55);
---user-manager-tree-active-bg: rgba(124, 58, 237, 0.12);
+--user-manager-tree-line: rgba(160, 160, 160, 0.44);
+--user-manager-tree-active-bg: rgba(167, 139, 250, 0.1);
 
 /* 用途化变量 — 数据分析面板滚动条（DataAnalysisPanel） */
---data-analysis-scroll-thumb: rgba(124, 58, 237, 0.3);
---data-analysis-scroll-thumb-hover: rgba(124, 58, 237, 0.5);
+--data-analysis-scroll-thumb: rgba(167, 139, 250, 0.24);
+--data-analysis-scroll-thumb-hover: rgba(167, 139, 250, 0.4);
 
 /* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
---schedule-list-divider: rgba(160, 160, 160, 0.5);
---schedule-list-title-shadow: rgba(124, 58, 237, 0.3);
---schedule-list-title-shadow-sm: rgba(124, 58, 237, 0.2);
+--schedule-list-divider: rgba(160, 160, 160, 0.4);
+--schedule-list-title-shadow: rgba(167, 139, 250, 0.24);
+--schedule-list-title-shadow-sm: rgba(167, 139, 250, 0.16);
 
 /* 用途化变量 — 点歌券标识（CardCodeTag） */
---card-code-bg: rgba(245, 158, 11, 0.1);
---card-code-border: rgba(245, 158, 11, 0.25);
---card-code-text: #d97706;
+--card-code-bg: rgba(251, 191, 36, 0.08);
+--card-code-border: rgba(251, 191, 36, 0.2);
+--card-code-text: #f59e0b;
 
 /* 用途化变量 — 认证模块（Auth） */
---auth-error-input-shadow: rgba(244, 63, 94, 0.1);
+--auth-error-input-shadow: rgba(248, 113, 113, 0.08);
 
 /* 用途化变量 — 面板背景色（亮色模式） */
---panel-bg: #faf9f7;
---panel-bg-alt: #f5f3f0;
---panel-bg-hover: #eeeaf0;
---panel-bg-deep: #e8e5f0;
---panel-bg-deepest: #f5f3f0;
---panel-bg-overlay: #f5f3f0;
+--panel-bg: #fcfcfa;
+--panel-bg-alt: #f9f8f5;
+--panel-bg-hover: #f3f2ee;
+--panel-bg-deep: #f0eef5;
+--panel-bg-deepest: #f9f8f5;
+--panel-bg-overlay: #f9f8f5;
 --panel-bg-elevated: #ffffff;
 --panel-bg-dialog: #ffffff;
---panel-bg-subtle: #f5f3f0;
---panel-bg-tertiary: #e5e0ea;
---panel-bg-quaternary: #f0ece8;
---panel-bg-contrast: #f5f3f0;
---panel-bg-dark: #e8e5f0;
---panel-bg-darker: #f0ece8;
---panel-bg-darkest: #e5e0ea;
---panel-bg-compact: #f5f3f0;
+--panel-bg-subtle: #f9f8f5;
+--panel-bg-tertiary: #edeae5;
+--panel-bg-quaternary: #f7f6f2;
+--panel-bg-contrast: #f9f8f5;
+--panel-bg-dark: #f0eef5;
+--panel-bg-darker: #f7f6f2;
+--panel-bg-darkest: #edeae5;
+--panel-bg-compact: #f9f8f5;
 --panel-bg-flat: #ffffff;
 --panel-bg-raised: #ffffff;
---panel-bg-inset: #f0ece8;
+--panel-bg-inset: #f7f6f2;
 
 /* 通用表面色（无 panel 前缀） */
---panel-bg-secondary: #eeeaf0;
---panel-bg-tertiary: #e5e0ea;
---table-row-bg: #faf9f7;
+--panel-bg-secondary: #f3f2ee;
+--panel-bg-tertiary: #edeae5;
+--table-row-bg: #fcfcfa;
 
 /* 用途化变量 — 文字灰度（亮色模式） */
---text-muted: #8b8b99;
---text-muted-light: #a0a0aa;
---text-muted-dark: #5c5c6e;
---text-tertiary-hover: #5c5c6e;
---text-primary-light: #29292e;
---text-primary-lighter: #3d3d4e;
---text-link: #8b5cf6;
---text-link-hover: #7c3aed;
---text-highlight: #856404;
+--text-muted: #9a9aa8;
+--text-muted-light: #adadb8;
+--text-muted-dark: #7a7a8a;
+--text-tertiary-hover: #7a7a8a;
+--text-primary-light: #333338;
+--text-primary-lighter: #4a4a5e;
+--text-link: #a78bfa;
+--text-link-hover: #9580fa;
+--text-highlight: #92400e;
 
 /* 用途化变量 — 边框与分割线（亮色模式） */
---panel-border: #e8e5f0;
---panel-border-active: #8b5cf6;
---panel-border-subtle: #eeeaf0;
---panel-border-10: rgba(238, 234, 240, 0.1);
---panel-border-light: #e8e5f0;
---panel-border-dark: #c0bcd0;
---panel-border-highlight: #d8d4e0;
---panel-border-brand: #8b5cf6;
---panel-border-error: #ef4444;
+--panel-border: #f0eef5;
+--panel-border-active: #a78bfa;
+--panel-border-subtle: #f3f2ee;
+--panel-border-10: rgba(243, 242, 238, 0.1);
+--panel-border-light: #f0eef5;
+--panel-border-dark: #ccc9d6;
+--panel-border-highlight: #e4e1eb;
+--panel-border-brand: #a78bfa;
+--panel-border-error: #f87171;
 
 /* 用途化变量 — 状态色（亮色模式） */
 --status-info-bg: #f0f9ff;
---status-info-border: #0ea5e9;
---status-info-glow: rgba(14, 165, 233, 0.15);
---status-info-icon: #0ea5e9;
---status-success-icon: #07c160;
---status-warning-icon: #fadb14;
---status-error-icon: #ff4d4f;
---status-error-deep: #d32f2f;
+--status-info-border: #38bdf8;
+--status-info-glow: rgba(56, 189, 248, 0.1);
+--status-info-icon: #38bdf8;
+--status-success-icon: #34d399;
+--status-warning-icon: #fde047;
+--status-error-icon: #f87171;
+--status-error-deep: #f87171;
 
 /* 用途化变量 — 通知/状态语义色与场景渐变辅助色（替代原 --color-collab/pink/cyan/teal/indigo）
    collab=协作, pink=年度回顾装饰, cyan=QQ/抖音, teal=QQ登录按钮, indigo=选中通知 === */
---color-collab: #8b5cf6;
---color-collab-hover: #7c3aed;
+--color-collab: #a78bfa;
+--color-collab-hover: #9580fa;
 --color-collab-light: #c4b5fd;
 --color-collab-lighter: #ede9fe;
---color-collab-glow: rgba(139, 92, 246, 0.3);
---color-pink: #f472b6;
---color-pink-alpha-10: rgba(244, 114, 182, 0.1);
---color-pink-alpha-20: rgba(244, 114, 182, 0.2);
---color-cyan: #22d3ee;
---color-teal: #06b6d4;
---color-indigo: #8b5cf6;
---color-indigo-rgb: 139 92 246;
---color-indigo-hover: #a78bfa;
+--color-collab-glow: rgba(167, 139, 250, 0.24);
+--color-pink: #f9a8d4;
+--color-pink-alpha-10: rgba(249, 168, 212, 0.08);
+--color-pink-alpha-20: rgba(249, 168, 212, 0.15);
+--color-cyan: #67e8f9;
+--color-teal: #22d3ee;
+--color-indigo: #a78bfa;
+--color-indigo-rgb: 167 139 250;
+--color-indigo-hover: #c4b5fd;
 
 /* === WarpCanvas 星空配色（用途命名，替代原 --color-collab/indigo 语义歧义） ===
    以下变量别名指向 --color-collab / --color-indigo，保持视觉一致性的同时语义更清晰 === */
@@ -514,199 +514,199 @@
 --warp-canvas-indigo: var(--color-indigo);
 
 /* 用途化变量 — 滚动条与轨道 */
---scrollbar-track-dark: #eeeaf0;
---scrollbar-track-hover: #faf9f7;
+--scrollbar-track-dark: #f3f2ee;
+--scrollbar-track-hover: #fcfcfa;
 
 /* === Alpha (--primary) === */
---primary-5: rgba(139, 92, 246, 0.05);
---primary-10: rgba(139, 92, 246, 0.1);
---primary-15: rgba(139, 92, 246, 0.15);
---primary-18: rgba(139, 92, 246, 0.18);
---primary-20: rgba(139, 92, 246, 0.2);
---primary-25: rgba(139, 92, 246, 0.25);
---primary-30: rgba(139, 92, 246, 0.3);
---primary-35: rgba(139, 92, 246, 0.35);
---primary-40: rgba(139, 92, 246, 0.4);
---primary-60: rgba(139, 92, 246, 0.6);
---primary-80: rgba(139, 92, 246, 0.8);
---primary-50: rgba(139, 92, 246, 0.5);
+--primary-5: rgba(167, 139, 250, 0.04);
+--primary-10: rgba(167, 139, 250, 0.08);
+--primary-15: rgba(167, 139, 250, 0.12);
+--primary-18: rgba(167, 139, 250, 0.14);
+--primary-20: rgba(167, 139, 250, 0.16);
+--primary-25: rgba(167, 139, 250, 0.2);
+--primary-30: rgba(167, 139, 250, 0.24);
+--primary-35: rgba(167, 139, 250, 0.28);
+--primary-40: rgba(167, 139, 250, 0.32);
+--primary-60: rgba(167, 139, 250, 0.48);
+--primary-80: rgba(167, 139, 250, 0.64);
+--primary-50: rgba(167, 139, 250, 0.4);
 /* === Alpha (--primary-hover) === */
---primary-hover-5: rgba(124, 58, 237, 0.05);
---primary-hover-10: rgba(124, 58, 237, 0.1);
---primary-hover-20: rgba(124, 58, 237, 0.2);
---primary-hover-30: rgba(124, 58, 237, 0.3);
+--primary-hover-5: rgba(149, 128, 250, 0.04);
+--primary-hover-10: rgba(149, 128, 250, 0.08);
+--primary-hover-20: rgba(149, 128, 250, 0.16);
+--primary-hover-30: rgba(149, 128, 250, 0.24);
 /* === Alpha (--success) === */
---success-5: rgba(16, 185, 129, 0.05);
---success-10: rgba(16, 185, 129, 0.1);
---success-20: rgba(16, 185, 129, 0.2);
---success-40: rgba(16, 185, 129, 0.4);
---success-50: rgba(16, 185, 129, 0.5);
---success-70: rgba(16, 185, 129, 0.7);
---success-80: rgba(16, 185, 129, 0.8);
---success-30: rgba(16, 185, 129, 0.3);
+--success-5: rgba(52, 211, 153, 0.04);
+--success-10: rgba(52, 211, 153, 0.08);
+--success-20: rgba(52, 211, 153, 0.16);
+--success-40: rgba(52, 211, 153, 0.32);
+--success-50: rgba(52, 211, 153, 0.4);
+--success-70: rgba(52, 211, 153, 0.56);
+--success-80: rgba(52, 211, 153, 0.64);
+--success-30: rgba(52, 211, 153, 0.24);
 /* === Alpha (--success-hover) === */
---success-hover-5: rgba(5, 150, 105, 0.05);
---success-hover-10: rgba(5, 150, 105, 0.1);
---success-hover-20: rgba(5, 150, 105, 0.2);
+--success-hover-5: rgba(16, 185, 129, 0.04);
+--success-hover-10: rgba(16, 185, 129, 0.08);
+--success-hover-20: rgba(16, 185, 129, 0.16);
 /* === Alpha (--warning) === */
---warning-5: rgba(245, 158, 11, 0.05);
---warning-10: rgba(245, 158, 11, 0.1);
---warning-15: rgba(245, 158, 11, 0.15);
---warning-20: rgba(245, 158, 11, 0.2);
---warning-25: rgba(245, 158, 11, 0.25);
---warning-30: rgba(245, 158, 11, 0.3);
---warning-40: rgba(245, 158, 11, 0.4);
---warning-50: rgba(245, 158, 11, 0.5);
---warning-80: rgba(245, 158, 11, 0.8);
---warning-200: rgba(245, 158, 11, 0.2);
---warning-300: rgba(245, 158, 11, 0.3);
+--warning-5: rgba(251, 191, 36, 0.04);
+--warning-10: rgba(251, 191, 36, 0.08);
+--warning-15: rgba(251, 191, 36, 0.1);
+--warning-20: rgba(251, 191, 36, 0.16);
+--warning-25: rgba(251, 191, 36, 0.2);
+--warning-30: rgba(251, 191, 36, 0.24);
+--warning-40: rgba(251, 191, 36, 0.32);
+--warning-50: rgba(251, 191, 36, 0.4);
+--warning-80: rgba(251, 191, 36, 0.64);
+--warning-200: rgba(251, 191, 36, 0.16);
+--warning-300: rgba(251, 191, 36, 0.24);
 /* === Alpha (--warning-hover) === */
---warning-hover-5: rgba(217, 119, 6, 0.05);
---warning-hover-10: rgba(217, 119, 6, 0.1);
---warning-hover-15: rgba(217, 119, 6, 0.15);
---warning-hover-20: rgba(217, 119, 6, 0.2);
---warning-hover-25: rgba(217, 119, 6, 0.25);
---warning-hover-30: rgba(217, 119, 6, 0.3);
---warning-hover-40: rgba(217, 119, 6, 0.4);
---warning-hover-50: rgba(217, 119, 6, 0.5);
+--warning-hover-5: rgba(245, 158, 11, 0.04);
+--warning-hover-10: rgba(245, 158, 11, 0.08);
+--warning-hover-15: rgba(245, 158, 11, 0.12);
+--warning-hover-20: rgba(245, 158, 11, 0.16);
+--warning-hover-25: rgba(245, 158, 11, 0.2);
+--warning-hover-30: rgba(245, 158, 11, 0.24);
+--warning-hover-40: rgba(245, 158, 11, 0.32);
+--warning-hover-50: rgba(245, 158, 11, 0.4);
 /* === Alpha (--error) === */
---error-5: rgba(239, 68, 68, 0.05);
---error-10: rgba(239, 68, 68, 0.1);
---error-15: rgba(239, 68, 68, 0.15);
---error-20: rgba(239, 68, 68, 0.2);
---error-30: rgba(239, 68, 68, 0.3);
---error-40: rgba(239, 68, 68, 0.4);
---error-50: rgba(239, 68, 68, 0.5);
---error-60: rgba(239, 68, 68, 0.6);
---error-70: rgba(239, 68, 68, 0.7);
---error-80: rgba(239, 68, 68, 0.8);
+--error-5: rgba(248, 113, 113, 0.04);
+--error-10: rgba(248, 113, 113, 0.08);
+--error-15: rgba(248, 113, 113, 0.12);
+--error-20: rgba(248, 113, 113, 0.16);
+--error-30: rgba(248, 113, 113, 0.24);
+--error-40: rgba(248, 113, 113, 0.32);
+--error-50: rgba(248, 113, 113, 0.4);
+--error-60: rgba(248, 113, 113, 0.48);
+--error-70: rgba(248, 113, 113, 0.56);
+--error-80: rgba(248, 113, 113, 0.64);
 /* === Alpha (--error-hover) === */
---error-hover-5: rgba(220, 38, 38, 0.05);
---error-hover-10: rgba(220, 38, 38, 0.1);
---error-hover-15: rgba(220, 38, 38, 0.15);
---error-hover-20: rgba(220, 38, 38, 0.2);
---error-hover-30: rgba(220, 38, 38, 0.3);
+--error-hover-5: rgba(239, 68, 68, 0.04);
+--error-hover-10: rgba(239, 68, 68, 0.08);
+--error-hover-15: rgba(239, 68, 68, 0.12);
+--error-hover-20: rgba(239, 68, 68, 0.16);
+--error-hover-30: rgba(239, 68, 68, 0.24);
 /* === Alpha (--info) === */
---info-5: rgba(14, 165, 233, 0.05);
---info-10: rgba(14, 165, 233, 0.1);
---info-20: rgba(14, 165, 233, 0.2);
---info-30: rgba(14, 165, 233, 0.3);
---info-40: rgba(14, 165, 233, 0.4);
---info-50: rgba(14, 165, 233, 0.5);
+--info-5: rgba(56, 189, 248, 0.04);
+--info-10: rgba(56, 189, 248, 0.08);
+--info-20: rgba(56, 189, 248, 0.16);
+--info-30: rgba(56, 189, 248, 0.24);
+--info-40: rgba(56, 189, 248, 0.32);
+--info-50: rgba(56, 189, 248, 0.4);
 /* === Alpha (--info-hover) === */
---info-hover-5: rgba(2, 132, 199, 0.05);
---info-hover-10: rgba(2, 132, 199, 0.1);
---info-hover-20: rgba(2, 132, 199, 0.2);
+--info-hover-5: rgba(14, 165, 233, 0.04);
+--info-hover-10: rgba(14, 165, 233, 0.08);
+--info-hover-20: rgba(14, 165, 233, 0.16);
 --info-hover-30: rgba(2, 132, 199, 0.3);
 --info-hover-40: rgba(2, 132, 199, 0.4);
 --info-hover-50: rgba(2, 132, 199, 0.5);
 /* === Alpha (--bg-primary) === */
---bg-primary-5: rgba(250, 249, 247, 0.05);
---bg-primary-10: rgba(250, 249, 247, 0.1);
---bg-primary-20: rgba(250, 249, 247, 0.2);
---bg-primary-25: rgba(250, 249, 247, 0.25);
---bg-primary-30: rgba(250, 249, 247, 0.3);
---bg-primary-40: rgba(250, 249, 247, 0.4);
---bg-primary-45: rgba(250, 249, 247, 0.45);
---bg-primary-50: rgba(250, 249, 247, 0.5);
---bg-primary-60: rgba(250, 249, 247, 0.6);
---bg-primary-70: rgba(250, 249, 247, 0.7);
---bg-primary-80: rgba(250, 249, 247, 0.8);
---bg-primary-85: rgba(250, 249, 247, 0.85);
---bg-primary-90: rgba(250, 249, 247, 0.9);
---bg-primary-95: rgba(250, 249, 247, 0.95);
+--bg-primary-5: rgba(252, 252, 250, 0.04);
+--bg-primary-10: rgba(252, 252, 250, 0.08);
+--bg-primary-20: rgba(252, 252, 250, 0.16);
+--bg-primary-25: rgba(252, 252, 250, 0.2);
+--bg-primary-30: rgba(252, 252, 250, 0.24);
+--bg-primary-40: rgba(252, 252, 250, 0.32);
+--bg-primary-45: rgba(252, 252, 250, 0.36);
+--bg-primary-50: rgba(252, 252, 250, 0.4);
+--bg-primary-60: rgba(252, 252, 250, 0.48);
+--bg-primary-70: rgba(252, 252, 250, 0.56);
+--bg-primary-80: rgba(252, 252, 250, 0.64);
+--bg-primary-85: rgba(252, 252, 250, 0.68);
+--bg-primary-90: rgba(252, 252, 250, 0.72);
+--bg-primary-95: rgba(252, 252, 250, 0.76);
 /* === Alpha (--bg-secondary) === */
---bg-secondary-5: rgba(245, 243, 240, 0.05);
---bg-secondary-10: rgba(245, 243, 240, 0.1);
---bg-secondary-15: rgba(245, 243, 240, 0.15);
---bg-secondary-20: rgba(245, 243, 240, 0.2);
---bg-secondary-30: rgba(245, 243, 240, 0.3);
---bg-secondary-40: rgba(245, 243, 240, 0.4);
---bg-secondary-50: rgba(245, 243, 240, 0.5);
---bg-secondary-60: rgba(245, 243, 240, 0.6);
---bg-secondary-70: rgba(245, 243, 240, 0.7);
---bg-secondary-80: rgba(245, 243, 240, 0.8);
---bg-secondary-90: rgba(245, 243, 240, 0.9);
---bg-secondary-95: rgba(245, 243, 240, 0.95);
+--bg-secondary-5: rgba(249, 248, 245, 0.04);
+--bg-secondary-10: rgba(249, 248, 245, 0.08);
+--bg-secondary-15: rgba(249, 248, 245, 0.12);
+--bg-secondary-20: rgba(249, 248, 245, 0.16);
+--bg-secondary-30: rgba(249, 248, 245, 0.24);
+--bg-secondary-40: rgba(249, 248, 245, 0.32);
+--bg-secondary-50: rgba(249, 248, 245, 0.4);
+--bg-secondary-60: rgba(249, 248, 245, 0.48);
+--bg-secondary-70: rgba(249, 248, 245, 0.56);
+--bg-secondary-80: rgba(249, 248, 245, 0.64);
+--bg-secondary-90: rgba(249, 248, 245, 0.72);
+--bg-secondary-95: rgba(249, 248, 245, 0.76);
 /* === Alpha (--bg-tertiary) === */
---bg-tertiary-5: rgba(238, 234, 240, 0.05);
---bg-tertiary-10: rgba(238, 234, 240, 0.1);
---bg-tertiary-20: rgba(238, 234, 240, 0.2);
---bg-tertiary-30: rgba(238, 234, 240, 0.3);
---bg-tertiary-40: rgba(238, 234, 240, 0.4);
---bg-tertiary-50: rgba(238, 234, 240, 0.5);
---bg-tertiary-60: rgba(238, 234, 240, 0.6);
---bg-tertiary-70: rgba(238, 234, 240, 0.7);
---bg-tertiary-80: rgba(238, 234, 240, 0.8);
+--bg-tertiary-5: rgba(243, 242, 238, 0.04);
+--bg-tertiary-10: rgba(243, 242, 238, 0.08);
+--bg-tertiary-20: rgba(243, 242, 238, 0.16);
+--bg-tertiary-30: rgba(243, 242, 238, 0.24);
+--bg-tertiary-40: rgba(243, 242, 238, 0.32);
+--bg-tertiary-50: rgba(243, 242, 238, 0.4);
+--bg-tertiary-60: rgba(243, 242, 238, 0.48);
+--bg-tertiary-70: rgba(243, 242, 238, 0.56);
+--bg-tertiary-80: rgba(243, 242, 238, 0.64);
 /* === Alpha (--bg-quaternary) === */
---bg-quaternary-50: rgba(229, 229, 229, 0.5);
+--bg-quaternary-50: rgba(237, 234, 229, 0.4);
 /* === Alpha (--border-secondary) === */
---border-secondary-30: rgba(229, 229, 229, 0.3);
---border-secondary-40: rgba(229, 229, 229, 0.4);
---border-secondary-50: rgba(229, 229, 229, 0.5);
---border-secondary-60: rgba(229, 229, 229, 0.6);
---border-secondary-70: rgba(229, 229, 229, 0.7);
---border-secondary-80: rgba(229, 229, 229, 0.8);
+--border-secondary-30: rgba(240, 238, 245, 0.24);
+--border-secondary-40: rgba(240, 238, 245, 0.32);
+--border-secondary-50: rgba(240, 238, 245, 0.4);
+--border-secondary-60: rgba(240, 238, 245, 0.48);
+--border-secondary-70: rgba(240, 238, 245, 0.56);
+--border-secondary-80: rgba(240, 238, 245, 0.64);
 /* === Alpha (--border-tertiary) === */
---border-tertiary-30: rgba(212, 212, 212, 0.3);
---border-tertiary-50: rgba(212, 212, 212, 0.5);
+--border-tertiary-30: rgba(228, 225, 235, 0.24);
+--border-tertiary-50: rgba(228, 225, 235, 0.4);
 /* === Alpha (--text-primary) === */
---text-primary-10: rgba(41, 41, 46, 0.1);
---text-primary-20: rgba(41, 41, 46, 0.2);
---text-primary-30: rgba(41, 41, 46, 0.3);
---text-primary-40: rgba(41, 41, 46, 0.4);
---text-primary-50: rgba(41, 41, 46, 0.5);
---text-primary-60: rgba(41, 41, 46, 0.6);
---text-primary-70: rgba(41, 41, 46, 0.7);
---text-primary-80: rgba(41, 41, 46, 0.8);
---text-primary-90: rgba(41, 41, 46, 0.9);
+--text-primary-10: rgba(51, 51, 56, 0.08);
+--text-primary-20: rgba(51, 51, 56, 0.16);
+--text-primary-30: rgba(51, 51, 56, 0.24);
+--text-primary-40: rgba(51, 51, 56, 0.32);
+--text-primary-50: rgba(51, 51, 56, 0.4);
+--text-primary-60: rgba(51, 51, 56, 0.48);
+--text-primary-70: rgba(51, 51, 56, 0.56);
+--text-primary-80: rgba(51, 51, 56, 0.64);
+--text-primary-90: rgba(51, 51, 56, 0.72);
 /* === Alpha (--text-error) === */
---text-error-20: rgba(239, 68, 68, 0.2);
---text-error-50: rgba(239, 68, 68, 0.5);
---text-error-60: rgba(239, 68, 68, 0.6);
---text-error-70: rgba(239, 68, 68, 0.7);
---text-error-80: rgba(239, 68, 68, 0.8);
+--text-error-20: rgba(248, 113, 113, 0.16);
+--text-error-50: rgba(248, 113, 113, 0.4);
+--text-error-60: rgba(248, 113, 113, 0.48);
+--text-error-70: rgba(248, 113, 113, 0.56);
+--text-error-80: rgba(248, 113, 113, 0.64);
 /* === 通用浅色文字（亮色模式） === */
---light: rgba(30, 30, 30, 0.95);
+--light: rgba(30, 30, 30, 0.76);
 /* === Alpha (--text-success) === */
---text-success-50: rgba(16, 185, 129, 0.5);
---text-success-70: rgba(16, 185, 129, 0.7);
---text-success-80: rgba(16, 185, 129, 0.8);
+--text-success-50: rgba(52, 211, 153, 0.4);
+--text-success-70: rgba(52, 211, 153, 0.56);
+--text-success-80: rgba(52, 211, 153, 0.64);
 /* === Alpha (--text-warning) === */
---text-warning-80: rgba(245, 158, 11, 0.8);
+--text-warning-80: rgba(251, 191, 36, 0.64);
 
 /* 用途化变量 — 首页（index） */
---index-footer-bg: rgba(245, 243, 240, 0.9);
---index-visualizer-bg: rgba(238, 234, 240, 0.5);
---index-card-glow: rgba(124, 58, 237, 0.15);
---index-brand-badge-bg: rgba(124, 58, 237, 0.1);
---index-brand-badge-border: rgba(124, 58, 237, 0.2);
---index-main-icon-shadow: rgba(124, 58, 237, 0.5);
---index-pulsing-ring-shadow: rgba(124, 58, 237, 0.4);
+--index-footer-bg: rgba(249, 248, 245, 0.72);
+--index-visualizer-bg: rgba(243, 242, 238, 0.4);
+--index-card-glow: rgba(167, 139, 250, 0.12);
+--index-brand-badge-bg: rgba(167, 139, 250, 0.08);
+--index-brand-badge-border: rgba(167, 139, 250, 0.16);
+--index-main-icon-shadow: rgba(167, 139, 250, 0.4);
+--index-pulsing-ring-shadow: rgba(167, 139, 250, 0.32);
 
 /* 用途化变量 — 年度回顾（year-review） */
---year-review-home-btn-shadow: rgba(139, 92, 246, 0.2);
---year-review-blob-1-bg: rgba(139, 92, 246, 0.4);
---year-review-blob-2-bg: rgba(244, 114, 182, 0.2);
---year-review-gradient-overlay-end: rgba(244, 114, 182, 0.15);
---year-review-stat-number-shadow: rgba(139, 92, 246, 0.5);
---year-review-artist-label-border: rgba(168, 85, 247, 0.3);
---year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
---year-review-stats-bg-gradient: rgba(139, 92, 246, 0.4);
---app-loading-brand-primary: #8b5cf6;
---app-loading-brand-secondary: #a78bfa;
---app-loading-primary-glow: rgba(139, 92, 246, 0.2);
---app-loading-primary-glow-accelerating: rgba(139, 92, 246, 0.65);
---app-loading-secondary-glow: rgba(167, 139, 250, 0.18);
---app-loading-text-color: rgba(139, 92, 246, 0.9);
+--year-review-home-btn-shadow: rgba(167, 139, 250, 0.16);
+--year-review-blob-1-bg: rgba(167, 139, 250, 0.32);
+--year-review-blob-2-bg: rgba(249, 168, 212, 0.15);
+--year-review-gradient-overlay-end: rgba(249, 168, 212, 0.12);
+--year-review-stat-number-shadow: rgba(167, 139, 250, 0.4);
+--year-review-artist-label-border: rgba(196, 181, 253, 0.24);
+--year-review-artist-bg-blur: rgba(196, 181, 253, 0.16);
+--year-review-stats-bg-gradient: rgba(167, 139, 250, 0.32);
+--app-loading-brand-primary: #a78bfa;
+--app-loading-brand-secondary: #c4b5fd;
+--app-loading-primary-glow: rgba(167, 139, 250, 0.16);
+--app-loading-primary-glow-accelerating: rgba(167, 139, 250, 0.52);
+--app-loading-secondary-glow: rgba(196, 181, 253, 0.14);
+--app-loading-text-color: rgba(167, 139, 250, 0.72);
 
 /* 用途化变量 — 模态框通用（Modal shared） */
---lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
---lyrics-modal-bg-accent-blue: rgba(139, 92, 246, 0.32);
---lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.25);
---lyrics-modal-badge-menu-bg: rgba(250, 249, 247, 0.9);
---audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.85);
---audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.25);
+--lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.32);
+--lyrics-modal-bg-accent-blue: rgba(167, 139, 250, 0.26);
+--lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.2);
+--lyrics-modal-badge-menu-bg: rgba(252, 252, 250, 0.9);
+--audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.7);
+--audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.2);
 
 /* === Overlay / 遮罩层半透明色（浅色模式 = 黑色半透明） === */
 --overlay-1: rgba(0, 0, 0, 0.01);
@@ -788,25 +788,25 @@
 
 /* OAuth 第三方平台品牌色（--oauth-casdoor-green / --oauth-kuaishou-orange 已在独立变量区定义，此处省略） */
 
-/* === 用途化变量 — 背景纹理光晕（body::before） === */
---bg-texture-warm-glow: rgba(238, 234, 240, 0.02);
+/* 用途化变量 — 背景纹理光晕（body::before） === */
+--bg-texture-warm-glow: rgba(243, 242, 238, 0.016);
 
 /* === 用途化变量 — 按钮阴影 === */
---btn-primary-shadow: rgba(139, 92, 246, 0.2);
+--btn-primary-shadow: rgba(167, 139, 250, 0.16);
 
 /* === 用途化变量 — Canvas 动画背景叠加色 === */
---canvas-bg-overlay: rgba(250, 249, 247, 0.92);
+--canvas-bg-overlay: rgba(252, 252, 250, 0.74);
 
 /* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
---canvas-glow-overlay-end: rgba(245, 243, 240, 0.7);
+--canvas-glow-overlay-end: rgba(249, 248, 245, 0.56);
 
 /* === 用途化变量 — 歌词消息 fallback === */
---lyric-msg-fallback-text: #29292e;
+--lyric-msg-fallback-text: #333338;
 
 /* === 用途化变量 — 模态框阴影 === */
---modal-hover-shadow: rgba(139, 92, 246, 0.08);
+--modal-hover-shadow: rgba(167, 139, 250, 0.06);
 
 /* === 用途化变量 — 移动端表格阴影 === */
---mobile-table-shadow: rgba(0, 0, 0, 0.5);
+--mobile-table-shadow: rgba(0, 0, 0, 0.4);
 }
 
