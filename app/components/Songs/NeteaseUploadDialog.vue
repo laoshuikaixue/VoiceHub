@@ -117,7 +117,7 @@
                     :style="{ width: `${uploadProgress}%` }"
                   >
                     <div
-                      class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"
+                      class="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--color-white-alpha-20)] to-transparent animate-shimmer"
                     />
                   </div>
                 </div>

@@ -10,7 +10,7 @@
       <div class="relative mb-6">
         <div class="absolute inset-0 blur-2xl bg-error-10 rounded-full" />
         <div
-          class="relative flex items-center justify-center w-16 h-16 bg-bg-primary border border-error-30 rounded-2xl text-error shadow-xl shadow-black/40"
+          class="relative flex items-center justify-center w-16 h-16 bg-bg-primary border border-error-30 rounded-2xl text-error shadow-xl shadow-[0_20px_25px_var(--color-black-alpha-40)]"
         >
           <AlertCircle :size="32" stroke-width="1.5" />
         </div>
@@ -24,7 +24,7 @@
       <div class="flex flex-wrap items-center justify-center gap-4">
         <button
           :disabled="retrying"
-          class="flex items-center gap-2 px-6 py-2.5 bg-bg-primary border border-border-secondary hover:border-primary-50 text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-black/20 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2.5 bg-bg-primary border border-border-secondary hover:border-primary-50 text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-[0_10px_15px_var(--color-black-alpha-20)] disabled:opacity-50"
           @click="handleRetry"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': retrying }" />

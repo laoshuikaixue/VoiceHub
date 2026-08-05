@@ -82,7 +82,7 @@
         <div
           v-for="(stat, i) in kpiStats"
           :key="i"
-          class="group relative p-6 bg-bg-secondary-40 border border-border-secondary-60 rounded-[2rem] overflow-hidden hover:border-border-tertiary transition-all hover:shadow-2xl hover:shadow-black/40"
+          class="group relative p-6 bg-bg-secondary-40 border border-border-secondary-60 rounded-[2rem] overflow-hidden hover:border-border-tertiary transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--color-black-alpha-40)]"
         >
           <div class="flex justify-between items-start">
             <div

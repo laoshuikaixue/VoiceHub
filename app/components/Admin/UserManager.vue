@@ -401,7 +401,7 @@
           <div
             v-for="user in users"
             :key="user.id"
-            class="bg-bg-secondary-40 border border-border-secondary rounded-xl p-5 space-y-5 shadow-lg shadow-black/20"
+            class="bg-bg-secondary-40 border border-border-secondary rounded-xl p-5 space-y-5 shadow-lg shadow-[0_10px_15px_var(--color-black-alpha-20)]"
             @click="showUserDetail(user, $event)"
           >
             <div class="flex items-start justify-between">

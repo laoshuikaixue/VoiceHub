@@ -101,7 +101,7 @@
           v-for="slot in requestTimes"
           :key="slot.id"
           :class="[
-            'group bg-bg-secondary-40 border rounded-3xl p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-black/40',
+            'group bg-bg-secondary-40 border rounded-3xl p-8 space-y-6 transition-all hover:shadow-2xl hover:shadow-[0_25px_50px_var(--color-black-alpha-40)]',
             slot.enabled && !slot.past ? 'border-border-secondary' : 'border-border-secondary-40 opacity-60'
           ]"
         >

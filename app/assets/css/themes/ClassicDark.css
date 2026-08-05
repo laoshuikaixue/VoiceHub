@@ -501,6 +501,13 @@
 --color-pink: #f472b6;
 --color-pink-alpha-10: rgba(244, 114, 182, 0.1);
 --color-pink-alpha-20: rgba(244, 114, 182, 0.2);
+
+/* === 黑色 / 白色 Alpha 变体（替代原生颜色 /xx 透明修饰符） === */
+--color-black-alpha-20: rgba(0, 0, 0, 0.2);
+--color-black-alpha-40: rgba(0, 0, 0, 0.4);
+--color-black-alpha-80: rgba(0, 0, 0, 0.8);
+--color-white-alpha-20: rgba(255, 255, 255, 0.2);
+
 --color-cyan: #22d3ee;
 --color-teal: #06b6d4;
 --color-indigo: #6366f1;
