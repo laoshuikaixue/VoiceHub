@@ -182,9 +182,9 @@ onUnmounted(() => {
   box-sizing: border-box;
   width: 100%;
   min-height: 66px;
-  border: 1px solid #dfe3e8;
-  border-radius: 12px;
-  background: #fafbfc;
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-xl);
+  background: var(--bg-secondary);
 }
 
 .turnstile-loading {
@@ -192,7 +192,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  color: #52606d;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -219,17 +219,17 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border-color: #f3d36b;
-  background: #fffbed;
-  color: #9a5700;
+  border-color: var(--warning-border);
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .turnstile-load-error-content { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
 .turnstile-warning-icon { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px; }
 .turnstile-load-error-title { margin: 0; font-size: 14px; }
 .turnstile-load-error-desc { margin: 4px 0 0; font-size: 12px; line-height: 1.35; }
-.turnstile-retry { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 7px 10px; border: 1px solid #efb84b; border-radius: 7px; background: #fff; color: #9a5700; font-size: 13px; cursor: pointer; }
-.turnstile-retry:hover { background: #fff7df; }
+.turnstile-retry { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 7px 10px; border: 1px solid var(--warning-border); border-radius: var(--radius-md); background: var(--bg-tertiary); color: var(--warning); font-size: 13px; cursor: pointer; }
+.turnstile-retry:hover { background: var(--bg-hover); }
 .turnstile-retry svg { width: 13px; height: 13px; }
 
 @keyframes turnstile-spin { to { transform: rotate(360deg); } }
