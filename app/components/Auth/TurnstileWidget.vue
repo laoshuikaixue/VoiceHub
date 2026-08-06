@@ -39,6 +39,7 @@ declare global {
 
 const props = defineProps<{
   modelValue: string
+  configReady?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -58,9 +59,17 @@ let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(() => siteConfig.value.turnstileSiteKey, (newKey) => {
   if (newKey && !widgetId) {
+    if (props.configReady !== false) startTimeout()
     renderWidget()
   }
 }, { immediate: true })
+
+watch(() => props.configReady, (ready) => {
+  if (ready) {
+    startTimeout()
+    renderWidget()
+  }
+})
 
 function renderWidget() {
   if (!containerRef.value || !siteConfig.value.turnstileSiteKey || widgetId !== null) return
@@ -136,7 +145,7 @@ defineExpose({
 })
 
 onMounted(() => {
-  startTimeout()
+  if (props.configReady !== false && siteConfig.value.turnstileSiteKey) startTimeout()
   // 如果之前没有加载过 Turnstile 脚本，则动态加载
   if (!document.getElementById('turnstile-script')) {
     const script = document.createElement('script')

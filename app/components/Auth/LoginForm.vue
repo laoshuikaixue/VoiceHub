@@ -241,9 +241,10 @@
         </div>
       </div>
 
-      <div v-show="showCaptcha" class="form-group">
+      <div v-if="!isSiteConfigLoaded || showCaptcha" class="form-group">
         <TurnstileWidget
-          v-if="captchaProvider === 'turnstile'"
+          v-if="!isSiteConfigLoaded || captchaProvider === 'turnstile'"
+          :config-ready="isSiteConfigLoaded"
           ref="turnstileRef"
           v-model="turnstileToken"
         />
@@ -353,7 +354,7 @@ import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
 import { useLocale } from '~/utils/locale'
 
-const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
+const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, isLoaded: isSiteConfigLoaded } = useSiteConfig()
 const { auth: authLocale } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -382,7 +383,7 @@ const showCaptcha = computed(() => {
 })
 
 const isTurnstilePending = computed(() => {
-  return showCaptcha.value && captchaProvider.value === 'turnstile' && !turnstileToken.value
+  return !isSiteConfigLoaded.value || (showCaptcha.value && captchaProvider.value === 'turnstile' && !turnstileToken.value)
 })
 
 const getFormTitle = computed(() => {

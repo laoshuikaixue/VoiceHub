@@ -182,9 +182,19 @@ const loadSessions = async (targetPage = 1) => {
     forbidden.value = false
   } catch (requestError) {
     if (version !== requestVersion) return
-    if (requestError?.statusCode === 403) {
+    const statusCode = Number(
+      requestError?.statusCode ||
+      requestError?.status ||
+      requestError?.data?.statusCode ||
+      requestError?.response?.status
+    )
+    if (statusCode === 403) {
       forbidden.value = true
       data.value = null
+    } else if (statusCode === 401) {
+      forbidden.value = false
+      data.value = null
+      error.value = localize(requestError, '登录状态已失效，请重新登录。')
     } else {
       error.value = localize(requestError, '用户活动记录暂时无法读取。')
     }

@@ -928,8 +928,8 @@
       </section>
 
       <section class="dependency-matrix">
-        <OpsPanel v-for="item in dependencyHealthCards" :key="item.label" :title="item.label" :status="dependencyCardStatus(item.label)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencyCardEmpty(item.label) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
-          <div class="dependency-card__status"><i class="dependency-status-dot" :class="`dependency-status-dot--${dependencyCardStatus(item.label)}`" /><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
+        <OpsPanel v-for="item in dependencyHealthCards" :key="item.label" class="dependency-card" :title="item.label" :status="dependencyCardStatus(item.label)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencyCardEmpty(item.label) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
+          <div class="dependency-card__status"><span>当前状态</span><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
           <p v-if="dependencyFailureReason(item.label)" class="dependency-card__failure">最近失败：{{ dependencyFailureReason(item.label) }}</p>
           <dl><div v-for="detail in item.details" :key="detail"><dt>{{ detail }}</dt><dd>{{ dependencyMetricValue(item.label, detail) }}</dd></div></dl>
         </OpsPanel>
@@ -3691,6 +3691,10 @@ const dependencyProtectionPanelStatus = (panel) => {
   padding: 0.65rem;
 }
 
+.health-score-panel {
+  align-self: start;
+}
+
 :deep(.health-score-panel .ops-panel__header) {
   display: none;
 }
@@ -4724,11 +4728,8 @@ const dependencyProtectionPanelStatus = (panel) => {
 
 .dependency-matrix {
   display: grid;
-  grid-auto-columns: minmax(10rem, 1fr);
-  grid-auto-flow: column;
-  gap: 1rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
+  gap: 0.75rem;
 }
 
 .diagnostic-summary-card {
@@ -4892,12 +4893,44 @@ const dependencyProtectionPanelStatus = (panel) => {
 .dependency-card {
   display: flex;
   min-width: 0;
-  min-height: 12rem;
+  min-height: 17rem;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid rgb(39 39 42);
   border-radius: 8px;
   background: rgb(24 24 27 / 0.44);
+}
+
+:deep(.dependency-card .ops-panel__header) {
+  display: grid;
+  min-height: 3.25rem;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.3rem;
+}
+
+:deep(.dependency-card .ops-panel__heading h3) {
+  line-height: 1.35;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+:deep(.dependency-card .ops-panel__updated) {
+  font-family: var(--ops-mono);
+  font-size: 0.625rem;
+}
+
+:deep(.dependency-card .ops-panel__actions) {
+  justify-content: flex-start;
+  padding-left: 1rem;
+}
+
+:deep(.dependency-card .ops-panel__body) {
+  display: flex;
+  min-height: 13.5rem;
+  flex: 1;
+  flex-direction: column;
+  padding: 0;
 }
 
 .dependency-card__header {
@@ -4911,15 +4944,27 @@ const dependencyProtectionPanelStatus = (panel) => {
 }
 
 .dependency-card__status {
-  display: flex;
+  display: grid;
+  min-height: 3.4rem;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1.1rem 1rem;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  padding: 0.7rem 0.8rem;
+}
+
+.dependency-card__status span {
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
+  font-weight: 500;
 }
 
 .dependency-card__status strong {
-  color: rgb(244 244 245);
-  font-size: 1.5rem;
+  color: var(--ops-text-1);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
 }
 
 .dependency-status-dot {
@@ -4931,17 +4976,19 @@ const dependencyProtectionPanelStatus = (panel) => {
 }
 
 .dependency-card dl {
+  display: grid;
   margin-top: auto;
+  margin-bottom: 0;
   border-top: 1px solid rgb(39 39 42 / 0.75);
 }
 
 .dependency-card dl > div {
-  display: flex;
-  min-height: 2.75rem;
+  display: grid;
+  min-height: 2.35rem;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 0.75rem;
-  padding: 0 1rem;
+  padding: 0.45rem 0.8rem;
   border-bottom: 1px solid rgb(39 39 42 / 0.55);
 }
 
@@ -4951,13 +4998,20 @@ const dependencyProtectionPanelStatus = (panel) => {
 
 .dependency-card dt,
 .dependency-card dd {
-  color: rgb(113 113 122);
-  font-size: 0.625rem;
-  font-weight: 600;
+  margin: 0;
+  color: var(--ops-text-2);
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .dependency-card dd {
-  color: rgb(161 161 170);
+  color: var(--ops-text-1);
+  font-family: var(--ops-mono);
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .error-code-layout {
@@ -5378,11 +5432,7 @@ const dependencyProtectionPanelStatus = (panel) => {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
-  .dependency-matrix {
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: row;
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-  }
+  .dependency-matrix { grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr)); }
 }
 
 .operation-log-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .55rem; margin-bottom: .875rem; }
