@@ -1,5 +1,5 @@
 import { PerformanceObserver, monitorEventLoopDelay, performance } from 'node:perf_hooks'
-import { hostname, totalmem } from 'node:os'
+import { cpus, freemem, hostname, loadavg, totalmem } from 'node:os'
 import { readFileSync, statfsSync } from 'node:fs'
 import { sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
@@ -12,6 +12,13 @@ let cpuUsageSnapshot = {
   usage: process.cpuUsage(),
   collectedAt: performance.now()
 }
+const readSystemCpuTimes = () => cpus().reduce((result, cpu) => {
+  const total = Object.values(cpu.times).reduce((sum, value) => sum + value, 0)
+  result.idle += cpu.times.idle
+  result.total += total
+  return result
+}, { idle: 0, total: 0 })
+let systemCpuSnapshot = readSystemCpuTimes()
 
 const state = {
   startedAt: Date.now(),
@@ -95,11 +102,22 @@ const percentile = (values: number[], ratio: number) => {
   return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * ratio) - 1)]
 }
 
+const hasPlatformEnv = (value: string | undefined) => Boolean(value && value !== '0' && value.toLowerCase() !== 'false')
+
 const getRuntimeDescriptor = () => {
-  const nitroPreset = process.env.NITRO_PRESET || (process.env.VERCEL ? 'vercel' : process.env.NETLIFY === 'true' ? 'netlify' : 'node-server')
-  const serverless = ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => nitroPreset.toLowerCase().includes(name))
+  // 平台环境变量优先于 Nitro preset，避免 Vercel 构建产物使用 node-server 时被误判为自托管。
+  const deploymentTarget = hasPlatformEnv(process.env.VERCEL) || hasPlatformEnv(process.env.VERCEL_ENV)
+    ? 'vercel'
+    : hasPlatformEnv(process.env.NETLIFY)
+      ? 'netlify'
+      : hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)
+        ? 'cloudflare'
+        : null
+  const nitroPreset = process.env.NITRO_PRESET || deploymentTarget || 'node-server'
+  const serverless = Boolean(deploymentTarget) || ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => nitroPreset.toLowerCase().includes(name))
   return {
     nitroPreset,
+    deploymentTarget,
     serverless,
     hostname: process.env.HOSTNAME || hostname(),
     processId: process.pid,
@@ -120,13 +138,23 @@ const getProcessCpuUsage = () => {
   return Number((cpuMs / elapsedMs * 100).toFixed(2))
 }
 
+const getSystemCpuUsage = () => {
+  const current = readSystemCpuTimes()
+  const idleDelta = current.idle - systemCpuSnapshot.idle
+  const totalDelta = current.total - systemCpuSnapshot.total
+  systemCpuSnapshot = current
+  if (totalDelta <= 0) return null
+  return Number((Math.max(0, Math.min(1, 1 - idleDelta / totalDelta)) * 100).toFixed(2))
+}
+
 const getNetworkBytes = () => {
   if (process.platform !== 'linux') return { rxBytes: null, txBytes: null }
   try {
     const rows = readFileSync('/proc/net/dev', 'utf8').split('\n').slice(2)
     return rows.reduce((result, row) => {
-      const [, payload] = row.split(':')
+      const [interfaceName, payload] = row.split(':')
       if (!payload) return result
+      if (interfaceName.trim() === 'lo') return result
       const values = payload.trim().split(/\s+/).map(Number)
       if (values.length < 9) return result
       const rxBytes = values[0] ?? 0
@@ -153,13 +181,18 @@ const getDiskBytes = () => {
 }
 
 const getSystemResourceSnapshot = (cpuUsagePercent: number | null) => {
-  const memory = process.memoryUsage()
+  const cpuList = cpus()
+  const memoryTotalBytes = totalmem()
+  const memoryFreeBytes = freemem()
   const disk = getDiskBytes()
   const network = getNetworkBytes()
   return {
     cpuUsagePercent,
-    memoryUsedBytes: Number.isFinite(memory.rss) ? memory.rss : null,
-    memoryTotalBytes: Number.isFinite(totalmem()) ? totalmem() : null,
+    cpuModel: cpuList[0]?.model || null,
+    cpuCores: cpuList.length || null,
+    loadAverage: loadavg().map((value) => Number(value.toFixed(2))),
+    memoryUsedBytes: Number.isFinite(memoryTotalBytes) && Number.isFinite(memoryFreeBytes) ? Math.max(0, memoryTotalBytes - memoryFreeBytes) : null,
+    memoryTotalBytes: Number.isFinite(memoryTotalBytes) ? memoryTotalBytes : null,
     diskUsedBytes: disk.usedBytes,
     diskTotalBytes: disk.totalBytes,
     networkRxBytes: network.rxBytes,
@@ -213,8 +246,8 @@ export const persistOperationsDatabaseSnapshot = (snapshot: {
 
 export const getOperationsMetrics = () => {
   prune()
-  const cpuUsagePercent = getProcessCpuUsage()
-  const resources = getSystemResourceSnapshot(cpuUsagePercent)
+  const processCpuUsagePercent = getProcessCpuUsage()
+  const resources = getSystemResourceSnapshot(getSystemCpuUsage())
   persistOperationsResourceSnapshot(resources)
   const durations = state.samples.map((sample) => sample.durationMs)
   const recentRequests = state.samples.length
@@ -289,7 +322,7 @@ export const getOperationsMetrics = () => {
     process: {
       uptimeSeconds: process.uptime(),
       memory: process.memoryUsage(),
-      cpuUsagePercent,
+      cpuUsagePercent: processCpuUsagePercent,
       activeRequests: state.activeRequests,
       activeHandles: typeof process.getActiveResourcesInfo === 'function' ? process.getActiveResourcesInfo().length : null
     },

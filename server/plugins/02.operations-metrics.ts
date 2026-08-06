@@ -5,6 +5,7 @@ import { db } from '~/drizzle/db'
 import { apiLogs } from '~/drizzle/schema'
 import { sql } from 'drizzle-orm'
 import { getInstanceId } from '~~/server/utils/instance-id'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 
 const getPathname = (url = '') => url.split('?')[0]
 const MUSIC_SOURCE_PROBE_HEADER = 'x-voicehub-operations-probe'
@@ -28,8 +29,11 @@ const isMonitoringRequest = (url = '') => [
   '/api/admin/backup/history'
 ].some((prefix) => url.startsWith(prefix))
 
+const hasPlatformEnv = (value: string | undefined) => Boolean(value && value !== '0' && value.toLowerCase() !== 'false')
 const isServerlessRuntime = () => {
-  const preset = process.env.NITRO_PRESET || (process.env.VERCEL ? 'vercel' : process.env.NETLIFY === 'true' ? 'netlify' : 'node-server')
+  if (hasPlatformEnv(process.env.VERCEL) || hasPlatformEnv(process.env.VERCEL_ENV)) return true
+  if (hasPlatformEnv(process.env.NETLIFY) || hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)) return true
+  const preset = process.env.NITRO_PRESET || 'node-server'
   return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => preset.toLowerCase().includes(name))
 }
 
@@ -54,9 +58,9 @@ const persistMinuteBucket = (statusCode: number, durationMs: number) => {
 export default defineNitroPlugin((nitroApp) => {
   const runMusicSourceProbe = async () => {
     if (process.env.VOICEHUB_MUSIC_SOURCE_PROBE_ENABLED === 'false') return
-    if (musicSourceProbeInFlight || Date.now() - lastMusicSourceProbeAt < MUSIC_SOURCE_PROBE_INTERVAL_MS) return musicSourceProbeInFlight || undefined
+    if (musicSourceProbeInFlight || getServerTimestamp() - lastMusicSourceProbeAt < MUSIC_SOURCE_PROBE_INTERVAL_MS) return musicSourceProbeInFlight || undefined
 
-    lastMusicSourceProbeAt = Date.now()
+    lastMusicSourceProbeAt = getServerTimestamp()
     musicSourceProbeInFlight = (async () => {
       let recentlyObserved = new Set<string>()
       try {

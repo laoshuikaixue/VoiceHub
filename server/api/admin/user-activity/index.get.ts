@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gt, gte, ilike, isNull, lt, or, sql, type SQL } from 'drizzle-orm'
+import { and, count, countDistinct, desc, eq, gt, gte, ilike, isNull, lt, or, sql, type SQL } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { verifyUserAuth } from '~~/server/utils/auth'
@@ -79,7 +79,10 @@ export default defineEventHandler(async (event) => {
       db.select({ value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(where),
       db.select({ value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))),
       db.select({ value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, lt(userSessions.lastActiveAt, activeSince))),
-      db.execute(sql`SELECT count(DISTINCT s.user_id)::int AS value FROM user_sessions s INNER JOIN "User" u ON u.id = s.user_id WHERE s.revoked_at IS NULL AND s.expires_at > now() AND s.last_active_at >= ${activeSince} AND s.token_version = u."tokenVersion"`),
+      db.select({ value: countDistinct(userSessions.userId) })
+        .from(userSessions)
+        .innerJoin(users, eq(userSessions.userId, users.id))
+        .where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))),
       db.select({ label: userSessions.browser, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))).groupBy(userSessions.browser).orderBy(desc(count())),
       db.select({ label: userSessions.deviceType, value: count() }).from(userSessions).innerJoin(users, eq(userSessions.userId, users.id)).where(and(...baseConditions, gte(userSessions.lastActiveAt, activeSince))).groupBy(userSessions.deviceType).orderBy(desc(count()))
     ])
@@ -102,7 +105,7 @@ export default defineEventHandler(async (event) => {
         totalSessions: Number(activeRows[0]?.value || 0) + Number(idleRows[0]?.value || 0),
         activeSessions: Number(activeRows[0]?.value || 0),
         idleSessions: Number(idleRows[0]?.value || 0),
-        onlineUsers: Number((usersRows as any[])[0]?.value || 0),
+        onlineUsers: Number(usersRows[0]?.value || 0),
         browsers: browserRows.map((row) => ({ label: row.label, value: Number(row.value) })),
         devices: deviceRows.map((row) => ({ label: row.label, value: Number(row.value) }))
       }

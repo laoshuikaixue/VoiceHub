@@ -170,7 +170,7 @@
                 <p class="text-sm font-semibold text-zinc-300">{{ item.label }}</p>
                 <p class="mt-1 text-xs text-zinc-600">{{ item.preview }}</p>
               </div>
-              <span class="status-badge">{{ item.value }}</span>
+              <span class="status-badge" :class="`status-badge--${item.status}`">{{ item.value }}</span>
             </div>
           </div>
         </OpsPanel>
@@ -293,12 +293,12 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <article v-for="panel in infraTrendPanels" :key="panel.title" class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && hasTimelineMetric(panel.field) ? `${formatChartValue(trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field))} ${panel.unit}` : '暂无数据' }}</span></div>
+          <div class="panel-header"><div><h3 class="panel-title">{{ panel.title }}</h3><p class="panel-description">{{ panel.detail }}</p></div><span class="status-badge">当前 {{ panel.available && hasTimelineMetric(panel.field) ? `${formatChartValue(trendValue(runtimeTimeline[runtimeTimeline.length - 1], panel.field), panel.unit)} ${panel.unit}` : '暂无数据' }}</span></div>
           <div v-if="panel.available && hasTimelineMetric(panel.field)" class="ops-time-chart">
             <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks(panel.field)" :key="tick">{{ tick }} {{ panel.unit }}</span></div>
             <div class="ops-time-chart__plot">
               <div class="ops-time-chart__grid"><i v-for="tick in chartTicks(panel.field)" :key="tick" /></div>
-              <div class="ops-time-chart__bars"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field)}%` }" @mouseenter="showChartTooltip(panel.field, panel.title, point, trendValue(point, panel.field), panel.unit, index, runtimeTimeline.length)" @mouseleave="hideChartTooltip" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field)}%` }" @mouseenter="showChartTooltip(panel.field, panel.title, point, trendValue(point, panel.field), panel.unit, index, runtimeTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
               <i v-if="chartTooltip.visible && chartTooltip.key === panel.field" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
               <div v-if="chartTooltip.visible && chartTooltip.key === panel.field" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
             </div>
@@ -404,7 +404,7 @@
             <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks(panel.field, databaseTimeline)" :key="tick">{{ tick }} {{ panel.unit }}</span></div>
             <div class="ops-time-chart__plot">
               <div class="ops-time-chart__grid"><i v-for="tick in chartTicks(panel.field, databaseTimeline)" :key="tick" /></div>
-              <div class="ops-time-chart__bars"><i v-for="(point, index) in databaseTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field, databaseTimeline)}%` }" @mouseenter="showChartTooltip(`database-${panel.field}`, panel.title, point, trendValue(point, panel.field), panel.unit, index, databaseTimeline.length)" @mouseleave="hideChartTooltip" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in databaseTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(trendValue(point, panel.field), panel.field, databaseTimeline)}%` }" @mouseenter="showChartTooltip(`database-${panel.field}`, panel.title, point, trendValue(point, panel.field), panel.unit, index, databaseTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
               <i v-if="chartTooltip.visible && chartTooltip.key === `database-${panel.field}`" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
               <div v-if="chartTooltip.visible && chartTooltip.key === `database-${panel.field}`" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
             </div>
@@ -527,7 +527,7 @@
             <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('requests')" :key="tick">{{ tick }} 次</span></div>
             <div class="ops-time-chart__plot">
               <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('requests')" :key="tick" /></div>
-              <div class="ops-time-chart__bars"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests, 'requests')}%` }" @mouseenter="showChartTooltip('business-requests', '请求数', point, point.requests, '次', index, runtimeTimeline.length)" @mouseleave="hideChartTooltip" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in runtimeTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.requests, 'requests')}%` }" @mouseenter="showChartTooltip('business-requests', '请求数', point, point.requests, '次', index, runtimeTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
               <i v-if="chartTooltip.visible && chartTooltip.key === 'business-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
               <div v-if="chartTooltip.visible && chartTooltip.key === 'business-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
             </div>
@@ -539,7 +539,7 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <OpsPanel class="xl:col-span-7" :title="locale.business.scheduleRateTrend" :subtitle="locale.business.scheduleRateTrendDetail" :status="businessTimelinePanelStatus" :updated-at="businessTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasBusinessTimelineMetric('schedules_created') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
-          <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.schedules_created, 'schedules_created', businessOperationTimeline)}%` }" @mouseenter="showChartTooltip('schedule-created', '新增排期', point, point.schedules_created, '次', index, businessOperationTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
+          <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_created', businessOperationTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.schedules_created, 'schedules_created', businessOperationTimeline)}%` }" @mouseenter="showChartTooltip('schedule-created', '新增排期', point, point.schedules_created, '次', index, businessOperationTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-created'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
         </OpsPanel>
 
         <OpsPanel class="xl:col-span-5" :title="locale.business.capacityPlanning" :subtitle="locale.business.capacityPlanningDetail" status="unknown" :updated-at="lastUpdatedRelative" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!runtimeTimeline.length && !initialOperationsLoading" :refreshable="false">
@@ -552,7 +552,7 @@
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-12">
         <OpsPanel class="xl:col-span-8" :title="locale.business.operationOutcomes" :subtitle="locale.business.operationOutcomesDetail" :status="businessTimelinePanelStatus" :updated-at="businessTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!businessOperationTimeline.length && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
-          <div v-if="hasBusinessTimelineMetric('schedules_played')" class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.schedules_played, 'schedules_played', businessOperationTimeline)}%` }" @mouseenter="showChartTooltip('schedule-played', '已播排期', point, point.schedules_played, '次', index, businessOperationTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
+          <div v-if="hasBusinessTimelineMetric('schedules_played')" class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('schedules_played', businessOperationTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in businessOperationTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.schedules_played, 'schedules_played', businessOperationTimeline)}%` }" @mouseenter="showChartTooltip('schedule-played', '已播排期', point, point.schedules_played, '次', index, businessOperationTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'schedule-played'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(businessOperationTimeline[0]?.at) }}</span><span>{{ formatChartTime(businessOperationTimeline[businessOperationTimeline.length - 1]?.at) }}</span></div></div>
           <dl class="detail-grid"><div v-for="item in businessOutcomeTotals" :key="item.label"><dt>{{ item.label }}</dt><dd>{{ item.value }}</dd></div></dl>
         </OpsPanel>
 
@@ -831,7 +831,7 @@
           </div>
         </OpsPanel>
         <OpsPanel :title="locale.debug.errorTrend" :subtitle="locale.debug.errorTrendDetail" :status="requestTrendPanelStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('errors') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
-          <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.errors, 'errors', requestBehaviorTimeline)}%` }" @mouseenter="showChartTooltip('request-errors', '错误请求', point, point.errors, '次', index, requestBehaviorTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
+        <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('errors', requestBehaviorTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.errors, 'errors', requestBehaviorTimeline)}%` }" @mouseenter="showChartTooltip('request-errors', '错误请求', point, point.errors, '次', index, requestBehaviorTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'request-errors'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
         </OpsPanel>
       </section>
 
@@ -862,7 +862,7 @@
       </section>
 
       <OpsPanel :title="locale.debug.userRequestTimeline" :subtitle="locale.debug.userRequestTimelineDetail" :status="requestTrendPanelStatus" :updated-at="requestBehaviorUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasRequestBehaviorMetric('user_requests') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false" @refresh="loadOperationsData">
-        <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.user_requests, 'user_requests', requestBehaviorTimeline)}%` }" @mouseenter="showChartTooltip('user-requests', '用户侧请求', point, point.user_requests, '次', index, requestBehaviorTimeline.length)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
+        <div class="ops-time-chart"><div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick">{{ tick }} 次</span></div><div class="ops-time-chart__plot"><div class="ops-time-chart__grid"><i v-for="tick in chartTicks('user_requests', requestBehaviorTimeline)" :key="tick" /></div><div class="ops-time-chart__bars"><i v-for="(point, index) in requestBehaviorTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.user_requests, 'user_requests', requestBehaviorTimeline)}%` }" @mouseenter="showChartTooltip('user-requests', '用户侧请求', point, point.user_requests, '次', index, requestBehaviorTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div><i v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" /><div v-if="chartTooltip.visible && chartTooltip.key === 'user-requests'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div></div><div class="ops-time-chart__x-axis"><span>{{ formatChartTime(requestBehaviorTimeline[0]?.at) }}</span><span>{{ formatChartTime(requestBehaviorTimeline[requestBehaviorTimeline.length - 1]?.at) }}</span></div></div>
       </OpsPanel>
     </template>
 
@@ -945,10 +945,18 @@
         <Icon name="music" :size="16" />
       </section>
 
-      <section class="panel">
-        <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.semanticFailureTrend }}</h3><p class="panel-description">{{ locale.dependencies.semanticFailureTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-        <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-      </section>
+      <OpsPanel :title="locale.dependencies.semanticFailureTrend" :subtitle="locale.dependencies.semanticFailureTrendDetail" :status="dependenciesModuleStatus" :updated-at="dependencyTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasDependencyTimelineMetric('semantic_failure_rate') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
+        <div class="ops-time-chart">
+          <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('semantic_failure_rate', dependencyAggregateTimeline)" :key="tick">{{ tick }} %</span></div>
+          <div class="ops-time-chart__plot">
+            <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('semantic_failure_rate', dependencyAggregateTimeline)" :key="tick" /></div>
+            <div class="ops-time-chart__bars"><i v-for="(point, index) in dependencyAggregateTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.semantic_failure_rate, 'semantic_failure_rate', dependencyAggregateTimeline)}%` }" @mouseenter="showChartTooltip('dependency-semantic-failure', locale.dependencies.semanticFailureTrend, point, point.semantic_failure_rate, '%', index, dependencyAggregateTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
+            <i v-if="chartTooltip.visible && chartTooltip.key === 'dependency-semantic-failure'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
+            <div v-if="chartTooltip.visible && chartTooltip.key === 'dependency-semantic-failure'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
+          </div>
+          <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(dependencyAggregateTimeline[0]?.at) }}</span><span>{{ formatChartTime(dependencyAggregateTimeline[dependencyAggregateTimeline.length - 1]?.at) }}</span></div>
+        </div>
+      </OpsPanel>
 
       <section class="subsection-heading">
         <div><h3>{{ locale.dependencies.latencyAndErrors }}</h3><p>{{ locale.dependencies.latencyAndErrorsDetail }}</p></div>
@@ -961,10 +969,18 @@
       </section>
 
       <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <article class="panel">
-          <div class="panel-header"><div><h3 class="panel-title">{{ locale.dependencies.callVolumeTrend }}</h3><p class="panel-description">{{ locale.dependencies.callVolumeTrendDetail }}</p></div><span class="status-badge">未采集趋势</span></div>
-          <div class="ops-empty-copy">暂无历史趋势数据，当前仅展示实时值。</div>
-        </article>
+        <OpsPanel :title="locale.dependencies.callVolumeTrend" :subtitle="locale.dependencies.callVolumeTrendDetail" :status="dependenciesModuleStatus" :updated-at="dependencyTimelineUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!hasDependencyTimelineMetric('calls') && !initialOperationsLoading" empty-text="暂无历史趋势数据，当前仅展示实时值。" :refreshable="false">
+          <div class="ops-time-chart">
+            <div class="ops-time-chart__y-axis"><span v-for="tick in chartTicks('calls', dependencyAggregateTimeline)" :key="tick">{{ tick }} 次</span></div>
+            <div class="ops-time-chart__plot">
+              <div class="ops-time-chart__grid"><i v-for="tick in chartTicks('calls', dependencyAggregateTimeline)" :key="tick" /></div>
+              <div class="ops-time-chart__bars"><i v-for="(point, index) in dependencyAggregateTimeline" :key="point.at" :style="{ height: `${runtimeBarHeight(point.calls, 'calls', dependencyAggregateTimeline)}%` }" @mouseenter="showChartTooltip('dependency-call-volume', locale.dependencies.callVolumeTrend, point, point.calls, '次', index, dependencyAggregateTimeline.length, $event)" @mouseleave="hideChartTooltip" /></div>
+              <i v-if="chartTooltip.visible && chartTooltip.key === 'dependency-call-volume'" class="ops-time-chart__guide" :style="{ left: `${chartTooltip.left}%` }" />
+              <div v-if="chartTooltip.visible && chartTooltip.key === 'dependency-call-volume'" class="ops-chart-tooltip" :style="{ left: `${chartTooltip.left}%` }"><time>{{ chartTooltip.time }}</time><dl><div><dt>{{ chartTooltip.series }}</dt><dd>{{ chartTooltip.value }} {{ chartTooltip.unit }}</dd></div></dl></div>
+            </div>
+            <div class="ops-time-chart__x-axis"><span>{{ formatChartTime(dependencyAggregateTimeline[0]?.at) }}</span><span>{{ formatChartTime(dependencyAggregateTimeline[dependencyAggregateTimeline.length - 1]?.at) }}</span></div>
+          </div>
+        </OpsPanel>
         <OpsPanel title="当前调用健康度" subtitle="仅表示本实例当前采集周期的被动调用结果，不代表 24 小时可用性。" :status="dependenciesModuleStatus" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="!knownMusicSourceStatuses.length && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
           <div class="dependency-uptime-list">
             <div v-for="row in dependencyUptimeRows" :key="row.source" class="dependency-uptime-row">
@@ -1618,19 +1634,37 @@ const trendValue = (point, field = 'requests') => Number(point?.[field] ?? 0)
 const hasTimelineMetric = (field) => runtimeTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
 const chartTicks = (field, points = runtimeTimeline.value) => {
   const maximum = Math.max(...points.map((point) => Number(point?.[field] || 0)), 0)
-  const top = Math.max(1, Math.ceil(maximum))
-  return [...new Set([top, Math.round(top / 2), 0])]
+  const isTrafficMetric = field === 'network_rx_mb' || field === 'network_tx_mb'
+  const isRateMetric = String(field).includes('_rate')
+  const precision = isTrafficMetric ? 2 : isRateMetric ? 1 : 0
+  const top = isTrafficMetric || isRateMetric
+    ? (maximum > 0 ? Number(Math.max(10 ** -precision, maximum < 1 ? Math.ceil(maximum * (10 ** precision)) / (10 ** precision) : Math.ceil(maximum)).toFixed(precision)) : 1)
+    : Math.max(1, Math.ceil(maximum))
+  const middle = Number((top / 2).toFixed(precision))
+  return [...new Set([top, middle, 0])]
 }
 const formatChartTime = (value) => value ? new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'
-const formatChartValue = (value) => Number.isFinite(Number(value)) ? String(Math.round(Number(value))) : '--'
-const showChartTooltip = (key, series, point, value, unit, index, total) => {
-  const left = ((index + 0.5) / Math.max(total, 1)) * 100
+const formatChartValue = (value, unit = '') => {
+  const numericValue = Number(value)
+  if (!Number.isFinite(numericValue)) return '--'
+  if (String(unit).includes('MB')) return numericValue.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1')
+  if (unit === '%') return numericValue.toFixed(1).replace(/\.0$/, '')
+  return String(Math.round(numericValue))
+}
+const showChartTooltip = (key, series, point, value, unit, index, total, event) => {
+  const barElement = event?.currentTarget
+  const plotElement = barElement?.closest('.ops-time-chart__plot')
+  const barRect = barElement?.getBoundingClientRect?.()
+  const plotRect = plotElement?.getBoundingClientRect?.()
+  const left = barRect && plotRect && plotRect.width > 0
+    ? ((barRect.left + barRect.width / 2 - plotRect.left) / plotRect.width) * 100
+    : ((index + 0.5) / Math.max(total, 1)) * 100
   chartTooltip.value = {
     visible: true,
     key,
     time: formatChartTime(point?.at),
     series,
-    value: formatChartValue(value),
+    value: formatChartValue(value, unit),
     unit,
     left: Math.min(90, Math.max(10, left))
   }
@@ -1641,6 +1675,7 @@ const runtimeGcMetrics = computed(() => runtimeMetrics.value?.gc || null)
 const runtimeSsrPrewarm = computed(() => runtimeMetrics.value?.ssrPrewarm || null)
 const runtimeBusinessMetrics = computed(() => runtimeMetrics.value?.business || {})
 const runtimeOAuthMetrics = computed(() => runtimeMetrics.value?.oauth || null)
+const runtimeNotificationMetrics = computed(() => runtimeMetrics.value?.notifications || null)
 const runtimeSseMetrics = computed(() => operationsData.value.metrics?.sse || null)
 const runtimeRedisMetrics = computed(() => operationsData.value.metrics?.redis || null)
 const runtimeDatabaseMetrics = computed(() => operationsData.value.metrics?.database || null)
@@ -1928,6 +1963,29 @@ const backupConfigPanelStatus = computed(() => {
 })
 const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {})
 const dependencyMetricTimeline = computed(() => runtimeDatabaseMetrics.value?.dependencyTimeline || [])
+const dependencyAggregateTimeline = computed(() => {
+  const buckets = new Map()
+  for (const point of dependencyMetricTimeline.value) {
+    const at = point?.at
+    if (!at) continue
+    const key = new Date(at).toISOString()
+    const bucket = buckets.get(key) || { at: key, calls: 0, semanticFailures: 0 }
+    bucket.calls += Number(point.calls || 0)
+    bucket.semanticFailures += Number(point.semantic_failures || 0)
+    buckets.set(key, bucket)
+  }
+  return [...buckets.values()]
+    .sort((left, right) => new Date(left.at).getTime() - new Date(right.at).getTime())
+    .map((point) => ({
+      at: point.at,
+      calls: point.calls,
+      semantic_failure_rate: point.calls ? Number((point.semanticFailures / point.calls * 100).toFixed(2)) : null
+    }))
+})
+const hasDependencyTimelineMetric = (field) => dependencyAggregateTimeline.value.some((point) => point?.[field] != null && Number.isFinite(Number(point[field])))
+const dependencyTimelineUpdatedAt = computed(() => dependencyAggregateTimeline.value.length
+  ? formatTimestamp(dependencyAggregateTimeline.value[dependencyAggregateTimeline.value.length - 1].at)
+  : dependencyUpdatedAt.value)
 const runtimeAlerts = computed(() => runtimeMetrics.value?.alerts || [])
 const runtimeAlertStatus = computed(() => {
   if (runtimeAlerts.value.some((item) => item.severity === 'critical')) return 'error'
@@ -2040,10 +2098,12 @@ const dependencySourceForLabel = (label) => {
   return labels[label]
 }
 const dependencyStatusValue = (label) => {
-  const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
+  const source = dependencySourceForLabel(label)
+  if (!source) return dependencyOverviewStatusText(label)
+  const metric = dependencyMetrics.value[source]
   if (!metric || !Number(metric.calls)) return '未调用'
   if (metric.successRate == null) return '未知'
-  const status = dependencySourceStatus(dependencySourceForLabel(label))
+  const status = dependencySourceStatus(source)
   return status === 'ok' ? '已连接' : status === 'warning' ? '需要关注' : status === 'error' ? '不可用' : '未知'
 }
 const dependencyCardStatus = (label) => {
@@ -2052,8 +2112,41 @@ const dependencyCardStatus = (label) => {
   if (source) return musicSourceStatuses.value.find((item) => item.source === source)?.status || 'unknown'
   if (label === locale.value.dependencies?.neonPostgresql) return databaseModuleStatus.value
   if (label === locale.value.services?.redis) return runtimeRedisMetrics.value?.configured ? (runtimeRedisMetrics.value.connected ? 'ok' : 'error') : 'unknown'
-  if (label === locale.value.dependencies?.oauth) return runtimeOAuthMetrics.value?.successRate == null ? 'unknown' : runtimeOAuthMetrics.value.successRate < 90 ? 'warning' : 'ok'
+  if (label === locale.value.dependencies?.oauth) {
+    if (!Number(runtimeOAuthMetrics.value?.calls || 0) || runtimeOAuthMetrics.value?.successRate == null) return 'unknown'
+    return Number(runtimeOAuthMetrics.value.successRate) === 0 ? 'error' : Number(runtimeOAuthMetrics.value.successRate) < 90 ? 'warning' : 'ok'
+  }
+  if (label === locale.value.dependencies?.smtp) {
+    const accepted = Number(runtimeNotificationMetrics.value?.smtpAccepted || 0)
+    const failures = Number(runtimeNotificationMetrics.value?.smtpFailures || 0)
+    if (!accepted && !failures) return 'unknown'
+    if (failures && !accepted) return 'error'
+    return failures ? 'warning' : 'ok'
+  }
+  if (label === locale.value.dependencies?.notificationService) {
+    const eligible = Number(runtimeNotificationMetrics.value?.meowEligible || 0)
+    const failures = Number(runtimeNotificationMetrics.value?.meowTransportFailures || 0)
+    if (!eligible && !failures) return 'unknown'
+    if (failures && !eligible) return 'error'
+    return failures ? 'warning' : 'ok'
+  }
   return 'unknown'
+}
+const dependencyOverviewStatusText = (label) => {
+  const status = dependencyCardStatus(label)
+  if (status === 'ok') return '正常'
+  if (status === 'warning') return '警告'
+  if (status === 'error') return '异常'
+  const source = dependencySourceForLabel(label)
+  if (source) {
+    const metric = dependencyMetrics.value[source]
+    if (!metric) return '未采集'
+    if (!Number(metric.calls)) return '未调用'
+    return '未知'
+  }
+  if (label === locale.value.services?.redis && runtimeRedisMetrics.value && !runtimeRedisMetrics.value.configured) return '未配置'
+  if (label === locale.value.dependencies?.neonPostgresql && !databaseSnapshot.value) return '未采集'
+  return '未知'
 }
 const dependencyFailureReason = (label) => {
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
@@ -2061,9 +2154,42 @@ const dependencyFailureReason = (label) => {
   return Number(metric?.timeouts || 0) > 0 ? `发生 ${metric.timeouts} 次超时` : ''
 }
 const dependencyMetricValue = (label, detail) => {
+  if (label === locale.value.dependencies?.oauth) {
+    if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.loginSuccessRate) {
+      return runtimeOAuthMetrics.value?.successRate == null ? '--' : formatPercent(runtimeOAuthMetrics.value.successRate)
+    }
+    return '--'
+  }
+  if (label === locale.value.dependencies?.neonPostgresql) {
+    if (detail === locale.value.dependencies?.availability) return databaseSnapshot.value ? (databaseSnapshot.value.connected ? '正常' : '异常') : '--'
+    if (detail === locale.value.dependencies?.connectionUsage) return operationsData.value.pool?.utilization == null ? '--' : formatPercent(operationsData.value.pool.utilization)
+    if (detail === locale.value.dependencies?.lastSuccess) return databaseSnapshot.value?.timestamp ? formatTimestamp(databaseSnapshot.value.timestamp) : '--'
+  }
   if (label === locale.value.dependencies?.neonPostgresql && detail === locale.value.dependencies?.coldStartP95) {
     const connectionInfo = databaseSnapshot.value?.connectionInfo
     return connectionInfo?.serverlessMode ? 'N/A · auto-suspend enabled' : 'N/A'
+  }
+  if (label === locale.value.services?.redis) {
+    if (!runtimeRedisMetrics.value?.configured) return '--'
+    if (detail === locale.value.dependencies?.availability) return runtimeRedisMetrics.value.connected ? '正常' : '异常'
+    if (detail === locale.value.dependencies?.cacheHitRate) return runtimeRedisMetrics.value.metrics?.hitRate == null ? '--' : formatPercent(runtimeRedisMetrics.value.metrics.hitRate)
+    return '--'
+  }
+  if (label === locale.value.dependencies?.smtp) {
+    const accepted = Number(runtimeNotificationMetrics.value?.smtpAccepted || 0)
+    const failures = Number(runtimeNotificationMetrics.value?.smtpFailures || 0)
+    const total = accepted + failures
+    if (detail === locale.value.dependencies?.availability) return total ? formatPercent(accepted / total * 100) : '--'
+    if (detail === locale.value.dependencies?.smtpFailureRate) return total ? formatPercent(failures / total * 100) : '--'
+    return '--'
+  }
+  if (label === locale.value.dependencies?.notificationService) {
+    const eligible = Number(runtimeNotificationMetrics.value?.meowEligible || 0)
+    const failures = Number(runtimeNotificationMetrics.value?.meowTransportFailures || 0)
+    if (detail === locale.value.dependencies?.availability || detail === locale.value.dependencies?.notificationSuccessRate) {
+      return eligible ? formatPercent(Math.max(0, eligible - failures) / eligible * 100) : '--'
+    }
+    return '--'
   }
   const metric = dependencyMetrics.value[dependencySourceForLabel(label)]
   if (!metric) return dependencySourceForLabel(label) ? '未采集调用' : '--'
@@ -2091,6 +2217,8 @@ const dependencyCardEmpty = (label) => {
   if (label === locale.value.dependencies?.oauth) return runtimeOAuthMetrics.value?.successRate == null
   if (label === locale.value.dependencies?.neonPostgresql) return !databaseSnapshot.value
   if (label === locale.value.services?.redis) return !runtimeRedisMetrics.value?.configured
+  if (label === locale.value.dependencies?.smtp) return !Number(runtimeNotificationMetrics.value?.smtpAccepted || 0) && !Number(runtimeNotificationMetrics.value?.smtpFailures || 0)
+  if (label === locale.value.dependencies?.notificationService) return !Number(runtimeNotificationMetrics.value?.meowEligible || 0) && !Number(runtimeNotificationMetrics.value?.meowTransportFailures || 0)
   return true
 }
 const dependencyCardEmptyText = (label) => {
@@ -2256,9 +2384,18 @@ const overviewSignals = computed(() => [
 ].filter((item) => !isServerlessRuntime.value || ![locale.value.overview?.cpuStatus, locale.value.overview?.memoryStatus].includes(item.label)))
 
 const isServerlessRuntime = computed(() => {
-  const mode = String(runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || '').toLowerCase()
+  const runtime = runtimeMetrics.value?.runtime || runtimeMetrics.value || {}
+  const mode = String(runtime.deploymentTarget || runtime.nitroPreset || systemSnapshot.value?.nitroPreset || '').toLowerCase()
   if (publicRuntimeConfig.isNetlify) return true
   return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
+})
+const runtimeDeploymentTarget = computed(() => {
+  const runtime = runtimeMetrics.value?.runtime || runtimeMetrics.value || {}
+  const target = String(runtime.deploymentTarget || '').toLowerCase()
+  if (target === 'vercel') return 'Vercel Serverless'
+  if (target === 'netlify') return 'Netlify Serverless'
+  if (target === 'cloudflare') return 'Cloudflare Serverless'
+  return runtime.nitroPreset || systemSnapshot.value?.nitroPreset || (isServerlessRuntime.value ? 'Serverless' : 'Node 服务')
 })
 const healthLiveDetails = computed(() => [
   { label: locale.value.overview?.sloBudget, value: '--' },
@@ -2312,8 +2449,8 @@ const backupConfigFields = computed(() => [
 ])
 
 const deploymentModeRows = computed(() => [
-  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: systemSnapshot.value?.platform ? '已检测到' : locale.value.overview?.detectionPending },
-  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? '已检测到' : '不适用' }
+  { icon: 'server', label: locale.value.overview?.selfHostedRuntime, detail: locale.value.overview?.selfHostedRuntimeDetail, value: isServerlessRuntime.value ? '不适用' : systemSnapshot.value?.platform ? '已检测到' : locale.value.overview?.detectionPending },
+  { icon: 'activity', label: locale.value.overview?.serverlessRuntime, detail: locale.value.overview?.serverlessRuntimeDetail, value: isServerlessRuntime.value ? `已检测到（${runtimeDeploymentTarget.value}）` : '不适用' }
 ])
 
 const dependencyRows = computed(() => [
@@ -2472,7 +2609,7 @@ const serverMetrics = computed(() => (isServerlessRuntime.value ? [
     icon: 'activity',
     label: locale.value.metrics?.cpuUsage,
     detail: locale.value.server?.cpuUsageDetail,
-    value: runtimeMetrics.value?.process?.cpuUsagePercent != null ? formatPercent(runtimeMetrics.value.process.cpuUsagePercent) : '--'
+    value: runtimeMetrics.value?.resources?.cpuUsagePercent != null ? formatPercent(runtimeMetrics.value.resources.cpuUsagePercent) : '--'
   },
   {
     icon: 'monitoring',
@@ -2535,7 +2672,7 @@ const infraTrendPanels = computed(() => (isServerlessRuntime.value ? [
 ]))
 
 const serverRuntimeDetails = computed(() => [
-  { label: '部署运行模式', value: runtimeMetrics.value?.runtime?.nitroPreset || runtimeMetrics.value?.nitroPreset || systemSnapshot.value?.nitroPreset || (publicRuntimeConfig.isNetlify ? '无服务器（Netlify）' : 'Node 服务') },
+  { label: '部署运行模式', value: runtimeDeploymentTarget.value },
   { label: locale.value.server?.platformRelease, value: systemSnapshot.value?.platform || '--' },
   { label: locale.value.runtime?.architecture, value: systemSnapshot.value?.arch || '--' },
   { label: locale.value.runtime?.nodeVersion, value: systemSnapshot.value?.nodeVersion || '--' },
@@ -2553,13 +2690,13 @@ const serverResourcePanels = computed(() => [
     source: 'system',
     title: locale.value.server?.cpuDetails,
     detail: locale.value.server?.cpuDetailsDetail,
-    empty: true,
+    empty: isServerlessRuntime.value || runtimeMetrics.value?.resources?.cpuCores == null,
     items: [
-      { label: locale.value.server?.cpuModel, value: '--' },
-      { label: locale.value.server?.cpuCores, value: '--' },
-      { label: locale.value.server?.loadAverage1, value: '--' },
-      { label: locale.value.server?.loadAverage5, value: '--' },
-      { label: locale.value.server?.loadAverage15, value: '--' }
+      { label: locale.value.server?.cpuModel, value: runtimeMetrics.value?.resources?.cpuModel || '--' },
+      { label: locale.value.server?.cpuCores, value: runtimeMetrics.value?.resources?.cpuCores != null ? String(runtimeMetrics.value.resources.cpuCores) : '--' },
+      { label: locale.value.server?.loadAverage1, value: runtimeMetrics.value?.resources?.loadAverage?.[0] != null ? String(runtimeMetrics.value.resources.loadAverage[0]) : '--' },
+      { label: locale.value.server?.loadAverage5, value: runtimeMetrics.value?.resources?.loadAverage?.[1] != null ? String(runtimeMetrics.value.resources.loadAverage[1]) : '--' },
+      { label: locale.value.server?.loadAverage15, value: runtimeMetrics.value?.resources?.loadAverage?.[2] != null ? String(runtimeMetrics.value.resources.loadAverage[2]) : '--' }
     ]
   },
   {
@@ -2567,11 +2704,11 @@ const serverResourcePanels = computed(() => [
     source: 'system',
     title: locale.value.server?.systemMemoryDetails,
     detail: locale.value.server?.systemMemoryDetailsDetail,
-    empty: !systemSnapshot.value?.memory,
+    empty: isServerlessRuntime.value || runtimeMetrics.value?.resources?.memoryTotalBytes == null,
     items: [
-      { label: locale.value.server?.systemMemoryTotal, value: systemSnapshot.value?.memory?.total != null ? `${systemSnapshot.value.memory.total} MB` : '--' },
-      { label: locale.value.server?.systemMemoryUsed, value: systemSnapshot.value?.memory?.used != null ? `${systemSnapshot.value.memory.used} MB` : '--' },
-      { label: locale.value.server?.systemMemoryAvailable, value: systemSnapshot.value?.memory?.total != null && systemSnapshot.value?.memory?.used != null ? `${Math.max(0, systemSnapshot.value.memory.total - systemSnapshot.value.memory.used)} MB` : '--' }
+      { label: locale.value.server?.systemMemoryTotal, value: formatBytes(runtimeMetrics.value?.resources?.memoryTotalBytes) },
+      { label: locale.value.server?.systemMemoryUsed, value: formatBytes(runtimeMetrics.value?.resources?.memoryUsedBytes) },
+      { label: locale.value.server?.systemMemoryAvailable, value: runtimeMetrics.value?.resources?.memoryTotalBytes != null && runtimeMetrics.value?.resources?.memoryUsedBytes != null ? formatBytes(Math.max(0, runtimeMetrics.value.resources.memoryTotalBytes - runtimeMetrics.value.resources.memoryUsedBytes)) : '--' }
     ]
   },
   {
@@ -2579,11 +2716,11 @@ const serverResourcePanels = computed(() => [
     source: 'system',
     title: locale.value.server?.diskDetails,
     detail: locale.value.server?.diskDetailsDetail,
-    empty: true,
+    empty: isServerlessRuntime.value || runtimeMetrics.value?.resources?.diskTotalBytes == null,
     items: [
-      { label: locale.value.server?.diskTotal, value: '--' },
-      { label: locale.value.server?.diskAvailable, value: '--' },
-      { label: locale.value.server?.partitionCount, value: '--' }
+      { label: locale.value.server?.diskTotal, value: formatBytes(runtimeMetrics.value?.resources?.diskTotalBytes) },
+      { label: locale.value.server?.diskAvailable, value: runtimeMetrics.value?.resources?.diskTotalBytes != null && runtimeMetrics.value?.resources?.diskUsedBytes != null ? formatBytes(Math.max(0, runtimeMetrics.value.resources.diskTotalBytes - runtimeMetrics.value.resources.diskUsedBytes)) : '--' },
+      { label: locale.value.server?.partitionCount, value: '1（工作目录文件系统）' }
     ]
   },
   {
@@ -2593,6 +2730,7 @@ const serverResourcePanels = computed(() => [
     detail: locale.value.server?.nodeProcessDetailsDetail,
     empty: !runtimeMetrics.value?.process,
     items: [
+      { label: 'Node 进程 CPU', value: runtimeMetrics.value?.process?.cpuUsagePercent != null ? formatPercent(runtimeMetrics.value.process.cpuUsagePercent) : '--' },
       { label: locale.value.server?.rssMemory, value: runtimeMetrics.value?.process?.memory?.rss != null ? formatBytes(runtimeMetrics.value.process.memory.rss) : '--' },
       { label: locale.value.server?.nodeHeapUtilization, value: runtimeMetrics.value?.process?.memory?.heapTotal ? formatPercent(runtimeMetrics.value.process.memory.heapUsed / runtimeMetrics.value.process.memory.heapTotal * 100) : '--' },
       { label: locale.value.server?.heapUsed, value: runtimeMetrics.value?.process?.memory?.heapUsed != null ? formatBytes(runtimeMetrics.value.process.memory.heapUsed) : '--' },
@@ -3037,6 +3175,8 @@ const dependencyMetricGroups = (item) => {
 
 const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map(item => ({
   ...item,
+  status: dependencyCardStatus(item.label),
+  value: dependencyOverviewStatusText(item.label),
   preview: item.details.slice(0, 3).map(detail => `${detail} ${dependencyMetricValue(item.label, detail)}`).join(' · ')
 })))
 
@@ -5232,6 +5372,10 @@ const dependencyProtectionPanelStatus = (panel) => {
 .metric-label,
 .empty-cell { color: #94a3b8; }
 .status-badge { border-color: rgba(148, 163, 184, 0.12); border-radius: 6px; color: #94a3b8; background: #0e1217; }
+.status-badge--ok { border-color: color-mix(in srgb, var(--ops-ok) 30%, transparent); color: var(--ops-ok); background: color-mix(in srgb, var(--ops-ok) 8%, #0e1217); }
+.status-badge--warning { border-color: color-mix(in srgb, var(--ops-warning) 30%, transparent); color: var(--ops-warning); background: color-mix(in srgb, var(--ops-warning) 8%, #0e1217); }
+.status-badge--error { border-color: color-mix(in srgb, var(--ops-error) 30%, transparent); color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 8%, #0e1217); }
+.status-badge--unknown { border-color: var(--ops-line); color: var(--ops-unknown); background: #0e1217; }
 .operations-loading-state,
 .empty-progress,
 .histogram-placeholder,
