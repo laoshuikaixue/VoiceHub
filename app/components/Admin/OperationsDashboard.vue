@@ -5675,4 +5675,98 @@ const dependencyProtectionPanelStatus = (panel) => {
 .monitoring-reference__content { border-top: 1px solid var(--ops-line); }
 @media (min-width: 1280px) { .operation-log-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(13rem, 1.3fr) auto; }.operation-log-filters .filter-field--wide { grid-column: span 2; } }
 @media (max-width: 640px) { .operation-log-detail-grid { grid-template-columns: 1fr; }.operation-log-filters .filter-field--wide { min-width: 100%; } }
+
+/* ===== 视觉精修层：统一质感、状态氛围与反馈动效，不改结构 ===== */
+
+/* 修复：--ops-control 被多处引用但从未定义，导航分组标签与参考表背景失效 */
+.operations-dashboard {
+  --ops-control: #0d1218;
+  --ops-radius: 8px;
+  --spine-accent: var(--ops-unknown);
+}
+.operations-dashboard[data-health="ok"] { --spine-accent: var(--ops-ok); }
+.operations-dashboard[data-health="warning"] { --spine-accent: var(--ops-warning); }
+.operations-dashboard[data-health="error"] { --spine-accent: var(--ops-error); }
+
+@keyframes ops-spin { to { transform: rotate(360deg); } }
+@keyframes ops-dot-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--spine-accent) 45%, transparent); }
+  100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+/* 顶部状态脊：随整体健康度着色 */
+.ops-status-spine {
+  border-color: color-mix(in srgb, var(--spine-accent) 34%, var(--ops-line));
+  border-radius: 10px;
+  background: radial-gradient(130% 130% at 0% 0%, color-mix(in srgb, var(--spine-accent) 10%, transparent), transparent 58%), var(--ops-panel);
+  padding: .85rem 1rem;
+}
+.ops-status-spine__dot { animation: ops-dot-pulse 2.4s ease-out infinite; }
+.operations-dashboard[data-health="ok"] .ops-status-spine__dot { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ops-ok) 16%, transparent); }
+.ops-status-spine__headline { font-family: inherit; font-size: 1.05rem; font-weight: 700; }
+.ops-status-spine__countdown { background: linear-gradient(90deg, color-mix(in srgb, var(--ops-info) 25%, transparent), var(--ops-info)); box-shadow: 0 0 8px color-mix(in srgb, var(--ops-info) 55%, transparent); }
+
+/* 刷新主按钮强调色 */
+.refresh-button { border-color: color-mix(in srgb, var(--ops-info) 30%, transparent); color: var(--ops-info); background: color-mix(in srgb, var(--ops-info) 9%, #0e1217); }
+.refresh-button:hover:not(:disabled) { border-color: color-mix(in srgb, var(--ops-info) 60%, transparent); background: color-mix(in srgb, var(--ops-info) 15%, #0e1217); }
+.auto-refresh-toggle > span.is-enabled { box-shadow: 0 0 6px color-mix(in srgb, var(--ops-info) 70%, transparent); }
+
+/* 恢复加载/刷新旋转反馈（此前 animation:none 导致加载无反馈；reduced-motion 用户仍由上方媒体查询压制） */
+.icon-spin,
+.operations-loading-state__spinner { animation: ops-spin .9s linear infinite; }
+
+/* 分组导航 */
+.group-navigation { border-radius: var(--ops-radius); }
+.group-tab--active { background: color-mix(in srgb, var(--ops-info) 8%, transparent); }
+.group-tab__status--ok { box-shadow: 0 0 5px color-mix(in srgb, var(--ops-ok) 55%, transparent); }
+.group-tab__status--warning { box-shadow: 0 0 5px color-mix(in srgb, var(--ops-warning) 55%, transparent); }
+.group-tab__status--error { box-shadow: 0 0 5px color-mix(in srgb, var(--ops-error) 55%, transparent); }
+
+/* 卡片质感：细腻阴影 + 顶部高光，hover 轻微浮起 */
+.panel,
+.signal-card,
+.metric-card,
+.deployment-mode-card,
+.dependency-card,
+.server-summary-strip,
+.operations-loading-state,
+.group-navigation,
+.monitoring-reference,
+.ops-empty-panel {
+  border-color: rgba(148, 163, 184, .13);
+  border-radius: var(--ops-radius);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(148, 163, 184, .05);
+}
+.panel:hover,
+.signal-card:hover,
+.metric-card:hover,
+.deployment-mode-card:hover,
+.service-row:hover {
+  border-color: color-mix(in srgb, var(--ops-info) 32%, var(--ops-line));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .32), inset 0 1px 0 rgba(148, 163, 184, .06);
+  transform: translateY(-1px);
+}
+
+/* 指标小卡与内部块统一质感 */
+.ops-metric-item { border-radius: var(--ops-radius); background: #0d1117; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.ops-metric-item:hover { border-color: color-mix(in srgb, var(--ops-info) 30%, transparent); box-shadow: 0 4px 14px rgba(0, 0, 0, .3); transform: translateY(-1px); }
+.server-health-details > div,
+.server-health-inspection__note,
+.risk-summary-grid > div,
+.risk-level-row,
+.risk-levels__empty,
+.server-health-score,
+.risk-total { border-radius: 6px; }
+
+/* 状态徽章胶囊化 */
+.status-badge { border-radius: 999px; padding: .22rem .6rem; font-weight: 650; letter-spacing: .01em; }
+
+/* 表格行 hover 反馈 */
+.data-table thead { background: rgba(148, 163, 184, .04); }
+.data-table tbody tr { transition: background-color .12s ease; }
+.data-table tbody tr:hover td { background: rgba(148, 163, 184, .04); }
+
+/* 图表柱子渐变填充 */
+.ops-time-chart__bars i { background: linear-gradient(180deg, rgba(56, 189, 248, .95), rgba(56, 189, 248, .5)); }
+.ops-time-chart__bars i:hover { background: linear-gradient(180deg, #22d3ee, color-mix(in srgb, #22d3ee 65%, transparent)); }
 </style>
