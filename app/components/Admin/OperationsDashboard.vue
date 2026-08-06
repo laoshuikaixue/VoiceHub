@@ -44,7 +44,7 @@
               :key="group.value"
               type="button"
               class="group-tab"
-              :class="{ 'group-tab--active': activeGroup === group.value }"
+              :class="[`group-tab--${groupTabStatus(group.value)}`, { 'group-tab--active': activeGroup === group.value }]"
               :aria-selected="activeGroup === group.value"
               @click="selectMonitorGroup(group.value)"
             >
@@ -928,10 +928,15 @@
       </section>
 
       <section class="dependency-matrix">
-        <OpsPanel v-for="item in dependencyHealthCards" :key="item.label" class="dependency-card" :title="item.label" :status="dependencyCardStatus(item.label)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencyCardEmpty(item.label) && !initialOperationsLoading" :refreshable="false" @refresh="loadOperationsData">
-          <div class="dependency-card__status"><span>当前状态</span><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
+        <OpsPanel v-for="item in dependencyHealthCards" :key="item.label" class="dependency-card" :title="item.label" :status="dependencyCardStatus(item.label)" :updated-at="dependencyUpdatedAt" :pending="initialOperationsLoading" :error="moduleFetchErrors.metrics" :empty="dependencyCardEmpty(item.label) && !initialOperationsLoading" :empty-text="dependencyCardEmptyText(item.label)" :refreshable="false" @refresh="loadOperationsData">
+          <div class="dependency-card__status" :class="`dependency-card__status--${dependencyCardStatus(item.label)}`"><span>{{ locale.dependencies.currentStatus }}</span><strong>{{ dependencyStatusValue(item.label) }}</strong></div>
           <p v-if="dependencyFailureReason(item.label)" class="dependency-card__failure">最近失败：{{ dependencyFailureReason(item.label) }}</p>
-          <dl><div v-for="detail in item.details" :key="detail"><dt>{{ detail }}</dt><dd>{{ dependencyMetricValue(item.label, detail) }}</dd></div></dl>
+          <dl class="dependency-card__metrics">
+            <template v-for="group in dependencyMetricGroups(item)" :key="group.key">
+              <dt class="dependency-card__group-label">{{ group.label }}</dt>
+              <div v-for="detail in group.details" :key="detail"><dt>{{ detail }}</dt><dd>{{ dependencyMetricValue(item.label, detail) }}</dd></div>
+            </template>
+          </dl>
         </OpsPanel>
       </section>
 
@@ -2069,7 +2074,9 @@ const dependencyMetricValue = (label, detail) => {
   if (detail === locale.value.dependencies?.p95LatencyShort) return metric.p95DurationMs == null ? '--' : `${Math.round(Number(metric.p95DurationMs))} ms`
   return '--'
 }
-const dependencyUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt ? formatTimestamp(runtimeMetrics.value.collectedAt) : locale.value.awaitingConnection)
+const dependencyUpdatedAt = computed(() => runtimeMetrics.value?.collectedAt
+  ? new Date(runtimeMetrics.value.collectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  : locale.value.awaitingConnection)
 const dependencySourceStatus = (source) => {
   if (moduleFetchErrors.value.metrics) return 'error'
   return musicSourceStatuses.value.find((item) => item.source === source)?.status || 'unknown'
@@ -2083,8 +2090,21 @@ const dependencyCardEmpty = (label) => {
   if (source) return dependencySourceEmpty(source)
   if (label === locale.value.dependencies?.oauth) return runtimeOAuthMetrics.value?.successRate == null
   if (label === locale.value.dependencies?.neonPostgresql) return !databaseSnapshot.value
-  if (label === locale.value.services?.redis) return !runtimeRedisMetrics.value
+  if (label === locale.value.services?.redis) return !runtimeRedisMetrics.value?.configured
   return true
+}
+const dependencyCardEmptyText = (label) => {
+  const source = dependencySourceForLabel(label)
+  if (source) {
+    const metric = dependencyMetrics.value[source]
+    return metric && !Number(metric.calls)
+      ? locale.value.dependencies?.emptyNotInvoked
+      : locale.value.dependencies?.emptyNotCollected
+  }
+  if (label === locale.value.services?.redis && runtimeRedisMetrics.value && !runtimeRedisMetrics.value.configured) {
+    return locale.value.dependencies?.emptyNotConfigured
+  }
+  return locale.value.dependencies?.emptyNotCollected
 }
 const securityMetricValue = (label) => {
   if (label === locale.value.audit?.invalidTokenRequests) return runtimeHttpMetrics.value?.status401 != null ? String(runtimeHttpMetrics.value.status401) : 'N/A'
@@ -3000,6 +3020,21 @@ const musicSourceHealthDetails = computed(() => [
   locale.value.dependencies?.lastSuccess
 ])
 
+const dependencyMetricGroups = (item) => {
+  const details = (item.details || []).filter(Boolean)
+  if (details.length >= 8) {
+    return [
+      { key: 'availability', label: locale.value.dependencies?.metricGroupAvailability, details: details.slice(0, 2) },
+      { key: 'quality', label: locale.value.dependencies?.metricGroupQuality, details: details.slice(2, 6) },
+      { key: 'stability', label: locale.value.dependencies?.metricGroupStability, details: details.slice(6) }
+    ]
+  }
+  return [
+    { key: 'availability', label: locale.value.dependencies?.metricGroupAvailability, details: details.slice(0, 2) },
+    { key: 'stability', label: locale.value.dependencies?.metricGroupStability, details: details.slice(2) }
+  ].filter((group) => group.details.length)
+}
+
 const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map(item => ({
   ...item,
   preview: item.details.slice(0, 3).map(detail => `${detail} ${dependencyMetricValue(item.label, detail)}`).join(' · ')
@@ -3275,9 +3310,9 @@ const dependencyProtectionPanelStatus = (panel) => {
 .group-navigation {
   overflow-x: auto;
   overflow-y: hidden;
-  border: 1px solid rgb(39 39 42);
-  border-radius: 8px;
-  background: rgb(24 24 27 / 0.3);
+  border: 1px solid var(--ops-line);
+  border-radius: 6px;
+  background: var(--ops-panel);
 }
 
 .group-navigation__scroll {
@@ -3293,20 +3328,20 @@ const dependencyProtectionPanelStatus = (panel) => {
 }
 
 .group-navigation__section + .group-navigation__section {
-  border-left: 1px solid rgb(63 63 70);
+  border-left: 1px solid var(--ops-line-strong);
 }
 
 .group-navigation__label {
   display: flex;
-  width: 5.5rem;
-  min-height: 2.9rem;
+  width: 4.75rem;
+  min-height: 2.65rem;
   flex: 0 0 auto;
   align-items: center;
   gap: 0.4rem;
   border-right: 1px solid rgb(39 39 42);
-  padding: 0 0.8rem;
-  color: rgb(82 82 91);
-  background: rgb(9 9 11 / 0.45);
+  padding: 0 0.65rem;
+  color: var(--ops-text-3);
+  background: var(--ops-control);
   font-size: 0.625rem;
   font-weight: 700;
 }
@@ -3314,27 +3349,27 @@ const dependencyProtectionPanelStatus = (panel) => {
 .group-tabs {
   display: flex;
   flex: 0 0 auto;
-  gap: 0.25rem;
+  gap: 0.1rem;
 }
 
 .group-tab {
   position: relative;
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: 2.65rem;
   flex: 0 0 auto;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0 0.8rem;
-  color: rgb(113 113 122);
-  font-size: 0.75rem;
+  gap: 0.4rem;
+  padding: 0 0.65rem;
+  color: var(--ops-text-2);
+  font-size: 0.6875rem;
   font-weight: 600;
   white-space: nowrap;
   transition: color 150ms ease;
 }
 
 .group-tab__status {
-  width: 0.4rem;
-  height: 0.4rem;
+  width: 0.375rem;
+  height: 0.375rem;
   flex: 0 0 auto;
   margin-left: 0.1rem;
   border-radius: 50%;
@@ -3356,16 +3391,19 @@ const dependencyProtectionPanelStatus = (panel) => {
 }
 
 .group-tab:hover {
-  color: rgb(212 212 216);
+  color: var(--ops-text-1);
 }
 
 .group-tab--active {
-  color: rgb(96 165 250);
+  color: var(--ops-info);
 }
 
 .group-tab--active::after {
-  background: rgb(59 130 246);
+  background: var(--ops-info);
 }
+
+.group-tab--warning:not(.group-tab--active) { color: color-mix(in srgb, var(--ops-warning) 82%, var(--ops-text-2)); }
+.group-tab--error:not(.group-tab--active) { color: var(--ops-error); }
 
 .panel,
 .deployment-mode-grid {
@@ -4959,6 +4997,11 @@ const dependencyProtectionPanelStatus = (panel) => {
   font-weight: 500;
 }
 
+.dependency-card__status--ok strong { color: var(--ops-ok); }
+.dependency-card__status--warning strong { color: var(--ops-warning); }
+.dependency-card__status--error strong { color: var(--ops-error); }
+.dependency-card__status--unknown strong { color: var(--ops-unknown); }
+
 .dependency-card__status strong {
   color: var(--ops-text-1);
   font-family: inherit;
@@ -4981,6 +5024,18 @@ const dependencyProtectionPanelStatus = (panel) => {
   margin-bottom: 0;
   border-top: 1px solid rgb(39 39 42 / 0.75);
 }
+
+.dependency-card dt.dependency-card__group-label {
+  display: block;
+  padding: 0.55rem 0.8rem 0.3rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+  color: var(--ops-text-3);
+  font-size: 0.6rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.dependency-card dt.dependency-card__group-label:first-child { border-top: 0; }
 
 .dependency-card dl > div {
   display: grid;
@@ -5154,7 +5209,7 @@ const dependencyProtectionPanelStatus = (panel) => {
 .log-level--info { color: var(--ops-text-2); background: rgba(148, 163, 184, .12); }
 .duration-value { display: inline-flex; border-radius: 3px; padding: .17rem .36rem; font-family: var(--ops-mono); font-size: .67rem; }.duration-value--ok { color: var(--ops-ok); background: color-mix(in srgb, var(--ops-ok) 10%, transparent); }.duration-value--warning { color: var(--ops-warning); background: color-mix(in srgb, var(--ops-warning) 10%, transparent); }.duration-value--error { color: var(--ops-error); background: color-mix(in srgb, var(--ops-error) 10%, transparent); }.request-row--error { background: color-mix(in srgb, var(--ops-error) 5%, transparent); }
 .diagnostic-duration-summary { display: flex; min-height: 10rem; flex-direction: column; justify-content: center; padding: 1.25rem; }.diagnostic-duration-summary strong { color: var(--ops-text-1); font-family: var(--ops-mono); font-size: 1.7rem; }.diagnostic-duration-summary span { margin-top: .5rem; color: var(--ops-text-2); font-size: .72rem; }.diagnostic-duration-summary p { margin: 1rem 0 0; color: var(--ops-text-3); font-size: .67rem; line-height: 1.6; }
-.dependency-card--ok { border-left: 3px solid var(--ops-ok); }.dependency-card--warning { border-left: 3px solid var(--ops-warning); }.dependency-card--error { border-left: 3px solid var(--ops-error); }.dependency-card--unknown { border-left: 3px solid var(--ops-unknown); }.dependency-status-dot--ok { background: var(--ops-ok); }.dependency-status-dot--warning { background: var(--ops-warning); }.dependency-status-dot--error { background: var(--ops-error); }.dependency-card__observed, .dependency-card__failure { margin: 0; padding: 0 .95rem .65rem; color: var(--ops-text-3); font-size: .62rem; }.dependency-card__failure { color: var(--ops-error); overflow-wrap: anywhere; }
+.dependency-card--ok { border-left: 3px solid var(--ops-ok); }.dependency-card--warning { border-left: 3px solid var(--ops-warning); }.dependency-card--error { border-left: 3px solid var(--ops-error); }.dependency-card--unknown { border-left: 3px solid var(--ops-unknown); }.dependency-status-dot--ok { background: var(--ops-ok); }.dependency-status-dot--warning { background: var(--ops-warning); }.dependency-status-dot--error { background: var(--ops-error); }.dependency-card__observed, .dependency-card__failure { margin: 0; padding: 0 .8rem .55rem; color: var(--ops-text-3); font-size: .62rem; }.dependency-card__failure { display: -webkit-box; overflow: hidden; color: var(--ops-error); overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
 /* 旧详情面板沿用统一数据中心外壳，不改变其内容结构。 */
 .panel,

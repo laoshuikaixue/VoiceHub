@@ -2044,6 +2044,7 @@ export const admin = {
     dependencies: {
       healthMatrix: '依赖健康矩阵',
       healthMatrixDetail: '集中查看四个音乐源及认证、数据库、缓存、SMTP、通知服务的状态、成功率、P95、熔断器和最近成功时间。',
+      metricGroupAvailability: '可用性与性能', metricGroupQuality: '结果质量', metricGroupStability: '稳定性', currentStatus: '当前状态', emptyNotCollected: '暂无真实采集数据。', emptyNotInvoked: '当前采集周期未调用该依赖。', emptyNotConfigured: '当前未配置该依赖。',
       availability: '可用率',
       errorRate: '错误率',
       circuitBreakerState: '熔断器状态', lastSuccess: '最近成功', coldStartP95: '冷启动 P95', callVolumeTrend: '外部调用量趋势', callVolumeTrendDetail: '结合错误率观察分母变化，避免将调用量骤降误判为健康。', uptimeStrip: '24 小时可用性色带', uptimeStripDetail: '按小时查看依赖可用性窗口，空白表示尚未采集。', uptimeUnavailable: '未采集', uptimeWindow: '最近 24 小时',

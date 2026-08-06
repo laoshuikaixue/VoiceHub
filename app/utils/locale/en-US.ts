@@ -2035,6 +2035,7 @@ export const admin = {
     dependencies: {
       healthMatrix: 'Dependency Health Matrix',
       healthMatrixDetail: 'Status, success rate, P95, circuit breaker, and last success for four music sources plus auth, database, cache, SMTP, and notifications.',
+      metricGroupAvailability: 'Availability & Performance', metricGroupQuality: 'Result Quality', metricGroupStability: 'Stability', currentStatus: 'Current Status', emptyNotCollected: 'No real metrics have been collected.', emptyNotInvoked: 'This dependency was not called in the current collection window.', emptyNotConfigured: 'This dependency is not configured.',
       availability: 'Availability',
       errorRate: 'Error Rate',
       circuitBreakerState: 'Circuit Breaker', lastSuccess: 'Last Success', coldStartP95: 'Cold-start P95', callVolumeTrend: 'External Call Volume', callVolumeTrendDetail: 'Pair volume with error rate so a denominator collapse is not mistaken for health.', uptimeStrip: '24-hour Uptime Strip', uptimeStripDetail: 'Hourly dependency availability; blank means metrics have not been collected.', uptimeUnavailable: 'Not collected', uptimeWindow: 'Last 24 hours',
