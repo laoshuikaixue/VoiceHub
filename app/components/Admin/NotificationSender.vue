@@ -35,7 +35,38 @@
                 :placeholder="locale.contentPlaceholder"
                 class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-primary-30 transition-all text-text-primary placeholder:text-text-primary min-h-[160px] resize-none"
               />
+              <p class="px-1 text-[10px] font-medium text-text-disabled">
+                {{ locale.markdownHint }}
+              </p>
             </div>
+
+            <!-- 重要通知开关 -->
+            <label
+              class="flex cursor-pointer items-start gap-4 rounded-2xl border p-4 transition-colors"
+              :class="
+                form.important
+                  ? 'border-primary-300 bg-primary-hover-10'
+                  : 'border-border-secondary bg-bg-primary hover:border-border-tertiary'
+              "
+            >
+              <input v-model="form.important" type="checkbox" class="peer sr-only">
+              <span
+                class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors after:absolute after:left-1 after:top-1 after:h-4 after:w-4 after:rounded-full after:bg-text-disabled after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-5 peer-checked:after:bg-bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300"
+                aria-hidden="true"
+              />
+              <span class="min-w-0">
+                <span class="flex items-center gap-2 text-sm font-black text-text-primary">
+                  <AlertTriangle
+                    :size="16"
+                    :class="form.important ? 'text-primary' : 'text-text-disabled'"
+                  />
+                  {{ locale.importantToggleTitle }}
+                </span>
+                <span class="mt-1 block text-xs leading-relaxed text-text-secondary">
+                  {{ locale.importantToggleDescription }}
+                </span>
+              </span>
+            </label>
 
             <!-- 范围选择 -->
             <div class="space-y-3 pt-4 border-t border-border-secondary-50">
@@ -336,84 +367,117 @@
             <Eye :size="16" class="text-primary" /> {{ locale.previewTitle }}
           </h3>
 
-          <div class="flex-1 flex flex-col items-center justify-center p-4">
-            <div
-              class="w-full max-w-[320px] bg-bg-primary border border-border-secondary rounded-3xl overflow-hidden shadow-2xl relative"
+          <div class="flex flex-1 flex-col items-center justify-center p-1 sm:p-4">
+            <!-- 重要通知预览 -->
+            <section
+              v-if="form.important"
+              class="w-full max-w-[320px] overflow-hidden rounded-2xl border border-primary-300 bg-bg-primary shadow-2xl"
             >
-              <!-- 顶部装饰 -->
-              <div class="h-1.5 bg-primary-hover w-full" />
-
-              <div class="p-6 space-y-4">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <div
-                      class="w-8 h-8 rounded-xl bg-primary-hover-10 text-primary flex items-center justify-center border border-primary-20"
-                    >
-                      <Bell :size="14" />
-                    </div>
-                    <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
-                      >{{ locale.previewSender }}</span
-                    >
+              <div class="h-1.5 w-full bg-warning" />
+              <div class="p-5 space-y-5">
+                <header class="flex items-start gap-3">
+                  <div
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-warning-300 bg-warning-10 text-warning"
+                    aria-hidden="true"
+                  >
+                    <Icon name="bell-ring" :size="17" />
                   </div>
-                  <span class="text-[9px] text-text-secondary font-bold uppercase tracking-wider"
-                    >{{ locale.justNow }}</span
-                  >
-                </div>
+                  <div class="min-w-0 flex-1">
+                    <h4
+                      class="break-words text-sm font-black"
+                      :class="form.title ? 'text-text-primary' : 'italic text-text-disabled'"
+                    >
+                      {{ form.title || locale.previewTitlePlaceholder }}
+                    </h4>
+                    <p class="mt-1 truncate text-[11px] font-black text-text-disabled">
+                      {{ locale.senderLabel }}：{{ previewSenderName }}
+                    </p>
+                  </div>
+                </header>
 
-                <div class="space-y-2">
-                  <h4
-                    :class="[
-                      'text-sm font-black transition-colors',
-                      form.title ? 'text-text-primary' : 'text-text-primary italic'
-                    ]"
-                  >
-                    {{ form.title || locale.previewTitlePlaceholder }}
-                  </h4>
-                  <p
-                    :class="[
-                      'text-[11px] leading-relaxed transition-colors',
-                      form.content ? 'text-text-tertiary' : 'text-text-primary italic line-clamp-3'
-                    ]"
-                  >
-                    {{ form.content || locale.previewContentPlaceholder }}
-                  </p>
-                </div>
+                <div
+                  v-if="form.content"
+                  class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-text-tertiary"
+                  v-html="previewContent"
+                />
+                <p v-else class="text-sm italic leading-relaxed text-text-disabled">
+                  {{ locale.previewContentPlaceholder }}
+                </p>
 
-                <div class="pt-4 border-t border-border-secondary-50 flex items-center justify-between">
-                  <div class="flex items-center gap-1.5">
-                    <Users :size="12" class="text-text-secondary" />
-                    <span class="text-[9px] font-black text-text-disabled uppercase tracking-wider">
+                <footer class="flex items-center justify-between gap-4 border-t border-border-secondary-50 pt-4">
+                  <div class="flex min-w-0 items-center gap-1.5 text-text-secondary">
+                    <Users :size="13" class="shrink-0" aria-hidden="true" />
+                    <span class="truncate text-[10px] font-black text-text-disabled">
                       {{ getLocaleMessage('previewScope', scopeDescription) }}
                     </span>
                   </div>
-                  <button
-                    class="p-1.5 text-primary hover:bg-primary-hover-10 rounded-lg transition-all"
+                  <MessageSquare :size="17" class="shrink-0 text-warning" aria-hidden="true" />
+                </footer>
+              </div>
+            </section>
+
+            <!-- 普通通知预览 -->
+            <article
+              v-else
+              class="w-full max-w-[320px] overflow-hidden rounded-2xl border border-border-secondary bg-bg-primary shadow-2xl"
+            >
+              <div class="h-1.5 w-full bg-primary" />
+              <div class="p-5 space-y-5">
+                <header class="flex items-start gap-3">
+                  <div
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary-20 bg-primary-hover-10 text-primary"
+                    aria-hidden="true"
                   >
-                    <MessageSquare :size="14" />
-                  </button>
-                </div>
-              </div>
+                    <Icon name="bell" :size="17" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <h4
+                      class="break-words text-sm font-black"
+                      :class="form.title ? 'text-text-primary' : 'italic text-text-disabled'"
+                    >
+                      {{ form.title || locale.previewTitlePlaceholder }}
+                    </h4>
+                    <p class="mt-1 truncate text-[11px] font-black text-text-disabled">
+                      {{ locale.senderLabel }}：{{ previewSenderName }}
+                    </p>
+                  </div>
+                </header>
 
-              <!-- 背景光晕 -->
-              <div
-                class="absolute top-0 right-0 w-32 h-32 bg-primary-hover-5 blur-[50px] -z-10 rounded-full"
-              />
-            </div>
-
-            <div class="mt-8 space-y-3 w-full max-w-[320px]">
-              <div
-                class="flex items-start gap-3 p-3 bg-warning-5 border border-warning-10 rounded-2xl"
-              >
-                <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
-                <p class="text-[10px] font-bold text-text-tertiary leading-normal">
-                  {{ locale.previewHint }}
+                <div
+                  v-if="form.content"
+                  class="markdown-body max-h-64 overflow-y-auto text-sm leading-relaxed text-text-tertiary"
+                  v-html="previewContent"
+                />
+                <p v-else class="text-sm italic leading-relaxed text-text-disabled">
+                  {{ locale.previewContentPlaceholder }}
                 </p>
+
+                <footer class="flex items-center justify-between gap-4 border-t border-border-secondary-50 pt-4">
+                  <div class="flex min-w-0 items-center gap-1.5 text-text-secondary">
+                    <Users :size="13" class="shrink-0" aria-hidden="true" />
+                    <span class="truncate text-[10px] font-black text-text-disabled">
+                      {{ getLocaleMessage('previewScope', scopeDescription) }}
+                    </span>
+                  </div>
+                  <MessageSquare :size="17" class="shrink-0 text-primary" aria-hidden="true" />
+                </footer>
               </div>
+            </article>
+
+            <div
+              class="mt-6 flex w-full max-w-[320px] items-start gap-3 rounded-lg border border-warning-10 bg-warning-5 p-3"
+            >
+              <AlertCircle :size="14" class="mt-0.5 shrink-0 text-warning" />
+              <p class="text-[10px] font-black text-text-tertiary leading-normal">
+                {{ locale.previewHint }}
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <NotificationHistory :refresh-key="historyRefreshKey" />
   </div>
 </template>
 
@@ -426,28 +490,37 @@ import {
   LayoutGrid,
   User,
   Search,
-  Bell,
   Info,
   X,
   Check,
   Plus,
   AlertCircle,
+  AlertTriangle,
   Eye,
   MessageSquare,
   Loader2
 } from '@lucide/vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import Icon from '~/components/UI/Icon.vue'
+import NotificationHistory from '~/components/Admin/NotificationHistory.vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAdmin } from '~/composables/useAdmin'
 import { useUserFilters } from '~/composables/useUserFilters'
 import { useLocale } from '~/utils/locale'
+import { renderMarkdown } from '~/utils/markdown'
 
-const { isAdmin, getAuthConfig } = useAuth()
+const { user: authUser, isAdmin, getAuthConfig } = useAuth()
 const { sendAdminNotification } = useAdmin()
 const userFilters = useUserFilters()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.notificationSender || {})
 const { msg: getLocaleMessage, nested: getNestedMessage } = useLocaleText(locale)
+const previewSenderName = computed(
+  () =>
+    authUser.value?.name?.trim() ||
+    authUser.value?.username?.trim() ||
+    locale.value.previewSender
+)
 
 onMounted(() => {
   userFilters.fetchOptions()
@@ -461,6 +534,7 @@ const gradeOptions = computed(() => {
 const form = ref({
   title: '',
   content: '',
+  important: false,
   scope: 'ALL', // 'ALL', 'GRADE', 'CLASS', 'MULTI_CLASS', 'SPECIFIC_USERS'
   grade: '',
   classGrade: '',
@@ -496,6 +570,8 @@ watch(() => multiClassForm.value.grade, () => {
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+const historyRefreshKey = ref(0)
+const previewContent = computed(() => renderMarkdown(form.value.content))
 
 // 用户搜索相关
 const userSearchQuery = ref('')
@@ -701,6 +777,7 @@ const sendNotification = async () => {
     const notificationData = {
       title: form.value.title,
       content: form.value.content,
+      important: form.value.important,
       scope: form.value.scope,
       filter: {}
     }
@@ -722,6 +799,7 @@ const sendNotification = async () => {
 
     if (result && result.success) {
       success.value = getNestedMessage('messages', 'sendSuccess', result.sentCount)
+      historyRefreshKey.value += 1
 
       // 3秒后自动隐藏成功提示
       setTimeout(() => {
@@ -732,6 +810,7 @@ const sendNotification = async () => {
       form.value = {
         title: '',
         content: '',
+        important: false,
         scope: 'ALL',
         grade: '',
         classGrade: '',
