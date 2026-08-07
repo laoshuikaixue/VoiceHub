@@ -14,8 +14,8 @@
 }
 
 /* 全局控件默认强调色 — 跟随主题主色调，但允许显式 accent-* 类覆盖 */
-input[type="checkbox"]:not([class*="accent-"]):
-input[type="radio"]:not([class*="accent-"]):
+input[type="checkbox"]:not([class*="accent-"]),
+input[type="radio"]:not([class*="accent-"]),
 input[type="range"]:not([class*="accent-"]) {
   accent-color: var(--accent-color);
 }
