@@ -567,7 +567,8 @@ export default defineEventHandler(async (event) => {
     // 检测运行环境
     const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
     const isNetlify = process.env.NETLIFY
-    const isServerless = isVercel || isNetlify
+    const isEdgeOne = process.env.EDGEONE || process.env.EDGEONE_PAGES
+    const isServerless = isVercel || isNetlify || isEdgeOne
 
     if (isServerless) {
       // 在无服务器环境中，直接返回备份数据供前端下载
