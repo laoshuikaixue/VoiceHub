@@ -269,8 +269,64 @@
               <div v-else class="notification-container">
                 <!-- 标题和设置按�?-->
                 <div class="notification-header">
-                  <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
-                  <button class="settings-icon" @click="toggleNotificationSettings">
+                  <div class="notification-header-main">
+                    <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
+                    <div
+                      :aria-label="locale.notificationFilterLabel"
+                      class="notification-filter"
+                      role="group"
+                    >
+                      <button
+                        :aria-pressed="notificationsService.currentFilter.value === 'all'"
+                        :class="{ active: notificationsService.currentFilter.value === 'all' }"
+                        type="button"
+                        @click="notificationsService.changeFilter('all')"
+                      >
+                        {{ locale.allNotifications }}
+                      </button>
+                      <button
+                        :aria-pressed="notificationsService.currentFilter.value === 'unread'"
+                        :class="{ active: notificationsService.currentFilter.value === 'unread' }"
+                        type="button"
+                        @click="notificationsService.changeFilter('unread')"
+                      >
+                        {{ locale.unread }}
+                      </button>
+                    </div>
+                    <div class="notification-search">
+                      <Icon :size="17" aria-hidden="true" name="search" />
+                      <input
+                        v-model="notificationSearchInput"
+                        :aria-label="locale.searchNotifications"
+                        :placeholder="locale.searchNotificationsPlaceholder"
+                        autocomplete="off"
+                        maxlength="100"
+                        type="search"
+                        @input="handleNotificationSearchInput"
+                        @keydown.enter.prevent="runNotificationSearch"
+                      >
+                      <button
+                        v-if="notificationSearchInput"
+                        :aria-label="locale.clearNotificationSearch"
+                        :title="locale.clearNotificationSearch"
+                        type="button"
+                        @click="clearNotificationSearch"
+                      >
+                        <Icon :size="15" name="x" />
+                      </button>
+                    </div>
+                  </div>
+                  <div class="notification-header-actions">
+                    <button
+                      :class="{ disabled: !hasUnreadNotifications }"
+                      :disabled="!hasUnreadNotifications"
+                      class="mark-all-read-header"
+                      @click="markAllNotificationsAsRead"
+                    >
+                      <Icon :size="15" name="check" />
+                      <span>{{ locale.markAllRead }}</span>
+                    </button>
+                    <button class="settings-icon" @click="toggleNotificationSettings">
                     <svg
                       fill="none"
                       height="20"
@@ -289,6 +345,37 @@
                     </svg>
                   </button>
                 </div>
+
+                <button
+                  :aria-label="formatLocaleValue(
+                    locale.unreadCountSummary,
+                    notificationsService.unreadCount.value
+                  )"
+                  :class="{ empty: !hasUnreadNotifications }"
+                  :disabled="!hasUnreadNotifications"
+                  class="notification-unread-summary"
+                  type="button"
+                  @click="notificationsService.changeFilter('unread')"
+                >
+                  <span class="notification-unread-summary-icon">
+                    <Icon :size="21" aria-hidden="true" name="bell-ring" />
+                  </span>
+                  <span class="notification-unread-summary-copy">
+                    <span>{{ locale.unreadOverview }}</span>
+                    <strong>
+                      {{
+                        formatLocaleValue(
+                          locale.unreadCountSummary,
+                          notificationsService.unreadCount.value
+                        )
+                      }}
+                    </strong>
+                  </span>
+                  <span v-if="hasUnreadNotifications" class="notification-unread-summary-action">
+                    <span>{{ locale.viewUnreadNotifications }}</span>
+                    <Icon :size="17" aria-hidden="true" name="chevron-right" />
+                  </span>
+                </button>
 
                 <!-- 通知列表 -->
                 <div class="notification-list">
@@ -359,19 +446,11 @@
                             <Icon v-else :size="20" color="var(--text-muted)" name="bell" />
                           </div>
                           <div class="notification-title-row">
-                            <div class="notification-title">
-                              <span v-if="notification.type === 'SONG_SELECTED'">{{ locale.notificationTypes.SONG_SELECTED }}</span>
-                              <span v-else-if="notification.type === 'SONG_PLAYED'"
-                                >{{ locale.notificationTypes.SONG_PLAYED }}</span
-                              >
-                              <span v-else-if="notification.type === 'SONG_VOTED'">{{ locale.notificationTypes.SONG_VOTED }}</span>
-                              <span v-else-if="notification.type === 'SONG_REJECTED'"
-                                >{{ locale.notificationTypes.SONG_REJECTED }}</span
-                              >
-                              <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
-                                {{ locale.notificationTypes.COLLABORATION_INVITE }}
+                            <div class="notification-heading-row">
+                              <div class="notification-card-title">
+                                <span>{{ notification.title || getNotificationTypeLabel(notification.type) }}</span>
                                 <span
-                                  v-if="notification.handled"
+                                  v-if="notification.type === 'COLLABORATION_INVITE' && notification.handled"
                                   :class="[
                                     'status-tag',
                                     notification.status === 'ACCEPTED'
@@ -389,20 +468,34 @@
                                         : locale.inviteStatus.rejected
                                   }}
                                 </span>
-                              </span>
-                              <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
-                                >{{ locale.notificationTypes.COLLABORATION_RESPONSE }}</span
+                              </div>
+                              <span
+                                class="notification-read-status"
+                                :class="notification.read ? 'is-read' : 'is-unread'"
                               >
-                              <span v-else>{{ locale.notificationTypes.SYSTEM }}</span>
-                              <span v-if="!notification.read" class="unread-indicator" />
+                                <Icon :size="14" name="eye" />
+                                {{ notification.read ? locale.read : locale.unread }}
+                              </span>
                             </div>
                             <div class="notification-time">
                               {{ formatNotificationTime(notification.createdAt) }}
                             </div>
+                            <div class="notification-sender">
+                              <Icon :size="13" aria-hidden="true" name="user" />
+                              <span>{{ locale.sender }}：{{ getNotificationSenderName(notification) }}</span>
+                            </div>
                           </div>
                         </div>
                         <div class="notification-card-body">
-                          <div class="notification-text">{{ notification.message }}</div>
+                          <!-- 仅管理员手动发送的通知渲染 Markdown，系统自动通知含用户可控内容，保持纯文本 -->
+                          <div
+                            v-if="isAdminManualNotification(notification)"
+                            class="notification-text markdown-body"
+                            v-html="renderedNotificationMessages[notification.id]"
+                          />
+                          <div v-else class="notification-text">
+                            {{ notification.message }}
+                          </div>
 
                           <!-- 联合投稿邀请操作按�?-->
                           <div
@@ -724,6 +817,7 @@ import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
 import { useSiteConfig } from '~/composables/useSiteConfig'
+import { useToast } from '~/composables/useToast'
 import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
@@ -774,6 +868,7 @@ const userClassInfo = computed(() => {
 const songs = useSongs()
 // 立即初始化通知服务，避免时序问�?
 const notificationsService = useNotifications()
+const { showToast } = useToast()
 const unreadNotificationCount = ref(0)
 
 // 模拟数据初始�?
@@ -948,6 +1043,34 @@ let refreshInterval = null
 // 添加通知相关变量
 const userNotifications = computed(() => notificationsService?.notifications?.value || [])
 const notificationsLoading = computed(() => notificationsService?.loading?.value || false)
+const notificationSearchInput = ref('')
+let notificationSearchTimer = null
+
+const runNotificationSearch = async () => {
+  if (notificationSearchTimer) {
+    clearTimeout(notificationSearchTimer)
+    notificationSearchTimer = null
+  }
+  await notificationsService.changeSearch(notificationSearchInput.value)
+}
+
+const handleNotificationSearchInput = () => {
+  if (notificationSearchTimer) clearTimeout(notificationSearchTimer)
+  notificationSearchTimer = setTimeout(() => {
+    notificationSearchTimer = null
+    notificationsService.changeSearch(notificationSearchInput.value)
+  }, 300)
+}
+
+const clearNotificationSearch = async () => {
+  notificationSearchInput.value = ''
+  await runNotificationSearch()
+}
+
+onUnmounted(() => {
+  if (notificationSearchTimer) clearTimeout(notificationSearchTimer)
+})
+
 const hasUnreadNotifications = computed(() => {
   // 确保notificationsService已初始化且有unreadCount
   if (!notificationsService || !notificationsService.unreadCount) {
@@ -1030,7 +1153,10 @@ const markNotificationAsRead = async (id) => {
 const markAllNotificationsAsRead = async () => {
   try {
     if (notificationsService) {
-      await notificationsService.markAllAsRead()
+      const result = await notificationsService.markAllAsRead()
+      if (result) {
+        showToast(locale.value.markAllReadSuccess, 'success')
+      }
     }
   } catch (error) {
     console.error('[????] ???????????', error)
@@ -1083,7 +1209,10 @@ const handleConfirmAction = async () => {
       await notificationsService.deleteNotification(pendingId.value)
       pendingId.value = null
     } else if (pendingAction.value === 'clearAll') {
-      await notificationsService.clearAllNotifications()
+      const result = await notificationsService.clearAllNotifications()
+      if (result) {
+        showToast(locale.value.clearAllSuccess, 'success')
+      }
     }
   }
   showConfirmDialog.value = false
@@ -1178,6 +1307,30 @@ const formatNotificationTime = (timeString) => {
   // 大于30天，显示具体日期
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
+
+const getNotificationTypeLabel = (type) =>
+  locale.value?.notificationTypes?.[type] ||
+  locale.value?.notificationTypes?.SYSTEM ||
+  type
+
+const getNotificationSenderName = (notification) =>
+  notification?.sender?.name?.trim() ||
+  notification?.sender?.username?.trim() ||
+  locale.value.systemSender
+
+// 只有管理员手动发送的通知才允许 Markdown 渲染
+const isAdminManualNotification = (notification) => notification?.source === 'ADMIN_MANUAL'
+
+// 预计算已清洗的 Markdown HTML，避免模板内重复解析
+const renderedNotificationMessages = computed(() => {
+  const rendered = {}
+  for (const notification of userNotifications.value) {
+    if (isAdminManualNotification(notification)) {
+      rendered[notification.id] = renderMarkdown(notification.message)
+    }
+  }
+  return rendered
+})
 
 // 监听标签页切换，如果切换到通知标签页，加载通知
 watch(activeTab, (newTab) => {
@@ -2596,7 +2749,245 @@ if (
   transform: rotate(30deg);
 }
 
+/* 通知头部主体区域：标题 + 过滤器 + 搜索框 */
+.notification-header-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+/* 通知过滤器按钮组 */
+.notification-filter {
+  display: flex;
+  gap: 0.35rem;
+  background: var(--overlay-6);
+  border-radius: 9999px;
+  padding: 0.25rem;
+}
+
+.notification-filter button {
+  border: none;
+  background: transparent;
+  color: var(--overlay-50);
+  padding: 0.3rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.notification-filter button.active {
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 通知搜索框 */
+.notification-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--overlay-6);
+  border: 1px solid var(--overlay-10);
+  border-radius: 9999px;
+  padding: 0.35rem 0.65rem;
+  min-width: 200px;
+  flex: 1;
+  max-width: 300px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-search:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-alpha);
+}
+
+.notification-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  min-width: 0;
+}
+
+.notification-search input::placeholder {
+  color: var(--overlay-40);
+}
+
+.notification-search button {
+  background: none;
+  border: none;
+  color: var(--overlay-50);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.notification-search button:hover {
+  color: var(--text-primary);
+  background: var(--overlay-10);
+}
+
+/* 全部标为已读按钮（header内） */
+.mark-all-read-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--overlay-10);
+  background: var(--overlay-5);
+  color: var(--text-primary);
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mark-all-read-header:hover:not(:disabled) {
+  background: var(--overlay-10);
+}
+
+.mark-all-read-header:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 未读摘要卡片 */
+.notification-unread-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.85rem 1.15rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--overlay-10);
+  border-radius: 14px;
+  background: var(--overlay-4);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.notification-unread-summary:hover:not(:disabled) {
+  background: var(--overlay-5);
+  border-color: var(--color-accent-alpha);
+}
+
+.notification-unread-summary:disabled,
+.notification-unread-summary.empty {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.notification-unread-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
+.notification-unread-summary-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-unread-summary-copy span:first-child {
+  font-size: 0.8rem;
+  color: var(--overlay-50);
+}
+
+.notification-unread-summary-copy strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.notification-unread-summary-action {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* 通知已读/未读状态标签 */
+.notification-read-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.notification-read-status.is-unread {
+  background: rgba(var(--color-accent-rgb), 0.15);
+  color: var(--color-accent);
+}
+
+.notification-read-status.is-read {
+  background: var(--overlay-6);
+  color: var(--overlay-50);
+}
+
+/* Markdown 渲染区 */
+.markdown-body {
+  line-height: 1.7;
+}
+
+.markdown-body :deep(p) {
+  margin: 0 0 0.6em;
+}
+
+.markdown-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  margin: 0.8em 0 0.4em;
+  font-weight: 600;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 1.4em;
+  margin: 0.4em 0;
+}
+
+.markdown-body :deep(a) {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
 /* 通知列表 */
+.notification-list {
 .notification-list {
   flex: 1;
   display: flex;
@@ -2696,18 +3087,38 @@ if (
 .notification-title-row {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
-.notification-title {
+.notification-card-title {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
+.notification-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .notification-time {
+  margin-top: 0.4rem;
   font-size: 0.75rem;
   color: var(--overlay-40);
+}
+
+.notification-sender {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--overlay-50);
 }
 
 .notification-card-body {
