@@ -241,12 +241,12 @@
         </div>
       </div>
 
-      <div v-if="!isSiteConfigLoaded || showCaptcha" class="form-group">
+      <div v-if="isSiteConfigLoaded && showCaptcha" class="form-group">
         <TurnstileWidget
-          v-if="!isSiteConfigLoaded || captchaProvider === 'turnstile'"
-          :config-ready="isSiteConfigLoaded"
+          v-if="captchaProvider === 'turnstile'"
           ref="turnstileRef"
           v-model="turnstileToken"
+          :config-ready="isSiteConfigLoaded"
         />
         <CaptchaInput
           v-else

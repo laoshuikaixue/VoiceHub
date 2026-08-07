@@ -32,9 +32,9 @@ const isMonitoringRequest = (url = '') => [
 const hasPlatformEnv = (value: string | undefined) => Boolean(value && value !== '0' && value.toLowerCase() !== 'false')
 const isServerlessRuntime = () => {
   if (hasPlatformEnv(process.env.VERCEL) || hasPlatformEnv(process.env.VERCEL_ENV)) return true
-  if (hasPlatformEnv(process.env.NETLIFY) || hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)) return true
+  if (hasPlatformEnv(process.env.NETLIFY) || hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES) || hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)) return true
   const preset = process.env.NITRO_PRESET || 'node-server'
-  return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => preset.toLowerCase().includes(name))
+  return ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => preset.toLowerCase().includes(name))
 }
 
 const persistMinuteBucket = (statusCode: number, durationMs: number) => {

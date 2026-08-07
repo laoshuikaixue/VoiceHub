@@ -110,11 +110,13 @@ const getRuntimeDescriptor = () => {
     ? 'vercel'
     : hasPlatformEnv(process.env.NETLIFY)
       ? 'netlify'
+      : hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES)
+        ? 'edgeone'
       : hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)
         ? 'cloudflare'
         : null
   const nitroPreset = process.env.NITRO_PRESET || deploymentTarget || 'node-server'
-  const serverless = Boolean(deploymentTarget) || ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => nitroPreset.toLowerCase().includes(name))
+  const serverless = Boolean(deploymentTarget) || ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => nitroPreset.toLowerCase().includes(name))
   return {
     nitroPreset,
     deploymentTarget,

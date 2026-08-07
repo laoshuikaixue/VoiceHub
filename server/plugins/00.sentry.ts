@@ -16,6 +16,7 @@ declare global {
 const getDeploymentTarget = (): string => {
   if (process.env.NETLIFY === 'true') return 'netlify'
   if (process.env.VERCEL) return 'vercel'
+  if (process.env.EDGEONE || process.env.EDGEONE_PAGES) return 'edgeone'
   if (process.env.NITRO_PRESET?.includes('cloudflare')) return 'cloudflare'
   return 'self-hosted-node'
 }

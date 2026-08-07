@@ -2397,13 +2397,14 @@ const isServerlessRuntime = computed(() => {
   const runtime = runtimeMetrics.value?.runtime || runtimeMetrics.value || {}
   const mode = String(runtime.deploymentTarget || runtime.nitroPreset || systemSnapshot.value?.nitroPreset || '').toLowerCase()
   if (publicRuntimeConfig.isNetlify) return true
-  return ['vercel', 'netlify', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
+  return ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => mode.includes(name))
 })
 const runtimeDeploymentTarget = computed(() => {
   const runtime = runtimeMetrics.value?.runtime || runtimeMetrics.value || {}
   const target = String(runtime.deploymentTarget || '').toLowerCase()
   if (target === 'vercel') return 'Vercel Serverless'
   if (target === 'netlify') return 'Netlify Serverless'
+  if (target === 'edgeone') return 'EdgeOne Edge Platform'
   if (target === 'cloudflare') return 'Cloudflare Serverless'
   return runtime.nitroPreset || systemSnapshot.value?.nitroPreset || (isServerlessRuntime.value ? 'Serverless' : 'Node 服务')
 })

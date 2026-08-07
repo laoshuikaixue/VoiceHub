@@ -519,7 +519,8 @@ export default defineEventHandler(async (event) => {
     // 检测运行环境
     const isVercel = process.env.VERCEL || process.env.VERCEL_ENV
     const isNetlify = process.env.NETLIFY
-    const isServerless = isVercel || isNetlify
+    const isEdgeOne = process.env.EDGEONE || process.env.EDGEONE_PAGES
+    const isServerless = isVercel || isNetlify || isEdgeOne
 
     const recordExportSuccess = () => recordAdminOperation(event, {
       actor: { id: user.id, role: user.role },
