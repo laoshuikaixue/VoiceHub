@@ -3730,6 +3730,7 @@ export const admin = {
 // ==================== 主题 ====================
 export const theme = {
   select: '选择主题',
+  System: '跟随系统',
   ClassicDark: '经典深色',
   ClassicLight: '经典浅色',
   ModernLight: '现代浅色'

@@ -637,8 +637,8 @@ export default defineNuxtConfig({
       script: [
         {
           tagPriority: 'critical',
-          // 与 useTheme.ts 默认逻辑一致：无保存值或非法值时回退 ClassicDark
-          innerHTML: "(function(){var t='ClassicDark';try{var s=localStorage.getItem('voicehub-theme');if(['ClassicDark','ClassicLight','ModernLight'].indexOf(s)>-1){t=s}}catch(e){}document.documentElement.setAttribute('data-theme',t)})()"
+          // 与 useTheme.ts 默认逻辑一致：无保存值或非法值时回退 ClassicDark；System 按系统配色偏好解析
+          innerHTML: "(function(){var t='ClassicDark';try{var s=localStorage.getItem('voicehub-theme');if(['ClassicDark','ClassicLight','ModernLight'].indexOf(s)>-1){t=s}else if(s==='System'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'ClassicDark':'ClassicLight'}}catch(e){}document.documentElement.setAttribute('data-theme',t)})()"
         }
       ],
       title: siteTitle,

@@ -3721,6 +3721,7 @@ export const admin = {
 // ==================== Theme ====================
 export const theme = {
   select: 'Choose theme',
+  System: 'Follow System',
   ClassicDark: 'Classic Dark',
   ClassicLight: 'Classic Light',
   ModernLight: 'Modern Light'

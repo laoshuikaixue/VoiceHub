@@ -47,8 +47,8 @@
                       type="button"
                       role="option"
                       class="theme-option"
-                      :class="{ 'is-active': currentTheme === themeItem }"
-                      :aria-selected="currentTheme === themeItem"
+                      :class="{ 'is-active': selectedTheme === themeItem }"
+                      :aria-selected="selectedTheme === themeItem"
                       @click="selectTheme(themeItem)"
                     >
                       {{ getThemeLabel(themeItem) }}
@@ -986,7 +986,7 @@ const selectLocale = (code) => {
 }
 
 // ==================== 主题切换 ====================
-const { currentTheme, themes, setTheme: setThemeFn } = useTheme()
+const { selectedTheme, themes, setTheme: setThemeFn } = useTheme()
 const { theme: themeLocale } = useLocale()
 
 const toggleThemeMenu = (event) => {
