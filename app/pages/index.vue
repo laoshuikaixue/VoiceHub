@@ -2814,7 +2814,7 @@ if (
   border: 0;
   outline: 0;
   background: transparent;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 0.85rem;
 }
 
@@ -2842,7 +2842,7 @@ if (
 
 .notification-search button:hover {
   background: var(--overlay-8);
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .notification-unread-summary {
@@ -2856,7 +2856,7 @@ if (
   border-radius: 8px;
   background: var(--overlay-4);
   padding: 0.8rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   text-align: left;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -2907,9 +2907,6 @@ if (
   color: var(--overlay-50);
   font-size: 0.72rem;
   font-weight: 600;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
 .settings-icon:hover {
