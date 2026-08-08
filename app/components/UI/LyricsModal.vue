@@ -998,23 +998,28 @@ watch(
 
       await nextTick()
 
-      if (backgroundContainer.value) {
-        await backgroundRenderer.initializeBackground(backgroundContainer.value)
+      // 播放进度同步优先启动，不等待背景（封面经代理加载可能较慢）
+      if (isPlaying.value) {
+        startProgressTimer()
+      }
 
-        backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
-        await syncBackgroundState()
-        backgroundRenderer.startRender()
-        if (!isPlaying.value) {
-          backgroundRenderer.pauseRender()
-        }
+      // 背景渲染异步初始化，避免阻塞播放基础功能
+      if (backgroundContainer.value) {
+        void (async () => {
+          await backgroundRenderer.initializeBackground(backgroundContainer.value)
+          if (!props.isVisible) return
+
+          backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+          await syncBackgroundState()
+          backgroundRenderer.startRender()
+          if (!isPlaying.value) {
+            backgroundRenderer.pauseRender()
+          }
+        })()
       }
 
       // 歌词由 LyricManager 自动监听 currentTrack 变化并获取，这里不需要手动 fetch
       // 但如果首次打开且没有歌词，可以触发一次检查（Manager 已有 immediate watch）
-
-      if (isPlaying.value) {
-        startProgressTimer()
-      }
 
       document.addEventListener('keydown', handleKeydown)
       await updateMobileState()
