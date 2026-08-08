@@ -52,10 +52,11 @@
           </h3>
           <button
             class="p-2 text-text-tertiary hover:text-text-secondary transition-colors"
-            :class="{ 'animate-spin': loadingActivities }"
+            :disabled="loadingActivities"
             @click="refreshActivities"
           >
-            <RefreshCw :size="16" />
+            <RefreshCw v-if="!loadingActivities" :size="16" />
+            <Loader2 v-else :size="16" class="animate-spin" />
           </button>
         </div>
         <div
@@ -65,7 +66,7 @@
             v-if="loadingActivities && recentActivities.length === 0"
             class="flex flex-col items-center justify-center h-full text-text-tertiary gap-3 py-20"
           >
-            <RefreshCw :size="24" class="animate-spin" />
+            <Loader2 :size="24" class="animate-spin" />
             <span class="text-sm">{{ locale.loading }}</span>
           </div>
           <div
@@ -205,6 +206,7 @@ import {
   ExternalLink,
   Heart,
   Inbox,
+  Loader2,
   Music,
   RefreshCw,
   ShieldCheck,
