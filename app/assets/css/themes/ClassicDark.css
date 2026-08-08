@@ -72,10 +72,10 @@
   --border-quaternary: #4a4a4a;
   --border-color: var(--border-quaternary);
   /* 阴影 */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
   /* 圆角 */
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -178,7 +178,7 @@
   --input-placeholder: var(--text-quaternary);
   --input-shadow-focus: 0 0 0 3px var(--primary-light);
   /* 模态框颜色 */
-  --modal-backdrop: rgba(0, 0, 0, 0.45);
+  --modal-backdrop: rgba(0, 0, 0, 0.7);
   --modal-bg: var(--bg-secondary);
   --modal-border: var(--border-secondary);
   --modal-header-border: var(--border-secondary);
@@ -328,6 +328,10 @@
   --section-tab-bg: var(--panel-bg-overlay);
   --section-tab-border: var(--panel-bg-raised);
   --surface-subtle: rgba(255, 255, 255, 0.03);
+  /* ─── 表面卡片背景（深色=黑色叠加，对齐 main 分支观感；浅色=浅灰） ─── */
+  --surface-card-bg: rgba(0, 0, 0, 0.4);
+  --surface-card-bg-medium: rgba(0, 0, 0, 0.3);
+  --surface-card-bg-soft: rgba(0, 0, 0, 0.2);
   /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
    每个平台有专属颜色变量，语义清晰，互不干扰。
    旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */

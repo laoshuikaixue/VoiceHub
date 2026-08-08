@@ -3001,7 +3001,7 @@ button:disabled {
 }
 
 .submission-note-content-box {
-  background: var(--mask-5);
+  background: var(--surface-card-bg-soft);
   border: 1px solid var(--overlay-5);
   border-radius: 12px;
   padding: 16px;

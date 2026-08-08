@@ -22,7 +22,7 @@
           <div class="flex items-center justify-between">
             <div
               :class="[
-                'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary transition-all',
+                'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary transition-all flex items-center justify-center',
                 card.isDanger
                   ? 'text-error border-error-10'
                   : card.colorClass === 'primary'

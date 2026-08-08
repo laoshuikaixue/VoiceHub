@@ -328,6 +328,10 @@
   --section-tab-bg: #ffffff;
   --section-tab-border: var(--song-card-border);
   --surface-subtle: #ffffff;
+  /* ─── 表面卡片背景（深色=黑色叠加，对齐 main 分支观感；浅色=浅灰） ─── */
+  --surface-card-bg: var(--mask-5);
+  --surface-card-bg-medium: var(--mask-30);
+  --surface-card-bg-soft: var(--mask-20);
   /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
    每个平台有专属颜色变量，语义清晰，互不干扰。
    旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */

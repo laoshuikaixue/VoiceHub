@@ -10,7 +10,7 @@
         <div class="flex justify-between items-start mb-4">
           <div
             :class="[
-              'p-3 rounded-xl border',
+              'p-3 rounded-xl border flex items-center justify-center',
               stat.color === 'blue'
                 ? 'bg-primary-10 text-primary border-primary-20'
                 : stat.color === 'emerald'

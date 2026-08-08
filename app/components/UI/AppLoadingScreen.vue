@@ -118,7 +118,8 @@ const warpSettings = computed(() => ({
   padding: 0;
   overflow: hidden;
   color: var(--text-primary);
-  background: var(--bg-primary);
+  /* 兜底色：极端情况下 data-theme 未设置导致主题变量缺失时，仍保证加载页不透明，避免主页内容透出 */
+  background: var(--bg-primary, #000000);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   user-select: none;
 }

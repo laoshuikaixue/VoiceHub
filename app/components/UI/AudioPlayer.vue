@@ -2556,7 +2556,7 @@ const getFirstChar = (text) => {
 /* 歌词面板样式 */
 .lyrics-panel {
   margin-top: 0.5rem;
-  background: var(--mask-20);
+  background: var(--surface-card-bg-soft);
   border-radius: 12px;
   padding: 0.5rem;
   backdrop-filter: blur(20px);

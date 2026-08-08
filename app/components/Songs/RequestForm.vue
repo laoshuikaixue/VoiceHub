@@ -3976,7 +3976,7 @@ defineExpose({
 }
 
 .rules-section {
-  background: var(--mask-5);
+  background: var(--surface-card-bg);
   border-radius: 13px;
   padding: 1.25rem;
   flex: 0 0 35%; /* 稍微缩小规则区域占比 */
@@ -4337,7 +4337,7 @@ defineExpose({
 }
 
 .submission-status-horizontal {
-  background: var(--mask-30);
+  background: var(--surface-card-bg-medium);
   border-radius: 8px;
   padding: 0.4rem 0.75rem;
   margin-bottom: 0.5rem;
@@ -4887,7 +4887,7 @@ defineExpose({
 
 .search-type-switch {
   display: flex;
-  background: var(--mask-5);
+  background: var(--surface-card-bg-soft);
   border-radius: 6px;
   padding: 2px;
   border: 1px solid var(--overlay-5);
@@ -5091,7 +5091,7 @@ defineExpose({
 /* 搜索结果容器样式 */
 .search-results-container {
   flex: 1;
-  background: var(--mask-5);
+  background: var(--surface-card-bg);
   border-radius: 13px;
   display: flex;
   flex-direction: column;
@@ -5636,7 +5636,7 @@ defineExpose({
 }
 
 .readonly {
-  background: var(--mask-20) !important;
+  background: var(--surface-card-bg-soft) !important;
   color: var(--overlay-50) !important;
   cursor: not-allowed;
   border-color: transparent !important;
@@ -5701,7 +5701,7 @@ defineExpose({
 .play-overlay-container {
   position: absolute;
   inset: 0;
-  background: var(--mask-40);
+  background: var(--surface-card-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5957,7 +5957,7 @@ defineExpose({
 /* 手动输入区域样式 */
 .manual-input-section {
   margin-top: 2rem;
-  background: var(--mask-40);
+  background: var(--surface-card-bg);
   border-radius: 13px;
   padding: 1.5rem;
 }
@@ -6269,7 +6269,7 @@ defineExpose({
   }
 
   .platform-selection {
-    background: var(--mask-20);
+    background: var(--surface-card-bg-soft);
     padding: 4px;
     border-radius: 12px;
     margin-bottom: 0.5rem;

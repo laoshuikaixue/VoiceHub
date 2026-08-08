@@ -564,7 +564,7 @@ watch(
   padding: 0.65rem 0.8rem;
   border-radius: 8px;
   color: var(--overlay-58);
-  background: var(--mask-18);
+  background: var(--surface-card-bg-soft);
   font-size: 0.82rem;
   line-height: 1.55;
   word-break: break-word;

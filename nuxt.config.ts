@@ -633,6 +633,14 @@ export default defineNuxtConfig({
   // 配置环境变量
   app: {
     head: {
+      // 首帧前同步恢复主题：SSR 输出的 HTML 无 data-theme，主题 CSS 变量未定义会导致加载页背景透明、主页内容透出
+      script: [
+        {
+          tagPriority: 'critical',
+          // 与 useTheme.ts 默认逻辑一致：无保存值或非法值时回退 ClassicDark
+          innerHTML: "(function(){var t='ClassicDark';try{var s=localStorage.getItem('voicehub-theme');if(['ClassicDark','ClassicLight','ModernLight'].indexOf(s)>-1){t=s}}catch(e){}document.documentElement.setAttribute('data-theme',t)})()"
+        }
+      ],
       title: siteTitle,
       meta: [
         { charset: 'utf-8' },

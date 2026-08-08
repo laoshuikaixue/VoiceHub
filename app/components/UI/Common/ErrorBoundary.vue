@@ -221,7 +221,7 @@ const toggleDetails = () => {
 .error-details {
   margin-top: 24px;
   padding: 16px;
-  background: var(--mask-30);
+  background: var(--surface-card-bg-medium);
   border: 1px solid var(--overlay-10);
   border-radius: 8px;
   text-align: left;
