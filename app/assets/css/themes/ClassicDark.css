@@ -307,15 +307,12 @@
   /* 错误文本 */
   --color-pending-tag: var(--color-warning-light);
   /* 等待中标签 */
-  /* ─── 点赞按钮（深色模式：实心填充样式） ─── */
+  /* 首页标题分隔线 */
+  --title-divider-bg: var(--color-accent);
   --like-btn-bg: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   --like-btn-hover-bg: linear-gradient(180deg, var(--color-accent-hover) 0%, var(--color-accent) 100%);
   --like-btn-border: var(--overlay-16);
-  /* 歌曲卡片边框（深色模式下保持轻弱） */
   --song-card-border: var(--overlay-6);
-  /* 首页标题分隔线 */
-  --title-divider-bg: var(--color-accent);
-  /* ─── 表面色（深色模式：取值与现状一致，视觉零变化） ─── */
   --song-card-bg: var(--overlay-7);
   --song-card-footer-bg: var(--overlay-2);
   --song-card-divider: var(--overlay-4);
@@ -328,7 +325,6 @@
   --section-tab-bg: var(--panel-bg-overlay);
   --section-tab-border: var(--panel-bg-raised);
   --surface-subtle: rgba(255, 255, 255, 0.03);
-  /* ─── 表面卡片背景（深色=黑色叠加，对齐 main 分支观感；浅色=浅灰） ─── */
   --surface-card-bg: rgba(0, 0, 0, 0.4);
   --surface-card-bg-medium: rgba(0, 0, 0, 0.3);
   --surface-card-bg-soft: rgba(0, 0, 0, 0.2);

@@ -11,7 +11,6 @@
 </template>
 
 <script setup>
-// 通用加载转圈：scoped CSS 实现，不依赖 UnoCSS utility，避免样式缺失导致动画不可见
 import { computed } from 'vue'
 
 const props = defineProps({

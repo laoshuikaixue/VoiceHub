@@ -3704,6 +3704,12 @@ if (
     max-width: 100%; /* 确保不超过视口宽度*/
   }
 
+  /* 通知标签页移动端留出左右边距，避免内容贴满屏幕 */
+  .notification-pane {
+    padding: 0 0.75rem;
+    box-sizing: border-box;
+  }
+
   /* 排期标签页优化*/
   .schedule-tab-pane {
     padding: 0;
