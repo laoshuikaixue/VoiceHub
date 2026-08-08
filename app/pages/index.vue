@@ -381,7 +381,7 @@
                 <!-- 通知列表 -->
                 <div class="notification-list">
                   <div v-if="notificationsLoading" class="loading-indicator">
-                    <div class="loading-spinner" />
+                    <AppSpinner :size="32" />
                     <span>{{ locale.loading }}</span>
                   </div>
 
@@ -680,7 +680,7 @@
                     v-if="notificationsService.isPaginationLoading.value"
                     class="pagination-loading"
                   >
-                    <div class="loading-spinner" />
+                    <AppSpinner :size="16" />
                     <span>{{ locale.loading }}</span>
                   </div>
                 </div>
@@ -836,6 +836,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
@@ -2997,21 +2998,6 @@ if (
   margin-bottom: 0.5rem;
 }
 
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--overlay-10);
-  border-top-color: var(--color-accent-light);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .notification-items {
   display: flex;
   flex-direction: column;
@@ -3350,25 +3336,6 @@ if (
   color: var(--overlay-70);
   font-size: 0.85rem;
   animation: fade-in 0.3s ease;
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--overlay-20);
-  border-top: 2px solid var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  will-change: transform;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 @keyframes fade-in {

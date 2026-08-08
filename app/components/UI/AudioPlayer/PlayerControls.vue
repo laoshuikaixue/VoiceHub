@@ -18,7 +18,7 @@
           class="control-btn play-pause-btn"
           @click="$emit('togglePlay')"
         >
-          <div v-if="isLoadingTrack" class="loading-spinner" />
+          <AppSpinner v-if="isLoadingTrack" :size="18" />
           <Icon v-else-if="isPlaying" :size="18" color="white" name="pause" />
           <Icon v-else :size="18" color="white" name="play" />
         </button>
@@ -63,6 +63,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({
@@ -205,24 +206,6 @@ defineExpose({
   width: 44px;
   height: 44px;
   background: var(--overlay-15);
-}
-
-.loading-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--overlay-30);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 .progress-container-wrapper {

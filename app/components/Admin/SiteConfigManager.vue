@@ -22,9 +22,7 @@
           @click="saveConfig"
         >
           <template v-if="saving">
-            <div
-              class="w-3.5 h-3.5 border-2 border-primary-30 border-t-primary rounded-full animate-spin"
-            />
+            <AppSpinner :size="14" />
             {{ locale.saving }}
           </template>
           <template v-else-if="saveSuccess"> <CheckCircle2 :size="14" /> {{ locale.saved }} </template>
@@ -34,9 +32,7 @@
     </div>
 
     <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-      <div
-        class="w-8 h-8 border-4 border-border-secondary border-t-primary rounded-full animate-spin mb-4"
-      />
+      <AppSpinner :size="32" class="mb-4" />
       <p class="text-text-tertiary text-sm">{{ locale.loading }}</p>
     </div>
 
@@ -570,6 +566,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from '@lucide/vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'

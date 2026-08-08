@@ -224,9 +224,7 @@
       <!-- 用户表格 -->
       <div class="space-y-4 min-w-0">
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-text-tertiary">
-        <div
-          class="w-8 h-8 border-2 border-primary-20 border-t-primary rounded-full animate-spin mb-4"
-        />
+        <AppSpinner :size="32" class="mb-4" />
         <div class="text-xs font-black uppercase tracking-widest">{{ locale.loading }}</div>
       </div>
 
@@ -1519,6 +1517,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Check,
   UserPlus,

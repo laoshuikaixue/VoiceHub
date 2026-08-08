@@ -55,9 +55,7 @@
       v-if="loading"
       class="flex flex-col items-center justify-center py-20 space-y-4 bg-bg-secondary-20 border border-border-secondary-50 rounded-xl"
     >
-      <div
-        class="w-10 h-10 border-4 border-primary-20 border-t-primary rounded-full animate-spin"
-      />
+      <AppSpinner :size="40" />
       <p class="text-xs font-black text-text-tertiary uppercase tracking-widest">{{ locale.loading }}</p>
     </div>
 
@@ -357,6 +355,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import type { PlayTime } from '~/types'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Plus,
   Clock,

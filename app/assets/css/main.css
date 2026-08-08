@@ -26,6 +26,9 @@ input[type="range"]:not([class*="accent-"]) {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* UnoCSS preflight 未重置 border-style，补齐后 utility 边框与加载转圈才能渲染 */
+  border-style: solid;
+  border-width: 0;
 }
 
 /* 字体显示策略优化 */

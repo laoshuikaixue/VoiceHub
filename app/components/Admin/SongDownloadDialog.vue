@@ -514,10 +514,7 @@
                 @click="startDownload"
               >
                 <Download v-if="!downloading" class="w-3.5 h-3.5" />
-                <span
-                  v-else
-                  class="w-3.5 h-3.5 border-2 border-primary-30 border-t-primary rounded-full animate-spin"
-                />
+                <AppSpinner :size="14" />
                 {{
                   downloading
                     ? currentTaskType === 'merge'
@@ -541,6 +538,7 @@ import { computed, ref, watch, reactive, onUnmounted } from 'vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { getMusicUrlResult } from '~/utils/musicUrl'
 import { useLocale } from '~/utils/locale'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   X as CloseIcon,
   Check,

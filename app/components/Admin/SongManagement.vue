@@ -137,9 +137,7 @@
         class="absolute inset-0 bg-bg-primary-40 backdrop-blur-sm z-10 flex items-center justify-center"
       >
         <div class="flex flex-col items-center gap-3">
-          <div
-            class="w-8 h-8 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
-          />
+          <AppSpinner :size="32" />
           <span class="text-xs font-bold text-text-tertiary tracking-widest uppercase">{{ locale.loading }}</span>
         </div>
       </div>
@@ -661,9 +659,7 @@
                     v-if="showEditModal ? editUserSearchLoading : userSearchLoading"
                     class="absolute right-4 top-1/2 -translate-y-1/2"
                   >
-                    <div
-                      class="w-4 h-4 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
-                    />
+                    <AppSpinner :size="16" />
                   </div>
                 </div>
 
@@ -752,9 +748,7 @@
                     v-if="editCollaboratorSearchLoading"
                     class="absolute right-4 top-1/2 -translate-y-1/2"
                   >
-                    <div
-                      class="w-4 h-4 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
-                    />
+                    <AppSpinner :size="16" />
                   </div>
                   <div
                     v-if="showEditCollaboratorDropdown && filteredEditCollaborators.length > 0"
@@ -1070,6 +1064,7 @@ import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Search,
   Plus,

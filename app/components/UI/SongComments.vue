@@ -21,7 +21,7 @@
     </div>
 
     <div v-else-if="isLoading && !commentItems.length" class="comments-state">
-      <div class="loading-spinner" />
+      <AppSpinner :size="24" />
       <p>{{ locale.loading }}</p>
     </div>
 
@@ -95,6 +95,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { fetchNetease } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
@@ -658,21 +659,6 @@ watch(
 .load-more-button:disabled {
   opacity: 0.6;
   cursor: wait;
-}
-
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--overlay-18);
-  border-top-color: var(--text-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 1024px) {

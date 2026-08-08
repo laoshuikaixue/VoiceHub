@@ -73,15 +73,14 @@
       v-if="isLoading"
       class="absolute inset-0 flex items-center justify-center bg-bg-secondary-40 backdrop-blur-[1px]"
     >
-      <div
-        class="w-6 h-6 border-2 border-primary-20 border-t-primary rounded-full animate-spin"
-      />
+      <AppSpinner :size="24" />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Users,
   Music,

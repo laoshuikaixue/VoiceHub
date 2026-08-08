@@ -157,7 +157,10 @@
 
     <!-- 使用Transition组件包裹所有内容 -->
     <Transition mode="out-in" name="tab-switch">
-      <div v-if="loading" :key="'loading'" class="loading">{{ locale.loading }}</div>
+      <div v-if="loading" :key="'loading'" class="loading">
+        <AppSpinner :size="40" />
+        {{ locale.loading }}
+      </div>
 
       <div v-else-if="error" :key="'error'" class="error">
         {{ error }}
@@ -409,6 +412,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 import { useThemeImage } from '~/composables/useThemeImage'
 
@@ -1837,15 +1841,6 @@ const vRipple = {
 }
 
 /* 加载动画 */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .loading {
   text-align: center;
   padding: 3rem;
@@ -1854,18 +1849,7 @@ const vRipple = {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.loading::before {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  border: 3px solid var(--color-accent-alpha-20);
-  border-top-color: var(--color-accent);
-  animation: spin 1s linear infinite;
+  gap: 1rem;
 }
 
 .error,
@@ -2673,12 +2657,6 @@ button:disabled {
     padding: 40px 20px;
     background: transparent;
     border-radius: 0;
-  }
-
-  .loading::before {
-    width: 32px;
-    height: 32px;
-    border-width: 2px;
   }
 
   /* 分页 */

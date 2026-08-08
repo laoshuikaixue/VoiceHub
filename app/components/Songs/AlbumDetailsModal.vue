@@ -90,7 +90,7 @@
           <!-- 加载状态 -->
           <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center">
-              <div class="w-12 h-12 border-4 border-border-secondary border-t-primary rounded-full animate-spin mb-4" />
+              <AppSpinner :size="48" class="mb-4" />
               <p class="text-sm font-bold text-text-tertiary uppercase tracking-widest">{{ locale.loading }}</p>
             </div>
           </div>
@@ -293,6 +293,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'

@@ -47,9 +47,7 @@
         v-if="loading"
         class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg-primary-60 backdrop-blur-[2px] animate-in fade-in duration-300"
       >
-        <div
-          class="w-10 h-10 border-4 border-primary-20 border-t-primary rounded-full animate-spin mb-4"
-        />
+        <AppSpinner :size="40" class="mb-4" />
         <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{
           resolvedLoadingText
         }}</span>
@@ -235,6 +233,7 @@ import {
   MoreHorizontal
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 
 const props = defineProps({
   columns: { type: Array, required: true },

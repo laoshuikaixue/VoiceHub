@@ -75,10 +75,7 @@
             @click="addBlacklistItem"
           >
             <Plus v-if="!loading" :size="16" />
-            <div
-              v-else
-              class="w-4 h-4 border-2 border-primary-30 border-t-primary rounded-full animate-spin"
-            />
+            <AppSpinner :size="16" />
             {{ loading ? locale.processing : locale.addButton }}
           </button>
         </div>
@@ -218,9 +215,7 @@
           v-if="loading && blacklist.length === 0"
           class="py-20 flex flex-col items-center justify-center space-y-4"
         >
-          <div
-            class="w-12 h-12 border-4 border-border-secondary border-t-primary rounded-full animate-spin"
-          />
+          <AppSpinner :size="48" />
           <p class="text-text-tertiary text-xs font-bold uppercase tracking-widest">{{ locale.loading }}</p>
         </div>
 
@@ -320,6 +315,7 @@
 
 <script setup>
 import { onMounted, reactive, ref, computed } from 'vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   ShieldAlert,
   Music,

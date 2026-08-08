@@ -7,7 +7,9 @@
     >
       <div class="relative w-24 h-24">
         <div class="absolute inset-0 border-4 border-primary-20 rounded-full" />
-        <div class="absolute inset-0 border-4 border-t-primary rounded-full animate-spin" />
+        <div class="absolute inset-0 flex items-center justify-center">
+          <AppSpinner :size="96" />
+        </div>
         <div class="absolute inset-0 flex items-center justify-center">
           <Activity class="text-primary animate-pulse" :size="32" />
         </div>
@@ -204,9 +206,7 @@
             v-if="panelStates.trends.loading && trendData.length === 0"
             class="flex-1 flex flex-col items-center justify-center space-y-4"
           >
-            <div
-              class="w-12 h-12 border-4 border-primary-20 border-t-primary rounded-full animate-spin"
-            />
+            <AppSpinner :size="48" />
             <p class="text-xs font-black text-text-disabled uppercase tracking-widest">
               {{ locale.loadingTrends }}
             </p>
@@ -610,6 +610,7 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   TrendingUp,
   Users,

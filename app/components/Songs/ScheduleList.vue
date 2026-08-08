@@ -97,7 +97,10 @@
 
         <!-- 使用Transition组件包裹内容 -->
         <Transition mode="out-in" name="schedule-fade">
-          <div v-if="loading" key="loading" class="loading">{{ locale.loading }}</div>
+          <div v-if="loading" key="loading" class="loading">
+            <AppSpinner :size="40" />
+            {{ locale.loading }}
+          </div>
 
           <div v-else-if="error" key="error" class="error">
             {{ error }}
@@ -647,6 +650,7 @@ import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
@@ -1926,18 +1930,7 @@ const vRipple = {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.loading::before {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  border: 3px solid var(--color-accent-alpha-20);
-  border-top-color: var(--color-accent);
-  animation: spin 1s linear infinite;
+  gap: 1rem;
 }
 
 @keyframes spin {
@@ -3302,12 +3295,6 @@ const vRipple = {
     background: transparent;
     border-radius: 0;
     margin: 0;
-  }
-
-  .loading::before {
-    width: 32px;
-    height: 32px;
-    border-width: 2px;
   }
 
   .empty .icon {

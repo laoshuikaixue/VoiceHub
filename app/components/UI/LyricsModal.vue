@@ -270,7 +270,7 @@
                   <Icon name="skip-back" size="28" />
                 </button>
                 <button class="play-pause-btn" @click="togglePlayPause">
-                  <div v-if="isLoadingTrack" class="loading-spinner" />
+                  <AppSpinner v-if="isLoadingTrack" :size="32" />
                   <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
                 </button>
                 <button :disabled="!hasNext" class="control-btn" @click="nextSong">
@@ -314,6 +314,7 @@ import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
@@ -1738,21 +1739,6 @@ onUnmounted(() => {
 
 .play-pause-btn:hover {
   transform: scale(1.1);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--overlay-20);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* 歌词工具栏 */

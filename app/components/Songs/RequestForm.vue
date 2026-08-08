@@ -577,7 +577,7 @@
 
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
-              <div class="loading-spinner" />
+              <AppSpinner :size="40" />
               <p class="loading-text">{{ locale.processing }}</p>
             </div>
 
@@ -1374,6 +1374,7 @@ import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
@@ -5116,15 +5117,6 @@ defineExpose({
   flex: 1;
   gap: 1rem;
   min-height: 200px; /* 添加最小高度 */
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-accent-alpha-20);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
 }
 
 .loading-text {

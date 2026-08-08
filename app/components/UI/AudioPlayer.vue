@@ -56,7 +56,7 @@
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls">
             <button class="mobile-control-btn" @click.stop="handleTogglePlay">
-              <div v-if="control.isLoadingTrack.value" class="loading-spinner-small" />
+              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" />
               <Icon
                 v-else
                 :name="control.isPlaying.value ? 'pause' : 'play'"
@@ -139,7 +139,7 @@
                 title="播放/暂停"
                 @click="handleTogglePlay"
               >
-                <div v-if="control.isLoadingTrack.value" class="loading-spinner" />
+                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" />
                 <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
                 <Icon v-else name="play" size="24" />
               </span>
@@ -254,6 +254,7 @@ import AudioElement from './AudioPlayer/AudioElement.vue'
 import VolumeControl from './AudioPlayer/VolumeControl.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
+import AppSpinner from './Common/AppSpinner.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
@@ -2054,21 +2055,6 @@ const getFirstChar = (text) => {
   opacity: 0;
 }
 
-.loading-spinner-small {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--overlay-10);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* 时间区域 */
 .time {
   display: flex;
@@ -2646,25 +2632,6 @@ const getFirstChar = (text) => {
 
   .center-controls {
     column-gap: 30px;
-  }
-}
-
-/* 加载和错误状态 */
-.loading-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--overlay-30);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
   }
 }
 

@@ -33,7 +33,7 @@
     </div>
 
     <div v-else-if="isLoading" class="placeholder">
-      <div class="loading-spinner" />
+      <AppSpinner :size="24" class="mb-3" />
       <p>{{ locale.loading }}</p>
     </div>
 
@@ -49,6 +49,7 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 const { ui } = useLocale()
@@ -218,25 +219,6 @@ watch(
 
 .placeholder.error {
   color: var(--color-error-light);
-}
-
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--overlay-20);
-  border-top: 2px solid var(--overlay-60);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 12px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 /* Apple Music风格的渐变效果 */

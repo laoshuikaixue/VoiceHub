@@ -10,11 +10,8 @@
       <!-- 加载动画 -->
       <div class="mb-8">
         <!-- 默认圆形加载器 -->
-        <div v-if="spinnerType === 'circle'" class="relative">
-          <div
-            class="w-12 h-12 border-4 border-primary-20 border-t-primary rounded-full animate-spin"
-          />
-          <div class="absolute inset-0 blur-lg bg-primary-20 rounded-full animate-pulse" />
+        <div v-if="spinnerType === 'circle'">
+          <AppSpinner :size="48" />
         </div>
 
         <!-- 点状加载器 -->
@@ -94,8 +91,10 @@
               </div>
               <div
                 v-else-if="index === currentStep"
-                class="w-6 h-6 border-2 border-primary-20 border-t-primary rounded-lg animate-spin"
-              />
+                class="w-6 h-6 flex items-center justify-center"
+              >
+                <AppSpinner :size="24" />
+              </div>
               <div
                 v-else
                 class="flex items-center justify-center w-6 h-6 bg-bg-secondary border border-border-secondary rounded-lg"
@@ -127,6 +126,7 @@
 
 <script lang="ts" setup>
 import { Check } from '@lucide/vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { computed } from 'vue'
 import { useLocale } from '~/utils/locale'
 

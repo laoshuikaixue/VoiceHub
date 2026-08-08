@@ -62,7 +62,7 @@
       v-if="loading && apiKeys.length === 0"
       class="flex flex-col items-center justify-center py-20"
     >
-      <div class="loading-spinner mb-4" />
+      <AppSpinner :size="24" class="mb-4" />
       <p class="text-text-tertiary text-xs">{{ locale.loading }}</p>
     </div>
 
@@ -625,6 +625,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 
 const { admin, currentLocale } = useLocale()
 const locale = computed(() => useSafeLocale(admin.value?.apiKeys || {}))
@@ -1123,20 +1124,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--overlay-10);
-  border-top-color: var(--color-accent-light);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
