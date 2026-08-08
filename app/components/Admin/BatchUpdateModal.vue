@@ -652,7 +652,7 @@
             </div>
             <div class="h-2 bg-bg-secondary rounded-full overflow-hidden">
               <div
-                class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-300 ease-out rounded-full"
+                class="h-full bg-gradient-to-r from-success to-success-light transition-all duration-300 ease-out rounded-full"
                 :style="{ width: updateProgress + '%' }"
               />
             </div>
