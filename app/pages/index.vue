@@ -152,7 +152,7 @@
 
       <!-- 中间主体内容区域 -->
       <div class="content-area">
-        <!-- 选项卡区�?-->
+        <!-- 选项卡区域-->
         <div class="tabs-row">
           <div
             :class="{ active: activeTab === 'schedule' }"
@@ -267,7 +267,7 @@
                 </div>
               </div>
               <div v-else class="notification-container">
-                <!-- 标题和设置按�?-->
+                <!-- 标题和设置按钮-->
                 <div class="notification-header">
                   <div class="notification-header-main">
                     <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
@@ -500,7 +500,7 @@
                         <div class="notification-card-body">
                           <div class="notification-text">{{ notification.message }}</div>
 
-                          <!-- 联合投稿邀请操作按�?-->
+                          <!-- 联合投稿邀请操作按钮-->
                           <div
                             v-if="
                               notification.type === 'COLLABORATION_INVITE' && !notification.handled
@@ -572,7 +572,7 @@
                   </div>
 
                   <div class="pagination-controls">
-                    <!-- 每页显示数量选择�?-->
+                    <!-- 每页显示数量选择器-->
                     <div class="page-size-selector">
                       <label for="pageSize">{{ locale.pageSize }}</label>
                       <CustomSelect
@@ -654,7 +654,7 @@
                     </div>
                   </div>
 
-                  <!-- 分页加载状�?-->
+                  <!-- 分页加载状态-->
                   <div
                     v-if="notificationsService.isPaginationLoading.value"
                     class="pagination-loading"
@@ -679,7 +679,7 @@
                   </button>
                 </div>
 
-                <!-- 确认对话�?-->
+                <!-- 确认对话框-->
                 <ConfirmDialog
                   v-model:show="showConfirmDialog"
                   :cancel-text="confirmDialogConfig.cancelText"
@@ -826,7 +826,7 @@ import { useLocale } from '~/utils/locale'
 import { useTheme } from '~/composables/useTheme'
 import { useThemeImage } from '~/composables/useThemeImage'
 
-// 获取运行时配�?
+// 获取运行时配置
 const config = useRuntimeConfig()
 const router = useRouter()
 const route = useRoute()
@@ -868,16 +868,16 @@ const userClassInfo = computed(() => {
 })
 
 const songs = useSongs()
-// 立即初始化通知服务，避免时序问�?
+// 立即初始化通知服务，避免时序问题
 const notificationsService = useNotifications()
 const unreadNotificationCount = ref(0)
 
-// 模拟数据初始�?
+// 模拟数据初初始化
 const songCount = ref(0)
 const scheduleCount = ref(0)
 const isRequestOpen = ref(true)
 
-// 弹窗状�?
+// 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
@@ -987,7 +987,7 @@ const getThemeLabel = (theme) => {
   return themeLocale.value[theme]
 }
 
-// 监听用户头像变化，重置错误状�?
+// 监听用户头像变化，重置错误状态
 watch(
   () => user.value?.avatar,
   () => {
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
   window.removeEventListener('click', handleClickOutside)
 })
 
-// 标签页状�?
+// 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
 
 const tabOrder = ['schedule', 'songs', 'request', 'notification']
@@ -1143,14 +1143,14 @@ const loadNotifications = async () => {
   }
 }
 
-// 标记通知为已�?
+// 标记通知为已读
 const markNotificationAsRead = async (id) => {
   if (notificationsService) {
     await notificationsService.markAsRead(id)
   }
 }
 
-// 标记所有通知为已�?
+// 标记所有通知为已读
 const markAllNotificationsAsRead = async () => {
   try {
     if (notificationsService) {
@@ -1188,7 +1188,7 @@ const clearAllNotifications = async () => {
   showConfirmDialog.value = true
 }
 
-// 确认对话框相关状�?
+// 确认对话框相关状态
 const showConfirmDialog = ref(false)
 const confirmDialogConfig = ref({
   title: '',
@@ -1229,7 +1229,7 @@ const handlePageSizeChange = async (newSize) => {
   }
 }
 
-// 获取可见的页码列�?
+// 获取可见的页码列表
 const getVisiblePages = () => {
   if (!notificationsService) return []
 
@@ -1238,12 +1238,12 @@ const getVisiblePages = () => {
   const pages = []
 
   if (totalPages <= 7) {
-    // 总页数少于等�?页，显示所有页�?
+    // 总页数少于等于7页，显示所有页面
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i)
     }
   } else {
-    // 总页数大�?页，显示省略�?
+    // 总页数大于7页，显示省略号
     if (currentPage <= 4) {
       // 当前页在前面
       for (let i = 1; i <= 5; i++) {
@@ -1299,7 +1299,7 @@ const formatNotificationTime = (timeString) => {
     return formatLocaleValue(locale.value.time.hoursAgo, Math.floor(diff / 3600000))
   }
 
-  // 小于30�?
+  // 小于30天
   if (diff < 2592000000) {
     return formatLocaleValue(locale.value.time.daysAgo, Math.floor(diff / 86400000))
   }
@@ -1353,7 +1353,7 @@ onMounted(() => {
   }
 })
 
-// 获取当前日期和星�?
+// 获取当前日期和星期
 const getCurrentDate = () => {
   const now = getSyncedDate()
   const year = now.getFullYear()
@@ -1367,14 +1367,14 @@ const getCurrentDate = () => {
 // RequestForm组件引用
 const requestFormRef = ref(null)
 
-// 更新歌曲数量统计（优化版本，避免重复请求�?
+// 更新歌曲数量统计（优化版本，避免重复请求
 const updateSongCounts = async (semester = null) => {
   try {
     // 更新排期歌曲数量
     const schedules = songs?.publicSchedules?.value || []
     scheduleCount.value = schedules.length
 
-    // 更新总歌曲数�?
+    // 更新总歌曲数量
     if (isClientAuthenticated.value && songs?.songs?.value) {
       // 已登录用户：使用完整歌曲列表
       songCount.value = songs.songs.value.length
@@ -1535,7 +1535,7 @@ const realSongCount = computed(() => {
 const publicSchedules = computed(() => songs?.publicSchedules?.value || [])
 const allSongs = computed(() => songs?.visibleSongs?.value || [])
 const filteredSongs = computed(() => {
-  // 返回所有歌曲，但将已播放的歌曲排在最�?
+  // 返回所有歌曲，但将已播放的歌曲排在最前
   if (allSongs.value && allSongs.value.length > 0) {
     const unplayedSongs = allSongs.value.filter((song) => !song.played)
     const playedSongs = allSongs.value.filter((song) => song.played)
@@ -1570,12 +1570,12 @@ const handleRequest = async (songData) => {
       console.log('???????????')
       await refreshSongs()
 
-      // 刷新投稿状�?
+      // 刷新投稿状态
       if (requestFormRef.value && requestFormRef.value.refreshSubmissionStatus) {
         await requestFormRef.value.refreshSubmissionStatus()
       }
 
-      // 如果当前在歌曲列表页，自动切换到该页�?
+      // 如果当前在歌曲列表页，自动切换到该页面
       if (activeTab.value !== 'songs') {
         setTimeout(() => {
           handleTabClick('songs')
@@ -1606,7 +1606,7 @@ const handleVote = async (song) => {
   try {
     if (!songs) return
 
-    // 调用投票API - 通知已在composable中处�?
+    // 调用投票API - 通知已在composable中处理
     // 检查是否是取消投票请求
     if (song.unvote) {
       // 传递完整对象以支持撤销投票功能
@@ -1654,7 +1654,7 @@ const handleWithdraw = async (song) => {
   try {
     if (!songs) return
 
-    // 调用撤回API - 通知已在composable中处�?
+    // 调用撤回API - 通知已在composable中处理
     await songs.withdrawSong(song.id)
     // 更新计数
     updateSongCounts()
@@ -1683,7 +1683,7 @@ const refreshSongs = async () => {
 const handleSemesterChange = async (semester) => {
   try {
     // 通过事件总线通知SongList组件进行前端过滤
-    // 使用nextTick确保事件在DOM更新后触�?
+    // 使用nextTick确保事件在DOM更新后触发
     await nextTick()
 
     // 触发自定义事件，通知所有监听的组件
@@ -1701,9 +1701,9 @@ const handleSemesterChange = async (semester) => {
   }
 }
 
-// 更新通知数量 - 可以保留这个函数但不再调�?
+// 更新通知数量 - 可以保留这个函数但不再调用
 const updateNotificationCount = async () => {
-  // 函数保留但不再使�?
+  // 函数保留但不再使用
 }
 
 // 处理登出
@@ -1713,7 +1713,7 @@ const handleLogout = () => {
   }
 }
 
-// 处理进入后台的点击动�?
+// 处理进入后台的点击动画
 const handleDashboardClick = (event) => {
   const button = event.currentTarget
   button.classList.add('clicking')
@@ -1754,7 +1754,7 @@ const handleCollaborationReply = async (notification, accept) => {
     notification.handled = true
     notification.status = accept ? 'ACCEPTED' : 'REJECTED'
     notification.repliedAt = new Date()
-    // notification.message += accept ? ' (已接�?' : ' (已拒�?'
+    // notification.message += accept ? ' (已接受' : ' (已拒绝'
 
     if (window.$showNotification) {
       window.$showNotification(
@@ -1763,7 +1763,7 @@ const handleCollaborationReply = async (notification, accept) => {
       )
     }
 
-    // 标记通知为已�?
+    // 标记通知为已读
     await markNotificationAsRead(notification.id)
 
     // 刷新歌曲列表
@@ -1784,7 +1784,7 @@ const handleCollaborationReply = async (notification, accept) => {
   }
 }
 
-// 格式化刷新间�?
+// 格式化刷新间隔
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
     return formatLocaleValue(locale.value.time.seconds, seconds)
@@ -1814,12 +1814,12 @@ const vRipple = {
 
       setTimeout(() => {
         ripple.remove()
-      }, 600) // 与CSS动画时间一�?
+      }, 600) // 与CSS动画时间一致
     })
   }
 }
 
-// 处理标签点击事件，添加动画效�?
+// 处理标签点击事件，添加动画效果
 const handleTabClick = (tab) => {
   activeTab.value = tab
 }
@@ -1836,21 +1836,21 @@ const showLoginNotice = () => {
   }
 }
 
-// 检查用户是否需要修改密�?
+// 检查用户是否需要修改密码
 const checkPasswordChangeRequired = async (user = null) => {
   try {
-    // 使用传入的用户信息或当前认证状态中的用户信�?
+    // 使用传入的用户信息或当前认证状态中的用户信息
     const currentUser = user || auth?.user?.value
 
     if (currentUser && currentUser.requirePasswordChange) {
-      // 延迟1秒显示通知，确保页面加载完�?
+      // 延迟1秒显示通知，确保页面加载完成
       setTimeout(() => {
         if (window.$showNotification) {
           window.$showNotification(
             getMessage('changePasswordTip'),
             'info',
             true,
-            8000 // 显示8�?
+            8000 // 显示8秒
           )
         }
       }, 1000)
@@ -1861,7 +1861,7 @@ const checkPasswordChangeRequired = async (user = null) => {
 }
 
 // 添加未读通知计数
-// 之前已声明了unreadNotificationCount，这里对其进行增�?
+// 之前已声明了unreadNotificationCount，这里对其进行递增操作
 if (
   notificationsService &&
   notificationsService.unreadCount &&
@@ -1902,7 +1902,7 @@ if (
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100%; /* 改为占满父容器高度而不是视口高�?*/
+  height: 100%; /* 改为占满父容器高度而不是视口高度*/
 }
 
 /* 添加顶部Ellipse 1效果 */
@@ -2272,7 +2272,7 @@ if (
   padding: 0 4px;
 }
 
-/* 登录按钮 - 桌面�?*/
+/* 登录按钮 - 桌面端*/
 .login-options .login-btn {
   display: flex;
   align-items: center;
@@ -2368,11 +2368,11 @@ if (
   flex-direction: column;
   gap: 0;
   flex: 1; /* 占据剩余空间 */
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   width: 100%; /* 确保宽度占满 */
 }
 
-/* 选项卡样�?- 桌面�?*/
+/* 选项卡片样式- 桌面端*/
 .tabs-row {
   display: flex;
   gap: 5px;
@@ -2436,7 +2436,7 @@ if (
   transform: translateY(-20px) scale(1.02);
 }
 
-/* 通知项交错进入动�?*/
+/* 通知项交错进入动画*/
 .notification-card {
   animation: notification-item-enter 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: var(--animation-delay, 0s);
@@ -2464,13 +2464,13 @@ if (
   }
 }
 
-/* 选项卡切换动�?*/
+/* 选项卡切换动画*/
 .section-tab {
   position: relative;
   transition: all 0.3s ease;
   overflow: hidden;
   padding: 0.75rem 1.5rem;
-  z-index: 10; /* 确保在内容之�?*/
+  z-index: 10; /* 确保在内容之上*/
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2478,7 +2478,7 @@ if (
 }
 
 .section-tab .tab-icon {
-  display: none; /* PC端默认隐藏图�?*/
+  display: none; /* PC端默认隐藏图标*/
 }
 
 .section-tab .icon-wrapper {
@@ -2490,7 +2490,7 @@ if (
   position: relative;
 }
 
-/* PC端通知小圆�?*/
+/* PC端通知小圆点*/
 .notification-badge-desktop {
   position: absolute;
   top: -2px;
@@ -2525,8 +2525,8 @@ if (
 /* 移除上浮效果 */
 .section-tab:hover {
   transform: none; /* 移除上浮效果 */
-  background-color: transparent; /* 移除背景�?*/
-  box-shadow: none; /* 移除内阴�?*/
+  background-color: transparent; /* 移除背背景*/
+  box-shadow: none; /* 移除内阴影*/
   color: var(--text-primary);
 }
 
@@ -2548,7 +2548,7 @@ if (
   display: flex;
   flex-direction: column;
   flex: 1; /* 占据剩余空间 */
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -2574,8 +2574,8 @@ if (
   padding: 0;
   display: flex;
   flex-direction: column;
-  flex: 1; /* 占满父容器高�?*/
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  flex: 1; /* 占满父容器高度*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -2583,7 +2583,7 @@ if (
   flex: 1; /* 占据剩余空间 */
   display: flex;
   flex-direction: column;
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -2596,7 +2596,7 @@ if (
     padding: 0;
   }
 
-  /* 移动端分页控件样�?*/
+  /* 移动端分页控件样式*/
   .pagination-controls {
     flex-direction: column;
     gap: 10px;
@@ -2651,7 +2651,7 @@ if (
   gap: 2rem;
 }
 
-/* 空状�?*/
+/* 空状态*/
 .empty-state {
   text-align: center;
   padding: 2rem;
@@ -3239,7 +3239,7 @@ if (
   font-size: 0.85rem;
 }
 
-/* 分页加载状�?*/
+/* 分页加载状态*/
 .pagination-loading {
   display: flex;
   align-items: center;
@@ -3281,7 +3281,7 @@ if (
   }
 }
 
-/* 底部操作�?*/
+/* 底部操作区*/
 .notification-actions-bar {
   display: flex;
   justify-content: center;
@@ -3324,7 +3324,7 @@ if (
   background-color: var(--overlay-5);
 }
 
-/* ==================== 移动端设�?==================== */
+/* ==================== 移动端设置==================== */
 
 /* 基础移动端适配 */
 @media (max-width: 768px) {
@@ -3337,7 +3337,7 @@ if (
     padding: 0;
   }
 
-  /* 隐藏原有的ellipse效果，使用更微妙的背�?*/
+  /* 隐藏原有的ellipse效果，使用更微妙的背景*/
   .ellipse-effect {
     display: none;
   }
@@ -3373,7 +3373,7 @@ if (
     background: var(--overlay-15);
   }
 
-  /* 移动端的主页面里不需要写学校名，保持简�?*/
+  /* 移动端的主页面里不需要写学校名，保持简约*/
   .site-title {
     display: none;
   }
@@ -3383,7 +3383,7 @@ if (
     max-height: 36px;
   }
 
-  /* 用户区域简�?*/
+  /* 用户区域简约*/
   .user-section {
     width: auto;
   }
@@ -3475,12 +3475,12 @@ if (
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* 内容区域 - 全宽无边�?*/
+  /* 内容区域 - 全宽无边框*/
   .content-area {
     min-height: auto;
     overflow-x: hidden; /* 防止横向溢出 */
-    max-width: 100vw; /* 确保不超过视口宽�?*/
-    box-sizing: border-box; /* 确保padding计入总宽�?*/
+    max-width: 100vw; /* 确保不超过视口宽度*/
+    box-sizing: border-box; /* 确保padding计入总宽度*/
   }
 
   .tabs-row {
@@ -3492,7 +3492,7 @@ if (
     max-width: 500px;
     display: flex;
     justify-content: space-around;
-    align-items: stretch; /* 修改�?stretch 以配合子元素 height: 100% */
+    align-items: stretch; /* 修改为stretch 以配合子元素 height: 100% */
     gap: 0;
     padding: 0 0.5rem;
     height: 64px;
@@ -3568,7 +3568,7 @@ if (
     display: none;
   }
 
-  /* 移除底部指示器（横条�? 彻底隐藏 */
+  /* 移除底部指示器（横条 彻底隐藏 */
   .section-tab::after {
     display: none !important;
   }
@@ -3595,7 +3595,7 @@ if (
   }
 
   .section-tab .icon-wrapper {
-    display: flex; /* 移动端显示图标容�?*/
+    display: flex; /* 移动端显示图标容器*/
   }
 
   /* 通知徽章 - 回归蓝色风格 */
@@ -3617,7 +3617,7 @@ if (
   }
 
   @keyframes badge-pulse {
-    /* 移除导致位移的动�?*/
+    /* 移除导致位移的动画*/
   }
 
   .section-tab.disabled {
@@ -3638,10 +3638,10 @@ if (
   .tab-pane {
     padding: 0;
     overflow-x: hidden; /* 防止横向溢出 */
-    max-width: 100%; /* 确保不超过视口宽�?*/
+    max-width: 100%; /* 确保不超过视口宽度*/
   }
 
-  /* 排期标签页优�?*/
+  /* 排期标签页优化*/
   .schedule-tab-pane {
     padding: 0;
     min-height: auto;
@@ -3652,9 +3652,9 @@ if (
     flex-direction: column;
     gap: 16px;
     overflow-x: hidden; /* 防止横向溢出 */
-    max-width: 100%; /* 确保不超过视口宽�?*/
+    max-width: 100%; /* 确保不超过视口宽度*/
     padding: 0 0.5rem; /* 添加左右内边距，防止内容贴边 */
-    box-sizing: border-box; /* 确保padding计入总宽�?*/
+    box-sizing: border-box; /* 确保padding计入总宽度*/
   }
 
   /* 登录选项 */
@@ -3672,7 +3672,7 @@ if (
   }
 }
 
-/* 小屏幕设备额外优�?*/
+/* 小屏幕设备额外优化*/
 @media (max-width: 480px) {
   .top-bar {
     padding: 8px 10px;
@@ -3797,7 +3797,7 @@ if (
   }
 }
 
-/* 弹窗遮罩�?*/
+/* 弹窗遮罩层*/
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -4181,7 +4181,7 @@ if (
   }
 }
 
-/* 覆盖旧动�?*/
+/* 覆盖旧动画*/
 .modal-animation-enter-active,
 .modal-animation-leave-active {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4271,7 +4271,7 @@ if (
   cursor: not-allowed;
 }
 
-/* 未登录提示样�?*/
+/* 未登录提示样式*/
 .login-required-container {
   display: flex;
   flex-direction: column;
