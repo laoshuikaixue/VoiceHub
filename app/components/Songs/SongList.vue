@@ -1905,6 +1905,7 @@ const vRipple = {
 .song-card-main {
   padding: 1rem 0 1rem 1rem; /* 移除右侧内边距，保留左侧、上下内边距 */
   background: var(--panel-bg);
+  border: 1px solid var(--song-card-border);
   box-shadow: 0px 4px 4px var(--mask-25);
   position: relative;
   height: 100px; /* 减小卡片高度 */
@@ -2107,11 +2108,15 @@ const vRipple = {
   justify-content: center;
   width: 48px;
   height: 45px;
-  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
-  border: 1px solid var(--overlay-16);
+  background: var(--like-btn-bg);
+  border: 1px solid var(--like-btn-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.like-button:hover:not(.disabled):not(.liked) {
+  background: var(--like-btn-hover-bg);
 }
 
 .like-button.liked {
@@ -2201,6 +2206,7 @@ const vRipple = {
   align-items: center;
   justify-content: space-between;
   background: var(--panel-bg);
+  border: 1px solid var(--song-card-border);
   border-radius: 0 0 10px 10px;
   padding: 0.5rem 1rem;
   width: 95%;
@@ -2503,7 +2509,7 @@ button:disabled {
     border-radius: 20px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid var(--overlay-12);
+    border: 1px solid var(--song-card-border);
     box-shadow: 0 4px 20px var(--mask-15);
   }
 

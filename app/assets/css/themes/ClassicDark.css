@@ -307,6 +307,14 @@
   /* 错误文本 */
   --color-pending-tag: var(--color-warning-light);
   /* 等待中标签 */
+  /* ─── 点赞按钮（深色模式：实心填充样式） ─── */
+  --like-btn-bg: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  --like-btn-hover-bg: linear-gradient(180deg, var(--color-accent-hover) 0%, var(--color-accent) 100%);
+  --like-btn-border: var(--overlay-16);
+  /* 歌曲卡片边框（深色模式下保持轻弱） */
+  --song-card-border: var(--overlay-6);
+  /* 首页标题分隔线 */
+  --title-divider-bg: var(--color-accent);
   /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
    每个平台有专属颜色变量，语义清晰，互不干扰。
    旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */

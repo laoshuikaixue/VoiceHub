@@ -2396,7 +2396,7 @@ if (
 .title-divider {
   width: 40px;
   height: 4px;
-  background: var(--color-accent);
+  background: var(--title-divider-bg);
   border-radius: 2px;
   box-shadow: 0 0 15px var(--color-accent-alpha-60);
 }

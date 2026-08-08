@@ -66,9 +66,9 @@
   --text-quaternary: #6b7280;
   --text-disabled: #6b7280;
   /* 边框颜色 */
-  --border-primary: #f0f0f0;
-  --border-secondary: #e5e5e5;
-  --border-tertiary: #d4d4d4;
+  --border-primary: #ececf1;
+  --border-secondary: #dedee6;
+  --border-tertiary: #c9c9d4;
   --border-quaternary: #a3a3a3;
   --border-color: var(--border-quaternary);
   /* 阴影 */
@@ -151,7 +151,7 @@
   --btn-secondary-bg: #f5f5f5;
   --btn-secondary-hover: #e5e5e5;
   --btn-secondary-text: var(--text-primary);
-  --btn-secondary-border: #d4d4d4;
+  --btn-secondary-border: #c9c9d4;
 
   --btn-success-bg: var(--success);
   --btn-success-hover: var(--success-hover);
@@ -307,6 +307,14 @@
   /* 错误文本 */
   --color-pending-tag: var(--color-warning-light);
   /* 等待中标签 */
+  /* ─── 点赞按钮（浅色模式：轮廓描边样式，不填充背景） ─── */
+  --like-btn-bg: #ffffff;
+  --like-btn-hover-bg: rgba(11, 90, 254, 0.06);
+  --like-btn-border: rgba(11, 90, 254, 0.45);
+  /* 歌曲卡片边框（浅色模式下需清晰可见） */
+  --song-card-border: #cdd1d9;
+  /* 首页标题分隔线（柔和蓝色） */
+  --title-divider-bg: #60a5fa;
   /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
    每个平台有专属颜色变量，语义清晰，互不干扰。
    旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */
@@ -466,13 +474,13 @@
   --text-link-hover: #1d4ed8;
   --text-highlight: #856404;
   /* 用途化变量 — 边框与分割线（亮色模式） */
-  --panel-border: #e5e5e5;
+  --panel-border: #dedee6;
   --panel-border-active: #0b5afe;
-  --panel-border-subtle: #f0f0f0;
+  --panel-border-subtle: #ececf1;
   --panel-border-10: rgba(240, 240, 240, 0.1);
-  --panel-border-light: #e5e5e5;
+  --panel-border-light: #dedee6;
   --panel-border-dark: #a3a3a3;
-  --panel-border-highlight: #d4d4d4;
+  --panel-border-highlight: #c9c9d4;
   --panel-border-brand: #0b5afe;
   --panel-border-error: #ef4444;
   /* 用途化变量 — 状态色（亮色模式） */
@@ -647,16 +655,16 @@
   --bg-quaternary-10: rgba(229, 229, 229, 0.1);
   --bg-quaternary-50: rgba(229, 229, 229, 0.5);
   /* === Alpha (--border-secondary) === */
-  --border-secondary-30: rgba(229, 229, 229, 0.3);
-  --border-secondary-40: rgba(229, 229, 229, 0.4);
-  --border-secondary-50: rgba(229, 229, 229, 0.5);
-  --border-secondary-60: rgba(229, 229, 229, 0.6);
-  --border-secondary-70: rgba(229, 229, 229, 0.7);
-  --border-secondary-80: rgba(229, 229, 229, 0.8);
+  --border-secondary-30: rgba(222, 222, 230, 0.3);
+  --border-secondary-40: rgba(222, 222, 230, 0.4);
+  --border-secondary-50: rgba(222, 222, 230, 0.5);
+  --border-secondary-60: rgba(222, 222, 230, 0.6);
+  --border-secondary-70: rgba(222, 222, 230, 0.7);
+  --border-secondary-80: rgba(222, 222, 230, 0.8);
   /* === Alpha (--border-tertiary) === */
-  --border-tertiary-20: rgba(212, 212, 212, 0.2);
-  --border-tertiary-30: rgba(212, 212, 212, 0.3);
-  --border-tertiary-50: rgba(212, 212, 212, 0.5);
+  --border-tertiary-20: rgba(201, 201, 212, 0.2);
+  --border-tertiary-30: rgba(201, 201, 212, 0.3);
+  --border-tertiary-50: rgba(201, 201, 212, 0.5);
   /* === Alpha (--text-primary) === */
   --text-primary-10: rgba(38, 38, 38, 0.1);
   --text-primary-20: rgba(38, 38, 38, 0.2);
