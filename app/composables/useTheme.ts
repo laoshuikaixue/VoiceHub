@@ -13,25 +13,30 @@ let current: Ref<Theme> | null = null
  * 在组件 composable 中使用，服务端返回初始值但不订阅。
  */
 export function useTheme() {
+  // SSR 环境返回只读 stub，避免模块级单例在 Node 进程中跨请求共享可变状态
+  if (import.meta.server) {
+    const currentTheme = computed(() => 'ClassicDark' as Theme)
+    const isDark = computed(() => true)
+    return {
+      currentTheme,
+      isDark,
+      themes: THEMES,
+      setTheme: () => {},
+      toggleTheme: () => {}
+    }
+  }
+
   if (!current) {
-    // 初始化状态，SSR 时默认经典深色
     let saved = null
-    if (typeof window !== 'undefined') {
-      try {
-        saved = localStorage.getItem('voicehub-theme')
-      } catch {
-        // localStorage 不可用（如无痕模式被禁用），静默降级
-        saved = null
-      }
+    try {
+      saved = localStorage.getItem('voicehub-theme')
+    } catch {
+      saved = null
     }
     const resolved: Theme = (THEMES.includes(saved as Theme) ? saved : null) ?? 'ClassicDark'
 
     current = ref<Theme>(resolved)
-
-    // 非 SSR 环境：同步 DOM attribute
-    if (import.meta.client && resolved) {
-      document.documentElement.setAttribute('data-theme', resolved)
-    }
+    document.documentElement.setAttribute('data-theme', resolved)
   }
 
   const theme = current!
@@ -39,16 +44,13 @@ export function useTheme() {
   const currentTheme = computed(() => theme.value)
   const isDark = computed(() => theme.value === 'ClassicDark')
 
-  /** 设置主题并持久化到 localStorage */
   const setTheme = (t: Theme) => {
     theme.value = t
     document.documentElement.setAttribute('data-theme', t)
-    if (import.meta.client) {
-      try {
-        localStorage.setItem('voicehub-theme', t)
-      } catch {
-        // localStorage 写入失败（如配额满或被禁用），静默忽略
-      }
+    try {
+      localStorage.setItem('voicehub-theme', t)
+    } catch {
+      /* localStorage 写入失败（如配额满或被禁用），静默忽略 */
     }
   }
 

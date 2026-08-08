@@ -211,6 +211,7 @@
   --color-accent-light: #c4b5fd;
   --color-accent-hover: #9580fa;
   --color-accent-light-hover: #8b68fa;
+  --color-accent-lighter: #ddd6fe;
   --color-accent-glow: rgba(167, 139, 250, 0.25);
   --color-error: #f87171;
   --color-error-light: #fca5a5;
@@ -224,6 +225,10 @@
   --color-warning-light: #fde047;
   --color-warning-hover: #f59e0b;
   --color-warning-glow: rgba(251, 191, 36, 0.25);
+  /* --color-warning 透明度变体 */
+  --color-warning-alpha-14: rgba(251, 191, 36, 0.14);
+  --color-warning-alpha-24: rgba(251, 191, 36, 0.24);
+  --color-warning-alpha-48: rgba(251, 191, 36, 0.48);
   --color-orange: #fdba74;
   --color-orange-light: #fed7aa;
   --color-orange-hover: #fb923c;
@@ -237,11 +242,13 @@
   --color-accent-alpha-15: rgba(167, 139, 250, 0.12);
   --color-accent-alpha-18: rgba(167, 139, 250, 0.14);
   --color-accent-alpha-20: rgba(167, 139, 250, 0.13);
+  --color-accent-alpha-22: rgba(167, 139, 250, 0.22);
   --color-accent-alpha-25: rgba(167, 139, 250, 0.2);
   --color-accent-alpha-30: rgba(167, 139, 250, 0.2);
   --color-accent-alpha-40: rgba(167, 139, 250, 0.25);
   --color-accent-alpha-50: rgba(167, 139, 250, 0.32);
   --color-accent-alpha-60: rgba(167, 139, 250, 0.4);
+  --color-accent-alpha-65: rgba(167, 139, 250, 0.5);
   --color-accent-alpha-80: rgba(167, 139, 250, 0.48);
 
   /* 用途化变量 — 通知/状态/场景语义色（用途命名，替代原 --color-brand-* 颜色命名）
@@ -415,7 +422,7 @@
   --panel-bg-elevated: #ffffff;
   --panel-bg-dialog: #ffffff;
   --panel-bg-subtle: #f9f8f5;
-  --panel-bg-tertiary: #edeae5;
+  --panel-bg-tier-tertiary: #edeae5;
   --panel-bg-quaternary: #f7f6f2;
   --panel-bg-contrast: #f9f8f5;
   --panel-bg-dark: #f0eef5;
