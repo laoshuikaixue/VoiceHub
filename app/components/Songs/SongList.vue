@@ -2393,9 +2393,9 @@ button:disabled {
     padding: 8px 16px;
     font-size: 13px;
     font-weight: 500;
-    border: none;
+    border: 1px solid var(--chip-border);
     border-radius: 20px;
-    background: var(--overlay-4);
+    background: var(--chip-bg);
     color: var(--overlay-50);
     margin: 0;
     white-space: nowrap;
@@ -2404,7 +2404,7 @@ button:disabled {
   .tab-button:hover {
     transform: none;
     color: var(--overlay-80);
-    background: var(--overlay-8);
+    background: var(--chip-bg-hover);
   }
 
   .tab-button.active {
@@ -2427,8 +2427,8 @@ button:disabled {
   }
 
   .search-input {
-    background: var(--overlay-4);
-    border: none;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
     border-radius: 12px;
     padding: 10px 16px;
     padding-right: 40px;
@@ -2436,7 +2436,7 @@ button:disabled {
   }
 
   .search-input:focus {
-    background: var(--overlay-8);
+    background: var(--chip-bg-hover);
     box-shadow: none;
   }
 
@@ -2454,12 +2454,12 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: var(--overlay-4);
-    border: none;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
   }
 
   .semester-toggle-btn:hover {
-    background: var(--overlay-8);
+    background: var(--chip-bg-hover);
     transform: none;
     box-shadow: none;
   }
@@ -2482,13 +2482,13 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: var(--overlay-4);
-    border: none;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
     flex-shrink: 0;
   }
 
   .refresh-button:hover {
-    background: var(--overlay-8);
+    background: var(--chip-bg-hover);
     transform: none;
     box-shadow: none;
   }
@@ -2503,7 +2503,7 @@ button:disabled {
 
   .song-card {
     width: 100%;
-    background: var(--overlay-7);
+    background: var(--song-card-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
@@ -2617,8 +2617,8 @@ button:disabled {
     width: 44px;
     height: 44px;
     border-radius: 14px;
-    background: var(--overlay-5);
-    border: 1px solid var(--overlay-10);
+    background: var(--like-btn-bg-mobile);
+    border: 1px solid var(--like-btn-border-mobile);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2637,11 +2637,11 @@ button:disabled {
 
   /* 投稿时间和操作 */
   .submission-footer {
-    background: var(--overlay-2);
+    background: var(--song-card-footer-bg);
     padding: 10px 16px;
     height: auto;
     width: 100%;
-    border-top: 1px solid var(--overlay-4);
+    border-top: 1px solid var(--song-card-divider);
   }
 
   .submission-time {
@@ -2655,7 +2655,7 @@ button:disabled {
     padding: 0 12px;
     font-size: 12px;
     border-radius: 8px;
-    background: var(--overlay-8);
+    background: var(--withdraw-btn-bg-mobile);
     border: 1px solid var(--overlay-10);
     color: var(--overlay-80);
   }

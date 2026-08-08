@@ -2189,7 +2189,7 @@ const vRipple = {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: var(--overlay-3);
+  background: var(--surface-subtle);
   border-radius: 12px;
   margin-bottom: 1.5rem;
   border: 1px solid var(--overlay-5);
@@ -2244,7 +2244,7 @@ const vRipple = {
 
 /* 控制面板（歌单选择与创建） */
 .control-panel {
-  background: var(--overlay-2);
+  background: var(--surface-subtle);
   border-radius: 16px;
   padding: 1.25rem;
   border: 1px solid var(--overlay-5);
@@ -2486,7 +2486,7 @@ const vRipple = {
 }
 
 .songs-list {
-  background: var(--overlay-3);
+  background: var(--surface-subtle);
   border-radius: 12px;
   border: 1px solid var(--overlay-5);
   max-height: 300px;
@@ -2499,7 +2499,7 @@ const vRipple = {
   text-align: center;
   color: var(--overlay-40);
   font-size: 14px;
-  background: var(--overlay-2);
+  background: var(--surface-subtle);
   border-radius: 12px;
 }
 

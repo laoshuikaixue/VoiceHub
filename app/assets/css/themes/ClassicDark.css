@@ -315,6 +315,19 @@
   --song-card-border: var(--overlay-6);
   /* 首页标题分隔线 */
   --title-divider-bg: var(--color-accent);
+  /* ─── 表面色（深色模式：取值与现状一致，视觉零变化） ─── */
+  --song-card-bg: var(--overlay-7);
+  --song-card-footer-bg: var(--overlay-2);
+  --song-card-divider: var(--overlay-4);
+  --chip-bg: var(--overlay-4);
+  --chip-bg-hover: var(--overlay-8);
+  --chip-border: transparent;
+  --like-btn-bg-mobile: var(--overlay-5);
+  --like-btn-border-mobile: var(--overlay-10);
+  --withdraw-btn-bg-mobile: var(--overlay-8);
+  --section-tab-bg: var(--panel-bg-overlay);
+  --section-tab-border: var(--panel-bg-raised);
+  --surface-subtle: rgba(255, 255, 255, 0.03);
   /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
    每个平台有专属颜色变量，语义清晰，互不干扰。
    旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */

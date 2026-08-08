@@ -2437,14 +2437,14 @@ if (
 }
 
 .section-tab {
-  background: var(--panel-bg-overlay);
+  background: var(--section-tab-bg);
   border-radius: 15px 15px 0 0;
   padding: 15px 24px;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
   color: var(--text-secondary);
-  border: 2px solid var(--panel-bg-raised);
+  border: 2px solid var(--section-tab-border);
   border-bottom: none;
   cursor: pointer;
   flex: 0 0 auto;
@@ -2757,7 +2757,7 @@ if (
   flex-shrink: 0;
   border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  background: var(--overlay-4);
+  background: var(--chip-bg);
   padding: 3px;
 }
 
@@ -2844,7 +2844,7 @@ if (
   gap: 0.6rem;
   border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  background: var(--overlay-4);
+  background: var(--chip-bg);
   padding: 0 0.75rem;
   color: var(--overlay-40);
   transition: border-color 0.2s ease, background 0.2s ease;
