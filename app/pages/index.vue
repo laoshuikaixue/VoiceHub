@@ -455,45 +455,58 @@
                             <Icon v-else :size="20" color="var(--text-muted)" name="bell" />
                           </div>
                           <div class="notification-title-row">
-                            <div class="notification-title">
-                              <span v-if="notification.type === 'SONG_SELECTED'">{{ locale.notificationTypes.SONG_SELECTED }}</span>
-                              <span v-else-if="notification.type === 'SONG_PLAYED'"
-                                >{{ locale.notificationTypes.SONG_PLAYED }}</span
-                              >
-                              <span v-else-if="notification.type === 'SONG_VOTED'">{{ locale.notificationTypes.SONG_VOTED }}</span>
-                              <span v-else-if="notification.type === 'SONG_REJECTED'"
-                                >{{ locale.notificationTypes.SONG_REJECTED }}</span
-                              >
-                              <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
-                                {{ locale.notificationTypes.COLLABORATION_INVITE }}
-                                <span
-                                  v-if="notification.handled"
-                                  :class="[
-                                    'status-tag',
-                                    notification.status === 'ACCEPTED'
-                                      ? 'accepted'
-                                      : notification.status === 'INVALID'
-                                        ? 'invalid'
-                                        : 'rejected'
-                                  ]"
+                            <div class="notification-heading-row">
+                              <div class="notification-title">
+                                <span v-if="notification.type === 'SONG_SELECTED'">{{ locale.notificationTypes.SONG_SELECTED }}</span>
+                                <span v-else-if="notification.type === 'SONG_PLAYED'"
+                                  >{{ locale.notificationTypes.SONG_PLAYED }}</span
                                 >
-                                  {{
-                                    notification.status === 'ACCEPTED'
-                                      ? locale.inviteStatus.accepted
-                                      : notification.status === 'INVALID'
-                                        ? locale.inviteStatus.invalid
-                                        : locale.inviteStatus.rejected
-                                  }}
+                                <span v-else-if="notification.type === 'SONG_VOTED'">{{ locale.notificationTypes.SONG_VOTED }}</span>
+                                <span v-else-if="notification.type === 'SONG_REJECTED'"
+                                  >{{ locale.notificationTypes.SONG_REJECTED }}</span
+                                >
+                                <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
+                                  {{ locale.notificationTypes.COLLABORATION_INVITE }}
+                                  <span
+                                    v-if="notification.handled"
+                                    :class="[
+                                      'status-tag',
+                                      notification.status === 'ACCEPTED'
+                                        ? 'accepted'
+                                        : notification.status === 'INVALID'
+                                          ? 'invalid'
+                                          : 'rejected'
+                                    ]"
+                                  >
+                                    {{
+                                      notification.status === 'ACCEPTED'
+                                        ? locale.inviteStatus.accepted
+                                        : notification.status === 'INVALID'
+                                          ? locale.inviteStatus.invalid
+                                          : locale.inviteStatus.rejected
+                                    }}
+                                  </span>
                                 </span>
-                              </span>
-                              <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
-                                >{{ locale.notificationTypes.COLLABORATION_RESPONSE }}</span
+                                <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
+                                  >{{ locale.notificationTypes.COLLABORATION_RESPONSE }}</span
+                                >
+                                <span v-else>{{ locale.notificationTypes.SYSTEM }}</span>
+                                <span v-if="!notification.read" class="unread-indicator" />
+                              </div>
+                              <span
+                                class="notification-read-status"
+                                :class="notification.read ? 'is-read' : 'is-unread'"
                               >
-                              <span v-else>{{ locale.notificationTypes.SYSTEM }}</span>
-                              <span v-if="!notification.read" class="unread-indicator" />
+                                <Icon :size="14" name="eye" />
+                                {{ notification.read ? locale.read : locale.unread }}
+                              </span>
                             </div>
                             <div class="notification-time">
                               {{ formatNotificationTime(notification.createdAt) }}
+                            </div>
+                            <div class="notification-sender">
+                              <Icon :size="13" aria-hidden="true" name="user" />
+                              <span>{{ locale.sender }}：{{ getNotificationSenderName(notification) }}</span>
                             </div>
                           </div>
                         </div>
@@ -1293,6 +1306,11 @@ const getNotificationTypeLabel = (type) =>
   locale.value?.notificationTypes?.[type] ||
   locale.value?.notificationTypes?.SYSTEM ||
   type
+
+const getNotificationSenderName = (notification) =>
+  notification?.sender?.name?.trim() ||
+  notification?.sender?.username?.trim() ||
+  locale.value.systemSender
 
 // 只有管理员手动发送的通知才允许 Markdown 渲染
 const isAdminManualNotification = (notification) => notification?.source === 'ADMIN_MANUAL'
@@ -3047,15 +3065,58 @@ if (
   min-width: 0;
 }
 
+.notification-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .notification-title {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.notification-read-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.notification-read-status.is-read {
+  border-color: var(--success-20);
+  background: var(--success-10);
+  color: var(--color-success-light);
+}
+
+.notification-read-status.is-unread {
+  border-color: var(--warning-20);
+  background: var(--warning-10);
+  color: var(--color-warning-light);
 }
 
 .notification-time {
+  margin-top: 0.4rem;
   font-size: 0.75rem;
+  color: var(--overlay-40);
+}
+
+.notification-sender {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
   color: var(--overlay-40);
 }
 
@@ -3067,6 +3128,16 @@ if (
   color: var(--overlay-70);
   font-size: 0.875rem;
   line-height: 1.6;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.notification-text.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.notification-text.markdown-body > :last-child {
+  margin-bottom: 0;
 }
 
 .notification-card-actions {
