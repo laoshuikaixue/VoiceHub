@@ -21,6 +21,7 @@ import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { z } from 'zod'
+import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
 
 type SongRequestUser = {
   id: number
@@ -484,6 +485,21 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
         console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
       }
     }
+
+    await recordAdminOperation(event, {
+      actor: user,
+      action: 'SONG.REQUEST_CREATE',
+      targetType: 'SONG',
+      targetId: song.id,
+      targetLabel: `${song.title} - ${song.artist}`,
+      result: 'SUCCESS',
+      summary: '用户提交歌曲请求',
+      changes: {
+        provider: song.musicPlatform,
+        semester: song.semester,
+        count: notificationsToSend.length
+      }
+    })
 
     return song
   } catch (error: any) {

@@ -1,4 +1,5 @@
 import { formatPlayTime } from '../../../utils/native_common'
+import { recordDependencyCall } from '~~/server/utils/operations-metrics'
 
 /**
  * 咪咕网页 v5 搜索接口
@@ -132,6 +133,8 @@ export default defineEventHandler(async (event) => {
   const str = query.str as string
   const page = parseInt((query.page as string) || '1')
   const limit = parseInt((query.limit as string) || '30')
+  let fallbacks = 0
+  const startedAt = Date.now()
 
   if (!str) {
     throw createError({ statusCode: 400, message: 'Missing search query' })
@@ -142,10 +145,13 @@ export default defineEventHandler(async (event) => {
     try {
       result = await searchPC(str, page, limit)
     } catch (err) {
+      fallbacks += 1
       console.warn('[mg.get] 咪咕网页 v5 接口请求失败，回退到移动端接口:', err)
       result = await searchMobile(str, page, limit)
     }
 
+    const list = result?.list || []
+    recordDependencyCall('migu', { success: list.length > 0, emptyResult: list.length === 0, durationMs: Date.now() - startedAt, fallbacks })
     return {
       ...result,
       page,
@@ -153,6 +159,7 @@ export default defineEventHandler(async (event) => {
       source: 'mg'
     }
   } catch (err: any) {
+    recordDependencyCall('migu', { success: false, semanticFailure: true, durationMs: Date.now() - startedAt, fallbacks, error: err?.message || String(err) })
     console.error('[mg.get] 咪咕搜索失败:', err)
     throw createError({
       statusCode: err.statusCode || 500,

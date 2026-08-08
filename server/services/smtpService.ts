@@ -5,6 +5,7 @@ import { and, eq, isNotNull } from 'drizzle-orm'
 import { getSiteTitle } from '~~/server/utils/siteUtils'
 import { formatIPForEmail } from '~~/server/utils/ip-utils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { recordNotificationDelivery } from '~~/server/utils/operations-metrics'
 
 const HTML_ESCAPE_MAP: Record<string, string> = {
   '&': '&amp;',
@@ -350,6 +351,7 @@ export class SmtpService {
 
     try {
       const result = await this.transporter!.sendMail(mailOptions)
+      recordNotificationDelivery('smtp', 'accepted')
       console.log(`邮件发送成功: ${result.messageId}`)
       return true
     } catch (error: any) {
@@ -371,6 +373,7 @@ export class SmtpService {
             }
           }
           const result = await this.transporter!.sendMail(retryMailOptions)
+          recordNotificationDelivery('smtp', 'accepted')
           console.log(`重试发送成功: ${result.messageId}`)
           return true
         } catch (retryError) {
@@ -379,6 +382,7 @@ export class SmtpService {
         }
       }
 
+      recordNotificationDelivery('smtp', 'failure')
       console.error('发送邮件失败:', error)
       throw error
     }

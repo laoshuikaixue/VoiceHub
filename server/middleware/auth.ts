@@ -14,6 +14,7 @@ import {
 } from '../utils/auth-route-policy'
 import { getPasswordSetupState } from '../utils/initial-password-policy'
 import { createApiError } from '../utils/apiError'
+import { syncAuthenticatedUserSession } from '../services/userSessionService'
 
 function clearAuthCookie(event: H3Event) {
   setCookie(event, 'auth-token', '', {
@@ -235,6 +236,18 @@ export default defineEventHandler(async (event) => {
       emailVerified: user.emailVerified,
       requirePasswordChange,
       ...passwordSetupState
+    }
+
+    const sessionActive = await syncAuthenticatedUserSession(event, decoded, user)
+    if (!sessionActive) {
+      delete event.context.user
+      clearAuthCookie(event)
+      return sendError(
+        event,
+        createApiError(401, 'AUTH_SESSION_EXPIRED', '当前会话已被管理员下线，请重新登录', {
+          invalidToken: true
+        })
+      )
     }
 
     // 认证完成前只允许维持登录态和完成改密所需的接口。

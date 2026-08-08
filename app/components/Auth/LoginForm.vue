@@ -241,11 +241,12 @@
         </div>
       </div>
 
-      <div v-show="showCaptcha" class="form-group">
+      <div v-if="isSiteConfigLoaded && showCaptcha" class="form-group">
         <TurnstileWidget
           v-if="captchaProvider === 'turnstile'"
           ref="turnstileRef"
           v-model="turnstileToken"
+          :config-ready="isSiteConfigLoaded"
         />
         <CaptchaInput
           v-else
@@ -270,7 +271,7 @@
         <span class="error-message">{{ error }}</span>
       </div>
 
-      <button :disabled="loading" class="submit-btn" type="submit">
+      <button :disabled="loading || isTurnstilePending" class="submit-btn" type="submit">
         <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
           <circle
             cx="12"
@@ -353,7 +354,7 @@ import CaptchaInput from './CaptchaInput.vue'
 import TurnstileWidget from './TurnstileWidget.vue'
 import { useLocale } from '~/utils/locale'
 
-const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
+const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, isLoaded: isSiteConfigLoaded } = useSiteConfig()
 const { auth: authLocale } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
@@ -379,6 +380,10 @@ const showCaptcha = computed(() => {
   // 否则根据配置显示
   if (!captchaEnabled.value) return false
   return captchaProvider.value === 'turnstile'
+})
+
+const isTurnstilePending = computed(() => {
+  return !isSiteConfigLoaded.value || (showCaptcha.value && captchaProvider.value === 'turnstile' && !turnstileToken.value)
 })
 
 const getFormTitle = computed(() => {
@@ -505,6 +510,8 @@ watch(showCreateMode, async (enabled) => {
 })
 
 const handleLogin = async () => {
+  if (isTurnstilePending.value) return
+
   if (!username.value || !password.value) {
     error.value = locale.value.fullLoginInfo
     return

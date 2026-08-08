@@ -765,10 +765,15 @@ VoiceHub/
 │   │   │   ├── CardCodesManager.vue   # 点歌券管理
 │   │   │   ├── DataAnalysisPanel.vue  # 数据分析面板
 │   │   │   ├── DatabaseManager.vue    # 数据库管理
+│   │   │   ├── DrilldownLink.vue      # 运维诊断钻取链接
 │   │   │   ├── EmailTemplateManager.vue # 邮件模板管理
 │   │   │   ├── NotificationHistory.vue # 通知发送历史与用户已读明细
 │   │   │   ├── NotificationSender.vue # 通知发送管理
 │   │   │   ├── OAuthConfigManager.vue # OAuth 配置管理
+│   │   │   ├── OperationsDashboard.vue # 运维监控面板
+│   │   │   ├── UserActivityPanel.vue # 用户活动与在线会话面板
+│   │   │   ├── Ops/                     # 运维看板通用展示组件
+│   │   │   │   └── OpsPanel.vue          # 统一状态面板壳
 │   │   │   ├── OverviewDashboard.vue  # 管理概览仪表板
 │   │   │   ├── PlayTimeManager.vue    # 播放时间管理
 │   │   │   ├── ProviderConfigSection.vue # OAuth 提供商配置组件
@@ -928,6 +933,7 @@ VoiceHub/
 │   │   ├── auth.client.ts      # 客户端认证插件
 │   │   ├── auth.server.ts      # 服务端认证插件
 │   │   ├── locale.ts           # 语言初始化与SSR同步插件
+│   │   ├── session-heartbeat.client.ts # 登录会话活动心跳
 │   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
@@ -972,6 +978,7 @@ VoiceHub/
 │       └── url.ts             # URL处理工具
 ├── server/                # 服务端代码
 │   ├── api/                # API路由
+│   │   ├── metrics.get.ts   # Prometheus 文本格式指标出口
 │   │   ├── admin/          # 管理员API
 │   │   │   ├── api-keys/            # API密钥管理API
 │   │   │   │   ├── [id].delete.ts   # 删除API密钥
@@ -999,6 +1006,14 @@ VoiceHub/
 │   │   │   │   ├── test-s3.post.ts     # 测试 S3 连接
 │   │   │   │   ├── test-telegram.post.ts # 测试 Telegram Bot
 │   │   │   │   ├── test-webdav.post.ts  # 测试 WebDAV 连接
+│   │   │   ├── operations/          # 运维监控 API
+│   │   │   │   └── metrics.get.ts   # 管理员运行指标快照
+│   │   │   ├── operation-logs/      # 管理操作审计查询 API
+│   │   │   │   ├── [id].get.ts      # 获取操作记录详情
+│   │   │   │   └── index.get.ts     # 分页查询操作记录
+│   │   │   ├── user-activity/       # 用户活动与在线会话 API
+│   │   │   │   ├── index.get.ts     # 查询会话统计与列表
+│   │   │   │   └── sessions/[id].delete.ts # 强制下线单个会话
 │   │   │   │   └── upload.post.ts   # 上传备份文件
 │   │   │   ├── blacklist/           # 黑名单管理API
 │   │   │   │   ├── [id].delete.ts   # 删除黑名单项
@@ -1256,9 +1271,11 @@ VoiceHub/
 │   ├── plugins/            # 服务端插件
 │   │   ├── 00.sentry.ts    # Sentry错误追踪插件
 │   │   ├── 01.pre-warm-ssr.ts # SSR预热插件
+│   │   ├── 02.operations-metrics.ts # 运行指标采集插件
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   └── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   ├── services/           # 业务服务层
+│   │   ├── adminOperationLogService.ts # 管理操作审计写入与脱敏服务
 │   │   ├── apiLogService.ts # API日志服务
 │   │   ├── autoBackupService.ts # 自动备份服务
 │   │   ├── cardCodeDeleteService.ts # 点歌券删除服务
@@ -1270,6 +1287,7 @@ VoiceHub/
 │   │   ├── securityService.ts # 安全服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
+│   │   ├── userSessionService.ts # 用户会话采集与撤销服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
@@ -1298,6 +1316,7 @@ VoiceHub/
 │   │   ├── oauth-strategies.ts # OAuth策略配置
 │   │   ├── oauth-token.ts  # OAuth令牌工具
 │   │   ├── oauth.ts        # OAuth通用工具
+│   │   ├── operations-metrics.ts # 进程内运行指标聚合
 │   │   ├── permissions.js  # 权限系统配置
 │   │   ├── qq_music_sdk.ts # QQ音乐SDK调用封装
 │   │   ├── rateLimiter.ts  # 请求速率限制工具
