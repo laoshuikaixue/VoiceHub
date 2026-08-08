@@ -3,17 +3,17 @@
     class="flex flex-col space-y-8 pb-12 lg:pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
   >
     <div class="flex flex-col space-y-2">
-      <h2 class="text-2xl font-bold tracking-tight text-zinc-100">{{ locale.title }}</h2>
-      <p class="text-sm text-zinc-500">{{ locale.desc }}</p>
+      <h2 class="text-2xl font-bold tracking-tight text-text-primary">{{ locale.title }}</h2>
+      <p class="text-sm text-text-tertiary">{{ locale.desc }}</p>
     </div>
 
     <!-- 权限检查 -->
     <div
       v-if="!canPrintSchedule"
-      class="flex flex-col items-center justify-center py-20 bg-zinc-900/50 rounded-xl border border-zinc-800"
+      class="flex flex-col items-center justify-center py-20 bg-bg-secondary-50 rounded-xl border border-border-secondary"
     >
       <div
-        class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-4"
+        class="w-16 h-16 bg-error-10 rounded-full flex items-center justify-center text-error mb-4"
       >
         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10" />
@@ -21,24 +21,24 @@
           <path d="m9 9 6 6" />
         </svg>
       </div>
-      <h3 class="text-lg font-bold text-zinc-100">{{ locale.noPermissionTitle }}</h3>
-      <p class="text-zinc-500 mt-2">{{ locale.noPermissionDesc }}</p>
+      <h3 class="text-lg font-bold text-text-primary">{{ locale.noPermissionTitle }}</h3>
+      <p class="text-text-tertiary mt-2">{{ locale.noPermissionDesc }}</p>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-auto">
       <!-- 设置面板 -->
       <div class="lg:col-span-4 flex flex-col gap-6 h-auto">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
+          class="bg-bg-secondary-40 border border-border-secondary rounded-xl p-6 space-y-6 shadow-lg flex flex-col h-auto"
         >
-          <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100 shrink-0">
-            <Layout class="w-4 h-4 text-blue-500" /> {{ locale.settingsTitle }}
+          <h3 class="text-lg font-bold flex items-center gap-2 text-text-primary shrink-0">
+            <Layout class="w-4 h-4 text-primary" /> {{ locale.settingsTitle }}
           </h3>
 
           <div class="space-y-5 pr-2">
             <!-- 纸张大小 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
                 >{{ locale.paperSize }}</label
               >
               <CustomSelect
@@ -51,7 +51,7 @@
 
             <!-- 页面方向 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
                 >{{ locale.orientation }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -59,8 +59,8 @@
                   :class="[
                     'py-2.5 rounded-lg text-sm font-bold transition-all',
                     settings.orientation === 'portrait'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
-                      : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
+                      : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="settings.orientation = 'portrait'"
                 >
@@ -70,8 +70,8 @@
                   :class="[
                     'py-2.5 rounded-lg text-sm font-bold transition-all',
                     settings.orientation === 'landscape'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
-                      : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
+                      : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="settings.orientation = 'landscape'"
                 >
@@ -82,7 +82,7 @@
 
             <!-- 排版样式 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
                 >{{ locale.layoutStyle }}</label
               >
               <div class="grid grid-cols-2 gap-2">
@@ -90,8 +90,8 @@
                   :class="[
                     'py-2 rounded-lg text-sm font-bold transition-all',
                     settings.layoutStyle === 'classic'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
-                      : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
+                      : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="selectClassicLayout"
                 >
@@ -101,8 +101,8 @@
                   :class="[
                     'py-2 rounded-lg text-sm font-bold transition-all',
                     settings.layoutStyle === 'table'
-                      ? 'border border-blue-500/30 bg-blue-600/10 text-blue-400 shadow-sm'
-                      : 'border border-zinc-800 bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                      ? 'border border-primary-30 bg-primary-hover-10 text-primary shadow-sm'
+                      : 'border border-border-secondary bg-bg-primary text-text-tertiary hover:text-text-secondary'
                   ]"
                   @click="selectTableLayout"
                 >
@@ -113,20 +113,20 @@
 
             <!-- 日期范围 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
                 >{{ locale.dateRange }}</label
               >
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
                   v-model="settings.startDate"
                   type="date"
-                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
                   max="9999-12-31"
                 />
                 <input
                   v-model="settings.endDate"
                   type="date"
-                  class="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-colors"
+                  class="bg-bg-primary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-secondary focus:outline-none focus:border-primary-50 transition-colors"
                   max="9999-12-31"
                 />
               </div>
@@ -137,8 +137,8 @@
                   :class="[
                     'px-2 py-1 text-[10px] rounded-md transition-colors border',
                     settings.dateRangePreset === range.value
-                      ? 'bg-blue-600/20 border-blue-500/50 text-blue-400'
-                      : 'bg-zinc-800/50 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                      ? 'bg-primary-hover-20 border-primary-50 text-primary'
+                      : 'bg-bg-tertiary-50 border-border-secondary text-text-tertiary hover:bg-bg-tertiary'
                   ]"
                   @click="setDateRange(range.value)"
                 >
@@ -149,7 +149,7 @@
 
             <!-- 显示内容 -->
             <div class="space-y-3">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
                 >{{ locale.displayContent }}</label
               >
               <div class="grid grid-cols-1 gap-2.5">
@@ -162,19 +162,19 @@
                     :class="[
                       'w-5 h-5 rounded flex items-center justify-center border transition-all',
                       settings[option.key]
-                        ? 'bg-blue-600 border-blue-600'
-                        : 'bg-zinc-950 border-zinc-800 group-hover:border-zinc-700'
+                        ? 'bg-primary-hover border-primary'
+                        : 'bg-bg-primary border-border-secondary group-hover:border-border-tertiary'
                     ]"
                   >
-                    <CheckCircle2 v-if="settings[option.key]" class="w-3 h-3 text-white" />
+                    <CheckCircle2 v-if="settings[option.key]" class="w-3 h-3 text-text-primary" />
                   </div>
                   <input v-model="settings[option.key]" type="checkbox" class="hidden" />
                   <span
                     :class="[
                       'text-sm font-medium transition-colors',
                       settings[option.key]
-                        ? 'text-zinc-200'
-                        : 'text-zinc-500 group-hover:text-zinc-400'
+                        ? 'text-text-primary'
+                        : 'text-text-tertiary group-hover:text-text-tertiary'
                     ]"
                     >{{ option.label }}</span
                   >
@@ -188,19 +188,19 @@
                     :class="[
                       'w-5 h-5 rounded flex items-center justify-center border transition-all',
                       settings.showSchoolLogo
-                        ? 'bg-blue-600 border-blue-600'
-                        : 'bg-zinc-950 border-zinc-800 group-hover:border-zinc-700'
+                        ? 'bg-primary-hover border-primary'
+                        : 'bg-bg-primary border-border-secondary group-hover:border-border-tertiary'
                     ]"
                   >
-                    <CheckCircle2 v-if="settings.showSchoolLogo" class="w-3 h-3 text-white" />
+                    <CheckCircle2 v-if="settings.showSchoolLogo" class="w-3 h-3 text-text-primary" />
                   </div>
                   <input v-model="settings.showSchoolLogo" type="checkbox" class="hidden" />
                   <span
                     :class="[
                       'text-sm font-medium transition-colors',
                       settings.showSchoolLogo
-                        ? 'text-zinc-200'
-                        : 'text-zinc-500 group-hover:text-zinc-400'
+                        ? 'text-text-primary'
+                        : 'text-text-tertiary group-hover:text-text-tertiary'
                     ]"
                     >{{ locale.schoolLogo }}</span
                   >
@@ -210,28 +210,28 @@
 
             <!-- 备注 -->
             <div class="space-y-2">
-              <label class="text-[11px] font-black uppercase text-zinc-600 tracking-wider"
+              <label class="text-[11px] font-black uppercase text-text-disabled tracking-wider"
                 >{{ locale.remark }}</label
               >
               <textarea
                 v-model="settings.remark"
                 :placeholder="locale.remarkPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:outline-none text-zinc-300 min-h-[80px] resize-none focus:border-blue-500/50 transition-colors"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm focus:outline-none text-text-secondary min-h-[80px] resize-none focus:border-primary-50 transition-colors"
               />
             </div>
           </div>
 
           <!-- 操作按钮 -->
-          <div class="space-y-2 pt-4 border-t border-zinc-800 shrink-0">
+          <div class="space-y-2 pt-4 border-t border-border-secondary shrink-0">
             <button
-              class="w-full flex items-center justify-center gap-2 py-3 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 text-sm font-bold rounded-lg border border-zinc-700 transition-all"
+              class="w-full flex items-center justify-center gap-2 py-3 bg-bg-tertiary-80 hover:bg-bg-quaternary text-text-secondary text-sm font-bold rounded-lg border border-border-tertiary transition-all"
               @click="refreshPreview"
             >
               <RefreshCw class="w-4 h-4" /> {{ locale.refreshPreview }}
             </button>
             <button
               :disabled="isPrinting"
-              class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all"
+              class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary text-sm font-bold rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all"
               @click="printSchedule"
             >
               <Printer class="w-4 h-4" /> {{ isPrinting ? locale.printing : locale.print }}
@@ -239,14 +239,14 @@
             <div class="grid grid-cols-2 gap-2">
               <button
                 :disabled="isExporting"
-                class="flex items-center justify-center gap-2 py-2.5 bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-emerald-500/20 transition-all"
+                class="flex items-center justify-center gap-2 py-2.5 bg-success-10 text-success hover:bg-success-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-success-20 transition-all"
                 @click="exportPDF"
               >
                 <FileText class="w-3.5 h-3.5" /> {{ isExporting ? locale.exporting : locale.exportPdf }}
               </button>
               <button
                 :disabled="isExportingImage"
-                class="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-amber-500/20 transition-all"
+                class="flex items-center justify-center gap-2 py-2.5 bg-warning-10 text-warning hover:bg-warning-20 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold rounded-lg border border-warning-20 transition-all"
                 @click="exportImage"
               >
                 <ImageIcon class="w-3.5 h-3.5" /> {{ isExportingImage ? locale.exporting : locale.exportImage }}
@@ -259,29 +259,29 @@
       <!-- 预览区域 -->
       <div class="lg:col-span-8 flex flex-col gap-4 h-[700px] lg:h-0 lg:min-h-full mb-8 lg:mb-0">
         <div
-          class="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
+          class="bg-bg-secondary-40 border border-border-secondary rounded-xl overflow-hidden flex flex-col h-full shadow-lg"
         >
-          <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
-            <h3 class="text-lg font-bold flex items-center gap-2 text-zinc-100">
-              <AlignLeft class="w-4.5 h-4.5 text-zinc-500" /> {{ locale.previewArea }}
+          <div class="px-6 py-5 border-b border-border-secondary flex items-center justify-between">
+            <h3 class="text-lg font-bold flex items-center gap-2 text-text-primary">
+              <AlignLeft class="w-4.5 h-4.5 text-text-tertiary" /> {{ locale.previewArea }}
             </h3>
             <div class="flex items-center gap-2 text-xs font-bold">
-              <span class="text-zinc-400">{{ formatLocale(locale.songCount, '', filteredSchedules.length) }}</span>
+              <span class="text-text-tertiary">{{ formatLocale(locale.songCount, '', filteredSchedules.length) }}</span>
               <span
                 v-if="schedules.length === 0"
-                class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20"
+                class="px-2 py-0.5 rounded bg-error-10 text-error border border-error-20"
                 >{{ locale.noData }}</span
               >
               <span
                 v-else-if="filteredSchedules.length === 0"
-                class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                class="px-2 py-0.5 rounded bg-warning-10 text-warning border border-warning-20"
                 >{{ locale.filtered }}</span
               >
             </div>
           </div>
 
           <div
-            class="flex-1 bg-zinc-950/50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
+            class="flex-1 bg-bg-primary-50 p-6 md:p-12 overflow-auto custom-scrollbar flex items-start"
           >
             <!-- 纸张预览 -->
             <div
@@ -296,7 +296,7 @@
                 <!-- 页面头部 -->
                 <div class="page-header">
                   <div class="logo-section">
-                    <img :src="logoUrl" alt="VoiceHub Logo" class="logo" />
+                    <img src="/assets/logo.png" alt="VoiceHub Logo" class="logo" />
                     <!-- 竖线分割 -->
                     <div class="logo-divider" />
                     <!-- 学校logo -->
@@ -438,7 +438,6 @@ import { useLocale } from '~/utils/locale'
 // 导入子组件
 import ScheduleItemPrint from './ScheduleItemPrint.vue'
 import ScheduleTablePrint from './ScheduleTablePrint.vue'
-import logoPng from '~~/public/images/logo.png'
 
 // 学期管理
 import { useSemesters } from '~/composables/useSemesters'
@@ -467,8 +466,7 @@ const { siteTitle, schoolLogoPrintUrl, schoolLogoPrintDisplayUrl, initSiteConfig
 // 配置
 const config = useRuntimeConfig()
 
-// Logo URL处理
-const logoUrl = computed(() => logoPng)
+
 
 // 响应式数据
 const schedules = ref([])
@@ -1418,8 +1416,8 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
       top: 0;
       z-index: -9999;
       opacity: 0;
-      background: white;
-      color: black;
+      background: #ffffff;
+      color: #1a1a1a;
       width: ${targetWidth}px;
       padding: 40px;
       box-sizing: border-box;
@@ -1458,9 +1456,9 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
   const allElements = clonedPage.querySelectorAll('*')
   allElements.forEach((el) => {
     if (el.style) {
-      el.style.color = 'black !important'
-      el.style.background = 'white !important'
-      el.style.backgroundColor = 'white !important'
+      el.style.color = '#1a1a1a !important'
+      el.style.background = '#ffffff !important'
+      el.style.backgroundColor = '#ffffff !important'
     }
 
     if (
@@ -1470,8 +1468,8 @@ const generateAndDownloadImage = async (sourceElement, filename, preProcessCallb
         el.classList.contains('page-footer') ||
         el.classList.contains('schedule-content'))
     ) {
-      el.style.setProperty('background', 'white', 'important')
-      el.style.setProperty('background-color', 'white', 'important')
+      el.style.setProperty('background', '#ffffff', 'important')
+      el.style.setProperty('background-color', '#ffffff', 'important')
     }
   })
 
@@ -1759,7 +1757,7 @@ watch(
 /* 打印页面样式 */
 .print-page {
   background: #ffffff;
-  color: #000000;
+  color: #1a1a1a;
   width: 100%;
   margin: 0 auto;
   padding: 30px;
@@ -1775,7 +1773,7 @@ watch(
   align-items: flex-start;
   margin-bottom: 32px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #e5e5e5;
+  border-bottom: 2px solid #d1d5db;
 }
 
 .logo-section {
@@ -1794,7 +1792,7 @@ watch(
 .logo-divider {
   width: 2px;
   height: 60px;
-  background: linear-gradient(to bottom, #ddd, #999, #ddd);
+  background: linear-gradient(to bottom, #d1d5db, #636366, #d1d5db);
   border-radius: 1px;
   margin: 0 4px;
 }
@@ -1813,19 +1811,19 @@ watch(
   font-size: 24px;
   font-weight: normal;
   margin: 0 0 4px 0;
-  color: #000;
+  color: #1a1a1a;
 }
 
 .title-section h2 {
   font-size: 18px;
   font-weight: 500;
   margin: 0;
-  color: #666;
+  color: #636366;
 }
 
 .date-info {
   font-size: 14px;
-  color: #666;
+  color: #636366;
   text-align: right;
   display: flex;
   align-items: flex-start;
@@ -1845,7 +1843,7 @@ watch(
 .no-data-message {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: #636366;
   column-span: all;
 }
 
@@ -1853,7 +1851,7 @@ watch(
   width: 64px;
   height: 64px;
   margin: 0 auto 20px;
-  color: #ccc;
+  color: #d1d5db;
 }
 
 .no-data-icon svg {
@@ -1865,7 +1863,7 @@ watch(
   font-size: 18px;
   font-weight: 500;
   margin: 0 0 12px 0;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .no-data-message p {
@@ -1885,28 +1883,28 @@ watch(
   font-weight: bold;
   margin: 0 0 12px 0;
   padding: 8px 12px;
-  border-bottom: 2px solid #ddd;
-  background: #f8f9fa;
-  color: #333;
+  border-bottom: 2px solid #d1d5db;
+  background: #f3f4f6;
+  color: #1a1a1a;
   border-radius: 4px 4px 0 0;
 }
 
 .playtime-group .group-title {
-  background: #e3f2fd;
-  border-bottom-color: #2196f3;
-  color: #1565c0;
+  background: #f8f9fa;
+  border-bottom-color: #0b5afe;
+  color: #2563eb;
 }
 
 .date-group .group-title {
-  background: #f3e5f5;
-  border-bottom-color: #9c27b0;
-  color: #7b1fa2;
+  background: #f8f9fa;
+  border-bottom-color: #8b5cf6;
+  color: #7c3aed;
 }
 
 .group-count {
   font-size: 14px;
   font-weight: normal;
-  color: #666;
+  color: #636366;
   margin-left: 8px;
 }
 
@@ -1923,16 +1921,16 @@ watch(
   font-weight: bold;
   margin: 0 0 8px 0;
   padding: 6px 10px;
-  background: #f0f8ff;
-  border-left: 3px solid #2196f3;
-  color: #1565c0;
+  background: #f8f9fa;
+  border-left: 3px solid #0b5afe;
+  color: #2563eb;
   border-radius: 0 4px 4px 0;
 }
 
 .playtime-count {
   font-size: 12px;
   font-weight: normal;
-  color: #666;
+  color: #636366;
   margin-left: 6px;
 }
 
@@ -1949,9 +1947,9 @@ watch(
   justify-content: space-between;
   align-items: flex-start;
   padding-top: 16px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid #d1d5db;
   font-size: 12px;
-  color: #666;
+  color: #636366;
 }
 
 .footer-left {
@@ -1966,7 +1964,7 @@ watch(
 
 .remark-text {
   font-size: 11px;
-  color: #555;
+  color: #636366;
   max-width: 400px;
   word-wrap: break-word;
   line-height: 1.3;

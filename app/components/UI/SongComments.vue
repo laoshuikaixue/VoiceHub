@@ -21,7 +21,7 @@
     </div>
 
     <div v-else-if="isLoading && !commentItems.length" class="comments-state">
-      <div class="loading-spinner" />
+      <AppSpinner :size="24" />
       <p>{{ locale.loading }}</p>
     </div>
 
@@ -95,6 +95,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { fetchNetease } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
@@ -403,7 +404,7 @@ watch(
   min-height: 0;
   display: flex;
   flex-direction: column;
-  color: #ffffff;
+  color: var(--text-primary);
   overflow: hidden;
 }
 
@@ -418,14 +419,14 @@ watch(
 
 .comments-eyebrow {
   margin: 0 0 0.25rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--overlay-55);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .comments-title {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -439,15 +440,15 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--overlay-85);
+  background: var(--overlay-12);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .refresh-button:hover:not(:disabled) {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  background: var(--overlay-20);
 }
 
 .refresh-button:disabled {
@@ -461,7 +462,7 @@ watch(
   gap: 0.75rem;
   flex-shrink: 0;
   padding-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--overlay-62);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -485,7 +486,7 @@ watch(
 }
 
 .comments-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--overlay-22);
   border-radius: 999px;
 }
 
@@ -493,9 +494,9 @@ watch(
   display: flex;
   gap: 0.85rem;
   padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
@@ -509,8 +510,8 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--overlay-12);
+  color: var(--overlay-70);
 }
 
 .avatar img {
@@ -537,21 +538,21 @@ watch(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--overlay-88);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .comment-time {
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--overlay-42);
   font-size: 0.75rem;
   font-weight: 600;
 }
 
 .comment-content {
   margin: 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--overlay-78);
   font-size: 0.95rem;
   line-height: 1.65;
   white-space: pre-wrap;
@@ -562,8 +563,8 @@ watch(
   margin-top: 0.7rem;
   padding: 0.65rem 0.8rem;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.58);
-  background: rgba(0, 0, 0, 0.18);
+  color: var(--overlay-58);
+  background: var(--surface-card-bg-soft);
   font-size: 0.82rem;
   line-height: 1.55;
   word-break: break-word;
@@ -574,7 +575,7 @@ watch(
   align-items: center;
   gap: 0.65rem;
   margin-top: 0.65rem;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--overlay-52);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -594,7 +595,7 @@ watch(
 
 .liked-count:hover:not(:disabled),
 .liked-count.liked {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--overlay-92);
 }
 
 .liked-count:hover:not(:disabled) {
@@ -607,7 +608,7 @@ watch(
 }
 
 .hot-label {
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--overlay-86);
 }
 
 .comments-state {
@@ -618,7 +619,7 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--overlay-62);
   text-align: center;
 }
 
@@ -632,8 +633,8 @@ watch(
 .load-more-button {
   border: 0;
   border-radius: 8px;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+  background: var(--overlay-14);
   cursor: pointer;
   font-weight: 700;
   transition: all 0.2s ease;
@@ -652,27 +653,12 @@ watch(
 
 .state-action:hover,
 .load-more-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--overlay-22);
 }
 
 .load-more-button:disabled {
   opacity: 0.6;
   cursor: wait;
-}
-
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.18);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 1024px) {

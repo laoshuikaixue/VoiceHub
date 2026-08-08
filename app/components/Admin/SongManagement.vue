@@ -4,25 +4,25 @@
     <div class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
         <div class="space-y-1">
-          <h2 class="text-3xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
+          <h2 class="text-3xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
           <div class="flex items-center gap-6 mt-4">
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                 >{{ locale.stats.total }}</span
               >
-              <span class="text-sm font-bold text-zinc-300">{{ baseFilteredSongs.length }}</span>
+              <span class="text-sm font-bold text-text-secondary">{{ baseFilteredSongs.length }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                 >{{ locale.stats.played }}</span
               >
-              <span class="text-sm font-bold text-emerald-500">{{ playedCount }}</span>
+              <span class="text-sm font-bold text-success">{{ playedCount }}</span>
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+              <span class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                 >{{ locale.stats.pending }}</span
               >
-              <span class="text-sm font-bold text-blue-500">{{ pendingCount }}</span>
+              <span class="text-sm font-bold text-primary">{{ pendingCount }}</span>
             </div>
           </div>
         </div>
@@ -39,34 +39,34 @@
           >
             <div
               v-if="selectedSongs.length > 0"
-              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-zinc-900/90 border border-zinc-800 rounded-lg backdrop-blur-xl shadow-2xl"
+              class="hidden sm:flex flex-row items-center gap-2 p-1.5 bg-bg-secondary-90 border border-border-secondary rounded-lg backdrop-blur-xl shadow-2xl"
             >
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-success text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="openDownloadDialog"
               >
-                <Download :size="14" class="text-emerald-500/70" /> {{ locale.actions.download }} ({{
+                <Download :size="14" class="text-success-70" /> {{ locale.actions.download }} ({{
                   selectedSongs.length
                 }})
               </button>
               <button
-                class="flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 text-[11px] font-black rounded-lg border border-zinc-700/50 transition-all active:scale-95 uppercase tracking-widest"
+                class="flex items-center justify-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-error text-[11px] font-black rounded-lg border border-border-tertiary-50 transition-all active:scale-95 uppercase tracking-widest"
                 @click="batchDelete"
               >
-                <Trash2 :size="14" class="text-red-500/70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
+                <Trash2 :size="14" class="text-error-70" /> {{ locale.actions.delete }} ({{ selectedSongs.length }})
               </button>
             </div>
           </Transition>
 
           <button
-            class="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-lg transition-all active:scale-95"
+            class="flex items-center gap-2 px-5 py-2.5 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-lg transition-all active:scale-95"
             @click="openAddSongModal"
           >
             <Plus :size="16" /> {{ locale.actions.addManual }}
           </button>
           <button
             :disabled="loading"
-            class="flex items-center gap-2 px-5 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20 transition-all disabled:opacity-50"
+            class="flex items-center gap-2 px-5 py-2.5 bg-primary-hover-10 hover:bg-primary-hover-20 text-primary text-xs font-bold rounded-lg border border-primary-20 transition-all disabled:opacity-50"
             @click="refreshSongs(true)"
           >
             <RotateCcw :size="16" :class="{ 'animate-spin': loading }" /> {{ locale.actions.refresh }}
@@ -76,18 +76,18 @@
 
       <!-- 过滤器栏 -->
       <div
-        class="bg-zinc-900/30 border border-zinc-800/60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
+        class="bg-bg-secondary-30 border border-border-secondary-60 rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center"
       >
         <div class="relative flex-1 group w-full lg:w-auto">
           <Search
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-blue-500 transition-colors"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
             :size="18"
           />
           <input
             v-model="searchQuery"
             type="text"
             :placeholder="locale.searchPlaceholder"
-            class="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800 text-zinc-200"
+            class="w-full bg-bg-primary-50 border border-border-secondary-80 rounded-lg pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary text-text-primary"
           />
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 lg:flex lg:items-center gap-3 w-full lg:w-auto">
@@ -129,51 +129,49 @@
 
     <!-- 歌曲表格 -->
     <div
-      class="bg-zinc-900/10 border border-zinc-800/40 rounded-xl overflow-hidden shadow-2xl relative"
+      class="bg-bg-secondary-10 border border-border-secondary-40 rounded-xl overflow-hidden shadow-2xl relative"
     >
       <!-- 加载遮罩 -->
       <div
         v-if="loading"
-        class="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm z-10 flex items-center justify-center"
+        class="absolute inset-0 bg-bg-primary-40 backdrop-blur-sm z-10 flex items-center justify-center"
       >
         <div class="flex flex-col items-center gap-3">
-          <div
-            class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
-          />
-          <span class="text-xs font-bold text-zinc-400 tracking-widest uppercase">{{ locale.loading }}</span>
+          <AppSpinner :size="32" />
+          <span class="text-xs font-bold text-text-tertiary tracking-widest uppercase">{{ locale.loading }}</span>
         </div>
       </div>
 
       <!-- 表头 -->
       <div
-        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-zinc-800/60 bg-zinc-900/40"
+        class="hidden lg:grid grid-cols-12 gap-4 px-8 py-5 border-b border-border-secondary-60 bg-bg-secondary-40"
       >
         <div class="col-span-1 flex items-center">
           <input
             type="checkbox"
             :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
             @change="toggleSelectAll"
           />
         </div>
-        <div class="col-span-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+        <div class="col-span-4 text-[10px] font-black text-text-disabled uppercase tracking-widest">
           {{ locale.table.songInfo }}
         </div>
-        <div class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+        <div class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest">
           {{ locale.table.requester }}
         </div>
         <div
-          class="col-span-1 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
+          class="col-span-1 text-[10px] font-black text-text-disabled uppercase tracking-widest text-center"
         >
           {{ locale.table.stats }}
         </div>
         <div
-          class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-center"
+          class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest text-center"
         >
           {{ locale.table.status }}
         </div>
         <div
-          class="col-span-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right pr-4"
+          class="col-span-2 text-[10px] font-black text-text-disabled uppercase tracking-widest text-right pr-4"
         >
           {{ locale.table.actions }}
         </div>
@@ -182,44 +180,44 @@
       <!-- 移动端批量操作栏 -->
       <div
         v-if="filteredSongs.length > 0"
-        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-zinc-800/60 bg-zinc-900/40"
+        class="lg:hidden flex items-center justify-between px-6 py-3 border-b border-border-secondary-60 bg-bg-secondary-40"
       >
-        <label class="flex items-center gap-2 text-xs font-bold text-zinc-300 cursor-pointer py-1">
+        <label class="flex items-center gap-2 text-xs font-bold text-text-secondary cursor-pointer py-1">
           <input
             type="checkbox"
             :checked="isAllSelected"
-            class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+            class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
             @change="toggleSelectAll"
           >
           {{ locale.table.selectPage }}
         </label>
-        <span v-if="selectedSongs.length > 0" class="text-xs text-blue-400 font-bold">{{ getLocaleMessage('selectedItems', selectedSongs.length) }}</span>
+        <span v-if="selectedSongs.length > 0" class="text-xs text-primary font-bold">{{ getLocaleMessage('selectedItems', selectedSongs.length) }}</span>
       </div>
 
       <!-- 空状态 -->
       <div
         v-if="filteredSongs.length === 0 && !loading"
-        class="py-20 flex flex-col items-center justify-center text-zinc-500"
+        class="py-20 flex flex-col items-center justify-center text-text-tertiary"
       >
-        <Music :size="48" class="text-zinc-800 mb-4" />
+        <Music :size="48" class="text-text-primary mb-4" />
         <p class="text-sm font-bold">{{ searchQuery ? locale.empty.search : locale.empty.default }}</p>
       </div>
 
       <!-- 列表内容 -->
-      <div v-else class="divide-y divide-zinc-800/40">
+      <div v-else class="divide-y divide-panel-bg-dark-40">
         <div
           v-for="song in paginatedSongs"
           :key="song.id"
           :class="[
             'flex flex-col lg:grid lg:grid-cols-12 gap-4 px-6 lg:px-8 py-5 transition-all lg:items-center group relative',
-            selectedSongs.includes(song.id) ? 'bg-blue-600/5' : 'hover:bg-zinc-800/20'
+            selectedSongs.includes(song.id) ? 'bg-primary-hover-5' : 'hover:bg-bg-tertiary-20'
           ]"
         >
           <div class="hidden lg:flex col-span-1 items-center">
             <input
               type="checkbox"
               :checked="selectedSongs.includes(song.id)"
-              class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+              class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
               @change="toggleSelectSong(song.id)"
             />
           </div>
@@ -231,14 +229,14 @@
               <input
                 type="checkbox"
                 :checked="selectedSongs.includes(song.id)"
-                class="w-5 h-5 rounded-lg border-2 border-zinc-800 bg-zinc-950 accent-blue-600 transition-all cursor-pointer"
+                class="w-5 h-5 rounded-lg border-2 border-border-secondary bg-bg-primary transition-all cursor-pointer"
                 @change="toggleSelectSong(song.id)"
               />
             </label>
             <div
               :class="[
-                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-zinc-800/40 border-zinc-700/30 group-hover:border-zinc-600 cursor-pointer hover:opacity-80',
-                selectedSongs.includes(song.id) ? 'border-blue-500/50' : ''
+                'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-all overflow-hidden bg-bg-tertiary-40 border-border-tertiary-30 group-hover:border-border-tertiary cursor-pointer hover:opacity-80',
+                selectedSongs.includes(song.id) ? 'border-primary-50' : ''
               ]"
               @click.stop="playSong(song)"
             >
@@ -248,15 +246,15 @@
                 class="w-full h-full object-cover"
                 referrerpolicy="no-referrer"
               />
-              <Music v-else :size="20" class="text-zinc-600" />
+              <Music v-else :size="20" class="text-text-disabled" />
             </div>
             <div class="min-w-0">
               <h4
                 :class="[
                   'font-bold transition-colors flex items-center',
                   selectedSongs.includes(song.id)
-                    ? 'text-blue-400'
-                    : 'text-zinc-100 group-hover:text-blue-400'
+                    ? 'text-primary'
+                    : 'text-text-primary group-hover:text-primary'
                 ]"
               >
                 <span
@@ -268,7 +266,7 @@
                 <span v-else class="truncate">{{ song.title }}</span>
                 <button
                   v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all"
+                  class="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all"
                   :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
@@ -276,7 +274,7 @@
                 </button>
                 <span
                   v-if="song.hasSubmissionNote && song.submissionNote"
-                  class="ml-2 text-xs text-blue-400/80 truncate max-w-[200px] cursor-pointer hover:text-blue-400 transition-colors font-normal"
+                  class="ml-2 text-xs text-primary-80 truncate max-w-[200px] cursor-pointer hover:text-primary transition-colors font-normal"
                   :title="locale.actions.viewRemark"
                   @click.stop="openSubmissionRemark(song)"
                 >
@@ -287,9 +285,9 @@
                   }}
                 </span>
               </h4>
-              <p class="text-xs text-zinc-500 font-medium truncate mt-0.5">{{ song.artist }}</p>
+              <p class="text-xs text-text-tertiary font-medium truncate mt-0.5">{{ song.artist }}</p>
               <span
-                class="lg:hidden text-[9px] font-black text-zinc-700 uppercase tracking-wider mt-1 inline-block"
+                class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
                 >{{ formatDate(song.createdAt) }}</span
               >
             </div>
@@ -302,15 +300,15 @@
             <!-- Left side: Requester, Votes, Status -->
             <div class="flex items-center gap-3 lg:contents">
               <div class="col-span-6 lg:col-span-2 flex flex-col lg:items-start min-w-[60px]">
-                <span class="text-xs font-bold text-zinc-400 truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
-                <span v-if="song.user" class="text-[10px] font-bold text-zinc-600 truncate max-w-[100px]"
+                <span class="text-xs font-bold text-text-tertiary truncate max-w-[100px]">{{ song.requester || locale.unknown }}</span>
+                <span v-if="song.user" class="text-[10px] font-bold text-text-disabled truncate max-w-[100px]"
                   >@{{ song.user.username }}</span
                 >
-                <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-blue-500 mt-1">
+                <span v-if="song.preferredPlayTimeId" class="text-[10px] font-bold text-primary mt-1">
                   {{ getLocaleMessage('preferredPlayTime', getPlayTimeName(song.preferredPlayTimeId)) }}
                 </span>
                 <span
-                  class="hidden lg:inline text-[9px] font-black text-zinc-700 uppercase tracking-widest mt-1 opacity-60"
+                  class="hidden lg:inline text-[9px] font-black text-text-secondary uppercase tracking-widest mt-1 opacity-60"
                   >{{ formatDate(song.createdAt) }}</span
                 >
               </div>
@@ -321,12 +319,12 @@
                   :class="[
                     'inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg transition-all',
                     song.voteCount > 0
-                      ? 'bg-pink-500/10 text-pink-500 hover:bg-pink-500/20 cursor-pointer'
-                      : 'bg-zinc-950/30 text-zinc-700 cursor-default'
+                      ? 'bg-color-pink-alpha-10 text-color-pink hover:bg-color-pink-alpha-10 cursor-pointer'
+                      : 'bg-bg-primary-30 text-text-secondary cursor-default'
                   ]"
                   @click="showVoters(song.id)"
                 >
-                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-pink-500/20' : ''" />
+                  <Heart :size="12" :class="song.voteCount > 0 ? 'fill-color-pink-alpha-20' : ''" />
                   {{ song.voteCount || 0 }}
                 </button>
               </div>
@@ -336,10 +334,10 @@
                   :class="[
                     'px-2 py-0.5 text-[10px] font-black rounded-md uppercase tracking-wider',
                     song.played
-                      ? 'bg-emerald-500/10 text-emerald-500'
+                      ? 'bg-success-10 text-success'
                       : song.scheduled
-                        ? 'bg-blue-500/10 text-blue-500'
-                        : 'bg-zinc-800 text-zinc-500'
+                        ? 'bg-primary-10 text-primary'
+                        : 'bg-bg-tertiary text-text-tertiary'
                   ]"
                 >
                   {{ getStatusText(song) }}
@@ -352,7 +350,7 @@
               class="col-span-12 lg:col-span-2 flex items-center justify-end gap-1 lg:gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0 ml-auto"
             >
               <button
-                class="p-2 bg-zinc-800/50 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                class="p-2 bg-bg-tertiary-50 text-primary hover:bg-primary-hover hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.edit"
                 @click="editSong(song)"
               >
@@ -361,7 +359,7 @@
 
               <button
                 v-if="!song.played"
-                class="p-2 bg-zinc-800/50 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                class="p-2 bg-bg-tertiary-50 text-success hover:bg-success hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markPlayed"
                 @click="markAsPlayed(song.id)"
               >
@@ -369,7 +367,7 @@
               </button>
               <button
                 v-else
-                class="p-2 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                class="p-2 bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.markUnplayed"
                 @click="markAsUnplayed(song.id)"
               >
@@ -377,14 +375,14 @@
               </button>
 
               <button
-                class="p-2 bg-zinc-800/50 text-amber-500 hover:bg-amber-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                class="p-2 bg-bg-tertiary-50 text-warning hover:bg-warning hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.reject"
                 @click="rejectSong(song.id)"
               >
                 <X :size="14" />
               </button>
               <button
-                class="p-2 bg-zinc-800/50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-zinc-700/30"
+                class="p-2 bg-bg-tertiary-50 text-error hover:bg-error hover:text-text-primary rounded-xl transition-all border border-border-tertiary-30"
                 :title="locale.actions.deleteSong"
                 @click="deleteSong(song.id)"
               >
@@ -415,22 +413,22 @@
     >
       <div
         v-if="selectedSongs.length > 0"
-        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-zinc-900/95 border border-zinc-800 rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-xl flex items-center justify-between"
+        class="sm:hidden fixed bottom-[70px] left-4 right-4 z-40 bg-bg-secondary-95 border border-border-secondary rounded-2xl p-2 shadow-[0_8px_30px_var(--mobile-table-shadow)] backdrop-blur-xl flex items-center justify-between"
       >
         <div class="px-3 flex flex-col">
-          <span class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{{ locale.selected }}</span>
-          <span class="text-sm font-bold text-blue-400">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
+          <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{ locale.selected }}</span>
+          <span class="text-sm font-bold text-primary">{{ getLocaleMessage('selectedSongs', selectedSongs.length) }}</span>
         </div>
         <div class="flex items-center gap-2">
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 rounded-xl border border-zinc-700/50 transition-all active:scale-95"
+            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-success rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
             @click="openDownloadDialog"
           >
             <Download :size="16" class="mb-1" />
             <span class="text-[9px] font-bold">{{ locale.actions.download }}</span>
           </button>
           <button
-            class="flex flex-col items-center justify-center w-14 h-12 bg-zinc-800 hover:bg-zinc-700 text-red-400 rounded-xl border border-zinc-700/50 transition-all active:scale-95"
+            class="flex flex-col items-center justify-center w-14 h-12 bg-bg-tertiary hover:bg-bg-quaternary text-error rounded-xl border border-border-tertiary-50 transition-all active:scale-95"
             @click="batchDelete"
           >
             <Trash2 :size="16" class="mb-1" />
@@ -475,16 +473,16 @@
     >
       <div
         v-if="showRejectDialog"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       >
         <div
-          class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+          class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
           @click.stop
         >
-          <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-zinc-100">{{ locale.rejectDialog.title }}</h3>
+          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
+            <h3 class="text-xl font-black text-text-primary">{{ locale.rejectDialog.title }}</h3>
             <button
-              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              class="text-text-tertiary hover:text-text-secondary transition-colors"
               @click="cancelReject"
             >
               <X :size="20" />
@@ -492,26 +490,26 @@
           </div>
 
           <div class="p-8 space-y-6">
-            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-lg flex items-center gap-4">
+            <div class="p-5 bg-bg-primary border border-border-secondary rounded-lg flex items-center gap-4">
               <div
-                class="w-10 h-10 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10"
+                class="w-10 h-10 rounded-lg bg-error-10 text-error flex items-center justify-center border border-error-10"
               >
                 <Music :size="18" />
               </div>
               <div>
-                <h4 class="font-bold text-zinc-100 text-sm">{{ rejectSongInfo.title }}</h4>
-                <p class="text-xs text-zinc-500">{{ locale.rejectDialog.requester(rejectSongInfo.requester) }}</p>
+                <h4 class="font-bold text-text-primary text-sm">{{ rejectSongInfo.title }}</h4>
+                <p class="text-xs text-text-tertiary">{{ locale.rejectDialog.requester(rejectSongInfo.requester) }}</p>
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.rejectDialog.reason }}</label
               >
               <textarea
                 v-model="rejectReason"
                 :placeholder="locale.rejectDialog.reasonPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-red-500/30 min-h-[120px] resize-none transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-error-30 min-h-[120px] resize-none transition-all"
               />
             </div>
 
@@ -519,30 +517,30 @@
               <input
                 v-model="addToBlacklist"
                 type="checkbox"
-                class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-red-600"
+                class="w-4 h-4 rounded border-border-secondary bg-bg-primary accent-red-600"
               />
               <div>
                 <span
-                  class="text-xs font-bold text-zinc-300 group-hover:text-red-400 transition-colors"
+                  class="text-xs font-bold text-text-secondary group-hover:text-error transition-colors"
                   >{{ locale.rejectDialog.addToBlacklist }}</span
                 >
-                <p class="text-[10px] text-zinc-600 font-medium">
+                <p class="text-[10px] text-text-disabled font-medium">
                   {{ locale.rejectDialog.blacklistHint }}
                 </p>
               </div>
             </label>
           </div>
 
-          <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
+          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
             <button
-              class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
+              class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="cancelReject"
             >
               {{ locale.dialog.cancel }}
             </button>
             <button
               :disabled="rejectLoading"
-              class="px-8 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-error hover:bg-error text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
               @click="confirmReject"
             >
               {{ rejectLoading ? locale.rejectDialog.processing : locale.rejectDialog.confirm }}
@@ -573,18 +571,18 @@
     >
       <div
         v-if="showEditModal || showAddSongModal"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm overflow-y-auto"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm overflow-y-auto"
       >
         <div
-          class="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden my-auto"
+          class="w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden my-auto"
           @click.stop
         >
-          <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-            <h3 class="text-xl font-black text-zinc-100">
+          <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
+            <h3 class="text-xl font-black text-text-primary">
               {{ showEditModal ? locale.editModal.editTitle : locale.editModal.addTitle }}
             </h3>
             <button
-              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              class="text-text-tertiary hover:text-text-secondary transition-colors"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"
             >
               <X :size="20" />
@@ -594,7 +592,7 @@
           <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.editModal.titleLabel }}</label
                 >
                 <input
@@ -602,18 +600,18 @@
                   v-model="editForm.title"
                   type="text"
                   :placeholder="locale.editModal.titlePlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.title"
                   type="text"
                   :placeholder="locale.editModal.titlePlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.editModal.artistLabel }}</label
                 >
                 <input
@@ -621,20 +619,20 @@
                   v-model="editForm.artist"
                   type="text"
                   :placeholder="locale.editModal.artistPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.artist"
                   type="text"
                   :placeholder="locale.editModal.artistPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                 />
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.editModal.requester }}</label
               >
               <div class="relative user-search-container">
@@ -644,7 +642,7 @@
                     v-model="editUserSearchQuery"
                     type="text"
                     :placeholder="locale.editModal.userSearchPlaceholder"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                     @focus="showEditUserDropdown = true"
                     @input="searchEditUsers()"
                   />
@@ -653,7 +651,7 @@
                     v-model="userSearchQuery"
                     type="text"
                     :placeholder="locale.editModal.userSearchPlaceholder"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                     @focus="showUserDropdown = true"
                     @input="searchUsers()"
                   />
@@ -661,9 +659,7 @@
                     v-if="showEditModal ? editUserSearchLoading : userSearchLoading"
                     class="absolute right-4 top-1/2 -translate-y-1/2"
                   >
-                    <div
-                      class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
-                    />
+                    <AppSpinner :size="16" />
                   </div>
                 </div>
 
@@ -674,19 +670,19 @@
                       ? showEditUserDropdown && filteredEditUsers.length > 0
                       : showUserDropdown && filteredUsers.length > 0
                   "
-                  class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
+                  class="absolute z-10 w-full mt-2 bg-bg-secondary border border-border-secondary rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
                 >
                   <div
                     v-for="user in showEditModal
                       ? filteredEditUsers.slice(0, 10)
                       : filteredUsers.slice(0, 10)"
                     :key="user.id"
-                    class="px-4 py-3 hover:bg-zinc-800 cursor-pointer transition-colors flex items-center justify-between group"
+                    class="px-4 py-3 hover:bg-bg-tertiary cursor-pointer transition-colors flex items-center justify-between group"
                     @click="showEditModal ? selectEditUser(user) : selectUser(user)"
                   >
                     <div class="flex flex-col">
-                      <span class="text-sm font-bold text-zinc-200">{{ user.name }}</span>
-                      <span class="text-[10px] text-zinc-500">@{{ user.username }}</span>
+                      <span class="text-sm font-bold text-text-primary">{{ user.name }}</span>
+                      <span class="text-[10px] text-text-tertiary">@{{ user.username }}</span>
                     </div>
                     <Check
                       v-if="
@@ -695,7 +691,7 @@
                           : selectedUser?.id === user.id
                       "
                       :size="14"
-                      class="text-blue-500"
+                      class="text-primary"
                     />
                   </div>
                 </div>
@@ -704,14 +700,14 @@
                 v-if="showEditModal ? selectedEditUser : selectedUser"
                 class="flex items-center gap-2 mt-2 px-1"
               >
-                <span class="text-[10px] font-bold text-blue-500"
+                <span class="text-[10px] font-bold text-primary"
                   >{{ locale.editModal.selectedUser((showEditModal ? selectedEditUser : selectedUser).name) }}
                   <template v-if="(showEditModal ? selectedEditUser : selectedUser).username">
                     (@{{ (showEditModal ? selectedEditUser : selectedUser).username }})
                   </template></span
                 >
                 <button
-                  class="text-zinc-600 hover:text-zinc-400"
+                  class="text-text-disabled hover:text-text-tertiary"
                   @click="showEditModal ? clearSelectedEditUser() : clearSelectedUser()"
                 >
                   <X :size="12" />
@@ -720,7 +716,7 @@
             </div>
 
             <div v-if="showEditModal" class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.editModal.collaborators }}</label
               >
               <div class="space-y-3 user-search-container">
@@ -728,11 +724,11 @@
                   <span
                     v-for="collaborator in selectedEditCollaborators"
                     :key="collaborator.id"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-primary border border-border-secondary text-xs text-text-secondary"
                   >
                     {{ getCollaboratorDisplayName(collaborator) }}
                     <button
-                      class="text-zinc-500 hover:text-red-400 transition-colors"
+                      class="text-text-tertiary hover:text-error transition-colors"
                       @click="removeEditCollaborator(collaborator.id)"
                     >
                       <X :size="12" />
@@ -744,7 +740,7 @@
                     v-model="editCollaboratorSearchQuery"
                     type="text"
                     :placeholder="locale.editModal.collaboratorSearchPlaceholder"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all"
                     @focus="showEditCollaboratorDropdown = true"
                     @input="searchEditCollaborators()"
                   />
@@ -752,29 +748,27 @@
                     v-if="editCollaboratorSearchLoading"
                     class="absolute right-4 top-1/2 -translate-y-1/2"
                   >
-                    <div
-                      class="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
-                    />
+                    <AppSpinner :size="16" />
                   </div>
                   <div
                     v-if="showEditCollaboratorDropdown && filteredEditCollaborators.length > 0"
-                    class="absolute z-10 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
+                    class="absolute z-10 w-full mt-2 bg-bg-secondary border border-border-secondary rounded-lg shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
                   >
                     <div
                       v-for="user in filteredEditCollaborators.slice(0, 10)"
                       :key="user.id"
-                      class="px-4 py-3 hover:bg-zinc-800 cursor-pointer transition-colors flex items-center justify-between group"
+                      class="px-4 py-3 hover:bg-bg-tertiary cursor-pointer transition-colors flex items-center justify-between group"
                       @click="selectEditCollaborator(user)"
                     >
                       <div class="flex flex-col">
-                        <span class="text-sm font-bold text-zinc-200">{{ user.name }}</span>
-                        <span class="text-[10px] text-zinc-500">@{{ user.username }}</span>
+                        <span class="text-sm font-bold text-text-primary">{{ user.name }}</span>
+                        <span class="text-[10px] text-text-tertiary">@{{ user.username }}</span>
                       </div>
-                      <Plus :size="14" class="text-blue-500 opacity-70 group-hover:opacity-100" />
+                      <Plus :size="14" class="text-primary opacity-70 group-hover:opacity-100" />
                     </div>
                   </div>
                 </div>
-                <p class="text-[10px] text-zinc-600 font-medium px-1">
+                <p class="text-[10px] text-text-disabled font-medium px-1">
                   {{ locale.editModal.collaboratorHint }}
                 </p>
               </div>
@@ -782,7 +776,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.filters.semester }}</label
                 >
                 <CustomSelect
@@ -803,7 +797,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.editModal.preferredPlayTime }}</label
                 >
                 <CustomSelect
@@ -827,7 +821,7 @@
 
             <div v-if="showEditModal" class="space-y-3">
               <div class="flex items-center justify-between gap-3 px-1">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                   >{{ locale.editModal.submissionNote }}</label
                 >
                 <button
@@ -835,8 +829,8 @@
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-black tracking-widest uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   :class="
                     submissionNoteClearRequested
-                      ? 'border-zinc-700 bg-zinc-950 text-zinc-300 hover:border-zinc-600'
-                      : 'border-amber-500/20 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                      ? 'border-border-tertiary bg-bg-primary text-text-secondary hover:border-border-tertiary'
+                      : 'border-warning-20 bg-warning-10 text-warning hover:bg-warning-20'
                   "
                   @click="
                     submissionNoteClearRequested
@@ -851,7 +845,7 @@
                 v-model="editForm.submissionNote"
                 :disabled="submissionNoteClearRequested"
                 :placeholder="locale.editModal.submissionNotePlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-4 text-sm text-text-primary focus:outline-none focus:border-primary-30 min-h-[120px] resize-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <label
                 class="flex items-center gap-3 px-1 transition-opacity"
@@ -865,51 +859,51 @@
                   v-model="editForm.submissionNotePublic"
                   :disabled="submissionNoteClearRequested"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-500"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-primary"
                 />
                 <div>
                   <span
                     class="text-xs font-bold transition-colors"
-                    :class="submissionNoteClearRequested ? 'text-zinc-500' : 'text-zinc-300 group-hover:text-blue-400'"
+                    :class="submissionNoteClearRequested ? 'text-text-tertiary' : 'text-text-secondary group-hover:text-primary'"
                     >{{ locale.editModal.publicNote }}</span
                   >
-                  <p class="text-[10px] text-zinc-600 font-medium">
+                  <p class="text-[10px] text-text-disabled font-medium">
                     {{ locale.editModal.publicNoteHint }}
                   </p>
                 </div>
               </label>
               <div
                 v-if="submissionNoteClearRequested"
-                class="space-y-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"
+                class="space-y-3 rounded-xl border border-warning-20 bg-warning-5 p-4"
               >
-                <div class="text-xs font-bold text-amber-300">
+                <div class="text-xs font-bold text-warning">
                   {{ locale.editModal.clearNoteHint }}
                 </div>
                 <textarea
                   v-model="submissionNoteClearReason"
                   :placeholder="locale.editModal.clearNoteReasonPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-amber-500/30 min-h-[96px] resize-none transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-warning-30 min-h-[96px] resize-none transition-all"
                 />
                 <label class="flex items-center gap-3 cursor-pointer group">
                   <input
                     v-model="notifyOnSubmissionNoteClear"
                     type="checkbox"
-                    class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-amber-500"
+                    class="w-4 h-4 rounded border-border-secondary bg-bg-primary accent-amber-500"
                   />
                   <div>
-                    <span class="text-xs font-bold text-zinc-300 group-hover:text-amber-300 transition-colors"
+                    <span class="text-xs font-bold text-text-secondary group-hover:text-warning transition-colors"
                       >{{ locale.editModal.notifyAfterClear }}</span
                     >
-                    <p class="text-[10px] text-zinc-600 font-medium">
+                    <p class="text-[10px] text-text-disabled font-medium">
                       {{ locale.editModal.notifyAfterClearHint }}
                     </p>
                   </div>
                 </label>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-zinc-800/50">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-border-secondary-50">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.editModal.musicPlatform }}</label
                 >
                 <CustomSelect
@@ -934,7 +928,7 @@
                 />
               </div>
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.editModal.musicId }}</label
                 >
                 <input
@@ -942,20 +936,20 @@
                   v-model="editForm.musicId"
                   type="text"
                   :placeholder="locale.editModal.musicIdPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
                 />
                 <input
                   v-else
                   v-model="addForm.musicId"
                   type="text"
                   :placeholder="locale.editModal.musicIdPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
                 />
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.editModal.coverUrl }}</label
               >
               <input
@@ -963,21 +957,21 @@
                 v-model="editForm.cover"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
               />
               <input
                 v-else
                 v-model="addForm.cover"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
               />
               <p
                 v-if="
                   (showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -986,7 +980,7 @@
                   !(showEditModal ? editCoverValidation.valid : addCoverValidation.valid) &&
                   (showEditModal ? editForm.cover : addForm.cover)
                 "
-                class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editCoverValidation.error : addCoverValidation.error }}
@@ -994,7 +988,7 @@
             </div>
 
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.editModal.playUrl }}</label
               >
               <input
@@ -1002,21 +996,21 @@
                 v-model="editForm.playUrl"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
               />
               <input
                 v-else
                 v-model="addForm.playUrl"
                 type="text"
                 placeholder="http://..."
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-200 focus:outline-none transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-lg px-4 py-3 text-sm text-text-primary focus:outline-none transition-all"
               />
               <p
                 v-if="
                   (showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-emerald-500/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-success-80 font-bold px-1 flex items-center gap-1"
               >
                 <Check :size="10" /> {{ locale.editModal.validUrl }}
               </p>
@@ -1025,7 +1019,7 @@
                   !(showEditModal ? editPlayUrlValidation.valid : addPlayUrlValidation.valid) &&
                   (showEditModal ? editForm.playUrl : addForm.playUrl)
                 "
-                class="text-[10px] text-red-500/80 font-bold px-1 flex items-center gap-1"
+                class="text-[10px] text-error-80 font-bold px-1 flex items-center gap-1"
               >
                 <X :size="10" />
                 {{ showEditModal ? editPlayUrlValidation.error : addPlayUrlValidation.error }}
@@ -1033,16 +1027,16 @@
             </div>
           </div>
 
-          <div class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end">
+          <div class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end">
             <button
-              class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300"
+              class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
               @click="showEditModal ? cancelEditSong() : cancelAddSong()"
             >
               {{ locale.dialog.cancel }}
             </button>
             <button
               :disabled="showEditModal ? editLoading : !canSubmitAddForm || addLoading"
-              class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+              class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
               @click="showEditModal ? saveEditSong() : saveAddSong()"
             >
               {{
@@ -1070,6 +1064,7 @@ import SongDownloadDialog from '~/components/Admin/SongDownloadDialog.vue'
 import SubmissionRemarkDialog from '~/components/Admin/SubmissionRemarkDialog.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Search,
   Plus,
@@ -2339,10 +2334,10 @@ onUnmounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--panel-bg-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: var(--panel-bg-hover);
 }
 </style>

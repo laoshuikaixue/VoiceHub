@@ -3,14 +3,14 @@
     <!-- 头部区域 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-1">
+        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-text-tertiary mt-1">
           {{ locale.desc }}
         </p>
       </div>
       <div class="flex items-center gap-3">
         <button
-          class="flex items-center gap-2 px-6 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50"
+          class="flex items-center gap-2 px-6 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50"
           :disabled="reloading"
           @click="reloadSmtpConfig"
         >
@@ -18,7 +18,7 @@
           {{ reloading ? locale.reloading : locale.reload }}
         </button>
         <button
-          class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           :disabled="saving"
           @click="saveConfig"
         >
@@ -31,20 +31,20 @@
       <!-- 左侧栏：SMTP 设置与测试 -->
       <div class="xl:col-span-4 space-y-8">
         <!-- SMTP 核心设置 -->
-        <section class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
+        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <div class="flex items-center justify-between">
             <h3
-              class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
+              class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
             >
-              <Server :size="16" class="text-blue-500" /> {{ locale.serviceConfig }}
+              <Server :size="16" class="text-primary" /> {{ locale.serviceConfig }}
             </h3>
             <button
               class="relative w-10 h-5 rounded-full transition-colors"
-              :class="config.smtpEnabled ? 'bg-blue-600' : 'bg-zinc-800'"
+              :class="config.smtpEnabled ? 'bg-primary-hover' : 'bg-bg-tertiary'"
               @click="config.smtpEnabled = !config.smtpEnabled"
             >
               <div
-                class="absolute top-1 w-3 h-3 bg-white rounded-full transition-all"
+                class="absolute top-1 w-3 h-3 bg-bg-secondary rounded-full transition-all"
                 :class="config.smtpEnabled ? 'left-6' : 'left-1'"
               />
             </button>
@@ -52,30 +52,30 @@
 
           <div class="space-y-4">
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.smtpHost }}</label
               >
               <input
                 v-model="config.smtpHost"
                 type="text"
                 placeholder="smtp.example.com"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1.5">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.port }}</label
                 >
                 <input
                   v-model.number="config.smtpPort"
                   type="number"
                   placeholder="587"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
               <div class="space-y-1.5">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.secure }}</label
                 >
                 <CustomSelect
@@ -87,66 +87,66 @@
               </div>
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.username }}</label
               >
               <input
                 v-model="config.smtpUsername"
                 type="text"
                 placeholder="your-email@example.com"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.fromEmail }}</label
               >
               <input
                 v-model="config.smtpFromEmail"
                 type="text"
                 :placeholder="config.smtpUsername || 'your-email@example.com'"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
-              <p class="text-[9px] text-zinc-500 px-1 italic">
+              <p class="text-[9px] text-text-tertiary px-1 italic">
                 {{ locale.fromEmailHint }}
               </p>
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.password }}</label
               >
               <input
                 v-model="config.smtpPassword"
                 type="password"
                 placeholder="••••••••••••"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.fromName }}</label
               >
               <input
                 v-model="config.smtpFromName"
                 type="text"
                 :placeholder="locale.defaultFromName"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
               >
             </div>
           </div>
         </section>
 
         <!-- SMTP 测试模块 -->
-        <section class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] p-6 space-y-6">
+        <section class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] p-6 space-y-6">
           <h3
-            class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
+            class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
           >
-            <Send :size="16" class="text-emerald-500" /> {{ locale.serviceTest }}
+            <Send :size="16" class="text-success" /> {{ locale.serviceTest }}
           </h3>
 
           <div class="space-y-4">
             <div class="space-y-1.5">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.testEmail }}</label
               >
               <div class="flex gap-2">
@@ -154,14 +154,14 @@
                   v-model="testEmail"
                   type="email"
                   :placeholder="locale.testEmailPlaceholder"
-                  class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
                 <button
-                  class="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                   :disabled="testing || !testEmail || !config.smtpEnabled"
                   @click="sendTestEmail"
                 >
-                  <Check v-if="testResult?.success" :size="14" class="text-emerald-500" />
+                  <Check v-if="testResult?.success" :size="14" class="text-success" />
                   <Send v-else :size="14" />
                   {{ testing ? locale.sending : testResult?.success ? locale.sent : locale.send }}
                 </button>
@@ -173,8 +173,8 @@
                 class="flex items-center gap-2 p-3 rounded-xl text-xs"
                 :class="
                   testResult.success
-                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                    : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                    ? 'bg-success-10 text-success border border-success-20'
+                    : 'bg-error-10 text-error border border-error-20'
                 "
               >
                 <CheckCircle v-if="testResult.success" :size="14" />

@@ -2,22 +2,22 @@
   <Transition name="fade">
     <div
       v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
       @click="closeDialog"
     >
       <Transition name="scale">
         <div
           v-if="show"
-          class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+          class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
           @click.stop
         >
           <!-- 头部 -->
-          <div class="flex items-center justify-between p-4 border-b border-zinc-800 shrink-0">
-            <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">
+          <div class="flex items-center justify-between p-4 border-b border-border-secondary shrink-0">
+            <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">
               {{ locale.title }}
             </h3>
             <button
-              class="text-zinc-500 hover:text-zinc-300 transition-colors"
+              class="text-text-tertiary hover:text-text-secondary transition-colors"
               @click="closeDialog"
             >
               <Icon name="x" :size="20" />
@@ -28,10 +28,10 @@
           <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
             <!-- 登录状态检查 -->
             <section v-if="!isLoggedIn" class="space-y-3">
-              <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4">
-                <p class="text-xs text-yellow-400 mb-3">{{ locale.loginRequired }}</p>
+              <div class="bg-warning-10 border border-warning-20 rounded-2xl p-4">
+                <p class="text-xs text-warning mb-3">{{ locale.loginRequired }}</p>
                 <button
-                  class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors"
+                  class="w-full py-2 px-4 bg-primary-hover hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-colors"
                   @click="showLoginModal"
                 >
                   {{ locale.loginNow }}
@@ -42,7 +42,7 @@
             <template v-else>
               <!-- 音质选择 -->
               <section class="space-y-3">
-                <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1"
+                <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em] px-1"
                   >{{ locale.quality }}</label
                 >
                 <div class="grid grid-cols-2 gap-2">
@@ -52,8 +52,8 @@
                     class="flex flex-col p-4 rounded-2xl border text-left transition-all relative overflow-hidden group"
                     :class="[
                       selectedQuality === option.value
-                        ? 'bg-blue-600/10 border-blue-500 shadow-sm'
-                        : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                        ? 'bg-primary-hover-10 border-primary shadow-sm'
+                        : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                     ]"
                     @click="selectedQuality = option.value"
                   >
@@ -61,16 +61,16 @@
                       <span
                         class="text-xs font-bold transition-colors"
                         :class="
-                          selectedQuality === option.value ? 'text-blue-400' : 'text-zinc-200'
+                          selectedQuality === option.value ? 'text-primary' : 'text-text-primary'
                         "
                         >{{ option.label }}</span
                       >
                       <div
                         v-if="selectedQuality === option.value"
-                        class="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                        class="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_var(--primary-50)]"
                       />
                     </div>
-                    <span class="text-[10px] text-zinc-500 relative z-10">{{
+                    <span class="text-[10px] text-text-tertiary relative z-10">{{
                       option.description
                     }}</span>
                   </button>
@@ -79,10 +79,10 @@
 
               <!-- 歌曲信息 -->
               <section class="space-y-3">
-                <label class="text-[10px] font-black uppercase text-zinc-600 tracking-[0.2em] px-1"
+                <label class="text-[10px] font-black uppercase text-text-disabled tracking-[0.2em] px-1"
                   >{{ locale.songInfo }}</label
                 >
-                <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-2">
+                <div class="bg-bg-primary border border-border-secondary rounded-2xl p-4 space-y-2">
                   <div class="flex items-center gap-3">
                     <img
                       v-if="song?.img || song?.cover"
@@ -91,8 +91,8 @@
                       class="w-12 h-12 rounded-lg object-cover"
                     >
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm font-bold text-zinc-200 truncate">{{ songName }}</p>
-                      <p class="text-xs text-zinc-500 truncate">{{ artistName }}</p>
+                      <p class="text-sm font-bold text-text-primary truncate">{{ songName }}</p>
+                      <p class="text-xs text-text-tertiary truncate">{{ artistName }}</p>
                     </div>
                   </div>
                 </div>
@@ -101,27 +101,27 @@
               <!-- 上传进度 -->
               <section
                 v-if="uploading || uploadProgress > 0"
-                class="space-y-3 pt-4 border-t border-zinc-800/50"
+                class="space-y-3 pt-4 border-t border-border-secondary-50"
               >
                 <div
                   class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider"
                 >
-                  <span class="text-zinc-400">{{ uploadStatus }}</span>
-                  <span class="text-blue-400">{{ uploadProgress }}%</span>
+                  <span class="text-text-tertiary">{{ uploadStatus }}</span>
+                  <span class="text-primary">{{ uploadProgress }}%</span>
                 </div>
                 <div
-                  class="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50 relative"
+                  class="h-2 bg-bg-primary rounded-full overflow-hidden border border-border-secondary-50 relative"
                 >
                   <div
-                    class="h-full bg-gradient-to-r from-blue-600 to-indigo-500 transition-all duration-300 ease-out relative overflow-hidden"
+                    class="h-full bg-gradient-to-r from-primary to-primary-hover transition-all duration-300 ease-out relative overflow-hidden"
                     :style="{ width: `${uploadProgress}%` }"
                   >
                     <div
-                      class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"
+                      class="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--shimmer-overlay)] to-transparent animate-shimmer"
                     />
                   </div>
                 </div>
-                <p v-if="uploadMessage" class="text-[10px] text-zinc-500 text-center">
+                <p v-if="uploadMessage" class="text-[10px] text-text-tertiary text-center">
                   {{ uploadMessage }}
                 </p>
               </section>
@@ -129,16 +129,16 @@
           </div>
 
           <!-- Footer -->
-          <div v-if="isLoggedIn" class="p-4 border-t border-zinc-800 shrink-0 flex gap-3">
+          <div v-if="isLoggedIn" class="p-4 border-t border-border-secondary shrink-0 flex gap-3">
             <button
-              class="flex-1 py-3 px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+              class="flex-1 py-3 px-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
               :disabled="uploading"
               @click="closeDialog"
             >
               {{ locale.cancel }}
             </button>
             <button
-              class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+              class="flex-1 py-3 px-4 bg-primary-hover hover:bg-primary-hover text-text-primary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="uploading"
               @click="startUpload"
             >
@@ -610,12 +610,12 @@ const startUpload = async () => {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 @keyframes shimmer {

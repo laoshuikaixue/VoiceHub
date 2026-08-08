@@ -1,22 +1,22 @@
 <template>
-  <div class="bg-zinc-900/30 border border-zinc-800 rounded-[2rem] overflow-hidden">
+  <div class="bg-bg-secondary-30 border border-border-secondary rounded-[2rem] overflow-hidden">
     <!-- 头部 -->
-    <div class="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900/20">
+    <div class="flex items-center justify-between p-6 border-b border-border-secondary bg-bg-secondary-20">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center border border-blue-500/20"
+          class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center border border-primary-20"
         >
-          <Mail :size="20" class="text-blue-500" />
+          <Mail :size="20" class="text-primary" />
         </div>
         <div>
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.title }}</h3>
-          <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.desc }}</p>
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.title }}</h3>
+          <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.desc }}</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
         <button
           v-if="selected"
-          class="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-[11px] font-bold rounded-xl transition-all"
+          class="flex items-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-[11px] font-bold rounded-xl transition-all"
           :disabled="saving"
           @click="doPreview"
         >
@@ -24,7 +24,7 @@
         </button>
         <button
           v-if="selected"
-          class="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+          class="flex items-center gap-2 px-6 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[11px] font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
           :disabled="saving"
           @click="save"
         >
@@ -35,14 +35,14 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[650px]">
       <!-- 左侧：模板列表 -->
-      <div class="lg:col-span-3 border-r border-zinc-800 bg-zinc-900/10 flex flex-col">
-        <div class="p-4 border-b border-zinc-800/50">
+      <div class="lg:col-span-3 border-r border-border-secondary bg-bg-secondary-10 flex flex-col">
+        <div class="p-4 border-b border-border-secondary-50">
           <div class="relative">
-            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+            <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
             <input
               type="text"
               :placeholder="locale.searchPlaceholder"
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-[10px] text-zinc-400 focus:outline-none focus:border-blue-500/30"
+              class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-9 pr-3 py-2 text-[10px] text-text-tertiary focus:outline-none focus:border-primary-30"
             >
           </div>
         </div>
@@ -53,8 +53,8 @@
             class="w-full group flex flex-col gap-1 p-3 rounded-2xl transition-all text-left border"
             :class="[
               selectedKey === t.key
-                ? 'bg-blue-600/10 border-blue-500/20'
-                : 'bg-transparent border-transparent hover:bg-zinc-800/40'
+                ? 'bg-primary-hover-10 border-primary-20'
+                : 'bg-transparent border-transparent hover:bg-bg-tertiary-40'
             ]"
             @click="select(t)"
           >
@@ -63,8 +63,8 @@
                 class="text-[11px] font-black tracking-tight transition-colors"
                 :class="
                   selectedKey === t.key
-                    ? 'text-blue-400'
-                    : 'text-zinc-300 group-hover:text-zinc-100'
+                    ? 'text-primary'
+                    : 'text-text-secondary group-hover:text-text-primary'
                 "
               >
                 {{ t.name }}
@@ -72,67 +72,67 @@
               <div class="flex gap-1">
                 <span
                   v-if="t.isBuiltin && !t.isOverridden"
-                  class="px-1.5 py-0.5 rounded-md bg-zinc-800 text-[8px] font-black text-zinc-500 uppercase tracking-tighter"
+                  class="px-1.5 py-0.5 rounded-md bg-bg-tertiary text-[8px] font-black text-text-tertiary uppercase tracking-tighter"
                 >
                   {{ locale.builtin }}
                 </span>
                 <span
                   v-if="t.isOverridden"
-                  class="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-[8px] font-black text-emerald-500 uppercase tracking-tighter"
+                  class="px-1.5 py-0.5 rounded-md bg-success-10 text-[8px] font-black text-success uppercase tracking-tighter"
                 >
                   {{ locale.custom }}
                 </span>
               </div>
             </div>
-            <span class="text-[9px] font-bold text-zinc-600 font-mono">{{ t.key }}</span>
+            <span class="text-[9px] font-bold text-text-disabled font-mono">{{ t.key }}</span>
           </button>
         </div>
       </div>
 
       <!-- 右侧：编辑器区域 -->
-      <div class="lg:col-span-9 flex flex-col bg-zinc-950/20 overflow-hidden">
+      <div class="lg:col-span-9 flex flex-col bg-bg-primary-20 overflow-hidden">
         <div v-if="selected" class="flex-1 overflow-y-auto custom-scrollbar p-8">
           <div class="max-w-4xl mx-auto space-y-8">
             <!-- 基础信息与主题 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                   >{{ locale.templateName }}</label
                 >
                 <input
                   v-model="form.name"
                   type="text"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
               <div class="space-y-2">
                 <div class="flex items-center justify-between px-1">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                     >{{ locale.emailSubject }}</label
                   >
-                  <span class="text-[9px] text-zinc-500 font-bold uppercase">{{ locale.supportsVariables }}</span>
+                  <span class="text-[9px] text-text-tertiary font-bold uppercase">{{ locale.supportsVariables }}</span>
                 </div>
                 <input
                   v-model="form.subject"
                   type="text"
                   :placeholder="locale.subjectPlaceholder"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-xs text-zinc-200 focus:outline-none focus:border-blue-500/30"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-xs text-text-primary focus:outline-none focus:border-primary-30"
                 >
               </div>
             </div>
 
             <!-- 变量提示 -->
-            <div class="bg-blue-600/5 border border-blue-500/10 rounded-2xl p-4 flex gap-4">
+            <div class="bg-primary-hover-5 border border-primary-10 rounded-2xl p-4 flex gap-4">
               <div
-                class="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0"
+                class="w-8 h-8 rounded-xl bg-primary-10 flex items-center justify-center shrink-0"
               >
-                <Info :size="16" class="text-blue-500" />
+                <Info :size="16" class="text-primary" />
               </div>
               <div class="space-y-1">
-                <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                <h4 class="text-[10px] font-black text-primary uppercase tracking-widest">
                   {{ locale.availableVariables }}
                 </h4>
-                <p class="text-[11px] text-zinc-500 leading-relaxed font-mono">
+                <p class="text-[11px] text-text-tertiary leading-relaxed font-mono">
                   <template v-if="selected.key === 'verification.code'">
                     <span v-pre>{{ name }}, {{ email }}, {{ code }}, {{ expiresInMinutes }}</span>
                   </template>
@@ -147,17 +147,17 @@
             <div class="space-y-3">
               <div class="flex items-center justify-between px-1">
                 <div class="flex items-center gap-2">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest"
                     >{{ locale.htmlContent }}</label
                   >
                   <span
-                    class="px-2 py-0.5 rounded-md bg-zinc-900 text-[8px] font-black text-zinc-500 uppercase"
+                    class="px-2 py-0.5 rounded-md bg-bg-secondary text-[8px] font-black text-text-tertiary uppercase"
                     >Handlebars</span
                   >
                 </div>
                 <button
                   v-if="selected.isOverridden"
-                  class="flex items-center gap-1.5 text-[10px] font-bold text-rose-500 hover:text-rose-400 transition-colors"
+                  class="flex items-center gap-1.5 text-[10px] font-bold text-error hover:text-error transition-colors"
                   @click="restore"
                 >
                   <RotateCcw :size="12" /> {{ locale.restoreDefault }}
@@ -165,14 +165,14 @@
               </div>
               <div class="relative group">
                 <div
-                  class="absolute right-4 top-4 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute right-4 top-4 p-2 rounded-lg bg-bg-secondary-50 border border-border-secondary opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Code :size="14" class="text-zinc-500" />
+                  <Code :size="14" class="text-text-tertiary" />
                 </div>
                 <textarea
                   v-model="form.html"
                   rows="16"
-                  class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-6 text-[11px] text-zinc-300 font-mono leading-relaxed focus:outline-none focus:border-blue-500/30 custom-scrollbar"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl p-6 text-[11px] text-text-secondary font-mono leading-relaxed focus:outline-none focus:border-primary-30 custom-scrollbar"
                   placeholder="<html>..."
                 />
               </div>
@@ -184,22 +184,22 @@
               enter-from-class="transform translate-y-4 opacity-0"
               enter-to-class="transform translate-y-0 opacity-100"
             >
-              <div v-if="previewHtml" class="space-y-4 pt-4 border-t border-zinc-800">
+              <div v-if="previewHtml" class="space-y-4 pt-4 border-t border-border-secondary">
                 <div class="flex items-center justify-between px-1">
                   <label
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest flex items-center gap-2"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest flex items-center gap-2"
                   >
                     <Eye :size="14" /> {{ locale.livePreviewLabel }}
-                    <span class="text-zinc-400 font-normal normal-case">{{ previewSubject }}</span>
+                    <span class="text-text-tertiary font-normal normal-case">{{ previewSubject }}</span>
                   </label>
                   <button
-                    class="text-[10px] font-bold text-zinc-500 hover:text-zinc-300"
+                    class="text-[10px] font-bold text-text-tertiary hover:text-text-secondary"
                     @click="previewHtml = ''"
                   >
                     {{ locale.hidePreview }}
                   </button>
                 </div>
-                <div class="rounded-2xl overflow-hidden border border-zinc-800 bg-white shadow-2xl">
+                <div class="rounded-2xl overflow-hidden border border-border-secondary bg-bg-secondary shadow-2xl">
                   <iframe :srcdoc="previewHtml" class="w-full h-[500px] border-none" />
                 </div>
               </div>
@@ -210,12 +210,12 @@
         <!-- 空状态 -->
         <div
           v-else
-          class="flex-1 flex flex-col items-center justify-center text-zinc-700 space-y-4"
+          class="flex-1 flex flex-col items-center justify-center text-text-secondary space-y-4"
         >
           <div
-            class="w-16 h-16 rounded-3xl bg-zinc-900/50 flex items-center justify-center border border-zinc-800/50"
+            class="w-16 h-16 rounded-3xl bg-bg-secondary-50 flex items-center justify-center border border-border-secondary-50"
           >
-            <Mail :size="32" class="text-zinc-800" />
+            <Mail :size="32" class="text-text-primary" />
           </div>
           <p class="text-xs font-bold tracking-widest uppercase">{{ locale.emptySelectTemplate }}</p>
         </div>
@@ -354,10 +354,10 @@ onMounted(() => {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--panel-bg-alt);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: var(--panel-bg-hover);
 }
 </style>

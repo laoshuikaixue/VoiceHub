@@ -3,18 +3,18 @@
     <!-- 搜索输入框 -->
     <div class="relative flex-1 w-full">
       <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-        <Search :size="16" class="text-zinc-500" />
+        <Search :size="16" class="text-text-tertiary" />
       </div>
       <input
         :value="searchQuery"
         type="text"
         :placeholder="resolvedSearchPlaceholder"
-        class="block w-full pl-11 pr-11 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl text-xs font-bold text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-blue-600/5 transition-all"
+        class="block w-full pl-11 pr-11 py-2.5 bg-bg-primary border border-border-secondary rounded-2xl text-xs font-bold text-text-primary placeholder:text-text-disabled focus:outline-none focus:border-primary-50 focus:bg-primary-hover-5 transition-all"
         @input="$emit('update:searchQuery', $event.target.value)"
       >
       <button
         v-if="searchQuery"
-        class="absolute inset-y-0 right-0 pr-4 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
+        class="absolute inset-y-0 right-0 pr-4 flex items-center text-text-tertiary hover:text-text-secondary transition-colors"
         @click="$emit('update:searchQuery', '')"
       >
         <X :size="14" />
@@ -37,19 +37,19 @@
         <!-- 日期范围过滤器 -->
         <div
           v-else-if="filter.type === 'dateRange'"
-          class="flex items-center gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-2xl"
+          class="flex items-center gap-2 p-1 bg-bg-primary border border-border-secondary rounded-2xl"
         >
           <input
             type="date"
             :value="filterValues[filter.key]?.start || ''"
-            class="bg-transparent border-none text-[10px] font-bold text-zinc-300 focus:ring-0 px-2 py-1 w-28"
+            class="bg-transparent border-none text-[10px] font-bold text-text-secondary focus:ring-0 px-2 py-1 w-28"
             @input="updateDateRange(filter.key, 'start', $event.target.value)"
           >
-          <span class="text-zinc-700 text-[10px] font-black uppercase">{{ locale.to }}</span>
+          <span class="text-text-secondary text-[10px] font-black uppercase">{{ locale.to }}</span>
           <input
             type="date"
             :value="filterValues[filter.key]?.end || ''"
-            class="bg-transparent border-none text-[10px] font-bold text-zinc-300 focus:ring-0 px-2 py-1 w-28"
+            class="bg-transparent border-none text-[10px] font-bold text-text-secondary focus:ring-0 px-2 py-1 w-28"
             @input="updateDateRange(filter.key, 'end', $event.target.value)"
           >
         </div>
@@ -57,23 +57,23 @@
         <!-- 多选过滤器 -->
         <div v-else-if="filter.type === 'multiSelect'" ref="dropdownRef" class="relative">
           <button
-            class="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-2xl transition-all hover:border-zinc-700"
-            :class="{ 'border-blue-500/50 bg-blue-600/5': openDropdown === filter.key }"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-bg-primary border border-border-secondary rounded-2xl transition-all hover:border-border-tertiary"
+            :class="{ 'border-primary-50 bg-primary-hover-5': openDropdown === filter.key }"
             @click="toggleDropdown(filter.key)"
           >
             <div class="flex flex-col items-start gap-0.5 overflow-hidden">
               <span
                 v-if="filter.label"
-                class="text-[9px] font-black text-zinc-600 uppercase tracking-widest leading-none"
+                class="text-[9px] font-black text-text-disabled uppercase tracking-widest leading-none"
                 >{{ filter.label }}</span
               >
-              <span class="text-[11px] font-bold text-zinc-300 truncate w-full text-left">{{
+              <span class="text-[11px] font-bold text-text-secondary truncate w-full text-left">{{
                 getMultiSelectLabel(filter)
               }}</span>
             </div>
             <ChevronDown
               :size="14"
-              class="text-zinc-500 shrink-0 transition-transform"
+              class="text-text-tertiary shrink-0 transition-transform"
               :class="{ 'rotate-180': openDropdown === filter.key }"
             />
           </button>
@@ -88,21 +88,21 @@
           >
             <div
               v-if="openDropdown === filter.key"
-              class="absolute z-50 mt-2 w-full min-w-[200px] bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden py-1"
+              class="absolute z-50 mt-2 w-full min-w-[200px] bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl overflow-hidden py-1"
             >
               <div class="max-h-60 overflow-y-auto custom-scrollbar">
                 <label
                   v-for="option in filter.options"
                   :key="option.value"
-                  class="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-800 cursor-pointer group transition-colors"
+                  class="flex items-center gap-3 px-4 py-2.5 hover:bg-bg-tertiary cursor-pointer group transition-colors"
                 >
                   <input
                     type="checkbox"
                     :checked="(filterValues[filter.key] || []).includes(option.value)"
-                    class="w-3.5 h-3.5 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all"
+                    class="w-3.5 h-3.5 rounded border-border-tertiary bg-bg-primary text-primary-hover focus:ring-0 focus:ring-offset-0 transition-all"
                     @change="toggleMultiSelectOption(filter.key, option.value)"
                   >
-                  <span class="text-xs font-bold text-zinc-400 group-hover:text-zinc-200">{{
+                  <span class="text-xs font-bold text-text-tertiary group-hover:text-text-primary">{{
                     option.label
                   }}</span>
                 </label>
@@ -117,7 +117,7 @@
     <div v-if="showActions" class="flex items-center gap-2 w-full lg:w-auto">
       <button
         v-if="hasActiveFilters"
-        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 hover:bg-red-500/5 text-zinc-400 hover:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
+        class="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-secondary border border-border-secondary hover:border-error-30 hover:bg-error-5 text-text-tertiary hover:text-error text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
         @click="clearAllFilters"
       >
         <RotateCcw :size="14" />

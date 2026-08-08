@@ -1,4 +1,5 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
+import { useTheme } from '~/composables/useTheme'
 
 export interface LyricRenderConfig {
   fontSize: number
@@ -40,13 +41,31 @@ export const useLyricPlayer = () => {
   const defaultConfig: LyricRenderConfig = {
     fontSize: 24,
     lineHeight: 1.6,
-    activeColor: '#ffffff',
-    inactiveColor: 'rgba(255,255,255,0.6)',
-    passedColor: 'rgba(255,255,255,0.4)',
+    activeColor: 'var(--text-primary)',
+    inactiveColor: 'var(--overlay-60)',
+    passedColor: 'var(--overlay-40)',
     enableBlur: true,
     enableScale: true,
     enableSpring: true,
     alignPosition: 0.5
+  }
+
+  // 将 config 中的 CSS 变量替换为实际颜色值（Canvas 无法直接解析 CSS 变量）
+  const resolveCssVariables = (cfg: LyricRenderConfig): LyricRenderConfig => {
+    const style = getComputedStyle(document.documentElement)
+    const resolve = (color: string, fallback = '#ffffff') => {
+      if (!color.startsWith('var(')) return color
+      const varName = color.match(/var\(--([a-z0-9-]+)\)/)?.[1]
+      if (!varName) return color
+      const resolved = style.getPropertyValue(varName).trim()
+      return resolved || fallback
+    }
+    return {
+      ...cfg,
+      inactiveColor: resolve(cfg.inactiveColor, '#cccccc'),
+      passedColor: resolve(cfg.passedColor, '#888888'),
+      activeColor: resolve(cfg.activeColor, '#ffffff')
+    }
   }
 
   const config = ref<LyricRenderConfig>({ ...defaultConfig })
@@ -78,9 +97,9 @@ export const useLyricPlayer = () => {
       container.appendChild(lyricPlayer.value.getElement())
       console.log('[useLyricPlayer] 容器设置完成')
 
-      // 应用初始配置
+      // 应用初始配置（解析 CSS 变量为实际颜色值）
       if (lyricPlayer.value.setConfig) {
-        lyricPlayer.value.setConfig(defaultConfig)
+        lyricPlayer.value.setConfig(resolveCssVariables(defaultConfig))
       }
       console.log('[useLyricPlayer] 配置应用完成')
 
@@ -118,7 +137,7 @@ export const useLyricPlayer = () => {
         align-items: center;
         justify-content: center;
         height: 100%;
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--overlay-60);
         font-size: 1.1rem;
         text-align: center;
       ">
@@ -136,28 +155,31 @@ export const useLyricPlayer = () => {
     if (!lyricPlayer.value || !lyricPlayer.value.setLyricLineStyle) return
 
     try {
+      // 解析 CSS 变量为实际颜色值（Canvas 无法直接解析）
+      const resolved = resolveCssVariables(config.value)
+      
       // 设置字体大小和行高
       lyricPlayer.value.setLyricLineStyle({
-        fontSize: config.value.fontSize,
-        lineHeight: config.value.lineHeight
+        fontSize: resolved.fontSize,
+        lineHeight: resolved.lineHeight
       })
 
       // 设置颜色
       lyricPlayer.value.setLyricLineColor({
-        active: config.value.activeColor,
-        inactive: config.value.inactiveColor,
-        passed: config.value.passedColor
+        active: resolved.activeColor,
+        inactive: resolved.inactiveColor,
+        passed: resolved.passedColor
       })
 
       // 设置效果
       lyricPlayer.value.setLyricLineEffect({
-        blur: config.value.enableBlur,
-        scale: config.value.enableScale,
-        spring: config.value.enableSpring
+        blur: resolved.enableBlur,
+        scale: resolved.enableScale,
+        spring: resolved.enableSpring
       })
 
       // 设置对齐位置
-      lyricPlayer.value.setAlignPosition(config.value.alignPosition)
+      lyricPlayer.value.setAlignPosition(resolved.alignPosition)
     } catch (error) {
       console.error('应用歌词配置失败:', error)
     }
@@ -294,6 +316,15 @@ export const useLyricPlayer = () => {
       await applyConfig()
     },
     { deep: true }
+  )
+
+  // 监听主题切换：响应式监听 currentTheme 变化，重新解析 CSS 变量颜色
+  const { currentTheme } = useTheme()
+  watch(
+    () => currentTheme.value,
+    async () => {
+      await applyConfig()
+    }
   )
 
   // 组件卸载时清理

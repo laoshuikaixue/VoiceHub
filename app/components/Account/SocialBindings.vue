@@ -1,47 +1,47 @@
 <template>
-  <section :class="sectionClass">
-    <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
-      <div class="p-2.5 bg-purple-500/10 rounded-xl">
-        <Share2 :size="20" class="text-purple-500" />
+  <div :class="cardClass">
+    <div class="flex items-center gap-3 pb-5 mb-6">
+      <div class="p-2.5 bg-primary-10 rounded-xl">
+        <Share2 :size="20" class="text-primary" />
       </div>
       <div>
-        <h2 class="text-base font-black text-zinc-100">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-0.5">{{ locale.desc }}</p>
+        <h2 class="text-base font-black text-text-primary">{{ locale.title }}</h2>
+        <p class="text-xs text-text-tertiary mt-0.5">{{ locale.desc }}</p>
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500">
+    <div v-if="loading" class="flex items-center justify-center gap-2 py-8 text-xs text-text-tertiary">
       <Loader2 :size="16" class="animate-spin" />
       <span>{{ locale.loading }}</span>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- 邮箱绑定 -->
-      <div v-if="smtpEnabled" :class="cardClass">
+      <div v-if="smtpEnabled">
         <div class="flex items-center gap-3 mb-4">
-          <div class="p-2 bg-zinc-950 rounded-lg border border-zinc-800">
-            <Mail :size="16" class="text-zinc-400" />
+          <div class="p-2 bg-bg-tertiary rounded-lg border border-border-secondary">
+            <Mail :size="16" class="text-text-secondary" />
           </div>
-          <h3 class="text-sm font-bold text-zinc-200">{{ locale.emailNotifyTitle }}</h3>
+          <h3 class="text-sm font-bold text-text-primary">{{ locale.emailNotifyTitle }}</h3>
         </div>
 
         <div class="space-y-4">
-          <div v-if="userEmail" class="p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl">
+          <div v-if="userEmail" class="p-3 bg-bg-secondary-20 border border-border-secondary rounded-xl">
             <div class="flex items-center justify-between">
               <div>
                 <p
-                  class="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1"
+                  class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1"
                 >
                   {{ locale.currentEmail }}
                 </p>
-                <p class="text-sm font-medium text-zinc-200">{{ userEmail }}</p>
+                <p class="text-sm font-medium text-text-primary">{{ userEmail }}</p>
               </div>
               <div
                 :class="[
                   'px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider',
                   emailVerified
-                    ? 'bg-emerald-500/10 text-emerald-500'
-                    : 'bg-amber-500/10 text-amber-500'
+                    ? 'bg-success-10 text-success'
+                    : 'bg-warning-10 text-warning'
                 ]"
               >
                 {{ emailVerified ? locale.verified : locale.pendingVerify }}
@@ -51,18 +51,18 @@
 
           <!-- 未绑定状态 -->
           <div v-if="!userEmail" class="space-y-3">
-            <p class="text-xs text-zinc-500">{{ locale.emailUnboundDesc }}</p>
+            <p class="text-xs text-text-tertiary">{{ locale.emailUnboundDesc }}</p>
             <div class="flex flex-col sm:flex-row gap-2">
               <input
                 v-model="newEmail"
                 :disabled="bindingEmail"
                 type="email"
                 :placeholder="locale.emailPlaceholder"
-                class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary-30 w-full sm:w-auto"
               >
               <button
                 :disabled="!newEmail || bindingEmail"
-                class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap"
+                class="px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap"
                 @click="bindEmail"
               >
                 {{ bindingEmail ? locale.pleaseWait : locale.bindNow }}
@@ -73,10 +73,10 @@
           <!-- 待验证状态 -->
           <div v-else-if="!emailVerified" class="space-y-4 pt-2">
             <div
-              class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+              class="p-3 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
             >
-              <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
-              <p class="text-[11px] text-zinc-500 leading-relaxed">
+              <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
+              <p class="text-[11px] text-text-tertiary leading-relaxed">
                 {{ locale.emailCodeSentTip }}
               </p>
             </div>
@@ -88,10 +88,10 @@
                 maxlength="6"
                 :placeholder="locale.emailCodePlaceholder"
                 :class="[
-                  'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
+                  'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                   emailCodeError
-                    ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                    : 'border-zinc-800 focus:border-blue-500/30'
+                    ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                    : 'border-border-secondary focus:border-primary-30'
                 ]"
                 @input="handleEmailCodeInput"
                 @keydown="handleEmailCodeKeydown"
@@ -99,21 +99,21 @@
               <div class="grid grid-cols-2 gap-2">
                 <button
                   :disabled="bindingEmail || emailCode.length !== 6"
-                  class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                  class="px-4 py-2.5 bg-primary hover:bg-primary-hover text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50"
                   @click="verifyEmailCode"
                 >
                   {{ bindingEmail ? locale.verifying : locale.confirmVerify }}
                 </button>
                 <button
                   :disabled="resendingEmail"
-                  class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                  class="px-4 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                   @click="resendVerificationEmail"
                 >
                   {{ resendingEmail ? locale.sending : locale.resend }}
                 </button>
               </div>
               <button
-                class="w-full py-2 text-zinc-600 hover:text-zinc-400 text-[10px] font-black uppercase tracking-widest transition-all"
+                class="w-full py-2 text-text-tertiary hover:text-text-secondary text-[10px] font-black uppercase tracking-widest transition-all"
                 @click="changeEmail"
               >
                 {{ locale.changeEmailAddress }}
@@ -124,14 +124,14 @@
           <!-- 已验证状态 -->
           <div v-else class="flex gap-2 pt-2">
             <button
-              class="flex-1 py-2.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
+              class="flex-1 py-2.5 bg-bg-tertiary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all"
               @click="changeEmail"
             >
               {{ locale.changeEmail }}
             </button>
             <button
               :disabled="unbindingEmail"
-              class="flex-1 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+              class="flex-1 py-2.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all"
               @click="unbindEmail"
             >
               {{ unbindingEmail ? locale.unbinding : locale.unbindEmail }}
@@ -141,34 +141,34 @@
       </div>
 
       <!-- MeoW 账号绑定 -->
-      <div :class="[cardClass, 'border-blue-500/20 bg-blue-500/[0.02]']">
+      <div :class="meowCardClass">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-              <Smartphone :size="16" class="text-blue-500" />
+            <div class="p-2 bg-primary-10 rounded-lg border border-primary-20">
+              <Smartphone :size="16" class="text-primary" />
             </div>
-            <h3 class="text-sm font-bold text-zinc-200">{{ locale.meowPushTitle }}</h3>
+            <h3 class="text-sm font-bold text-text-primary">{{ locale.meowPushTitle }}</h3>
           </div>
         </div>
 
         <div class="space-y-4">
           <div
             v-if="meowUserIdBound"
-            class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl"
+            class="p-3 bg-primary-10 border border-primary-20 rounded-xl"
           >
             <div class="flex items-center justify-between">
               <div>
                 <p
-                  class="text-[10px] text-blue-500/60 font-black uppercase tracking-widest mb-1"
+                  class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1"
                 >
                   {{ locale.currentBoundId }}
                 </p>
-                <p class="text-sm font-black text-blue-500 tracking-tight">
+                <p class="text-sm font-black text-primary tracking-tight">
                   {{ meowUserIdBound }}
                 </p>
               </div>
               <div
-                class="px-2 py-0.5 bg-blue-500 text-white rounded-full text-[10px] font-black uppercase tracking-wider"
+                class="px-2 py-0.5 bg-primary text-white rounded-full text-[10px] font-black uppercase tracking-wider"
               >
                 {{ locale.connected }}
               </div>
@@ -177,7 +177,7 @@
 
           <!-- 未绑定状态 -->
           <div v-if="!meowUserIdBound" class="space-y-3">
-            <p class="text-xs text-zinc-500">
+            <p class="text-xs text-text-tertiary">
               {{ locale.meowDesc }}
             </p>
 
@@ -188,11 +188,11 @@
                 :disabled="binding"
                 type="text"
                 :placeholder="locale.meowIdPlaceholder"
-                class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500/30 w-full sm:w-auto"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-primary-30 w-full sm:w-auto"
               >
               <button
                 :disabled="!meowUserId || binding"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-blue-900/20 whitespace-nowrap"
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50 shadow-lg shadow-[var(--primary-glow)] whitespace-nowrap"
                 @click="sendVerificationCode"
               >
                 {{ binding ? locale.sending : locale.sendCode }}
@@ -202,12 +202,12 @@
             <!-- 第二步：输入验证码 -->
             <div v-else class="space-y-4">
               <div
-                class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+                class="p-3 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
               >
-                <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
-                <p class="text-[11px] text-zinc-500 leading-relaxed">
+                <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
+                <p class="text-[11px] text-text-tertiary leading-relaxed">
                   {{ locale.meowCodeSentPrefix }}
-                  <span class="font-bold text-zinc-200">{{ meowUserId }}</span
+                  <span class="font-bold text-text-primary">{{ meowUserId }}</span
                   >{{ locale.meowCodeSentSuffix }}
                 </p>
               </div>
@@ -219,10 +219,10 @@
                   maxlength="6"
                   :placeholder="locale.codePlaceholder"
                   :class="[
-                    'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
+                    'w-full bg-bg-primary border rounded-xl px-4 py-3 text-lg font-black tracking-[0.5em] text-center focus:outline-none transition-all',
                     verificationCodeError
-                      ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                      : 'border-zinc-800 focus:border-blue-500/30'
+                      ? 'border-error shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                      : 'border-border-secondary focus:border-primary-30'
                   ]"
                   @input="handleVerificationCodeInput"
                   @keydown="handleVerificationCodeKeydown"
@@ -230,14 +230,14 @@
                 <div class="grid grid-cols-2 gap-2">
                   <button
                     :disabled="binding || verificationCode.length !== 6"
-                    class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl transition-all disabled:opacity-50"
+                    class="px-4 py-2.5 bg-primary hover:bg-primary-hover text-text-primary text-xs font-black rounded-xl transition-all disabled:opacity-50"
                     @click="verifyAndBind"
                   >
                     {{ binding ? locale.verifying : locale.confirmBind }}
                   </button>
                   <button
                     :disabled="binding"
-                    class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                    class="px-4 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                     @click="cancelVerification"
                   >
                     {{ locale.cancel }}
@@ -250,7 +250,7 @@
           <!-- 已绑定状态 -->
           <div v-else class="pt-2">
             <button
-              class="w-full py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all"
+              class="w-full py-2.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all"
               @click="showUnbindConfirm"
             >
               {{ locale.unbindMeow }}
@@ -270,7 +270,7 @@
       @cancel="confirmDialog.onCancel"
       @confirm="confirmDialog.onConfirm"
     />
-  </section>
+  </div>
 </template>
 
 <script setup>
@@ -286,10 +286,12 @@ const { showToast } = useToast()
 const { pages } = useLocale()
 const locale = computed(() => pages.value?.account?.social || {})
 
-// 样式类常量
-const sectionClass = 'bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'
+// 卡片样式类常量（sectionClass 由父组件 account/index.vue 控制）
 const cardClass =
-  'bg-zinc-950/40 border border-zinc-800/50 rounded-2xl p-5 transition-all hover:border-zinc-700/50'
+  'rounded-2xl border border-border-secondary bg-bg-secondary-30 p-5 shadow-lg shadow-[0_10px_15px_var(--shadow-color)] transition-all hover:border-border-tertiary'
+// MeoW 卡片（蓝紫色调，与邮箱卡片做视觉区分）
+const meowCardClass =
+  'rounded-2xl border border-primary-20 bg-primary-5 p-5 shadow-lg shadow-[0_10px_15px_var(--shadow-color)] transition-all hover:border-border-tertiary'
 
 // 页面状态
 const loading = ref(true)

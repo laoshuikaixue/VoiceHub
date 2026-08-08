@@ -1,11 +1,11 @@
 <template>
   <div class="space-y-6 pb-24 md:pb-8">
     <!-- 日期选择器 -->
-    <div class="relative bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-1 overflow-hidden">
+    <div class="relative bg-bg-secondary-50 border border-border-secondary-50 rounded-2xl p-1 overflow-hidden">
       <div class="flex items-center" @touchstart.stop>
         <button
           :disabled="isFirstDateVisible"
-          class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+          class="p-2 text-text-tertiary hover:text-text-secondary disabled:opacity-30 transition-colors"
           @click="scrollDates('left')"
         >
           <svg
@@ -31,8 +31,8 @@
             :class="[
               'flex flex-col items-center justify-center min-w-[64px] h-16 rounded-lg transition-all duration-200 border',
               selectedDate === date.value
-                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 hover:border-zinc-700'
+                ? 'bg-primary-hover border-primary text-text-primary shadow-lg shadow-[var(--primary-glow)]'
+                : 'bg-bg-secondary border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-secondary hover:border-border-tertiary'
             ]"
             @click="handleDateSelect(date.value)"
           >
@@ -46,7 +46,7 @@
 
         <button
           :disabled="isLastDateVisible"
-          class="p-2 text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+          class="p-2 text-text-tertiary hover:text-text-secondary disabled:opacity-30 transition-colors"
           @click="scrollDates('right')"
         >
           <svg
@@ -61,10 +61,10 @@
         </button>
 
         <!-- 操作按钮组 -->
-        <div class="flex items-center border-l border-zinc-800 ml-1 pl-1">
+        <div class="flex items-center border-l border-border-secondary ml-1 pl-1">
           <!-- 定位到今天 -->
           <button
-            class="p-2 text-zinc-500 hover:text-emerald-400 transition-colors"
+            class="p-2 text-text-tertiary hover:text-success transition-colors"
             :title="locale.jumpToday"
             @click="scrollToToday"
           >
@@ -73,7 +73,7 @@
 
           <!-- 手动日期选择按钮 -->
           <button
-            class="p-2 text-zinc-500 hover:text-blue-400 transition-colors"
+            class="p-2 text-text-tertiary hover:text-primary transition-colors"
             :title="locale.selectSpecificDate"
             @click="openManualDatePicker"
           >
@@ -86,16 +86,16 @@
     <!-- 手动日期选择弹窗 -->
     <div
       v-if="showManualDatePicker"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
     >
       <div
-        class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+        class="bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
         @click.stop
       >
-        <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.selectDate }}</h3>
+        <div class="flex items-center justify-between p-4 border-b border-border-secondary">
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.selectDate }}</h3>
           <button
-            class="text-zinc-500 hover:text-zinc-300 transition-colors"
+            class="text-text-tertiary hover:text-text-secondary transition-colors"
             @click="showManualDatePicker = false"
           >
             <CloseIcon class="w-5 h-5" />
@@ -104,18 +104,18 @@
         <div class="p-6 space-y-6">
           <input
             v-model="manualSelectedDate"
-            class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-blue-500 transition-colors"
+            class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary transition-colors"
             type="date"
           />
           <div class="flex gap-3">
             <button
-              class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+              class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
               @click="showManualDatePicker = false"
             >
               {{ locale.cancel }}
             </button>
             <button
-              class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-colors uppercase tracking-wider"
+              class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider"
               @click="confirmManualDate"
             >
               {{ locale.confirm }}
@@ -128,7 +128,7 @@
     <!-- 播出时段选择器 (如果启用) -->
     <div
       v-if="playTimeEnabled"
-      class="flex items-center gap-3 bg-zinc-900/30 border border-zinc-800 rounded-lg p-3"
+      class="flex items-center gap-3 bg-bg-secondary-30 border border-border-secondary rounded-lg p-3"
     >
       <CustomSelect
         :model-value="selectedPlayTime"
@@ -146,19 +146,19 @@
 
     <div v-else>
       <div
-        class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 shadow-xl mb-4 pt-4"
+        class="lg:hidden sticky -top-4 -mx-4 -mt-4 z-20 flex p-1 bg-bg-primary-90 backdrop-blur-md border-b border-border-secondary shadow-xl mb-4 pt-4"
       >
         <button
           :class="[
             'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
-            mobileTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500'
+            mobileTab === 'pending' ? 'bg-primary-hover text-text-primary shadow-lg' : 'text-text-tertiary'
           ]"
           @click="mobileTab = 'pending'"
         >
           <ListMusic class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
             >{{ locale.pendingSongs }}
-            <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
+            <span class="px-1.5 py-0.5 bg-bg-tertiary text-[10px] rounded text-text-tertiary">{{
               filteredUnscheduledSongs.length
             }}</span></span
           >
@@ -166,14 +166,14 @@
         <button
           :class="[
             'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-black uppercase tracking-widest transition-all',
-            mobileTab === 'scheduled' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-500'
+            mobileTab === 'scheduled' ? 'bg-primary-hover text-text-primary shadow-lg' : 'text-text-tertiary'
           ]"
           @click="mobileTab = 'scheduled'"
         >
           <PlaySquare class="w-4 h-4" />
           <span class="flex items-center gap-1.5"
             >{{ locale.playlist }}
-            <span class="px-1.5 py-0.5 bg-zinc-800 text-[10px] rounded text-zinc-400">{{
+            <span class="px-1.5 py-0.5 bg-bg-tertiary text-[10px] rounded text-text-tertiary">{{
               localScheduledSongs.length
             }}</span></span
           >
@@ -193,11 +193,11 @@
           @drop.stop.prevent="handleReturnToDraggable"
         >
           <div class="flex items-center justify-between px-1">
-            <h3 class="hidden lg:block text-lg font-black tracking-tight text-zinc-100 uppercase">
+            <h3 class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase">
               {{ locale.pendingSongs }}
             </h3>
             <div
-              class="flex w-full lg:w-auto gap-1 p-1 bg-zinc-900/50 rounded-xl border border-zinc-800"
+              class="flex w-full lg:w-auto gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
             >
               <button
                 v-for="tab in scheduleTabs"
@@ -205,8 +205,8 @@
                 :class="[
                   'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                   activeTab === tab.id
-                    ? 'bg-zinc-800 text-blue-400 shadow-md border border-blue-500/20'
-                    : 'text-zinc-600 hover:text-zinc-400'
+                    ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
+                    : 'text-text-disabled hover:text-text-tertiary'
                 ]"
                 @click="activeTab = tab.id"
               >
@@ -216,18 +216,18 @@
           </div>
 
           <!-- 筛选区 - 移动端折叠 -->
-          <div class="bg-zinc-900/40 border border-zinc-800 rounded-2xl shadow-xl">
+          <div class="bg-bg-secondary-40 border border-border-secondary rounded-2xl shadow-xl">
             <div
-              class="p-4 flex items-center justify-between lg:hidden border-b border-zinc-800/50 rounded-t-2xl"
+              class="p-4 flex items-center justify-between lg:hidden border-b border-border-secondary-50 rounded-t-2xl"
               @click="mobileFiltersOpen = !mobileFiltersOpen"
             >
-              <div class="flex items-center gap-2 text-zinc-400">
+              <div class="flex items-center gap-2 text-text-tertiary">
                 <Filter class="w-3.5 h-3.5" />
                 <span class="text-[11px] font-black uppercase tracking-widest">{{ locale.searchAndFilter }}</span>
               </div>
               <ChevronRight
                 :class="[
-                  'w-3.5 h-3.5 text-zinc-700 transition-transform duration-300',
+                  'w-3.5 h-3.5 text-text-secondary transition-transform duration-300',
                   mobileFiltersOpen ? 'rotate-90' : ''
                 ]"
               />
@@ -239,17 +239,17 @@
             >
               <div class="relative">
                 <Search
-                  class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700 w-3.5 h-3.5"
+                  class="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-3.5 h-3.5"
                 />
                 <input
                   v-model="searchQuery"
                   type="text"
                   :placeholder="locale.searchPlaceholder"
-                  class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs focus:outline-none focus:border-blue-500/30 transition-all text-zinc-200"
+                  class="w-full pl-9 pr-4 py-2 bg-bg-primary border border-border-secondary rounded-xl text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
                 />
                 <button
                   v-if="searchQuery"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-text-disabled hover:text-text-tertiary"
                   @click="searchQuery = ''"
                 >
                   <CloseIcon class="w-3.5 h-3.5" />
@@ -283,9 +283,9 @@
                   <CustomSelect v-model="songSortOption" :label="locale.sort" :options="sortOptions" />
                 </div>
                 <button
-                  class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-zinc-950 border border-zinc-800 hover:border-blue-500/30 hover:text-blue-400 rounded-xl text-xs focus:outline-none transition-all text-zinc-300"
+                  class="flex items-center justify-center gap-2 w-full px-4 py-2 bg-bg-primary border border-border-secondary hover:border-primary-30 hover:text-primary rounded-xl text-xs focus:outline-none transition-all text-text-secondary"
                   :class="{
-                    'border-blue-500/50 text-blue-400 bg-blue-500/10': isPlaylistFilterActive
+                    'border-primary-50 text-primary bg-primary-10': isPlaylistFilterActive
                   }"
                   @click="showPlaylistFilterModal = true"
                 >
@@ -300,8 +300,8 @@
             :class="[
               'draggable-songs flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
               isDraggableOver
-                ? 'border-blue-500 bg-blue-500/5'
-                : 'border-zinc-800/80 bg-zinc-900/20'
+                ? 'border-primary bg-primary-5'
+                : 'border-border-secondary-80 bg-bg-secondary-20'
             ]"
           >
             <div class="space-y-2">
@@ -311,8 +311,8 @@
                 :class="[
                   'draggable-song relative group rounded-xl p-3 transition-all select-none',
                   song.cardCodeId
-                    ? 'bg-amber-500/5 border border-amber-500/30'
-                    : 'bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700'
+                    ? 'bg-warning-5 border border-warning-30'
+                    : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
                 ]"
                 draggable="true"
                 @dragend="dragEnd"
@@ -325,7 +325,7 @@
                 <div class="flex items-center gap-3">
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                    class="relative w-12 h-12 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer hover:opacity-80 transition-opacity"
                     @click.stop="playSong(song)"
                   >
                     <img
@@ -338,7 +338,7 @@
                     />
                     <div
                       v-else
-                      class="w-full h-full flex items-center justify-center text-zinc-600"
+                      class="w-full h-full flex items-center justify-center text-text-disabled"
                     >
                       <Music2 class="w-6 h-6 opacity-50" />
                     </div>
@@ -347,11 +347,11 @@
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div class="flex items-center gap-2 min-w-0">
                       <h4
-                        class="font-bold text-zinc-100 text-sm truncate flex items-center gap-2 min-w-0"
+                        class="font-bold text-text-primary text-sm truncate flex items-center gap-2 min-w-0"
                       >
                         <span
                           v-if="isBilibiliSong(song)"
-                          class="text-zinc-100 flex items-center gap-1 text-left truncate"
+                          class="text-text-primary flex items-center gap-1 text-left truncate"
                         >
                           <span class="truncate">{{ song.title }}</span>
                         </span>
@@ -365,7 +365,7 @@
                           <span
                             v-for="(playlistName, idx) in playlistNamesMap[song.musicId]"
                             :key="idx"
-                            class="px-1.5 py-[2px] bg-blue-500/10 text-blue-400 rounded text-[9px] border border-blue-500/20 truncate max-w-[100px] font-normal leading-none"
+                            class="px-1.5 py-[2px] bg-primary-10 text-primary rounded text-[9px] border border-primary-20 truncate max-w-[100px] font-normal leading-none"
                             :title="playlistName"
                           >
                             {{ playlistName }}
@@ -374,7 +374,7 @@
                       </h4>
                       <button
                         v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all flex-shrink-0"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
@@ -382,14 +382,14 @@
                       </button>
                       <span
                         v-if="song.cardCodeId"
-                        class="inline-flex items-center rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 whitespace-nowrap flex-shrink-0"
+                        class="inline-flex items-center rounded-md border border-warning-20 bg-warning-10 px-1.5 py-0.5 text-[9px] font-bold text-warning whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
                         {{ locale.cardPending }}
                       </span>
                       <span
                         v-if="song.hasSubmissionNote && song.submissionNote"
-                        class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
+                        class="text-xs text-primary-80 truncate max-w-[150px] cursor-pointer hover:text-primary transition-colors"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(song)"
                       >
@@ -400,17 +400,17 @@
                         }}
                       </span>
                     </div>
-                    <div class="text-xs text-zinc-400 truncate">{{ song.artist }}</div>
-                    <div class="text-[10px] text-zinc-500 truncate flex items-center gap-1">
+                    <div class="text-xs text-text-tertiary truncate">{{ song.artist }}</div>
+                    <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
-                      <span v-if="song.requesterGrade || song.grade" class="text-zinc-600">|</span>
+                      <span v-if="song.requesterGrade || song.grade" class="text-text-disabled">|</span>
                       <span v-if="song.requesterGrade || song.grade">
                         {{ song.requesterGrade || song.grade }}
                         {{ song.requesterClass || song.class }}
                       </span>
                       <span
                         v-if="song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
+                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
@@ -421,16 +421,16 @@
                     <!-- 普通模式：投票数 -->
                     <div
                       v-if="activeTab !== 'replay'"
-                      class="flex items-center gap-1 text-[10px] font-bold text-zinc-500 bg-zinc-950/50 px-2 py-1 rounded-md border border-zinc-800/50"
+                      class="flex items-center gap-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 px-2 py-1 rounded-md border border-border-secondary-50"
                     >
-                      <Heart class="w-3 h-3 text-red-500/50" />
+                      <Heart class="w-3 h-3 text-error-50" />
                       {{ song.voteCount || 0 }}
                     </div>
 
                     <!-- 重播模式：查看按钮 -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-[10px] font-bold transition-colors"
+                      class="px-3 py-1.5 rounded-lg bg-primary-10 hover:bg-primary-20 text-primary border border-primary-20 text-[10px] font-bold transition-colors"
                       @click.stop="openReplayModal(song)"
                     >
                       {{ locale.view }}
@@ -439,7 +439,7 @@
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="lg:hidden p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 transition-colors"
+                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors"
                       :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
@@ -448,7 +448,7 @@
 
                     <!-- 移动端添加按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="addSongToSchedule(song)"
                     >
                       <Plus class="w-5 h-5" />
@@ -456,7 +456,7 @@
 
                     <!-- 菜单按钮 -->
                     <div
-                      class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors"
                     >
                       <MoreVertical class="w-4 h-4" />
                     </div>
@@ -467,7 +467,7 @@
               <!-- 空状态 -->
               <div
                 v-if="filteredUnscheduledSongs.length === 0"
-                class="h-[300px] flex flex-col items-center justify-center text-zinc-800"
+                class="h-[300px] flex flex-col items-center justify-center text-text-primary"
               >
                 <div v-if="searchQuery" class="flex flex-col items-center">
                   <Search class="w-8 h-8 mb-2 opacity-20" />
@@ -501,79 +501,79 @@
           <div
             class="hidden lg:flex flex-col xl:flex-row xl:items-center justify-between gap-4 px-1"
           >
-            <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">{{ locale.playOrder }}</h3>
+            <h3 class="text-lg font-black tracking-tight text-text-primary uppercase">{{ locale.playOrder }}</h3>
             <div
-              class="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-900/50 border border-zinc-800/50 rounded-2xl"
+              class="flex flex-wrap items-center gap-2 p-1.5 bg-bg-secondary-50 border border-border-secondary-50 rounded-2xl"
             >
               <div class="flex gap-1">
                 <button
                   :disabled="
                     !hasChanges && localScheduledSongs.length === 0 && !hasUnpublishedDrafts
                   "
-                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="saveDraft"
                 >
                   <Save class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.saveDraft }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="openDownloadDialog"
                 >
                   <Download class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.downloadSongs }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-emerald-500 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-success rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="markAllAsPlayed"
                 >
                   <CheckCircle2 class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.markAllPlayed }}</span
                   >
                 </button>
                 <button
-                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-purple-400 rounded-xl transition-all group relative"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative"
                   @click="openMoveDateDialog"
                 >
                   <ArrowRight class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.moveDate }}</span
                   >
                 </button>
                 <button
                   :disabled="localScheduledSongs.length === 0"
-                  class="p-2 bg-zinc-950 border border-zinc-800 hover:bg-zinc-800 text-zinc-500 hover:text-red-400 rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-error rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="clearScheduleList"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                   <span
-                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-800 text-[9px] text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-zinc-700"
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.clearList }}</span
                   >
                 </button>
               </div>
-              <div class="h-6 w-[1px] bg-zinc-800 mx-1" />
+              <div class="h-6 w-[1px] bg-bg-tertiary mx-1" />
               <button
                 :disabled="!canPublish"
-                class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-[10px] font-black rounded-xl border border-emerald-500/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-[10px] font-black rounded-xl border border-success-20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="publishSchedule"
               >
                 <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
               </button>
               <button
                 :disabled="!hasChanges"
-                class="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+                class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
               >
                 <FileBadge class="w-3.5 h-3.5" /> {{ locale.saveAndPublish }}
@@ -585,7 +585,7 @@
             ref="sequenceList"
             :class="[
               'sequence-list flex-1 border-2 border-dashed rounded-[2rem] p-2 md:p-3 min-h-[400px] transition-colors duration-200',
-              isSequenceOver ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-800/80 bg-zinc-900/20'
+              isSequenceOver ? 'border-primary bg-primary-5' : 'border-border-secondary-80 bg-bg-secondary-20'
             ]"
             @dragleave="handleSequenceDragLeave"
             @dragover.prevent="handleDragOver"
@@ -594,7 +594,7 @@
           >
             <div
               v-if="localScheduledSongs.length === 0"
-              class="flex flex-col items-center justify-center h-full py-12 text-zinc-800"
+              class="flex flex-col items-center justify-center h-full py-12 text-text-primary"
             >
               <PlaySquare class="w-8 h-8 mb-4 opacity-20" />
               <p class="text-[10px] font-black uppercase tracking-widest">{{ locale.addSongsHint }}</p>
@@ -605,11 +605,11 @@
                 v-for="(schedule, index) in localScheduledSongs"
                 :key="schedule.id"
                 :class="[
-                  'scheduled-song relative group bg-zinc-900 border border-zinc-800/50 rounded-xl p-3 hover:border-zinc-700 transition-all select-none',
-                  dragOverIndex === index ? 'border-t-2 border-t-blue-500' : '',
-                  schedule.isDraft ? 'border-amber-500/30 bg-amber-500/5' : '',
+                  'scheduled-song relative group bg-bg-secondary border border-border-secondary-50 rounded-xl p-3 hover:border-border-tertiary transition-all select-none',
+                  dragOverIndex === index ? 'border-t-2 border-t-primary' : '',
+                  schedule.isDraft ? 'border-warning-30 bg-warning-5' : '',
                   schedule.song && (schedule.song.cardCodeId || schedule.song.usedCardCode)
-                    ? 'border-amber-500/30 bg-amber-500/5'
+                    ? 'border-warning-30 bg-warning-5'
                     : ''
                 ]"
                 :data-schedule-id="schedule.id"
@@ -626,17 +626,17 @@
               >
                 <div class="flex items-center gap-3">
                   <div
-                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-zinc-950/50 border border-zinc-800 text-zinc-500 font-black text-xs flex-shrink-0"
+                    class="flex flex-col items-center justify-center w-10 h-10 rounded-lg bg-bg-primary-50 border border-border-secondary text-text-tertiary font-black text-xs flex-shrink-0"
                   >
-                    <span class="text-[8px] text-zinc-600 uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
-                    <span class="text-sm text-zinc-300 leading-none">{{
+                    <span class="text-[8px] text-text-disabled uppercase leading-none mb-0.5">{{ locale.positionShort }}</span>
+                    <span class="text-sm text-text-secondary leading-none">{{
                       index + 1 < 10 ? '0' + (index + 1) : index + 1
                     }}</span>
                   </div>
 
                   <!-- 封面图片 -->
                   <div
-                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0 border border-zinc-700/50 cursor-pointer hover:opacity-80 transition-opacity"
+                    class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50 cursor-pointer hover:opacity-80 transition-opacity"
                     @click.stop="playSong(schedule.song)"
                   >
                     <img
@@ -649,7 +649,7 @@
                     />
                     <div
                       v-else
-                      class="w-full h-full flex items-center justify-center text-zinc-600"
+                      class="w-full h-full flex items-center justify-center text-text-disabled"
                     >
                       <Music2 class="w-5 h-5 opacity-50" />
                     </div>
@@ -657,12 +657,12 @@
 
                   <div class="flex-1 min-w-0 flex flex-col gap-0.5">
                     <div class="flex items-center gap-2 min-w-0">
-                      <h4 class="font-bold text-zinc-200 text-sm truncate min-w-0">
+                      <h4 class="font-bold text-text-primary text-sm truncate min-w-0">
                         {{ schedule.song.title }}
                       </h4>
                       <button
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all flex-shrink-0"
+                        class="inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary-30 bg-primary-10 text-primary hover:bg-primary-20 transition-all flex-shrink-0"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
@@ -670,7 +670,7 @@
                       </button>
                       <span
                         v-if="schedule.song.hasSubmissionNote && schedule.song.submissionNote"
-                        class="text-xs text-blue-400/80 truncate max-w-[150px] cursor-pointer hover:text-blue-400 transition-colors"
+                        class="text-xs text-primary-80 truncate max-w-[150px] cursor-pointer hover:text-primary transition-colors"
                         :title="locale.viewRemark"
                         @click.stop="openSubmissionRemark(schedule.song, schedule.replayRequestId)"
                       >
@@ -683,27 +683,27 @@
                       <!-- 重播标识 -->
                       <span
                         v-if="schedule.replayRequestId != null"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-10 text-primary border border-primary-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
                         <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         >{{ locale.draft }}</span
                       >
                       <!-- 点歌券徽章（已使用点歌券投稿的歌曲在排期中高亮显示） -->
                       <span
                         v-if="schedule.song.cardCodeId || schedule.song.usedCardCode"
-                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
+                        class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-warning-10 text-warning border border-warning-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0"
                         :title="locale.cardPending"
                       >
                         {{ locale.cardCode }}
                       </span>
                     </div>
-                    <div class="text-xs text-zinc-500 truncate">{{ schedule.song.artist }}</div>
-                    <div class="text-[10px] text-zinc-600 truncate flex items-center gap-1">
+                    <div class="text-xs text-text-tertiary truncate">{{ schedule.song.artist }}</div>
+                    <div class="text-[10px] text-text-disabled truncate flex items-center gap-1">
                       <!-- 显示申请人或投稿人 -->
                       <span
                         v-if="schedule.replayRequestId != null"
@@ -728,7 +728,7 @@
                       <span v-else>{{ schedule.song.requester }}</span>
                       <span
                         v-if="schedule.song.requesterGrade || schedule.song.grade"
-                        class="text-zinc-700"
+                        class="text-text-secondary"
                         >|</span
                       >
                       <span v-if="schedule.song.requesterGrade || schedule.song.grade">
@@ -737,7 +737,7 @@
                       </span>
                       <span
                         v-if="schedule.song.preferredPlayTimeId"
-                        class="ml-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-[9px] border border-indigo-500/20 whitespace-nowrap"
+                        class="ml-1 px-1.5 py-0.5 bg-info-10 text-info rounded text-[9px] border border-info-20 whitespace-nowrap"
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(schedule.song.preferredPlayTimeId)}`, getPlayTimeName(schedule.song.preferredPlayTimeId)) }}
                       </span>
@@ -747,7 +747,7 @@
                   <div class="flex items-center gap-2">
                     <button
                       v-if="schedule.isDraft"
-                      class="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 transition-colors"
+                      class="p-1.5 rounded-lg bg-success-10 hover:bg-success-20 text-success border border-success-20 transition-colors"
                       :title="locale.publishThisDraft"
                       @click="publishSingleDraft(schedule)"
                     >
@@ -756,14 +756,14 @@
 
                     <!-- 移动端删除按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="removeSongFromSchedule(schedule)"
                     >
                       <Minus class="w-5 h-5" />
                     </button>
 
                     <div
-                      class="p-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-600 cursor-grab active:cursor-grabbing hover:text-zinc-400 transition-colors"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors"
                     >
                       <MoreVertical class="w-4 h-4" />
                     </div>
@@ -777,43 +777,43 @@
 
       <!-- 移动端底部操作栏 -->
       <div
-        class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 flex items-center gap-3 pb-6"
+        class="lg:hidden fixed bottom-0 left-0 right-0 z-40 p-3 bg-bg-primary-90 backdrop-blur-xl border-t border-border-secondary flex items-center gap-3 pb-6"
       >
         <div class="w-[148px] overflow-x-auto scrollbar-hide">
           <div class="flex items-center gap-2 w-max">
             <button
-              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all"
               @click="openDownloadDialog"
             >
               <Download class="w-5 h-5" />
             </button>
             <button
-              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-text-tertiary rounded-xl flex items-center justify-center active:scale-95 transition-all"
               @click="saveDraft"
             >
               <Save class="w-5 h-5" />
             </button>
             <button
-              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-emerald-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-success rounded-xl flex items-center justify-center active:scale-95 transition-all"
               @click="markAllAsPlayed"
             >
               <CheckCircle2 class="w-5 h-5" />
             </button>
             <button
-              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-purple-400 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-info rounded-xl flex items-center justify-center active:scale-95 transition-all"
               @click="openMoveDateDialog"
             >
               <ArrowRight class="w-5 h-5" />
             </button>
             <button
-              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-red-400 rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-error rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="localScheduledSongs.length === 0"
               @click="clearScheduleList"
             >
               <Trash2 class="w-5 h-5" />
             </button>
             <button
-              class="w-11 h-11 shrink-0 bg-zinc-900 border border-zinc-800 text-blue-500 rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
               :title="locale.publishOnly"
               @click="publishSchedule"
             >
@@ -825,7 +825,7 @@
         <!-- 主要操作 -->
         <button
           :disabled="!hasChanges"
-          class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black uppercase tracking-widest rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           @click="saveSequence"
         >
           <FileBadge class="w-4 h-4" /> {{ locale.saveAndPublish }}
@@ -856,37 +856,37 @@
 
   <div
     v-if="showMoveDateDialog"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
   >
     <div
-      class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+      class="bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.moveDateTitle }}</h3>
+      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.moveDateTitle }}</h3>
         <button
-          class="text-zinc-500 hover:text-zinc-300 transition-colors"
+          class="text-text-tertiary hover:text-text-secondary transition-colors"
           @click="showMoveDateDialog = false"
         >
           <CloseIcon class="w-5 h-5" />
         </button>
       </div>
       <div class="p-6 space-y-4">
-          <div class="text-xs text-zinc-500">{{ locale.currentDate(selectedDate) }}</div>
+          <div class="text-xs text-text-tertiary">{{ locale.currentDate(selectedDate) }}</div>
         <input
           v-model="moveTargetDate"
-          class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-purple-500 transition-colors"
+          class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-info transition-colors"
           type="date"
         />
         <div class="flex gap-3">
           <button
-            class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+            class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
             @click="showMoveDateDialog = false"
           >
           {{ locale.cancel }}
           </button>
           <button
-            class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-purple-900/20 transition-colors uppercase tracking-wider"
+            class="flex-1 py-3 bg-info hover:bg-info text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--info-glow-20)] transition-colors uppercase tracking-wider"
             @click="confirmMoveDate"
           >
           {{ locale.nextStep }}
@@ -899,26 +899,26 @@
   <!-- 重播申请详情弹窗 -->
   <div
     v-if="showReplayModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
     @click="closeReplayModal"
   >
     <div
-      class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+      class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
       @click.stop
     >
-      <div class="flex items-center justify-between p-4 border-b border-zinc-800">
-        <h3 class="text-sm font-black text-zinc-100 uppercase tracking-widest">
+      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">
         {{ locale.replayDetailTitle(replayModalTitle) }}
         </h3>
         <div class="flex items-center gap-3">
           <button
-            class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-lg text-xs font-bold transition-colors"
+            class="px-3 py-1.5 bg-error-10 hover:bg-error-20 text-error border border-error-20 rounded-lg text-xs font-bold transition-colors"
             @click="(rejectReplayRequest(replayModalSongId), closeReplayModal())"
           >
           {{ locale.rejectRequest }}
           </button>
           <button
-            class="text-zinc-500 hover:text-zinc-300 transition-colors"
+            class="text-text-tertiary hover:text-text-secondary transition-colors"
             @click="closeReplayModal"
           >
             <CloseIcon class="w-5 h-5" />
@@ -926,7 +926,7 @@
         </div>
       </div>
       <div class="p-0 overflow-y-auto max-h-[60vh]">
-        <div class="divide-y divide-zinc-800/50">
+        <div class="divide-y divide-panel-bg-dark-50">
           <div
             v-for="(req, idx) in replayModalRequests"
             :key="idx"
@@ -934,25 +934,25 @@
           >
             <div class="flex items-center gap-3">
               <div
-                class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-500 group-hover:text-blue-400 transition-colors"
+                class="w-8 h-8 rounded-lg bg-bg-secondary border border-border-secondary flex items-center justify-center text-text-tertiary group-hover:text-primary transition-colors"
               >
                 <User class="w-3.5 h-3.5" />
               </div>
               <div class="flex flex-col">
-                <span class="text-sm font-bold text-zinc-200">{{ req.name }}</span>
-                <span v-if="req.grade" class="text-[10px] text-zinc-500"
+                <span class="text-sm font-bold text-text-primary">{{ req.name }}</span>
+                <span v-if="req.grade" class="text-[10px] text-text-tertiary"
                   >{{ req.grade }}{{ req.class ? ` ${req.class}` : '' }}</span
                 >
               </div>
             </div>
             <div
-              class="flex items-center gap-1.5 text-[10px] font-black text-zinc-600 uppercase tracking-widest"
+              class="flex items-center gap-1.5 text-[10px] font-black text-text-disabled uppercase tracking-widest"
             >
               <Clock class="w-2.5 h-2.5" />
               {{ formatDate(req.createdAt) }}
             </div>
           </div>
-          <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-zinc-700">
+          <div v-if="replayModalRequests.length === 0" class="py-10 text-center text-text-secondary">
             <Info class="w-6 h-6 mx-auto mb-2 opacity-20" />
         <p class="text-xs font-bold uppercase tracking-widest">{{ locale.noReplayDetails }}</p>
           </div>
@@ -3048,10 +3048,10 @@ const updateDragPosition = (x, y) => {
   if (!elementBelow) return
 
   // 清除之前的高亮
-  document.querySelectorAll('.border-blue-500').forEach((el) => {
+  document.querySelectorAll('.border-primary').forEach((el) => {
     // 仅移除通过拖拽添加的高亮，避免移除原本的样式
     if (el.dataset.dragHighlight) {
-      el.classList.remove('border-blue-500', 'bg-blue-500/10')
+      el.classList.remove('border-primary', 'bg-primary-10')
       delete el.dataset.dragHighlight
     }
   })
@@ -3065,19 +3065,19 @@ const updateDragPosition = (x, y) => {
   if (touchDragData.value?.type === 'song') {
     // 拖拽待排歌曲时，高亮播放列表区域
     if (sequenceList) {
-      sequenceList.classList.add('border-blue-500', 'bg-blue-500/10')
+      sequenceList.classList.add('border-primary', 'bg-primary-10')
       sequenceList.dataset.dragHighlight = 'true'
     } else if (scheduledSong) {
-      scheduledSong.classList.add('border-blue-500', 'bg-blue-500/10')
+      scheduledSong.classList.add('border-primary', 'bg-primary-10')
       scheduledSong.dataset.dragHighlight = 'true'
     }
   } else if (touchDragData.value?.type === 'schedule') {
     // 拖拽已排歌曲时，高亮待排区域或其他已排歌曲
     if (draggableSongs) {
-      draggableSongs.classList.add('border-blue-500', 'bg-blue-500/10')
+      draggableSongs.classList.add('border-primary', 'bg-primary-10')
       draggableSongs.dataset.dragHighlight = 'true'
     } else if (scheduledSong) {
-      scheduledSong.classList.add('border-blue-500', 'bg-blue-500/10')
+      scheduledSong.classList.add('border-primary', 'bg-primary-10')
       scheduledSong.dataset.dragHighlight = 'true'
     }
   }
@@ -3085,9 +3085,9 @@ const updateDragPosition = (x, y) => {
 
 // 清除拖拽位置指示
 const clearDragPosition = () => {
-  document.querySelectorAll('.border-blue-500').forEach((el) => {
+  document.querySelectorAll('.border-primary').forEach((el) => {
     if (el.dataset.dragHighlight) {
-      el.classList.remove('border-blue-500', 'bg-blue-500/10')
+      el.classList.remove('border-primary', 'bg-primary-10')
       delete el.dataset.dragHighlight
     }
   })

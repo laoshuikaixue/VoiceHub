@@ -3718,6 +3718,14 @@ export const admin = {
   }
 } as const
 
+// ==================== Theme ====================
+export const theme = {
+  select: 'Choose theme',
+  ClassicDark: 'Classic Dark',
+  ClassicLight: 'Classic Light',
+  ModernLight: 'Modern Light'
+} as const
+
 // Localized copy for server-side business error codes (keyed by SERVER_ERROR_CODES in server/config/constants.ts).
 // The client resolves these via useServerErrors().localize(err) using err.data.code, falling back to the server message.
 export const serverErrors = {

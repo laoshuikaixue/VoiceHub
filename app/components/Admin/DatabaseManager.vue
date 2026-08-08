@@ -2,8 +2,8 @@
   <div class="max-w-[1200px] mx-auto space-y-8 pb-20 px-2">
     <!-- 页面标题 -->
     <div class="space-y-1">
-      <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
-      <p class="text-xs text-zinc-500 font-medium">
+      <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+      <p class="text-xs text-text-tertiary font-medium">
         {{ locale.desc }}
       </p>
     </div>
@@ -14,44 +14,48 @@
         v-for="card in cards"
         :key="card.id"
         :class="[
-          'group relative bg-zinc-900/40 border border-zinc-800 rounded-2xl p-8 transition-all hover:border-zinc-700 hover:shadow-2xl hover:shadow-black/40',
-          card.isDanger ? 'hover:border-rose-500/20' : ''
+          'group relative bg-bg-secondary-40 border border-border-secondary rounded-2xl p-8 transition-all hover:border-border-tertiary hover:shadow-2xl hover:shadow-[0_25px_50px_var(--shadow-color-deep)]',
+          card.isDanger ? 'hover:border-error-20' : ''
         ]"
       >
         <div class="flex flex-col h-full space-y-6">
           <div class="flex items-center justify-between">
             <div
               :class="[
-                'p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 transition-all',
+                'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary transition-all flex items-center justify-center',
                 card.isDanger
-                  ? 'text-rose-500 border-rose-500/10'
-                  : `text-${card.color}-500 border-${card.color}-500/10 shadow-lg`
+                  ? 'text-error border-error-10'
+                  : card.colorClass === 'primary'
+                    ? 'text-primary border-primary-20'
+                    : card.colorClass === 'warning'
+                      ? 'text-warning border-warning-20'
+                      : 'text-success border-success-20'
               ]"
             >
               <component :is="card.icon" class="w-6 h-6" />
             </div>
             <span
               v-if="card.isDanger"
-              class="px-2 py-0.5 bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase tracking-widest border border-rose-500/20 rounded"
+              class="px-2 py-0.5 bg-error-10 text-error text-[9px] font-black uppercase tracking-widest border border-error-20 rounded"
               >{{ locale.highRisk }}</span
             >
           </div>
 
           <div class="flex-1 space-y-2">
-            <h3 class="text-lg font-bold text-zinc-100 group-hover:text-blue-400 transition-colors">
+            <h3 class="text-lg font-bold text-text-primary group-hover:text-primary transition-colors">
               {{ card.title }}
             </h3>
-            <p class="text-xs text-zinc-500 leading-relaxed font-medium">
+            <p class="text-xs text-text-tertiary leading-relaxed font-medium">
               {{ card.desc }}
             </p>
           </div>
 
           <button
             :disabled="isLoading(card.id)"
-            class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-zinc-950 border border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 hover:border-zinc-700"
+            class="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 bg-bg-primary border border-border-secondary text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary hover:border-border-tertiary"
             :class="
               card.isDanger
-                ? 'bg-zinc-950 border border-rose-900/30 text-rose-500 hover:bg-rose-600 hover:text-white hover:border-rose-600 shadow-lg shadow-rose-900/5'
+                ? 'bg-bg-primary border border-error-30 text-error hover:bg-error hover:text-text-primary hover:border-error shadow-lg shadow-[var(--error-glow-5)]'
                 : ''
             "
             @click="openModal(card.id)"
@@ -65,18 +69,18 @@
         <div
           :class="[
             'absolute -right-4 -bottom-4 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none',
-            card.isDanger ? 'bg-rose-500/5' : `bg-${card.color}-500/5`
+            card.isDanger ? 'bg-error-5' : card.colorClass === 'primary' ? 'bg-primary-5' : card.colorClass === 'warning' ? 'bg-warning-5' : 'bg-success-5'
           ]"
         />
       </div>
     </div>
 
     <!-- 维护建议 -->
-    <div class="bg-blue-600/5 border border-blue-500/10 rounded-xl p-5 flex items-start gap-4">
-      <AlertCircle class="text-blue-500 shrink-0 mt-0.5 w-[18px] h-[18px]" />
+    <div class="bg-primary-hover-5 border border-primary-10 rounded-xl p-5 flex items-start gap-4">
+      <AlertCircle class="text-primary shrink-0 mt-0.5 w-[18px] h-[18px]" />
       <div class="space-y-1">
-        <p class="text-[11px] font-bold text-zinc-300">{{ locale.maintenanceTitle }}</p>
-        <p class="text-[10px] text-zinc-500 leading-relaxed">
+        <p class="text-[11px] font-bold text-text-secondary">{{ locale.maintenanceTitle }}</p>
+        <p class="text-[10px] text-text-tertiary leading-relaxed">
           {{ locale.maintenanceDesc }}
         </p>
       </div>
@@ -87,14 +91,14 @@
       v-if="activeModal === 'backup'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
-        <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.backupTitle }}</h3>
+        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
+          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.backupTitle }}</h3>
           <button
-            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -102,49 +106,49 @@
         </div>
         <div class="p-8 space-y-6">
           <div class="space-y-2">
-            <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1">
+            <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1">
               {{ locale.selectContent }}
             </p>
             <div class="space-y-2">
               <label
                 v-for="(item, i) in backupOptions"
                 :key="i"
-                class="flex items-start gap-4 p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
+                class="flex items-start gap-4 p-4 bg-bg-primary-50 border border-border-secondary rounded-xl cursor-pointer hover:border-border-tertiary transition-all group"
               >
                 <div class="shrink-0 mt-0.5">
                   <input
                     v-model="createForm[item.key]"
                     type="checkbox"
-                    class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600"
+                    class="w-4 h-4 rounded border-border-secondary bg-bg-secondary"
                   >
                 </div>
                 <div>
                   <p
-                    class="text-xs font-bold text-zinc-200 group-hover:text-blue-400 transition-colors"
+                    class="text-xs font-bold text-text-primary group-hover:text-primary transition-colors"
                   >
                     {{ item.label }}
                   </p>
-                  <p class="text-[10px] text-zinc-600 font-medium mt-0.5">{{ item.desc }}</p>
+                  <p class="text-[10px] text-text-disabled font-medium mt-0.5">{{ item.desc }}</p>
                 </div>
               </label>
             </div>
           </div>
-          <div class="p-3 bg-blue-500/5 border border-blue-500/10 rounded-xl">
-            <p class="text-[10px] text-zinc-500 text-center italic">
+          <div class="p-3 bg-primary-5 border border-primary-10 rounded-xl">
+            <p class="text-[10px] text-text-tertiary text-center italic">
               {{ locale.backupHint }}
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
-            class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
+            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="createLoading"
-            class="px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="createBackup"
           >
             {{ createLoading ? locale.exporting : locale.startExport }}
@@ -158,14 +162,14 @@
       v-if="activeModal === 'restore'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
-        <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.restoreTitle }}</h3>
+        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
+          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.restoreTitle }}</h3>
           <button
-            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -173,18 +177,18 @@
         </div>
         <div class="p-8 space-y-6">
           <div
-            class="border-2 border-dashed border-zinc-800 rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all cursor-pointer"
+            class="border-2 border-dashed border-border-secondary rounded-2xl p-10 flex flex-col items-center justify-center text-center group hover:border-success-50 hover:bg-success-5 transition-all cursor-pointer"
             @click="$refs.fileInput.click()"
             @dragover.prevent
             @drop.prevent="handleFileDrop"
           >
             <Upload
-              class="w-8 h-8 text-zinc-700 mb-4 group-hover:text-emerald-500 transition-colors"
+              class="w-8 h-8 text-text-secondary mb-4 group-hover:text-success transition-colors"
             />
-            <h5 class="text-sm font-bold text-zinc-300">
+            <h5 class="text-sm font-bold text-text-secondary">
               {{ selectedFile ? selectedFile.name : locale.selectFile }}
             </h5>
-            <p class="text-[10px] text-zinc-600 font-bold uppercase mt-1 tracking-widest">
+            <p class="text-[10px] text-text-disabled font-bold uppercase mt-1 tracking-widest">
               {{ locale.fileHint }}
             </p>
             <input
@@ -197,7 +201,7 @@
           </div>
 
           <div class="space-y-3">
-            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+            <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
               >{{ locale.restoreMode }}</label
             >
             <div class="grid grid-cols-2 gap-3">
@@ -205,46 +209,46 @@
                 :class="[
                   'p-4 border rounded-xl text-left transition-all',
                   restoreForm.mode === 'merge'
-                    ? 'bg-zinc-950 border-emerald-500/30'
-                    : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                    ? 'bg-bg-primary border-success-30'
+                    : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                 ]"
                 @click="restoreForm.mode = 'merge'"
               >
                 <h6
                   :class="[
                     'text-xs font-bold',
-                    restoreForm.mode === 'merge' ? 'text-emerald-400' : 'text-zinc-500'
+                    restoreForm.mode === 'merge' ? 'text-success' : 'text-text-tertiary'
                   ]"
                 >
                   {{ locale.restoreModes?.merge?.title ?? '合并恢复' }}
                 </h6>
-                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}</p>
+                <p class="text-[9px] text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.merge?.desc ?? '保留现有数据并合并备份内容' }}</p>
               </button>
               <button
                 :class="[
                   'p-4 border rounded-xl text-left transition-all',
                   restoreForm.mode === 'replace'
-                    ? 'bg-zinc-950 border-emerald-500/30'
-                    : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                    ? 'bg-bg-primary border-success-30'
+                    : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                 ]"
                 @click="restoreForm.mode = 'replace'"
               >
                 <h6
                   :class="[
                     'text-xs font-bold',
-                    restoreForm.mode === 'replace' ? 'text-emerald-400' : 'text-zinc-500'
+                    restoreForm.mode === 'replace' ? 'text-success' : 'text-text-tertiary'
                   ]"
                 >
                   {{ locale.restoreModes?.replace?.title ?? '覆盖恢复' }}
                 </h6>
-                <p class="text-[9px] text-zinc-600 uppercase mt-0.5">{{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}</p>
+                <p class="text-[9px] text-text-disabled uppercase mt-0.5">{{ locale.restoreModes?.replace?.desc ?? '清除现有数据后恢复备份内容' }}</p>
               </button>
             </div>
           </div>
 
           <div
             v-if="restoreForm.mode === 'replace' && hasSuperAdminInBackup"
-            class="p-4 bg-zinc-950 border border-zinc-800 rounded-xl"
+            class="p-4 bg-bg-primary border border-border-secondary rounded-xl"
           >
             <label class="flex items-start gap-3 cursor-pointer">
               <input
@@ -253,8 +257,8 @@
                 class="mt-0.5 accent-emerald-500"
               >
               <div>
-                <p class="text-xs font-bold text-zinc-200">{{ locale.overwriteSuperAdmin }}</p>
-                <p class="text-[10px] text-zinc-500 mt-1">
+                <p class="text-xs font-bold text-text-primary">{{ locale.overwriteSuperAdmin }}</p>
+                <p class="text-[10px] text-text-tertiary mt-1">
                   {{ locale.overwriteSuperAdminDesc }}
                 </p>
               </div>
@@ -262,24 +266,24 @@
           </div>
 
           <div
-            class="p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
+            class="p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
           >
-            <AlertCircle class="text-amber-500 shrink-0 mt-0.5 w-4 h-4" />
-            <p class="text-[10px] text-zinc-500 leading-normal font-medium">
+            <AlertCircle class="text-warning shrink-0 mt-0.5 w-4 h-4" />
+            <p class="text-[10px] text-text-tertiary leading-normal font-medium">
               {{ locale.replaceWarning }}
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
-            class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
+            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="uploadLoading || !selectedFile"
-            class="px-8 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-8 py-2 bg-success hover:bg-success text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="restoreBackup"
           >
             {{ uploadLoading ? restoreProgress || locale.restoring : locale.confirmRestore }}
@@ -293,14 +297,14 @@
       v-if="activeModal === 'reset-seq'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
-        <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.resetSequenceTitle }}</h3>
+        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
+          <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.resetSequenceTitle }}</h3>
           <button
-            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -308,7 +312,7 @@
         </div>
         <div class="p-8 space-y-6">
           <div class="space-y-2">
-            <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+            <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
               >{{ locale.selectTargetTable }}</label
             >
             <CustomSelect
@@ -320,32 +324,32 @@
             />
           </div>
 
-          <div class="p-6 bg-zinc-950/50 border border-zinc-800 rounded-2xl space-y-4">
+          <div class="p-6 bg-bg-primary-50 border border-border-secondary rounded-2xl space-y-4">
             <div class="flex items-center gap-3">
               <div
-                class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center"
+                class="w-8 h-8 rounded-lg bg-warning-10 text-warning flex items-center justify-center"
               >
                 <AlertCircle class="w-4 h-4" />
               </div>
-              <h6 class="text-xs font-bold text-zinc-300 uppercase tracking-widest">
+              <h6 class="text-xs font-bold text-text-secondary uppercase tracking-widest">
                 {{ locale.sequenceHelpTitle }}
               </h6>
             </div>
-            <p class="text-[11px] text-zinc-500 leading-relaxed font-medium">
+            <p class="text-[11px] text-text-tertiary leading-relaxed font-medium">
               {{ locale.sequenceHelpDesc }}
             </p>
           </div>
         </div>
-        <div class="px-8 py-6 bg-zinc-950/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="px-8 py-6 bg-bg-primary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
-            class="px-4 py-2 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-widest"
+            class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest"
             @click="activeModal = 'none'"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="sequenceLoading || !sequenceForm.table"
-            class="px-8 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-8 py-2 bg-warning hover:bg-warning text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
             @click="resetSequence"
           >
             {{ sequenceLoading ? locale.resetting : locale.executeReset }}
@@ -359,14 +363,14 @@
       v-if="activeModal === 'reset-db'"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="activeModal = 'none'" />
+      <div class="absolute inset-0 bg-bg-primary-80 backdrop-blur-sm" @click="activeModal = 'none'" />
       <div
-        class="relative bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
+        class="relative bg-bg-secondary border border-border-secondary rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200"
       >
-        <div class="px-8 py-6 border-b border-zinc-800 flex items-center justify-between">
-          <h3 class="text-xl font-black text-rose-500 tracking-tight">{{ locale.dangerResetTitle }}</h3>
+        <div class="px-8 py-6 border-b border-border-secondary flex items-center justify-between">
+          <h3 class="text-xl font-black text-error tracking-tight">{{ locale.dangerResetTitle }}</h3>
           <button
-            class="p-2 hover:bg-zinc-800 rounded-xl transition-colors text-zinc-500 hover:text-zinc-200"
+            class="p-2 hover:bg-bg-tertiary rounded-xl transition-colors text-text-tertiary hover:text-text-primary"
             @click="activeModal = 'none'"
           >
             <X class="w-5 h-5" />
@@ -374,15 +378,15 @@
         </div>
         <div class="p-8 space-y-6">
           <div
-            class="p-6 bg-rose-600/10 border border-rose-500/20 rounded-2xl flex flex-col items-center text-center"
+            class="p-6 bg-error-10 border border-error-20 rounded-2xl flex flex-col items-center text-center"
           >
-            <Trash2 class="text-rose-500 mb-4 w-12 h-12" />
-            <h4 class="text-lg font-black text-rose-500 tracking-tight">
+            <Trash2 class="text-error mb-4 w-12 h-12" />
+            <h4 class="text-lg font-black text-error tracking-tight">
               {{ locale.dangerResetHeading }}
             </h4>
-            <p class="text-xs text-zinc-500 mt-2 font-medium leading-relaxed">
+            <p class="text-xs text-text-tertiary mt-2 font-medium leading-relaxed">
               {{ locale.dangerResetPrefix }}
-              <span class="text-zinc-300 font-bold"
+              <span class="text-text-secondary font-bold"
                 >{{ locale.dangerResetScope }}</span
               >。
             </p>
@@ -390,12 +394,12 @@
 
           <div class="space-y-3">
             <label
-              class="text-[11px] font-black text-rose-500/80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
+              class="text-[11px] font-black text-error-80 uppercase tracking-widest px-1 flex items-center justify-center gap-2"
             >
               {{ locale.confirmCodeLabel }}
             </label>
             <div
-              class="bg-zinc-950 border border-rose-900/30 rounded-xl px-4 py-3 font-mono text-[10px] text-rose-400 text-center select-all"
+              class="bg-bg-primary border border-error-30 rounded-xl px-4 py-3 font-mono text-[10px] text-error text-center select-all"
             >
               {{ CONFIRM_CODE }}
             </div>
@@ -403,23 +407,23 @@
               v-model="resetConfirmText"
               type="text"
               :placeholder="locale.confirmCodePlaceholder"
-              class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-rose-500/40 text-center font-mono placeholder:text-zinc-700"
+              class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:border-error-40 text-center font-mono placeholder:text-text-secondary"
             >
           </div>
 
           <div class="grid grid-cols-2 gap-3 pt-2">
             <button
-              class="py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-500 text-xs font-black rounded-xl transition-all uppercase tracking-widest"
+              class="py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-tertiary text-xs font-black rounded-xl transition-all uppercase tracking-widest"
               @click="activeModal = 'none'"
             >
               {{ locale.cancel }}
             </button>
             <button
               :disabled="resetConfirmText !== CONFIRM_CODE || resetLoading"
-              class="py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed disabled:border-zinc-700"
+              class="py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg disabled:bg-bg-tertiary disabled:text-text-disabled disabled:cursor-not-allowed disabled:border-border-tertiary"
               :class="
                 resetConfirmText === CONFIRM_CODE
-                  ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-900/20 active:scale-95'
+                  ? 'bg-error hover:bg-error text-text-primary shadow-[var(--error-glow-20)] active:scale-95'
                   : ''
               "
               @click="resetDatabase"
@@ -508,7 +512,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.backup?.title ?? '备份数据库',
     desc: locale.value?.cards?.backup?.desc ?? '导出系统数据备份文件',
     icon: Download,
-    color: 'blue',
+    colorClass: 'primary',
     btnText: locale.value?.cards?.backup?.button ?? '创建备份'
   },
   {
@@ -516,7 +520,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.restore?.title ?? '恢复数据库',
     desc: locale.value?.cards?.restore?.desc ?? '从备份文件恢复系统数据',
     icon: Upload,
-    color: 'emerald',
+    colorClass: 'success',
     btnText: locale.value?.cards?.restore?.button ?? '恢复备份'
   },
   {
@@ -524,7 +528,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.resetSeq?.title ?? '修复数据序列',
     desc: locale.value?.cards?.resetSeq?.desc ?? '修复数据表自增序列',
     icon: RotateCw,
-    color: 'amber',
+    colorClass: 'warning',
     btnText: locale.value?.cards?.resetSeq?.button ?? '修复序列'
   },
   {
@@ -532,7 +536,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.resetDb?.title ?? '重置数据库',
     desc: locale.value?.cards?.resetDb?.desc ?? '清空除管理员外的系统数据',
     icon: Trash2,
-    color: 'rose',
+    colorClass: 'error',
     btnText: locale.value?.cards?.resetDb?.button ?? '重置数据库',
     isDanger: true
   },
@@ -541,7 +545,7 @@ const cards = computed(() => [
     title: locale.value?.cards?.autoBackup?.title ?? '自动备份',
     desc: locale.value?.cards?.autoBackup?.desc ?? '配置多种备份方式，通过外部触发实现定时自动备份',
     icon: CloudUpload,
-    color: 'green',
+    colorClass: 'success',
     btnText: locale.value?.cards?.autoBackup?.button ?? '配置自动备份'
   }
 ])

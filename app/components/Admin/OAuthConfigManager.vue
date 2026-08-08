@@ -1,14 +1,14 @@
 <template>
   <section :class="cardClass">
     <h3
-      class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+      class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
     >
-      <Shield :size="16" class="text-green-500" /> {{ locale.title }}
+      <Shield :size="16" class="text-success" /> {{ locale.title }}
     </h3>
 
-    <div class="flex items-start gap-3 p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl">
-      <AlertCircle :size="14" class="text-blue-500 shrink-0 mt-0.5" />
-      <p class="text-[10px] text-zinc-500 leading-relaxed">
+    <div class="flex items-start gap-3 p-4 bg-primary-5 border border-primary-10 rounded-xl">
+      <AlertCircle :size="14" class="text-primary shrink-0 mt-0.5" />
+      <p class="text-[10px] text-text-tertiary leading-relaxed">
         {{
           locale.runtimeConfigNotice ||
           'OAuth 运行时配置已迁移到后台。环境变量仅用于兼容旧部署和一键导入，导入后以此页面保存的配置为准。'
@@ -17,13 +17,13 @@
     </div>
 
     <!-- 基础配置 -->
-    <div class="space-y-4 mb-6 pb-6 border-b border-zinc-800">
+    <div class="space-y-4 mb-6 pb-6 border-b border-border-secondary">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ locale.baseSettings }}</h4>
+        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ locale.baseSettings }}</h4>
         <button
           v-if="envData.hasBaseConfig"
           type="button"
-          class="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/20 rounded-md transition-colors font-bold flex items-center gap-1"
+          class="text-[10px] px-2 py-1 bg-primary-10 text-primary hover:bg-primary-20 border border-primary-20 rounded-md transition-colors font-bold flex items-center gap-1"
           @click="importEnvData('base')"
         >
           <Download :size="12" />
@@ -32,17 +32,17 @@
       </div>
 
       <div
-        class="flex items-center justify-between bg-zinc-900/50 p-4 rounded-xl border border-zinc-800/50"
+        class="flex items-center justify-between bg-bg-secondary-50 p-4 rounded-xl border border-border-secondary-50"
       >
         <div>
           <label :class="labelClass">{{ locale.allowRegistration }}</label>
-          <p class="text-[10px] text-zinc-600 mt-1">{{ locale.allowRegistrationDesc }}</p>
+          <p class="text-[10px] text-text-disabled mt-1">{{ locale.allowRegistrationDesc }}</p>
         </div>
         <div class="flex items-center gap-2">
           <span
             :class="[
               'text-[10px] font-bold',
-              formData.allowOAuthRegistration ? 'text-green-500' : 'text-zinc-500'
+              formData.allowOAuthRegistration ? 'text-success' : 'text-text-tertiary'
             ]"
           >
             {{ formData.allowOAuthRegistration ? locale.allowed : locale.notAllowed }}
@@ -50,15 +50,15 @@
           <input
             v-model="formData.allowOAuthRegistration"
             type="checkbox"
-            class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
+            class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-green-600 cursor-pointer"
           />
         </div>
       </div>
 
       <div>
         <label :class="labelClass">{{ locale.redirectUri }}</label>
-        <p class="text-[10px] text-zinc-600 px-1 mb-2">
-          {{ locale.redirectExample }} <code class="bg-zinc-950 px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
+        <p class="text-[10px] text-text-disabled px-1 mb-2">
+          {{ locale.redirectExample }} <code class="bg-bg-primary px-2 py-1 rounded">https://yourdomain.com/api/auth/[provider]/callback</code>
         </p>
         <input
           v-model="formData.oauthRedirectUri"
@@ -70,7 +70,7 @@
 
       <div>
         <label :class="labelClass">{{ locale.stateSecret }}</label>
-        <p class="text-[10px] text-zinc-600 px-1 mb-2">{{ locale.stateSecretDesc }}</p>
+        <p class="text-[10px] text-text-disabled px-1 mb-2">{{ locale.stateSecretDesc }}</p>
         <div class="flex gap-2">
           <input
             v-model="formData.oauthStateSecret"
@@ -80,7 +80,7 @@
           />
           <button
             type="button"
-            class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
+            class="px-4 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary text-xs font-bold rounded-xl transition-all"
             @click="showSecrets.state = !showSecrets.state"
           >
             {{ showSecrets.state ? locale.hide : locale.show }}
@@ -137,7 +137,7 @@
             :placeholder="locale.aggregateLoginTypePlaceholder || '请选择至少一种登录方式'"
             multiple
           />
-          <p class="text-[10px] text-zinc-600 px-1 mt-2">
+          <p class="text-[10px] text-text-disabled px-1 mt-2">
             {{
               locale.aggregateLoginTypeDesc ||
               '请选择当前聚合登录服务已接入并开通的登录方式；启用服务商尚未支持的平台会导致授权失败。每种登录方式会独立记录账号绑定关系。'
@@ -152,7 +152,7 @@
             placeholder="https://a.idcfx.net/connect.php"
             :class="inputClass"
           />
-          <p class="text-[10px] text-zinc-600 px-1 mt-2">
+          <p class="text-[10px] text-text-disabled px-1 mt-2">
             {{
               locale.aggregateEndpointDesc ||
               '兼容彩虹聚合登录协议的服务端 connect.php 地址；公网应使用 HTTPS，可信内网可使用 HTTP。'
@@ -165,12 +165,12 @@
     <!-- Custom OAuth2 -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-widest">{{ locale.customOAuth }}</h4>
+        <h4 class="text-xs font-bold text-text-tertiary uppercase tracking-widest">{{ locale.customOAuth }}</h4>
         <div class="flex items-center gap-2">
           <span
             :class="[
               'text-[10px] font-bold',
-              formData.customOAuthEnabled ? 'text-green-500' : 'text-red-500'
+              formData.customOAuthEnabled ? 'text-success' : 'text-error'
             ]"
           >
             {{ formData.customOAuthEnabled ? locale.enabled : locale.disabled }}
@@ -178,7 +178,7 @@
           <input
             v-model="formData.customOAuthEnabled"
             type="checkbox"
-            class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-green-600 cursor-pointer"
+            class="w-4 h-4 rounded border-border-secondary bg-bg-secondary accent-green-600 cursor-pointer"
           />
         </div>
       </div>
@@ -255,7 +255,7 @@
             />
             <button
               type="button"
-              class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all"
+              class="px-4 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary text-xs font-bold rounded-xl transition-all"
               @click="showSecrets.custom = !showSecrets.custom"
             >
               {{ showSecrets.custom ? locale.hide : locale.show }}
@@ -319,13 +319,13 @@
 
     <!-- 信息提示 -->
     <div
-      class="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-xl flex items-start gap-3"
+      class="mt-6 p-4 bg-warning-5 border border-warning-10 rounded-xl flex items-start gap-3"
     >
-      <AlertCircle class="text-amber-500 shrink-0 mt-0.5" :size="14" />
-      <div class="text-[10px] text-zinc-500 leading-relaxed space-y-1">
+      <AlertCircle class="text-warning shrink-0 mt-0.5" :size="14" />
+      <div class="text-[10px] text-text-tertiary leading-relaxed space-y-1">
         <p>
           {{ locale.brokerHintPrefix }}
-          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-blue-500 hover:underline">VoiceHub-Auth-Broker</a>
+          <a href="https://github.com/laoshuikaixue/VoiceHub-Auth-Broker" target="_blank" class="text-primary hover:underline">VoiceHub-Auth-Broker</a>
           {{ locale.brokerHintSuffix }}
         </p>
       </div>
@@ -359,9 +359,9 @@ const locale = computed(() => admin.value?.oauthConfig || {})
 const getLogMessage = (key) => locale.value?.logs?.[key] || key
 
 const inputClass =
-  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
-const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
+  'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
+const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
+const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 const showSecrets = ref({
   state: false,

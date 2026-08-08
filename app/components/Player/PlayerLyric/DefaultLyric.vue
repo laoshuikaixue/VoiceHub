@@ -825,6 +825,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   font-size: 22px;
-  color: #fff;
+  color: var(--text-primary);
 }
 </style>

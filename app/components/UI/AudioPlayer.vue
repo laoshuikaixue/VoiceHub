@@ -56,7 +56,7 @@
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls">
             <button class="mobile-control-btn" @click.stop="handleTogglePlay">
-              <div v-if="control.isLoadingTrack.value" class="loading-spinner-small" />
+              <AppSpinner v-if="control.isLoadingTrack.value" :size="20" />
               <Icon
                 v-else
                 :name="control.isPlaying.value ? 'pause' : 'play'"
@@ -65,7 +65,7 @@
               />
             </button>
             <button class="mobile-control-btn" @click.stop="stopPlaying">
-              <Icon name="close" :size="20" color="rgba(255,255,255,0.6)" />
+              <Icon name="close" :size="20" color="var(--overlay-60)" />
             </button>
           </div>
 
@@ -139,7 +139,7 @@
                 title="播放/暂停"
                 @click="handleTogglePlay"
               >
-                <div v-if="control.isLoadingTrack.value" class="loading-spinner" />
+                <AppSpinner v-if="control.isLoadingTrack.value" :size="18" />
                 <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
                 <Icon v-else name="play" size="24" />
               </span>
@@ -193,9 +193,9 @@
               :show-translation="false"
               :translation-lyrics="control.lyrics.translationLyrics.value"
               :word-by-word-lyrics="control.lyrics.wordByWordLyrics.value"
-              active-line-color="#ffffff"
+              active-line-color="var(--text-primary)"
               height="120px"
-              inactive-line-color="rgba(255, 255, 255, 0.6)"
+              :inactive-line-color="inactiveColor"
               @seek="handleLyricSeek"
             />
           </div>
@@ -254,6 +254,7 @@ import AudioElement from './AudioPlayer/AudioElement.vue'
 import VolumeControl from './AudioPlayer/VolumeControl.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
 import Icon from './Icon.vue'
+import AppSpinner from './Common/AppSpinner.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useAudioPlayerSync } from '~/composables/useAudioPlayerSync'
@@ -264,6 +265,7 @@ import { getBilibiliUrl } from '~/utils/url'
 import { scrobbleSong } from '~/utils/neteaseApi'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
+import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
   getMusicUrlResult,
@@ -273,6 +275,14 @@ import {
 // 添加 router 导入
 const router = useRouter()
 const { audioPlayer: audioPlayerLocale } = useLocale()
+
+// 歌词非活跃行颜色 — 随主题切换
+const theme = useTheme()
+const inactiveColor = computed(() =>
+  theme.currentTheme.value === 'ClassicDark'
+    ? 'var(--overlay-60)'
+    : 'var(--mask-60)'
+)
 
 const props = defineProps({
   song: {
@@ -1852,20 +1862,20 @@ const getFirstChar = (text) => {
   0%,
   100% {
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 4px 16px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-      0 0 0 1px rgba(255, 255, 255, 0.1);
+      0 8px 32px var(--mask-30),
+      0 4px 16px var(--mask-20),
+      inset 0 1px 0 var(--overlay-20),
+      inset 0 -1px 0 var(--mask-10),
+      0 0 0 1px var(--overlay-10);
   }
   50% {
     box-shadow:
-      0 12px 48px rgba(0, 0, 0, 0.4),
-      0 6px 24px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-      0 0 0 1px rgba(255, 255, 255, 0.15),
-      0 0 40px rgba(255, 255, 255, 0.08);
+      0 12px 48px var(--mask-40),
+      0 6px 24px var(--mask-30),
+      inset 0 1px 0 var(--overlay-30),
+      inset 0 -1px 0 var(--mask-15),
+      0 0 0 1px var(--overlay-15),
+      0 0 40px var(--overlay-8);
   }
 }
 
@@ -1887,7 +1897,7 @@ const getFirstChar = (text) => {
   left: 0;
   right: 0;
   height: 20vh;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.3));
+  background: linear-gradient(to bottom, transparent, var(--mask-30));
   z-index: 999;
   backdrop-filter: blur(1px);
   pointer-events: none;
@@ -1951,11 +1961,11 @@ const getFirstChar = (text) => {
   padding: 0 12px;
   flex-direction: row;
   align-items: center;
-  background: rgba(20, 20, 25, 0.85);
+  background: var(--audio-player-bar-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--overlay-8);
+  box-shadow: 0 8px 32px var(--mask-40);
   animation: none;
   overflow: hidden;
 }
@@ -1971,15 +1981,15 @@ const getFirstChar = (text) => {
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   cursor: pointer;
   z-index: 10;
 }
 
 .mobile-top-progress .progress-fill {
   height: 100%;
-  background: #0b5afe;
-  box-shadow: 0 0 8px rgba(11, 90, 254, 0.6);
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent-alpha-60);
   border-radius: 0 1px 1px 0;
 }
 
@@ -1994,7 +2004,7 @@ const getFirstChar = (text) => {
   height: 44px;
   aspect-ratio: 1;
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px var(--mask-20);
 }
 
 .music-widget.mobile-player-bar .song-info {
@@ -2045,21 +2055,6 @@ const getFirstChar = (text) => {
   opacity: 0;
 }
 
-.loading-spinner-small {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* 时间区域 */
 .time {
   display: flex;
@@ -2077,7 +2072,7 @@ const getFirstChar = (text) => {
   flex-shrink: 0;
   align-items: center;
   border-radius: 7px;
-  background: rgba(74, 74, 74, 0.39);
+  background: var(--audio-player-progress-track-bg);
   height: 7px;
   width: 100%;
   max-width: 376px;
@@ -2090,7 +2085,7 @@ const getFirstChar = (text) => {
 }
 
 .progress-fill {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--overlay-70);
   height: 100%;
   transition: width 0.1s linear;
   border-radius: 6px;
@@ -2108,20 +2103,20 @@ const getFirstChar = (text) => {
   align-items: flex-start;
   border-radius: 22px;
   /* 不支持毛玻璃时使用深色背景，避免只剩低透明度底色 */
-  background: rgba(20, 20, 25, 0.85);
+  background: var(--audio-player-bar-bg);
   padding: 10px 7px 10px 13px;
   width: 400px;
   height: 165px;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--overlay-20);
   box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 16px 48px var(--mask-30),
+    0 8px 24px var(--mask-20),
+    0 4px 12px var(--mask-10),
+    inset 0 1px 0 var(--overlay-30),
+    inset 0 -1px 0 var(--mask-10),
+    0 0 0 1px var(--overlay-5);
   z-index: 1000;
   will-change: transform, opacity;
   font-family:
@@ -2134,14 +2129,14 @@ const getFirstChar = (text) => {
 .music-widget:hover {
   transform: translateX(-50%) translateY(-2px);
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 6px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 40px rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
+    0 20px 60px var(--mask-40),
+    0 12px 32px var(--mask-25),
+    0 6px 16px var(--mask-15),
+    inset 0 1px 0 var(--overlay-40),
+    inset 0 -1px 0 var(--mask-10),
+    0 0 0 1px var(--overlay-10),
+    0 0 40px var(--overlay-10);
+  border-color: var(--overlay-25);
 }
 
 /* 标题区域 */
@@ -2172,7 +2167,7 @@ const getFirstChar = (text) => {
 }
 
 .cover-container.clickable:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px var(--mask-40);
 }
 
 .cover-container.clickable:hover .cover-hover-overlay {
@@ -2201,7 +2196,7 @@ const getFirstChar = (text) => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--mask-30);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2218,8 +2213,8 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-collab-hover) 100%);
+  color: var(--text-primary);
   font-size: 18px;
   font-weight: 600;
   font-family:
@@ -2247,7 +2242,7 @@ const getFirstChar = (text) => {
   line-height: 22px;
   padding-bottom: 2px;
   letter-spacing: -0.4px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2267,7 +2262,7 @@ const getFirstChar = (text) => {
   overflow: hidden;
   line-height: 20px;
   letter-spacing: -0.4px;
-  color: #ffffff75;
+  color: var(--text-primary-60);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2288,7 +2283,7 @@ const getFirstChar = (text) => {
   align-items: center;
   justify-content: center;
   border-radius: 100px;
-  background: #00000042;
+  background: var(--bg-primary-25);
   padding: 6px;
   width: 32px;
   height: 32px;
@@ -2300,12 +2295,12 @@ const getFirstChar = (text) => {
 }
 
 .close-button:hover {
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--mask-60);
   transform: scale(1.05);
 }
 
 .close-icon {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
   line-height: 1;
   font-family:
@@ -2342,7 +2337,7 @@ const getFirstChar = (text) => {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--panel-bg-deep);
   border-radius: 7px;
   height: 8px;
   width: 100%;
@@ -2355,21 +2350,21 @@ const getFirstChar = (text) => {
 }
 
 .ios-progress-bar:hover {
-  border-color: #333;
+  border-color: var(--text-primary);
   box-shadow:
-    0 0 20px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 0 20px var(--overlay-10),
+    inset 0 1px 0 var(--overlay-10);
 }
 
 .progress-fill {
-  background: linear-gradient(90deg, #ffffffb2, #ffffff);
+  background: linear-gradient(90deg, var(--text-primary-80), var(--text-primary));
   height: 8px;
   transition: width 0.1s linear;
   border-radius: 7px;
   position: absolute;
   left: 0;
   top: 0;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px var(--overlay-30);
 }
 
 /* 时间和音质显示 */
@@ -2387,7 +2382,7 @@ const getFirstChar = (text) => {
   width: 60px;
   line-height: 18px;
   letter-spacing: 0.42px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2407,7 +2402,7 @@ const getFirstChar = (text) => {
 }
 
 .clickable-time:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.05);
 }
 
@@ -2422,10 +2417,10 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff1a;
+  background: var(--text-primary-10);
   border-radius: 4px;
   padding: 0 8px;
-  color: #ffffffb3;
+  color: var(--text-primary-80);
   font-size: 10px;
   font-weight: 600;
   backdrop-filter: blur(10px);
@@ -2435,8 +2430,8 @@ const getFirstChar = (text) => {
 }
 
 .audio-quality-badge:hover {
-  background: #ffffff26;
-  color: #ffffff;
+  background: var(--text-primary-20);
+  color: var(--text-primary);
 }
 
 /* 控制按钮区域 */
@@ -2453,7 +2448,7 @@ const getFirstChar = (text) => {
 .ios-control-btn {
   background: none;
   border: none;
-  color: #ffffff92;
+  color: var(--text-primary-60);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   display: flex;
@@ -2482,17 +2477,17 @@ const getFirstChar = (text) => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--overlay-10) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .ios-control-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
   box-shadow:
-    0 0 20px rgba(255, 255, 255, 0.2),
-    0 0 40px rgba(255, 255, 255, 0.1);
+    0 0 20px var(--overlay-20),
+    0 0 40px var(--overlay-10);
 }
 
 .ios-control-btn:hover::before {
@@ -2502,8 +2497,8 @@ const getFirstChar = (text) => {
 .ios-control-btn:active {
   transform: scale(0.95);
   box-shadow:
-    0 0 15px rgba(255, 255, 255, 0.3),
-    inset 0 0 10px rgba(255, 255, 255, 0.1);
+    0 0 15px var(--overlay-30),
+    inset 0 0 10px var(--overlay-10);
 }
 
 .ios-control-btn:disabled {
@@ -2561,12 +2556,12 @@ const getFirstChar = (text) => {
 /* 歌词面板样式 */
 .lyrics-panel {
   margin-top: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-card-bg-soft);
   border-radius: 12px;
   padding: 0.5rem;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 /* 歌词滑动动画 */
@@ -2640,25 +2635,6 @@ const getFirstChar = (text) => {
   }
 }
 
-/* 加载和错误状态 */
-.loading-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 /* 内部元素淡入动画 */
 .title-section {
   animation: fade-slide-in 0.6s ease-out 0.1s both;
@@ -2695,7 +2671,7 @@ const getFirstChar = (text) => {
   width: 60px;
   line-height: 18px;
   letter-spacing: 0.42px;
-  color: #ffffffb3;
+  color: var(--text-primary-80);
   font-family:
     'SF Pro', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimHei, Arial, Helvetica,
     sans-serif;
@@ -2714,10 +2690,10 @@ const getFirstChar = (text) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff1a;
+  background: var(--text-primary-10);
   border-radius: 4px;
   padding: 0 8px;
-  color: #ffffffb3;
+  color: var(--text-primary-80);
   font-size: 10px;
   font-weight: 600;
   backdrop-filter: blur(10px);
@@ -2727,8 +2703,8 @@ const getFirstChar = (text) => {
 }
 
 .audio-quality:hover {
-  background: #ffffff26;
-  color: #ffffff;
+  background: var(--text-primary-20);
+  color: var(--text-primary);
 }
 
 .audio-quality:active {
@@ -2750,13 +2726,13 @@ const getFirstChar = (text) => {
   width: 39px;
   font-size: 25px;
   text-align: center;
-  color: #ffffff92;
+  color: var(--text-primary-60);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .lyrics-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
 }
 
@@ -2764,7 +2740,7 @@ const getFirstChar = (text) => {
 .control-btn {
   line-height: 1;
   font-size: 24px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -2789,7 +2765,7 @@ const getFirstChar = (text) => {
 .play-pause-btn {
   line-height: 44px;
   font-size: 37px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -2834,28 +2810,28 @@ const getFirstChar = (text) => {
   left: 50%;
   transform: translateX(-50%);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)),
-    rgba(128, 128, 128, 0.85);
+    linear-gradient(135deg, var(--overlay-25), var(--overlay-15)),
+    var(--audio-player-dropdown-bg-fallback);
   border-radius: 12px;
   padding: 8px 0;
   backdrop-filter: blur(60px) saturate(2) brightness(1.1);
   -webkit-backdrop-filter: blur(60px) saturate(2) brightness(1.1);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--overlay-40);
   z-index: 9999;
   min-width: 120px;
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.3),
-    0 6px 16px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 0 30px rgba(255, 255, 255, 0.1);
+    0 20px 60px var(--mask-40),
+    0 12px 32px var(--mask-30),
+    0 6px 16px var(--mask-20),
+    inset 0 1px 0 var(--overlay-40),
+    inset 0 -1px 0 var(--mask-10),
+    0 0 0 1px var(--overlay-10),
+    0 0 30px var(--overlay-10);
 }
 
 .quality-option {
   padding: 8px 16px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   font-size: 12px;
@@ -2875,18 +2851,18 @@ const getFirstChar = (text) => {
   right: 0;
   bottom: 0;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(135deg, var(--overlay-10), var(--overlay-5));
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .quality-option:hover {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--overlay-95);
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
   box-shadow:
-    0 4px 16px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 4px 16px var(--overlay-10),
+    inset 0 1px 0 var(--overlay-20);
 }
 
 .quality-option:hover::before {
@@ -2894,18 +2870,18 @@ const getFirstChar = (text) => {
 }
 
 .quality-option.active {
-  color: #007aff;
+  color: var(--color-accent);
   background:
-    linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 122, 255, 0.15)),
-    rgba(0, 122, 255, 0.1);
-  border: 1px solid rgba(0, 122, 255, 0.6);
+    linear-gradient(135deg, var(--audio-player-quality-active-bg-start), var(--audio-player-quality-active-bg-mid)),
+    var(--audio-player-quality-active-bg-end);
+  border: 1px solid var(--audio-player-quality-active-border);
   font-weight: 600;
   transform: translateY(-2px);
   box-shadow:
-    0 6px 20px rgba(0, 122, 255, 0.4),
-    0 2px 8px rgba(0, 122, 255, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 0 0 1px rgba(0, 122, 255, 0.2);
+    0 6px 20px var(--audio-player-quality-active-shadow-lg),
+    0 2px 8px var(--audio-player-quality-active-shadow),
+    inset 0 1px 0 var(--overlay-30),
+    0 0 0 1px var(--audio-player-quality-active-ring);
 }
 
 /* 音质下拉动画 - 向上弹出优化 */
@@ -2937,8 +2913,8 @@ const getFirstChar = (text) => {
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .music-widget {
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)),
-      rgba(128, 128, 128, 0.25);
+      linear-gradient(135deg, var(--overlay-10), var(--overlay-5)),
+      var(--audio-player-liquid-glass-bg-fallback);
   }
 }
 </style>

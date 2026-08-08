@@ -1,35 +1,35 @@
 <template>
   <div
-    class="relative overflow-hidden p-6 bg-zinc-900 border border-zinc-800 rounded-xl group hover:border-blue-500/30 transition-all duration-300 shadow-xl shadow-black/20"
+    class="relative overflow-hidden p-6 bg-bg-secondary border border-border-secondary rounded-xl group hover:border-primary-30 transition-all duration-300 shadow-xl shadow-[0_20px_25px_var(--shadow-color)]"
     :class="{ 'opacity-60 grayscale cursor-wait': isLoading }"
   >
     <!-- 背景装饰 -->
     <div
-      class="absolute -right-4 -top-4 w-24 h-24 bg-blue-600/5 blur-3xl rounded-full group-hover:bg-blue-600/10 transition-colors"
+      class="absolute -right-4 -top-4 w-24 h-24 bg-primary-hover-5 blur-3xl rounded-full group-hover:bg-primary-hover-10 transition-colors"
     />
 
     <div class="flex items-start justify-between relative z-10">
       <div class="space-y-4 flex-1">
         <div class="flex items-center gap-2">
           <div
-            class="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 group-hover:border-blue-500/30 group-hover:bg-blue-600/5 transition-all duration-300"
+            class="p-2.5 rounded-lg bg-bg-primary border border-border-secondary group-hover:border-primary-30 group-hover:bg-primary-hover-5 transition-all duration-300"
             :class="iconClass"
           >
             <component
               :is="iconComponent"
               :size="18"
-              class="text-zinc-400 group-hover:text-blue-400 transition-colors"
+              class="text-text-tertiary group-hover:text-primary transition-colors"
             />
           </div>
           <span
-            class="text-[10px] font-black text-zinc-600 uppercase tracking-widest group-hover:text-zinc-500 transition-colors"
+            class="text-[10px] font-black text-text-disabled uppercase tracking-widest group-hover:text-text-tertiary transition-colors"
             >{{ label }}</span
           >
         </div>
 
         <div class="space-y-1">
           <div class="flex items-baseline gap-2">
-            <h3 class="text-3xl font-black text-zinc-100 tracking-tight">
+            <h3 class="text-3xl font-black text-text-primary tracking-tight">
               {{ formattedValue }}
             </h3>
             <div
@@ -45,7 +45,7 @@
           </div>
           <p
             v-if="subtitle"
-            class="text-[10px] font-bold text-zinc-600 group-hover:text-zinc-500 transition-colors"
+            class="text-[10px] font-bold text-text-disabled group-hover:text-text-tertiary transition-colors"
           >
             {{ subtitle }}
           </p>
@@ -54,7 +54,7 @@
 
       <!-- 迷你趋势图 -->
       <div v-if="trendData && trendData.length > 0" class="w-24 h-12 self-end mb-1">
-        <svg class="w-full h-full drop-shadow-[0_0_8px_rgba(59,130,246,0.2)]" viewBox="0 0 100 20">
+        <svg class="w-full h-full drop-shadow-[0_0_8px_var(--primary-20)]" viewBox="0 0 100 20">
           <polyline
             :points="trendPoints"
             :stroke="trendColor"
@@ -71,17 +71,16 @@
     <!-- 加载动画 -->
     <div
       v-if="isLoading"
-      class="absolute inset-0 flex items-center justify-center bg-zinc-900/40 backdrop-blur-[1px]"
+      class="absolute inset-0 flex items-center justify-center bg-bg-secondary-40 backdrop-blur-[1px]"
     >
-      <div
-        class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
-      />
+      <AppSpinner :size="24" />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import {
   Users,
   Music,
@@ -134,9 +133,9 @@ const iconComponent = computed(() => {
 
 const changeClass = computed(() => {
   if (props.change === undefined) return ''
-  if (props.change > 0) return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-  if (props.change < 0) return 'bg-red-500/10 text-red-500 border-red-500/20'
-  return 'bg-zinc-800 text-zinc-500 border-zinc-700'
+  if (props.change > 0) return 'bg-success-10 text-success border-success-20'
+  if (props.change < 0) return 'bg-error-10 text-error border-error-20'
+  return 'bg-bg-tertiary text-text-tertiary border-border-tertiary'
 })
 
 const formattedValue = computed(() => {
@@ -174,17 +173,17 @@ const trendPoints = computed(() => {
 
 const trendColor = computed(() => {
   if (!props.trendData || props.trendData.length < 2) {
-    if (props.change > 0) return '#10b981' // emerald-500
-    if (props.change < 0) return '#ef4444' // red-500
-    return '#3b82f6' // blue-500
+    if (props.change > 0) return 'var(--color-success)' // emerald-500
+    if (props.change < 0) return 'var(--color-error)' // red-500
+    return 'var(--color-accent-light)' // blue-500
   }
 
   const first = props.trendData[0]
   const last = props.trendData[props.trendData.length - 1]
 
-  if (last > first) return '#10b981' // emerald-500
-  if (last < first) return '#ef4444' // red-500
-  return '#3b82f6' // blue-500
+  if (last > first) return 'var(--color-success)' // emerald-500
+  if (last < first) return 'var(--color-error)' // red-500
+  return 'var(--color-accent-light)' // blue-500
 })
 </script>
 

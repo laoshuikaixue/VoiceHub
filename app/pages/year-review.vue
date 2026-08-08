@@ -2,7 +2,6 @@
   <div class="review-page">
     <Head>
       <Title>{{ locale.pageTitle }}</Title>
-      <Meta name="theme-color" content="#000000" />
       <Meta
         name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
@@ -215,8 +214,8 @@ const handleTouchEnd = (e) => {
 .review-page {
   position: fixed;
   inset: 0;
-  background-color: #000;
-  color: #fff;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   z-index: 9999;
   font-family:
     'MiSans',
@@ -234,29 +233,29 @@ const handleTouchEnd = (e) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #000;
+  background-color: var(--bg-primary);
   z-index: 50;
 }
 
 .loading .spinner {
   width: 3rem;
   height: 3rem;
-  border: 4px solid rgba(255, 255, 255, 0.2);
-  border-top-color: #8b5cf6; /* brand-purple */
+  border: 4px solid var(--overlay-20);
+  border-top-color: var(--color-collab); /* brand-purple */
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loading-text {
   margin-top: 1rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.875rem;
   animation: pulse 2s infinite;
 }
 
 .error .icon-warning {
   font-size: 3rem;
-  color: #ef4444;
+  color: var(--color-error);
   margin-bottom: 1rem;
 }
 
@@ -267,14 +266,14 @@ const handleTouchEnd = (e) => {
 }
 
 .error-desc {
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
 }
 
 .retry-btn {
   padding: 0.5rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 9999px;
   display: flex;
   align-items: center;
@@ -283,13 +282,13 @@ const handleTouchEnd = (e) => {
 }
 
 .retry-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .empty .empty-icon-circle {
   width: 5rem;
   height: 5rem;
-  background: #111827;
+  background: var(--panel-bg-dark);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -308,21 +307,21 @@ const handleTouchEnd = (e) => {
 }
 
 .empty-desc {
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   margin-bottom: 2rem;
 }
 
 .home-btn {
   padding: 0.75rem 2rem;
-  background: #8b5cf6;
+  background: var(--color-collab);
   border-radius: 9999px;
   font-weight: 700;
-  box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 10px 15px -3px var(--year-review-home-btn-shadow);
   transition: background 0.2s;
 }
 
 .home-btn:hover {
-  background: #7c3aed;
+  background: var(--color-collab-hover);
 }
 
 /* 幻灯片容器 */
@@ -358,17 +357,17 @@ const handleTouchEnd = (e) => {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-30);
   transition: all 0.3s;
 }
 
 .indicator-dot:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--overlay-60);
 }
 
 .indicator-dot.active {
   height: 1.5rem;
-  background: #fff;
+  background: var(--text-primary);
 }
 
 /* 滚动提示 */
@@ -378,7 +377,7 @@ const handleTouchEnd = (e) => {
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   display: flex;
   flex-direction: column;
   align-items: center;

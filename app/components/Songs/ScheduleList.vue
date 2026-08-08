@@ -29,7 +29,7 @@
             :title="locale.addToPlaylist"
             @click="handleAddToPlaylistClick"
           >
-            <Icon :size="20" color="#ffffff" name="music" />
+            <Icon :size="20" color="var(--text-primary)" name="music" />
           </button>
         </div>
 
@@ -90,14 +90,17 @@
             type="button"
             @click="handleAddToPlaylistClick"
           >
-            <Icon :size="18" color="#ffffff" name="music" />
+            <Icon :size="18" color="var(--text-primary)" name="music" />
             <span>{{ locale.addToPlaylist }}</span>
           </button>
         </div>
 
         <!-- 使用Transition组件包裹内容 -->
         <Transition mode="out-in" name="schedule-fade">
-          <div v-if="loading" key="loading" class="loading">{{ locale.loading }}</div>
+          <div v-if="loading" key="loading" class="loading">
+            <AppSpinner :size="40" />
+            {{ locale.loading }}
+          </div>
 
           <div v-else-if="error" key="error" class="error">
             {{ error }}
@@ -106,7 +109,7 @@
           <div v-else-if="!schedules || schedules.length === 0" key="empty-all" class="empty">
             <div class="icon mb-4">🎵</div>
             <p>{{ locale.emptyAll }}</p>
-            <p class="text-sm text-gray">{{ locale.emptyAllDesc }}</p>
+            <p class="text-sm text-text-muted">{{ locale.emptyAllDesc }}</p>
           </div>
 
           <div v-else-if="currentDateSchedules.length === 0" key="empty-date" class="empty">
@@ -310,24 +313,24 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="closePlaylistModal"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
               <div
-                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
               >
                 <Icon name="music" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.addToPlaylist }}</h3>
+              <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.addToPlaylist }}</h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               type="button"
               @click="closePlaylistModal"
             >
@@ -342,13 +345,13 @@
               class="flex flex-col items-center justify-center py-20 text-center"
             >
               <div
-                class="w-20 h-20 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-6"
+                class="w-20 h-20 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-6"
               >
-                <Icon name="music" :size="40" class="text-zinc-500 opacity-20" />
+                <Icon name="music" :size="40" class="text-text-tertiary opacity-20" />
               </div>
-              <p class="text-zinc-400 font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
+              <p class="text-text-tertiary font-medium mb-8">{{ locale.loginRequiredForPlaylist }}</p>
               <button
-                class="px-10 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black transition-all active:scale-95 shadow-xl shadow-blue-900/20"
+                class="px-10 py-4 rounded-2xl bg-primary-hover hover:bg-primary text-text-primary font-black transition-all active:scale-95 shadow-xl shadow-[var(--primary-glow)]"
                 type="button"
                 @click="openLoginFromPlaylist"
               >
@@ -360,10 +363,10 @@
               <!-- 用户信息栏 -->
               <div
                 v-if="neteaseUser"
-                class="flex items-center p-4 bg-zinc-800/30 border border-zinc-800/50 rounded-2xl"
+                class="flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-2xl"
               >
                 <div
-                  class="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 mr-4 ring-2 ring-zinc-700/50"
+                  class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-panel-bg-hover-50"
                 >
                   <img
                     v-if="neteaseUser.avatarUrl"
@@ -371,14 +374,14 @@
                     alt="avatar"
                     class="w-full h-full object-cover"
                   >
-                  <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-zinc-500" />
+                  <Icon v-else name="user" :size="24" class="w-full h-full p-3 text-text-tertiary" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <span
-                    class="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-0.5"
+                    class="block text-[10px] font-black text-text-tertiary uppercase tracking-widest mb-0.5"
                     >{{ locale.currentAccount }}</span
                   >
-                  <span class="block font-bold text-zinc-100 truncate">
+                  <span class="block font-bold text-text-primary truncate">
                     {{ neteaseUser.nickname || neteaseUser.userName || locale.neteaseUser }}
                   </span>
                 </div>
@@ -388,7 +391,7 @@
               <div class="space-y-6">
                 <!-- 选择歌单 -->
                 <div class="space-y-3">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.targetPlaylist }}</label
                   >
                   <div class="flex gap-3">
@@ -402,7 +405,7 @@
                     />
                     <button
                       :disabled="playlistsLoading"
-                      class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all disabled:opacity-50"
+                      class="w-10 h-[38px] flex items-center justify-center rounded-lg bg-bg-primary border border-border-secondary text-text-tertiary hover:text-text-primary hover:border-border-tertiary transition-all disabled:opacity-50"
                       :title="locale.refreshPlaylist"
                       type="button"
                       @click="reloadPlaylists"
@@ -418,7 +421,7 @@
                   <div v-if="selectedPlaylistId" class="px-1 pt-1">
                     <button
                       :disabled="playlistActionLoading"
-                      class="text-[10px] font-black text-red-400/60 hover:text-red-400 flex items-center gap-1.5 transition-colors uppercase tracking-wider"
+                      class="text-[10px] font-black text-error-60 hover:text-error flex items-center gap-1.5 transition-colors uppercase tracking-wider"
                       type="button"
                       @click="handleDeletePlaylist"
                     >
@@ -430,29 +433,29 @@
 
                 <div class="relative py-2 flex items-center justify-center">
                   <div class="absolute inset-0 flex items-center px-8">
-                    <div class="w-full border-t border-zinc-800/30" />
+                    <div class="w-full border-t border-border-secondary-30" />
                   </div>
                   <span
-                    class="relative px-4 bg-zinc-900 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]"
+                    class="relative px-4 bg-bg-secondary text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]"
                     >{{ locale.or }}</span
                   >
                 </div>
 
                 <!-- 创建新歌单 -->
                 <div class="space-y-4">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.createPlaylist }}</label
                   >
                   <div class="flex gap-3">
                     <input
                       v-model="newPlaylistName"
-                      class="flex-1 px-5 py-3.5 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                      class="flex-1 px-5 py-3.5 bg-bg-primary border border-border-secondary rounded-xl text-text-primary text-sm placeholder-text-disabled focus:outline-none focus:border-primary-30 transition-all"
                       :placeholder="locale.newPlaylistPlaceholder"
                       type="text"
                     >
                     <button
                       :disabled="!newPlaylistName.trim() || playlistActionLoading"
-                      class="px-8 py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
+                      class="px-8 py-3.5 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest"
                       type="button"
                       @click="handleCreatePlaylist"
                     >
@@ -463,14 +466,14 @@
                     <div class="relative">
                       <input v-model="newPlaylistPrivacy" class="sr-only peer" type="checkbox" >
                       <div
-                        class="w-9 h-5 bg-zinc-800 rounded-full border border-zinc-700 peer-checked:bg-blue-600 peer-checked:border-blue-500 transition-all"
+                        class="w-9 h-5 bg-bg-tertiary rounded-full border border-border-tertiary peer-checked:bg-primary-hover peer-checked:border-primary transition-all"
                       />
                       <div
-                        class="absolute left-1 top-1 w-3 h-3 bg-zinc-500 rounded-full transition-all peer-checked:left-5 peer-checked:bg-white"
+                        class="absolute left-1 top-1 w-3 h-3 bg-bg-quaternary rounded-full transition-all peer-checked:left-5 peer-checked:bg-bg-secondary"
                       />
                     </div>
                     <span
-                      class="text-[10px] font-black text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors"
+                      class="text-[10px] font-black text-text-tertiary uppercase tracking-widest group-hover:text-text-secondary transition-colors"
                       >{{ locale.privatePlaylist }}</span
                     >
                   </label>
@@ -480,23 +483,23 @@
               <!-- 歌曲选择区域 -->
               <div class="space-y-4">
                 <div class="flex items-center justify-between px-1">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
                     {{ locale.selectSongs }}
                     <span
-                      class="ml-2 px-2 py-0.5 rounded-md bg-blue-600/10 text-blue-500 text-[9px]"
+                      class="ml-2 px-2 py-0.5 rounded-md bg-primary-hover-10 text-primary text-[9px]"
                       >{{ selectedSongIds.length }} / {{ neteaseSongs.length }}</span
                     >
                   </label>
                   <div class="flex gap-4">
                     <button
-                      class="text-[10px] font-black text-zinc-400 hover:text-blue-500 uppercase tracking-wider transition-colors"
+                      class="text-[10px] font-black text-text-tertiary hover:text-primary uppercase tracking-wider transition-colors"
                       type="button"
                       @click="selectAllNeteaseSongs"
                     >
                       {{ locale.selectAll }}
                     </button>
                     <button
-                      class="text-[10px] font-black text-zinc-400 hover:text-red-400 uppercase tracking-wider transition-colors"
+                      class="text-[10px] font-black text-text-tertiary hover:text-error uppercase tracking-wider transition-colors"
                       type="button"
                       @click="clearSelectedSongs"
                     >
@@ -507,7 +510,7 @@
 
                 <div
                   v-if="neteaseSongs.length === 0"
-                  class="flex flex-col items-center justify-center py-12 bg-zinc-950/30 border border-dashed border-zinc-800 rounded-3xl text-zinc-600"
+                  class="flex flex-col items-center justify-center py-12 bg-bg-primary-30 border border-dashed border-border-secondary rounded-3xl text-text-disabled"
                 >
                   <Icon name="music" :size="32" class="mb-3 opacity-20" />
                   <p class="text-[10px] font-black uppercase tracking-widest">
@@ -522,8 +525,8 @@
                     :class="[
                       'group flex items-center p-3.5 rounded-xl border transition-all cursor-pointer',
                       isSongSelected(song.id)
-                        ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
-                        : 'bg-zinc-950 border-transparent hover:border-zinc-800'
+                        ? 'bg-primary-hover-10 border-primary-30 shadow-lg'
+                        : 'bg-bg-primary border-transparent hover:border-border-secondary'
                     ]"
                     @click="toggleSongSelection(song.id)"
                   >
@@ -531,18 +534,18 @@
                       :class="[
                         'w-5 h-5 rounded-lg border-2 flex items-center justify-center mr-3.5 transition-all',
                         isSongSelected(song.id)
-                          ? 'bg-blue-600 border-blue-600 text-white'
-                          : 'border-zinc-800 group-hover:border-zinc-700'
+                          ? 'bg-primary-hover border-primary text-text-primary'
+                          : 'border-border-secondary group-hover:border-border-tertiary'
                       ]"
                     >
                       <Icon v-if="isSongSelected(song.id)" name="check" :size="12" />
                     </div>
                     <div class="flex-1 min-w-0">
-                      <div class="text-sm font-bold truncate text-zinc-100">
+                      <div class="text-sm font-bold truncate text-text-primary">
                         {{ song.title }}
                       </div>
                       <div
-                        class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-zinc-500"
+                        class="text-[10px] font-black uppercase tracking-widest truncate mt-0.5 text-text-tertiary"
                       >
                         {{ song.artist }}
                       </div>
@@ -557,7 +560,7 @@
           <div v-if="isNeteaseLoggedIn" class="p-8 pt-0">
             <div class="flex gap-3">
               <button
-                class="flex-1 px-6 py-4 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                class="flex-1 px-6 py-4 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
                 type="button"
                 @click="closePlaylistModal"
               >
@@ -567,7 +570,7 @@
                 :disabled="
                   !selectedPlaylistId || selectedSongIds.length === 0 || playlistActionLoading
                 "
-                class="flex-[2] px-6 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 uppercase tracking-widest"
+                class="flex-[2] px-6 py-4 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-[var(--primary-glow)] flex items-center justify-center gap-2 uppercase tracking-widest"
                 type="button"
                 @click="handleAddSongsToPlaylist"
               >
@@ -615,7 +618,7 @@
     >
       <div
         v-if="submissionNoteDialog.show"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
         @click="closeSubmissionNote"
       >
         <div class="submission-note-modal" @click.stop>
@@ -647,6 +650,7 @@ import { useSongs } from '~/composables/useSongs'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { convertToHttps } from '~/utils/url'
@@ -1735,27 +1739,27 @@ const vRipple = {
   align-items: center;
   margin-bottom: 1.5rem;
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, rgba(11, 90, 254, 0.1) 0%, rgba(33, 36, 45, 0.9) 100%);
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--panel-bg-deep) 100%);
   border-radius: 12px;
-  border: 1px solid rgba(11, 90, 254, 0.2);
+  border: 1px solid var(--primary-border);
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--mask-15);
 }
 
 .semester-label {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
   font-weight: 500;
   margin-right: 0.75rem;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px var(--mask-30);
 }
 
 .semester-select {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, var(--overlay-15) 0%, var(--overlay-8) 100%);
+  border: 1px solid var(--overlay-25);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
   padding: 0.6rem 1rem;
   font-size: 14px;
   font-weight: 500;
@@ -1763,28 +1767,28 @@ const vRipple = {
   transition: all 0.3s ease;
   min-width: 180px;
   backdrop-filter: blur(5px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--mask-10);
 }
 
 .semester-select:hover {
-  background: linear-gradient(135deg, rgba(11, 90, 254, 0.2) 0%, rgba(255, 255, 255, 0.15) 100%);
-  border-color: rgba(11, 90, 254, 0.6);
+  background: linear-gradient(135deg, var(--color-accent-alpha-20) 0%, var(--overlay-15) 100%);
+  border-color: var(--color-accent-alpha-60);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(11, 90, 254, 0.2);
+  box-shadow: 0 4px 12px var(--color-accent-alpha-20);
 }
 
 .semester-select:focus {
   outline: none;
-  border-color: #0b5afe;
+  border-color: var(--color-accent);
   box-shadow:
-    0 0 0 3px rgba(11, 90, 254, 0.3),
-    0 4px 12px rgba(11, 90, 254, 0.2);
+    0 0 0 3px var(--color-accent-alpha-30),
+    0 4px 12px var(--color-accent-alpha-20);
   transform: translateY(-1px);
 }
 
 .semester-select option {
-  background: #1a1d24;
-  color: #ffffff;
+  background: var(--panel-bg-overlay);
+  color: var(--text-primary);
   padding: 0.5rem;
 }
 
@@ -1825,7 +1829,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 400;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 0.5rem;
@@ -1838,24 +1842,24 @@ const vRipple = {
 }
 
 .date-item:hover {
-  background: #21242d;
+  background: var(--panel-bg);
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--mask-20);
 }
 
 .date-item.active {
-  background: #21242d;
-  color: #ffffff;
+  background: var(--panel-bg);
+  color: var(--text-primary);
   font-weight: 600;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(11, 90, 254, 0.2);
-  border-left: 3px solid #0b5afe;
+  box-shadow: 0 4px 12px var(--color-accent-alpha-20);
+  border-left: 3px solid var(--color-accent);
 }
 
 .empty-dates {
   padding: 2rem 1rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   width: 100%;
   box-sizing: border-box;
   display: flex;
@@ -1876,9 +1880,9 @@ const vRipple = {
   width: 2px;
   background: linear-gradient(
     180deg,
-    rgba(217, 217, 217, 0) 0%,
-    rgba(217, 217, 217, 0.5) 50%,
-    rgba(217, 217, 217, 0) 100%
+    transparent 0%,
+    var(--schedule-list-divider) 50%,
+    transparent 100%
   );
   margin: 0 1.5rem;
   position: relative;
@@ -1910,7 +1914,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -1919,25 +1923,14 @@ const vRipple = {
   padding: 3rem;
   text-align: center;
   border-radius: 10px;
-  background: #21242d;
+  background: var(--panel-bg);
   margin: 1rem 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.loading::before {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0b5afe;
-  animation: spin 1s linear infinite;
+  gap: 1rem;
 }
 
 @keyframes spin {
@@ -1954,13 +1947,13 @@ const vRipple = {
   padding: 2rem;
   text-align: center;
   border-radius: 10px;
-  background: #21242d;
+  background: var(--panel-bg);
   margin: 1rem 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .error {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .empty .icon {
@@ -1984,13 +1977,13 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   margin: 0 0 1rem 0;
 }
 
 .playtime-time {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   margin-left: 0.5rem;
 }
 
@@ -2004,7 +1997,7 @@ const vRipple = {
 .song-card {
   width: 320px;
   flex-shrink: 0;
-  background: #21242d;
+  background: var(--panel-bg);
   border-radius: 10px;
   overflow: hidden;
   position: relative;
@@ -2019,9 +2012,9 @@ const vRipple = {
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  border: 1px solid var(--overlay-10);
+  background: var(--overlay-10);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -2031,8 +2024,8 @@ const vRipple = {
 }
 
 .add-playlist-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
+  border-color: var(--overlay-20);
 }
 
 .add-playlist-btn:active {
@@ -2051,7 +2044,7 @@ const vRipple = {
 .playlist-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--mask-75);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -2064,10 +2057,10 @@ const vRipple = {
   width: 100%;
   max-width: 580px;
   max-height: 85vh;
-  background: #1e1e24;
+  background: var(--panel-bg-elevated);
   border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
+  border: 1px solid var(--overlay-8);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2077,11 +2070,11 @@ const vRipple = {
 /* 头部样式 */
 .playlist-modal-header {
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--overlay-8);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(30, 30, 36, 0.95);
+  background: var(--panel-bg-overlay);
 }
 
 .header-title {
@@ -2098,7 +2091,7 @@ const vRipple = {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: 0.5px;
 }
 
@@ -2107,8 +2100,8 @@ const vRipple = {
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--overlay-5);
+  color: var(--overlay-60);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2117,8 +2110,8 @@ const vRipple = {
 }
 
 .playlist-modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--overlay-10);
+  color: var(--text-primary);
   transform: rotate(90deg);
 }
 
@@ -2127,7 +2120,7 @@ const vRipple = {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
-  background: #1e1e24;
+  background: var(--panel-bg-elevated);
 }
 
 /* 滚动条美化 */
@@ -2140,12 +2133,12 @@ const vRipple = {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--overlay-10);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-20);
 }
 
 /* 登录提示 */
@@ -2162,7 +2155,7 @@ const vRipple = {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%);
+  background: linear-gradient(135deg, var(--primary-10) 0%, var(--primary-5) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2171,7 +2164,7 @@ const vRipple = {
 }
 
 .login-hint {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   margin-bottom: 2rem;
   font-size: 15px;
 }
@@ -2189,10 +2182,10 @@ const vRipple = {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-subtle);
   border-radius: 12px;
   margin-bottom: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 .user-avatar {
@@ -2200,11 +2193,11 @@ const vRipple = {
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  background: #2a2a32;
+  background: var(--panel-bg-compact);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(102, 126, 234, 0.2);
+  border: 2px solid var(--primary-20);
 }
 
 .user-avatar img {
@@ -2221,7 +2214,7 @@ const vRipple = {
 
 .user-name {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
 }
 
@@ -2244,10 +2237,10 @@ const vRipple = {
 
 /* 控制面板（歌单选择与创建） */
 .control-panel {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-subtle);
   border-radius: 16px;
   padding: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
   margin-bottom: 1.5rem;
 }
 
@@ -2260,7 +2253,7 @@ const vRipple = {
 .section-label {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -2295,9 +2288,9 @@ const vRipple = {
 .custom-select,
 .custom-input {
   width: 100%;
-  background: #141418;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--panel-bg-subtle);
+  border: 1px solid var(--overlay-10);
+  color: var(--text-primary);
   padding: 0.75rem 1rem;
   border-radius: 10px;
   font-size: 14px;
@@ -2316,24 +2309,24 @@ const vRipple = {
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
 }
 
 .custom-select:focus,
 .custom-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  background: #1a1a20;
+  box-shadow: 0 0 0 3px var(--primary-10);
+  background: var(--panel-bg-inset);
 }
 
 .btn-icon {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-5);
+  color: var(--overlay-80);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2343,8 +2336,8 @@ const vRipple = {
 }
 
 .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--overlay-10);
+  color: var(--text-primary);
 }
 
 .btn-icon:disabled {
@@ -2365,7 +2358,7 @@ const vRipple = {
 .btn-text-danger {
   background: none;
   border: none;
-  color: rgba(239, 68, 68, 0.8);
+  color: var(--error-80);
   font-size: 12px;
   display: flex;
   align-items: center;
@@ -2377,15 +2370,15 @@ const vRipple = {
 }
 
 .btn-text-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: var(--error-10);
+  color: var(--color-error);
 }
 
 .divider {
   display: flex;
   align-items: center;
   margin: 1.25rem 0;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--overlay-20);
   font-size: 12px;
 }
 
@@ -2394,7 +2387,7 @@ const vRipple = {
   content: '';
   flex: 1;
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
 }
 
 .divider span {
@@ -2418,7 +2411,7 @@ const vRipple = {
   width: 18px;
   height: 18px;
   border-radius: 4px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--overlay-30);
   position: relative;
   transition: all 0.2s ease;
 }
@@ -2442,7 +2435,7 @@ const vRipple = {
 
 .checkbox-label {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
 }
 
 /* 歌曲选择面板 */
@@ -2486,9 +2479,9 @@ const vRipple = {
 }
 
 .songs-list {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-subtle);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
   max-height: 300px;
   overflow-y: auto;
   padding: 0.5rem;
@@ -2497,9 +2490,9 @@ const vRipple = {
 .empty-state {
   padding: 2rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-subtle);
   border-radius: 12px;
 }
 
@@ -2520,19 +2513,19 @@ const vRipple = {
 }
 
 .song-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
 }
 
 .song-item.selected {
-  background: rgba(11, 90, 254, 0.1);
-  border-color: rgba(11, 90, 254, 0.2);
+  background: var(--color-accent-alpha-10);
+  border-color: var(--color-accent-alpha-20);
 }
 
 .song-checkbox {
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid var(--overlay-30);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2555,7 +2548,7 @@ const vRipple = {
 
 .song-name {
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -2566,7 +2559,7 @@ const vRipple = {
 
 .song-artist {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2576,8 +2569,8 @@ const vRipple = {
 /* 底部按钮栏 */
 .playlist-modal-footer {
   padding: 1.25rem 1.5rem;
-  background: rgba(30, 30, 36, 0.95);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--panel-bg-overlay);
+  border-top: 1px solid var(--overlay-8);
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
@@ -2603,14 +2596,14 @@ const vRipple = {
 
 .btn-primary {
   background: var(--primary);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px var(--primary-25);
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 6px 16px var(--primary-35);
 }
 
 .btn-primary:disabled {
@@ -2621,22 +2614,22 @@ const vRipple = {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--overlay-10);
+  color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-15);
 }
 
 .btn-ghost {
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--overlay-5);
+  color: var(--text-primary);
 }
 
 /* 动画定义 */
@@ -2669,9 +2662,9 @@ const vRipple = {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  border: 1px solid var(--overlay-10);
+  background: var(--overlay-10);
+  color: var(--text-primary);
   cursor: pointer;
   margin-right: 0.5rem;
   backdrop-filter: blur(10px);
@@ -2680,7 +2673,7 @@ const vRipple = {
 
 .mobile-add-playlist-btn:active {
   transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 /* 响应式调整 */
@@ -2760,7 +2753,7 @@ const vRipple = {
 
 .song-card-main {
   padding: 1rem;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  box-shadow: 0px 4px 4px var(--mask-25);
   position: relative;
   height: 90px; /* 减小卡片高度 */
   display: flex; /* 使用flex布局 */
@@ -2777,7 +2770,7 @@ const vRipple = {
   position: relative;
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px var(--mask-30);
 }
 
 .cover-image {
@@ -2795,8 +2788,8 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: bold;
   font-family: 'MiSans', sans-serif;
@@ -2812,7 +2805,7 @@ const vRipple = {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   opacity: 0;
   transition: opacity 0.2s ease;
   cursor: pointer;
@@ -2827,7 +2820,7 @@ const vRipple = {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(11, 90, 254, 0.8);
+  background: var(--color-accent-alpha-80);
   border: none;
   display: flex;
   align-items: center;
@@ -2859,7 +2852,7 @@ const vRipple = {
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   display: flex;
   align-items: flex-start;
@@ -2882,10 +2875,10 @@ const vRipple = {
   align-items: center;
   justify-content: center;
   padding: 2px 6px;
-  background: rgba(11, 90, 254, 0.15);
-  border: 1px solid rgba(11, 90, 254, 0.3);
+  background: var(--color-accent-alpha-15);
+  border: 1px solid var(--color-accent-alpha-30);
   border-radius: 4px;
-  color: #0b5afe;
+  color: var(--color-accent);
   font-size: 12px;
   font-weight: 500;
   flex-shrink: 0;
@@ -2896,8 +2889,8 @@ const vRipple = {
 }
 
 .replay-badge:hover {
-  background: rgba(11, 90, 254, 0.25);
-  border-color: rgba(11, 90, 254, 0.5);
+  background: var(--color-accent-alpha-25);
+  border-color: var(--color-accent-alpha-50);
 }
 
 /* 点歌券标识 */
@@ -2905,10 +2898,10 @@ const vRipple = {
   display: inline-flex;
   align-items: center;
   padding: 2px 6px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--card-code-bg);
+  border: 1px solid var(--card-code-border);
   border-radius: 4px;
-  color: #fcd34d;
+  color: var(--card-code-text);
   font-size: 0.7rem;
   font-weight: 500;
   flex-shrink: 0;
@@ -2926,14 +2919,14 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: normal;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   text-align: left;
 }
 
 /* 重播申请人数样式 */
 .replay-requester {
   /* 使用和普通投稿人相同的颜色 */
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-weight: normal;
   cursor: help;
 }
@@ -2959,21 +2952,21 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #0b5afe;
+  color: var(--color-accent);
   text-shadow:
-    0px 20px 30px rgba(0, 114, 248, 0.5),
-    0px 8px 15px rgba(0, 114, 248, 0.5),
-    0px 4px 10px rgba(0, 179, 248, 0.3),
-    0px 2px 10px rgba(0, 179, 248, 0.2),
-    inset 3px 3px 10px rgba(255, 255, 255, 0.4),
-    inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+    0px 20px 30px var(--primary-50),
+    0px 8px 15px var(--primary-50),
+    0px 4px 10px var(--schedule-list-title-shadow),
+    0px 2px 10px var(--schedule-list-title-shadow-sm),
+    inset 3px 3px 10px var(--overlay-40),
+    inset -1px -1px 15px var(--overlay-40);
 }
 
 .vote-count .label {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   opacity: 0.4;
 }
 
@@ -3021,15 +3014,15 @@ const vRipple = {
   .nav-capsule {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--overlay-5);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--overlay-10);
     padding: 4px;
     flex: 1;
     max-width: none;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px var(--mask-20);
   }
 
   .nav-btn {
@@ -3040,14 +3033,14 @@ const vRipple = {
     justify-content: center;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--overlay-60);
     border-radius: 16px;
     transition: all 0.2s ease;
   }
 
   .nav-btn:active:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    color: #0b5afe;
+    background: var(--overlay-10);
+    color: var(--color-accent);
   }
 
   .nav-btn:disabled {
@@ -3068,16 +3061,16 @@ const vRipple = {
   .date-text {
     font-size: 15px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary);
     white-space: nowrap;
     text-shadow:
-      0 0 10px rgba(255, 255, 255, 0.2),
-      0 0 20px rgba(11, 90, 254, 0.15);
+      0 0 10px var(--overlay-20),
+      0 0 20px var(--color-accent-alpha-15);
   }
 
   .dropdown-icon {
     opacity: 0.5;
-    color: #ffffff;
+    color: var(--text-primary);
   }
 
   .mobile-action-btn {
@@ -3086,17 +3079,17 @@ const vRipple = {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0b5afe 0%, #0043f8 100%);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
     border: none;
     border-radius: 16px;
-    box-shadow: 0 4px 15px rgba(11, 90, 254, 0.4);
+    box-shadow: 0 4px 15px var(--color-accent-alpha-40);
     transition: all 0.2s ease;
     flex-shrink: 0;
   }
 
   .mobile-action-btn:active {
     transform: scale(0.92);
-    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.4);
+    box-shadow: 0 2px 8px var(--color-accent-alpha-40);
   }
 
   /* 移除旧样式 */
@@ -3154,14 +3147,14 @@ const vRipple = {
   .playtime-header h4 {
     font-size: 13px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--overlay-50);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   .playtime-time {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
   }
 
   /* 歌曲卡片 - 无边框卡片设计 */
@@ -3173,38 +3166,38 @@ const vRipple = {
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--overlay-12);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 18px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--overlay-20);
+    box-shadow: 0 4px 15px var(--mask-20);
   }
 
   .song-card.playing {
-    background: rgba(11, 90, 254, 0.18);
-    border-color: rgba(11, 90, 254, 0.5);
-    box-shadow: 0 0 20px rgba(11, 90, 254, 0.3);
+    background: var(--color-accent-alpha-18);
+    border-color: var(--color-accent-alpha-50);
+    box-shadow: 0 0 20px var(--color-accent-alpha-30);
   }
 
   .song-card.playing .song-title {
-    color: #0b5afe;
-    text-shadow: 0 0 10px rgba(11, 90, 254, 0.4);
+    color: var(--color-accent);
+    text-shadow: 0 0 10px var(--color-accent-alpha-40);
   }
 
   .song-card:active {
     transform: scale(0.98);
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--overlay-15);
+    border-color: var(--overlay-30);
   }
 
   .song-card.played {
     opacity: 0.8;
     filter: grayscale(0.35);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-8);
+    border-color: var(--overlay-10);
   }
 
   .song-card-main {
@@ -3236,7 +3229,7 @@ const vRipple = {
     height: 48px;
     aspect-ratio: 1;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--mask-30);
   }
 
   .text-cover {
@@ -3267,13 +3260,13 @@ const vRipple = {
     font-weight: 600;
     margin-bottom: 2px;
     line-height: 1.4;
-    color: #ffffff;
+    color: var(--text-primary);
     letter-spacing: 0.01em;
   }
 
   .requester {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--overlay-50);
     font-weight: 400;
   }
 
@@ -3281,7 +3274,7 @@ const vRipple = {
   .vote-count .count {
     font-size: 22px;
     font-weight: 800;
-    color: #0b5afe;
+    color: var(--color-accent);
     font-family: 'MiSans-Bold', sans-serif;
     line-height: 1;
   }
@@ -3289,7 +3282,7 @@ const vRipple = {
   .vote-count .label {
     font-size: 11px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     margin-top: 2px;
   }
 
@@ -3304,12 +3297,6 @@ const vRipple = {
     margin: 0;
   }
 
-  .loading::before {
-    width: 32px;
-    height: 32px;
-    border-width: 2px;
-  }
-
   .empty .icon {
     font-size: 2.5rem;
     margin-bottom: 12px;
@@ -3317,18 +3304,18 @@ const vRipple = {
 
   /* 日期选择弹窗 */
   .date-picker-content {
-    background: #1a1a1f;
+    background: var(--panel-bg);
     border-radius: 20px 20px 0 0;
     width: 100%;
     max-width: 100%;
     max-height: 70vh;
     border: none;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -10px 40px var(--mask-50);
   }
 
   .date-picker-header {
     padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--overlay-6);
   }
 
   .date-picker-header h3 {
@@ -3340,7 +3327,7 @@ const vRipple = {
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--overlay-6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3354,20 +3341,20 @@ const vRipple = {
     padding: 14px 16px;
     border-radius: 12px;
     margin-bottom: 6px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--overlay-3);
     border: none;
     font-size: 14px;
   }
 
   .date-picker-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--overlay-6);
     transform: none;
   }
 
   .date-picker-item.active {
-    background: rgba(11, 90, 254, 0.15);
+    background: var(--color-accent-alpha-15);
     border-left: none;
-    color: #0b5afe;
+    color: var(--color-accent);
   }
 }
 
@@ -3441,7 +3428,7 @@ const vRipple = {
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-20);
   transform: scale(0);
   animation: ripple 0.6s linear;
   pointer-events: none;
@@ -3474,7 +3461,7 @@ const vRipple = {
   display: none;
   text-align: center;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   margin-bottom: 0.5rem;
 }
 
@@ -3483,7 +3470,7 @@ const vRipple = {
   display: none;
   width: 100%;
   height: 2px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--overlay-10);
   margin-top: 0.5rem;
   border-radius: 1px;
   overflow: hidden;
@@ -3492,7 +3479,7 @@ const vRipple = {
 .scroll-indicator {
   height: 100%;
   width: 20%;
-  background-color: rgba(11, 90, 254, 0.6);
+  background-color: var(--color-accent-alpha-60);
   border-radius: 1px;
   animation: scroll-hint 1.5s infinite;
 }
@@ -3515,10 +3502,10 @@ const vRipple = {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  background: #21242d;
+  background: var(--panel-bg);
   border-radius: 10px;
   padding: 0.75rem 1rem;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 6px var(--mask-10);
   width: 100%;
   position: relative;
   z-index: 10;
@@ -3526,9 +3513,9 @@ const vRipple = {
 }
 
 .date-nav-btn {
-  background: rgba(11, 90, 254, 0.1);
-  border: 1px solid rgba(11, 90, 254, 0.2);
-  color: #ffffff;
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border);
+  color: var(--text-primary);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -3545,14 +3532,14 @@ const vRipple = {
 }
 
 .date-nav-btn:hover:not(:disabled) {
-  background: rgba(11, 90, 254, 0.2);
+  background: var(--color-accent-alpha-20);
 }
 
 .current-date-mobile {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #ffffff;
+  color: var(--text-primary);
   text-align: center;
   flex: 1;
   white-space: pre-line;
@@ -3571,7 +3558,7 @@ const vRipple = {
 }
 
 .current-date-mobile:hover {
-  color: #0b5afe;
+  color: var(--color-accent);
 }
 
 /* 日期选择器弹窗样式 */
@@ -3593,7 +3580,7 @@ const vRipple = {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--mask-50);
   backdrop-filter: blur(3px);
 }
 
@@ -3602,10 +3589,10 @@ const vRipple = {
   width: 85%;
   max-width: 350px;
   max-height: 70vh;
-  background: #1a1d24;
+  background: var(--panel-bg-overlay);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px var(--mask-30);
+  border: 1px solid var(--overlay-10);
   overflow: hidden;
   animation: scale-in 0.2s ease;
   display: flex;
@@ -3617,7 +3604,7 @@ const vRipple = {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--overlay-10);
 }
 
 .date-picker-header h3 {
@@ -3629,7 +3616,7 @@ const vRipple = {
 .close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 22px;
   cursor: pointer;
   padding: 0 5px;
@@ -3648,20 +3635,20 @@ const vRipple = {
   margin-bottom: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
   position: relative;
   overflow: hidden;
   white-space: pre-line;
 }
 
 .date-picker-item:hover {
-  background: rgba(11, 90, 254, 0.1);
+  background: var(--color-accent-alpha-10);
   transform: translateY(-2px);
 }
 
 .date-picker-item.active {
-  background: rgba(11, 90, 254, 0.2);
-  border-left: 3px solid #0b5afe;
+  background: var(--color-accent-alpha-20);
+  border-left: 3px solid var(--color-accent);
 }
 
 /* 过渡动画 */
@@ -3693,33 +3680,33 @@ const vRipple = {
   width: 24px;
   height: 22px;
   margin-left: 6px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid var(--primary-30);
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.08);
-  color: #60a5fa;
+  background: var(--primary-10);
+  color: var(--color-accent-light);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  box-shadow: 0 0 0 0 transparent;
   flex-shrink: 0;
 }
 
 .submission-note-trigger:hover {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 6px 12px rgba(96, 165, 250, 0.15);
+  background: var(--primary-18);
+  border-color: var(--primary-50);
+  box-shadow: 0 6px 12px var(--primary-15);
 }
 
 .submission-note-modal {
   width: 100%;
   max-width: 400px;
-  background: rgba(24, 24, 27, 0.85);
+  background: var(--panel-bg-overlay);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-8);
   border-radius: 20px;
   padding: 24px;
-  color: #f3f4f6;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  color: var(--text-secondary);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
 }
 
 .submission-note-header {
@@ -3732,27 +3719,27 @@ const vRipple = {
 .submission-note-header h4 {
   font-size: 18px;
   font-weight: 600;
-  color: #f3f4f6;
+  color: var(--text-secondary);
   margin: 0;
 }
 
 .submission-note-header button {
   border: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
   border-radius: 50%;
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .submission-note-header button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f4f4f5;
+  background: var(--overlay-10);
+  color: var(--text-primary-light);
 }
 
 .submission-note-meta {
@@ -3765,8 +3752,8 @@ const vRipple = {
 
 .song-title-tag {
   font-size: 13px;
-  color: #9ca3af;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  background: var(--overlay-6);
   padding: 4px 10px;
   border-radius: 6px;
 }
@@ -3778,20 +3765,20 @@ const vRipple = {
 }
 
 .visibility-public {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: var(--primary-15);
+  color: var(--color-accent-light);
+  border: 1px solid var(--primary-20);
 }
 
 .visibility-private {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--warning-15);
+  color: var(--color-warning-light);
+  border: 1px solid var(--warning-20);
 }
 
 .submission-note-content-box {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-card-bg-soft);
+  border: 1px solid var(--overlay-5);
   border-radius: 12px;
   padding: 16px;
   max-height: 300px;
@@ -3801,7 +3788,7 @@ const vRipple = {
 .submission-note-content {
   font-size: 14px;
   line-height: 1.7;
-  color: #e4e4e7;
+  color: var(--text-primary-lighter);
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;

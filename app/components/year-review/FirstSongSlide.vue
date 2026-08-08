@@ -77,7 +77,7 @@ const formatDate = (dateStr) => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #000;
+  background-color: var(--bg-primary);
 }
 
 .bg-blur {
@@ -105,25 +105,25 @@ const formatDate = (dateStr) => {
   display: inline-block;
   padding: 0.25rem 1rem;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-20);
+  background: var(--overlay-5);
   backdrop-filter: blur(12px);
   font-size: 0.875rem;
   margin-bottom: 1.5rem;
   letter-spacing: 0.1em;
-  color: #f472b6; /* brand-pink */
+  color: var(--color-pink); /* brand-pink */
   font-weight: 600;
 }
 
 .text-intro {
   font-size: 1.5rem;
-  color: #d1d5db;
+  color: var(--text-primary-lighter);
   font-weight: 300;
   margin-bottom: 2rem;
 }
 
 .highlight {
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 700;
   margin: 0 0.5rem;
 }
@@ -142,9 +142,9 @@ const formatDate = (dateStr) => {
   height: 100%;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #111827;
+  box-shadow: 0 25px 50px -12px var(--mask-50);
+  border: 1px solid var(--overlay-10);
+  background: var(--panel-bg-dark);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -162,13 +162,13 @@ const formatDate = (dateStr) => {
 }
 
 .placeholder-icon {
-  color: #4b5563;
+  color: var(--text-muted);
 }
 
 .glossy-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top right, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(to top right, var(--overlay-10), transparent);
   pointer-events: none;
 }
 
@@ -184,12 +184,12 @@ const formatDate = (dateStr) => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .song-artist {
   font-size: 1.125rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -198,7 +198,7 @@ const formatDate = (dateStr) => {
 .date-text {
   margin-top: 2rem;
   font-size: 1.125rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-family:
     'MiSans',
     system-ui,

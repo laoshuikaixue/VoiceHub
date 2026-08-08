@@ -1,15 +1,15 @@
 <template>
   <div class="space-y-6">
     <div v-if="loading" class="flex flex-col items-center justify-center py-12">
-      <Loader2 :size="24" class="text-blue-500 animate-spin mb-3" />
-      <p class="text-zinc-500 text-xs font-medium">{{ locale.loading }}</p>
+      <Loader2 :size="24" class="text-primary animate-spin mb-3" />
+      <p class="text-text-tertiary text-xs font-medium">{{ locale.loading }}</p>
     </div>
 
     <div v-else class="space-y-4">
       <div v-for="provider in enabledProviders" :key="provider.key" :class="itemClass">
         <div class="flex items-center gap-4">
           <div
-            class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100"
+            class="w-10 h-10 rounded-xl bg-bg-primary flex items-center justify-center border border-border-secondary text-text-primary"
           >
             <AuthProvidersGitHubIcon v-if="provider.key === 'github'" class="w-5 h-5" />
             <AuthProvidersCasdoorIcon v-else-if="provider.key === 'casdoor'" class="w-5 h-5" />
@@ -23,21 +23,21 @@
             <Shield v-else :size="20" />
           </div>
           <div class="flex flex-col">
-            <span class="text-sm font-bold text-zinc-200">{{
+            <span class="text-sm font-bold text-text-primary">{{
               provider.name || getProviderDisplayName(provider.key)
             }}</span>
             <span
               v-if="getIdentityByProvider(provider.key)"
-              class="text-[11px] text-blue-500 font-medium mt-0.5"
+              class="text-[11px] text-primary font-medium mt-0.5"
               >{{ getIdentityByProvider(provider.key).providerUsername }}</span
             >
-            <span v-else class="text-[11px] text-zinc-500 mt-0.5">{{ locale.unbound }}</span>
+            <span v-else class="text-[11px] text-text-tertiary mt-0.5">{{ locale.unbound }}</span>
           </div>
         </div>
 
         <button
           v-if="getIdentityByProvider(provider.key)"
-          class="px-4 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-500 text-xs font-black rounded-xl transition-all disabled:opacity-50"
+          class="px-4 py-1.5 bg-error-10 border border-error-20 hover:bg-error-20 text-error text-xs font-black rounded-xl transition-all disabled:opacity-50"
           :disabled="actionLoading"
           @click="confirmUnbind(provider.key)"
         >
@@ -45,7 +45,7 @@
         </button>
         <button
           v-else
-          class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click="handleBind(provider)"
         >
@@ -58,27 +58,27 @@
         v-if="isWebAuthnSupported || webauthnIdentities.length > 0 || !isSecureContext"
         :class="[
           itemClass,
-          webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-zinc-900/70' : ''
+          webauthnIdentities.length > 0 ? 'cursor-pointer hover:bg-bg-secondary-70' : ''
         ]"
         @click="toggleWebAuthnList"
       >
         <div class="flex items-center gap-4">
           <div
-            class="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 text-zinc-100"
+            class="w-10 h-10 rounded-xl bg-bg-primary flex items-center justify-center border border-border-secondary text-text-primary"
           >
             <Fingerprint :size="20" />
           </div>
           <div class="flex flex-col">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-zinc-200">Passkey</span>
+              <span class="text-sm font-bold text-text-primary">Passkey</span>
               <ChevronDown
                 v-if="webauthnIdentities.length > 0"
                 :size="14"
-                class="text-zinc-500 transition-transform duration-300"
+                class="text-text-tertiary transition-transform duration-300"
                 :class="{ 'rotate-180': isWebAuthnExpanded }"
               />
             </div>
-            <span class="text-[11px] text-zinc-500 mt-0.5"
+            <span class="text-[11px] text-text-tertiary mt-0.5"
               >{{ locale.boundDevices }} {{ webauthnIdentities.length }} {{ locale.devices }}</span
             >
           </div>
@@ -86,7 +86,7 @@
 
         <button
           v-if="isWebAuthnSupported"
-          class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50"
+          class="px-4 py-1.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50"
           :disabled="actionLoading"
           @click.stop="handleWebAuthnRegister"
         >
@@ -94,7 +94,7 @@
         </button>
         <div
           v-else-if="!isSecureContext"
-          class="flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-500/20"
+          class="flex items-center gap-1 text-warning bg-warning-10 px-3 py-1.5 rounded-lg border border-warning-20"
         >
           <AlertTriangle :size="12" />
           <span class="text-[10px] font-medium">{{ locale.httpsRequired }}</span>
@@ -111,14 +111,14 @@
             <div
               v-for="cred in webauthnIdentities"
               :key="cred.id"
-              class="flex items-center justify-between p-3 bg-zinc-950/20 border border-zinc-900 rounded-xl group/item"
+              class="flex items-center justify-between p-3 bg-bg-primary-20 border border-border-secondary rounded-xl group/item"
             >
               <div class="flex flex-col flex-1 mr-4">
                 <div v-if="editingId === cred.id" class="flex items-center gap-2 mb-1">
                   <input
                     v-model="editingName"
                     type="text"
-                    class="bg-zinc-900 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-200 focus:outline-none focus:border-blue-500 w-full"
+                    class="bg-bg-secondary border border-border-tertiary rounded px-2 py-0.5 text-xs text-text-primary focus:outline-none focus:border-primary w-full"
                     :disabled="isRenaming"
                     @keyup.enter="saveEditing(cred.id)"
                     @keyup.esc="cancelEditing"
@@ -127,9 +127,9 @@
                   />
                 </div>
                 <div v-else class="flex items-center gap-2 mb-0.5">
-                  <span class="text-xs font-medium text-zinc-300">{{ cred.providerUsername }}</span>
+                  <span class="text-xs font-medium text-text-secondary">{{ cred.providerUsername }}</span>
                   <button
-                    class="text-zinc-500 hover:text-zinc-300 opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
+                    class="text-text-tertiary hover:text-text-secondary opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5"
                     @click.stop="startEditing(cred)"
                     :title="locale.rename"
                   >
@@ -137,7 +137,7 @@
                   </button>
                 </div>
 
-                <span class="text-[10px] text-zinc-600"
+                <span class="text-[10px] text-text-disabled"
                   >{{ locale.addedAt }} {{ new Date(cred.createdAt).toLocaleString(currentLocale.value, {
                     year: 'numeric', 
                     month: '2-digit', 
@@ -153,7 +153,7 @@
               <div class="flex items-center gap-1">
                 <template v-if="editingId === cred.id">
                   <button
-                    class="text-zinc-400 hover:text-green-400 transition-colors p-1"
+                    class="text-text-tertiary hover:text-success transition-colors p-1"
                     :disabled="isRenaming"
                     @click.stop="saveEditing(cred.id)"
                     :title="locale.save"
@@ -161,7 +161,7 @@
                     <Check :size="14" />
                   </button>
                   <button
-                    class="text-zinc-400 hover:text-zinc-200 transition-colors p-1"
+                    class="text-text-tertiary hover:text-text-primary transition-colors p-1"
                     :disabled="isRenaming"
                     @click.stop="cancelEditing"
                     :title="locale.cancel"
@@ -171,7 +171,7 @@
                 </template>
                 <button
                   v-else
-                  class="text-xs text-rose-500 hover:text-rose-400 font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
+                  class="text-xs text-error hover:text-error font-medium px-2 py-1 opacity-0 group-hover/item:opacity-100 transition-opacity"
                   @click="confirmUnbindWebAuthn(cred)"
                 >
                   {{ locale.remove }}
@@ -299,24 +299,24 @@ const confirmDialog = ref({
 
 // 样式类
 const itemClass =
-  'flex items-center justify-between p-4 bg-zinc-950/30 border border-zinc-900 rounded-2xl hover:bg-zinc-900/50 transition-all group'
+  'flex items-center justify-between p-4 bg-bg-primary-30 border border-border-secondary rounded-2xl hover:bg-bg-secondary-50 transition-all group'
 
 const aggregateIconClass = (loginType) => {
   const classes = {
-    qq: 'text-[#12b7f5]',
-    wx: 'text-[#07c160]',
-    alipay: 'text-[#1677ff]',
-    sina: 'text-[#e6162d]',
-    baidu: 'text-[#2932e1]',
-    douyin: 'text-[#25f4ee]',
-    huawei: 'text-[#cf0a2c]',
-    xiaomi: 'text-[#ff6900]',
-    gitee: 'text-[#c71d23]',
-    gitea: 'text-zinc-100 [--gitea-cutout:#18181b]',
-    bilibili: 'text-[#00a1d6]',
-    kuaishou: 'text-[#ff4906]'
+    qq: 'text-[var(--oauth-qq)]',
+    wx: 'text-[var(--oauth-wx)]',
+    alipay: 'text-[var(--oauth-alipay)]',
+    sina: 'text-[var(--oauth-sina)]',
+    baidu: 'text-[var(--oauth-baidu)]',
+    douyin: 'text-[var(--oauth-douyin)]',
+    huawei: 'text-[var(--oauth-huawei)]',
+    xiaomi: 'text-[var(--oauth-xiaomi)]',
+    gitee: 'text-[var(--oauth-gitee)]',
+    gitea: 'text-text-primary [--gitea-cutout:var(--panel-bg-dialog)]',
+    bilibili: 'text-[var(--oauth-bilibili)]',
+    kuaishou: 'text-[var(--oauth-kuaishou)]'
   }
-  return classes[loginType] || 'text-zinc-100'
+  return classes[loginType] || 'text-text-primary'
 }
 
 const enabledProviders = computed(() => oauthProviders.value || [])

@@ -7,16 +7,16 @@
     >
       <div
         v-if="show"
-        class="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        class="fixed inset-0 z-[2000] bg-bg-primary-80 backdrop-blur-sm flex items-center justify-center p-4"
         @click="$emit('cancel')"
       >
         <div 
-          class="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-2xl p-6 shadow-2xl space-y-6"
+          class="w-full max-w-md bg-bg-primary border border-border-secondary rounded-2xl p-6 shadow-2xl space-y-6"
           @click.stop
         >
           <div class="text-center space-y-2">
-            <h3 class="text-xl font-bold text-zinc-100">{{ locale.title }}</h3>
-            <p class="text-sm text-zinc-400">
+            <h3 class="text-xl font-bold text-text-primary">{{ locale.title }}</h3>
+            <p class="text-sm text-text-tertiary">
               {{ method === 'totp' ? locale.totpDesc : locale.emailDesc }}
             </p>
           </div>
@@ -24,9 +24,9 @@
           <div class="space-y-4">
             <!-- 邮箱输入 (仅 Email 模式) -->
             <div v-if="method === 'email'" class="space-y-2">
-              <label class="block text-sm text-zinc-400">
+              <label class="block text-sm text-text-tertiary">
                 {{ locale.emailLabel }}
-                <span v-if="maskedEmail" class="block text-xs text-zinc-500 mt-1">
+                <span v-if="maskedEmail" class="block text-xs text-text-tertiary mt-1">
                   {{ locale.maskedEmailTip }} {{ maskedEmail }}
                 </span>
               </label>
@@ -35,7 +35,7 @@
                   v-model="emailInput"
                   type="email"
                   :placeholder="locale.emailPlaceholder"
-                  class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-4 py-3 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   :disabled="emailSent && cooldown > 0"
                   @keyup.enter="!emailSent && sendEmailCode()"
                 />
@@ -50,7 +50,7 @@
                   type="text"
                   maxlength="6"
                   placeholder="000000"
-                  class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-center text-2xl font-mono tracking-widest text-zinc-100 placeholder-zinc-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-4 py-3 text-center text-2xl font-mono tracking-widest text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   @keyup.enter="handleVerify"
                   ref="inputRef"
                 />
@@ -63,13 +63,13 @@
                 type="button"
                 @click="sendEmailCode"
                 :disabled="cooldown > 0 || sending || !emailInput"
-                class="text-sm text-blue-500 hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="text-sm text-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {{ resendButtonText }}
               </button>
             </div>
 
-            <div v-if="error" class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-500 text-sm">
+            <div v-if="error" class="p-3 bg-error-10 border border-error-20 rounded-lg flex items-center gap-2 text-error text-sm">
               <AlertCircle :size="16" />
               <span>{{ error }}</span>
             </div>
@@ -77,7 +77,7 @@
             <button
               @click="handleVerify"
               :disabled="loading || code.length !== 6"
-              class="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+              class="w-full py-3 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               <Loader2 v-if="loading" class="animate-spin" :size="18" />
               <span>{{ locale.verifyLogin }}</span>
@@ -87,14 +87,14 @@
             <button
               v-if="hasMultipleMethods"
               @click="toggleMethod"
-              class="w-full py-2 text-blue-500 hover:text-blue-400 text-sm transition-colors"
+              class="w-full py-2 text-primary hover:text-primary text-sm transition-colors"
             >
               {{ method === 'totp' ? locale.switchToEmail : locale.switchToTotp }}
             </button>
 
             <button
               @click="$emit('cancel')"
-              class="w-full py-2 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+              class="w-full py-2 text-text-tertiary hover:text-text-secondary text-sm transition-colors"
             >
               {{ locale.backLogin }}
             </button>

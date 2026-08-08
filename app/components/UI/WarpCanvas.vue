@@ -1,69 +1,154 @@
 <template>
-  <div class="absolute inset-0 z-0 bg-[#070709] overflow-hidden">
+  <div class="absolute inset-0 z-0 bg-bg-primary overflow-hidden">
     <canvas
       ref="canvasRef"
       class="w-full h-full block touch-none pointer-events-auto"
     />
-    <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_45%,rgba(5,5,7,0.92)_100%)]" />
+    <div
+      class="absolute inset-0 pointer-events-none"
+      :style="{ background: `radial-gradient(circle_at_center,transparent_45%,${glowColors.overlayEnd} 100%)` }"
+    />
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useTheme } from '~/composables/useTheme'
 
-interface WarpSettings {
-  themeColor: string
-  pattern: 'hyperdrive' | 'nebula' | 'grid' | 'vortex'
-  speedMultiplier: number
-  particleCount: number
-  glowEffect: boolean
-  interactive: boolean
-}
+const props = defineProps({
+  settings: { type: Object, required: true },
+  isAccelerating: { type: Boolean, required: true },
+  currentProgress: { type: Number, required: true }
+})
 
-const props = defineProps<{
-  settings: WarpSettings
-  isAccelerating: boolean
-  currentProgress: number
-}>()
+const { isDark } = useTheme()
 
-const canvasRef = ref<HTMLCanvasElement | null>(null)
+const canvasRef = ref(null)
 
 const settingsRef = ref(props.settings)
 const isAcceleratingRef = ref(props.isAccelerating)
 
 watch(() => props.settings, (val) => { settingsRef.value = val })
 watch(() => props.isAccelerating, (val) => { isAcceleratingRef.value = val })
+watch(isDark, () => {
+  loadBrandColors()
+  // 主题切换后重绘光晕颜色
+  glowColors.load()
+  // 主题切换后重新生成星星颜色
+  stars.length = 0
+  for (let i = 0; i < 250; i++) {
+    stars.push(initStar({ z: Math.random() * 1000 }))
+  }
+})
 
 const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 }
 
-interface Star {
-  x: number
-  y: number
-  z: number
-  prevZ: number
-  color: string
-  size: number
-  angle: number
+// Canvas 动画所需的状态，提升为模块级以便主题切换时重绘
+const stars = []
+
+// Canvas 2D API 不识别 CSS 变量，此处从 CSS 变量动态读取实际色值
+const BRAND_COLORS = {}
+
+function loadBrandColors(root) {
+  root = root || document.documentElement
+  const cs = getComputedStyle(root)
+  const keys = [
+    'warp-canvas-indigo', 'warp-canvas-primary', 'warp-canvas-primary-light', 'brand-blue-light',
+    'brand-green', 'brand-green-light', 'brand-red', 'brand-pink',
+    'brand-teal', 'brand-orange', 'brand-yellow-light',
+    'text-primary', 'text-primary-lighter', 'brand-cyan',
+  ]
+  for (const key of keys) {
+    const val = cs.getPropertyValue(`--${key}`).trim()
+    if (val) BRAND_COLORS[key] = toHexValue(val)
+  }
 }
 
-function getRandomColor(base: string): string {
-  const cold = ['#6366f1', '#8b5cf6', '#a855f7', '#3b82f6', '#ffffff', '#e0e7ff']
+if (typeof document !== 'undefined') {
+  loadBrandColors()
+}
+
+/** 将任意 CSS 颜色值统一转为 hex (#RRGGBB) */
+function toHexValue(color) {
+  if (color.startsWith('#')) {
+    // #RGB 展开为 #RRGGBB
+    if (color.length === 4) {
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
+    }
+    return color
+  }
+  // rgb(r, g, b) / rgba(r, g, b, a)
+  const m = color.match(/rgba?\(\s*([\d.]+)\s*[,%]\s*([\d.]+)\s*[,%]\s*([\d.]+)/)
+  if (m) {
+    const r = parseInt(m[1], 10)
+    const g = parseInt(m[2], 10)
+    const b = parseInt(m[3], 10)
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+  }
+  // 兜底：原样返回
+  return color
+}
+
+/** 将 hex 颜色转为 rgba 数组 [r, g, b, a] */
+function hexToRgba(hex) {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = `${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`
+  const r = parseInt(h.substring(0, 2), 16)
+  const g = parseInt(h.substring(2, 4), 16)
+  const b = parseInt(h.substring(4, 6), 16)
+  return [r, g, b, 1]
+}
+
+/** 将 hex 颜色 + alpha 转为 rgba() 字符串 */
+function hexWithAlpha(hex, alpha) {
+  const [r, g, b] = hexToRgba(hex)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+// 光晕颜色 — 统一从 CSS 变量 --app-loading-brand-primary 读取
+const glowColors = {
+  color: '',       // hex
+  overlayEnd: '',  // 解析后的 rgba 字符串
+  load() {
+    const cs = getComputedStyle(document.documentElement)
+    const raw = cs.getPropertyValue('--app-loading-brand-primary').trim()
+    // 回退值与 SSR 默认主题（经典深色）的主色对齐
+    this.color = raw ? toHexValue(raw) : '#6366f1'
+    // 解析 --canvas-glow-overlay-end 的实际 rgba 值
+    const rawOverlay = cs.getPropertyValue('--canvas-glow-overlay-end').trim()
+    this.overlayEnd = rawOverlay || 'rgba(245, 245, 247, 0.7)'
+  }
+}
+if (typeof document !== 'undefined') {
+  glowColors.load()
+}
+
+function getRandomColor(base) {
+  const cold = ['warp-canvas-indigo', 'warp-canvas-primary', 'brand-blue-light', 'text-primary', 'warp-canvas-primary-light']
   if (base === 'emerald') {
-    const greens = ['#10b981', '#34d399', '#6ee7b7', '#059669', '#38bdf8']
-    return greens[Math.floor(Math.random() * greens.length)]
+    const greens = ['brand-green', 'brand-green-light', 'brand-cyan']
+    return toHex(greens[Math.floor(Math.random() * greens.length)])
   }
   if (base === 'cyberpunk') {
-    const pinks = ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#06b6d4']
-    return pinks[Math.floor(Math.random() * pinks.length)]
+    const pinks = ['brand-red', 'brand-pink', 'warp-canvas-primary', 'brand-teal']
+    return toHex(pinks[Math.floor(Math.random() * pinks.length)])
   }
   if (base === 'sunset') {
-    const warm = ['#f97316', '#ef4444', '#f1f5f9', '#facc15', '#ec4899']
-    return warm[Math.floor(Math.random() * warm.length)]
+    const warm = ['brand-orange', 'brand-red', 'text-primary-lighter', 'brand-yellow-light', 'brand-pink']
+    return toHex(warm[Math.floor(Math.random() * warm.length)])
   }
-  return cold[Math.floor(Math.random() * cold.length)]
+  return toHex(cold[Math.floor(Math.random() * cold.length)])
 }
 
-function initStar(partial: Partial<Star> = {}): Star {
+function toHex(color) {
+  // 已经是 hex 直接返回
+  if (color.startsWith('#')) return color
+  // 从映射表取（已统一为 hex）
+  return BRAND_COLORS[color] ?? glowColors.color
+}
+
+function initStar(partial) {
+  partial = partial || {}
   return {
     x: partial.x ?? (Math.random() - 0.5) * 1000,
     y: partial.y ?? (Math.random() - 0.5) * 1000,
@@ -81,7 +166,7 @@ onMounted(() => {
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  let animationId: number
+  let animationId
   let width = 0
   let height = 0
 
@@ -101,7 +186,6 @@ onMounted(() => {
   }
   handleResize()
 
-  const stars: Star[] = []
   for (let i = 0; i < 250; i++) {
     stars.push(initStar({ z: Math.random() * 1000 }))
   }
@@ -111,14 +195,14 @@ onMounted(() => {
   let glowFactor = 0.12
   let radialGlowOpacity = 0.2
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = (e) => {
     const halfW = window.innerWidth / 2
     const halfH = window.innerHeight / 2
     pointer.targetX = (e.clientX - halfW) / halfW
     pointer.targetY = (e.clientY - halfH) / halfH
   }
 
-  const handleTouchMove = (e: TouchEvent) => {
+  const handleTouchMove = (e) => {
     if (e.touches.length > 0) {
       const touch = e.touches[0]
       const halfW = window.innerWidth / 2
@@ -157,7 +241,10 @@ onMounted(() => {
     pointer.y += (pointer.targetY - pointer.y) * 0.08
 
     ctx.save()
-    ctx.fillStyle = 'rgba(7, 7, 9, 0.18)'
+    // 从 CSS 变量读取背景叠加色
+    const bgOverlay = getComputedStyle(document.documentElement)
+      .getPropertyValue('--canvas-bg-overlay').trim()
+    ctx.fillStyle = bgOverlay || 'rgba(7, 7, 9, 0.18)'
     ctx.fillRect(0, 0, width, height)
 
     const centerX = width / 2 + pointer.x * (width * 0.12)
@@ -194,9 +281,9 @@ onMounted(() => {
     if (currentSettings.glowEffect) {
       ctx.globalAlpha = glowFactor
       const grad = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, Math.max(width, height) * 0.75)
-      grad.addColorStop(0, `rgba(99, 102, 241, ${radialGlowOpacity})`)
-      grad.addColorStop(0.5, 'rgba(99, 102, 241, 0.04)')
-      grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      grad.addColorStop(0, hexWithAlpha(glowColors.color, radialGlowOpacity))
+      grad.addColorStop(0.5, hexWithAlpha(glowColors.color, 0.04))
+      grad.addColorStop(1, 'transparent')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, width, height)
     }

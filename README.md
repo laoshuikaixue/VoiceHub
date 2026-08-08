@@ -96,7 +96,7 @@
 - **Nuxt 4**：Vue.js全栈框架，提供SSR和SPA支持
 - **Vue 3**：响应式前端框架，使用Composition API
 - **TypeScript**：类型安全的JavaScript，提供完整的类型定义
-- **Tailwind CSS**：实用优先的CSS框架，响应式设计
+- **UNO CSS**：实用优先的CSS框架，响应式设计
 - **Vue Router**：前端路由管理
 
 ### 后端技术
@@ -740,15 +740,19 @@ VoiceHub/
 │   │   └── css/               # CSS样式文件
 │   │       ├── components.css      # 组件样式
 │   │       ├── lyric-player.module.css  # 歌词播放器样式
-│   │       ├── main.css           # 主样式文件
+│   │       ├── main.css           # 主样式文件（含主题引入）
 │   │       ├── markdown.css       # Markdown样式
 │   │       ├── mobile-admin.css   # 移动端管理样式
 │   │       ├── print-fix.css      # 打印样式修复
 │   │       ├── sf-pro-icons.css   # SF Pro图标字体
-│   │       ├── theme-protection.css # 主题保护样式
+│   │       ├── theme-protection.css # 主题保护样式（浏览器兼容性）
 │   │       ├── transitions.css    # 过渡动画样式
-│   │       ├── variables.css      # CSS变量定义
-│   │       └── year-review.css    # 年度回顾样式
+│   │       ├── variables.css      # 全局基础样式与媒体查询
+│   │       ├── year-review.css    # 年度回顾样式
+│   │       └── themes/            # 主题目录
+│   │           ├── dark.css         # 深色主题设计变量
+│   │           ├── light.css        # 亮色主题设计变量
+│   │           └── ModernLight.css # 现代浅色主题设计变量
 │   ├── components/            # Vue组件目录
 │   │   ├── Account/           # 账号管理组件
 │   │   │   └── SocialBindings.vue     # 社交账号绑定（邮箱/MeoW）
@@ -832,6 +836,7 @@ VoiceHub/
 │   │   │   │   ├── PlayerInfo.vue     # 播放器信息组件
 │   │   │   │   └── VolumeControl.vue  # 播放器音量控制组件
 │   │   │   ├── Common/        # 通用UI组件
+│   │   │   │   ├── AppSpinner.vue      # 通用加载转圈组件
 │   │   │   │   ├── CollapsibleSection.vue # 可折叠区域组件
 │   │   │   │   ├── CustomSelect.vue   # 自定义选择器
 │   │   │   │   ├── DataTable.vue      # 通用数据表格组件
@@ -926,10 +931,13 @@ VoiceHub/
 │   │   └── time-sync.client.ts # 客户端服务器时间对时插件
 │   ├── public/                # 静态文件目录
 │   │   ├── images/            # 图片资源
-│   │   │   ├── logo.png       # PNG格式Logo
-│   │   │   ├── logo.svg       # SVG格式Logo
-│   │   │   ├── search.svg     # 搜索图标
-│   │   │   └── thumbs-up.svg  # 点赞图标
+│   │   │   └── beian.png      # 备案图标
+│   │   ├── themes/            # 主题图片（按主题分目录，仅 SVG 随主题切换）
+│   │   │   ├── dark/          # 暗色主题图片
+│   │   │   │   ├── logo.svg   # SVG格式Logo（首页/登录页等）
+│   │   │   │   ├── search.svg # 搜索图标
+│   │   │   │   └── thumbs-up.svg # 点赞图标
+│   │   │   └── light/         # 亮色主题图片（结构与 dark 完全相同）
 │   │   ├── favicon.ico        # 网站图标
 │   │   └── robots.txt         # 搜索引擎爬虫配置
 │   └── utils/                 # 工具函数
@@ -1360,12 +1368,14 @@ VoiceHub/
   - **`year-review/`**: 年度回顾功能组件
 - **`app/pages/`**: 页面组件，Nuxt 4 自动路由
 - **`app/composables/`**: Vue 3组合式API，业务逻辑复用
+  - **`useTheme.ts`**: 主题管理 composable，支持深色/浅色主题切换与 localStorage 持久化
 - **`app/drizzle/`**: Drizzle ORM配置、数据库连接和迁移文件
 
 #### 配置目录 (app/)
 
 - **`app/assets/css/`**: 样式文件，支持CSS变量和主题
 - **`app/plugins/`**: Nuxt插件，扩展框架功能
+  - **`theme.client.ts`**: 主题初始化插件（客户端），恢复用户主题偏好、同步 `data-theme` attribute 和 `<meta name="theme-color">`
 - **`app/middleware/`**: 中间件，处理路由和认证
 - **`app/utils/`**: 客户端工具函数
   - **`core/`**: 核心工具（安全等）
@@ -1387,8 +1397,57 @@ VoiceHub/
 
 #### 静态资源
 
-- **`app/public/`**: 静态文件
-- **`app/public/images/`**: 图片资源，包含Logo和图标文件
+- **`public/`**: 静态文件
+- **`public/images/`**: 备案图标等与主题无关的图片
+- **`public/assets/`**: 不随主题切换的公共资源（如 `logo.png`）
+- **`public/themes/{ClassicDark,ClassicLight}/`**: 随主题切换的 SVG 图片资源（Logo、搜索图标、点赞图标）
+
+### 主题系统
+
+VoiceHub 采用 CSS 变量驱动的主题架构，支持深色与亮色两种主题模式，包含经典与现代两种设计风格。主题文件按功能模块组织在 `app/assets/css/themes/` 目录下：
+
+#### 目录结构
+
+```
+app/assets/css/themes/
+├── ClassicDark.css       # 深色主题设计变量（:root[data-theme="ClassicDark"]）
+├── ClassicLight.css      # 亮色主题设计变量（:root[data-theme="ClassicLight"]）
+└── ModernLight.css       # 现代浅色主题设计变量（:root[data-theme="ModernLight"]）
+```
+
+#### 架构说明
+
+- **CSS 变量分离**：每个主题在独立的 CSS 文件中定义 `:root[data-theme="主题名"]` 选择器，包含所有设计变量（颜色、背景、文字、边框等）
+- **引入方式**：`app/assets/css/main.css` 通过 `@import` 引入主题文件，各主题按需引入
+- **切换机制**：通过 `useTheme()` composable 和 `theme.client.ts` 插件实现主题切换与 localStorage 持久化
+
+#### 主题图片管理
+
+主题相关的图片资源：**SVG 图片**（随主题切换，存放在 `public/themes/{ClassicDark,ClassicLight,ModernLight}/`）
+
+- **SVG 主题图片存放位置**：`public/themes/ClassicLight/`（亮色主题）、`public/themes/ClassicDark/`（深色主题）和 `public/themes/ModernLight/`（现代浅色主题）
+- **管理方式**：SVG 图片通过 `useThemeImage()` composable 统一获取，PNG 图片直接使用静态路径
+- **使用示例**：
+  ```vue
+  <script setup>
+  import { useThemeImage } from '~/composables/useThemeImage'
+  const { getLogo, getSearchIcon, getThumbsUpIcon } = useThemeImage()
+  </script>
+  <template>
+    <img :src="getLogo()" alt="Logo" />
+    <img src="/assets/logo.png" alt="Logo PNG" />
+  </template>
+  ```
+- **同步规则**：新增主题时需在 `app/assets/css/themes/` 下创建对应的 CSS 文件，**同时**在 `public/themes/` 下创建对应的图片目录并放入 SVG 文件。如果只新增 CSS 主题而未同步图片，组件将无法加载主题图片。
+
+#### 自定义主题
+
+如需新增自定义主题：
+
+1. 在 `app/assets/css/themes/` 下创建新主题，如 `ocean.css`，使用 `:root[data-theme="ocean"]` 作为根选择器定义所有设计变量
+3. 在 `app/assets/css/main.css` 中添加对应的 `@import` 语句
+4. 在 `app/composables/useTheme.ts` 中将新主题 ID 加入 `Theme` 类型和 `THEMES` 数组
+5. 在 `public/themes/` 下创建对应主题的 SVG 图片文件夹（如 `public/themes/ocean/`），**放入与 `ClassicDark/` 和 `ClassicLight/` 相同的 SVG 图片**，否则使用该主题时组件无法加载主题图片。
 
 ## 使用说明
 

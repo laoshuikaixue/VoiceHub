@@ -1,18 +1,18 @@
 <template>
-  <section class="border-t border-zinc-800 pt-8">
+  <section class="border-t border-panel-bg-dark pt-8">
     <div class="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
       <div>
         <div class="flex items-center gap-2">
-          <History :size="18" class="text-blue-500" />
-          <h3 class="text-lg font-black text-zinc-100">{{ locale.title }}</h3>
+          <History :size="18" class="text-primary" />
+          <h3 class="text-lg font-black text-text-primary-lighter">{{ locale.title }}</h3>
         </div>
-        <p class="mt-1 text-xs text-zinc-500">{{ locale.description }}</p>
+        <p class="mt-1 text-xs text-text-tertiary">{{ locale.description }}</p>
       </div>
 
       <button
         type="button"
         :disabled="loading"
-        class="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-zinc-800 px-4 text-xs font-bold text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50 md:self-auto"
+        class="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-panel-bg-dark px-4 text-xs font-bold text-text-muted transition-colors hover:border-panel-bg-hover hover:text-text-primary-lighter disabled:cursor-wait disabled:opacity-50 md:self-auto"
         @click="refreshHistory"
       >
         <RefreshCw :size="15" :class="loading ? 'animate-spin' : ''" />
@@ -20,20 +20,20 @@
       </button>
     </div>
 
-    <div class="mt-5 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3">
+    <div class="mt-5 rounded-lg border border-panel-bg-dark bg-panel-bg-deepest-30 p-3">
       <div
         class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_170px_190px_170px_auto]"
       >
         <div class="relative sm:col-span-2 xl:col-span-1">
           <Search
             :size="15"
-            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"
           />
           <input
             v-model="filters.keyword"
             type="search"
             maxlength="100"
-            class="min-h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 pl-9 pr-3 text-xs text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-blue-500/40"
+            class="min-h-11 w-full rounded-lg border border-panel-bg-dark bg-panel-bg-darkest pl-9 pr-3 text-xs text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary-40"
             :placeholder="locale.searchPlaceholder"
             :aria-label="locale.searchPlaceholder"
             @input="scheduleHistorySearch"
@@ -68,7 +68,7 @@
         <button
           type="button"
           :disabled="!hasActiveFilters || loading"
-          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-zinc-800 px-4 text-xs font-bold text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+          class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-panel-bg-dark px-4 text-xs font-bold text-text-tertiary transition-colors hover:border-panel-bg-hover hover:text-text-primary-light disabled:cursor-not-allowed disabled:opacity-40"
           @click="clearHistoryFilters"
         >
           <X :size="14" />
@@ -79,16 +79,16 @@
 
     <div
       v-if="error"
-      class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-red-500/20 bg-red-500/5 p-4"
+      class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-error-20 bg-error-5 p-4"
       role="alert"
     >
       <div class="flex min-w-0 items-start gap-3">
-        <AlertCircle :size="17" class="mt-0.5 shrink-0 text-red-400" />
-        <p class="break-words text-xs font-medium text-red-300">{{ error }}</p>
+        <AlertCircle :size="17" class="mt-0.5 shrink-0 text-error" />
+        <p class="break-words text-xs font-medium text-error-light">{{ error }}</p>
       </div>
       <button
         type="button"
-        class="shrink-0 text-xs font-bold text-red-300 hover:text-red-200"
+        class="shrink-0 text-xs font-bold text-error-light hover:text-error-light"
         @click="loadHistory"
       >
         {{ locale.retry }}
@@ -97,7 +97,7 @@
 
     <div
       v-if="loading && notifications.length === 0"
-      class="flex min-h-56 items-center justify-center text-zinc-600"
+      class="flex min-h-56 items-center justify-center text-text-disabled"
     >
       <Loader2 :size="22" class="animate-spin" />
       <span class="ml-3 text-xs font-bold">{{ locale.loading }}</span>
@@ -105,21 +105,21 @@
 
     <div
       v-else-if="notifications.length === 0"
-      class="mt-6 flex min-h-56 flex-col items-center justify-center border-y border-zinc-800 text-center"
+      class="mt-6 flex min-h-56 flex-col items-center justify-center border-y border-panel-bg-dark text-center"
     >
-      <Inbox :size="28" class="text-zinc-700" />
-      <p class="mt-3 text-sm font-bold text-zinc-400">
+      <Inbox :size="28" class="text-text-disabled" />
+      <p class="mt-3 text-sm font-bold text-text-muted">
         {{ hasActiveFilters ? locale.filteredEmpty : locale.empty }}
       </p>
-      <p class="mt-1 text-xs text-zinc-600">
+      <p class="mt-1 text-xs text-text-disabled">
         {{ hasActiveFilters ? locale.filteredEmptyDescription : locale.emptyDescription }}
       </p>
     </div>
 
     <template v-else>
-      <div class="mt-6 hidden overflow-x-auto rounded-lg border border-zinc-800 md:block">
+      <div class="mt-6 hidden overflow-x-auto rounded-lg border border-panel-bg-dark md:block">
         <table class="w-full min-w-[760px] border-collapse text-left">
-          <thead class="bg-zinc-900/80 text-[10px] font-black uppercase text-zinc-600">
+          <thead class="bg-panel-bg-deepest-80 text-[10px] font-black uppercase text-text-disabled">
             <tr>
               <th class="px-5 py-3">{{ locale.notification }}</th>
               <th class="px-5 py-3">{{ locale.type }}</th>
@@ -129,13 +129,13 @@
               <th class="px-5 py-3 text-right">{{ locale.actions }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-zinc-800/80 bg-zinc-950/40">
-            <tr v-for="item in notifications" :key="item.batchId" class="hover:bg-zinc-900/40">
+          <tbody class="divide-y divide-panel-bg-dark-80 bg-panel-bg-darkest-40">
+            <tr v-for="item in notifications" :key="item.batchId" class="hover:bg-panel-bg-deepest-40">
               <td class="max-w-[380px] px-5 py-4 align-top">
-                <p class="truncate text-sm font-bold text-zinc-200">
+                <p class="truncate text-sm font-bold text-text-primary-light">
                   {{ item.title || locale.untitled }}
                 </p>
-                <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600">
+                <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-text-disabled">
                   {{ item.message }}
                 </p>
               </td>
@@ -144,28 +144,28 @@
                   class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-bold"
                   :class="
                     item.important
-                      ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
-                      : 'border-zinc-700 bg-zinc-900 text-zinc-500'
+                      ? 'border-warning-20 bg-warning-10 text-warning-light'
+                      : 'border-panel-bg-hover bg-panel-bg-deepest text-text-tertiary'
                   "
                 >
                   <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
                   {{ item.important ? locale.important : locale.normal }}
                 </span>
               </td>
-              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-zinc-400">
+              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-text-muted">
                 {{ senderName(item) }}
               </td>
-              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-zinc-400">
+              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-text-muted">
                 {{ locale.recipientCount(item.recipientCount) }}
               </td>
-              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-zinc-500">
+              <td class="whitespace-nowrap px-5 py-4 align-top text-xs text-text-tertiary">
                 {{ formatDateTime(item.createdAt) }}
               </td>
               <td class="px-5 py-4 text-right align-top">
                 <div class="inline-flex items-center gap-2">
                   <button
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
                     :title="locale.viewDetails"
                     :aria-label="locale.viewDetails"
                     @click="openDetails(item)"
@@ -174,7 +174,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-300"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light"
                     :title="locale.edit"
                     :aria-label="locale.edit"
                     @click="openEdit(item)"
@@ -183,7 +183,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light"
                     :title="locale.delete"
                     :aria-label="locale.delete"
                     @click="requestDelete(item)"
@@ -197,27 +197,27 @@
         </table>
       </div>
 
-      <div class="mt-6 divide-y divide-zinc-800 border-y border-zinc-800 md:hidden">
+      <div class="mt-6 divide-y divide-panel-bg-dark border-y border-panel-bg-dark md:hidden">
         <article v-for="item in notifications" :key="item.batchId" class="py-5">
           <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <p class="break-words text-sm font-bold text-zinc-200">
+              <p class="break-words text-sm font-bold text-text-primary-light">
                 {{ item.title || locale.untitled }}
               </p>
-              <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600">
+              <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-text-disabled">
                 {{ item.message }}
               </p>
             </div>
             <span
               class="inline-flex shrink-0 items-center gap-1.5 text-[10px] font-bold"
-              :class="item.important ? 'text-amber-300' : 'text-zinc-500'"
+              :class="item.important ? 'text-warning-light' : 'text-text-tertiary'"
             >
               <Icon :name="item.important ? 'bell-ring' : 'bell'" :size="12" />
               {{ item.important ? locale.important : locale.normal }}
             </span>
           </div>
 
-          <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-zinc-500">
+          <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-text-tertiary">
             <span class="inline-flex items-center gap-1.5">
               <Users :size="14" />
               {{ locale.recipientCount(item.recipientCount) }}
@@ -229,7 +229,7 @@
           <div class="mt-4 grid grid-cols-3 gap-2">
             <button
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
               @click="openDetails(item)"
             >
               <Eye :size="14" />
@@ -237,7 +237,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-300"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light"
               @click="openEdit(item)"
             >
               <Pencil :size="14" />
@@ -245,7 +245,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-zinc-700 text-xs font-bold text-zinc-300 transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light"
               @click="requestDelete(item)"
             >
               <Trash2 :size="14" />
@@ -275,7 +275,7 @@
       >
         <div
           v-if="selectedBatch"
-          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-zinc-950/80 p-4 backdrop-blur-sm"
+          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="notification-detail-title"
@@ -283,32 +283,32 @@
           @keydown.esc="closeDetails"
         >
           <div
-            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
           >
             <header
-              class="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800/50 px-5 py-5 sm:px-8 sm:py-6"
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
             >
               <div class="min-w-0">
-                <p class="text-[10px] font-black uppercase text-blue-400">
+                <p class="text-[10px] font-black uppercase text-primary">
                   {{ locale.detailsEyebrow }}
                 </p>
                 <h2
                   id="notification-detail-title"
-                  class="mt-1 break-words text-lg font-black text-zinc-100"
+                  class="mt-1 break-words text-lg font-black text-text-primary-lighter"
                 >
                   {{ selectedBatch.title || locale.untitled }}
                 </h2>
-                <p class="mt-1 text-xs text-zinc-500">
+                <p class="mt-1 text-xs text-text-tertiary">
                   {{ formatDateTime(selectedBatch.createdAt) }}
                 </p>
-                <p class="mt-1 text-xs text-zinc-500">
+                <p class="mt-1 text-xs text-text-tertiary">
                   {{ locale.sender }}：{{ senderName(selectedBatch) }}
                 </p>
               </div>
               <button
                 ref="closeButton"
                 type="button"
-                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-lighter"
                 :title="locale.close"
                 :aria-label="locale.close"
                 @click="closeDetails"
@@ -318,12 +318,12 @@
             </header>
 
             <div class="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:p-8">
-              <p class="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-zinc-500">
+              <p class="line-clamp-3 whitespace-pre-wrap text-xs leading-relaxed text-text-tertiary">
                 {{ selectedBatch.message }}
               </p>
 
               <div
-                class="mt-5 inline-flex max-w-full overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950 p-1"
+                class="mt-5 inline-flex max-w-full overflow-x-auto rounded-lg border border-panel-bg-dark bg-panel-bg-darkest p-1"
                 role="group"
                 :aria-label="locale.statusFilter"
               >
@@ -335,15 +335,15 @@
                   class="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-md px-3 text-xs font-bold transition-colors"
                   :class="
                     detailStatus === option.value
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-panel-bg-dark text-text-primary-lighter'
+                      : 'text-text-tertiary hover:text-text-secondary'
                   "
                   @click="setDetailStatus(option.value)"
                 >
                   <component :is="option.icon" :size="14" />
                   {{ option.label }}
                   <span
-                    class="min-w-6 rounded bg-zinc-900 px-1.5 py-0.5 text-center text-[10px] text-zinc-400"
+                    class="min-w-6 rounded bg-panel-bg-deepest px-1.5 py-0.5 text-center text-[10px] text-text-muted"
                   >
                     {{ option.count }}
                   </span>
@@ -352,13 +352,13 @@
 
               <div
                 v-if="detailError"
-                class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-red-500/20 bg-red-500/5 p-4"
+                class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-error-20 bg-error-5 p-4"
                 role="alert"
               >
-                <p class="break-words text-xs font-medium text-red-300">{{ detailError }}</p>
+                <p class="break-words text-xs font-medium text-error-light">{{ detailError }}</p>
                 <button
                   type="button"
-                  class="shrink-0 text-xs font-bold text-red-300"
+                  class="shrink-0 text-xs font-bold text-error-light"
                   @click="loadDetails"
                 >
                   {{ locale.retry }}
@@ -367,7 +367,7 @@
 
               <div
                 v-if="detailLoading"
-                class="flex min-h-48 items-center justify-center text-zinc-600"
+                class="flex min-h-48 items-center justify-center text-text-disabled"
               >
                 <Loader2 :size="22" class="animate-spin" />
                 <span class="ml-3 text-xs font-bold">{{ locale.detailsLoading }}</span>
@@ -375,38 +375,38 @@
 
               <div
                 v-else-if="recipients.length === 0"
-                class="mt-5 flex min-h-48 items-center justify-center border-y border-zinc-800 text-xs text-zinc-600"
+                class="mt-5 flex min-h-48 items-center justify-center border-y border-panel-bg-dark text-xs text-text-disabled"
               >
                 {{ locale.noRecipients }}
               </div>
 
               <template v-else>
-                <div class="mt-5 hidden overflow-x-auto rounded-lg border border-zinc-800 sm:block">
+                <div class="mt-5 hidden overflow-x-auto rounded-lg border border-panel-bg-dark sm:block">
                   <table class="w-full min-w-[620px] border-collapse text-left">
-                    <thead class="bg-zinc-950/60 text-[10px] font-black uppercase text-zinc-500">
+                    <thead class="bg-panel-bg-darkest-60 text-[10px] font-black uppercase text-text-tertiary">
                       <tr>
                         <th class="px-4 py-3">{{ locale.recipient }}</th>
                         <th class="px-4 py-3">{{ locale.status }}</th>
                         <th class="px-4 py-3">{{ locale.readAt }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-800/80">
+                    <tbody class="divide-y divide-panel-bg-dark-80">
                       <tr v-for="item in recipients" :key="item.id">
                         <td class="px-4 py-3">
-                          <p class="text-xs font-bold text-zinc-300">{{ recipientName(item) }}</p>
-                          <p class="mt-1 text-[10px] text-zinc-600">{{ recipientMeta(item) }}</p>
+                          <p class="text-xs font-bold text-text-secondary">{{ recipientName(item) }}</p>
+                          <p class="mt-1 text-[10px] text-text-disabled">{{ recipientMeta(item) }}</p>
                         </td>
                         <td class="px-4 py-3">
                           <span
                             class="inline-flex items-center gap-1.5 text-xs font-bold"
-                            :class="item.read ? 'text-emerald-400' : 'text-amber-300'"
+                            :class="item.read ? 'text-success' : 'text-warning-light'"
                           >
                             <CheckCircle2 v-if="item.read" :size="14" />
                             <Circle v-else :size="14" />
                             {{ item.read ? locale.read : locale.unread }}
                           </span>
                         </td>
-                        <td class="whitespace-nowrap px-4 py-3 text-xs text-zinc-500">
+                        <td class="whitespace-nowrap px-4 py-3 text-xs text-text-tertiary">
                           {{ item.readAt ? formatDateTime(item.readAt) : locale.notRead }}
                         </td>
                       </tr>
@@ -414,27 +414,27 @@
                   </table>
                 </div>
 
-                <div class="mt-5 divide-y divide-zinc-800 border-y border-zinc-800 sm:hidden">
+                <div class="mt-5 divide-y divide-panel-bg-dark border-y border-panel-bg-dark sm:hidden">
                   <article v-for="item in recipients" :key="item.id" class="py-4">
                     <div class="flex items-start justify-between gap-3">
                       <div class="min-w-0">
-                        <p class="break-words text-xs font-bold text-zinc-300">
+                        <p class="break-words text-xs font-bold text-text-secondary">
                           {{ recipientName(item) }}
                         </p>
-                        <p class="mt-1 break-words text-[10px] text-zinc-600">
+                        <p class="mt-1 break-words text-[10px] text-text-disabled">
                           {{ recipientMeta(item) }}
                         </p>
                       </div>
                       <span
                         class="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold"
-                        :class="item.read ? 'text-emerald-400' : 'text-amber-300'"
+                        :class="item.read ? 'text-success' : 'text-warning-light'"
                       >
                         <CheckCircle2 v-if="item.read" :size="14" />
                         <Circle v-else :size="14" />
                         {{ item.read ? locale.read : locale.unread }}
                       </span>
                     </div>
-                    <p class="mt-3 text-[10px] text-zinc-600">
+                    <p class="mt-3 text-[10px] text-text-disabled">
                       {{ locale.readAt }}：{{
                         item.readAt ? formatDateTime(item.readAt) : locale.notRead
                       }}
@@ -467,7 +467,7 @@
       >
         <div
           v-if="editingBatch"
-          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-zinc-950/80 p-4 backdrop-blur-sm"
+          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="notification-edit-title"
@@ -475,23 +475,23 @@
           @keydown.esc="closeEdit"
         >
           <form
-            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+            class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
             @submit.prevent="saveEdit"
           >
             <header
-              class="flex shrink-0 items-center justify-between gap-4 border-b border-zinc-800/50 px-5 py-5 sm:px-8 sm:py-6"
+              class="flex shrink-0 items-center justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
             >
               <div>
-                <p class="text-[10px] font-black uppercase text-emerald-400">
+                <p class="text-[10px] font-black uppercase text-success">
                   {{ locale.editEyebrow }}
                 </p>
-                <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-zinc-100">
+                <h2 id="notification-edit-title" class="mt-1 text-lg font-black text-text-primary-lighter">
                   {{ locale.editNotification }}
                 </h2>
               </div>
               <button
                 type="button"
-                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:cursor-wait disabled:opacity-50"
+                class="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-text-tertiary transition-colors hover:bg-panel-bg-dark hover:text-text-primary-lighter disabled:cursor-wait disabled:opacity-50"
                 :disabled="editSaving"
                 :title="locale.close"
                 :aria-label="locale.close"
@@ -505,7 +505,7 @@
               <div>
                 <label
                   for="notification-edit-name"
-                  class="mb-2 block text-xs font-bold text-zinc-300"
+                  class="mb-2 block text-xs font-bold text-text-secondary"
                 >
                   {{ locale.editTitle }}
                 </label>
@@ -515,55 +515,55 @@
                   v-model="editForm.title"
                   type="text"
                   maxlength="200"
-                  class="min-h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-sm text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-blue-500/30"
+                  class="min-h-11 w-full rounded-lg border border-panel-bg-dark bg-panel-bg-darkest px-4 text-sm text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary-40"
                   :placeholder="locale.editTitlePlaceholder"
                 >
               </div>
 
               <div>
                 <div class="mb-2 flex items-center justify-between gap-3">
-                  <label for="notification-edit-content" class="text-xs font-bold text-zinc-300">
+                  <label for="notification-edit-content" class="text-xs font-bold text-text-secondary">
                     {{ locale.editContent }}
                   </label>
-                  <span class="text-[10px] font-bold text-zinc-600">Markdown</span>
+                  <span class="text-[10px] font-bold text-text-disabled">Markdown</span>
                 </div>
                 <textarea
                   id="notification-edit-content"
                   v-model="editForm.content"
                   maxlength="20000"
                   rows="10"
-                  class="w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm leading-relaxed text-zinc-200 outline-none transition-colors placeholder:text-zinc-600 focus:border-blue-500/30"
+                  class="w-full resize-y rounded-lg border border-panel-bg-dark bg-panel-bg-darkest px-4 py-4 text-sm leading-relaxed text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary-40"
                   :placeholder="locale.editContentPlaceholder"
                 />
               </div>
 
-              <label class="flex cursor-pointer items-start gap-3 border-y border-zinc-800 py-4">
+              <label class="flex cursor-pointer items-start gap-3 border-y border-panel-bg-dark py-4">
                 <input
                   v-model="editForm.important"
                   type="checkbox"
                   class="mt-0.5 size-4 shrink-0 accent-amber-500"
                 >
                 <span>
-                  <span class="block text-xs font-bold text-zinc-200">{{
+                  <span class="block text-xs font-bold text-text-primary-light">{{
                     locale.editImportant
                   }}</span>
-                  <span class="mt-1 block text-[10px] leading-relaxed text-zinc-500">
+                  <span class="mt-1 block text-[10px] leading-relaxed text-text-tertiary">
                     {{ locale.editImportantDescription }}
                   </span>
                 </span>
               </label>
 
               <div v-if="editForm.content.trim()">
-                <p class="mb-2 text-xs font-bold text-zinc-300">{{ locale.preview }}</p>
+                <p class="mb-2 text-xs font-bold text-text-secondary">{{ locale.preview }}</p>
                 <div
-                  class="markdown-body max-h-56 overflow-y-auto border-y border-zinc-800 py-4 text-xs text-zinc-400"
+                  class="markdown-body max-h-56 overflow-y-auto border-y border-panel-bg-dark py-4 text-xs text-text-muted"
                   v-html="renderMarkdown(editForm.content)"
                 />
               </div>
 
               <div
                 v-if="editError"
-                class="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs font-medium text-red-300"
+                class="rounded-lg border border-error-20 bg-error-5 p-3 text-xs font-medium text-error-light"
                 role="alert"
               >
                 {{ editError }}
@@ -571,12 +571,12 @@
             </div>
 
             <footer
-              class="flex shrink-0 flex-col-reverse gap-3 border-t border-zinc-800/50 bg-zinc-900/50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
+              class="flex shrink-0 flex-col-reverse gap-3 border-t border-panel-bg-dark-50 bg-panel-bg-deepest-50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
             >
               <button
                 type="button"
                 :disabled="editSaving"
-                class="min-h-10 px-6 text-xs font-bold text-zinc-500 transition-colors hover:text-zinc-300 disabled:cursor-wait disabled:opacity-50"
+                class="min-h-10 px-6 text-xs font-bold text-text-tertiary transition-colors hover:text-text-secondary disabled:cursor-wait disabled:opacity-50"
                 @click="closeEdit"
               >
                 {{ locale.cancel }}
@@ -584,7 +584,7 @@
               <button
                 type="submit"
                 :disabled="editSaving"
-                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 text-xs font-black text-white transition-colors hover:bg-blue-500 disabled:cursor-wait disabled:opacity-50"
+                class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-8 text-xs font-black text-white transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-50"
               >
                 <Loader2 v-if="editSaving" :size="15" class="animate-spin" />
                 <Save v-else :size="15" />

@@ -34,7 +34,7 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: radial-gradient(circle at center, #111827, #000000);
+  background: radial-gradient(circle at center, var(--panel-bg-dark), var(--bg-primary));
 }
 
 .blob {
@@ -49,7 +49,7 @@ const { yearReview } = useLocale()
   left: -10%;
   width: 500px;
   height: 500px;
-  background: rgba(139, 92, 246, 0.4); /* brand-purple */
+  background: var(--year-review-blob-1-bg);
   animation: spin 20s linear infinite;
 }
 
@@ -58,7 +58,7 @@ const { yearReview } = useLocale()
   right: -10%;
   width: 600px;
   height: 600px;
-  background: rgba(244, 114, 182, 0.2); /* brand-pink */
+  background: var(--year-review-blob-2-bg);
   animation: reverse-spin 25s linear infinite;
 }
 
@@ -76,7 +76,7 @@ const { yearReview } = useLocale()
   transform: translate(-50%, -50%);
   font-size: 14rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.03);
+  color: var(--overlay-3);
   pointer-events: none;
   user-select: none;
   line-height: 1;
@@ -85,7 +85,7 @@ const { yearReview } = useLocale()
 .sub-title {
   font-size: 1.5rem;
   font-weight: 300;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin-bottom: 1rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -94,12 +94,12 @@ const { yearReview } = useLocale()
 .main-title {
   font-size: 5rem;
   font-weight: 900;
-  background-image: linear-gradient(to right, #ffffff, #e5e7eb, #6b7280);
+  background-image: linear-gradient(to right, var(--text-primary), var(--panel-border-light), var(--text-muted));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   margin-bottom: 2rem;
-  filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 25px 25px var(--mask-15));
 }
 
 @media (max-width: 768px) {

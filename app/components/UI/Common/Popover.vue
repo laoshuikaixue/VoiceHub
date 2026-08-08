@@ -17,7 +17,7 @@
           v-if="isOpen"
           ref="contentRef"
           :style="contentStyle"
-          class="fixed z-[10000] bg-[#1e1e1e]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+          class="fixed z-[10000] bg-bg-secondary-95 backdrop-blur-xl border border-primary-10 rounded-xl shadow-2xl overflow-hidden"
           @click.stop
         >
           <slot name="content" :close="close" />

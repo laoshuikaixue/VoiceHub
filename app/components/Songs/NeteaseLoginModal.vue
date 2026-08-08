@@ -13,27 +13,27 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4"
         @click="handleClose"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden"
+          class="relative w-full max-w-sm bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
-          <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
+          <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
             <div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+              <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                 <div
-                  class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="music" :size="20" />
                 </div>
                 {{ locale.neteaseTitle }}
               </h3>
-              <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.neteaseDesc }}</p>
+              <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.neteaseDesc }}</p>
             </div>
             <button
-              class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+              class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
               @click="handleClose"
             >
               <Icon name="x" :size="20" />
@@ -43,27 +43,27 @@
           <!-- 主体 -->
           <div class="p-8 pt-4 flex flex-col items-center">
             <div class="w-full flex flex-col items-center min-h-[250px] justify-center">
-              <div v-if="loading" class="flex flex-col items-center text-zinc-500">
-                <Icon name="loader" :size="48" class="mb-4 animate-spin text-zinc-400" />
+              <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
+                <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
                 <p class="font-bold uppercase tracking-widest text-[10px]">{{ locale.loadingQr }}</p>
               </div>
 
               <div v-else-if="qrImg" class="relative group">
                 <div
-                  class="p-4 bg-white rounded-3xl shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
+                  class="p-4 bg-bg-secondary rounded-3xl shadow-inner transition-transform duration-500 group-hover:scale-[1.02]"
                 >
                   <img :src="qrImg" alt="Login QR Code" class="w-44 h-44 object-contain" >
                 </div>
 
                 <div
                   v-if="isExpired"
-                  class="absolute inset-0 bg-zinc-900/90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-zinc-900/80"
+                  class="absolute inset-0 bg-bg-secondary-90 backdrop-blur-sm rounded-3xl flex items-center justify-center cursor-pointer transition-all hover:bg-bg-secondary-80"
                   @click="initLogin"
                 >
-                  <div class="flex flex-col items-center text-zinc-100">
-                    <Icon name="refresh" :size="40" class="mb-3 text-zinc-400" />
+                  <div class="flex flex-col items-center text-text-primary">
+                    <Icon name="refresh" :size="40" class="mb-3 text-text-tertiary" />
                     <span class="font-black uppercase tracking-widest text-xs">{{ locale.qrExpired }}</span>
-                    <span class="text-[10px] text-zinc-500 mt-1 font-bold">{{ locale.clickRefresh }}</span>
+                    <span class="text-[10px] text-text-tertiary mt-1 font-bold">{{ locale.clickRefresh }}</span>
                   </div>
                 </div>
               </div>
@@ -76,26 +76,26 @@
                 >
                   <p
                     v-if="status === 800"
-                    class="text-zinc-400 text-xs font-black uppercase tracking-widest"
+                    class="text-text-tertiary text-xs font-black uppercase tracking-widest"
                   >
                     {{ locale.expiredRefresh }}
                   </p>
                   <p
                     v-else-if="status === 801"
-                    class="text-zinc-400 text-xs font-black uppercase tracking-widest"
+                    class="text-text-tertiary text-xs font-black uppercase tracking-widest"
                   >
                     {{ locale.neteaseWaiting }}
                   </p>
                   <p
                     v-else-if="status === 802"
-                    class="text-blue-500 text-xs font-black uppercase tracking-widest flex items-center justify-center"
+                    class="text-primary text-xs font-black uppercase tracking-widest flex items-center justify-center"
                   >
                     <Icon name="check" :size="16" class="mr-2" />
                     {{ locale.scanSuccess }}
                   </p>
                   <p
                     v-else-if="status === 803"
-                    class="text-emerald-500 text-xs font-black uppercase tracking-widest"
+                    class="text-success text-xs font-black uppercase tracking-widest"
                   >
                     {{ locale.neteaseSuccess }}
                   </p>
@@ -104,9 +104,9 @@
             </div>
 
             <!-- 说明提示 -->
-            <div class="mt-8 p-4 bg-zinc-800/30 rounded-2xl border border-zinc-800/50 w-full">
+            <div class="mt-8 p-4 bg-bg-tertiary-30 rounded-2xl border border-border-secondary-50 w-full">
               <p
-                class="text-[10px] leading-relaxed text-zinc-500 text-center uppercase tracking-[0.15em] font-black"
+                class="text-[10px] leading-relaxed text-text-tertiary text-center uppercase tracking-[0.15em] font-black"
               >
                 {{ locale.neteaseTip }}
               </p>

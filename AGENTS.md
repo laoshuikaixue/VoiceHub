@@ -14,6 +14,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 
 ### 2.1. 语言
 注释、文档、Git 信息均用简体中文。注释中禁止写思考过程等无用内容，只需关键部分。
+- CSS 注释只保留关键信息（变量用途、值来源、防误删警告），禁止写设计意图、过程或对比说明（如“取值与现状一致”“视觉零变化”“浅色模式下需清晰可见”“对齐某分支观感”等）
 
 ### 2.2. Vue 组件
 - 统一 `<script setup>`（纯 JS，不加 `lang="ts"`，禁止类型注解）
@@ -57,6 +58,12 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 ### 3.4. 专辑详情
 - `AlbumDetailsModal.vue`：仅网易云支持，使用 `AbortController` 防止竞态
 - QQ 音乐专辑链接不可点击
+
+### 3.5. 加载动画
+- 加载转圈统一用 `~/components/UI/Common/AppSpinner.vue`（scoped CSS 实现，不依赖 UnoCSS utility），支持 `size`（直径 px，默认 32）、`borderWidth`、`label` 属性；复杂加载状态（标题/进度/步骤）用 `LoadingState.vue`（其 circle 类型内部复用 AppSpinner）
+- 禁止手写 `border-*-20/30 border-t-primary rounded-full animate-spin` 或自建 `.loading-spinner` 圆环类；此写法依赖 UnoCSS 生成的 border 工具类，preflight 未设置 `border-style: solid` 时整个圆环不可见
+- 按钮内加载态可用 Lucide 图标（`Loader2`/`RefreshCw` 等）+ `animate-spin`；错误语义色（如网易云红色转圈）保留专用类
+- 全局 border 重置：`main.css` 的 `*` 规则含 `border-style: solid; border-width: 0`，勿删除
 
 ## 4. 文件变更提醒
 

@@ -81,28 +81,28 @@ onMounted(() => {
   align-items: center;
   padding: 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  background: #21242d;
-  color: #ffffff;
+  box-shadow: 0 4px 16px var(--mask-40);
+  background: var(--panel-bg);
+  color: var(--text-primary);
   max-width: 400px;
   min-width: 300px;
   font-family: 'MiSans', sans-serif;
   overflow: hidden;
   position: relative;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .notification-item.success {
-  border-left: 4px solid #10b981;
+  border-left: 4px solid var(--color-success);
 }
 
 .notification-item.error {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--color-error);
 }
 
 .notification-item.info {
-  border-left: 4px solid #0b5afe;
+  border-left: 4px solid var(--color-accent);
 }
 
 .notification-icon {
@@ -119,18 +119,18 @@ onMounted(() => {
 }
 
 .success .notification-icon {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: var(--success-20);
+  color: var(--color-success);
 }
 
 .error .notification-icon {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: var(--error-20);
+  color: var(--color-error);
 }
 
 .info .notification-icon {
-  background: rgba(11, 90, 254, 0.2);
-  color: #0b5afe;
+  background: var(--color-accent-alpha-20);
+  color: var(--color-accent);
 }
 
 .notification-content {
@@ -143,7 +143,7 @@ onMounted(() => {
 .notification-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 20px;
   cursor: pointer;
   width: 28px;
@@ -158,7 +158,7 @@ onMounted(() => {
 }
 
 .notification-close:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 /* 进度条 */
@@ -168,7 +168,7 @@ onMounted(() => {
   left: 0;
   width: 100%;
   height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
 }
 
 .notification-progress-bar {
@@ -179,15 +179,15 @@ onMounted(() => {
 }
 
 .success .notification-progress-bar {
-  background-color: #10b981;
+  background-color: var(--color-success);
 }
 
 .error .notification-progress-bar {
-  background-color: #ef4444;
+  background-color: var(--color-error);
 }
 
 .info .notification-progress-bar {
-  background-color: #0b5afe;
+  background-color: var(--color-accent);
 }
 
 @keyframes progress-shrink {
@@ -250,15 +250,7 @@ onMounted(() => {
 /* 悬停效果 */
 .notification-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 6px 20px var(--mask-50);
   transition: all 0.2s ease;
-}
-
-/* 暗色主题优化 */
-@media (prefers-color-scheme: dark) {
-  .notification-item {
-    background: rgba(33, 36, 45, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
 }
 </style>

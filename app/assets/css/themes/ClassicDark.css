@@ -1,0 +1,827 @@
+/* 经典深色主题 — 全部设计变量 */
+:root[data-theme='ClassicDark'] {
+  /* 主色调 */
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-light: rgba(59, 130, 246, 0.1);
+  --primary-border: rgba(59, 130, 246, 0.2);
+  /* 控件强调色（与 --primary 一致，供 accent-color 使用） */
+  --accent-color: #3b82f6;
+  /* 主色光晕（供阴影 glow 使用） */
+  --primary-glow: rgba(59, 130, 246, 0.15);
+  --primary-glow-5: rgba(59, 130, 246, 0.05);
+  --primary-glow-10: rgba(59, 130, 246, 0.1);
+  --primary-glow-20: rgba(59, 130, 246, 0.15);
+  --primary-glow-40: rgba(59, 130, 246, 0.3);
+  /* 成功色光晕 */
+  --success-glow: rgba(16, 185, 129, 0.15);
+  --success-glow-5: rgba(16, 185, 129, 0.05);
+  --success-glow-10: rgba(16, 185, 129, 0.1);
+  --success-glow-20: rgba(16, 185, 129, 0.15);
+  /* 警告色光晕 */
+  --warning-glow: rgba(245, 158, 11, 0.15);
+  --warning-glow-5: rgba(245, 158, 11, 0.05);
+  --warning-glow-10: rgba(245, 158, 11, 0.1);
+  --warning-glow-20: rgba(245, 158, 11, 0.15);
+  /* 错误色光晕 */
+  --error-glow: rgba(239, 68, 68, 0.15);
+  --error-glow-5: rgba(239, 68, 68, 0.05);
+  --error-glow-10: rgba(239, 68, 68, 0.1);
+  --error-glow-20: rgba(239, 68, 68, 0.15);
+  /* 成功色 */
+  --success: #10b981;
+  --success-hover: #059669;
+  --success-light: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.2);
+  /* 警告色 */
+  --warning: #f59e0b;
+  --warning-hover: #d97706;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.2);
+  /* 错误色 */
+  --error: #ef4444;
+  --error-hover: #dc2626;
+  --error-light: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.2);
+  /* 信息色光晕 */
+  --info: #3b82f6;
+  --info-hover: #2563eb;
+  --info-light: rgba(59, 130, 246, 0.1);
+  --info-border: rgba(59, 130, 246, 0.2);
+  /* 信息色光晕（蓝色系，与 info 品牌色一致） */
+  --info-glow: rgba(59, 130, 246, 0.15);
+  --info-glow-5: rgba(59, 130, 246, 0.05);
+  --info-glow-10: rgba(59, 130, 246, 0.1);
+  --info-glow-20: rgba(59, 130, 246, 0.15);
+  /* 背景色 */
+  --bg-primary: #111111;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --bg-quaternary: #3a3a3a;
+  --bg-hover: #1f1f1f;
+  /* 文字颜色 */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-tertiary: #888888;
+  --text-quaternary: #666666;
+  --text-disabled: #444444;
+  /* 边框颜色 */
+  --border-primary: #1f1f1f;
+  --border-secondary: #2a2a2a;
+  --border-tertiary: #3a3a3a;
+  --border-quaternary: #4a4a4a;
+  --border-color: var(--border-quaternary);
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+  /* 字体大小 */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  /* 字体粗细 */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  /* 过渡动画 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  /* Z-index层级 */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+  --z-app-loader: 9000;
+  /* 特殊状态颜色 */
+  --status-pending: #fbbf24;
+  --status-pending-light: rgba(251, 191, 36, 0.1);
+  --status-approved: #10b981;
+  --status-approved-light: rgba(16, 185, 129, 0.1);
+  --status-played: #6b7280;
+  --status-played-light: rgba(107, 114, 128, 0.1);
+  /* 投票相关颜色 */
+  --vote-heart: #ef4444;
+  --vote-heart-hover: #dc2626;
+  --vote-count: var(--text-tertiary);
+  /* 拖拽状态颜色 */
+  --drag-over: var(--primary-light);
+  --drag-over-border: var(--primary);
+  --dragging-opacity: 0.5;
+  /* 表格颜色 */
+  --table-header-bg: var(--bg-tertiary);
+  --table-row-hover: var(--bg-hover);
+  --table-border: var(--border-secondary);
+  --table-selected: var(--primary-light);
+  /* 卡片颜色 */
+  --card-bg: var(--bg-secondary);
+  --card-border: var(--border-secondary);
+  --card-hover-border: var(--border-tertiary);
+  --card-shadow: var(--shadow-md);
+  /* 按钮颜色 */
+  --btn-primary-bg: var(--primary);
+  --btn-primary-hover: var(--primary-hover);
+  --btn-primary-text: var(--text-primary);
+  --btn-primary-border: var(--primary-border);
+
+  --btn-secondary-bg: #3a3a3a;
+  --btn-secondary-hover: #4a4a4a;
+  --btn-secondary-text: var(--text-primary);
+  --btn-secondary-border: #555555;
+
+  --btn-success-bg: var(--success);
+  --btn-success-hover: var(--success-hover);
+  --btn-success-text: var(--text-primary);
+  --btn-success-border: var(--success-border);
+
+  --btn-warning-bg: var(--warning);
+  --btn-warning-hover: var(--warning-hover);
+  --btn-warning-text: var(--text-primary);
+  --btn-warning-border: var(--warning-border);
+
+  --btn-error-bg: var(--error);
+  --btn-error-hover: var(--error-hover);
+  --btn-error-text: var(--text-primary);
+  --btn-error-border: var(--error-border);
+
+  --btn-disabled-bg: var(--bg-tertiary);
+  --btn-disabled-text: var(--text-disabled);
+  /* 输入框颜色 */
+  --input-bg: var(--bg-tertiary);
+  --input-border: var(--border-tertiary);
+  --input-border-focus: var(--primary);
+  --input-text: var(--text-primary);
+  --input-placeholder: var(--text-quaternary);
+  --input-shadow-focus: 0 0 0 3px var(--primary-light);
+  /* 模态框颜色 */
+  --modal-backdrop: rgba(0, 0, 0, 0.7);
+  --modal-bg: var(--bg-secondary);
+  --modal-border: var(--border-secondary);
+  --modal-header-border: var(--border-secondary);
+  --modal-footer-border: var(--border-secondary);
+  /* 通知颜色 */
+  --notification-success-bg: var(--success-light);
+  --notification-success-border: var(--success-border);
+  --notification-success-text: var(--success);
+
+  --notification-warning-bg: var(--warning-light);
+  --notification-warning-border: var(--warning-border);
+  --notification-warning-text: var(--warning);
+
+  --notification-error-bg: var(--error-light);
+  --notification-error-border: var(--error-border);
+  --notification-error-text: var(--error);
+
+  --notification-info-bg: var(--info-light);
+  --notification-info-border: var(--info-border);
+  --notification-info-text: var(--info);
+  /* 加载动画颜色 */
+  --spinner-primary: var(--primary);
+  --spinner-secondary: var(--bg-tertiary);
+  /* 滚动条颜色 */
+  --scrollbar-track: var(--bg-tertiary);
+  --scrollbar-thumb: var(--bg-quaternary);
+  --scrollbar-thumb-hover: #4a4a4a;
+  /* 用途化变量 — 品牌色（已语义化：blue=通用强调色, red=错误, green=成功, yellow=警告） */
+  --color-accent: #0b5afe;
+  --color-accent-light: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-accent-light-hover: #1d4ed8;
+  --color-accent-lighter: #60a5fa;
+  --color-accent-glow: rgba(11, 90, 254, 0.4);
+  --color-error: #ef4444;
+  --color-error-light: #f87171;
+  --color-error-hover: #dc2626;
+  --color-error-glow: rgba(239, 68, 68, 0.4);
+  --color-success: #10b981;
+  --color-success-light: #4ade80;
+  --color-success-hover: #22c55e;
+  --color-success-glow: rgba(34, 197, 94, 0.4);
+  --color-warning: #f59e0b;
+  --color-warning-light: #fbbf24;
+  --color-warning-hover: #d97706;
+  --color-warning-glow: rgba(245, 158, 11, 0.4);
+  /* --color-warning 透明度变体 */
+  --color-warning-alpha-14: rgba(245, 158, 11, 0.14);
+  --color-warning-alpha-24: rgba(245, 158, 11, 0.24);
+  --color-warning-alpha-48: rgba(245, 158, 11, 0.48);
+  --color-orange: #fb923c;
+  --color-orange-light: #fdba74;
+  --color-orange-hover: #ff6900;
+  --color-orange-glow: rgba(251, 146, 60, 0.4);
+
+  /* === Alpha (--color-accent) ===
+   以下为 --color-accent 的各透明度变体（alpha-前缀 + 透明度百分比）===
+   --color-accent-alpha-10 ~ --color-accent-alpha-80 对应原 --color-accent-* 系列 === */
+  --color-accent-alpha-10: rgba(11, 90, 254, 0.08);
+  --color-accent-alpha-12: rgba(11, 90, 254, 0.12);
+  --color-accent-alpha-15: rgba(11, 90, 254, 0.15);
+  --color-accent-alpha-18: rgba(11, 90, 254, 0.18);
+  --color-accent-alpha-20: rgba(11, 90, 254, 0.16);
+  --color-accent-alpha-22: rgba(11, 90, 254, 0.22);
+  --color-accent-alpha-25: rgba(11, 90, 254, 0.25);
+  --color-accent-alpha-30: rgba(11, 90, 254, 0.25);
+  --color-accent-alpha-40: rgba(11, 90, 254, 0.3);
+  --color-accent-alpha-50: rgba(11, 90, 254, 0.4);
+  --color-accent-alpha-60: rgba(11, 90, 254, 0.5);
+  --color-accent-alpha-65: rgba(11, 90, 254, 0.65);
+  --color-accent-alpha-80: rgba(11, 90, 254, 0.6);
+
+  /* 用途化变量 — 通知/状态/场景语义色（用途命名，替代原 --color-brand-* 颜色命名）
+   ═══════════════════════════════════════════════════════════════
+   新增 --color-accent-alpha-* / --color-collab / --color-indigo 等语义变量后，
+   以下变量供全局 CSS / Vue 组件统一引用，避免直接在业务代码中硬写颜色值。 === */
+
+  /* ─── 通知图标颜色（index.vue 通知列表） ─── */
+  --color-notif-info: var(--color-accent);
+  --color-notif-success: var(--color-success);
+  --color-notif-error: var(--color-error);
+  --color-notif-warning: var(--color-warning);
+  --color-notif-checked: var(--color-accent);
+  --color-notif-collab: var(--color-collab);
+  --color-notif-indigo: var(--color-indigo);
+  /* ─── 通知容器/Toast 语义色（Notification.vue / NotificationContainer.vue） ─── */
+  --color-toast-success: var(--color-success);
+  --color-toast-error: var(--color-error);
+  --color-toast-info-bg: var(--color-accent-alpha-20);
+  --color-toast-info-text: var(--color-accent);
+  /* ─── 通用 UI 组件语义色 ─── */
+  --color-checked: var(--color-accent);
+  /* 勾选框选中颜色 */
+  --color-search-focus: var(--color-accent);
+  /* 搜索框 focus 边框 */
+  --color-search-btn-bg: var(--color-accent);
+  /* 搜索按钮背景 */
+  --color-progress-fill: var(--color-accent);
+  /* 进度条填充色 */
+  --color-spinner-border: var(--color-accent);
+  /* 加载指示器边框 */
+  --color-tab-active: var(--color-accent);
+  /* Tab 激活下边框 */
+  --color-page-btn-active: var(--color-accent);
+  /* 分页按钮激活态 */
+  --color-checkbox-checked: var(--color-accent-light);
+  /* 勾选框选中态背景 */
+  --color-checkbox-checked-border: var(--color-accent-light);
+  --color-mobile-page-input: var(--color-accent);
+  /* 移动端页码输入框 focus */
+  --color-page-nav-hover: var(--color-accent-light);
+  /* 翻页按钮 hover 边框 */
+  --color-visibility-public: var(--color-accent-light);
+  /* 歌曲可见性"公开"标签 */
+  --color-text-cover-bg: var(--color-accent);
+  /* 文字封面背景 */
+  --color-like-btn-bg: var(--color-accent);
+  /* 点赞按钮背景 */
+  --color-replay-cancel-bg: var(--color-accent);
+  /* 重播取消按钮背景 */
+  --color-semester-toggle: var(--color-accent);
+  /* 学期切换按钮文字 */
+  --color-admin-badge: var(--color-accent-light);
+  /* 管理员徽章文字 */
+  --color-error-text: var(--color-error);
+  /* 错误文本 */
+  --color-pending-tag: var(--color-warning-light);
+  /* 等待中标签 */
+  /* 首页标题分隔线 */
+  --title-divider-bg: var(--color-accent);
+  --like-btn-bg: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  --like-btn-hover-bg: linear-gradient(180deg, var(--color-accent-hover) 0%, var(--color-accent) 100%);
+  --like-btn-border: var(--overlay-16);
+  --song-card-border: var(--overlay-6);
+  --song-card-bg: var(--overlay-7);
+  --song-card-footer-bg: var(--overlay-2);
+  --song-card-divider: var(--overlay-4);
+  --chip-bg: var(--overlay-4);
+  --chip-bg-hover: var(--overlay-8);
+  --chip-border: transparent;
+  --like-btn-bg-mobile: var(--overlay-5);
+  --like-btn-border-mobile: var(--overlay-10);
+  --withdraw-btn-bg-mobile: var(--overlay-8);
+  --section-tab-bg: var(--panel-bg-overlay);
+  --section-tab-border: var(--panel-bg-raised);
+  --surface-subtle: rgba(255, 255, 255, 0.03);
+  --surface-card-bg: rgba(0, 0, 0, 0.4);
+  --surface-card-bg-medium: rgba(0, 0, 0, 0.3);
+  --surface-card-bg-soft: rgba(0, 0, 0, 0.2);
+  /* ─── OAuth 第三方平台独立品牌色（用途命名 --oauth-*，不再复用通用语义色）───
+   每个平台有专属颜色变量，语义清晰，互不干扰。
+   旧 --color-oauth-* 保留向后兼容，但新增 --oauth-* 系列为主用。 === */
+  --oauth-qq: #22d3ee;
+  --oauth-wx: #10b981;
+  --oauth-alipay: #0b5afe;
+  --oauth-sina: #dc2626;
+  --oauth-baidu: #6366f1;
+  --oauth-douyin: #fe2c55;
+  --oauth-huawei: #dc2626;
+  --oauth-xiaomi: #ff6900;
+  --oauth-gitee: #dc2626;
+  --oauth-bilibili: #06b6d4;
+  --oauth-kuaishou: #ff4906;
+  --oauth-kuaishou-orange: var(--oauth-kuaishou);
+  --oauth-google-blue: #4285f4;
+  --oauth-google-red: #ea4335;
+  --oauth-google-yellow: #fbbc05;
+  --oauth-google-green: #34a853;
+  --oauth-casdoor: #67c23a;
+  --oauth-casdoor-green: var(--oauth-casdoor);
+  /* Gitea 品牌路径的镂空色（供 Icon.vue SVG path 使用） */
+  --gitea-cutout: var(--panel-bg-dialog);
+  /* ─── Auth/OAuth 品牌色（旧命名，向后兼容，指向新 --oauth-* 系列）─── */
+  --color-oauth-qq: var(--oauth-qq);
+  --color-oauth-wx: var(--oauth-wx);
+  --color-oauth-alipay: var(--oauth-alipay);
+  --color-oauth-sina: var(--oauth-sina);
+  --color-oauth-baidu: var(--oauth-baidu);
+  --color-oauth-douyin: var(--oauth-douyin);
+  --color-oauth-huawei: var(--oauth-huawei);
+  --color-oauth-xiaomi: var(--oauth-xiaomi);
+  --color-oauth-gitee: var(--oauth-gitee);
+  --color-oauth-bilibili: var(--oauth-bilibili);
+  --color-oauth-kuaishou: var(--oauth-kuaishou);
+  --requestform-audio-match-hover-border: rgba(96, 165, 250, 0.35);
+  --requestform-audio-match-hover-border-light: rgba(96, 165, 250, 0.22);
+  --requestform-qq-login-shadow: rgba(6, 182, 212, 0.15);
+  --requestform-qq-login-shadow-hover: rgba(6, 182, 212, 0.25);
+  --requestform-user-icon-bg: rgba(6, 182, 212, 0.12);
+  --requestform-user-icon-border: rgba(6, 182, 212, 0.22);
+  --requestform-login-btn-hover-shadow: rgba(37, 99, 235, 0.35);
+  --requestform-login-btn-hover-shadow-lg: rgba(37, 99, 235, 0.45);
+  --requestform-like-btn-hover-shadow: rgba(220, 38, 38, 0.35);
+  --requestform-like-btn-hover-shadow-lg: rgba(220, 38, 38, 0.45);
+  --requestform-source-healthy-bg: rgba(34, 197, 94, 0.15);
+  --requestform-source-healthy-border: rgba(34, 197, 94, 0.3);
+  --requestform-source-healthy-glow: rgba(34, 197, 94, 0.6);
+  --requestform-source-checking-bg: rgba(251, 191, 36, 0.15);
+  --requestform-source-checking-border: rgba(251, 191, 36, 0.3);
+  --requestform-source-checking-glow: rgba(251, 191, 36, 0.6);
+  --requestform-modal-overlay-bg: rgba(20, 20, 25, 0.95);
+  --requestform-submit-btn-hover-shadow: rgba(0, 67, 248, 0.4);
+  --requestform-delete-btn-hover-shadow: rgba(236, 65, 65, 0.5);
+  --requestform-delete-btn-hover-shadow-sm: rgba(236, 65, 65, 0.3);
+  --requestform-replay-btn-bg: rgba(0, 117, 248, 0.1);
+  --requestform-replay-btn-bg-hover: rgba(0, 117, 248, 0.2);
+  --requestform-replay-btn-border: rgba(0, 117, 248, 0.3);
+  --requestform-replay-btn-border-hover: rgba(0, 117, 248, 0.5);
+  --requestform-mobile-chip-border: rgba(113, 113, 122, 0.45);
+  --requestform-mobile-chip-border-sm: rgba(113, 113, 122, 0.4);
+  --requestform-mobile-chip-bg: rgba(39, 39, 42, 0.75);
+  --requestform-mobile-chip-text: rgba(212, 212, 216, 0.9);
+  --requestform-mobile-button-text: rgba(228, 228, 231, 0.9);
+  --requestform-chip-required-bg: rgba(234, 179, 8, 0.1);
+  --requestform-chip-required-border: rgba(234, 179, 8, 0.35);
+  --requestform-chip-required-border-sm: rgba(234, 179, 8, 0.3);
+  --requestform-chip-valid-border: rgba(16, 185, 129, 0.35);
+  --requestform-chip-invalid-bg: rgba(248, 113, 113, 0.1);
+  --requestform-chip-invalid-border: rgba(248, 113, 113, 0.35);
+  /* 用途化变量 — 音频播放器（AudioPlayer） */
+  --audio-player-bar-bg: rgba(20, 20, 25, 0.85);
+  --audio-player-progress-track-bg: rgba(74, 74, 74, 0.39);
+  --audio-player-quality-active-bg-start: rgba(0, 122, 255, 0.25);
+  --audio-player-quality-active-bg-mid: rgba(0, 122, 255, 0.15);
+  --audio-player-quality-active-bg-end: rgba(0, 122, 255, 0.1);
+  --audio-player-quality-active-border: rgba(0, 122, 255, 0.6);
+  --audio-player-quality-active-shadow-lg: rgba(0, 122, 255, 0.4);
+  --audio-player-quality-active-shadow: rgba(0, 122, 255, 0.3);
+  --audio-player-quality-active-ring: rgba(0, 122, 255, 0.2);
+  /* 用途化变量 — 音量控制（VolumeControl） */
+  --volume-control-panel-bg: rgba(30, 30, 35, 0.85);
+  --volume-control-muted-color: rgba(255, 100, 100, 0.9);
+  /* 用途化变量 — 备份管理器（BackupManager） */
+  --backup-manager-danger-bg: rgba(211, 47, 47, 0.1);
+  --backup-manager-file-remove-bg: rgba(211, 47, 47, 0.2);
+  --backup-manager-file-remove-bg-hover: rgba(211, 47, 47, 0.3);
+  --backup-manager-warning-box-bg: rgba(255, 152, 0, 0.1);
+  /* 用途化变量 — 用户歌曲模态框滚动条（UserSongsModal） */
+  --usersongs-scroll-thumb: rgba(113, 113, 122, 0.3);
+  --usersongs-scroll-thumb-hover: rgba(113, 113, 122, 0.5);
+  /* 用途化变量 — 用户管理器（UserManager） */
+  --user-manager-tree-line: rgba(63, 63, 70, 0.55);
+  --user-manager-tree-active-bg: rgba(37, 99, 235, 0.16);
+  /* 用途化变量 — 数据分析面板滚动条（DataAnalysisPanel） */
+  --data-analysis-scroll-thumb: rgba(79, 70, 229, 0.3);
+  --data-analysis-scroll-thumb-hover: rgba(79, 70, 229, 0.5);
+  /* 用途化变量 — 歌曲列表（ScheduleList/SongList） */
+  --schedule-list-divider: rgba(217, 217, 217, 0.5);
+  --schedule-list-title-shadow: rgba(0, 179, 248, 0.3);
+  --schedule-list-title-shadow-sm: rgba(0, 179, 248, 0.2);
+  /* 用途化变量 — 点歌券标识（CardCodeTag） */
+  --card-code-bg: rgba(245, 158, 11, 0.1);
+  --card-code-border: rgba(245, 158, 11, 0.25);
+  --card-code-text: #fcd34d;
+  /* 用途化变量 — 认证模块（Auth） */
+  --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
+  /* 用途化变量 — 面板背景色（深色模式） */
+  --panel-bg: #21242d;
+  --panel-bg-alt: #27272a;
+  --panel-bg-hover: #3f3f46;
+  --panel-bg-deep: #1a1a1a;
+  --panel-bg-deepest: #0a0a0a;
+  --panel-bg-overlay: #1a1d24;
+  --panel-bg-elevated: #1e1e24;
+  --panel-bg-dialog: #18181b;
+  --panel-bg-subtle: #141418;
+  --panel-bg-tier-tertiary: #1a1a2e;
+  --panel-bg-quaternary: #040e15;
+  --panel-bg-contrast: #2a2e38;
+  --panel-bg-dark: #111827;
+  --panel-bg-darker: #12121a;
+  --panel-bg-darkest: #0a0a0f;
+  --panel-bg-compact: #2a2a2a;
+  --panel-bg-flat: #2a2a2a;
+  --panel-bg-raised: #282830;
+  --panel-bg-inset: #1a1a20;
+  /* 面板背景色 alpha 变体 */
+  --panel-bg-dark-40: rgba(17, 24, 39, 0.4);
+  --panel-bg-dark-50: rgba(17, 24, 39, 0.5);
+  --panel-bg-dark-80: rgba(17, 24, 39, 0.8);
+  --panel-bg-darkest-20: rgba(10, 10, 15, 0.2);
+  --panel-bg-darkest-30: rgba(10, 10, 15, 0.3);
+  --panel-bg-darkest-40: rgba(10, 10, 15, 0.4);
+  --panel-bg-darkest-50: rgba(10, 10, 15, 0.5);
+  --panel-bg-darkest-60: rgba(10, 10, 15, 0.6);
+  --panel-bg-darkest-80: rgba(10, 10, 15, 0.8);
+  --panel-bg-darkest-95: rgba(10, 10, 15, 0.95);
+  --panel-bg-deepest-30: rgba(10, 10, 10, 0.3);
+  --panel-bg-deepest-40: rgba(10, 10, 10, 0.4);
+  --panel-bg-deepest-50: rgba(10, 10, 10, 0.5);
+  --panel-bg-deepest-80: rgba(10, 10, 10, 0.8);
+  --panel-bg-deepest-95: rgba(10, 10, 10, 0.95);
+  --panel-bg-hover-50: rgba(63, 63, 70, 0.5);
+  /* 通用表面色（无 panel 前缀） */
+  --panel-bg-secondary: #2a2a35;
+  --panel-bg-tertiary: #333340;
+  --table-row-bg: #1a1a25;
+  /* 用途化变量 — 文字灰度（深色模式） */
+  --text-muted: #9ca3af;
+  --text-muted-light: #a1a1aa;
+  --text-muted-dark: #a0a0a0;
+  --text-tertiary-hover: #888;
+  --text-primary-light: #f4f4f5;
+  --text-primary-lighter: #e4e4e7;
+  --text-link: #60a5fa;
+  --text-link-hover: #93c5fd;
+  --text-highlight: #ffd700;
+  /* 用途化变量 — 边框与分割线（深色模式） */
+  --panel-border: #2a2a2a;
+  --panel-border-active: #242f38;
+  --panel-border-subtle: #1f1f1f;
+  --panel-border-10: rgba(31, 31, 31, 0.1);
+  --panel-border-light: #3a3a3a;
+  --panel-border-dark: #4a4a4a;
+  --panel-border-highlight: #3f3f46;
+  --panel-border-brand: #0b5afe;
+  --panel-border-error: #ef4444;
+  /* 用途化变量 — 状态色（深色模式） */
+  --status-info-bg: #040e15;
+  --status-info-border: #0b5afe;
+  --status-info-glow: rgba(11, 90, 254, 0.15);
+  --status-info-icon: #22d3ee;
+  --status-success-icon: #07c160;
+  --status-warning-icon: #fde047;
+  --status-error-icon: #ff6b6b;
+  --status-error-deep: #cf0a2c;
+
+  /* 用途化变量 — 通知/状态语义色与场景渐变辅助色（替代原 --color-collab/pink/cyan/teal/indigo）
+   collab=协作, pink=年度回顾装饰, cyan=QQ/抖音, teal=QQ登录按钮, indigo=选中通知 === */
+  --color-collab: #8b5cf6;
+  --color-collab-hover: #7c3aed;
+  --color-collab-light: #a78bfa;
+  --color-collab-lighter: #e9d5ff;
+  --color-collab-glow: rgba(139, 92, 246, 0.3);
+  --color-collab-10: rgba(139, 92, 246, 0.1);
+  --color-pink: #f472b6;
+  --color-pink-alpha-10: rgba(244, 114, 182, 0.1);
+  --color-pink-alpha-20: rgba(244, 114, 182, 0.2);
+
+  /* === 语义化视觉覆盖层变量 ===
+   --shadow-color / --shadow-color-deep : 卡片悬浮阴影
+   --modal-overlay                    : 全屏弹窗遮罩
+   --shimmer-overlay                  : 加载 shimmer 光效 */
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  --shadow-color-deep: rgba(0, 0, 0, 0.4);
+  --modal-overlay: rgba(0, 0, 0, 0.8);
+  --shimmer-overlay: rgba(255, 255, 255, 0.2);
+
+  --color-cyan: #22d3ee;
+  --color-teal: #06b6d4;
+  --color-indigo: #6366f1;
+  --color-indigo-rgb: 99 102 241;
+  --color-indigo-hover: #4f46e5;
+  /* 选中文本背景色（供 ::selection 使用） */
+  --selection-bg: rgba(139, 92, 246, 0.3);
+
+  /* === WarpCanvas 星空配色（用途命名，替代原 --color-collab/indigo 语义歧义） ===
+   以下变量别名指向 --color-collab / --color-indigo，保持视觉一致性的同时语义更清晰 === */
+  --warp-canvas-primary: var(--color-collab);
+  --warp-canvas-primary-light: var(--color-collab-light);
+  --warp-canvas-indigo: var(--color-indigo);
+  /* 用途化变量 — 滚动条与轨道 */
+  --scrollbar-track-dark: #1a1a1f;
+  --scrollbar-track-hover: #27272a;
+  /* === Alpha (--primary) === */
+  --primary-5: rgba(59, 130, 246, 0.05);
+  --primary-10: rgba(59, 130, 246, 0.1);
+  --primary-15: rgba(59, 130, 246, 0.15);
+  --primary-18: rgba(59, 130, 246, 0.18);
+  --primary-20: rgba(59, 130, 246, 0.2);
+  --primary-25: rgba(59, 130, 246, 0.25);
+  --primary-30: rgba(59, 130, 246, 0.3);
+  --primary-35: rgba(59, 130, 246, 0.35);
+  --primary-40: rgba(59, 130, 246, 0.4);
+  --primary-60: rgba(59, 130, 246, 0.6);
+  --primary-80: rgba(59, 130, 246, 0.8);
+  --primary-50: rgba(59, 130, 246, 0.5);
+  /* === Alpha (--primary-hover) === */
+  --primary-hover-5: rgba(37, 99, 235, 0.05);
+  --primary-hover-10: rgba(37, 99, 235, 0.1);
+  --primary-hover-20: rgba(37, 99, 235, 0.2);
+  --primary-hover-30: rgba(37, 99, 235, 0.3);
+  /* === Alpha (--success) === */
+  --success-5: rgba(16, 185, 129, 0.05);
+  --success-10: rgba(16, 185, 129, 0.1);
+  --success-20: rgba(16, 185, 129, 0.2);
+  --success-40: rgba(16, 185, 129, 0.4);
+  --success-50: rgba(16, 185, 129, 0.5);
+  --success-70: rgba(16, 185, 129, 0.7);
+  --success-80: rgba(16, 185, 129, 0.8);
+  --success-30: rgba(16, 185, 129, 0.3);
+  /* === Alpha (--success-hover) === */
+  --success-hover-5: rgba(5, 150, 105, 0.05);
+  --success-hover-10: rgba(5, 150, 105, 0.1);
+  --success-hover-20: rgba(5, 150, 105, 0.2);
+  /* === Alpha (--warning) === */
+  --warning-5: rgba(245, 158, 11, 0.05);
+  --warning-10: rgba(245, 158, 11, 0.1);
+  --warning-15: rgba(245, 158, 11, 0.15);
+  --warning-20: rgba(245, 158, 11, 0.2);
+  --warning-25: rgba(245, 158, 11, 0.25);
+  --warning-30: rgba(245, 158, 11, 0.3);
+  --warning-40: rgba(245, 158, 11, 0.4);
+  --warning-50: rgba(245, 158, 11, 0.5);
+  --warning-80: rgba(245, 158, 11, 0.8);
+  --warning-200: rgba(245, 158, 11, 0.2);
+  --warning-300: rgba(245, 158, 11, 0.3);
+  /* === Alpha (--warning-hover) === */
+  --warning-hover-5: rgba(217, 119, 6, 0.05);
+  --warning-hover-10: rgba(217, 119, 6, 0.1);
+  --warning-hover-15: rgba(217, 119, 6, 0.15);
+  --warning-hover-20: rgba(217, 119, 6, 0.2);
+  --warning-hover-25: rgba(217, 119, 6, 0.25);
+  --warning-hover-30: rgba(217, 119, 6, 0.3);
+  --warning-hover-40: rgba(217, 119, 6, 0.4);
+  --warning-hover-50: rgba(217, 119, 6, 0.5);
+  /* === Alpha (--error) === */
+  --error-5: rgba(239, 68, 68, 0.05);
+  --error-10: rgba(239, 68, 68, 0.1);
+  --error-15: rgba(239, 68, 68, 0.15);
+  --error-20: rgba(239, 68, 68, 0.2);
+  --error-30: rgba(239, 68, 68, 0.3);
+  --error-40: rgba(239, 68, 68, 0.4);
+  --error-50: rgba(239, 68, 68, 0.5);
+  --error-60: rgba(239, 68, 68, 0.6);
+  --error-70: rgba(239, 68, 68, 0.7);
+  --error-80: rgba(239, 68, 68, 0.8);
+  /* === Alpha (--error-hover) === */
+  --error-hover-5: rgba(220, 38, 38, 0.05);
+  --error-hover-10: rgba(220, 38, 38, 0.1);
+  --error-hover-15: rgba(220, 38, 38, 0.15);
+  --error-hover-20: rgba(220, 38, 38, 0.2);
+  --error-hover-30: rgba(220, 38, 38, 0.3);
+  /* === Alpha (--info) === */
+  --info-5: rgba(59, 130, 246, 0.05);
+  --info-10: rgba(59, 130, 246, 0.1);
+  --info-20: rgba(59, 130, 246, 0.2);
+  --info-30: rgba(59, 130, 246, 0.3);
+  --info-40: rgba(59, 130, 246, 0.4);
+  --info-50: rgba(59, 130, 246, 0.5);
+  /* === Alpha (--info-hover) === */
+  --info-hover-5: rgba(37, 99, 235, 0.05);
+  --info-hover-10: rgba(37, 99, 235, 0.1);
+  --info-hover-20: rgba(37, 99, 235, 0.2);
+  --info-hover-30: rgba(37, 99, 235, 0.3);
+  --info-hover-40: rgba(37, 99, 235, 0.4);
+  --info-hover-50: rgba(37, 99, 235, 0.5);
+  /* === Alpha (--bg-primary) === */
+  --bg-primary-5: rgba(17, 17, 17, 0.05);
+  --bg-primary-10: rgba(17, 17, 17, 0.1);
+  --bg-primary-20: rgba(17, 17, 17, 0.2);
+  --bg-primary-25: rgba(17, 17, 17, 0.25);
+  --bg-primary-30: rgba(17, 17, 17, 0.3);
+  --bg-primary-40: rgba(17, 17, 17, 0.4);
+  --bg-primary-45: rgba(17, 17, 17, 0.45);
+  --bg-primary-50: rgba(17, 17, 17, 0.5);
+  --bg-primary-60: rgba(17, 17, 17, 0.6);
+  --bg-primary-70: rgba(17, 17, 17, 0.7);
+  --bg-primary-80: rgba(17, 17, 17, 0.8);
+  --bg-primary-85: rgba(17, 17, 17, 0.85);
+  --bg-primary-90: rgba(17, 17, 17, 0.9);
+  --bg-primary-95: rgba(17, 17, 17, 0.95);
+  /* === Alpha (--bg-secondary) === */
+  --bg-secondary-5: rgba(26, 26, 26, 0.05);
+  --bg-secondary-10: rgba(26, 26, 26, 0.1);
+  --bg-secondary-15: rgba(26, 26, 26, 0.15);
+  --bg-secondary-20: rgba(26, 26, 26, 0.2);
+  --bg-secondary-30: rgba(26, 26, 26, 0.3);
+  --bg-secondary-40: rgba(26, 26, 26, 0.4);
+  --bg-secondary-50: rgba(26, 26, 26, 0.5);
+  --bg-secondary-60: rgba(26, 26, 26, 0.6);
+  --bg-secondary-70: rgba(26, 26, 26, 0.7);
+  --bg-secondary-80: rgba(26, 26, 26, 0.8);
+  --bg-secondary-90: rgba(26, 26, 26, 0.9);
+  --bg-secondary-95: rgba(26, 26, 26, 0.95);
+  /* === Alpha (--bg-tertiary) === */
+  --bg-tertiary-5: rgba(42, 42, 42, 0.05);
+  --bg-tertiary-10: rgba(42, 42, 42, 0.1);
+  --bg-tertiary-20: rgba(42, 42, 42, 0.2);
+  --bg-tertiary-30: rgba(42, 42, 42, 0.3);
+  --bg-tertiary-40: rgba(42, 42, 42, 0.4);
+  --bg-tertiary-50: rgba(42, 42, 42, 0.5);
+  --bg-tertiary-60: rgba(42, 42, 42, 0.6);
+  --bg-tertiary-70: rgba(42, 42, 42, 0.7);
+  --bg-tertiary-80: rgba(42, 42, 42, 0.8);
+  /* === Alpha (--bg-quaternary) === */
+  --bg-quaternary-10: rgba(58, 58, 58, 0.1);
+  --bg-quaternary-50: rgba(58, 58, 58, 0.5);
+  /* === Alpha (--border-secondary) === */
+  --border-secondary-30: rgba(42, 42, 42, 0.3);
+  --border-secondary-40: rgba(42, 42, 42, 0.4);
+  --border-secondary-50: rgba(42, 42, 42, 0.5);
+  --border-secondary-60: rgba(42, 42, 42, 0.6);
+  --border-secondary-70: rgba(42, 42, 42, 0.7);
+  --border-secondary-80: rgba(42, 42, 42, 0.8);
+  /* === Alpha (--border-tertiary) === */
+  --border-tertiary-20: rgba(58, 58, 58, 0.2);
+  --border-tertiary-30: rgba(58, 58, 58, 0.3);
+  --border-tertiary-50: rgba(58, 58, 58, 0.5);
+  /* === Alpha (--text-primary) === */
+  --text-primary-10: rgba(255, 255, 255, 0.1);
+  --text-primary-20: rgba(255, 255, 255, 0.2);
+  --text-primary-30: rgba(255, 255, 255, 0.3);
+  --text-primary-40: rgba(255, 255, 255, 0.4);
+  --text-primary-50: rgba(255, 255, 255, 0.5);
+  --text-primary-60: rgba(255, 255, 255, 0.6);
+  --text-primary-70: rgba(255, 255, 255, 0.7);
+  --text-primary-80: rgba(255, 255, 255, 0.8);
+  --text-primary-90: rgba(255, 255, 255, 0.9);
+  /* === Alpha (--text-error) === */
+  --text-error-20: rgba(239, 68, 68, 0.2);
+  --text-error-50: rgba(239, 68, 68, 0.5);
+  --text-error-60: rgba(239, 68, 68, 0.6);
+  --text-error-70: rgba(239, 68, 68, 0.7);
+  --text-error-80: rgba(239, 68, 68, 0.8);
+  /* === 通用浅色文字（深色模式） === */
+  --light: rgba(255, 255, 255, 0.95);
+  /* === Alpha (--text-success) === */
+  --text-success-50: rgba(16, 185, 129, 0.5);
+  --text-success-70: rgba(16, 185, 129, 0.7);
+  --text-success-80: rgba(16, 185, 129, 0.8);
+  /* === Alpha (--text-warning) === */
+  --text-warning-80: rgba(245, 158, 11, 0.8);
+  /* 用途化变量 — 首页（index） */
+  --index-footer-bg: rgba(28, 28, 30, 0.9);
+  --index-visualizer-bg: rgba(30, 41, 59, 0.5);
+  --index-card-glow: rgba(139, 92, 246, 0.15);
+  --index-brand-badge-bg: rgba(139, 92, 246, 0.1);
+  --index-brand-badge-border: rgba(139, 92, 246, 0.2);
+  --index-main-icon-shadow: rgba(139, 92, 246, 0.5);
+  --index-pulsing-ring-shadow: rgba(0, 122, 255, 0.4);
+  /* 用途化变量 — 年度回顾（year-review） */
+  --year-review-home-btn-shadow: rgba(139, 92, 246, 0.2);
+  --year-review-blob-1-bg: rgba(139, 92, 246, 0.4);
+  --year-review-blob-2-bg: rgba(244, 114, 182, 0.2);
+  --year-review-gradient-overlay-end: rgba(244, 114, 182, 0.15);
+  --year-review-stat-number-shadow: rgba(37, 99, 235, 0.5);
+  --year-review-artist-label-border: rgba(168, 85, 247, 0.3);
+  --year-review-artist-bg-blur: rgba(168, 85, 247, 0.2);
+  --year-review-stats-bg-gradient: rgba(30, 58, 138, 0.4);
+  --app-loading-brand-primary: #6366f1;
+  --app-loading-brand-secondary: #818cf8;
+  --app-loading-primary-glow: rgba(99, 102, 241, 0.42);
+  --app-loading-primary-glow-accelerating: rgba(99, 102, 241, 0.8);
+  --app-loading-secondary-glow: rgba(129, 140, 248, 0.28);
+  --app-loading-text-color: rgba(165, 180, 252, 0.78);
+  /* 用途化变量 — 模态框通用（Modal shared） */
+  --lyrics-modal-enter-shadow: rgba(0, 0, 0, 0.4);
+  --lyrics-modal-bg-accent-blue: rgba(84, 130, 255, 0.32);
+  --lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.25);
+  --lyrics-modal-badge-menu-bg: rgba(245, 245, 245, 0.9);
+  --audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.85);
+  --audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.25);
+  /* === Overlay / 遮罩层半透明色（深色模式 = 白色半透明） === */
+  --overlay-1: rgba(255, 255, 255, 0.01);
+  --overlay-2: rgba(255, 255, 255, 0.02);
+  --overlay-3: rgba(255, 255, 255, 0.03);
+  --overlay-4: rgba(255, 255, 255, 0.04);
+  --overlay-5: rgba(255, 255, 255, 0.05);
+  --overlay-6: rgba(255, 255, 255, 0.06);
+  --overlay-7: rgba(255, 255, 255, 0.07);
+  --overlay-8: rgba(255, 255, 255, 0.08);
+  --overlay-9: rgba(255, 255, 255, 0.09);
+  --overlay-10: rgba(255, 255, 255, 0.1);
+  --overlay-12: rgba(255, 255, 255, 0.12);
+  --overlay-14: rgba(255, 255, 255, 0.14);
+  --overlay-15: rgba(255, 255, 255, 0.15);
+  --overlay-16: rgba(255, 255, 255, 0.16);
+  --overlay-18: rgba(255, 255, 255, 0.18);
+  --overlay-20: rgba(255, 255, 255, 0.2);
+  --overlay-22: rgba(255, 255, 255, 0.22);
+  --overlay-25: rgba(255, 255, 255, 0.25);
+  --overlay-30: rgba(255, 255, 255, 0.3);
+  --overlay-35: rgba(255, 255, 255, 0.35);
+  --overlay-40: rgba(255, 255, 255, 0.4);
+  --overlay-42: rgba(255, 255, 255, 0.42);
+  --overlay-45: rgba(255, 255, 255, 0.45);
+  --overlay-50: rgba(255, 255, 255, 0.5);
+  --overlay-52: rgba(255, 255, 255, 0.52);
+  --overlay-55: rgba(255, 255, 255, 0.55);
+  --overlay-58: rgba(255, 255, 255, 0.58);
+  --overlay-60: rgba(255, 255, 255, 0.6);
+  --overlay-62: rgba(255, 255, 255, 0.62);
+  --overlay-70: rgba(255, 255, 255, 0.7);
+  --overlay-78: rgba(255, 255, 255, 0.78);
+  --overlay-80: rgba(255, 255, 255, 0.8);
+  --overlay-85: rgba(255, 255, 255, 0.85);
+  --overlay-86: rgba(255, 255, 255, 0.86);
+  --overlay-88: rgba(255, 255, 255, 0.88);
+  --overlay-90: rgba(255, 255, 255, 0.9);
+  --overlay-92: rgba(255, 255, 255, 0.92);
+  --overlay-95: rgba(255, 255, 255, 0.95);
+  /* === Mask / 暗色遮罩（深色模式 = 标准不透明度） === */
+  --mask-2: rgba(0, 0, 0, 0.01);
+  --mask-4: rgba(0, 0, 0, 0.02);
+  --mask-5: rgba(0, 0, 0, 0.03);
+  --mask-6: rgba(0, 0, 0, 0.04);
+  --mask-8: rgba(0, 0, 0, 0.05);
+  --mask-10: rgba(0, 0, 0, 0.06);
+  --mask-15: rgba(0, 0, 0, 0.08);
+  --mask-18: rgba(0, 0, 0, 0.09);
+  --mask-20: rgba(0, 0, 0, 0.1);
+  --mask-25: rgba(0, 0, 0, 0.12);
+  --mask-30: rgba(0, 0, 0, 0.15);
+  --mask-35: rgba(0, 0, 0, 0.17);
+  --mask-40: rgba(0, 0, 0, 0.2);
+  --mask-45: rgba(0, 0, 0, 0.22);
+  --mask-50: rgba(0, 0, 0, 0.25);
+  --mask-60: rgba(0, 0, 0, 0.3);
+  --mask-70: rgba(0, 0, 0, 0.35);
+  --mask-75: rgba(0, 0, 0, 0.4);
+  --mask-80: rgba(0, 0, 0, 0.5);
+  --mask-85: rgba(0, 0, 0, 0.6);
+  --mask-95: rgba(0, 0, 0, 0.7);
+  /* 打印专用变量（覆盖主题配色，白底黑字） */
+  --print-bg: #ffffff;
+  --print-bg-subtle: #f8f9fa;
+  --print-bg-subtler: #f3f4f6;
+  --print-bg-deep: #f0f0f0;
+  --print-bg-darker: #f5f5f5;
+  --print-text-primary: #1a1a1a;
+  --print-text-secondary: #3a3a3c;
+  --print-text-tertiary: #636366;
+  --print-border: #d1d5db;
+  --print-border-light: #e5e5ea;
+  --print-muted: #6c757d;
+  /* Year Review 专用变量 */
+  --year-review-text-tertiary: #6b7280;
+  --year-review-text-yellow: #fde047;
+  --year-review-text-cyan: #67e8f9;
+  /* OAuth 第三方平台品牌色（--oauth-casdoor-green / --oauth-kuaishou-orange 已在独立变量区定义，此处省略） */
+  /* === 用途化变量 — 背景纹理光晕（body::before） === */
+  --bg-texture-warm-glow: transparent;
+  /* === 用途化变量 — 按钮阴影 === */
+  --btn-primary-shadow: rgba(99, 102, 241, 0.2);
+  /* === 用途化变量 — Canvas 动画背景叠加色 === */
+  --canvas-bg-overlay: rgba(7, 7, 9, 0.18);
+  /* === 用途化变量 — Canvas 动画光晕遮罩末端 === */
+  --canvas-glow-overlay-end: rgba(245, 245, 247, 0.7);
+  /* === 用途化变量 — 歌词消息 fallback === */
+  --lyric-msg-fallback-text: #ffffff;
+  /* === 用途化变量 — 模态框阴影 === */
+  --modal-hover-shadow: rgba(0, 0, 0, 0.1);
+  /* === 用途化变量 — 移动端表格阴影 === */
+  --mobile-table-shadow: rgba(0, 0, 0, 0.5);
+}

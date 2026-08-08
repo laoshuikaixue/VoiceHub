@@ -1,20 +1,20 @@
 <template>
-  <div class="min-h-screen bg-zinc-950 text-zinc-200 pb-24">
+  <div class="min-h-screen bg-bg-primary text-text-primary pb-24">
     <!-- 顶部导航栏 -->
     <div
-      class="sticky top-0 z-30 bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-900/50 px-4 py-4 mb-8"
+      class="sticky top-0 z-30 bg-bg-primary-80 backdrop-blur-xl border-b border-border-secondary-50 px-4 py-4 mb-8"
     >
       <div class="max-w-[1200px] mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
           <button
-            class="p-2 hover:bg-zinc-900 rounded-xl transition-all text-zinc-400 hover:text-zinc-100"
+            class="p-2 hover:bg-bg-secondary rounded-xl transition-all text-text-tertiary hover:text-text-primary"
             @click="goBack"
           >
             <ArrowLeft :size="20" />
           </button>
           <div>
-            <h1 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h1>
-            <p class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest mt-0.5">
+            <h1 class="text-xl font-black text-text-primary tracking-tight">{{ locale.title }}</h1>
+            <p class="text-[10px] text-text-tertiary font-medium uppercase tracking-widest mt-0.5">
               {{ locale.subtitle }}
             </p>
           </div>
@@ -29,7 +29,7 @@
           <section :class="sectionClass" class="flex flex-col items-center text-center">
             <div class="relative group">
               <div
-                class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-blue-900/20 mb-6 group-hover:scale-105 transition-transform duration-500"
+                class="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center text-text-primary text-4xl font-black shadow-2xl shadow-[var(--primary-glow)] mb-6 group-hover:scale-105 transition-transform duration-500"
               >
                 <img
                   v-if="auth.user.value?.avatar && !avatarError"
@@ -40,34 +40,34 @@
                 <span v-else>{{ userInitials }}</span>
               </div>
               <div
-                class="absolute -bottom-1 -right-1 p-2 bg-zinc-900 border border-zinc-800 rounded-full text-blue-500 shadow-xl"
+                class="absolute -bottom-1 -right-1 p-2 bg-bg-secondary border border-border-secondary rounded-full text-primary shadow-xl"
               >
                 <User :size="16" />
               </div>
             </div>
 
             <div class="space-y-2">
-              <h2 class="text-2xl font-black text-zinc-100 tracking-tight">
+              <h2 class="text-2xl font-black text-text-primary tracking-tight">
                 {{ auth.user.value?.name || auth.user.value?.username }}
               </h2>
-              <p class="text-sm font-medium text-zinc-500">@{{ auth.user.value?.username }}</p>
+              <p class="text-sm font-medium text-text-tertiary">@{{ auth.user.value?.username }}</p>
             </div>
 
             <div class="flex flex-wrap justify-center gap-2 mt-6">
               <span
-                class="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-primary-10 border border-primary-20 text-primary text-[10px] font-black uppercase tracking-wider rounded-full"
               >
                 {{ roleName }}
               </span>
               <span
                 v-if="auth.user.value?.grade"
-                class="px-3 py-1 bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-[10px] font-black uppercase tracking-wider rounded-full"
               >
                 {{ auth.user.value?.grade }}
               </span>
               <span
                 v-if="auth.user.value?.class"
-                class="px-3 py-1 bg-zinc-800 text-zinc-400 text-[10px] font-black uppercase tracking-wider rounded-full"
+                class="px-3 py-1 bg-bg-tertiary text-text-tertiary text-[10px] font-black uppercase tracking-wider rounded-full"
               >
                 {{ auth.user.value?.class }}
               </span>
@@ -79,13 +79,13 @@
         <div class="lg:col-span-8 space-y-8">
           <!-- 第三方登录绑定 -->
           <section v-if="hasOAuthProviders" :class="sectionClass">
-            <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
-              <div class="p-2.5 bg-purple-500/10 rounded-xl">
-                <LinkIcon :size="20" class="text-purple-500" />
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-info-10 rounded-xl">
+                <LinkIcon :size="20" class="text-info" />
               </div>
               <div>
-                <h2 class="text-base font-black text-zinc-100">{{ locale.oauthBinding }}</h2>
-                <p class="text-xs text-zinc-500 mt-0.5">{{ locale.oauthBindingDesc }}</p>
+                <h2 class="text-base font-black text-text-primary">{{ locale.oauthBinding }}</h2>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.oauthBindingDesc }}</p>
               </div>
             </div>
             <AuthOAuthBindingCard />
@@ -96,18 +96,18 @@
 
           <!-- 个人 API Key -->
           <section :class="sectionClass">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/50 pb-5 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary-50 pb-5 mb-6">
               <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-emerald-500/10 rounded-xl">
-                  <KeyRound :size="20" class="text-emerald-500" />
+                <div class="p-2.5 bg-success-10 rounded-xl">
+                  <KeyRound :size="20" class="text-success" />
                 </div>
                 <div>
-                  <h2 class="text-base font-black text-zinc-100">{{ locale.personalApiKey.title }}</h2>
-                  <p class="text-xs text-zinc-500 mt-0.5">{{ locale.personalApiKey.desc }}</p>
+                  <h2 class="text-base font-black text-text-primary">{{ locale.personalApiKey.title }}</h2>
+                  <p class="text-xs text-text-tertiary mt-0.5">{{ locale.personalApiKey.desc }}</p>
                 </div>
               </div>
               <button
-                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-success hover:bg-success text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                 :disabled="apiKeyLoading || apiKeyCreating"
                 @click="createPersonalApiKey"
               >
@@ -117,18 +117,18 @@
               </button>
             </div>
 
-            <div v-if="apiKeyLoading" class="flex items-center justify-center gap-2 py-8 text-xs text-zinc-500 text-center">
+            <div v-if="apiKeyLoading" class="flex items-center justify-center gap-2 py-8 text-xs text-text-tertiary text-center">
               <RefreshCw :size="16" class="animate-spin" />
               <span>{{ locale.personalApiKey.loading }}</span>
             </div>
 
             <div
               v-else-if="personalApiKeys.length === 0"
-              class="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/40 px-5 py-8 text-center"
+              class="rounded-2xl border border-dashed border-border-secondary bg-bg-primary-40 px-5 py-8 text-center"
             >
-              <KeyRound :size="28" class="mx-auto text-zinc-700 mb-3" />
-              <p class="text-sm font-bold text-zinc-300">{{ locale.personalApiKey.emptyTitle }}</p>
-              <p class="text-xs text-zinc-600 mt-2 leading-relaxed">
+              <KeyRound :size="28" class="mx-auto text-text-secondary mb-3" />
+              <p class="text-sm font-bold text-text-secondary">{{ locale.personalApiKey.emptyTitle }}</p>
+              <p class="text-xs text-text-disabled mt-2 leading-relaxed">
                 {{ locale.personalApiKey.emptyDesc }}
               </p>
             </div>
@@ -137,12 +137,12 @@
               <div
                 v-for="key in personalApiKeys"
                 :key="key.id"
-                class="rounded-2xl border border-zinc-800/70 bg-zinc-950/45 p-4"
+                class="rounded-2xl border border-border-secondary-70 bg-bg-primary-45 p-4"
               >
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                      <h3 class="text-sm font-black text-zinc-100">{{ key.name }}</h3>
+                      <h3 class="text-sm font-black text-text-primary">{{ key.name }}</h3>
                       <span
                         class="px-2 py-0.5 rounded text-[10px] font-black border"
                         :class="getApiKeyStatusClass(key.status)"
@@ -150,10 +150,10 @@
                         {{ getApiKeyStatusLabel(key.status) }}
                       </span>
                     </div>
-                    <p class="text-xs text-zinc-500 mt-1">{{ key.description || locale.personalApiKey.noDescription }}</p>
+                    <p class="text-xs text-text-tertiary mt-1">{{ key.description || locale.personalApiKey.noDescription }}</p>
                   </div>
                   <button
-                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                    class="inline-flex items-center justify-center gap-2 px-3 py-2 border border-error-20 bg-error-10 text-error hover:bg-error-15 text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                     :disabled="apiKeyDeletingId === key.id"
                     @click="deletePersonalApiKey(key)"
                   >
@@ -165,29 +165,29 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-5">
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.keyPrefix }}</p>
-                    <p class="font-mono text-xs text-blue-400">{{ key.keyPrefix }}...</p>
+                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.keyPrefix }}</p>
+                    <p class="font-mono text-xs text-primary">{{ key.keyPrefix }}...</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.createdAt }}</p>
-                    <p class="text-xs text-zinc-400">{{ formatDate(key.createdAt) }}</p>
+                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.createdAt }}</p>
+                    <p class="text-xs text-text-tertiary">{{ formatDate(key.createdAt) }}</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.lastUsedAt }}</p>
-                    <p class="text-xs text-zinc-400">{{ key.lastUsedAt ? formatDate(key.lastUsedAt) : locale.personalApiKey.neverUsed }}</p>
+                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.lastUsedAt }}</p>
+                    <p class="text-xs text-text-tertiary">{{ key.lastUsedAt ? formatDate(key.lastUsedAt) : locale.personalApiKey.neverUsed }}</p>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.usageCount }}</p>
+                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.usageCount }}</p>
                     <button
-                      class="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors disabled:cursor-default disabled:opacity-60"
+                      class="text-xs font-bold text-success hover:text-success-hover transition-colors disabled:cursor-default disabled:opacity-60"
                       @click="openPersonalApiKeyLogs(key)"
                     >
                       {{ key.usageCount || 0 }}
                     </button>
                   </div>
                   <div class="space-y-1">
-                    <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.expiresAt }}</p>
-                    <p class="text-xs text-zinc-400">{{ key.expiresAt ? formatDate(key.expiresAt) : locale.personalApiKey.neverExpires }}</p>
+                    <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.expiresAt }}</p>
+                    <p class="text-xs text-text-tertiary">{{ key.expiresAt ? formatDate(key.expiresAt) : locale.personalApiKey.neverExpires }}</p>
                   </div>
                 </div>
               </div>
@@ -196,13 +196,13 @@
 
           <!-- 修改密码 -->
           <section :class="sectionClass">
-            <div class="flex items-center gap-3 border-b border-zinc-800/50 pb-5 mb-6">
-              <div class="p-2.5 bg-blue-500/10 rounded-xl">
-                <Lock :size="20" class="text-blue-500" />
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-primary-10 rounded-xl">
+                <Lock :size="20" class="text-primary" />
               </div>
               <div>
-                <h2 class="text-base font-black text-zinc-100">{{ locale.changePassword }}</h2>
-                <p class="text-xs text-zinc-500 mt-0.5">{{ locale.changePasswordDesc }}</p>
+                <h2 class="text-base font-black text-text-primary">{{ locale.changePassword }}</h2>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.changePasswordDesc }}</p>
               </div>
             </div>
             <div class="max-w-md">
@@ -234,21 +234,21 @@
       <Transition name="modal">
         <div
           v-if="createdApiKey"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
         >
-          <div class="w-full max-w-xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
+          <div class="w-full max-w-xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-border-secondary flex items-center justify-between">
               <div>
-                <h3 class="text-lg font-black text-zinc-100">{{ locale.personalApiKey.createdTitle }}</h3>
-                <p class="text-xs text-zinc-500 mt-1">{{ locale.personalApiKey.createdDesc }}</p>
+                <h3 class="text-lg font-black text-text-primary">{{ locale.personalApiKey.createdTitle }}</h3>
+                <p class="text-xs text-text-tertiary mt-1">{{ locale.personalApiKey.createdDesc }}</p>
               </div>
-              <button class="text-zinc-500 hover:text-zinc-200 transition-colors" @click="closeCreatedApiKey">
+              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closeCreatedApiKey">
                 <X :size="20" />
               </button>
             </div>
 
             <div class="p-6 space-y-5">
-              <div class="flex items-start gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-400">
+              <div class="flex items-start gap-3 rounded-2xl border border-warning-20 bg-warning-10 p-4 text-warning">
                 <AlertTriangle :size="18" class="shrink-0 mt-0.5" />
                 <p class="text-xs font-bold leading-relaxed">
                   {{ locale.personalApiKey.copyWarning }}
@@ -256,14 +256,14 @@
               </div>
 
               <div class="space-y-2">
-                <p class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{{ locale.personalApiKey.fullKey }}</p>
+                <p class="text-[10px] font-black text-text-disabled uppercase tracking-widest">{{ locale.personalApiKey.fullKey }}</p>
                 <div class="flex items-stretch gap-2">
-                  <div class="flex-1 min-w-0 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 font-mono text-xs text-blue-400 break-all select-all">
+                  <div class="flex-1 min-w-0 rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 font-mono text-xs text-primary break-all select-all">
                     {{ createdApiKey.apiKey }}
                   </div>
                   <button
                     class="w-12 rounded-xl flex items-center justify-center transition-all"
-                    :class="apiKeyCopied ? 'bg-emerald-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'"
+                    :class="apiKeyCopied ? 'bg-success text-text-primary' : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary'"
                     @click="copyApiKey(createdApiKey.apiKey)"
                   >
                     <Check v-if="apiKeyCopied" :size="16" />
@@ -273,9 +273,9 @@
               </div>
             </div>
 
-            <div class="p-6 border-t border-zinc-800">
+            <div class="p-6 border-t border-border-secondary">
               <button
-                class="w-full py-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-black rounded-xl transition-all"
+                class="w-full py-3 bg-bg-primary border border-border-secondary hover:border-border-tertiary text-text-primary text-xs font-black rounded-xl transition-all"
                 @click="closeCreatedApiKey"
               >
                 {{ locale.personalApiKey.closeSaved }}
@@ -290,38 +290,38 @@
       <Transition name="modal">
         <div
           v-if="showApiKeyLogsModal"
-          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          class="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-bg-primary-70 backdrop-blur-sm"
         >
-          <div class="w-full max-w-4xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden">
-            <div class="p-6 border-b border-zinc-800 flex items-start justify-between gap-4">
+          <div class="w-full max-w-4xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-border-secondary flex items-start justify-between gap-4">
               <div>
-                <h3 class="text-lg font-black text-zinc-100">{{ locale.personalApiKey.logsTitle }}</h3>
-                <p class="text-xs text-zinc-500 mt-1">
+                <h3 class="text-lg font-black text-text-primary">{{ locale.personalApiKey.logsTitle }}</h3>
+                <p class="text-xs text-text-tertiary mt-1">
                   {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
                 </p>
               </div>
-              <button class="text-zinc-500 hover:text-zinc-200 transition-colors" @click="closePersonalApiKeyLogs">
+              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closePersonalApiKeyLogs">
                 <X :size="20" />
               </button>
             </div>
 
             <div class="p-6">
-              <div v-if="apiKeyLogsLoading" class="flex items-center justify-center gap-2 py-10 text-xs text-zinc-500">
+              <div v-if="apiKeyLogsLoading" class="flex items-center justify-center gap-2 py-10 text-xs text-text-tertiary">
                 <RefreshCw :size="16" class="animate-spin" />
                 <span>{{ locale.personalApiKey.loadingLogs }}</span>
               </div>
 
               <div v-else-if="apiKeyLogs.length === 0" class="py-10 text-center">
-                <p class="text-sm font-bold text-zinc-300">{{ locale.personalApiKey.noLogs }}</p>
-                <p class="text-xs text-zinc-600 mt-2">{{ locale.personalApiKey.noLogsDesc }}</p>
+                <p class="text-sm font-bold text-text-secondary">{{ locale.personalApiKey.noLogs }}</p>
+                <p class="text-xs text-text-disabled mt-2">{{ locale.personalApiKey.noLogsDesc }}</p>
               </div>
 
               <div v-else class="space-y-4">
-                <div class="overflow-hidden rounded-2xl border border-zinc-800">
+                <div class="overflow-hidden rounded-2xl border border-border-secondary">
                   <div class="max-h-[60vh] overflow-auto">
                     <table class="min-w-full text-left">
-                      <thead class="sticky top-0 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
-                        <tr class="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      <thead class="sticky top-0 bg-bg-primary-95 backdrop-blur border-b border-border-secondary">
+                        <tr class="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.time }}</th>
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.method }}</th>
                           <th class="px-4 py-3">{{ locale.personalApiKey.logColumns.endpoint }}</th>
@@ -332,8 +332,8 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="log in apiKeyLogs" :key="log.id" class="border-b border-zinc-900 last:border-0">
-                          <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ formatDate(log.createdAt) }}</td>
+                        <tr v-for="log in apiKeyLogs" :key="log.id" class="border-b border-border-secondary last:border-0">
+                          <td class="px-4 py-3 text-xs text-text-tertiary whitespace-nowrap">{{ formatDate(log.createdAt) }}</td>
                           <td class="px-4 py-3">
                             <span
                               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border"
@@ -342,13 +342,13 @@
                               {{ log.method }}
                             </span>
                           </td>
-                          <td class="px-4 py-3 text-xs text-zinc-300 break-all">{{ log.endpoint }}</td>
+                          <td class="px-4 py-3 text-xs text-text-secondary break-all">{{ log.endpoint }}</td>
                           <td class="px-4 py-3 text-xs font-bold" :class="getApiStatusClass(log.statusCode)">
                             {{ log.statusCode }}
                           </td>
-                          <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ log.ipAddress }}</td>
-                          <td class="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">{{ log.responseTimeMs }} ms</td>
-                          <td class="px-4 py-3 text-xs text-zinc-500 break-all">
+                          <td class="px-4 py-3 text-xs text-text-tertiary whitespace-nowrap">{{ log.ipAddress }}</td>
+                          <td class="px-4 py-3 text-xs text-text-tertiary whitespace-nowrap">{{ log.responseTimeMs }} ms</td>
+                          <td class="px-4 py-3 text-xs text-text-tertiary break-all">
                             {{ log.errorMessage || locale.personalApiKey.none }}
                           </td>
                         </tr>
@@ -358,19 +358,19 @@
                 </div>
 
                 <div class="flex items-center justify-between gap-3">
-                  <p class="text-xs text-zinc-500">
+                  <p class="text-xs text-text-tertiary">
                     {{ locale.personalApiKey.pageInfo(apiKeyLogsPagination.page, apiKeyLogsPagination.totalPages || 1) }}
                   </p>
                   <div class="flex items-center gap-2">
                     <button
-                      class="px-3 py-2 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40"
+                      class="px-3 py-2 rounded-xl border border-border-secondary text-xs font-bold text-text-secondary disabled:opacity-40"
                       :disabled="apiKeyLogsPagination.page <= 1 || apiKeyLogsLoading"
                       @click="changePersonalApiKeyLogsPage(apiKeyLogsPagination.page - 1)"
                     >
                       {{ locale.personalApiKey.previousPage }}
                     </button>
                     <button
-                      class="px-3 py-2 rounded-xl border border-zinc-800 text-xs font-bold text-zinc-300 disabled:opacity-40"
+                      class="px-3 py-2 rounded-xl border border-border-secondary text-xs font-bold text-text-secondary disabled:opacity-40"
                       :disabled="apiKeyLogsPagination.page >= apiKeyLogsPagination.totalPages || apiKeyLogsLoading"
                       @click="changePersonalApiKeyLogsPage(apiKeyLogsPagination.page + 1)"
                     >
@@ -469,7 +469,7 @@ onMounted(() => {
 })
 
 // 样式类常量
-const sectionClass = 'bg-zinc-900/40 border border-zinc-900 rounded-3xl p-6 md:p-8 shadow-2xl'
+const sectionClass = 'bg-bg-secondary-40 border border-border-secondary rounded-3xl p-6 md:p-8 shadow-2xl'
 
 const userInitials = computed(() => {
   const name = auth.user.value?.name || auth.user.value?.username || 'U'
@@ -672,26 +672,26 @@ const getApiKeyStatusLabel = (status) => {
 
 const getApiKeyStatusClass = (status) => {
   const map = {
-    active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    inactive: 'bg-zinc-800 text-zinc-500 border-zinc-700/50',
-    expired: 'bg-red-500/10 text-red-400 border-red-500/20'
+    active: 'bg-success-10 text-success border-success-20',
+    inactive: 'bg-bg-tertiary text-text-tertiary border-border-tertiary-50',
+    expired: 'bg-error-10 text-error border-error-20'
   }
-  return map[status] || 'bg-zinc-800 text-zinc-500 border-zinc-700/50'
+  return map[status] || 'bg-bg-tertiary text-text-tertiary border-border-tertiary-50'
 }
 
 const getApiMethodClass = (method) => {
   const map = {
-    GET: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    POST: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    PUT: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    DELETE: 'bg-red-500/10 text-red-400 border-red-500/20'
+    GET: 'bg-success-10 text-success border-success-20',
+    POST: 'bg-primary-10 text-primary border-primary-20',
+    PUT: 'bg-warning-10 text-warning border-warning-20',
+    DELETE: 'bg-error-10 text-error border-error-20'
   }
-  return map[method] || 'bg-zinc-800 text-zinc-400 border-zinc-700/50'
+  return map[method] || 'bg-bg-tertiary text-text-tertiary border-border-tertiary-50'
 }
 
 const getApiStatusClass = (statusCode) => {
-  if (statusCode >= 200 && statusCode < 300) return 'text-emerald-400'
-  if (statusCode >= 300 && statusCode < 400) return 'text-amber-400'
-  return 'text-red-400'
+  if (statusCode >= 200 && statusCode < 300) return 'text-success'
+  if (statusCode >= 300 && statusCode < 400) return 'text-warning'
+  return 'text-error'
 }
 </script>

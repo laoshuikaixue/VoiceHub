@@ -3,20 +3,20 @@
     <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
       <div>
         <h2 class="text-lg font-black">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-1 font-medium">
+        <p class="text-xs text-text-tertiary mt-1 font-medium">
           {{ locale.desc }}
         </p>
       </div>
 
       <div class="flex flex-wrap gap-2">
         <button
-          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:border-zinc-700 transition-all"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-secondary bg-bg-secondary text-text-secondary text-xs font-bold hover:border-border-tertiary transition-all"
           @click="refreshAll"
         >
           <RefreshCw :size="14" /> {{ locale.refresh }}
         </button>
         <button
-          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300 text-xs font-bold hover:border-zinc-700 transition-all"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-secondary bg-bg-secondary text-text-secondary text-xs font-bold hover:border-border-tertiary transition-all"
           :disabled="exporting"
           @click="exportCodes"
         >
@@ -26,26 +26,26 @@
     </div>
 
     <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-      <div v-for="item in stats" :key="item.label" class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
-        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-500">{{ item.label }}</p>
+      <div v-for="item in stats" :key="item.label" class="rounded-2xl border border-border-secondary bg-bg-secondary-50 p-4">
+        <p class="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">{{ item.label }}</p>
         <div class="mt-2 flex items-end justify-between gap-2">
-          <span class="text-2xl font-black text-zinc-100">{{ item.value }}</span>
+          <span class="text-2xl font-black text-text-primary">{{ item.value }}</span>
           <span :class="['text-[10px] font-bold px-2 py-1 rounded-full', item.badgeClass]">{{ item.hint }}</span>
         </div>
       </div>
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
-      <section class="min-w-0 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-5">
+      <section class="min-w-0 rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex flex-1 flex-col sm:flex-row gap-3">
             <div class="relative flex-1">
-              <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
               <input
                 v-model="filters.q"
                 type="text"
                 :placeholder="locale.searchPlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40 transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-xl pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40 transition-all"
                 @keyup.enter="fetchCodes(1)"
               >
             </div>
@@ -63,15 +63,15 @@
           </div>
 
           <button
-            class="text-xs font-bold text-zinc-500 hover:text-zinc-200 transition-colors"
+            class="text-xs font-bold text-text-tertiary hover:text-text-primary transition-colors"
             @click="resetFilters"
           >
             {{ locale.clearFilters }}
           </button>
         </div>
 
-        <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
-          <span class="text-xs font-black text-blue-400">{{ getLocaleMessage('selectedItems', selectedIds.length) }}</span>
+        <div v-if="selectedIds.length" class="flex flex-wrap items-center gap-2 rounded-xl border border-primary-20 bg-primary-5 p-3">
+          <span class="text-xs font-black text-primary">{{ getLocaleMessage('selectedItems', selectedIds.length) }}</span>
           <CustomSelect
             v-model="bulkStatus"
             :options="bulkStatusOptions"
@@ -80,29 +80,29 @@
             class-name="w-32"
           />
           <button
-            class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors"
+            class="px-3 py-2 rounded-lg bg-primary-hover text-text-primary text-xs font-bold hover:bg-primary transition-colors"
             :disabled="saving"
             @click="applyBulkStatus"
           >
             {{ locale.applyBulk }}
           </button>
-          <button class="px-3 py-2 rounded-lg bg-zinc-900 text-zinc-300 text-xs font-bold border border-zinc-800" @click="clearSelection">
+          <button class="px-3 py-2 rounded-lg bg-bg-secondary text-text-secondary text-xs font-bold border border-border-secondary" @click="clearSelection">
             {{ locale.cancelSelection }}
           </button>
         </div>
 
-        <div class="overflow-x-auto rounded-2xl border border-zinc-800">
-          <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-zinc-950/60 p-8 text-center text-sm text-zinc-500">
+        <div class="overflow-x-auto rounded-2xl border border-border-secondary">
+          <div v-if="loading" class="flex min-w-[880px] items-center justify-center bg-bg-primary-60 p-8 text-center text-sm text-text-tertiary">
             {{ locale.loading }}
           </div>
 
           <table v-else class="min-w-[880px] table-fixed text-left text-sm">
-            <thead class="bg-zinc-950/80 text-zinc-500">
+            <thead class="bg-bg-primary-80 text-text-tertiary">
               <tr>
                 <th class="px-3 py-3 w-10">
                   <input
                     type="checkbox"
-                    class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-500"
+                    class="h-4 w-4 rounded border-border-tertiary bg-bg-secondary text-primary"
                     :checked="allVisibleSelected"
                     :indeterminate="someVisibleSelected && !allVisibleSelected"
                     @change="toggleSelectAll"
@@ -117,20 +117,20 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in codes" :key="item.id" class="border-t border-zinc-800/80 hover:bg-zinc-950/70 transition-colors">
+              <tr v-for="item in codes" :key="item.id" class="border-t border-border-secondary-80 hover:bg-bg-primary-70 transition-colors">
                 <td class="px-3 py-3 align-top">
                   <input
                     type="checkbox"
-                    class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-500"
+                    class="h-4 w-4 rounded border-border-tertiary bg-bg-secondary text-primary"
                     :checked="selectedIds.includes(item.id)"
                     @change="toggleSelect(item.id)"
                   >
                 </td>
-                <td class="px-3 py-3 align-top text-zinc-500">{{ item.id }}</td>
-                <td class="px-3 py-3 align-top font-mono text-zinc-100">
-                  <div class="flex max-w-full items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2">
+                <td class="px-3 py-3 align-top text-text-tertiary">{{ item.id }}</td>
+                <td class="px-3 py-3 align-top font-mono text-text-primary">
+                  <div class="flex max-w-full items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2">
                     <span class="block min-w-0 flex-1 truncate text-xs tracking-[0.08em]" :title="item.code">{{ item.code }}</span>
-                    <button class="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors" :title="locale.copy" @click="copyCode(item.code)">
+                    <button class="shrink-0 text-text-tertiary hover:text-text-primary transition-colors" :title="locale.copy" @click="copyCode(item.code)">
                       <Copy :size="14" />
                     </button>
                   </div>
@@ -139,7 +139,7 @@
                   <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', statusMeta(item.status).class]">
                     {{ statusMeta(item.status).label }}
                   </span>
-                  <p v-if="item.lockedAt || item.redeemedAt" class="mt-1 text-[10px] text-zinc-500 leading-relaxed">
+                  <p v-if="item.lockedAt || item.redeemedAt" class="mt-1 text-[10px] text-text-tertiary leading-relaxed">
                     <span v-if="item.lockedAt">{{ getLocaleMessage('lockedAt', formatDate(item.lockedAt)) }}</span>
                     <span v-if="item.redeemedAt">{{ item.lockedAt ? ' · ' : '' }}{{ getLocaleMessage('redeemedAt', formatDate(item.redeemedAt)) }}</span>
                   </p>
@@ -150,28 +150,28 @@
                       v-model="item.noteDraft"
                       rows="2"
                       :placeholder="locale.note"
-                      class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+                      class="w-full resize-none rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
                     />
-                    <button class="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 hover:text-blue-300 transition-colors" @click="saveNote(item)">
+                    <button class="text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary transition-colors" @click="saveNote(item)">
                       {{ locale.saveNote }}
                     </button>
                   </div>
                 </td>
-                <td class="px-3 py-3 align-top text-[11px] text-zinc-500 leading-relaxed">
+                <td class="px-3 py-3 align-top text-[11px] text-text-tertiary leading-relaxed">
                   <p>{{ getLocaleMessage('createdAt', formatDate(item.createdAt)) }}</p>
                   <p>{{ getLocaleMessage('updatedAt', formatDate(item.updatedAt)) }}</p>
                 </td>
                 <td class="px-3 py-3 align-top">
                   <div class="flex flex-wrap gap-2">
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-zinc-300" @click="updateStatus([item.id], 'AVAILABLE')">{{ locale.available }}</button>
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-amber-300" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-emerald-300" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
-                    <button class="rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-[11px] font-bold text-red-300" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-text-secondary" @click="updateStatus([item.id], 'AVAILABLE')">{{ locale.available }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-warning" @click="updateStatus([item.id], 'LOCKED')">{{ locale.locked }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-success" @click="updateStatus([item.id], 'REDEEMED')">{{ locale.redeemed }}</button>
+                    <button class="rounded-lg border border-border-secondary bg-bg-primary px-2.5 py-1.5 text-[11px] font-bold text-error" @click="updateStatus([item.id], 'INVALID')">{{ locale.invalid }}</button>
                   </div>
                 </td>
               </tr>
               <tr v-if="!codes.length">
-                <td colspan="7" class="px-3 py-10 text-center text-sm text-zinc-500">{{ locale.empty }}</td>
+                <td colspan="7" class="px-3 py-10 text-center text-sm text-text-tertiary">{{ locale.empty }}</td>
               </tr>
             </tbody>
           </table>
@@ -187,21 +187,21 @@
       </section>
 
       <section class="space-y-4">
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+        <div class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-4 space-y-3">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <h3 class="text-sm font-black text-zinc-100">{{ locale.createTitle }}</h3>
-              <p class="mt-1 text-[11px] text-zinc-500">{{ locale.createDesc }}</p>
+              <h3 class="text-sm font-black text-text-primary">{{ locale.createTitle }}</h3>
+              <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.createDesc }}</p>
             </div>
-            <div class="inline-flex shrink-0 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
+            <div class="inline-flex shrink-0 rounded-xl border border-border-secondary bg-bg-primary p-1">
               <button
-                :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
+                :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'manual' ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary']"
                 @click="createMode = 'manual'"
               >
                 {{ locale.manualImport }}
               </button>
               <button
-                :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500']"
+                :class="['min-w-[72px] whitespace-nowrap px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors', createMode === 'generate' ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary']"
                 @click="createMode = 'generate'"
               >
                 {{ locale.autoGenerate }}
@@ -214,86 +214,86 @@
               v-model="manualCodes"
               rows="4"
               :placeholder="locale.manualPlaceholder"
-              class="w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+              class="w-full resize-none rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
             />
           </div>
 
           <div v-else class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.generateCount }}</label>
-              <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.generateCount }}</label>
+              <input v-model.number="generateForm.count" type="number" min="1" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.prefix }}</label>
-              <input v-model="generateForm.prefix" type="text" :placeholder="locale.prefixPlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.prefix }}</label>
+              <input v-model="generateForm.prefix" type="text" :placeholder="locale.prefixPlaceholder" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.randomLength }}</label>
-              <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.randomLength }}</label>
+              <input v-model.number="generateForm.length" type="number" min="4" max="32" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
             <div>
-              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.charset }}</label>
-              <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40">
+              <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.charset }}</label>
+              <input v-model="generateForm.charset" type="text" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-40">
             </div>
           </div>
 
           <div>
-            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.note }}</label>
-            <input v-model="createNote" type="text" :placeholder="locale.bulkNotePlaceholder" class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40">
+            <label class="mb-1.5 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.note }}</label>
+            <input v-model="createNote" type="text" :placeholder="locale.bulkNotePlaceholder" class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40">
           </div>
 
           <div class="flex flex-wrap gap-2">
             <button
-              class="flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-black text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+              class="flex items-center gap-2 rounded-xl bg-primary-hover px-3.5 py-2 text-xs font-black text-text-primary hover:bg-primary transition-colors disabled:opacity-50"
               :disabled="saving"
               @click="createCodes"
             >
               <Plus :size="14" /> {{ locale.createCardCode }}
             </button>
-            <button class="rounded-xl border border-zinc-800 bg-zinc-950 px-3.5 py-2 text-xs font-bold text-zinc-300" @click="fillDemoCodes">
+            <button class="rounded-xl border border-border-secondary bg-bg-primary px-3.5 py-2 text-xs font-bold text-text-secondary" @click="fillDemoCodes">
               {{ locale.fillDemo }}
             </button>
           </div>
 
           <div
             v-if="createMode === 'generate' && lastGeneratedCodes.length"
-            class="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-3 space-y-3"
+            class="rounded-2xl border border-border-secondary bg-bg-primary-60 p-3 space-y-3"
           >
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p class="text-xs font-black text-zinc-100">{{ getLocaleMessage('lastGeneratedTitle', lastGeneratedCodes.length) }}</p>
-                <p class="mt-1 text-[11px] text-zinc-500">{{ locale.lastGeneratedDesc }}</p>
+                <p class="text-xs font-black text-text-primary">{{ getLocaleMessage('lastGeneratedTitle', lastGeneratedCodes.length) }}</p>
+                <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.lastGeneratedDesc }}</p>
               </div>
               <button
-                class="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300 hover:border-zinc-700 hover:text-zinc-100 transition-colors"
+                class="flex items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary hover:border-border-tertiary hover:text-text-primary transition-colors"
                 @click="copyLastGeneratedCodes"
               >
                 <Copy :size="14" /> {{ locale.copyAll }}
               </button>
             </div>
-            <div class="max-h-32 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-950 p-3 font-mono text-xs leading-relaxed text-zinc-200">
+            <div class="max-h-32 overflow-y-auto rounded-xl border border-border-secondary bg-bg-primary p-3 font-mono text-xs leading-relaxed text-text-primary">
               <p v-for="code in lastGeneratedCodes" :key="code" class="break-all">{{ code }}</p>
             </div>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
-          <ul class="space-y-2 text-[12px] leading-relaxed text-zinc-500">
+        <div class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-4 space-y-3">
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.quickTipsTitle }}</h3>
+          <ul class="space-y-2 text-[12px] leading-relaxed text-text-tertiary">
             <li v-for="tip in locale.quickTips" :key="tip">· {{ tip }}</li>
           </ul>
         </div>
       </section>
     </div>
 
-    <section class="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-4">
+    <section class="rounded-2xl border border-border-secondary bg-bg-secondary-40 p-5 space-y-4">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-black text-zinc-100 uppercase tracking-[0.24em]">{{ locale.redeemLogsTitle }}</h3>
-          <p class="mt-1 text-[11px] text-zinc-500">{{ locale.redeemLogsDesc }}</p>
+          <h3 class="text-sm font-black text-text-primary uppercase tracking-[0.24em]">{{ locale.redeemLogsTitle }}</h3>
+          <p class="mt-1 text-[11px] text-text-tertiary">{{ locale.redeemLogsDesc }}</p>
         </div>
         <button
-          class="rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-bold text-zinc-300"
+          class="rounded-xl border border-border-secondary bg-bg-primary px-3 py-2 text-xs font-bold text-text-secondary"
           @click="fetchRedeemLogs"
         >
           {{ locale.refreshLogs }}
@@ -302,20 +302,20 @@
 
       <div class="grid grid-cols-1 gap-3 xl:grid-cols-6">
         <div class="xl:col-span-2">
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.keyword }}</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.keyword }}</label>
           <input
             v-model="logFilters.q"
             type="text"
             :placeholder="locale.logSearchPlaceholder"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
             @keyup.enter="fetchRedeemLogs"
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.source }}</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.source }}</label>
           <select
             v-model="logFilters.source"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
           >
             <option value="">{{ locale.allSources }}</option>
             <option value="ADMIN_MANUAL">{{ locale.sources?.adminManual || '手动核销' }}</option>
@@ -324,54 +324,54 @@
           </select>
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.redeemer }}</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.redeemer }}</label>
           <input
             v-model="logFilters.redeemer"
             type="text"
             :placeholder="locale.redeemerPlaceholder"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-primary-40"
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.startDate }}</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.startDate }}</label>
           <input
             v-model="logFilters.startDate"
             type="date"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
           >
         </div>
         <div>
-          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">{{ locale.endDate }}</label>
+          <label class="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{{ locale.endDate }}</label>
           <input
             v-model="logFilters.endDate"
             type="date"
-            class="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/40"
+            class="w-full rounded-xl border border-border-secondary bg-bg-primary px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-40"
           >
         </div>
       </div>
 
       <div class="flex flex-wrap gap-2">
         <button
-          class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-white hover:bg-blue-500 transition-colors"
+          class="rounded-xl bg-primary-hover px-4 py-2 text-xs font-black text-text-primary hover:bg-primary transition-colors"
           @click="fetchRedeemLogs"
         >
           {{ locale.queryLogs }}
         </button>
         <button
-          class="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-xs font-bold text-zinc-300"
+          class="rounded-xl border border-border-secondary bg-bg-primary px-4 py-2 text-xs font-bold text-text-secondary"
           @click="resetLogFilters"
         >
           {{ locale.clearConditions }}
         </button>
       </div>
 
-      <div v-if="logsLoading" class="rounded-xl border border-zinc-800 bg-zinc-950/60 p-6 text-center text-sm text-zinc-500">
+      <div v-if="logsLoading" class="rounded-xl border border-border-secondary bg-bg-primary-60 p-6 text-center text-sm text-text-tertiary">
         {{ locale.loadingLogs }}
       </div>
 
-      <div v-else class="overflow-hidden rounded-2xl border border-zinc-800">
+      <div v-else class="overflow-hidden rounded-2xl border border-border-secondary">
         <table class="min-w-full text-left text-sm">
-          <thead class="bg-zinc-950/80 text-zinc-500">
+          <thead class="bg-bg-primary-80 text-text-tertiary">
             <tr>
               <th class="px-3 py-3 w-20">{{ locale.logId }}</th>
               <th class="px-3 py-3">{{ locale.cardCode }}</th>
@@ -385,27 +385,27 @@
             <tr
               v-for="item in redeemLogs"
               :key="item.id"
-              class="border-t border-zinc-800/80 hover:bg-zinc-950/70 transition-colors"
+              class="border-t border-border-secondary-80 hover:bg-bg-primary-70 transition-colors"
             >
-              <td class="px-3 py-3 text-zinc-500">{{ item.id }}</td>
-              <td class="px-3 py-3 font-mono text-zinc-200 break-all">{{ item.code || item.codeSnapshot }}</td>
+              <td class="px-3 py-3 text-text-tertiary">{{ item.id }}</td>
+              <td class="px-3 py-3 font-mono text-text-primary break-all">{{ item.code || item.codeSnapshot }}</td>
               <td class="px-3 py-3">
                 <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.2em]', logSourceMeta(item.source).class]">
                   {{ logSourceMeta(item.source).label }}
                 </span>
               </td>
-              <td class="px-3 py-3 text-zinc-300">
+              <td class="px-3 py-3 text-text-secondary">
                 {{ item.redeemer?.name || locale.unknownUser }}
-                <span class="text-zinc-500">({{ item.redeemer?.username || 'unknown' }})</span>
+                <span class="text-text-tertiary">({{ item.redeemer?.username || 'unknown' }})</span>
               </td>
-              <td class="px-3 py-3 text-zinc-400">{{ formatDate(item.redeemedAt) }}</td>
-              <td class="px-3 py-3 text-zinc-300">
-                <span v-if="item.song">{{ item.song.title }}<span class="text-zinc-500">{{ item.song.artist ? ` · ${item.song.artist}` : '' }}</span></span>
-                <span v-else class="text-zinc-500">—</span>
+              <td class="px-3 py-3 text-text-tertiary">{{ formatDate(item.redeemedAt) }}</td>
+              <td class="px-3 py-3 text-text-secondary">
+                <span v-if="item.song">{{ item.song.title }}<span class="text-text-tertiary">{{ item.song.artist ? ` · ${item.song.artist}` : '' }}</span></span>
+                <span v-else class="text-text-tertiary">—</span>
               </td>
             </tr>
             <tr v-if="!redeemLogs.length">
-              <td colspan="6" class="px-3 py-8 text-center text-sm text-zinc-500">{{ locale.noRedeemLogs }}</td>
+              <td colspan="6" class="px-3 py-8 text-center text-sm text-text-tertiary">{{ locale.noRedeemLogs }}</td>
             </tr>
           </tbody>
         </table>
@@ -463,23 +463,23 @@ const bulkStatusOptions = computed(() => [
 
 const statusMeta = (status) => {
   const statusMap = {
-    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-red-500/10 text-red-300 border border-red-500/20' }
+    AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-success-10 text-success border border-success-20' },
+    LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-warning-10 text-warning border border-warning-20' },
+    REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-primary-10 text-primary border border-primary-20' },
+    INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-error-10 text-error border border-error-20' }
   }
-  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
 }
 
 const logSourceMeta = (source) => {
   const sourceMap = {
-    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-blue-500/10 text-blue-300 border border-blue-500/20' },
-    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' },
-    WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-amber-500/10 text-amber-300 border border-amber-500/20' },
-    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-zinc-500/10 text-zinc-300 border border-zinc-500/20' }
+    ADMIN_MANUAL: { label: locale.value?.sources?.adminManual || 'Manual Redeem', class: 'bg-primary-10 text-primary border border-primary-20' },
+    ADMIN: { label: locale.value?.sources?.admin || 'Admin Action', class: 'bg-primary-10 text-primary border border-primary-20' },
+    SCHEDULE_AUTO: { label: locale.value?.sources?.scheduleAuto || 'Schedule Auto', class: 'bg-success-10 text-success border border-success-20' },
+    SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-warning-10 text-warning border border-warning-20' },
+    SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-success-10 text-success border border-success-20' },
+    WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-warning-10 text-warning border border-warning-20' },
+    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
   }
   return sourceMap[source] || sourceMap.UNKNOWN
 }
@@ -491,10 +491,10 @@ const stats = computed(() => {
   const redeemed = cardStats.value?.redeemed ?? 0
 
   return [
-    { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-zinc-800 text-zinc-200' },
-    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-emerald-500/10 text-emerald-300' },
-    { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-amber-500/10 text-amber-300' },
-    { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-blue-500/10 text-blue-300' }
+    { label: locale.value?.stats?.total || 'Total', value: total, hint: locale.value?.stats?.all || 'All', badgeClass: 'bg-bg-tertiary text-text-primary' },
+    { label: locale.value?.stats?.available || 'Available', value: available, hint: locale.value?.stats?.unused || 'Unused', badgeClass: 'bg-success-10 text-success' },
+    { label: locale.value?.stats?.locked || 'Locked', value: locked, hint: locale.value?.stats?.pendingRedeem || 'Pending redeem', badgeClass: 'bg-warning-10 text-warning' },
+    { label: locale.value?.stats?.redeemed || 'Redeemed', value: redeemed, hint: locale.value?.stats?.completed || 'Completed', badgeClass: 'bg-primary-10 text-primary' }
   ]
 })
 
@@ -805,7 +805,7 @@ onMounted(refreshAll)
 <style scoped>
 textarea {
   scrollbar-width: thin;
-  scrollbar-color: #3f3f46 transparent;
+  scrollbar-color: var(--panel-bg-hover) transparent;
 }
 
 textarea::-webkit-scrollbar {
@@ -813,7 +813,7 @@ textarea::-webkit-scrollbar {
 }
 
 textarea::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--panel-bg-hover);
   border-radius: 9999px;
 }
 </style>

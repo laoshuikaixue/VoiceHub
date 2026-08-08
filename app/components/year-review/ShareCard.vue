@@ -65,7 +65,7 @@ defineExpose({
   height: 100%;
   min-height: 600px;
   overflow: hidden;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, var(--panel-bg-tertiary) 0%, var(--panel-bg-tertiary) 50%, var(--panel-bg-tertiary) 100%);
 }
 
 .card-background {
@@ -77,9 +77,9 @@ defineExpose({
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(244, 114, 182, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+    radial-gradient(circle at 20% 30%, var(--index-card-glow) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, var(--year-review-gradient-overlay-end) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, var(--primary-10) 0%, transparent 60%);
 }
 
 .noise-overlay {
@@ -108,7 +108,7 @@ defineExpose({
 .logo {
   font-size: 1.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  background: linear-gradient(135deg, var(--color-collab), var(--color-pink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -117,7 +117,7 @@ defineExpose({
 .year {
   font-size: 3rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.1);
+  color: var(--overlay-10);
   line-height: 1;
 }
 
@@ -129,7 +129,7 @@ defineExpose({
 .main-title {
   font-size: 3.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 50%, #9ca3af 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--panel-border-light) 50%, var(--text-muted) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -139,7 +139,7 @@ defineExpose({
 
 .subtitle {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   letter-spacing: 0.3em;
   text-transform: uppercase;
 }
@@ -154,16 +154,16 @@ defineExpose({
 .stat-item {
   text-align: center;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-3);
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-8);
   backdrop-filter: blur(10px);
 }
 
 .stat-value {
   font-size: 2.5rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  background: linear-gradient(135deg, var(--color-accent-light), var(--color-accent-light));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -172,7 +172,7 @@ defineExpose({
 
 .stat-label {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   letter-spacing: 0.05em;
 }
 
@@ -183,7 +183,7 @@ defineExpose({
 
 .footer-text {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   letter-spacing: 0.1em;
   margin-bottom: 1rem;
 }
@@ -191,7 +191,7 @@ defineExpose({
 .footer-line {
   width: 100px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-20), transparent);
   margin: 0 auto;
 }
 
