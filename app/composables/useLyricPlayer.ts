@@ -1,4 +1,5 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
+import { useTheme } from '~/composables/useTheme'
 
 export interface LyricRenderConfig {
   fontSize: number
@@ -317,16 +318,14 @@ export const useLyricPlayer = () => {
     { deep: true }
   )
 
-  // 监听主题切换：CSS 变量值变化时重新解析颜色
-  if (import.meta.client) {
-    const observer = new MutationObserver((mutations) => {
-      if (mutations.some(m => m.attributeName === 'data-theme' || m.attributeName === 'style')) {
-        applyConfig()
-      }
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'style'] })
-    onUnmounted(() => observer.disconnect())
-  }
+  // 监听主题切换：响应式监听 currentTheme 变化，重新解析 CSS 变量颜色
+  const { currentTheme } = useTheme()
+  watch(
+    () => currentTheme.value,
+    async () => {
+      await applyConfig()
+    }
+  )
 
   // 组件卸载时清理
   onUnmounted(() => {

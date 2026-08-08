@@ -484,6 +484,8 @@
   --color-indigo: #6366f1;
   --color-indigo-rgb: 99 102 241;
   --color-indigo-hover: #4f46e5;
+  /* 选中文本背景色（供 ::selection 使用） */
+  --selection-bg: rgba(139, 92, 246, 0.3);
 
   /* === WarpCanvas 星空配色（用途命名，替代原 --color-collab/indigo 语义歧义） ===
    以下变量别名指向 --color-collab / --color-indigo，保持视觉一致性的同时语义更清晰 === */

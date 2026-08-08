@@ -5,7 +5,6 @@
  */
 import { watch } from 'vue'
 import type { Theme } from '~/composables/useTheme'
-import { THEMES } from '~/composables/useTheme'
 
 export default defineNuxtPlugin((nuxtApp) => {
   if (import.meta.server) return
@@ -30,18 +29,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     meta.setAttribute('content', colorMap[theme] || cs.getPropertyValue('--bg-primary').trim() || '#111111')
   }
 
-  // 应用 saved theme
-  let saved: Theme | null = null
-  try {
-    saved = localStorage.getItem('voicehub-theme') as Theme
-  } catch {
-    // localStorage 不可用，静默降级
-  }
-  if (saved && THEMES.includes(saved)) {
-    setTheme(saved)
-  }
-
-  // 首次挂载时设置
+  // 首次挂载时设置（useTheme 初始化时已读取 localStorage 并恢复主题，无需重复读取）
   nuxtApp.hook('vue:mounted', () => {
     document.documentElement.setAttribute('data-theme', currentTheme.value)
     updateMeta(currentTheme.value)

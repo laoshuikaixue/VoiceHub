@@ -2,7 +2,7 @@
 :root[data-theme='ClassicLight'] {
   /* 主色调 */
   --primary: #3b82f6;
-  --primary-hover: #3b82f6;
+  --primary-hover: #2563eb;
   --primary-light: rgba(59, 130, 246, 0.1);
   --primary-border: rgba(59, 130, 246, 0.2);
   /* 控件强调色（与 --primary 一致，供 accent-color 使用） */
@@ -45,7 +45,7 @@
   --error-border: rgba(239, 68, 68, 0.2);
   /* 信息色光晕 */
   --info: #3b82f6;
-  --info-hover: #3b82f6;
+  --info-hover: #1d4ed8;
   --info-light: rgba(59, 130, 246, 0.1);
   --info-border: rgba(59, 130, 246, 0.2);
   /* 信息色光晕（蓝色系，与 info 品牌色一致） */
@@ -484,6 +484,8 @@
   --color-indigo: #2563eb;
   --color-indigo-rgb: 37 99 235;
   --color-indigo-hover: #818cf8;
+  /* 选中文本背景色（供 ::selection 使用） */
+  --selection-bg: rgba(59, 130, 246, 0.25);
 
   /* === WarpCanvas 星空配色（用途命名，替代原 --color-collab/indigo 语义歧义） ===
    以下变量别名指向 --color-collab / --color-indigo，保持视觉一致性的同时语义更清晰 === */
