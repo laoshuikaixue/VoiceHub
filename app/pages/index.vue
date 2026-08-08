@@ -36,7 +36,7 @@
                   :aria-expanded="showThemeMenu"
                   @click="toggleThemeMenu"
                 >
-                  主题
+                  <Icon name="shirt" :size="18" />
                 </button>
 
                 <Transition name="dropdown-fade">
@@ -2145,13 +2145,11 @@ if (
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 15px;
-  min-width: 44px;
-  padding: 0 12px;
+  width: 36px;
   height: 36px;
+  padding: 0;
   border: 1px solid var(--overlay-10);
-  border-radius: 18px;
+  border-radius: 50%;
   background: var(--overlay-4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -3487,11 +3485,8 @@ if (
   }
 
   .theme-switcher-trigger {
-    min-width: 40px;
-    padding: 0 10px;
+    width: 32px;
     height: 32px;
-    font-size: 14px;
-    border-radius: 16px;
   }
 
   .language-dropdown {
