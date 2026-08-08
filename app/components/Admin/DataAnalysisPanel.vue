@@ -242,7 +242,7 @@
                   :style="{
                     height: `${(item.count / Math.max(...trendData.map((d) => d.count), 1)) * 100}%`
                   }"
-                  class="w-full bg-gradient-to-t from-primary/10 to-primary/40 rounded-t-xl group-hover:from-primary/30 group-hover:to-primary/60 transition-all border-x border-t border-primary-20 group-hover:border-primary-40 min-h-[4px]"
+                  class="w-full bg-gradient-to-t from-primary-10 to-primary-40 rounded-t-xl group-hover:from-primary-30 group-hover:to-primary-60 transition-all border-x border-t border-primary-20 group-hover:border-primary-40 min-h-[4px]"
                 />
                 <div
                   class="absolute left-1/2 -translate-x-1/2 -translate-y-full mb-2 text-[10px] font-black text-primary opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none z-10"
@@ -549,7 +549,7 @@
           class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200"
         >
           <div
-            class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary/10 to-transparent"
+            class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary-10 to-transparent"
           >
             <div class="flex items-center justify-between mb-4">
               <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.activeUserDetails }}</h4>

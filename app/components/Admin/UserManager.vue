@@ -262,7 +262,7 @@
                 <th class="px-6 py-5 text-right pr-10">{{ locale.table.actions }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-panel-bg-dark/40">
+            <tbody class="divide-y divide-panel-bg-dark-40">
               <tr
                 v-for="user in users"
                 :key="user.id"

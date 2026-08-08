@@ -10,7 +10,7 @@
     >
       <div
         v-if="notification"
-        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest/80 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
         @keydown="handleKeydown"
       >
         <section
@@ -22,13 +22,13 @@
           tabindex="-1"
           class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
         >
-          <header class="relative border-b border-panel-bg-dark/50 px-5 py-5 sm:px-8 sm:py-6">
+          <header class="relative border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6">
             <div
               class="absolute right-5 top-5 flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold sm:right-8 sm:top-6"
               :class="
                 notification.read
-                  ? 'border-success-light/20 bg-success-light/20 text-success-light'
-                  : 'border-warning/20 bg-warning-light/20 text-warning-light'
+                  ? 'border-success-30 bg-success-10 text-success-light'
+                  : 'border-warning-20 bg-warning-20 text-warning-light'
               "
             >
               <span
@@ -40,7 +40,7 @@
 
             <div class="flex items-start gap-4 pr-20 sm:pr-24">
               <div
-                class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-warning/20 bg-warning-light/20 text-warning-light"
+                class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-warning-20 bg-warning-20 text-warning-light"
                 aria-hidden="true"
               >
                 <Icon name="bell-ring" :size="22" />
@@ -80,7 +80,7 @@
           />
 
           <footer
-            class="flex flex-col items-end gap-3 border-t border-panel-bg-dark/50 bg-panel-bg-deepest/50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
+            class="flex flex-col items-end gap-3 border-t border-panel-bg-dark-50 bg-panel-bg-deepest-50 px-5 py-5 sm:flex-row sm:items-center sm:justify-end sm:px-8 sm:py-6"
           >
             <p
               v-if="error"

@@ -363,7 +363,7 @@
                 class="flex items-center p-4 bg-bg-tertiary-30 border border-border-secondary-50 rounded-2xl"
               >
                 <div
-                  class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-panel-bg-hover/50"
+                  class="w-12 h-12 rounded-xl overflow-hidden bg-bg-tertiary mr-4 ring-2 ring-panel-bg-hover-50"
                 >
                   <img
                     v-if="neteaseUser.avatarUrl"

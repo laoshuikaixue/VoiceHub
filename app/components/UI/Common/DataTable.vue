@@ -87,7 +87,7 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-panel-bg-dark/50">
+          <tbody class="divide-y divide-panel-bg-dark-50">
             <tr v-if="!loading && data.length === 0">
               <td :colspan="totalColumns" class="p-20 text-center">
                 <slot name="empty">

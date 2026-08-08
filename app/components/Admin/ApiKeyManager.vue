@@ -1107,7 +1107,7 @@ const getMethodClass = (method) => {
     PUT: 'bg-warning-10 text-warning border-warning-20',
     DELETE: 'bg-error-10 text-error border-error-20'
   }
-  return map[method] || 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20'
+  return map[method] || 'bg-bg-quaternary-10 text-text-tertiary border-border-tertiary-20'
 }
 
 const getStatusColorClass = (code) => {

@@ -4,7 +4,7 @@
       <div class="absolute inset-0 bg-[var(--modal-overlay)] backdrop-blur-sm" @click="$emit('close')" />
       <div class="relative bg-panel-bg-deepest border border-panel-bg-dark rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200">
         <!-- 标题栏 -->
-        <div class="sticky top-0 z-10 bg-panel-bg-deepest/95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
+        <div class="sticky top-0 z-10 bg-panel-bg-deepest-95 backdrop-blur-sm px-6 py-5 border-b border-panel-bg-dark flex items-center justify-between rounded-t-3xl">
           <h3 class="text-lg font-black text-text-primary-lighter tracking-tight">{{ locale.title }}</h3>
           <button class="p-2 hover:bg-panel-bg-dark rounded-xl transition-colors text-text-tertiary hover:text-text-primary-light" @click="$emit('close')">
             <X class="w-5 h-5" />
@@ -13,7 +13,7 @@
 
         <div class="px-6 py-5 space-y-6">
           <!-- 总开关 -->
-          <div class="bg-panel-bg-darkest/50 border border-panel-bg-dark rounded-2xl p-5">
+          <div class="bg-panel-bg-darkest-50 border border-panel-bg-dark rounded-2xl p-5">
             <div class="flex items-center justify-between">
               <div class="space-y-0.5">
                 <p class="text-sm font-bold text-text-primary-light">{{ locale.masterSwitch.label }}</p>
@@ -131,7 +131,7 @@
               >
                 <template #icon><Mail class="w-5 h-5" /></template>
                 <div class="space-y-3">
-                  <div class="p-3 bg-primary/5 border border-primary/10 rounded-xl flex items-start gap-2.5">
+                  <div class="p-3 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-2.5">
                     <Info class="text-primary shrink-0 mt-0.5 w-3.5 h-3.5" />
                     <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.methods.email.smtpHint }}</p>
                   </div>
@@ -153,7 +153,7 @@
           <CollapsibleSection :title="locale.endpoint.title">
             <div class="space-y-4">
               <!-- 提示 -->
-              <div class="p-3 bg-warning/10 border border-warning/10 rounded-xl flex items-start gap-2.5">
+              <div class="p-3 bg-warning-10 border border-warning-10 rounded-xl flex items-start gap-2.5">
                 <Info class="text-warning shrink-0 mt-0.5 w-3.5 h-3.5" />
                 <p class="text-[11px] text-text-muted leading-relaxed">{{ locale.endpoint.hint }}</p>
               </div>
@@ -273,7 +273,7 @@ crontab -e
               <p class="text-[10px] text-text-disabled mt-1">{{ locale.history.emptyHint }}</p>
             </div>
             <div v-else class="space-y-2">
-              <div v-for="record in historyRecords" :key="record.id" class="bg-panel-bg-darkest/50 border border-panel-bg-dark rounded-xl p-3">
+              <div v-for="record in historyRecords" :key="record.id" class="bg-panel-bg-darkest-50 border border-panel-bg-dark rounded-xl p-3">
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
                     <span :class="getStatusInfo(record).cls" class="px-2 py-0.5 text-[10px] font-bold rounded-md border">
@@ -297,7 +297,7 @@ crontab -e
             </div>
             <div v-if="historyRecords.length > 0" class="flex justify-end pt-2">
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-text-tertiary hover:text-error bg-panel-bg-darkest/50 border border-panel-bg-dark hover:border-error/20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold text-text-tertiary hover:text-error bg-panel-bg-darkest-50 border border-panel-bg-dark hover:border-error-20 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 :disabled="clearingHistory"
                 @click="clearHistory"
               >
@@ -309,7 +309,7 @@ crontab -e
         </div>
 
         <!-- 底部操作栏 -->
-        <div class="sticky bottom-0 bg-panel-bg-darkest/95 backdrop-blur-sm px-6 py-4 border-t border-panel-bg-dark rounded-b-3xl flex gap-3 justify-end">
+        <div class="sticky bottom-0 bg-panel-bg-darkest-95 backdrop-blur-sm px-6 py-4 border-t border-panel-bg-dark rounded-b-3xl flex gap-3 justify-end">
           <button class="px-4 py-2 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors uppercase tracking-widest" @click="$emit('close')">
             {{ locale.cancel }}
           </button>
@@ -457,14 +457,14 @@ const getStatusInfo = (record) => {
   const methods = record.methods || []
   if (methods.length === 0) {
     return record.success
-      ? { text: '成功', cls: 'bg-success/10 text-success border-success/10' }
-      : { text: '失败', cls: 'bg-error/10 text-error border-error/10' }
+      ? { text: '成功', cls: 'bg-success-10 text-success border-success-10' }
+      : { text: '失败', cls: 'bg-error-10 text-error border-error-10' }
   }
   const allSuccess = methods.every((m) => m.success)
   const allFailed = methods.every((m) => !m.success)
-  if (allSuccess) return { text: '成功', cls: 'bg-success/10 text-success border-success/10' }
-  if (allFailed) return { text: '失败', cls: 'bg-error/10 text-error border-error/10' }
-  return { text: '部分成功', cls: 'bg-warning/10 text-warning border-warning/10' }
+  if (allSuccess) return { text: '成功', cls: 'bg-success-10 text-success border-success-10' }
+  if (allFailed) return { text: '失败', cls: 'bg-error-10 text-error border-error-10' }
+  return { text: '部分成功', cls: 'bg-warning-10 text-warning border-warning-10' }
 }
 
 const formatMethodError = (err) => {

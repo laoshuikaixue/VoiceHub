@@ -17,7 +17,7 @@
                   ? 'bg-success-10 text-success border-success-20'
                   : stat.color === 'pink'
                     ? 'bg-color-pink-alpha-10 text-color-pink border-color-pink-alpha-20'
-                    : 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20'
+                    : 'bg-bg-quaternary-10 text-text-tertiary border-border-tertiary-20'
             ]"
           >
             <component :is="stat.icon" :size="24" />
@@ -324,7 +324,7 @@ const getActivityStyle = (type) => {
     schedule: { icon: Calendar, bg: 'bg-primary-10 text-primary border-primary-20' }
   }
 
-  return styles[type] || { icon: Activity, bg: 'bg-bg-quaternary/10 text-text-tertiary border-border-tertiary/20' }
+  return styles[type] || { icon: Activity, bg: 'bg-bg-quaternary-10 text-text-tertiary border-border-tertiary-20' }
 }
 
 const loadStats = async () => {

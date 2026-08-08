@@ -209,7 +209,7 @@
                 :class="[
                   'p-4 border rounded-xl text-left transition-all',
                   restoreForm.mode === 'merge'
-                    ? 'bg-bg-primary border-success/30'
+                    ? 'bg-bg-primary border-success-30'
                     : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                 ]"
                 @click="restoreForm.mode = 'merge'"
@@ -228,7 +228,7 @@
                 :class="[
                   'p-4 border rounded-xl text-left transition-all',
                   restoreForm.mode === 'replace'
-                    ? 'bg-bg-primary border-success/30'
+                    ? 'bg-bg-primary border-success-30'
                     : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
                 ]"
                 @click="restoreForm.mode = 'replace'"

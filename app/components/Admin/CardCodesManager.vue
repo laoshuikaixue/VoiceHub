@@ -468,7 +468,7 @@ const statusMeta = (status) => {
     REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-primary-10 text-primary border border-primary-20' },
     INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-error-10 text-error border border-error-20' }
   }
-  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary/10 text-text-secondary border border-border-tertiary/20' }
+  return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
 }
 
 const logSourceMeta = (source) => {
@@ -479,7 +479,7 @@ const logSourceMeta = (source) => {
     SCHEDULE_REMOVE: { label: locale.value?.sources?.scheduleRemove || 'Schedule Remove', class: 'bg-warning-10 text-warning border border-warning-20' },
     SCHEDULE: { label: locale.value?.sources?.schedule || 'Schedule', class: 'bg-success-10 text-success border border-success-20' },
     WITHDRAW: { label: locale.value?.sources?.withdraw || 'Withdraw', class: 'bg-warning-10 text-warning border border-warning-20' },
-    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary/10 text-text-secondary border border-border-tertiary/20' }
+    UNKNOWN: { label: locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }
   }
   return sourceMap[source] || sourceMap.UNKNOWN
 }

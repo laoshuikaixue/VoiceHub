@@ -470,7 +470,7 @@
                     id="submission-note"
                     v-model="submissionNote"
                     maxlength="300"
-                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary/10 resize-y transition-all"
+                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary-10 resize-y transition-all"
                   />
                   <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
                     <span>{{ submissionNote.length }}/300</span>
@@ -970,7 +970,7 @@
                 ref="cardCodeInputRef"
                 v-model="cardCodeDraft"
                 :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning/10"
+                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
               />
@@ -1239,7 +1239,7 @@
                       :class="[
                         'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
-                          ? 'border-error/50 focus:border-error/50'
+                          ? 'border-error-50 focus:border-error-50'
                           : 'border-border-secondary focus:border-primary-30'
                       ]"
                       :placeholder="locale.coverPlaceholder"
@@ -1288,7 +1288,7 @@
                       :class="[
                         'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
-                          ? 'border-error/50 focus:border-error/50'
+                          ? 'border-error-50 focus:border-error-50'
                           : 'border-border-secondary focus:border-primary-30'
                       ]"
                       :placeholder="locale.playUrlPlaceholder"

@@ -206,7 +206,7 @@
       </div>
 
       <!-- 列表内容 -->
-      <div v-else class="divide-y divide-panel-bg-dark/40">
+      <div v-else class="divide-y divide-panel-bg-dark-40">
         <div
           v-for="song in paginatedSongs"
           :key="song.id"

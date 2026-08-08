@@ -46,7 +46,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'grade-only'
-                  ? 'bg-info-5 border-info/50 ring-4 ring-color-collab/10'
+                  ? 'bg-info-5 border-info-50 ring-4 ring-color-collab-10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -81,7 +81,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'excel-batch'
-                  ? 'bg-success-5 border-success-50 ring-4 ring-success/10'
+                  ? 'bg-success-5 border-success-50 ring-4 ring-success-10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -116,7 +116,7 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'status-batch'
-                  ? 'bg-warning-5 border-warning-50 ring-4 ring-warning/10'
+                  ? 'bg-warning-5 border-warning-50 ring-4 ring-warning-10'
                   : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
@@ -221,7 +221,7 @@
                         v-model="selectedUserIds"
                         :value="user.id"
                         type="checkbox"
-                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab/10"
+                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab-10"
                       >
                       <div class="flex flex-col">
                         <span
@@ -270,7 +270,7 @@
                   <input
                     v-model="keepClass"
                     type="checkbox"
-                    class="w-5 h-5 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab/10"
+                    class="w-5 h-5 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab-10"
                   >
                   <span class="text-xs font-bold text-text-secondary">{{ locale.gradeSettings.keepClass }}</span>
                 </label>
@@ -386,7 +386,7 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'username'
-                      ? 'bg-primary-10 border-primary-50 text-primary ring-4 ring-primary/10'
+                      ? 'bg-primary-10 border-primary-50 text-primary ring-4 ring-primary-10'
                       : 'bg-bg-secondary border-border-secondary text-text-disabled hover:border-border-tertiary hover:text-text-tertiary'
                   ]"
                 >
@@ -398,7 +398,7 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'name'
-                      ? 'bg-success-10 border-success-50 text-success ring-4 ring-success/10'
+                      ? 'bg-success-10 border-success-50 text-success ring-4 ring-success-10'
                       : 'bg-bg-secondary border-border-secondary text-text-disabled hover:border-border-tertiary hover:text-text-tertiary'
                   ]"
                 >

@@ -425,6 +425,23 @@
   --panel-bg-flat: #ffffff;
   --panel-bg-raised: #ffffff;
   --panel-bg-inset: #f7f6f2;
+  /* 面板背景色 alpha 变体 */
+  --panel-bg-dark-40: rgba(240, 238, 245, 0.4);
+  --panel-bg-dark-50: rgba(240, 238, 245, 0.5);
+  --panel-bg-dark-80: rgba(240, 238, 245, 0.8);
+  --panel-bg-darkest-20: rgba(237, 234, 229, 0.2);
+  --panel-bg-darkest-30: rgba(237, 234, 229, 0.3);
+  --panel-bg-darkest-40: rgba(237, 234, 229, 0.4);
+  --panel-bg-darkest-50: rgba(237, 234, 229, 0.5);
+  --panel-bg-darkest-60: rgba(237, 234, 229, 0.6);
+  --panel-bg-darkest-80: rgba(237, 234, 229, 0.8);
+  --panel-bg-darkest-95: rgba(237, 234, 229, 0.95);
+  --panel-bg-deepest-30: rgba(249, 248, 245, 0.3);
+  --panel-bg-deepest-40: rgba(249, 248, 245, 0.4);
+  --panel-bg-deepest-50: rgba(249, 248, 245, 0.5);
+  --panel-bg-deepest-80: rgba(249, 248, 245, 0.8);
+  --panel-bg-deepest-95: rgba(249, 248, 245, 0.95);
+  --panel-bg-hover-50: rgba(243, 242, 238, 0.5);
   /* 通用表面色（无 panel 前缀） */
   --panel-bg-secondary: #f3f2ee;
   --panel-bg-tertiary: #edeae5;
@@ -466,6 +483,7 @@
   --color-collab-light: #c4b5fd;
   --color-collab-lighter: #ede9fe;
   --color-collab-glow: rgba(167, 139, 250, 0.24);
+  --color-collab-10: rgba(167, 139, 250, 0.1);
   --color-pink: #f9a8d4;
   --color-pink-alpha-10: rgba(249, 168, 212, 0.08);
   --color-pink-alpha-20: rgba(249, 168, 212, 0.15);
@@ -617,6 +635,7 @@
   --bg-tertiary-70: rgba(243, 242, 238, 0.56);
   --bg-tertiary-80: rgba(243, 242, 238, 0.64);
   /* === Alpha (--bg-quaternary) === */
+  --bg-quaternary-10: rgba(237, 234, 229, 0.1);
   --bg-quaternary-50: rgba(237, 234, 229, 0.4);
   /* === Alpha (--border-secondary) === */
   --border-secondary-30: rgba(240, 238, 245, 0.24);
@@ -626,6 +645,7 @@
   --border-secondary-70: rgba(240, 238, 245, 0.56);
   --border-secondary-80: rgba(240, 238, 245, 0.64);
   /* === Alpha (--border-tertiary) === */
+  --border-tertiary-20: rgba(228, 225, 235, 0.16);
   --border-tertiary-30: rgba(228, 225, 235, 0.24);
   --border-tertiary-50: rgba(228, 225, 235, 0.4);
   /* === Alpha (--text-primary) === */

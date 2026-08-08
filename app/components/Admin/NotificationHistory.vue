@@ -20,7 +20,7 @@
       </button>
     </div>
 
-    <div class="mt-5 rounded-lg border border-panel-bg-dark bg-panel-bg-deepest/30 p-3">
+    <div class="mt-5 rounded-lg border border-panel-bg-dark bg-panel-bg-deepest-30 p-3">
       <div
         class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(260px,1fr)_170px_190px_170px_auto]"
       >
@@ -33,7 +33,7 @@
             v-model="filters.keyword"
             type="search"
             maxlength="100"
-            class="min-h-11 w-full rounded-lg border border-panel-bg-dark bg-panel-bg-darkest pl-9 pr-3 text-xs text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary/40"
+            class="min-h-11 w-full rounded-lg border border-panel-bg-dark bg-panel-bg-darkest pl-9 pr-3 text-xs text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary-40"
             :placeholder="locale.searchPlaceholder"
             :aria-label="locale.searchPlaceholder"
             @input="scheduleHistorySearch"
@@ -79,7 +79,7 @@
 
     <div
       v-if="error"
-      class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-error/20 bg-error/5 p-4"
+      class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-error-20 bg-error-5 p-4"
       role="alert"
     >
       <div class="flex min-w-0 items-start gap-3">
@@ -119,7 +119,7 @@
     <template v-else>
       <div class="mt-6 hidden overflow-x-auto rounded-lg border border-panel-bg-dark md:block">
         <table class="w-full min-w-[760px] border-collapse text-left">
-          <thead class="bg-panel-bg-deepest/80 text-[10px] font-black uppercase text-text-disabled">
+          <thead class="bg-panel-bg-deepest-80 text-[10px] font-black uppercase text-text-disabled">
             <tr>
               <th class="px-5 py-3">{{ locale.notification }}</th>
               <th class="px-5 py-3">{{ locale.type }}</th>
@@ -129,8 +129,8 @@
               <th class="px-5 py-3 text-right">{{ locale.actions }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-panel-bg-dark/80 bg-panel-bg-darkest/40">
-            <tr v-for="item in notifications" :key="item.batchId" class="hover:bg-panel-bg-deepest/40">
+          <tbody class="divide-y divide-panel-bg-dark-80 bg-panel-bg-darkest-40">
+            <tr v-for="item in notifications" :key="item.batchId" class="hover:bg-panel-bg-deepest-40">
               <td class="max-w-[380px] px-5 py-4 align-top">
                 <p class="truncate text-sm font-bold text-text-primary-light">
                   {{ item.title || locale.untitled }}
@@ -144,7 +144,7 @@
                   class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-bold"
                   :class="
                     item.important
-                      ? 'border-warning/20 bg-warning-light/10 text-warning-light'
+                      ? 'border-warning-20 bg-warning-10 text-warning-light'
                       : 'border-panel-bg-hover bg-panel-bg-deepest text-text-tertiary'
                   "
                 >
@@ -165,7 +165,7 @@
                 <div class="inline-flex items-center gap-2">
                   <button
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary-light"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
                     :title="locale.viewDetails"
                     :aria-label="locale.viewDetails"
                     @click="openDetails(item)"
@@ -174,7 +174,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-success/50 hover:bg-success/10 hover:text-success-light"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light"
                     :title="locale.edit"
                     :aria-label="locale.edit"
                     @click="openEdit(item)"
@@ -183,7 +183,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-error/50 hover:bg-error/10 hover:text-error-light"
+                    class="inline-flex size-9 items-center justify-center rounded-lg border border-panel-bg-hover text-text-muted transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light"
                     :title="locale.delete"
                     :aria-label="locale.delete"
                     @click="requestDelete(item)"
@@ -229,7 +229,7 @@
           <div class="mt-4 grid grid-cols-3 gap-2">
             <button
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary-light"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-primary-50 hover:bg-primary-10 hover:text-primary-light"
               @click="openDetails(item)"
             >
               <Eye :size="14" />
@@ -237,7 +237,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-success/50 hover:bg-success/10 hover:text-success-light"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-success-50 hover:bg-success-10 hover:text-success-light"
               @click="openEdit(item)"
             >
               <Pencil :size="14" />
@@ -245,7 +245,7 @@
             </button>
             <button
               type="button"
-              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-error/50 hover:bg-error/10 hover:text-error-light"
+              class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-panel-bg-hover text-xs font-bold text-text-secondary transition-colors hover:border-error-50 hover:bg-error-10 hover:text-error-light"
               @click="requestDelete(item)"
             >
               <Trash2 :size="14" />
@@ -275,7 +275,7 @@
       >
         <div
           v-if="selectedBatch"
-          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest/80 p-4 backdrop-blur-sm"
+          class="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="notification-detail-title"
@@ -286,7 +286,7 @@
             class="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-panel-bg-dark bg-panel-bg-deepest shadow-2xl"
           >
             <header
-              class="flex shrink-0 items-start justify-between gap-4 border-b border-panel-bg-dark/50 px-5 py-5 sm:px-8 sm:py-6"
+              class="flex shrink-0 items-start justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
             >
               <div class="min-w-0">
                 <p class="text-[10px] font-black uppercase text-primary">
@@ -352,7 +352,7 @@
 
               <div
                 v-if="detailError"
-                class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-error/20 bg-error/5 p-4"
+                class="mt-5 flex items-start justify-between gap-4 rounded-lg border border-error-20 bg-error-5 p-4"
                 role="alert"
               >
                 <p class="break-words text-xs font-medium text-error-light">{{ detailError }}</p>
@@ -383,14 +383,14 @@
               <template v-else>
                 <div class="mt-5 hidden overflow-x-auto rounded-lg border border-panel-bg-dark sm:block">
                   <table class="w-full min-w-[620px] border-collapse text-left">
-                    <thead class="bg-panel-bg-darkest/60 text-[10px] font-black uppercase text-text-tertiary">
+                    <thead class="bg-panel-bg-darkest-60 text-[10px] font-black uppercase text-text-tertiary">
                       <tr>
                         <th class="px-4 py-3">{{ locale.recipient }}</th>
                         <th class="px-4 py-3">{{ locale.status }}</th>
                         <th class="px-4 py-3">{{ locale.readAt }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-panel-bg-dark/80">
+                    <tbody class="divide-y divide-panel-bg-dark-80">
                       <tr v-for="item in recipients" :key="item.id">
                         <td class="px-4 py-3">
                           <p class="text-xs font-bold text-text-secondary">{{ recipientName(item) }}</p>
@@ -467,7 +467,7 @@
       >
         <div
           v-if="editingBatch"
-          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest/80 p-4 backdrop-blur-sm"
+          class="fixed inset-0 z-[130] flex items-center justify-center overflow-y-auto bg-panel-bg-darkest-80 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="notification-edit-title"
@@ -479,7 +479,7 @@
             @submit.prevent="saveEdit"
           >
             <header
-              class="flex shrink-0 items-center justify-between gap-4 border-b border-panel-bg-dark/50 px-5 py-5 sm:px-8 sm:py-6"
+              class="flex shrink-0 items-center justify-between gap-4 border-b border-panel-bg-dark-50 px-5 py-5 sm:px-8 sm:py-6"
             >
               <div>
                 <p class="text-[10px] font-black uppercase text-success">
@@ -515,7 +515,7 @@
                   v-model="editForm.title"
                   type="text"
                   maxlength="200"
-                  class="min-h-11 w-full rounded-lg border border-panel-bg-dark bg-panel-bg-darkest px-4 text-sm text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary/40"
+                  class="min-h-11 w-full rounded-lg border border-panel-bg-dark bg-panel-bg-darkest px-4 text-sm text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary-40"
                   :placeholder="locale.editTitlePlaceholder"
                 >
               </div>
@@ -532,7 +532,7 @@
                   v-model="editForm.content"
                   maxlength="20000"
                   rows="10"
-                  class="w-full resize-y rounded-lg border border-panel-bg-dark bg-panel-bg-darkest px-4 py-4 text-sm leading-relaxed text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary/40"
+                  class="w-full resize-y rounded-lg border border-panel-bg-dark bg-panel-bg-darkest px-4 py-4 text-sm leading-relaxed text-text-primary-light outline-none transition-colors placeholder:text-text-disabled focus:border-primary-40"
                   :placeholder="locale.editContentPlaceholder"
                 />
               </div>
@@ -563,7 +563,7 @@
 
               <div
                 v-if="editError"
-                class="rounded-lg border border-error/20 bg-error/5 p-3 text-xs font-medium text-error-light"
+                class="rounded-lg border border-error-20 bg-error-5 p-3 text-xs font-medium text-error-light"
                 role="alert"
               >
                 {{ editError }}
@@ -571,7 +571,7 @@
             </div>
 
             <footer
-              class="flex shrink-0 flex-col-reverse gap-3 border-t border-panel-bg-dark/50 bg-panel-bg-deepest/50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
+              class="flex shrink-0 flex-col-reverse gap-3 border-t border-panel-bg-dark-50 bg-panel-bg-deepest-50 px-5 py-5 sm:flex-row sm:justify-end sm:px-8 sm:py-6"
             >
               <button
                 type="button"
