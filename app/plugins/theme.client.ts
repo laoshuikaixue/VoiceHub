@@ -1,7 +1,7 @@
 /**
- * 主题初始化与同步插件（客户端）。
- * - 恢复 localStorage 保存的主题并设置 data-theme attribute。
- * - 动态更新 <meta name="theme-color"> 以跟随 PWA 状态栏颜色。
+ * 主题同步插件（客户端）。
+ * - 更新 <meta name="theme-color"> 以跟随 PWA 状态栏颜色。
+ * - data-theme attribute 由 useTheme() 初始化和 setTheme() 统一管理，本插件不再重复设置。
  */
 import { watch } from 'vue'
 import type { Theme } from '~/composables/useTheme'
@@ -9,7 +9,7 @@ import type { Theme } from '~/composables/useTheme'
 export default defineNuxtPlugin((nuxtApp) => {
   if (import.meta.server) return
 
-  const { currentTheme, setTheme } = useTheme()
+  const { currentTheme } = useTheme()
 
   /** 根据主题（经典深色/经典浅色/现代浅色）更新 theme-color meta */
   function updateMeta(theme) {
@@ -29,9 +29,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     meta.setAttribute('content', colorMap[theme] || cs.getPropertyValue('--bg-primary').trim() || '#111111')
   }
 
-  // 首次挂载时设置（useTheme 初始化时已读取 localStorage 并恢复主题，无需重复读取）
+  // 首次挂载时更新 theme-color meta（data-theme attribute 由 useTheme() 初始化和 setTheme() 统一管理，无需在此重复设置）
   nuxtApp.hook('vue:mounted', () => {
-    document.documentElement.setAttribute('data-theme', currentTheme.value)
     updateMeta(currentTheme.value)
   })
 

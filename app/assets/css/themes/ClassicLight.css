@@ -63,8 +63,8 @@
   --text-primary: #18181b;
   --text-secondary: #3f3f46;
   --text-tertiary: #71717a;
-  --text-quaternary: #a1a1aa;
-  --text-disabled: #d4d4d4;
+  --text-quaternary: #6b7280;
+  --text-disabled: #6b7280;
   /* 边框颜色 */
   --border-primary: #f0f0f0;
   --border-secondary: #e5e5e5;
@@ -366,9 +366,9 @@
   --requestform-replay-btn-border-hover: rgba(0, 117, 248, 0.5);
   --requestform-mobile-chip-border: rgba(113, 113, 122, 0.45);
   --requestform-mobile-chip-border-sm: rgba(113, 113, 122, 0.4);
-  --requestform-mobile-chip-bg: rgba(39, 39, 42, 0.75);
-  --requestform-mobile-chip-text: rgba(212, 212, 216, 0.9);
-  --requestform-mobile-button-text: rgba(228, 228, 231, 0.9);
+  --requestform-mobile-chip-bg: rgba(240, 240, 248, 0.75);
+  --requestform-mobile-chip-text: rgba(38, 38, 38, 0.9);
+  --requestform-mobile-button-text: rgba(38, 38, 38, 0.9);
   --requestform-chip-required-bg: rgba(234, 179, 8, 0.1);
   --requestform-chip-required-border: rgba(234, 179, 8, 0.35);
   --requestform-chip-required-border-sm: rgba(234, 179, 8, 0.3);
@@ -376,7 +376,7 @@
   --requestform-chip-invalid-bg: rgba(248, 113, 113, 0.1);
   --requestform-chip-invalid-border: rgba(248, 113, 113, 0.35);
   /* 用途化变量 — 音频播放器（AudioPlayer） */
-  --audio-player-bar-bg: rgba(20, 20, 25, 0.85);
+  --audio-player-bar-bg: rgba(255, 255, 255, 0.92);
   --audio-player-progress-track-bg: rgba(74, 74, 74, 0.39);
   --audio-player-quality-active-bg-start: rgba(0, 122, 255, 0.25);
   --audio-player-quality-active-bg-mid: rgba(0, 122, 255, 0.15);
@@ -386,7 +386,7 @@
   --audio-player-quality-active-shadow: rgba(0, 122, 255, 0.3);
   --audio-player-quality-active-ring: rgba(0, 122, 255, 0.2);
   /* 用途化变量 — 音量控制（VolumeControl） */
-  --volume-control-panel-bg: rgba(30, 30, 35, 0.85);
+  --volume-control-panel-bg: rgba(255, 255, 255, 0.92);
   --volume-control-muted-color: rgba(255, 100, 100, 0.9);
   /* 用途化变量 — 备份管理器（BackupManager） */
   --backup-manager-danger-bg: rgba(211, 47, 47, 0.1);
@@ -409,7 +409,7 @@
   /* 用途化变量 — 点歌券标识（CardCodeTag） */
   --card-code-bg: rgba(245, 158, 11, 0.1);
   --card-code-border: rgba(245, 158, 11, 0.25);
-  --card-code-text: #d97706;
+  --card-code-text: #92400e;
   /* 用途化变量 — 认证模块（Auth） */
   --auth-error-input-shadow: rgba(244, 63, 94, 0.1);
   /* 用途化变量 — 面板背景色（亮色模式） */
@@ -479,18 +479,18 @@
   --status-info-glow: rgba(11, 90, 254, 0.15);
   --status-info-icon: #1677ff;
   --status-success-icon: #07c160;
-  --status-warning-icon: #fadb14;
+  --status-warning-icon: #a16207;
   --status-error-icon: #ff4d4f;
   --status-error-deep: #d32f2f;
 
   /* 用途化变量 — 通知/状态语义色与场景渐变辅助色（替代原 --color-collab/pink/cyan/teal/indigo）
    collab=协作, pink=年度回顾装饰, cyan=QQ/抖音, teal=QQ登录按钮, indigo=选中通知 === */
-  --color-collab: #3b82f6;
-  --color-collab-hover: #a78bfa;
-  --color-collab-light: #60a5fa;
-  --color-collab-lighter: #dbeafe;
-  --color-collab-glow: rgba(59, 130, 246, 0.3);
-  --color-collab-10: rgba(59, 130, 246, 0.1);
+  --color-collab: #4f46e5;
+  --color-collab-hover: #1d4ed8;
+  --color-collab-light: #818cf8;
+  --color-collab-lighter: #e0e7ff;
+  --color-collab-glow: rgba(79, 70, 229, 0.3);
+  --color-collab-10: rgba(79, 70, 229, 0.1);
   --color-pink: #f472b6;
   --color-pink-alpha-10: rgba(244, 114, 182, 0.1);
   --color-pink-alpha-20: rgba(244, 114, 182, 0.2);
@@ -508,7 +508,7 @@
   --color-teal: #06b6d4;
   --color-indigo: #2563eb;
   --color-indigo-rgb: 37 99 235;
-  --color-indigo-hover: #818cf8;
+  --color-indigo-hover: #1e40af;
   /* 选中文本背景色（供 ::selection 使用） */
   --selection-bg: rgba(59, 130, 246, 0.25);
 
@@ -680,8 +680,8 @@
   /* === Alpha (--text-warning) === */
   --text-warning-80: rgba(245, 158, 11, 0.8);
   /* 用途化变量 — 首页（index） */
-  --index-footer-bg: rgba(28, 28, 30, 0.9);
-  --index-visualizer-bg: rgba(30, 41, 59, 0.5);
+  --index-footer-bg: rgba(250, 250, 250, 0.9);
+  --index-visualizer-bg: rgba(231, 245, 255, 0.5);
   --index-card-glow: rgba(139, 92, 246, 0.15);
   --index-brand-badge-bg: rgba(139, 92, 246, 0.1);
   --index-brand-badge-border: rgba(139, 92, 246, 0.2);
@@ -718,6 +718,7 @@
   --overlay-6: rgba(0, 0, 0, 0.06);
   --overlay-7: rgba(0, 0, 0, 0.07);
   --overlay-8: rgba(0, 0, 0, 0.08);
+  --overlay-9: rgba(0, 0, 0, 0.09);
   --overlay-10: rgba(0, 0, 0, 0.1);
   --overlay-12: rgba(0, 0, 0, 0.12);
   --overlay-14: rgba(0, 0, 0, 0.14);
@@ -728,6 +729,7 @@
   --overlay-22: rgba(0, 0, 0, 0.22);
   --overlay-25: rgba(0, 0, 0, 0.25);
   --overlay-30: rgba(0, 0, 0, 0.3);
+  --overlay-35: rgba(0, 0, 0, 0.35);
   --overlay-40: rgba(0, 0, 0, 0.4);
   --overlay-42: rgba(0, 0, 0, 0.42);
   --overlay-45: rgba(0, 0, 0, 0.45);
