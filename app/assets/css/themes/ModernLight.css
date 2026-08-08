@@ -1,77 +1,77 @@
 /* 现代浅色主题 — 全部设计变量 */
 :root[data-theme='ModernLight'] {
-  /* 主色调 — 薰衣草紫（更淡雅） */
+  /* 主色调 */
   --primary: #a78bfa;
   --primary-hover: #9580fa;
   --primary-light: rgba(167, 139, 250, 0.1);
   --primary-border: rgba(167, 139, 250, 0.2);
   /* 控件强调色（与 --primary 一致，供 accent-color 使用） */
   --accent-color: #a78bfa;
-  /* 主色光晕（更淡） */
+  /* 主色光晕（供阴影 glow 使用） */
   --primary-glow: rgba(167, 139, 250, 0.07);
   --primary-glow-5: rgba(167, 139, 250, 0.03);
   --primary-glow-10: rgba(167, 139, 250, 0.06);
   --primary-glow-20: rgba(167, 139, 250, 0.12);
   --primary-glow-40: rgba(167, 139, 250, 0.25);
-  /* 成功色光晕（更淡） */
+  /* 成功色光晕 */
   --success-glow: rgba(52, 211, 153, 0.07);
   --success-glow-5: rgba(52, 211, 153, 0.03);
   --success-glow-10: rgba(52, 211, 153, 0.06);
   --success-glow-20: rgba(52, 211, 153, 0.12);
-  /* 警告色光晕（更淡） */
+  /* 警告色光晕 */
   --warning-glow: rgba(251, 191, 36, 0.07);
   --warning-glow-5: rgba(251, 191, 36, 0.03);
   --warning-glow-10: rgba(251, 191, 36, 0.06);
   --warning-glow-20: rgba(251, 191, 36, 0.12);
-  /* 错误色光晕（更淡） */
+  /* 错误色光晕 */
   --error-glow: rgba(248, 113, 113, 0.07);
   --error-glow-5: rgba(248, 113, 113, 0.03);
   --error-glow-10: rgba(248, 113, 113, 0.06);
   --error-glow-20: rgba(248, 113, 113, 0.12);
-  /* 成功色（更淡雅） */
+  /* 成功色 */
   --success: #34d399;
   --success-hover: #10b981;
   --success-light: rgba(52, 211, 153, 0.1);
   --success-border: rgba(52, 211, 153, 0.18);
-  /* 警告色（更淡雅） */
+  /* 警告色 */
   --warning: #fbbf24;
   --warning-hover: #f59e0b;
   --warning-light: rgba(251, 191, 36, 0.1);
   --warning-border: rgba(251, 191, 36, 0.18);
-  /* 错误色（更淡雅） */
+  /* 错误色 */
   --error: #f87171;
   --error-hover: #ef4444;
   --error-light: rgba(248, 113, 113, 0.1);
   --error-border: rgba(248, 113, 113, 0.18);
-  /* 信息色 — 天蓝（更淡雅） */
+  /* 信息色光晕 */
   --info: #38bdf8;
   --info-hover: #0ea5e9;
   --info-light: rgba(56, 189, 248, 0.1);
   --info-border: rgba(56, 189, 248, 0.18);
-  /* 信息色光晕（更淡） */
+  /* 信息色光晕（蓝色系，与 info 品牌色一致） */
   --info-glow: rgba(56, 189, 248, 0.07);
   --info-glow-5: rgba(56, 189, 248, 0.03);
   --info-glow-10: rgba(56, 189, 248, 0.06);
   --info-glow-20: rgba(56, 189, 248, 0.12);
-  /* 背景色（更淡、更冷白） */
+  /* 背景色 */
   --bg-primary: #fcfcfa;
   --bg-secondary: #f9f8f5;
   --bg-tertiary: #f3f2ee;
   --bg-quaternary: #edeae5;
   --bg-hover: #f7f6f2;
-  /* 文字颜色（更淡灰） */
+  /* 文字颜色 */
   --text-primary: #333338;
   --text-secondary: #7a7a8a;
   --text-tertiary: #9a9aa8;
   --text-quaternary: #adadb8;
   --text-disabled: #d0d0d5;
-  /* 边框颜色（更淡） */
+  /* 边框颜色 */
   --border-primary: #f5f4f2;
   --border-secondary: #f0eef5;
   --border-tertiary: #e4e1eb;
   --border-quaternary: #ccc9d6;
   --border-color: var(--border-tertiary);
-  /* 阴影（大幅降低透明度） */
+  /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(167, 139, 250, 0.02);
   --shadow-md: 0 2px 6px rgba(167, 139, 250, 0.03);
   --shadow-lg: 0 8px 20px rgba(167, 139, 250, 0.05);
@@ -117,14 +117,14 @@
   --z-tooltip: 700;
   --z-toast: 800;
   --z-app-loader: 9000;
-  /* 特殊状态颜色（更淡雅） */
+  /* 特殊状态颜色 */
   --status-pending: #fbbf24;
   --status-pending-light: rgba(251, 191, 36, 0.1);
   --status-approved: #34d399;
   --status-approved-light: rgba(52, 211, 153, 0.1);
   --status-played: #aeaeb8;
   --status-played-light: rgba(174, 174, 184, 0.1);
-  /* 投票相关颜色（更淡） */
+  /* 投票相关颜色 */
   --vote-heart: #f87171;
   --vote-heart-hover: #ef4444;
   --vote-count: var(--text-tertiary);
@@ -142,7 +142,7 @@
   --card-border: var(--border-secondary);
   --card-hover-border: var(--border-tertiary);
   --card-shadow: var(--shadow-md);
-  /* 按钮颜色（背景更淡） */
+  /* 按钮颜色 */
   --btn-primary-bg: var(--primary);
   --btn-primary-hover: var(--primary-hover);
   --btn-primary-text: #ffffff;
@@ -170,7 +170,7 @@
 
   --btn-disabled-bg: var(--bg-tertiary);
   --btn-disabled-text: var(--text-disabled);
-  /* 输入框颜色（更淡） */
+  /* 输入框颜色 */
   --input-bg: var(--bg-tertiary);
   --input-border: var(--border-tertiary);
   --input-border-focus: var(--primary);
@@ -202,11 +202,11 @@
   /* 加载动画颜色 */
   --spinner-primary: var(--primary);
   --spinner-secondary: var(--bg-tertiary);
-  /* 滚动条颜色（更淡） */
+  /* 滚动条颜色 */
   --scrollbar-track: var(--bg-tertiary);
   --scrollbar-thumb: var(--bg-quaternary);
   --scrollbar-thumb-hover: #b0b0b0;
-  /* 用途化变量 — 品牌色（更淡雅） */
+  /* 用途化变量 — 品牌色（已语义化：blue=通用强调色, red=错误, green=成功, yellow=警告） */
   --color-accent: #a78bfa;
   --color-accent-light: #c4b5fd;
   --color-accent-hover: #9580fa;
@@ -328,6 +328,8 @@
   --oauth-google-green: #86efac;
   --oauth-casdoor: #a3e635;
   --oauth-casdoor-green: var(--oauth-casdoor);
+  /* Gitea 品牌路径的镂空色（供 Icon.vue SVG path 使用） */
+  --gitea-cutout: var(--panel-bg-dialog);
   /* ─── Auth/OAuth 品牌色（旧命名，向后兼容，指向新 --oauth-* 系列）─── */
   --color-oauth-qq: var(--oauth-qq);
   --color-oauth-wx: var(--oauth-wx);

@@ -328,6 +328,8 @@
   --oauth-google-green: #34a853;
   --oauth-casdoor: #67c23a;
   --oauth-casdoor-green: var(--oauth-casdoor);
+  /* Gitea 品牌路径的镂空色（供 Icon.vue SVG path 使用） */
+  --gitea-cutout: var(--panel-bg-dialog);
   /* ─── Auth/OAuth 品牌色（旧命名，向后兼容，指向新 --oauth-* 系列）─── */
   --color-oauth-qq: var(--oauth-qq);
   --color-oauth-wx: var(--oauth-wx);
