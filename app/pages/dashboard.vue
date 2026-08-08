@@ -49,7 +49,7 @@
             <button
               v-if="showBackToTop"
               :aria-label="locale.backToTop"
-              class="fixed bottom-8 right-8 p-3 bg-primary-hover text-text-primary rounded-full shadow-lg hover:bg-primary-hover transition-all z-50"
+              class="fixed bottom-8 right-8 p-3 bg-primary-hover text-text-primary rounded-full shadow-lg hover:bg-primary transition-all z-50"
               @click="scrollToTop"
             >
               <ChevronUp :size="24" />

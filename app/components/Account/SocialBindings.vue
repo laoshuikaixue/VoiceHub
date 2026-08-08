@@ -141,7 +141,7 @@
       </div>
 
       <!-- MeoW 账号绑定 -->
-      <div :class="['border-primary-20', 'bg-primary-5', 'rounded-2xl', 'p-5', 'shadow-lg', 'shadow-[0_10px_15px_var(--shadow-color)]', 'transition-all', 'hover:border-border-tertiary']">
+      <div :class="meowCardClass">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
             <div class="p-2 bg-primary-10 rounded-lg border border-primary-20">
@@ -289,6 +289,9 @@ const locale = computed(() => pages.value?.account?.social || {})
 // 卡片样式类常量（sectionClass 由父组件 account/index.vue 控制）
 const cardClass =
   'rounded-2xl border border-border-secondary bg-bg-secondary-30 p-5 shadow-lg shadow-[0_10px_15px_var(--shadow-color)] transition-all hover:border-border-tertiary'
+// MeoW 卡片（蓝紫色调，与邮箱卡片做视觉区分）
+const meowCardClass =
+  'rounded-2xl border border-primary-20 bg-primary-5 p-5 shadow-lg shadow-[0_10px_15px_var(--shadow-color)] transition-all hover:border-border-tertiary'
 
 // 页面状态
 const loading = ref(true)

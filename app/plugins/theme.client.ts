@@ -15,10 +15,10 @@ export default defineNuxtPlugin((nuxtApp) => {
   function updateMeta(theme) {
     const cs = getComputedStyle(document.documentElement)
     const colorMap = {
-      // 经典深色 -> 经典浅色 -> 现代浅色
+      // 经典深色 -> 经典浅色 -> 现代浅色（统一使用 --bg-primary 作为页面主背景色）
       ClassicDark: cs.getPropertyValue('--bg-primary').trim() || '#111111',
-      ClassicLight: cs.getPropertyValue('--bg-secondary').trim() || '#ffffff',
-      ModernLight: cs.getPropertyValue('--bg-secondary').trim() || '#f5f5f5'
+      ClassicLight: cs.getPropertyValue('--bg-primary').trim() || '#fafafa',
+      ModernLight: cs.getPropertyValue('--bg-primary').trim() || '#fcfcfa'
     }
     let meta = document.querySelector("meta[name='theme-color']")
     if (!meta) {
