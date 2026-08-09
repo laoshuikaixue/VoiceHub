@@ -1,4 +1,4 @@
-import { startOperationRequest, finishOperationRequest, setOperationRequestContext, recordBusinessOperation, recordOAuthOperation, setMusicSourceProbeRunner } from '~~/server/utils/operations-metrics'
+import { startOperationRequest, finishOperationRequest, setOperationRequestContext, recordBusinessOperation, recordOAuthOperation, observeRuntimeDeployment, setMusicSourceProbeRunner } from '~~/server/utils/operations-metrics'
 import { randomUUID } from 'node:crypto'
 import { performance } from 'node:perf_hooks'
 import { db } from '~/drizzle/db'
@@ -31,8 +31,9 @@ const isMonitoringRequest = (url = '') => [
 
 const hasPlatformEnv = (value: string | undefined) => Boolean(value && value !== '0' && value.toLowerCase() !== 'false')
 const isServerlessRuntime = () => {
+  if (process.env.VOICEHUB_DEPLOYMENT_TARGET?.toLowerCase() === 'edgeone') return true
   if (hasPlatformEnv(process.env.VERCEL) || hasPlatformEnv(process.env.VERCEL_ENV)) return true
-  if (hasPlatformEnv(process.env.NETLIFY) || hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES) || hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)) return true
+  if (hasPlatformEnv(process.env.NETLIFY) || hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES) || hasPlatformEnv(process.env.EDGEONE_ENV) || hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)) return true
   const preset = process.env.NITRO_PRESET || 'node-server'
   return ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => preset.toLowerCase().includes(name))
 }
@@ -99,6 +100,7 @@ export default defineNitroPlugin((nitroApp) => {
   }
 
   nitroApp.hooks.hook('request', (event) => {
+    observeRuntimeDeployment(event.node.req.headers)
     if (isMonitoringRequest(event.node.req.url) || isMusicSourceProbeRequest(event)) return
     const startedAt = startOperationRequest()
     event.context.operationsMetricsStartedAt = startedAt

@@ -3484,7 +3484,8 @@ const dependencyProtectionPanelStatus = (panel) => {
 
 .group-navigation__label {
   display: flex;
-  width: 4.75rem;
+  width: auto;
+  min-width: 6.2rem;
   min-height: 2.65rem;
   flex: 0 0 auto;
   align-items: center;
@@ -3495,6 +3496,7 @@ const dependencyProtectionPanelStatus = (panel) => {
   background: var(--ops-control);
   font-size: 0.625rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .group-tabs {

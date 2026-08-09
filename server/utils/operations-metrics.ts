@@ -22,6 +22,7 @@ let systemCpuSnapshot = readSystemCpuTimes()
 
 const state = {
   startedAt: Date.now(),
+  observedDeploymentTarget: null as 'edgeone' | null,
   totalRequests: 0,
   clientErrors: 0,
   serverErrors: 0,
@@ -104,17 +105,31 @@ const percentile = (values: number[], ratio: number) => {
 
 const hasPlatformEnv = (value: string | undefined) => Boolean(value && value !== '0' && value.toLowerCase() !== 'false')
 
+const getConfiguredDeploymentTarget = () => {
+  const target = String(process.env.VOICEHUB_DEPLOYMENT_TARGET || '').trim().toLowerCase()
+  return ['vercel', 'netlify', 'edgeone', 'cloudflare'].includes(target) ? target : null
+}
+
+export const observeRuntimeDeployment = (headers: Record<string, string | string[] | undefined> = {}) => {
+  const hasEdgeOneHeader = Object.entries(headers).some(([name, value]) => {
+    const normalizedName = name.toLowerCase()
+    return Boolean(value) && (normalizedName.startsWith('eo-') || normalizedName.startsWith('x-edgeone-'))
+  })
+  if (hasEdgeOneHeader) state.observedDeploymentTarget = 'edgeone'
+}
+
 const getRuntimeDescriptor = () => {
   // 平台环境变量优先于 Nitro preset，避免 Vercel 构建产物使用 node-server 时被误判为自托管。
-  const deploymentTarget = hasPlatformEnv(process.env.VERCEL) || hasPlatformEnv(process.env.VERCEL_ENV)
-    ? 'vercel'
-    : hasPlatformEnv(process.env.NETLIFY)
-      ? 'netlify'
-      : hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES)
-        ? 'edgeone'
-      : hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)
-        ? 'cloudflare'
-        : null
+  const deploymentTarget = getConfiguredDeploymentTarget()
+    || (hasPlatformEnv(process.env.VERCEL) || hasPlatformEnv(process.env.VERCEL_ENV)
+      ? 'vercel'
+      : hasPlatformEnv(process.env.NETLIFY)
+        ? 'netlify'
+        : hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES) || hasPlatformEnv(process.env.EDGEONE_ENV)
+          ? 'edgeone'
+          : hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)
+            ? 'cloudflare'
+            : state.observedDeploymentTarget)
   const nitroPreset = process.env.NITRO_PRESET || deploymentTarget || 'node-server'
   const serverless = Boolean(deploymentTarget) || ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => nitroPreset.toLowerCase().includes(name))
   return {

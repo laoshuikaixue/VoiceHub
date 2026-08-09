@@ -1,6 +1,6 @@
 import { defineEventHandler, createError, getQuery } from 'h3'
 import { verifyAdminAuth } from '~~/server/utils/auth'
-import { getOperationsMetrics, persistOperationsDatabaseSnapshot, triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
+import { getOperationsMetrics, observeRuntimeDeployment, persistOperationsDatabaseSnapshot, triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
 import { getRedisMetrics, getRedisStats } from '~~/server/utils/redis'
 import { databaseManager } from '~~/server/utils/database-manager'
 import { getMusicSseStats } from '~~/server/api/music/websocket'
@@ -125,6 +125,7 @@ const getBackupMonitorStatus = async () => {
 }
 
 export default defineEventHandler(async (event) => {
+  observeRuntimeDeployment(event.node.req.headers)
   const authResult = await verifyAdminAuth(event)
   if (!authResult.success) {
     throw createError({ statusCode: 401, message: authResult.message })
