@@ -713,7 +713,7 @@
                       </span>
                     </div>
                     <div class="text-xs text-text-tertiary truncate">{{ schedule.song.artist }}</div>
-                    <div class="text-[10px] text-text-disabled truncate flex items-center gap-1">
+                    <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <!-- 显示申请人或投稿人 -->
                       <span
                         v-if="schedule.replayRequestId != null"
@@ -738,7 +738,7 @@
                       <span v-else>{{ schedule.song.requester }}</span>
                       <span
                         v-if="schedule.song.requesterGrade || schedule.song.grade"
-                        class="text-text-secondary"
+                        class="text-text-disabled"
                         >|</span
                       >
                       <span v-if="schedule.song.requesterGrade || schedule.song.grade">
