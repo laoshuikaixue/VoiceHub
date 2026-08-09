@@ -3,12 +3,10 @@ import { db, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { getPasswordPolicyViolation } from '~/utils/password-policy'
+import { validateOAuthRegisterCredentials } from '~/utils/oauth-register'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-
-const OAUTH_REGISTER_USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/
 
 export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
@@ -42,21 +40,9 @@ export default defineEventHandler(async (event) => {
     throw createApiError(400, SERVER_ERROR_CODES.AUTH_NAME_USERNAME_PASSWORD_REQUIRED, '姓名、用户名、密码不能为空')
   }
 
-  if (username.length < 3 || username.length > 30) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_USERNAME_LENGTH_INVALID, '用户名长度需要在3-30个字符之间')
-  }
-
-  if (!OAUTH_REGISTER_USERNAME_PATTERN.test(username)) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_USERNAME_PATTERN_INVALID, '用户名仅可包含英文、数字、下划线和连字符')
-  }
-
-  const passwordViolation = getPasswordPolicyViolation(password)
-  if (passwordViolation) {
-    throw createApiError(400, passwordViolation.code, passwordViolation.message)
-  }
-
-  if (password !== confirmPassword) {
-    throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_PASSWORD_MISMATCH, '两次输入的密码不一致')
+  const validationError = validateOAuthRegisterCredentials(username, password, confirmPassword)
+  if (validationError) {
+    throw createApiError(400, validationError.code, validationError.message)
   }
 
   if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
