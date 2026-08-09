@@ -1,7 +1,6 @@
-import { and, eq, gte, inArray, lte } from 'drizzle-orm'
+import { and, eq, gte, lte } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
-import { createSongSelectedNotification } from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
 
@@ -75,14 +74,9 @@ export default defineEventHandler(async (event) => {
       // 查询来源日期的所有排期（含草稿和已发布），按 sequence 排序
       const sourceSchedules = await tx
         .select({
-          id: schedules.id,
           songId: schedules.songId,
           sequence: schedules.sequence,
-          playTimeId: schedules.playTimeId,
-          isDraft: schedules.isDraft,
-          requesterId: songs.requesterId,
-          songTitle: songs.title,
-          cardCodeId: songs.cardCodeId
+          playTimeId: schedules.playTimeId
         })
         .from(schedules)
         .innerJoin(songs, eq(schedules.songId, songs.id))
@@ -91,17 +85,15 @@ export default defineEventHandler(async (event) => {
 
       if (sourceSchedules.length === 0) {
         return {
-          copiedCount: 0,
-          copiedSongs: []
+          copiedCount: 0
         }
       }
 
-      const insertedSchedules: any[] = []
-      const copiedSongs: any[] = []
+      let copiedCount = 0
       const now = getServerDate()
 
       for (const source of sourceSchedules) {
-        const inserted = await tx
+        await tx
           .insert(schedules)
           .values({
             songId: source.songId,
@@ -112,40 +104,12 @@ export default defineEventHandler(async (event) => {
             publishedAt: null,
             updatedAt: now
           })
-          .returning()
 
-        if (inserted.length > 0) {
-          insertedSchedules.push(inserted[0])
-          copiedSongs.push(source)
-        }
+        copiedCount++
       }
 
-      return {
-        copiedCount: insertedSchedules.length,
-        copiedSongs,
-        insertedSchedules
-      }
+      return { copiedCount }
     })
-
-    // 异步发送通知：原歌曲的请求人收到"歌曲已被安排到 {toDate}"
-    const notificationsToSend = copyResult.copiedSongs.map((item) => {
-      return createSongSelectedNotification(item.requesterId, item.songId, {
-        title: item.songTitle,
-        artist: '',
-        playDate: toPlayDate
-      })
-    })
-
-    if (notificationsToSend.length > 0) {
-      event.waitUntil(
-        Promise.allSettled(notificationsToSend).then((results) => {
-          const successCount = results.filter((r) => r.status === 'fulfilled').length
-          console.log(
-            `[Notification] 排期复制通知发送完成: ${successCount}/${notificationsToSend.length} 成功`
-          )
-        })
-      )
-    }
 
     console.log(`[Performance] 复制排期耗时: ${Date.now() - startTime}ms`)
 

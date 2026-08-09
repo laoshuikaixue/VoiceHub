@@ -2349,6 +2349,7 @@ export const admin = {
       invalidTargetDate: 'Invalid target date. Use YYYY-MM-DD and ensure the date is valid',
       sameTargetDate: 'Target date cannot be the same as the current date',
       noMovableSongs: 'No movable songs on the current date',
+      moveDateFailed: (message: string) => `Move failed: ${message}`,
       noCopyableSongs: 'No copyable songs on the current date',
       copyDateFailed: (message: string) => `Copy failed: ${message}`,
       saveDraftFailed: (message: string) => `Failed to save draft: ${message}`,

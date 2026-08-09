@@ -2358,6 +2358,7 @@ export const admin = {
       invalidTargetDate: '目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效',
       sameTargetDate: '目标日期不能与当前日期相同',
       noMovableSongs: '当前日期没有可迁移的歌曲',
+      moveDateFailed: (message: string) => `迁移失败: ${message}`,
       noCopyableSongs: '当前日期没有可复制的歌曲',
       copyDateFailed: (message: string) => `复制失败: ${message}`,
       saveDraftFailed: (message: string) => `保存草稿失败: ${message}`,
