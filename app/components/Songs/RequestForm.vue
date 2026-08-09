@@ -2297,12 +2297,8 @@ watch(
 )
 
 onMounted(async () => {
-  // 加载平台配置，确保 platform 默认值为第一个可用平台
-  await loadPlatformConfig()
-  const available = getAvailablePlatforms()
-  if (available.length > 0 && !available.includes(platform.value)) {
-    platform.value = available[0]
-  }
+  // 后台加载平台配置（不阻塞其他初始化）；平台可用性变化由 watch 自动处理
+  loadPlatformConfig()
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()

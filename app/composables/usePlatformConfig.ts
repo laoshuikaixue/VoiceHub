@@ -4,6 +4,7 @@
  */
 
 import { ref } from 'vue'
+import { useSiteConfig } from './useSiteConfig'
 
 const DEFAULT_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
 
@@ -15,6 +16,18 @@ const cache = {
   loaded: ref(false)
 }
 
+/** 安全解析平台数组，解析失败时回退默认值 */
+const parsePlatformArray = (value: unknown): string[] => {
+  try {
+    const arr = typeof value === 'string' ? JSON.parse(value) : value
+    if (!Array.isArray(arr)) return [...DEFAULT_PLATFORMS]
+    const valid = arr.filter((p: unknown) => (DEFAULT_PLATFORMS as readonly string[]).includes(p as string))
+    return valid.length > 0 ? (valid as string[]) : [...DEFAULT_PLATFORMS]
+  } catch {
+    return [...DEFAULT_PLATFORMS]
+  }
+}
+
 export const usePlatformConfig = () => {
   const enabledPlatforms = cache.enabledPlatforms
   const platformOrder = cache.platformOrder
@@ -22,8 +35,24 @@ export const usePlatformConfig = () => {
 
   /**
    * 加载平台配置
+   * @param forceApi 强制走 API 请求（跳过 useSiteConfig 优化），供管理页保存后刷新使用
    */
-  const doLoadPlatformConfig = async () => {
+  const doLoadPlatformConfig = async (forceApi = false) => {
+    // 优先复用 useSiteConfig 已加载的数据（/api/site-config 已含平台字段），避免重复请求
+    if (!forceApi) {
+      try {
+        const { siteConfig, isLoaded } = useSiteConfig()
+        if (isLoaded.value && siteConfig.value?.enabledPlatforms) {
+          enabledPlatforms.value = parsePlatformArray(siteConfig.value.enabledPlatforms)
+          platformOrder.value = parsePlatformArray(siteConfig.value.platformOrder)
+          loaded.value = true
+          return
+        }
+      } catch {
+        // useSiteConfig 数据未就绪，回退到独立 API 请求
+      }
+    }
+
     try {
       const res = await $fetch('/api/platform-config')
       enabledPlatforms.value = Array.isArray(res.enabledPlatforms) ? res.enabledPlatforms : [...DEFAULT_PLATFORMS]
@@ -44,10 +73,10 @@ export const usePlatformConfig = () => {
     await doLoadPlatformConfig()
   }
 
-  /** 重置加载状态并重新获取配置，供管理员保存后刷新使用 */
+  /** 重置加载状态并重新获取配置（跳过 useSiteConfig 优化，确保读到最新数据），供管理员保存后刷新使用 */
   const refreshPlatformConfig = async () => {
     loaded.value = false
-    await doLoadPlatformConfig()
+    await doLoadPlatformConfig(true)
   }
 
   /**
