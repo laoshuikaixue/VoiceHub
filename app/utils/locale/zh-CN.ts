@@ -3414,6 +3414,10 @@ export const admin = {
         statusBatch: {
           title: '设置账户状态',
           desc: '批量设置选中学生的账户状态'
+        },
+        songAdminBatch: {
+          title: '歌曲管理员',
+          desc: '批量更新歌曲管理员的年级、班级、账号状态'
         }
       },
       fields: {
@@ -3446,6 +3450,26 @@ export const admin = {
         targetStatusPlaceholder: '请选择目标状态',
         reason: '变更原因说明',
         reasonPlaceholder: '例如: 2025届学生统一毕业'
+      },
+      songAdminSettings: {
+        title: '歌曲管理员信息更新',
+        desc: '选中用户将应用以下变更（留空则保持原值）',
+        scope: '歌曲管理员范围筛选',
+        currentGrade: '当前年级',
+        currentClass: '当前班级',
+        allGrades: '全部年级',
+        allClasses: '全部班级',
+        selectUsers: (selected: number, total: number) => `选择管理员 (${selected}/${total})`,
+        clearSelection: '取消全选',
+        selectAll: '选择当前全部',
+        noMatchedUsers: '没有匹配条件的歌曲管理员',
+        targetSettings: '更新目标设置',
+        targetGrade: '目标年级',
+        targetGradePlaceholder: '例如: 2025（留空保持原值）',
+        targetClass: '目标班级',
+        targetClassPlaceholder: '例如: 1班（留空保持原值）',
+        targetStatus: '目标账号状态',
+        targetStatusPlaceholder: '请选择目标状态（留空保持原值）'
       },
       statusOptions: {
         all: '不限当前状态',
@@ -3523,7 +3547,10 @@ export const admin = {
         partialExcelSuccess: (success: number, failed: number) => `部分更新成功：成功 ${success} 个，失败 ${failed} 个，请检查后重试`,
         excelFailed: (failed: number) => `批量更新失败：${failed} 个用户未能更新，请检查后重试`,
         partialStatusSuccess: (failed: number) => `部分更新成功，${failed} 个用户因权限或状态等原因跳过`,
-        statusSuccess: '批量更新状态成功'
+        statusSuccess: '批量更新状态成功',
+        songAdminSuccess: (count: number) => `成功更新 ${count} 位歌曲管理员信息`,
+        partialSongAdminSuccess: (failed: number) => `部分更新成功，${failed} 位管理员因权限或状态等原因跳过`,
+        songAdminNoChanges: '所选歌曲管理员的信息没有需要更新的变更'
       },
       errors: {
         invalidExcelFormat: 'Excel文件格式错误，请检查文件格式',
@@ -3544,7 +3571,8 @@ export const admin = {
         noValidUpdates: '没有有效的更新数据',
         batchRequestFailed: '批量更新请求失败',
         invalidBatchResponse: '批量更新接口返回格式异常',
-        statusUpdateFailed: '批量更新状态失败'
+        statusUpdateFailed: '批量更新状态失败',
+        songAdminUpdateFailed: '批量更新歌曲管理员失败'
       }
     },
     deleteDialog: {
