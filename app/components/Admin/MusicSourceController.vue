@@ -103,39 +103,44 @@
         </div>
         <p class="text-[10px] text-text-tertiary">{{ t.orderDesc }}</p>
         <div class="space-y-2">
-          <div
-            v-for="(pf, idx) in platformOrder"
-            :key="pf"
-            :class="[
-              'flex items-center gap-3 p-3 border rounded-xl transition-all cursor-move select-none',
-              enabledPlatforms.includes(pf)
-                ? 'border-border-secondary bg-bg-secondary-40'
-                : 'border-border-tertiary bg-bg-secondary-70 opacity-60'
-            ]"
-            draggable="true"
-            @dragstart="handleDragStart($event, idx)"
-            @dragover.prevent="handleDragOver($event, idx)"
-            @drop="handleDrop($event, idx)"
-            @dragend="handleDragEnd"
-          >
-            <span class="text-[10px] font-black text-text-tertiary w-5 text-center">{{ idx + 1 }}</span>
-            <div class="flex items-center justify-center text-text-disabled hover:text-text-primary">
-              <GripVertical :size="14" />
+          <TransitionGroup name="platform-order" tag="div" class="space-y-2">
+            <div
+              v-for="(pf, idx) in platformOrder"
+              :key="pf"
+              :class="[
+                'flex items-center gap-3 p-3 border rounded-xl transition-all cursor-move select-none',
+                dragOverIndex === idx ? 'border-t-2 border-t-primary' : '',
+                enabledPlatforms.includes(pf)
+                  ? 'border-border-secondary bg-bg-secondary-40'
+                  : 'border-border-tertiary bg-bg-secondary-70 opacity-60'
+              ]"
+              draggable="true"
+              @dragstart="handleDragStart($event, idx)"
+              @dragend="handleDragEnd($event)"
+              @dragover.prevent
+              @dragenter.prevent="handleDragEnter($event, idx)"
+              @dragleave="handleDragLeave"
+              @drop.stop.prevent="handleDrop($event, idx)"
+            >
+              <span class="text-[10px] font-black text-text-tertiary w-5 text-center">{{ idx + 1 }}</span>
+              <div class="flex items-center justify-center text-text-disabled hover:text-text-primary">
+                <GripVertical :size="14" />
+              </div>
+              <div class="flex items-center gap-2 flex-1">
+                <span class="text-xs font-medium text-text-primary">{{ getPlatformLabel(pf) }}</span>
+                <span
+                  :class="[
+                    'text-[10px] px-1.5 py-0.5 rounded font-medium',
+                    enabledPlatforms.includes(pf)
+                      ? 'bg-primary-5 text-primary'
+                      : 'bg-bg-tertiary-70 text-text-tertiary'
+                  ]"
+                >
+                  {{ enabledPlatforms.includes(pf) ? platformStatusText.enabled : platformStatusText.disabled }}
+                </span>
+              </div>
             </div>
-            <div class="flex items-center gap-2 flex-1">
-              <span class="text-xs font-medium text-text-primary">{{ getPlatformLabel(pf) }}</span>
-              <span
-                :class="[
-                  'text-[10px] px-1.5 py-0.5 rounded font-medium',
-                  enabledPlatforms.includes(pf)
-                    ? 'bg-primary-5 text-primary'
-                    : 'bg-bg-tertiary-70 text-text-tertiary'
-                ]"
-              >
-                {{ enabledPlatforms.includes(pf) ? platformStatusText.enabled : platformStatusText.disabled }}
-              </span>
-            </div>
-          </div>
+          </TransitionGroup>
         </div>
       </div>
     </div>
@@ -217,32 +222,44 @@ const parsePlatformArray = (value) => {
 
 const getPlatformLabel = (key) => getPlatformDisplayName(key, siteConfig.value, currentLocale.value)
 
+// 拖拽排序（参考排期管理序列的交互模式：拖拽中仅标记插入位置，drop 时重排，配合 TransitionGroup 动画）
+const dragOverIndex = ref(-1)
 let draggedIndex = -1
 
 const handleDragStart = (e, idx) => {
   draggedIndex = idx
   e.dataTransfer.effectAllowed = 'move'
   e.dataTransfer.setData('text/plain', String(idx))
+  setTimeout(() => {
+    e.target.classList.add('opacity-50')
+  }, 0)
 }
 
-const handleDragOver = (e, idx) => {
+const handleDragEnter = (e, idx) => {
   e.preventDefault()
-  e.dataTransfer.dropEffect = 'move'
-  if (draggedIndex === -1 || draggedIndex === idx) return
-  const order = platformOrder.value
-  const item = order[draggedIndex]
-  order.splice(draggedIndex, 1)
-  order.splice(idx, 0, item)
-  draggedIndex = idx
+  dragOverIndex.value = idx
+}
+
+const handleDragLeave = (e) => {
+  if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
+    dragOverIndex.value = -1
+  }
 }
 
 const handleDrop = (e, idx) => {
   e.preventDefault()
-  handleDragOver(e, idx)
+  dragOverIndex.value = -1
+  if (draggedIndex === -1 || draggedIndex === idx) return
+  const order = [...platformOrder.value]
+  const [item] = order.splice(draggedIndex, 1)
+  order.splice(idx, 0, item)
+  platformOrder.value = order
 }
 
-const handleDragEnd = () => {
+const handleDragEnd = (e) => {
+  e.target.classList.remove('opacity-50')
   draggedIndex = -1
+  dragOverIndex.value = -1
 }
 
 const togglePlatform = (pf) => {
@@ -322,3 +339,23 @@ const resetForm = () => {
 
 onMounted(loadConfig)
 </script>
+
+<style scoped>
+/* 平台排序拖拽过渡动画 */
+.platform-order-move,
+.platform-order-enter-active,
+.platform-order-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.platform-order-enter-from,
+.platform-order-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.platform-order-leave-active {
+  position: absolute;
+  width: 100%;
+}
+</style>
