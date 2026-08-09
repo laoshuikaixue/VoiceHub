@@ -22,6 +22,7 @@ import {
   votes
 } from '../app/drizzle/db.ts'
 import bcrypt from 'bcryptjs'
+import { closeConnection } from '../app/drizzle/db.ts'
 
 function getFirstRow(result) {
   return result?.rows?.[0] ?? result?.[0]
@@ -161,6 +162,8 @@ async function main() {
   } catch (error) {
     console.error('清空数据库时出错:', error)
     process.exit(1)
+  } finally {
+    await closeConnection()
   }
 }
 
