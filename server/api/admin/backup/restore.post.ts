@@ -1189,7 +1189,9 @@ export default defineEventHandler(async (event) => {
                           'turnstileSiteKey',
                           'turnstileSecretKey',
                           'autoBackupEnabled',
-                          'autoBackupConfig'
+                          'autoBackupConfig',
+                          'enabledPlatforms',
+                          'platformOrder'
                         ]
 
                         // 只添加备份数据中存在的字段

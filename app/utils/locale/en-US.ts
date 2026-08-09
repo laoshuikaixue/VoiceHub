@@ -103,6 +103,15 @@ export const siteConfig = {
     parseApiErrorFailed: 'Failed to parse API error response:',
     saveFailed: 'Failed to save configuration:'
   },
+
+  // Platform names
+  platformNetease: 'NetEase Cloud Music',
+  platformTencent: 'QQ Music',
+  platformBilibili: 'Bilibili',
+  platformMigu: 'Migu Music',
+  platformEnabled: 'Enabled',
+  platformDisabled: 'Disabled',
+
   serverMessages: {
     oauthRedirectCallbackInvalid: 'oauthRedirectUri must be a callback URL, for example https://yourdomain.com/api/auth/[provider]/callback',
     oauthRedirectUrlInvalid: 'oauthRedirectUri is not a valid URL, for example https://yourdomain.com/api/auth/[provider]/callback',
@@ -485,6 +494,7 @@ export const pages = {
       semesters: 'Semester Management',
       blacklist: 'Blacklist Management',
       'site-config': 'Site Configuration',
+      'music-source': 'Music Source Control',
       database: 'Database Operations',
       'api-keys': 'API Key Management'
     },
@@ -1323,7 +1333,8 @@ export const pages = {
       alreadyReplayed: 'This song has been replayed',
       alreadyRequestedReplay: 'Replay already requested',
       musicUrlFailed: 'Failed to get music playback URL',
-      semesterLoadFailed: 'Failed to load semester info. Please refresh and try again'
+      semesterLoadFailed: 'Failed to load semester info. Please refresh and try again',
+      platformAutoSwitched: (name: string) => `Current platform is unavailable, switched to ${name}`
     },
     requestForm: {
       guidelinesTitle: 'Submission Guidelines',
@@ -1683,6 +1694,7 @@ export const admin = {
       semesters: 'Semesters',
       blacklist: 'Blacklist',
       cardCodes: 'Request Cards',
+      musicSource: 'Music Source',
       siteConfig: 'Site Config',
       database: 'Database',
       password: 'Change Password'
@@ -2486,6 +2498,24 @@ export const admin = {
       fetchEnvFailed: 'Failed to fetch environment variables:',
       importEnvFailed: 'Failed to import environment configuration:'
     }
+  },
+  musicSourceController: {
+    title: 'Music Source Control',
+    description: 'Manage music platform switches and search order. Changes take effect immediately.',
+    saveConfig: 'Save Config',
+    saving: 'Saving...',
+    saved: 'Saved',
+    reset: 'Reset',
+    loading: 'Loading...',
+    fetchFailed: 'Failed to fetch config',
+    saveFailedRetry: 'Save failed, please retry',
+    saveSuccess: 'Source config saved',
+    switchTitle: 'Platform Switch',
+    switchDesc: 'Enable or disable each music platform for search',
+    orderTitle: 'Search Order',
+    orderDesc: 'Drag to reorder platform buttons in the search area',
+    resetOrder: 'Reset Order',
+    mustKeepOne: 'At least one platform must stay enabled'
   },
   playTimeManager: {
     title: 'Play Time Management',
@@ -3963,6 +3993,7 @@ export const serverErrors = {
   USER_CODE_INVALID: 'Incorrect verification code',
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
   BACKUP_DISABLED: 'Auto backup is disabled',
+  MUSIC_SOURCE_PLATFORM_DISABLED: 'Platform "{0}" is disabled. Available platforms: {1}',
   BACKUP_NOT_CONFIGURED: 'Auto backup is not configured',
   NO_BACKUP_METHOD_ENABLED: 'No backup methods enabled',
   BACKUP_FAILED: 'Backup execution failed',

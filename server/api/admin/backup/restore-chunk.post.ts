@@ -760,7 +760,9 @@ export default defineEventHandler(async (event) => {
               'turnstileSiteKey',
               'turnstileSecretKey',
               'autoBackupEnabled',
-              'autoBackupConfig'
+              'autoBackupConfig',
+              'enabledPlatforms',
+              'platformOrder'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) systemSettingsData[field] = record[field]

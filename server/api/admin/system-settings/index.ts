@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { maskSystemSettingsSecrets } from './secretMask'
+import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -47,7 +48,9 @@ export default defineEventHandler(async (event) => {
           monthlySubmissionLimit: null,
           showBlacklistKeywords: false,
           enableCollaborativeSubmission: true,
-          enableSubmissionRemarks: false
+          enableSubmissionRemarks: false,
+          enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
+          platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS])
         })
         .returning()
       settings = newSettingsResult[0]

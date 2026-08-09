@@ -2,12 +2,89 @@ import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
-import { SYSTEM_SETTINGS_DEFAULTS } from '../../../utils/system-settings-defaults'
+import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl,
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+
+/**
+ * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
+ */
+const parsePlatformStored = (value: unknown): string[] => {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    return Array.isArray(parsed) && parsed.length > 0 ? (parsed as string[]) : [...MUSIC_SOURCE_PLATFORMS]
+  } catch {
+    return [...MUSIC_SOURCE_PLATFORMS]
+  }
+}
+
+/**
+ * 校验平台数组 JSON 字符串
+ * @param fieldName 字段名（用于错误消息）
+ * @param value 原始值（应为 JSON 字符串）
+ * @param requireUnique 是否要求无重复（仅 platformOrder 需要）
+ * @returns 校验后的数组
+ */
+const validatePlatformArray = (fieldName: string, value: unknown, requireUnique = false): string[] => {
+  if (typeof value !== 'string') {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `${fieldName} 必须是 JSON 字符串`
+    )
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(value)
+  } catch {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `${fieldName} 格式无效，应为合法 JSON 数组`
+    )
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `${fieldName} 必须是数组`
+    )
+  }
+
+  const invalid = parsed.filter((p: unknown) => !(MUSIC_SOURCE_PLATFORMS as readonly string[]).includes(p as string))
+  if (invalid.length > 0) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `${fieldName} 包含无效的平台: ${(invalid as string[]).join(', ')}`
+    )
+  }
+
+  if (parsed.length === 0) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `${fieldName} 至少保留一个平台`
+    )
+  }
+
+  if (requireUnique && parsed.length !== new Set(parsed as string[]).size) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+      `${fieldName} 中不能包含重复的平台`
+    )
+  }
+
+  return parsed as string[]
+}
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -313,6 +390,32 @@ export default defineEventHandler(async (event) => {
         })
       }
       updateData.forcePasswordChangeOnFirstLogin = body.forcePasswordChangeOnFirstLogin
+    }
+
+    // 平台管理配置
+    if (body.enabledPlatforms !== undefined || body.platformOrder !== undefined) {
+      const enabled = body.enabledPlatforms !== undefined
+        ? validatePlatformArray('enabledPlatforms', body.enabledPlatforms, true)
+        : parsePlatformStored(settings?.enabledPlatforms)
+      const order = body.platformOrder !== undefined
+        ? validatePlatformArray('platformOrder', body.platformOrder, true)
+        : parsePlatformStored(settings?.platformOrder)
+
+      // 交叉一致性：排序中必须至少包含一个已启用的平台，避免“无可用平台”死锁
+      if (!order.some((p) => enabled.includes(p))) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'platformOrder 必须包含至少一个已启用的平台'
+        )
+      }
+
+      if (body.enabledPlatforms !== undefined) {
+        updateData.enabledPlatforms = body.enabledPlatforms
+      }
+      if (body.platformOrder !== undefined) {
+        updateData.platformOrder = body.platformOrder
+      }
     }
 
     // SMTP配置字段

@@ -252,6 +252,10 @@ export const systemSettings = pgTable('SystemSettings', {
   // 自动备份配置
   autoBackupEnabled: boolean('autoBackupEnabled').default(false).notNull(),
   autoBackupConfig: text('autoBackupConfig'),
+
+  // 平台管理配置
+  enabledPlatforms: text('enabledPlatforms').default('["netease","tencent","bilibili","migu"]'),
+  platformOrder: text('platformOrder').default('["netease","tencent","bilibili","migu"]'),
 });
 
 // 歌曲黑名单表

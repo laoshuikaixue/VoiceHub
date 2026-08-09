@@ -114,6 +114,15 @@ export const siteConfig = {
     parseApiErrorFailed: '无法解析API错误响应:',
     saveFailed: '保存配置失败:'
   },
+
+  // 平台名称
+  platformNetease: '网易云音乐',
+  platformTencent: 'QQ音乐',
+  platformBilibili: '哔哩哔哩',
+  platformMigu: '咪咕音乐',
+  platformEnabled: '已启用',
+  platformDisabled: '已禁用',
+
   serverMessages: {
     oauthRedirectCallbackInvalid: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback',
     oauthRedirectUrlInvalid: 'oauthRedirectUri 不是合法 URL，示例：https://yourdomain.com/api/auth/[provider]/callback',
@@ -496,6 +505,7 @@ export const pages = {
       semesters: '学期管理',
       blacklist: '黑名单管理',
       'site-config': '站点配置',
+      'music-source': '音源控制',
       database: '数据库操作',
       'api-keys': 'API密钥管理'
     },
@@ -1332,7 +1342,8 @@ export const pages = {
       alreadyReplayed: '该歌曲已重播',
       alreadyRequestedReplay: '该歌曲已申请过重播',
       musicUrlFailed: '获取音乐播放链接失败',
-      semesterLoadFailed: '获取学期信息失败，请刷新页面重试'
+      semesterLoadFailed: '获取学期信息失败，请刷新页面重试',
+      platformAutoSwitched: (name: string) => `当前平台已不可用，已自动切换至${name}`
     },
     requestForm: {
       guidelinesTitle: '投稿须知',
@@ -1692,6 +1703,7 @@ export const admin = {
       semesters: '学期管理',
       blacklist: '黑名单管理',
       cardCodes: '点歌券管理',
+      musicSource: '音源控制',
       siteConfig: '站点配置',
       database: '数据库操作',
       password: '修改密码'
@@ -2495,6 +2507,24 @@ export const admin = {
       fetchEnvFailed: '获取环境变量失败:',
       importEnvFailed: '导入环境配置失败:'
     }
+  },
+  musicSourceController: {
+    title: '音源控制',
+    description: '管理音乐平台的开关状态和搜索顺序，配置后立即生效',
+    saveConfig: '保存配置',
+    saving: '保存中...',
+    saved: '已保存',
+    reset: '重置',
+    loading: '加载中...',
+    fetchFailed: '获取配置失败',
+    saveFailedRetry: '保存配置失败，请重试',
+    saveSuccess: '音源配置已保存',
+    switchTitle: '平台开关',
+    switchDesc: '开启或关闭各音乐平台的搜索功能',
+    orderTitle: '搜索顺序',
+    orderDesc: '拖拽调整平台在搜索按钮区的显示顺序',
+    resetOrder: '重置顺序',
+    mustKeepOne: '至少保留一个平台启用'
   },
   playTimeManager: {
     title: '播出时段管理',
@@ -3972,6 +4002,7 @@ export const serverErrors = {
   USER_CODE_INVALID: '验证码错误',
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
   BACKUP_DISABLED: '自动备份未启用',
+  MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
   BACKUP_NOT_CONFIGURED: '自动备份未配置',
   NO_BACKUP_METHOD_ENABLED: '没有启用任何备份方式',
   BACKUP_FAILED: '备份执行失败',
