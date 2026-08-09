@@ -1333,7 +1333,8 @@ export const pages = {
       alreadyReplayed: 'This song has been replayed',
       alreadyRequestedReplay: 'Replay already requested',
       musicUrlFailed: 'Failed to get music playback URL',
-      semesterLoadFailed: 'Failed to load semester info. Please refresh and try again'
+      semesterLoadFailed: 'Failed to load semester info. Please refresh and try again',
+      platformAutoSwitched: (name: string) => `Current platform is unavailable, switched to ${name}`
     },
     requestForm: {
       guidelinesTitle: 'Submission Guidelines',
@@ -2504,7 +2505,7 @@ export const admin = {
     switchTitle: 'Platform Switch',
     switchDesc: 'Enable or disable each music platform for search',
     orderTitle: 'Search Order',
-    orderDesc: 'Drag to reorder platform buttons; search tries platforms in this order',
+    orderDesc: 'Drag to reorder platform buttons in the search area',
     resetOrder: 'Reset Order',
     mustKeepOne: 'At least one platform must stay enabled'
   },

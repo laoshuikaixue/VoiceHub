@@ -1,14 +1,16 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
+import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 
-const DEFAULT_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu']
+const DEFAULT_PLATFORMS = [...MUSIC_SOURCE_PLATFORMS]
 
 /**
- * 安全解析 platform JSON 字段，解析失败时返回默认值
+ * 安全解析 platform JSON 字段，解析失败或为空时返回默认值
  */
 const parsePlatformJson = (value: string | null | undefined) => {
   try {
-    return JSON.parse(value || '[]')
+    const parsed = JSON.parse(value || '[]')
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...DEFAULT_PLATFORMS]
   } catch {
     return [...DEFAULT_PLATFORMS]
   }

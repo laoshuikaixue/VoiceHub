@@ -391,6 +391,9 @@ export const MUSIC_PLATFORMS = {
   MIGU: 'migu'
 } as const
 
+// 音源控制功能平台白名单（enabledPlatforms/platformOrder 校验用；新增平台需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/utils/platforms.ts）
+export const MUSIC_SOURCE_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
+
 export const RISK_CONTROL_CONSTANTS = {
   IP_SWITCH_WINDOW_MS: 5 * 60 * 1000,
   IP_SWITCH_THRESHOLD: 3,

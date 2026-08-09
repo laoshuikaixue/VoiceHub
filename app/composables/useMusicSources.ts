@@ -21,43 +21,7 @@ import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { useLyricSettings } from './useLyricSettings'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useServerErrors } from './useLocaleText'
-
-// 平台显示名键 → 国际化文案键（按 siteConfig 段）
-const PLATFORM_NAME_KEYS = {
-  netease: 'platformNetease',
-  tencent: 'platformTencent',
-  bilibili: 'platformBilibili',
-  migu: 'platformMigu'
-} as const
-
-// 平台显示名回退值
-const PLATFORM_NAME_FALLBACK = {
-  netease: '网易云音乐',
-  tencent: 'QQ音乐',
-  bilibili: '哔哩哔哩',
-  migu: '咪咕音乐'
-} as const
-
-const PLATFORM_NAME_FALLBACK_EN = {
-  netease: 'NetEase Cloud Music',
-  tencent: 'QQ Music',
-  bilibili: 'Bilibili',
-  migu: 'Migu Music'
-} as const
-
-/**
- * 获取平台本地化显示名
- */
-const getPlatformDisplayName = (key: string, siteConfig: any, currentLocale: string): string => {
-  const nameKey = PLATFORM_NAME_KEYS[key as keyof typeof PLATFORM_NAME_KEYS]
-  if (nameKey && siteConfig?.[nameKey]) {
-    return siteConfig[nameKey]
-  }
-  const isEn = currentLocale === 'en-US'
-  return isEn
-    ? (PLATFORM_NAME_FALLBACK_EN[key as keyof typeof PLATFORM_NAME_FALLBACK_EN] ?? key)
-    : (PLATFORM_NAME_FALLBACK[key as keyof typeof PLATFORM_NAME_FALLBACK] ?? key)
-}
+import { getPlatformDisplayName } from '~/utils/platforms'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -462,6 +426,11 @@ export const useMusicSources = () => {
 
     const currentRank = getCurrentRank(currentData)
     const targetPlatform = platform === 'netease' ? 'tencent' : 'netease'
+    // 目标平台被管理员禁用时跳过跨平台歌词升级
+    if (import.meta.client && !globalEnabledPlatforms.value.includes(targetPlatform)) {
+      console.warn(`[getLyrics] 跨平台歌词升级跳过：目标平台 ${targetPlatform} 已被禁用`)
+      return false
+    }
     const queries = buildLyricUpgradeQueries(meta)
     if (queries.length === 0) return false
 
@@ -1185,12 +1154,9 @@ export const useMusicSources = () => {
               params: [platformName, availableNames]
             }
           }
-          throw {
-            data: {
-              ...payload.data,
-              message: localize(payload)
-            }
-          }
+          const err = new Error(localize(payload))
+          ;(err as any).data = payload.data
+          throw err
         }
       }
       const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
@@ -1313,9 +1279,23 @@ export const useMusicSources = () => {
         }
       }
 
-      // 若为QQ音乐平台，尝试完腾讯源后允许作为最后手段切换到其他平台
+      // 若为QQ音乐平台，尝试完腾讯源后允许作为最后手段切换到其他平台（排除已禁用的平台）
       if (params.platform === 'tencent') {
-        const otherSources = enabledSources.filter((s) => s.id !== 'vkeys-v3' && s.id !== 'vkeys')
+        // 音源 id → 平台 key 映射（仅对本功能支持的平台生效）
+        const platformOfSource = (id: string): string => {
+          if (id.includes('netease')) return 'netease'
+          if (id.includes('bilibili')) return 'bilibili'
+          if (id.includes('migu')) return 'migu'
+          return ''
+        }
+        const otherSources = enabledSources.filter(
+          (s) =>
+            s.id !== 'vkeys-v3' &&
+            s.id !== 'vkeys' &&
+            (platformOfSource(s.id)
+              ? globalEnabledPlatforms.value.includes(platformOfSource(s.id))
+              : true)
+        )
         if (otherSources.length) {
           console.log('QQ音乐平台所有专用源失败，作为最后手段尝试其他平台音源')
           for (const source of otherSources) {

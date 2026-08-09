@@ -210,7 +210,7 @@
           </div>
 
           <!-- 音乐平台选择按钮 -->
-          <div class="platform-selection-container">
+          <div v-if="platformConfigLoaded" class="platform-selection-container">
             <div class="platform-selection">
               <button
                 v-for="pKey in availablePlatforms"
@@ -1435,7 +1435,7 @@ const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
 
-const { getAvailablePlatforms, loadPlatformConfig } = usePlatformConfig()
+const { getAvailablePlatforms, loadPlatformConfig, loaded: platformConfigLoaded } = usePlatformConfig()
 const availablePlatforms = computed(() => getAvailablePlatforms())
 
 // 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
@@ -1443,10 +1443,9 @@ watch(availablePlatforms, (available) => {
   if (available.length > 0 && !available.includes(platform.value)) {
     platform.value = available[0]
     if (window.$showNotification) {
-      window.$showNotification(
-        locale.value.platforms[platform.value] ? `当前平台已不可用，已自动切换至${locale.value.platforms[platform.value]}` : '当前平台已不可用，已自动切换',
-        'info'
-      )
+      const switchedName = locale.value.platforms[platform.value] || ''
+      const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
+      window.$showNotification(msg, 'info')
     }
   }
 })

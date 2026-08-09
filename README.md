@@ -964,6 +964,7 @@ VoiceHub/
 │       ├── markdown.js        # Markdown工具
 │       ├── musicSources.ts    # 音乐源配置
 │       ├── musicUrl.ts        # 音乐URL处理
+│       ├── platforms.ts       # 平台元数据共享（白名单/显示名/图标）
 │       ├── sentryUpstreamMusicErrors.ts # Sentry 上游音源错误过滤
 │       ├── neteaseApi.ts      # 网易云音乐API
 │       ├── oauth-register.ts  # OAuth注册工具

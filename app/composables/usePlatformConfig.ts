@@ -5,15 +5,16 @@
 
 import { ref } from 'vue'
 import { useSiteConfig } from './useSiteConfig'
-
-const DEFAULT_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu'] as const
+import { DEFAULT_PLATFORMS } from '~/utils/platforms'
 
 export { DEFAULT_PLATFORMS }
 
 const cache = {
   enabledPlatforms: ref<string[]>([...DEFAULT_PLATFORMS]),
   platformOrder: ref<string[]>([...DEFAULT_PLATFORMS]),
-  loaded: ref(false)
+  loaded: ref(false),
+  // 加载中的 promise，避免并发重复请求
+  inflight: null as Promise<void> | null
 }
 
 /** 安全解析平台数组，解析失败时回退默认值 */
@@ -55,8 +56,8 @@ export const usePlatformConfig = () => {
 
     try {
       const res = await $fetch('/api/platform-config')
-      enabledPlatforms.value = Array.isArray(res.enabledPlatforms) ? res.enabledPlatforms : [...DEFAULT_PLATFORMS]
-      platformOrder.value = Array.isArray(res.platformOrder) ? res.platformOrder : [...DEFAULT_PLATFORMS]
+      enabledPlatforms.value = parsePlatformArray(res.enabledPlatforms)
+      platformOrder.value = parsePlatformArray(res.platformOrder)
       loaded.value = true
     } catch {
       // SSR 阶段 $fetch 不可用，保持 loaded=false 让客户端重试
@@ -70,11 +71,17 @@ export const usePlatformConfig = () => {
   const loadPlatformConfig = async () => {
     if (import.meta.server) return
     if (loaded.value) return
-    await doLoadPlatformConfig()
+    // 已有加载请求进行中则直接复用，避免并发重复请求
+    if (cache.inflight) return cache.inflight
+    cache.inflight = doLoadPlatformConfig().finally(() => {
+      cache.inflight = null
+    })
+    await cache.inflight
   }
 
   /** 重置加载状态并重新获取配置（跳过 useSiteConfig 优化，确保读到最新数据），供管理员保存后刷新使用 */
   const refreshPlatformConfig = async () => {
+    if (import.meta.server) return
     loaded.value = false
     await doLoadPlatformConfig(true)
   }

@@ -1342,7 +1342,8 @@ export const pages = {
       alreadyReplayed: '该歌曲已重播',
       alreadyRequestedReplay: '该歌曲已申请过重播',
       musicUrlFailed: '获取音乐播放链接失败',
-      semesterLoadFailed: '获取学期信息失败，请刷新页面重试'
+      semesterLoadFailed: '获取学期信息失败，请刷新页面重试',
+      platformAutoSwitched: (name: string) => `当前平台已不可用，已自动切换至${name}`
     },
     requestForm: {
       guidelinesTitle: '投稿须知',
@@ -2513,7 +2514,7 @@ export const admin = {
     switchTitle: '平台开关',
     switchDesc: '开启或关闭各音乐平台的搜索功能',
     orderTitle: '搜索顺序',
-    orderDesc: '拖拽调整平台在搜索按钮区的显示顺序，搜索时按此顺序依次尝试',
+    orderDesc: '拖拽调整平台在搜索按钮区的显示顺序',
     resetOrder: '重置顺序',
     mustKeepOne: '至少保留一个平台启用'
   },

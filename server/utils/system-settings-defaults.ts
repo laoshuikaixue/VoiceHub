@@ -1,3 +1,5 @@
+import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
   enablePlayTimeSelection: false,
@@ -51,8 +53,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   autoBackupEnabled: false,
   autoBackupConfig: null,
   // 平台管理
-  enabledPlatforms: '["netease","tencent","bilibili","migu"]',
-  platformOrder: '["netease","tencent","bilibili","migu"]',
+  enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
+  platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [

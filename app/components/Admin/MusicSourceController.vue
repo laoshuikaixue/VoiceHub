@@ -171,10 +171,12 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { usePlatformConfig, DEFAULT_PLATFORMS } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
-import { useLocaleText } from '~/composables/useLocaleText'
+import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
+import { getPlatformDisplayName, getPlatformInitial } from '~/utils/platforms'
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { refreshPlatformConfig } = usePlatformConfig()
+const { localize } = useServerErrors()
 
 const showNotification = (msg, type) => {
   if (window.$showNotification) {
@@ -204,18 +206,6 @@ const t = computed(() => ({
   mustKeepOne: callT('mustKeepOne')
 }))
 
-// 平台名称映射（复用国际化 siteConfig 段），英文模式无词典值时回退到平台 key
-const platformNames = computed(() => {
-  const s = siteConfig.value || {}
-  const isEn = currentLocale.value === 'en-US'
-  return {
-    netease: s.platformNetease || (isEn ? 'NetEase Cloud Music' : '网易云音乐'),
-    tencent: s.platformTencent || (isEn ? 'QQ Music' : 'QQ音乐'),
-    bilibili: s.platformBilibili || (isEn ? 'Bilibili' : '哔哩哔哩'),
-    migu: s.platformMigu || (isEn ? 'Migu Music' : '咪咕音乐')
-  }
-})
-
 const siteLocale = computed(() => useSafeLocale(siteConfig.value || {}))
 const { t: siteT } = useLocaleText(siteLocale)
 const platformStatusText = computed(() => ({
@@ -241,12 +231,7 @@ const parsePlatformArray = (value) => {
   }
 }
 
-const getPlatformLabel = (key) => platformNames.value[key] || key
-
-const getPlatformInitial = (key) => {
-  const map = { netease: '云', tencent: 'Q', bilibili: 'B', migu: 'M' }
-  return map[key] || '?'
-}
+const getPlatformLabel = (key) => getPlatformDisplayName(key, siteConfig.value, currentLocale.value)
 
 let draggedIndex = -1
 
@@ -339,7 +324,7 @@ const saveConfig = async () => {
     setTimeout(() => { saveSuccess.value = false }, 3000)
   } catch (error) {
     console.error('保存音源配置失败:', error)
-    const msg = error?.data?.message || error?.message || t.value.saveFailedRetry || '保存失败'
+    const msg = localize(error, t.value.saveFailedRetry || '保存失败')
     showNotification(msg, 'error')
   } finally {
     saving.value = false

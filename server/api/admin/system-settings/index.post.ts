@@ -9,9 +9,19 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { SERVER_ERROR_CODES, MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
 
-const VALID_PLATFORMS = ['netease', 'tencent', 'bilibili', 'migu']
+/**
+ * 解析数据库中存储的平台数组（历史脏数据/异常写入时回退默认值）
+ */
+const parsePlatformStored = (value: unknown): string[] => {
+  try {
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value
+    return Array.isArray(parsed) && parsed.length > 0 ? (parsed as string[]) : [...MUSIC_SOURCE_PLATFORMS]
+  } catch {
+    return [...MUSIC_SOURCE_PLATFORMS]
+  }
+}
 
 /**
  * 校验平台数组 JSON 字符串
@@ -48,7 +58,7 @@ const validatePlatformArray = (fieldName: string, value: unknown, requireUnique 
     )
   }
 
-  const invalid = parsed.filter((p: unknown) => !VALID_PLATFORMS.includes(p as string))
+  const invalid = parsed.filter((p: unknown) => !(MUSIC_SOURCE_PLATFORMS as readonly string[]).includes(p as string))
   if (invalid.length > 0) {
     throw createApiError(
       400,
@@ -383,14 +393,29 @@ export default defineEventHandler(async (event) => {
     }
 
     // 平台管理配置
-    if (body.enabledPlatforms !== undefined) {
-      validatePlatformArray('enabledPlatforms', body.enabledPlatforms)
-      updateData.enabledPlatforms = body.enabledPlatforms
-    }
+    if (body.enabledPlatforms !== undefined || body.platformOrder !== undefined) {
+      const enabled = body.enabledPlatforms !== undefined
+        ? validatePlatformArray('enabledPlatforms', body.enabledPlatforms, true)
+        : parsePlatformStored(settings?.enabledPlatforms)
+      const order = body.platformOrder !== undefined
+        ? validatePlatformArray('platformOrder', body.platformOrder, true)
+        : parsePlatformStored(settings?.platformOrder)
 
-    if (body.platformOrder !== undefined) {
-      validatePlatformArray('platformOrder', body.platformOrder, true)
-      updateData.platformOrder = body.platformOrder
+      // 交叉一致性：排序中必须至少包含一个已启用的平台，避免“无可用平台”死锁
+      if (!order.some((p) => enabled.includes(p))) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+          'platformOrder 必须包含至少一个已启用的平台'
+        )
+      }
+
+      if (body.enabledPlatforms !== undefined) {
+        updateData.enabledPlatforms = body.enabledPlatforms
+      }
+      if (body.platformOrder !== undefined) {
+        updateData.platformOrder = body.platformOrder
+      }
     }
 
     // SMTP配置字段
