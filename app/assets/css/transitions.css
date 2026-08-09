@@ -20,7 +20,8 @@
   width: 100%;
   min-width: 0;
   animation: page-view-enter 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity, filter;
+  /* will-change 声明 transform/filter 会使本元素成为 fixed 定位包含块，导致未 Teleport 的弹窗遮罩错位，仅保留 opacity */
+  will-change: opacity;
 }
 
 .page-view[data-route='index'] {

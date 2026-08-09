@@ -31,27 +31,14 @@
         >
           <!-- 头部 -->
           <div
-            class="flex items-center justify-between px-6 py-4 border-b border-border-secondary bg-bg-secondary-50 backdrop-blur-sm"
+            class="flex items-center justify-between px-6 py-4 border-b border-border-secondary bg-bg-secondary"
           >
             <h3 class="text-lg font-semibold text-text-primary">{{ locale.title }}</h3>
             <button
               class="p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
               @click="$emit('close')"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 18 12" />
-              </svg>
+              <Icon name="x" :size="20" />
             </button>
           </div>
 
@@ -248,6 +235,7 @@
 import { ref, computed, watch } from 'vue'
 import { useSemesters } from '~/composables/useSemesters'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import Icon from '~/components/UI/Icon.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useLocale } from '~/utils/locale'
 

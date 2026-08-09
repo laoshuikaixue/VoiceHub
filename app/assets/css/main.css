@@ -485,3 +485,8 @@ body::before {
     max-width: none !important;
   }
 }
+
+/* 重置 fixed 元素外边距：space-y-* 布局规则会给子元素加 margin-top，导致弹窗遮罩定位偏移 */
+.fixed {
+  margin: 0 !important;
+}
