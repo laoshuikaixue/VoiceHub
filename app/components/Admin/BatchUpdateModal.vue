@@ -41,7 +41,7 @@
 
         <div class="flex-1 overflow-y-auto p-8 pt-6 custom-scrollbar space-y-8">
           <!-- 更新方式选择 -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <label
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
@@ -374,7 +374,7 @@
               >
                 <Music :size="14" class="text-primary shrink-0" />
                 <span class="text-[10px] text-primary-80 leading-relaxed">
-                  {{ getNestedText('updateTypes', 'songAdminBatch', 'roleHint') }}
+                  {{ locale.updateTypes.songAdminBatch.roleHint }}
                 </span>
               </div>
 
@@ -974,6 +974,7 @@ const locale = computed(() => {
       gradeOnly: {},
       excelBatch: {},
       statusBatch: {},
+      songAdminBatch: {},
       ...(base.updateTypes || {})
     },
     fields: { ...(base.fields || {}) },
@@ -1012,6 +1013,7 @@ const locale = computed(() => {
       partialExcelSuccess: emptyText,
       excelFailed: emptyText,
       partialStatusSuccess: emptyText,
+      songAdminNoChanges: emptyText,
       ...(base.messages || {})
     },
     errors: {
@@ -1170,30 +1172,56 @@ const performSongAdminBatchUpdate = async () => {
     return updateData
   })
 
-  const response = await $fetch('/api/admin/users/batch-update', {
-    method: 'POST',
-    body: { updates },
-    ...auth.getAuthConfig()
-  })
+  // 后端单次批量更新上限 100 条，超出时分批提交
+  const batchSize = 50
+  let totalUpdated = 0
+  let totalFailed = 0
+  let firstErrorDetail = ''
 
-  if (!response?.success) {
-    throw new Error(response?.message || getNestedText('errors', 'songAdminUpdateFailed'))
+  for (let i = 0; i < updates.length; i += batchSize) {
+    const batch = updates.slice(i, i + batchSize)
+
+    try {
+      const response = await $fetch('/api/admin/users/batch-update', {
+        method: 'POST',
+        body: { updates: batch },
+        ...auth.getAuthConfig()
+      })
+
+      if (!response?.success) {
+        throw new Error(response?.message || getNestedText('errors', 'songAdminUpdateFailed'))
+      }
+
+      totalUpdated += response.data?.summary?.success || 0
+      totalFailed += response.data?.summary?.failed || 0
+      if (!firstErrorDetail && response.data?.errors?.length > 0) {
+        firstErrorDetail = response.data.errors[0].error
+      }
+    } catch (err) {
+      console.error('歌曲管理员批量更新失败:', err)
+      totalFailed += batch.length
+    }
   }
 
-  const failed = response.data?.summary?.failed || 0
-  const updated = response.data?.summary?.success || 0
+  // 目标字段与现状一致等无实际变更场景
+  if (totalUpdated === 0 && totalFailed === 0) {
+    if (window.$showNotification) {
+      window.$showNotification(getNestedText('messages', 'songAdminNoChanges'), 'warning')
+    }
+    return
+  }
 
-  if (failed > 0) {
-    if (updated > 0) {
+  if (totalFailed > 0) {
+    if (totalUpdated > 0) {
       if (window.$showNotification) {
-        window.$showNotification(getNestedText('messages', 'partialSongAdminSuccess', failed), 'warning')
+        window.$showNotification(getNestedText('messages', 'partialSongAdminSuccess', totalFailed), 'warning')
       }
     } else {
-      throw new Error(getNestedText('errors', 'updateFailedWithEtc', response.data?.errors?.[0]?.error || getNestedText('errors', 'songAdminUpdateFailed')))
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', firstErrorDetail || getNestedText('errors', 'songAdminUpdateFailed')))
     }
   } else {
     if (window.$showNotification) {
-      window.$showNotification(getNestedText('messages', 'songAdminSuccess', updated), 'success')
+      window.$showNotification(getNestedText('messages', 'songAdminSuccess', totalUpdated), 'success')
     }
   }
 }

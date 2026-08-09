@@ -3542,7 +3542,8 @@ export const admin = {
         partialStatusSuccess: (failed: number) => `部分更新成功，${failed} 个用户因权限或状态等原因跳过`,
         statusSuccess: '批量更新状态成功',
         songAdminSuccess: (count: number) => `成功更新 ${count} 位歌曲管理员信息`,
-        partialSongAdminSuccess: (failed: number) => `部分更新成功，${failed} 位管理员因权限或状态等原因跳过`
+        partialSongAdminSuccess: (failed: number) => `部分更新成功，${failed} 位管理员因权限或状态等原因跳过`,
+        songAdminNoChanges: '所选歌曲管理员的信息没有需要更新的变更'
       },
       errors: {
         invalidExcelFormat: 'Excel文件格式错误，请检查文件格式',

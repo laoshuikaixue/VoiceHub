@@ -3533,7 +3533,8 @@ export const admin = {
         partialStatusSuccess: (failed: number) => `Partially updated. ${failed} users were skipped due to permissions or status.`,
         statusSuccess: 'Batch status update succeeded',
         songAdminSuccess: (count: number) => `Successfully updated ${count} Song Admins`,
-        partialSongAdminSuccess: (failed: number) => `Partially updated. ${failed} admins were skipped due to permissions or status.`
+        partialSongAdminSuccess: (failed: number) => `Partially updated. ${failed} admins were skipped due to permissions or status.`,
+        songAdminNoChanges: 'No changes needed for the selected Song Admins'
       },
       errors: {
         invalidExcelFormat: 'Invalid Excel format. Please check the file format.',
