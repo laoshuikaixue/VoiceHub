@@ -39,7 +39,7 @@
     "@applemusic-like-lyrics/vue": "^0.5.2",
     "@breezystack/lamejs": "^1.2.7",
     "@lucide/vue": "^1.30.0",
-    "@neteasecloudmusicapienhanced/api": "^4.38.0",
+    "@neteasecloudmusicapienhanced/api": "^4.40.0",
     "@netlify/functions": "^2.8.2",
     "@nuxt/kit": "4.5.0",
     "@pixi/app": "^7.4.3",
