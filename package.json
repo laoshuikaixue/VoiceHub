@@ -21,6 +21,7 @@
     "setup": "pnpm install --frozen-lockfile && pnpm run db:migrate",
     "create-admin": "pnpm exec tsx scripts/create-admin.js",
     "clear-db": "pnpm exec tsx scripts/clear-database.js",
+    "db:reset": "pnpm exec tsx scripts/reset-database.js",
     "safe-migrate": "pnpm exec tsx scripts/safe-migrate.js",
     "deploy": "node scripts/deploy.js",
     "vercel-build": "node scripts/deploy.js",
