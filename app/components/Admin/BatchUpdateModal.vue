@@ -369,14 +369,6 @@
                 <Filter :size="14" class="text-primary" />
                 {{ getNestedText('songAdminSettings', 'scope') }}
               </div>
-              <div
-                class="p-3 bg-primary-10 border border-primary-20 rounded-lg flex items-center gap-3"
-              >
-                <Music :size="14" class="text-primary shrink-0" />
-                <span class="text-[10px] text-primary-80 leading-relaxed">
-                  {{ locale.updateTypes.songAdminBatch.roleHint }}
-                </span>
-              </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">

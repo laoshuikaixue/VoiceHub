@@ -3400,8 +3400,7 @@ export const admin = {
         },
         songAdminBatch: {
           title: 'Song Admin',
-          desc: 'Batch update grade, class, and account status for Song Admins',
-          roleHint: 'Only shows users with Song Admin (SONG_ADMIN) role'
+          desc: 'Batch update grade, class, and account status for Song Admins'
         }
       },
       fields: {

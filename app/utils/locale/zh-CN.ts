@@ -3409,8 +3409,7 @@ export const admin = {
         },
         songAdminBatch: {
           title: '歌曲管理员',
-          desc: '批量更新歌曲管理员的年级、班级、账号状态',
-          roleHint: '仅显示歌曲管理员 (SONG_ADMIN) 角色用户'
+          desc: '批量更新歌曲管理员的年级、班级、账号状态'
         }
       },
       fields: {
