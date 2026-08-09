@@ -80,7 +80,7 @@
           <!-- 第三方登录绑定 -->
           <section v-if="hasOAuthProviders" :class="sectionClass">
             <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
-              <div class="p-2.5 bg-info-10 rounded-xl">
+              <div class="p-2.5 bg-info-10 rounded-xl flex items-center justify-center">
                 <LinkIcon :size="20" class="text-info" />
               </div>
               <div>
@@ -98,7 +98,7 @@
           <section :class="sectionClass">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border-secondary-50 pb-5 mb-6">
               <div class="flex items-center gap-3">
-                <div class="p-2.5 bg-success-10 rounded-xl">
+                <div class="p-2.5 bg-success-10 rounded-xl flex items-center justify-center">
                   <KeyRound :size="20" class="text-success" />
                 </div>
                 <div>
@@ -197,7 +197,7 @@
           <!-- 修改密码 -->
           <section :class="sectionClass">
             <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
-              <div class="p-2.5 bg-primary-10 rounded-xl">
+              <div class="p-2.5 bg-primary-10 rounded-xl flex items-center justify-center">
                 <Lock :size="20" class="text-primary" />
               </div>
               <div>

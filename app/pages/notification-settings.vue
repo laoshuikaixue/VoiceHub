@@ -41,7 +41,7 @@
         <!-- 站内通知设置 -->
         <section :class="sectionClass">
           <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
-            <div class="p-2.5 bg-primary-10 rounded-xl">
+            <div class="p-2.5 bg-primary-10 rounded-xl flex items-center justify-center">
               <Bell :size="20" class="text-primary" />
             </div>
             <div>

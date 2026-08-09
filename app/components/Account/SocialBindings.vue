@@ -1,7 +1,7 @@
 <template>
   <div :class="cardClass">
     <div class="flex items-center gap-3 pb-5 mb-6">
-      <div class="p-2.5 bg-primary-10 rounded-xl">
+      <div class="p-2.5 bg-primary-10 rounded-xl flex items-center justify-center">
         <Share2 :size="20" class="text-primary" />
       </div>
       <div>
@@ -144,7 +144,7 @@
       <div :class="meowCardClass">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <div class="p-2 bg-primary-10 rounded-lg border border-primary-20">
+            <div class="p-2 bg-primary-10 rounded-lg border border-primary-20 flex items-center justify-center">
               <Smartphone :size="16" class="text-primary" />
             </div>
             <h3 class="text-sm font-bold text-text-primary">{{ locale.meowPushTitle }}</h3>
