@@ -1050,11 +1050,13 @@ import OpsPanel from '~/components/Admin/Ops/OpsPanel.vue'
 import UserActivityPanel from '~/components/Admin/UserActivityPanel.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
+import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useToast } from '~/composables/useToast'
 
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.operations || {})
 const { showToast } = useToast()
+const { enabledPlatforms: enabledMusicPlatforms, loadPlatformConfig } = usePlatformConfig()
 const publicRuntimeConfig = useRuntimeConfig().public || {}
 const activeGroup = ref('overview')
 const globalRequestId = ref('')
@@ -1306,6 +1308,7 @@ const handleVisibilityChange = () => {
   else startAutoRefresh()
 }
 onMounted(() => {
+  void loadPlatformConfig()
   loadOperationsData()
   startAutoRefresh()
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -1790,7 +1793,9 @@ const databaseModuleStatus = computed(() => {
   if (utilization >= 0.8 || latency >= 500 || Number(databaseDiagnostics.value?.locks?.data?.length || 0) > 0) return 'warning'
   return 'ok'
 })
-const musicSourceStatuses = computed(() => ['netease', 'tencent', 'bilibili', 'migu'].map((source) => {
+const musicSourceKeys = ['netease', 'tencent', 'bilibili', 'migu']
+const enabledMusicSourceKeys = computed(() => musicSourceKeys.filter((source) => enabledMusicPlatforms.value.includes(source)))
+const musicSourceStatuses = computed(() => enabledMusicSourceKeys.value.map((source) => {
   const metric = dependencyMetrics.value[source]
   if (!metric || !Number(metric.calls)) return { source, status: 'unknown', metric: null }
   if (metric.successRate == null) return { source, status: 'unknown', metric }
@@ -1975,7 +1980,7 @@ const dependencyMetrics = computed(() => runtimeMetrics.value?.dependencies || {
 const dependencyMetricTimeline = computed(() => runtimeDatabaseMetrics.value?.dependencyTimeline || [])
 const dependencyAggregateTimeline = computed(() => {
   const buckets = new Map()
-  for (const point of dependencyMetricTimeline.value) {
+  for (const point of dependencyMetricTimeline.value.filter((entry) => enabledMusicSourceKeys.value.includes(entry.source))) {
     const at = point?.at
     if (!at) continue
     const key = new Date(at).toISOString()
@@ -2048,7 +2053,7 @@ const musicApiRows = computed(() => [
   { key: 'tencent', source: locale.value.overview?.tencentSource },
   { key: 'bilibili', source: locale.value.overview?.bilibiliSource },
   { key: 'migu', source: locale.value.overview?.miguSource }
-].map(({ key, source }) => {
+].filter(({ key }) => enabledMusicSourceKeys.value.includes(key)).map(({ key, source }) => {
   const metric = dependencyMetrics.value?.[key]
   return {
     source: source || key,
@@ -2107,6 +2112,18 @@ const dependencySourceForLabel = (label) => {
   }
   return labels[label]
 }
+const musicSourceLabel = (source) => ({
+  netease: locale.value.overview?.neteaseSource || '网易云音乐',
+  tencent: locale.value.overview?.tencentSource || 'QQ 音乐',
+  bilibili: locale.value.overview?.bilibiliSource || 'Bilibili',
+  migu: locale.value.overview?.miguSource || '咪咕音乐'
+}[source] || source)
+const dependencyErrorPanelTitle = (source) => ({
+  netease: locale.value.dependencies?.neteaseErrorCodes,
+  tencent: locale.value.dependencies?.tencentErrorCodes,
+  bilibili: locale.value.dependencies?.bilibiliErrorCodes,
+  migu: locale.value.dependencies?.miguErrorCodes
+}[source] || source)
 const dependencyStatusValue = (label) => {
   const source = dependencySourceForLabel(label)
   if (!source) return dependencyOverviewStatusText(label)
@@ -3111,26 +3128,11 @@ const logContextValue = (label) => {
 }
 
 const dependencyHealthCards = computed(() => [
-  {
+  ...enabledMusicSourceKeys.value.map((source) => ({
     icon: 'music',
-    label: locale.value.overview?.neteaseSource,
+    label: musicSourceLabel(source),
     details: musicSourceHealthDetails.value
-  },
-  {
-    icon: 'music',
-    label: locale.value.overview?.tencentSource,
-    details: musicSourceHealthDetails.value
-  },
-  {
-    icon: 'music',
-    label: locale.value.overview?.bilibiliSource,
-    details: musicSourceHealthDetails.value
-  },
-  {
-    icon: 'music',
-    label: locale.value.overview?.miguSource,
-    details: musicSourceHealthDetails.value
-  },
+  })),
   {
     icon: 'success',
     label: locale.value.dependencies?.oauth,
@@ -3191,35 +3193,13 @@ const overviewDependencyPreview = computed(() => dependencyHealthCards.value.map
   preview: item.details.slice(0, 3).map(detail => `${detail} ${dependencyMetricValue(item.label, detail)}`).join(' · ')
 })))
 
-const dependencyErrorPanels = computed(() => [
-  {
-    source: 'netease',
-    title: locale.value.dependencies?.neteaseErrorCodes,
-    detail: locale.value.dependencies?.errorCodePanelDetail
-  },
-  {
-    source: 'tencent',
-    title: locale.value.dependencies?.tencentErrorCodes,
-    detail: locale.value.dependencies?.errorCodePanelDetail
-  },
-  {
-    source: 'bilibili',
-    title: locale.value.dependencies?.bilibiliErrorCodes,
-    detail: locale.value.dependencies?.errorCodePanelDetail
-  },
-  {
-    source: 'migu',
-    title: locale.value.dependencies?.miguErrorCodes,
-    detail: locale.value.dependencies?.errorCodePanelDetail
-  }
-])
+const dependencyErrorPanels = computed(() => enabledMusicSourceKeys.value.map((source) => ({
+  source,
+  title: dependencyErrorPanelTitle(source),
+  detail: locale.value.dependencies?.errorCodePanelDetail
+})))
 
-const dependencyUptimeRows = computed(() => [
-  { source: 'netease', label: locale.value.overview?.neteaseSource || '网易云音乐' },
-  { source: 'tencent', label: locale.value.overview?.tencentSource || 'QQ 音乐' },
-  { source: 'bilibili', label: locale.value.overview?.bilibiliSource || 'Bilibili' },
-  { source: 'migu', label: locale.value.overview?.miguSource || '咪咕音乐' }
-].map((item) => {
+const dependencyUptimeRows = computed(() => enabledMusicSourceKeys.value.map((source) => ({ source, label: musicSourceLabel(source) })).map((item) => {
   const sourceStatus = dependencySourceStatus(item.source)
   const current = sourceStatus === 'ok' ? 'up' : sourceStatus === 'warning' ? 'degraded' : sourceStatus === 'error' ? 'down' : 'unknown'
   const hourly = new Map()
@@ -3282,10 +3262,7 @@ const dependencyProtectionPanels = computed(() => [
       locale.value.dependencies?.retryAttempts,
       locale.value.dependencies?.circuitBreakerOpens,
       locale.value.dependencies?.cachedResponseFallbacks,
-      locale.value.overview?.neteaseSource,
-      locale.value.overview?.tencentSource,
-      locale.value.overview?.bilibiliSource,
-      locale.value.overview?.miguSource
+      ...enabledMusicSourceKeys.value.map((source) => musicSourceLabel(source))
     ]
   },
   {

@@ -2,7 +2,7 @@ import { startOperationRequest, finishOperationRequest, setOperationRequestConte
 import { randomUUID } from 'node:crypto'
 import { performance } from 'node:perf_hooks'
 import { db } from '~/drizzle/db'
-import { apiLogs } from '~/drizzle/schema'
+import { apiLogs, systemSettings } from '~/drizzle/schema'
 import { sql } from 'drizzle-orm'
 import { getInstanceId } from '~~/server/utils/instance-id'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
@@ -19,6 +19,7 @@ const musicSourceProbeTargets = [
 ]
 let musicSourceProbeInFlight: Promise<void> | null = null
 let lastMusicSourceProbeAt = 0
+let musicSourceProbeConfigVersion = 0
 
 const isMusicSourceProbeRequest = (event: any) => String(event.node.req.headers[MUSIC_SOURCE_PROBE_HEADER] || '') === '1'
 const isMonitoringRequest = (url = '') => [
@@ -36,6 +37,20 @@ const isServerlessRuntime = () => {
   if (hasPlatformEnv(process.env.NETLIFY) || hasPlatformEnv(process.env.EDGEONE) || hasPlatformEnv(process.env.EDGEONE_PAGES) || hasPlatformEnv(process.env.EDGEONE_ENV) || hasPlatformEnv(process.env.CF_PAGES) || hasPlatformEnv(process.env.CLOUDFLARE)) return true
   const preset = process.env.NITRO_PRESET || 'node-server'
   return ['vercel', 'netlify', 'edgeone', 'cloudflare', 'serverless'].some((name) => preset.toLowerCase().includes(name))
+}
+
+const getEnabledMusicSourceSet = async () => {
+  try {
+    const rows = await db.select({ enabledPlatforms: systemSettings.enabledPlatforms }).from(systemSettings).limit(1)
+    const stored = rows[0]?.enabledPlatforms
+    if (!stored) return new Set(musicSourceProbeTargets.map((target) => target.source))
+    const parsed = JSON.parse(stored)
+    if (!Array.isArray(parsed)) return null
+    return new Set(parsed.filter((source) => musicSourceProbeTargets.some((target) => target.source === source)))
+  } catch (error) {
+    console.warn('[Operations] Unable to load music source configuration; skipping active probes', error)
+    return null
+  }
 }
 
 const persistMinuteBucket = (statusCode: number, durationMs: number) => {
@@ -57,12 +72,16 @@ const persistMinuteBucket = (statusCode: number, durationMs: number) => {
 }
 
 export default defineNitroPlugin((nitroApp) => {
-  const runMusicSourceProbe = async () => {
+  const runMusicSourceProbe = async (force = false) => {
     if (process.env.VOICEHUB_MUSIC_SOURCE_PROBE_ENABLED === 'false') return
-    if (musicSourceProbeInFlight || getServerTimestamp() - lastMusicSourceProbeAt < MUSIC_SOURCE_PROBE_INTERVAL_MS) return musicSourceProbeInFlight || undefined
+    if (force) musicSourceProbeConfigVersion += 1
+    if (musicSourceProbeInFlight || (!force && getServerTimestamp() - lastMusicSourceProbeAt < MUSIC_SOURCE_PROBE_INTERVAL_MS)) return musicSourceProbeInFlight || undefined
 
     lastMusicSourceProbeAt = getServerTimestamp()
     musicSourceProbeInFlight = (async () => {
+      let observedConfigVersion = musicSourceProbeConfigVersion
+      let enabledSources = await getEnabledMusicSourceSet()
+      if (!enabledSources) return
       let recentlyObserved = new Set<string>()
       try {
         const rows = await db.execute(sql`
@@ -76,6 +95,12 @@ export default defineNitroPlugin((nitroApp) => {
       }
 
       for (const target of musicSourceProbeTargets) {
+        if (observedConfigVersion !== musicSourceProbeConfigVersion) {
+          observedConfigVersion = musicSourceProbeConfigVersion
+          enabledSources = await getEnabledMusicSourceSet()
+          if (!enabledSources) return
+        }
+        if (!enabledSources.has(target.source)) continue
         if (recentlyObserved.has(target.source)) continue
         try {
           await nitroApp.localFetch(target.path, {

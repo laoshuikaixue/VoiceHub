@@ -3,6 +3,7 @@ import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { recordAdminOperation } from '~~/server/services/adminOperationLogService'
+import { triggerMusicSourceProbe } from '~~/server/utils/operations-metrics'
 import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
 import {
   getAggregateOAuthLoginTypesOrDefault,
@@ -873,6 +874,12 @@ export default defineEventHandler(async (event) => {
       console.log('[SMTP] SMTP配置已重新加载（更新系统设置）')
     } catch (smtpError) {
       console.warn('[SMTP] SMTP配置重载失败:', smtpError)
+    }
+
+    if (updateData.enabledPlatforms !== undefined || updateData.platformOrder !== undefined) {
+      void triggerMusicSourceProbe(true)?.catch((probeError) => {
+        console.warn('[Operations] Music source probe configuration refresh failed:', probeError)
+      })
     }
 
     await recordAdminOperation(event, {

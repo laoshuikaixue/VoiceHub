@@ -24,6 +24,16 @@ const parseDate = (value: unknown) => {
 const sessionState = (lastActiveAt: Date, now: Date) =>
   now.getTime() - new Date(lastActiveAt).getTime() <= USER_SESSION_ACTIVE_WINDOW_MS ? 'active' : 'idle'
 
+const parseOperatingSystem = (userAgent: string | null) => {
+  const value = String(userAgent || '')
+  if (/Windows NT/i.test(value)) return 'Windows'
+  if (/Android/i.test(value)) return 'Android'
+  if (/iPhone|iPad|iPod/i.test(value)) return 'iOS'
+  if (/Mac OS X|Macintosh/i.test(value)) return 'macOS'
+  if (/Linux/i.test(value)) return 'Linux'
+  return '未知'
+}
+
 export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event)
   const query = getQuery(event)
@@ -38,6 +48,7 @@ export default defineEventHandler(async (event) => {
   const endAt = parseDate(query.endAt)
   const now = getServerDate()
   const activeSince = new Date(now.getTime() - USER_SESSION_ACTIVE_WINDOW_MS)
+  const currentSessionId = String(event.context.userSessionId || '')
   const baseConditions: SQL[] = [
     isNull(userSessions.revokedAt),
     gt(userSessions.expiresAt, now),
@@ -69,6 +80,7 @@ export default defineEventHandler(async (event) => {
         name: users.name,
         role: users.role,
         ipAddress: userSessions.ipAddress,
+        userAgent: userSessions.userAgent,
         browser: userSessions.browser,
         deviceType: userSessions.deviceType,
         lastPath: userSessions.lastPath,
@@ -94,6 +106,8 @@ export default defineEventHandler(async (event) => {
       ...row,
       displayName: row.name || row.username,
       ipAddress: maskedIp(row.ipAddress),
+      operatingSystem: parseOperatingSystem(row.userAgent),
+      isCurrentSession: row.id === currentSessionId,
       status: sessionState(row.lastActiveAt, now)
     }))
 

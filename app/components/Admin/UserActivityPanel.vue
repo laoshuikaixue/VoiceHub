@@ -75,18 +75,44 @@
           <table class="activity-table">
             <thead><tr><th>账号</th><th>角色</th><th>来源 IP</th><th>设备</th><th>浏览器</th><th>状态</th><th>最近页面</th><th>最后活跃</th><th>在线时长</th><th>操作</th></tr></thead>
             <tbody>
-              <tr v-for="session in sessions" :key="session.id">
-                <td><strong>{{ session.displayName }}</strong><small>@{{ session.username }}</small></td>
-                <td>{{ roleLabel(session.role) }}</td>
-                <td class="activity-mono">{{ session.ipAddress }}</td>
-                <td>{{ deviceLabel(session.deviceType) }}</td>
-                <td>{{ session.browser }}</td>
-                <td><span class="activity-session-status" :class="`activity-session-status--${session.status}`">{{ session.status === 'active' ? '活跃' : '闲置' }}</span></td>
-                <td class="activity-path" :title="session.lastPath || '--'">{{ session.lastPath || '--' }}</td>
-                <td>{{ formatTime(session.lastActiveAt) }}</td>
-                <td>{{ sessionDuration(session.startedAt) }}</td>
-                <td><button type="button" class="activity-revoke" :disabled="revokingId === session.id" @click="revokeSession(session)"><Icon name="logout" :size="13" />{{ revokingId === session.id ? '处理中' : '强制下线' }}</button></td>
-              </tr>
+              <template v-for="session in sessions" :key="session.id">
+                <tr :class="{ 'activity-table__row--expanded': expandedSessionId === session.id }">
+                  <td><strong>{{ session.displayName }}</strong><small>@{{ session.username }}</small></td>
+                  <td>{{ roleLabel(session.role) }}</td>
+                  <td class="activity-mono">{{ session.ipAddress }}</td>
+                  <td>{{ deviceLabel(session.deviceType) }}</td>
+                  <td>{{ session.browser }}</td>
+                  <td><span class="activity-session-status" :class="`activity-session-status--${session.status}`">{{ session.status === 'active' ? '活跃' : '闲置' }}</span></td>
+                  <td class="activity-path" :title="session.lastPath || '--'">{{ session.lastPath || '--' }}</td>
+                  <td>{{ formatTime(session.lastActiveAt) }}</td>
+                  <td>{{ sessionDuration(session.startedAt) }}</td>
+                  <td class="activity-table-actions"><button type="button" class="activity-details-toggle" :aria-expanded="expandedSessionId === session.id" @click="toggleSessionDetails(session.id)">{{ expandedSessionId === session.id ? '收起详情' : '查看详情' }}</button><button type="button" class="activity-revoke" :disabled="revokingId === session.id" @click="revokeSession(session)"><Icon name="logout" :size="13" />{{ revokingId === session.id ? '处理中' : '强制下线' }}</button></td>
+                </tr>
+                <tr v-if="expandedSessionId === session.id" class="activity-session-detail-row">
+                  <td colspan="10">
+                    <dl class="activity-session-detail">
+                      <div><dt>用户名</dt><dd>{{ session.username || '--' }}</dd></div>
+                      <div><dt>姓名</dt><dd>{{ session.name || '--' }}</dd></div>
+                      <div><dt>所属部门</dt><dd>--</dd></div>
+                      <div><dt>岗位</dt><dd>--</dd></div>
+                      <div><dt>角色</dt><dd>{{ roleLabel(session.role) }}</dd></div>
+                      <div><dt>会话状态</dt><dd><span class="activity-session-status" :class="`activity-session-status--${session.status}`">{{ session.status === 'active' ? '活跃' : '闲置' }}</span></dd></div>
+                      <div><dt>是否当前会话</dt><dd>{{ session.isCurrentSession ? '是' : '否' }}</dd></div>
+                      <div><dt>IP 地址</dt><dd class="activity-mono">{{ session.ipAddress || '--' }}</dd></div>
+                      <div><dt>设备类型</dt><dd>{{ deviceLabel(session.deviceType) }}</dd></div>
+                      <div><dt>浏览器</dt><dd>{{ session.browser || '--' }}</dd></div>
+                      <div><dt>操作系统</dt><dd>{{ session.operatingSystem || '--' }}</dd></div>
+                      <div><dt>最近页面</dt><dd class="activity-detail-path" :title="session.lastPath || '--'">{{ session.lastPath || '--' }}</dd></div>
+                      <div><dt>登录时间</dt><dd>{{ formatTime(session.startedAt) }}</dd></div>
+                      <div><dt>最后活跃</dt><dd>{{ formatTime(session.lastActiveAt) }}</dd></div>
+                      <div><dt>最近续签</dt><dd>--</dd></div>
+                      <div><dt>会话时长</dt><dd>{{ sessionDuration(session.startedAt) }}</dd></div>
+                      <div><dt>到期时间</dt><dd>{{ formatTime(session.expiresAt) }}</dd></div>
+                      <div class="activity-session-detail__wide"><dt>User Agent</dt><dd class="activity-user-agent">{{ session.userAgent || '--' }}</dd></div>
+                    </dl>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -114,6 +140,7 @@ const error = ref('')
 const forbidden = ref(false)
 const page = ref(1)
 const revokingId = ref('')
+const expandedSessionId = ref('')
 const filters = ref({ keyword: '', status: '', deviceType: '' })
 const pagination = ref({ page: 1, limit: 20, total: 0, totalPages: 0 })
 let requestVersion = 0
@@ -177,6 +204,7 @@ const loadSessions = async (targetPage = 1) => {
     })
     if (version !== requestVersion) return
     data.value = response
+    if (expandedSessionId.value && !response.sessions.some((session) => session.id === expandedSessionId.value)) expandedSessionId.value = ''
     pagination.value = response.pagination
     page.value = response.pagination.page
     forbidden.value = false
@@ -204,6 +232,9 @@ const loadSessions = async (targetPage = 1) => {
 }
 
 const applyFilters = () => loadSessions(1)
+const toggleSessionDetails = (sessionId) => {
+  expandedSessionId.value = expandedSessionId.value === sessionId ? '' : sessionId
+}
 const resetFilters = () => {
   filters.value = { keyword: '', status: '', deviceType: '' }
   void loadSessions(1)
@@ -244,7 +275,9 @@ watch(() => props.refreshToken, () => void loadSessions(page.value), { immediate
 .activity-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: .65rem; border: 1px solid var(--ops-line); border-radius: 6px; padding: .75rem; background: var(--ops-panel); }.activity-filters label { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: center; gap: .5rem; color: var(--ops-text-2); font-size: .6875rem; }.activity-filters input { width: 100%; height: 1.875rem; border: 1px solid var(--ops-line); border-radius: 6px; padding: 0 .6rem; outline: none; color: var(--ops-text-1); background: #0e1217; font-size: .7rem; }.activity-filters input:focus { border-color: rgba(34,211,238,.5); }.activity-select { min-width: 0; }.activity-filter-actions { display: flex; justify-content: flex-end; gap: .5rem; }.activity-filter-actions button { height: 1.875rem; border: 1px solid var(--ops-line); border-radius: 6px; padding: 0 .75rem; color: var(--ops-text-1); background: #0e1217; font-size: .7rem; cursor: pointer; }.activity-filter-actions button:hover { border-color: rgba(34,211,238,.5); }.activity-filter-actions .activity-button--primary { border-color: rgba(34,211,238,.5); color: var(--ops-info); }
 :deep(.activity-select > div) { min-height: 1.875rem; height: 1.875rem; border-color: var(--ops-line); border-radius: 6px; padding: 0 .6rem; background: #0e1217; }:deep(.activity-select > div:hover) { border-color: rgba(34,211,238,.5); }
 .activity-table-wrap { overflow-x: auto; }.activity-table { width: 100%; min-width: 1050px; border-collapse: collapse; }.activity-table th { border-bottom: 1px solid var(--ops-line); padding: .65rem .55rem; color: var(--ops-text-2); font-size: .64rem; font-weight: 600; text-align: left; white-space: nowrap; }.activity-table td { max-width: 12rem; border-bottom: 1px solid rgba(148,163,184,.08); padding: .65rem .55rem; color: var(--ops-text-1); font-size: .68rem; }.activity-table td > strong, .activity-table td > small { display: block; }.activity-table td > small { margin-top: .2rem; color: var(--ops-text-2); }.activity-mono { font-family: var(--ops-mono); }.activity-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.activity-session-status { display: inline-flex; border: 1px solid var(--ops-line); border-radius: 4px; padding: .2rem .35rem; color: var(--ops-text-2); }.activity-session-status--active { border-color: color-mix(in srgb,var(--ops-ok) 30%,transparent); color: var(--ops-ok); background: color-mix(in srgb,var(--ops-ok) 8%,transparent); }.activity-session-status--idle { border-color: color-mix(in srgb,var(--ops-warning) 30%,transparent); color: var(--ops-warning); background: color-mix(in srgb,var(--ops-warning) 8%,transparent); }.activity-revoke { display: inline-flex; height: 1.75rem; align-items: center; gap: .3rem; border: 1px solid color-mix(in srgb,var(--ops-error) 30%,transparent); border-radius: 5px; padding: 0 .45rem; color: var(--ops-error); background: color-mix(in srgb,var(--ops-error) 7%,#0e1217); font-size: .64rem; cursor: pointer; }.activity-revoke:disabled { cursor: not-allowed; opacity: .5; }
+.activity-table-actions { display: flex; align-items: center; gap: .4rem; white-space: nowrap; }.activity-details-toggle { height: 1.75rem; border: 1px solid var(--ops-line); border-radius: 5px; padding: 0 .45rem; color: var(--ops-info); background: #0e1217; font-size: .64rem; cursor: pointer; }.activity-details-toggle:hover { border-color: color-mix(in srgb,var(--ops-info) 55%,transparent); }.activity-table__row--expanded > td { border-bottom-color: transparent; }.activity-session-detail-row > td { padding: 0 .55rem .75rem; border-bottom: 1px solid rgba(148,163,184,.08); }.activity-session-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; margin: 0; border: 1px solid var(--ops-line); border-radius: 6px; background: #0e1217; }.activity-session-detail > div { display: grid; grid-template-columns: 6.25rem minmax(0, 1fr); min-height: 2.25rem; border-right: 1px solid rgba(148,163,184,.08); border-bottom: 1px solid rgba(148,163,184,.08); }.activity-session-detail > div:nth-child(2n) { border-right: 0; }.activity-session-detail > div:nth-last-child(-n + 2) { border-bottom: 0; }.activity-session-detail dt { display: flex; align-items: center; padding: .45rem .55rem; color: var(--ops-text-2); background: rgba(148,163,184,.045); font-size: .66rem; font-weight: 600; }.activity-session-detail dd { min-width: 0; margin: 0; padding: .45rem .55rem; color: var(--ops-text-1); font-size: .68rem; line-height: 1.45; word-break: break-word; }.activity-session-detail__wide { grid-column: 1 / -1; border-right: 0 !important; }.activity-user-agent { color: var(--ops-text-2) !important; font-family: var(--ops-mono); }.activity-detail-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .activity-pagination { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .75rem; color: var(--ops-text-2); font-size: .68rem; }.activity-pagination div { display: flex; align-items: center; gap: .5rem; }.activity-pagination button { height: 1.75rem; border: 1px solid var(--ops-line); border-radius: 5px; padding: 0 .5rem; color: var(--ops-text-1); background: #0e1217; font-size: .65rem; cursor: pointer; }.activity-pagination button:disabled { cursor: not-allowed; opacity: .4; }.activity-pagination strong { color: var(--ops-text-1); font-family: var(--ops-mono); }
 @media (min-width: 768px) { .activity-posture { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }.activity-filters { grid-template-columns: minmax(13rem, 1.2fr) minmax(10rem, .8fr) minmax(10rem, .8fr) auto; }.activity-filters label { grid-template-columns: auto minmax(0, 1fr); } }
 @media (min-width: 1280px) { .activity-analysis-grid { grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr); } }
+@media (max-width: 767px) { .activity-session-detail { grid-template-columns: 1fr; }.activity-session-detail > div { border-right: 0; }.activity-session-detail > div:not(:last-child) { border-bottom: 1px solid rgba(148,163,184,.08); }.activity-session-detail__wide { grid-column: auto; } }
 </style>

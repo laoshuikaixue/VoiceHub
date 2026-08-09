@@ -52,13 +52,13 @@ const state = {
   ssrPrewarm: { attempts: 0, successes: 0, failures: 0, lastDurationMs: null as number | null, lastResult: null as string | null }
 }
 
-let musicSourceProbeRunner: (() => Promise<void>) | null = null
+let musicSourceProbeRunner: ((force?: boolean) => Promise<void>) | null = null
 
-export const setMusicSourceProbeRunner = (runner: (() => Promise<void>) | null) => {
+export const setMusicSourceProbeRunner = (runner: ((force?: boolean) => Promise<void>) | null) => {
   musicSourceProbeRunner = runner
 }
 
-export const triggerMusicSourceProbe = () => musicSourceProbeRunner?.()
+export const triggerMusicSourceProbe = (force = false) => musicSourceProbeRunner?.(force)
 
 const gcObserver = new PerformanceObserver((list) => {
   for (const entry of list.getEntries()) {
