@@ -78,11 +78,18 @@ export default defineNuxtConfig({
   },
   modules: [
     '@unocss/nuxt',
+    '@nuxtjs/tailwindcss',
+    'shadcn-nuxt',
     '@vite-pwa/nuxt',
     ...(process.env.NODE_ENV === 'development' || process.env.npm_lifecycle_event?.includes('lint')
       ? ['@nuxt/eslint']
       : [])
   ],
+
+  shadcn: {
+    prefix: '',
+    componentDir: '@/components/ui'
+  },
 
   // UnoCSS 配置
   unocss: {
@@ -559,6 +566,7 @@ export default defineNuxtConfig({
 
   // 引入全局CSS
   css: [
+    '~/assets/css/tailwind.css',
     '~/assets/css/variables.css',
     '~/assets/css/components.css',
     '~/assets/css/main.css',
