@@ -50,6 +50,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 自动备份
   autoBackupEnabled: false,
   autoBackupConfig: null,
+  // 平台管理
+  enabledPlatforms: '["netease","tencent","bilibili","migu"]',
+  platformOrder: '["netease","tencent","bilibili","migu"]',
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -90,7 +93,9 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'captchaEnabled',
   'captchaMaxFailures',
   'captchaProvider',
-  'turnstileSiteKey'
+  'turnstileSiteKey',
+  'enabledPlatforms',
+  'platformOrder'
 ]
 
 export const filterPublicSettings = (data: any) => {

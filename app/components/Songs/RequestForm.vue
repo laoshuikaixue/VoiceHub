@@ -213,32 +213,13 @@
           <div class="platform-selection-container">
             <div class="platform-selection">
               <button
-                :class="['platform-btn', { active: platform === 'netease' }]"
+                v-for="pKey in availablePlatforms"
+                :key="pKey"
+                :class="['platform-btn', { active: platform === pKey }]"
                 type="button"
-                @click="switchPlatform('netease')"
+                @click="switchPlatform(pKey)"
               >
-                {{ locale.platforms.netease }}
-              </button>
-              <button
-                :class="['platform-btn', { active: platform === 'tencent' }]"
-                type="button"
-                @click="switchPlatform('tencent')"
-              >
-                {{ locale.platforms.tencent }}
-              </button>
-              <button
-                :class="['platform-btn', { active: platform === 'bilibili' }]"
-                type="button"
-                @click="switchPlatform('bilibili')"
-              >
-                {{ locale.platforms.bilibili }}
-              </button>
-              <button
-                :class="['platform-btn', { active: platform === 'migu' }]"
-                type="button"
-                @click="switchPlatform('migu')"
-              >
-                {{ locale.platforms.migu }}
+                {{ locale.platforms[pKey] || pKey }}
               </button>
             </div>
 
@@ -1372,6 +1353,7 @@ import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
@@ -1452,6 +1434,22 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
+
+const { getAvailablePlatforms, loadPlatformConfig } = usePlatformConfig()
+const availablePlatforms = computed(() => getAvailablePlatforms())
+
+// 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
+watch(availablePlatforms, (available) => {
+  if (available.length > 0 && !available.includes(platform.value)) {
+    platform.value = available[0]
+    if (window.$showNotification) {
+      window.$showNotification(
+        locale.value.platforms[platform.value] ? `当前平台已不可用，已自动切换至${locale.value.platforms[platform.value]}` : '当前平台已不可用，已自动切换',
+        'info'
+      )
+    }
+  }
+})
 
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
@@ -2299,6 +2297,12 @@ watch(
 )
 
 onMounted(async () => {
+  // 加载平台配置，确保 platform 默认值为第一个可用平台
+  await loadPlatformConfig()
+  const available = getAvailablePlatforms()
+  if (available.length > 0 && !available.includes(platform.value)) {
+    platform.value = available[0]
+  }
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()
@@ -2580,6 +2584,7 @@ const handleSearch = async () => {
     }
 
     console.log('开始多音源搜索:', searchParams)
+    // 平台可用性检查已由 searchSongs 内部统一处理
     const results = await musicSources.searchSongs(searchParams)
 
     // 再次检查是否被中断，防止竞态条件

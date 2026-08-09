@@ -130,6 +130,7 @@ import {
   FileEdit,
   BookOpen,
   Ban,
+  Wifi,
   Globe,
   Database,
   Lock,
@@ -201,6 +202,7 @@ const menuGroups = computed(() => [
       { icon: BookOpen, label: locale.value.menu?.semesters || '学期管理', id: 'semesters' },
       { icon: Ban, label: locale.value.menu?.blacklist || '黑名单', id: 'blacklist' },
       { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
+      { icon: Wifi, label: locale.value.menu?.musicSource || '音源控制', id: 'music-source' },
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
       { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' }
     ]

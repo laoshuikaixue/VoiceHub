@@ -47,7 +47,9 @@ export default defineEventHandler(async (event) => {
           monthlySubmissionLimit: null,
           showBlacklistKeywords: false,
           enableCollaborativeSubmission: true,
-          enableSubmissionRemarks: false
+          enableSubmissionRemarks: false,
+          enabledPlatforms: '["netease","tencent","bilibili","migu"]',
+          platformOrder: '["netease","tencent","bilibili","migu"]'
         })
         .returning()
       settings = newSettingsResult[0]

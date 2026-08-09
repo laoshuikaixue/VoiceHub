@@ -19,6 +19,45 @@ import {
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
 import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { useLyricSettings } from './useLyricSettings'
+import { usePlatformConfig } from './usePlatformConfig'
+import { useServerErrors } from './useLocaleText'
+
+// 平台显示名键 → 国际化文案键（按 siteConfig 段）
+const PLATFORM_NAME_KEYS = {
+  netease: 'platformNetease',
+  tencent: 'platformTencent',
+  bilibili: 'platformBilibili',
+  migu: 'platformMigu'
+} as const
+
+// 平台显示名回退值
+const PLATFORM_NAME_FALLBACK = {
+  netease: '网易云音乐',
+  tencent: 'QQ音乐',
+  bilibili: '哔哩哔哩',
+  migu: '咪咕音乐'
+} as const
+
+const PLATFORM_NAME_FALLBACK_EN = {
+  netease: 'NetEase Cloud Music',
+  tencent: 'QQ Music',
+  bilibili: 'Bilibili',
+  migu: 'Migu Music'
+} as const
+
+/**
+ * 获取平台本地化显示名
+ */
+const getPlatformDisplayName = (key: string, siteConfig: any, currentLocale: string): string => {
+  const nameKey = PLATFORM_NAME_KEYS[key as keyof typeof PLATFORM_NAME_KEYS]
+  if (nameKey && siteConfig?.[nameKey]) {
+    return siteConfig[nameKey]
+  }
+  const isEn = currentLocale === 'en-US'
+  return isEn
+    ? (PLATFORM_NAME_FALLBACK_EN[key as keyof typeof PLATFORM_NAME_FALLBACK_EN] ?? key)
+    : (PLATFORM_NAME_FALLBACK[key as keyof typeof PLATFORM_NAME_FALLBACK] ?? key)
+}
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -352,6 +391,9 @@ export const useMusicSources = () => {
 
   // 音源状态
   const sourceStatus = ref<Record<string, SourceStatus>>({})
+
+  // 平台启用配置（usePlatformConfig 内部为模块级缓存，各实例共享同一份引用）
+  const { enabledPlatforms: globalEnabledPlatforms } = usePlatformConfig()
 
   /**
    * 使用 Meting API 获取歌曲信息
@@ -1127,6 +1169,30 @@ export const useMusicSources = () => {
       // - QQ音乐平台：无论国内外均优先 Native Music
       // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
+      // 检查平台是否启用（SSR 阶段跳过，$fetch 无 cookie）
+      if (import.meta.client) {
+        if (!globalEnabledPlatforms.value.includes(platform)) {
+          const { currentLocale, siteConfig } = useLocale()
+          const available = globalEnabledPlatforms.value.filter((p) => p !== platform)
+          const platformName = getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
+          const availableNames = available.map((p) => getPlatformDisplayName(p, siteConfig.value, currentLocale.value)).join('、')
+          const { localize } = useServerErrors()
+          // 先按 code + params 本地化得到 message，再抛出结构化错误：
+          // data.code 供 extractErrorCode 提取，data.message 供 getThrownMessage 提取
+          const payload = {
+            data: {
+              code: 'MUSIC_SOURCE_PLATFORM_DISABLED',
+              params: [platformName, availableNames]
+            }
+          }
+          throw {
+            data: {
+              ...payload.data,
+              message: localize(payload)
+            }
+          }
+        }
+      }
       const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
 
       if (

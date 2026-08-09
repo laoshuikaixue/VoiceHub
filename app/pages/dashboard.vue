@@ -159,6 +159,14 @@
               <LazyAdminSiteConfigManager />
             </div>
 
+            <!-- 音源控制 -->
+            <div
+              v-if="activeTab === 'music-source' && permissions.canAccessPage('music-source')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminMusicSourceController />
+            </div>
+
             <!-- 数据库操作 -->
             <div
               v-if="activeTab === 'database' && permissions.canAccessPage('database')"
