@@ -20,7 +20,7 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 统一 `<script setup>`（纯 JS，不加 `lang="ts"`，禁止类型注解）
 - API 调用用 `useFetch` 或 `$fetch`，需错误处理
 - 模态框用 `<Teleport to="body">`
-- 图标用 `<Icon name="..." />`，name 需在 `Icon.vue` 中有定义
+- 图标用 `<Icon name="..." />`，name 需在 `Icon.vue` 中有定义；图标语义必须符合实际功能（如音源控制用 `ListMusic`），禁止使用语义不符的图标
 - 项目未开启组件自动导入，模板中使用的自定义组件（含 `Icon`）必须在 `<script setup>` 中显式导入；漏导入不会报错，会被渲染成无内容的原生未知标签（如 `<icon>`），表现为占位但不显示
 - 下拉选择统一复用 `~/components/UI/Common/CustomSelect.vue`；多选使用其 `multiple` 模式，禁止为普通业务配置新增原生 `<select>`
 - 状态管理用 Composables，不用 Pinia
@@ -65,6 +65,43 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 按钮内加载态可用 Lucide 图标（`Loader2`/`RefreshCw` 等）+ `animate-spin`；错误语义色（如网易云红色转圈）保留专用类
 - 全局 border 重置：`main.css` 的 `*` 规则含 `border-style: solid; border-width: 0`，勿删除
 
-## 4. 文件变更提醒
+## 4. 配置与扩展功能开发规范
+
+### 4.1. 常量与白名单收敛
+- 业务白名单/枚举只允许一个权威定义：服务端放 `server/config/constants.ts`（如 `MUSIC_SOURCE_PLATFORMS`），前端放共享模块（如 `app/utils/platforms.ts`）；其他文件一律 import 引用，禁止重新定义同名数组或映射
+- 新增业务实体（平台等）需同步：constants + 前端共享模块 + `app/drizzle/schema.ts` 默认值 + 迁移文件，缺一不可
+
+### 4.2. 数据库迁移
+- 迁移必须用 `pnpm db:generate` 生成（自动产出 SQL + snapshot + journal），禁止手工编辑 `_journal.json` 或手工放置 SQL；缺 snapshot 会导致后续 `db:generate`/`db:check` 失败或生成重复迁移
+- 迁移时间戳使用真实生成时刻，禁止随意编造
+
+### 4.3. 新增 SystemSettings 字段同步清单
+新增字段必须全部同步，遗漏会导致备份能进不能出、初始化缺字段：
+1. `app/drizzle/schema.ts`（含默认值）
+2. `server/utils/system-settings-defaults.ts` 的 `SYSTEM_SETTINGS_DEFAULTS`
+3. `server/api/admin/system-settings/index.ts` 建行分支
+4. `server/api/admin/backup/restore.post.ts` 与 `restore-chunk.post.ts` 的字段白名单（最易遗漏）
+5. 需公开时加入 `PUBLIC_SETTINGS_FIELDS`
+6. 迁移文件
+
+### 4.4. 组合字段交叉校验
+- 多个配置字段存在相互约束（如启用列表与排序列表交集非空）时，保存接口必须做交叉一致性校验：提交字段与当前持久化值合并后校验，禁止只独立校验单字段；失败用 `createApiError` + `COMMON_INVALID_PARAMS`
+
+### 4.5. 开关/禁用类功能
+- 实现平台/功能开关时，必须梳理该功能的全部调用路径（含既有降级、兜底、跨平台升级路径），在每条路径的源头按配置过滤，禁止只拦截主入口
+- 后台任务（如歌词跨平台升级）遇到被禁用的目标应显式跳过并记录日志，不能静默失败
+
+### 4.6. 配置读取容错
+- 读取 DB/外部配置（JSON 数组等）必须容错：非法 JSON、空数组、未知值回退默认值（参考 `usePlatformConfig` 的 `parsePlatformArray`），禁止直接采用解析结果
+
+### 4.7. 模块级缓存与异步配置 UI
+- 模块级共享缓存加载必须防并发（in-flight promise 去重）；`refresh` 类方法加 `import.meta.server` 守卫，防止 SSR 污染共享状态
+- 依赖异步配置的 UI 在配置加载完成前不渲染（如 `v-if="loaded"`），避免 SSR 首屏闪烁或禁用项短暂可见
+
+### 4.8. 抛错与错误展示
+- 抛错必须用 `Error` 实例（可附加 `data`），禁止 `throw { data: ... }` 字面量
+- 客户端用户可见错误统一 `useServerErrors().localize(err)` 展示，禁止直接取 `error.data.message`/`error.message`（中文消息在英文界面会泄漏）
+
+## 5. 文件变更提醒
 
 **每次完成任务后，如果新增或删除了文件/目录，必须同步更新 `README.md` 的"项目结构"部分，保持与实际文件系统一致。（注意：数据库迁移文件除外）**

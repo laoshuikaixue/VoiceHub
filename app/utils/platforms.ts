@@ -42,9 +42,3 @@ export const getPlatformDisplayName = (key: string, siteConfig: any, currentLoca
     ? (PLATFORM_NAME_FALLBACK_EN[key as keyof typeof PLATFORM_NAME_FALLBACK_EN] ?? key)
     : (PLATFORM_NAME_FALLBACK[key as keyof typeof PLATFORM_NAME_FALLBACK] ?? key)
 }
-
-// 平台图标字符（管理页徽标）
-export const getPlatformInitial = (key: string): string => {
-  const map = { netease: '云', tencent: 'Q', bilibili: 'B', migu: 'M' }
-  return map[key as keyof typeof map] || '?'
-}

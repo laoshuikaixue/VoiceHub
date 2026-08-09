@@ -68,14 +68,6 @@
             ]"
           >
             <div class="flex items-center gap-3">
-              <div
-                :class="[
-                  'w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black',
-                  pf === 'netease' ? 'bg-[#e7282c]' : pf === 'tencent' ? 'bg-[#f0741a]' : pf === 'bilibili' ? 'bg-[#fb7299]' : 'bg-[#00c2ff]'
-                ]"
-              >
-                {{ getPlatformInitial(pf) }}
-              </div>
               <span class="text-xs font-bold text-text-primary">{{ getPlatformLabel(pf) }}</span>
             </div>
             <button
@@ -131,14 +123,6 @@
               <GripVertical :size="14" />
             </div>
             <div class="flex items-center gap-2 flex-1">
-              <div
-                :class="[
-                  'w-6 h-6 rounded flex items-center justify-center text-white text-[10px] font-black',
-                  pf === 'netease' ? 'bg-[#e7282c]' : pf === 'tencent' ? 'bg-[#f0741a]' : pf === 'bilibili' ? 'bg-[#fb7299]' : 'bg-[#00c2ff]'
-                ]"
-              >
-                {{ getPlatformInitial(pf) }}
-              </div>
               <span class="text-xs font-medium text-text-primary">{{ getPlatformLabel(pf) }}</span>
               <span
                 :class="[
@@ -172,7 +156,7 @@ import { usePlatformConfig, DEFAULT_PLATFORMS } from '~/composables/usePlatformC
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { getPlatformDisplayName, getPlatformInitial } from '~/utils/platforms'
+import { getPlatformDisplayName } from '~/utils/platforms'
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { refreshPlatformConfig } = usePlatformConfig()
