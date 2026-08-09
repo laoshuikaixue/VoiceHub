@@ -197,6 +197,7 @@ export const changePassword = {
 
 export const common = {
   language: 'Language',
+  followSystem: 'Follow System',
   workerIn: 'Worker in',
   cancel: 'Cancel',
   confirm: 'Confirm',
