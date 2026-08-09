@@ -36,7 +36,7 @@
                   :aria-expanded="showThemeMenu"
                   @click="toggleThemeMenu"
                 >
-                  <Icon name="shirt" :size="18" />
+                  <Icon name="gift" :size="19" />
                 </button>
 
                 <Transition name="dropdown-fade">
@@ -73,6 +73,16 @@
                 <Transition name="dropdown-fade">
                   <div v-if="showLanguageMenu" class="language-dropdown" role="listbox">
                     <button
+                      type="button"
+                      role="option"
+                      class="language-option"
+                      :class="{ 'is-active': isFollowingSystem }"
+                      :aria-selected="isFollowingSystem"
+                      @click="selectFollowSystem"
+                    >
+                      <span class="language-option-label">{{ common.followSystem }}</span>
+                    </button>
+                    <button
                       v-for="localeOption in supportedLocales"
                       :key="localeOption.code"
                       type="button"
@@ -83,12 +93,6 @@
                       @click="selectLocale(localeOption.code)"
                     >
                       <span class="language-option-label">{{ localeOption.label }}</span>
-                      <Icon
-                        v-if="currentLocale === localeOption.code"
-                        name="check"
-                        :size="16"
-                        color="var(--color-accent)"
-                      />
                     </button>
                   </div>
                 </Transition>
@@ -853,7 +857,8 @@ import { useThemeImage } from '~/composables/useThemeImage'
 const config = useRuntimeConfig()
 const router = useRouter()
 const route = useRoute()
-const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
+const { pages, common, currentLocale, setLocale, supportedLocales, isFollowingSystem, followSystemLocale } =
+  useLocale()
 const locale = computed(() => pages.value?.home || {})
 const getHomeText = (section, key, ...args) => formatLocaleValue(locale.value?.[section]?.[key], ...args)
 const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
@@ -981,7 +986,14 @@ const toggleLanguageMenu = (event) => {
 }
 
 const selectLocale = (code) => {
-  setLocale(code)
+  // 手动选择为长期偏好（manual），此后进入网站不再跟随系统语言
+  setLocale(code, true)
+  showLanguageMenu.value = false
+}
+
+const selectFollowSystem = () => {
+  // 清除手动偏好，回到跟随系统语言模式
+  followSystemLocale()
   showLanguageMenu.value = false
 }
 
@@ -3521,6 +3533,8 @@ if (
     border: 1px solid var(--overlay-10);
     box-shadow: 0 4px 12px var(--mask-10);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0; /* 防止空间不足时按钮被压缩导致文字换行 */
+    white-space: nowrap;
   }
 
   .login-options .login-btn :deep(.icon) {
@@ -3843,6 +3857,13 @@ if (
   .notification-unread-summary-action {
     font-size: 0.7rem;
   }
+
+  /* 窄屏压缩登录按钮，保证“登录”文字横向排布 */
+  .login-options .login-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    gap: 6px;
+  }
 }
 
 /* 超小屏幕设备 */
@@ -3863,6 +3884,12 @@ if (
 
   .section-tab {
     font-size: 9px;
+  }
+
+  .login-options .login-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 4px;
   }
 }
 

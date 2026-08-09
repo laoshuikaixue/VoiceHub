@@ -208,6 +208,7 @@ export const changePassword = {
 
 export const common = {
   language: '语言',
+  followSystem: '跟随系统',
   workerIn: '响应耗时',
   cancel: '取消',
   confirm: '确定',

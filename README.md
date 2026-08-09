@@ -1682,7 +1682,7 @@ VoiceHub 内置一套无第三方依赖的手写国际化方案，支持 `zh-CN`
   - 中文（`FALLBACK_LOCALE`）作为**兜底与合并基底静态内置**；其余语言在被激活时才**动态按需加载**，默认语言用户不会下载多余语言包。
   - `mergeLocaleFallback` 保证非兜底语言缺失某键时自动回退中文，不会出现空文本。
   - 当前语言用 `useState('voicehub-locale')` 存储，**SSR 下按请求隔离**，避免跨请求语言串扰。
-- **初始化插件**：`app/plugins/locale.ts`（服务端 + 客户端通用）。语言解析顺序为 `cookie` → `Accept-Language` / 浏览器语言 → 兜底；渲染前 `await` 目标语言词典以消除首屏闪烁与水合不匹配，并驱动 `<html lang>`。
+- **初始化插件**：`app/plugins/locale.ts`（服务端 + 客户端通用）。仅当用户手动选择过语言（`manual` 偏好）时信任 `cookie`，否则每次进入按 `Accept-Language` / 浏览器语言**跟随系统语言**，系统语言变化后自动切换；手动选择长期保留。渲染前 `await` 目标语言词典以消除首屏闪烁与水合不匹配，并驱动 `<html lang>`。
 
 #### 组件中使用
 
