@@ -3,9 +3,10 @@ import { db, users, userIdentities } from '~/drizzle/db'
 import { JWTEnhanced } from '~~/server/utils/jwt-enhanced'
 import { verifyBindingToken } from '~~/server/utils/oauth-token'
 import { getBeijingTime } from '~/utils/timeUtils'
-import { validatePasswordPolicy } from '~/utils/password-policy'
+import { getPasswordPolicyViolation } from '~/utils/password-policy'
 import { isSecureRequest } from '~~/server/utils/request-utils'
 import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 const OAUTH_REGISTER_USERNAME_PATTERN = /^[a-zA-Z0-9_-]+$/
 
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
   // 检查是否允许 OAuth 注册
   const config = await db.query.systemSettings.findFirst()
   if (!config?.allowOAuthRegistration) {
-    throw createApiError(403, 'AUTH_OAUTH_REGISTER_DISABLED_BIND', '系统已关闭第三方账号注册功能，请登录现有账号进行绑定')
+    throw createApiError(403, SERVER_ERROR_CODES.AUTH_OAUTH_REGISTER_DISABLED_BIND, '系统已关闭第三方账号注册功能，请登录现有账号进行绑定')
   }
 
   const body = await readBody(event)
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
   const bindingToken = getCookie(event, 'binding-token')
 
   if (!bindingToken) {
-    throw createApiError(400, 'AUTH_REGISTER_SESSION_EXPIRED', '注册会话已过期，请重新通过第三方登录发起')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_SESSION_EXPIRED, '注册会话已过期，请重新通过第三方登录发起')
   }
 
   let payload
@@ -33,33 +34,33 @@ export default defineEventHandler(async (event) => {
     payload = verifyBindingToken(bindingToken)
   } catch (e) {
     deleteCookie(event, 'binding-token')
-    throw createApiError(400, 'AUTH_INVALID_REGISTER_TOKEN', '无效的注册令牌')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INVALID_REGISTER_TOKEN, '无效的注册令牌')
   }
 
   // 验证输入
   if (!username || !name || !password || !confirmPassword) {
-    throw createApiError(400, 'AUTH_NAME_USERNAME_PASSWORD_REQUIRED', '姓名、用户名、密码不能为空')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_NAME_USERNAME_PASSWORD_REQUIRED, '姓名、用户名、密码不能为空')
   }
 
   if (username.length < 3 || username.length > 30) {
-    throw createApiError(400, 'AUTH_USERNAME_LENGTH_INVALID', '用户名长度需要在3-30个字符之间')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_USERNAME_LENGTH_INVALID, '用户名长度需要在3-30个字符之间')
   }
 
   if (!OAUTH_REGISTER_USERNAME_PATTERN.test(username)) {
-    throw createApiError(400, 'AUTH_USERNAME_PATTERN_INVALID', '用户名仅可包含英文、数字、下划线和连字符')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_USERNAME_PATTERN_INVALID, '用户名仅可包含英文、数字、下划线和连字符')
   }
 
-  const passwordError = validatePasswordPolicy(password)
-  if (passwordError) {
-    throw createApiError(400, 'AUTH_PASSWORD_POLICY_INVALID', passwordError)
+  const passwordViolation = getPasswordPolicyViolation(password)
+  if (passwordViolation) {
+    throw createApiError(400, passwordViolation.code, passwordViolation.message)
   }
 
   if (password !== confirmPassword) {
-    throw createApiError(400, 'AUTH_REGISTER_PASSWORD_MISMATCH', '两次输入的密码不一致')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_REGISTER_PASSWORD_MISMATCH, '两次输入的密码不一致')
   }
 
   if ((selectedGrade && !selectedClass) || (!selectedGrade && selectedClass)) {
-    throw createApiError(400, 'AUTH_GRADE_CLASS_TOGETHER', '年级和班级需要同时选择，或全部留空')
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_TOGETHER, '年级和班级需要同时选择，或全部留空')
   }
 
   if (selectedGrade && selectedClass) {
@@ -70,7 +71,7 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!existingClass) {
-      throw createApiError(400, 'AUTH_GRADE_CLASS_MUST_EXIST', '请选择系统内已存在的年级和班级')
+      throw createApiError(400, SERVER_ERROR_CODES.AUTH_GRADE_CLASS_MUST_EXIST, '请选择系统内已存在的年级和班级')
     }
   }
 
@@ -80,7 +81,7 @@ export default defineEventHandler(async (event) => {
   })
 
   if (existingUser) {
-    throw createApiError(409, 'AUTH_USERNAME_TAKEN', '用户名已存在，请使用其他用户名')
+    throw createApiError(409, SERVER_ERROR_CODES.AUTH_USERNAME_TAKEN, '用户名已存在，请使用其他用户名')
   }
 
   // 检查OAuth身份是否已被绑定
@@ -90,7 +91,7 @@ export default defineEventHandler(async (event) => {
   })
 
   if (existingIdentity) {
-    throw createApiError(409, 'AUTH_OAUTH_ALREADY_BOUND', '该第三方账号已被绑定，请直接登录或绑定到现有账户')
+    throw createApiError(409, SERVER_ERROR_CODES.AUTH_OAUTH_ALREADY_BOUND, '该第三方账号已被绑定，请直接登录或绑定到现有账户')
   }
 
   try {
@@ -163,9 +164,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (e: any) {
     console.error('OAuth register error:', e)
-    throw createError({
-      statusCode: 500,
-      message: e.message || '注册失败，请稍后重试'
-    })
+    throw createApiError(500, SERVER_ERROR_CODES.AUTH_SYSTEM_ERROR, e.message || '注册失败，请稍后重试')
   }
 })
