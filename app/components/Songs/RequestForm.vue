@@ -6027,6 +6027,7 @@ defineExpose({
   /* Netease Options Mobile Optimization */
   .netease-options {
     padding: 0.75rem;
+    min-width: unset; /* 移除桌面端的最小宽度限制 */
   }
 
   .user-compact-row {
@@ -6043,11 +6044,16 @@ defineExpose({
   .search-type-switch {
     width: 100%;
     display: flex;
+    min-width: 0;
   }
 
   .radio-label {
     flex: 1;
+    min-width: 0;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .user-actions-row {
@@ -6060,9 +6066,17 @@ defineExpose({
   /* 移动端下让按钮平分宽度 */
   .user-actions-row .action-btn-compact {
     flex: 1;
+    min-width: 0;
     width: auto;
     justify-content: center;
     padding: 0.6rem 0.4rem;
+  }
+
+  /* 按钮文字过窄时省略号截断 */
+  .user-actions-row .action-btn-compact span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* 移动端显示/隐藏控制 */
@@ -6266,6 +6280,7 @@ defineExpose({
   .platform-selection-container {
     flex-direction: column;
     align-items: stretch;
+    min-width: 0;
   }
 
   .platform-selection {
@@ -6274,18 +6289,21 @@ defineExpose({
     border-radius: 12px;
     margin-bottom: 0.5rem;
     display: flex;
-    overflow: visible;
+    min-width: 0;
   }
 
   .platform-btn {
     flex: 1;
-    padding: 0.5rem;
-    font-size: 13px;
+    min-width: 0;
+    padding: 0.5rem 0.25rem;
+    font-size: 12px;
+    line-height: 1.3;
     border-radius: 10px;
     background: transparent;
     border: none;
     color: var(--overlay-50);
-    min-width: auto;
+    white-space: normal;
+    word-break: break-word;
   }
 
   .platform-btn.active {
