@@ -13,16 +13,16 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4 min-w-0">
-              <div class="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-zinc-800">
+              <div class="w-12 h-12 rounded-2xl overflow-hidden flex-shrink-0 bg-bg-tertiary">
                 <img
                   v-if="video?.cover"
                   :src="video.cover"
@@ -32,22 +32,22 @@
                 >
                 <div
                   v-else
-                  class="w-full h-full bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="play" :size="24" />
                 </div>
               </div>
               <div class="min-w-0">
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
+                <h3 class="text-xl font-black text-text-primary tracking-tight truncate">
                   {{ video?.title }}
                 </h3>
-                <p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mt-1">
+                <p class="text-xs font-bold text-text-tertiary uppercase tracking-widest mt-1">
                   {{ locale.uploader }}{{ video?.artist }}
                 </p>
               </div>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -58,10 +58,10 @@
           <div class="flex-1 overflow-y-auto p-8 pt-4 custom-scrollbar">
             <div
               v-if="episodes.length === 0"
-              class="flex flex-col items-center justify-center py-12 text-zinc-500"
+              class="flex flex-col items-center justify-center py-12 text-text-tertiary"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
                 <Icon name="play" :size="32" class="opacity-20" />
               </div>
@@ -75,13 +75,13 @@
                 class="group flex items-center p-3 sm:p-4 rounded-3xl transition-all"
                 :class="[
                   isCurrentEpisode(episode)
-                    ? 'bg-blue-600/10 border border-blue-500/50'
-                    : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50 hover:border-zinc-700'
+                    ? 'bg-primary-hover-10 border border-primary-50'
+                    : 'bg-bg-tertiary-30 border border-border-secondary-50 hover:bg-bg-tertiary-50 hover:border-border-tertiary'
                 ]"
               >
                 <!-- 剧集编号 -->
                 <div
-                  class="w-8 h-8 sm:w-12 sm:h-12 rounded-2xl bg-zinc-800 flex items-center justify-center text-zinc-500 font-black text-xs sm:text-sm flex-shrink-0 mr-3 sm:mr-4 group-hover:text-zinc-300 transition-colors"
+                  class="w-8 h-8 sm:w-12 sm:h-12 rounded-2xl bg-bg-tertiary flex items-center justify-center text-text-tertiary font-black text-xs sm:text-sm flex-shrink-0 mr-3 sm:mr-4 group-hover:text-text-secondary transition-colors"
                 >
                   P{{ episode.page }}
                 </div>
@@ -89,12 +89,12 @@
                 <!-- 剧集信息 -->
                 <div class="flex-1 min-w-0">
                   <h4
-                    class="font-bold text-zinc-100 text-sm sm:text-base whitespace-normal sm:whitespace-nowrap sm:truncate line-clamp-2 sm:line-clamp-none group-hover:text-white transition-colors"
+                    class="font-bold text-text-primary text-sm sm:text-base whitespace-normal sm:whitespace-nowrap sm:truncate line-clamp-2 sm:line-clamp-none group-hover:text-text-primary transition-colors"
                   >
                     {{ episode.part }}
                   </h4>
                   <div
-                    class="flex items-center gap-3 mt-1 text-[10px] text-zinc-500 font-bold uppercase tracking-wider"
+                    class="flex items-center gap-3 mt-1 text-[10px] text-text-tertiary font-bold uppercase tracking-wider"
                   >
                     <span class="flex items-center">
                       <Icon name="clock" :size="10" class="mr-1" />
@@ -107,7 +107,7 @@
                 <div class="ml-2 sm:ml-4 shrink-0 flex items-center gap-2 sm:gap-3">
                   <!-- 预听/暂停按钮 -->
                   <button
-                    class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
+                    class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-bg-tertiary text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary transition-all active:scale-95"
                     :title="isCurrentEpisode(episode) && isPlaying ? locale.pause : locale.preview"
                     @click.stop="togglePlay(episode)"
                   >
@@ -121,7 +121,7 @@
                     <button
                       v-if="allowPlayedResubmit"
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectEpisode(episode)"
                     >
                       <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>
@@ -130,7 +130,7 @@
                     <!-- 已播放标签 -->
                     <div
                       v-else
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ locale.played }}
                     </div>
@@ -139,7 +139,7 @@
                   <template v-else-if="getEpisodeStatus(episode).scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ locale.scheduled }}
                     </div>
@@ -149,7 +149,7 @@
                     <div class="flex flex-col gap-2 items-center">
                       <!-- 已投稿标签 -->
                       <div
-                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-bg-tertiary text-text-tertiary text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                       >
                         {{ locale.submitted }}
                       </div>
@@ -161,8 +161,8 @@
                         :class="[
                           'w-full px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
                           getEpisodeStatus(episode).voted
-                            ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
-                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-500'
+                            ? 'bg-error-10 text-error border border-error-20 cursor-not-allowed'
+                            : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-error'
                         ]"
                         @click.stop="voteEpisode(episode)"
                       >
@@ -182,7 +182,7 @@
                     <!-- 选择投稿按钮（未投稿） -->
                     <button
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectEpisode(episode)"
                     >
                       <span v-if="submitting && selectedEpisodeCid === episode.cid">{{ locale.submitting }}</span>
@@ -392,11 +392,11 @@ defineExpose({
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--overlay-10);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-20);
 }
 </style>

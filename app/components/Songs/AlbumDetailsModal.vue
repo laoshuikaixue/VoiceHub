@@ -13,16 +13,16 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-3xl bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-3xl bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
           <div class="flex items-start justify-between p-8 pb-4 gap-4">
             <div class="flex items-start gap-4 min-w-0 flex-1">
-              <div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-zinc-800 shadow-lg">
+              <div class="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-bg-tertiary shadow-lg">
                 <img
                   v-if="albumInfo && albumInfo.cover"
                   :src="convertToHttps(albumInfo.cover)"
@@ -32,19 +32,19 @@
                 >
                 <div
                   v-else
-                  class="w-full h-full bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Icon name="disc" :size="32" />
                 </div>
               </div>
               <div class="min-w-0 flex-1">
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight truncate">
+                <h3 class="text-xl font-black text-text-primary tracking-tight truncate">
                   {{ albumInfo && albumInfo.name ? albumInfo.name : locale.albumFallback }}
                 </h3>
-                <p class="text-xs font-bold text-zinc-400 mt-1 truncate">
+                <p class="text-xs font-bold text-text-tertiary mt-1 truncate">
                   {{ albumInfo && albumInfo.artist ? albumInfo.artist : locale.unknownArtist }}
                 </p>
-                <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-zinc-600">
+                <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-text-disabled">
                   <span v-if="albumInfo && albumInfo.size">
                     {{ callLocale('songCount', `${albumInfo.size} 首`, albumInfo.size) }}
                   </span>
@@ -58,7 +58,7 @@
                 <!-- 专辑描述 -->
                 <p
                   v-if="albumInfo && albumInfo.description"
-                  class="mt-2 text-[11px] text-zinc-500 leading-relaxed line-clamp-2 cursor-pointer hover:text-zinc-400 transition-colors"
+                  class="mt-2 text-[11px] text-text-tertiary leading-relaxed line-clamp-2 cursor-pointer hover:text-text-tertiary transition-colors"
                   :title="locale.viewFullIntro"
                   @click="showDescModal = true"
                 >
@@ -67,7 +67,7 @@
               </div>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -81,25 +81,25 @@
                 v-model="searchQuery"
                 type="text"
                 :placeholder="locale.searchPlaceholder"
-                class="w-full h-9 pl-9 pr-3 rounded-xl bg-zinc-800/60 border border-zinc-700/50 text-zinc-100 text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/50 focus:bg-zinc-800 transition-all"
+                class="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-tertiary-60 border border-border-tertiary-50 text-text-primary text-sm placeholder-text-disabled focus:outline-none focus:border-primary-50 focus:bg-bg-tertiary transition-all"
               >
-              <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
+              <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
             </div>
           </div>
 
           <!-- 加载状态 -->
           <div v-if="loading" class="flex-1 flex items-center justify-center py-12">
             <div class="flex flex-col items-center">
-              <div class="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin mb-4" />
-              <p class="text-sm font-bold text-zinc-500 uppercase tracking-widest">{{ locale.loading }}</p>
+              <AppSpinner :size="48" class="mb-4" />
+              <p class="text-sm font-bold text-text-tertiary uppercase tracking-widest">{{ locale.loading }}</p>
             </div>
           </div>
 
           <!-- 错误状态 -->
           <div v-else-if="error" class="flex-1 flex items-center justify-center py-12">
-            <div class="flex flex-col items-center text-red-500">
+            <div class="flex flex-col items-center text-error">
               <div
-                class="w-16 h-16 rounded-3xl bg-red-500/10 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-error-10 flex items-center justify-center mb-4"
               >
                 <Icon name="alert-circle" :size="32" />
               </div>
@@ -111,10 +111,10 @@
           <div v-else class="flex-1 overflow-y-auto px-8 pt-2 pb-4 custom-scrollbar">
             <div
               v-if="filteredSongs.length === 0"
-              class="flex flex-col items-center justify-center py-12 text-zinc-500"
+              class="flex flex-col items-center justify-center py-12 text-text-tertiary"
             >
               <div
-                class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
+                class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
                 <Icon name="music" :size="32" class="opacity-20" />
               </div>
@@ -130,12 +130,12 @@
                 class="group flex items-center p-2 sm:p-3 rounded-2xl transition-all"
                 :class="[
                   isCurrentSong(song)
-                    ? 'bg-blue-600/10 border border-blue-500/50'
-                    : 'bg-zinc-800/30 border border-zinc-800/50 hover:bg-zinc-800/50 hover:border-zinc-700'
+                    ? 'bg-primary-hover-10 border border-primary-50'
+                    : 'bg-bg-tertiary-30 border border-border-secondary-50 hover:bg-bg-tertiary-50 hover:border-border-tertiary'
                 ]"
               >
                 <!-- 歌曲封面 -->
-                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden flex-shrink-0 mr-3 bg-zinc-800">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden flex-shrink-0 mr-3 bg-bg-tertiary">
                   <img
                     v-if="song.img"
                     :src="convertToHttps(song.img)"
@@ -146,7 +146,7 @@
                   >
                   <div
                     v-else
-                    class="w-full h-full flex items-center justify-center text-zinc-600"
+                    class="w-full h-full flex items-center justify-center text-text-disabled"
                   >
                     <Icon name="music" :size="16" />
                   </div>
@@ -155,12 +155,12 @@
                 <!-- 歌曲信息 -->
                 <div class="flex-1 min-w-0">
                   <h4
-                    class="font-bold text-zinc-100 text-sm sm:text-base whitespace-normal sm:whitespace-nowrap sm:truncate line-clamp-2 sm:line-clamp-none group-hover:text-white transition-colors"
+                    class="font-bold text-text-primary text-sm sm:text-base whitespace-normal sm:whitespace-nowrap sm:truncate line-clamp-2 sm:line-clamp-none group-hover:text-text-primary transition-colors"
                   >
                     {{ song.name }}
                   </h4>
                   <div
-                    class="flex items-center gap-3 mt-0.5 text-[10px] text-zinc-500 font-bold uppercase tracking-wider"
+                    class="flex items-center gap-3 mt-0.5 text-[10px] text-text-tertiary font-bold uppercase tracking-wider"
                   >
                     <span class="truncate">{{ song.singer }}</span>
                     <span class="flex items-center shrink-0">
@@ -174,7 +174,7 @@
                 <div class="ml-2 sm:ml-4 shrink-0 flex items-center gap-2">
                   <!-- 预听/暂停按钮 -->
                   <button
-                    class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100 transition-all active:scale-95"
+                    class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-bg-tertiary text-text-tertiary hover:bg-bg-quaternary hover:text-text-primary transition-all active:scale-95"
                     :title="isCurrentSong(song) && isPlaying ? locale.pause : locale.preview"
                     @click.stop="togglePlay(song)"
                   >
@@ -187,7 +187,7 @@
                   <template v-if="song.status.played">
                     <!-- 已播放标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-success-10 text-success border border-success-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ requestLocale.played }}
                     </div>
@@ -196,7 +196,7 @@
                   <template v-else-if="song.status.scheduled">
                     <!-- 已排期标签 -->
                     <div
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-warning-10 text-warning border border-warning-20 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                     >
                       {{ requestLocale.scheduled }}
                     </div>
@@ -206,7 +206,7 @@
                     <div class="flex flex-col sm:flex-row gap-2 items-center">
                       <!-- 已投稿标签 -->
                       <div
-                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-zinc-800 text-zinc-500 text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
+                        class="w-full text-center px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-bg-tertiary text-text-tertiary text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest"
                       >
                         {{ locale.submitted }}
                       </div>
@@ -218,8 +218,8 @@
                         :class="[
                           'w-full sm:w-auto px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black shrink-0 uppercase tracking-widest transition-all active:scale-95',
                           song.status.voted
-                            ? 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
-                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-500'
+                            ? 'bg-error-10 text-error border border-error-20 cursor-not-allowed'
+                            : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-error'
                         ]"
                         @click.stop="voteSong(song)"
                       >
@@ -239,7 +239,7 @@
                     <!-- 投稿按钮（未投稿） -->
                     <button
                       :disabled="submitting"
-                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                      class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-[10px] sm:text-xs font-black disabled:opacity-50 transition-all active:scale-95 shrink-0 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                       @click.stop="selectSong(song)"
                     >
                       <span v-if="submitting && selectedSongId === song.songmid">{{ requestLocale.submitting }}</span>
@@ -267,21 +267,21 @@
         class="fixed inset-0 z-[200] flex items-center justify-center p-6"
         @click.self="showDescModal = false"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
         <div
-          class="relative w-full max-w-xl max-h-[70vh] bg-zinc-900 border border-zinc-800 rounded-2xl p-6 overflow-y-auto custom-scrollbar"
+          class="relative w-full max-w-xl max-h-[70vh] bg-bg-secondary border border-border-secondary rounded-2xl p-6 overflow-y-auto custom-scrollbar"
           @click.stop
         >
           <div class="flex items-center justify-between mb-4">
-            <h4 class="text-sm font-black text-zinc-100 uppercase tracking-widest">{{ locale.albumIntro }}</h4>
+            <h4 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.albumIntro }}</h4>
             <button
-              class="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="showDescModal = false"
             >
               <Icon name="x" :size="16" />
             </button>
           </div>
-          <p class="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap">
+          <p class="text-sm text-text-tertiary leading-relaxed whitespace-pre-wrap">
             {{ albumInfo?.description }}
           </p>
         </div>
@@ -293,6 +293,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
@@ -664,11 +665,11 @@ defineExpose({
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--overlay-10);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-20);
 }
 </style>

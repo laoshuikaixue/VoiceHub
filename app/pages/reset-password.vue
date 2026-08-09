@@ -483,7 +483,7 @@ const handleSubmit = async () => {
 .success-icon {
   width: 64px;
   height: 64px;
-  color: var(--success, #10b981);
+  color: var(--success);
   margin-bottom: 20px;
 }
 

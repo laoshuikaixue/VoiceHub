@@ -1,17 +1,17 @@
 <template>
   <div class="space-y-6">
     <!-- 状态显示 -->
-    <div class="flex items-center justify-between p-4 bg-zinc-950/50 rounded-xl border border-zinc-800">
+    <div class="flex items-center justify-between p-4 bg-bg-primary-50 rounded-xl border border-border-secondary">
       <div class="flex items-center gap-3">
         <div 
           class="p-2 rounded-lg"
-          :class="isEnabled ? 'bg-green-500/10 text-green-500' : 'bg-zinc-800 text-zinc-500'"
+          :class="isEnabled ? 'bg-success-10 text-success' : 'bg-bg-tertiary text-text-tertiary'"
         >
           <ShieldCheck :size="20" />
         </div>
         <div>
-          <h3 class="font-bold text-zinc-100">{{ locale.title }}</h3>
-          <p class="text-xs text-zinc-500">
+          <h3 class="font-bold text-text-primary">{{ locale.title }}</h3>
+          <p class="text-xs text-text-tertiary">
             {{ isEnabled ? locale.enabledDesc : locale.disabledDesc }}
           </p>
         </div>
@@ -20,36 +20,36 @@
       <button
         v-if="!isEnabled"
         @click="startSetup"
-        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors"
+        class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary text-sm font-bold rounded-lg transition-colors"
       >
         {{ locale.enable }}
       </button>
       <button
         v-else
         @click="confirmDisable"
-        class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 text-sm font-bold rounded-lg transition-colors"
+        class="px-4 py-2 bg-error-10 hover:bg-error-20 text-error border border-error-20 text-sm font-bold rounded-lg transition-colors"
       >
         {{ locale.disable }}
       </button>
     </div>
 
     <!-- 开启流程 -->
-    <div v-if="showSetup" class="bg-zinc-950/30 rounded-xl border border-zinc-800 p-6 space-y-6 animate-in fade-in slide-in-from-top-4">
+    <div v-if="showSetup" class="bg-bg-primary-30 rounded-xl border border-border-secondary p-6 space-y-6 animate-in fade-in slide-in-from-top-4">
       <div class="flex items-start justify-between">
         <div>
-          <h4 class="font-bold text-zinc-100 mb-1">{{ locale.setupTitle }}</h4>
-          <p class="text-sm text-zinc-400">{{ locale.setupDesc }}</p>
+          <h4 class="font-bold text-text-primary mb-1">{{ locale.setupTitle }}</h4>
+          <p class="text-sm text-text-tertiary">{{ locale.setupDesc }}</p>
         </div>
-        <button @click="cancelSetup" class="text-zinc-500 hover:text-zinc-300">
+        <button @click="cancelSetup" class="text-text-tertiary hover:text-text-secondary">
           <X :size="20" />
         </button>
       </div>
 
       <div class="flex flex-col md:flex-row gap-8 items-center md:items-start">
         <!-- 二维码区域 -->
-        <div class="flex-shrink-0 bg-white p-2 rounded-lg">
+        <div class="flex-shrink-0 bg-bg-secondary p-2 rounded-lg">
           <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="2FA QR Code" class="w-48 h-48" />
-          <div v-else class="w-48 h-48 flex items-center justify-center bg-zinc-100 text-zinc-400">
+          <div v-else class="w-48 h-48 flex items-center justify-center bg-bg-secondary text-text-tertiary">
             <Loader2 class="animate-spin" />
           </div>
         </div>
@@ -57,16 +57,16 @@
         <!-- 验证输入区域 -->
         <div class="flex-1 space-y-4 w-full">
           <div>
-            <label class="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label class="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2">
               {{ locale.manualKey }}
             </label>
             <div class="flex items-center gap-2">
-              <code class="px-3 py-2 bg-zinc-900 rounded-lg text-zinc-300 font-mono text-sm border border-zinc-800 select-all">
+              <code class="px-3 py-2 bg-bg-secondary rounded-lg text-text-secondary font-mono text-sm border border-border-secondary select-all">
                 {{ secret }}
               </code>
               <button 
                 @click="copySecret"
-                class="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 transition-colors"
+                class="p-2 hover:bg-bg-tertiary rounded-lg text-text-tertiary transition-colors"
                 :title="locale.copyKey"
               >
                 <Copy :size="16" />
@@ -75,7 +75,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
+            <label class="block text-xs font-bold text-text-tertiary uppercase tracking-wider mb-2">
               {{ locale.code }}
             </label>
             <div class="flex gap-2">
@@ -84,13 +84,13 @@
                 type="text"
                 :placeholder="locale.codePlaceholder"
                 maxlength="6"
-                class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono text-center tracking-widest"
+                class="flex-1 bg-bg-secondary border border-border-secondary rounded-lg px-4 py-2 text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-mono text-center tracking-widest"
                 @keyup.enter="enable2FA"
               />
               <button
                 @click="enable2FA"
                 :disabled="loading || verificationCode.length !== 6"
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+                class="px-6 py-2 bg-primary-hover hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-text-primary font-bold rounded-lg transition-colors flex items-center gap-2"
               >
                 <Loader2 v-if="loading" class="animate-spin" :size="16" />
                 <span>{{ locale.verifyAndEnable }}</span>

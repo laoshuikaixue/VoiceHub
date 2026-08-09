@@ -9,13 +9,13 @@
         <slot name="toolbar-left">
           <div
             v-if="selectedRows.length > 0"
-            class="flex items-center gap-2 px-3 py-1.5 bg-blue-600/10 border border-blue-500/20 rounded-lg"
+            class="flex items-center gap-2 px-3 py-1.5 bg-primary-hover-10 border border-primary-20 rounded-lg"
           >
-            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest"
+            <span class="text-[10px] font-black text-primary uppercase tracking-widest"
               >{{ formatLocale(locale.selectedItems, selectedRows.length) }}</span
             >
             <button
-              class="p-0.5 text-blue-400 hover:text-blue-300 transition-colors"
+              class="p-0.5 text-primary hover:text-primary transition-colors"
               @click="$emit('clear-selection')"
             >
               <X :size="12" />
@@ -28,7 +28,7 @@
           <button
             v-if="refreshable"
             :disabled="loading"
-            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
+            class="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-50"
             @click="$emit('refresh')"
           >
             <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
@@ -40,17 +40,15 @@
 
     <!-- 表格主容器 -->
     <div
-      class="relative bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl shadow-black/20"
+      class="relative bg-bg-secondary-50 border border-border-secondary rounded-xl overflow-hidden shadow-2xl shadow-[0_25px_50px_var(--shadow-color)]"
     >
       <!-- 加载状态 -->
       <div
         v-if="loading"
-        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-[2px] animate-in fade-in duration-300"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-bg-primary-60 backdrop-blur-[2px] animate-in fade-in duration-300"
       >
-        <div
-          class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"
-        />
-        <span class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{{
+        <AppSpinner :size="40" class="mb-4" />
+        <span class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">{{
           resolvedLoadingText
         }}</span>
       </div>
@@ -59,12 +57,12 @@
       <div class="hidden md:block overflow-x-auto custom-scrollbar">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="border-b border-zinc-800 bg-zinc-900/50">
+            <tr class="border-b border-border-secondary bg-bg-secondary-50">
               <th v-if="selectable" class="p-4 w-10">
                 <input
                   type="checkbox"
                   :checked="isAllSelected"
-                  class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                  class="w-4 h-4 rounded border-border-tertiary bg-bg-primary text-primary-hover focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
                   @change="toggleSelectAll"
                 >
               </th>
@@ -73,7 +71,7 @@
                 :key="column.key"
                 :class="[
                   column.class,
-                  'p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest'
+                  'p-4 text-[10px] font-black text-text-disabled uppercase tracking-widest'
                 ]"
                 :style="{ width: column.width }"
               >
@@ -81,17 +79,17 @@
               </th>
               <th
                 v-if="hasActions"
-                class="p-4 text-[10px] font-black text-zinc-600 uppercase tracking-widest text-right"
+                class="p-4 text-[10px] font-black text-text-disabled uppercase tracking-widest text-right"
               >
                 {{ locale.actions }}
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-zinc-800/50">
+          <tbody class="divide-y divide-panel-bg-dark-50">
             <tr v-if="!loading && data.length === 0">
               <td :colspan="totalColumns" class="p-20 text-center">
                 <slot name="empty">
-                  <div class="flex flex-col items-center gap-3 text-zinc-700">
+                  <div class="flex flex-col items-center gap-3 text-text-secondary">
                     <Database :size="40" stroke-width="1" />
                     <span class="text-[10px] font-black uppercase tracking-widest"
                       >{{ locale.noData }}</span
@@ -103,22 +101,22 @@
             <tr
               v-for="(row, index) in data"
               :key="getRowKey(row, index)"
-              class="group hover:bg-zinc-800/30 transition-colors cursor-default"
-              :class="{ 'bg-blue-600/5': selectedRows.includes(getRowKey(row, index)) }"
+              class="group hover:bg-bg-tertiary-30 transition-colors cursor-default"
+              :class="{ 'bg-primary-hover-5': selectedRows.includes(getRowKey(row, index)) }"
               @click="handleRowClick(row, index)"
             >
               <td v-if="selectable" class="p-4" @click.stop>
                 <input
                   type="checkbox"
                   :checked="selectedRows.includes(getRowKey(row, index))"
-                  class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                  class="w-4 h-4 rounded border-border-tertiary bg-bg-primary text-primary-hover focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
                   @change="toggleSelectRow(getRowKey(row, index))"
                 >
               </td>
               <td
                 v-for="column in columns"
                 :key="column.key"
-                :class="[column.class, 'p-4 text-xs font-bold text-zinc-300']"
+                :class="[column.class, 'p-4 text-xs font-bold text-text-secondary']"
               >
                 <slot
                   :name="`cell-${column.key}`"
@@ -133,13 +131,13 @@
                 <div class="flex items-center justify-end gap-1">
                   <slot name="actions" :row="row" :index="index">
                     <button
-                      class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
+                      class="p-2 text-text-tertiary hover:text-primary hover:bg-primary-10 rounded-xl transition-all"
                       :title="locale.edit"
                     >
                       <Edit2 :size="14" />
                     </button>
                     <button
-                      class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                      class="p-2 text-text-tertiary hover:text-error hover:bg-error-10 rounded-xl transition-all"
                       :title="locale.delete"
                     >
                       <Trash2 :size="14" />
@@ -153,10 +151,10 @@
       </div>
 
       <!-- 移动端卡片列表 -->
-      <div class="md:hidden divide-y divide-zinc-800">
+      <div class="md:hidden divide-y divide-panel-bg-dark">
         <div v-if="!loading && data.length === 0" class="p-20 text-center">
           <slot name="empty">
-            <div class="flex flex-col items-center gap-3 text-zinc-700">
+            <div class="flex flex-col items-center gap-3 text-text-secondary">
               <Database :size="40" stroke-width="1" />
               <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.noData }}</span>
             </div>
@@ -165,8 +163,8 @@
         <div
           v-for="(row, index) in data"
           :key="getRowKey(row, index)"
-          class="p-4 space-y-4 hover:bg-zinc-800/30 transition-colors"
-          :class="{ 'bg-blue-600/5': selectedRows.includes(getRowKey(row, index)) }"
+          class="p-4 space-y-4 hover:bg-bg-tertiary-30 transition-colors"
+          :class="{ 'bg-primary-hover-5': selectedRows.includes(getRowKey(row, index)) }"
           @click="handleRowClick(row, index)"
         >
           <div class="flex items-center justify-between">
@@ -175,12 +173,12 @@
                 <input
                   type="checkbox"
                   :checked="selectedRows.includes(getRowKey(row, index))"
-                  class="w-4 h-4 rounded border-zinc-700 bg-zinc-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
+                  class="w-4 h-4 rounded border-border-tertiary bg-bg-primary text-primary-hover focus:ring-0 focus:ring-offset-0 transition-all cursor-pointer"
                   @change="toggleSelectRow(getRowKey(row, index))"
                 >
               </div>
               <slot name="mobile-primary" :row="row" :index="index">
-                <span class="text-sm font-black text-zinc-100">{{
+                <span class="text-sm font-black text-text-primary">{{
                   formatCellValue(getNestedValue(row, columns[0]?.key), columns[0])
                 }}</span>
               </slot>
@@ -188,12 +186,12 @@
             <div v-if="hasActions" class="flex items-center gap-1" @click.stop>
               <slot name="actions" :row="row" :index="index">
                 <button
-                  class="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
+                  class="p-2 text-text-tertiary hover:text-primary hover:bg-primary-10 rounded-xl transition-all"
                 >
                   <Edit2 :size="14" />
                 </button>
                 <button
-                  class="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                  class="p-2 text-text-tertiary hover:text-error hover:bg-error-10 rounded-xl transition-all"
                 >
                   <Trash2 :size="14" />
                 </button>
@@ -202,10 +200,10 @@
           </div>
           <div class="grid grid-cols-2 gap-y-3 gap-x-4">
             <div v-for="column in columns.slice(1)" :key="column.key" class="space-y-1">
-              <span class="text-[9px] font-black text-zinc-600 uppercase tracking-widest block">{{
+              <span class="text-[9px] font-black text-text-disabled uppercase tracking-widest block">{{
                 column.title
               }}</span>
-              <div class="text-xs font-bold text-zinc-400">
+              <div class="text-xs font-bold text-text-tertiary">
                 <slot
                   :name="`cell-${column.key}`"
                   :row="row"
@@ -235,6 +233,7 @@ import {
   MoreHorizontal
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -351,7 +350,7 @@ const handleRowClick = (row, index) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--mask-50);
   display: flex;
   flex-direction: column;
   align-items: center;

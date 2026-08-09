@@ -20,7 +20,8 @@
   width: 100%;
   min-width: 0;
   animation: page-view-enter 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform, opacity, filter;
+  /* will-change 声明 transform/filter 会使本元素成为 fixed 定位包含块，导致未 Teleport 的弹窗遮罩错位，仅保留 opacity */
+  will-change: opacity;
 }
 
 .page-view[data-route='index'] {
@@ -109,7 +110,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,8 +120,8 @@
 .loading-spinner {
   width: 60px;
   height: 60px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top: 3px solid #4f46e5;
+  border: 3px solid var(--overlay-10);
+  border-top: 3px solid var(--color-indigo);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

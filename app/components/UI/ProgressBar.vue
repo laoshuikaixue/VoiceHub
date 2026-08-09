@@ -56,14 +56,14 @@ defineProps({
 
 .progress-bar {
   height: 8px;
-  background-color: #e9ecef;
+  background-color: var(--panel-bg-hover);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: #3490dc;
+  background-color: var(--color-accent);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -71,14 +71,14 @@ defineProps({
 .progress-fill.indeterminate {
   width: 30% !important;
   animation: progress-indeterminate 1.5s ease-in-out infinite;
-  background-image: linear-gradient(to right, #3490dc, #38c172, #3490dc);
+  background-image: linear-gradient(to right, var(--color-accent), var(--color-success), var(--color-accent));
   background-size: 200% 100%;
 }
 
 .progress-sub-message {
   margin-top: 5px;
   font-size: 12px;
-  color: #6c757d;
+  color: var(--text-muted);
 }
 
 @keyframes progress-indeterminate {

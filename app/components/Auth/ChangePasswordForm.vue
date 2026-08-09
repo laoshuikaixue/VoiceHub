@@ -4,12 +4,12 @@
       <div v-if="!isFirstLogin" class="space-y-2">
         <label
           for="current-password"
-          class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1"
+          class="text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
           >{{ locale.currentPassword }}</label
         >
         <div class="relative group">
           <div
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors"
           >
             <Lock :size="18" />
           </div>
@@ -19,8 +19,8 @@
             :class="[
               inputClass,
               error
-                ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-zinc-800 focus:border-blue-500/30'
+                ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
+                : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showCurrentPassword ? 'text' : 'password'"
             autocomplete="current-password"
@@ -29,7 +29,7 @@
             @input="error = ''"
           />
           <button
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-colors"
             type="button"
             :aria-label="
               showCurrentPassword ? locale.hideCurrentPassword : locale.showCurrentPassword
@@ -45,12 +45,12 @@
       <div class="space-y-2">
         <label
           for="new-password"
-          class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1"
+          class="text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
           >{{ locale.newPassword }}</label
         >
         <div class="relative group">
           <div
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors"
           >
             <KeyRound :size="18" />
           </div>
@@ -60,8 +60,8 @@
             :class="[
               inputClass,
               error
-                ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-zinc-800 focus:border-blue-500/30'
+                ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
+                : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
@@ -70,7 +70,7 @@
             @input="handleNewPasswordInput"
           />
           <button
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-colors"
             type="button"
             :aria-label="showNewPassword ? locale.hideNewPassword : locale.showNewPassword"
             @click="showNewPassword = !showNewPassword"
@@ -82,7 +82,7 @@
 
         <!-- 密码强度指示器 -->
         <div v-if="newPassword" class="px-1 pt-1 space-y-2">
-          <div class="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+          <div class="h-1 w-full bg-bg-tertiary rounded-full overflow-hidden">
             <div
               class="h-full transition-all duration-500"
               :class="passwordStrength.colorClass"
@@ -90,7 +90,7 @@
             />
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500"
+            <span class="text-[10px] font-black uppercase tracking-widest text-text-tertiary"
               >{{ locale.passwordStrength }}</span
             >
             <span
@@ -106,12 +106,12 @@
       <div class="space-y-2">
         <label
           for="confirm-password"
-          class="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1"
+          class="text-xs font-black text-text-tertiary uppercase tracking-widest ml-1"
           >{{ locale.confirmPassword }}</label
         >
         <div class="relative group">
           <div
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors"
+            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors"
           >
             <CheckCircle2 :size="18" />
           </div>
@@ -121,8 +121,8 @@
             :class="[
               inputClass,
               error || (confirmPassword && newPassword !== confirmPassword)
-                ? 'border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
-                : 'border-zinc-800 focus:border-blue-500/30'
+                ? 'border-error shadow-[0_0_15px_var(--auth-error-input-shadow)]'
+                : 'border-border-secondary focus:border-primary-30'
             ]"
             :type="showConfirmPassword ? 'text' : 'password'"
             autocomplete="new-password"
@@ -131,7 +131,7 @@
             @input="error = ''"
           />
           <button
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-colors"
             type="button"
             :aria-label="
               showConfirmPassword ? locale.hideConfirmPassword : locale.showConfirmPassword
@@ -147,12 +147,12 @@
         <div v-if="confirmPassword" class="px-1">
           <div
             v-if="newPassword !== confirmPassword"
-            class="flex items-center gap-1.5 text-rose-500"
+            class="flex items-center gap-1.5 text-error"
           >
             <XCircle :size="12" />
             <span class="text-[10px] font-bold">{{ locale.mismatch }}</span>
           </div>
-          <div v-else class="flex items-center gap-1.5 text-emerald-500">
+          <div v-else class="flex items-center gap-1.5 text-success">
             <CheckCircle2 :size="12" />
             <span class="text-[10px] font-bold">{{ locale.matched }}</span>
           </div>
@@ -163,24 +163,24 @@
       <div
         v-if="error"
         aria-live="polite"
-        class="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3"
+        class="p-3 bg-error-10 border border-error-20 rounded-xl flex items-center gap-3"
       >
-        <AlertCircle :size="16" class="text-rose-500 shrink-0" />
-        <span class="text-xs text-rose-500 font-medium">{{ error }}</span>
+        <AlertCircle :size="16" class="text-error shrink-0" />
+        <span class="text-xs text-error font-medium">{{ error }}</span>
       </div>
 
       <div
         v-if="success"
         aria-live="polite"
-        class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center gap-3"
+        class="p-3 bg-success-10 border border-success-20 rounded-xl flex items-center gap-3"
       >
-        <CheckCircle2 :size="16" class="text-emerald-500 shrink-0" />
-        <span class="text-xs text-emerald-500 font-medium">{{ success }}</span>
+        <CheckCircle2 :size="16" class="text-success shrink-0" />
+        <span class="text-xs text-success font-medium">{{ success }}</span>
       </div>
 
       <button
         :disabled="loading || !isFormValid"
-        class="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
+        class="w-full flex items-center justify-center gap-2 py-3 bg-primary-hover hover:bg-primary text-text-primary text-sm font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-50"
         type="submit"
       >
         <Loader2 v-if="loading" :size="18" class="animate-spin" />
@@ -239,7 +239,7 @@ onBeforeUnmount(() => {
 
 // 样式类
 const inputClass =
-  'w-full bg-zinc-950 border rounded-xl pl-11 pr-11 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none transition-all'
+  'w-full bg-bg-primary border rounded-xl pl-11 pr-11 py-3 text-sm text-text-primary placeholder:text-text-disabled focus:outline-none transition-all'
 
 // 密码显示状态
 const showCurrentPassword = ref(false)

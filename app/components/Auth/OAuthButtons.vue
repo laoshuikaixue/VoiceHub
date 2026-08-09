@@ -64,37 +64,37 @@ const providerButtonClass = (provider) => {
     'w-12 h-12 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] flex items-center justify-center cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[var(--bg-tertiary)]'
 
   if (key === 'github') {
-    return `${baseClass} hover:bg-[#24292e] hover:text-white hover:border-[#24292e]`
+    return `${baseClass} hover:bg-[var(--panel-bg-subtle)] hover:text-text-primary hover:border-[var(--panel-bg-subtle)]`
   }
   if (key === 'casdoor') {
-    return `${baseClass} hover:border-[#67c23a]`
+    return `${baseClass} hover:border-[var(--oauth-casdoor-green)]`
   }
   if (key === 'google') {
-    return `${baseClass} hover:bg-white hover:text-black hover:border-[#dadce0]`
+    return `${baseClass} hover:bg-bg-secondary hover:text-black hover:border-[var(--panel-border)]`
   }
   if (key === 'aggregate') {
     const aggregateClasses = {
-      qq: 'hover:bg-[#12b7f5] hover:text-white hover:border-[#12b7f5]',
-      wx: 'hover:bg-[#07c160] hover:text-white hover:border-[#07c160]',
-      alipay: 'hover:bg-[#1677ff] hover:text-white hover:border-[#1677ff]',
-      sina: 'hover:bg-[#e6162d] hover:text-white hover:border-[#e6162d]',
-      baidu: 'hover:bg-[#2932e1] hover:text-white hover:border-[#2932e1]',
-      douyin: 'hover:bg-[#161823] hover:text-white hover:border-[#25f4ee]',
-      huawei: 'hover:bg-[#cf0a2c] hover:text-white hover:border-[#cf0a2c]',
-      xiaomi: 'hover:bg-[#ff6900] hover:text-white hover:border-[#ff6900]',
-      gitee: 'hover:bg-[#c71d23] hover:text-white hover:border-[#c71d23]',
+      qq: 'hover:bg-[var(--oauth-qq)] hover:text-text-primary hover:border-[var(--oauth-qq)]',
+      wx: 'hover:bg-[var(--oauth-wx)] hover:text-text-primary hover:border-[var(--oauth-wx)]',
+      alipay: 'hover:bg-[var(--oauth-alipay)] hover:text-text-primary hover:border-[var(--oauth-alipay)]',
+      sina: 'hover:bg-[var(--oauth-sina)] hover:text-text-primary hover:border-[var(--oauth-sina)]',
+      baidu: 'hover:bg-[var(--oauth-baidu)] hover:text-text-primary hover:border-[var(--oauth-baidu)]',
+      douyin: 'hover:bg-[var(--panel-bg-darkest)] hover:text-text-primary hover:border-[var(--oauth-douyin)]',
+      huawei: 'hover:bg-[var(--oauth-huawei)] hover:text-text-primary hover:border-[var(--oauth-huawei)]',
+      xiaomi: 'hover:bg-[var(--oauth-xiaomi)] hover:text-text-primary hover:border-[var(--oauth-xiaomi)]',
+      gitee: 'hover:bg-[var(--oauth-gitee)] hover:text-text-primary hover:border-[var(--oauth-gitee)]',
       gitea:
-        '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:#fff] hover:bg-white hover:text-black hover:border-white',
-      bilibili: 'hover:bg-[#00a1d6] hover:text-white hover:border-[#00a1d6]',
-      kuaishou: 'hover:bg-[#ff4906] hover:text-white hover:border-[#ff4906]'
+        '[--gitea-cutout:var(--bg-secondary)] hover:[--gitea-cutout:var(--text-primary)] hover:bg-bg-secondary hover:text-black hover:border-primary',
+      bilibili: 'hover:bg-[var(--oauth-bilibili)] hover:text-text-primary hover:border-[var(--oauth-bilibili)]',
+      kuaishou: 'hover:bg-[var(--oauth-kuaishou)] hover:text-text-primary hover:border-[var(--oauth-kuaishou)]'
     }
     return `${baseClass} ${aggregateClasses[provider.loginType] || ''}`
   }
   if (key === 'oauth2') {
-    return `${baseClass} hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e]`
+    return `${baseClass} hover:bg-[var(--status-success-icon)] hover:text-text-primary hover:border-[var(--status-success-icon)]`
   }
 
-  return `${baseClass} hover:border-blue-500/40 hover:text-blue-400`
+  return `${baseClass} hover:border-primary-40 hover:text-primary`
 }
 
 const loginWith = (provider) => {

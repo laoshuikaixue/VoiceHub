@@ -5,7 +5,7 @@
       <div class="info-section">
         <div class="info-content">
           <div class="logo-section">
-            <img alt="VoiceHub Logo" class="brand-logo" :src="logo" />
+            <img alt="VoiceHub Logo" class="brand-logo" :src="getLogo()" />
             <h1 v-if="siteTitle" class="brand-title">{{ siteTitle }}</h1>
           </div>
 
@@ -97,13 +97,13 @@
 <script setup>
 import ChangePasswordForm from '~/components/Auth/ChangePasswordForm.vue'
 import Icon from '~/components/UI/Icon.vue'
-import { computed } from 'vue'
-import logo from '~~/public/images/logo.svg'
 import { useLocale } from '~/utils/locale'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()
 const { changePassword: locale } = useLocale()
+const { getLogo } = useThemeImage()
 
 const auth = useAuth()
 const router = useRouter()
@@ -130,7 +130,7 @@ onMounted(async () => {
   width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  background: #0a0a0a;
+  background: var(--panel-bg-deepest);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -142,9 +142,9 @@ onMounted(async () => {
 .auth-container {
   width: 100%;
   max-width: 1200px;
-  background: #111111;
+  background: var(--bg-primary);
   border-radius: 24px;
-  border: 1px solid #1f1f1f;
+  border: 1px solid var(--panel-border-subtle);
   overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -153,7 +153,7 @@ onMounted(async () => {
 }
 
 .info-section {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--color-indigo-hover) 0%, var(--color-collab-hover) 100%);
   padding: 60px 40px;
   display: flex;
   align-items: center;
@@ -169,7 +169,7 @@ onMounted(async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%23666" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
   opacity: 0.3;
 }
 
@@ -195,7 +195,7 @@ onMounted(async () => {
   font-size: 36px;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--panel-bg-deep) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -217,7 +217,7 @@ onMounted(async () => {
 .welcome-message p,
 .security-message p {
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   margin: 0;
   line-height: 1.6;
 }
@@ -244,16 +244,16 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 8px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--overlay-20);
 }
 
 .tip-icon {
   width: 16px;
   height: 16px;
-  color: #10b981;
+  color: var(--color-success);
   flex-shrink: 0;
 }
 
@@ -267,7 +267,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #111111;
+  background: var(--bg-primary);
 }
 
 .form-container {
@@ -291,13 +291,13 @@ onMounted(async () => {
 .form-header h2 {
   font-size: 28px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
 }
 
 .form-header p {
   font-size: 16px;
-  color: #888888;
+  color: var(--text-tertiary-hover);
   margin: 0;
 }
 
@@ -311,10 +311,10 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  background: var(--panel-bg-deep);
+  border: 1px solid var(--panel-border);
   border-radius: 8px;
-  color: #cccccc;
+  color: var(--text-secondary);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -322,9 +322,9 @@ onMounted(async () => {
 }
 
 .back-link:hover {
-  background: #2a2a2a;
-  color: #ffffff;
-  border-color: #3a3a3a;
+  background: var(--panel-border);
+  color: var(--text-primary);
+  border-color: var(--panel-border-light);
 }
 
 .back-link svg {

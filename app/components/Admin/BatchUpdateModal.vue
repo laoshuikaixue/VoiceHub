@@ -9,30 +9,30 @@
   >
     <div
       v-if="show"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       @click="$emit('close')"
     >
       <div
-        class="bg-zinc-900 border border-zinc-800 w-full max-w-2xl rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        class="bg-bg-secondary border border-border-secondary w-full max-w-2xl rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
         @click.stop
       >
         <!-- 头部 -->
-        <div class="p-8 pb-4 flex items-center justify-between border-b border-zinc-800/50">
+        <div class="p-8 pb-4 flex items-center justify-between border-b border-border-secondary-50">
           <div>
-            <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+            <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
               <div
-                class="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center text-purple-500"
+                class="w-10 h-10 rounded-xl bg-info-10 flex items-center justify-center text-info"
               >
                 <Layers :size="20" />
               </div>
               {{ locale.title }}
             </h3>
-            <p class="text-xs text-zinc-500 mt-1 ml-13">
+            <p class="text-xs text-text-tertiary mt-1 ml-13">
               {{ locale.desc }}
             </p>
           </div>
           <button
-            class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-xl transition-all"
+            class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
             @click="$emit('close')"
           >
             <X :size="20" />
@@ -41,13 +41,13 @@
 
         <div class="flex-1 overflow-y-auto p-8 pt-6 custom-scrollbar space-y-8">
           <!-- 更新方式选择 -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <label
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'grade-only'
-                  ? 'bg-purple-500/5 border-purple-500/50 ring-4 ring-purple-500/10'
-                  : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                  ? 'bg-info-5 border-info-50 ring-4 ring-color-collab-10'
+                  : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
               <input v-model="updateType" type="radio" value="grade-only" class="sr-only" >
@@ -56,23 +56,23 @@
                   :class="[
                     'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
                     updateType === 'grade-only'
-                      ? 'bg-purple-500 text-white'
-                      : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300'
+                      ? 'bg-info text-text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary group-hover:text-text-secondary'
                   ]"
                 >
                   <Calendar :size="18" />
                 </div>
                 <div
                   v-if="updateType === 'grade-only'"
-                  class="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center"
+                  class="w-5 h-5 rounded-full bg-info flex items-center justify-center"
                 >
-                  <Check :size="12" class="text-white" />
+                  <Check :size="12" class="text-text-primary" />
                 </div>
               </div>
-              <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
+              <span class="text-sm font-black text-text-primary uppercase tracking-widest"
                 >{{ locale.updateTypes.gradeOnly.title }}</span
               >
-              <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
+              <span class="text-[10px] text-text-tertiary mt-1 font-medium leading-relaxed"
                 >{{ locale.updateTypes.gradeOnly.desc }}</span
               >
             </label>
@@ -81,8 +81,8 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'excel-batch'
-                  ? 'bg-emerald-500/5 border-emerald-500/50 ring-4 ring-emerald-500/10'
-                  : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                  ? 'bg-success-5 border-success-50 ring-4 ring-success-10'
+                  : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
               <input v-model="updateType" type="radio" value="excel-batch" class="sr-only" >
@@ -91,23 +91,23 @@
                   :class="[
                     'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
                     updateType === 'excel-batch'
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300'
+                      ? 'bg-success text-text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary group-hover:text-text-secondary'
                   ]"
                 >
                   <FileSpreadsheet :size="18" />
                 </div>
                 <div
                   v-if="updateType === 'excel-batch'"
-                  class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center"
+                  class="w-5 h-5 rounded-full bg-success flex items-center justify-center"
                 >
-                  <Check :size="12" class="text-white" />
+                  <Check :size="12" class="text-text-primary" />
                 </div>
               </div>
-              <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
+              <span class="text-sm font-black text-text-primary uppercase tracking-widest"
                 >{{ locale.updateTypes.excelBatch.title }}</span
               >
-              <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
+              <span class="text-[10px] text-text-tertiary mt-1 font-medium leading-relaxed"
                 >{{ locale.updateTypes.excelBatch.desc }}</span
               >
             </label>
@@ -116,8 +116,8 @@
               :class="[
                 'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
                 updateType === 'status-batch'
-                  ? 'bg-amber-500/5 border-amber-500/50 ring-4 ring-amber-500/10'
-                  : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+                  ? 'bg-warning-5 border-warning-50 ring-4 ring-warning-10'
+                  : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
               ]"
             >
               <input v-model="updateType" type="radio" value="status-batch" class="sr-only" >
@@ -126,24 +126,59 @@
                   :class="[
                     'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
                     updateType === 'status-batch'
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-zinc-800 text-zinc-500 group-hover:text-zinc-300'
+                      ? 'bg-warning text-text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary group-hover:text-text-secondary'
                   ]"
                 >
                   <ShieldAlert :size="18" />
                 </div>
                 <div
                   v-if="updateType === 'status-batch'"
-                  class="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center"
+                  class="w-5 h-5 rounded-full bg-warning flex items-center justify-center"
                 >
-                  <Check :size="12" class="text-white" />
+                  <Check :size="12" class="text-text-primary" />
                 </div>
               </div>
-              <span class="text-sm font-black text-zinc-200 uppercase tracking-widest"
+              <span class="text-sm font-black text-text-primary uppercase tracking-widest"
                 >{{ locale.updateTypes.statusBatch.title }}</span
               >
-              <span class="text-[10px] text-zinc-500 mt-1 font-medium leading-relaxed"
+              <span class="text-[10px] text-text-tertiary mt-1 font-medium leading-relaxed"
                 >{{ locale.updateTypes.statusBatch.desc }}</span
+              >
+            </label>
+
+            <label
+              :class="[
+                'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
+                updateType === 'song-admin-batch'
+                  ? 'bg-primary-5 border-primary-50 ring-4 ring-primary-10'
+                  : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
+              ]"
+            >
+              <input v-model="updateType" type="radio" value="song-admin-batch" class="sr-only" >
+              <div class="flex items-center justify-between mb-3">
+                <div
+                  :class="[
+                    'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+                    updateType === 'song-admin-batch'
+                      ? 'bg-primary text-text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary group-hover:text-text-secondary'
+                  ]"
+                >
+                  <Music :size="18" />
+                </div>
+                <div
+                  v-if="updateType === 'song-admin-batch'"
+                  class="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                >
+                  <Check :size="12" class="text-text-primary" />
+                </div>
+              </div>
+              <span class="text-sm font-black text-text-primary uppercase tracking-widest"
+                >{{ locale.updateTypes.songAdminBatch.title }}</span
+              >
+              <span class="text-[10px] text-text-tertiary mt-1 font-medium leading-relaxed"
+                >{{ locale.updateTypes.songAdminBatch.desc }}</span
               >
             </label>
           </div>
@@ -153,17 +188,17 @@
             v-if="['grade-only', 'status-batch'].includes(updateType)"
             class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
-            <div class="p-6 bg-zinc-950/50 border border-zinc-800/50 rounded-xl space-y-6">
+            <div class="p-6 bg-bg-primary-50 border border-border-secondary-50 rounded-xl space-y-6">
               <div
-                class="flex items-center gap-2 text-xs font-black text-zinc-400 uppercase tracking-widest"
+                class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest"
               >
-                <Filter :size="14" class="text-purple-500" />
+                <Filter :size="14" class="text-info" />
                 {{ locale.studentFilter.title }}
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.studentFilter.currentGrade }}</label
                   >
                   <CustomSelect
@@ -176,7 +211,7 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.studentFilter.currentClass }}</label
                   >
                   <CustomSelect
@@ -192,22 +227,22 @@
 
               <div class="space-y-3">
                 <div class="flex items-center justify-between ml-1">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
                     >{{ getNestedText('studentFilter', 'selectUsers', selectedUserIds?.length || 0, filteredUsers?.length || 0) }}</label
                   >
                   <button
-                    class="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors"
+                    class="text-[10px] font-black text-info hover:text-info uppercase tracking-widest transition-colors"
                     @click="toggleSelectAll"
                   >
                     {{ isAllSelected ? locale.studentFilter.clearSelection : locale.studentFilter.selectAll }}
                   </button>
                 </div>
                 <div
-                  class="max-h-48 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950 p-2 custom-scrollbar"
+                  class="max-h-48 overflow-y-auto rounded-lg border border-border-secondary bg-bg-primary p-2 custom-scrollbar"
                 >
                   <div
                     v-if="filteredUsers?.length === 0"
-                    class="py-10 text-center text-xs text-zinc-600 font-medium"
+                    class="py-10 text-center text-xs text-text-disabled font-medium"
                   >
                     {{ locale.studentFilter.noMatchedUsers }}
                   </div>
@@ -215,20 +250,20 @@
                     <label
                       v-for="user in filteredUsers"
                       :key="user.id"
-                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-900/50 cursor-pointer transition-colors group"
+                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary-50 cursor-pointer transition-colors group"
                     >
                       <input
                         v-model="selectedUserIds"
                         :value="user.id"
                         type="checkbox"
-                        class="w-4 h-4 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
+                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab-10"
                       >
                       <div class="flex flex-col">
                         <span
-                          class="text-xs font-bold text-zinc-200 group-hover:text-purple-400 transition-colors"
+                          class="text-xs font-bold text-text-primary group-hover:text-info transition-colors"
                           >{{ user.name }}</span
                         >
-                        <span class="text-[10px] text-zinc-600 font-mono">{{
+                        <span class="text-[10px] text-text-disabled font-mono">{{
                           user.username
                         }}</span>
                       </div>
@@ -239,53 +274,53 @@
             </div>
 
             <!-- 目标年级设置 -->
-            <div v-if="updateType === 'grade-only'" class="p-6 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-6">
+            <div v-if="updateType === 'grade-only'" class="p-6 bg-info-5 border border-info-20 rounded-xl space-y-6">
               <div
-                class="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest"
+                class="flex items-center gap-2 text-xs font-black text-info uppercase tracking-widest"
               >
                 <Save :size="14" />
                 {{ locale.gradeSettings.title }}
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1"
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                     >{{ locale.gradeSettings.targetGrade }}</label
                   >
                   <div class="relative group">
                     <Calendar
-                      class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-purple-500 transition-colors"
+                      class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-info transition-colors"
                       :size="16"
                     />
                     <input
                       v-model="targetGrade"
                       type="text"
                       :placeholder="locale.gradeSettings.targetGradePlaceholder"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-purple-500/30 transition-all text-zinc-200"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-info-30 transition-all text-text-primary"
                     >
                   </div>
                 </div>
                 <label
-                  class="flex items-center gap-3 p-3 bg-zinc-950 border border-zinc-800 rounded-lg cursor-pointer hover:border-zinc-700 transition-all"
+                  class="flex items-center gap-3 p-3 bg-bg-primary border border-border-secondary rounded-lg cursor-pointer hover:border-border-tertiary transition-all"
                 >
                   <input
                     v-model="keepClass"
                     type="checkbox"
-                    class="w-5 h-5 rounded-md border-zinc-700 bg-zinc-950 text-purple-600 focus:ring-purple-500/20"
+                    class="w-5 h-5 rounded-md border-border-tertiary bg-bg-primary text-info focus:ring-color-collab-10"
                   >
-                  <span class="text-xs font-bold text-zinc-300">{{ locale.gradeSettings.keepClass }}</span>
+                  <span class="text-xs font-bold text-text-secondary">{{ locale.gradeSettings.keepClass }}</span>
                 </label>
               </div>
             </div>
 
             <!-- 目标状态设置 -->
-            <div v-if="updateType === 'status-batch'" class="p-6 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-6">
-              <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+            <div v-if="updateType === 'status-batch'" class="p-6 bg-warning-5 border border-warning-20 rounded-xl space-y-6">
+              <div class="flex items-center gap-2 text-xs font-black text-warning uppercase tracking-widest">
                 <Save :size="14" />
                 {{ locale.statusSettings.title }}
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.sourceStatus }}</label>
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">{{ locale.statusSettings.sourceStatus }}</label>
                   <CustomSelect
                     v-model="sourceStatus"
                     :options="sourceStatusOptions"
@@ -296,7 +331,7 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.targetStatus }}</label>
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">{{ locale.statusSettings.targetStatus }}</label>
                   <CustomSelect
                     v-model="targetStatus"
                     :options="statusOptions"
@@ -307,16 +342,167 @@
                   />
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{{ locale.statusSettings.reason }}</label>
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">{{ locale.statusSettings.reason }}</label>
                   <div class="relative group">
-                    <MessageSquare class="absolute left-4 top-3 text-zinc-700 group-focus-within:text-amber-500 transition-colors" :size="16" />
+                    <MessageSquare class="absolute left-4 top-3 text-text-secondary group-focus-within:text-warning transition-colors" :size="16" />
                     <textarea
                       v-model="statusReason"
                       rows="2"
                       :placeholder="locale.statusSettings.reasonPlaceholder"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-amber-500/30 transition-all text-zinc-200 resize-none"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-warning-30 transition-all text-text-primary resize-none"
                     ></textarea>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 歌曲管理员批量更新面板 -->
+          <div
+            v-if="updateType === 'song-admin-batch'"
+            class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <div class="p-6 bg-bg-primary-50 border border-border-secondary-50 rounded-xl space-y-6">
+              <div
+                class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest"
+              >
+                <Filter :size="14" class="text-primary" />
+                {{ getNestedText('songAdminSettings', 'scope') }}
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'currentGrade') }}</label
+                  >
+                  <CustomSelect
+                    v-model="songAdminGradeFilter"
+                    :options="songAdminGradeOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="getNestedText('songAdminSettings', 'allGrades')"
+                    class-name="w-full"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'currentClass') }}</label
+                  >
+                  <CustomSelect
+                    v-model="songAdminClassFilter"
+                    :options="songAdminClassOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="getNestedText('songAdminSettings', 'allClasses')"
+                    class-name="w-full"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex items-center justify-between ml-1">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+                    >{{ getNestedText('songAdminSettings', 'selectUsers', songAdminIds?.length || 0, filteredSongAdminUsers?.length || 0) }}</label>
+                  <button
+                    class="text-[10px] font-black text-primary hover:text-info uppercase tracking-widest transition-colors"
+                    @click="toggleSelectAllSongAdmin"
+                  >
+                    {{ isAllSongAdminSelected ? getNestedText('songAdminSettings', 'clearSelection') : getNestedText('songAdminSettings', 'selectAll') }}
+                  </button>
+                </div>
+                <div
+                  class="max-h-48 overflow-y-auto rounded-lg border border-border-secondary bg-bg-primary p-2 custom-scrollbar"
+                >
+                  <div
+                    v-if="filteredSongAdminUsers?.length === 0"
+                    class="py-10 text-center text-xs text-text-disabled font-medium"
+                  >
+                    {{ getNestedText('songAdminSettings', 'noMatchedUsers') }}
+                  </div>
+                  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    <label
+                      v-for="user in filteredSongAdminUsers"
+                      :key="user.id"
+                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary-50 cursor-pointer transition-colors group"
+                    >
+                      <input
+                        v-model="songAdminIds"
+                        :value="user.id"
+                        type="checkbox"
+                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-primary focus:ring-primary-10"
+                      >
+                      <div class="flex flex-col">
+                        <span
+                          class="text-xs font-bold text-text-primary group-hover:text-primary transition-colors"
+                          >{{ user.name }}</span>
+                        <span class="text-[10px] text-text-disabled font-mono">{{
+                          user.username
+                        }}</span>
+                      </div>
+                      <span class="ml-auto text-[10px] font-bold text-text-disabled">
+                        {{ user.grade || '-' }} {{ user.class || '-' }}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 歌曲管理员更新目标设置 -->
+            <div class="p-6 bg-primary-5 border border-primary-20 rounded-xl space-y-6">
+              <div
+                class="flex items-center gap-2 text-xs font-black text-primary uppercase tracking-widest"
+              >
+                <Save :size="14" />
+                {{ getNestedText('songAdminSettings', 'targetSettings') }}
+              </div>
+              <p class="text-[10px] text-primary-80 leading-relaxed">
+                {{ getNestedText('songAdminSettings', 'desc') }}
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'targetGrade') }}</label>
+                  <div class="relative group">
+                    <Calendar
+                      class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
+                      :size="16"
+                    />
+                    <input
+                      v-model="songAdminTargetGrade"
+                      type="text"
+                      :placeholder="getNestedText('songAdminSettings', 'targetGradePlaceholder')"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
+                    >
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'targetClass') }}</label>
+                  <div class="relative group">
+                    <Briefcase
+                      class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
+                      :size="16"
+                    />
+                    <input
+                      v-model="songAdminTargetClass"
+                      type="text"
+                      :placeholder="getNestedText('songAdminSettings', 'targetClassPlaceholder')"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
+                    >
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'targetStatus') }}</label>
+                  <CustomSelect
+                    v-model="songAdminTargetStatus"
+                    :options="statusOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="getNestedText('songAdminSettings', 'targetStatusPlaceholder')"
+                    class-name="w-full"
+                  />
                 </div>
               </div>
             </div>
@@ -350,33 +536,33 @@
                 :class="[
                   'w-full py-12 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-4',
                   isDragOver
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-800 hover:border-emerald-500/50 hover:bg-emerald-500/5'
+                    ? 'border-success bg-success-10'
+                    : 'border-border-secondary hover:border-success-50 hover:bg-success-5'
                 ]"
               >
                 <div
                   :class="[
-                    'w-16 h-16 rounded-lg bg-zinc-900 flex items-center justify-center transition-colors shadow-xl',
-                    isDragOver ? 'text-emerald-500' : 'text-zinc-600 group-hover:text-emerald-500'
+                    'w-16 h-16 rounded-lg bg-bg-secondary flex items-center justify-center transition-colors shadow-xl',
+                    isDragOver ? 'text-success' : 'text-text-disabled group-hover:text-success'
                   ]"
                 >
                   <Upload :size="32" />
                 </div>
                 <div class="text-center">
-                  <p class="text-base font-black text-zinc-200 tracking-tight">
+                  <p class="text-base font-black text-text-primary tracking-tight">
                     {{ locale.excelUpload.dragTitle }}
                   </p>
-                  <p class="text-xs text-zinc-500 mt-1">
-                    {{ locale.excelUpload.or }} <span class="text-emerald-500 font-bold">{{ locale.excelUpload.chooseFile }}</span> {{ locale.excelUpload.supportedFormats }}
+                  <p class="text-xs text-text-tertiary mt-1">
+                    {{ locale.excelUpload.or }} <span class="text-success font-bold">{{ locale.excelUpload.chooseFile }}</span> {{ locale.excelUpload.supportedFormats }}
                   </p>
                 </div>
               </div>
             </div>
 
             <!-- 匹配方式选择 -->
-            <div class="p-5 bg-zinc-950 border border-zinc-800 rounded-xl space-y-4">
+            <div class="p-5 bg-bg-primary border border-border-secondary rounded-xl space-y-4">
               <div
-                class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest"
+                class="flex items-center gap-2 text-[10px] font-black text-text-tertiary uppercase tracking-widest"
               >
                 <Filter :size="12" />
                 {{ locale.matchType.title }}
@@ -386,33 +572,33 @@
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'username'
-                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 ring-4 ring-blue-500/10'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
+                      ? 'bg-primary-10 border-primary-50 text-primary ring-4 ring-primary-10'
+                      : 'bg-bg-secondary border-border-secondary text-text-disabled hover:border-border-tertiary hover:text-text-tertiary'
                   ]"
                 >
                   <input v-model="matchType" type="radio" value="username" class="sr-only" />
-                  <span v-if="matchType === 'username'" class="w-2 h-2 rounded-full bg-blue-500" />
+                  <span v-if="matchType === 'username'" class="w-2 h-2 rounded-full bg-primary" />
                   {{ locale.matchType.byUsername }}
                 </label>
                 <label
                   :class="[
                     'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all cursor-pointer text-xs font-black uppercase tracking-widest',
                     matchType === 'name'
-                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 ring-4 ring-emerald-500/10'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400'
+                      ? 'bg-success-10 border-success-50 text-success ring-4 ring-success-10'
+                      : 'bg-bg-secondary border-border-secondary text-text-disabled hover:border-border-tertiary hover:text-text-tertiary'
                   ]"
                 >
                   <input v-model="matchType" type="radio" value="name" class="sr-only" />
-                  <span v-if="matchType === 'name'" class="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span v-if="matchType === 'name'" class="w-2 h-2 rounded-full bg-success" />
                   {{ locale.matchType.byName }}
                 </label>
               </div>
-              <p class="text-[10px] text-zinc-600 leading-relaxed">
+              <p class="text-[10px] text-text-disabled leading-relaxed">
                 <template v-if="matchType === 'username'">
-                  {{ locale.matchType.usernamePrefix }}<span class="text-blue-400 font-bold">{{ locale.fields.username }}</span>{{ locale.matchType.usernameSuffix }}
+                  {{ locale.matchType.usernamePrefix }}<span class="text-primary font-bold">{{ locale.fields.username }}</span>{{ locale.matchType.usernameSuffix }}
                 </template>
                 <template v-else>
-                  {{ locale.matchType.namePrefix }}<span class="text-emerald-400 font-bold">{{ locale.fields.realName }}</span>{{ locale.matchType.nameMiddle }}<span class="text-emerald-400 font-bold">{{ locale.fields.username }}</span>{{ locale.matchType.nameSuffix }}
+                  {{ locale.matchType.namePrefix }}<span class="text-success font-bold">{{ locale.fields.realName }}</span>{{ locale.matchType.nameMiddle }}<span class="text-success font-bold">{{ locale.fields.username }}</span>{{ locale.matchType.nameSuffix }}
                 </template>
               </p>
             </div>
@@ -420,44 +606,44 @@
             <!-- 模板与说明 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div
-                class="md:col-span-2 p-5 bg-zinc-950 border border-zinc-800 rounded-xl space-y-3"
+                class="md:col-span-2 p-5 bg-bg-primary border border-border-secondary rounded-xl space-y-3"
               >
                 <div
-                  class="flex items-center gap-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest"
+                  class="flex items-center gap-2 text-[10px] font-black text-text-tertiary uppercase tracking-widest"
                 >
                   <Info :size="12" />
                   {{ locale.fileSpec.title }}
                 </div>
-                <ul class="text-[10px] text-zinc-600 space-y-1.5 font-medium leading-relaxed">
+                <ul class="text-[10px] text-text-disabled space-y-1.5 font-medium leading-relaxed">
                   <li class="flex items-start gap-2">
-                    <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
+                    <div class="w-1 h-1 rounded-full bg-bg-quaternary mt-1.5" />
                     {{ locale.fileSpec.headerLine }}
                   </li>
                   <li class="flex items-start gap-2">
-                    <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
+                    <div class="w-1 h-1 rounded-full bg-bg-quaternary mt-1.5" />
                     <template v-if="matchType === 'username'">
-                      <span class="text-blue-400 font-bold">{{ locale.fields.username }}</span> {{ locale.fileSpec.usernameColumn }}
+                      <span class="text-primary font-bold">{{ locale.fields.username }}</span> {{ locale.fileSpec.usernameColumn }}
                     </template>
                     <template v-else>
-                      <span class="text-emerald-400 font-bold">{{ locale.fields.name }}</span> {{ locale.fileSpec.nameColumn }}
+                      <span class="text-success font-bold">{{ locale.fields.name }}</span> {{ locale.fileSpec.nameColumn }}
                     </template>
                   </li>
                   <li class="flex items-start gap-2">
-                    <div class="w-1 h-1 rounded-full bg-zinc-700 mt-1.5" />
+                    <div class="w-1 h-1 rounded-full bg-bg-quaternary mt-1.5" />
                     {{ locale.fileSpec.blankKeepsOriginal }}
                   </li>
                 </ul>
               </div>
               <button
-                class="p-5 bg-emerald-500/5 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group"
+                class="p-5 bg-success-5 border border-success-20 hover:border-success-40 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group"
                 @click="downloadTemplate"
               >
                 <div
-                  class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-900/20 group-hover:scale-110 transition-transform"
+                  class="w-10 h-10 rounded-lg bg-success text-text-primary flex items-center justify-center shadow-lg shadow-[var(--success-glow-20)] group-hover:scale-110 transition-transform"
                 >
                   <Download :size="20" />
                 </div>
-                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest"
+                <span class="text-[10px] font-black text-success uppercase tracking-widest"
                   >{{ locale.fileSpec.downloadTemplate }}</span
                 >
               </button>
@@ -469,27 +655,27 @@
               <!-- 外部阻断用户提示 -->
               <div
                 v-if="blockerList.length > 0"
-                class="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl space-y-3 animate-in fade-in duration-300"
+                class="p-5 bg-warning-5 border border-warning-20 rounded-2xl space-y-3 animate-in fade-in duration-300"
               >
-                <div class="flex items-center gap-2 text-xs font-black text-amber-400 uppercase tracking-widest">
+                <div class="flex items-center gap-2 text-xs font-black text-warning uppercase tracking-widest">
                   <AlertCircle :size="16" />
                   {{ locale.preview.blockersTitle(blockerList.length) }}
                 </div>
-                <p class="text-[10px] text-amber-300/80 leading-relaxed">
+                <p class="text-[10px] text-warning-80 leading-relaxed">
                   {{ locale.preview.blockersDesc }}
                 </p>
                 <div class="flex flex-wrap gap-2">
                   <span
                     v-for="(blocker, i) in blockerList"
                     :key="i"
-                    class="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs font-bold text-amber-400"
+                    class="px-3 py-1.5 bg-warning-10 border border-warning-20 rounded-lg text-xs font-bold text-warning"
                   >
                     {{ blocker.name }}({{ blocker.username }})
                   </span>
                 </div>
               </div>
               <div class="flex items-center justify-between ml-1">
-                <label class="text-xs font-black text-zinc-400 uppercase tracking-widest"
+                <label class="text-xs font-black text-text-tertiary uppercase tracking-widest"
                   >{{ locale.preview.dataPreview(previewFilter === 'all' ? excelPreviewData.length : filteredPreviewData.length, excelPreviewData.length) }}</label
                 >
                 <div class="flex items-center gap-4">
@@ -502,8 +688,8 @@
                     ]"
                     @click="previewFilter = previewFilter === 'pending' ? 'all' : 'pending'"
                   >
-                    <div class="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">{{ locale.preview.pending(previewCounts.pending) }}</span>
+                    <div class="w-2 h-2 rounded-full bg-success" />
+                    <span class="text-[10px] text-text-tertiary font-bold">{{ locale.preview.pending(previewCounts.pending) }}</span>
                   </button>
                   <button
                     :class="[
@@ -514,8 +700,8 @@
                     ]"
                     @click="previewFilter = previewFilter === 'noChange' ? 'all' : 'noChange'"
                   >
-                    <div class="w-2 h-2 rounded-full bg-zinc-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">{{ locale.preview.noChangeCount(previewCounts.noChange) }}</span>
+                    <div class="w-2 h-2 rounded-full bg-bg-quaternary" />
+                    <span class="text-[10px] text-text-tertiary font-bold">{{ locale.preview.noChangeCount(previewCounts.noChange) }}</span>
                   </button>
                   <button
                     :class="[
@@ -526,16 +712,16 @@
                     ]"
                     @click="previewFilter = previewFilter === 'error' ? 'all' : 'error'"
                   >
-                    <div class="w-2 h-2 rounded-full bg-red-500" />
-                    <span class="text-[10px] text-zinc-500 font-bold">{{ locale.preview.errorCount(previewCounts.error) }}</span>
+                    <div class="w-2 h-2 rounded-full bg-error" />
+                    <span class="text-[10px] text-text-tertiary font-bold">{{ locale.preview.errorCount(previewCounts.error) }}</span>
                   </button>
                 </div>
               </div>
-              <div class="rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden shadow-xl">
+              <div class="rounded-xl border border-border-secondary bg-bg-primary overflow-hidden shadow-xl">
                 <div class="overflow-x-auto custom-scrollbar">
                   <table class="w-full text-left border-collapse">
                     <thead
-                      class="bg-zinc-900/80 text-[10px] font-black text-zinc-500 uppercase tracking-widest border-b border-zinc-800"
+                      class="bg-bg-secondary-80 text-[10px] font-black text-text-tertiary uppercase tracking-widest border-b border-border-secondary"
                     >
                       <tr>
                         <th class="px-5 py-4 whitespace-nowrap">
@@ -546,12 +732,12 @@
                         <th class="px-5 py-4 whitespace-nowrap text-right">{{ locale.preview.matchStatus }}</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-zinc-900">
+                    <tbody class="divide-y divide-panel-bg-deepest">
                       <tr
                         v-for="(row, index) in filteredPreviewData.slice(0, 10)"
                         :key="index"
                         :class="[
-                          row.error ? 'bg-red-500/5' : 'hover:bg-zinc-900/30 transition-colors'
+                          row.error ? 'bg-error-5' : 'hover:bg-bg-secondary-30 transition-colors'
                         ]"
                       >
                         <td class="px-5 py-4">
@@ -559,11 +745,11 @@
                             <span
                               :class="[
                                 'text-xs font-bold',
-                                row.error ? 'text-red-400' : 'text-zinc-200'
+                                row.error ? 'text-error' : 'text-text-primary'
                               ]"
                               >{{ matchType === 'username' ? row.username : row.name }}</span
                             >
-                            <span class="text-[10px] text-zinc-600 font-medium">{{
+                            <span class="text-[10px] text-text-disabled font-medium">{{
                               matchType === 'username' ? (row.name || '-') : (row.username || '-')
                             }}</span>
                           </div>
@@ -571,28 +757,28 @@
                         <td class="px-5 py-4">
                           <div class="flex flex-col">
                             <div class="flex items-center gap-1.5">
-                              <span class="text-xs font-bold text-zinc-200">{{ row.currentGrade || '-' }}</span>
-                              <span class="text-[10px] text-zinc-700">/</span>
-                              <span class="text-xs font-bold text-zinc-200">{{ row.currentClass || '-' }}</span>
+                              <span class="text-xs font-bold text-text-primary">{{ row.currentGrade || '-' }}</span>
+                              <span class="text-[10px] text-text-secondary">/</span>
+                              <span class="text-xs font-bold text-text-primary">{{ row.currentClass || '-' }}</span>
                             </div>
-                            <span class="text-[10px] text-zinc-500 font-medium mt-0.5">{{ row.username }}</span>
+                            <span class="text-[10px] text-text-tertiary font-medium mt-0.5">{{ row.username }}</span>
                           </div>
                         </td>
                         <td class="px-5 py-4">
                           <div class="flex flex-col">
                             <template v-if="row.noChange">
-                              <span class="text-xs font-bold text-zinc-600">-</span>
+                              <span class="text-xs font-bold text-text-disabled">-</span>
                             </template>
                             <template v-else>
                               <div class="flex items-center gap-1.5">
-                                <span class="text-xs font-bold text-emerald-400">{{ row.newGrade || row.currentGrade || '-' }}</span>
-                                <span class="text-[10px] text-zinc-700">/</span>
-                                <span class="text-xs font-bold text-emerald-400">{{ row.newClass || row.currentClass || '-' }}</span>
+                                <span class="text-xs font-bold text-success">{{ row.newGrade || row.currentGrade || '-' }}</span>
+                                <span class="text-[10px] text-text-secondary">/</span>
+                                <span class="text-xs font-bold text-success">{{ row.newClass || row.currentClass || '-' }}</span>
                               </div>
                               <span
                                 :class="[
                                   'text-[10px] font-medium mt-0.5',
-                                  row.newUsername ? 'text-emerald-400' : 'text-zinc-500'
+                                  row.newUsername ? 'text-success' : 'text-text-tertiary'
                                 ]"
                               >{{ row.newUsername || row.username }}</span>
                             </template>
@@ -601,19 +787,19 @@
                         <td class="px-5 py-4 text-right">
                           <span
                             v-if="row.error"
-                            class="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-black rounded uppercase tracking-tighter border border-red-500/20"
+                            class="px-2 py-0.5 bg-error-10 text-error text-[10px] font-black rounded uppercase tracking-tighter border border-error-20"
                           >
                             {{ row.error }}
                           </span>
                           <span
                             v-else-if="row.noChange"
-                            class="px-2 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] font-black rounded uppercase tracking-tighter border border-zinc-700/50"
+                            class="px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-[10px] font-black rounded uppercase tracking-tighter border border-border-tertiary-50"
                           >
                             {{ locale.preview.noChange }}
                           </span>
                           <span
                             v-else
-                            class="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded uppercase tracking-tighter border border-emerald-500/20"
+                            class="px-2 py-0.5 bg-success-10 text-success text-[10px] font-black rounded uppercase tracking-tighter border border-success-20"
                           >
                             {{ locale.preview.ready }}
                           </span>
@@ -624,7 +810,7 @@
                 </div>
                 <div
                   v-if="filteredPreviewData.length > 10"
-                  class="p-4 text-center border-t border-zinc-900 bg-zinc-900/20 text-[10px] text-zinc-600 font-bold uppercase tracking-widest"
+                  class="p-4 text-center border-t border-border-secondary bg-bg-secondary-20 text-[10px] text-text-disabled font-bold uppercase tracking-widest"
                 >
                   {{ locale.preview.moreQueued(filteredPreviewData.length - 10) }}
                 </div>
@@ -635,7 +821,7 @@
           <!-- 错误提示 -->
           <div
             v-if="error"
-            class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs animate-in shake duration-300"
+            class="p-4 bg-error-10 border border-error-20 rounded-2xl flex items-center gap-3 text-error text-xs animate-in shake duration-300"
           >
             <AlertCircle :size="16" />
             {{ error }}
@@ -644,15 +830,15 @@
           <!-- 进度条 -->
           <div
             v-if="updateType === 'excel-batch' && updateProgressText"
-            class="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            class="p-5 bg-success-5 border border-success-20 rounded-2xl space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div class="flex items-center justify-between">
-              <span class="text-xs font-black text-emerald-400 uppercase tracking-widest">{{ updateProgressText }}</span>
-              <span class="text-xs font-black text-emerald-400">{{ updateProgress }}%</span>
+              <span class="text-xs font-black text-success uppercase tracking-widest">{{ updateProgressText }}</span>
+              <span class="text-xs font-black text-success">{{ updateProgress }}%</span>
             </div>
-            <div class="h-2 bg-zinc-900 rounded-full overflow-hidden">
+            <div class="h-2 bg-bg-secondary rounded-full overflow-hidden">
               <div
-                class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-300 ease-out rounded-full"
+                class="h-full bg-gradient-to-r from-success to-success-light transition-all duration-300 ease-out rounded-full"
                 :style="{ width: updateProgress + '%' }"
               />
             </div>
@@ -660,9 +846,9 @@
         </div>
 
         <!-- 底部按钮 -->
-        <div class="p-8 pt-4 border-t border-zinc-800/50 bg-zinc-900/50 flex gap-3">
+        <div class="p-8 pt-4 border-t border-border-secondary-50 bg-bg-secondary-50 flex gap-3">
           <button
-            class="flex-1 px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
+            class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest"
             @click="$emit('close')"
           >
             {{ locale.actions.cancel }}
@@ -670,12 +856,14 @@
           <button
             :disabled="loading || !canUpdate"
             :class="[
-              'flex-[2] px-6 py-4 text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg active:scale-95',
+              'flex-[2] px-6 py-4 text-text-primary text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg active:scale-95',
               updateType === 'excel-batch'
-                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
+                ? 'bg-success hover:bg-success shadow-[var(--success-glow-20)]'
                 : updateType === 'status-batch'
-                  ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20'
-                  : 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/20'
+                  ? 'bg-warning hover:bg-warning shadow-[var(--warning-glow-20)]'
+                  : updateType === 'song-admin-batch'
+                    ? 'bg-primary hover:bg-primary shadow-[var(--primary-glow)]'
+                    : 'bg-info hover:bg-info shadow-[var(--info-glow-20)]'
             ]"
             @click="performUpdate"
           >
@@ -705,12 +893,14 @@ import {
   Save,
   Upload,
   Download,
+  Briefcase,
   Info,
   AlertCircle,
   RefreshCw,
   CheckCircle2,
   ShieldAlert,
-  MessageSquare
+  MessageSquare,
+  Music
 } from '@lucide/vue'
 
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -738,6 +928,14 @@ const keepClass = ref(true)
 const sourceStatus = ref('')
 const targetStatus = ref('')
 const statusReason = ref('')
+
+// 歌曲管理员批量更新相关
+const songAdminGradeFilter = ref('')
+const songAdminClassFilter = ref('')
+const songAdminIds = ref([])
+const songAdminTargetGrade = ref('')
+const songAdminTargetClass = ref('')
+const songAdminTargetStatus = ref('')
 
 // Excel批量更新相关
 const isDragOver = ref(false)
@@ -768,6 +966,7 @@ const locale = computed(() => {
       gradeOnly: {},
       excelBatch: {},
       statusBatch: {},
+      songAdminBatch: {},
       ...(base.updateTypes || {})
     },
     fields: { ...(base.fields || {}) },
@@ -806,6 +1005,7 @@ const locale = computed(() => {
       partialExcelSuccess: emptyText,
       excelFailed: emptyText,
       partialStatusSuccess: emptyText,
+      songAdminNoChanges: emptyText,
       ...(base.messages || {})
     },
     errors: {
@@ -882,6 +1082,142 @@ const classOptions = computed(() => {
   ]
 })
 
+const songAdminUsers = computed(() => {
+  return computedUsers.value.filter((u) => u.role === 'SONG_ADMIN')
+})
+
+const songAdminAvailableGrades = computed(() => {
+  const grades = new Set()
+  songAdminUsers.value.forEach((u) => {
+    if (u.grade) grades.add(u.grade)
+  })
+  return Array.from(grades)
+})
+
+const songAdminAvailableClasses = computed(() => {
+  const classes = new Set()
+  let pool = songAdminUsers.value
+  if (songAdminGradeFilter.value) {
+    pool = pool.filter((u) => u.grade === songAdminGradeFilter.value)
+  }
+  pool.forEach((u) => {
+    if (u.class) classes.add(u.class)
+  })
+  return Array.from(classes)
+})
+
+watch(() => songAdminGradeFilter.value, () => {
+  songAdminClassFilter.value = ''
+})
+
+const songAdminGradeOptions = computed(() => {
+  return [
+    { label: getNestedText('songAdminSettings', 'allGrades'), value: '' },
+    ...songAdminAvailableGrades.value.map((g) => ({ label: g, value: g }))
+  ]
+})
+
+const songAdminClassOptions = computed(() => {
+  return [
+    { label: getNestedText('songAdminSettings', 'allClasses'), value: '' },
+    ...songAdminAvailableClasses.value.map((c) => ({ label: c, value: c }))
+  ]
+})
+
+const filteredSongAdminUsers = computed(() => {
+  let filtered = songAdminUsers.value
+
+  if (songAdminGradeFilter.value) {
+    filtered = filtered.filter((u) => u.grade === songAdminGradeFilter.value)
+  }
+
+  if (songAdminClassFilter.value) {
+    filtered = filtered.filter((u) => u.class === songAdminClassFilter.value)
+  }
+
+  return filtered
+})
+
+const isAllSongAdminSelected = computed(() => {
+  if (filteredSongAdminUsers.value.length === 0) return false
+  const selectedSet = new Set(songAdminIds.value)
+  return filteredSongAdminUsers.value.every((u) => selectedSet.has(u.id))
+})
+
+const toggleSelectAllSongAdmin = () => {
+  const filteredIds = filteredSongAdminUsers.value.map((u) => u.id)
+  const filteredSet = new Set(filteredIds)
+  if (isAllSongAdminSelected.value) {
+    songAdminIds.value = songAdminIds.value.filter((id) => !filteredSet.has(id))
+  } else {
+    const newSelections = new Set([...songAdminIds.value, ...filteredIds])
+    songAdminIds.value = Array.from(newSelections)
+  }
+}
+
+const performSongAdminBatchUpdate = async () => {
+  const updates = songAdminIds.value.map((userId) => {
+    const updateData = { userId }
+    if (songAdminTargetGrade.value.trim()) updateData.grade = songAdminTargetGrade.value.trim()
+    if (songAdminTargetClass.value.trim()) updateData.class = songAdminTargetClass.value.trim()
+    if (songAdminTargetStatus.value) updateData.status = songAdminTargetStatus.value
+    return updateData
+  })
+
+  // 后端单次批量更新上限 100 条，超出时分批提交
+  const batchSize = 50
+  let totalUpdated = 0
+  let totalFailed = 0
+  let firstErrorDetail = ''
+
+  for (let i = 0; i < updates.length; i += batchSize) {
+    const batch = updates.slice(i, i + batchSize)
+
+    try {
+      const response = await $fetch('/api/admin/users/batch-update', {
+        method: 'POST',
+        body: { updates: batch },
+        ...auth.getAuthConfig()
+      })
+
+      if (!response?.success) {
+        throw new Error(response?.message || getNestedText('errors', 'songAdminUpdateFailed'))
+      }
+
+      totalUpdated += response.data?.summary?.success || 0
+      totalFailed += response.data?.summary?.failed || 0
+      if (!firstErrorDetail && response.data?.errors?.length > 0) {
+        firstErrorDetail = response.data.errors[0].error
+      }
+    } catch (err) {
+      console.error('歌曲管理员批量更新失败:', err)
+      totalFailed += batch.length
+    }
+  }
+
+  // 目标字段与现状一致等无实际变更场景
+  if (totalUpdated === 0 && totalFailed === 0) {
+    if (window.$showNotification) {
+      window.$showNotification(getNestedText('messages', 'songAdminNoChanges'), 'warning')
+    }
+    return
+  }
+
+  if (totalFailed > 0) {
+    if (totalUpdated > 0) {
+      if (window.$showNotification) {
+        window.$showNotification(getNestedText('messages', 'partialSongAdminSuccess', totalFailed), 'warning')
+      }
+    } else {
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', firstErrorDetail || getNestedText('errors', 'songAdminUpdateFailed')))
+    }
+  } else {
+    if (window.$showNotification) {
+      window.$showNotification(getNestedText('messages', 'songAdminSuccess', totalUpdated), 'success')
+    }
+  }
+}
+
 const filteredUsers = computed(() => {
   let filtered = computedUsers.value
 
@@ -909,6 +1245,11 @@ const canUpdate = computed(() => {
     return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error && !row.noChange)
   } else if (updateType.value === 'status-batch') {
     return selectedUserIds.value.length > 0 && targetStatus.value && statusReason.value.trim()
+  } else if (updateType.value === 'song-admin-batch') {
+    return (
+      songAdminIds.value.length > 0 &&
+      (songAdminTargetGrade.value.trim() || songAdminTargetClass.value.trim() || songAdminTargetStatus.value)
+    )
   }
   return false
 })
@@ -1300,6 +1641,10 @@ const performUpdate = async () => {
       await performStatusUpdate()
       emit('update-success')
       emit('close')
+    } else if (updateType.value === 'song-admin-batch') {
+      await performSongAdminBatchUpdate()
+      emit('update-success')
+      emit('close')
     }
   } catch (err) {
     console.error('批量更新失败:', err)
@@ -1483,6 +1828,12 @@ watch(
       previewFilter.value = 'all'
       targetStatus.value = ''
       statusReason.value = ''
+      songAdminGradeFilter.value = ''
+      songAdminClassFilter.value = ''
+      songAdminIds.value = []
+      songAdminTargetGrade.value = ''
+      songAdminTargetClass.value = ''
+      songAdminTargetStatus.value = ''
       error.value = ''
       updateProgress.value = 0
       updateProgressText.value = ''
@@ -1501,10 +1852,10 @@ watch(
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #4a5568;
+  background: var(--text-muted);
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+  background: var(--text-muted);
 }
 </style>

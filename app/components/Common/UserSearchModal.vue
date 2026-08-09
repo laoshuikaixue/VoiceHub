@@ -13,24 +13,24 @@
         class="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-60 backdrop-blur-sm" />
 
         <div
-          class="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          class="relative w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
           @click.stop
         >
           <!-- 头部 -->
           <div class="flex items-center justify-between p-8 pb-4">
             <div class="flex items-center gap-4">
               <div
-                class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
               >
                 <Icon name="user" :size="24" />
               </div>
-              <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ resolvedTitle }}</h3>
+              <h3 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="close"
             >
               <Icon name="x" :size="20" />
@@ -45,20 +45,20 @@
                 <Icon
                   name="search"
                   :size="20"
-                  class="text-zinc-500 group-focus-within:text-zinc-300 transition-colors"
+                  class="text-text-tertiary group-focus-within:text-text-secondary transition-colors"
                 />
               </div>
               <input
                 ref="searchInput"
                 v-model="searchQuery"
-                class="w-full pl-12 pr-12 py-4 bg-zinc-950 border border-zinc-800 rounded-2xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                class="w-full pl-12 pr-12 py-4 bg-bg-primary border border-border-secondary rounded-2xl text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary-30 transition-all"
                 :placeholder="locale.searchUsersPlaceholder"
                 type="text"
                 @input="handleSearch"
                 @keyup.enter="performSearch"
               >
               <div v-if="loading" class="absolute inset-y-0 right-4 flex items-center">
-                <Icon name="loader" :size="20" class="text-zinc-400 animate-spin" />
+                <Icon name="loader" :size="20" class="text-text-tertiary animate-spin" />
               </div>
             </div>
 
@@ -66,10 +66,10 @@
             <div class="user-list space-y-3 min-h-[300px]">
               <div
                 v-if="users.length === 0 && !loading && hasSearched"
-                class="flex flex-col items-center justify-center py-12 text-zinc-500"
+                class="flex flex-col items-center justify-center py-12 text-text-tertiary"
               >
                 <div
-                  class="w-16 h-16 rounded-3xl bg-zinc-800/50 flex items-center justify-center mb-4"
+                  class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
                   <Icon name="search" :size="32" class="opacity-20" />
                 </div>
@@ -82,8 +82,8 @@
                 :class="[
                   'group flex items-center p-4 rounded-2xl border transition-all cursor-pointer',
                   isSelected(user)
-                    ? 'bg-blue-600/10 border-blue-500/30 shadow-lg'
-                    : 'bg-zinc-950 border-transparent hover:border-zinc-800'
+                    ? 'bg-primary-hover-10 border-primary-30 shadow-lg'
+                    : 'bg-bg-primary border-transparent hover:border-border-secondary'
                 ]"
                 @click="toggleSelection(user)"
               >
@@ -91,7 +91,7 @@
                 <div
                   :class="[
                     'w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black mr-4 transition-colors',
-                    isSelected(user) ? 'bg-blue-600 text-white' : 'bg-zinc-800 text-zinc-500'
+                    isSelected(user) ? 'bg-primary-hover text-text-primary' : 'bg-bg-tertiary text-text-tertiary'
                   ]"
                 >
                   {{ user.name.charAt(0) }}
@@ -99,11 +99,11 @@
 
                 <!-- 用户信息 -->
                 <div class="flex-1 min-w-0">
-                  <div class="font-bold text-zinc-100 truncate">
+                  <div class="font-bold text-text-primary truncate">
                     {{ user.name }}
                   </div>
                   <div
-                    class="text-[10px] font-black uppercase tracking-widest flex flex-wrap gap-2 mt-0.5 text-zinc-500"
+                    class="text-[10px] font-black uppercase tracking-widest flex flex-wrap gap-2 mt-0.5 text-text-tertiary"
                   >
                     <span v-if="user.grade" class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
@@ -123,8 +123,8 @@
                     :class="[
                       'w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all',
                       isSelected(user)
-                        ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'border-zinc-800 group-hover:border-zinc-700'
+                        ? 'bg-primary-hover border-primary text-text-primary'
+                        : 'border-border-secondary group-hover:border-border-tertiary'
                     ]"
                   >
                     <Icon v-if="isSelected(user)" name="check" :size="14" />
@@ -137,21 +137,21 @@
           <!-- 底部操作栏 -->
           <div class="p-8 pt-0">
             <div class="flex items-center justify-between gap-4">
-              <div class="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
-                <span v-if="selectedUsers.length > 0" class="text-blue-500">
+              <div class="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
+                <span v-if="selectedUsers.length > 0" class="text-primary">
                   {{ formatLocale(locale.selectedUsers, selectedUsers.length) }}
                 </span>
               </div>
               <div class="flex gap-3">
                 <button
-                  class="px-6 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
+                  class="px-6 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black transition-all active:scale-95 uppercase tracking-widest"
                   @click="close"
                 >
                   {{ locale.cancel }}
                 </button>
                 <button
                   :disabled="selectedUsers.length === 0"
-                  class="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                  class="px-8 py-3 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-xs font-black disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest shadow-lg shadow-[var(--primary-glow)]"
                   @click="confirm"
                 >
                   {{ locale.confirm }}
@@ -291,11 +291,11 @@ watch(
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 </style>

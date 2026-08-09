@@ -1,3 +1,5 @@
+import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+
 export const SYSTEM_SETTINGS_DEFAULTS = {
   telemetryEnabled: true,
   enablePlayTimeSelection: false,
@@ -50,6 +52,9 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   // 自动备份
   autoBackupEnabled: false,
   autoBackupConfig: null,
+  // 平台管理
+  enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
+  platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [
@@ -90,7 +95,9 @@ export const PUBLIC_SETTINGS_FIELDS = [
   'captchaEnabled',
   'captchaMaxFailures',
   'captchaProvider',
-  'turnstileSiteKey'
+  'turnstileSiteKey',
+  'enabledPlatforms',
+  'platformOrder'
 ]
 
 export const filterPublicSettings = (data: any) => {

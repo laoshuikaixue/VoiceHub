@@ -54,7 +54,7 @@
   </section>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, ref, watch } from 'vue'
 import WarpCanvas from './WarpCanvas.vue'
 import { useLocale } from '~/utils/locale'
@@ -63,10 +63,10 @@ const { auth } = useLocale()
 const locale = computed(() => auth.value?.appLoadingScreen || {})
 const DEFAULT_PROGRESS = 8
 
-const props = defineProps<{
-  message?: string
-  progress?: number
-}>()
+const props = defineProps({
+  message: { type: String },
+  progress: { type: Number }
+})
 
 const displayMessage = computed(() => props.message || locale.value.message)
 
@@ -98,8 +98,7 @@ watch(() => props.progress, () => {
 })
 
 const warpSettings = computed(() => ({
-  themeColor: 'indigo',
-  pattern: 'hyperdrive' as const,
+  pattern: 'hyperdrive',
   speedMultiplier: safeProgress.value >= 100 ? 0.3 : 1.3,
   particleCount: 220,
   glowEffect: true,
@@ -118,8 +117,9 @@ const warpSettings = computed(() => ({
   justify-content: space-between;
   padding: 0;
   overflow: hidden;
-  color: #f3f4f6;
-  background: #070709;
+  color: var(--text-primary);
+  /* 兜底色：极端情况下 data-theme 未设置导致主题变量缺失时，仍保证加载页不透明，避免主页内容透出 */
+  background: var(--bg-primary, #000000);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   user-select: none;
 }
@@ -151,7 +151,7 @@ const warpSettings = computed(() => ({
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 .progress-ring {
@@ -161,17 +161,17 @@ const warpSettings = computed(() => ({
 }
 
 .ring-track {
-  stroke: rgba(255, 255, 255, 0.05);
+  stroke: var(--overlay-5);
 }
 
 .ring-fill {
-  stroke: #6366f1;
-  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4));
+  stroke: var(--app-loading-brand-primary);
+  filter: drop-shadow(0 0 8px var(--app-loading-primary-glow));
   transition: stroke-dashoffset 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 400ms ease;
 }
 
 .ring-fill.accelerating {
-  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.8)) brightness(1.3);
+  filter: drop-shadow(0 0 20px var(--app-loading-primary-glow-accelerating)) brightness(1.3);
 }
 
 .ring-label {
@@ -187,7 +187,7 @@ const warpSettings = computed(() => ({
   font-size: 26px;
   font-weight: 700;
   letter-spacing: normal;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .text-container {
@@ -213,7 +213,7 @@ const warpSettings = computed(() => ({
   font-size: 18px;
   font-weight: 500;
   letter-spacing: -0.025em;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--overlay-95);
   text-wrap: balance;
 }
 
@@ -228,7 +228,7 @@ const warpSettings = computed(() => ({
   font-size: 10px;
   font-family: ui-monospace, monospace;
   letter-spacing: 0.2em;
-  color: rgba(129, 140, 248, 0.8);
+  color: var(--app-loading-text-color);
   text-transform: uppercase;
 }
 
@@ -238,8 +238,8 @@ const warpSettings = computed(() => ({
   left: 0;
   height: 3px;
   z-index: 20;
-  background: linear-gradient(90deg, #6366f1, #a78bfa);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.6), 0 0 40px rgba(99, 102, 241, 0.25);
+  background: linear-gradient(90deg, var(--app-loading-brand-primary), var(--app-loading-brand-secondary));
+  box-shadow: 0 0 12px var(--app-loading-primary-glow), 0 0 40px var(--app-loading-secondary-glow);
   transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

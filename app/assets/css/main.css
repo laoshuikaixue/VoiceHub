@@ -1,13 +1,23 @@
 /* 导入浏览器主题保护样式 */
 @import url('./theme-protection.css');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 导入主题变量（亮色覆盖暗色，由 data-theme 控制） */
+@import url('./themes/ClassicDark.css');
+@import url('./themes/ClassicLight.css');
+@import url('./themes/ModernLight.css');
+
+@unocss;
 
 /* 防止浏览器自动应用深色主题 */
 :root {
   color-scheme: light dark;
+}
+
+/* 全局控件默认强调色 — 跟随主题主色调，但允许显式 accent-* 类覆盖 */
+input[type="checkbox"]:not([class*="accent-"]),
+input[type="radio"]:not([class*="accent-"]),
+input[type="range"]:not([class*="accent-"]) {
+  accent-color: var(--accent-color);
 }
 
 /* 流体背景与全局样式 */
@@ -16,6 +26,9 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* UnoCSS preflight 未重置 border-style，补齐后 utility 边框与加载转圈才能渲染 */
+  border-style: solid;
+  border-width: 0;
 }
 
 /* 字体显示策略优化 */
@@ -82,9 +95,9 @@ body::before {
   width: 100%;
   height: 100%;
   background:
-    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.01) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.02) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(var(--color-indigo-rgb), 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, var(--bg-texture-warm-glow) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(var(--color-indigo-rgb), 0.02) 0%, transparent 50%);
   z-index: -1;
   pointer-events: none;
 }
@@ -233,9 +246,9 @@ body::before {
   border-radius: var(--radius-xl);
   padding: var(--spacing-2xl);
   box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 4px 6px var(--mask-10),
+    0 1px 3px var(--mask-8),
+    inset 0 1px 0 var(--overlay-5);
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
@@ -248,16 +261,16 @@ body::before {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-10), transparent);
 }
 
 .card:hover {
   transform: translateY(-4px);
   border-color: var(--card-hover-border);
   box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.15),
-    0 4px 8px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 12px 24px var(--mask-15),
+    0 4px 8px var(--mask-10),
+    inset 0 1px 0 var(--overlay-10);
 }
 
 /* 按钮 */
@@ -276,7 +289,7 @@ body::before {
   font-size: var(--text-sm);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--mask-10);
 }
 
 .btn::before {
@@ -286,7 +299,7 @@ body::before {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--overlay-10), transparent);
   transition: left 0.5s;
 }
 
@@ -303,7 +316,7 @@ body::before {
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px var(--btn-primary-shadow);
 }
 
 .btn-secondary {
@@ -313,10 +326,10 @@ body::before {
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, var(--bg-quaternary) 0%, #4a4a4a 100%);
+  background: linear-gradient(135deg, var(--bg-quaternary) 0%, var(--btn-secondary-hover) 100%);
   color: var(--text-primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px var(--overlay-10);
 }
 
 .btn-outline {
@@ -331,7 +344,7 @@ body::before {
   border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px var(--primary-20);
 }
 
 .btn:disabled {
@@ -379,7 +392,7 @@ body::before {
   border-color: var(--input-border-focus);
   box-shadow:
     var(--input-shadow-focus),
-    0 4px 12px rgba(102, 126, 234, 0.1);
+    0 4px 12px var(--primary-10);
   background: var(--bg-secondary);
   transform: translateY(-1px);
 }
@@ -471,4 +484,9 @@ body::before {
     width: 95% !important;
     max-width: none !important;
   }
+}
+
+/* 重置 fixed 元素外边距：space-y-* 布局规则会给子元素加 margin-top，导致弹窗遮罩定位偏移 */
+.fixed {
+  margin: 0 !important;
 }

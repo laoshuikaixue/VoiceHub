@@ -1,18 +1,18 @@
 <template>
   <div
-    class="backdrop-blur-md p-6 rounded-xl border border-white/10 bg-slate-800/70 shadow-2xl max-w-[400px] mx-auto text-zinc-100 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_rgba(0,0,0,0.2)]"
+    class="backdrop-blur-md p-6 rounded-xl border border-primary-10 bg-bg-tertiary-70 shadow-2xl max-w-[400px] mx-auto text-text-primary transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_15px_30px_var(--modal-hover-shadow)]"
   >
-    <h3 class="mb-6 pb-2 border-b border-white/10 text-zinc-100 font-bold text-lg">
+    <h3 class="mb-6 pb-2 border-b border-primary-10 text-text-primary font-bold text-lg">
       {{ scheduleTitle }}
     </h3>
 
     <form @submit.prevent="handleSubmit">
       <div class="mb-4">
-        <label class="block mb-2 font-medium text-zinc-100" for="playDate">{{ locale.playDate }}</label>
+        <label class="block mb-2 font-medium text-text-primary" for="playDate">{{ locale.playDate }}</label>
         <input
           id="playDate"
           v-model="playDate"
-          class="w-full p-3 border border-white/10 rounded-lg text-base bg-[#0f172a99] text-zinc-100 outline-none transition-colors duration-150 focus:border-indigo-500 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.25)]"
+          class="w-full p-3 border border-primary-10 rounded-lg text-base bg-bg-tertiary-50 text-text-primary outline-none transition-colors duration-150 focus:border-primary focus:shadow-[0_0_0_2px_var(--primary-light)]"
           required
           type="date"
         >
@@ -30,12 +30,12 @@
 
         <div
           v-if="song?.preferredPlayTime"
-          class="mt-3 p-3 bg-white/5 rounded-lg text-sm flex items-start gap-2"
+          class="mt-3 p-3 bg-bg-secondary-5 rounded-lg text-sm flex items-start gap-2"
         >
           <div class="text-base">💡</div>
           <div>
             {{ locale.preferredPlayTime }}
-            <span class="font-medium text-indigo-300">
+            <span class="font-medium text-info">
               {{ song.preferredPlayTime.name }}
               <template v-if="song.preferredPlayTime.startTime || song.preferredPlayTime.endTime">
                 ({{ formatPlayTimeRange(song.preferredPlayTime) }})
@@ -45,13 +45,13 @@
         </div>
       </div>
 
-      <div v-if="error" class="p-3 mt-4 bg-red-500/10 text-red-300 rounded-lg">
+      <div v-if="error" class="p-3 mt-4 bg-error-10 text-error rounded-lg">
         {{ error }}
       </div>
 
       <div class="flex justify-between gap-4 mt-6">
         <button
-          class="flex-1 p-3 border border-white/10 rounded-lg text-base cursor-pointer transition-all duration-200 bg-white/10 text-zinc-100 hover:bg-white/15"
+          class="flex-1 p-3 border border-primary-10 rounded-lg text-base cursor-pointer transition-all duration-200 bg-bg-secondary-10 text-text-primary hover:bg-bg-secondary-15"
           type="button"
           @click="$emit('cancel')"
         >
@@ -59,7 +59,7 @@
         </button>
         <button
           :disabled="loading"
-          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 hover:-translate-y-px disabled:bg-indigo-500/50 disabled:cursor-not-allowed disabled:transform-none"
+          class="flex-1 p-3 border-none rounded-lg text-base cursor-pointer transition-all duration-200 bg-info text-text-primary hover:bg-info hover:-translate-y-px disabled:bg-info-50 disabled:cursor-not-allowed disabled:transform-none"
           type="submit"
         >
           {{ loading ? locale.creating : locale.create }}

@@ -46,7 +46,7 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #030712; /* gray-950 */
+  background-color: var(--panel-bg-darkest); /* gray-950 */
 }
 
 .bg-gradient {
@@ -54,7 +54,7 @@ const { yearReview } = useLocale()
   inset: 0;
   background: radial-gradient(
     ellipse at top right,
-    rgba(30, 58, 138, 0.4),
+    var(--year-review-stats-bg-gradient),
     transparent,
     transparent
   );
@@ -69,7 +69,7 @@ const { yearReview } = useLocale()
 
 .label {
   margin-bottom: 1rem;
-  color: #3b82f6; /* brand-blue */
+  color: var(--color-accent-light); /* brand-blue */
   font-weight: 700;
   letter-spacing: 0.05em;
   font-size: 1.125rem;
@@ -77,7 +77,7 @@ const { yearReview } = useLocale()
 
 .text-intro {
   font-size: 1.5rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
@@ -94,16 +94,16 @@ const { yearReview } = useLocale()
   font-size: 10rem;
   font-weight: 900;
   line-height: 1;
-  background-image: linear-gradient(to bottom, #60a5fa, #1d4ed8);
+  background-image: linear-gradient(to bottom, var(--color-accent-light), var(--color-accent-light-hover));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 30px rgba(37, 99, 235, 0.5));
+  filter: drop-shadow(0 0 30px var(--year-review-stat-number-shadow));
 }
 
 .suffix {
   font-size: 1.5rem;
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   font-weight: 500;
   margin-left: 0.5rem;
 }
@@ -112,8 +112,8 @@ const { yearReview } = useLocale()
   margin-top: 3rem;
   padding: 1.5rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   backdrop-filter: blur(4px);
 }
 
@@ -125,19 +125,19 @@ const { yearReview } = useLocale()
 
 .text-base {
   font-size: 1.125rem;
-  color: #d1d5db;
+  color: var(--text-primary-lighter);
 }
 
 .highlight-green {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #4ade80;
+  color: var(--color-success-light);
   margin: 0 0.25rem;
 }
 
 .text-sub {
   font-size: 1rem;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 @media (max-width: 768px) {

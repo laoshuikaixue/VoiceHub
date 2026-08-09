@@ -114,6 +114,15 @@ export const siteConfig = {
     parseApiErrorFailed: '无法解析API错误响应:',
     saveFailed: '保存配置失败:'
   },
+
+  // 平台名称
+  platformNetease: '网易云音乐',
+  platformTencent: 'QQ音乐',
+  platformBilibili: '哔哩哔哩',
+  platformMigu: '咪咕音乐',
+  platformEnabled: '已启用',
+  platformDisabled: '已禁用',
+
   serverMessages: {
     oauthRedirectCallbackInvalid: 'oauthRedirectUri 必须是回调地址，例如 https://yourdomain.com/api/auth/[provider]/callback',
     oauthRedirectUrlInvalid: 'oauthRedirectUri 不是合法 URL，示例：https://yourdomain.com/api/auth/[provider]/callback',
@@ -199,6 +208,7 @@ export const changePassword = {
 
 export const common = {
   language: '语言',
+  followSystem: '跟随系统',
   workerIn: '响应耗时',
   cancel: '取消',
   confirm: '确定',
@@ -497,6 +507,7 @@ export const pages = {
       blacklist: '黑名单管理',
       'site-config': '站点配置',
       operations: '运维监控',
+      'music-source': '音源控制',
       database: '数据库操作',
       'api-keys': 'API密钥管理'
     },
@@ -1337,7 +1348,8 @@ export const pages = {
       alreadyReplayed: '该歌曲已重播',
       alreadyRequestedReplay: '该歌曲已申请过重播',
       musicUrlFailed: '获取音乐播放链接失败',
-      semesterLoadFailed: '获取学期信息失败，请刷新页面重试'
+      semesterLoadFailed: '获取学期信息失败，请刷新页面重试',
+      platformAutoSwitched: (name: string) => `当前平台已不可用，已自动切换至${name}`
     },
     requestForm: {
       guidelinesTitle: '投稿须知',
@@ -1697,6 +1709,7 @@ export const admin = {
       semesters: '学期管理',
       blacklist: '黑名单管理',
       cardCodes: '点歌券管理',
+      musicSource: '音源控制',
       siteConfig: '站点配置',
       operations: '运维监控',
       database: '数据库操作',
@@ -2945,6 +2958,7 @@ export const admin = {
     downloadSongs: '下载歌曲',
     markAllPlayed: '全部已播放',
     moveDate: '迁移日期',
+    copyDate: '复制排期',
     clearList: '清空列表',
     publishSchedule: '发布排期',
     publishOnly: '仅发布排期',
@@ -2958,6 +2972,7 @@ export const admin = {
     andMoreApplicants: (count: number) => ` 等${count}人`,
     publishThisDraft: '发布此草稿',
     moveDateTitle: '迁移排期日期',
+    copyDateTitle: '复制排期日期',
     currentDate: (date: string) => `当前日期：${date}`,
     nextStep: '下一步',
     replayDetailTitle: (title: string) => `${title} - 重播申请详情`,
@@ -3011,6 +3026,8 @@ export const admin = {
       clearListConfirm: '确认清空',
       moveDateMessage: (sourceDate: string, count: number, targetDate: string) => `确定将 ${sourceDate} 的所有 ${count} 首歌曲迁移到 ${targetDate} 吗？歌曲顺序与内容将保持不变。`,
       moveDateConfirm: '确认迁移',
+      copyDateMessage: (sourceDate: string, count: number, targetDate: string) => `确定将 ${sourceDate} 的所有 ${count} 首歌曲复制到 ${targetDate} 吗？原排期将保留，目标日期将生成新排期。`,
+      copyDateConfirm: '确认复制',
       deleteScheduleTitle: '删除排期',
       deleteScheduleMessage: '确定要删除当天的所有排期吗？此操作不可恢复。',
       deleteScheduleConfirm: '确认删除',
@@ -3025,7 +3042,9 @@ export const admin = {
       allMarkedPlayed: '所有歌曲已标记为播放',
       playlistCleared: '播放列表已清空，请记得保存修改',
       saveBeforeMove: '请先保存当前未发布修改后再执行迁移',
+      saveBeforeCopy: '请先保存当前未发布修改后再执行复制',
       moveDateSuccess: (count: number, date: string) => `已迁移 ${count} 首歌曲到 ${date}`,
+      copyDateSuccess: (count: number, date: string) => `已复制 ${count} 首歌曲到 ${date}`,
       draftSaved: '排期草稿保存成功！',
       allDraftsDeleted: '所有草稿已删除！',
       scheduleDeleted: '排期已删除！',
@@ -3064,6 +3083,8 @@ export const admin = {
       sameTargetDate: '目标日期不能与当前日期相同',
       noMovableSongs: '当前日期没有可迁移的歌曲',
       moveDateFailed: (message: string) => `迁移失败: ${message}`,
+      noCopyableSongs: '当前日期没有可复制的歌曲',
+      copyDateFailed: (message: string) => `复制失败: ${message}`,
       saveDraftFailed: (message: string) => `保存草稿失败: ${message}`,
       publishScheduleFailed: (message: string) => `发布排期失败: ${message}`,
       publishDraftFailed: (message: string) => `发布草稿失败: ${message}`
@@ -3198,6 +3219,24 @@ export const admin = {
       fetchEnvFailed: '获取环境变量失败:',
       importEnvFailed: '导入环境配置失败:'
     }
+  },
+  musicSourceController: {
+    title: '音源控制',
+    description: '管理音乐平台的开关状态和搜索顺序，配置后立即生效',
+    saveConfig: '保存配置',
+    saving: '保存中...',
+    saved: '已保存',
+    reset: '重置',
+    loading: '加载中...',
+    fetchFailed: '获取配置失败',
+    saveFailedRetry: '保存配置失败，请重试',
+    saveSuccess: '音源配置已保存',
+    switchTitle: '平台开关',
+    switchDesc: '开启或关闭各音乐平台的搜索功能',
+    orderTitle: '搜索顺序',
+    orderDesc: '拖拽调整平台在搜索按钮区的显示顺序',
+    resetOrder: '重置顺序',
+    mustKeepOne: '至少保留一个平台启用'
   },
   playTimeManager: {
     title: '播出时段管理',
@@ -4117,6 +4156,10 @@ export const admin = {
         statusBatch: {
           title: '设置账户状态',
           desc: '批量设置选中学生的账户状态'
+        },
+        songAdminBatch: {
+          title: '歌曲管理员',
+          desc: '批量更新歌曲管理员的年级、班级、账号状态'
         }
       },
       fields: {
@@ -4149,6 +4192,26 @@ export const admin = {
         targetStatusPlaceholder: '请选择目标状态',
         reason: '变更原因说明',
         reasonPlaceholder: '例如: 2025届学生统一毕业'
+      },
+      songAdminSettings: {
+        title: '歌曲管理员信息更新',
+        desc: '选中用户将应用以下变更（留空则保持原值）',
+        scope: '歌曲管理员范围筛选',
+        currentGrade: '当前年级',
+        currentClass: '当前班级',
+        allGrades: '全部年级',
+        allClasses: '全部班级',
+        selectUsers: (selected: number, total: number) => `选择管理员 (${selected}/${total})`,
+        clearSelection: '取消全选',
+        selectAll: '选择当前全部',
+        noMatchedUsers: '没有匹配条件的歌曲管理员',
+        targetSettings: '更新目标设置',
+        targetGrade: '目标年级',
+        targetGradePlaceholder: '例如: 2025（留空保持原值）',
+        targetClass: '目标班级',
+        targetClassPlaceholder: '例如: 1班（留空保持原值）',
+        targetStatus: '目标账号状态',
+        targetStatusPlaceholder: '请选择目标状态（留空保持原值）'
       },
       statusOptions: {
         all: '不限当前状态',
@@ -4226,7 +4289,10 @@ export const admin = {
         partialExcelSuccess: (success: number, failed: number) => `部分更新成功：成功 ${success} 个，失败 ${failed} 个，请检查后重试`,
         excelFailed: (failed: number) => `批量更新失败：${failed} 个用户未能更新，请检查后重试`,
         partialStatusSuccess: (failed: number) => `部分更新成功，${failed} 个用户因权限或状态等原因跳过`,
-        statusSuccess: '批量更新状态成功'
+        statusSuccess: '批量更新状态成功',
+        songAdminSuccess: (count: number) => `成功更新 ${count} 位歌曲管理员信息`,
+        partialSongAdminSuccess: (failed: number) => `部分更新成功，${failed} 位管理员因权限或状态等原因跳过`,
+        songAdminNoChanges: '所选歌曲管理员的信息没有需要更新的变更'
       },
       errors: {
         invalidExcelFormat: 'Excel文件格式错误，请检查文件格式',
@@ -4247,7 +4313,8 @@ export const admin = {
         noValidUpdates: '没有有效的更新数据',
         batchRequestFailed: '批量更新请求失败',
         invalidBatchResponse: '批量更新接口返回格式异常',
-        statusUpdateFailed: '批量更新状态失败'
+        statusUpdateFailed: '批量更新状态失败',
+        songAdminUpdateFailed: '批量更新歌曲管理员失败'
       }
     },
     deleteDialog: {
@@ -4438,6 +4505,15 @@ export const admin = {
   }
 } as const
 
+// ==================== 主题 ====================
+export const theme = {
+  select: '选择主题',
+  System: '跟随系统',
+  ClassicDark: '经典深色',
+  ClassicLight: '经典浅色',
+  ModernLight: '现代浅色'
+} as const
+
 // 服务端业务错误码本地化文案（按 server/config/constants.ts 的 SERVER_ERROR_CODES 键入）。
 // 客户端通过 useServerErrors().localize(err) 按 err.data.code 命中此表，未命中回退服务端英文 message。
 export const serverErrors = {
@@ -4474,6 +4550,8 @@ export const serverErrors = {
   AUTH_INCOMPLETE_PARAMS: '参数不完整',
   COMMON_INVALID_PARAMS: '参数错误',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: '姓名、用户名、密码不能为空',
+  AUTH_USERNAME_LENGTH_INVALID: '用户名长度需要在3-30个字符之间',
+  AUTH_USERNAME_PATTERN_INVALID: '用户名仅可包含英文、数字、下划线和连字符',
   AUTH_PASSWORD_TOO_SHORT: '密码长度不能少于8个字符',
   AUTH_PASSWORD_TOO_LONG: '密码长度不能超过128位',
   AUTH_PASSWORD_TOO_MANY_BYTES: '密码有效长度不能超过72字节',
@@ -4495,6 +4573,7 @@ export const serverErrors = {
   AUTH_DATABASE_UNAVAILABLE: '数据库服务暂时不可用',
   AUTH_NEW_PASSWORD_SAME_AS_CURRENT: '新密码不能与当前密码相同',
   AUTH_NEW_PASSWORD_REQUIRED: '新密码不能为空',
+  AUTH_REGISTER_PASSWORD_MISMATCH: '两次输入的密码不一致',
   AUTH_INVALID_REGISTER_TOKEN: '无效的注册令牌',
   AUTH_INVALID_BINDING_TOKEN: '无效的绑定令牌',
   AUTH_INVALID_RESET_LINK: '无效的重置链接',
@@ -4638,6 +4717,7 @@ export const serverErrors = {
   USER_CODE_INVALID: '验证码错误',
   USER_CODE_TOO_MANY_ATTEMPTS: '验证码错误次数过多，请重新发送',
   BACKUP_DISABLED: '自动备份未启用',
+  MUSIC_SOURCE_PLATFORM_DISABLED: '平台“{0}”已关闭，可用平台：{1}',
   BACKUP_NOT_CONFIGURED: '自动备份未配置',
   NO_BACKUP_METHOD_ENABLED: '没有启用任何备份方式',
   BACKUP_FAILED: '备份执行失败',

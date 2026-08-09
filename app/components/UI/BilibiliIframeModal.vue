@@ -13,13 +13,13 @@
         class="fixed inset-0 z-[10000] flex items-center justify-center p-4"
         @click.self="close"
       >
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+        <div class="absolute inset-0 bg-bg-primary-90 backdrop-blur-sm" />
 
         <div class="relative w-full max-w-6xl h-[90vh] flex flex-col" @click.stop>
           <!-- 顶部工具栏 -->
           <div class="flex items-center justify-end gap-2 mb-3">
             <button
-              class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all flex items-center gap-2"
+              class="px-4 py-2 rounded-xl bg-primary-hover hover:bg-primary text-text-primary text-sm font-bold transition-all flex items-center gap-2"
               :title="locale.openInNewTab"
               @click="openInNewTab"
             >
@@ -37,7 +37,7 @@
               {{ locale.openInBilibili }}
             </button>
             <button
-              class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 transition-all"
+              class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-80 hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary transition-all"
               :title="locale.close"
               @click="close"
             >
@@ -46,7 +46,7 @@
           </div>
 
           <!-- iframe 容器 -->
-          <div class="flex-1 rounded-2xl overflow-hidden bg-black shadow-2xl">
+          <div class="flex-1 rounded-2xl overflow-hidden bg-bg-primary shadow-2xl">
             <iframe
               v-if="iframeUrl"
               :src="iframeUrl"
@@ -55,7 +55,7 @@
               sandbox="allow-top-navigation-by-user-activation allow-same-origin allow-forms allow-scripts"
               referrerpolicy="no-referrer"
             />
-            <div v-else class="w-full h-full flex items-center justify-center text-zinc-500">
+            <div v-else class="w-full h-full flex items-center justify-center text-text-tertiary">
               <div class="text-center">
                 <Icon name="alert-circle" :size="48" class="mx-auto mb-4 opacity-20" />
                 <p class="text-sm font-bold">{{ locale.loadFailed }}</p>

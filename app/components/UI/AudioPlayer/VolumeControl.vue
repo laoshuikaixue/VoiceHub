@@ -215,7 +215,7 @@ const handleClickOutside = (e: Event) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff92;
+  color: var(--text-primary-60);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border-radius: 50%;
@@ -224,18 +224,18 @@ const handleClickOutside = (e: Event) => {
 }
 
 .volume-btn:hover {
-  color: #ffffff;
+  color: var(--text-primary);
   transform: scale(1.1);
 }
 
 .volume-btn.active {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  background: var(--overlay-10);
   border-radius: 20px;
 }
 
 .muted-icon {
-  color: rgba(255, 100, 100, 0.9);
+  color: var(--volume-control-muted-color);
 }
 
 .volume-text {
@@ -263,16 +263,16 @@ const handleClickOutside = (e: Event) => {
   transform: translateX(-50%);
   width: 36px;
   height: 120px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)),
-    rgba(30, 30, 35, 0.85);
+  background: linear-gradient(135deg, var(--overlay-15), var(--overlay-5)),
+    var(--volume-control-panel-bg);
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px var(--mask-30), inset 0 1px 0 var(--overlay-20);
   padding: 12px 0;
 }
 
@@ -305,7 +305,7 @@ const handleClickOutside = (e: Event) => {
   position: relative;
   width: 6px;
   height: 100%;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   border-radius: 3px;
 }
 
@@ -314,7 +314,7 @@ const handleClickOutside = (e: Event) => {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: linear-gradient(to top, #4facfe, #00f2fe);
+  background: linear-gradient(to top, var(--color-accent-light), var(--color-cyan));
   border-radius: 3px;
   transition: height 0.1s linear;
 }
@@ -325,9 +325,9 @@ const handleClickOutside = (e: Event) => {
   transform: translate(-50%, 50%);
   width: 14px;
   height: 14px;
-  background: #ffffff;
+  background: var(--text-primary);
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 6px var(--mask-30);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   pointer-events: none;
 }
@@ -335,6 +335,6 @@ const handleClickOutside = (e: Event) => {
 .volume-slider-thumb.dragging,
 .volume-slider:hover .volume-slider-thumb {
   transform: translate(-50%, 50%) scale(1.2);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 10px var(--mask-40);
 }
 </style>

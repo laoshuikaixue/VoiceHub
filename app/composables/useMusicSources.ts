@@ -19,6 +19,9 @@ import {
 import { getBilibiliTrackUrl, searchBilibili, parseBilibiliId } from '~/utils/bilibiliSource'
 import { evaluateLyricDataMatch } from '~/utils/lyric/lyricMatchQuality'
 import { useLyricSettings } from './useLyricSettings'
+import { usePlatformConfig } from './usePlatformConfig'
+import { useServerErrors } from './useLocaleText'
+import { getPlatformDisplayName } from '~/utils/platforms'
 
 // 歌词请求缓存，避免同一首歌重复请求
 const lyricCache = new Map<string, Promise<any>>()
@@ -353,6 +356,9 @@ export const useMusicSources = () => {
   // 音源状态
   const sourceStatus = ref<Record<string, SourceStatus>>({})
 
+  // 平台启用配置（usePlatformConfig 内部为模块级缓存，各实例共享同一份引用）
+  const { enabledPlatforms: globalEnabledPlatforms } = usePlatformConfig()
+
   /**
    * 使用 Meting API 获取歌曲信息
    * @param id 歌曲ID
@@ -420,6 +426,11 @@ export const useMusicSources = () => {
 
     const currentRank = getCurrentRank(currentData)
     const targetPlatform = platform === 'netease' ? 'tencent' : 'netease'
+    // 目标平台被管理员禁用时跳过跨平台歌词升级
+    if (import.meta.client && !globalEnabledPlatforms.value.includes(targetPlatform)) {
+      console.warn(`[getLyrics] 跨平台歌词升级跳过：目标平台 ${targetPlatform} 已被禁用`)
+      return false
+    }
     const queries = buildLyricUpgradeQueries(meta)
     if (queries.length === 0) return false
 
@@ -1127,6 +1138,27 @@ export const useMusicSources = () => {
       // - QQ音乐平台：无论国内外均优先 Native Music
       // - 网易云音乐平台：仅国内服务器优先 Native Music；海外跳过，直接使用第三方 API
       const platform = params.platform || 'netease'
+      // 检查平台是否启用（SSR 阶段跳过，$fetch 无 cookie）
+      if (import.meta.client) {
+        if (!globalEnabledPlatforms.value.includes(platform)) {
+          const { currentLocale, siteConfig } = useLocale()
+          const available = globalEnabledPlatforms.value.filter((p) => p !== platform)
+          const platformName = getPlatformDisplayName(platform, siteConfig.value, currentLocale.value)
+          const availableNames = available.map((p) => getPlatformDisplayName(p, siteConfig.value, currentLocale.value)).join('、')
+          const { localize } = useServerErrors()
+          // 先按 code + params 本地化得到 message，再抛出结构化错误：
+          // data.code 供 extractErrorCode 提取，data.message 供 getThrownMessage 提取
+          const payload = {
+            data: {
+              code: 'MUSIC_SOURCE_PLATFORM_DISABLED',
+              params: [platformName, availableNames]
+            }
+          }
+          const err = new Error(localize(payload))
+          ;(err as any).data = payload.data
+          throw err
+        }
+      }
       const shouldUseNativeFirst = platform === 'tencent' || isServerInChina.value === true
 
       if (
@@ -1247,9 +1279,23 @@ export const useMusicSources = () => {
         }
       }
 
-      // 若为QQ音乐平台，尝试完腾讯源后允许作为最后手段切换到其他平台
+      // 若为QQ音乐平台，尝试完腾讯源后允许作为最后手段切换到其他平台（排除已禁用的平台）
       if (params.platform === 'tencent') {
-        const otherSources = enabledSources.filter((s) => s.id !== 'vkeys-v3' && s.id !== 'vkeys')
+        // 音源 id → 平台 key 映射（仅对本功能支持的平台生效）
+        const platformOfSource = (id: string): string => {
+          if (id.includes('netease')) return 'netease'
+          if (id.includes('bilibili')) return 'bilibili'
+          if (id.includes('migu')) return 'migu'
+          return ''
+        }
+        const otherSources = enabledSources.filter(
+          (s) =>
+            s.id !== 'vkeys-v3' &&
+            s.id !== 'vkeys' &&
+            (platformOfSource(s.id)
+              ? globalEnabledPlatforms.value.includes(platformOfSource(s.id))
+              : true)
+        )
         if (otherSources.length) {
           console.log('QQ音乐平台所有专用源失败，作为最后手段尝试其他平台音源')
           for (const source of otherSources) {

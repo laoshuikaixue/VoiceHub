@@ -1,7 +1,7 @@
 <template>
   <div v-if="totalPages > 1" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 pt-4">
     <!-- 分页信息 -->
-    <div class="text-[10px] font-black text-zinc-700 uppercase tracking-[0.2em] order-2 sm:order-1">
+    <div class="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] order-2 sm:order-1">
       {{ formatLocale(locale.info, currentPage, totalPages) }}
       <span v-if="totalItems !== null"> ({{ formatLocale(locale.totalItems, totalItems, displayItemName) }})</span>
     </div>
@@ -11,7 +11,7 @@
       <!-- 首页 -->
       <button
         :disabled="currentPage === 1"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.first"
         @click="goToPage(1)"
       >
@@ -21,7 +21,7 @@
       <!-- 上一页 -->
       <button
         :disabled="currentPage === 1"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.prev"
         @click="goToPage(currentPage - 1)"
       >
@@ -36,8 +36,8 @@
           :class="[
             'w-10 h-10 rounded-lg text-xs font-black transition-all shadow-lg',
             currentPage === page
-              ? 'bg-blue-600 text-white shadow-blue-900/20'
-              : 'border border-zinc-800 text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 shadow-none'
+              ? 'bg-primary-hover text-text-primary shadow-[var(--primary-glow)]'
+              : 'border border-border-secondary text-text-secondary hover:text-primary hover:border-primary-30 shadow-none'
           ]"
           @click="goToPage(page)"
         >
@@ -48,7 +48,7 @@
       <!-- 下一页 -->
       <button
         :disabled="currentPage === totalPages"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.next"
         @click="goToPage(currentPage + 1)"
       >
@@ -58,7 +58,7 @@
       <!-- 尾页 -->
       <button
         :disabled="currentPage === totalPages"
-        class="w-10 h-10 rounded-lg border border-zinc-800 flex items-center justify-center text-zinc-700 hover:text-blue-400 hover:border-blue-500/30 transition-all disabled:opacity-20 disabled:hover:text-zinc-700 disabled:hover:border-zinc-800"
+        class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.last"
         @click="goToPage(totalPages)"
       >
@@ -66,18 +66,18 @@
       </button>
 
       <!-- 跳转输入 -->
-      <div class="flex items-center ml-2 pl-2 border-l border-zinc-800">
+      <div class="flex items-center ml-2 pl-2 border-l border-border-secondary">
         <div class="relative group">
           <input
             v-model="jumpPageInput"
             type="text"
-            class="w-12 h-10 bg-zinc-950 border border-zinc-800 rounded-lg text-center text-xs font-black text-zinc-300 focus:outline-none focus:border-blue-500/50 transition-all"
+            class="w-12 h-10 bg-bg-primary border border-border-secondary rounded-lg text-center text-xs font-black text-text-secondary focus:outline-none focus:border-primary-50 transition-all"
             :placeholder="locale.pagePlaceholder"
             @keyup.enter="handleJump"
           >
         </div>
         <button
-          class="ml-2 px-3 h-10 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+          class="ml-2 px-3 h-10 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
           @click="handleJump"
         >
           {{ locale.jump }}

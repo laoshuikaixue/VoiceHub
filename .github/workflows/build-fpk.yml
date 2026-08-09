@@ -60,10 +60,10 @@ jobs:
           
           # 从 public 目录复制图标到构建目录
           mkdir -p voicehub/app/ui/images
-          cp public/images/logo.png voicehub/app/ui/images/icon-64.png
-          cp public/images/logo.png voicehub/app/ui/images/icon-256.png
-          cp public/images/logo.png voicehub/ICON.PNG
-          cp public/images/logo.png voicehub/ICON_256.PNG
+          cp public/assets/logo.png voicehub/app/ui/images/icon-64.png
+          cp public/assets/logo.png voicehub/app/ui/images/icon-256.png
+          cp public/assets/logo.png voicehub/ICON.PNG
+          cp public/assets/logo.png voicehub/ICON_256.PNG
           
           # 更新版本号
           sed -i "s/^version=.*/version=${APP_VER}/" voicehub/manifest

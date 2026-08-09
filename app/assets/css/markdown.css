@@ -10,7 +10,7 @@
 .markdown-body h4 {
   font-weight: 700;
   margin: 0.8em 0 0.4em;
-  color: #e4e4e7;
+  color: var(--text-primary-lighter);
 }
 
 .markdown-body h1 { font-size: 1.3em; }
@@ -32,26 +32,26 @@
 .markdown-body li { margin-bottom: 0.25em; }
 
 .markdown-body a {
-  color: #3b82f6;
+  color: var(--color-accent);
   text-decoration: underline;
 }
 
 .markdown-body strong {
   font-weight: 700;
-  color: #e4e4e7;
+  color: var(--text-primary-lighter);
 }
 
 .markdown-body em { font-style: italic; }
 
 .markdown-body code {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-tertiary-10);
   padding: 0.15em 0.4em;
   border-radius: 4px;
   font-size: 0.9em;
 }
 
 .markdown-body pre {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--bg-primary-30);
   padding: 0.75em 1em;
   border-radius: 8px;
   overflow-x: auto;
@@ -73,7 +73,7 @@
 
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border-10);
   padding: 0.4em 0.8em;
 }
 
@@ -86,15 +86,15 @@
 .markdown-body td[align='right'] { text-align: right; }
 
 .markdown-body hr {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--panel-border-10);
   margin: 0.8em 0;
 }
 
 .markdown-body blockquote {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-accent);
   padding-left: 1em;
   margin: 0.5em 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 
 .markdown-body img {
@@ -119,7 +119,7 @@
   width: 1em;
   height: 1em;
   margin: 0 0.35em 0 0;
-  border: 1.5px solid #52525b;
+  border: 1.5px solid var(--panel-border-subtle);
   border-radius: 3px;
   background: transparent;
   vertical-align: middle;
@@ -128,8 +128,8 @@
 }
 
 .markdown-body input[type='checkbox']:checked {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .markdown-body input[type='checkbox']:checked::after {
@@ -139,7 +139,7 @@
   top: 1px;
   width: 4px;
   height: 7px;
-  border: solid #fff;
+  border: solid var(--text-primary);
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }

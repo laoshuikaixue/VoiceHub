@@ -23,7 +23,17 @@ type LegacyNestedSectionKey = 'auth' | 'ui' | 'songs'
 
 const LOCALE_STORAGE_KEY = 'voicehub.locale'
 export const LOCALE_COOKIE_KEY = 'voicehub.locale'
+// 语言偏好来源：'manual' = 用户手动选择（长期记住），'system' = 自动跟随系统（每次进入重新解析）
+export const LOCALE_PREFERENCE_KEY = 'voicehub.locale.pref'
+export type LocalePreference = 'manual' | 'system'
 export const FALLBACK_LOCALE: Locale = 'zh-CN'
+
+// 语言 cookie 共用配置（长期有效，跟随手动/系统模式一起写入）
+const localeCookieOptions = {
+  maxAge: 60 * 60 * 24 * 365,
+  sameSite: 'lax' as const,
+  path: '/'
+}
 
 export const isSupportedLocale = (locale: string | null | undefined): locale is Locale =>
   supportedLocales.some((item) => item.code === locale)
@@ -60,17 +70,25 @@ export async function loadLocaleMessages(locale: Locale): Promise<void> {
   await loadingPromises[locale]
 }
 
-// 客户端语言解析：本地存储（历史偏好迁移）→ 浏览器语言 → 兜底。
+// 客户端语言解析：用户手动偏好（localStorage）→ 浏览器/系统语言 → 兜底。
+// 自动跟随系统的解析结果不写入 localStorage，系统语言变化后才能重新跟随。
 export function resolveClientInitialLocale(): Locale {
   if (!import.meta.client) return FALLBACK_LOCALE
 
   const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY)
-  if (isSupportedLocale(savedLocale)) return savedLocale
+  const preference = window.localStorage.getItem(LOCALE_PREFERENCE_KEY)
+  if (preference === 'manual' && isSupportedLocale(savedLocale)) return savedLocale
 
-  const browserLocale = window.navigator.language
-  if (isSupportedLocale(browserLocale)) return browserLocale
-  if (browserLocale?.toLowerCase().startsWith('zh')) return 'zh-CN'
-  if (browserLocale?.toLowerCase().startsWith('en')) return 'en-US'
+  // navigator.languages 为浏览器首选语言列表（通常跟随系统语言），逐项匹配更准确
+  const browserLanguages =
+    window.navigator.languages?.length > 0 ? window.navigator.languages : [window.navigator.language]
+  for (const language of browserLanguages) {
+    if (!language) continue
+    if (isSupportedLocale(language)) return language
+    const normalized = language.toLowerCase()
+    if (normalized.startsWith('zh')) return 'zh-CN'
+    if (normalized.startsWith('en')) return 'en-US'
+  }
 
   return FALLBACK_LOCALE
 }
@@ -180,13 +198,21 @@ const getMergedSection = <Key extends LocaleSectionKey>(
   return result
 }
 
-export function setLocale(locale: Locale) {
+export function setLocale(locale: Locale, manual = false) {
   if (!isSupportedLocale(locale)) return
 
   // 与读取路径解耦：存在 Nuxt 上下文时更新 useState（请求隔离），
   // 客户端另同步模块级回退 ref，避免两者出现 split-brain 导致部分消费者收不到切换。
   if (tryUseNuxtApp()) {
     useState<Locale>('voicehub-locale', () => fallbackLocaleRef.value).value = locale
+    // 语言与偏好来源写入 cookie：manual 长期记住；system 仅本次会话，下次进入重新跟随系统语言
+    const localeCookie = useCookie<Locale | undefined>(LOCALE_COOKIE_KEY, localeCookieOptions)
+    const preferenceCookie = useCookie<LocalePreference | undefined>(
+      LOCALE_PREFERENCE_KEY,
+      localeCookieOptions
+    )
+    localeCookie.value = locale
+    preferenceCookie.value = manual ? 'manual' : 'system'
   }
   // 触发目标语言词典的按需加载；加载完成后相关 computed 会自动更新。
   void loadLocaleMessages(locale)
@@ -194,21 +220,48 @@ export function setLocale(locale: Locale) {
   if (import.meta.client) {
     // 客户端同步模块级回退 ref，使在模块加载期实例化的单例（如共享歌词实例）也能响应语言切换。
     fallbackLocaleRef.value = locale
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
-    } catch {
-      // 忽略隐私模式等场景下的持久化失败
+    if (manual) {
+      try {
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+        window.localStorage.setItem(LOCALE_PREFERENCE_KEY, 'manual')
+      } catch {
+        // 忽略隐私模式等场景下的持久化失败
+      }
     }
   }
 }
 
+// 切换到跟随系统模式：清除手动偏好并立即按系统语言切换。
+export function followSystemLocale(): Locale {
+  if (import.meta.client) {
+    try {
+      window.localStorage.removeItem(LOCALE_STORAGE_KEY)
+      window.localStorage.removeItem(LOCALE_PREFERENCE_KEY)
+    } catch {
+      // 忽略隐私模式等场景下的清除失败
+    }
+  }
+  // 清除偏好后再解析，确保取到的是系统语言而非历史手动选择
+  const resolved = import.meta.client ? resolveClientInitialLocale() : FALLBACK_LOCALE
+  setLocale(resolved, false)
+  return resolved
+}
+
 export function useLocale() {
   const currentLocale = getCurrentLocale()
+  // 偏好来源标志（manual=用户手动选择 / system=跟随系统）；无 Nuxt 上下文（模块加载期）时视为跟随系统
+  const preferenceCookie = tryUseNuxtApp()
+    ? useCookie<LocalePreference | undefined>(LOCALE_PREFERENCE_KEY, localeCookieOptions)
+    : null
+  // 当前是否为「跟随系统」模式（未手动选择过语言）
+  const isFollowingSystem = computed(() => preferenceCookie?.value !== 'manual')
   const withFallback = <Key extends keyof LocaleMessages>(key: Key) =>
     computed(() => getMergedSection(currentLocale.value, key))
 
   return {
     currentLocale,
+    isFollowingSystem,
+    followSystemLocale,
     supportedLocales,
     setLocale,
     loadLocaleMessages,
@@ -223,7 +276,8 @@ export function useLocale() {
     songs: withFallback('songs'),
     admin: withFallback('admin'),
     yearReview: withFallback('yearReview'),
-    importantNotification: withFallback('importantNotification'),
-    serverErrors: withFallback('serverErrors')
+    serverErrors: withFallback('serverErrors'),
+    theme: withFallback('theme') as unknown as typeof import('./zh-CN').theme,
+    importantNotification: withFallback('importantNotification')
   }
 }

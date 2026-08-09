@@ -59,13 +59,13 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #000;
+  background-color: var(--bg-primary);
 }
 
 .bg-gradient {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, #1f2937, #000, #000);
+  background: radial-gradient(circle at center, var(--panel-border-subtle), var(--bg-primary), var(--bg-primary));
   opacity: 0.5;
 }
 
@@ -78,7 +78,7 @@ const { yearReview } = useLocale()
 }
 
 .label {
-  color: #6b7280;
+  color: var(--year-review-text-tertiary);
   font-size: 0.875rem;
   letter-spacing: 0.5em;
   text-transform: uppercase;
@@ -95,7 +95,7 @@ const { yearReview } = useLocale()
   font-size: 6rem;
   font-weight: 900;
   line-height: 1;
-  background-image: linear-gradient(to bottom, #fff, #1f2937);
+  background-image: linear-gradient(to bottom, var(--text-primary), var(--panel-border-subtle));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -107,12 +107,12 @@ const { yearReview } = useLocale()
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(to right, transparent, var(--overlay-20), transparent);
 }
 
 .text-intro {
   font-size: 1.125rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   margin-bottom: 3rem;
 }
 
@@ -135,8 +135,8 @@ const { yearReview } = useLocale()
   width: 100%;
   padding: 1rem 2rem;
   border-radius: 9999px;
-  background: #fff;
-  color: #000;
+  background: var(--text-primary);
+  color: var(--bg-primary);
   font-weight: 700;
   font-size: 1.125rem;
   overflow: hidden;
@@ -153,7 +153,7 @@ const { yearReview } = useLocale()
 .btn-bg {
   position: absolute;
   inset: 0;
-  background: #e5e7eb;
+  background: var(--panel-border-light);
   transform: translateY(100%);
   transition: transform 0.3s;
 }
@@ -174,9 +174,9 @@ const { yearReview } = useLocale()
   width: 100%;
   padding: 1rem 2rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-20);
+  color: var(--text-primary);
   font-weight: 700;
   font-size: 1.125rem;
   backdrop-filter: blur(12px);
@@ -188,7 +188,7 @@ const { yearReview } = useLocale()
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .btn-secondary:active {

@@ -355,7 +355,7 @@ import TurnstileWidget from './TurnstileWidget.vue'
 import { useLocale } from '~/utils/locale'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider, isLoaded: isSiteConfigLoaded } = useSiteConfig()
-const { auth: authLocale } = useLocale()
+const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
 
@@ -609,7 +609,7 @@ const handleRegisterOAuth = async () => {
   )
 
   if (validationError) {
-    error.value = validationError
+    error.value = serverErrors.value?.[validationError.code] || locale.value.registerFailed
     return
   }
 
@@ -1026,7 +1026,7 @@ const handleWebAuthnLogin = async () => {
 .webauthn-btn {
   width: 100%;
   padding: 14px;
-  background: var(--surface-secondary);
+  background: var(--panel-bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--input-border);
   border-radius: var(--radius-lg);
@@ -1041,7 +1041,7 @@ const handleWebAuthnLogin = async () => {
 }
 
 .webauthn-btn:hover:not(:disabled) {
-  background: var(--surface-tertiary);
+  background: var(--panel-bg-tertiary);
   border-color: var(--input-border-focus);
 }
 
@@ -1103,7 +1103,7 @@ const handleWebAuthnLogin = async () => {
 .mode-btn {
   flex: 1;
   padding: 12px 16px;
-  background: var(--surface-secondary);
+  background: var(--panel-bg-secondary);
   color: var(--text-secondary);
   border: 2px solid var(--input-border);
   border-radius: var(--radius-lg);
@@ -1125,7 +1125,7 @@ const handleWebAuthnLogin = async () => {
 }
 
 .mode-btn:hover:not(.active) {
-  background: var(--surface-tertiary);
+  background: var(--panel-bg-tertiary);
   border-color: var(--input-border-focus);
   color: var(--text-primary);
 }

@@ -9,22 +9,22 @@
   >
     <div
       v-if="show"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
       @click="close"
     >
       <div
-        class="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden"
+        class="w-full max-w-lg bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl overflow-hidden"
         @click.stop
       >
-        <div class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between">
-          <h3 class="text-xl font-black text-zinc-100">{{ locale.title }}</h3>
-          <button class="text-zinc-500 hover:text-zinc-300 transition-colors" @click="close">
+        <div class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between">
+          <h3 class="text-xl font-black text-text-primary">{{ locale.title }}</h3>
+          <button class="text-text-tertiary hover:text-text-secondary transition-colors" @click="close">
             <X :size="20" />
           </button>
         </div>
         <div class="p-8 space-y-4">
           <div class="flex items-center gap-3">
-            <p class="text-xs text-zinc-500 font-medium">{{ songTitle }}</p>
+            <p class="text-xs text-text-tertiary font-medium">{{ songTitle }}</p>
             <label for="is-public-checkbox" class="flex items-center gap-2 cursor-pointer group" :class="{ 'opacity-50': isUpdatingPublic }">
               <input
                 id="is-public-checkbox"
@@ -32,23 +32,23 @@
                 :checked="isPublic"
                 :disabled="isUpdatingPublic"
                 @change="$emit('update:isPublic', $event.target.checked)"
-                class="w-4 h-4 rounded border-zinc-800 bg-zinc-950 accent-blue-500 cursor-pointer disabled:cursor-not-allowed"
+                class="w-4 h-4 rounded border-border-secondary bg-bg-primary cursor-pointer disabled:cursor-not-allowed"
               >
               <span
                 :class="[
                   'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border transition-colors',
                   isPublic
-                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 group-hover:bg-blue-500/20'
-                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20 group-hover:bg-amber-500/20'
+                    ? 'bg-primary-10 text-primary border-primary-20 group-hover:bg-primary-20'
+                    : 'bg-warning-10 text-warning border-warning-20 group-hover:bg-warning-20'
                 ]"
               >
                 {{ isPublic ? locale.publicRemark : locale.adminOnly }}
               </span>
-              <span v-if="isUpdatingPublic" class="text-[10px] text-zinc-500 animate-pulse">{{ locale.updating }}</span>
+              <span v-if="isUpdatingPublic" class="text-[10px] text-text-tertiary animate-pulse">{{ locale.updating }}</span>
             </label>
           </div>
-          <div class="bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-4">
-            <p class="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
+          <div class="bg-bg-primary-50 border border-border-secondary-50 rounded-xl p-4">
+            <p class="text-sm text-text-primary leading-relaxed whitespace-pre-wrap">
               {{ content }}
             </p>
           </div>

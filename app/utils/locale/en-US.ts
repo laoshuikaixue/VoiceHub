@@ -103,6 +103,15 @@ export const siteConfig = {
     parseApiErrorFailed: 'Failed to parse API error response:',
     saveFailed: 'Failed to save configuration:'
   },
+
+  // Platform names
+  platformNetease: 'NetEase Cloud Music',
+  platformTencent: 'QQ Music',
+  platformBilibili: 'Bilibili',
+  platformMigu: 'Migu Music',
+  platformEnabled: 'Enabled',
+  platformDisabled: 'Disabled',
+
   serverMessages: {
     oauthRedirectCallbackInvalid: 'oauthRedirectUri must be a callback URL, for example https://yourdomain.com/api/auth/[provider]/callback',
     oauthRedirectUrlInvalid: 'oauthRedirectUri is not a valid URL, for example https://yourdomain.com/api/auth/[provider]/callback',
@@ -188,6 +197,7 @@ export const changePassword = {
 
 export const common = {
   language: 'Language',
+  followSystem: 'Follow System',
   workerIn: 'Worker in',
   cancel: 'Cancel',
   confirm: 'Confirm',
@@ -486,6 +496,7 @@ export const pages = {
       blacklist: 'Blacklist Management',
       'site-config': 'Site Configuration',
       operations: 'Operations Monitor',
+      'music-source': 'Music Source Control',
       database: 'Database Operations',
       'api-keys': 'API Key Management'
     },
@@ -1328,7 +1339,8 @@ export const pages = {
       alreadyReplayed: 'This song has been replayed',
       alreadyRequestedReplay: 'Replay already requested',
       musicUrlFailed: 'Failed to get music playback URL',
-      semesterLoadFailed: 'Failed to load semester info. Please refresh and try again'
+      semesterLoadFailed: 'Failed to load semester info. Please refresh and try again',
+      platformAutoSwitched: (name: string) => `Current platform is unavailable, switched to ${name}`
     },
     requestForm: {
       guidelinesTitle: 'Submission Guidelines',
@@ -1688,6 +1700,7 @@ export const admin = {
       semesters: 'Semesters',
       blacklist: 'Blacklist',
       cardCodes: 'Request Cards',
+      musicSource: 'Music Source',
       siteConfig: 'Site Config',
       operations: 'Operations Monitor',
       database: 'Database',
@@ -2936,6 +2949,7 @@ export const admin = {
     downloadSongs: 'Download Songs',
     markAllPlayed: 'Mark All Played',
     moveDate: 'Move Date',
+    copyDate: 'Copy Schedule',
     clearList: 'Clear List',
     publishSchedule: 'Publish Schedule',
     publishOnly: 'Publish Only',
@@ -2949,6 +2963,7 @@ export const admin = {
     andMoreApplicants: (count: number) => ` and ${count} more`,
     publishThisDraft: 'Publish this draft',
     moveDateTitle: 'Move Schedule Date',
+    copyDateTitle: 'Copy Schedule Date',
     currentDate: (date: string) => `Current date: ${date}`,
     nextStep: 'Next',
     replayDetailTitle: (title: string) => `${title} - Replay Request Details`,
@@ -3002,6 +3017,8 @@ export const admin = {
       clearListConfirm: 'Clear',
       moveDateMessage: (sourceDate: string, count: number, targetDate: string) => `Move all ${count} songs from ${sourceDate} to ${targetDate}? Order and content will be preserved.`,
       moveDateConfirm: 'Move',
+      copyDateMessage: (sourceDate: string, count: number, targetDate: string) => `Copy all ${count} songs from ${sourceDate} to ${targetDate}? The original schedule will remain and a new one will be created.`,
+      copyDateConfirm: 'Copy',
       deleteScheduleTitle: 'Delete Schedule',
       deleteScheduleMessage: 'Delete all schedules for this day? This cannot be recovered.',
       deleteScheduleConfirm: 'Delete',
@@ -3016,7 +3033,9 @@ export const admin = {
       allMarkedPlayed: 'All songs marked as played',
       playlistCleared: 'Playlist cleared. Remember to save changes',
       saveBeforeMove: 'Save current unpublished changes before moving schedules',
+      saveBeforeCopy: 'Save current unpublished changes before copying schedules',
       moveDateSuccess: (count: number, date: string) => `Moved ${count} songs to ${date}`,
+      copyDateSuccess: (count: number, date: string) => `Copied ${count} songs to ${date}`,
       draftSaved: 'Schedule draft saved!',
       allDraftsDeleted: 'All drafts deleted!',
       scheduleDeleted: 'Schedule deleted!',
@@ -3055,6 +3074,8 @@ export const admin = {
       sameTargetDate: 'Target date cannot be the same as the current date',
       noMovableSongs: 'No movable songs on the current date',
       moveDateFailed: (message: string) => `Move failed: ${message}`,
+      noCopyableSongs: 'No copyable songs on the current date',
+      copyDateFailed: (message: string) => `Copy failed: ${message}`,
       saveDraftFailed: (message: string) => `Failed to save draft: ${message}`,
       publishScheduleFailed: (message: string) => `Failed to publish schedule: ${message}`,
       publishDraftFailed: (message: string) => `Failed to publish draft: ${message}`
@@ -3189,6 +3210,24 @@ export const admin = {
       fetchEnvFailed: 'Failed to fetch environment variables:',
       importEnvFailed: 'Failed to import environment configuration:'
     }
+  },
+  musicSourceController: {
+    title: 'Music Source Control',
+    description: 'Manage music platform switches and search order. Changes take effect immediately.',
+    saveConfig: 'Save Config',
+    saving: 'Saving...',
+    saved: 'Saved',
+    reset: 'Reset',
+    loading: 'Loading...',
+    fetchFailed: 'Failed to fetch config',
+    saveFailedRetry: 'Save failed, please retry',
+    saveSuccess: 'Source config saved',
+    switchTitle: 'Platform Switch',
+    switchDesc: 'Enable or disable each music platform for search',
+    orderTitle: 'Search Order',
+    orderDesc: 'Drag to reorder platform buttons in the search area',
+    resetOrder: 'Reset Order',
+    mustKeepOne: 'At least one platform must stay enabled'
   },
   playTimeManager: {
     title: 'Play Time Management',
@@ -4108,6 +4147,10 @@ export const admin = {
         statusBatch: {
           title: 'Set Account Status',
           desc: 'Batch set account status for selected students'
+        },
+        songAdminBatch: {
+          title: 'Song Admin',
+          desc: 'Batch update grade, class, and account status for Song Admins'
         }
       },
       fields: {
@@ -4140,6 +4183,26 @@ export const admin = {
         targetStatusPlaceholder: 'Select target status',
         reason: 'Reason for Change',
         reasonPlaceholder: 'e.g. Batch graduate class of 2025'
+      },
+      songAdminSettings: {
+        title: 'Song Admin Info Update',
+        desc: 'Selected users will apply the changes below (blank fields keep original values)',
+        scope: 'Song Admin Scope Filter',
+        currentGrade: 'Current Grade',
+        currentClass: 'Current Class',
+        allGrades: 'All Grades',
+        allClasses: 'All Classes',
+        selectUsers: (selected: number, total: number) => `Select Admins (${selected}/${total})`,
+        clearSelection: 'Clear Selection',
+        selectAll: 'Select All Current',
+        noMatchedUsers: 'No Song Admins match the filters',
+        targetSettings: 'Update Target Settings',
+        targetGrade: 'Target Grade',
+        targetGradePlaceholder: 'e.g. 2025 (blank keeps original)',
+        targetClass: 'Target Class',
+        targetClassPlaceholder: 'e.g. Class 1 (blank keeps original)',
+        targetStatus: 'Target Account Status',
+        targetStatusPlaceholder: 'Select target status (blank keeps original)'
       },
       statusOptions: {
         all: 'Any current status',
@@ -4217,7 +4280,10 @@ export const admin = {
         partialExcelSuccess: (success: number, failed: number) => `Partially updated: ${success} succeeded, ${failed} failed. Please check and retry.`,
         excelFailed: (failed: number) => `Batch update failed: ${failed} users could not be updated. Please check and retry.`,
         partialStatusSuccess: (failed: number) => `Partially updated. ${failed} users were skipped due to permissions or status.`,
-        statusSuccess: 'Batch status update succeeded'
+        statusSuccess: 'Batch status update succeeded',
+        songAdminSuccess: (count: number) => `Successfully updated ${count} Song Admins`,
+        partialSongAdminSuccess: (failed: number) => `Partially updated. ${failed} admins were skipped due to permissions or status.`,
+        songAdminNoChanges: 'No changes needed for the selected Song Admins'
       },
       errors: {
         invalidExcelFormat: 'Invalid Excel format. Please check the file format.',
@@ -4238,7 +4304,8 @@ export const admin = {
         noValidUpdates: 'No valid update data',
         batchRequestFailed: 'Batch update request failed',
         invalidBatchResponse: 'Batch update API returned an invalid response',
-        statusUpdateFailed: 'Batch status update failed'
+        statusUpdateFailed: 'Batch status update failed',
+        songAdminUpdateFailed: 'Batch Song Admin update failed'
       }
     },
     deleteDialog: {
@@ -4429,6 +4496,15 @@ export const admin = {
   }
 } as const
 
+// ==================== Theme ====================
+export const theme = {
+  select: 'Choose theme',
+  System: 'Follow System',
+  ClassicDark: 'Classic Dark',
+  ClassicLight: 'Classic Light',
+  ModernLight: 'Modern Light'
+} as const
+
 // Localized copy for server-side business error codes (keyed by SERVER_ERROR_CODES in server/config/constants.ts).
 // The client resolves these via useServerErrors().localize(err) using err.data.code, falling back to the server message.
 export const serverErrors = {
@@ -4465,6 +4541,8 @@ export const serverErrors = {
   AUTH_INCOMPLETE_PARAMS: 'Incomplete parameters',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
   AUTH_NAME_USERNAME_PASSWORD_REQUIRED: 'Name, username, and password are required',
+  AUTH_USERNAME_LENGTH_INVALID: 'Username must be between 3 and 30 characters',
+  AUTH_USERNAME_PATTERN_INVALID: 'Username may only contain letters, numbers, underscores, and hyphens',
   AUTH_PASSWORD_TOO_SHORT: 'Password must be at least 8 characters',
   AUTH_PASSWORD_TOO_LONG: 'Password cannot exceed 128 characters',
   AUTH_PASSWORD_TOO_MANY_BYTES: 'Password cannot exceed 72 bytes',
@@ -4486,6 +4564,7 @@ export const serverErrors = {
   AUTH_DATABASE_UNAVAILABLE: 'The database service is temporarily unavailable',
   AUTH_NEW_PASSWORD_SAME_AS_CURRENT: 'The new password cannot be the same as the current password',
   AUTH_NEW_PASSWORD_REQUIRED: 'The new password cannot be empty',
+  AUTH_REGISTER_PASSWORD_MISMATCH: 'The two passwords do not match',
   AUTH_INVALID_REGISTER_TOKEN: 'Invalid registration token',
   AUTH_INVALID_BINDING_TOKEN: 'Invalid binding token',
   AUTH_INVALID_RESET_LINK: 'Invalid reset link',
@@ -4629,6 +4708,7 @@ export const serverErrors = {
   USER_CODE_INVALID: 'Incorrect verification code',
   USER_CODE_TOO_MANY_ATTEMPTS: 'Too many incorrect verification codes. Please resend.',
   BACKUP_DISABLED: 'Auto backup is disabled',
+  MUSIC_SOURCE_PLATFORM_DISABLED: 'Platform "{0}" is disabled. Available platforms: {1}',
   BACKUP_NOT_CONFIGURED: 'Auto backup is not configured',
   NO_BACKUP_METHOD_ENABLED: 'No backup methods enabled',
   BACKUP_FAILED: 'Backup execution failed',

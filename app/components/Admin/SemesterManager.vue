@@ -3,13 +3,13 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.title }}</h2>
-        <p class="text-xs text-zinc-500 mt-1">
+        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.title }}</h2>
+        <p class="text-xs text-text-tertiary mt-1">
           {{ locale.desc }}
         </p>
       </div>
       <button
-        class="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+        class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
         @click="openModal"
       >
         <svg
@@ -44,24 +44,24 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="text-amber-500 fill-amber-500"
+            class="text-warning fill-warning"
           >
             <polygon
               points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
             />
           </svg>
-          <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+          <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
             {{ locale.currentActive }}
           </h3>
         </div>
 
         <div
           v-if="currentSemester"
-          class="relative bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-10 shadow-2xl shadow-blue-900/20 overflow-hidden group"
+          class="relative bg-gradient-to-br from-primary to-primary-hover rounded-3xl p-10 shadow-2xl shadow-[var(--primary-glow)] overflow-hidden group"
         >
           <div class="relative z-10 space-y-6">
             <div
-              class="w-16 h-16 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
+              class="w-16 h-16 rounded-3xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -79,10 +79,10 @@
               </svg>
             </div>
             <div class="space-y-2">
-              <h4 class="text-3xl font-black text-white tracking-tight leading-tight">
+              <h4 class="text-3xl font-black text-text-primary tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
-              <div class="flex items-center gap-2 text-blue-100/60 font-bold text-xs">
+              <div class="flex items-center gap-2 text-primary-60 font-bold text-xs">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="12"
@@ -104,7 +104,7 @@
             </div>
             <div class="pt-4">
               <span
-                class="px-4 py-2 bg-white text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
+                class="px-4 py-2 bg-bg-secondary text-primary-hover text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg"
               >
                 {{ locale.inProgress }}
               </span>
@@ -112,7 +112,7 @@
           </div>
 
           <!-- 装饰性背景元素 -->
-          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/5 blur-3xl rounded-full" />
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-bg-secondary-5 blur-3xl rounded-full" />
           <div class="absolute top-10 right-10 opacity-10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -124,7 +124,7 @@
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
-              class="text-white"
+              class="text-text-primary"
             >
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
@@ -134,7 +134,7 @@
 
         <div
           v-else
-          class="bg-zinc-900/30 border border-zinc-800 border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
+          class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -146,19 +146,19 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="text-zinc-700"
+            class="text-text-secondary"
           >
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <p class="text-sm font-bold text-zinc-600">{{ locale.noCurrent }}</p>
-          <button class="text-xs text-blue-500 font-black hover:underline" @click="openModal">
+          <p class="text-sm font-bold text-text-disabled">{{ locale.noCurrent }}</p>
+          <button class="text-xs text-primary font-black hover:underline" @click="openModal">
             {{ locale.createNow }}
           </button>
         </div>
 
-        <div class="p-6 bg-zinc-900/20 border border-zinc-800 rounded-3xl flex items-start gap-4">
+        <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-3xl flex items-start gap-4">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="18"
@@ -169,15 +169,15 @@
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="text-zinc-500 shrink-0 mt-0.5"
+            class="text-text-tertiary shrink-0 mt-0.5"
           >
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="16" x2="12" y2="12" />
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
           <div class="space-y-1">
-            <p class="text-xs font-bold text-zinc-400">{{ locale.switchTitle }}</p>
-            <p class="text-[11px] text-zinc-600 leading-relaxed">
+            <p class="text-xs font-bold text-text-tertiary">{{ locale.switchTitle }}</p>
+            <p class="text-[11px] text-text-disabled leading-relaxed">
               {{ locale.switchDesc }}
             </p>
           </div>
@@ -198,25 +198,25 @@
               stroke-width="2"
               stroke-linecap="round"
               stroke-linejoin="round"
-              class="text-zinc-600"
+              class="text-text-disabled"
             >
               <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
               <path d="M3 3v5h5" />
               <path d="M12 7v5l4 2" />
             </svg>
-            <h3 class="text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+            <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
               {{ locale.historyTitle }}
             </h3>
           </div>
-          <span class="text-[10px] font-black text-zinc-700">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
+          <span class="text-[10px] font-black text-text-secondary">{{ getLocaleMessage('historyCount', semesters.length) }}</span>
         </div>
 
         <div class="space-y-4">
           <div
             v-if="loading && semesters.length === 0"
-            class="text-center py-20 bg-zinc-900/10 border border-zinc-800 border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
           >
-            <p class="text-xs font-bold text-zinc-600">{{ locale.loading }}</p>
+            <p class="text-xs font-bold text-text-disabled">{{ locale.loading }}</p>
           </div>
 
           <div
@@ -225,8 +225,8 @@
             class="group flex items-center justify-between p-6 rounded-[2rem] border transition-all"
             :class="
               sem.isActive
-                ? 'bg-blue-600/5 border-blue-500/30'
-                : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700'
+                ? 'bg-primary-hover-5 border-primary-30'
+                : 'bg-bg-secondary-40 border-border-secondary hover:border-border-tertiary'
             "
           >
             <div class="flex items-center gap-5">
@@ -234,8 +234,8 @@
                 class="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
                 :class="
                   sem.isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                    : 'bg-zinc-800 text-zinc-600 border border-zinc-700'
+                    ? 'bg-primary-hover text-text-primary shadow-lg shadow-[var(--primary-glow)]'
+                    : 'bg-bg-tertiary text-text-disabled border border-border-tertiary'
                 "
               >
                 <svg
@@ -258,12 +258,12 @@
                 <h5
                   class="font-bold transition-colors"
                   :class="
-                    sem.isActive ? 'text-blue-400' : 'text-zinc-200 group-hover:text-blue-400'
+                    sem.isActive ? 'text-primary' : 'text-text-primary group-hover:text-primary'
                   "
                 >
                   {{ sem.name }}
                 </h5>
-                <p class="text-[10px] text-zinc-600 font-medium uppercase tracking-widest mt-0.5">
+                <p class="text-[10px] text-text-disabled font-medium uppercase tracking-widest mt-0.5">
                   {{ getLocaleMessage('createdAt', formatDate(sem.createdAt)) }}
                 </p>
               </div>
@@ -272,7 +272,7 @@
             <div class="flex items-center gap-2">
               <div
                 v-if="sem.isActive"
-                class="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-500 rounded-xl border border-emerald-500/20"
+                class="flex items-center gap-2 px-4 py-2 bg-success-10 text-success rounded-xl border border-success-20"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -293,7 +293,7 @@
               <button
                 v-else
                 :disabled="loading"
-                class="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white text-[10px] font-black rounded-xl border border-zinc-700 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black rounded-xl border border-border-tertiary transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="setActive(sem.id)"
               >
                 <svg
@@ -315,7 +315,7 @@
 
               <button
                 :disabled="loading"
-                class="p-2.5 text-zinc-700 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2.5 text-text-secondary hover:text-primary hover:bg-primary-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.editSemester"
                 @click="openEditModal(sem)"
               >
@@ -337,7 +337,7 @@
               <button
                 v-if="!sem.isActive"
                 :disabled="loading"
-                class="p-2.5 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-2.5 text-text-secondary hover:text-error hover:bg-error-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.deleteSemester"
                 @click="deleteSemester(sem.id)"
               >
@@ -365,9 +365,9 @@
 
           <div
             v-if="semesters.length === 0 && !loading"
-            class="text-center py-20 bg-zinc-900/10 border border-zinc-800 border-dashed rounded-[2rem]"
+            class="text-center py-20 bg-bg-secondary-10 border border-border-secondary border-dashed rounded-[2rem]"
           >
-            <p class="text-xs font-bold text-zinc-600">{{ locale.empty }}</p>
+            <p class="text-xs font-bold text-text-disabled">{{ locale.empty }}</p>
           </div>
         </div>
       </div>
@@ -376,19 +376,19 @@
     <!-- 添加/修改学期弹窗 -->
     <div
       v-if="showModal"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
     >
       <div
-        class="w-full max-w-md bg-zinc-900 rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden"
+        class="w-full max-w-md bg-bg-secondary rounded-3xl border border-border-secondary shadow-2xl overflow-hidden"
         @click.stop
       >
         <div class="p-8 space-y-6">
           <div class="flex items-center justify-between">
-            <h3 class="text-xl font-black text-white tracking-tight">
+            <h3 class="text-xl font-black text-text-primary tracking-tight">
               {{ isEditing ? locale.editSemester : locale.add }}
             </h3>
             <button
-              class="p-2 text-zinc-500 hover:text-white transition-colors"
+              class="p-2 text-text-tertiary hover:text-text-primary transition-colors"
               @click="closeModal"
             >
               <svg
@@ -410,14 +410,14 @@
 
           <div class="space-y-6">
             <div class="space-y-2">
-              <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+              <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                 >{{ locale.semesterName }}</label
               >
               <input
                 v-model="semesterForm.name"
                 type="text"
                 :placeholder="locale.namePlaceholder"
-                class="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-5 py-4 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 font-bold transition-all"
+                class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-5 py-4 text-sm text-text-primary focus:outline-none focus:border-primary-30 font-bold transition-all"
               >
             </div>
 
@@ -425,20 +425,20 @@
               <input
                 v-model="semesterForm.isActive"
                 type="checkbox"
-                class="w-4.5 h-4.5 rounded-lg border-zinc-800 bg-zinc-950 accent-blue-600 transition-all"
+                class="w-4.5 h-4.5 rounded-lg border-border-secondary bg-bg-primary transition-all"
               >
               <div>
                 <span
-                  class="text-xs font-bold text-zinc-300 group-hover:text-blue-400 transition-colors"
+                  class="text-xs font-bold text-text-secondary group-hover:text-primary transition-colors"
                   >{{ locale.setAsActive }}</span
                 >
-                <p class="text-[10px] text-zinc-600 font-medium">
+                <p class="text-[10px] text-text-disabled font-medium">
                   {{ locale.setAsActiveHint }}
                 </p>
               </div>
             </label>
 
-            <div class="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl flex items-start gap-3">
+            <div class="p-4 bg-bg-primary border border-border-secondary rounded-2xl flex items-start gap-3">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="14"
@@ -449,29 +449,29 @@
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                class="text-amber-500 shrink-0 mt-0.5"
+                class="text-warning shrink-0 mt-0.5"
               >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <p class="text-[10px] text-zinc-500 leading-normal">
+              <p class="text-[10px] text-text-tertiary leading-normal">
                 {{ locale.namingTip }}
               </p>
             </div>
           </div>
         </div>
 
-        <div class="p-6 bg-zinc-800/50 border-t border-zinc-800 flex gap-3 justify-end">
+        <div class="p-6 bg-bg-tertiary-50 border-t border-border-secondary flex gap-3 justify-end">
           <button
-            class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
+            class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-colors"
             @click="closeModal"
           >
             {{ locale.cancel }}
           </button>
           <button
             :disabled="submitting || !semesterForm.name.trim()"
-            class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-50 text-white text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
+            class="px-8 py-2.5 bg-primary-hover hover:bg-primary disabled:bg-primary-hover disabled:opacity-50 text-text-primary text-xs font-black rounded-xl shadow-lg transition-all active:scale-95"
             @click="handleSubmit"
           >
             {{ submitting ? (isEditing ? locale.saving : locale.creating) : (isEditing ? locale.saveChanges : locale.createSemester) }}

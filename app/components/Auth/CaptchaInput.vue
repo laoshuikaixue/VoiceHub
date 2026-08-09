@@ -1,10 +1,10 @@
 <template>
   <div class="flex flex-col gap-2">
-    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ locale.label }}</label>
+    <label class="text-sm font-medium text-text-secondary dark:text-text-tertiary">{{ locale.label }}</label>
     <div class="flex gap-2 items-start">
       <!-- SVG 图片（可点击刷新） -->
       <div
-        class="captcha-svg-container border border-gray-300 dark:border-gray-600 cursor-pointer"
+        class="captcha-svg-container border border-border-secondary dark:border-border-tertiary cursor-pointer"
         :title="locale.refreshTitle"
         @click="refreshCaptcha"
       >
@@ -17,13 +17,13 @@
         maxlength="4"
         autocomplete="off"
         :placeholder="locale.placeholder"
-        class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+        class="flex-1 px-3 py-2 border border-border-secondary dark:border-border-tertiary rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-bg-secondary dark:bg-bg-tertiary text-text-primary dark:text-text-primary-lighter placeholder-text-muted dark:placeholder-text-tertiary"
         @input="handleInput"
       >
       <!-- 刷新按钮（也可直接点图片，这里提供文字按钮辅助） -->
       <button
         type="button"
-        class="px-2 py-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400"
+        class="px-2 py-1 text-xs text-primary-hover hover:text-primary-hover dark:text-primary"
         @click="refreshCaptcha"
       >
         {{ locale.refresh }}
@@ -103,6 +103,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f9fafb; /* 浅灰背景，与你的设计一致 */
+  background-color: var(--panel-bg-overlay); /* 浅灰背景，与你的设计一致 */
 }
 </style>

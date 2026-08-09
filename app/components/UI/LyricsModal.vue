@@ -270,7 +270,7 @@
                   <Icon name="skip-back" size="28" />
                 </button>
                 <button class="play-pause-btn" @click="togglePlayPause">
-                  <div v-if="isLoadingTrack" class="loading-spinner" />
+                  <AppSpinner v-if="isLoadingTrack" :size="32" />
                   <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
                 </button>
                 <button :disabled="!hasNext" class="control-btn" @click="nextSong">
@@ -314,6 +314,7 @@ import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
 import { useAudioVisualizer } from '~/composables/useAudioVisualizer'
@@ -514,7 +515,7 @@ const updateLayoutCache = () => {
     el.style.transformOrigin = '0 0'
     el.style.zIndex = '100'
     el.style.borderRadius = '12px'
-    el.style.boxShadow = '0 16px 36px rgba(0,0,0,0.4)'
+    el.style.boxShadow = '0 16px 36px var(--lyrics-modal-enter-shadow)'
     // 确保硬件加速
     el.style.transform = 'translate3d(0, 0, 0)'
     el.style.willChange = 'transform, border-radius'
@@ -997,23 +998,28 @@ watch(
 
       await nextTick()
 
-      if (backgroundContainer.value) {
-        await backgroundRenderer.initializeBackground(backgroundContainer.value)
+      // 播放进度同步优先启动，不等待背景（封面经代理加载可能较慢）
+      if (isPlaying.value) {
+        startProgressTimer()
+      }
 
-        backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
-        await syncBackgroundState()
-        backgroundRenderer.startRender()
-        if (!isPlaying.value) {
-          backgroundRenderer.pauseRender()
-        }
+      // 背景渲染异步初始化，避免阻塞播放基础功能
+      if (backgroundContainer.value) {
+        void (async () => {
+          await backgroundRenderer.initializeBackground(backgroundContainer.value)
+          if (!props.isVisible) return
+
+          backgroundRenderer.setCoverBlurElement(coverBlurContainer.value)
+          await syncBackgroundState()
+          backgroundRenderer.startRender()
+          if (!isPlaying.value) {
+            backgroundRenderer.pauseRender()
+          }
+        })()
       }
 
       // 歌词由 LyricManager 自动监听 currentTrack 变化并获取，这里不需要手动 fetch
       // 但如果首次打开且没有歌词，可以触发一次检查（Manager 已有 immediate watch）
-
-      if (isPlaying.value) {
-        startProgressTimer()
-      }
 
       document.addEventListener('keydown', handleKeydown)
       await updateMobileState()
@@ -1090,6 +1096,14 @@ const startAnimationLoop = () => {
   requestAnimationFrame(frame)
 }
 
+// 从 rgba/rgb 颜色字符串中提取 R/G/B 并替换为新的 alpha
+const extractColorWithAlpha = (colorStr, alpha) => {
+  const match = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
+  if (!match) return colorStr
+  const [, r, g, b] = match
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 const drawSpectrum = () => {
   if (!spectrumCanvas.value || !audioVisualizer.isInitialized.value) return
 
@@ -1111,7 +1125,9 @@ const drawSpectrum = () => {
 
   const step = Math.floor(data.length / 2 / barCount)
 
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+  // 获取当前主题下 overlay 基准色（Canvas 无法直接使用 CSS 变量）
+  const style = getComputedStyle(document.documentElement)
+  const overlayBase = style.getPropertyValue('--overlay-20').trim() || 'rgba(255, 255, 255, 0.2)'
 
   for (let i = 0; i < barCount; i++) {
     const dataIndex = i * step
@@ -1123,7 +1139,9 @@ const drawSpectrum = () => {
     const y = height - i * (blockH + gap) - 100
     if (y < 0) break
 
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.2 + percent * 0.5})`
+    // 根据 percent (0~1) 在 0.2~0.7 之间动态计算 alpha
+    const dynamicAlpha = 0.2 + percent * 0.5
+    ctx.fillStyle = extractColorWithAlpha(overlayBase, dynamicAlpha)
 
     ctx.beginPath()
     ctx.roundRect(0, y, Math.max(4, barW), blockH, 4)
@@ -1194,7 +1212,7 @@ onUnmounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.95);
+  background: var(--mask-95);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -1205,8 +1223,8 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  background: #000000;
-  color: #ffffff;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1233,9 +1251,9 @@ onUnmounted(() => {
   z-index: 0;
   opacity: 0;
   background:
-    radial-gradient(circle at 30% 30%, rgba(84, 130, 255, 0.32), transparent 34%),
-    radial-gradient(circle at 70% 40%, rgba(255, 88, 126, 0.25), transparent 32%),
-    linear-gradient(135deg, #14141c 0%, #090910 100%);
+    radial-gradient(circle at 30% 30%, var(--lyrics-modal-bg-accent-blue), transparent 34%),
+    radial-gradient(circle at 70% 40%, var(--lyrics-modal-bg-accent-pink), transparent 32%),
+    linear-gradient(135deg, var(--panel-bg-subtle) 0%, var(--panel-bg-deepest) 100%);
   background-size: 180% 180%;
   transition: opacity 0.5s ease;
 }
@@ -1285,7 +1303,7 @@ onUnmounted(() => {
 .background-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+  background: radial-gradient(circle at center, var(--mask-10) 0%, var(--mask-50) 100%);
   z-index: 1;
 }
 
@@ -1295,7 +1313,7 @@ onUnmounted(() => {
   top: 2rem;
   right: 2rem;
   z-index: 50;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -1303,7 +1321,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(12px);
@@ -1332,7 +1350,7 @@ onUnmounted(() => {
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--overlay-25);
   transform: scale(1.05);
   color: white;
 }
@@ -1383,7 +1401,7 @@ onUnmounted(() => {
   height: 100%;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 32px var(--mask-40);
   transform: scale(0.85);
   transition:
     transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -1393,7 +1411,7 @@ onUnmounted(() => {
 
 .song-cover.playing {
   transform: scale(1);
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 24px 48px var(--mask-60);
 }
 
 .song-cover:hover {
@@ -1417,11 +1435,11 @@ onUnmounted(() => {
 .default-cover {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #333, #555);
+  background: linear-gradient(135deg, var(--text-primary), var(--text-disabled));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
 }
 
 .song-info-container {
@@ -1433,7 +1451,7 @@ onUnmounted(() => {
   font-size: 2.2rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  color: #ffffff;
+  color: var(--text-primary);
   line-height: 1.2;
   letter-spacing: -0.02em;
   white-space: normal;
@@ -1444,7 +1462,7 @@ onUnmounted(() => {
 
 .song-artist {
   font-size: 1.4rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   font-weight: 500;
   margin: 0;
   letter-spacing: -0.01em;
@@ -1500,9 +1518,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -1516,7 +1534,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--overlay-62);
   background: transparent;
   cursor: pointer;
   font-size: 0.82rem;
@@ -1525,12 +1543,12 @@ onUnmounted(() => {
 }
 
 .switcher-button:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .switcher-button.active {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.18);
+  color: var(--text-primary);
+  background: var(--overlay-18);
 }
 
 .comments-display-area {
@@ -1547,8 +1565,8 @@ onUnmounted(() => {
   transform: translateX(-50%);
   padding: 0.55rem 1rem;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.92);
-  background: rgba(0, 0, 0, 0.18);
+  color: var(--overlay-92);
+  background: var(--mask-18);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   font-size: 1.05rem;
@@ -1604,7 +1622,7 @@ onUnmounted(() => {
 .time-display {
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   min-width: 45px;
   text-align: center;
   font-weight: 500;
@@ -1615,7 +1633,7 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   height: 5px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-15);
   border-radius: 3px;
   position: relative;
   cursor: pointer;
@@ -1628,7 +1646,7 @@ onUnmounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: #ffffff;
+  background: var(--text-primary);
   border-radius: 3px;
   pointer-events: none;
 }
@@ -1638,12 +1656,12 @@ onUnmounted(() => {
   top: 50%;
   width: 14px;
   height: 14px;
-  background: #ffffff;
+  background: var(--text-primary);
   border-radius: 50%;
   transform: translate(-50%, -50%) scale(0);
   transition: transform 0.1s ease;
   pointer-events: none;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px var(--mask-30);
 }
 
 .progress-bar:hover .progress-thumb {
@@ -1680,7 +1698,7 @@ onUnmounted(() => {
 .control-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -1707,8 +1725,8 @@ onUnmounted(() => {
 
 .secondary-btn.active {
   opacity: 1;
-  color: #ffffff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  color: var(--text-primary);
+  text-shadow: 0 0 8px var(--overlay-40);
 }
 
 .play-pause-btn {
@@ -1728,21 +1746,6 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.2);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* 歌词工具栏 */
 .lyric-toolbar {
   position: absolute;
@@ -1758,7 +1761,7 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1768,7 +1771,7 @@ onUnmounted(() => {
 }
 
 .toolbar-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .lyric-settings-content {
@@ -1783,7 +1786,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   font-size: 0.9rem;
 }
 
@@ -1791,7 +1794,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 6px;
   padding: 2px;
 }
@@ -1809,14 +1812,14 @@ onUnmounted(() => {
 }
 
 .setting-item button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 4px;
 }
 
 .setting-item input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: #fa2d48;
+  accent-color: var(--color-error);
 }
 
 /* 音质菜单动画 */
@@ -1828,14 +1831,14 @@ onUnmounted(() => {
   transform: translateX(-50%) scale(0.9);
   margin-bottom: 12px; /* 底部间距 */
   margin-top: 0;
-  background: rgba(245, 245, 245, 0.9);
+  background: var(--lyrics-modal-badge-menu-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 12px;
   padding: 4px;
   min-width: 100px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 10px 40px var(--mask-20);
+  border: 1px solid var(--overlay-40);
   z-index: 99999; /* 提高层级 */
   display: flex;
   flex-direction: column;
@@ -1873,7 +1876,7 @@ onUnmounted(() => {
   width: 100%;
   text-align: center;
   background: transparent;
-  color: #333; /* 深色文字 */
+  color: var(--text-primary); /* 深色文字 */
   padding: 8px 12px; /* 减小内边距 */
   border-radius: 8px;
   font-size: 0.85rem; /* 稍微减小字体 */
@@ -1886,14 +1889,14 @@ onUnmounted(() => {
 }
 
 .badge-quality-option:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--mask-5);
 }
 
 .badge-quality-option.active {
-  color: #007aff; /* 蓝色字 */
-  background: #ffffff;
+  color: var(--color-accent); /* 蓝色字 */
+  background: var(--text-primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px var(--mask-8);
 }
 
 .mobile-pagination-dots {
@@ -1913,7 +1916,7 @@ onUnmounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-30);
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto;
@@ -1923,8 +1926,8 @@ onUnmounted(() => {
   width: 20px;
   height: 5px;
   border-radius: 3px;
-  background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  background: var(--text-primary);
+  box-shadow: 0 0 10px var(--overlay-30);
 }
 
 .mobile-quality-badge {
@@ -1934,15 +1937,15 @@ onUnmounted(() => {
   justify-content: center;
   padding: 4px 10px;
   margin-top: 12px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-15);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   transition: all 0.2s ease;
   user-select: none; /* 禁止选择 */
   -webkit-user-select: none;
@@ -1950,7 +1953,7 @@ onUnmounted(() => {
 }
 
 .mobile-quality-badge:active {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--overlay-25);
   transform: scale(0.96);
 }
 
@@ -2170,11 +2173,11 @@ onUnmounted(() => {
 
   .progress-bar {
     height: 4px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-10);
   }
 
   .progress-fill {
-    background: #ffffff;
+    background: var(--text-primary);
   }
 
   .progress-thumb {
@@ -2185,7 +2188,7 @@ onUnmounted(() => {
 
   .time-display {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
   }
 
   .control-buttons {
@@ -2200,7 +2203,7 @@ onUnmounted(() => {
   }
 
   .control-btn {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--overlay-60);
     /* 增加点击区域 */
     min-width: 44px;
     min-height: 44px;
@@ -2210,7 +2213,7 @@ onUnmounted(() => {
   }
 
   .play-pause-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-10);
     width: 64px;
     height: 64px;
     border-radius: 50%;
@@ -2224,7 +2227,7 @@ onUnmounted(() => {
 
   .play-pause-btn:active {
     transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-20);
   }
 
   .badge-quality-menu {
@@ -2247,7 +2250,7 @@ onUnmounted(() => {
   .toolbar-btn {
     width: 36px;
     height: 36px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-10);
   }
 
   .comment-current-lyric {
@@ -2304,7 +2307,7 @@ onUnmounted(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: -0.01em;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 4px var(--mask-30);
     line-height: 1.2;
     display: block;
     width: 100%;
@@ -2312,7 +2315,7 @@ onUnmounted(() => {
 
   .mini-artist {
     font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--overlay-60);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

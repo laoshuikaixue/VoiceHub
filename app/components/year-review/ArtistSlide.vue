@@ -40,13 +40,13 @@ const { yearReview } = useLocale()
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #1a0b2e;
+  background-color: var(--panel-bg-tertiary);
 }
 
 .bg-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, #000, transparent, transparent);
+  background: linear-gradient(to top, var(--bg-primary), transparent, transparent);
   opacity: 0.8;
   z-index: 10;
 }
@@ -56,7 +56,7 @@ const { yearReview } = useLocale()
   top: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(to bottom, #581c87, #000);
+  background: linear-gradient(to bottom, var(--color-collab-hover), var(--bg-primary));
   opacity: 0.5;
   animation: pulse 8s infinite;
 }
@@ -72,19 +72,19 @@ const { yearReview } = useLocale()
 }
 
 .label {
-  color: #d8b4fe; /* purple-300 */
+  color: var(--color-collab-light); /* purple-300 */
   letter-spacing: 0.3em;
   text-transform: uppercase;
   margin-bottom: 1.5rem;
   font-size: 0.875rem;
   font-weight: 700;
-  border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+  border-bottom: 1px solid var(--year-review-artist-label-border);
   padding-bottom: 0.5rem;
 }
 
 .text-intro {
   font-size: 1.5rem;
-  color: #d1d5db;
+  color: var(--text-primary-lighter);
   font-weight: 300;
   margin-bottom: 3rem;
 }
@@ -101,7 +101,7 @@ const { yearReview } = useLocale()
   transform: translate(-50%, -50%);
   width: 120%;
   height: 120%;
-  background: rgba(168, 85, 247, 0.2);
+  background: var(--year-review-artist-bg-blur);
   filter: blur(60px);
   border-radius: 50%;
 }
@@ -112,18 +112,18 @@ const { yearReview } = useLocale()
   font-weight: 900;
   font-style: italic;
   letter-spacing: -0.05em;
-  background-image: linear-gradient(to bottom right, #e9d5ff, #f472b6, #fb923c);
+  background-image: linear-gradient(to bottom right, var(--color-collab-light), var(--color-pink), var(--color-orange));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 25px 25px var(--mask-15));
   word-break: break-word;
   padding: 0 0.5rem;
 }
 
 .text-desc {
   margin-top: 3rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   max-width: 24rem;
   margin-left: auto;
   margin-right: auto;

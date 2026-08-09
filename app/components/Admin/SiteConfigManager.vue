@@ -3,28 +3,26 @@
     <!-- 顶部标题栏 -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-black text-zinc-100 tracking-tight">{{ locale.pageTitle }}</h2>
-        <p class="text-xs text-zinc-500 mt-1 font-medium">
+        <h2 class="text-2xl font-black text-text-primary tracking-tight">{{ locale.pageTitle }}</h2>
+        <p class="text-xs text-text-tertiary mt-1 font-medium">
           {{ locale.pageDescription }}
         </p>
       </div>
       <div class="flex gap-3">
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-5 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 text-xs font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-5 py-2 bg-bg-secondary border border-border-secondary hover:border-border-tertiary text-text-tertiary text-xs font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           @click="resetForm"
         >
           <RotateCcw :size="14" /> {{ locale.reset }}
         </button>
         <button
           :disabled="loading || saving"
-          class="flex items-center gap-2 px-8 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-900/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-8 py-2 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="saveConfig"
         >
           <template v-if="saving">
-            <div
-              class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"
-            />
+            <AppSpinner :size="14" />
             {{ locale.saving }}
           </template>
           <template v-else-if="saveSuccess"> <CheckCircle2 :size="14" /> {{ locale.saved }} </template>
@@ -34,19 +32,17 @@
     </div>
 
     <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-      <div
-        class="w-8 h-8 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin mb-4"
-      />
-      <p class="text-zinc-500 text-sm">{{ locale.loading }}</p>
+      <AppSpinner :size="32" class="mb-4" />
+      <p class="text-text-tertiary text-sm">{{ locale.loading }}</p>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- 基础信息 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
         >
-          <Globe :size="16" class="text-blue-500" /> {{ locale.basicInfo }}
+          <Globe :size="16" class="text-primary" /> {{ locale.basicInfo }}
         </h3>
         <div class="space-y-4">
           <div>
@@ -78,16 +74,16 @@
           </div>
           <div class="pt-2">
             <div
-              class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
             >
               <div>
-                <p class="text-xs font-bold text-zinc-200">{{ locale.showBeianIcon }}</p>
-                <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.showBeianIconDesc }}</p>
+                <p class="text-xs font-bold text-text-primary">{{ locale.showBeianIcon }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.showBeianIconDesc }}</p>
               </div>
               <input
                 v-model="formData.showBeianIcon"
                 type="checkbox"
-                class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
               />
             </div>
           </div>
@@ -106,9 +102,9 @@
       <!-- 视觉识别 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
         >
-          <ImageIcon :size="16" class="text-purple-500" /> {{ locale.visualIdentity }}
+          <ImageIcon :size="16" class="text-info" /> {{ locale.visualIdentity }}
         </h3>
         <div class="space-y-4">
           <div>
@@ -144,70 +140,70 @@
       <!-- 投稿逻辑设置 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
         >
-          <Settings2 :size="16" class="text-amber-500" /> {{ locale.submissionLogic }}
+          <Settings2 :size="16" class="text-warning" /> {{ locale.submissionLogic }}
         </h3>
         <div class="space-y-6">
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">{{ locale.enableCollaborative }}</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableCollaborativeDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">{{ locale.enableCollaborative }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCollaborativeDesc }}</p>
             </div>
             <input
               v-model="formData.enableCollaborativeSubmission"
               type="checkbox"
-              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">{{ locale.enableRemarks }}</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableRemarksDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">{{ locale.enableRemarks }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableRemarksDesc }}</p>
             </div>
             <input
               v-model="formData.enableSubmissionRemarks"
               type="checkbox"
-              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">{{ locale.enableCardCodeRequests }}</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeRequests }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
             </div>
             <input
               v-model="formData.enableCardCodeRequests"
               type="checkbox"
-              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">{{ locale.requireCardCodeForRequests }}</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">{{ locale.requireCardCodeForRequests }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
             </div>
             <input
               v-model="formData.requireCardCodeForRequests"
               type="checkbox"
-              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
           <div
             :class="[
-              'flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl transition-opacity',
+              'flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl transition-opacity',
               !formData.enableSubmissionLimit ||
               (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
                 ? 'opacity-50'
@@ -215,8 +211,8 @@
             ]"
           >
             <div class="pr-4">
-              <p class="text-xs font-bold text-zinc-200">{{ locale.enableCardCodeLimitBypass }}</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">
+              <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeLimitBypass }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">
                 {{ locale.enableCardCodeLimitBypassDesc }}
               </p>
             </div>
@@ -227,47 +223,47 @@
                 !formData.enableSubmissionLimit ||
                 (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
               "
-              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer disabled:cursor-not-allowed"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
             />
           </div>
 
           <div
-            class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+            class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-zinc-200">{{ locale.enableReplay }}</p>
-              <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableReplayDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">{{ locale.enableReplay }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableReplayDesc }}</p>
             </div>
             <input
               v-model="formData.enableReplayRequests"
               type="checkbox"
-              class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
           <div class="space-y-4">
             <div
-              class="flex items-center justify-between p-3 bg-zinc-950/50 border border-zinc-800 rounded-xl"
+              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
             >
               <div>
-                <p class="text-xs font-bold text-zinc-200">{{ locale.enableLimit }}</p>
-                <p class="text-[10px] text-zinc-500 mt-0.5">{{ locale.enableLimitDesc }}</p>
+                <p class="text-xs font-bold text-text-primary">{{ locale.enableLimit }}</p>
+                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableLimitDesc }}</p>
               </div>
               <input
                 v-model="formData.enableSubmissionLimit"
                 type="checkbox"
-                class="w-5 h-5 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
               />
             </div>
 
             <div v-if="formData.enableSubmissionLimit" class="space-y-4">
-              <div class="grid grid-cols-3 gap-2 p-1 bg-zinc-950 border border-zinc-800 rounded-xl">
+              <div class="grid grid-cols-3 gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
                 <button
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                     activeLimitTab === 'daily'
-                      ? 'bg-zinc-800 text-blue-400 shadow-sm'
-                      : 'text-zinc-600 hover:text-zinc-400'
+                      ? 'bg-bg-tertiary text-primary shadow-sm'
+                      : 'text-text-disabled hover:text-text-tertiary'
                   ]"
                   @click="handleLimitTypeChange('daily')"
                 >
@@ -277,8 +273,8 @@
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                     activeLimitTab === 'weekly'
-                      ? 'bg-zinc-800 text-blue-400 shadow-sm'
-                      : 'text-zinc-600 hover:text-zinc-400'
+                      ? 'bg-bg-tertiary text-primary shadow-sm'
+                      : 'text-text-disabled hover:text-text-tertiary'
                   ]"
                   @click="handleLimitTypeChange('weekly')"
                 >
@@ -288,8 +284,8 @@
                   :class="[
                     'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
                     activeLimitTab === 'monthly'
-                      ? 'bg-zinc-800 text-blue-400 shadow-sm'
-                      : 'text-zinc-600 hover:text-zinc-400'
+                      ? 'bg-bg-tertiary text-primary shadow-sm'
+                      : 'text-text-disabled hover:text-text-tertiary'
                   ]"
                   @click="handleLimitTypeChange('monthly')"
                 >
@@ -307,7 +303,7 @@
                     :class="inputClass"
                   />
                   <span
-                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-zinc-700 uppercase"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
                     >{{ locale.limitUnit }}</span
                   >
                 </div>
@@ -320,66 +316,66 @@
       <!-- 安全与隐私设置 -->
       <section :class="cardClass">
         <h3
-          class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2 border-b border-zinc-800 pb-4"
+          class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2 border-b border-border-secondary pb-4"
         >
-          <Shield :size="16" class="text-rose-500" /> {{ locale.securityPrivacy }}
+          <Shield :size="16" class="text-error" /> {{ locale.securityPrivacy }}
         </h3>
         <div class="space-y-4">
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
                   id="captcha-enabled"
                   v-model="formData.captchaEnabled"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <div class="flex-1 space-y-4">
                 <label for="captcha-enabled" class="cursor-pointer block">
-                  <p class="text-xs font-bold text-zinc-200">{{ locale.captchaEnabled }}</p>
-                  <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                  <p class="text-xs font-bold text-text-primary">{{ locale.captchaEnabled }}</p>
+                  <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
                     {{ locale.captchaEnabledDesc }}
                   </p>
                 </label>
 
-                <div v-if="formData.captchaEnabled" class="pt-2 border-t border-zinc-800 space-y-4">
+                <div v-if="formData.captchaEnabled" class="pt-2 border-t border-border-secondary space-y-4">
                   <!-- 验证码类型选择 -->
                   <div>
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaType }}</label>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.captchaType }}</label>
                     <div class="flex gap-4">
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
                           v-model="formData.captchaProvider"
                           type="radio"
                           value="graphic"
-                          class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer"
                         />
-                        <span class="text-sm text-zinc-300">{{ locale.captchaGraphic }}</span>
+                        <span class="text-sm text-text-secondary">{{ locale.captchaGraphic }}</span>
                       </label>
                       <label class="flex items-center gap-2 cursor-pointer">
                         <input
                           v-model="formData.captchaProvider"
                           type="radio"
                           value="turnstile"
-                          class="w-4 h-4 rounded-full border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                          class="w-4 h-4 rounded-full border-border-secondary bg-bg-secondary cursor-pointer"
                         />
-                        <span class="text-sm text-zinc-300">{{ locale.captchaTurnstile }}</span>
+                        <span class="text-sm text-text-secondary">{{ locale.captchaTurnstile }}</span>
                       </label>
                     </div>
                   </div>
 
                   <!-- 图形验证码配置 -->
                   <div v-if="formData.captchaProvider === 'graphic'">
-                    <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.captchaMaxFailures }}</label>
+                    <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.captchaMaxFailures }}</label>
                     <input
                       v-model.number="formData.captchaMaxFailures"
                       type="number"
                       min="1"
                       :placeholder="locale.captchaMaxFailuresPlaceholder"
-                      class="w-full max-w-[200px] bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                      class="w-full max-w-[200px] bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     />
-                    <p class="text-[10px] text-zinc-500 mt-1">
+                    <p class="text-[10px] text-text-tertiary mt-1">
                       {{ locale.captchaMaxFailuresDesc }}
                     </p>
                   </div>
@@ -387,23 +383,23 @@
                   <!-- Turnstile 配置 -->
                   <div v-if="formData.captchaProvider === 'turnstile'" class="space-y-4">
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSiteKey }}</label>
+                      <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSiteKey }}</label>
                       <input
                         v-model="formData.turnstileSiteKey"
                         type="text"
                         :placeholder="locale.turnstileSiteKeyPlaceholder"
-                        class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                       />
                     </div>
                     <div>
-                      <label class="block text-xs font-bold text-zinc-400 mb-2">{{ locale.turnstileSecretKey }}</label>
+                      <label class="block text-xs font-bold text-text-tertiary mb-2">{{ locale.turnstileSecretKey }}</label>
                       <input
                         v-model="formData.turnstileSecretKey"
                         type="password"
                         :placeholder="locale.turnstileSecretKeyPlaceholder"
-                        class="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        class="w-full bg-bg-secondary border border-border-secondary rounded-lg px-3 py-2 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                       />
-                      <p class="text-[10px] text-zinc-500 mt-1">
+                      <p class="text-[10px] text-text-tertiary mt-1">
                         {{ locale.turnstileSecretKeyDesc }}
                       </p>
                     </div>
@@ -413,89 +409,89 @@
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
                   id="force-password-change-first-login"
                   v-model="formData.forcePasswordChangeOnFirstLogin"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="force-password-change-first-login" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">
+                <p class="text-xs font-bold text-text-primary">
                   {{ locale.forcePasswordChangeOnFirstLogin }}
                 </p>
-                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
                   {{ locale.forcePasswordChangeOnFirstLoginDesc }}
                 </p>
               </label>
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
                   id="show-keywords"
                   v-model="formData.showBlacklistKeywords"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="show-keywords" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">{{ locale.showBlacklistKeywords }}</p>
-                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                <p class="text-xs font-bold text-text-primary">{{ locale.showBlacklistKeywords }}</p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
                   {{ locale.showBlacklistKeywordsDesc }}
                 </p>
               </label>
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
                   id="hide-students"
                   v-model="formData.hideStudentInfo"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="hide-students" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">{{ locale.hideStudentInfo }}</p>
-                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+                <p class="text-xs font-bold text-text-primary">{{ locale.hideStudentInfo }}</p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
                   {{ locale.hideStudentInfoDesc }}
                 </p>
               </label>
             </div>
           </div>
 
-          <div class="p-4 bg-zinc-950/50 border border-zinc-800 rounded-xl space-y-4">
+          <div class="p-4 bg-bg-primary-50 border border-border-secondary rounded-xl space-y-4">
             <div class="flex items-start gap-4">
               <div class="shrink-0 pt-0.5">
                 <input
                   id="telemetry-enabled"
                   v-model="formData.telemetryEnabled"
                   type="checkbox"
-                  class="w-4 h-4 rounded border-zinc-800 bg-zinc-900 accent-blue-600 cursor-pointer"
+                  class="w-4 h-4 rounded border-border-secondary bg-bg-secondary cursor-pointer"
                 />
               </div>
               <label for="telemetry-enabled" class="cursor-pointer">
-                <p class="text-xs font-bold text-zinc-200">{{ locale.telemetryEnabled }}</p>
-                <p class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
-                  {{ locale.telemetryEnabledDesc }} <strong class="text-zinc-400">{{ locale.telemetryPrivacy }}</strong>
+                <p class="text-xs font-bold text-text-primary">{{ locale.telemetryEnabled }}</p>
+                <p class="text-[10px] text-text-tertiary mt-1 leading-relaxed">
+                  {{ locale.telemetryEnabledDesc }} <strong class="text-text-tertiary">{{ locale.telemetryPrivacy }}</strong>
                 </p>
               </label>
             </div>
           </div>
 
           <div
-            class="p-4 bg-blue-500/5 border border-blue-500/10 rounded-xl flex items-start gap-3"
+            class="p-4 bg-primary-5 border border-primary-10 rounded-xl flex items-start gap-3"
           >
-            <AlertCircle class="text-blue-500 shrink-0 mt-0.5" :size="14" />
-            <p class="text-[10px] text-zinc-500 leading-normal">
+            <AlertCircle class="text-primary shrink-0 mt-0.5" :size="14" />
+            <p class="text-[10px] text-text-tertiary leading-normal">
               {{ locale.configWarning }}
             </p>
           </div>
@@ -504,21 +500,21 @@
 
       <!-- 投稿须知 -->
       <section
-        class="lg:col-span-2 bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 space-y-6"
+        class="lg:col-span-2 bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 space-y-6"
       >
-        <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <div class="flex items-center justify-between border-b border-border-secondary pb-4">
           <h3
-            class="text-sm font-black text-zinc-100 uppercase tracking-widest flex items-center gap-2"
+            class="text-sm font-black text-text-primary uppercase tracking-widest flex items-center gap-2"
           >
-            <FileText :size="16" class="text-emerald-500" /> {{ locale.submissionGuidelines }}
+            <FileText :size="16" class="text-success" /> {{ locale.submissionGuidelines }}
           </h3>
-          <div class="flex gap-1 bg-zinc-950 rounded-lg p-1">
+          <div class="flex gap-1 bg-bg-primary rounded-lg p-1">
             <button
               :class="[
                 'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
                 editMode === 'edit'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-primary-hover text-text-primary shadow-sm'
+                  : 'text-text-tertiary hover:text-text-secondary'
               ]"
               @click="editMode = 'edit'"
             >
@@ -528,8 +524,8 @@
               :class="[
                 'px-3 py-1.5 text-[10px] font-bold rounded-md transition-all uppercase tracking-wider',
                 editMode === 'preview'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-primary-hover text-text-primary shadow-sm'
+                  : 'text-text-tertiary hover:text-text-secondary'
               ]"
               @click="editMode = 'preview'"
             >
@@ -546,7 +542,7 @@
         />
         <div
           v-else
-          class="guidelines-preview markdown-body w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-300 leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
+          class="guidelines-preview markdown-body w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-secondary leading-relaxed min-h-[150px] max-h-[400px] overflow-y-auto"
           v-html="renderedPreview"
         />
       </section>
@@ -570,6 +566,7 @@ import {
   CheckCircle2,
   AlertCircle
 } from '@lucide/vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'
@@ -589,9 +586,9 @@ const renderedPreview = computed(() => renderMarkdown(formData.value.submissionG
 
 // 样式类常量
 const inputClass =
-  'w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-zinc-800'
-const labelClass = 'text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1 block mb-2'
-const cardClass = 'bg-zinc-900/40 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6'
+  'w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-30 transition-all placeholder:text-text-primary'
+const labelClass = 'text-[10px] font-black text-text-disabled uppercase tracking-widest px-1 block mb-2'
+const cardClass = 'bg-bg-secondary-40 border border-border-secondary rounded-2xl p-6 shadow-xl space-y-6'
 
 const defaultSubmissionGuidelines = computed(() => locale.value?.defaultSubmissionGuidelines || '请遵守校园广播站投稿规范。')
 

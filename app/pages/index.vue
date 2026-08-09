@@ -14,7 +14,7 @@
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" :src="logo" />
+            <img alt="VoiceHub Logo" class="logo-image" :src="getLogo()" />
           </NuxtLink>
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider-container">
@@ -27,6 +27,36 @@
         <div class="user-section">
           <ClientOnly>
             <div class="user-actions-row">
+              <div class="theme-switcher">
+                <button
+                  type="button"
+                  class="theme-switcher-trigger"
+                  :class="{ 'is-open': showThemeMenu }"
+                  :aria-label="'主题'"
+                  :aria-expanded="showThemeMenu"
+                  @click="toggleThemeMenu"
+                >
+                  <Icon name="gift" :size="19" />
+                </button>
+
+                <Transition name="dropdown-fade">
+                  <div v-if="showThemeMenu" class="theme-dropdown" role="listbox">
+                    <button
+                      v-for="themeItem in themes"
+                      :key="themeItem"
+                      type="button"
+                      role="option"
+                      class="theme-option"
+                      :class="{ 'is-active': selectedTheme === themeItem }"
+                      :aria-selected="selectedTheme === themeItem"
+                      @click="selectTheme(themeItem)"
+                    >
+                      {{ getThemeLabel(themeItem) }}
+                    </button>
+                  </div>
+                </Transition>
+              </div>
+
               <div class="language-switcher">
                 <button
                   type="button"
@@ -43,6 +73,16 @@
                 <Transition name="dropdown-fade">
                   <div v-if="showLanguageMenu" class="language-dropdown" role="listbox">
                     <button
+                      type="button"
+                      role="option"
+                      class="language-option"
+                      :class="{ 'is-active': isFollowingSystem }"
+                      :aria-selected="isFollowingSystem"
+                      @click="selectFollowSystem"
+                    >
+                      <span class="language-option-label">{{ common.followSystem }}</span>
+                    </button>
+                    <button
                       v-for="localeOption in supportedLocales"
                       :key="localeOption.code"
                       type="button"
@@ -53,12 +93,6 @@
                       @click="selectLocale(localeOption.code)"
                     >
                       <span class="language-option-label">{{ localeOption.label }}</span>
-                      <Icon
-                        v-if="currentLocale === localeOption.code"
-                        name="check"
-                        :size="16"
-                        color="#0b5afe"
-                      />
                     </button>
                   </div>
                 </Transition>
@@ -122,7 +156,7 @@
 
       <!-- 中间主体内容区域 -->
       <div class="content-area">
-        <!-- 选项卡区�?-->
+        <!-- 选项卡区域-->
         <div class="tabs-row">
           <div
             :class="{ active: activeTab === 'schedule' }"
@@ -237,7 +271,7 @@
                 </div>
               </div>
               <div v-else class="notification-container">
-                <!-- 标题和设置按�?-->
+                <!-- 标题和设置按钮-->
                 <div class="notification-header">
                   <div class="notification-header-main">
                     <h2 class="notification-title">{{ locale.notificationCenter }}</h2>
@@ -351,13 +385,13 @@
                 <!-- 通知列表 -->
                 <div class="notification-list">
                   <div v-if="notificationsLoading" class="loading-indicator">
-                    <div class="loading-spinner" />
+                    <AppSpinner :size="32" />
                     <span>{{ locale.loading }}</span>
                   </div>
 
                   <div v-else-if="userNotifications.length === 0" class="empty-notification">
                     <div class="empty-icon">
-                      <Icon :size="48" color="#6b7280" name="bell" />
+                      <Icon :size="48" color="var(--text-muted)" name="bell" />
                     </div>
                     <p>
                       {{
@@ -387,72 +421,81 @@
                         <div class="notification-card-header">
                           <div class="notification-icon-type">
                             <Icon
-                              v-if="notification.important"
+                              v-if="notification.type === 'SONG_SELECTED'"
                               :size="20"
-                              color="#fbbf24"
-                              name="bell-ring"
-                            />
-                            <Icon
-                              v-else-if="notification.type === 'SONG_SELECTED'"
-                              :size="20"
-                              color="#4f46e5"
+                              color="var(--color-indigo-hover)"
                               name="check"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_PLAYED'"
                               :size="20"
-                              color="#10b981"
+                              color="var(--color-success)"
                               name="play"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_VOTED'"
                               :size="20"
-                              color="#f59e0b"
+                              color="var(--color-warning)"
                               name="thumbs-up"
                             />
                             <Icon
                               v-else-if="notification.type === 'SONG_REJECTED'"
                               :size="20"
-                              color="#ef4444"
+                              color="var(--color-error)"
                               name="x-circle"
                             />
                             <Icon
                               v-else-if="notification.type === 'COLLABORATION_INVITE'"
                               :size="20"
-                              color="#0B5AFE"
+                              color="var(--color-accent)"
                               name="users"
                             />
                             <Icon
                               v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
                               :size="20"
-                              color="#8b5cf6"
+                              color="var(--color-collab)"
                               name="message-circle"
                             />
-                            <Icon v-else :size="20" color="#6b7280" name="bell" />
+                            <Icon v-else :size="20" color="var(--text-muted)" name="bell" />
                           </div>
                           <div class="notification-title-row">
                             <div class="notification-heading-row">
                               <div class="notification-title">
-                                <span>{{ notification.title || getNotificationTypeLabel(notification.type) }}</span>
-                                <span
-                                  v-if="notification.type === 'COLLABORATION_INVITE' && notification.handled"
-                                  :class="[
-                                    'status-tag',
-                                    notification.status === 'ACCEPTED'
-                                      ? 'accepted'
-                                      : notification.status === 'INVALID'
-                                        ? 'invalid'
-                                        : 'rejected'
-                                  ]"
+                                <span v-if="notification.type === 'SONG_SELECTED'">{{ locale.notificationTypes.SONG_SELECTED }}</span>
+                                <span v-else-if="notification.type === 'SONG_PLAYED'"
+                                  >{{ locale.notificationTypes.SONG_PLAYED }}</span
                                 >
-                                  {{
-                                    notification.status === 'ACCEPTED'
-                                      ? locale.inviteStatus.accepted
-                                      : notification.status === 'INVALID'
-                                        ? locale.inviteStatus.invalid
-                                        : locale.inviteStatus.rejected
-                                  }}
+                                <span v-else-if="notification.type === 'SONG_VOTED'">{{ locale.notificationTypes.SONG_VOTED }}</span>
+                                <span v-else-if="notification.type === 'SONG_REJECTED'"
+                                  >{{ locale.notificationTypes.SONG_REJECTED }}</span
+                                >
+                                <span v-else-if="notification.type === 'COLLABORATION_INVITE'">
+                                  {{ locale.notificationTypes.COLLABORATION_INVITE }}
+                                  <span
+                                    v-if="notification.handled"
+                                    :class="[
+                                      'status-tag',
+                                      notification.status === 'ACCEPTED'
+                                        ? 'accepted'
+                                        : notification.status === 'INVALID'
+                                          ? 'invalid'
+                                          : 'rejected'
+                                    ]"
+                                  >
+                                    {{
+                                      notification.status === 'ACCEPTED'
+                                        ? locale.inviteStatus.accepted
+                                        : notification.status === 'INVALID'
+                                          ? locale.inviteStatus.invalid
+                                          : locale.inviteStatus.rejected
+                                    }}
+                                  </span>
                                 </span>
+                                <span v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
+                                  >{{ locale.notificationTypes.COLLABORATION_RESPONSE }}</span
+                                >
+                                <span v-else>{{ locale.notificationTypes.SYSTEM }}</span>
+                                <span v-if="!notification.read" class="unread-indicator" />
                               </div>
                               <span
                                 class="notification-read-status"
@@ -482,7 +525,7 @@
                             {{ notification.message }}
                           </div>
 
-                          <!-- 联合投稿邀请操作按�?-->
+                          <!-- 联合投稿邀请操作按钮-->
                           <div
                             v-if="
                               notification.type === 'COLLABORATION_INVITE' && !notification.handled
@@ -554,7 +597,7 @@
                   </div>
 
                   <div class="pagination-controls">
-                    <!-- 每页显示数量选择�?-->
+                    <!-- 每页显示数量选择器-->
                     <div class="page-size-selector">
                       <label for="pageSize">{{ locale.pageSize }}</label>
                       <CustomSelect
@@ -636,24 +679,32 @@
                     </div>
                   </div>
 
-                  <!-- 分页加载状�?-->
+                  <!-- 分页加载状态-->
                   <div
                     v-if="notificationsService.isPaginationLoading.value"
                     class="pagination-loading"
                   >
-                    <div class="loading-spinner" />
+                    <AppSpinner :size="16" />
                     <span>{{ locale.loading }}</span>
                   </div>
                 </div>
 
                 <!-- 底部操作按钮 -->
                 <div v-if="userNotifications.length > 0" class="notification-actions-bar">
+                  <button
+                    :class="{ disabled: !hasUnreadNotifications }"
+                    :disabled="!hasUnreadNotifications"
+                    class="action-button-large"
+                    @click="markAllNotificationsAsRead"
+                  >
+                    {{ locale.markAllRead }}
+                  </button>
                   <button class="action-button-large danger" @click="clearAllNotifications">
                     {{ locale.clearAllMessages }}
                   </button>
                 </div>
 
-                <!-- 确认对话�?-->
+                <!-- 确认对话框-->
                 <ConfirmDialog
                   v-model:show="showConfirmDialog"
                   :cancel-text="confirmDialogConfig.cancelText"
@@ -686,26 +737,26 @@
       >
         <div
           v-if="showRules"
-          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          class="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-bg-primary-80 backdrop-blur-sm"
           @click.self="showRules = false"
         >
           <div
-            class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+            class="bg-bg-secondary border border-border-secondary w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col"
           >
             <div class="p-8 pb-4 flex items-center justify-between">
               <div>
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight flex items-center gap-3">
+                <h3 class="text-xl font-black text-text-primary tracking-tight flex items-center gap-3">
                   <div
-                    class="w-10 h-10 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                    class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                   >
                     <Icon name="bell" :size="20" />
                   </div>
                   {{ locale.rulesTitle }}
                 </h3>
-                <p class="text-xs text-zinc-500 mt-1 ml-13">{{ locale.rulesDesc }}</p>
+                <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
-                class="p-3 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 rounded-2xl transition-all"
+                class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="showRules = false"
               >
                 <Icon name="x" :size="20" />
@@ -715,30 +766,30 @@
             <div class="p-8 pt-4 space-y-8">
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
+                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
                 >
                   <Icon name="message-circle" :size="12" />
                   {{ locale.submissionGuidelines }}
                 </h4>
                 <div
                   v-if="submissionGuidelines"
-                  class="guidelines-rendered markdown-body text-sm text-zinc-400 leading-relaxed font-medium bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  class="guidelines-rendered markdown-body text-sm text-text-tertiary leading-relaxed font-medium bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
                   v-html="renderedGuidelines"
                 />
                 <div
                   v-else
-                  class="space-y-3 bg-zinc-950/50 p-6 rounded-3xl border border-zinc-800/50"
+                  class="space-y-3 bg-bg-primary-50 p-6 rounded-3xl border border-border-secondary-50"
                 >
-                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
-                    <span class="text-blue-500 font-black">01</span>
+                  <div class="flex gap-3 text-sm text-text-tertiary font-medium">
+                    <span class="text-primary font-black">01</span>
                     <p>{{ locale.defaultRules[0] }}</p>
                   </div>
-                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
-                    <span class="text-blue-500 font-black">02</span>
+                  <div class="flex gap-3 text-sm text-text-tertiary font-medium">
+                    <span class="text-primary font-black">02</span>
                     <p>{{ locale.defaultRules[1] }}</p>
                   </div>
-                  <div class="flex gap-3 text-sm text-zinc-400 font-medium">
-                    <span class="text-blue-500 font-black">03</span>
+                  <div class="flex gap-3 text-sm text-text-tertiary font-medium">
+                    <span class="text-primary font-black">03</span>
                     <p>{{ locale.defaultRules[2] }}</p>
                   </div>
                 </div>
@@ -746,22 +797,22 @@
 
               <div class="rules-group space-y-4">
                 <h4
-                  class="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2"
+                  class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
                 >
                   <Icon name="calendar" :size="12" />
                   {{ locale.playbackTime }}
                 </h4>
                 <div
-                  class="bg-blue-600/10 border border-blue-500/20 p-6 rounded-3xl flex items-center gap-4"
+                  class="bg-primary-hover-10 border border-primary-20 p-6 rounded-3xl flex items-center gap-4"
                 >
                   <div
-                    class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40"
+                    class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-[var(--primary-glow-40)]"
                   >
                     <Icon name="clock" :size="24" />
                   </div>
                   <div>
-                    <p class="text-sm font-black text-zinc-100">{{ locale.playbackTimeDesc }}</p>
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
+                    <p class="text-sm font-black text-text-primary">{{ locale.playbackTimeDesc }}</p>
+                    <p class="text-[10px] text-text-tertiary font-bold uppercase tracking-widest mt-0.5">
                       PLAYBACK TIME
                     </p>
                   </div>
@@ -771,7 +822,7 @@
 
             <div class="p-8 pt-0">
               <button
-                class="w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
+                class="w-full px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest shadow-lg active:scale-95"
                 @click="showRules = false"
               >
                 {{ locale.gotIt }}
@@ -788,8 +839,8 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import logo from '~~/public/images/logo.svg'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
@@ -799,12 +850,15 @@ import { useToast } from '~/composables/useToast'
 import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useLocale } from '~/utils/locale'
+import { useTheme } from '~/composables/useTheme'
+import { useThemeImage } from '~/composables/useThemeImage'
 
-// 获取运行时配�?
+// 获取运行时配置
 const config = useRuntimeConfig()
 const router = useRouter()
 const route = useRoute()
-const { pages, common, currentLocale, setLocale, supportedLocales } = useLocale()
+const { pages, common, currentLocale, setLocale, supportedLocales, isFollowingSystem, followSystemLocale } =
+  useLocale()
 const locale = computed(() => pages.value?.home || {})
 const getHomeText = (section, key, ...args) => formatLocaleValue(locale.value?.[section]?.[key], ...args)
 const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
@@ -824,7 +878,8 @@ const {
 const renderedGuidelines = computed(() => renderMarkdown(submissionGuidelines.value))
 
 const auth = useAuth()
-
+const { showToast } = useToast()
+const { getLogo } = useThemeImage()
 const isClientAuthenticated = computed(() => auth?.isAuthenticated?.value || false)
 const isAdmin = computed(() => auth?.isAdmin?.value || false)
 const user = computed(() => auth?.user?.value || null)
@@ -842,21 +897,21 @@ const userClassInfo = computed(() => {
 })
 
 const songs = useSongs()
-// 立即初始化通知服务，避免时序问�?
+// 立即初始化通知服务，避免时序问题
 const notificationsService = useNotifications()
-const { showToast } = useToast()
 const unreadNotificationCount = ref(0)
 
-// 模拟数据初始�?
+// 模拟数据初初始化
 const songCount = ref(0)
 const scheduleCount = ref(0)
 const isRequestOpen = ref(true)
 
-// 弹窗状�?
+// 弹窗状态
 const showRequestModal = ref(false)
 const showRules = ref(false)
 const showUserActions = ref(false)
 const showLanguageMenu = ref(false)
+const showThemeMenu = ref(false)
 const avatarError = ref(false)
 
 const BOOT_PROGRESS = {
@@ -915,19 +970,60 @@ const finishBootLoading = async (startedAt) => {
 const toggleUserActions = (event) => {
   event.stopPropagation()
   showUserActions.value = !showUserActions.value
+  if (showUserActions.value) {
+    showLanguageMenu.value = false
+    showThemeMenu.value = false
+  }
 }
 
 const toggleLanguageMenu = (event) => {
   event.stopPropagation()
   showLanguageMenu.value = !showLanguageMenu.value
+  if (showLanguageMenu.value) {
+    showUserActions.value = false
+    showThemeMenu.value = false
+  }
 }
 
 const selectLocale = (code) => {
-  setLocale(code)
+  // 手动选择为长期偏好（manual），此后进入网站不再跟随系统语言
+  setLocale(code, true)
   showLanguageMenu.value = false
 }
 
-// 监听用户头像变化，重置错误状�?
+const selectFollowSystem = () => {
+  // 清除手动偏好，回到跟随系统语言模式
+  followSystemLocale()
+  showLanguageMenu.value = false
+}
+
+// ==================== 主题切换 ====================
+const { selectedTheme, themes, setTheme: setThemeFn } = useTheme()
+const { theme: themeLocale } = useLocale()
+
+const toggleThemeMenu = (event) => {
+  event.stopPropagation()
+  showThemeMenu.value = !showThemeMenu.value
+  if (showThemeMenu.value) {
+    showUserActions.value = false
+    showLanguageMenu.value = false
+  }
+}
+
+const closeThemeMenu = () => {
+  showThemeMenu.value = false
+}
+
+const selectTheme = (theme) => {
+  setThemeFn(theme)
+  closeThemeMenu()
+}
+
+const getThemeLabel = (theme) => {
+  return themeLocale.value[theme]
+}
+
+// 监听用户头像变化，重置错误状态
 watch(
   () => user.value?.avatar,
   () => {
@@ -950,6 +1046,12 @@ const handleClickOutside = (event) => {
       showLanguageMenu.value = false
     }
   }
+  if (showThemeMenu.value) {
+    const switcher = document.querySelector('.theme-switcher')
+    if (switcher && !switcher.contains(event.target)) {
+      showThemeMenu.value = false
+    }
+  }
 }
 
 onMounted(() => {
@@ -960,7 +1062,7 @@ onUnmounted(() => {
   window.removeEventListener('click', handleClickOutside)
 })
 
-// 标签页状�?
+// 标签页状态
 const activeTab = ref('schedule') // 默认显示播出排期
 
 const tabOrder = ['schedule', 'songs', 'request', 'notification']
@@ -1077,14 +1179,14 @@ const loadNotifications = async () => {
   }
 }
 
-// 标记通知为已�?
+// 标记通知为已读
 const markNotificationAsRead = async (id) => {
   if (notificationsService) {
     await notificationsService.markAsRead(id)
   }
 }
 
-// 标记所有通知为已�?
+// 标记所有通知为已读
 const markAllNotificationsAsRead = async () => {
   try {
     if (notificationsService) {
@@ -1125,7 +1227,7 @@ const clearAllNotifications = async () => {
   showConfirmDialog.value = true
 }
 
-// 确认对话框相关状�?
+// 确认对话框相关状态
 const showConfirmDialog = ref(false)
 const confirmDialogConfig = ref({
   title: '',
@@ -1169,7 +1271,7 @@ const handlePageSizeChange = async (newSize) => {
   }
 }
 
-// 获取可见的页码列�?
+// 获取可见的页码列表
 const getVisiblePages = () => {
   if (!notificationsService) return []
 
@@ -1178,12 +1280,12 @@ const getVisiblePages = () => {
   const pages = []
 
   if (totalPages <= 7) {
-    // 总页数少于等�?页，显示所有页�?
+    // 总页数少于等于7页，显示所有页面
     for (let i = 1; i <= totalPages; i++) {
       pages.push(i)
     }
   } else {
-    // 总页数大�?页，显示省略�?
+    // 总页数大于7页，显示省略号
     if (currentPage <= 4) {
       // 当前页在前面
       for (let i = 1; i <= 5; i++) {
@@ -1258,7 +1360,7 @@ const formatNotificationTime = (timeString) => {
     return formatLocaleValue(locale.value.time.hoursAgo, Math.floor(diff / 3600000))
   }
 
-  // 小于30�?
+  // 小于30天
   if (diff < 2592000000) {
     return formatLocaleValue(locale.value.time.daysAgo, Math.floor(diff / 86400000))
   }
@@ -1312,7 +1414,7 @@ onMounted(() => {
   }
 })
 
-// 获取当前日期和星�?
+// 获取当前日期和星期
 const getCurrentDate = () => {
   const now = getSyncedDate()
   const year = now.getFullYear()
@@ -1326,14 +1428,14 @@ const getCurrentDate = () => {
 // RequestForm组件引用
 const requestFormRef = ref(null)
 
-// 更新歌曲数量统计（优化版本，避免重复请求�?
+// 更新歌曲数量统计（优化版本，避免重复请求
 const updateSongCounts = async (semester = null) => {
   try {
     // 更新排期歌曲数量
     const schedules = songs?.publicSchedules?.value || []
     scheduleCount.value = schedules.length
 
-    // 更新总歌曲数�?
+    // 更新总歌曲数量
     if (isClientAuthenticated.value && songs?.songs?.value) {
       // 已登录用户：使用完整歌曲列表
       songCount.value = songs.songs.value.length
@@ -1494,7 +1596,7 @@ const realSongCount = computed(() => {
 const publicSchedules = computed(() => songs?.publicSchedules?.value || [])
 const allSongs = computed(() => songs?.visibleSongs?.value || [])
 const filteredSongs = computed(() => {
-  // 返回所有歌曲，但将已播放的歌曲排在最�?
+  // 返回所有歌曲，但将已播放的歌曲排在最前
   if (allSongs.value && allSongs.value.length > 0) {
     const unplayedSongs = allSongs.value.filter((song) => !song.played)
     const playedSongs = allSongs.value.filter((song) => song.played)
@@ -1529,12 +1631,12 @@ const handleRequest = async (songData) => {
       console.log('???????????')
       await refreshSongs()
 
-      // 刷新投稿状�?
+      // 刷新投稿状态
       if (requestFormRef.value && requestFormRef.value.refreshSubmissionStatus) {
         await requestFormRef.value.refreshSubmissionStatus()
       }
 
-      // 如果当前在歌曲列表页，自动切换到该页�?
+      // 如果当前在歌曲列表页，自动切换到该页面
       if (activeTab.value !== 'songs') {
         setTimeout(() => {
           handleTabClick('songs')
@@ -1565,7 +1667,7 @@ const handleVote = async (song) => {
   try {
     if (!songs) return
 
-    // 调用投票API - 通知已在composable中处�?
+    // 调用投票API - 通知已在composable中处理
     // 检查是否是取消投票请求
     if (song.unvote) {
       // 传递完整对象以支持撤销投票功能
@@ -1613,7 +1715,7 @@ const handleWithdraw = async (song) => {
   try {
     if (!songs) return
 
-    // 调用撤回API - 通知已在composable中处�?
+    // 调用撤回API - 通知已在composable中处理
     await songs.withdrawSong(song.id)
     // 更新计数
     updateSongCounts()
@@ -1642,7 +1744,7 @@ const refreshSongs = async () => {
 const handleSemesterChange = async (semester) => {
   try {
     // 通过事件总线通知SongList组件进行前端过滤
-    // 使用nextTick确保事件在DOM更新后触�?
+    // 使用nextTick确保事件在DOM更新后触发
     await nextTick()
 
     // 触发自定义事件，通知所有监听的组件
@@ -1660,9 +1762,9 @@ const handleSemesterChange = async (semester) => {
   }
 }
 
-// 更新通知数量 - 可以保留这个函数但不再调�?
+// 更新通知数量 - 可以保留这个函数但不再调用
 const updateNotificationCount = async () => {
-  // 函数保留但不再使�?
+  // 函数保留但不再使用
 }
 
 // 处理登出
@@ -1672,7 +1774,7 @@ const handleLogout = () => {
   }
 }
 
-// 处理进入后台的点击动�?
+// 处理进入后台的点击动画
 const handleDashboardClick = (event) => {
   const button = event.currentTarget
   button.classList.add('clicking')
@@ -1713,7 +1815,7 @@ const handleCollaborationReply = async (notification, accept) => {
     notification.handled = true
     notification.status = accept ? 'ACCEPTED' : 'REJECTED'
     notification.repliedAt = new Date()
-    // notification.message += accept ? ' (已接�?' : ' (已拒�?'
+    // notification.message += accept ? ' (已接受' : ' (已拒绝'
 
     if (window.$showNotification) {
       window.$showNotification(
@@ -1722,7 +1824,7 @@ const handleCollaborationReply = async (notification, accept) => {
       )
     }
 
-    // 标记通知为已�?
+    // 标记通知为已读
     await markNotificationAsRead(notification.id)
 
     // 刷新歌曲列表
@@ -1743,7 +1845,7 @@ const handleCollaborationReply = async (notification, accept) => {
   }
 }
 
-// 格式化刷新间�?
+// 格式化刷新间隔
 const formatRefreshInterval = (seconds) => {
   if (seconds < 60) {
     return formatLocaleValue(locale.value.time.seconds, seconds)
@@ -1773,12 +1875,12 @@ const vRipple = {
 
       setTimeout(() => {
         ripple.remove()
-      }, 600) // 与CSS动画时间一�?
+      }, 600) // 与CSS动画时间一致
     })
   }
 }
 
-// 处理标签点击事件，添加动画效�?
+// 处理标签点击事件，添加动画效果
 const handleTabClick = (tab) => {
   activeTab.value = tab
 }
@@ -1795,21 +1897,21 @@ const showLoginNotice = () => {
   }
 }
 
-// 检查用户是否需要修改密�?
+// 检查用户是否需要修改密码
 const checkPasswordChangeRequired = async (user = null) => {
   try {
-    // 使用传入的用户信息或当前认证状态中的用户信�?
+    // 使用传入的用户信息或当前认证状态中的用户信息
     const currentUser = user || auth?.user?.value
 
     if (currentUser && currentUser.requirePasswordChange) {
-      // 延迟1秒显示通知，确保页面加载完�?
+      // 延迟1秒显示通知，确保页面加载完成
       setTimeout(() => {
         if (window.$showNotification) {
           window.$showNotification(
             getMessage('changePasswordTip'),
             'info',
             true,
-            8000 // 显示8�?
+            8000 // 显示8秒
           )
         }
       }, 1000)
@@ -1820,7 +1922,7 @@ const checkPasswordChangeRequired = async (user = null) => {
 }
 
 // 添加未读通知计数
-// 之前已声明了unreadNotificationCount，这里对其进行增�?
+// 之前已声明了unreadNotificationCount，这里对其进行递增操作
 if (
   notificationsService &&
   notificationsService.unreadCount &&
@@ -1846,9 +1948,9 @@ if (
 .home {
   width: 100%;
   flex: 1;
-  background-color: #121318;
+  background-color: var(--panel-bg-darker);
   padding: 1.5rem;
-  color: #ffffff;
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
   min-height: 100vh; /* 确保至少占满视口 */
@@ -1861,7 +1963,7 @@ if (
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100%; /* 改为占满父容器高度而不是视口高�?*/
+  height: 100%; /* 改为占满父容器高度而不是视口高度*/
 }
 
 /* 添加顶部Ellipse 1效果 */
@@ -1874,9 +1976,9 @@ if (
   height: 309px;
   background: radial-gradient(
     ellipse at center,
-    rgba(11, 90, 254, 0.3) 0%,
-    rgba(11, 90, 254, 0.15) 30%,
-    rgba(11, 90, 254, 0) 70%
+    var(--color-accent-alpha-30) 0%,
+    var(--color-accent-alpha-15) 30%,
+    transparent 70%
   );
   z-index: 0;
   pointer-events: none;
@@ -1922,9 +2024,9 @@ if (
   height: 100px;
   background: linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.3),
-    rgba(255, 255, 255, 0.8),
-    rgba(255, 255, 255, 0.3)
+    var(--overlay-30),
+    var(--overlay-80),
+    var(--overlay-30)
   );
   border-radius: 1px;
 }
@@ -1974,12 +2076,12 @@ if (
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -1990,9 +2092,9 @@ if (
 .language-switcher-trigger:hover,
 .language-switcher-trigger:focus-visible,
 .language-switcher-trigger.is-open {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-color: var(--overlay-25);
+  background: var(--overlay-8);
   outline: none;
 }
 
@@ -2000,12 +2102,12 @@ if (
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  background: #1a1a1f;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel-bg);
+  border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 8px;
   min-width: 160px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px var(--mask-50);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2021,7 +2123,7 @@ if (
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -2032,17 +2134,93 @@ if (
 
 .language-option:hover,
 .language-option:focus-visible {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--overlay-5);
+  color: var(--text-primary);
   outline: none;
 }
 
 .language-option.is-active {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .language-option.is-active .language-option-label {
   font-weight: 600;
+}
+
+/* ==================== 主题切换 ==================== */
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+}
+
+.theme-switcher-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--overlay-10);
+  border-radius: 50%;
+  background: var(--overlay-4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--overlay-70);
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.theme-switcher-trigger:hover,
+.theme-switcher-trigger:focus-visible,
+.theme-switcher-trigger.is-open {
+  color: var(--text-primary);
+  border-color: var(--overlay-25);
+  background: var(--overlay-8);
+  outline: none;
+}
+
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: var(--panel-bg);
+  border: 1px solid var(--overlay-10);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 30px var(--mask-50);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 200;
+}
+
+.theme-option {
+  display: block;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--overlay-70);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: left;
+}
+
+.theme-option:hover,
+.theme-option:focus-visible {
+  background: var(--overlay-5);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.theme-option.is-active {
+  color: var(--text-primary);
 }
 
 .user-details-desktop {
@@ -2054,21 +2232,21 @@ if (
 .user-name {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
 }
 
 .user-badge {
   font-size: 10px;
   padding: 1px 6px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.5);
+  background: var(--overlay-10);
+  color: var(--overlay-50);
   border-radius: 4px;
   margin-top: 2px;
 }
 
 .user-badge.admin {
-  background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  background: var(--primary-20);
+  color: var(--color-accent-light);
 }
 
 .user-avatar-wrapper {
@@ -2076,8 +2254,8 @@ if (
   height: 36px;
   border-radius: 50%;
   overflow: hidden;
-  background: #2a2a2a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel-border);
+  border: 1px solid var(--overlay-10);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2099,12 +2277,12 @@ if (
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  background: #1a1a1f;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel-bg);
+  border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 8px;
   min-width: 160px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px var(--mask-50);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2115,24 +2293,25 @@ if (
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
+  border: 0;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  color: var(--overlay-70);
   font-size: 14px;
   transition: all 0.2s;
   text-decoration: none;
-  background: transparent;
   width: 100%;
   text-align: left;
 }
 
 .action-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
+  background: var(--overlay-5);
+  color: var(--text-primary);
 }
 
 .action-item.logout:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: var(--error-10);
+  color: var(--color-error);
 }
 
 .notification-badge {
@@ -2142,7 +2321,7 @@ if (
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
-  background-color: #f44336;
+  background-color: var(--color-error);
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -2152,7 +2331,7 @@ if (
   padding: 0 4px;
 }
 
-/* 登录按钮 - 桌面�?*/
+/* 登录按钮 - 桌面端*/
 .login-options .login-btn {
   display: flex;
   align-items: center;
@@ -2161,12 +2340,12 @@ if (
   border-radius: 14px;
   font-size: 14px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--overlay-4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+  border: 1px solid var(--overlay-10);
+  box-shadow: 0 4px 15px var(--mask-10);
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   text-decoration: none;
   position: relative;
@@ -2174,23 +2353,23 @@ if (
 }
 
 .login-options .login-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(59, 130, 246, 0.5);
+  background: var(--overlay-8);
+  border-color: var(--primary-50);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8px 25px var(--primary-20);
   color: white;
 }
 
 .login-options .login-btn :deep(.icon),
 .login-options .login-btn i {
-  color: #3b82f6;
+  color: var(--color-accent-light);
   transition: all 0.3s ease;
 }
 
 .login-options .login-btn:hover :deep(.icon),
 .login-options .login-btn:hover i {
   transform: scale(1.1);
-  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5));
+  filter: drop-shadow(0 0 5px var(--primary-50));
 }
 
 .login-options .login-btn:active {
@@ -2217,10 +2396,10 @@ if (
   font-weight: 800;
   font-size: 42px;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--overlay-70) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 10px 30px var(--mask-30);
   margin: 0;
   line-height: 1.2;
 }
@@ -2228,16 +2407,16 @@ if (
 .title-divider {
   width: 40px;
   height: 4px;
-  background: #0b5afe;
+  background: var(--title-divider-bg);
   border-radius: 2px;
-  box-shadow: 0 0 15px rgba(11, 90, 254, 0.6);
+  box-shadow: 0 0 15px var(--color-accent-alpha-60);
 }
 
 .sub-title {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
@@ -2248,11 +2427,11 @@ if (
   flex-direction: column;
   gap: 0;
   flex: 1; /* 占据剩余空间 */
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   width: 100%; /* 确保宽度占满 */
 }
 
-/* 选项卡样�?- 桌面�?*/
+/* 选项卡片样式- 桌面端*/
 .tabs-row {
   display: flex;
   gap: 5px;
@@ -2269,22 +2448,22 @@ if (
 }
 
 .section-tab {
-  background: #1a1b24;
+  background: var(--section-tab-bg);
   border-radius: 15px 15px 0 0;
   padding: 15px 24px;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
-  border: 2px solid #282830;
+  color: var(--text-secondary);
+  border: 2px solid var(--section-tab-border);
   border-bottom: none;
   cursor: pointer;
   flex: 0 0 auto;
 }
 
 .section-tab.active {
-  background: #21242d;
-  color: #ffffff;
+  background: var(--panel-bg);
+  color: var(--text-primary);
   position: relative;
   z-index: 1;
 }
@@ -2316,7 +2495,7 @@ if (
   transform: translateY(-20px) scale(1.02);
 }
 
-/* 通知项交错进入动�?*/
+/* 通知项交错进入动画*/
 .notification-card {
   animation: notification-item-enter 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: var(--animation-delay, 0s);
@@ -2330,7 +2509,7 @@ if (
 
 .notification-card:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 25px var(--mask-15);
 }
 
 @keyframes notification-item-enter {
@@ -2344,13 +2523,13 @@ if (
   }
 }
 
-/* 选项卡切换动�?*/
+/* 选项卡切换动画*/
 .section-tab {
   position: relative;
   transition: all 0.3s ease;
   overflow: hidden;
   padding: 0.75rem 1.5rem;
-  z-index: 10; /* 确保在内容之�?*/
+  z-index: 10; /* 确保在内容之上*/
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2358,7 +2537,7 @@ if (
 }
 
 .section-tab .tab-icon {
-  display: none; /* PC端默认隐藏图�?*/
+  display: none; /* PC端默认隐藏图标*/
 }
 
 .section-tab .icon-wrapper {
@@ -2370,16 +2549,16 @@ if (
   position: relative;
 }
 
-/* PC端通知小圆�?*/
+/* PC端通知小圆点*/
 .notification-badge-desktop {
   position: absolute;
   top: -2px;
   right: -8px;
   width: 6px;
   height: 6px;
-  background: #0b5afe;
+  background: var(--color-accent);
   border-radius: 50%;
-  box-shadow: 0 0 5px rgba(11, 90, 254, 0.5);
+  box-shadow: 0 0 5px var(--color-accent-alpha-50);
 }
 
 .section-tab::after {
@@ -2389,7 +2568,7 @@ if (
   left: 50%;
   width: 0;
   height: 2px;
-  background: #0b5afe;
+  background: var(--color-accent);
   transition: all 0.3s ease;
   transform: translateX(-50%);
 }
@@ -2405,21 +2584,21 @@ if (
 /* 移除上浮效果 */
 .section-tab:hover {
   transform: none; /* 移除上浮效果 */
-  background-color: transparent; /* 移除背景�?*/
-  box-shadow: none; /* 移除内阴�?*/
-  color: rgba(255, 255, 255, 0.9);
+  background-color: transparent; /* 移除背背景*/
+  box-shadow: none; /* 移除内阴影*/
+  color: var(--text-primary);
 }
 
 .section-tab.active:hover {
   background-color: transparent;
   box-shadow: none;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 /* 内容容器 */
 .tab-content-container {
-  background: #1a1b24;
-  border: 2px solid #282830;
+  background: var(--panel-bg-overlay);
+  border: 2px solid var(--panel-bg-raised);
   border-radius: 0 15px 15px 15px;
   padding: 1.5rem;
   margin-top: -2px; /* 使内容容器与标签连接 */
@@ -2428,7 +2607,7 @@ if (
   display: flex;
   flex-direction: column;
   flex: 1; /* 占据剩余空间 */
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -2454,8 +2633,8 @@ if (
   padding: 0;
   display: flex;
   flex-direction: column;
-  flex: 1; /* 占满父容器高�?*/
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  flex: 1; /* 占满父容器高度*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -2463,7 +2642,7 @@ if (
   flex: 1; /* 占据剩余空间 */
   display: flex;
   flex-direction: column;
-  min-height: 0; /* 允许 flex 子元素收�?*/
+  min-height: 0; /* 允许 flex 子元素收缩*/
   overflow: hidden; /* 防止内容溢出 */
 }
 
@@ -2476,7 +2655,7 @@ if (
     padding: 0;
   }
 
-  /* 移动端分页控件样�?*/
+  /* 移动端分页控件样式*/
   .pagination-controls {
     flex-direction: column;
     gap: 10px;
@@ -2515,7 +2694,7 @@ if (
   font-weight: 400;
   font-size: 16px;
   letter-spacing: 4%;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   margin: 1.5rem 0 1rem;
 }
 
@@ -2531,11 +2710,11 @@ if (
   gap: 2rem;
 }
 
-/* 空状�?*/
+/* 空状态*/
 .empty-state {
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 /* 下拉菜单动画 */
@@ -2572,7 +2751,7 @@ if (
   align-items: center;
   padding: 1.25rem 0;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--overlay-8);
 }
 
 .notification-header-main {
@@ -2587,9 +2766,9 @@ if (
 .notification-filter {
   display: inline-flex;
   flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--chip-bg);
   padding: 3px;
 }
 
@@ -2599,7 +2778,7 @@ if (
   border-radius: 6px;
   background: transparent;
   padding: 0.3rem 0.65rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--overlay-55);
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
@@ -2608,18 +2787,18 @@ if (
 }
 
 .notification-filter button:hover:not(.active) {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--overlay-85);
 }
 
 .notification-filter button.active {
-  background: #2563eb;
+  background: var(--color-accent);
   color: #ffffff;
 }
 
 .notification-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -2641,11 +2820,11 @@ if (
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border: 1px solid rgba(59, 130, 246, 0.22);
+  border: 1px solid var(--color-accent-alpha-22);
   border-radius: 10px;
-  background: rgba(59, 130, 246, 0.1);
+  background: var(--color-accent-alpha-10);
   padding: 0.45rem 0.75rem;
-  color: #93c5fd;
+  color: var(--color-accent-light);
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
@@ -2654,119 +2833,18 @@ if (
 }
 
 .mark-all-read-header:hover:not(.disabled) {
-  border-color: rgba(59, 130, 246, 0.4);
-  background: rgba(59, 130, 246, 0.18);
-  color: #dbeafe;
+  border-color: var(--color-accent-alpha-40);
+  background: var(--color-accent-alpha-18);
+  color: var(--color-accent-lighter);
 }
 
 .mark-all-read-header.disabled {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.3);
+  border-color: var(--overlay-8);
+  background: var(--overlay-3);
+  color: var(--overlay-30);
   cursor: not-allowed;
 }
 
-.settings-icon {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.settings-icon:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  transform: rotate(30deg);
-}
-
-.notification-unread-summary {
-  display: flex;
-  width: 100%;
-  min-height: 72px;
-  align-items: center;
-  gap: 0.85rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid rgba(245, 158, 11, 0.24);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
-  padding: 0.8rem 1rem;
-  color: #ffffff;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.notification-unread-summary:hover:not(:disabled) {
-  border-color: rgba(245, 158, 11, 0.48);
-  background: rgba(255, 255, 255, 0.075);
-}
-
-.notification-unread-summary:focus-visible {
-  outline: 2px solid #60a5fa;
-  outline-offset: 2px;
-}
-
-.notification-unread-summary.empty {
-  border-color: rgba(255, 255, 255, 0.09);
-  color: rgba(255, 255, 255, 0.58);
-  cursor: default;
-}
-
-.notification-unread-summary-icon {
-  display: inline-flex;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: rgba(245, 158, 11, 0.14);
-  color: #fbbf24;
-}
-
-.notification-unread-summary.empty .notification-unread-summary-icon {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.4);
-}
-
-.notification-unread-summary-copy {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.notification-unread-summary-copy > span {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.notification-unread-summary-copy strong {
-  color: inherit;
-  font-size: 1rem;
-  line-height: 1.35;
-}
-
-.notification-unread-summary-action {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.25rem;
-  color: #93c5fd;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-/* 通知列表 */
 .notification-search {
   display: flex;
   width: 260px;
@@ -2775,18 +2853,18 @@ if (
   flex: 0 1 260px;
   align-items: center;
   gap: 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--chip-bg);
   padding: 0 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .notification-search:focus-within {
-  border-color: rgba(59, 130, 246, 0.65);
-  background: rgba(255, 255, 255, 0.06);
-  color: #93c5fd;
+  border-color: var(--color-accent-alpha-65);
+  background: var(--overlay-6);
+  color: var(--color-accent-light);
 }
 
 .notification-search input {
@@ -2795,12 +2873,12 @@ if (
   border: 0;
   outline: 0;
   background: transparent;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 0.85rem;
 }
 
 .notification-search input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--overlay-35);
 }
 
 .notification-search input::-webkit-search-cancel-button {
@@ -2817,15 +2895,86 @@ if (
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--overlay-45);
   cursor: pointer;
 }
 
 .notification-search button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--overlay-8);
+  color: var(--text-primary);
 }
 
+.notification-unread-summary {
+  display: flex;
+  width: 100%;
+  min-height: 72px;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--color-warning-alpha-24);
+  border-radius: 8px;
+  background: var(--overlay-4);
+  padding: 0.8rem 1rem;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.notification-unread-summary:hover:not(:disabled) {
+  border-color: var(--color-warning-alpha-48);
+  background: var(--overlay-7);
+}
+
+.notification-unread-summary:focus-visible {
+  outline: 2px solid var(--color-accent-light);
+  outline-offset: 2px;
+}
+
+.notification-unread-summary.empty {
+  border-color: var(--overlay-9);
+  color: var(--overlay-58);
+  cursor: default;
+}
+
+.notification-unread-summary-icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--color-warning-alpha-14);
+  color: var(--color-warning-light);
+}
+
+.notification-unread-summary.empty .notification-unread-summary-icon {
+  background: var(--overlay-6);
+  color: var(--overlay-40);
+}
+
+.notification-unread-summary-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.notification-unread-summary-copy > span {
+  color: var(--overlay-50);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.settings-icon:hover {
+  background-color: var(--overlay-10);
+  color: var(--text-primary);
+  transform: rotate(30deg);
+}
+
+/* 通知列表 */
 .notification-list {
   flex: 1;
   display: flex;
@@ -2844,34 +2993,19 @@ if (
   align-items: center;
   justify-content: center;
   padding: 3rem 0;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   gap: 1.25rem;
 }
 
 .empty-icon {
   width: 80px;
   height: 80px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-3);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 0.5rem;
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #3b82f6;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .notification-items {
@@ -2881,9 +3015,9 @@ if (
 }
 
 .notification-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--overlay-3);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--overlay-6);
   border-radius: 20px;
   padding: 1.25rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2892,14 +3026,14 @@ if (
 }
 
 .notification-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--overlay-6);
+  border-color: var(--overlay-12);
   transform: translateY(-2px);
 }
 
 .notification-card.unread {
-  background: rgba(59, 130, 246, 0.05);
-  border-color: rgba(59, 130, 246, 0.2);
+  background: var(--primary-5);
+  border-color: var(--primary-20);
 }
 
 .notification-card-header {
@@ -2914,8 +3048,8 @@ if (
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background: var(--primary-10);
+  color: var(--color-accent-light);
   border-radius: 12px;
   margin-right: 1rem;
   flex-shrink: 0;
@@ -2937,7 +3071,7 @@ if (
 .notification-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -2956,21 +3090,21 @@ if (
 }
 
 .notification-read-status.is-read {
-  border-color: rgba(16, 185, 129, 0.18);
-  background: rgba(16, 185, 129, 0.08);
-  color: #6ee7b7;
+  border-color: var(--success-20);
+  background: var(--success-10);
+  color: var(--color-success-light);
 }
 
 .notification-read-status.is-unread {
-  border-color: rgba(245, 158, 11, 0.22);
-  background: rgba(245, 158, 11, 0.1);
-  color: #fcd34d;
+  border-color: var(--warning-20);
+  background: var(--warning-10);
+  color: var(--color-warning-light);
 }
 
 .notification-time {
   margin-top: 0.4rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
 }
 
 .notification-sender {
@@ -2979,7 +3113,7 @@ if (
   gap: 0.3rem;
   margin-top: 0.35rem;
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--overlay-40);
 }
 
 .notification-card-body {
@@ -2987,7 +3121,7 @@ if (
 }
 
 .notification-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-size: 0.875rem;
   line-height: 1.6;
   min-width: 0;
@@ -3010,9 +3144,9 @@ if (
 }
 
 .action-button.delete {
-  background: rgba(239, 68, 68, 0.05);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.1);
+  background: var(--error-5);
+  color: var(--color-error);
+  border: 1px solid var(--error-10);
   padding: 0.4rem 0.75rem;
   border-radius: 8px;
   font-size: 0.75rem;
@@ -3023,22 +3157,22 @@ if (
 }
 
 .action-button.delete:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.2);
+  background: var(--error-10);
+  border-color: var(--error-20);
 }
 
 .notification-actions-bar {
   display: flex;
   gap: 1rem;
   padding: 1rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--overlay-8);
 }
 
 .action-button-large {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
+  color: var(--text-primary);
   padding: 0.75rem;
   border-radius: 12px;
   font-size: 0.875rem;
@@ -3048,15 +3182,15 @@ if (
 }
 
 .action-button-large:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
 }
 
 .action-button-large.danger {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .action-button-large.danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--error-10);
 }
 
 .action-button-large.disabled {
@@ -3067,8 +3201,8 @@ if (
 /* 分页控件样式 */
 .notification-pagination {
   padding: 15px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-10);
+  border-bottom: 1px solid var(--overlay-10);
 }
 
 .pagination-info {
@@ -3077,7 +3211,7 @@ if (
 }
 
 .pagination-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-size: 0.85rem;
 }
 
@@ -3095,7 +3229,7 @@ if (
 }
 
 .page-size-selector label {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-size: 0.85rem;
   white-space: nowrap;
 }
@@ -3111,8 +3245,8 @@ if (
 }
 
 .page-nav-button {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-10);
+  border: 1px solid var(--overlay-20);
   color: var(--light);
   width: 32px;
   height: 32px;
@@ -3126,8 +3260,8 @@ if (
 }
 
 .page-nav-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-20);
+  border-color: var(--overlay-30);
   transform: translateY(-1px);
 }
 
@@ -3137,9 +3271,9 @@ if (
 }
 
 .page-nav-button:disabled {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-5);
+  border-color: var(--overlay-10);
+  color: var(--overlay-30);
   cursor: not-allowed;
 }
 
@@ -3150,8 +3284,8 @@ if (
 }
 
 .page-number-button {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-10);
+  border: 1px solid var(--overlay-20);
   color: var(--light);
   width: 32px;
   height: 32px;
@@ -3168,8 +3302,8 @@ if (
 }
 
 .page-number-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-20);
+  border-color: var(--overlay-30);
   transform: translateY(-1px);
 }
 
@@ -3185,52 +3319,33 @@ if (
 }
 
 .page-number-button.active:hover {
-  background-color: #0952e8;
-  border-color: #0952e8;
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .page-number-button:disabled {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-5);
+  border-color: var(--overlay-10);
+  color: var(--overlay-30);
   cursor: not-allowed;
 }
 
 .page-ellipsis {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   padding: 0 4px;
   font-size: 0.85rem;
 }
 
-/* 分页加载状�?*/
+/* 分页加载状态*/
 .pagination-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 0;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
   font-size: 0.85rem;
   animation: fade-in 0.3s ease;
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top: 2px solid var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  will-change: transform;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 
 @keyframes fade-in {
@@ -3244,17 +3359,17 @@ if (
   }
 }
 
-/* 底部操作�?*/
+/* 底部操作区*/
 .notification-actions-bar {
   display: flex;
   justify-content: center;
   gap: 10px;
   padding: 15px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-10);
 }
 
 .action-button-large {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--overlay-10);
   border: none;
   color: var(--light);
   padding: 8px 16px;
@@ -3265,42 +3380,42 @@ if (
 }
 
 .action-button-large:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--overlay-20);
 }
 
 .action-button-large.danger {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .action-button-large.danger:hover {
-  background-color: rgba(239, 68, 68, 0.2);
+  background-color: var(--error-20);
 }
 
 .action-button-large.disabled {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-5);
+  color: var(--overlay-30);
   cursor: not-allowed;
   opacity: 0.5;
 }
 
 .action-button-large.disabled:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--overlay-5);
 }
 
-/* ==================== 移动端设�?==================== */
+/* ==================== 移动端设置==================== */
 
 /* 基础移动端适配 */
 @media (max-width: 768px) {
   .home {
     padding: 0;
-    background-color: #0a0a0f;
+    background-color: var(--panel-bg-darkest);
   }
 
   .main-content {
     padding: 0;
   }
 
-  /* 隐藏原有的ellipse效果，使用更微妙的背�?*/
+  /* 隐藏原有的ellipse效果，使用更微妙的背景*/
   .ellipse-effect {
     display: none;
   }
@@ -3312,8 +3427,8 @@ if (
     align-items: center;
     padding: 10px 12px;
     margin: 0;
-    background: linear-gradient(180deg, rgba(11, 90, 254, 0.08) 0%, transparent 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: linear-gradient(180deg, var(--color-accent-alpha-10) 0%, transparent 100%);
+    border-bottom: 1px solid var(--overlay-5);
   }
 
   .logo-section {
@@ -3333,10 +3448,10 @@ if (
   .logo-divider {
     height: 28px;
     width: 1px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--overlay-15);
   }
 
-  /* 移动端的主页面里不需要写学校名，保持简�?*/
+  /* 移动端的主页面里不需要写学校名，保持简约*/
   .site-title {
     display: none;
   }
@@ -3346,7 +3461,7 @@ if (
     max-height: 36px;
   }
 
-  /* 用户区域简�?*/
+  /* 用户区域简约*/
   .user-section {
     width: auto;
   }
@@ -3362,8 +3477,8 @@ if (
   .user-avatar-wrapper {
     width: 32px;
     height: 32px;
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border-color: var(--overlay-10);
   }
 
   .user-avatar-placeholder {
@@ -3377,6 +3492,11 @@ if (
   }
 
   .language-switcher-trigger {
+    width: 32px;
+    height: 32px;
+  }
+
+  .theme-switcher-trigger {
     width: 32px;
     height: 32px;
   }
@@ -3406,23 +3526,25 @@ if (
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--overlay-10);
+    box-shadow: 0 4px 12px var(--mask-10);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0; /* 防止空间不足时按钮被压缩导致文字换行 */
+    white-space: nowrap;
   }
 
   .login-options .login-btn :deep(.icon) {
-    color: #3b82f6;
+    color: var(--color-accent-light);
   }
 
   .login-options .login-btn:active {
     transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(59, 130, 246, 0.4);
+    background: var(--overlay-15);
+    border-color: var(--primary-40);
   }
 
   /* Footer 间距优化 */
@@ -3430,12 +3552,12 @@ if (
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* 内容区域 - 全宽无边�?*/
+  /* 内容区域 - 全宽无边框*/
   .content-area {
     min-height: auto;
     overflow-x: hidden; /* 防止横向溢出 */
-    max-width: 100vw; /* 确保不超过视口宽�?*/
-    box-sizing: border-box; /* 确保padding计入总宽�?*/
+    max-width: 100vw; /* 确保不超过视口宽度*/
+    box-sizing: border-box; /* 确保padding计入总宽度*/
   }
 
   .tabs-row {
@@ -3447,17 +3569,17 @@ if (
     max-width: 500px;
     display: flex;
     justify-content: space-around;
-    align-items: stretch; /* 修改�?stretch 以配合子元素 height: 100% */
+    align-items: stretch; /* 修改为stretch 以配合子元素 height: 100% */
     gap: 0;
     padding: 0 0.5rem;
     height: 64px;
-    background: rgba(28, 28, 30, 0.9);
+    background: var(--index-footer-bg);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--overlay-10);
     border-radius: 9999px;
     z-index: 1000;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 40px var(--mask-60);
   }
 
   .section-tab {
@@ -3469,7 +3591,7 @@ if (
     padding: 0; /* 移除固定内边距，改用 flex 居中 */
     font-size: 10px;
     font-weight: 500;
-    color: #71717a; /* text-zinc-500 */
+    color: var(--text-muted); /* text-text-tertiary */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3494,15 +3616,15 @@ if (
   }
 
   .section-tab.active {
-    color: #3b82f6 !important; /* text-blue-500 - Force blue */
+    color: var(--color-accent-light) !important; /* text-primary - Force blue */
     background: transparent !important;
     transform: none !important;
-    text-shadow: 0 0 12px rgba(59, 130, 246, 0.6); /* Text Glow */
+    text-shadow: 0 0 12px var(--primary-60); /* Text Glow */
   }
 
   /* Prevent hover from turning it white on mobile */
   .section-tab.active:hover {
-    color: #3b82f6 !important;
+    color: var(--color-accent-light) !important;
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -3511,7 +3633,7 @@ if (
     opacity: 1;
     color: currentColor;
     transform: none;
-    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); /* Icon Glow */
+    filter: drop-shadow(0 0 8px var(--primary-50)); /* Icon Glow */
   }
 
   .section-tab.active .tab-text {
@@ -3523,7 +3645,7 @@ if (
     display: none;
   }
 
-  /* 移除底部指示器（横条�? 彻底隐藏 */
+  /* 移除底部指示器（横条 彻底隐藏 */
   .section-tab::after {
     display: none !important;
   }
@@ -3550,7 +3672,7 @@ if (
   }
 
   .section-tab .icon-wrapper {
-    display: flex; /* 移动端显示图标容�?*/
+    display: flex; /* 移动端显示图标容器*/
   }
 
   /* 通知徽章 - 回归蓝色风格 */
@@ -3560,10 +3682,10 @@ if (
     right: 0;
     width: 8px;
     height: 8px;
-    background: #0b5afe;
+    background: var(--color-accent);
     border-radius: 50%;
-    border: 1.5px solid #0a0a0f;
-    box-shadow: 0 0 5px rgba(11, 90, 254, 0.4);
+    border: 1.5px solid var(--panel-bg-darkest);
+    box-shadow: 0 0 5px var(--color-accent-alpha-40);
     z-index: 2;
   }
 
@@ -3572,7 +3694,7 @@ if (
   }
 
   @keyframes badge-pulse {
-    /* 移除导致位移的动�?*/
+    /* 移除导致位移的动画*/
   }
 
   .section-tab.disabled {
@@ -3593,10 +3715,16 @@ if (
   .tab-pane {
     padding: 0;
     overflow-x: hidden; /* 防止横向溢出 */
-    max-width: 100%; /* 确保不超过视口宽�?*/
+    max-width: 100%; /* 确保不超过视口宽度*/
   }
 
-  /* 排期标签页优�?*/
+  /* 通知标签页移动端留出左右边距，避免内容贴满屏幕 */
+  .notification-pane {
+    padding: 0 0.75rem;
+    box-sizing: border-box;
+  }
+
+  /* 排期标签页优化*/
   .schedule-tab-pane {
     padding: 0;
     min-height: auto;
@@ -3607,9 +3735,9 @@ if (
     flex-direction: column;
     gap: 16px;
     overflow-x: hidden; /* 防止横向溢出 */
-    max-width: 100%; /* 确保不超过视口宽�?*/
+    max-width: 100%; /* 确保不超过视口宽度*/
     padding: 0 0.5rem; /* 添加左右内边距，防止内容贴边 */
-    box-sizing: border-box; /* 确保padding计入总宽�?*/
+    box-sizing: border-box; /* 确保padding计入总宽度*/
   }
 
   /* 登录选项 */
@@ -3622,12 +3750,12 @@ if (
     padding: 6px 14px;
     font-size: 12px;
     border-radius: 6px;
-    background: rgba(11, 90, 254, 0.15);
-    border: 1px solid rgba(11, 90, 254, 0.3);
+    background: var(--color-accent-alpha-15);
+    border: 1px solid var(--color-accent-alpha-30);
   }
 }
 
-/* 小屏幕设备额外优�?*/
+/* 小屏幕设备额外优化*/
 @media (max-width: 480px) {
   .top-bar {
     padding: 8px 10px;
@@ -3729,6 +3857,13 @@ if (
   .notification-unread-summary-action {
     font-size: 0.7rem;
   }
+
+  /* 窄屏压缩登录按钮，保证“登录”文字横向排布 */
+  .login-options .login-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    gap: 6px;
+  }
 }
 
 /* 超小屏幕设备 */
@@ -3751,46 +3886,21 @@ if (
     font-size: 9px;
   }
 
-  .notification-title {
-    max-width: 78px;
-    font-size: 0.95rem;
-    overflow-wrap: anywhere;
-  }
-
-  .notification-filter button {
-    min-height: 25px;
-    padding: 0.2rem 0.35rem;
-    font-size: 0.65rem;
-  }
-
-  .mark-all-read-header {
-    max-width: 96px;
-    padding: 0.35rem 0.4rem;
-    font-size: 0.65rem;
-  }
-
-  .settings-icon {
-    width: 34px;
-    height: 34px;
-  }
-
-  .notification-unread-summary-action {
-    gap: 0;
-  }
-
-  .notification-unread-summary-action > span {
-    display: none;
+  .login-options .login-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 4px;
   }
 }
 
-/* 弹窗遮罩�?*/
+/* 弹窗遮罩层*/
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--mask-60);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -3810,10 +3920,10 @@ if (
 
 /* 弹窗内容 */
 .modal-content {
-  background: linear-gradient(135deg, #1a1b24 0%, #121318 100%);
+  background: linear-gradient(135deg, var(--panel-bg-overlay) 0%, var(--panel-bg-darker) 100%);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--overlay-10);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
   max-width: 420px;
   width: 90%;
   overflow: hidden;
@@ -3837,7 +3947,7 @@ if (
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--overlay-8);
 }
 
 .modal-header h2 {
@@ -3848,7 +3958,7 @@ if (
     sans-serif;
   font-size: 20px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
   letter-spacing: 0.02em;
 }
@@ -3858,9 +3968,9 @@ if (
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--overlay-8);
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
@@ -3871,8 +3981,8 @@ if (
 }
 
 .close-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: var(--overlay-15);
+  color: var(--text-primary);
   transform: rotate(90deg);
 }
 
@@ -3899,24 +4009,24 @@ if (
   gap: 0.5rem;
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .rules-icon {
-  color: #3b82f6;
+  color: var(--color-accent-light);
 }
 
 .rules-text {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   line-height: 1.6;
   margin: 0;
 }
 
 .guidelines-content {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   line-height: 1.6;
 }
 
@@ -3929,31 +4039,31 @@ if (
 .rule-item {
   display: flex;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   line-height: 1.5;
 }
 
 .rule-item span {
   margin-right: 0.5rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--overlay-30);
   font-weight: 600;
 }
 
 /* 年度报告弹窗 */
 .year-review-overlay {
   backdrop-filter: blur(8px);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
 }
 
 .year-review-card {
   position: relative;
   width: 90%;
   max-width: 400px;
-  background: #12121a;
+  background: var(--panel-bg-darker);
   border-radius: 32px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--overlay-10);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
   animation: card-appear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -3963,14 +4073,14 @@ if (
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--index-card-glow) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .card-pattern {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-image: radial-gradient(var(--overlay-5) 1px, transparent 1px);
   background-size: 20px 20px;
   opacity: 0.5;
 }
@@ -3982,9 +4092,9 @@ if (
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
+  color: var(--overlay-40);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3994,8 +4104,8 @@ if (
 }
 
 .card-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--overlay-10);
+  color: var(--text-primary);
   transform: translateY(2px);
 }
 
@@ -4009,10 +4119,10 @@ if (
 .brand-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: var(--index-brand-badge-bg);
+  border: 1px solid var(--index-brand-badge-border);
   border-radius: 99px;
-  color: #a78bfa;
+  color: var(--color-collab-light);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -4031,13 +4141,13 @@ if (
 .main-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  background: linear-gradient(135deg, var(--color-collab) 0%, var(--color-collab-hover) 100%);
   border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+  color: var(--text-primary);
+  box-shadow: 0 10px 25px -5px var(--index-main-icon-shadow);
   z-index: 2;
   transform: rotate(-5deg);
 }
@@ -4053,7 +4163,7 @@ if (
 
 .bar {
   width: 4px;
-  background: #8b5cf6;
+  background: var(--color-collab);
   border-radius: 2px;
   animation: bar-dance 1.2s ease-in-out infinite;
 }
@@ -4092,14 +4202,14 @@ if (
 .card-title {
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 12px;
   letter-spacing: -0.01em;
 }
 
 .card-description {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   line-height: 1.6;
   margin-bottom: 32px;
 }
@@ -4113,10 +4223,10 @@ if (
 .btn-primary {
   width: 100%;
   padding: 16px;
-  background: #fff;
+  background: var(--text-primary);
   border: none;
   border-radius: 16px;
-  color: #000;
+  color: var(--bg-primary);
   font-size: 16px;
   font-weight: 700;
   display: flex;
@@ -4129,8 +4239,8 @@ if (
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
-  background: #f4f4f4;
+  box-shadow: 0 10px 20px var(--overlay-10);
+  background: var(--panel-bg-deep);
 }
 
 .btn-primary:active {
@@ -4141,9 +4251,9 @@ if (
   width: 100%;
   padding: 14px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -4151,9 +4261,9 @@ if (
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-5);
+  color: var(--text-primary);
+  border-color: var(--overlay-20);
 }
 
 @keyframes card-appear {
@@ -4167,7 +4277,7 @@ if (
   }
 }
 
-/* 覆盖旧动�?*/
+/* 覆盖旧动画*/
 .modal-animation-enter-active,
 .modal-animation-leave-active {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4195,7 +4305,7 @@ if (
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--overlay-30);
   transform: scale(0);
   animation: ripple 0.6s linear;
   pointer-events: none;
@@ -4231,7 +4341,7 @@ if (
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #0b5afe;
+  background-color: var(--color-accent);
   display: inline-block;
   z-index: 2;
 }
@@ -4239,15 +4349,15 @@ if (
 @keyframes pulse {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.4);
+    box-shadow: 0 0 0 0 var(--index-pulsing-ring-shadow);
   }
   70% {
     transform: scale(1.05);
-    box-shadow: 0 0 0 5px rgba(0, 122, 255, 0);
+    box-shadow: 0 0 0 5px transparent;
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 
@@ -4257,7 +4367,7 @@ if (
   cursor: not-allowed;
 }
 
-/* 未登录提示样�?*/
+/* 未登录提示样式*/
 .login-required-container {
   display: flex;
   flex-direction: column;
@@ -4271,10 +4381,10 @@ if (
   text-align: center;
   max-width: 400px;
   padding: 30px;
-  background-color: rgba(30, 41, 59, 0.5);
+  background-color: var(--index-visualizer-bg);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--overlay-10);
+  box-shadow: 0 5px 20px var(--mask-20);
 }
 
 .login-icon {
@@ -4290,11 +4400,11 @@ if (
 
 .login-required-content p {
   margin-bottom: 20px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--overlay-70);
 }
 
 .login-button {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: none;
   color: white;
   padding: 10px 20px;
@@ -4306,6 +4416,6 @@ if (
 
 .login-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 5px 15px var(--primary-30);
 }
 </style>

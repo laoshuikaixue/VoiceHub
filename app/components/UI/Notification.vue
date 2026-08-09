@@ -69,9 +69,9 @@ defineEmits(['close'])
   align-items: center;
   padding: 16px;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  background: #21242d;
-  color: #ffffff;
+  box-shadow: 0 4px 16px var(--mask-40);
+  background: var(--panel-bg);
+  color: var(--text-primary);
   max-width: 400px;
   min-width: 300px;
   font-family: 'MiSans', sans-serif;
@@ -79,15 +79,15 @@ defineEmits(['close'])
 }
 
 .notification.success {
-  border-left: 4px solid #10b981;
+  border-left: 4px solid var(--color-success);
 }
 
 .notification.error {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--color-error);
 }
 
 .notification.info {
-  border-left: 4px solid #0b5afe;
+  border-left: 4px solid var(--color-accent);
 }
 
 .notification-icon {
@@ -103,18 +103,18 @@ defineEmits(['close'])
 }
 
 .success .notification-icon {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  background: var(--success-20);
+  color: var(--color-success);
 }
 
 .error .notification-icon {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  background: var(--error-20);
+  color: var(--color-error);
 }
 
 .info .notification-icon {
-  background: rgba(11, 90, 254, 0.2);
-  color: #0b5afe;
+  background: var(--color-accent-alpha-20);
+  color: var(--color-accent);
 }
 
 .notification-content {
@@ -126,7 +126,7 @@ defineEmits(['close'])
 .notification-close {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 20px;
   cursor: pointer;
   width: 28px;
@@ -140,7 +140,7 @@ defineEmits(['close'])
 }
 
 .notification-close:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 /* 进度条 */
@@ -150,7 +150,7 @@ defineEmits(['close'])
   left: 0;
   width: 100%;
   height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
 }
 
 .notification-progress-bar {
@@ -161,15 +161,15 @@ defineEmits(['close'])
 }
 
 .success .notification-progress-bar {
-  background-color: #10b981;
+  background-color: var(--color-success);
 }
 
 .error .notification-progress-bar {
-  background-color: #ef4444;
+  background-color: var(--color-error);
 }
 
 .info .notification-progress-bar {
-  background-color: #0b5afe;
+  background-color: var(--color-accent);
 }
 
 @keyframes progress-shrink {

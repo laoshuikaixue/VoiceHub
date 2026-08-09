@@ -157,7 +157,10 @@
 
     <!-- 使用Transition组件包裹所有内容 -->
     <Transition mode="out-in" name="tab-switch">
-      <div v-if="loading" :key="'loading'" class="loading">{{ locale.loading }}</div>
+      <div v-if="loading" :key="'loading'" class="loading">
+        <AppSpinner :size="40" />
+        {{ locale.loading }}
+      </div>
 
       <div v-else-if="error" :key="'error'" class="error">
         {{ error }}
@@ -303,7 +306,7 @@
                     class="like-button"
                     @click.stop="handleVote(song)"
                   >
-                    <img :alt="locale.likeAlt" class="like-icon" :src="thumbsUp" >
+                    <img :alt="locale.likeAlt" class="like-icon" :src="getThumbsUpIcon()" >
                   </button>
                 </div>
               </div>
@@ -368,7 +371,7 @@
           >
             <div
               v-if="submissionNoteDialog.show"
-              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-primary-60 backdrop-blur-sm"
               @click="closeSubmissionNote"
             >
               <div class="submission-note-modal" @click.stop>
@@ -409,13 +412,15 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { convertToHttps } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
-import thumbsUp from '~~/public/images/thumbs-up.svg'
+import { useThemeImage } from '~/composables/useThemeImage'
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 
+const { getThumbsUpIcon } = useThemeImage()
 const props = defineProps({
   songs: {
     type: Array,
@@ -995,26 +1000,7 @@ const playSongWithUrlFetching = async (song) => {
 }
 
 // 切换歌曲播放/暂停
-const unlockMobileAudioPlayback = async () => {
-  if (typeof document === 'undefined') return
-
-  const audio = document.querySelector('audio')
-  if (!audio) return
-
-  try {
-    const wasMuted = audio.muted
-    audio.muted = true
-    await audio.play()
-    audio.pause()
-    audio.muted = wasMuted
-  } catch (error) {
-    console.debug('[SongList] 移动端音频解锁未完成:', error)
-  }
-}
-
 const togglePlaySong = async (song) => {
-  await unlockMobileAudioPlayback()
-
   // 检查是否为当前歌曲且正在播放
   if (audioPlayer.isCurrentSong(song.id) && audioPlayer.getPlayingStatus().value) {
     // 如果正在播放，则暂停
@@ -1553,7 +1539,7 @@ const vRipple = {
   .search-icon-box {
     position: absolute;
     left: 14px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     display: flex;
     align-items: center;
     pointer-events: none;
@@ -1561,27 +1547,27 @@ const vRipple = {
   }
 
   .mobile-search-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
     border-radius: 12px;
     padding: 12px 16px 12px 42px;
     font-size: 14px;
-    color: #fff;
+    color: var(--text-primary);
     width: 100%;
     transition: all 0.2s ease;
   }
 
   .mobile-search-input:focus {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: #3b82f6;
+    background: var(--overlay-8);
+    border-color: var(--color-accent-light);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px var(--primary-10);
   }
 
   .mobile-tabs {
     display: flex;
     gap: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--overlay-5);
     padding-bottom: 2px;
   }
 
@@ -1591,7 +1577,7 @@ const vRipple = {
     padding: 0 0 8px 0;
     font-size: 14px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     cursor: pointer;
     position: relative;
     white-space: nowrap;
@@ -1599,7 +1585,7 @@ const vRipple = {
   }
 
   .mobile-tab-btn.active {
-    color: #3b82f6;
+    color: var(--color-accent-light);
   }
 
   .active-indicator {
@@ -1608,9 +1594,9 @@ const vRipple = {
     left: 0;
     right: 0;
     height: 2px;
-    background: #3b82f6;
+    background: var(--color-accent-light);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 8px var(--primary-50);
   }
 }
 
@@ -1647,7 +1633,7 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   border-bottom: 3px solid transparent;
@@ -1655,13 +1641,13 @@ const vRipple = {
 }
 
 .tab-button:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   transform: translateY(-3px);
 }
 
 .tab-button.active {
-  color: #ffffff;
-  border-bottom-color: #0b5afe;
+  color: var(--text-primary);
+  border-bottom-color: var(--color-accent);
   transform: none;
   box-shadow: none;
   background-color: transparent;
@@ -1675,7 +1661,7 @@ const vRipple = {
 .ripple-effect {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(11, 90, 254, 0.3) 0%, rgba(255, 255, 255, 0.1) 70%);
+  background: radial-gradient(circle, var(--color-accent-alpha-30) 0%, var(--overlay-10) 70%);
   transform: scale(0);
   animation: ripple 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
   pointer-events: none;
@@ -1709,31 +1695,31 @@ const vRipple = {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #21242d;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--panel-bg);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   font-size: 14px;
   padding: 0;
 }
 
 .semester-toggle-btn:hover {
-  background: #2a2e38;
+  background: var(--panel-bg-contrast);
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  color: #0b5afe;
+  box-shadow: 0 2px 8px var(--mask-20);
+  color: var(--color-accent);
 }
 
 .semester-dropdown {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  background: #1a1d24;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--panel-bg-overlay);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--mask-30);
   z-index: 100;
   min-width: 180px;
   overflow: hidden;
@@ -1741,11 +1727,11 @@ const vRipple = {
 
 .semester-option {
   padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--overlay-5);
 }
 
 .semester-option:last-child {
@@ -1753,13 +1739,13 @@ const vRipple = {
 }
 
 .semester-option:hover {
-  background: rgba(11, 90, 254, 0.1);
-  color: #ffffff;
+  background: var(--color-accent-alpha-10);
+  color: var(--text-primary);
 }
 
 .semester-option.active {
-  background: rgba(11, 90, 254, 0.2);
-  color: #0b5afe;
+  background: var(--color-accent-alpha-20);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -1769,21 +1755,21 @@ const vRipple = {
 }
 
 .search-input {
-  background: #040e15;
-  border: 1px solid #242f38;
+  background: var(--panel-bg-quaternary);
+  border: 1px solid var(--panel-border-active);
   border-radius: 8px;
   padding: 0.5rem 1rem;
   padding-right: 2.5rem;
   font-family: 'MiSans-Demibold', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   width: 100%;
   transition: all 0.2s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #0b5afe;
+  border-color: var(--color-accent);
 }
 
 .search-icon {
@@ -1791,7 +1777,7 @@ const vRipple = {
   right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .refresh-button {
@@ -1800,18 +1786,18 @@ const vRipple = {
   justify-content: center;
   width: 36px;
   height: 36px;
-  background: #21242d;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--panel-bg);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
 }
 
 .refresh-button:hover {
-  background: #2a2e38;
+  background: var(--panel-bg-contrast);
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--mask-20);
 }
 
 .refresh-button:active {
@@ -1836,46 +1822,26 @@ const vRipple = {
 }
 
 /* 加载动画 */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 .loading {
   text-align: center;
   padding: 3rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-.loading::before {
-  content: '';
-  display: block;
-  width: 40px;
-  height: 40px;
-  margin-bottom: 1rem;
-  border-radius: 50%;
-  border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0b5afe;
-  animation: spin 1s linear infinite;
+  gap: 1rem;
 }
 
 .error,
 .empty {
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .error {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .songs-container {
@@ -1903,8 +1869,9 @@ const vRipple = {
 
 .song-card-main {
   padding: 1rem 0 1rem 1rem; /* 移除右侧内边距，保留左侧、上下内边距 */
-  background: #21242d;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  background: var(--panel-bg);
+  border: 1px solid var(--song-card-border);
+  box-shadow: 0px 4px 4px var(--mask-25);
   position: relative;
   height: 100px; /* 减小卡片高度 */
   border-radius: 10px;
@@ -1933,7 +1900,7 @@ const vRipple = {
   position: relative;
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px var(--mask-30);
 }
 
 .cover-image {
@@ -1951,8 +1918,8 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: bold;
   font-family: 'MiSans-Demibold', sans-serif;
@@ -1968,7 +1935,7 @@ const vRipple = {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--mask-40);
   opacity: 0;
   transition: opacity 0.2s ease;
   cursor: pointer;
@@ -1983,7 +1950,7 @@ const vRipple = {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(11, 90, 254, 0.8);
+  background: var(--color-accent-alpha-80);
   border: none;
   display: flex;
   align-items: center;
@@ -2014,7 +1981,7 @@ const vRipple = {
   font-weight: 600;
   font-size: 16px;
   letter-spacing: 0.04em;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   width: 100%; /* 确保标题占满整个容器宽度 */
   display: flex;
@@ -2042,7 +2009,7 @@ const vRipple = {
   font-family: 'MiSans', sans-serif;
   font-weight: normal;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
@@ -2076,21 +2043,21 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 20px;
-  color: #0b5afe;
+  color: var(--color-accent);
   text-shadow:
-    0px 20px 30px rgba(0, 114, 248, 0.5),
-    0px 8px 15px rgba(0, 114, 248, 0.5),
-    0px 4px 10px rgba(0, 179, 248, 0.3),
-    0px 2px 10px rgba(0, 179, 248, 0.2),
-    inset 3px 3px 10px rgba(255, 255, 255, 0.4),
-    inset -1px -1px 15px rgba(255, 255, 255, 0.4);
+    0px 20px 30px var(--primary-50),
+    0px 8px 15px var(--primary-50),
+    0px 4px 10px var(--schedule-list-title-shadow),
+    0px 2px 10px var(--schedule-list-title-shadow-sm),
+    inset 3px 3px 10px var(--overlay-40),
+    inset -1px -1px 15px var(--overlay-40);
 }
 
 .vote-count .label {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   opacity: 0.4;
 }
 
@@ -2106,22 +2073,26 @@ const vRipple = {
   justify-content: center;
   width: 48px;
   height: 45px;
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--like-btn-bg);
+  border: 1px solid var(--like-btn-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
+.like-button:hover:not(.disabled):not(.liked) {
+  background: var(--like-btn-hover-bg);
+}
+
 .like-button.liked {
-  background: #1a1d24;
-  border-color: #242f38;
+  background: var(--panel-bg-overlay);
+  border-color: var(--panel-border-active);
   background-image: none;
 }
 
 .like-button.disabled {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -2142,12 +2113,12 @@ const vRipple = {
 
 .scheduled-tag {
   display: inline-flex;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--success-20);
+  border: 1px solid var(--success-40);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: #10b981;
+  color: var(--color-success);
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
@@ -2155,12 +2126,12 @@ const vRipple = {
 
 .played-tag {
   display: inline-flex;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: var(--success-20);
+  border: 1px solid var(--success-40);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: #10b981;
+  color: var(--color-success);
   margin-left: 0.5rem;
   flex-shrink: 0; /* 防止标签被压缩 */
   align-self: center; /* 确保垂直居中 */
@@ -2168,12 +2139,12 @@ const vRipple = {
 
 .replay-tag {
   display: inline-flex;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: var(--primary-20);
+  border: 1px solid var(--primary-40);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
   font-size: 0.7rem;
-  color: #3b82f6;
+  color: var(--color-accent-light);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;
@@ -2184,11 +2155,11 @@ const vRipple = {
   display: inline-flex;
   align-items: center;
   padding: 0.15rem 0.4rem;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--card-code-bg);
+  border: 1px solid var(--card-code-border);
   border-radius: 4px;
   font-size: 0.7rem;
-  color: #fcd34d;
+  color: var(--card-code-text);
   margin-left: 0.5rem;
   flex-shrink: 0;
   align-self: center;
@@ -2199,7 +2170,8 @@ const vRipple = {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #21242d;
+  background: var(--panel-bg);
+  border: 1px solid var(--song-card-border);
   border-radius: 0 0 10px 10px;
   padding: 0.5rem 1rem;
   width: 95%;
@@ -2212,20 +2184,20 @@ const vRipple = {
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   text-align: left;
   max-width: 70%;
 }
 
 .withdraw-button {
-  background: linear-gradient(180deg, #ff2f2f 0%, #ff654d 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-error-light) 0%, var(--color-error-light) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.25rem 0.75rem;
   font-family: 'MiSans-Demibold', sans-serif;
   font-weight: 600;
   font-size: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
   height: 27px;
@@ -2239,11 +2211,11 @@ const vRipple = {
 
 .withdraw-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--mask-20);
 }
 
 .replay-cancel-btn {
-  background: linear-gradient(180deg, #0b5afe 0%, #3d7fff 100%);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   min-width: 75px;
 }
 
@@ -2268,24 +2240,24 @@ button:disabled {
 
 .page-button,
 .page-number {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .page-number.active {
-  background: #0b5afe;
-  border-color: #0b5afe;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .page-info {
   margin-left: 0.5rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 0.875rem;
 }
 
@@ -2298,18 +2270,18 @@ button:disabled {
 }
 
 .jump-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 0.875rem;
   white-space: nowrap;
 }
 
 .jump-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: var(--text-primary);
   width: 60px;
   text-align: center;
   transition: all 0.2s ease;
@@ -2317,30 +2289,30 @@ button:disabled {
 
 .jump-input:focus {
   outline: none;
-  border-color: #0b5afe;
-  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--color-accent);
+  background: var(--overlay-15);
 }
 
 .jump-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 0.75rem;
 }
 
 .jump-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .jump-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-20);
+  border-color: var(--overlay-30);
 }
 
 .jump-button:disabled {
@@ -2386,23 +2358,23 @@ button:disabled {
     padding: 8px 16px;
     font-size: 13px;
     font-weight: 500;
-    border: none;
+    border: 1px solid var(--chip-border);
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.5);
+    background: var(--chip-bg);
+    color: var(--overlay-50);
     margin: 0;
     white-space: nowrap;
   }
 
   .tab-button:hover {
     transform: none;
-    color: rgba(255, 255, 255, 0.8);
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--overlay-80);
+    background: var(--chip-bg-hover);
   }
 
   .tab-button.active {
-    background: rgba(11, 90, 254, 0.15);
-    color: #0b5afe;
+    background: var(--color-accent-alpha-15);
+    color: var(--color-accent);
     border-bottom: none;
     box-shadow: none;
   }
@@ -2420,8 +2392,8 @@ button:disabled {
   }
 
   .search-input {
-    background: rgba(255, 255, 255, 0.04);
-    border: none;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
     border-radius: 12px;
     padding: 10px 16px;
     padding-right: 40px;
@@ -2429,7 +2401,7 @@ button:disabled {
   }
 
   .search-input:focus {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--chip-bg-hover);
     box-shadow: none;
   }
 
@@ -2447,21 +2419,21 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: none;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
   }
 
   .semester-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--chip-bg-hover);
     transform: none;
     box-shadow: none;
   }
 
   .semester-dropdown {
-    background: #1a1a1f;
+    background: var(--panel-bg);
     border: none;
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 10px 40px var(--mask-40);
     top: calc(100% + 8px);
   }
 
@@ -2475,13 +2447,13 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: none;
+    background: var(--chip-bg);
+    border: 1px solid var(--chip-border);
     flex-shrink: 0;
   }
 
   .refresh-button:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--chip-bg-hover);
     transform: none;
     box-shadow: none;
   }
@@ -2496,38 +2468,38 @@ button:disabled {
 
   .song-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--song-card-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--song-card-border);
+    box-shadow: 0 4px 20px var(--mask-15);
   }
 
   .song-card.playing {
-    background: rgba(11, 90, 254, 0.12);
-    border-color: rgba(11, 90, 254, 0.4);
-    box-shadow: 0 0 20px rgba(11, 90, 254, 0.2);
+    background: var(--color-accent-alpha-12);
+    border-color: var(--color-accent-alpha-40);
+    box-shadow: 0 0 20px var(--color-accent-alpha-20);
   }
 
   .song-card.playing .song-title {
-    color: #0b5afe;
-    text-shadow: 0 0 10px rgba(11, 90, 254, 0.3);
+    color: var(--color-accent);
+    text-shadow: 0 0 10px var(--color-accent-alpha-30);
   }
 
   .song-card:active {
     transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-10);
+    border-color: var(--overlay-20);
   }
 
   .song-card.played {
     opacity: 0.8;
     filter: grayscale(0.35);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-8);
+    border-color: var(--overlay-10);
   }
 
   .song-card-main {
@@ -2551,7 +2523,7 @@ button:disabled {
     height: 60px;
     aspect-ratio: 1;
     border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--mask-30);
   }
 
   /* 播放按钮 */
@@ -2570,13 +2542,13 @@ button:disabled {
     font-weight: 700;
     margin-bottom: 4px;
     line-height: 1.2;
-    color: #ffffff;
+    color: var(--text-primary);
     letter-spacing: 0.01em;
   }
 
   .requester {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
     font-weight: 400;
     margin-top: 2px;
   }
@@ -2601,7 +2573,7 @@ button:disabled {
   .vote-count .label {
     font-size: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
     margin-top: 2px;
     text-transform: uppercase;
   }
@@ -2610,8 +2582,8 @@ button:disabled {
     width: 44px;
     height: 44px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--like-btn-bg-mobile);
+    border: 1px solid var(--like-btn-border-mobile);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2630,16 +2602,16 @@ button:disabled {
 
   /* 投稿时间和操作 */
   .submission-footer {
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--song-card-footer-bg);
     padding: 10px 16px;
     height: auto;
     width: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid var(--song-card-divider);
   }
 
   .submission-time {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
     font-weight: 400;
   }
 
@@ -2648,9 +2620,9 @@ button:disabled {
     padding: 0 12px;
     font-size: 12px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
+    background: var(--withdraw-btn-bg-mobile);
+    border: 1px solid var(--overlay-10);
+    color: var(--overlay-80);
   }
 
   .withdraw-button.replay-cancel-btn {
@@ -2668,12 +2640,6 @@ button:disabled {
     border-radius: 0;
   }
 
-  .loading::before {
-    width: 32px;
-    height: 32px;
-    border-width: 2px;
-  }
-
   /* 分页 */
   .pagination {
     flex-wrap: wrap;
@@ -2685,7 +2651,7 @@ button:disabled {
 
   .page-button,
   .page-number {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -2693,13 +2659,13 @@ button:disabled {
   }
 
   .page-number.active {
-    background: rgba(11, 90, 254, 0.15);
-    color: #0b5afe;
+    background: var(--color-accent-alpha-15);
+    color: var(--color-accent);
   }
 
   .page-info {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--overlay-40);
   }
 
   .page-jump {
@@ -2708,7 +2674,7 @@ button:disabled {
   }
 
   .jump-input {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     border: none;
     border-radius: 8px;
     width: 50px;
@@ -2716,7 +2682,7 @@ button:disabled {
   }
 
   .jump-button {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--overlay-8);
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -2792,9 +2758,9 @@ button:disabled {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2804,7 +2770,7 @@ button:disabled {
 
   .page-nav-btn:active {
     transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--overlay-10);
   }
 
   .page-nav-btn:disabled {
@@ -2818,17 +2784,17 @@ button:disabled {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--overlay-3);
     border-radius: 12px;
     height: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--overlay-8);
   }
 
   .mobile-page-input {
     width: 40px;
     background: transparent;
     border: none;
-    color: #fff;
+    color: var(--text-primary);
     text-align: center;
     font-size: 14px;
     font-weight: 600;
@@ -2838,24 +2804,24 @@ button:disabled {
 
   .mobile-page-input:focus {
     outline: none;
-    color: #0b5afe;
+    color: var(--color-accent);
   }
 
   .page-selector .divider {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--overlay-30);
     font-size: 14px;
   }
 
   .page-selector .total {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--overlay-60);
     font-size: 14px;
     font-weight: 500;
   }
 }
 
 .page-nav-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #3b82f6;
+  background: var(--overlay-10);
+  border-color: var(--color-accent-light);
 }
 
 .page-nav-btn:disabled {
@@ -2873,17 +2839,17 @@ button:disabled {
 
 .page-indicator .current {
   font-size: 18px;
-  color: #3b82f6;
+  color: var(--color-accent-light);
 }
 
 .page-indicator .divider {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--overlay-20);
 }
 
 .page-indicator .total {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
 }
 
 @media (max-width: 768px) {
@@ -2919,33 +2885,33 @@ button:disabled {
   width: 24px;
   height: 22px;
   margin-left: 6px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid var(--primary-30);
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.08);
-  color: #60a5fa;
+  background: var(--primary-10);
+  color: var(--color-accent-light);
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  box-shadow: 0 0 0 0 transparent;
   flex-shrink: 0;
 }
 
 .submission-note-trigger:hover {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 6px 12px rgba(96, 165, 250, 0.15);
+  background: var(--primary-18);
+  border-color: var(--primary-50);
+  box-shadow: 0 6px 12px var(--primary-15);
 }
 
 .submission-note-modal {
   width: 100%;
   max-width: 400px;
-  background: rgba(24, 24, 27, 0.85);
+  background: var(--panel-bg-overlay);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-8);
   border-radius: 20px;
   padding: 24px;
-  color: #f3f4f6;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  color: var(--text-secondary);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
 }
 
 .submission-note-header {
@@ -2958,27 +2924,27 @@ button:disabled {
 .submission-note-header h4 {
   font-size: 18px;
   font-weight: 600;
-  color: #f3f4f6;
+  color: var(--text-secondary);
   margin: 0;
 }
 
 .submission-note-header button {
   border: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
   border-radius: 50%;
   width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .submission-note-header button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f4f4f5;
+  background: var(--overlay-10);
+  color: var(--text-primary-light);
 }
 
 .submission-note-meta {
@@ -2991,8 +2957,8 @@ button:disabled {
 
 .song-title-tag {
   font-size: 13px;
-  color: #9ca3af;
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  background: var(--overlay-6);
   padding: 4px 10px;
   border-radius: 6px;
 }
@@ -3004,20 +2970,20 @@ button:disabled {
 }
 
 .visibility-public {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: var(--primary-15);
+  color: var(--color-accent-light);
+  border: 1px solid var(--primary-20);
 }
 
 .visibility-private {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: var(--warning-15);
+  color: var(--color-warning-light);
+  border: 1px solid var(--warning-20);
 }
 
 .submission-note-content-box {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-card-bg-soft);
+  border: 1px solid var(--overlay-5);
   border-radius: 12px;
   padding: 16px;
   max-height: 300px;
@@ -3027,7 +2993,7 @@ button:disabled {
 .submission-note-content {
   font-size: 14px;
   line-height: 1.7;
-  color: #e4e4e7;
+  color: var(--text-primary-lighter);
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;

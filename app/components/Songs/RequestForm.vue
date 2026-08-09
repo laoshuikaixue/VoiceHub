@@ -210,35 +210,16 @@
           </div>
 
           <!-- 音乐平台选择按钮 -->
-          <div class="platform-selection-container">
+          <div v-if="platformConfigLoaded" class="platform-selection-container">
             <div class="platform-selection">
               <button
-                :class="['platform-btn', { active: platform === 'netease' }]"
+                v-for="pKey in availablePlatforms"
+                :key="pKey"
+                :class="['platform-btn', { active: platform === pKey }]"
                 type="button"
-                @click="switchPlatform('netease')"
+                @click="switchPlatform(pKey)"
               >
-                {{ locale.platforms.netease }}
-              </button>
-              <button
-                :class="['platform-btn', { active: platform === 'tencent' }]"
-                type="button"
-                @click="switchPlatform('tencent')"
-              >
-                {{ locale.platforms.tencent }}
-              </button>
-              <button
-                :class="['platform-btn', { active: platform === 'bilibili' }]"
-                type="button"
-                @click="switchPlatform('bilibili')"
-              >
-                {{ locale.platforms.bilibili }}
-              </button>
-              <button
-                :class="['platform-btn', { active: platform === 'migu' }]"
-                type="button"
-                @click="switchPlatform('migu')"
-              >
-                {{ locale.platforms.migu }}
+                {{ locale.platforms[pKey] || pKey }}
               </button>
             </div>
 
@@ -319,7 +300,7 @@
                       <Icon :size="14" name="download" />
                     </button>
                     <button
-                      class="action-btn-compact text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                      class="action-btn-compact text-error hover:text-error hover:bg-error-10"
                       :aria-label="locale.logout"
                       :title="locale.logout"
                       type="button"
@@ -366,7 +347,7 @@
 
                   <div class="user-actions-row">
                     <button
-                      class="action-btn-compact text-red-400 hover:bg-red-400/10 hover:text-red-300"
+                      class="action-btn-compact text-error hover:bg-error-10 hover:text-error"
                       :aria-label="locale.logoutQQ"
                       :title="locale.logoutQQ"
                       type="button"
@@ -405,7 +386,7 @@
               <div v-if="enableSubmissionRemarks" class="form-group submission-note-group">
                 <div class="input-wrapper">
                   <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <label for="submission-note" class="text-[12px] font-bold text-zinc-300"
+                    <label for="submission-note" class="text-[12px] font-bold text-text-secondary"
                       >{{ locale.submissionNote }}</label
                     >
                     <div class="flex items-center gap-2">
@@ -470,9 +451,9 @@
                     id="submission-note"
                     v-model="submissionNote"
                     maxlength="300"
-                    class="w-full min-h-[60px] rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2 text-sm text-zinc-100 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 resize-y transition-all"
+                    class="w-full min-h-[60px] rounded-xl border border-border-secondary bg-bg-secondary-60 px-4 py-2 text-sm text-text-primary focus:outline-none focus:border-primary-50 focus:ring-1 focus:ring-primary-10 resize-y transition-all"
                   />
-                  <div class="mt-1 flex justify-end text-[11px] text-zinc-500">
+                  <div class="mt-1 flex justify-end text-[11px] text-text-tertiary">
                     <span>{{ submissionNote.length }}/300</span>
                   </div>
                 </div>
@@ -489,13 +470,13 @@
                   <div class="flex min-w-0 items-center gap-2">
                     <div class="min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-black text-zinc-200">{{ locale.cardCode }}</span>
+                        <span class="text-xs font-black text-text-primary">{{ locale.cardCode }}</span>
                         <span
                           :class="[
                             'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                             cardCodeFieldMeta.required
-                              ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-                              : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
+                              ? 'border-warning-30 bg-warning-10 text-warning-300'
+                              : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
                           ]"
                         >
                           {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
@@ -505,12 +486,12 @@
                         :class="[
                           'mt-1 truncate text-[11px]',
                           cardCodeValidation.valid
-                            ? 'text-emerald-300/80'
+                            ? 'text-success-300'
                             : cardCodeValidation.valid === false
-                              ? 'text-red-300/80'
+                              ? 'text-error-80'
                               : cardCodeFieldMeta.required
-                                ? 'text-yellow-300/80'
-                                : 'text-zinc-500'
+                                ? 'text-warning-300'
+                                : 'text-text-tertiary'
                         ]"
                       >
                         {{ cardCodeStatusText }}
@@ -519,7 +500,7 @@
                   </div>
                   <div class="flex shrink-0 items-center gap-2">
                     <button
-                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-yellow-500/25 bg-yellow-500/10 px-3 text-xs font-black text-yellow-200 transition-all hover:border-yellow-400/40 hover:bg-yellow-500/15"
+                      class="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-warning-25 bg-warning-10 px-3 text-xs font-black text-warning-200 transition-all hover:border-warning-40 hover:bg-warning-15"
                       type="button"
                       @click="openCardCodeModal"
                     >
@@ -528,7 +509,7 @@
                     </button>
                     <button
                       v-if="trimmedCardCode"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-500 transition-all hover:border-red-500/30 hover:text-red-300"
+                      class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-secondary bg-bg-secondary-80 text-text-tertiary transition-all hover:border-error-30 hover:text-error"
                       :title="locale.clearCardCode"
                       type="button"
                       @click="clearCardCode"
@@ -577,7 +558,7 @@
 
             <!-- 加载状态 -->
             <div v-if="searching" class="loading-state">
-              <div class="loading-spinner" />
+              <AppSpinner :size="40" />
               <p class="loading-text">{{ locale.processing }}</p>
             </div>
 
@@ -802,7 +783,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="searchIcon" >
+                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" >
                 </div>
               </div>
             </Transition>
@@ -925,32 +906,32 @@
       >
         <div
           v-if="showCardCodeModal"
-          class="fixed inset-0 z-[105] flex items-end justify-center bg-zinc-950/80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+          class="fixed inset-0 z-[105] flex items-end justify-center bg-bg-primary-80 p-3 backdrop-blur-sm sm:items-center sm:p-6"
           @click.self="closeCardCodeModal"
         >
           <div
-            class="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+            class="w-full max-w-md overflow-hidden rounded-2xl border border-border-secondary bg-bg-secondary shadow-2xl"
             @click.stop
           >
-            <div class="flex items-center justify-between border-b border-zinc-800/70 px-5 py-4">
+            <div class="flex items-center justify-between border-b border-border-secondary-70 px-5 py-4">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-zinc-100">{{ locale.cardCode }}</h3>
+                  <h3 class="text-base font-black text-text-primary">{{ locale.cardCode }}</h3>
                   <span
                     :class="[
                       'rounded-full border px-1.5 py-0.5 text-[9px] font-black',
                       cardCodeFieldMeta.required
-                        ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-                        : 'border-zinc-700 bg-zinc-800/70 text-zinc-400'
+                        ? 'border-warning-30 bg-warning-10 text-warning-300'
+                        : 'border-border-tertiary bg-bg-tertiary-70 text-text-tertiary'
                     ]"
                   >
                     {{ cardCodeFieldMeta.required ? locale.required : locale.optional }}
                   </span>
                 </div>
-                <p class="mt-1 text-[11px] text-zinc-500">{{ cardCodeFieldMeta.helper }}</p>
+                <p class="mt-1 text-[11px] text-text-tertiary">{{ cardCodeFieldMeta.helper }}</p>
               </div>
               <button
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-800/60 text-zinc-400 transition-all hover:bg-zinc-800 hover:text-zinc-100"
+                class="flex h-9 w-9 items-center justify-center rounded-xl bg-bg-tertiary-60 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
                 type="button"
                 @click="closeCardCodeModal"
               >
@@ -961,7 +942,7 @@
             <div class="px-5 py-5">
               <label
                 for="card-code-modal"
-                class="px-1 text-[10px] font-black uppercase tracking-widest text-zinc-600"
+                class="px-1 text-[10px] font-black uppercase tracking-widest text-text-disabled"
               >
                 {{ locale.cardCodeLabel }}
               </label>
@@ -970,7 +951,7 @@
                 ref="cardCodeInputRef"
                 v-model="cardCodeDraft"
                 :placeholder="cardCodeFieldMeta.placeholder"
-                class="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm font-bold text-zinc-100 placeholder-zinc-600 transition-all focus:border-yellow-400/50 focus:outline-none focus:ring-1 focus:ring-yellow-400/20"
+                class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
               />
@@ -978,10 +959,10 @@
                 :class="[
                   'mt-2 px-1 text-[11px]',
                   cardCodeValidation.valid
-                    ? 'text-emerald-300/80'
+                    ? 'text-success-300'
                     : cardCodeValidation.valid === false
-                      ? 'text-red-300/80'
-                      : 'text-zinc-500'
+                      ? 'text-error-80'
+                      : 'text-text-tertiary'
                 ]"
               >
                 {{ cardCodeModalHint }}
@@ -989,10 +970,10 @@
             </div>
 
             <div
-              class="flex flex-col-reverse gap-2 border-t border-zinc-800/70 bg-zinc-900/70 px-5 py-4 sm:flex-row sm:justify-end"
+              class="flex flex-col-reverse gap-2 border-t border-border-secondary-70 bg-bg-secondary-70 px-5 py-4 sm:flex-row sm:justify-end"
             >
               <button
-                class="rounded-lg px-4 py-2.5 text-xs font-bold text-zinc-500 transition-all hover:text-zinc-300"
+                class="rounded-lg px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:text-text-secondary"
                 type="button"
                 @click="closeCardCodeModal"
               >
@@ -1000,7 +981,7 @@
               </button>
               <button
                 v-if="trimmedCardCode"
-                class="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-bold text-zinc-400 transition-all hover:border-red-500/30 hover:text-red-300"
+                class="rounded-lg border border-border-secondary bg-bg-primary px-4 py-2.5 text-xs font-bold text-text-tertiary transition-all hover:border-error-30 hover:text-error"
                 type="button"
                 @click="clearCardCode"
               >
@@ -1008,7 +989,7 @@
               </button>
               <button
                 :disabled="cardCodeValidation.checking"
-                class="rounded-lg bg-yellow-500 px-5 py-2.5 text-xs font-black text-zinc-950 transition-all hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                class="rounded-lg bg-warning px-5 py-2.5 text-xs font-black text-text-primary transition-all hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
                 type="button"
                 @click="saveCardCode"
               >
@@ -1031,10 +1012,10 @@
       >
         <div
           v-if="showAudioMatchModal"
-          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/85 backdrop-blur-sm"
+          class="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-85 backdrop-blur-sm"
         >
           <div
-            class="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            class="relative w-full max-w-md bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
             @click.stop
           >
             <div class="px-8 py-7 flex flex-col items-center text-center">
@@ -1043,23 +1024,23 @@
                   class="w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500"
                   :class="
                     audioMatchRecording
-                      ? 'bg-red-500/20 text-red-400 scale-110'
+                      ? 'bg-error-20 text-error scale-110'
                       : audioMatchError
-                        ? 'bg-zinc-800/50 text-zinc-500'
-                        : 'bg-blue-500/10 text-blue-400'
+                        ? 'bg-bg-tertiary-50 text-text-tertiary'
+                        : 'bg-primary-10 text-primary'
                   "
                 >
                   <Icon :size="32" name="mic" />
                 </div>
                 <div
                   v-if="audioMatchRecording"
-                  class="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-30"
+                  class="absolute inset-0 rounded-full border-2 border-error animate-ping opacity-30"
                 />
               </div>
 
-              <h3 class="mt-6 text-xl font-bold text-zinc-100 tracking-tight">{{ locale.audioMatch }}</h3>
+              <h3 class="mt-6 text-xl font-bold text-text-primary tracking-tight">{{ locale.audioMatch }}</h3>
 
-              <p class="mt-2 text-sm text-zinc-400 max-w-[260px]">
+              <p class="mt-2 text-sm text-text-tertiary max-w-[260px]">
                 {{
                   audioMatchStatus ||
                   (audioMatchError ? audioMatchError : locale.audioMatchHint)
@@ -1102,8 +1083,8 @@
               v-if="audioMatchResults.length"
               class="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar"
             >
-              <div class="border-t border-zinc-800/60 pt-5">
-                <h4 class="text-sm font-semibold text-zinc-300 mb-4">{{ locale.audioMatchResults }}</h4>
+              <div class="border-t border-border-secondary-60 pt-5">
+                <h4 class="text-sm font-semibold text-text-secondary mb-4">{{ locale.audioMatchResults }}</h4>
                 <div class="space-y-2">
                   <button
                     v-for="match in audioMatchResults"
@@ -1114,7 +1095,7 @@
                   >
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                       <div
-                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-zinc-800/50 flex items-center justify-center"
+                        class="relative shrink-0 w-11 h-11 rounded-xl overflow-hidden group/cover bg-bg-tertiary-50 flex items-center justify-center"
                         @click.stop="playAudioMatchResult(match)"
                       >
                         <img
@@ -1122,19 +1103,19 @@
                           :src="match.cover"
                           class="w-full h-full object-cover"
                         />
-                        <Music v-else class="w-5 h-5 text-zinc-500" />
+                        <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
-                          class="absolute inset-0 bg-black/50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
+                          class="absolute inset-0 bg-bg-primary-50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
                         >
-                          <Play class="w-4 h-4 text-white fill-white" />
+                          <Play class="w-4 h-4 text-text-primary fill-white" />
                         </div>
                       </div>
                       <div class="min-w-0 text-left flex-1">
-                        <p class="truncate text-sm font-medium text-zinc-100">{{ match.name }}</p>
-                        <p class="truncate text-xs text-zinc-400 mt-0.5">{{ match.artist }}</p>
+                        <p class="truncate text-sm font-medium text-text-primary">{{ match.name }}</p>
+                        <p class="truncate text-xs text-text-tertiary mt-0.5">{{ match.artist }}</p>
                       </div>
                       <div class="shrink-0 text-right">
-                        <span class="text-[11px] font-mono text-blue-400">
+                        <span class="text-[11px] font-mono text-primary">
                           {{ (match.startTime / 1000).toFixed(1) }}s
                         </span>
                       </div>
@@ -1160,27 +1141,27 @@
       >
         <div
           v-if="showManualModal"
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-zinc-950/80 backdrop-blur-sm"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-bg-primary-80 backdrop-blur-sm"
           @click.self="showManualModal = false"
         >
           <div
-            class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            class="relative w-full max-w-2xl bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
             @click.stop
           >
             <!-- Header -->
             <div
-              class="px-8 py-6 border-b border-zinc-800/50 flex items-center justify-between shrink-0"
+              class="px-8 py-6 border-b border-border-secondary-50 flex items-center justify-between shrink-0"
             >
               <div class="flex items-center gap-4">
                 <div
-                  class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500"
+                  class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
                   <Edit3 :size="24" />
                 </div>
-                <h3 class="text-xl font-black text-zinc-100 tracking-tight">{{ locale.manualTitle }}</h3>
+                <h3 class="text-xl font-black text-text-primary tracking-tight">{{ locale.manualTitle }}</h3>
               </div>
               <button
-                class="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 transition-all"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
                 @click="showManualModal = false"
               >
                 <X class="w-5 h-5" />
@@ -1192,18 +1173,18 @@
               <div class="grid grid-cols-1 gap-6">
                 <!-- 歌曲名称 -->
                 <div class="space-y-2">
-                  <label class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                  <label class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.songName }}</label
                   >
                   <div class="relative group">
                     <input
                       :value="title"
-                      class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-400 font-bold focus:outline-none cursor-not-allowed transition-all"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-tertiary font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
                     />
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                      <Lock class="w-4 h-4 text-zinc-600" />
+                      <Lock class="w-4 h-4 text-text-disabled" />
                     </div>
                   </div>
                 </div>
@@ -1212,13 +1193,13 @@
                 <div class="space-y-2">
                   <label
                     for="modal-artist"
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.artistName }}</label
                   >
                   <input
                     id="modal-artist"
                     v-model="manualArtist"
-                    class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-500/30 transition-all"
+                    class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none focus:border-primary-30 transition-all"
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
@@ -1229,7 +1210,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-cover"
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.coverUrl }}</label
                   >
                   <div class="relative group">
@@ -1237,10 +1218,10 @@
                       id="modal-cover"
                       v-model="manualCover"
                       :class="[
-                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
+                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none transition-all',
                         manualCover && !coverValidation.valid
-                          ? 'border-red-500/50 focus:border-red-500/50'
-                          : 'border-zinc-800 focus:border-blue-500/30'
+                          ? 'border-error-50 focus:border-error-50'
+                          : 'border-border-secondary focus:border-primary-30'
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
@@ -1249,7 +1230,7 @@
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
                     >
-                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                      <Loader2 class="w-4 h-4 text-text-tertiary animate-spin" />
                     </div>
                   </div>
                   <Transition
@@ -1260,13 +1241,13 @@
                     <div v-if="manualCover && !coverValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!coverValidation.valid"
-                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ coverValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1278,7 +1259,7 @@
                 <div class="space-y-2">
                   <label
                     for="modal-play-url"
-                    class="text-[10px] font-black text-zinc-600 uppercase tracking-widest px-1"
+                    class="text-[10px] font-black text-text-disabled uppercase tracking-widest px-1"
                     >{{ locale.playUrl }}</label
                   >
                   <div class="relative group">
@@ -1286,10 +1267,10 @@
                       id="modal-play-url"
                       v-model="manualPlayUrl"
                       :class="[
-                        'w-full bg-zinc-950 border rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none transition-all',
+                        'w-full bg-bg-primary border rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-disabled focus:outline-none transition-all',
                         manualPlayUrl && !playUrlValidation.valid
-                          ? 'border-red-500/50 focus:border-red-500/50'
-                          : 'border-zinc-800 focus:border-blue-500/30'
+                          ? 'border-error-50 focus:border-error-50'
+                          : 'border-border-secondary focus:border-primary-30'
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
@@ -1298,7 +1279,7 @@
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
                     >
-                      <Loader2 class="w-4 h-4 text-zinc-400 animate-spin" />
+                      <Loader2 class="w-4 h-4 text-text-tertiary animate-spin" />
                     </div>
                   </div>
                   <Transition
@@ -1309,13 +1290,13 @@
                     <div v-if="manualPlayUrl && !playUrlValidation.validating" class="px-1 pt-1">
                       <p
                         v-if="!playUrlValidation.valid"
-                        class="text-[10px] font-bold text-red-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-error-80 flex items-center gap-1"
                       >
                         <X class="w-3 h-3" /> {{ playUrlValidation.error }}
                       </p>
                       <p
                         v-else
-                        class="text-[10px] font-bold text-emerald-500/80 flex items-center gap-1"
+                        class="text-[10px] font-bold text-success-80 flex items-center gap-1"
                       >
                         <Check class="w-3 h-3" /> {{ locale.validUrl }}
                       </p>
@@ -1327,10 +1308,10 @@
 
             <!-- Footer -->
             <div
-              class="px-8 py-6 bg-zinc-900/50 border-t border-zinc-800/50 flex gap-3 justify-end shrink-0"
+              class="px-8 py-6 bg-bg-secondary-50 border-t border-border-secondary-50 flex gap-3 justify-end shrink-0"
             >
               <button
-                class="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-all"
+                class="px-6 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary transition-all"
                 type="button"
                 @click="showManualModal = false"
               >
@@ -1338,7 +1319,7 @@
               </button>
               <button
                 :disabled="!canSubmitManualForm || submitting"
-                class="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-lg transition-all disabled:opacity-50"
+                class="px-8 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50"
                 type="button"
                 @click="handleManualSubmit"
               >
@@ -1362,9 +1343,9 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import searchIcon from '~~/public/images/search.svg'
 import { X, Lock, Loader2, Check, Edit3, Music, Play } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
+import { useThemeImage } from '~/composables/useThemeImage'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -1372,8 +1353,10 @@ import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useAudioQuality } from '~/composables/useAudioQuality'
+import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
@@ -1403,6 +1386,7 @@ const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const { t: callLocale } = useLocaleText(locale)
 const { localize: localizeServerError } = useServerErrors()
+const { getSearchIcon } = useThemeImage()
 
 // 站点配置
 const {
@@ -1450,6 +1434,21 @@ const error = ref('')
 const success = ref('')
 const submitting = ref(false)
 const voting = ref(false)
+
+const { getAvailablePlatforms, loadPlatformConfig, loaded: platformConfigLoaded } = usePlatformConfig()
+const availablePlatforms = computed(() => getAvailablePlatforms())
+
+// 监听平台可用性变化：当当前平台被管理员禁用时，自动切换到第一个可用平台
+watch(availablePlatforms, (available) => {
+  if (available.length > 0 && !available.includes(platform.value)) {
+    platform.value = available[0]
+    if (window.$showNotification) {
+      const switchedName = locale.value.platforms[platform.value] || ''
+      const msg = callLocale('notifications.platformAutoSwitched', '', switchedName)
+      window.$showNotification(msg, 'info')
+    }
+  }
+})
 
 const showImportSongsModal = ref(false)
 const showLoginModal = ref(false)
@@ -2297,6 +2296,8 @@ watch(
 )
 
 onMounted(async () => {
+  // 后台加载平台配置（不阻塞其他初始化）；平台可用性变化由 watch 自动处理
+  loadPlatformConfig()
   checkNeteaseLoginStatus()
   checkQQMusicLoginStatus()
   fetchPlayTimes()
@@ -2578,6 +2579,7 @@ const handleSearch = async () => {
     }
 
     console.log('开始多音源搜索:', searchParams)
+    // 平台可用性检查已由 searchSongs 内部统一处理
     const results = await musicSources.searchSongs(searchParams)
 
     // 再次检查是否被中断，防止竞态条件
@@ -3957,7 +3959,7 @@ defineExpose({
 <style scoped>
 .request-form {
   width: 100%;
-  color: #ffffff;
+  color: var(--text-primary);
   display: flex;
   gap: 2rem;
   height: calc(100vh - 160px);
@@ -3974,7 +3976,7 @@ defineExpose({
 }
 
 .rules-section {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-card-bg);
   border-radius: 13px;
   padding: 1.25rem;
   flex: 0 0 35%; /* 稍微缩小规则区域占比 */
@@ -3988,7 +3990,7 @@ defineExpose({
   font-weight: 400;
   font-size: 15px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   margin-bottom: 0.75rem;
 }
 
@@ -3998,7 +4000,7 @@ defineExpose({
   font-size: 15px;
   line-height: 1.7;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .rules-content-desktop p {
@@ -4016,19 +4018,19 @@ defineExpose({
   gap: 0.5rem;
   font-size: 15px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   margin-bottom: 1.25rem;
 }
 
 .rules-icon {
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .rules-content {
   font-family: 'MiSans', sans-serif;
   font-size: 13px;
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
 }
 
 .rule-item {
@@ -4038,7 +4040,7 @@ defineExpose({
 
 .rule-item span {
   margin-right: 0.5rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--overlay-30);
   font-weight: 600;
 }
 
@@ -4082,7 +4084,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: #ffffff;
+  color: var(--text-primary);
   white-space: nowrap;
   flex-shrink: 0; /* 防止标签被压缩 */
 }
@@ -4095,29 +4097,29 @@ defineExpose({
 }
 
 .search-input {
-  background: #040e15;
-  border: 1px solid #242f38;
+  background: var(--panel-bg-quaternary);
+  border: 1px solid var(--panel-border-active);
   border-radius: 8px;
   padding: 0.6rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   flex: 1;
   min-width: 100px; /* 确保输入框不会缩到太小 */
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #0b5afe;
+  border-color: var(--color-accent);
 }
 
 .search-button {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.75rem 1.5rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -4129,7 +4131,7 @@ defineExpose({
 
 .search-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 4px 12px var(--primary-30);
 }
 
 .search-button:disabled {
@@ -4143,11 +4145,11 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
   padding: 0.75rem 0.9rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--overlay-85);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
@@ -4158,9 +4160,9 @@ defineExpose({
 }
 
 .audio-match-btn:hover:not(:disabled) {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: rgba(96, 165, 250, 0.35);
-  color: #ffffff;
+  background: var(--primary-18);
+  border-color: var(--requestform-audio-match-hover-border);
+  color: var(--text-primary);
 }
 
 .audio-match-btn:disabled {
@@ -4181,7 +4183,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #ffffff;
+  color: var(--text-primary);
   white-space: nowrap;
   flex-shrink: 0; /* 防止标签被压缩 */
 }
@@ -4197,18 +4199,18 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(11, 90, 254, 0.1);
-  border: 1px solid rgba(11, 90, 254, 0.2);
+  background: var(--color-accent-alpha-10);
+  border: 1px solid var(--color-accent-alpha-20);
   border-radius: 6px;
   padding: 0.25rem 0.5rem;
   font-size: 14px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .remove-collaborator {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4216,26 +4218,26 @@ defineExpose({
 }
 
 .remove-collaborator:hover {
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .add-collaborator-btn {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   border-radius: 6px;
   padding: 0.25rem 0.75rem;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .add-collaborator-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--overlay-10);
+  color: var(--text-primary);
 }
 
 /* 自定义复选框样式 */
@@ -4258,8 +4260,8 @@ defineExpose({
   width: 14px;
   height: 14px;
   border-radius: 4px;
-  border: 1px solid #3f3f46;
-  background: rgba(24, 24, 27, 0.5);
+  border: 1px solid var(--panel-bg-hover);
+  background: var(--panel-bg-overlay);
   transition: all 0.2s ease;
 }
 
@@ -4273,8 +4275,8 @@ defineExpose({
 }
 
 .custom-checkbox-input:checked + .custom-checkbox-box {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-light);
 }
 
 .custom-checkbox-input:checked + .custom-checkbox-box .custom-checkbox-icon {
@@ -4284,16 +4286,16 @@ defineExpose({
 
 .custom-checkbox-text {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-muted);
   transition: color 0.2s ease;
 }
 
 .custom-checkbox-input:checked ~ .custom-checkbox-text {
-  color: #d1d5db;
+  color: var(--text-primary-lighter);
 }
 
 .custom-checkbox-wrapper:hover .custom-checkbox-box {
-  border-color: #60a5fa;
+  border-color: var(--color-accent-light);
 }
 
 /* 横向投稿状态样式 */
@@ -4302,27 +4304,27 @@ defineExpose({
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: var(--primary-10);
+  border-color: var(--primary-30);
 }
 
 .login-required-notice .notice-icon {
   flex-shrink: 0;
-  color: #60a5fa;
+  color: var(--color-accent-light);
 }
 
 .login-required-notice .notice-text {
-  color: #93c5fd;
+  color: var(--text-link-hover);
   font-size: 13px;
   font-weight: 500;
 }
 
 .login-required-notice .login-link-btn {
   padding: 0.2rem 0.6rem;
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  border: 1px solid var(--primary-40);
   border-radius: 4px;
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  background: var(--primary-20);
+  color: var(--color-accent-light);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -4330,16 +4332,16 @@ defineExpose({
 }
 
 .login-required-notice .login-link-btn:hover {
-  background: rgba(59, 130, 246, 0.35);
-  color: #bfdbfe;
+  background: var(--primary-35);
+  color: var(--text-link-hover);
 }
 
 .submission-status-horizontal {
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--surface-card-bg-medium);
   border-radius: 8px;
   padding: 0.4rem 0.75rem;
   margin-bottom: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
 }
 
 .admin-notice-horizontal {
@@ -4357,7 +4359,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
-  color: #ffd700;
+  color: var(--text-highlight);
 }
 
 .submission-closed-notice {
@@ -4375,7 +4377,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
-  color: #ff6b6b;
+  color: var(--color-error-light);
 }
 
 .status-content-horizontal {
@@ -4396,23 +4398,23 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .status-item-horizontal .status-value {
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: #0b5afe;
+  color: var(--color-accent);
 }
 
 .status-item-horizontal .status-remaining {
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(11, 90, 254, 0.1);
-  border: 1px solid rgba(11, 90, 254, 0.3);
+  color: var(--overlay-70);
+  background: var(--color-accent-alpha-10);
+  border: 1px solid var(--color-accent-alpha-30);
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
 }
@@ -4440,9 +4442,9 @@ defineExpose({
 .desktop-card-code-panel {
   min-height: 94px;
   height: 100%;
-  border: 1px solid rgba(39, 39, 42, 0.8);
+  border: 1px solid var(--panel-bg-deep);
   border-radius: 12px;
-  background: rgba(24, 24, 27, 0.35);
+  background: var(--panel-bg-overlay);
   padding: 0.75rem;
   display: flex;
   align-items: center;
@@ -4469,7 +4471,7 @@ defineExpose({
   font-weight: 600;
   font-size: 15px;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   margin-bottom: 0.25rem;
 }
 
@@ -4479,21 +4481,21 @@ defineExpose({
 
 .form-input,
 .form-select {
-  background: #040e15;
-  border: 1px solid #242f38;
+  background: var(--panel-bg-quaternary);
+  border: 1px solid var(--panel-border-active);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   width: 100%;
 }
 
 .form-input:focus,
 .form-select:focus {
   outline: none;
-  border-color: #0b5afe;
+  border-color: var(--color-accent);
 }
 
 /* 平台选择按钮样式 */
@@ -4557,19 +4559,19 @@ defineExpose({
 .login-title {
   font-size: 13px;
   font-weight: 500;
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   margin: 0;
 }
 
 .login-hint {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--overlay-45);
   margin: 2px 0 0 0;
   line-height: 1.3;
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, var(--color-accent-light) 0%, var(--color-accent-hover) 100%);
   color: white;
   border: none;
   padding: 0.45rem 0.85rem;
@@ -4580,22 +4582,22 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 10px var(--primary-15);
 }
 
 .login-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 5px 14px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 5px 14px var(--primary-25);
   filter: brightness(1.1);
 }
 
 .qq-login-btn {
-  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-  box-shadow: 0 4px 10px rgba(6, 182, 212, 0.15);
+  background: linear-gradient(135deg, var(--color-teal) 0%, var(--color-teal) 100%);
+  box-shadow: 0 4px 10px var(--requestform-qq-login-shadow);
 }
 
 .qq-login-btn:hover {
-  box-shadow: 0 5px 14px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 5px 14px var(--requestform-qq-login-shadow-hover);
 }
 
 .header-actions {
@@ -4610,7 +4612,7 @@ defineExpose({
   gap: 0.25rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-size: 11px;
@@ -4619,8 +4621,8 @@ defineExpose({
 }
 
 .header-btn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  background: var(--overlay-8);
 }
 
 .login-actions {
@@ -4630,9 +4632,9 @@ defineExpose({
 }
 
 .import-btn {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--overlay-4);
+  color: var(--overlay-70);
+  border: 1px solid var(--overlay-8);
   padding: 0.45rem 0.75rem;
   border-radius: 7px;
   font-size: 12px;
@@ -4647,9 +4649,9 @@ defineExpose({
 }
 
 .import-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: var(--overlay-8);
+  border-color: var(--overlay-15);
+  color: var(--text-primary);
 }
 
 .user-status {
@@ -4675,7 +4677,7 @@ defineExpose({
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid var(--overlay-10);
 }
 
 .qq-user-avatar {
@@ -4686,14 +4688,14 @@ defineExpose({
   height: 24px;
   flex-shrink: 0;
   border-radius: 50%;
-  color: #22d3ee;
-  background: rgba(6, 182, 212, 0.12);
-  border: 1.5px solid rgba(6, 182, 212, 0.22);
+  color: var(--color-cyan);
+  background: var(--requestform-user-icon-bg);
+  border: 1.5px solid var(--requestform-user-icon-border);
 }
 
 .user-name {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -4709,9 +4711,9 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--overlay-4);
+  border: 1px solid var(--overlay-6);
+  color: var(--overlay-70);
   padding: 0.35rem 0.6rem;
   border-radius: 6px;
   font-size: 11px;
@@ -4722,9 +4724,9 @@ defineExpose({
 }
 
 .action-btn-compact:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  color: var(--text-primary);
+  border-color: var(--overlay-12);
 }
 
 .audio-waveform {
@@ -4738,7 +4740,7 @@ defineExpose({
   display: block;
   width: 3px;
   height: 100%;
-  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(180deg, var(--color-accent-light) 0%, var(--color-accent-light-hover) 100%);
   border-radius: 2px;
   animation: wave 1.2s ease-in-out infinite;
 }
@@ -4784,20 +4786,20 @@ defineExpose({
 }
 
 .audio-match-primary-btn {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, var(--color-accent-hover) 0%, var(--color-accent-light-hover) 100%);
   border: none;
   border-radius: 12px;
   padding: 0.875rem 2rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px var(--requestform-login-btn-hover-shadow);
 }
 
 .audio-match-primary-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 20px var(--requestform-login-btn-hover-shadow-lg);
 }
 
 .audio-match-primary-btn:disabled {
@@ -4808,15 +4810,15 @@ defineExpose({
 }
 
 .audio-match-record-btn {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  background: linear-gradient(135deg, var(--color-error-hover) 0%, var(--color-error-hover) 100%);
   border: none;
   border-radius: 12px;
   padding: 0.875rem 2rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+  box-shadow: 0 4px 14px var(--requestform-like-btn-hover-shadow);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -4824,14 +4826,14 @@ defineExpose({
 
 .audio-match-record-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+  box-shadow: 0 6px 20px var(--requestform-like-btn-hover-shadow-lg);
 }
 
 .recording-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--text-primary);
   animation: pulse-dot 1s ease-in-out infinite;
 }
 
@@ -4849,19 +4851,19 @@ defineExpose({
 
 .audio-match-cancel-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 0.875rem 1.5rem;
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
 }
 
 .audio-match-cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e4e4e7;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--overlay-5);
+  color: var(--text-primary-lighter);
+  border-color: var(--overlay-15);
 }
 
 .audio-match-result-item {
@@ -4871,24 +4873,24 @@ defineExpose({
   justify-content: space-between;
   gap: 1rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--overlay-8);
+  background: var(--overlay-3);
   padding: 0.95rem 1rem;
   cursor: pointer;
 }
 
 .audio-match-result-item:hover {
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(96, 165, 250, 0.22);
+  background: var(--primary-10);
+  border-color: var(--requestform-audio-match-hover-border-light);
   transform: translateY(-1px);
 }
 
 .search-type-switch {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--surface-card-bg-soft);
   border-radius: 6px;
   padding: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--overlay-5);
 }
 
 .radio-label {
@@ -4896,7 +4898,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   cursor: pointer;
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
@@ -4904,10 +4906,10 @@ defineExpose({
 }
 
 .radio-label.active {
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--overlay-8);
+  box-shadow: 0 1px 3px var(--mask-10);
 }
 
 .radio-label input {
@@ -4920,7 +4922,7 @@ defineExpose({
   gap: 0.2rem;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   font-size: 11px;
@@ -4929,39 +4931,39 @@ defineExpose({
 }
 
 .logout-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--overlay-70);
+  background: var(--overlay-5);
 }
 
 .platform-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
   padding: 0.45rem 0.85rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
 }
 
 .platform-btn.active {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border-color: var(--overlay-16);
+  color: var(--text-primary);
 }
 
 .platform-btn:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--overlay-20);
+  color: var(--overlay-80);
 }
 
 /* 音源状态显示 */
 .source-status-display {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -4978,14 +4980,14 @@ defineExpose({
 .status-title {
   font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--overlay-90);
   font-family: 'MiSans', sans-serif;
 }
 
 .status-summary {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--overlay-60);
+  background: var(--overlay-10);
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-family: 'MiSans', sans-serif;
@@ -5012,25 +5014,25 @@ defineExpose({
 }
 
 .source-item.healthy {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.3);
-  color: #4ade80;
+  background: var(--requestform-source-healthy-bg);
+  border-color: var(--requestform-source-healthy-border);
+  color: var(--color-success-light);
 }
 
 .source-item.unhealthy {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #f87171;
+  background: var(--error-15);
+  border-color: var(--error-30);
+  color: var(--color-error-light);
 }
 
 .source-item.checking {
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.3);
-  color: #fbbf24;
+  background: var(--requestform-source-checking-bg);
+  border-color: var(--requestform-source-checking-border);
+  color: var(--color-warning-light);
 }
 
 .source-item.current {
-  box-shadow: 0 0 0 2px rgba(11, 90, 254, 0.4);
+  box-shadow: 0 0 0 2px var(--color-accent-alpha-40);
   transform: scale(1.02);
 }
 
@@ -5046,18 +5048,18 @@ defineExpose({
 }
 
 .source-item.healthy .source-indicator {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+  background: var(--color-success-hover);
+  box-shadow: 0 0 6px var(--requestform-source-healthy-glow);
 }
 
 .source-item.unhealthy .source-indicator {
-  background: #ef4444;
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  background: var(--color-error);
+  box-shadow: 0 0 6px var(--error-60);
 }
 
 .source-item.checking .source-indicator {
-  background: #fbbf24;
-  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+  background: var(--color-warning-light);
+  box-shadow: 0 0 6px var(--requestform-source-checking-glow);
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -5077,10 +5079,10 @@ defineExpose({
   gap: 0.5rem;
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--error-15);
+  border: 1px solid var(--error-30);
   border-radius: 6px;
-  color: #f87171;
+  color: var(--color-error-light);
   font-size: 12px;
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
@@ -5089,7 +5091,7 @@ defineExpose({
 /* 搜索结果容器样式 */
 .search-results-container {
   flex: 1;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-card-bg);
   border-radius: 13px;
   display: flex;
   flex-direction: column;
@@ -5117,17 +5119,8 @@ defineExpose({
   min-height: 200px; /* 添加最小高度 */
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(11, 90, 254, 0.2);
-  border-top-color: #0b5afe;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 .loading-text {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   margin: 0;
@@ -5166,17 +5159,17 @@ defineExpose({
 }
 
 .results-grid::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--overlay-10);
   border-radius: 3px;
 }
 
 .results-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-30);
   border-radius: 3px;
 }
 
 .results-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--overlay-50);
 }
 
 /* 空状态和初始状态 */
@@ -5204,13 +5197,13 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .empty-hint,
 .initial-hint {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 13px;
   margin: 0;
 }
@@ -5238,25 +5231,25 @@ defineExpose({
 .manual-input-trigger {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-10);
   text-align: center;
 }
 
 .manual-submit-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .manual-submit-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   transform: translateY(-2px);
 }
 
@@ -5265,7 +5258,7 @@ defineExpose({
   font-weight: 600;
   font-size: 14px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   margin-top: 0.5rem;
 }
 
@@ -5276,14 +5269,14 @@ defineExpose({
 }
 
 .submit-button {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -5313,7 +5306,7 @@ defineExpose({
 }
 
 .alert-icon {
-  color: #f59e0b;
+  color: var(--color-warning);
   flex-shrink: 0;
 }
 
@@ -5321,7 +5314,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 16px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .alert-content {
@@ -5339,7 +5332,7 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--overlay-5);
 }
 
 .similar-song-item:last-child {
@@ -5354,7 +5347,7 @@ defineExpose({
 .song-title {
   margin: 0 0 0.25rem 0;
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -5378,21 +5371,21 @@ defineExpose({
 }
 
 .status-played {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .status-scheduled {
-  color: #f59e0b;
+  color: var(--color-warning);
 }
 
 .alert-hint {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 14px;
   margin-top: 0.5rem;
 }
 
 .voted-status {
-  color: #10b981;
+  color: var(--color-success);
   font-size: 14px;
   font-weight: 600;
   margin-top: 0.5rem;
@@ -5408,11 +5401,11 @@ defineExpose({
 }
 
 .vote-btn {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -5422,21 +5415,21 @@ defineExpose({
 
 .vote-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 2px 8px var(--primary-30);
 }
 
 .vote-btn:disabled {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   cursor: not-allowed;
   transform: none;
 }
 
 .ignore-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -5517,13 +5510,13 @@ defineExpose({
 }
 
 /* 弹窗样式 */
-.modal-overlay {
+.requestform-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--mask-60);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -5533,13 +5526,13 @@ defineExpose({
 }
 
 .modal-content {
-  background: rgba(20, 20, 25, 0.95);
+  background: var(--requestform-modal-overlay-bg);
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px var(--mask-50);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--overlay-10);
   transform-origin: center;
 }
 
@@ -5548,13 +5541,13 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--overlay-5);
+  background: var(--overlay-2);
 }
 
 .modal-header h3 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 18px;
@@ -5564,7 +5557,7 @@ defineExpose({
 .close-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 24px;
   cursor: pointer;
   padding: 0;
@@ -5578,8 +5571,8 @@ defineExpose({
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--overlay-10);
+  color: var(--text-primary);
   transform: rotate(90deg);
 }
 
@@ -5613,27 +5606,27 @@ defineExpose({
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--overlay-5);
+  border-color: var(--overlay-10);
+  color: var(--overlay-80);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  color: var(--text-primary);
+  border-color: var(--overlay-20);
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0043f8 0%, #0075f8 100%);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border-color: var(--overlay-10);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px var(--primary-30);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 67, 248, 0.4);
+  box-shadow: 0 6px 16px var(--requestform-submit-btn-hover-shadow);
 }
 
 .btn-primary:disabled {
@@ -5643,8 +5636,8 @@ defineExpose({
 }
 
 .readonly {
-  background: rgba(0, 0, 0, 0.2) !important;
-  color: rgba(255, 255, 255, 0.5) !important;
+  background: var(--surface-card-bg-soft) !important;
+  color: var(--overlay-50) !important;
   cursor: not-allowed;
   border-color: transparent !important;
 }
@@ -5672,7 +5665,7 @@ defineExpose({
   gap: 1rem;
   transition: all 0.2s ease;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--overlay-10);
 }
 
 .result-item:last-child {
@@ -5680,7 +5673,7 @@ defineExpose({
 }
 
 .result-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--overlay-5);
 }
 
 .result-cover {
@@ -5690,8 +5683,8 @@ defineExpose({
   flex-shrink: 0;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  background: #18181b;
+  box-shadow: 0 4px 12px var(--mask-20);
+  background: var(--panel-bg-dialog);
 }
 
 .cover-img {
@@ -5708,7 +5701,7 @@ defineExpose({
 .play-overlay-container {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-card-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5725,15 +5718,15 @@ defineExpose({
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--overlay-30);
+  box-shadow: 0 8px 16px var(--mask-30);
 }
 
 .play-icon {
@@ -5753,7 +5746,7 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 15px;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -5764,7 +5757,7 @@ defineExpose({
 }
 
 .result-artist {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-size: 13px;
   margin: 0.25rem 0;
   white-space: nowrap;
@@ -5775,7 +5768,7 @@ defineExpose({
 .result-album,
 .result-quality,
 .result-pay {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
   font-size: 11px;
   margin: 0.15rem 0;
 }
@@ -5791,8 +5784,8 @@ defineExpose({
 }
 
 .cloud-disk-btn {
-  background: linear-gradient(180deg, #ec4141 0%, #d83030 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, var(--color-error) 0%, var(--color-error-hover) 100%);
+  border: 1px solid var(--overlay-20);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -5801,25 +5794,25 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px var(--mask-20);
   -webkit-appearance: none;
   appearance: none;
 }
 
 .cloud-disk-btn:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(236, 65, 65, 0.5);
-  background: linear-gradient(180deg, #d83030 0%, #c52020 100%);
-  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px var(--requestform-delete-btn-hover-shadow);
+  background: linear-gradient(180deg, var(--color-error-hover) 0%, var(--color-error-hover) 100%);
+  border-color: var(--overlay-40);
 }
 
 .cloud-disk-btn:active {
   transform: translateY(0) scale(0.95);
-  box-shadow: 0 2px 4px rgba(236, 65, 65, 0.3);
+  box-shadow: 0 2px 4px var(--requestform-delete-btn-hover-shadow-sm);
 }
 
 .similar-song-info {
@@ -5832,27 +5825,27 @@ defineExpose({
 
 .similar-text {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
 }
 
 .similar-text.status-played {
-  color: #ef4444;
+  color: var(--color-error);
   font-weight: 600;
 }
 
 .similar-text.status-scheduled {
-  color: #f59e0b;
+  color: var(--color-warning);
   font-weight: 600;
 }
 
 .like-btn {
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-error) 0%, var(--color-error-hover) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 12px;
@@ -5866,18 +5859,18 @@ defineExpose({
 
 .like-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 8px var(--error-30);
 }
 
 .like-btn:disabled {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   cursor: not-allowed;
   transform: none;
 }
 
 .like-btn.disabled {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -5889,11 +5882,11 @@ defineExpose({
 }
 
 .select-btn {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -5902,11 +5895,11 @@ defineExpose({
 }
 
 .replay-btn {
-  background: rgba(0, 117, 248, 0.1);
-  border: 1px solid rgba(0, 117, 248, 0.3);
+  background: var(--requestform-replay-btn-bg);
+  border: 1px solid var(--requestform-replay-btn-border);
   border-radius: 6px;
   padding: 0.4rem 0.8rem;
-  color: #3b82f6;
+  color: var(--color-accent-light);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 12px;
@@ -5919,16 +5912,16 @@ defineExpose({
 }
 
 .replay-btn:hover:not(:disabled) {
-  background: rgba(0, 117, 248, 0.2);
-  border-color: rgba(0, 117, 248, 0.5);
-  color: #60a5fa;
+  background: var(--requestform-replay-btn-bg-hover);
+  border-color: var(--requestform-replay-btn-border-hover);
+  color: var(--color-accent-light);
   transform: translateY(-1px);
 }
 
 .replay-btn:disabled {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.3);
+  background: var(--overlay-5);
+  border-color: var(--overlay-10);
+  color: var(--overlay-30);
   cursor: not-allowed;
   transform: none;
 }
@@ -5940,31 +5933,31 @@ defineExpose({
   margin-top: 1rem;
   text-align: center;
   padding: 1rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--overlay-10);
 }
 
 .manual-submit-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1.5rem;
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: #ffffff;
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .manual-submit-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
   transform: translateY(-2px);
 }
 
 /* 手动输入区域样式 */
 .manual-input-section {
   margin-top: 2rem;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-card-bg);
   border-radius: 13px;
   padding: 1.5rem;
 }
@@ -5974,7 +5967,7 @@ defineExpose({
   font-weight: 600;
   font-size: 18px;
   margin-bottom: 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .manual-form {
@@ -5990,11 +5983,11 @@ defineExpose({
 }
 
 .manual-cancel-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--overlay-10);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -6003,15 +5996,15 @@ defineExpose({
 }
 
 .manual-cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-20);
 }
 
 .manual-confirm-btn {
-  background: linear-gradient(180deg, #0043f8 0%, #0075f8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
+  border: 1px solid var(--overlay-16);
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  color: #ffffff;
+  color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -6021,7 +6014,7 @@ defineExpose({
 
 .manual-confirm-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 67, 248, 0.3);
+  box-shadow: 0 4px 12px var(--primary-30);
 }
 
 .manual-confirm-btn:disabled {
@@ -6034,6 +6027,7 @@ defineExpose({
   /* Netease Options Mobile Optimization */
   .netease-options {
     padding: 0.75rem;
+    min-width: unset; /* 移除桌面端的最小宽度限制 */
   }
 
   .user-compact-row {
@@ -6050,11 +6044,16 @@ defineExpose({
   .search-type-switch {
     width: 100%;
     display: flex;
+    min-width: 0;
   }
 
   .radio-label {
     flex: 1;
+    min-width: 0;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .user-actions-row {
@@ -6067,9 +6066,17 @@ defineExpose({
   /* 移动端下让按钮平分宽度 */
   .user-actions-row .action-btn-compact {
     flex: 1;
+    min-width: 0;
     width: auto;
     justify-content: center;
     padding: 0.6rem 0.4rem;
+  }
+
+  /* 按钮文字过窄时省略号截断 */
+  .user-actions-row .action-btn-compact span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* 移动端显示/隐藏控制 */
@@ -6094,23 +6101,23 @@ defineExpose({
     height: auto;
     margin-bottom: 1.5rem;
     padding: 1.25rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--overlay-4);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--overlay-8);
     border-radius: 18px;
   }
 
   .rules-title {
     font-size: 15px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--overlay-90);
     margin-bottom: 1.25rem;
     letter-spacing: normal;
   }
 
   .rules-icon {
     display: block;
-    color: #f59e0b;
+    color: var(--color-warning);
   }
 
   .form-container {
@@ -6148,9 +6155,9 @@ defineExpose({
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--overlay-2);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--overlay-8);
     border-radius: 20px;
     /* 允许容器内容触发页面滚动 */
     touch-action: pan-y;
@@ -6242,8 +6249,8 @@ defineExpose({
   }
 
   .search-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--overlay-5);
+    border: 1px solid var(--overlay-10);
     border-radius: 12px;
     padding: 0.75rem 1rem;
     font-size: 15px;
@@ -6273,32 +6280,36 @@ defineExpose({
   .platform-selection-container {
     flex-direction: column;
     align-items: stretch;
+    min-width: 0;
   }
 
   .platform-selection {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--surface-card-bg-soft);
     padding: 4px;
     border-radius: 12px;
     margin-bottom: 0.5rem;
     display: flex;
-    overflow: visible;
+    min-width: 0;
   }
 
   .platform-btn {
     flex: 1;
-    padding: 0.5rem;
-    font-size: 13px;
+    min-width: 0;
+    padding: 0.5rem 0.25rem;
+    font-size: 12px;
+    line-height: 1.3;
     border-radius: 10px;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
-    min-width: auto;
+    color: var(--overlay-50);
+    white-space: normal;
+    word-break: break-word;
   }
 
   .platform-btn.active {
-    background: #0b5afe;
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(11, 90, 254, 0.3);
+    background: var(--color-accent);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px var(--color-accent-alpha-30);
   }
 
   /* 移动端音源状态显示 */
@@ -6367,9 +6378,9 @@ defineExpose({
     gap: 0.35rem;
     min-height: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(113, 113, 122, 0.45);
-    background: rgba(39, 39, 42, 0.75);
-    color: rgba(212, 212, 216, 0.9);
+    border: 1px solid var(--requestform-mobile-chip-border);
+    background: var(--requestform-mobile-chip-bg);
+    color: var(--requestform-mobile-chip-text);
     padding: 0.25rem 0.55rem;
     font-size: 11px;
     font-weight: 800;
@@ -6384,9 +6395,9 @@ defineExpose({
     width: 100%;
     min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgba(113, 113, 122, 0.4);
-    background: rgba(24, 24, 27, 0.65);
-    color: rgba(228, 228, 231, 0.9);
+    border: 1px solid var(--requestform-mobile-chip-border-sm);
+    background: var(--panel-bg-overlay);
+    color: var(--requestform-mobile-button-text);
     padding: 0.65rem 0.85rem;
     font-size: 13px;
     font-weight: 800;
@@ -6394,29 +6405,29 @@ defineExpose({
 
   .mobile-card-code-chip.is-required,
   .mobile-card-code-button.is-required {
-    border-color: rgba(234, 179, 8, 0.35);
-    background: rgba(234, 179, 8, 0.1);
-    color: #fde68a;
+    border-color: var(--requestform-chip-required-border);
+    background: var(--requestform-chip-required-bg);
+    color: var(--color-warning-light);
   }
 
   .mobile-card-code-chip.has-code,
   .mobile-card-code-button.has-code {
-    border-color: rgba(234, 179, 8, 0.3);
-    color: #facc15;
+    border-color: var(--requestform-chip-required-border-sm);
+    color: var(--color-warning-light);
   }
 
   .mobile-card-code-chip.is-valid,
   .mobile-card-code-button.is-valid {
-    border-color: rgba(16, 185, 129, 0.35);
-    background: rgba(16, 185, 129, 0.1);
-    color: #6ee7b7;
+    border-color: var(--requestform-chip-valid-border);
+    background: var(--success-10);
+    color: var(--color-success-light);
   }
 
   .mobile-card-code-chip.is-invalid,
   .mobile-card-code-button.is-invalid {
-    border-color: rgba(248, 113, 113, 0.35);
-    background: rgba(248, 113, 113, 0.1);
-    color: #fca5a5;
+    border-color: var(--requestform-chip-invalid-border);
+    background: var(--requestform-chip-invalid-bg);
+    color: var(--color-error-light);
   }
 
   .form-group label {
@@ -6473,9 +6484,9 @@ defineExpose({
 
   /* 移动端搜索结果优化 */
   .result-item {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--overlay-3);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--overlay-6);
     margin-bottom: 0.5rem;
     padding: 10px;
     flex-direction: row;
@@ -6607,14 +6618,14 @@ defineExpose({
 .netease-loading-state .loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(239, 68, 68, 0.2);
-  border-top-color: #ef4444;
+  border: 2px solid var(--error-20);
+  border-top-color: var(--color-error);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .netease-loading-state .loading-text {
-  color: #a1a1aa;
+  color: var(--text-muted-light);
   font-size: 13px;
   font-weight: 500;
   margin: 0;
@@ -6622,7 +6633,7 @@ defineExpose({
 
 /* URL验证状态样式 */
 .validation-loading {
-  color: #fbbf24;
+  color: var(--color-warning-light);
   font-size: 0.875rem;
   margin-top: 0.25rem;
   display: flex;
@@ -6631,31 +6642,31 @@ defineExpose({
 }
 
 .validation-error {
-  color: #ef4444;
+  color: var(--color-error);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
 .validation-success {
-  color: #10b981;
+  color: var(--color-success);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
 .form-input.error {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 1px #ef4444;
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 1px var(--color-error);
 }
 
 .import-semester-btn {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--overlay-8);
+  border: 1px solid var(--overlay-12);
   border-radius: 8px;
   padding: 0.6rem 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--overlay-80);
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -6667,9 +6678,9 @@ defineExpose({
 }
 
 .import-semester-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-15);
+  color: var(--text-primary);
+  border-color: var(--overlay-20);
 }
 
 @media (max-width: 768px) {
@@ -6686,7 +6697,7 @@ defineExpose({
 
 .video-info {
   padding: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--overlay-10);
   margin-bottom: 1rem;
 }
 
@@ -6694,14 +6705,14 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 16px;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .video-author {
   font-family: 'MiSans', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--overlay-60);
 }
 
 .episodes-list {
@@ -6716,16 +6727,16 @@ defineExpose({
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--overlay-5);
+  border: 1px solid var(--overlay-10);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .episode-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
   transform: translateX(4px);
 }
 
@@ -6733,8 +6744,8 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--overlay-80);
+  background: var(--overlay-10);
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   min-width: 40px;
@@ -6752,13 +6763,13 @@ defineExpose({
   font-family: 'MiSans', sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .episode-duration {
   font-family: 'MiSans', sans-serif;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--overlay-50);
 }
 
 /* 专辑详情样式 */
@@ -6772,12 +6783,12 @@ defineExpose({
 }
 
 .clickable-album:hover .album-name {
-  color: #3b82f6;
+  color: var(--color-accent-light);
   text-decoration: underline;
 }
 
 .album-label {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--overlay-40);
 }
 
 .album-link-icon {

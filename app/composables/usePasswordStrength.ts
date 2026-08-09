@@ -23,29 +23,29 @@ export function usePasswordStrength(passwordRef: Ref<string>) {
     if (score < 3) {
       return {
         width: `${scorePercentage || 10}%`,
-        colorClass: 'bg-rose-500',
-        textColorClass: 'text-rose-500',
+        colorClass: 'bg-error',
+        textColorClass: 'text-error',
         text: strengthLevels.value?.weak || ''
       }
     } else if (score < 4) {
       return {
         width: `${scorePercentage}%`,
-        colorClass: 'bg-amber-500',
-        textColorClass: 'text-amber-500',
+        colorClass: 'bg-warning',
+        textColorClass: 'text-warning',
         text: strengthLevels.value?.medium || ''
       }
     } else if (score < 5) {
       return {
         width: `${scorePercentage}%`,
-        colorClass: 'bg-blue-500',
-        textColorClass: 'text-blue-500',
+        colorClass: 'bg-primary',
+        textColorClass: 'text-primary',
         text: strengthLevels.value?.strong || ''
       }
     } else {
       return {
         width: '100%',
-        colorClass: 'bg-emerald-500',
-        textColorClass: 'text-emerald-500',
+        colorClass: 'bg-success',
+        textColorClass: 'text-success',
         text: strengthLevels.value?.veryStrong || ''
       }
     }
