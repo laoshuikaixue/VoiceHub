@@ -146,6 +146,41 @@
                 >{{ locale.updateTypes.statusBatch.desc }}</span
               >
             </label>
+
+            <label
+              :class="[
+                'relative flex flex-col p-5 rounded-xl border-2 transition-all cursor-pointer group',
+                updateType === 'song-admin-batch'
+                  ? 'bg-primary-5 border-primary-50 ring-4 ring-primary-10'
+                  : 'bg-bg-primary border-border-secondary hover:border-border-tertiary'
+              ]"
+            >
+              <input v-model="updateType" type="radio" value="song-admin-batch" class="sr-only" >
+              <div class="flex items-center justify-between mb-3">
+                <div
+                  :class="[
+                    'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+                    updateType === 'song-admin-batch'
+                      ? 'bg-primary text-text-primary'
+                      : 'bg-bg-tertiary text-text-tertiary group-hover:text-text-secondary'
+                  ]"
+                >
+                  <Music :size="18" />
+                </div>
+                <div
+                  v-if="updateType === 'song-admin-batch'"
+                  class="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                >
+                  <Check :size="12" class="text-text-primary" />
+                </div>
+              </div>
+              <span class="text-sm font-black text-text-primary uppercase tracking-widest"
+                >{{ locale.updateTypes.songAdminBatch.title }}</span
+              >
+              <span class="text-[10px] text-text-tertiary mt-1 font-medium leading-relaxed"
+                >{{ locale.updateTypes.songAdminBatch.desc }}</span
+              >
+            </label>
           </div>
 
           <!-- 学生选择面板 (年级更新和状态更新共用) -->
@@ -317,6 +352,165 @@
                       class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-warning-30 transition-all text-text-primary resize-none"
                     ></textarea>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 歌曲管理员批量更新面板 -->
+          <div
+            v-if="updateType === 'song-admin-batch'"
+            class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <div class="p-6 bg-bg-primary-50 border border-border-secondary-50 rounded-xl space-y-6">
+              <div
+                class="flex items-center gap-2 text-xs font-black text-text-tertiary uppercase tracking-widest"
+              >
+                <Filter :size="14" class="text-primary" />
+                {{ getNestedText('songAdminSettings', 'scope') }}
+              </div>
+              <div
+                class="p-3 bg-primary-10 border border-primary-20 rounded-lg flex items-center gap-3"
+              >
+                <Music :size="14" class="text-primary shrink-0" />
+                <span class="text-[10px] text-primary-80 leading-relaxed">
+                  {{ getNestedText('updateTypes', 'songAdminBatch', 'roleHint') }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'currentGrade') }}</label
+                  >
+                  <CustomSelect
+                    v-model="songAdminGradeFilter"
+                    :options="songAdminGradeOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="getNestedText('songAdminSettings', 'allGrades')"
+                    class-name="w-full"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'currentClass') }}</label
+                  >
+                  <CustomSelect
+                    v-model="songAdminClassFilter"
+                    :options="songAdminClassOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="getNestedText('songAdminSettings', 'allClasses')"
+                    class-name="w-full"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <div class="flex items-center justify-between ml-1">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest"
+                    >{{ getNestedText('songAdminSettings', 'selectUsers', songAdminIds?.length || 0, filteredSongAdminUsers?.length || 0) }}</label>
+                  <button
+                    class="text-[10px] font-black text-primary hover:text-info uppercase tracking-widest transition-colors"
+                    @click="toggleSelectAllSongAdmin"
+                  >
+                    {{ isAllSongAdminSelected ? getNestedText('songAdminSettings', 'clearSelection') : getNestedText('songAdminSettings', 'selectAll') }}
+                  </button>
+                </div>
+                <div
+                  class="max-h-48 overflow-y-auto rounded-lg border border-border-secondary bg-bg-primary p-2 custom-scrollbar"
+                >
+                  <div
+                    v-if="filteredSongAdminUsers?.length === 0"
+                    class="py-10 text-center text-xs text-text-disabled font-medium"
+                  >
+                    {{ getNestedText('songAdminSettings', 'noMatchedUsers') }}
+                  </div>
+                  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-1">
+                    <label
+                      v-for="user in filteredSongAdminUsers"
+                      :key="user.id"
+                      class="flex items-center gap-3 p-3 rounded-lg hover:bg-bg-secondary-50 cursor-pointer transition-colors group"
+                    >
+                      <input
+                        v-model="songAdminIds"
+                        :value="user.id"
+                        type="checkbox"
+                        class="w-4 h-4 rounded-md border-border-tertiary bg-bg-primary text-primary focus:ring-primary-10"
+                      >
+                      <div class="flex flex-col">
+                        <span
+                          class="text-xs font-bold text-text-primary group-hover:text-primary transition-colors"
+                          >{{ user.name }}</span>
+                        <span class="text-[10px] text-text-disabled font-mono">{{
+                          user.username
+                        }}</span>
+                      </div>
+                      <span class="ml-auto text-[10px] font-bold text-text-disabled">
+                        {{ user.grade || '-' }} {{ user.class || '-' }}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 歌曲管理员更新目标设置 -->
+            <div class="p-6 bg-primary-5 border border-primary-20 rounded-xl space-y-6">
+              <div
+                class="flex items-center gap-2 text-xs font-black text-primary uppercase tracking-widest"
+              >
+                <Save :size="14" />
+                {{ getNestedText('songAdminSettings', 'targetSettings') }}
+              </div>
+              <p class="text-[10px] text-primary-80 leading-relaxed">
+                {{ getNestedText('songAdminSettings', 'desc') }}
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'targetGrade') }}</label>
+                  <div class="relative group">
+                    <Calendar
+                      class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
+                      :size="16"
+                    />
+                    <input
+                      v-model="songAdminTargetGrade"
+                      type="text"
+                      :placeholder="getNestedText('songAdminSettings', 'targetGradePlaceholder')"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
+                    >
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'targetClass') }}</label>
+                  <div class="relative group">
+                    <Briefcase
+                      class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors"
+                      :size="16"
+                    />
+                    <input
+                      v-model="songAdminTargetClass"
+                      type="text"
+                      :placeholder="getNestedText('songAdminSettings', 'targetClassPlaceholder')"
+                      class="w-full bg-bg-primary border border-border-secondary rounded-lg pl-11 pr-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
+                    >
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <label class="text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
+                    >{{ getNestedText('songAdminSettings', 'targetStatus') }}</label>
+                  <CustomSelect
+                    v-model="songAdminTargetStatus"
+                    :options="statusOptions"
+                    label-key="label"
+                    value-key="value"
+                    :placeholder="getNestedText('songAdminSettings', 'targetStatusPlaceholder')"
+                    class-name="w-full"
+                  />
                 </div>
               </div>
             </div>
@@ -675,7 +869,9 @@
                 ? 'bg-success hover:bg-success shadow-[var(--success-glow-20)]'
                 : updateType === 'status-batch'
                   ? 'bg-warning hover:bg-warning shadow-[var(--warning-glow-20)]'
-                  : 'bg-info hover:bg-info shadow-[var(--info-glow-20)]'
+                  : updateType === 'song-admin-batch'
+                    ? 'bg-primary hover:bg-primary shadow-[var(--primary-glow)]'
+                    : 'bg-info hover:bg-info shadow-[var(--info-glow-20)]'
             ]"
             @click="performUpdate"
           >
@@ -705,12 +901,14 @@ import {
   Save,
   Upload,
   Download,
+  Briefcase,
   Info,
   AlertCircle,
   RefreshCw,
   CheckCircle2,
   ShieldAlert,
-  MessageSquare
+  MessageSquare,
+  Music
 } from '@lucide/vue'
 
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -738,6 +936,14 @@ const keepClass = ref(true)
 const sourceStatus = ref('')
 const targetStatus = ref('')
 const statusReason = ref('')
+
+// 歌曲管理员批量更新相关
+const songAdminGradeFilter = ref('')
+const songAdminClassFilter = ref('')
+const songAdminIds = ref([])
+const songAdminTargetGrade = ref('')
+const songAdminTargetClass = ref('')
+const songAdminTargetStatus = ref('')
 
 // Excel批量更新相关
 const isDragOver = ref(false)
@@ -882,6 +1088,116 @@ const classOptions = computed(() => {
   ]
 })
 
+const songAdminUsers = computed(() => {
+  return computedUsers.value.filter((u) => u.role === 'SONG_ADMIN')
+})
+
+const songAdminAvailableGrades = computed(() => {
+  const grades = new Set()
+  songAdminUsers.value.forEach((u) => {
+    if (u.grade) grades.add(u.grade)
+  })
+  return Array.from(grades)
+})
+
+const songAdminAvailableClasses = computed(() => {
+  const classes = new Set()
+  let pool = songAdminUsers.value
+  if (songAdminGradeFilter.value) {
+    pool = pool.filter((u) => u.grade === songAdminGradeFilter.value)
+  }
+  pool.forEach((u) => {
+    if (u.class) classes.add(u.class)
+  })
+  return Array.from(classes)
+})
+
+watch(() => songAdminGradeFilter.value, () => {
+  songAdminClassFilter.value = ''
+})
+
+const songAdminGradeOptions = computed(() => {
+  return [
+    { label: getNestedText('songAdminSettings', 'allGrades'), value: '' },
+    ...songAdminAvailableGrades.value.map((g) => ({ label: g, value: g }))
+  ]
+})
+
+const songAdminClassOptions = computed(() => {
+  return [
+    { label: getNestedText('songAdminSettings', 'allClasses'), value: '' },
+    ...songAdminAvailableClasses.value.map((c) => ({ label: c, value: c }))
+  ]
+})
+
+const filteredSongAdminUsers = computed(() => {
+  let filtered = songAdminUsers.value
+
+  if (songAdminGradeFilter.value) {
+    filtered = filtered.filter((u) => u.grade === songAdminGradeFilter.value)
+  }
+
+  if (songAdminClassFilter.value) {
+    filtered = filtered.filter((u) => u.class === songAdminClassFilter.value)
+  }
+
+  return filtered
+})
+
+const isAllSongAdminSelected = computed(() => {
+  if (filteredSongAdminUsers.value.length === 0) return false
+  const selectedSet = new Set(songAdminIds.value)
+  return filteredSongAdminUsers.value.every((u) => selectedSet.has(u.id))
+})
+
+const toggleSelectAllSongAdmin = () => {
+  const filteredIds = filteredSongAdminUsers.value.map((u) => u.id)
+  const filteredSet = new Set(filteredIds)
+  if (isAllSongAdminSelected.value) {
+    songAdminIds.value = songAdminIds.value.filter((id) => !filteredSet.has(id))
+  } else {
+    const newSelections = new Set([...songAdminIds.value, ...filteredIds])
+    songAdminIds.value = Array.from(newSelections)
+  }
+}
+
+const performSongAdminBatchUpdate = async () => {
+  const updates = songAdminIds.value.map((userId) => {
+    const updateData = { userId }
+    if (songAdminTargetGrade.value.trim()) updateData.grade = songAdminTargetGrade.value.trim()
+    if (songAdminTargetClass.value.trim()) updateData.class = songAdminTargetClass.value.trim()
+    if (songAdminTargetStatus.value) updateData.status = songAdminTargetStatus.value
+    return updateData
+  })
+
+  const response = await $fetch('/api/admin/users/batch-update', {
+    method: 'POST',
+    body: { updates },
+    ...auth.getAuthConfig()
+  })
+
+  if (!response?.success) {
+    throw new Error(response?.message || getNestedText('errors', 'songAdminUpdateFailed'))
+  }
+
+  const failed = response.data?.summary?.failed || 0
+  const updated = response.data?.summary?.success || 0
+
+  if (failed > 0) {
+    if (updated > 0) {
+      if (window.$showNotification) {
+        window.$showNotification(getNestedText('messages', 'partialSongAdminSuccess', failed), 'warning')
+      }
+    } else {
+      throw new Error(getNestedText('errors', 'updateFailedWithEtc', response.data?.errors?.[0]?.error || getNestedText('errors', 'songAdminUpdateFailed')))
+    }
+  } else {
+    if (window.$showNotification) {
+      window.$showNotification(getNestedText('messages', 'songAdminSuccess', updated), 'success')
+    }
+  }
+}
+
 const filteredUsers = computed(() => {
   let filtered = computedUsers.value
 
@@ -909,6 +1225,11 @@ const canUpdate = computed(() => {
     return excelPreviewData.value.length > 0 && excelPreviewData.value.some((row) => !row.error && !row.noChange)
   } else if (updateType.value === 'status-batch') {
     return selectedUserIds.value.length > 0 && targetStatus.value && statusReason.value.trim()
+  } else if (updateType.value === 'song-admin-batch') {
+    return (
+      songAdminIds.value.length > 0 &&
+      (songAdminTargetGrade.value.trim() || songAdminTargetClass.value.trim() || songAdminTargetStatus.value)
+    )
   }
   return false
 })
@@ -1300,6 +1621,10 @@ const performUpdate = async () => {
       await performStatusUpdate()
       emit('update-success')
       emit('close')
+    } else if (updateType.value === 'song-admin-batch') {
+      await performSongAdminBatchUpdate()
+      emit('update-success')
+      emit('close')
     }
   } catch (err) {
     console.error('批量更新失败:', err)
@@ -1483,6 +1808,12 @@ watch(
       previewFilter.value = 'all'
       targetStatus.value = ''
       statusReason.value = ''
+      songAdminGradeFilter.value = ''
+      songAdminClassFilter.value = ''
+      songAdminIds.value = []
+      songAdminTargetGrade.value = ''
+      songAdminTargetClass.value = ''
+      songAdminTargetStatus.value = ''
       error.value = ''
       updateProgress.value = 0
       updateProgressText.value = ''

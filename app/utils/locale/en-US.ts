@@ -3397,6 +3397,11 @@ export const admin = {
         statusBatch: {
           title: 'Set Account Status',
           desc: 'Batch set account status for selected students'
+        },
+        songAdminBatch: {
+          title: 'Song Admin',
+          desc: 'Batch update grade, class, and account status for Song Admins',
+          roleHint: 'Only shows users with Song Admin (SONG_ADMIN) role'
         }
       },
       fields: {
@@ -3429,6 +3434,26 @@ export const admin = {
         targetStatusPlaceholder: 'Select target status',
         reason: 'Reason for Change',
         reasonPlaceholder: 'e.g. Batch graduate class of 2025'
+      },
+      songAdminSettings: {
+        title: 'Song Admin Info Update',
+        desc: 'Selected users will apply the changes below (blank fields keep original values)',
+        scope: 'Song Admin Scope Filter',
+        currentGrade: 'Current Grade',
+        currentClass: 'Current Class',
+        allGrades: 'All Grades',
+        allClasses: 'All Classes',
+        selectUsers: (selected: number, total: number) => `Select Admins (${selected}/${total})`,
+        clearSelection: 'Clear Selection',
+        selectAll: 'Select All Current',
+        noMatchedUsers: 'No Song Admins match the filters',
+        targetSettings: 'Update Target Settings',
+        targetGrade: 'Target Grade',
+        targetGradePlaceholder: 'e.g. 2025 (blank keeps original)',
+        targetClass: 'Target Class',
+        targetClassPlaceholder: 'e.g. Class 1 (blank keeps original)',
+        targetStatus: 'Target Account Status',
+        targetStatusPlaceholder: 'Select target status (blank keeps original)'
       },
       statusOptions: {
         all: 'Any current status',
@@ -3506,7 +3531,9 @@ export const admin = {
         partialExcelSuccess: (success: number, failed: number) => `Partially updated: ${success} succeeded, ${failed} failed. Please check and retry.`,
         excelFailed: (failed: number) => `Batch update failed: ${failed} users could not be updated. Please check and retry.`,
         partialStatusSuccess: (failed: number) => `Partially updated. ${failed} users were skipped due to permissions or status.`,
-        statusSuccess: 'Batch status update succeeded'
+        statusSuccess: 'Batch status update succeeded',
+        songAdminSuccess: (count: number) => `Successfully updated ${count} Song Admins`,
+        partialSongAdminSuccess: (failed: number) => `Partially updated. ${failed} admins were skipped due to permissions or status.`
       },
       errors: {
         invalidExcelFormat: 'Invalid Excel format. Please check the file format.',
@@ -3527,7 +3554,8 @@ export const admin = {
         noValidUpdates: 'No valid update data',
         batchRequestFailed: 'Batch update request failed',
         invalidBatchResponse: 'Batch update API returned an invalid response',
-        statusUpdateFailed: 'Batch status update failed'
+        statusUpdateFailed: 'Batch status update failed',
+        songAdminUpdateFailed: 'Batch Song Admin update failed'
       }
     },
     deleteDialog: {
