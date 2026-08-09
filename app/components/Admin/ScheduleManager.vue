@@ -552,6 +552,16 @@
                   >
                 </button>
                 <button
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative"
+                  @click="openCopyDateDialog"
+                >
+                  <Copy class="w-3.5 h-3.5" />
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    >{{ locale.copyDate }}</span
+                  >
+                </button>
+                <button
                   :disabled="localScheduledSongs.length === 0"
                   class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-error rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="clearScheduleList"
@@ -806,6 +816,12 @@
               <ArrowRight class="w-5 h-5" />
             </button>
             <button
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              @click="openCopyDateDialog"
+            >
+              <Copy class="w-5 h-5" />
+            </button>
+            <button
               class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-error rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="localScheduledSongs.length === 0"
               @click="clearScheduleList"
@@ -890,6 +906,48 @@
             @click="confirmMoveDate"
           >
           {{ locale.nextStep }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    v-if="showCopyDateDialog"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
+  >
+    <div
+      class="bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl w-full max-w-sm overflow-hidden"
+      @click.stop
+    >
+      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.copyDateTitle }}</h3>
+        <button
+          class="text-text-tertiary hover:text-text-secondary transition-colors"
+          @click="showCopyDateDialog = false"
+        >
+          <CloseIcon class="w-5 h-5" />
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="text-xs text-text-tertiary">{{ locale.currentDate(selectedDate) }}</div>
+        <input
+          v-model="copyTargetDate"
+          class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary transition-colors"
+          type="date"
+        />
+        <div class="flex gap-3">
+          <button
+            class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+            @click="showCopyDateDialog = false"
+          >
+            {{ locale.cancel }}
+          </button>
+          <button
+            class="flex-1 py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider"
+            @click="confirmCopyDate"
+          >
+            {{ locale.nextStep }}
           </button>
         </div>
       </div>
@@ -1008,7 +1066,8 @@ import {
   CircleDot,
   ExternalLink,
   MessageSquare,
-  Trash2
+  Trash2,
+  Copy
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
@@ -1217,6 +1276,8 @@ const replayModalRequests = ref([])
 const replayModalSongId = ref(null)
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
+const showCopyDateDialog = ref(false)
+const copyTargetDate = ref('')
 const submissionRemarkDialog = ref({
   show: false,
   songId: null,
@@ -2609,6 +2670,18 @@ const openMoveDateDialog = () => {
   showMoveDateDialog.value = true
 }
 
+const openCopyDateDialog = () => {
+  if (hasChanges.value) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.messages.saveBeforeCopy, 'warning')
+    }
+    return
+  }
+
+  copyTargetDate.value = selectedDate.value
+  showCopyDateDialog.value = true
+}
+
 const confirmMoveDate = async () => {
   const targetDate = moveTargetDate.value.trim()
 
@@ -2689,6 +2762,97 @@ const confirmMoveDate = async () => {
           getThrownMessage(error) || formatLocaleValue(locale.value?.unknown) || '未知错误'
         window.$showNotification(
           callLocale('errors.moveDateFailed', `迁移失败: ${backendMessage}`, backendMessage),
+          'error'
+        )
+      }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  showConfirmDialog.value = true
+}
+
+const confirmCopyDate = async () => {
+  const targetDate = copyTargetDate.value.trim()
+
+  if (!parseDateValue(targetDate)) {
+    if (window.$showNotification) {
+      window.$showNotification(
+        callLocale('errors.invalidTargetDate', '目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效'),
+        'error'
+      )
+    }
+    return
+  }
+
+  if (targetDate === selectedDate.value) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.errors.sameTargetDate, 'warning')
+    }
+    return
+  }
+
+  const sourceDate = selectedDate.value
+  const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
+    if (!schedule.playDate) return false
+    return getScheduleDateValue(schedule.playDate) === sourceDate
+  })
+
+  if (sourceSchedules.length === 0) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.errors.noCopyableSongs, 'warning')
+    }
+    return
+  }
+
+  confirmDialogTitle.value = locale.value.copyDateTitle
+  confirmDialogMessage.value = callLocale(
+    'confirmations.copyDateMessage',
+    `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲复制到 ${targetDate} 吗？原排期将保留，目标日期将生成新排期。`,
+    sourceDate,
+    sourceSchedules.length,
+    targetDate
+  )
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = locale.value.confirmations.copyDateConfirm
+  showCopyDateDialog.value = false
+
+  confirmAction.value = async () => {
+    loading.value = true
+    try {
+      const result = await $fetch('/api/admin/schedule/copy', {
+        method: 'POST',
+        body: {
+          fromDate: sourceDate,
+          toDate: targetDate
+        },
+        ...auth.getAuthConfig()
+      })
+
+      await loadData()
+      updateLocalScheduledSongs()
+
+      if (window.$showNotification) {
+        window.$showNotification(
+          result?.copiedCount > 0
+            ? callLocale(
+                'messages.copyDateSuccess',
+                `已复制 ${result.copiedCount} 首歌曲到 ${targetDate}`,
+                result.copiedCount,
+                targetDate
+              )
+            : locale.value.errors.noCopyableSongs,
+          result?.copiedCount > 0 ? 'success' : 'warning'
+        )
+      }
+    } catch (error) {
+      console.error('复制排期日期失败:', error)
+      if (window.$showNotification) {
+        const backendMessage =
+          getThrownMessage(error) || formatLocaleValue(locale.value?.unknown) || '未知错误'
+        window.$showNotification(
+          callLocale('errors.copyDateFailed', `复制失败: ${backendMessage}`, backendMessage),
           'error'
         )
       }
