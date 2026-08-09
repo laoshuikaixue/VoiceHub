@@ -354,7 +354,7 @@ import TurnstileWidget from './TurnstileWidget.vue'
 import { useLocale } from '~/utils/locale'
 
 const { allowOAuthRegistration, fetchSiteConfig, smtpEnabled, captchaEnabled, captchaProvider } = useSiteConfig()
-const { auth: authLocale } = useLocale()
+const { auth: authLocale, serverErrors } = useLocale()
 const locale = computed(() => authLocale.value?.loginForm || {})
 const { localize: localizeServerError } = useServerErrors()
 
@@ -602,7 +602,7 @@ const handleRegisterOAuth = async () => {
   )
 
   if (validationError) {
-    error.value = validationError
+    error.value = serverErrors.value?.[validationError.code] || locale.value.registerFailed
     return
   }
 
