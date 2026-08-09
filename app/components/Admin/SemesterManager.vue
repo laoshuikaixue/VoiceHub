@@ -12,20 +12,7 @@
         class="flex items-center gap-2 px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95"
         @click="openModal"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
+        <Plus :size="14" />
         {{ locale.add }}
       </button>
     </div>
@@ -34,22 +21,7 @@
       <!-- 左侧栏：当前活跃学期 -->
       <div class="lg:col-span-5 space-y-6">
         <div class="flex items-center gap-2 px-1">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-warning fill-warning"
-          >
-            <polygon
-              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-            />
-          </svg>
+          <Star :size="14" class="text-warning fill-warning" />
           <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
             {{ locale.currentActive }}
           </h3>
@@ -63,42 +35,14 @@
             <div
               class="w-16 h-16 rounded-3xl bg-bg-secondary-10 backdrop-blur-md flex items-center justify-center text-text-primary border border-primary-20"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
+              <BookOpen :size="32" />
             </div>
             <div class="space-y-2">
               <h4 class="text-3xl font-black text-text-primary tracking-tight leading-tight">
                 {{ currentSemester.name }}
               </h4>
               <div class="flex items-center gap-2 text-primary-60 font-bold text-xs">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
+                <CalendarDays :size="12" />
                 {{ getLocaleMessage('createdAt', formatDate(currentSemester.createdAt)) }}
               </div>
             </div>
@@ -114,21 +58,7 @@
           <!-- 装饰性背景元素 -->
           <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-bg-secondary-5 blur-3xl rounded-full" />
           <div class="absolute top-10 right-10 opacity-10">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="160"
-              height="160"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="text-text-primary"
-            >
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
+            <BookOpen :size="160" class="text-text-primary" aria-hidden="true" />
           </div>
         </div>
 
@@ -136,22 +66,7 @@
           v-else
           class="bg-bg-secondary-30 border border-border-secondary border-dashed rounded-3xl p-20 flex flex-col items-center justify-center text-center gap-4"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-text-secondary"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <CircleAlert :size="40" class="text-text-secondary" />
           <p class="text-sm font-bold text-text-disabled">{{ locale.noCurrent }}</p>
           <button class="text-xs text-primary font-black hover:underline" @click="openModal">
             {{ locale.createNow }}
@@ -159,22 +74,7 @@
         </div>
 
         <div class="p-6 bg-bg-secondary-20 border border-border-secondary rounded-3xl flex items-start gap-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="text-text-tertiary shrink-0 mt-0.5"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
-          </svg>
+          <Info :size="18" class="text-text-tertiary shrink-0 mt-0.5" />
           <div class="space-y-1">
             <p class="text-xs font-bold text-text-tertiary">{{ locale.switchTitle }}</p>
             <p class="text-[11px] text-text-disabled leading-relaxed">
@@ -188,22 +88,7 @@
       <div class="lg:col-span-7 space-y-6">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="text-text-disabled"
-            >
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-              <path d="M3 3v5h5" />
-              <path d="M12 7v5l4 2" />
-            </svg>
+            <History :size="14" class="text-text-disabled" />
             <h3 class="text-[10px] font-black text-text-disabled uppercase tracking-[0.2em]">
               {{ locale.historyTitle }}
             </h3>
@@ -238,21 +123,7 @@
                     : 'bg-bg-tertiary text-text-disabled border border-border-tertiary'
                 "
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="21 8 21 21 3 21 3 8" />
-                  <rect x="1" y="3" width="22" height="5" />
-                  <line x1="10" y1="12" x2="14" y2="12" />
-                </svg>
+                <Archive :size="20" />
               </div>
               <div>
                 <h5
@@ -274,20 +145,7 @@
                 v-if="sem.isActive"
                 class="flex items-center gap-2 px-4 py-2 bg-success-10 text-success rounded-xl border border-success-20"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
+                <CircleCheck :size="12" />
                 <span class="text-[10px] font-black uppercase tracking-widest">{{ locale.currentSemester }}</span>
               </div>
               <button
@@ -296,69 +154,29 @@
                 class="flex items-center gap-2 px-4 py-2 bg-bg-tertiary hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary text-[10px] font-black rounded-xl border border-border-tertiary transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 @click="setActive(sem.id)"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
+                <ArrowRight :size="12" />
                 {{ locale.setCurrent }}
               </button>
 
               <button
+                :aria-label="locale.editSemester"
                 :disabled="loading"
                 class="p-2.5 text-text-secondary hover:text-primary hover:bg-primary-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.editSemester"
                 @click="openEditModal(sem)"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                </svg>
+                <Pencil :size="14" />
               </button>
 
               <button
                 v-if="!sem.isActive"
+                :aria-label="locale.deleteSemester"
                 :disabled="loading"
                 class="p-2.5 text-text-secondary hover:text-error hover:bg-error-10 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="locale.deleteSemester"
                 @click="deleteSemester(sem.id)"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path
-                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
+                <Trash2 :size="14" />
               </button>
             </div>
           </div>
@@ -388,23 +206,11 @@
               {{ isEditing ? locale.editSemester : locale.add }}
             </h3>
             <button
+              aria-label="关闭学期弹窗"
               class="p-2 text-text-tertiary hover:text-text-primary transition-colors"
               @click="closeModal"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X :size="20" />
             </button>
           </div>
 
@@ -439,22 +245,7 @@
             </label>
 
             <div class="p-4 bg-bg-primary border border-border-secondary rounded-2xl flex items-start gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="text-warning shrink-0 mt-0.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+              <CircleAlert :size="14" class="text-warning shrink-0 mt-0.5" />
               <p class="text-[10px] text-text-tertiary leading-normal">
                 {{ locale.namingTip }}
               </p>
@@ -496,6 +287,7 @@
 </template>
 
 <script setup>
+import { Archive, ArrowRight, BookOpen, CalendarDays, CircleAlert, CircleCheck, History, Info, Pencil, Plus, Star, Trash2, X } from '@lucide/vue'
 import { onMounted, ref, computed } from 'vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useToast } from '~/composables/useToast'

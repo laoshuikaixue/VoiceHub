@@ -30,6 +30,7 @@
           >
             <div class="flex items-center gap-3">
               <button
+                aria-label="打开移动端菜单"
                 class="lg:hidden p-2 text-text-tertiary hover:bg-bg-tertiary rounded-lg transition-colors"
                 @click="toggleSidebar"
               >

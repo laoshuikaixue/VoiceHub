@@ -23,25 +23,16 @@
               :title="locale.openInNewTab"
               @click="openInNewTab"
             >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
+              <ExternalLink class="w-4 h-4" />
               {{ locale.openInBilibili }}
             </button>
             <button
+              :aria-label="locale.close"
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-80 hover:bg-bg-quaternary text-text-tertiary hover:text-text-primary transition-all"
               :title="locale.close"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -57,7 +48,7 @@
             />
             <div v-else class="w-full h-full flex items-center justify-center text-text-tertiary">
               <div class="text-center">
-                <Icon name="alert-circle" :size="48" class="mx-auto mb-4 opacity-20" />
+                <CircleX :size="48" class="mx-auto mb-4 opacity-20"  />
                 <p class="text-sm font-bold">{{ locale.loadFailed }}</p>
               </div>
             </div>
@@ -69,8 +60,8 @@
 </template>
 
 <script setup>
+import { ExternalLink, X, CircleX } from '@lucide/vue'
 import { computed } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

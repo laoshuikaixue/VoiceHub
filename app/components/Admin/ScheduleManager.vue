@@ -8,15 +8,7 @@
           class="p-2 text-text-tertiary hover:text-text-secondary disabled:opacity-30 transition-colors"
           @click="scrollDates('left')"
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <polyline points="15,18 9,12 15,6" />
-          </svg>
+          <ChevronLeft class="w-5 h-5" />
         </button>
 
         <div
@@ -49,15 +41,7 @@
           class="p-2 text-text-tertiary hover:text-text-secondary disabled:opacity-30 transition-colors"
           @click="scrollDates('right')"
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <polyline points="9,18 15,12 9,6" />
-          </svg>
+          <ChevronRight class="w-5 h-5" />
         </button>
 
         <!-- 操作按钮组 -->
@@ -696,7 +680,7 @@
                         class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-10 text-primary border border-primary-20 uppercase tracking-wider whitespace-nowrap flex-shrink-0 flex items-center gap-1"
                         :title="locale.replaySong"
                       >
-                        <Icon name="repeat" :size="10" class-name="flex-shrink-0" />{{ locale.replay }}
+                        <Repeat2 :size="10" class="flex-shrink-0"  />{{ locale.replay }}
                       </span>
                       <span
                         v-if="schedule.isDraft"
@@ -1039,6 +1023,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch, inject } from 'vue'
 import {
+  ChevronLeft,
   Search,
   Save,
   Send,
@@ -1067,12 +1052,11 @@ import {
   ExternalLink,
   MessageSquare,
   Trash2,
-  Copy
-} from '@lucide/vue'
+  Copy,
+  Repeat2} from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
 import ConfirmDialog from '../UI/ConfirmDialog.vue'
-import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'

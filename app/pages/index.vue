@@ -67,7 +67,7 @@
                   aria-haspopup="listbox"
                   @click="toggleLanguageMenu"
                 >
-                  <Icon name="translate" :size="19" />
+                  <Languages :size="19"  />
                 </button>
 
                 <Transition name="dropdown-fade">
@@ -93,6 +93,12 @@
                       @click="selectLocale(localeOption.code)"
                     >
                       <span class="language-option-label">{{ localeOption.label }}</span>
+                      <Icon
+                        v-if="currentLocale === localeOption.code"
+                        name="check"
+                        :size="16"
+                        color="var(--color-accent)"
+                      />
                     </button>
                   </div>
                 </Transition>
@@ -120,15 +126,15 @@
                 <Transition name="dropdown-fade">
                   <div v-if="showUserActions" class="user-actions-dropdown">
                     <NuxtLink class="action-item" to="/account">
-                      <Icon name="user" :size="16" />
+                      <User :size="16"  />
                       <span>{{ locale.account }}</span>
                     </NuxtLink>
                     <NuxtLink v-if="isAdmin" class="action-item" to="/dashboard">
-                      <Icon name="settings" :size="16" />
+                      <Settings :size="16"  />
                       <span>{{ locale.dashboard }}</span>
                     </NuxtLink>
                     <button class="action-item logout" @click="handleLogout">
-                      <Icon name="logout" :size="16" />
+                      <LogOut :size="16"  />
                       <span>{{ locale.logout }}</span>
                     </button>
                   </div>
@@ -137,7 +143,7 @@
 
               <div v-else class="login-options">
                 <NuxtLink class="login-btn" to="/login">
-                  <Icon name="user" :size="16" />
+                  <User :size="16"  />
                   <span>{{ locale.login }}</span>
                 </NuxtLink>
               </div>
@@ -163,7 +169,7 @@
             class="section-tab"
             @click="handleTabClick('schedule')"
           >
-            <Icon class="tab-icon" name="calendar" :size="20" />
+            <CalendarDays class="tab-icon" :size="20"  />
             <span class="tab-text">{{ locale.tabs.schedule }}</span>
           </div>
           <div
@@ -171,7 +177,7 @@
             class="section-tab"
             @click="handleTabClick('songs')"
           >
-            <Icon class="tab-icon" name="music" :size="20" />
+            <Music class="tab-icon" :size="20"  />
             <span class="tab-text">{{ locale.tabs.songs }}</span>
           </div>
           <div
@@ -179,7 +185,7 @@
             class="section-tab"
             @click="handleTabClick('request')"
           >
-            <Icon class="tab-icon" name="search" :size="20" />
+            <Search class="tab-icon" :size="20"  />
             <span class="tab-text">{{ locale.tabs.request }}</span>
           </div>
           <ClientOnly>
@@ -191,7 +197,7 @@
               @click="isClientAuthenticated ? handleTabClick('notification') : showLoginNotice()"
             >
               <div class="icon-wrapper">
-                <Icon class="tab-icon" name="message-circle" :size="20" />
+                <MessageCircle class="tab-icon" :size="20"  />
                 <span
                   v-if="isClientAuthenticated && hasUnreadNotifications"
                   class="notification-badge-tab"
@@ -207,7 +213,7 @@
             </div>
             <template #fallback>
               <div class="section-tab disabled" data-tab="notification">
-                <Icon class="tab-icon" name="message-circle" :size="20" />
+                <MessageCircle class="tab-icon" :size="20"  />
                 <span class="tab-text">{{ locale.tabs.notification }}</span>
               </div>
             </template>
@@ -264,7 +270,7 @@
             >
               <div v-if="!isClientAuthenticated" class="login-required-container">
                 <div class="login-required-content">
-                  <div class="login-icon">🔒</div>
+                  <Lock class="login-icon" :size="48" aria-hidden="true" />
                   <h3>{{ locale.loginRequired }}</h3>
                   <p>{{ locale.loginRequiredDesc }}</p>
                   <button class="login-button" @click="navigateToLogin">{{ locale.loginNow }}</button>
@@ -298,7 +304,7 @@
                       </button>
                     </div>
                     <div class="notification-search">
-                      <Icon :size="17" aria-hidden="true" name="search" />
+                      <Search :size="17" aria-hidden="true" />
                       <input
                         v-model="notificationSearchInput"
                         :aria-label="locale.searchNotifications"
@@ -316,7 +322,7 @@
                         type="button"
                         @click="clearNotificationSearch"
                       >
-                        <Icon :size="15" name="x" />
+                        <X :size="15" />
                       </button>
                     </div>
                   </div>
@@ -327,26 +333,11 @@
                       class="mark-all-read-header"
                       @click="markAllNotificationsAsRead"
                     >
-                      <Icon :size="15" name="check" />
+                      <Check :size="15" />
                       <span>{{ locale.markAllRead }}</span>
                     </button>
-                    <button class="settings-icon" @click="toggleNotificationSettings">
-                      <svg
-                        fill="none"
-                        height="20"
-                        stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                        width="20"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle cx="12" cy="12" r="3" />
-                        <path
-                          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
-                        />
-                      </svg>
+                    <button :aria-label="locale.notificationSettings" class="settings-icon" @click="toggleNotificationSettings">
+                      <Settings :size="20" />
                     </button>
                   </div>
                 </div>
@@ -363,7 +354,7 @@
                   @click="notificationsService.changeFilter('unread')"
                 >
                   <span class="notification-unread-summary-icon">
-                    <Icon :size="21" aria-hidden="true" name="bell-ring" />
+                    <BellRing :size="21" aria-hidden="true" />
                   </span>
                   <span class="notification-unread-summary-copy">
                     <span>{{ locale.unreadOverview }}</span>
@@ -378,7 +369,7 @@
                   </span>
                   <span v-if="hasUnreadNotifications" class="notification-unread-summary-action">
                     <span>{{ locale.viewUnreadNotifications }}</span>
-                    <Icon :size="17" aria-hidden="true" name="chevron-right" />
+                    <ChevronRight :size="17" aria-hidden="true" />
                   </span>
                 </button>
 
@@ -391,7 +382,7 @@
 
                   <div v-else-if="userNotifications.length === 0" class="empty-notification">
                     <div class="empty-icon">
-                      <Icon :size="48" color="var(--text-muted)" name="bell" />
+                      <Bell :size="48" color="var(--text-muted)" />
                     </div>
                     <p>
                       {{
@@ -420,43 +411,37 @@
                       >
                         <div class="notification-card-header">
                           <div class="notification-icon-type">
-                            <Icon
+                            <Check
                               v-if="notification.type === 'SONG_SELECTED'"
                               :size="20"
                               color="var(--color-indigo-hover)"
-                              name="check"
-                            />
-                            <Icon
+                              />
+                            <Play
                               v-else-if="notification.type === 'SONG_PLAYED'"
                               :size="20"
                               color="var(--color-success)"
-                              name="play"
-                            />
-                            <Icon
+                              />
+                            <ThumbsUp
                               v-else-if="notification.type === 'SONG_VOTED'"
                               :size="20"
                               color="var(--color-warning)"
-                              name="thumbs-up"
-                            />
-                            <Icon
+                              />
+                            <CircleX
                               v-else-if="notification.type === 'SONG_REJECTED'"
                               :size="20"
                               color="var(--color-error)"
-                              name="x-circle"
-                            />
-                            <Icon
+                              />
+                            <Users
                               v-else-if="notification.type === 'COLLABORATION_INVITE'"
                               :size="20"
                               color="var(--color-accent)"
-                              name="users"
-                            />
-                            <Icon
+                              />
+                            <MessageCircle
                               v-else-if="notification.type === 'COLLABORATION_RESPONSE'"
                               :size="20"
                               color="var(--color-collab)"
-                              name="message-circle"
-                            />
-                            <Icon v-else :size="20" color="var(--text-muted)" name="bell" />
+                              />
+                            <Bell v-else :size="20" color="var(--text-muted)" />
                           </div>
                           <div class="notification-title-row">
                             <div class="notification-heading-row">
@@ -501,7 +486,7 @@
                                 class="notification-read-status"
                                 :class="notification.read ? 'is-read' : 'is-unread'"
                               >
-                                <Icon :size="14" name="eye" />
+                                <Eye :size="14" />
                                 {{ notification.read ? locale.read : locale.unread }}
                               </span>
                             </div>
@@ -509,7 +494,7 @@
                               {{ formatNotificationTime(notification.createdAt) }}
                             </div>
                             <div class="notification-sender">
-                              <Icon :size="13" aria-hidden="true" name="user" />
+                              <User :size="13" aria-hidden="true" />
                               <span>{{ locale.sender }}：{{ getNotificationSenderName(notification) }}</span>
                             </div>
                           </div>
@@ -554,22 +539,7 @@
                             :title="locale.delete"
                             @click.stop="deleteNotification(notification.id)"
                           >
-                            <svg
-                              fill="none"
-                              height="16"
-                              stroke="currentColor"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              viewBox="0 0 24 24"
-                              width="16"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <polyline points="3 6 5 6 21 6" />
-                              <path
-                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                              />
-                            </svg>
+                            <Trash2 :size="16" />
                             <span>{{ locale.delete }}</span>
                           </button>
                         </div>
@@ -612,6 +582,7 @@
                     <!-- 页码导航 -->
                     <div class="page-navigation">
                       <button
+                        :aria-label="locale.previousPage"
                         :disabled="
                           !notificationsService.hasPrevPage.value ||
                           notificationsService.isPaginationLoading.value
@@ -620,19 +591,7 @@
                         :title="locale.previousPage"
                         @click="notificationsService.prevPage()"
                       >
-                        <svg
-                          fill="none"
-                          height="16"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          viewBox="0 0 24 24"
-                          width="16"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <polyline points="15 18 9 12 15 6" />
-                        </svg>
+                        <ChevronLeft :size="16" />
                       </button>
 
                       <!-- 页码按钮 -->
@@ -658,23 +617,12 @@
                           !notificationsService.hasNextPage.value ||
                           notificationsService.isPaginationLoading.value
                         "
+                        :aria-label="locale.nextPage"
                         class="page-nav-button"
                         :title="locale.nextPage"
                         @click="notificationsService.nextPage()"
                       >
-                        <svg
-                          fill="none"
-                          height="16"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          viewBox="0 0 24 24"
-                          width="16"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
+                        <ChevronRight :size="16" />
                       </button>
                     </div>
                   </div>
@@ -749,17 +697,18 @@
                   <div
                     class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                   >
-                    <Icon name="bell" :size="20" />
+                    <Bell :size="20"  />
                   </div>
                   {{ locale.rulesTitle }}
                 </h3>
                 <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.rulesDesc }}</p>
               </div>
               <button
+                :aria-label="locale.close"
                 class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="showRules = false"
               >
-                <Icon name="x" :size="20" />
+                <X :size="20"  />
               </button>
             </div>
 
@@ -768,7 +717,7 @@
                 <h4
                   class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
                 >
-                  <Icon name="message-circle" :size="12" />
+                  <MessageCircle :size="12"  />
                   {{ locale.submissionGuidelines }}
                 </h4>
                 <div
@@ -799,7 +748,7 @@
                 <h4
                   class="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-2"
                 >
-                  <Icon name="calendar" :size="12" />
+                  <CalendarDays :size="12"  />
                   {{ locale.playbackTime }}
                 </h4>
                 <div
@@ -808,7 +757,7 @@
                   <div
                     class="w-12 h-12 rounded-2xl bg-primary-hover flex items-center justify-center text-text-primary shadow-lg shadow-[var(--primary-glow-40)]"
                   >
-                    <Icon name="clock" :size="24" />
+                    <Clock :size="24"  />
                   </div>
                   <div>
                     <p class="text-sm font-black text-text-primary">{{ locale.playbackTimeDesc }}</p>
@@ -836,10 +785,10 @@
 </template>
 
 <script setup>
+import { Shirt, Languages, Check, User, Settings, LogOut, CalendarDays, Music, Search, MessageCircle, Bell, X, Clock, BellRing, ChevronLeft, ChevronRight, Play, ThumbsUp, CircleX, Users, Eye, Trash2, Lock } from '@lucide/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'

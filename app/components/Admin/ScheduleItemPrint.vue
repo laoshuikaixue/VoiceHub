@@ -18,11 +18,7 @@
           @error="handleImageError"
         >
         <div class="cover-placeholder" :class="{ show: !schedule.song.cover }">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 1v6m0 6v6" />
-            <path d="m21 12-6-3-6 3-6-3" />
-          </svg>
+          <Disc3 />
         </div>
       </div>
 
@@ -75,6 +71,7 @@
 </template>
 
 <script setup>
+import { Disc3 } from '@lucide/vue'
 import { defineProps } from 'vue'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'

@@ -4,33 +4,36 @@
       <div class="control-with-progress">
         <!-- 上一首按钮 -->
         <button
+          :aria-label="hasPrevious ? locale.previous : locale.noPrevious"
           :disabled="!hasPrevious"
           :title="hasPrevious ? locale.previous : locale.noPrevious"
           class="control-btn prev-btn"
           @click="$emit('previous')"
         >
-          <Icon :size="24" color="white" name="skip-back" />
+          <SkipBack :size="24" color="white" />
         </button>
 
         <!-- 播放/暂停按钮 -->
         <button
+          :aria-label="isPlaying ? locale.pause : locale.play"
           :disabled="hasError || isLoadingTrack"
           class="control-btn play-pause-btn"
           @click="$emit('togglePlay')"
         >
           <AppSpinner v-if="isLoadingTrack" :size="18" />
-          <Icon v-else-if="isPlaying" :size="18" color="white" name="pause" />
-          <Icon v-else :size="18" color="white" name="play" />
+          <Pause v-else-if="isPlaying" :size="18" color="white" />
+          <Play v-else :size="18" color="white" />
         </button>
 
         <!-- 下一首按钮 -->
         <button
+          :aria-label="hasNext ? locale.next : locale.noNext"
           :disabled="!hasNext"
           :title="hasNext ? locale.next : locale.noNext"
           class="control-btn next-btn"
           @click="$emit('next')"
         >
-          <Icon :size="24" color="white" name="skip-forward" />
+          <SkipForward :size="24" color="white" />
         </button>
 
         <div class="progress-container-wrapper">
@@ -61,8 +64,8 @@
 </template>
 
 <script setup>
+import { SkipBack, Pause, Play, SkipForward } from '@lucide/vue'
 import { computed, ref } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 

@@ -23,17 +23,18 @@
               <div
                 class="w-10 h-10 rounded-2xl bg-warning-10 flex items-center justify-center text-warning"
               >
-                <Icon name="alert-triangle" :size="20" />
+                <TriangleAlert :size="20"  />
               </div>
               {{ locale.title }}
             </h3>
             <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.desc }}</p>
           </div>
           <button
+            aria-label="关闭重复歌曲弹窗"
             class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
             @click="$emit('close')"
           >
-            <Icon name="x" :size="20" />
+            <X :size="20"  />
           </button>
         </div>
 
@@ -58,7 +59,7 @@
                 @error="handleImageError"
               >
               <div v-else class="w-full h-full flex items-center justify-center text-text-secondary">
-                <Icon name="music" :size="32" />
+                <Music :size="32"  />
               </div>
             </div>
 
@@ -74,7 +75,7 @@
                 <div
                   class="flex items-center gap-1.5 text-[10px] font-black text-error uppercase tracking-widest"
                 >
-                  <Icon name="heart" :size="12" class="fill-current" />
+                  <Heart :size="12" class="fill-current"  />
                   {{ getLocaleMessage('votes', song.voteCount || 0) }}
                 </div>
                 <div
@@ -108,8 +109,8 @@
             class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-2xl shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
             @click="handleLike"
           >
-            <Icon v-if="liking" name="loader" :size="16" class="animate-spin" />
-            <Icon v-else name="heart" :size="16" :class="[song.voted ? 'fill-current' : '']" />
+            <Loader2 v-if="liking" :size="16" class="animate-spin"  />
+            <Heart v-else :size="16" :class="[song.voted ? 'fill-current' : '']"  />
             {{ song.voted ? locale.liked : locale.likeNow }}
           </button>
         </div>
@@ -119,10 +120,10 @@
 </template>
 
 <script lang="ts" setup>
+import { TriangleAlert, X, Music, Heart, Loader2 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import type { Song } from '~/types'
 import { convertToHttps } from '~/utils/url'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 interface Props {

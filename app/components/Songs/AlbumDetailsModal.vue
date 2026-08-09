@@ -34,7 +34,7 @@
                   v-else
                   class="w-full h-full bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
-                  <Icon name="disc" :size="32" />
+                  <Disc3 :size="32"  />
                 </div>
               </div>
               <div class="min-w-0 flex-1">
@@ -67,10 +67,11 @@
               </div>
             </div>
             <button
+              aria-label="关闭专辑详情弹窗"
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -83,7 +84,7 @@
                 :placeholder="locale.searchPlaceholder"
                 class="w-full h-9 pl-9 pr-3 rounded-xl bg-bg-tertiary-60 border border-border-tertiary-50 text-text-primary text-sm placeholder-text-disabled focus:outline-none focus:border-primary-50 focus:bg-bg-tertiary transition-all"
               >
-              <Icon name="search" :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
+              <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled"  />
             </div>
           </div>
 
@@ -101,7 +102,7 @@
               <div
                 class="w-16 h-16 rounded-3xl bg-error-10 flex items-center justify-center mb-4"
               >
-                <Icon name="alert-circle" :size="32" />
+                <CircleX :size="32"  />
               </div>
               <p class="text-sm font-bold uppercase tracking-widest">{{ error }}</p>
             </div>
@@ -116,7 +117,7 @@
               <div
                 class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
-                <Icon name="music" :size="32" class="opacity-20" />
+                <Music :size="32" class="opacity-20"  />
               </div>
               <p class="text-sm font-bold uppercase tracking-widest">
                 {{ searchQuery ? locale.noMatches : locale.noSongs }}
@@ -125,7 +126,7 @@
 
             <div v-else class="song-list space-y-1.5">
               <div
-                v-for="(song, index) in filteredSongs"
+                v-for="song in filteredSongs"
                 :key="song.songmid"
                 class="group flex items-center p-2 sm:p-3 rounded-2xl transition-all"
                 :class="[
@@ -148,7 +149,7 @@
                     v-else
                     class="w-full h-full flex items-center justify-center text-text-disabled"
                   >
-                    <Icon name="music" :size="16" />
+                    <Music :size="16"  />
                   </div>
                 </div>
 
@@ -164,7 +165,7 @@
                   >
                     <span class="truncate">{{ song.singer }}</span>
                     <span class="flex items-center shrink-0">
-                      <Icon name="clock" :size="10" class="mr-1" />
+                      <Clock :size="10" class="mr-1"  />
                       {{ song.interval }}
                     </span>
                   </div>
@@ -178,10 +179,8 @@
                     :title="isCurrentSong(song) && isPlaying ? locale.pause : locale.preview"
                     @click.stop="togglePlay(song)"
                   >
-                    <Icon
-                      :name="isCurrentSong(song) && isPlaying ? 'pause' : 'play'"
-                      :size="16"
-                    />
+                    <Pause v-if="isCurrentSong(song) && isPlaying" :size="16" />
+                    <Play v-else :size="16" />
                   </button>
 
                   <template v-if="song.status.played">
@@ -224,11 +223,11 @@
                         @click.stop="voteSong(song)"
                       >
                         <span class="flex items-center justify-center gap-1">
-                          <Icon
-                            name="heart"
+                          <Heart
+                           
                             :size="12"
                             :class="song.status.voted ? 'fill-current' : ''"
-                          />
+                           />
                           <span>{{ song.status.voted ? requestLocale.liked : requestLocale.like }}</span>
                         </span>
                       </button>
@@ -278,7 +277,7 @@
               class="w-8 h-8 flex items-center justify-center rounded-lg bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="showDescModal = false"
             >
-              <Icon name="x" :size="16" />
+              <X :size="16"  />
             </button>
           </div>
           <p class="text-sm text-text-tertiary leading-relaxed whitespace-pre-wrap">
@@ -291,8 +290,8 @@
 </template>
 
 <script setup>
+import { Disc3, X, Search, CircleX, Music, Clock, Heart, Pause, Play } from '@lucide/vue'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { convertToHttps } from '~/utils/url'

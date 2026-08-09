@@ -6,17 +6,10 @@
       >
         <!-- 错误图标 -->
         <div class="flex justify-center">
-          <div class="relative">
-            <div
-              class="w-24 h-24 rounded-3xl bg-error-10 border border-error-20 flex items-center justify-center text-error"
-            >
-              <ShieldAlert :size="48" stroke-width="1.5" />
-            </div>
-            <div
-              class="absolute -top-2 -right-2 w-8 h-8 bg-bg-primary border border-border-secondary rounded-full flex items-center justify-center text-error shadow-xl"
-            >
-              <X :size="16" stroke-width="3" />
-            </div>
+          <div
+            class="w-24 h-24 rounded-3xl bg-error-10 border border-error-20 flex items-center justify-center text-error"
+          >
+            <ShieldAlert :size="48" stroke-width="1.5" />
           </div>
         </div>
 
@@ -68,7 +61,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { ShieldAlert, X, LogIn, Home } from '@lucide/vue'
+import { ShieldAlert, LogIn, Home } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
 const route = useRoute()
@@ -102,4 +95,3 @@ definePageMeta({
 })
 </script>
 
-<style scoped></style>

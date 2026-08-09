@@ -15,11 +15,7 @@
       <div
         class="w-16 h-16 bg-error-10 rounded-full flex items-center justify-center text-error mb-4"
       >
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-          <path d="m15 9-6 6" />
-          <path d="m9 9 6 6" />
-        </svg>
+        <CircleX class="w-8 h-8" />
       </div>
       <h3 class="text-lg font-bold text-text-primary">{{ locale.noPermissionTitle }}</h3>
       <p class="text-text-tertiary mt-2">{{ locale.noPermissionDesc }}</p>
@@ -322,12 +318,7 @@
                   <!-- 无数据提示 -->
                   <div v-if="filteredSchedules.length === 0" class="no-data-message">
                     <div class="no-data-icon">
-                      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <rect height="18" rx="2" ry="2" width="18" x="3" y="4" />
-                        <line x1="16" x2="16" y1="2" y2="6" />
-                        <line x1="8" x2="8" y1="2" y2="6" />
-                        <line x1="3" x2="21" y1="10" y2="10" />
-                      </svg>
+                      <CalendarDays />
                     </div>
                     <h3>{{ locale.emptyTitle }}</h3>
                     <p v-if="schedules.length === 0">{{ locale.emptyNoSchedules }}</p>
@@ -423,6 +414,8 @@ import { useAuth } from '~/composables/useAuth'
 import { toPng, toBlob } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import {
+  CalendarDays,
+  CircleX,
   Layout,
   ChevronDown,
   CheckCircle2,
@@ -450,7 +443,7 @@ const generatedAtText = computed(() => {
   return formatLocale(locale.value?.generatedAt, nowText, nowText)
 })
 const remarkText = computed(() => {
-  const remark = settings.remark || ''
+  const remark = settings.value.remark || ''
   return formatLocale(locale.value?.remarkPrefix, remark, remark)
 })
 

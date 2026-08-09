@@ -7,6 +7,7 @@
       <div class="max-w-[1200px] mx-auto flex items-center justify-between">
         <div class="flex items-center gap-4">
           <button
+            aria-label="返回首页"
             class="p-2 hover:bg-bg-secondary rounded-xl transition-all text-text-tertiary hover:text-text-primary"
             @click="goBack"
           >
@@ -242,7 +243,11 @@
                 <h3 class="text-lg font-black text-text-primary">{{ locale.personalApiKey.createdTitle }}</h3>
                 <p class="text-xs text-text-tertiary mt-1">{{ locale.personalApiKey.createdDesc }}</p>
               </div>
-              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closeCreatedApiKey">
+              <button
+                :aria-label="locale.personalApiKey.closeSaved"
+                class="text-text-tertiary hover:text-text-primary transition-colors"
+                @click="closeCreatedApiKey"
+              >
                 <X :size="20" />
               </button>
             </div>
@@ -262,6 +267,7 @@
                     {{ createdApiKey.apiKey }}
                   </div>
                   <button
+                    :aria-label="locale.personalApiKey.copy"
                     class="w-12 rounded-xl flex items-center justify-center transition-all"
                     :class="apiKeyCopied ? 'bg-success text-text-primary' : 'bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary'"
                     @click="copyApiKey(createdApiKey.apiKey)"
@@ -300,7 +306,11 @@
                   {{ locale.personalApiKey.logsSubtitle(selectedApiKeyForLogs?.name || locale.personalApiKey.defaultName, apiKeyLogsPagination.total) }}
                 </p>
               </div>
-              <button class="text-text-tertiary hover:text-text-primary transition-colors" @click="closePersonalApiKeyLogs">
+              <button
+                :aria-label="locale.personalApiKey.close"
+                class="text-text-tertiary hover:text-text-primary transition-colors"
+                @click="closePersonalApiKeyLogs"
+              >
                 <X :size="20" />
               </button>
             </div>

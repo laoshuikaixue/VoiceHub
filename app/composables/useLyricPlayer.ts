@@ -141,10 +141,7 @@ export const useLyricPlayer = () => {
         font-size: 1.1rem;
         text-align: center;
       ">
-        <div>
-          <div style="margin-bottom: 1rem;">🎵</div>
-          <div>歌词播放器加载中...</div>
-        </div>
+        <div>歌词播放器加载中...</div>
       </div>
     `
     isInitialized.value = true

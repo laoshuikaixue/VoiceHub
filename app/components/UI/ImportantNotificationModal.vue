@@ -43,7 +43,7 @@
                 class="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-warning-20 bg-warning-20 text-warning-light"
                 aria-hidden="true"
               >
-                <Icon name="bell-ring" :size="22" />
+                <BellRing :size="22"  />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="text-xs font-bold text-warning-light">{{ locale.label }}</span>
@@ -59,14 +59,14 @@
                   class="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-text-tertiary"
                 >
                   <span class="inline-flex items-center gap-1 font-semibold text-text-muted">
-                    <Icon name="clock" :size="13" class="shrink-0" aria-hidden="true" />
+                    <Clock :size="13" class="shrink-0" aria-hidden="true"  />
                     {{ relativeCreatedAt }}
                   </span>
                   <span aria-hidden="true">&middot;</span>
                   <span>{{ formattedCreatedAt }}</span>
                 </time>
                 <p class="mt-2 flex items-center gap-1.5 text-xs text-text-muted">
-                  <Icon name="user" :size="13" class="shrink-0" aria-hidden="true" />
+                  <User :size="13" class="shrink-0" aria-hidden="true"  />
                   <span>{{ locale.sender }}：{{ senderDisplayName }}</span>
                 </p>
               </div>
@@ -97,8 +97,8 @@
               class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-8 py-2.5 text-xs font-black text-white transition-colors hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-panel-bg-deepest disabled:cursor-wait disabled:opacity-60"
               @click="markAsReadAndClose"
             >
-              <Icon v-if="closing" name="loader" :size="17" class="animate-spin" />
-              <Icon v-else name="check" :size="17" />
+              <Loader2 v-if="closing" :size="17" class="animate-spin"  />
+              <Check v-else :size="17"  />
               {{ closing ? locale.closing : locale.close }}
             </button>
           </footer>
@@ -109,8 +109,8 @@
 </template>
 
 <script setup>
+import { BellRing, Clock, User, Loader2, Check } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useImportantNotification } from '~/composables/useImportantNotification'
 import { useLocale } from '~/utils/locale'
 import { renderMarkdown } from '~/utils/markdown'

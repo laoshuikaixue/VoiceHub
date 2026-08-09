@@ -3,11 +3,8 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header">
         <h3 class="modal-title">{{ locale.title }}</h3>
-        <button class="close-btn" @click="closeModal">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <line x1="18" x2="6" y1="6" y2="18" />
-            <line x1="6" x2="18" y1="6" y2="18" />
-          </svg>
+        <button :aria-label="commonLocale.close" class="close-btn" @click="closeModal">
+          <X aria-hidden="true" />
         </button>
       </div>
 
@@ -17,11 +14,7 @@
           <h4 class="song-title">{{ songInfo.title }}</h4>
           <p class="song-artist">{{ songInfo.artist }}</p>
           <div class="vote-summary">
-            <svg class="heart-icon" fill="currentColor" viewBox="0 0 24 24">
-              <path
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-              />
-            </svg>
+            <Heart class="heart-icon" fill="currentColor" />
             <span class="vote-count">{{ formatLocale(locale.votes, totalVotes) }}</span>
           </div>
         </div>
@@ -34,17 +27,7 @@
 
         <!-- 错误状态 -->
         <div v-else-if="error" class="error-container">
-          <svg
-            class="error-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="15" x2="9" y1="9" y2="15" />
-            <line x1="9" x2="15" y1="9" y2="15" />
-          </svg>
+          <CircleX class="error-icon" />
           <p class="error-message">{{ error }}</p>
           <button class="retry-btn" @click="fetchVoters">{{ commonLocale.retry }}</button>
         </div>
@@ -72,17 +55,7 @@
 
         <!-- 无投票状态 -->
         <div v-else class="empty-state">
-          <svg
-            class="empty-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-            />
-          </svg>
+          <Heart class="empty-icon" />
           <p>{{ locale.empty }}</p>
         </div>
       </div>
@@ -95,6 +68,7 @@
 </template>
 
 <script setup>
+import { CircleX, Heart, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useLocale } from '~/utils/locale'
 
@@ -315,17 +289,12 @@ watch(
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--panel-border-light);
-  border-top: 3px solid var(--color-accent);
-  border-radius: 50%;
+  color: var(--color-accent);
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
+  to {
     transform: rotate(360deg);
   }
 }

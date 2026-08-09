@@ -6,17 +6,18 @@
         <h2 class="comments-title">{{ locale.title }}</h2>
       </div>
       <button
+        :aria-label="locale.refresh"
         class="refresh-button"
         :disabled="isLoading || !canFetchComments"
         :title="locale.refresh"
         @click="refreshComments"
       >
-        <Icon name="refresh" size="18" />
+        <RefreshCw size="18"  />
       </button>
     </header>
 
     <div v-if="!canFetchComments" class="comments-state">
-      <Icon name="message-circle" size="28" />
+      <MessageCircle size="28"  />
       <p>{{ locale.noSource }}</p>
     </div>
 
@@ -26,7 +27,7 @@
     </div>
 
     <div v-else-if="error" class="comments-state">
-      <Icon name="alert-circle" size="28" />
+      <CircleX size="28"  />
       <p>{{ error }}</p>
       <button class="state-action" @click="refreshComments">{{ locale.retry }}</button>
     </div>
@@ -38,7 +39,7 @@
       </div>
 
       <div v-if="!commentItems.length" class="comments-state">
-        <Icon name="message-circle" size="28" />
+        <MessageCircle size="28"  />
         <p>{{ locale.empty }}</p>
       </div>
 
@@ -51,7 +52,7 @@
               :alt="item.user?.nickname || locale.userAvatar"
               referrerpolicy="no-referrer"
             >
-            <Icon v-else name="user" size="18" />
+            <User v-else size="18"  />
           </div>
 
           <div class="comment-body">
@@ -71,7 +72,7 @@
                 :title="item.liked ? locale.unlike : locale.like"
                 @click="toggleCommentLike(item)"
               >
-                <Icon name="thumbs-up" size="13" />
+                <ThumbsUp size="13"  />
                 {{ formatCount(item.likedCount || 0) }}
               </button>
               <span v-if="item.isHot" class="hot-label">{{ locale.hot }}</span>
@@ -93,8 +94,8 @@
 </template>
 
 <script setup lang="ts">
+import { RefreshCw, MessageCircle, CircleX, User, ThumbsUp } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { fetchNetease } from '~/utils/neteaseApi'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'

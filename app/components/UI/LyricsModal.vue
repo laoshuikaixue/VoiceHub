@@ -32,8 +32,9 @@
           </div>
 
           <!-- 关闭按钮 -->
-          <button class="close-button" @click="closeModal">
-            <Icon :name="isMobile ? 'chevron-down' : 'x'" size="24" />
+          <button aria-label="关闭歌词窗口" class="close-button" @click="closeModal">
+            <ChevronDown v-if="isMobile" size="24" />
+            <X v-else size="24" />
           </button>
 
           <!-- 频谱可视化 (左侧边缘) -->
@@ -68,7 +69,7 @@
               referrerpolicy="no-referrer"
             />
             <div v-else class="default-cover">
-              <Icon name="music" size="64" />
+              <Music size="64"  />
             </div>
           </div>
 
@@ -98,7 +99,7 @@
                       @error="handleCoverError"
                     />
                     <div v-else class="default-cover">
-                      <Icon name="music" size="64" />
+                      <Music size="64"  />
                     </div>
                   </div>
                 </div>
@@ -156,7 +157,7 @@
                   :class="{ active: activePanel === 'lyrics' }"
                   @click="activePanel = 'lyrics'"
                 >
-                  <Icon name="lyrics" size="16" />
+                  <NotebookPen size="16"  />
                   <span>{{ locale.lyrics }}</span>
                 </button>
                 <button
@@ -164,7 +165,7 @@
                   :class="{ active: activePanel === 'comments' }"
                   @click="activePanel = 'comments'"
                 >
-                  <Icon name="message-circle" size="16" />
+                  <MessageCircle size="16"  />
                   <span>{{ locale.comments }}</span>
                 </button>
               </div>
@@ -190,7 +191,7 @@
                 <Popover placement="top-end" :offset="12">
                   <template #trigger>
                     <div class="toolbar-btn" :title="locale.settings">
-                      <Icon name="settings" size="20" />
+                      <Settings size="20"  />
                     </div>
                   </template>
                   <template #content>
@@ -256,25 +257,29 @@
             <div class="control-buttons" @touchstart.stop @touchmove.stop @touchend.stop>
               <div class="left-control">
                 <button
+                  :aria-label="playModeTitle"
                   class="control-btn secondary-btn"
                   :class="{ active: playMode !== 'off' }"
                   :title="playModeTitle"
                   @click="cyclePlayMode"
                 >
-                  <Icon :name="playModeIcon" size="20" />
+                  <Repeat1 v-if="playMode === 'loopOne'" size="20" />
+                  <ListMusic v-else-if="playMode === 'order'" size="20" />
+                  <CirclePlay v-else size="20" />
                 </button>
               </div>
 
               <div class="center-control">
-                <button :disabled="!hasPrevious" class="control-btn" @click="previousSong">
-                  <Icon name="skip-back" size="28" />
+                <button :aria-label="locale.previous" :disabled="!hasPrevious" class="control-btn" @click="previousSong">
+                  <SkipBack size="28"  />
                 </button>
-                <button class="play-pause-btn" @click="togglePlayPause">
+                <button :aria-label="isPlaying ? locale.pause : locale.play" class="play-pause-btn" @click="togglePlayPause">
                   <AppSpinner v-if="isLoadingTrack" :size="32" />
-                  <Icon v-else :name="isPlaying ? 'pause' : 'play'" size="32" />
+                  <Pause v-else-if="isPlaying" size="32" />
+                  <Play v-else size="32" />
                 </button>
-                <button :disabled="!hasNext" class="control-btn" @click="nextSong">
-                  <Icon name="skip-forward" size="28" />
+                <button :aria-label="locale.next" :disabled="!hasNext" class="control-btn" @click="nextSong">
+                  <SkipForward size="28"  />
                 </button>
               </div>
 
@@ -308,12 +313,12 @@
 </template>
 
 <script setup>
+import { Music, NotebookPen, MessageCircle, Settings, SkipBack, SkipForward, ChevronDown, X, Pause, Play, CirclePlay, ListMusic, Repeat1 } from '@lucide/vue'
 import { computed, nextTick, onUnmounted, ref, watch, onMounted } from 'vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useLyricSettings } from '~/composables/useLyricSettings'
 import { useBackgroundRenderer } from '~/composables/useBackgroundRenderer'
-import Icon from '~/components/UI/Icon.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAudioQuality } from '~/composables/useAudioQuality'
 import { useAudioPlayerEnhanced } from '~/composables/useAudioPlayerEnhanced'
@@ -773,18 +778,6 @@ const previousSong = () => {
 const nextSong = () => {
   audioPlayer.playNext()
 }
-
-const playModeIcon = computed(() => {
-  switch (audioPlayerControl.playMode.value) {
-    case 'loopOne':
-      return 'repeat-one'
-    case 'order':
-      return 'order'
-    case 'off':
-    default:
-      return 'play-circle'
-  }
-})
 
 const playModeTitle = computed(() => {
   switch (audioPlayerControl.playMode.value) {

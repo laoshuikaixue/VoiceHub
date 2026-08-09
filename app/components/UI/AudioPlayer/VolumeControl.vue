@@ -41,12 +41,12 @@
         <span v-if="showSlider" class="volume-text sf-pro">
           {{ Math.round(volumePercentage) }}%
         </span>
-        <Icon
-          v-else
-          :name="volumeIcon"
+        <VolumeX
+          v-else-if="volumeIcon === 'volume-mute'"
           :size="20"
           :class="{ 'muted-icon': isMuted }"
         />
+        <Volume2 v-else :size="20" :class="{ 'muted-icon': isMuted }" />
       </Transition>
     </div>
   </div>
@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import Icon from '../Icon.vue'
+import { Volume2, VolumeX } from '@lucide/vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 
 const control = useAudioPlayerControl()

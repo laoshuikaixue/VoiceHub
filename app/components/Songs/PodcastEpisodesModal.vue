@@ -25,17 +25,18 @@
               <div
                 class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary flex-shrink-0"
               >
-                <Icon name="mic" :size="24" />
+                <Mic :size="24"  />
               </div>
               <h3 class="text-xl font-black text-text-primary tracking-tight truncate">
                 {{ formatLocale(locale.programListTitle, radioName) }}
               </h3>
             </div>
             <button
+              :aria-label="locale.close"
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all flex-shrink-0"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -45,7 +46,7 @@
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
             >
-              <Icon name="refresh" :size="48" class="animate-spin mb-4 text-primary" />
+              <RefreshCw :size="48" class="animate-spin mb-4 text-primary"  />
               <p class="font-black uppercase tracking-widest text-[10px]">{{ locale.loadingPrograms }}</p>
             </div>
 
@@ -56,7 +57,7 @@
               <div
                 class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center text-error mb-4"
               >
-                <Icon name="alert-triangle" :size="32" />
+                <TriangleAlert :size="32"  />
               </div>
               <p class="text-sm text-text-tertiary mb-6">{{ error }}</p>
               <button
@@ -74,7 +75,7 @@
               <div
                 class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
               >
-                <Icon name="mic" :size="32" class="opacity-20" />
+                <Mic :size="32" class="opacity-20"  />
               </div>
               <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noPrograms }}</p>
             </div>
@@ -102,7 +103,7 @@
                     <div
                       class="w-8 h-8 rounded-full bg-bg-secondary-20 backdrop-blur-md flex items-center justify-center"
                     >
-                      <Icon name="play" :size="16" class="text-text-primary fill-current" />
+                      <Play :size="16" class="text-text-primary fill-current"  />
                     </div>
                   </div>
                 </div>
@@ -126,7 +127,8 @@
                     </span>
                     <span class="flex items-center">
                       <span class="w-1 h-1 rounded-full bg-current mr-1.5 opacity-40" />
-                      🎧 {{ formatCount(program.listenerCount) }}
+                      <Headphones :size="12" class="mr-1" aria-hidden="true" />
+                      {{ formatCount(program.listenerCount) }}
                     </span>
                   </div>
                 </div>
@@ -205,7 +207,7 @@
                   class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
                   @click="loadMore"
                 >
-                  <Icon v-if="loadingMore" name="loader" :size="16" class="animate-spin" />
+                  <Loader2 v-if="loadingMore" :size="16" class="animate-spin"  />
                   {{ loadingMore ? locale.loadingMore : locale.loadMore }}
                 </button>
               </div>
@@ -218,16 +220,17 @@
 </template>
 
 <script setup>
+import { Mic, X, RefreshCw, TriangleAlert, Play, Loader2, Headphones } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { useMusicSources } from '~/composables/useMusicSources'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'
 import { useLocale } from '~/utils/locale'
+import { convertToHttps } from '~/utils/url'
+
 const { songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.mediaModals || {})
-import { convertToHttps } from '~/utils/url'
-import Icon from '~/components/UI/Icon.vue'
 
 const props = defineProps({
   show: Boolean,

@@ -31,6 +31,11 @@ input[type="range"]:not([class*="accent-"]) {
   border-width: 0;
 }
 
+/* 避免 Tailwind 与 UnoCSS 对垂直居中工具类重复应用位移 */
+.-translate-y-1\/2 {
+  translate: none;
+}
+
 /* 字体显示策略优化 */
 @font-face {
   font-family: 'MiSans';

@@ -289,8 +289,11 @@ crontab -e
                   <span>{{ record.triggeredBy === 'api' ? 'API 触发' : record.triggeredBy || '未知' }}</span>
                 </div>
                 <div v-if="record.methods && record.methods.length" class="flex gap-2 mt-2">
-                  <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-success' : 'text-error'" class="text-[10px]">
-                    {{ m.method }} {{ m.success ? '✓' : '✗' }}<span v-if="!m.success && m.error" class="text-text-tertiary ml-0.5">({{ formatMethodError(m.error) }})</span>
+                  <span v-for="m in record.methods" :key="m.method" :class="m.success ? 'text-success' : 'text-error'" class="inline-flex items-center gap-0.5 text-[10px]">
+                    {{ m.method }}
+                    <Check v-if="m.success" :size="11" aria-hidden="true" />
+                    <X v-else :size="11" aria-hidden="true" />
+                    <span v-if="!m.success && m.error" class="text-text-tertiary ml-0.5">({{ formatMethodError(m.error) }})</span>
                   </span>
                 </div>
               </div>
@@ -324,7 +327,7 @@ crontab -e
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2 } from '@lucide/vue'
+import { X, Copy, ExternalLink, Clock, Info, Cloud, FolderOpen, Send, Mail, Trash2, Check } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
 import CollapsibleSection from '~/components/UI/Common/CollapsibleSection.vue'

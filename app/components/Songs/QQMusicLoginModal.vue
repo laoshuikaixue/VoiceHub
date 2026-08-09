@@ -25,25 +25,26 @@
                 <div
                   class="flex h-10 w-10 items-center justify-center rounded-2xl bg-info-10 text-info"
                 >
-                  <Icon name="music" :size="20" />
+                  <Music :size="20"  />
                 </div>
                 {{ locale.qqTitle }}
               </h3>
               <p class="ml-13 mt-1 text-xs text-text-tertiary">{{ locale.qqDesc }}</p>
             </div>
             <button
+              aria-label="关闭 QQ 音乐登录弹窗"
               class="rounded-2xl bg-bg-tertiary-50 p-3 text-text-tertiary transition-all hover:bg-bg-tertiary hover:text-text-primary"
               type="button"
               @click="handleClose"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
           <div class="flex flex-col items-center p-8 pt-4">
             <div class="flex min-h-[250px] w-full flex-col items-center justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
-                <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
+                <Loader2 :size="48" class="mb-4 animate-spin text-text-tertiary"  />
                 <p class="text-[10px] font-bold uppercase tracking-widest">{{ locale.loadingQr }}</p>
               </div>
 
@@ -60,7 +61,7 @@
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-text-primary">
-                    <Icon name="refresh" :size="40" class="mb-3 text-text-tertiary" />
+                    <RefreshCw :size="40" class="mb-3 text-text-tertiary"  />
                     <span class="text-xs font-black uppercase tracking-widest">{{ locale.qrExpired }}</span>
                     <span class="mt-1 text-[10px] font-bold text-text-tertiary">{{ locale.clickRefresh }}</span>
                   </div>
@@ -68,7 +69,7 @@
               </div>
 
               <div v-else-if="errorMessage" class="flex flex-col items-center text-center">
-                <Icon name="alert-circle" :size="44" class="mb-4 text-error" />
+                <CircleX :size="44" class="mb-4 text-error"  />
                 <p class="text-sm font-bold text-text-primary">{{ errorMessage }}</p>
                 <button
                   class="mt-5 rounded-2xl bg-info px-5 py-2 text-xs font-black text-text-primary transition hover:bg-info"
@@ -122,8 +123,8 @@
 </template>
 
 <script setup>
+import { Music, X, Loader2, RefreshCw, CircleX } from '@lucide/vue'
 import { computed, onUnmounted, ref, watch } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 const { songs } = useLocale()

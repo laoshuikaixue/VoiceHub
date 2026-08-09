@@ -10,24 +10,27 @@
 
     <!-- Loading State -->
     <div v-if="pending" class="state-screen loading">
-      <div class="spinner" />
+      <Loader2 class="spinner animate-spin" :size="48" />
       <p class="loading-text">{{ locale.loading }}</p>
     </div>
 
     <!-- Error State -->
     <div v-else-if="error" class="state-screen error">
-      <div class="icon-warning">⚠️</div>
+      <TriangleAlert class="icon-warning" :size="48" aria-hidden="true" />
       <div class="text-center">
         <h2 class="error-title">{{ locale.errorTitle }}</h2>
         <p class="error-desc">{{ locale.errorDesc }}</p>
       </div>
-      <button class="retry-btn" @click="refresh"><span>🔄</span> {{ locale.retry }}</button>
+      <button class="retry-btn" @click="refresh">
+        <RefreshCw :size="16" aria-hidden="true" />
+        {{ locale.retry }}
+      </button>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="isEmpty" class="state-screen empty">
       <div class="empty-icon-circle">
-        <span class="empty-icon">🎵</span>
+        <Music class="empty-icon" :size="36" aria-hidden="true" />
       </div>
       <h2 class="empty-title">{{ locale.emptyTitle }}</h2>
       <p class="empty-desc">{{ locale.emptyDesc }}</p>
@@ -68,19 +71,7 @@
       <Transition name="fade">
         <div v-if="currentIndex === 0" class="scroll-hint">
           <span>{{ locale.scrollHint }}</span>
-          <svg
-            class="animate-bounce"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
-          </svg>
+          <ChevronsDown class="animate-bounce" :size="20" />
         </div>
       </Transition>
     </div>

@@ -14,6 +14,7 @@
       >
       <button
         v-if="searchQuery"
+        aria-label="清空搜索"
         class="absolute inset-y-0 right-0 pr-4 flex items-center text-text-tertiary hover:text-text-secondary transition-colors"
         @click="$emit('update:searchQuery', '')"
       >

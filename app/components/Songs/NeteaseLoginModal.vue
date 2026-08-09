@@ -26,17 +26,18 @@
                 <div
                   class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                 >
-                  <Icon name="music" :size="20" />
+                  <Music :size="20"  />
                 </div>
                 {{ locale.neteaseTitle }}
               </h3>
               <p class="text-xs text-text-tertiary mt-1 ml-13">{{ locale.neteaseDesc }}</p>
             </div>
             <button
+              aria-label="关闭网易云登录弹窗"
               class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
               @click="handleClose"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -44,7 +45,7 @@
           <div class="p-8 pt-4 flex flex-col items-center">
             <div class="w-full flex flex-col items-center min-h-[250px] justify-center">
               <div v-if="loading" class="flex flex-col items-center text-text-tertiary">
-                <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
+                <Loader2 :size="48" class="mb-4 animate-spin text-text-tertiary"  />
                 <p class="font-bold uppercase tracking-widest text-[10px]">{{ locale.loadingQr }}</p>
               </div>
 
@@ -61,7 +62,7 @@
                   @click="initLogin"
                 >
                   <div class="flex flex-col items-center text-text-primary">
-                    <Icon name="refresh" :size="40" class="mb-3 text-text-tertiary" />
+                    <RefreshCw :size="40" class="mb-3 text-text-tertiary"  />
                     <span class="font-black uppercase tracking-widest text-xs">{{ locale.qrExpired }}</span>
                     <span class="text-[10px] text-text-tertiary mt-1 font-bold">{{ locale.clickRefresh }}</span>
                   </div>
@@ -90,7 +91,7 @@
                     v-else-if="status === 802"
                     class="text-primary text-xs font-black uppercase tracking-widest flex items-center justify-center"
                   >
-                    <Icon name="check" :size="16" class="mr-2" />
+                    <Check :size="16" class="mr-2"  />
                     {{ locale.scanSuccess }}
                   </p>
                   <p
@@ -119,8 +120,8 @@
 </template>
 
 <script lang="ts" setup>
+import { Music, X, Loader2, RefreshCw, Check } from '@lucide/vue'
 import { computed, onUnmounted, ref, watch } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 interface Props {

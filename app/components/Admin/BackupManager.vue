@@ -10,11 +10,7 @@
     <div class="actions-grid">
       <div class="action-card">
         <div class="action-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7,10 12,15 17,10" />
-            <line x1="12" x2="12" y1="15" y2="3" />
-          </svg>
+          <Download />
         </div>
         <div class="card-content">
           <h4>{{ locale.exportTitle }}</h4>
@@ -32,11 +28,7 @@
 
       <div class="action-card">
         <div class="action-icon">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17,8 12,3 7,8" />
-            <line x1="12" x2="12" y1="3" y2="15" />
-          </svg>
+          <Upload />
         </div>
         <div class="card-content">
           <h4>{{ locale.importTitle }}</h4>
@@ -58,11 +50,8 @@
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h3>{{ locale.createTitle }}</h3>
-          <button class="close-btn" @click="showCreateModal = false">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18" />
-              <line x1="6" x2="18" y1="6" y2="18" />
-            </svg>
+          <button aria-label="关闭创建备份窗口" class="close-btn" @click="showCreateModal = false">
+            <X aria-hidden="true" />
           </button>
         </div>
         <div class="modal-body">
@@ -105,10 +94,7 @@
         <div class="modal-header">
           <h3>{{ locale.importFileTitle }}</h3>
           <button class="close-btn" @click="showUploadModal = false">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <line x1="18" x2="6" y1="6" y2="18" />
-              <line x1="6" x2="18" y1="6" y2="18" />
-            </svg>
+            <X />
           </button>
         </div>
         <div class="modal-body">
@@ -121,11 +107,7 @@
               @drop="handleDrop"
               @dragover.prevent="isDragOver = true"
             >
-              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17,8 12,3 7,8" />
-                <line x1="12" x2="12" y1="3" y2="15" />
-              </svg>
+              <Upload />
               <h4>{{ locale.uploadTitle }}</h4>
               <p>{{ locale.uploadDesc }}</p>
               <input
@@ -139,10 +121,7 @@
 
             <div v-if="selectedFile" class="selected-file">
               <div class="file-info">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14,2 14,8 20,8" />
-                </svg>
+                <FileText />
                 <div class="file-details">
                   <span class="file-name">{{ selectedFile.name }}</span>
                   <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
@@ -152,10 +131,7 @@
                 class="remove-file-btn"
                 @click="clearSelectedFile"
               >
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <line x1="18" x2="6" y1="6" y2="18" />
-                  <line x1="6" x2="18" y1="6" y2="18" />
-                </svg>
+                <X />
               </button>
             </div>
           </div>
@@ -196,13 +172,7 @@
           </div>
 
           <div class="warning-box">
-            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path
-                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-              />
-              <line x1="12" x2="12" y1="9" y2="13" />
-              <line x1="12" x2="12.01" y1="17" y2="17" />
-            </svg>
+            <TriangleAlert />
             <div>
               <h4>{{ locale.warningTitle }}</h4>
               <p>{{ locale.warningDesc }}</p>
@@ -230,6 +200,7 @@
 </template>
 
 <script setup>
+import { Download, FileText, TriangleAlert, Upload, X } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useLocale } from '~/utils/locale'

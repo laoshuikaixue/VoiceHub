@@ -53,6 +53,7 @@
         </div>
         <div class="flex items-center gap-3">
           <button
+            :aria-label="locale.refresh"
             :disabled="isLoading"
             class="p-2.5 bg-bg-secondary-50 border border-border-secondary rounded-full text-text-tertiary hover:text-text-primary transition-all group disabled:opacity-50 flex items-center justify-center"
             @click="refreshAllData"
@@ -193,6 +194,7 @@
               </div>
               <button
                 v-if="panelStates.trends.error"
+                :aria-label="locale.retry"
                 class="p-2 text-error hover:text-error transition-colors"
                 :title="locale.retry"
                 @click="loadTrends"

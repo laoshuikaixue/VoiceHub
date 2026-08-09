@@ -12,15 +12,15 @@
         class="notification-item"
       >
         <div class="notification-icon">
-          <Icon v-if="notification.type === 'success'" :size="16" name="success" />
-          <Icon v-else-if="notification.type === 'error'" :size="16" name="error" />
-          <Icon v-else :size="16" name="info" />
+          <Check v-if="notification.type === 'success'" :size="16" />
+          <CircleX v-else-if="notification.type === 'error'" :size="16" />
+          <Info v-else :size="16" />
         </div>
         <div class="notification-content">
           {{ notification.message }}
         </div>
-        <button class="notification-close" @click="removeToast(notification.id)">
-          <Icon :size="16" name="close" />
+        <button aria-label="关闭通知" class="notification-close" @click="removeToast(notification.id)">
+          <X :size="16" aria-hidden="true" />
         </button>
 
         <!-- 进度条 -->
@@ -38,8 +38,8 @@
 </template>
 
 <script setup>
+import { Check, CircleX, Info, X } from '@lucide/vue'
 import { onMounted, ref, watch } from 'vue'
-import Icon from './Icon.vue'
 import { useToast } from '~/composables/useToast'
 
 // 使用 useToast 的共享状态

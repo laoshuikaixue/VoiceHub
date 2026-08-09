@@ -24,10 +24,11 @@
             <div class="flex items-center gap-4">
               <button
                 v-if="view === 'songs'"
+                :aria-label="locale.back"
                 class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
                 @click="backToPlaylists"
               >
-                <Icon name="arrow-left" :size="20" />
+                <ArrowLeft :size="20"  />
               </button>
               <h3
                 class="text-xl font-black text-text-primary tracking-tight truncate max-w-[300px] sm:max-w-md"
@@ -36,10 +37,11 @@
               </h3>
             </div>
             <button
+              aria-label="关闭歌单选择弹窗"
               class="w-10 h-10 flex items-center justify-center rounded-full bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -49,7 +51,7 @@
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
             >
-              <Icon name="loader" :size="48" class="mb-4 animate-spin text-text-tertiary" />
+              <Loader2 :size="48" class="mb-4 animate-spin text-text-tertiary"  />
               <p class="font-medium">{{ locale.processing }}</p>
             </div>
 
@@ -60,7 +62,7 @@
               <div
                 class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center mb-4"
               >
-                <Icon name="alert-circle" :size="32" class="text-error" />
+                <CircleX :size="32" class="text-error"  />
               </div>
               <p class="text-text-tertiary font-medium mb-6">{{ error }}</p>
               <button
@@ -80,7 +82,7 @@
                 <div
                   class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
-                  <Icon name="music" :size="32" class="opacity-20" />
+                  <Music :size="32" class="opacity-20"  />
                 </div>
                 <p class="font-medium">{{ locale.emptyPlaylists }}</p>
               </div>
@@ -118,7 +120,7 @@
                   </div>
                 </div>
                 <div class="ml-4 text-text-disabled group-hover:text-text-tertiary transition-colors">
-                  <Icon name="chevron-right" :size="24" />
+                  <ChevronRight :size="24"  />
                 </div>
               </div>
             </div>
@@ -132,7 +134,7 @@
                 <div
                   class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
-                  <Icon name="music" :size="32" class="opacity-20" />
+                  <Music :size="32" class="opacity-20"  />
                 </div>
                 <p class="font-medium">{{ locale.emptyPlaylist }}</p>
               </div>
@@ -160,7 +162,7 @@
                     <div
                       class="w-8 h-8 rounded-full bg-bg-secondary-20 backdrop-blur-md flex items-center justify-center"
                     >
-                      <Icon name="play" :size="16" class="text-text-primary fill-current" />
+                      <Play :size="16" class="text-text-primary fill-current"  />
                     </div>
                   </div>
                 </div>
@@ -254,7 +256,7 @@
                   class="px-8 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black disabled:opacity-50 transition-all flex items-center gap-2 uppercase tracking-widest"
                   @click="loadMore"
                 >
-                  <Icon v-if="moreLoading" name="loader" :size="16" class="animate-spin" />
+                  <Loader2 v-if="moreLoading" :size="16" class="animate-spin"  />
               {{ moreLoading ? locale.loadingMore : locale.loadMore }}
                 </button>
               </div>
@@ -267,10 +269,10 @@
 </template>
 
 <script setup>
+import { ArrowLeft, X, Loader2, CircleX, Music, ChevronRight, Play } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
 import { getPlaylistTracks, getUserPlaylists } from '~/utils/neteaseApi'
 import { convertToHttps } from '~/utils/url'
-import Icon from '../UI/Icon.vue'
 import { useSongs } from '~/composables/useSongs'
 import { useAuth } from '~/composables/useAuth'
 import { useSemesters } from '~/composables/useSemesters'

@@ -24,7 +24,10 @@
               class="w-20 h-20 rounded-[2rem] flex items-center justify-center mb-6 transition-colors border"
               :class="iconClasses"
             >
-              <Icon :name="iconName" :size="40" />
+              <CircleX v-if="iconName === 'alert-circle'" :size="40" />
+              <Check v-else-if="iconName === 'success'" :size="40" />
+              <Info v-else-if="iconName === 'info'" :size="40" />
+              <TriangleAlert v-else :size="40" />
             </div>
 
             <!-- 文字内容 -->
@@ -61,7 +64,7 @@
                 :disabled="loading || (showInput && !inputValue)"
                 @click="handleConfirm"
               >
-                <Icon v-if="loading" name="loader" :size="16" class="animate-spin" />
+                <Loader2 v-if="loading" :size="16" class="animate-spin"  />
                 {{ loading ? locale.processing : resolvedConfirmText }}
               </button>
             </div>
@@ -73,8 +76,8 @@
 </template>
 
 <script setup>
+import { Check, CircleX, Info, Loader2, TriangleAlert } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
-import Icon from './Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

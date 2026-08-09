@@ -43,7 +43,8 @@
 
             <!-- 悬浮展开提示遮罩 -->
             <div class="cover-hover-overlay">
-              <Icon :name="isBilibiliSong(activeSong) ? 'video' : 'maximize-2'" size="18" />
+              <Video v-if="isBilibiliSong(activeSong)" size="18" />
+              <Maximize2 v-else size="18" />
             </div>
           </div>
 
@@ -55,24 +56,26 @@
 
           <!-- 移动端播放控制 -->
           <div v-if="isMobile" class="mobile-controls">
-            <button class="mobile-control-btn" @click.stop="handleTogglePlay">
+            <button aria-label="播放或暂停" class="mobile-control-btn" @click.stop="handleTogglePlay">
               <AppSpinner v-if="control.isLoadingTrack.value" :size="20" />
-              <Icon
-                v-else
-                :name="control.isPlaying.value ? 'pause' : 'play'"
-                :size="24"
-                color="white"
-              />
+              <Pause v-else-if="control.isPlaying.value" :size="24" color="white" />
+              <Play v-else :size="24" color="white" />
             </button>
-            <button class="mobile-control-btn" @click.stop="stopPlaying">
-              <Icon name="close" :size="20" color="var(--overlay-60)" />
+            <button aria-label="关闭播放器" class="mobile-control-btn" @click.stop="stopPlaying">
+              <X :size="20" color="var(--overlay-60)"  />
             </button>
           </div>
 
           <!-- PC端右上角关闭按钮 -->
-          <div v-if="!isMobile" class="close-button" title="关闭播放器" @click="stopPlaying">
-            <span class="music-icon">×</span>
-          </div>
+          <button
+            v-if="!isMobile"
+            aria-label="关闭播放器"
+            class="close-button"
+            title="关闭播放器"
+            @click="stopPlaying"
+          >
+            <X class="music-icon" :size="18" aria-hidden="true" />
+          </button>
         </div>
 
         <!-- 媒体控制区域 (PC端显示) -->
@@ -116,7 +119,9 @@
                 :title="playModeTitle"
                 @click="cyclePlayMode"
               >
-                <Icon :name="playModeIcon" size="20" />
+                <Repeat2 v-if="playModeIcon === 'repeat'" size="20" />
+                <Repeat1 v-else-if="playModeIcon === 'repeat-one'" size="20" />
+                <ListMusic v-else size="20" />
               </span>
             </div>
 
@@ -129,7 +134,7 @@
                 title="上一首"
                 @click="handlePrevious"
               >
-                <Icon name="skip-back" size="26" />
+                <SkipBack size="26"  />
               </span>
 
               <!-- 播放/暂停 -->
@@ -140,8 +145,8 @@
                 @click="handleTogglePlay"
               >
                 <AppSpinner v-if="control.isLoadingTrack.value" :size="18" />
-                <Icon v-else-if="control.isPlaying.value" name="pause" size="24" />
-                <Icon v-else name="play" size="24" />
+                <Pause v-else-if="control.isPlaying.value" size="24"  />
+                <Play v-else size="24"  />
               </span>
 
               <!-- 下一首 -->
@@ -151,7 +156,7 @@
                 title="下一首"
                 @click="handleNext"
               >
-                <Icon name="skip-forward" size="26" />
+                <SkipForward size="26"  />
               </span>
             </div>
 
@@ -247,13 +252,13 @@
 </template>
 
 <script setup lang="ts">
+import { X, SkipBack, Pause, Play, SkipForward, Video, Maximize2, Repeat2, Repeat1, ListMusic } from '@lucide/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import AppleMusicLyrics from './AppleMusicLyrics.vue'
 import LyricsModal from './LyricsModal.vue'
 import AudioElement from './AudioPlayer/AudioElement.vue'
 import VolumeControl from './AudioPlayer/VolumeControl.vue'
 import BilibiliIframeModal from './BilibiliIframeModal.vue'
-import Icon from './Icon.vue'
 import AppSpinner from './Common/AppSpinner.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'

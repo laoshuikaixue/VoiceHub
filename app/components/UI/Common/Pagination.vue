@@ -10,6 +10,7 @@
     <div class="flex flex-wrap items-center justify-center gap-2 order-1 sm:order-2">
       <!-- 首页 -->
       <button
+        :aria-label="locale.first"
         :disabled="currentPage === 1"
         class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.first"
@@ -20,6 +21,7 @@
 
       <!-- 上一页 -->
       <button
+        :aria-label="locale.prev"
         :disabled="currentPage === 1"
         class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.prev"
@@ -47,6 +49,7 @@
 
       <!-- 下一页 -->
       <button
+        :aria-label="locale.next"
         :disabled="currentPage === totalPages"
         class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.next"
@@ -57,6 +60,7 @@
 
       <!-- 尾页 -->
       <button
+        :aria-label="locale.last"
         :disabled="currentPage === totalPages"
         class="w-10 h-10 rounded-lg border border-border-secondary flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary-30 transition-all disabled:opacity-20 disabled:hover:text-text-secondary disabled:hover:border-border-secondary"
         :title="locale.last"
@@ -130,7 +134,7 @@ const displayedPages = computed(() => {
   const maxVisible = 3 // 手机端展示较少，桌面端也可以通过这个控制
 
   let start = Math.max(1, props.currentPage - Math.floor(maxVisible / 2))
-  let end = Math.min(props.totalPages, start + maxVisible - 1)
+  const end = Math.min(props.totalPages, start + maxVisible - 1)
 
   if (end - start + 1 < maxVisible) {
     start = Math.max(1, end - maxVisible + 1)

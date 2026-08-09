@@ -10,15 +10,15 @@
       class="notification"
     >
       <div class="notification-icon">
-        <Icon v-if="type === 'success'" :size="16" name="success" />
-        <Icon v-else-if="type === 'error'" :size="16" name="error" />
-        <Icon v-else :size="16" name="info" />
+        <Check v-if="type === 'success'" :size="16" />
+        <CircleX v-else-if="type === 'error'" :size="16" />
+        <Info v-else :size="16" />
       </div>
       <div class="notification-content">
         {{ message }}
       </div>
-      <button class="notification-close" @click="$emit('close')">
-        <Icon :size="16" name="close" />
+      <button aria-label="关闭通知" class="notification-close" @click="$emit('close')">
+        <X :size="16" aria-hidden="true" />
       </button>
 
       <!-- 进度条 -->
@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import Icon from './Icon.vue'
+import { Check, CircleX, Info, X } from '@lucide/vue'
 
 defineProps({
   show: {

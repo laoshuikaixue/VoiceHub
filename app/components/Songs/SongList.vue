@@ -5,7 +5,7 @@
       <div class="mobile-search-container mobile-only">
         <div class="search-bar-wrapper">
           <div class="search-icon-box">
-            <Icon name="search" :size="18" />
+            <Search :size="18"  />
           </div>
           <input
             v-model="searchQuery"
@@ -87,29 +87,18 @@
               :placeholder="locale.searchPlaceholder"
               type="text"
             >
-            <span class="search-icon">🔍</span>
+            <Search class="search-icon" :size="18" aria-hidden="true" />
           </div>
 
           <!-- 学期选择器 -->
           <div v-if="availableSemesters.length > 1" class="semester-selector-compact">
             <button
+              :aria-label="locale.currentSemester + selectedSemester"
               :title="locale.currentSemester + selectedSemester"
               class="semester-toggle-btn"
               @click="showSemesterDropdown = !showSemesterDropdown"
             >
-              <svg
-                fill="none"
-                height="16"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-                width="16"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z" />
-              </svg>
+              <Star :size="16" />
             </button>
 
             <div v-if="showSemesterDropdown" class="semester-dropdown">
@@ -127,28 +116,13 @@
 
           <!-- 添加刷新按钮 - 使用SVG图标 -->
           <button
+            :aria-label="loading ? locale.refreshing : locale.refresh"
             :disabled="loading"
             :title="loading ? locale.refreshing : locale.refresh"
             class="refresh-button"
             @click="handleRefresh"
           >
-            <svg
-              :class="{ rotating: loading }"
-              class="refresh-icon"
-              fill="none"
-              height="16"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="16"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
-              />
-            </svg>
+            <RefreshCw :class="{ rotating: loading }" class="refresh-icon" :size="16" />
           </button>
         </div>
       </div>
@@ -204,16 +178,21 @@
                   >
                 </template>
                 <div v-else class="text-cover">
-                  {{ getFirstChar(song.title) }}
+                  <Music v-if="!getFirstChar(song.title)" :size="28" aria-hidden="true" />
+                  <template v-else>{{ getFirstChar(song.title) }}</template>
                 </div>
                 <!-- 添加播放按钮 (仅桌面端显示) -->
                 <div
                   v-if="(song.musicPlatform && song.musicId) || song.playUrl"
                   class="play-button-overlay"
                 >
-                  <button :title="isCurrentPlaying(song.id) ? locale.pause : locale.play" class="play-button">
-                    <Icon v-if="isCurrentPlaying(song.id)" :size="16" color="white" name="pause" />
-                    <Icon v-else :size="16" color="white" name="play" />
+                  <button
+                    :aria-label="isCurrentPlaying(song.id) ? locale.pause : locale.play"
+                    :title="isCurrentPlaying(song.id) ? locale.pause : locale.play"
+                    class="play-button"
+                  >
+                    <Pause v-if="isCurrentPlaying(song.id)" :size="16" color="white" />
+                    <Play v-else :size="16" color="white" />
                   </button>
                 </div>
               </div>
@@ -257,11 +236,12 @@
                   </span>
                   <button
                     v-if="song.hasSubmissionNote && song.submissionNote"
+                    :aria-label="locale.viewSubmissionNote"
                     class="submission-note-trigger"
                     :title="locale.viewSubmissionNote"
                     @click.stop="openSubmissionNote(song)"
                   >
-                    <Icon :size="14" name="message-circle" />
+                    <MessageCircle :size="14" />
                   </button>
                 </h3>
                 <div class="song-meta">
@@ -302,11 +282,12 @@
                       disabled: isVoteButtonDisabled(song)
                     }"
                     :disabled="isVoteButtonDisabled(song)"
+                    :aria-label="getVoteButtonTitle(song)"
                     :title="getVoteButtonTitle(song)"
                     class="like-button"
                     @click.stop="handleVote(song)"
                   >
-                    <img :alt="locale.likeAlt" class="like-icon" :src="getThumbsUpIcon()" >
+                    <ThumbsUp aria-hidden="true" class="like-icon" />
                   </button>
                 </div>
               </div>
@@ -378,7 +359,7 @@
                 <div class="submission-note-header">
                   <h4>{{ locale.submissionNote }}</h4>
                   <button @click="closeSubmissionNote">
-                    <Icon :size="14" name="close" />
+                    <X :size="14" />
                   </button>
                 </div>
                 <div class="submission-note-meta">
@@ -400,12 +381,12 @@
 </template>
 
 <script setup>
+import { Search, Pause, Play, MessageCircle, RefreshCw, Star, ThumbsUp, X } from '@lucide/vue'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAuth } from '~/composables/useAuth'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useSemesters } from '~/composables/useSemesters'
 import { useSongs } from '~/composables/useSongs'
-import Icon from '~/components/UI/Icon.vue'
 import Pagination from '~/components/UI/Common/Pagination.vue'
 import MarqueeText from '~/components/UI/MarqueeText.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
@@ -414,13 +395,11 @@ import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getMusicUrl as resolveMusicUrl } from '~/utils/musicUrl'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
-import { useThemeImage } from '~/composables/useThemeImage'
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 
-const { getThumbsUpIcon } = useThemeImage()
 const props = defineProps({
   songs: {
     type: Array,
@@ -959,7 +938,7 @@ const handleImageError = (event, song) => {
 
 // 获取歌曲标题的第一个字符作为封面
 const getFirstChar = (title) => {
-  if (!title) return locale.value.textCoverFallback
+  if (!title) return ''
   return title.trim().charAt(0)
 }
 

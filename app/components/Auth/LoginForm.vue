@@ -14,9 +14,7 @@
         type="button"
         @click="showCreateMode = false"
       >
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M11 16l-6-6m0 0l6-6m-6 6h12.5a4.5 4.5 0 010 9H11" />
-        </svg>
+        <Undo2 />
         {{ locale.bindExisting }}
       </button>
       <button
@@ -24,12 +22,7 @@
         type="button"
         @click="showCreateMode = true"
       >
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="8.5" cy="7" r="4" />
-          <line x1="20" y1="8" x2="20" y2="14" />
-          <line x1="23" y1="11" x2="17" y2="11" />
-        </svg>
+        <UserPlus />
         {{ locale.createAccount }}
       </button>
     </div>
@@ -41,16 +34,7 @@
           {{ showCreateMode ? locale.setUsername : locale.accountName }}
         </label>
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+          <User class="input-icon" />
           <input
             id="username"
             v-model="username"
@@ -69,18 +53,7 @@
       <div v-if="showCreateMode" class="form-group">
         <label for="name">{{ locale.realName }}</label>
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
+          <CalendarDays class="input-icon" />
           <input
             id="name"
             v-model="name"
@@ -129,17 +102,7 @@
           </NuxtLink>
         </div>
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
-            <circle cx="12" cy="16" r="1" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
+          <LockKeyhole class="input-icon" />
           <input
             id="password"
             v-model="password"
@@ -149,23 +112,14 @@
             required
             @input="error = ''"
           />
-          <button class="password-toggle" type="button" @click="showPassword = !showPassword">
-            <svg
-              v-if="showPassword"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-              />
-              <line x1="1" x2="23" y1="1" y2="23" />
-            </svg>
-            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
+          <button
+            :aria-label="showPassword ? locale.hidePassword : locale.showPassword"
+            class="password-toggle"
+            type="button"
+            @click="showPassword = !showPassword"
+          >
+            <EyeOff v-if="showPassword" />
+            <Eye v-else />
           </button>
         </div>
 
@@ -196,17 +150,7 @@
       <div v-if="showCreateMode" class="form-group">
         <label for="confirmPassword">{{ locale.confirmPassword }}</label>
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
-            <circle cx="12" cy="16" r="1" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
+          <LockKeyhole class="input-icon" />
           <input
             id="confirmPassword"
             v-model="confirmPassword"
@@ -217,26 +161,13 @@
             @input="error = ''"
           />
           <button
+            :aria-label="showConfirmPassword ? locale.hideConfirmPassword : locale.showConfirmPassword"
             class="password-toggle"
             type="button"
             @click="showConfirmPassword = !showConfirmPassword"
           >
-            <svg
-              v-if="showConfirmPassword"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-              />
-              <line x1="1" x2="23" y1="1" y2="23" />
-            </svg>
-            <svg v-else fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
+            <EyeOff v-if="showConfirmPassword" />
+            <Eye v-else />
           </button>
         </div>
       </div>
@@ -256,47 +187,12 @@
       </div>
 
       <div v-if="error" class="error-container">
-        <svg
-          class="error-icon"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" x2="12" y1="8" y2="12" />
-          <line x1="12" x2="12.01" y1="16" y2="16" />
-        </svg>
+        <CircleAlert class="error-icon" />
         <span class="error-message">{{ error }}</span>
       </div>
 
       <button :disabled="loading" class="submit-btn" type="submit">
-        <svg v-if="loading" class="loading-spinner" viewBox="0 0 24 24">
-          <circle
-            cx="12"
-            cy="12"
-            fill="none"
-            r="10"
-            stroke="currentColor"
-            stroke-dasharray="31.416"
-            stroke-dashoffset="31.416"
-            stroke-linecap="round"
-            stroke-width="2"
-          >
-            <animate
-              attributeName="stroke-dasharray"
-              dur="2s"
-              repeatCount="indefinite"
-              values="0 31.416;15.708 15.708;0 31.416"
-            />
-            <animate
-              attributeName="stroke-dashoffset"
-              dur="2s"
-              repeatCount="indefinite"
-              values="0;-15.708;-31.416"
-            />
-          </circle>
-        </svg>
+        <Loader2 v-if="loading" class="loading-spinner animate-spin" />
         <span v-if="loading">{{ isBindMode ? locale.binding : locale.loggingIn }}</span>
         <span v-else>{{ isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
@@ -346,7 +242,7 @@ import {
   signalUnknownWebAuthnCredential,
   startWebAuthnAuthentication
 } from '~/utils/webauthn'
-import { Fingerprint } from '@lucide/vue'
+import { CalendarDays, CircleAlert, Eye, EyeOff, Fingerprint, Loader2, LockKeyhole, Undo2, User, UserPlus } from '@lucide/vue'
 import { usePasswordStrength } from '~/composables/usePasswordStrength'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import CaptchaInput from './CaptchaInput.vue'

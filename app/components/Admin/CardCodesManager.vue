@@ -130,7 +130,7 @@
                 <td class="px-3 py-3 align-top font-mono text-text-primary">
                   <div class="flex max-w-full items-center gap-2 rounded-xl border border-border-secondary bg-bg-primary px-3 py-2">
                     <span class="block min-w-0 flex-1 truncate text-xs tracking-[0.08em]" :title="item.code">{{ item.code }}</span>
-                    <button class="shrink-0 text-text-tertiary hover:text-text-primary transition-colors" :title="locale.copy" @click="copyCode(item.code)">
+                    <button class="shrink-0 text-text-tertiary hover:text-text-primary transition-colors" :aria-label="locale.copy" :title="locale.copy" @click="copyCode(item.code)">
                       <Copy :size="14" />
                     </button>
                   </div>

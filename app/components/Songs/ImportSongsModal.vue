@@ -27,7 +27,7 @@
                   <div
                     class="w-10 h-10 rounded-2xl bg-success-10 flex items-center justify-center text-success"
                   >
-                    <Icon name="success" :size="20" />
+                    <Check :size="20"  />
                   </div>
                   {{ locale.resultTitle }}
                 </h3>
@@ -37,7 +37,7 @@
                 class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="close"
               >
-                <Icon name="x" :size="20" />
+                <X :size="20"  />
               </button>
             </div>
 
@@ -67,7 +67,7 @@
                 <div
                   class="flex items-center gap-2 text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1"
                 >
-                  <Icon name="info" :size="12" />
+                  <Info :size="12"  />
                   {{ locale.details }}
                 </div>
                 <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -84,7 +84,7 @@
                 v-else
                 class="flex flex-col items-center justify-center py-10 text-success-50"
               >
-                <Icon name="success" :size="48" class="mb-4" />
+                <Check :size="48" class="mb-4"  />
                 <p class="text-sm font-bold uppercase tracking-widest">{{ locale.allSuccess }}</p>
               </div>
             </div>
@@ -107,7 +107,7 @@
                   <div
                     class="w-10 h-10 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
                   >
-                    <Icon name="download" :size="20" />
+                    <Download :size="20"  />
                   </div>
                   {{ locale.title }}
                 </h3>
@@ -117,7 +117,7 @@
                 class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-2xl transition-all"
                 @click="close"
               >
-                <Icon name="x" :size="20" />
+                <X :size="20"  />
               </button>
             </div>
 
@@ -161,7 +161,7 @@
                 v-if="loadingSemesters || loadingSongs"
                 class="flex flex-col items-center justify-center py-20 text-text-tertiary"
               >
-                <Icon name="refresh" :size="32" class="animate-spin mb-4 text-primary" />
+                <RefreshCw :size="32" class="animate-spin mb-4 text-primary"  />
                 <div class="text-[10px] font-black uppercase tracking-widest">{{ locale.loadingSongs }}</div>
               </div>
 
@@ -172,7 +172,7 @@
                 <div
                   class="w-16 h-16 rounded-2xl bg-error-10 flex items-center justify-center text-error mb-4"
                 >
-                  <Icon name="alert-triangle" :size="32" />
+                  <TriangleAlert :size="32"  />
                 </div>
                 <p class="text-sm text-text-tertiary mb-6">{{ error }}</p>
                 <button
@@ -187,7 +187,7 @@
                 v-else-if="!selectedSemester"
                 class="flex flex-col items-center justify-center py-20 text-text-disabled"
               >
-                <Icon name="list" :size="48" class="mb-4 opacity-20" />
+                <ListMusic :size="48" class="mb-4 opacity-20"  />
                 <p class="text-sm font-bold uppercase tracking-widest">{{ locale.selectSemesterFirst }}</p>
               </div>
 
@@ -195,7 +195,7 @@
                 v-else-if="filteredSongs.length === 0"
                 class="flex flex-col items-center justify-center py-20 text-text-disabled"
               >
-                <Icon name="search" :size="48" class="mb-4 opacity-20" />
+                <Search :size="48" class="mb-4 opacity-20"  />
                 <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noSongs }}</p>
               </div>
 
@@ -219,7 +219,7 @@
                         : 'border-border-secondary text-transparent'
                     ]"
                   >
-                    <Icon name="check" :size="14" />
+                    <Check :size="14"  />
                   </div>
 
                   <div
@@ -289,8 +289,8 @@
                   :disabled="selectedSongIds.size === 0 || importing"
                   @click="handleImport"
                 >
-                  <Icon v-if="importing" name="refresh" :size="16" class="animate-spin" />
-                  <Icon v-else name="download" :size="16" />
+                  <RefreshCw v-if="importing" :size="16" class="animate-spin"  />
+                  <Download v-else :size="16"  />
                   {{ importing ? (locale.importing || '正在导入...') : (locale.confirmImport || '确认导入') }}
                 </button>
               </div>
@@ -303,10 +303,10 @@
 </template>
 
 <script setup>
+import { Check, X, Info, Download, RefreshCw, TriangleAlert, ListMusic, Search } from '@lucide/vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { convertToHttps } from '~/utils/url'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

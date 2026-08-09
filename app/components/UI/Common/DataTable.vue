@@ -15,6 +15,7 @@
               >{{ formatLocale(locale.selectedItems, selectedRows.length) }}</span
             >
             <button
+              :aria-label="locale.clearSelection"
               class="p-0.5 text-primary hover:text-primary transition-colors"
               @click="$emit('clear-selection')"
             >
@@ -131,12 +132,14 @@
                 <div class="flex items-center justify-end gap-1">
                   <slot name="actions" :row="row" :index="index">
                     <button
+                      :aria-label="locale.edit"
                       class="p-2 text-text-tertiary hover:text-primary hover:bg-primary-10 rounded-xl transition-all"
                       :title="locale.edit"
                     >
                       <Edit2 :size="14" />
                     </button>
                     <button
+                      :aria-label="locale.delete"
                       class="p-2 text-text-tertiary hover:text-error hover:bg-error-10 rounded-xl transition-all"
                       :title="locale.delete"
                     >
@@ -186,11 +189,13 @@
             <div v-if="hasActions" class="flex items-center gap-1" @click.stop>
               <slot name="actions" :row="row" :index="index">
                 <button
+                  :aria-label="locale.edit"
                   class="p-2 text-text-tertiary hover:text-primary hover:bg-primary-10 rounded-xl transition-all"
                 >
                   <Edit2 :size="14" />
                 </button>
                 <button
+                  :aria-label="locale.delete"
                   class="p-2 text-text-tertiary hover:text-error hover:bg-error-10 rounded-xl transition-all"
                 >
                   <Trash2 :size="14" />

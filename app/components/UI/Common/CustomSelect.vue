@@ -54,7 +54,7 @@
               @click="selectOption(option)"
             >
               <span class="truncate">{{ option.label }}</span>
-              <Icon v-if="isSelected(option)" name="check" :size="12" class="shrink-0" />
+              <Check v-if="isSelected(option)" :size="12" class="shrink-0"  />
             </button>
           </div>
         </div>
@@ -64,8 +64,8 @@
 </template>
 
 <script setup>
+import { Check } from '@lucide/vue'
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 const props = defineProps({

@@ -10,6 +10,7 @@
         v-for="provider in enabledProviders"
         :key="provider.key"
         type="button"
+        :aria-label="formatLocale(locale.loginWith, provider.name)"
         :class="providerButtonClass(provider)"
         :title="formatLocale(locale.loginWith, provider.name)"
         @click="loginWith(provider)"

@@ -10,6 +10,7 @@
         @input="$emit('update:modelValue', $event.target.value)"
       >
       <button
+        :aria-label="show ? '隐藏密码' : '显示密码'"
         type="button"
         class="absolute right-3 top-1/2 -translate-y-1/2 text-text-disabled hover:text-text-muted transition-colors"
         @click="show = !show"

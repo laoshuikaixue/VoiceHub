@@ -32,6 +32,7 @@
             </p>
           </div>
           <button
+            aria-label="关闭批量更新弹窗"
             class="p-3 bg-bg-tertiary-50 hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary rounded-xl transition-all"
             @click="$emit('close')"
           >

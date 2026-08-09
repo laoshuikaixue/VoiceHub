@@ -25,15 +25,16 @@
               <div
                 class="w-12 h-12 rounded-2xl bg-primary-hover-10 flex items-center justify-center text-primary"
               >
-                <Icon name="user" :size="24" />
+                <User :size="24"  />
               </div>
               <h3 class="text-xl font-black text-text-primary tracking-tight">{{ resolvedTitle }}</h3>
             </div>
             <button
+              aria-label="关闭用户搜索弹窗"
               class="w-10 h-10 flex items-center justify-center rounded-xl bg-bg-tertiary-50 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary transition-all"
               @click="close"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20"  />
             </button>
           </div>
 
@@ -42,11 +43,11 @@
             <!-- 搜索输入框 -->
             <div class="relative mb-6 group">
               <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <Icon
-                  name="search"
+                <Search
+                 
                   :size="20"
                   class="text-text-tertiary group-focus-within:text-text-secondary transition-colors"
-                />
+                 />
               </div>
               <input
                 ref="searchInput"
@@ -58,7 +59,7 @@
                 @keyup.enter="performSearch"
               >
               <div v-if="loading" class="absolute inset-y-0 right-4 flex items-center">
-                <Icon name="loader" :size="20" class="text-text-tertiary animate-spin" />
+                <Loader2 :size="20" class="text-text-tertiary animate-spin"  />
               </div>
             </div>
 
@@ -71,7 +72,7 @@
                 <div
                   class="w-16 h-16 rounded-3xl bg-bg-tertiary-50 flex items-center justify-center mb-4"
                 >
-                  <Icon name="search" :size="32" class="opacity-20" />
+                  <Search :size="32" class="opacity-20"  />
                 </div>
                 <p class="text-sm font-bold uppercase tracking-widest">{{ locale.noMatchingUsers }}</p>
               </div>
@@ -127,7 +128,7 @@
                         : 'border-border-secondary group-hover:border-border-tertiary'
                     ]"
                   >
-                    <Icon v-if="isSelected(user)" name="check" :size="14" />
+                    <Check v-if="isSelected(user)" :size="14"  />
                   </div>
                 </div>
               </div>
@@ -166,8 +167,8 @@
 </template>
 
 <script setup>
+import { User, X, Search, Loader2, Check } from '@lucide/vue'
 import { computed, ref, watch, nextTick } from 'vue'
-import Icon from '~/components/UI/Icon.vue'
 import { useLocale } from '~/utils/locale'
 
 // 简单的防抖函数实现

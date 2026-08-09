@@ -19,7 +19,7 @@
     <!-- 移动端投稿须知 -->
     <div class="rules-section mobile-only-rules">
       <h3 class="rules-title">
-        <Icon :size="16" class="rules-icon" name="bell" />
+        <Bell :size="16" class="rules-icon" />
         {{ locale.guidelinesTitle }}
       </h3>
       <div class="rules-content">
@@ -55,7 +55,7 @@
                 :placeholder="locale.searchPlaceholder"
                 required
                 type="text"
-              />
+              >
               <button
                 :disabled="loading || searching || !title.trim()"
                 class="search-button"
@@ -71,7 +71,7 @@
                 type="button"
                 @click="openAudioMatchModal"
               >
-                <Icon :size="16" name="mic" />
+                <Mic :size="16" />
                 <span class="btn-text">{{ locale.audioMatchShort }}</span>
               </button>
             </div>
@@ -82,7 +82,7 @@
               :title="locale.importFromPast"
               @click="showImportSongsModal = true"
             >
-              <Icon :size="16" name="history" />
+              <History :size="16" />
               <span class="btn-text">{{ locale.importFromPast }}</span>
             </button>
           </div>
@@ -98,7 +98,7 @@
                   type="button"
                   @click="removeCollaborator(user.id)"
                 >
-                  <Icon :size="12" name="close" />
+                  <X :size="12" />
                 </button>
               </div>
               <button
@@ -106,7 +106,7 @@
                 type="button"
                 @click="showUserSearchModal = true"
               >
-                <Icon :size="14" name="plus" />
+                <Plus :size="14" />
                 {{ locale.add }}
               </button>
             </div>
@@ -132,13 +132,13 @@
               v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')"
               class="admin-notice-horizontal"
             >
-              <span class="admin-icon">👑</span>
+              <Crown class="admin-icon" :size="14" aria-hidden="true" />
               <span class="admin-text">{{ locale.adminUnlimited }}</span>
             </div>
 
             <!-- 投稿关闭提示 -->
             <div v-else-if="submissionStatus.submissionClosed" class="submission-closed-notice">
-              <span class="closed-icon">🚫</span>
+              <Ban class="closed-icon" :size="14" aria-hidden="true" />
               <span class="closed-text">
                 {{
                   submissionStatus.timeLimitationEnabled && !submissionStatus.currentTimePeriod
@@ -243,7 +243,7 @@
                     {{ locale.loginNow }}
                   </button>
                   <button class="import-btn" type="button" @click="handleImportClick">
-                    <Icon :size="14" name="upload" />
+                    <Upload :size="14" />
                     {{ locale.importData }}
                   </button>
                 </div>
@@ -278,7 +278,7 @@
                       type="button"
                       @click="showRecentSongsModal = true"
                     >
-                      <Icon :size="14" name="history" />
+                      <History :size="14" />
                       <span>{{ locale.recent }}</span>
                     </button>
                     <button
@@ -287,7 +287,7 @@
                       type="button"
                       @click="showPlaylistModal = true"
                     >
-                      <Icon :size="14" name="playlist" />
+                      <ListMusic :size="14" />
                       <span>{{ locale.playlist }}</span>
                     </button>
                     <button
@@ -297,7 +297,7 @@
                       type="button"
                       @click="handleExportData"
                     >
-                      <Icon :size="14" name="download" />
+                      <Download :size="14" />
                     </button>
                     <button
                       class="action-btn-compact text-error hover:text-error hover:bg-error-10"
@@ -306,7 +306,7 @@
                       type="button"
                       @click="handleLogoutNetease"
                     >
-                      <Icon :size="14" name="logout" />
+                      <LogOut :size="14" />
                     </button>
                   </div>
                 </div>
@@ -338,9 +338,9 @@
                       :src="convertToHttps(qqMusicUser.avatarUrl)"
                       alt="avatar"
                       class="user-avatar"
-                    />
+                    >
                     <div v-else class="qq-user-avatar">
-                      <Icon :size="14" name="music" />
+                      <Music :size="14" />
                     </div>
                     <span class="user-name">{{ qqMusicUser?.nickname || locale.qqLoggedIn }}</span>
                   </div>
@@ -353,7 +353,7 @@
                       type="button"
                       @click="handleLogoutQQMusic"
                     >
-                      <Icon :size="14" name="logout" />
+                      <LogOut :size="14" />
                     </button>
                   </div>
                 </div>
@@ -407,18 +407,10 @@
                         type="button"
                         @click="openCardCodeModal"
                       >
-                        <Icon
-                          :size="12"
-                          :name="
-                            cardCodeValidation.checking
-                              ? 'loader'
-                              : trimmedCardCode
-                                ? cardCodeValidation.valid === false
-                                  ? 'close'
-                                  : 'check'
-                                : 'plus'
-                          "
-                        />
+                        <Loader2 v-if="cardCodeValidation.checking" :size="12" class="animate-spin" />
+                        <CircleX v-else-if="trimmedCardCode && cardCodeValidation.valid === false" :size="12" />
+                        <Check v-else-if="trimmedCardCode" :size="12" />
+                        <Plus v-else :size="12" />
                         <span>{{ mobileCardCodeLabel }}</span>
                       </button>
                       <label class="custom-checkbox-wrapper">
@@ -426,22 +418,9 @@
                           v-model="submissionNotePublic"
                           type="checkbox"
                           class="custom-checkbox-input"
-                        />
+                        >
                         <span class="custom-checkbox-box">
-                          <svg
-                            class="custom-checkbox-icon"
-                            viewBox="0 0 12 10"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M1 5L4.5 8.5L11 1.5"
-                              stroke="currentColor"
-                              stroke-width="2"
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                            />
-                          </svg>
+                          <Check class="custom-checkbox-icon" />
                         </span>
                         <span class="custom-checkbox-text">{{ locale.publicToUsers }}</span>
                       </label>
@@ -504,7 +483,8 @@
                       type="button"
                       @click="openCardCodeModal"
                     >
-                      <Icon :size="13" :name="trimmedCardCode ? 'edit' : 'plus'" />
+                      <Edit3 v-if="trimmedCardCode" :size="13" />
+                      <Plus v-else :size="13" />
                       {{ trimmedCardCode ? locale.editCardCode : locale.addCardCode }}
                     </button>
                     <button
@@ -514,7 +494,7 @@
                       type="button"
                       @click="clearCardCode"
                     >
-                      <Icon :size="13" name="close" />
+                      <X :size="13" />
                     </button>
                   </div>
                 </div>
@@ -537,21 +517,13 @@
                   @click="openCardCodeModal"
                 >
                   <span class="flex min-w-0 items-center gap-2">
-                    <Icon
-                      :size="14"
-                      :name="
-                        cardCodeValidation.checking
-                          ? 'loader'
-                          : trimmedCardCode
-                            ? cardCodeValidation.valid === false
-                              ? 'close'
-                              : 'check'
-                            : 'plus'
-                      "
-                    />
+                    <Loader2 v-if="cardCodeValidation.checking" :size="14" class="animate-spin" />
+                    <CircleX v-else-if="trimmedCardCode && cardCodeValidation.valid === false" :size="14" />
+                    <Check v-else-if="trimmedCardCode" :size="14" />
+                    <Plus v-else :size="14" />
                     <span class="truncate">{{ cardCodeStatusText }}</span>
                   </span>
-                  <Icon :size="13" name="chevron-right" />
+                  <ChevronRight :size="13" />
                 </button>
               </div>
             </div>
@@ -580,10 +552,10 @@
                         :alt="locale.coverAlt"
                         class="cover-img"
                         referrerpolicy="no-referrer"
-                      />
+                      >
                       <div v-if="!isBilibiliMultiP(result)" class="play-overlay-container">
                         <div class="play-button-wrapper">
-                          <Icon name="play" :size="20" class="play-icon" />
+                          <Play :size="20" class="play-icon"  />
                         </div>
                       </div>
                     </div>
@@ -598,12 +570,12 @@
                       >
                         <span class="album-label">{{ locale.album }}</span>
                         <span class="album-name">{{ result.album }}</span>
-                        <Icon
+                        <ExternalLink
                           v-if="isNeteaseAlbum(result)"
-                          name="external-link"
+                         
                           :size="12"
                           class="album-link-icon"
-                        />
+                         />
                       </p>
                     </div>
                     <div class="result-actions">
@@ -614,7 +586,7 @@
                         :title="locale.uploadToNeteaseCloud"
                         @click.stop.prevent="openUploadDialog(result)"
                       >
-                        <Icon name="cloud-upload" :size="18" />
+                        <CloudUpload :size="18"  />
                       </button>
 
                       <!-- 多P视频的特殊处理 -->
@@ -708,16 +680,7 @@
                               : handleLikeFromSearch(getSimilarSong(result), result)
                           "
                         >
-                          <svg
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                            />
-                          </svg>
+                          <Heart />
                           {{
                             getSimilarSong(result)?.played
                               ? locale.played
@@ -769,7 +732,7 @@
 
               <!-- 空状态 -->
               <div v-else-if="!searching && hasSearched" key="empty" class="empty-state">
-                <div class="empty-icon">🔍</div>
+                <Search class="empty-icon" :size="40" aria-hidden="true" />
                 <p class="empty-text">{{ locale.noResults }}</p>
                 <p class="empty-hint">{{ locale.noResultsHint }}</p>
                 <button v-if="!user" class="manual-submit-btn" type="button" @click="handleLoginRedirect">
@@ -783,7 +746,7 @@
               <!-- 初始状态 -->
               <div v-else-if="!searching" key="initial" class="initial-state">
                 <div class="search-illustration">
-                  <img :alt="locale.searchSongsAlt" class="search-svg" :src="getSearchIcon()" >
+                  <Search class="search-svg" :size="120" aria-hidden="true" />
                 </div>
               </div>
             </Transition>
@@ -935,7 +898,7 @@
                 type="button"
                 @click="closeCardCodeModal"
               >
-                <Icon :size="15" name="close" />
+                <X :size="15" />
               </button>
             </div>
 
@@ -954,7 +917,7 @@
                 class="mt-2 w-full rounded-xl border border-border-secondary bg-bg-primary px-4 py-3 text-sm font-bold text-text-primary placeholder-text-disabled transition-all focus:border-warning-50 focus:outline-none focus:ring-1 focus:ring-warning-10"
                 type="text"
                 @keydown.enter.prevent="saveCardCode"
-              />
+              >
               <p
                 :class="[
                   'mt-2 px-1 text-[11px]',
@@ -1030,7 +993,7 @@
                         : 'bg-primary-10 text-primary'
                   "
                 >
-                  <Icon :size="32" name="mic" />
+                  <Mic :size="32" />
                 </div>
                 <div
                   v-if="audioMatchRecording"
@@ -1102,7 +1065,7 @@
                           v-if="match.cover"
                           :src="match.cover"
                           class="w-full h-full object-cover"
-                        />
+                        >
                         <Music v-else class="w-5 h-5 text-text-tertiary" />
                         <div
                           class="absolute inset-0 bg-bg-primary-50 opacity-0 group-hover/cover:opacity-100 flex items-center justify-center transition-all"
@@ -1182,7 +1145,7 @@
                       class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-sm text-text-tertiary font-bold focus:outline-none cursor-not-allowed transition-all"
                       readonly
                       type="text"
-                    />
+                    >
                     <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                       <Lock class="w-4 h-4 text-text-disabled" />
                     </div>
@@ -1203,7 +1166,7 @@
                     :placeholder="locale.artistPlaceholder"
                     required
                     type="text"
-                  />
+                  >
                 </div>
 
                 <!-- 歌曲封面地址 -->
@@ -1225,7 +1188,7 @@
                       ]"
                       :placeholder="locale.coverPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="coverValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1274,7 +1237,7 @@
                       ]"
                       :placeholder="locale.playUrlPlaceholder"
                       type="url"
-                    />
+                    >
                     <div
                       v-if="playUrlValidation.validating"
                       class="absolute inset-y-0 right-4 flex items-center"
@@ -1337,15 +1300,15 @@
       style="display: none"
       type="file"
       @change="handleImportData"
-    />
+    >
   </div>
 </template>
 
 <script setup>
+import { Bell, Mic, History, X, Plus, Upload, ListMusic, Download, LogOut, Music, ChevronRight, Lock, Loader2, Check, Edit3, Play,
+  ExternalLink, CloudUpload, Heart, Crown, Ban, Search } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { X, Lock, Loader2, Check, Edit3, Music, Play } from '@lucide/vue'
 import { useSongs } from '~/composables/useSongs'
-import { useThemeImage } from '~/composables/useThemeImage'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useAudioPlayerControl } from '~/composables/useAudioPlayerControl'
 import { useSiteConfig } from '~/composables/useSiteConfig'
@@ -1357,7 +1320,6 @@ import { usePlatformConfig } from '~/composables/usePlatformConfig'
 import { useLocale } from '~/utils/locale'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
-import Icon from '../UI/Icon.vue'
 import { convertToHttps, validateUrl } from '~/utils/url'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { getLoginStatus } from '~/utils/neteaseApi'
@@ -1386,7 +1348,6 @@ const { songs: songsLocale } = useLocale()
 const locale = computed(() => useSafeLocale(songsLocale.value?.requestForm || {}))
 const { t: callLocale } = useLocaleText(locale)
 const { localize: localizeServerError } = useServerErrors()
-const { getSearchIcon } = useThemeImage()
 
 // 站点配置
 const {

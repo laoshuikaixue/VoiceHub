@@ -15,21 +15,7 @@
       </div>
       <!-- 悬浮提示层 -->
       <div class="lyrics-overlay">
-        <svg
-          fill="none"
-          height="20"
-          viewBox="0 0 24 24"
-          width="20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M3 5h18v2H3V5zm0 4h14v2H3V9zm0 4h18v2H3v-2zm0 4h10v2H3v-2z"
-            fill="currentColor"
-            opacity="0.9"
-          />
-          <circle cx="20" cy="11" fill="currentColor" opacity="0.7" r="2" />
-          <circle cx="18" cy="15" fill="currentColor" opacity="0.7" r="1.5" />
-        </svg>
+        <ListMusic :size="20" />
         <span class="lyrics-text">{{ locale.lyrics }}</span>
       </div>
     </div>
@@ -41,6 +27,7 @@
 </template>
 
 <script setup>
+import { ListMusic } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { convertToHttps } from '~/utils/url'
 import { useLocale } from '~/utils/locale'

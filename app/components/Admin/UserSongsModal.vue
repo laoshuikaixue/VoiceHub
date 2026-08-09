@@ -35,6 +35,7 @@
           >
             <h3 class="text-lg font-semibold text-text-primary">{{ locale.title }}</h3>
             <button
+              :aria-label="commonLocale.close"
               class="p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
               @click="$emit('close')"
             >
@@ -54,7 +55,7 @@
               v-else-if="error"
               class="flex-1 flex flex-col items-center justify-center text-text-tertiary gap-4"
             >
-              <div class="text-4xl">⚠️</div>
+              <TriangleAlert :size="40" aria-hidden="true" />
               <p>{{ error }}</p>
               <button
                 class="px-4 py-2 bg-primary-hover hover:bg-primary text-text-primary rounded-lg transition-colors text-sm font-medium"
@@ -140,7 +141,7 @@
                   v-if="filteredSongs.length === 0"
                   class="flex flex-col items-center justify-center py-20 text-text-tertiary"
                 >
-                  <div class="text-5xl mb-4 opacity-50">{{ activeTabIcon }}</div>
+                  <component :is="activeTabIcon" class="mb-4 opacity-50" :size="48" aria-hidden="true" />
                   <p>{{ locale.empty }}</p>
                 </div>
 
@@ -232,6 +233,7 @@
 </template>
 
 <script setup>
+import { X } from '@lucide/vue'
 import { ref, computed, watch } from 'vue'
 import { useSemesters } from '~/composables/useSemesters'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -289,13 +291,13 @@ const tabs = computed(() => [
 const activeTabIcon = computed(() => {
   switch (activeTab.value) {
     case 'submitted':
-      return '🎵'
+      return Music
     case 'voted':
-      return '❤️'
+      return Heart
     case 'replay':
-      return '🔁'
+      return Repeat2
     default:
-      return '📄'
+      return FileText
   }
 })
 
