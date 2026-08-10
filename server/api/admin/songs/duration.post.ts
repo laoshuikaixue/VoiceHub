@@ -6,7 +6,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   createTxSongDetailBody,
   normalizeTxMusicId,
-  txRequest
+  txHeaders
 } from '~~/server/utils/native_tx'
 
 export default defineEventHandler(async (event) => {
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     if (platform === 'netease' || platform === 'netease-podcast') {
       const response: any = await $fetch('/api/api-enhanced/netease/song/url/v1', {
         params: { id: musicId, level: 'standard' },
-        timeout: 8000
+        timeout: 10000
       })
 
       if (response?.code === 200 && Array.isArray(response.data) && response.data.length > 0) {
@@ -65,9 +65,15 @@ export default defineEventHandler(async (event) => {
       }
     } else if (platform === 'tencent') {
       const normalized = normalizeTxMusicId(musicId)
-      const result: any = await txRequest(
+      const result: any = await $fetch(
         'https://u.y.qq.com/cgi-bin/musicu.fcg',
-        createTxSongDetailBody(normalized)
+        {
+          method: 'POST',
+          headers: txHeaders,
+          body: createTxSongDetailBody(normalized),
+          responseType: 'json',
+          timeout: 10000
+        }
       )
 
       if (result?.code === 0 && result?.req?.code === 0) {

@@ -226,6 +226,28 @@
                 />
               </button>
             </div>
+
+            <!-- 批量刷新时长进度 -->
+            <div
+              v-if="refreshingAllDurations.running"
+              class="flex items-center gap-3 mt-2 px-1 lg:px-0"
+            >
+              <div class="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                  :style="{ width: `${Math.round((Number(refreshingAllDurations.progress.split('/')[0]) / Number(refreshingAllDurations.progress.split('/')[1])) * 100 || 0)}%` }"
+                />
+              </div>
+              <span class="text-[10px] font-bold text-text-tertiary whitespace-nowrap">
+                {{ locale.refreshAllDurations }} · {{ refreshingAllDurations.progress }}
+              </span>
+              <span class="text-[10px] font-bold text-primary whitespace-nowrap">
+                ✓{{ refreshingAllDurations.success }}
+              </span>
+              <span v-if="refreshingAllDurations.fail > 0" class="text-[10px] font-bold text-warning whitespace-nowrap">
+                ✗{{ refreshingAllDurations.fail }}
+              </span>
+            </div>
           </div>
 
           <!-- 筛选区 - 移动端折叠 -->
@@ -1512,7 +1534,7 @@ const replayModalSongId = ref(null)
 // 刷新时长状态（每首歌独立追踪）
 const refreshingDuration = ref({})
 // 批量刷新时长状态
-const refreshingAllDurations = ref({ running: false, progress: '' })
+const refreshingAllDurations = ref({ running: false, progress: '', success: 0, fail: 0 })
 // 自动排期状态
 const showAutoScheduleDialog = ref(false)
 const autoScheduleTargetMinutes = ref(null)
@@ -2182,6 +2204,9 @@ onMounted(async () => {
     // 再次确认滚动位置（防止布局偏移）
     scrollToDateElement('auto')
   })
+
+  // 自动排期弹窗 Esc 关闭
+  window.addEventListener('keydown', handleAutoScheduleEscape)
 })
 
 // 滚动到指定日期元素
@@ -2228,6 +2253,9 @@ onUnmounted(() => {
     dateSelector.value.removeEventListener('scroll', updateScrollButtonState)
   }
   window.removeEventListener('resize', checkWindowSize)
+
+  // 清理自动排期弹窗 Esc 监听
+  window.removeEventListener('keydown', handleAutoScheduleEscape)
 
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId)
@@ -2519,7 +2547,9 @@ const refreshAllDurations = async () => {
 
   refreshingAllDurations.value = {
     running: true,
-    progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`)
+    progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`),
+    success: 0,
+    fail: 0
   }
   let successCount = 0
   let failCount = 0
@@ -2551,13 +2581,16 @@ const refreshAllDurations = async () => {
             songs.value[songIndex].durationSeconds = result.durationSeconds
           }
           successCount++
+          refreshingAllDurations.value.success = successCount
         } else {
           failCount++
+          refreshingAllDurations.value.fail = failCount
         }
       } catch (err) {
         if (signal.aborted) break
         console.error(`批量刷新时长失败 #${song.id}:`, err)
         failCount++
+        refreshingAllDurations.value.fail = failCount
       } finally {
         refreshingAllDurations.value.progress = callLocale(
           'allDurationsProgress',
@@ -2587,6 +2620,13 @@ const refreshAllDurations = async () => {
 }
 
 // ===== 自动排期 =====
+// 自动排期弹窗 Esc 关闭
+const handleAutoScheduleEscape = (e) => {
+  if (e.key === 'Escape' && showAutoScheduleDialog.value) {
+    closeAutoScheduleDialog()
+  }
+}
+
 const openAutoScheduleDialog = () => {
   autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   showAutoScheduleDialog.value = true
@@ -2657,9 +2697,7 @@ const autoSchedule = (direction) => {
   const r2 = runGreedy(shuffled.map((id) => candidates.find((s) => s.id === id)))
 
   // 比较两种策略，返回更接近目标的
-  const pick = direction === 'under'
-    ? r1.totalDuration >= r2.totalDuration ? r1 : r2
-    : r2.absDiff < r1.absDiff ? r2 : r1
+  const pick = r1.absDiff < r2.absDiff ? r1 : r2
   return pick
 }
 
