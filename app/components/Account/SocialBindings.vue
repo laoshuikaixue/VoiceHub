@@ -19,7 +19,7 @@
       <!-- 邮箱绑定 -->
       <div v-if="smtpEnabled">
         <div class="flex items-center gap-3 mb-4">
-          <div class="p-2 bg-bg-tertiary rounded-lg border border-border-secondary">
+          <div class="p-2 bg-bg-tertiary rounded-lg border border-border-secondary flex items-center justify-center">
             <Mail :size="16" class="text-text-secondary" />
           </div>
           <h3 class="text-sm font-bold text-text-primary">{{ locale.emailNotifyTitle }}</h3>

@@ -49,7 +49,7 @@
           >
         </div>
         <button
-          class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-disabled hover:text-primary transition-all"
+          class="p-2.5 bg-bg-primary border border-border-secondary rounded-xl text-text-disabled hover:text-primary transition-all flex items-center justify-center"
           @click="loadApiKeys"
         >
           <RefreshCw :size="14" :class="{ 'animate-spin': loading }" />
@@ -490,7 +490,7 @@
                     </p>
                   </div>
                   <div
-                    class="p-2 bg-primary-10 rounded-xl text-primary group-hover:scale-110 transition-transform"
+                    class="p-2 bg-primary-10 rounded-xl text-primary group-hover:scale-110 transition-transform flex items-center justify-center"
                   >
                     <BarChart :size="20" />
                   </div>
@@ -511,7 +511,7 @@
                     </p>
                   </div>
                   <div
-                    class="p-2 bg-warning-10 rounded-xl text-warning group-hover:scale-110 transition-transform"
+                    class="p-2 bg-warning-10 rounded-xl text-warning group-hover:scale-110 transition-transform flex items-center justify-center"
                   >
                     <Clock :size="20" />
                   </div>

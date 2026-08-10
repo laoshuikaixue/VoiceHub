@@ -4077,7 +4077,8 @@ defineExpose({
   align-items: center;
   gap: 0.75rem;
   flex: 1.5;
-  min-width: 400px; /* 增加最小宽度，确保搜索框、标签和按钮有足够空间 */
+  min-width: 460px; /* 增加最小宽度，确保搜索框、标签和按钮有足够空间 */
+  flex-wrap: wrap; /* 允许在窄屏下换行 */
 }
 
 .search-label {
@@ -4093,7 +4094,7 @@ defineExpose({
   display: flex;
   gap: 0.5rem;
   flex: 1;
-  min-width: 0; /* 允许内部元素正常压缩 */
+  min-width: 220px; /* 保证按钮与输入框同行不重叠 */
 }
 
 .search-input {
@@ -4106,7 +4107,7 @@ defineExpose({
   font-size: 15px;
   color: var(--overlay-60);
   flex: 1;
-  min-width: 100px; /* 确保输入框不会缩到太小 */
+  min-width: 80px; /* 确保输入框不会缩到太小 */
 }
 
 .search-input:focus {
@@ -4118,7 +4119,7 @@ defineExpose({
   background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent) 100%);
   border: 1px solid var(--overlay-16);
   border-radius: 8px;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1.2rem;
   color: var(--text-primary);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
@@ -4148,7 +4149,7 @@ defineExpose({
   background: var(--overlay-8);
   border: 1px solid var(--overlay-12);
   border-radius: 8px;
-  padding: 0.75rem 0.9rem;
+  padding: 0.75rem 0.75rem;
   color: var(--overlay-85);
   font-family: 'MiSans', sans-serif;
   font-weight: 600;
@@ -4157,6 +4158,10 @@ defineExpose({
   white-space: nowrap;
   transition: all 0.2s ease;
   flex-shrink: 0;
+}
+
+.audio-match-btn .btn-text {
+  display: none;
 }
 
 .audio-match-btn:hover:not(:disabled) {
