@@ -414,5 +414,3 @@ onMounted(() => {
   loadConfig()
 })
 </script>
-
-<style scoped></style>

@@ -57,13 +57,18 @@
           </div>
 
           <button :disabled="loading" class="submit-btn" type="submit">
-            <Loader2 v-if="loading" class="loading-spinner animate-spin" />
+            <Loader2 v-if="loading" class="size-5 animate-spin" />
             <span v-if="loading">{{ step === 1 ? locale.verifying : locale.sending }}</span>
             <span v-else>{{ step === 1 ? locale.nextStep : locale.sendResetEmail }}</span>
           </button>
           
           <div class="form-footer">
-            <button v-if="step === 2" type="button" @click="step = 1; error = '';" class="back-link mr-4" style="background: none; border: none; cursor: pointer;">
+            <button
+              v-if="step === 2"
+              type="button"
+              class="back-link mr-4 border-0 bg-transparent cursor-pointer"
+              @click="step = 1; error = '';"
+            >
               {{ locale.previousStep }}
             </button>
             <NuxtLink to="/login" class="back-link">{{ locale.backLogin }}</NuxtLink>
@@ -365,10 +370,6 @@ const handleSubmit = async () => {
   transform: none;
 }
 
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-}
 
 .form-footer {
   margin-top: 16px;

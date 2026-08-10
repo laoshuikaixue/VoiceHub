@@ -186,5 +186,3 @@ const trendColor = computed(() => {
   return 'var(--color-accent-light)' // blue-500
 })
 </script>
-
-<style scoped></style>

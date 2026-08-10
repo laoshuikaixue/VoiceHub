@@ -10,7 +10,7 @@
 
     <!-- Loading State -->
     <div v-if="pending" class="state-screen loading">
-      <Loader2 class="spinner animate-spin" :size="48" />
+      <Loader2 class="size-12 animate-spin text-[var(--color-collab)]" aria-hidden="true" />
       <p class="loading-text">{{ locale.loading }}</p>
     </div>
 
@@ -228,14 +228,6 @@ const handleTouchEnd = (e) => {
   z-index: 50;
 }
 
-.loading .spinner {
-  width: 3rem;
-  height: 3rem;
-  border: 4px solid var(--overlay-20);
-  border-top-color: var(--color-collab); /* brand-purple */
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
 
 .loading-text {
   margin-top: 1rem;

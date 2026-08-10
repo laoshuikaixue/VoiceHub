@@ -277,7 +277,7 @@ body::before {
   }
 }
 
-/* 重置 fixed 元素外边距：space-y-* 布局规则会给子元素加 margin-top，导致弹窗遮罩定位偏移 */
-.fixed {
+/* 防止 space-y-* 改变全屏遮罩定位 */
+.fixed.inset-0 {
   margin: 0 !important;
 }

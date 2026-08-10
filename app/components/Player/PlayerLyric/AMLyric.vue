@@ -25,7 +25,7 @@
         <div class="message-text">{{ lyricManager.error.value }}</div>
       </div>
       <div v-else-if="!lyricLines || lyricLines.length === 0" class="lyric-message-container">
-        <Music :size="48" style="opacity: 0.5"  />
+        <Music :size="48" class="opacity-50" />
         <div class="message-text">{{ locale.empty }}</div>
       </div>
       <LyricPlayer

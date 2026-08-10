@@ -96,8 +96,8 @@
       <!-- 密码字段 -->
       <div class="form-group">
         <div class="flex justify-between items-center w-full mb-2">
-          <label for="password" style="margin-bottom: 0;">{{ showCreateMode ? locale.setPassword : locale.password }}</label>
-          <NuxtLink v-if="!showCreateMode && !isBindMode && smtpEnabled" to="/forgot-password" class="text-xs text-[var(--primary)] hover:opacity-80 transition-opacity" style="line-height: 1;">
+          <label for="password" class="mb-0">{{ showCreateMode ? locale.setPassword : locale.password }}</label>
+          <NuxtLink v-if="!showCreateMode && !isBindMode && smtpEnabled" to="/forgot-password" class="text-xs leading-none text-[var(--primary)] hover:opacity-80 transition-opacity">
             {{ locale.forgotPassword }}
           </NuxtLink>
         </div>
@@ -192,7 +192,7 @@
       </div>
 
       <button :disabled="loading" class="submit-btn" type="submit">
-        <Loader2 v-if="loading" class="loading-spinner animate-spin" />
+        <Loader2 v-if="loading" class="size-5 animate-spin" />
         <span v-if="loading">{{ isBindMode ? locale.binding : locale.loggingIn }}</span>
         <span v-else>{{ isBindMode ? locale.bindAndLogin : locale.login }}</span>
       </button>
@@ -862,10 +862,6 @@ const handleWebAuthnLogin = async () => {
   transform: translateY(0);
 }
 
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-}
 
 .form-footer {
   margin-top: 24px;

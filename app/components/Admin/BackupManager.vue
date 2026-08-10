@@ -113,7 +113,7 @@
               <input
                 ref="fileInput"
                 accept=".json,application/json"
-                style="display: none"
+                class="hidden"
                 type="file"
                 @change="handleFileSelect"
               >

@@ -499,5 +499,3 @@ onMounted(async () => {
   await Promise.all([fetchCurrentSemester(), fetchSemesters()])
 })
 </script>
-
-<style scoped></style>

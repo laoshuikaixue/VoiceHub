@@ -483,5 +483,3 @@ watch(selectedSemester, () => {
   }
 })
 </script>
-
-<style scoped></style>

@@ -261,5 +261,3 @@ onUnmounted(() => {
   stopPolling()
 })
 </script>
-
-<style scoped></style>

@@ -39,7 +39,7 @@
               class="p-2 text-text-tertiary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
               @click="$emit('close')"
             >
-              <Icon name="x" :size="20" />
+              <X :size="20" aria-hidden="true" />
             </button>
           </div>
 
@@ -237,7 +237,6 @@ import { X } from '@lucide/vue'
 import { ref, computed, watch } from 'vue'
 import { useSemesters } from '~/composables/useSemesters'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
-import Icon from '~/components/UI/Icon.vue'
 import LoadingState from '~/components/UI/Common/LoadingState.vue'
 import { useLocale } from '~/utils/locale'
 

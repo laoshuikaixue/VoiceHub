@@ -205,5 +205,3 @@ const confirmBtnClasses = computed(() => {
   }
 })
 </script>
-
-<style scoped></style>

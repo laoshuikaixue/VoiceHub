@@ -16,7 +16,7 @@
         </div>
 
         <form v-else :class="['auth-form', { 'has-error': !!error }]" @submit.prevent="handleSubmit">
-          <div v-if="!token" class="error-container" style="margin-bottom: 20px;">
+          <div v-if="!token" class="error-container mb-5">
             <CircleAlert class="error-icon" />
             <span class="error-message">{{ locale.invalidTokenFull }}</span>
           </div>
@@ -96,7 +96,7 @@
           </div>
 
           <button :disabled="loading || !token" class="submit-btn" type="submit">
-            <Loader2 v-if="loading" class="loading-spinner animate-spin" />
+            <Loader2 v-if="loading" class="size-5 animate-spin" />
             <span v-if="loading">{{ locale.resetting }}</span>
             <span v-else>{{ locale.submit }}</span>
           </button>
@@ -425,10 +425,6 @@ const handleSubmit = async () => {
   transform: none;
 }
 
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-}
 
 .form-footer {
   margin-top: 16px;

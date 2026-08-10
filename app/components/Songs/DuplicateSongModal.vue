@@ -163,5 +163,3 @@ const handleLike = async () => {
   }
 }
 </script>
-
-<style scoped></style>

@@ -13,8 +13,7 @@
 
         <div
           ref="dateSelector"
-          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 overscroll-x-contain"
-          style="overscroll-behavior-x: contain; touch-action: pan-x"
+          class="flex-1 flex overflow-x-auto scrollbar-hide gap-2 px-2 py-1 overscroll-x-contain touch-pan-x"
         >
           <button
             v-for="date in availableDates"

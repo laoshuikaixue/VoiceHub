@@ -1297,7 +1297,7 @@
     <input
       ref="fileInput"
       accept=".json"
-      style="display: none"
+      class="hidden"
       type="file"
       @change="handleImportData"
     >

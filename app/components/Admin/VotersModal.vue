@@ -21,7 +21,7 @@
 
         <!-- 加载状态 -->
         <div v-if="loading" class="loading-container">
-          <div class="spinner" />
+          <AppSpinner :size="32" />
           <p>{{ locale.loading }}</p>
         </div>
 
@@ -70,6 +70,7 @@
 <script setup>
 import { CircleX, Heart, X } from '@lucide/vue'
 import { computed, ref, watch } from 'vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useLocale } from '~/utils/locale'
 
 // Props
@@ -286,18 +287,6 @@ watch(
   gap: 16px;
 }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  color: var(--color-accent);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 .error-container {
   display: flex;

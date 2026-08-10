@@ -36,7 +36,7 @@
                   :aria-expanded="showThemeMenu"
                   @click="toggleThemeMenu"
                 >
-                  <Icon name="gift" :size="19" />
+                  <Shirt :size="19" aria-hidden="true" />
                 </button>
 
                 <Transition name="dropdown-fade">
@@ -93,11 +93,11 @@
                       @click="selectLocale(localeOption.code)"
                     >
                       <span class="language-option-label">{{ localeOption.label }}</span>
-                      <Icon
+                      <Check
                         v-if="currentLocale === localeOption.code"
-                        name="check"
                         :size="16"
-                        color="var(--color-accent)"
+                        class="text-[var(--color-accent)]"
+                        aria-hidden="true"
                       />
                     </button>
                   </div>
