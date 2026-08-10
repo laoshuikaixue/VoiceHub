@@ -587,6 +587,17 @@
                   >
                 </button>
                 <button
+                  :disabled="allUnscheduledSongs.length === 0"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="openAutoScheduleDialog"
+                >
+                  <Sparkles class="w-3.5 h-3.5" />
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    >{{ locale.autoSchedule }}</span
+                  >
+                </button>
+                <button
                   class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-info rounded-xl transition-all group relative"
                   @click="openMoveDateDialog"
                 >
@@ -894,6 +905,13 @@
             >
               <Send class="w-5 h-5" />
             </button>
+            <button
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              :title="locale.autoSchedule"
+              @click="openAutoScheduleDialog"
+            >
+              <Sparkles class="w-5 h-5" />
+            </button>
           </div>
         </div>
 
@@ -1093,6 +1111,148 @@
     @update:show="showPlaylistFilterModal = $event"
     @apply="handlePlaylistFilterApply"
   />
+
+  <!-- 自动排期弹窗 -->
+  <div
+    v-if="showAutoScheduleDialog"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-bg-primary-60 backdrop-blur-sm"
+    @click="closeAutoScheduleDialog"
+  >
+    <div
+      class="bg-bg-secondary border border-border-secondary rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden mx-4"
+      @click.stop
+    >
+      <div class="flex items-center justify-between p-4 border-b border-border-secondary">
+        <h3 class="text-sm font-black text-text-primary uppercase tracking-widest">{{ locale.autoScheduleTitle }}</h3>
+        <button
+          class="text-text-tertiary hover:text-text-secondary transition-colors"
+          @click="closeAutoScheduleDialog"
+        >
+          <CloseIcon class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <!-- 输入区 -->
+        <div v-if="!autoScheduleResult.songs.length" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.targetDuration }}</label>
+            <div class="flex gap-2">
+              <input
+                v-model.number="autoScheduleTargetMinutes"
+                type="number"
+                min="1"
+                :placeholder="locale.targetDurationPlaceholder"
+                class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                @keydown.enter="runAutoSchedule"
+              />
+              <span class="flex items-center text-xs text-text-disabled px-1">min</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">{{ locale.scheduleDirection }}</label>
+            <div class="flex gap-2">
+              <button
+                :class="[
+                  'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
+                  autoScheduleDirection === 'under'
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
+                ]"
+                @click="autoScheduleDirection = 'under'"
+              >
+                {{ locale.directionUnder }}
+              </button>
+              <button
+                :class="[
+                  'flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all uppercase tracking-wider',
+                  autoScheduleDirection === 'over'
+                    ? 'bg-primary-10 border-primary-30 text-primary'
+                    : 'bg-bg-primary border-border-secondary text-text-secondary hover:border-border-tertiary'
+                ]"
+                @click="autoScheduleDirection = 'over'"
+              >
+                {{ locale.directionOver }}
+              </button>
+            </div>
+          </div>
+
+          <div class="text-[11px] text-text-disabled">
+            {{ locale.availableCount(allUnscheduledSongs.length) }}
+          </div>
+
+          <button
+            :disabled="!autoScheduleTargetMinutes || autoScheduleTargetMinutes <= 0 || allUnscheduledSongs.length === 0"
+            class="w-full py-3 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            @click="runAutoSchedule"
+          >
+            <Sparkles class="w-3.5 h-3.5" />
+            {{ locale.autoScheduleRun }}
+          </button>
+        </div>
+
+        <!-- 结果区 -->
+        <div v-else class="space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <Sparkles class="w-4 h-4 text-primary" />
+              <span class="text-xs font-bold text-text-primary">{{ locale.resultTitle }}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] text-text-tertiary">
+                {{ locale.totalDuration }}
+              </span>
+              <span class="text-sm font-black text-primary">
+                {{ formatDuration(autoScheduleResult.totalDuration) }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            :class="[
+              'px-3 py-2 rounded-lg text-[11px] font-bold border',
+              autoScheduleResult.diff <= 0
+                ? 'bg-info-10 border-info-20 text-info'
+                : 'bg-warning-10 border-warning-20 text-warning'
+            ]"
+          >
+            {{ autoScheduleResult.diff <= 0
+              ? locale.resultUnderTarget(autoScheduleResult.absDiff)
+              : locale.resultOverTarget(autoScheduleResult.absDiff)
+            }}
+          </div>
+
+          <div class="space-y-1.5 max-h-[36vh] overflow-y-auto scrollbar-hide">
+            <div
+              v-for="(song, idx) in autoScheduleResult.songs"
+              :key="song.id"
+              class="flex items-center gap-2 px-3 py-2 bg-bg-primary border border-border-secondary-50 rounded-lg"
+            >
+              <span class="text-[10px] font-bold text-text-disabled w-5 shrink-0">{{ idx + 1 < 10 ? '0' + (idx + 1) : idx + 1 }}</span>
+              <span class="flex-1 min-w-0 text-xs text-text-primary truncate">{{ song.title }} — {{ song.artist }}</span>
+              <span class="text-[10px] text-text-secondary font-bold shrink-0">{{ formatDuration(song.durationSeconds) }}</span>
+            </div>
+          </div>
+
+          <div class="flex gap-2 pt-1">
+            <button
+              class="flex-1 py-2.5 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
+              @click="resetAutoSchedule"
+            >
+              {{ locale.tryAgain }}
+            </button>
+            <button
+              class="flex-1 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-bold rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-colors uppercase tracking-wider"
+              @click="confirmAutoSchedule"
+            >
+              {{ locale.confirmApply }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -1127,7 +1287,8 @@ import {
   MessageSquare,
   Trash2,
   Copy,
-  RefreshCcw
+  RefreshCcw,
+  Sparkles
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
@@ -1341,6 +1502,11 @@ const replayModalSongId = ref(null)
 const refreshingDuration = ref({})
 // 批量刷新时长状态
 const refreshingAllDurations = ref({ running: false, progress: '' })
+// 自动排期状态
+const showAutoScheduleDialog = ref(false)
+const autoScheduleTargetMinutes = ref(null)
+const autoScheduleDirection = ref('under')
+const autoScheduleResult = ref({ songs: [], totalDuration: 0, diff: 0, absDiff: 0 })
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const showCopyDateDialog = ref(false)
@@ -2397,6 +2563,101 @@ const refreshAllDurations = async () => {
       window.$showNotification(locale.value.messages.allDurationsFailed, 'error')
     }
   }
+}
+
+// ===== 自动排期 =====
+const openAutoScheduleDialog = () => {
+  autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  showAutoScheduleDialog.value = true
+}
+const closeAutoScheduleDialog = () => {
+  showAutoScheduleDialog.value = false
+  autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+}
+const resetAutoSchedule = () => {
+  autoScheduleResult.value = { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+}
+
+/**
+ * 自动排期算法：在候选池中选取总时长最接近目标的歌曲组合
+ * 策略：主路径按降序贪心，辅路径随机采样，取更优结果
+ * @param {'under'|'over'} direction 'under' 总时长不超过目标，'over' 总时长不低于目标
+ */
+const autoSchedule = (direction) => {
+  const targetSeconds = Math.floor(autoScheduleTargetMinutes.value * 60)
+  const candidates = allUnscheduledSongs.value
+    .filter((s) => typeof s.durationSeconds === 'number' && s.durationSeconds > 0)
+
+  if (candidates.length === 0) {
+    return { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
+  }
+
+  // 核心贪心：降序排列，逐首判定加入
+  const runGreedy = (sorted) => {
+    const result = []
+    let total = 0
+    for (const song of sorted) {
+      const newTotal = total + song.durationSeconds
+      if (direction === 'under') {
+        if (newTotal <= targetSeconds) {
+          result.push(song)
+          total = newTotal
+        }
+      } else {
+        result.push(song)
+        total = newTotal
+        if (total >= targetSeconds) break
+      }
+    }
+    // under 模式：升序再扫一遍填剩余空间
+    if (direction === 'under') {
+      const ids = new Set(result.map((s) => s.id))
+      for (const song of candidates.slice().sort((a, b) => a.durationSeconds - b.durationSeconds)) {
+        if (ids.has(song.id)) continue
+        if (total + song.durationSeconds <= targetSeconds) {
+          result.push(song)
+          total += song.durationSeconds
+          ids.add(song.id)
+        }
+      }
+    }
+    const diff = total - targetSeconds
+    return { songs: result, totalDuration: total, diff, absDiff: Math.abs(diff) }
+  }
+
+  const r1 = runGreedy([...candidates].sort((a, b) => b.durationSeconds - a.durationSeconds))
+
+  // 随机采样（打乱后重跑），降低贪心单一方向的偏差
+  const shuffled = candidates.map((s) => s.id)
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  const r2 = runGreedy(shuffled.map((id) => candidates.find((s) => s.id === id)))
+
+  // 比较两种策略，返回更接近目标的
+  const pick = direction === 'under'
+    ? r1.totalDuration >= r2.totalDuration ? r1 : r2
+    : r2.absDiff < r1.absDiff ? r2 : r1
+  return pick
+}
+
+const runAutoSchedule = () => {
+  const result = autoSchedule(autoScheduleDirection.value)
+  if (result.songs.length === 0) {
+    if (window.$showNotification) {
+      window.$showNotification(callLocale('autoScheduleNoResult', '未能找到满足条件的歌曲组合'), 'warning')
+    }
+    return
+  }
+  autoScheduleResult.value = result
+}
+
+const confirmAutoSchedule = () => {
+  for (const song of autoScheduleResult.value.songs) {
+    addSongToSchedule(song)
+  }
+  closeAutoScheduleDialog()
 }
 
 // 格式化播出时段时间范围
