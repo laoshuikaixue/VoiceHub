@@ -497,7 +497,8 @@ export const pages = {
       'site-config': 'Site Configuration',
       'music-source': 'Music Source Control',
       database: 'Database Operations',
-      'api-keys': 'API Key Management'
+      'api-keys': 'API Key Management',
+      'card-codes': 'Card Codes'
     },
     roles: {
       USER: 'User',
