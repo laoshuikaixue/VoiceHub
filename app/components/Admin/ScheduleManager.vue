@@ -906,6 +906,14 @@
               <Send class="w-5 h-5" />
             </button>
             <button
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="refreshingAllDurations.running"
+              :title="refreshingAllDurations.running ? `${locale.refreshAllDurations} (${refreshingAllDurations.progress})` : locale.refreshAllDurations"
+              @click="refreshAllDurations"
+            >
+              <RefreshCcw class="w-5 h-5" :class="{ 'animate-spin': refreshingAllDurations.running }" />
+            </button>
+            <button
               class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
               :title="locale.autoSchedule"
               @click="openAutoScheduleDialog"
