@@ -2236,6 +2236,7 @@ export const admin = {
     rejectRequest: 'Reject Request',
     saveDraft: 'Save Draft',
     refreshDuration: 'Refresh Duration',
+    refreshAllDurations: 'Refresh All Durations',
     downloadSongs: 'Download Songs',
     markAllPlayed: 'Mark All Played',
     moveDate: 'Move Date',
@@ -2333,7 +2334,13 @@ export const admin = {
       draftPublished: (title: string) => `Draft "${title}" published and notifications sent!`,
       durationUpdated: 'Duration refreshed',
       durationFailed: 'Failed to get duration',
-      durationNoPlatform: 'Song missing platform or music ID, cannot get duration'
+      durationNoPlatform: 'Song missing platform or music ID, cannot get duration',
+      allDurationsUpdated: (count: number) => `${count} song(s) duration refreshed`,
+      allDurationsPartial: (ok: number, fail: number) => `Refresh done: ${ok} succeeded, ${fail} failed`,
+      allDurationsFailed: 'Bulk duration refresh failed',
+      allDurationsSkipped: 'No songs need duration refresh',
+      allDurationsProgressTotal: '{0} song(s)',
+      allDurationsProgress: '{0} / {1}'
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',

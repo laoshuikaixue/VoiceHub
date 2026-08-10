@@ -196,21 +196,34 @@
             <h3 class="hidden lg:block text-lg font-black tracking-tight text-text-primary uppercase">
               {{ locale.pendingSongs }}
             </h3>
-            <div
-              class="flex w-full lg:w-auto gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
-            >
-              <button
-                v-for="tab in scheduleTabs"
-                :key="tab.id"
-                :class="[
-                  'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                  activeTab === tab.id
-                    ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
-                    : 'text-text-disabled hover:text-text-tertiary'
-                ]"
-                @click="activeTab = tab.id"
+            <div class="flex items-center gap-2 w-full lg:w-auto">
+              <div
+                class="flex flex-1 lg:flex-none gap-1 p-1 bg-bg-secondary-50 rounded-xl border border-border-secondary"
               >
-                {{ tab.label }}
+                <button
+                  v-for="tab in scheduleTabs"
+                  :key="tab.id"
+                  :class="[
+                    'flex-1 lg:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                    activeTab === tab.id
+                      ? 'bg-bg-tertiary text-primary shadow-md border border-primary-20'
+                      : 'text-text-disabled hover:text-text-tertiary'
+                  ]"
+                  @click="activeTab = tab.id"
+                >
+                  {{ tab.label }}
+                </button>
+              </div>
+              <button
+                class="hidden lg:flex p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="refreshingAllDurations.running"
+                :title="refreshingAllDurations.running ? `${locale.refreshAllDurations} (${refreshingAllDurations.progress})` : locale.refreshAllDurations"
+                @click="refreshAllDurations"
+              >
+                <RefreshCcw
+                  class="w-3.5 h-3.5"
+                  :class="{ 'animate-spin': refreshingAllDurations.running }"
+                />
               </button>
             </div>
           </div>
@@ -553,6 +566,24 @@
                   <span
                     class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
                     >{{ locale.markAllPlayed }}</span
+                  >
+                </button>
+                <button
+                  :disabled="refreshingAllDurations.running"
+                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  @click="refreshAllDurations"
+                >
+                  <RefreshCcw
+                    class="w-3.5 h-3.5"
+                    :class="{ 'animate-spin': refreshingAllDurations.running }"
+                  />
+                  <span
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-bg-tertiary text-[9px] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-border-tertiary"
+                    >{{ locale.refreshAllDurations }}{{
+                      refreshingAllDurations.running
+                        ? ` (${refreshingAllDurations.progress})`
+                        : ''
+                    }}</span
                   >
                 </button>
                 <button
@@ -1308,6 +1339,8 @@ const replayModalRequests = ref([])
 const replayModalSongId = ref(null)
 // 刷新时长状态（每首歌独立追踪）
 const refreshingDuration = ref({})
+// 批量刷新时长状态
+const refreshingAllDurations = ref({ running: false, progress: '' })
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const showCopyDateDialog = ref(false)
@@ -2007,6 +2040,12 @@ onUnmounted(() => {
     unregisterBeforeNavigate()
   }
 
+  // 组件卸载时中止批量刷新进行中的请求
+  if (refreshAllAbortController) {
+    refreshAllAbortController.abort()
+    refreshAllAbortController = null
+  }
+
   if (dateSelector.value) {
     dateSelector.value.removeEventListener('wheel', handleDateSelectorWheel)
     dateSelector.value.removeEventListener('scroll', updateScrollButtonState)
@@ -2253,6 +2292,110 @@ const refreshDuration = async (song) => {
     }
   } finally {
     refreshingDuration.value[songId] = false
+  }
+}
+
+// 批量刷新时长 AbortController
+let refreshAllAbortController = null
+
+// 批量刷新所有待排+已排歌曲的时长
+const refreshAllDurations = async () => {
+  // 中止上次未完成的批量刷新
+  refreshAllAbortController?.abort()
+  refreshAllAbortController = new AbortController()
+  const { signal } = refreshAllAbortController
+
+  // 收集所有有平台+音乐 ID 的歌曲，用 Set 去重（O(n) 而非 O(n²)）
+  const targetIds = new Set()
+  const targets = []
+
+  // 已排歌曲
+  for (const schedule of localScheduledSongs.value) {
+    const s = schedule.song
+    if (s && s.musicPlatform && s.musicId && !targetIds.has(s.id)) {
+      targetIds.add(s.id)
+      targets.push(s)
+    }
+  }
+  // 待排歌曲
+  for (const song of songs.value) {
+    if (song.musicPlatform && song.musicId && !targetIds.has(song.id)) {
+      targetIds.add(song.id)
+      targets.push(song)
+    }
+  }
+
+  if (targets.length === 0) {
+    if (window.$showNotification) {
+      window.$showNotification(callLocale('allDurationsSkipped', '当前无可刷新时长的歌曲'), 'info')
+    }
+    return
+  }
+
+  refreshingAllDurations.value = {
+    running: true,
+    progress: callLocale('allDurationsProgressTotal', `${targets.length} 首歌`)
+  }
+  let successCount = 0
+  let failCount = 0
+
+  try {
+    for (let i = 0; i < targets.length; i++) {
+      const song = targets[i]
+      try {
+        if (signal.aborted) break
+
+        const result = await $fetch('/api/admin/songs/duration', {
+          method: 'POST',
+          body: { songId: song.id },
+          signal,
+          ...auth.getAuthConfig()
+        })
+
+        if (result.success && result.durationSeconds) {
+          // 更新已排歌曲列表
+          for (const schedule of localScheduledSongs.value) {
+            if (schedule.song && schedule.song.id === song.id) {
+              schedule.song.durationSeconds = result.durationSeconds
+              break
+            }
+          }
+          // 更新待排歌曲列表
+          const songIndex = songs.value.findIndex((s) => s.id === song.id)
+          if (songIndex !== -1) {
+            songs.value[songIndex].durationSeconds = result.durationSeconds
+          }
+          successCount++
+        } else {
+          failCount++
+        }
+      } catch (err) {
+        if (signal.aborted) break
+        console.error(`批量刷新时长失败 #${song.id}:`, err)
+        failCount++
+      } finally {
+        refreshingAllDurations.value.progress = callLocale(
+          'allDurationsProgress',
+          `${i + 1} / ${targets.length}`,
+          `${i + 1}`, `${targets.length}`
+        )
+        // 短暂延迟，避免请求过于密集
+        await new Promise((resolve) => setTimeout(resolve, 150))
+      }
+    }
+  } finally {
+    refreshAllAbortController = null
+    refreshingAllDurations.value = { running: false, progress: '' }
+  }
+
+  if (window.$showNotification) {
+    if (successCount > 0 && failCount === 0) {
+      window.$showNotification(locale.value.messages.allDurationsUpdated(successCount), 'success')
+    } else if (successCount > 0 && failCount > 0) {
+      window.$showNotification(locale.value.messages.allDurationsPartial(successCount, failCount), 'warning')
+    } else {
+      window.$showNotification(locale.value.messages.allDurationsFailed, 'error')
+    }
   }
 }
 

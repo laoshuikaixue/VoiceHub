@@ -2245,6 +2245,7 @@ export const admin = {
     rejectRequest: '拒绝申请',
     saveDraft: '保存草稿',
     refreshDuration: '刷新歌曲时长',
+    refreshAllDurations: '批量刷新时长',
     downloadSongs: '下载歌曲',
     markAllPlayed: '全部已播放',
     moveDate: '迁移日期',
@@ -2342,7 +2343,13 @@ export const admin = {
       draftPublished: (title: string) => `草稿《${title}》发布成功，通知已发送！`,
       durationUpdated: '时长获取成功',
       durationFailed: '获取时长失败',
-      durationNoPlatform: '歌曲缺少平台或音乐 ID 信息，无法获取时长'
+      durationNoPlatform: '歌曲缺少平台或音乐 ID 信息，无法获取时长',
+      allDurationsUpdated: (count: number) => `成功刷新 ${count} 首歌曲的时长`,
+      allDurationsPartial: (ok: number, fail: number) => `刷新完成：成功 ${ok} 首，失败 ${fail} 首`,
+      allDurationsFailed: '批量刷新时长失败',
+      allDurationsSkipped: '当前无可刷新时长的歌曲',
+      allDurationsProgressTotal: '{0} 首歌',
+      allDurationsProgress: '{0} / {1}'
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
