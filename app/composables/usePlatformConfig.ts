@@ -7,8 +7,6 @@ import { ref } from 'vue'
 import { useSiteConfig } from './useSiteConfig'
 import { DEFAULT_PLATFORMS } from '~/utils/platforms'
 
-export { DEFAULT_PLATFORMS }
-
 const cache = {
   enabledPlatforms: ref<string[]>([...DEFAULT_PLATFORMS]),
   platformOrder: ref<string[]>([...DEFAULT_PLATFORMS]),

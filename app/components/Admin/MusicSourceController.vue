@@ -158,11 +158,10 @@ import {
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { usePlatformConfig } from '~/composables/usePlatformConfig'
-import { DEFAULT_PLATFORMS } from '~/utils/platforms'
 import { useLocale } from '~/utils/locale'
 import { useSafeLocale } from '~/composables/useSafeLocale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { getPlatformDisplayName } from '~/utils/platforms'
+import { DEFAULT_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 
 const { admin, siteConfig, currentLocale } = useLocale()
 const { refreshPlatformConfig } = usePlatformConfig()
