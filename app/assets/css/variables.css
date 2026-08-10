@@ -94,13 +94,6 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-button,
-a,
-input,
-textarea {
-  -webkit-tap-highlight-color: transparent;
-}
-
 @media (hover: none) and (pointer: coarse) {
   *:focus {
     outline: none !important;
@@ -112,23 +105,8 @@ textarea {
   }
 }
 
-/* 全局输入框重置 */
-input,
-textarea,
-select {
-  font-family: inherit;
-  font-size: inherit;
-}
-
-/* 全局图片样式 */
-img {
-  max-width: 100%;
-  height: auto;
-}
-
 /* 全局表格样式 */
 table {
-  border-collapse: collapse;
   width: 100%;
 }
 

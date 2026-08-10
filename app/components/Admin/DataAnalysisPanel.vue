@@ -548,7 +548,7 @@
         @mouseleave="handleTooltipMouseLeave"
       >
         <div
-          class="bg-bg-secondary border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl bg-opacity-90 animate-in fade-in zoom-in duration-200"
+          class="bg-bg-secondary-90 border border-border-secondary rounded-3xl shadow-2xl overflow-hidden min-w-[320px] backdrop-blur-xl animate-in fade-in zoom-in duration-200"
         >
           <div
             class="p-6 border-b border-border-secondary-50 bg-gradient-to-br from-primary-10 to-transparent"
