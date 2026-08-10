@@ -400,7 +400,21 @@
                         }}
                       </span>
                     </div>
-                    <div class="text-xs text-text-tertiary truncate">{{ song.artist }}</div>
+                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
+                      <span>{{ song.artist }}</span>
+                      <span
+                        v-if="song.durationSeconds"
+                        class="text-text-disabled shrink-0"
+                      >{{ formatDuration(song.durationSeconds) }}</span>
+                      <button
+                        class="ml-auto p-0.5 rounded text-text-disabled hover:text-primary transition-colors shrink-0"
+                        :title="locale.refreshDuration"
+                        :disabled="refreshingDuration[song.id]"
+                        @click.stop="refreshDuration(song)"
+                      >
+                        <RefreshCcw class="w-3 h-3" :class="{ 'animate-spin': refreshingDuration[song.id] }" />
+                      </button>
+                    </div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
                       <span v-if="song.requesterGrade || song.grade" class="text-text-disabled">|</span>
@@ -712,7 +726,21 @@
                         {{ locale.cardCode }}
                       </span>
                     </div>
-                    <div class="text-xs text-text-tertiary truncate">{{ schedule.song.artist }}</div>
+                    <div class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
+                      <span>{{ schedule.song.artist }}</span>
+                      <span
+                        v-if="schedule.song.durationSeconds"
+                        class="text-text-disabled shrink-0"
+                      >{{ formatDuration(schedule.song.durationSeconds) }}</span>
+                      <button
+                        class="ml-auto p-0.5 rounded text-text-disabled hover:text-primary transition-colors shrink-0"
+                        :title="locale.refreshDuration"
+                        :disabled="refreshingDuration[schedule.song.id]"
+                        @click.stop="refreshDuration(schedule.song)"
+                      >
+                        <RefreshCcw class="w-3 h-3" :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }" />
+                      </button>
+                    </div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <!-- 显示申请人或投稿人 -->
                       <span
@@ -1067,7 +1095,8 @@ import {
   ExternalLink,
   MessageSquare,
   Trash2,
-  Copy
+  Copy,
+  RefreshCcw
 } from '@lucide/vue'
 import SongDownloadDialog from './SongDownloadDialog.vue'
 import SubmissionRemarkDialog from './SubmissionRemarkDialog.vue'
@@ -1080,11 +1109,14 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { convertToHttps, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
+import { useServerErrors } from '~/composables/useLocaleText'
+import { formatDuration } from '~/utils/timeUtils'
 
 import SchedulePlaylistFilterModal from './SchedulePlaylistFilterModal.vue'
 import { getPlaylistDetail } from '~/utils/neteaseApi'
 
 const { admin } = useLocale()
+const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => {
   const base = admin.value?.scheduleManager || {}
   return useSafeLocale({
@@ -1274,6 +1306,8 @@ const showReplayModal = ref(false)
 const replayModalTitle = ref('')
 const replayModalRequests = ref([])
 const replayModalSongId = ref(null)
+// 刷新时长状态（每首歌独立追踪）
+const refreshingDuration = ref({})
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const showCopyDateDialog = ref(false)
@@ -2170,6 +2204,55 @@ const loadPlayTimes = async () => {
     console.error('加载播出时段失败:', error)
     playTimeEnabled.value = false
     playTimes.value = []
+  }
+}
+
+// 刷新歌曲时长
+const refreshDuration = async (song) => {
+  const songId = song.id
+  if (!song.musicPlatform || !song.musicId) {
+    if (window.$showNotification) {
+      window.$showNotification(locale.value.messages.durationNoPlatform, 'warning')
+    }
+    return
+  }
+
+  refreshingDuration.value[songId] = true
+  try {
+    const result = await $fetch('/api/admin/songs/duration', {
+      method: 'POST',
+      body: { songId },
+      ...auth.getAuthConfig()
+    })
+
+    if (result.success && result.durationSeconds) {
+      // 更新待排歌曲列表
+      const songIndex = songs.value.findIndex((s) => s.id === songId)
+      if (songIndex !== -1) {
+        songs.value[songIndex].durationSeconds = result.durationSeconds
+      }
+      // 更新已排歌曲列表
+      for (const schedule of localScheduledSongs.value) {
+        if (schedule.song && schedule.song.id === songId) {
+          schedule.song.durationSeconds = result.durationSeconds
+          break
+        }
+      }
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.messages.durationUpdated, 'success')
+      }
+    } else {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.messages.durationFailed, 'error')
+      }
+    }
+  } catch (err) {
+    console.error('刷新时长失败:', err)
+    if (window.$showNotification) {
+      window.$showNotification(localizeServerError(err), 'error')
+    }
+  } finally {
+    refreshingDuration.value[songId] = false
   }
 }
 

@@ -148,3 +148,14 @@ export function getBeijingEndOfMonth(date?: Date): Date {
   const target = date ? dayjs(date).tz(BEIJING_TIMEZONE) : dayjs(getSyncedNow()).tz(BEIJING_TIMEZONE)
   return target.endOf('month').toDate()
 }
+
+/**
+ * 格式化歌曲/音频时长（秒 → 分:秒）
+ */
+export function formatDuration(seconds: number): string {
+  const total = Number(seconds)
+  if (!isFinite(total) || total <= 0) return ''
+  const minutes = Math.floor(total / 60)
+  const secs = Math.floor(total % 60)
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
+}

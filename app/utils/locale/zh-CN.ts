@@ -2244,6 +2244,7 @@ export const admin = {
     view: '查看',
     rejectRequest: '拒绝申请',
     saveDraft: '保存草稿',
+    refreshDuration: '刷新歌曲时长',
     downloadSongs: '下载歌曲',
     markAllPlayed: '全部已播放',
     moveDate: '迁移日期',
@@ -2338,7 +2339,10 @@ export const admin = {
       allDraftsDeleted: '所有草稿已删除！',
       scheduleDeleted: '排期已删除！',
       schedulePublished: '排期发布成功，通知已发送！',
-      draftPublished: (title: string) => `草稿《${title}》发布成功，通知已发送！`
+      draftPublished: (title: string) => `草稿《${title}》发布成功，通知已发送！`,
+      durationUpdated: '时长获取成功',
+      durationFailed: '获取时长失败',
+      durationNoPlatform: '歌曲缺少平台或音乐 ID 信息，无法获取时长'
     },
     playlistFilterModal: {
       title: '歌单重复过滤',
@@ -3952,6 +3956,7 @@ export const serverErrors = {
   COMMON_INSUFFICIENT_PERMISSION: '权限不足',
   SONG_ID_REQUIRED: '歌曲ID不能为空',
   SONG_NOT_FOUND: '歌曲不存在',
+  SONG_DURATION_PLATFORM_REQUIRED: '歌曲缺少平台或音乐 ID 信息，无法获取时长',
   SONG_CARD_RELEASE_FAILED: '点歌券释放失败，撤回已终止',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: '系统未设置当前活跃学期，无法导入歌曲。请联系管理员先设置活跃学期。',
   SONG_FETCH_VOTERS_FAILED: '获取投票人员列表失败',

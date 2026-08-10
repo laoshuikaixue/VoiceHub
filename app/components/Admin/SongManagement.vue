@@ -285,7 +285,13 @@
                   }}
                 </span>
               </h4>
-              <p class="text-xs text-text-tertiary font-medium truncate mt-0.5">{{ song.artist }}</p>
+              <p class="text-xs text-text-tertiary font-medium truncate mt-0.5 flex items-center gap-1.5">
+                <span>{{ song.artist }}</span>
+                <span
+                  v-if="song.durationSeconds"
+                  class="text-text-disabled shrink-0"
+                >{{ formatDuration(song.durationSeconds) }}</span>
+              </p>
               <span
                 class="lg:hidden text-[9px] font-black text-text-secondary uppercase tracking-wider mt-1 inline-block"
                 >{{ formatDate(song.createdAt) }}</span
@@ -1093,6 +1099,7 @@ import { useSongPlayer } from '~/composables/useSongPlayer'
 import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { validateUrl, convertToHttps } from '~/utils/url'
+import { formatDuration } from '~/utils/timeUtils'
 import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 

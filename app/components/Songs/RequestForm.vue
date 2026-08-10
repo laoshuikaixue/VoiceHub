@@ -2747,11 +2747,12 @@ const getAudioUrl = async (result) => {
               quality: quality
             })
 
-            if (songDetail && songDetail.url) {
-              result.url = songDetail.url
+            if (songDetail?.data?.songs?.[0]?.url) {
+              const song = songDetail.data.songs[0]
+              result.url = song.url
               result.hasUrl = true
-              if (songDetail.cover) result.cover = songDetail.cover
-              if (songDetail.duration) result.duration = songDetail.duration
+              if (song.cover) result.cover = song.cover
+              if (song.duration) result.duration = song.duration
               return result
             }
           } catch (error) {
@@ -2829,11 +2830,12 @@ const getAudioUrl = async (result) => {
           quality: quality
         })
 
-        if (songDetail && songDetail.url) {
-          result.url = songDetail.url
+        if (songDetail?.data?.songs?.[0]?.url) {
+          const song = songDetail.data.songs[0]
+          result.url = song.url
           result.hasUrl = true
-          if (songDetail.cover) result.cover = songDetail.cover
-          if (songDetail.duration) result.duration = songDetail.duration
+          if (song.cover) result.cover = song.cover
+          if (song.duration) result.duration = song.duration
           return result
         }
       } catch (error) {
@@ -3052,6 +3054,16 @@ const handleLoginRedirect = async () => {
     }
   }
   await navigateTo(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
+}
+
+// 归一化时长到秒（网易云返回毫秒，其余返回秒）
+const normalizeDurationToSeconds = (duration) => {
+  if (!duration) return null
+  const d = Number(duration)
+  if (!isFinite(d) || d <= 0) return null
+  // 网易云返回毫秒（典型值 180000ms = 180s），其余平台返回秒
+  // 阈值 60000 确保 1 分钟以内的歌曲不被误判
+  return d > 60000 ? Math.floor(d / 1000) : Math.floor(d)
 }
 
 // 提交选中的歌曲
@@ -3276,6 +3288,7 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
+      durationSeconds: normalizeDurationToSeconds(result.duration),
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id),
@@ -3402,12 +3415,6 @@ const canResubmitBilibiliEpisodes = (result) => {
   if (!episodeStatus || episodeStatus.submittedEpisodes.length === 0) return false
 
   return episodeStatus.submittedEpisodes.every((song) => song.played)
-}
-
-const formatDuration = (seconds) => {
-  const minutes = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
 const handleBilibiliEpisodeSelect = async (payload) => {

@@ -27,6 +27,7 @@ interface SongResponse extends MaskableSong {
   musicPlatform: string | null
   musicId: string | null
   cardCodeId?: number | null
+  durationSeconds?: number | null
   playUrl: string | null
   requesterGrade: string | null
   requesterClass: string | null
@@ -220,6 +221,7 @@ export default defineEventHandler(async (event) => {
         s."musicPlatform",
         s."musicId",
         s."cardCodeId",
+        s."durationSeconds",
         s."playUrl",
         s."submissionNote",
         s."submissionNotePublic",
@@ -333,6 +335,7 @@ export default defineEventHandler(async (event) => {
         musicPlatform: row.musicPlatform || null,
         musicId: row.musicId || null,
         cardCodeId: row.cardCodeId ? Number(row.cardCodeId) : null,
+        durationSeconds: row.durationSeconds ? Number(row.durationSeconds) : null,
         playUrl: row.playUrl || null,
         replayRequested: user ? row.replayRequested === true : false,
         replayRequestCount,

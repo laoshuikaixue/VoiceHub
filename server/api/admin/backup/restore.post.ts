@@ -866,6 +866,7 @@ export default defineEventHandler(async (event) => {
                           'cover',
                           'musicPlatform',
                           'musicId',
+                          'durationSeconds',
                           'submissionNote',
                           'submissionNotePublic'
                         ]

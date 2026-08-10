@@ -2235,6 +2235,7 @@ export const admin = {
     view: 'View',
     rejectRequest: 'Reject Request',
     saveDraft: 'Save Draft',
+    refreshDuration: 'Refresh Duration',
     downloadSongs: 'Download Songs',
     markAllPlayed: 'Mark All Played',
     moveDate: 'Move Date',
@@ -2329,7 +2330,10 @@ export const admin = {
       allDraftsDeleted: 'All drafts deleted!',
       scheduleDeleted: 'Schedule deleted!',
       schedulePublished: 'Schedule published and notifications sent!',
-      draftPublished: (title: string) => `Draft "${title}" published and notifications sent!`
+      draftPublished: (title: string) => `Draft "${title}" published and notifications sent!`,
+      durationUpdated: 'Duration refreshed',
+      durationFailed: 'Failed to get duration',
+      durationNoPlatform: 'Song missing platform or music ID, cannot get duration'
     },
     playlistFilterModal: {
       title: 'Playlist Duplicate Filter',
@@ -3943,6 +3947,7 @@ export const serverErrors = {
   COMMON_INSUFFICIENT_PERMISSION: 'Insufficient permissions',
   SONG_ID_REQUIRED: 'Song ID is required',
   SONG_NOT_FOUND: 'Song not found',
+  SONG_DURATION_PLATFORM_REQUIRED: 'Song missing platform or music ID, cannot retrieve duration',
   SONG_CARD_RELEASE_FAILED: 'Failed to release the request card; the withdrawal was aborted',
   SONG_NO_ACTIVE_SEMESTER_IMPORT: 'No active semester is set, so songs cannot be imported. Please ask an administrator to set an active semester first.',
   SONG_FETCH_VOTERS_FAILED: 'Failed to fetch the voter list',

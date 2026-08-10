@@ -36,6 +36,7 @@ const songRequestBodySchema = z.object({
   bilibiliCid: z.string().trim().max(100, 'Bilibili CID 不能超过100个字符').optional().nullable(),
   bilibiliPage: z.union([z.string(), z.number()]).optional().nullable(),
   playUrl: z.string().trim().max(2000, '播放链接不能超过2000个字符').optional().nullable(),
+  durationSeconds: z.number().int().min(30, '时长不能低于30秒').max(3600, '时长不能超过1小时').optional().nullable(),
   submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
   preferredPlayTimeId: z.preprocess(
@@ -393,6 +394,7 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
           musicId: finalMusicId,
           cardCodeId: providedCardCodeId || null,
           playUrl: requestBody.playUrl || null,
+          durationSeconds: requestBody.durationSeconds || null,
           submissionNote,
           submissionNotePublic,
           hitRequestId: hitRequestTime?.id || null
