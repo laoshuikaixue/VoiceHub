@@ -2754,6 +2754,9 @@ const getAudioUrl = async (result) => {
               if (song.cover) result.cover = song.cover
               if (song.duration) result.duration = song.duration
               return result
+            } else {
+              console.warn('getSongDetail 未返回 url，尝试备用音源')
+              throw new Error('song detail has no url')
             }
           } catch (error) {
             // vkeys getSongDetail 失败，继续回退
@@ -2837,6 +2840,9 @@ const getAudioUrl = async (result) => {
           if (song.cover) result.cover = song.cover
           if (song.duration) result.duration = song.duration
           return result
+        } else {
+          console.warn('getSongDetail 未返回 url，尝试备用音源')
+          throw new Error('song detail has no url')
         }
       } catch (error) {
         console.error('获取网易云音乐详情失败:', error)

@@ -84,7 +84,7 @@ export default defineEventHandler(async (event) => {
     if (body.musicId !== undefined) updateData.musicId = body.musicId || null
     if (body.cover !== undefined) updateData.cover = body.cover || null
     if (body.playUrl !== undefined) updateData.playUrl = body.playUrl || null
-    if (durationSeconds !== undefined) updateData.durationSeconds = durationSeconds || null
+    if (durationSeconds !== undefined) updateData.durationSeconds = durationSeconds ?? null
 
     // 处理投稿人
     if ('requester' in body) {

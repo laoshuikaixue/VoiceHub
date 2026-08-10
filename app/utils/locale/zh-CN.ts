@@ -2363,6 +2363,8 @@ export const admin = {
       allDurationsPartial: (ok: number, fail: number) => `刷新完成：成功 ${ok} 首，失败 ${fail} 首`,
       allDurationsFailed: '批量刷新时长失败',
       allDurationsSkipped: '当前无可刷新时长的歌曲',
+      allDurationsCapped: '候选歌曲较多，本次仅刷新前 100 首',
+      confirmAutoScheduleApplied: (count, duration) => `已自动排期 ${count} 首歌曲，合计 ${duration}`,
       allDurationsProgressTotal: '{0} 首歌',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: '未能找到满足条件的歌曲组合'

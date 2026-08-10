@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     throw createApiError(
       400,
       SERVER_ERROR_CODES.SONG_DURATION_PLATFORM_REQUIRED,
-      'Song missing platform or music ID, cannot retrieve duration'
+      '歌曲缺少平台或音乐 ID 信息，无法获取时长'
     )
   }
 

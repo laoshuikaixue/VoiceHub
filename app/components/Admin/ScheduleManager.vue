@@ -1321,7 +1321,10 @@ const locale = computed(() => {
   const base = admin.value?.scheduleManager || {}
   return useSafeLocale({
     ...base,
-    messages: { ...(base.messages || {}) },
+    messages: {
+      confirmAutoScheduleApplied: (count, duration) => `已自动排期 ${count} 首歌曲，合计 ${duration}`,
+      ...(base.messages || {})
+    },
     errors: {
       rejectReplayFailed: (message) => `拒绝申请失败: ${message || '未知错误'}`,
       saveDraftFailed: (message) => `保存草稿失败: ${message || '未知错误'}`,
@@ -2506,16 +2509,24 @@ const refreshAllDurations = async () => {
     return
   }
 
+  const toRefresh = targets.length > 100 ? targets.slice(0, 100) : targets
+  if (toRefresh.length < targets.length && window.$showNotification) {
+    window.$showNotification(
+      callLocale('allDurationsCapped', '候选歌曲较多，本次仅刷新前 100 首'),
+      'warning'
+    )
+  }
+
   refreshingAllDurations.value = {
     running: true,
-    progress: callLocale('allDurationsProgressTotal', `${targets.length} 首歌`)
+    progress: callLocale('allDurationsProgressTotal', `${toRefresh.length} 首歌`)
   }
   let successCount = 0
   let failCount = 0
 
   try {
-    for (let i = 0; i < targets.length; i++) {
-      const song = targets[i]
+    for (let i = 0; i < toRefresh.length; i++) {
+      const song = toRefresh[i]
       try {
         if (signal.aborted) break
 
@@ -2550,11 +2561,13 @@ const refreshAllDurations = async () => {
       } finally {
         refreshingAllDurations.value.progress = callLocale(
           'allDurationsProgress',
-          `${i + 1} / ${targets.length}`,
-          `${i + 1}`, `${targets.length}`
+          `${i + 1} / ${toRefresh.length}`,
+          `${i + 1}`, `${toRefresh.length}`
         )
-        // 短暂延迟，避免请求过于密集
-        await new Promise((resolve) => setTimeout(resolve, 150))
+        // 短暂延迟，避免请求过于密集；已取消时不再等待
+        if (!signal.aborted) {
+          await new Promise((resolve) => setTimeout(resolve, 150))
+        }
       }
     }
   } finally {
@@ -2662,8 +2675,18 @@ const runAutoSchedule = () => {
 }
 
 const confirmAutoSchedule = () => {
-  for (const song of autoScheduleResult.value.songs) {
+  const confirmed = autoScheduleResult.value.songs.filter((song) =>
+    allUnscheduledSongs.value.some((s) => s.id === song.id)
+  )
+  for (const song of confirmed) {
     addSongToSchedule(song)
+  }
+  if (confirmed.length > 0 && window.$showNotification) {
+    const totalSec = confirmed.reduce((sum, song) => sum + song.durationSeconds, 0)
+    window.$showNotification(
+      locale.value.messages.confirmAutoScheduleApplied(confirmed.length, formatDuration(totalSec)),
+      'success'
+    )
   }
   closeAutoScheduleDialog()
 }

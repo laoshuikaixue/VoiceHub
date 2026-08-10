@@ -2354,6 +2354,8 @@ export const admin = {
       allDurationsPartial: (ok: number, fail: number) => `Refresh done: ${ok} succeeded, ${fail} failed`,
       allDurationsFailed: 'Bulk duration refresh failed',
       allDurationsSkipped: 'No songs need duration refresh',
+      allDurationsCapped: 'Too many candidates, refreshing the first 100 only',
+      confirmAutoScheduleApplied: (count, duration) => `Auto-scheduled ${count} song(s), total ${duration}`,
       allDurationsProgressTotal: '{0} song(s)',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: 'No matching song combination found'
