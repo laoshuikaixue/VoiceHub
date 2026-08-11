@@ -2383,6 +2383,7 @@ export const admin = {
       candidateDurationsSkipped: 'No candidate songs need duration refresh',
       confirmAutoScheduleApplied: (count, duration) => `Auto-scheduled ${count} song(s), total ${duration}`,
       allDurationsProgressTotal: '{0} song(s)',
+      candidateDurationsProgressTotal: '{0} song(s)',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: 'No matching song combination found'
     },

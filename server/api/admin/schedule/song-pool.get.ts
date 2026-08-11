@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
       title: song.title,
       artist: song.artist,
       durationSeconds: song.durationSeconds,
+      replayRequestId: song.replayRequestId,
       requester: song.requester,
       requesterId: song.requesterId,
       requesterGrade: song.requesterGrade,

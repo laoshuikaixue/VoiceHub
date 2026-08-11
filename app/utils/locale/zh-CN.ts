@@ -2392,6 +2392,7 @@ export const admin = {
       candidateDurationsSkipped: '当前无候选歌曲可刷新时长',
       confirmAutoScheduleApplied: (count, duration) => `已自动排期 ${count} 首歌曲，合计 ${duration}`,
       allDurationsProgressTotal: '{0} 首歌',
+      candidateDurationsProgressTotal: '{0} 首歌',
       allDurationsProgress: '{0} / {1}',
       autoScheduleNoResult: '未能找到满足条件的歌曲组合'
     },

@@ -3041,7 +3041,7 @@ const refreshAutoCandidateDurations = async () => {
 
   refreshingAutoCandidates.value = {
     running: true,
-    progress: `${toRefresh.length} 首歌`,
+    progress: callLocale('candidateDurationsProgressTotal', `${toRefresh.length} 首歌`, `${toRefresh.length} songs`),
     success: 0,
     fail: 0
   }
@@ -3195,6 +3195,22 @@ const autoSchedule = (direction, candidates) => {
 }
 
 // 自动排期候选池：根据选择的来源返回待排库/备选池/合并的歌曲
+// 备选池条目统一构造器（含 replayRequestId，用于重播申请链路）
+function poolCandidateFromItem(item) {
+  return {
+    id: item.songId,
+    songId: item.songId,
+    title: item.title,
+    artist: item.artist,
+    durationSeconds: item.durationSeconds,
+    replayRequestId: item.replayRequestId || null,
+    musicId: item.musicId,
+    musicPlatform: item.musicPlatform,
+    requester: item.requester,
+    cover: item.cover,
+    createdAt: item.createdAt
+  }
+}
 const autoScheduleCandidates = computed(() => {
   const scheduledIds = new Set(localScheduledSongs.value.map((s) => s.song && s.song.id).filter(Boolean))
 
@@ -3202,18 +3218,7 @@ const autoScheduleCandidates = computed(() => {
   if (activeTab.value === 'pool') {
     return songPool.value
       .filter((item) => !scheduledIds.has(item.songId))
-      .map((item) => ({
-        id: item.songId,
-        songId: item.songId,
-        title: item.title,
-        artist: item.artist,
-        durationSeconds: item.durationSeconds,
-        musicId: item.musicId,
-        musicPlatform: item.musicPlatform,
-        requester: item.requester,
-        cover: item.cover,
-        createdAt: item.createdAt
-      }))
+      .map(poolCandidateFromItem)
   }
 
   // 待排库/重播/所有：复用 allUnscheduledSongs 的过滤逻辑，再排除已排期歌曲
@@ -3222,18 +3227,7 @@ const autoScheduleCandidates = computed(() => {
     // 「所有」额外纳入备选池未排期的歌曲
     const poolCandidates = songPool.value
       .filter((item) => !scheduledIds.has(item.songId))
-      .map((item) => ({
-        id: item.songId,
-        songId: item.songId,
-        title: item.title,
-        artist: item.artist,
-        durationSeconds: item.durationSeconds,
-        musicId: item.musicId,
-        musicPlatform: item.musicPlatform,
-        requester: item.requester,
-        cover: item.cover,
-        createdAt: item.createdAt
-      }))
+      .map(poolCandidateFromItem)
     const baseIds = new Set(base.map((s) => s.id))
     return [...base, ...poolCandidates.filter((p) => !baseIds.has(p.songId))]
   }
@@ -3242,6 +3236,8 @@ const autoScheduleCandidates = computed(() => {
 
 const runAutoSchedule = () => {
   const candidates = autoScheduleCandidates.value
+  // 快照候选集 ID，供 confirmAutoSchedule 过滤使用，避免用户切换 Tab / 更新搜索导致候选集变化而静默丢弃结果
+  const candidateIds = new Set(candidates.map((s) => s.id))
   const result = autoSchedule(autoScheduleDirection.value, candidates)
   if (result.songs.length === 0) {
     if (window.$showNotification) {
@@ -3249,12 +3245,11 @@ const runAutoSchedule = () => {
     }
     return
   }
-  autoScheduleResult.value = result
+  autoScheduleResult.value = { ...result, candidateIds }
 }
 
 const confirmAutoSchedule = () => {
-  const candidates = autoScheduleCandidates.value
-  const candidateIds = new Set(candidates.map((s) => s.id))
+  const candidateIds = autoScheduleResult.value.candidateIds || new Set()
   const confirmed = autoScheduleResult.value.songs.filter((song) =>
     candidateIds.has(song.id)
   )

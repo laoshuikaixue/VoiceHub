@@ -10,8 +10,6 @@ import path from 'path'
 import { config } from 'dotenv'
 import postgres from 'postgres'
 
-config({ path: path.resolve(process.cwd(), '.env') })
-
 const colors = {
   reset: '\x1b[0m',
   bright: '\x1b[1m',
@@ -24,6 +22,23 @@ const log = (msg, color = 'reset') => console.log(`${colors[color]}${msg}${color
 const ok = (msg) => log(`✅ ${msg}`, 'green')
 const warn = (msg) => log(`⚠️  ${msg}`, 'yellow')
 const err = (msg) => log(`❌ ${msg}`, 'red')
+
+const args = process.argv.slice(2)
+const forceFlag = args.includes('--force')
+
+// 禁止在 CI 中执行（防止误触发导致生产库被清空）
+if (process.env.CI && !forceFlag) {
+  err('拒绝在 CI 环境中执行数据库重置；如确需强制，请使用 --force 标志并确认 CI 配置正确')
+  process.exit(1)
+}
+
+if (!forceFlag) {
+  err('危险操作：此脚本将清空整库数据')
+  err('请添加 --force 标志确认执行：pnpm run db:reset -- --force')
+  process.exit(1)
+}
+
+config({ path: path.resolve(process.cwd(), '.env') })
 
 const NON_INTERACTIVE_ENV = {
   ...process.env,
@@ -125,6 +140,10 @@ async function main() {
   }
 
   log('⚠️  此操作将删除数据库所有表（含迁移记录），并从头重建', 'red')
+  const dbUrl = (process.env.DATABASE_URL || '')
+    .replace(/(postgresql:\/\/[^:@]+):[^@]+@/, '$1:***@')
+    .replace(/(postgres:\/\/[^:@]+):[^@]+@/, '$1:***@')
+  log(`目标数据库: ${dbUrl}`, 'cyan')
   log('🔄 开始数据库完全重置...', 'bright')
 
   const sql = createSqlClient()

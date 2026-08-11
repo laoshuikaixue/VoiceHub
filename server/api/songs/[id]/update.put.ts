@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     // 获取歌曲ID
     const songId = parseInt(getRouterParam(event, 'id'))
     if (!songId) {
-      throw createApiError(400, 'SONG_INVALID_ID', 'Invalid song ID')
+      throw createApiError(400, SERVER_ERROR_CODES.SONG_INVALID_ID, 'Invalid song ID')
     }
 
     // 获取请求体
