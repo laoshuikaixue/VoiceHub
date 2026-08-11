@@ -1792,10 +1792,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "ScheduleSongPool_addedBy_Users_id_fk": {
-          "name": "ScheduleSongPool_addedBy_Users_id_fk",
+        "ScheduleSongPool_addedBy_User_id_fk": {
+          "name": "ScheduleSongPool_addedBy_User_id_fk",
           "tableFrom": "ScheduleSongPool",
-          "tableTo": "Users",
+          "tableTo": "User",
           "columnsFrom": [
             "addedBy"
           ],
