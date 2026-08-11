@@ -1,19 +1,19 @@
 import { readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { songs, scheduleSongPool } from '~/drizzle/schema'
-import { inArray } from 'drizzle-orm'
+import { inArray, count, eq } from 'drizzle-orm'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // 返回有效计数（排除歌曲已删除的孤立记录）
 const fetchPoolCount = async () => {
-  const poolRows = await db.select({ songId: scheduleSongPool.songId }).from(scheduleSongPool)
-  if (poolRows.length === 0) return 0
-  const songIds = poolRows.map((row) => row.songId)
-  const songsRows = await db.select({ id: songs.id }).from(songs).where(inArray(songs.id, songIds))
-  const validIds = new Set(songsRows.map((s) => s.id))
-  return poolRows.filter((row) => validIds.has(row.songId)).length
+  const result = await db
+    .select({ count: count() })
+    .from(scheduleSongPool)
+    .innerJoin(songs, eq(scheduleSongPool.songId, songs.id))
+    .limit(1)
+  return result[0]?.count || 0
 }
 
 export default defineEventHandler(async (event) => {
@@ -42,7 +42,8 @@ export default defineEventHandler(async (event) => {
   }).from(songs).where(inArray(songs.id, songIds))
   const songsMap = new Map(songsRows.map((s) => [s.id, s]))
 
-  const added = []
+  // 构建待插入值和跳过列表
+  const insertValues = []
   const skipped = []
 
   for (const songId of songIds) {
@@ -51,20 +52,24 @@ export default defineEventHandler(async (event) => {
       skipped.push({ songId, reason: '歌曲不存在' })
       continue
     }
+    insertValues.push({ songId, title: song.title, artist: song.artist, createdAt: now, addedBy: user.id })
+  }
 
-    try {
-      const inserted = await db
-        .insert(scheduleSongPool)
-        .values({ songId, createdAt: now, addedBy: user.id })
-        .onConflictDoNothing()
-        .returning()
-      if (inserted.length > 0) {
-        added.push({ songId, title: song.title, artist: song.artist })
+  // 批量插入
+  let added = []
+  if (insertValues.length > 0) {
+    const inserted = await db
+      .insert(scheduleSongPool)
+      .values(insertValues.map((v) => ({ songId: v.songId, createdAt: v.createdAt, addedBy: v.addedBy })))
+      .onConflictDoNothing()
+      .returning()
+    const insertedIds = new Set(inserted.map((r) => r.songId))
+    for (const v of insertValues) {
+      if (insertedIds.has(v.songId)) {
+        added.push({ songId: v.songId, title: v.title, artist: v.artist })
       } else {
-        skipped.push({ songId, reason: '已在备选池中' })
+        skipped.push({ songId: v.songId, reason: '已在备选池中' })
       }
-    } catch {
-      skipped.push({ songId, reason: '添加失败' })
     }
   }
 

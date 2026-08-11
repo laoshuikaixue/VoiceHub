@@ -112,6 +112,7 @@ export const song = pgTable("Song", {
 	cover: text(),
 	musicPlatform: text(),
 	musicId: text(),
+	durationSeconds: integer(),
 	playUrl: text(),
 	hitRequestId: integer(),
 	submissionNote: text(),

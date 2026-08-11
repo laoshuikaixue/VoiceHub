@@ -2036,6 +2036,7 @@ export default defineEventHandler(async (event) => {
                             .limit(1)
                           if (songExists.length === 0) {
                             console.warn(`备选池记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
+                            stats.warnings.push(`备选池歌曲ID ${record.songId} 不存在`)
                             break
                           }
                           // mapping 未命中但歌曲存在时，使用数据库查到的 ID（merge 模式下可能已被重新分配）
