@@ -223,7 +223,7 @@
                 <FolderPlus class="w-3.5 h-3.5" />
               </button>
               <button
-                class="hidden lg:flex p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                class="hidden lg:flex items-center justify-center p-1.5 bg-bg-secondary-50 rounded-lg border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="refreshingAllDurations.running"
                 :title="refreshingAllDurations.running ? `${locale.refreshAllDurations} (${refreshingAllDurations.progress})` : locale.refreshAllDurations"
                 @click="refreshAllDurations"
@@ -516,7 +516,7 @@
                     <!-- 备选池：加入排期按钮 -->
                     <button
                       v-if="activeTab === 'pool'"
-                      class="p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
+                      class="flex items-center justify-center p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
                       @click.stop="addSongToSchedule(song)"
                     >
                       <Plus class="w-5 h-5" />
@@ -534,7 +534,7 @@
 
                     <!-- 移动端添加按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
                       :class="{ 'bg-error-20 text-error hover:bg-error-30': activeTab === 'pool' }"
                       :title="activeTab === 'pool' ? locale.removeFromPool : ''"
                       @click.stop="activeTab === 'pool' ? removeFromPool(song.songId) : addSongToSchedule(song)"
@@ -642,7 +642,7 @@
                 </button>
                 <button
                   :disabled="refreshingAllDurations.running"
-                  class="p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="flex items-center justify-center p-2 bg-bg-primary border border-border-secondary hover:bg-bg-tertiary text-text-tertiary hover:text-primary rounded-xl transition-all group relative disabled:opacity-50 disabled:cursor-not-allowed"
                   @click="refreshAllDurations"
                 >
                   <RefreshCcw
@@ -1235,7 +1235,7 @@
           <div class="flex items-center justify-end">
             <button
               :disabled="refreshingAutoCandidates.running"
-              class="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+              class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-border-secondary text-text-tertiary hover:text-primary hover:border-primary-30 rounded-lg transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
               :title="locale.refreshCandidateDurations"
               @click="refreshAutoCandidateDurations"
             >
@@ -1320,15 +1320,44 @@
             }}
           </div>
 
-          <div class="space-y-1.5 max-h-[36vh] overflow-y-auto scrollbar-hide">
+          <div class="space-y-2 max-h-[36vh] overflow-y-auto scrollbar-hide">
             <div
               v-for="(song, idx) in autoScheduleResult.songs"
               :key="song.id"
-              class="flex items-center gap-2 px-3 py-2 bg-bg-primary border border-border-secondary-50 rounded-lg"
+              class="flex items-center gap-3 p-2.5 bg-bg-primary border border-border-secondary-50 rounded-lg"
             >
               <span class="text-[10px] font-bold text-text-disabled w-5 shrink-0">{{ idx + 1 < 10 ? '0' + (idx + 1) : idx + 1 }}</span>
-              <span class="flex-1 min-w-0 text-xs text-text-primary truncate">{{ song.title }} — {{ song.artist }}</span>
-              <span class="text-[10px] text-text-secondary font-bold shrink-0">{{ formatDuration(song.durationSeconds) }}</span>
+              <div
+                class="relative w-10 h-10 rounded-lg overflow-hidden bg-bg-tertiary flex-shrink-0 border border-border-tertiary-50"
+              >
+                <img
+                  v-if="song.cover"
+                  :src="convertToHttps(song.cover)"
+                  class="w-full h-full object-cover"
+                  referrerpolicy="no-referrer"
+                  loading="lazy"
+                  alt=""
+                />
+                <div
+                  v-else
+                  class="w-full h-full flex items-center justify-center text-text-disabled"
+                >
+                  <Music2 class="w-5 h-5 opacity-50" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                <span class="text-sm font-bold text-text-primary truncate">{{ song.title }}</span>
+                <span class="text-xs text-text-tertiary truncate flex items-center gap-1.5">
+                  <span>{{ song.artist }}</span>
+                  <span v-if="song.durationSeconds" class="text-text-disabled shrink-0">{{ formatDuration(song.durationSeconds) }}</span>
+                  <span v-if="song.requester" class="text-text-disabled">|</span>
+                  <span v-if="song.requester" class="text-text-tertiary truncate">{{ song.requester }}</span>
+                  <span v-if="song.voteCount != null" class="ml-auto flex items-center gap-1 text-[10px] font-bold text-text-tertiary bg-bg-primary-50 px-1.5 py-0.5 rounded-md border border-border-secondary-50 shrink-0">
+                    <Heart class="w-3 h-3 text-error-50" />
+                    {{ song.voteCount }}
+                  </span>
+                </span>
+              </div>
             </div>
           </div>
 
