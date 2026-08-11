@@ -247,7 +247,7 @@
                 />
               </div>
               <span class="text-[10px] font-bold text-text-tertiary whitespace-nowrap">
-                {{ locale.refreshAllDurations }} · {{ refreshingAllDurations.progress }}
+                {{ refreshingAllDurations.progress }}
               </span>
               <span class="text-[10px] font-bold text-primary whitespace-nowrap">
                 ✓{{ refreshingAllDurations.success }}
@@ -937,7 +937,10 @@
 
                     <!-- 刷新时长按钮 -->
                     <button
-                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary transition-colors"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary hover:border-primary-30 transition-all duration-200"
+                      :class="{
+                        'bg-primary-10 border-primary-30 text-primary shadow-[0_0_0_3px_var(--primary-glow)]': refreshingDuration[schedule.song.id]
+                      }"
                       :title="locale.refreshDuration"
                       :disabled="refreshingDuration[schedule.song.id]"
                       @click.stop="refreshDuration(schedule.song)"
