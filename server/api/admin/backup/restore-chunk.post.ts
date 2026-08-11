@@ -7,6 +7,7 @@ import {
   notifications,
   playTimes,
   schedules,
+  scheduleSongPool,
   semesters,
   songBlacklists,
   songs,
@@ -1203,6 +1204,33 @@ export default defineEventHandler(async (event) => {
               await tx.insert(votes).values(voteData)
               stats.created++
             }
+            break
+          }
+
+          case 'scheduleSongPool': {
+            // songId 外键映射（参照 schedules 处理模式）
+            let validPoolSongId = record.songId
+            const mappedPoolSongId = songIdMapping.get(record.songId)
+            if (mappedPoolSongId) {
+              validPoolSongId = mappedPoolSongId
+            } else {
+              const songExists = await tx
+                .select()
+                .from(songs)
+                .where(eq(songs.id, record.songId))
+                .limit(1)
+              if (songExists.length === 0) {
+                console.warn(`备选池记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
+                stats.warnings.push(`备选池歌曲ID ${record.songId} 不存在`)
+                break
+              }
+            }
+            const poolData: any = {
+              songId: validPoolSongId,
+              createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+            }
+            await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing()
+            stats.created++
             break
           }
         }

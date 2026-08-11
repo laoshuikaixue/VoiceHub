@@ -13,6 +13,7 @@ import {
   playTimes,
   requestTimes,
   schedules,
+  scheduleSongPool,
   semesters,
   songBlacklists,
   songCollaborators,
@@ -176,6 +177,21 @@ export default defineEventHandler(async (event) => {
           }))
         },
         description: '投票数据'
+      },
+      scheduleSongPool: {
+        query: async () => {
+          const poolData = await db.select().from(scheduleSongPool)
+          const songsData = await db.select({
+            id: songs.id,
+            title: songs.title,
+            artist: songs.artist
+          }).from(songs)
+          return poolData.map((row) => ({
+            ...row,
+            song: songsData.find((song) => song.id === row.songId)
+          }))
+        },
+        description: '排期备选池'
       },
       schedules: {
         query: async () => {

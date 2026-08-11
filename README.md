@@ -1056,7 +1056,10 @@ VoiceHub/
 │   │   │   │   ├── move-date.post.ts # 排期日期迁移
 │   │   │   │   ├── publish.post.ts  # 发布排期草稿
 │   │   │   │   ├── remove.post.ts   # 移除排期
-│   │   │   │   └── sequence.post.ts # 更新排期顺序
+│   │   │   │   ├── sequence.post.ts # 更新排期顺序
+│   │   │   │   ├── song-pool.delete.ts # 从备选池移除歌曲
+│   │   │   │   ├── song-pool.get.ts   # 获取备选池列表
+│   │   │   │   └── song-pool.post.ts  # 歌曲加入备选池
 │   │   │   ├── schedule.post.ts     # 创建排期
 │   │   │   ├── semesters/           # 学期管理API
 │   │   │   │   ├── [id].delete.ts   # 删除学期

@@ -107,6 +107,18 @@ export const schedules = pgTable('Schedule', {
   index('schedule_published_date_idx').on(table.isDraft, table.playDate)
 ]);
 
+// 排期备选池表
+export const scheduleSongPool = pgTable('ScheduleSongPool', {
+  id: serial('id').primaryKey(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  songId: integer('songId').notNull().references(() => songs.id, { onDelete: 'cascade' })
+}, (table) => [
+  unique('schedule_song_pool_song_unique').on(table.songId)
+]);
+
+export type ScheduleSongPool = typeof scheduleSongPool.$inferSelect;
+export type NewScheduleSongPool = typeof scheduleSongPool.$inferInsert;
+
 // 通知表
 export const notifications = pgTable('Notification', {
   id: serial('id').primaryKey(),

@@ -13,6 +13,7 @@ import {
   playTimes,
   requestTimes,
   schedules,
+  scheduleSongPool,
   semesters,
   songBlacklists,
   songCollaborators,
@@ -186,6 +187,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(collaborationLogs)
           await db.delete(songCollaborators)
           await db.delete(songReplayRequests)
+          await db.delete(scheduleSongPool)
           await db.delete(schedules)
           await db.delete(votes)
           await db.delete(songs)
@@ -258,6 +260,7 @@ export default defineEventHandler(async (event) => {
           await db.delete(collaborationLogs)
           await db.delete(songCollaborators)
           await db.delete(songReplayRequests)
+          await db.delete(scheduleSongPool)
           await db.delete(schedules)
           await db.delete(cardCodeRedeemLogs)
           await db.delete(votes)
@@ -2016,6 +2019,34 @@ export default defineEventHandler(async (event) => {
                             // 如果不存在，创建新投票（不指定ID，让数据库自动生成）
                             await tx.insert(votes).values(voteData)
                           }
+                        }
+                        break
+
+                      case 'scheduleSongPool':
+                        // 备选池：songId 外键映射（参照 schedules 的处理模式）
+                        let validPoolSongId = record.songId
+                        const mappedPoolSongId = songIdMapping.get(record.songId)
+                        if (mappedPoolSongId) {
+                          validPoolSongId = mappedPoolSongId
+                        } else {
+                          const songExists = await tx
+                            .select()
+                            .from(songs)
+                            .where(eq(songs.id, record.songId))
+                            .limit(1)
+                          if (songExists.length === 0) {
+                            console.warn(`备选池记录的歌曲ID ${record.songId} 不存在，跳过此记录`)
+                            break
+                          }
+                        }
+                        const poolData = {
+                          songId: validPoolSongId,
+                          createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
+                        }
+                        if (mode === 'merge') {
+                          await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing()
+                        } else {
+                          await tx.insert(scheduleSongPool).values(poolData)
                         }
                         break
 
