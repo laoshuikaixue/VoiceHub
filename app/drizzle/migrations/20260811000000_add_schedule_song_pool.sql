@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "ScheduleSongPool" (
   "id" serial PRIMARY KEY,
   "createdAt" timestamp DEFAULT now() NOT NULL,
   "songId" integer NOT NULL REFERENCES "Song" ("id") ON DELETE CASCADE,
-  "addedBy" integer REFERENCES "Users" ("id") ON DELETE SET NULL
+  "addedBy" integer REFERENCES "User" ("id") ON DELETE SET NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "schedule_song_pool_song_unique" ON "ScheduleSongPool" ("songId");

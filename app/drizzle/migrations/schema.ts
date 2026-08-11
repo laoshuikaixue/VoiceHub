@@ -63,6 +63,13 @@ export const schedule = pgTable("Schedule", {
 	replayRequestId: integer(),
 });
 
+export const scheduleSongPool = pgTable("ScheduleSongPool", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp().defaultNow().notNull(),
+	songId: integer().notNull(),
+	addedBy: integer(),
+});
+
 export const notificationSettings = pgTable("NotificationSettings", {
 	id: serial().primaryKey().notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),

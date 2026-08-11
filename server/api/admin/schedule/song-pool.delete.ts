@@ -1,6 +1,6 @@
 import { getQuery } from 'h3'
 import { db } from '~/drizzle/db'
-import { scheduleSongPool } from '~/drizzle/schema'
+import { scheduleSongPool, songs } from '~/drizzle/schema'
 import { inArray, count } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'

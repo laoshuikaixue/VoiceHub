@@ -3258,13 +3258,33 @@ const confirmAutoSchedule = () => {
   const confirmed = autoScheduleResult.value.songs.filter((song) =>
     candidateIds.has(song.id)
   )
-  for (const song of confirmed) {
-    addSongToSchedule(song)
+  const baseId = Date.now()
+  let appliedCount = 0
+  let appliedTotalSec = 0
+  for (let i = 0; i < confirmed.length; i++) {
+    const song = confirmed[i]
+    const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
+    if (existingIndex !== -1) continue
+
+    const newSchedule = {
+      id: baseId + i,
+      replayRequestId: song.replayRequestId || null,
+      song,
+      playDate: selectedDate.value,
+      sequence: localScheduledSongs.value.length + 1,
+      isNew: true,
+      isLocalOnly: true
+    }
+    scheduledSongIds.value.add(song.id)
+    setSongScheduledFlag(song.id, true)
+    localScheduledSongs.value.push(newSchedule)
+    hasChanges.value = true
+    appliedCount++
+    appliedTotalSec += song.durationSeconds
   }
-  if (confirmed.length > 0 && window.$showNotification) {
-    const totalSec = confirmed.reduce((sum, song) => sum + song.durationSeconds, 0)
+  if (appliedCount > 0 && window.$showNotification) {
     window.$showNotification(
-      locale.value.messages.confirmAutoScheduleApplied(confirmed.length, formatDuration(totalSec)),
+      locale.value.messages.confirmAutoScheduleApplied(appliedCount, formatDuration(appliedTotalSec)),
       'success'
     )
   }
