@@ -51,5 +51,5 @@ export default defineEventHandler(async (event) => {
     }
   }).filter(Boolean)
 
-  return { pool, count: pool.length }
+  return { pool, count: pool.length } // 有效记录数（已过滤掉歌曲被删除的孤立记录）
 })

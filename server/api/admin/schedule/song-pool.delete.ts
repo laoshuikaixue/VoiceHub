@@ -35,5 +35,5 @@ export default defineEventHandler(async (event) => {
   }
 
   const result = await db.delete(scheduleSongPool).where(inArray(scheduleSongPool.songId, songIds)).returning()
-  return { ok: true, removed: result.length, total: await fetchPoolCount() }
+  return { ok: true, removed: result.length, total: await fetchPoolCount() } // 含孤立记录，与 GET 的有效计数可能不一致
 })

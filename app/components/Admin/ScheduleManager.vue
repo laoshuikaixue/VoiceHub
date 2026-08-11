@@ -357,9 +357,9 @@
                     ? 'bg-warning-5 border border-warning-30'
                     : 'bg-bg-secondary border border-border-secondary-50 hover:border-border-tertiary'
                 ]"
-                :draggable="activeTab !== 'pool'"
-                @dragend="activeTab !== 'pool' && dragEnd"
-                @dragstart="activeTab !== 'pool' && dragStart($event, song)"
+                :draggable="true"
+                @dragend="dragEnd"
+                @dragstart="dragStart($event, song)"
                 @touchend="handleTouchEnd"
                 @touchmove="handleTouchMove"
                 @touchstart="handleTouchStart($event, song, 'song')"
@@ -449,14 +449,6 @@
                         v-if="song.durationSeconds"
                         class="text-text-disabled shrink-0"
                       >{{ formatDuration(song.durationSeconds) }}</span>
-                      <button
-                        class="ml-auto p-0.5 rounded text-text-disabled hover:text-primary transition-colors shrink-0"
-                        :title="locale.refreshDuration"
-                        :disabled="refreshingDuration[song.id]"
-                        @click.stop="refreshDuration(song)"
-                      >
-                        <RefreshCcw class="w-3 h-3" :class="{ 'animate-spin': refreshingDuration[song.id] }" />
-                      </button>
                     </div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
                       <span>{{ song.requester }}</span>
@@ -513,15 +505,6 @@
                       <FolderPlus class="w-3.5 h-3.5" />
                     </button>
 
-                    <!-- 备选池：加入排期按钮 -->
-                    <button
-                      v-if="activeTab === 'pool'"
-                      class="flex items-center justify-center p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
-                      @click.stop="addSongToSchedule(song)"
-                    >
-                      <Plus class="w-5 h-5" />
-                    </button>
-
                     <!-- 备选池：移除按钮（桌面） -->
                     <button
                       v-if="activeTab === 'pool'"
@@ -541,6 +524,16 @@
                     >
                       <Trash2 v-if="activeTab === 'pool'" class="w-5 h-5" />
                       <Plus v-else class="w-5 h-5" />
+                    </button>
+
+                    <!-- 刷新时长按钮 -->
+                    <button
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary transition-colors"
+                      :title="locale.refreshDuration"
+                      :disabled="refreshingDuration[song.id]"
+                      @click.stop="refreshDuration(song)"
+                    >
+                      <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[song.id] }" />
                     </button>
 
                     <!-- 菜单按钮 -->
@@ -846,17 +839,8 @@
                         v-if="schedule.song.durationSeconds"
                         class="text-text-disabled shrink-0"
                       >{{ formatDuration(schedule.song.durationSeconds) }}</span>
-                      <button
-                        class="ml-auto p-0.5 rounded text-text-disabled hover:text-primary transition-colors shrink-0"
-                        :title="locale.refreshDuration"
-                        :disabled="refreshingDuration[schedule.song.id]"
-                        @click.stop="refreshDuration(schedule.song)"
-                      >
-                        <RefreshCcw class="w-3 h-3" :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }" />
-                      </button>
                     </div>
                     <div class="text-[10px] text-text-tertiary truncate flex items-center gap-1">
-                      <!-- 显示申请人或投稿人 -->
                       <span
                         v-if="schedule.replayRequestId != null"
                         :title="
@@ -912,6 +896,16 @@
                       @click.stop="removeSongFromSchedule(schedule)"
                     >
                       <Minus class="w-5 h-5" />
+                    </button>
+
+                    <!-- 刷新时长按钮 -->
+                    <button
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-primary transition-colors"
+                      :title="locale.refreshDuration"
+                      :disabled="refreshingDuration[schedule.song.id]"
+                      @click.stop="refreshDuration(schedule.song)"
+                    >
+                      <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }" />
                     </button>
 
                     <div
@@ -1593,18 +1587,19 @@ const handlePlaylistFilterApply = async (playlistIds, playlistTracks = {}, playl
     trackIds.forEach((t) => {
       newTrackIds.add(t)
       if (!newNamesMap[t]) {
-        newNamesMap[t] = []
+        newNamesMap[t] = new Set()
       }
-      if (!newNamesMap[t].includes(playlistName)) {
-        newNamesMap[t].push(playlistName)
-      }
+      newNamesMap[t].add(playlistName)
     })
   })
 
   await Promise.all(fetchPromises)
 
   playlistFilterTrackIds.value = newTrackIds
-  playlistNamesMap.value = newNamesMap
+  playlistNamesMap.value = {}
+  Object.keys(newNamesMap).forEach((key) => {
+    playlistNamesMap.value[key] = Array.from(newNamesMap[key])
+  })
 }
 
 // 音频播放器
@@ -2995,6 +2990,9 @@ const autoSchedule = (direction, candidates) => {
     return { songs: [], totalDuration: 0, diff: 0, absDiff: 0 }
   }
 
+  // 建立 id → song 的 Map，避免随机路径中 O(n²) 查找
+  const songMap = new Map(filteredCandidates.map((s) => [s.id, s]))
+
   const runGreedy = (sorted) => {
     const result = []
     let total = 0
@@ -3033,9 +3031,16 @@ const autoSchedule = (direction, candidates) => {
     const j = Math.floor(Math.random() * (i + 1))
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
-  const r2 = runGreedy(shuffled.map((id) => filteredCandidates.find((s) => s.id === id)))
+  const r2 = runGreedy(shuffled.map((id) => songMap.get(id)).filter(Boolean))
 
-  const pick = r1.absDiff < r2.absDiff ? r1 : r2
+  // tiebreaker：absDiff 相同时优先取歌曲数较多的结果
+  const pick = r1.absDiff < r2.absDiff
+    ? r1
+    : r1.absDiff > r2.absDiff
+      ? r2
+      : r1.songs.length >= r2.songs.length
+        ? r1
+        : r2
   return pick
 }
 
@@ -3334,34 +3339,7 @@ const dropToSequence = async (event) => {
     const dragData = JSON.parse(data)
 
     if (dragData.type === 'add-to-schedule') {
-      const songId = parseInt(dragData.songId)
-      const isReplayRequest = dragData.replayRequestId != null
-      let song = isReplayRequest
-        ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
-        : songs.value.find((s) => s.id === songId)
-      if (!song) {
-        song = replayRequests.value.find((s) => s.id === songId)
-      }
-
-      if (!song) return
-
-      const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
-      if (existingIndex !== -1) return
-
-      const newSchedule = {
-        id: Date.now(),
-        replayRequestId: dragData.replayRequestId || song.replayRequestId || null,
-        song: song,
-        playDate: selectedDate.value, // 直接使用日期字符串
-        sequence: localScheduledSongs.value.length + 1,
-        isNew: true,
-        isLocalOnly: true
-      }
-
-      scheduledSongIds.value.add(songId)
-      setSongScheduledFlag(songId, true)
-      localScheduledSongs.value.push(newSchedule)
-      hasChanges.value = true
+      addSongToScheduleFromDrag(event)
     }
   } catch (err) {
     console.error('处理拖放失败:', err)
@@ -3375,7 +3353,6 @@ const dropReorder = async (event, dropIndex) => {
   try {
     const data = event.dataTransfer.getData('text/plain')
     if (!data) return
-
     const dragData = JSON.parse(data)
 
     if (dragData.type === 'reorder-schedule' && draggedSchedule.value) {
@@ -3395,42 +3372,7 @@ const dropReorder = async (event, dropIndex) => {
       localScheduledSongs.value = newOrder
       hasChanges.value = true
     } else if (dragData.type === 'add-to-schedule') {
-      // 处理从左侧拖到特定位置
-      const songId = parseInt(dragData.songId)
-      const isReplayRequest = dragData.replayRequestId != null
-      let song = isReplayRequest
-        ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
-        : songs.value.find((s) => s.id === songId)
-      if (!song) {
-        song = replayRequests.value.find((s) => s.id === songId)
-      }
-
-      if (!song) return
-
-      const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
-      if (existingIndex !== -1) return
-
-      const newSchedule = {
-        id: Date.now(),
-        replayRequestId: dragData.replayRequestId || song.replayRequestId || null,
-        song: song,
-        playDate: selectedDate.value, // 直接使用日期字符串
-        sequence: dropIndex + 1,
-        isNew: true
-      }
-
-      scheduledSongIds.value.add(songId)
-      setSongScheduledFlag(songId, true)
-
-      const newOrder = [...localScheduledSongs.value]
-      newOrder.splice(dropIndex, 0, newSchedule)
-
-      newOrder.forEach((item, index) => {
-        item.sequence = index + 1
-      })
-
-      localScheduledSongs.value = newOrder
-      hasChanges.value = true
+      insertSongToScheduleAt(event, dropIndex)
     }
   } catch (err) {
     console.error('处理重排序失败:', err)
@@ -3443,6 +3385,103 @@ const dropReorder = async (event, dropIndex) => {
 const setSongScheduledFlag = (songId, scheduled) => {
   const songInList = songs.value.find((s) => s.id === songId)
   if (songInList) songInList.scheduled = scheduled
+}
+
+// 从拖拽数据中查找歌曲（优先查 songs/replayRequests，再回退到 pool）
+const findSongFromDragData = (dragData) => {
+  const songId = parseInt(dragData.songId)
+  const isReplayRequest = dragData.replayRequestId != null
+  let song = isReplayRequest
+    ? replayRequests.value.find((s) => s.replayRequestId === dragData.replayRequestId)
+    : songs.value.find((s) => s.id === songId)
+  if (!song) {
+    song = replayRequests.value.find((s) => s.id === songId)
+  }
+  if (!song) {
+    const poolItem = songPool.value.find((p) => p.songId === songId)
+    if (poolItem) {
+      song = {
+        id: poolItem.songId,
+        title: poolItem.title,
+        artist: poolItem.artist,
+        durationSeconds: poolItem.durationSeconds || null,
+        cover: poolItem.cover || null,
+        musicId: poolItem.musicId || null,
+        musicPlatform: poolItem.musicPlatform || null,
+        requester: poolItem.requester || null,
+        requesterId: poolItem.requesterId || null,
+        requesterGrade: poolItem.requesterGrade || null,
+        requesterClass: poolItem.requesterClass || null,
+        grade: poolItem.grade || null,
+        class: poolItem["class"] || null,
+        voteCount: poolItem.voteCount || 0,
+        cardCodeId: poolItem.cardCodeId || null,
+        usedCardCode: poolItem.usedCardCode || false,
+        hasSubmissionNote: poolItem.hasSubmissionNote || false,
+        submissionNote: poolItem.submissionNote || null,
+        preferredPlayTimeId: poolItem.preferredPlayTimeId || null,
+        semester: poolItem.semester || null
+      }
+    }
+  }
+  return { song, songId }
+}
+
+// 从拖拽数据中提取歌曲并添加到排期列表末尾（共享逻辑）
+const addSongToScheduleFromDrag = (event) => {
+  const { song, songId } = findSongFromDragData(JSON.parse(event.dataTransfer.getData('text/plain')) || {})
+  if (!song) return
+
+  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
+  if (existingIndex !== -1) return
+
+  const insertIndex = localScheduledSongs.value.length
+
+  const newSchedule = {
+    id: Date.now(),
+    replayRequestId: song.replayRequestId || null,
+    song: song,
+    playDate: selectedDate.value,
+    sequence: insertIndex + 1,
+    isNew: true,
+    isLocalOnly: true
+  }
+
+  scheduledSongIds.value.add(songId)
+  setSongScheduledFlag(songId, true)
+  localScheduledSongs.value.push(newSchedule)
+  hasChanges.value = true
+}
+
+// 从拖拽数据中提取歌曲并插入到指定位置（共享逻辑）
+const insertSongToScheduleAt = (event, dropIndex) => {
+  const dragData = JSON.parse(event.dataTransfer.getData('text/plain'))
+  const { song, songId } = findSongFromDragData(dragData)
+  if (!song) return
+
+  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
+  if (existingIndex !== -1) return
+
+  const newSchedule = {
+    id: Date.now(),
+    replayRequestId: song.replayRequestId || null,
+    song: song,
+    playDate: selectedDate.value,
+    sequence: dropIndex + 1,
+    isNew: true
+  }
+
+  scheduledSongIds.value.add(songId)
+  setSongScheduledFlag(songId, true)
+
+  const newOrder = [...localScheduledSongs.value]
+  newOrder.splice(dropIndex, 0, newSchedule)
+  newOrder.forEach((item, index) => {
+    item.sequence = index + 1
+  })
+
+  localScheduledSongs.value = newOrder
+  hasChanges.value = true
 }
 
 // 添加歌曲到排期（点击方式）
@@ -3835,56 +3874,56 @@ const refreshDrafts = async () => {
 }
 
 // 保存草稿（无需确认）
+// 流程：先写入全部草稿，全部成功后再删除旧排期，避免中间失败导致数据丢失
 const saveDraft = async () => {
   loading.value = true
 
   try {
-    // 删除当天指定播出时段的所有排期和草稿
-    const existingSchedules = [...publicSchedules.value, ...drafts.value].filter((s) => {
-      if (!s.playDate) return false
-      const scheduleDateStr = getScheduleDateValue(s.playDate)
-      const isTargetDate = scheduleDateStr === selectedDate.value
+    // 收集当天指定播出时段的所有现有排期和草稿 ID
+    const existingScheduleIds = [...publicSchedules.value, ...drafts.value]
+      .filter((s) => {
+        if (!s.playDate) return false
+        const scheduleDateStr = getScheduleDateValue(s.playDate)
+        const isTargetDate = scheduleDateStr === selectedDate.value
+        if (selectedPlayTime.value) {
+          return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
+        }
+        return isTargetDate
+      })
+      .map((s) => s.id)
 
-      if (selectedPlayTime.value) {
-        return isTargetDate && s.playTimeId === parseInt(selectedPlayTime.value)
-      }
-      return isTargetDate
-    })
+    // 先写入全部草稿，全部成功后再删除旧排期
+    for (let i = 0; i < localScheduledSongs.value.length; i++) {
+      const song = localScheduledSongs.value[i]
 
-    // 删除现有的排期和草稿
-    for (const schedule of existingSchedules) {
       try {
-        await $fetch(`/api/admin/schedule/remove`, {
+        await $fetch('/api/admin/schedule/draft', {
           method: 'POST',
-          body: { scheduleId: schedule.id },
+          body: {
+            songId: song.song.id,
+            playDate: selectedDate.value,
+            sequence: i + 1,
+            playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
+            replayRequestId: song.replayRequestId || song.song?.replayRequestId || null
+          },
           ...auth.getAuthConfig()
         })
-      } catch (deleteError) {
-        console.warn('删除排期失败:', deleteError)
+      } catch (error) {
+        console.error(`创建草稿排期失败 (歌曲: ${song.song.title}):`, error)
+        throw error
       }
     }
 
-    // 如果有歌曲，创建草稿排期
-    if (localScheduledSongs.value.length > 0) {
-      for (let i = 0; i < localScheduledSongs.value.length; i++) {
-        const song = localScheduledSongs.value[i]
-
-        try {
-          await $fetch('/api/admin/schedule/draft', {
-            method: 'POST',
-            body: {
-              songId: song.song.id,
-              playDate: selectedDate.value, // 直接传递日期字符串
-              sequence: i + 1,
-              playTimeId: selectedPlayTime.value ? parseInt(selectedPlayTime.value) : null,
-              replayRequestId: song.replayRequestId || song.song?.replayRequestId || null
-            },
-            ...auth.getAuthConfig()
-          })
-        } catch (error) {
-          console.error(`创建草稿排期失败 (歌曲: ${song.song.title}):`, error)
-          throw error
-        }
+    // 全部写入成功后，删除旧排期和草稿
+    for (const scheduleId of existingScheduleIds) {
+      try {
+        await $fetch(`/api/admin/schedule/remove`, {
+          method: 'POST',
+          body: { scheduleId },
+          ...auth.getAuthConfig()
+        })
+      } catch (deleteError) {
+        console.warn('删除旧排期失败:', deleteError)
       }
     }
 

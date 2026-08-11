@@ -63,5 +63,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return { added, skipped, total: await fetchPoolCount() }
+  return { added, skipped, total: await fetchPoolCount() } // 含孤立记录，与 GET 的有效计数可能不一致
 })

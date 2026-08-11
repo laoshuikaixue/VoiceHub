@@ -25,6 +25,7 @@ import {
   userStatusLogs,
   votes
 } from '~/drizzle/schema'
+import { inArray } from 'drizzle-orm'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -181,14 +182,17 @@ export default defineEventHandler(async (event) => {
       scheduleSongPool: {
         query: async () => {
           const poolData = await db.select().from(scheduleSongPool)
+          if (poolData.length === 0) return []
+          const poolSongIds = poolData.map((row) => row.songId)
           const songsData = await db.select({
             id: songs.id,
             title: songs.title,
             artist: songs.artist
-          }).from(songs)
+          }).from(songs).where(inArray(songs.id, poolSongIds))
+          const songsMap = new Map(songsData.map((s) => [s.id, s]))
           return poolData.map((row) => ({
             ...row,
-            song: songsData.find((song) => song.id === row.songId)
+            song: songsMap.get(row.songId) || null
           }))
         },
         description: '排期备选池'

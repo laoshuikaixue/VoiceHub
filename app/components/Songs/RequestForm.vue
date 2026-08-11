@@ -3062,14 +3062,15 @@ const handleLoginRedirect = async () => {
   await navigateTo(`/login?redirect=${encodeURIComponent('/?tab=request')}`)
 }
 
-// 归一化时长到秒（网易云返回毫秒，其余返回秒）
-const normalizeDurationToSeconds = (duration) => {
+// 归一化时长到秒（网易云返回毫秒，其余平台返回秒）
+const normalizeDurationToSeconds = (duration, actualMusicPlatform) => {
   if (!duration) return null
   const d = Number(duration)
   if (!isFinite(d) || d <= 0) return null
-  // 网易云返回毫秒（典型值 180000ms = 180s），其余平台返回秒
-  // 阈值 60000 确保 1 分钟以内的歌曲不被误判
-  return d > 60000 ? Math.floor(d / 1000) : Math.floor(d)
+  // 网易云详情接口返回毫秒，其余平台返回秒
+  return actualMusicPlatform === 'netease' || actualMusicPlatform === 'netease-podcast'
+    ? Math.floor(d / 1000)
+    : Math.floor(d)
 }
 
 // 提交选中的歌曲
@@ -3294,7 +3295,7 @@ const submitSong = async (result, options = {}) => {
       cover: selectedCover.value,
       musicPlatform: result.actualMusicPlatform || result.musicPlatform || platform.value, // 优先使用搜索结果的实际平台来源
       musicId: result.musicId ? String(result.musicId) : null,
-      durationSeconds: normalizeDurationToSeconds(result.duration),
+      durationSeconds: normalizeDurationToSeconds(result.duration, result.actualMusicPlatform || result.musicPlatform),
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id),
