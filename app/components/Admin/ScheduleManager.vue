@@ -1132,12 +1132,54 @@
         </button>
       </div>
       <div class="p-6 space-y-4">
-        <div class="text-xs text-text-tertiary">{{ locale.currentDate(selectedDate) }}</div>
-        <input
-          v-model="copyTargetDate"
-          class="w-full bg-bg-primary border border-border-secondary rounded-xl px-4 py-3 text-text-primary focus:outline-none focus:border-primary transition-colors"
-          type="date"
-        />
+        <div class="space-y-3">
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
+              {{ locale.copyDateSourceRange }}
+            </div>
+            <div class="space-y-1.5">
+              <div class="gap-3 flex items-center">
+                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
+                <input
+                  v-model="copyFromStart"
+                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                  type="date"
+                />
+              </div>
+              <div class="gap-3 flex items-center">
+                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
+                <input
+                  v-model="copyFromEnd"
+                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                  type="date"
+                />
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2">
+              {{ locale.copyDateTargetRange }}
+            </div>
+            <div class="space-y-1.5">
+              <div class="gap-3 flex items-center">
+                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeStart }}</span>
+                <input
+                  v-model="copyToStart"
+                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                  type="date"
+                />
+              </div>
+              <div class="gap-3 flex items-center">
+                <span class="text-[9px] text-text-disabled w-16 shrink-0 uppercase tracking-wider">{{ locale.copyDateRangeEnd }}</span>
+                <input
+                  v-model="copyToEnd"
+                  class="flex-1 bg-bg-primary border border-border-secondary rounded-xl px-3 py-2.5 text-text-primary focus:outline-none focus:border-primary transition-colors"
+                  type="date"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="flex gap-3">
           <button
             class="flex-1 py-3 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-bold rounded-xl transition-colors uppercase tracking-wider"
@@ -1791,7 +1833,10 @@ const poolLoading = ref(false)
 const showMoveDateDialog = ref(false)
 const moveTargetDate = ref('')
 const showCopyDateDialog = ref(false)
-const copyTargetDate = ref('')
+const copyFromStart = ref('')
+const copyFromEnd = ref('')
+const copyToStart = ref('')
+const copyToEnd = ref('')
 const submissionRemarkDialog = ref({
   show: false,
   songId: null,
@@ -3825,8 +3870,31 @@ const openCopyDateDialog = () => {
     return
   }
 
-  copyTargetDate.value = selectedDate.value
+  const baseDate = selectedDate.value
+  const nextWeek = addDaysToString(baseDate, 7)
+  copyFromStart.value = baseDate
+  copyFromEnd.value = baseDate
+  copyToStart.value = nextWeek
+  copyToEnd.value = nextWeek
   showCopyDateDialog.value = true
+}
+
+const addDaysToString = (dateStr, days) => {
+  const parsed = parseDateValue(dateStr)
+  if (!parsed) return dateStr
+  const match = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateStr)
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + days))
+  const pad = (n) => (n < 10 ? '0' + n : '' + n)
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`
+}
+
+const getDaysBetween = (startStr, endStr) => {
+  const startMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(startStr)
+  const endMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(endStr)
+  if (!startMatch || !endMatch) return -1
+  const start = new Date(Date.UTC(Number(startMatch[1]), Number(startMatch[2]) - 1, Number(startMatch[3]))).getTime()
+  const end = new Date(Date.UTC(Number(endMatch[1]), Number(endMatch[2]) - 1, Number(endMatch[3]))).getTime()
+  return Math.round((end - start) / 86400000)
 }
 
 const confirmMoveDate = async () => {
@@ -3921,45 +3989,56 @@ const confirmMoveDate = async () => {
 }
 
 const confirmCopyDate = async () => {
-  const targetDate = copyTargetDate.value.trim()
+  const fromStart = copyFromStart.value.trim()
+  const fromEnd = copyFromEnd.value.trim()
+  const toStart = copyToStart.value.trim()
+  const toEnd = copyToEnd.value.trim()
 
-  if (!parseDateValue(targetDate)) {
+  if (!parseDateValue(fromStart) || !parseDateValue(fromEnd) || !parseDateValue(toStart) || !parseDateValue(toEnd)) {
     if (window.$showNotification) {
       window.$showNotification(
-        callLocale('errors.invalidTargetDate', '目标日期无效，请使用 YYYY-MM-DD 格式并确保日期有效'),
+        callLocale('errors.invalidTargetDate', '日期无效，请使用 YYYY-MM-DD 格式并确保日期有效'),
         'error'
       )
     }
     return
   }
 
-  if (targetDate === selectedDate.value) {
+  const sourceSpan = getDaysBetween(fromStart, fromEnd)
+  const targetSpan = getDaysBetween(toStart, toEnd)
+
+  if (sourceSpan < 0 || targetSpan < 0) {
     if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.sameTargetDate, 'warning')
+      window.$showNotification(locale.value.errors.invalidDateRange, 'error')
     }
     return
   }
 
-  const sourceDate = selectedDate.value
-  const sourceSchedules = [...publicSchedules.value, ...drafts.value].filter((schedule) => {
-    if (!schedule.playDate) return false
-    return getScheduleDateValue(schedule.playDate) === sourceDate
-  })
+  const sourceDays = sourceSpan + 1
+  const targetDays = targetSpan + 1
 
-  if (sourceSchedules.length === 0) {
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.errors.noCopyableSongs, 'warning')
+  for (let i = 0; i < targetDays; i++) {
+    const srcDay = i % sourceDays
+    const srcDate = addDaysToString(fromStart, srcDay)
+    const tgtDate = addDaysToString(toStart, i)
+    if (srcDate === tgtDate) {
+      if (window.$showNotification) {
+        window.$showNotification(locale.value.errors.targetDateConflicts, 'warning')
+      }
+      return
     }
-    return
   }
 
   confirmDialogTitle.value = locale.value.copyDateTitle
   confirmDialogMessage.value = callLocale(
     'confirmations.copyDateMessage',
-    `确定将 ${sourceDate} 的所有 ${sourceSchedules.length} 首歌曲复制到 ${targetDate} 吗？原排期将保留，目标日期将生成新排期。`,
-    sourceDate,
-    sourceSchedules.length,
-    targetDate
+    `确定将 ${fromStart} 至 ${fromEnd} 共 ${sourceDays} 天的排期复制到 ${toStart} 至 ${toEnd} 共 ${targetDays} 天吗？源排期将循环复用至填满目标区间。`,
+    fromStart,
+    fromEnd,
+    sourceDays,
+    toStart,
+    toEnd,
+    targetDays
   )
   confirmDialogType.value = 'warning'
   confirmDialogConfirmText.value = locale.value.confirmations.copyDateConfirm
@@ -3968,29 +4047,42 @@ const confirmCopyDate = async () => {
   confirmAction.value = async () => {
     loading.value = true
     try {
-      const result = await $fetch('/api/admin/schedule/copy', {
-        method: 'POST',
-        body: {
-          fromDate: sourceDate,
-          toDate: targetDate
-        },
-        ...auth.getAuthConfig()
-      })
+      let totalCopied = 0
+
+      for (let i = 0; i < targetDays; i++) {
+        const srcDay = i % sourceDays
+        const srcDate = addDaysToString(fromStart, srcDay)
+        const tgtDate = addDaysToString(toStart, i)
+
+        const result = await $fetch('/api/admin/schedule/copy', {
+          method: 'POST',
+          body: {
+            fromDate: srcDate,
+            toDate: tgtDate
+          },
+          ...auth.getAuthConfig()
+        })
+
+        if (result?.copiedCount > 0) {
+          totalCopied += result.copiedCount
+        }
+      }
 
       await loadData()
       updateLocalScheduledSongs()
 
       if (window.$showNotification) {
         window.$showNotification(
-          result?.copiedCount > 0
+          totalCopied > 0
             ? callLocale(
                 'messages.copyDateSuccess',
-                `已复制 ${result.copiedCount} 首歌曲到 ${targetDate}`,
-                result.copiedCount,
-                targetDate
+                `已逐日复制 ${totalCopied} 首歌曲至 ${toStart} ~ ${toEnd}`,
+                totalCopied,
+                toStart,
+                toEnd
               )
             : locale.value.errors.noCopyableSongs,
-          result?.copiedCount > 0 ? 'success' : 'warning'
+          totalCopied > 0 ? 'success' : 'warning'
         )
       }
     } catch (error) {
