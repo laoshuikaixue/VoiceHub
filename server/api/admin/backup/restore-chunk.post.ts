@@ -1208,7 +1208,7 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'scheduleSongPool': {
-            // songId 外键映射（参照 schedules 处理模式）
+            // songId + addedBy 外键映射
             let validPoolSongId = record.songId
             const mappedPoolSongId = songIdMapping.get(record.songId)
             if (mappedPoolSongId) {
@@ -1225,8 +1225,25 @@ export default defineEventHandler(async (event) => {
                 break
               }
             }
+            let validPoolAddedBy = record.addedBy || null
+            if (validPoolAddedBy) {
+              const mappedAddedBy = userIdMapping.get(validPoolAddedBy)
+              if (mappedAddedBy) {
+                validPoolAddedBy = mappedAddedBy
+              } else {
+                const userExists = await tx
+                  .select()
+                  .from(users)
+                  .where(eq(users.id, validPoolAddedBy))
+                  .limit(1)
+                if (userExists.length === 0) {
+                  validPoolAddedBy = null
+                }
+              }
+            }
             const poolData: any = {
               songId: validPoolSongId,
+              addedBy: validPoolAddedBy,
               createdAt: record.createdAt ? new Date(record.createdAt) : new Date()
             }
             await tx.insert(scheduleSongPool).values(poolData).onConflictDoNothing()

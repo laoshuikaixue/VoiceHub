@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
     // 获取系统设置
     const systemSettingsData = await getSystemSettingsCached()
 
-    // 超级管理员和管理员不受投稿限制
-    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    // 超级管理员、管理员、歌曲管理员不受投稿限制
+    const isAdmin = ['SUPER_ADMIN', 'ADMIN', 'SONG_ADMIN'].includes(user.role)
 
     // 基础返回结构
     const status: any = {

@@ -1,5 +1,5 @@
 import { db } from '~/drizzle/db'
-import { songs, scheduleSongPool } from '~/drizzle/schema'
+import { songs, scheduleSongPool, users } from '~/drizzle/schema'
 import { inArray } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -20,13 +20,22 @@ export default defineEventHandler(async (event) => {
     return { pool: [], count: 0 }
   }
 
-  const songIds = poolRows.map((row) => row.songId)
-  const songsRows = await db.select().from(songs).where(inArray(songs.id, songIds))
+  const poolSongIds = poolRows.map((row) => row.songId)
+  const songsRows = await db.select().from(songs).where(inArray(songs.id, poolSongIds))
   const songsMap = new Map(songsRows.map((s) => [s.id, s]))
+
+  // 批量加载添加者信息
+  const addedByIds = [...new Set(poolRows.map((row) => row.addedBy).filter(Boolean))]
+  const addedByUsersMap = new Map()
+  if (addedByIds.length > 0) {
+    const userRows = await db.select().from(users).where(inArray(users.id, addedByIds))
+    userRows.forEach((u) => addedByUsersMap.set(u.id, u))
+  }
 
   const pool = poolRows.map((row) => {
     const song = songsMap.get(row.songId)
     if (!song) return null
+    const addedByUser = row.addedBy ? addedByUsersMap.get(row.addedBy) : null
     return {
       poolId: row.id,
       songId: row.songId,
@@ -47,6 +56,8 @@ export default defineEventHandler(async (event) => {
       usedCardCode: song.usedCardCode,
       hasSubmissionNote: song.submissionNote ? true : false,
       submissionNote: song.submissionNote,
+      addedBy: row.addedBy,
+      addedByName: addedByUser?.name || addedByUser?.username || null,
       createdAt: row.createdAt
     }
   }).filter(Boolean)

@@ -463,6 +463,12 @@
                       >
                         {{ callLocale('preferredPlayTime', `期望: ${getPlayTimeName(song.preferredPlayTimeId)}`, getPlayTimeName(song.preferredPlayTimeId)) }}
                       </span>
+                      <span
+                        v-if="activeTab === 'pool' && song.addedByName"
+                        class="ml-1 px-1.5 py-0.5 bg-primary-10 text-primary rounded text-[9px] border border-primary-20 whitespace-nowrap"
+                      >
+                        {{ locale.addedBy }} {{ song.addedByName }}
+                      </span>
                     </div>
                   </div>
 
@@ -515,15 +521,44 @@
                       <Trash2 class="w-3.5 h-3.5" />
                     </button>
 
-                    <!-- 移动端添加按钮 -->
+                    <!-- 移动端加入备选池按钮 -->
+                    <button
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-info-10 text-info hover:bg-info-20 active:scale-95 transition-all flex-shrink-0"
+                      v-if="activeTab === 'normal' || activeTab === 'all'"
+                      :title="locale.addSingleToPool"
+                      @click.stop="addSingleToPool(song.id)"
+                    >
+                      <FolderPlus class="w-5 h-5" />
+                    </button>
+
+                    <!-- 备选池：加入排期按钮 -->
                     <button
                       class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
-                      :class="{ 'bg-error-20 text-error hover:bg-error-30': activeTab === 'pool' }"
-                      :title="activeTab === 'pool' ? locale.removeFromPool : ''"
-                      @click.stop="activeTab === 'pool' ? removeFromPool(song.songId) : addSongToSchedule(song)"
+                      v-if="activeTab === 'pool'"
+                      :title="locale.addToSchedule"
+                      @click.stop="addSongToSchedule(song)"
                     >
-                      <Trash2 v-if="activeTab === 'pool'" class="w-5 h-5" />
-                      <Plus v-else class="w-5 h-5" />
+                      <Plus class="w-5 h-5" />
+                    </button>
+
+                    <!-- 备选池：移除按钮（移动端） -->
+                    <button
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0"
+                      v-if="activeTab === 'pool'"
+                      :title="locale.removeFromPool"
+                      @click.stop="removeFromPool(song.songId)"
+                    >
+                      <Trash2 class="w-5 h-5" />
+                    </button>
+
+                    <!-- 非备选池：加入排期按钮（移动端） -->
+                    <button
+                      class="flex items-center justify-center lg:hidden p-2 rounded-full bg-primary-hover-20 text-primary hover:bg-primary-hover-30 active:scale-95 transition-all flex-shrink-0"
+                      v-if="activeTab !== 'pool'"
+                      :title="locale.addToSchedule"
+                      @click.stop="addSongToSchedule(song)"
+                    >
+                      <Plus class="w-5 h-5" />
                     </button>
 
                     <!-- 刷新时长按钮 -->
@@ -537,11 +572,13 @@
                     </button>
 
                     <!-- 菜单按钮 -->
-                    <div
-                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors"
+                    <button
+                      type="button"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-text-tertiary transition-colors"
+                      @click="openContextMenu($event, 'left', song)"
                     >
                       <MoreVertical class="w-4 h-4" />
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -908,11 +945,13 @@
                       <RefreshCcw class="w-3.5 h-3.5" :class="{ 'animate-spin': refreshingDuration[schedule.song.id] }" />
                     </button>
 
-                    <div
-                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled cursor-grab active:cursor-grabbing hover:text-text-tertiary transition-colors"
+                    <button
+                      type="button"
+                      class="p-1.5 rounded-lg bg-bg-primary border border-border-secondary text-text-disabled hover:text-text-tertiary transition-colors"
+                      @click="openContextMenu($event, 'right', schedule)"
                     >
                       <MoreVertical class="w-4 h-4" />
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -965,7 +1004,16 @@
               <Trash2 class="w-5 h-5" />
             </button>
             <button
-              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-info rounded-xl flex items-center justify-center active:scale-95 transition-all"
+              v-if="activeTab === 'normal' || activeTab === 'all'"
+              :title="locale.addAllPending"
+              @click="moveAllToPool"
+            >
+              <FolderPlus class="w-5 h-5" />
+            </button>
+            <button
+              class="w-11 h-11 shrink-0 bg-bg-secondary border border-border-secondary text-primary rounded-xl flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!canPublish"
               :title="locale.publishOnly"
               @click="publishSchedule"
             >
@@ -1373,6 +1421,78 @@
       </div>
     </div>
   </div>
+
+  <!-- 上下文菜单 -->
+  <div
+    v-if="contextMenuOpen"
+    class="fixed inset-0 z-50"
+    @click="contextMenuOpen = false"
+  >
+    <div
+      class="absolute bg-bg-secondary border border-border-secondary rounded-xl shadow-2xl p-1 min-w-[130px]"
+      :style="contextMenuPos"
+      @click.stop
+    >
+      <button
+        class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+        @click="playSong(contextMenuSong); contextMenuOpen = false"
+      >
+        <Play class="w-3 h-3" />
+        <span>{{ locale.playSong }}</span>
+      </button>
+      <template v-if="contextMenuSide === 'left'">
+        <button
+          v-if="activeTab === 'normal' || activeTab === 'all'"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          @click="addSingleToPool(contextMenuSong.id); contextMenuOpen = false"
+        >
+          <FolderPlus class="w-3 h-3" />
+          <span>{{ locale.addSingleToPool }}</span>
+        </button>
+        <button
+          v-if="activeTab === 'normal' || activeTab === 'all' || activeTab === 'replay'"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
+        >
+          <PlaySquare class="w-3 h-3" />
+          <span>{{ locale.addToSchedule }}</span>
+        </button>
+        <button
+          v-if="activeTab === 'pool'"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-primary hover:bg-bg-primary transition-colors"
+          @click="addSongToSchedule(contextMenuSong); contextMenuOpen = false"
+        >
+          <PlaySquare class="w-3 h-3" />
+          <span>{{ locale.addToSchedule }}</span>
+        </button>
+        <button
+          v-if="activeTab === 'pool'"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors"
+          @click="removeFromPool(contextMenuSong.songId || contextMenuSong.id); contextMenuOpen = false"
+        >
+          <Trash2 class="w-3 h-3" />
+          <span>{{ locale.removeFromPool }}</span>
+        </button>
+      </template>
+      <template v-if="contextMenuSide === 'right'">
+        <button
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-error hover:bg-error-10 transition-colors"
+          @click="removeSongFromSchedule(contextMenuSong); contextMenuOpen = false"
+        >
+          <Trash2 class="w-3 h-3" />
+          <span>{{ locale.removeFromSchedule }}</span>
+        </button>
+        <button
+          v-if="contextMenuSong.isDraft"
+          class="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg text-[11px] font-bold text-success hover:bg-success-10 transition-colors"
+          @click="publishSingleDraft(contextMenuSong); contextMenuOpen = false"
+        >
+          <Send class="w-3 h-3" />
+          <span>{{ locale.publishThisDraft }}</span>
+        </button>
+      </template>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -1385,6 +1505,7 @@ import {
   Download,
   FileBadge,
   PlaySquare,
+  Play,
   ChevronDown,
   ListMusic,
   Filter,
@@ -1631,6 +1752,32 @@ const refreshingAllDurations = ref({ running: false, progress: '', success: 0, f
 const refreshingAutoCandidates = ref({ running: false, progress: '', success: 0, fail: 0 })
 // 自动排期状态
 const showAutoScheduleDialog = ref(false)
+const contextMenuOpen = ref(false)
+const contextMenuSide = ref('left')
+const contextMenuSong = ref(null)
+const contextMenuPos = ref({ top: '50%', left: '50%' })
+const openContextMenu = (e, side, song) => {
+  e.stopPropagation()
+  const rect = e.currentTarget.getBoundingClientRect()
+  const menuW = 150
+  const menuH = 120
+  contextMenuSide.value = side
+  contextMenuSong.value = song
+  const vW = window.innerWidth
+  let left = rect.right + 8
+  if (left + menuW > vW) {
+    left = rect.left - menuW - 8
+  }
+  if (left < 8) left = vW - menuW - 8
+  const top = rect.bottom + 8
+  const adjustedTop = top + menuH > window.innerHeight ? top - menuH : top
+  contextMenuPos.value = {
+    top: `${adjustedTop}px`,
+    left: `${left}px`
+  }
+  contextMenuOpen.value = true
+}
+const closeContextMenu = () => { contextMenuOpen.value = false }
 const autoScheduleTargetMinutes = ref(null)
 const autoScheduleDirection = ref('under')
 

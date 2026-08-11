@@ -16,9 +16,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
-  const songId = Number(body?.songId)
+  const songId = body?.songId == null ? null : Number(body.songId)
 
-  if (!songId || !Number.isFinite(songId)) {
+  if (!Number.isFinite(songId) || songId < 1) {
     throw createApiError(400, SERVER_ERROR_CODES.SONG_INVALID_ID, '歌曲 ID 无效')
   }
 
@@ -113,8 +113,10 @@ export default defineEventHandler(async (event) => {
         }
       }
     } else if (platform === 'bilibili') {
-      // musicId 格式为 bvid:cid，需提取 bvid
-      const bvid = musicId.split(':')[0]
+      // musicId 格式为 bvid:cid 或 bvid:cid:page
+      const parts = musicId.split(':')
+      const bvid = parts[0]
+      const page = parts.length > 2 ? Number(parts[2]) : 1
       const viewResp: any = await $fetch(
         'https://api.bilibili.com/x/web-interface/view',
         {
@@ -128,7 +130,8 @@ export default defineEventHandler(async (event) => {
       )
 
       if (viewResp?.code === 0 && viewResp?.data?.pages?.length) {
-        const duration = viewResp.data.pages[0]?.duration
+        const pageIdx = page > 1 ? Math.max(0, page - 1) : 0
+        const duration = viewResp.data.pages[pageIdx]?.duration
         if (typeof duration === 'number' && duration > 0) {
           durationSeconds = Math.floor(duration)
         }

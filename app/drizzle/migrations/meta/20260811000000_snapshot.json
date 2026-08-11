@@ -1769,6 +1769,12 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "addedBy": {
+          "name": "addedBy",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1784,6 +1790,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ScheduleSongPool_addedBy_Users_id_fk": {
+          "name": "ScheduleSongPool_addedBy_Users_id_fk",
+          "tableFrom": "ScheduleSongPool",
+          "tableTo": "Users",
+          "columnsFrom": [
+            "addedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

@@ -5,9 +5,14 @@ import { inArray, count } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
+// 返回有效计数（排除歌曲已删除的孤立记录）
 const fetchPoolCount = async () => {
-  const [row] = await db.select({ count: count() }).from(scheduleSongPool)
-  return Number(row?.count ?? 0)
+  const poolRows = await db.select({ songId: scheduleSongPool.songId }).from(scheduleSongPool)
+  if (poolRows.length === 0) return 0
+  const songIds = poolRows.map((row) => row.songId)
+  const songsRows = await db.select({ id: songs.id }).from(songs).where(inArray(songs.id, songIds))
+  const validIds = new Set(songsRows.map((s) => s.id))
+  return poolRows.filter((row) => validIds.has(row.songId)).length
 }
 
 export default defineEventHandler(async (event) => {
@@ -35,5 +40,5 @@ export default defineEventHandler(async (event) => {
   }
 
   const result = await db.delete(scheduleSongPool).where(inArray(scheduleSongPool.songId, songIds)).returning()
-  return { ok: true, removed: result.length, total: await fetchPoolCount() } // 含孤立记录，与 GET 的有效计数可能不一致
+  return { ok: true, removed: result.length, total: await fetchPoolCount() }
 })
