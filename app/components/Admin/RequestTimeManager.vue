@@ -108,7 +108,7 @@
           <div class="flex items-start justify-between">
             <div
               :class="[
-                'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary text-text-tertiary transition-colors',
+                'p-3.5 rounded-2xl bg-bg-primary border border-border-secondary text-text-tertiary transition-colors flex items-center justify-center',
                 slot.enabled && !slot.past
                   ? 'text-primary border-primary-20 shadow-lg shadow-[var(--primary-glow-10)]'
                   : ''

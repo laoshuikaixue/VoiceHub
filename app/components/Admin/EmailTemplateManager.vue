@@ -165,7 +165,7 @@
               </div>
               <div class="relative group">
                 <div
-                  class="absolute right-4 top-4 p-2 rounded-lg bg-bg-secondary-50 border border-border-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute right-4 top-4 p-2 rounded-lg bg-bg-secondary-50 border border-border-secondary opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                 >
                   <Code :size="14" class="text-text-tertiary" />
                 </div>

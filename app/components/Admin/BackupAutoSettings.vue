@@ -165,7 +165,7 @@
                   <code class="flex-1 bg-panel-bg-darkest border border-panel-bg-dark rounded-xl px-4 py-2.5 text-xs text-primary font-mono break-all select-all">
                     {{ triggerEndpointUrl }}
                   </code>
-                  <button class="px-3 py-2 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light rounded-xl transition-colors shrink-0" @click="copyToClipboard(triggerEndpointUrl)">
+                  <button class="px-3 py-2 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-muted hover:text-text-primary-light rounded-xl transition-colors shrink-0 flex items-center justify-center" @click="copyToClipboard(triggerEndpointUrl)">
                     <Copy class="w-4 h-4" />
                   </button>
                 </div>
@@ -189,7 +189,7 @@
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"type": "full"}'</code></pre>
-                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors" @click="copyCurlCommand">
+                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors flex items-center justify-center" @click="copyCurlCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -240,7 +240,7 @@ jobs:
             -H "X-API-Key: ${{ secrets.API_KEY }}" \
             -H "Content-Type: application/json" \
             -d '{"type": "full"}'</code></pre>
-                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors" @click="copyGithubAction">
+                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors flex items-center justify-center" @click="copyGithubAction">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -255,7 +255,7 @@ crontab -e
   -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"type": "full"}'</code></pre>
-                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors" @click="copyCronCommand">
+                <button class="absolute top-3 right-3 px-2 py-1.5 bg-panel-bg-dark hover:bg-panel-bg-compact text-text-tertiary hover:text-text-primary-light rounded-lg transition-colors flex items-center justify-center" @click="copyCronCommand">
                   <Copy class="w-3.5 h-3.5" />
                 </button>
               </div>

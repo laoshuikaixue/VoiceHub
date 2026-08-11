@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between p-4 bg-bg-primary-50 rounded-xl border border-border-secondary">
       <div class="flex items-center gap-3">
         <div 
-          class="p-2 rounded-lg"
+          class="p-2 rounded-lg flex items-center justify-center"
           :class="isEnabled ? 'bg-success-10 text-success' : 'bg-bg-tertiary text-text-tertiary'"
         >
           <ShieldCheck :size="20" />

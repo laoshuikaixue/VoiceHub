@@ -494,7 +494,7 @@
                     <!-- 重播模式：拒绝按钮（仅移动端） -->
                     <button
                       v-if="activeTab === 'replay'"
-                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors"
+                      class="lg:hidden p-1.5 rounded-lg bg-error-10 hover:bg-error-20 text-error border border-error-20 transition-colors flex items-center justify-center"
                       :title="locale.rejectRequest"
                       @click.stop="rejectReplayRequest(song.id)"
                     >
@@ -929,7 +929,7 @@
 
                     <!-- 移动端删除按钮 -->
                     <button
-                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0"
+                      class="lg:hidden p-2 rounded-full bg-error-20 text-error hover:bg-error-30 active:scale-95 transition-all flex-shrink-0 flex items-center justify-center"
                       @click.stop="removeSongFromSchedule(schedule)"
                     >
                       <Minus class="w-5 h-5" />

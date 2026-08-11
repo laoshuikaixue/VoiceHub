@@ -404,7 +404,7 @@ watch(
   min-height: 0;
   display: flex;
   flex-direction: column;
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text);
   overflow: hidden;
 }
 
@@ -419,14 +419,14 @@ watch(
 
 .comments-eyebrow {
   margin: 0 0 0.25rem;
-  color: var(--overlay-55);
+  color: var(--lyrics-modal-text-muted);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .comments-title {
   margin: 0;
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text);
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -440,15 +440,15 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--overlay-85);
-  background: var(--overlay-12);
+  color: var(--lyrics-modal-text-secondary);
+  background: var(--lyrics-modal-surface);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .refresh-button:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: var(--overlay-20);
+  color: var(--lyrics-modal-text);
+  background: var(--lyrics-modal-surface-strong);
 }
 
 .refresh-button:disabled {
@@ -462,7 +462,7 @@ watch(
   gap: 0.75rem;
   flex-shrink: 0;
   padding-bottom: 1rem;
-  color: var(--overlay-62);
+  color: var(--lyrics-modal-text-muted);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -486,7 +486,7 @@ watch(
 }
 
 .comments-list::-webkit-scrollbar-thumb {
-  background: var(--overlay-22);
+  background: var(--lyrics-modal-surface-strong);
   border-radius: 999px;
 }
 
@@ -494,9 +494,9 @@ watch(
   display: flex;
   gap: 0.85rem;
   padding: 1rem;
-  border: 1px solid var(--overlay-10);
+  border: 1px solid var(--lyrics-modal-surface-border);
   border-radius: 8px;
-  background: var(--overlay-8);
+  background: var(--lyrics-modal-surface);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
@@ -510,8 +510,8 @@ watch(
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--overlay-12);
-  color: var(--overlay-70);
+  background: var(--lyrics-modal-surface);
+  color: var(--lyrics-modal-text-muted);
 }
 
 .avatar img {
@@ -538,21 +538,21 @@ watch(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--overlay-88);
+  color: var(--lyrics-modal-text);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .comment-time {
   flex-shrink: 0;
-  color: var(--overlay-42);
+  color: var(--lyrics-modal-text-muted);
   font-size: 0.75rem;
   font-weight: 600;
 }
 
 .comment-content {
   margin: 0;
-  color: var(--overlay-78);
+  color: var(--lyrics-modal-text-secondary);
   font-size: 0.95rem;
   line-height: 1.65;
   white-space: pre-wrap;
@@ -563,7 +563,7 @@ watch(
   margin-top: 0.7rem;
   padding: 0.65rem 0.8rem;
   border-radius: 8px;
-  color: var(--overlay-58);
+  color: var(--lyrics-modal-text-muted);
   background: var(--surface-card-bg-soft);
   font-size: 0.82rem;
   line-height: 1.55;
@@ -575,7 +575,7 @@ watch(
   align-items: center;
   gap: 0.65rem;
   margin-top: 0.65rem;
-  color: var(--overlay-52);
+  color: var(--lyrics-modal-text-muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -595,7 +595,7 @@ watch(
 
 .liked-count:hover:not(:disabled),
 .liked-count.liked {
-  color: var(--overlay-92);
+  color: var(--lyrics-modal-text);
 }
 
 .liked-count:hover:not(:disabled) {
@@ -608,7 +608,7 @@ watch(
 }
 
 .hot-label {
-  color: var(--overlay-86);
+  color: var(--lyrics-modal-text-secondary);
 }
 
 .comments-state {
@@ -619,7 +619,7 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  color: var(--overlay-62);
+  color: var(--lyrics-modal-text-muted);
   text-align: center;
 }
 
@@ -633,8 +633,8 @@ watch(
 .load-more-button {
   border: 0;
   border-radius: 8px;
-  color: var(--text-primary);
-  background: var(--overlay-14);
+  color: var(--lyrics-modal-text);
+  background: var(--lyrics-modal-surface);
   cursor: pointer;
   font-weight: 700;
   transition: all 0.2s ease;
@@ -653,7 +653,7 @@ watch(
 
 .state-action:hover,
 .load-more-button:hover:not(:disabled) {
-  background: var(--overlay-22);
+  background: var(--lyrics-modal-surface-strong);
 }
 
 .load-more-button:disabled {

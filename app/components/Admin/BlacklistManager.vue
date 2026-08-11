@@ -107,7 +107,7 @@
           @change="() => { pagination.page = 1; loadBlacklist(); }"
         />
         <button
-          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all active:scale-95"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-disabled hover:text-primary transition-all active:scale-95 flex items-center justify-center"
           @click="loadBlacklist"
         >
           <Filter :size="18" />
@@ -242,7 +242,7 @@
       <div v-if="pagination.pages > 1" class="flex items-center justify-center gap-4 mt-8">
         <button
           :disabled="pagination.page <= 1 || loading"
-          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center"
           @click="changePage(pagination.page - 1)"
         >
           <ChevronLeft :size="20" />
@@ -254,7 +254,7 @@
         </div>
         <button
           :disabled="pagination.page >= pagination.pages || loading"
-          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+          class="p-3 bg-bg-primary border border-border-secondary rounded-lg text-text-tertiary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center"
           @click="changePage(pagination.page + 1)"
         >
           <ChevronRight :size="20" />

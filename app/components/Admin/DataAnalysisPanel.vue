@@ -54,7 +54,7 @@
         <div class="flex items-center gap-3">
           <button
             :disabled="isLoading"
-            class="p-2.5 bg-bg-secondary-50 border border-border-secondary rounded-full text-text-tertiary hover:text-text-primary transition-all group disabled:opacity-50"
+            class="p-2.5 bg-bg-secondary-50 border border-border-secondary rounded-full text-text-tertiary hover:text-text-primary transition-all group disabled:opacity-50 flex items-center justify-center"
             @click="refreshAllData"
           >
             <RefreshCw :size="18" :class="{ 'animate-spin': isLoading }" />

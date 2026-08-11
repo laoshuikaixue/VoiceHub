@@ -635,7 +635,8 @@ onBeforeUnmount(() => {
           box-sizing: border-box;
           padding-block: 0.2em;
           margin-block: -0.2em;
-          opacity: var(--yrc-opacity, 0.3);
+          /* 非当前行逐字透明度提高，保证深色背景上可读 */
+          opacity: var(--yrc-opacity, 0.45);
         }
         &.end-with-space {
           margin-right: 12px;
@@ -668,7 +669,8 @@ onBeforeUnmount(() => {
       hyphens: auto;
     }
     &.is-lrc {
-      opacity: 0.3;
+      /* 非当前行歌词：原 0.3 对比度过低 */
+      opacity: 0.46;
     }
     &.is-yrc {
       .content {
@@ -681,10 +683,10 @@ onBeforeUnmount(() => {
       }
       .tran,
       .roma {
-        opacity: 0.3;
+        opacity: 0.42;
       }
       &.is-bg {
-        opacity: 0.4;
+        opacity: 0.46;
         transform: scale(0.7);
         padding: 0px 20px;
       }
@@ -703,7 +705,7 @@ onBeforeUnmount(() => {
       transform: scale(1);
       .tran,
       .roma {
-        opacity: 0.6;
+        opacity: 0.72;
       }
       &.is-bg {
         opacity: 0.85 !important;
@@ -825,6 +827,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   font-size: 22px;
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text, #ffffff);
 }
 </style>

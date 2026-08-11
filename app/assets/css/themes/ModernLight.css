@@ -730,6 +730,20 @@
   --lyrics-modal-bg-accent-blue: rgba(167, 139, 250, 0.26);
   --lyrics-modal-bg-accent-pink: rgba(255, 88, 126, 0.2);
   --lyrics-modal-badge-menu-bg: rgba(252, 252, 250, 0.9);
+  /* 全屏播放页：背景恒为模糊暗化封面，文字/图标统一高对比暖亮色 */
+  --lyrics-modal-text: #fdfcfa;
+  --lyrics-modal-text-secondary: rgba(253, 252, 248, 0.88);
+  --lyrics-modal-text-muted: rgba(253, 252, 248, 0.68);
+  --lyrics-modal-surface: rgba(255, 255, 255, 0.1);
+  --lyrics-modal-surface-strong: rgba(255, 255, 255, 0.2);
+  --lyrics-modal-surface-border: rgba(255, 255, 255, 0.14);
+  --lyrics-modal-track: rgba(255, 255, 255, 0.22);
+  /* 无封面时的渐变兜底底色（暖调深色，保留主题暖色气质） */
+  --lyrics-modal-bg-base-start: #1f1a14;
+  --lyrics-modal-bg-base-end: #0d0b08;
+  /* 音质菜单为浅色底，文字需固定深色 */
+  --lyrics-modal-badge-menu-text: #333338;
+  --lyrics-modal-badge-menu-active-bg: #ffffff;
   --audio-player-dropdown-bg-fallback: rgba(128, 128, 128, 0.7);
   --audio-player-liquid-glass-bg-fallback: rgba(128, 128, 128, 0.2);
   /* === Overlay / 遮罩层半透明色（浅色模式 = 黑色半透明） === */
