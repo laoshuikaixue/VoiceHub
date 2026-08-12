@@ -99,7 +99,7 @@ const commonLocale = computed(() => common.value || {})
 const locale = computed(() => useSafeLocale(common.value?.scheduleForm || {}))
 const scheduleTitle = computed(() => {
   const title = locale.value?.title
-  if (typeof title === 'string') return title.replace(/{0}/g, props.song?.title || '')
+  if (typeof title === 'string') return title.replace(/\{0\}/g, props.song?.title || '')
   if (typeof title === 'function') return title(props.song?.title || '')
   return ''
 })

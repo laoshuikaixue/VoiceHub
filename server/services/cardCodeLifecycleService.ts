@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import { createError } from 'h3'
-import { cardCodeRedeemLogs, cardCodes } from '~/drizzle/schema'
+import { cardCodeRedeemLogs, cardCodes, songs } from '~/drizzle/schema'
 
 type CardCodeTransitionContext = {
   songId: number
@@ -134,8 +134,20 @@ export const releaseCardCodeAfterSongWithdrawal = async (
   const releasedAt = getTransitionTime(at)
   const current = await readCardCode(tx, cardCodeId)
   if (!current) return { changed: false, reason: 'MISSING_CARD_CODE' }
-  if (!['LOCKED', 'REDEEMED'].includes(current.status)) {
-    return { changed: false, status: current.status }
+
+  const ownedSongs = await tx
+    .select({ id: songs.id })
+    .from(songs)
+    .where(and(eq(songs.id, songId), eq(songs.cardCodeId, cardCodeId)))
+    .limit(1)
+  if (ownedSongs.length === 0) {
+    return { changed: false, reason: 'CARD_NOT_OWNED_BY_SONG', status: current.status }
+  }
+  if (current.status === 'AVAILABLE') {
+    return { changed: false, reason: 'ALREADY_RELEASED', status: current.status }
+  }
+  if (current.status !== 'LOCKED') {
+    return { changed: false, reason: 'INVALID_STATUS', status: current.status }
   }
 
   const releaseResult = await tx
@@ -148,7 +160,7 @@ export const releaseCardCodeAfterSongWithdrawal = async (
       redeemedAt: null,
       updatedAt: releasedAt
     })
-    .where(and(eq(cardCodes.id, cardCodeId), inArray(cardCodes.status, ['LOCKED', 'REDEEMED'])))
+    .where(and(eq(cardCodes.id, cardCodeId), eq(cardCodes.status, 'LOCKED')))
     .returning({ id: cardCodes.id, code: cardCodes.code })
 
   if (releaseResult.length === 0) {

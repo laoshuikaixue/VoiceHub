@@ -177,53 +177,47 @@
             class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
             <div>
-              <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeRequests }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableCardCodeRequestsDesc }}</p>
+              <p class="text-xs font-bold text-text-primary">{{ locale.songQuotaEnabled }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.songQuotaEnabledDesc }}</p>
             </div>
             <input
-              v-model="formData.enableCardCodeRequests"
+              v-model="formData.songQuotaEnabled"
               type="checkbox"
               class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
             />
           </div>
 
+          <div v-if="formData.songQuotaEnabled" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CustomSelect
+              v-model="formData.songQuotaPeriodType"
+              :label="locale.songQuotaPeriodType"
+              :options="songQuotaPeriodOptions"
+            />
+            <div>
+              <label :class="labelClass">{{ locale.songQuotaPeriodAmount }}</label>
+              <input
+                v-model.number="formData.songQuotaPeriodAmount"
+                type="number"
+                min="1"
+                step="1"
+                :class="inputClass"
+              />
+            </div>
+          </div>
+
           <div
+            v-for="setting in songQuotaToggleSettings"
+            :key="setting.key"
             class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
           >
-            <div>
-              <p class="text-xs font-bold text-text-primary">{{ locale.requireCardCodeForRequests }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.requireCardCodeForRequestsDesc }}</p>
+            <div class="pr-4">
+              <p class="text-xs font-bold text-text-primary">{{ setting.label }}</p>
+              <p class="text-[10px] text-text-tertiary mt-0.5">{{ setting.description }}</p>
             </div>
             <input
-              v-model="formData.requireCardCodeForRequests"
+              v-model="formData[setting.key]"
               type="checkbox"
               class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-            />
-          </div>
-
-          <div
-            :class="[
-              'flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl transition-opacity',
-              !formData.enableSubmissionLimit ||
-              (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
-                ? 'opacity-50'
-                : ''
-            ]"
-          >
-            <div class="pr-4">
-              <p class="text-xs font-bold text-text-primary">{{ locale.enableCardCodeLimitBypass }}</p>
-              <p class="text-[10px] text-text-tertiary mt-0.5">
-                {{ locale.enableCardCodeLimitBypassDesc }}
-              </p>
-            </div>
-            <input
-              v-model="formData.enableCardCodeLimitBypass"
-              type="checkbox"
-              :disabled="
-                !formData.enableSubmissionLimit ||
-                (!formData.enableCardCodeRequests && !formData.requireCardCodeForRequests)
-              "
-              class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
             />
           </div>
 
@@ -241,75 +235,6 @@
             />
           </div>
 
-          <div class="space-y-4">
-            <div
-              class="flex items-center justify-between p-3 bg-bg-primary-50 border border-border-secondary rounded-xl"
-            >
-              <div>
-                <p class="text-xs font-bold text-text-primary">{{ locale.enableLimit }}</p>
-                <p class="text-[10px] text-text-tertiary mt-0.5">{{ locale.enableLimitDesc }}</p>
-              </div>
-              <input
-                v-model="formData.enableSubmissionLimit"
-                type="checkbox"
-                class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer"
-              />
-            </div>
-
-            <div v-if="formData.enableSubmissionLimit" class="space-y-4">
-              <div class="grid grid-cols-3 gap-2 p-1 bg-bg-primary border border-border-secondary rounded-xl">
-                <button
-                  :class="[
-                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                    activeLimitTab === 'daily'
-                      ? 'bg-bg-tertiary text-primary shadow-sm'
-                      : 'text-text-disabled hover:text-text-tertiary'
-                  ]"
-                  @click="handleLimitTypeChange('daily')"
-                >
-                  {{ locale.dailyLimit }}
-                </button>
-                <button
-                  :class="[
-                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                    activeLimitTab === 'weekly'
-                      ? 'bg-bg-tertiary text-primary shadow-sm'
-                      : 'text-text-disabled hover:text-text-tertiary'
-                  ]"
-                  @click="handleLimitTypeChange('weekly')"
-                >
-                  {{ locale.weeklyLimit }}
-                </button>
-                <button
-                  :class="[
-                    'py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
-                    activeLimitTab === 'monthly'
-                      ? 'bg-bg-tertiary text-primary shadow-sm'
-                      : 'text-text-disabled hover:text-text-tertiary'
-                  ]"
-                  @click="handleLimitTypeChange('monthly')"
-                >
-                  {{ locale.monthlyLimit }}
-                </button>
-              </div>
-
-              <div>
-                <label :class="labelClass">{{ currentLimitLabel }}</label>
-                <div class="relative">
-                  <input
-                    v-model.number="currentLimitValue"
-                    type="number"
-                    min="0"
-                    :class="inputClass"
-                  />
-                  <span
-                    class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-text-secondary uppercase"
-                    >{{ locale.limitUnit }}</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -567,6 +492,7 @@ import {
   AlertCircle
 } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
+import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
 import { useToast } from '~/composables/useToast'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
@@ -576,6 +502,7 @@ import OAuthConfigManager from './OAuthConfigManager.vue'
 
 const { showToast: showNotification } = useToast()
 const { refreshSiteConfig } = useSiteConfig()
+const { localize: localizeServerError } = useServerErrors()
 const { siteConfig: locale } = useLocale()
 
 const loading = ref(true)
@@ -607,14 +534,12 @@ const formData = ref({
   enableCollaborativeSubmission: true,
   enableSubmissionRemarks: false,
   enableReplayRequests: false,
-  enableSubmissionLimit: false,
-  // 点歌券点歌设置
-  enableCardCodeRequests: false,
-  requireCardCodeForRequests: false,
-  enableCardCodeLimitBypass: false,
-  dailySubmissionLimit: 5,
-  weeklySubmissionLimit: null,
-  monthlySubmissionLimit: null,
+  songQuotaEnabled: false,
+  songQuotaPeriodType: 'DAILY',
+  songQuotaPeriodAmount: 5,
+  adminSongQuotaExempt: true,
+  blockOnSongQuotaInsufficient: true,
+  legacyCardConversionEnabled: false,
   showBlacklistKeywords: false,
   hideStudentInfo: true,
   forcePasswordChangeOnFirstLogin: false,
@@ -660,48 +585,29 @@ const formData = ref({
 
 const originalData = ref({})
 
-// 当前限额类型和值的快捷访问
-const activeLimitTab = ref('daily')
+const songQuotaPeriodOptions = computed(() => [
+  { value: 'DAILY', label: locale.value?.songQuotaDaily },
+  { value: 'WEEKLY', label: locale.value?.songQuotaWeekly },
+  { value: 'MONTHLY', label: locale.value?.songQuotaMonthly }
+])
 
-// 根据数据中的限额值同步当前激活的标签页
-const syncActiveLimitTab = (data) => {
-  if (data.monthlySubmissionLimit != null) {
-    activeLimitTab.value = 'monthly'
-  } else if (data.weeklySubmissionLimit != null) {
-    activeLimitTab.value = 'weekly'
-  } else {
-    activeLimitTab.value = 'daily'
-  }
-}
-
-const currentLimitValue = computed({
-  get: () => {
-    if (activeLimitTab.value === 'monthly') return formData.value.monthlySubmissionLimit
-    return activeLimitTab.value === 'daily'
-      ? formData.value.dailySubmissionLimit
-      : formData.value.weeklySubmissionLimit
+const songQuotaToggleSettings = computed(() => [
+  {
+    key: 'adminSongQuotaExempt',
+    label: locale.value?.adminSongQuotaExempt,
+    description: locale.value?.adminSongQuotaExemptDesc
   },
-  set: (val) => {
-    if (activeLimitTab.value === 'monthly') {
-      formData.value.monthlySubmissionLimit = val
-    } else if (activeLimitTab.value === 'daily') {
-      formData.value.dailySubmissionLimit = val
-    } else {
-      formData.value.weeklySubmissionLimit = val
-    }
+  {
+    key: 'blockOnSongQuotaInsufficient',
+    label: locale.value?.blockOnSongQuotaInsufficient,
+    description: locale.value?.blockOnSongQuotaInsufficientDesc
+  },
+  {
+    key: 'legacyCardConversionEnabled',
+    label: locale.value?.legacyCardConversionEnabled,
+    description: locale.value?.legacyCardConversionEnabledDesc
   }
-})
-
-const currentLimitLabel = computed(() => {
-  const limitTypeLabel =
-    activeLimitTab.value === 'daily'
-      ? locale.value?.dailyLimitLabel
-      : activeLimitTab.value === 'weekly'
-        ? locale.value?.weeklyLimitLabel
-        : locale.value?.monthlyLimitLabel
-
-  return `${locale.value?.limitLabelPrefix || '当前启用：'}${limitTypeLabel || '未设置限额'}${locale.value?.limitLabelSuffix || '投稿限制'}`
-})
+])
 
 const getLocalizedServerMessage = (message) => {
   if (!message) return locale.value?.saveFailed || '系统设置保存失败'
@@ -815,8 +721,6 @@ const loadConfig = async () => {
 
     const data = await response.json()
 
-    syncActiveLimitTab(data)
-
     formData.value = {
       siteTitle: data.siteTitle || '',
       siteLogoUrl: data.siteLogoUrl || '',
@@ -830,14 +734,12 @@ const loadConfig = async () => {
       enableCollaborativeSubmission: data.enableCollaborativeSubmission !== false,
       enableSubmissionRemarks: !!data.enableSubmissionRemarks,
       enableReplayRequests: !!data.enableReplayRequests,
-      enableSubmissionLimit: !!data.enableSubmissionLimit,
-      // 点歌券点歌设置
-      enableCardCodeRequests: !!data.enableCardCodeRequests,
-      requireCardCodeForRequests: !!data.requireCardCodeForRequests,
-      enableCardCodeLimitBypass: !!data.enableCardCodeLimitBypass,
-      dailySubmissionLimit: data.dailySubmissionLimit ?? 5,
-      weeklySubmissionLimit: data.weeklySubmissionLimit ?? null,
-      monthlySubmissionLimit: data.monthlySubmissionLimit ?? null,
+      songQuotaEnabled: !!data.songQuotaEnabled,
+      songQuotaPeriodType: data.songQuotaPeriodType || 'DAILY',
+      songQuotaPeriodAmount: data.songQuotaPeriodAmount ?? 5,
+      adminSongQuotaExempt: data.adminSongQuotaExempt !== false,
+      blockOnSongQuotaInsufficient: data.blockOnSongQuotaInsufficient !== false,
+      legacyCardConversionEnabled: !!data.legacyCardConversionEnabled,
       showBlacklistKeywords: !!data.showBlacklistKeywords,
       hideStudentInfo: data.hideStudentInfo ?? true,
       forcePasswordChangeOnFirstLogin: data.forcePasswordChangeOnFirstLogin === true,
@@ -899,14 +801,7 @@ const saveConfig = async () => {
       siteTitle: (formData.value.siteTitle || '').trim() || locale.value?.defaultSiteTitle || 'VoiceHub',
       siteLogoUrl: (formData.value.siteLogoUrl || '').trim() || '/favicon.ico',
       submissionGuidelines:
-        (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value,
-      // 确保根据限额类型处理空值
-      dailySubmissionLimit:
-        activeLimitTab.value === 'daily' ? formData.value.dailySubmissionLimit : null,
-      weeklySubmissionLimit:
-        activeLimitTab.value === 'weekly' ? formData.value.weeklySubmissionLimit : null,
-      monthlySubmissionLimit:
-        activeLimitTab.value === 'monthly' ? formData.value.monthlySubmissionLimit : null
+        (formData.value.submissionGuidelines || '').trim() || defaultSubmissionGuidelines.value
     }
 
     const response = await fetch('/api/admin/system-settings', {
@@ -917,25 +812,13 @@ const saveConfig = async () => {
     })
 
     if (!response.ok) {
-      let message = locale.value?.saveFailed || '系统设置保存失败'
+      const error = new Error(locale.value?.saveFailed || '系统设置保存失败')
       try {
-        const errorData = await response.json()
-        console.error('Site config API error response:', errorData)
-
-        const getErrorMessage = (err) => {
-          if (err?.data?.error) return err.data.error
-          if (err?.message) return err.message
-          if (err?.statusMessage && err.statusMessage !== 'Error') return err.statusMessage
-          if (err?.data?.message) return err.data.message
-          if (err?.error) return err.error
-          return null
-        }
-
-        message = getLocalizedServerMessage(getErrorMessage(errorData) || locale.value?.saveFailed || '系统设置保存失败')
-      } catch (parseError) {
-        console.error('Failed to parse site config API error:', parseError)
+        error.data = await response.json()
+      } catch {
+        error.data = null
       }
-      throw new Error(message)
+      throw error
     }
 
     saveSuccess.value = true
@@ -951,36 +834,20 @@ const saveConfig = async () => {
     }, 3000)
   } catch (error) {
     console.error('Failed to save site config:', error)
-    let message = locale.value?.saveFailedRetry || '系统设置保存失败，请稍后重试'
-    if (error?.message) {
-      message = getLocalizedServerMessage(error.message)
-    }
-    showNotification(message, 'error')
+    showNotification(
+      error?.data
+        ? localizeServerError(error)
+        : getLocalizedServerMessage(error?.message || locale.value?.saveFailedRetry || '系统设置保存失败，请稍后重试'),
+      'error'
+    )
   } finally {
     saving.value = false
-  }
-}
-
-// 处理限额类型变化
-const handleLimitTypeChange = (type) => {
-  activeLimitTab.value = type
-  const limits = {
-    daily: { key: 'dailySubmissionLimit', default: 5 },
-    weekly: { key: 'weeklySubmissionLimit', default: 20 },
-    monthly: { key: 'monthlySubmissionLimit', default: 50 }
-  }
-
-  // 如果当前类型的限额为 null，则设置默认值
-  const targetLimit = limits[type]
-  if (formData.value[targetLimit.key] === null) {
-    formData.value[targetLimit.key] = targetLimit.default
   }
 }
 
 // 重置表单
 const resetForm = () => {
   formData.value = JSON.parse(JSON.stringify(originalData.value))
-  syncActiveLimitTab(formData.value)
 }
 
 onMounted(loadConfig)

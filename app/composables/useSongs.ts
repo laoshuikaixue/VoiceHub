@@ -25,6 +25,7 @@ export const useSongs = () => {
 
   let songsRequestVersion = 0
   let publicSchedulesRequestVersion = 0
+  let pendingSongRequestIdentity: { payload: string; key: string } | null = null
 
   // 显示通知
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -280,18 +281,27 @@ export const useSongs = () => {
 
     loading.value = true
     error.value = ''
+    const payload = JSON.stringify(songData)
+    const requestIdentity = pendingSongRequestIdentity?.payload === payload
+      ? pendingSongRequestIdentity
+      : { payload, key: crypto.randomUUID() }
+    pendingSongRequestIdentity = requestIdentity
 
     try {
-      // 使用认证配置
       const authConfig = getAuthConfig()
 
       const data = await $fetch('/api/songs/request', {
         method: 'POST',
         body: songData,
-        ...authConfig
+        ...authConfig,
+        headers: {
+          'Idempotency-Key': requestIdentity.key
+        }
       })
 
-      // 绕过去重，从数据库重新校准写入后的列表
+      if (pendingSongRequestIdentity === requestIdentity) {
+        pendingSongRequestIdentity = null
+      }
       await fetchSongs(true, undefined, true)
 
       return data
@@ -429,13 +439,13 @@ export const useSongs = () => {
         // 如果后端返回了特定消息，优先使用（除了撤回投稿的情况，我们要保留带标题的格式）
         message = data.message
       } else {
-        message = data.quotaReturned
+        message = data.quotaReturnResult === 'RETURNED'
           ? actionLocale.value.withdrawSucceededQuota(songTitle)
           : actionLocale.value.withdrawSucceeded(songTitle)
       }
 
       if (data.action !== 'leave') {
-        message = data.quotaReturned
+        message = data.quotaReturnResult === 'RETURNED'
           ? actionLocale.value.withdrawSucceededQuota(songTitle)
           : actionLocale.value.withdrawSucceeded(songTitle)
       }
@@ -443,7 +453,7 @@ export const useSongs = () => {
       showNotification(message, 'success')
       return data
     } catch (err: any) {
-      const errorMsg = err.data?.message || err.message || '撤回歌曲失败'
+      const errorMsg = localizeServerError(err) || '撤回歌曲失败'
       error.value = errorMsg
       showNotification(errorMsg, 'error')
       return null

@@ -1,10 +1,9 @@
 import { db } from '~/drizzle/db'
 import { createSongPlayedNotification } from '~~/server/services/notificationService'
 import { songs, songReplayRequests } from '~/drizzle/schema'
-import { eq, and, inArray } from 'drizzle-orm'
-import { getBeijingTime } from '~/utils/timeUtils'
-import { getClientIP } from '~~/server/utils/ip-utils'
+import { eq, and, asc, inArray } from 'drizzle-orm'
 import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { getServerDate } from '~~/server/utils/serverTime'
 import { z } from 'zod'
 
 const markPlayedSchema = z.object({
@@ -49,11 +48,19 @@ export default defineEventHandler(async (event) => {
     : and(inArray(songs.id, songIds), eq(songs.played, true))
 
   const { updatedSongsResult, updatedSongIds } = await db.transaction(async (tx) => {
+    const now = getServerDate()
+    await tx
+      .select({ id: songs.id })
+      .from(songs)
+      .where(inArray(songs.id, songIds))
+      .orderBy(asc(songs.id))
+      .for('update')
+
     const updatedSongsResult = await tx
       .update(songs)
       .set({
         played: !isUnmark,
-        playedAt: isUnmark ? null : getBeijingTime()
+        playedAt: isUnmark ? null : now
       })
       .where(condition)
       .returning({ id: songs.id })
@@ -67,7 +74,7 @@ export default defineEventHandler(async (event) => {
           .update(songReplayRequests)
           .set({
             status: 'FULFILLED',
-            updatedAt: getBeijingTime()
+            updatedAt: now
           })
           .where(
             and(
@@ -85,7 +92,7 @@ export default defineEventHandler(async (event) => {
         const restoredCount = await restoreReplayRequestsToPending({
           tx,
           songIds: updatedSongIds,
-          at: getBeijingTime()
+          at: now
         })
 
         if (restoredCount > 0) {

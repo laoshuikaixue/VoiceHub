@@ -1,4 +1,4 @@
-import {bigint, boolean, index, integer, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique} from 'drizzle-orm/pg-core';
+import {bigint, boolean, check, index, integer, jsonb, pgEnum, pgTable, serial, text, timestamp, uniqueIndex, uuid, varchar, unique, type AnyPgColumn} from 'drizzle-orm/pg-core';
 import {relations, sql} from 'drizzle-orm';
 
 // 枚举定义
@@ -6,10 +6,23 @@ export const blacklistTypeEnum = pgEnum('BlacklistType', ['SONG', 'KEYWORD']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'withdrawn', 'graduate']);
 export const collaboratorStatusEnum = pgEnum('collaborator_status', ['PENDING', 'ACCEPTED', 'REJECTED']);
 export const replayRequestStatusEnum = pgEnum('replay_request_status', ['PENDING', 'FULFILLED', 'REJECTED']);
+export const songQuotaTypeEnum = pgEnum('song_quota_type', ['PERIODIC', 'PERMANENT']);
+export const songQuotaSourceEnum = pgEnum('song_quota_source', [
+  'PERIOD_EXPIRED',
+  'PERIOD_GRANT',
+  'ADMIN_ADJUST',
+  'ADMIN_BULK_ADJUST',
+  'OPEN_API_ADJUST',
+  'SONG_REQUEST',
+  'SONG_WITHDRAW_RETURN',
+  'SONG_WITHDRAW_EXPIRED',
+  'LEGACY_CARD_CONVERT'
+]);
 export const cardCodeStatusEnum = pgEnum('card_code_status', [
   'AVAILABLE',
   'LOCKED',
   'REDEEMED',
+  'CONVERTED',
   'INVALID'
 ]);
 
@@ -66,12 +79,28 @@ export const songs = pgTable('Song', {
   playUrl: text('playUrl'),
   musicPlatform: text('musicPlatform'),
   musicId: text('musicId'),
+  requestId: text('requestId'),
+  fingerprint: text('fingerprint'),
   submissionNote: text('submissionNote'),
   submissionNotePublic: boolean('submissionNotePublic').default(false).notNull(),
   hitRequestId: integer(),
   cardCodeId: integer('cardCodeId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  quotaConsumed: boolean('quotaConsumed').default(false).notNull(),
+  quotaType: songQuotaTypeEnum('quotaType'),
+  quotaTransactionId: integer('quotaTransactionId').references((): AnyPgColumn => songQuotaTransactions.id, { onDelete: 'set null' }),
+  quotaPeriodKey: text('quotaPeriodKey'),
+  quotaReturned: boolean('quotaReturned').default(false).notNull(),
+  quotaReturnTransactionId: integer('quotaReturnTransactionId').references((): AnyPgColumn => songQuotaTransactions.id, { onDelete: 'set null' }),
 }, (table) => [
+  check('song_quota_consumption_consistent', sql`(
+    (${table.quotaConsumed} = false AND ${table.quotaType} IS NULL AND ${table.quotaTransactionId} IS NULL AND ${table.quotaPeriodKey} IS NULL AND ${table.quotaReturned} = false AND ${table.quotaReturnTransactionId} IS NULL)
+    OR
+    (${table.quotaConsumed} = true AND ${table.quotaType} IS NOT NULL AND ${table.quotaTransactionId} IS NOT NULL AND (${table.quotaType} = 'PERMANENT' OR ${table.quotaPeriodKey} IS NOT NULL) AND ((${table.quotaReturned} = false AND ${table.quotaReturnTransactionId} IS NULL) OR (${table.quotaReturned} = true AND ${table.quotaReturnTransactionId} IS NOT NULL)))
+  )`),
   index('song_card_code_id_idx').on(table.cardCodeId),
+  uniqueIndex('song_quota_transaction_id_unique').on(table.quotaTransactionId),
+  uniqueIndex('song_quota_return_transaction_id_unique').on(table.quotaReturnTransactionId),
+  uniqueIndex('song_request_id_unique').on(table.requestId),
   index('song_semester_created_at_idx').on(table.semester, table.createdAt),
   index('song_requester_id_idx').on(table.requesterId)
 ]);
@@ -200,6 +229,12 @@ export const systemSettings = pgTable('SystemSettings', {
   enableCardCodeRequests: boolean('enableCardCodeRequests').default(false).notNull(),
   requireCardCodeForRequests: boolean('requireCardCodeForRequests').default(false).notNull(),
   enableCardCodeLimitBypass: boolean('enableCardCodeLimitBypass').default(false).notNull(),
+  songQuotaEnabled: boolean('songQuotaEnabled'),
+  songQuotaPeriodType: text('songQuotaPeriodType'),
+  songQuotaPeriodAmount: integer('songQuotaPeriodAmount'),
+  adminSongQuotaExempt: boolean('adminSongQuotaExempt'),
+  blockOnSongQuotaInsufficient: boolean('blockOnSongQuotaInsufficient'),
+  legacyCardConversionEnabled: boolean('legacyCardConversionEnabled'),
   
   // 验证码配置
   captchaProvider: text('captchaProvider').default('graphic').notNull(),
@@ -637,6 +672,47 @@ export const cardCodes = pgTable('CardCode', {
   note: text('note'),
 });
 
+export const songQuotaAccounts = pgTable('SongQuotaAccount', {
+  id: serial('id').primaryKey(),
+  userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
+  periodicBalance: integer('periodicBalance').default(0).notNull(),
+  permanentBalance: integer('permanentBalance').default(0).notNull(),
+  periodKey: text('periodKey'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  check('song_quota_account_periodic_balance_nonnegative', sql`${table.periodicBalance} >= 0`),
+  check('song_quota_account_permanent_balance_nonnegative', sql`${table.permanentBalance} >= 0`)
+]);
+
+export const songQuotaTransactions = pgTable('SongQuotaTransaction', {
+  id: serial('id').primaryKey(),
+  accountId: integer('accountId').notNull().references(() => songQuotaAccounts.id, { onDelete: 'cascade' }),
+  quotaType: songQuotaTypeEnum('quotaType').notNull(),
+  source: songQuotaSourceEnum('source').notNull(),
+  delta: integer('delta').notNull(),
+  balanceAfter: integer('balanceAfter').notNull(),
+  periodKey: text('periodKey'),
+  idempotencyKey: text('idempotencyKey').unique(),
+  requestFingerprint: text('requestFingerprint'),
+  songId: integer('songId').references(() => songs.id, { onDelete: 'set null' }),
+  legacyCardId: integer('legacyCardId').references(() => cardCodes.id, { onDelete: 'set null' }),
+  administratorId: integer('administratorId').references(() => users.id, { onDelete: 'set null' }),
+  apiKeyId: uuid('apiKeyId').references(() => apiKeys.id, { onDelete: 'set null' }),
+  publicDescription: text('publicDescription'),
+  internalNote: text('internalNote'),
+  externalReference: text('externalReference'),
+  snapshot: jsonb('snapshot'),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  check('song_quota_transaction_balance_after_nonnegative', sql`${table.balanceAfter} >= 0`),
+  index('song_quota_transaction_account_created_at_idx').on(table.accountId, table.createdAt),
+  index('song_quota_transaction_song_id_idx').on(table.songId),
+  index('song_quota_transaction_legacy_card_id_idx').on(table.legacyCardId),
+  index('song_quota_transaction_administrator_id_idx').on(table.administratorId),
+  index('song_quota_transaction_api_key_id_idx').on(table.apiKeyId)
+]);
+
 // 卡密兑换日志表
 export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
   id: serial('id').primaryKey(),
@@ -653,6 +729,10 @@ export const cardCodeRedeemLogs = pgTable('CardCodeRedeemLog', {
 
 export type CardCode = typeof cardCodes.$inferSelect;
 export type NewCardCode = typeof cardCodes.$inferInsert;
+export type SongQuotaAccount = typeof songQuotaAccounts.$inferSelect;
+export type NewSongQuotaAccount = typeof songQuotaAccounts.$inferInsert;
+export type SongQuotaTransaction = typeof songQuotaTransactions.$inferSelect;
+export type NewSongQuotaTransaction = typeof songQuotaTransactions.$inferInsert;
 
 // 自动备份历史记录表
 export const backupHistory = pgTable('BackupHistory', {

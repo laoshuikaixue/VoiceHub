@@ -772,14 +772,19 @@ const availablePermissions = computed(() => [
     description: getPermissionOptionText('cardCodesRead', 'description')
   },
   {
-    value: 'card-codes:write',
-    label: getPermissionOptionText('cardCodesWrite', 'label'),
-    description: getPermissionOptionText('cardCodesWrite', 'description')
+    value: 'song-quotas:read',
+    label: getPermissionOptionText('songQuotasRead', 'label'),
+    description: getPermissionOptionText('songQuotasRead', 'description')
   },
   {
-    value: 'card-codes:delete',
-    label: getPermissionOptionText('cardCodesDelete', 'label'),
-    description: getPermissionOptionText('cardCodesDelete', 'description')
+    value: 'song-quotas:adjust',
+    label: getPermissionOptionText('songQuotasAdjust', 'label'),
+    description: getPermissionOptionText('songQuotasAdjust', 'description')
+  },
+  {
+    value: 'song-quota-transactions:read',
+    label: getPermissionOptionText('songQuotaTransactionsRead', 'label'),
+    description: getPermissionOptionText('songQuotaTransactionsRead', 'description')
   },
   {
     value: 'backup:execute',

@@ -22,12 +22,12 @@ export const usePermissions = () => {
 
     // 管理员可以访问的页面
     if (role === 'ADMIN') {
-      return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source'].includes(page)
+      return ['overview', 'schedule', 'print', 'songs', 'users', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'song-quotas', 'music-source'].includes(page)
     }
 
     // 歌曲管理员可以访问的页面
     if (role === 'SONG_ADMIN') {
-      return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'].includes(page)
+      return ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'song-quotas'].includes(page)
     }
 
     return false

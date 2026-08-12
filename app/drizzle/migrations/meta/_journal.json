@@ -274,6 +274,13 @@
       "when": 1786269600000,
       "tag": "20260809000000_add_platform_management",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1786553208799,
+      "tag": "20260812164648_auto-migration",
+      "breakpoints": true
     }
   ]
 }

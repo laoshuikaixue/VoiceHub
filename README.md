@@ -1009,6 +1009,12 @@ VoiceHub/
 │   │   │   │   ├── [id].patch.ts    # 更新黑名单项
 │   │   │   │   ├── index.get.ts     # 获取黑名单列表
 │   │   │   │   └── index.post.ts    # 添加黑名单项
+│   │   │   ├── song-quotas/         # 用户点歌额度管理API
+│   │   │   │   ├── [userId].get.ts  # 获取用户额度详情
+│   │   │   │   ├── _shared.ts       # 管理员额度鉴权与输入校验
+│   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
+│   │   │   │   ├── index.get.ts     # 分页搜索额度账户
+│   │   │   │   └── transactions.get.ts # 分页筛选全局额度流水
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
 │   │   │   │   ├── create.post.ts   # 创建点歌券
@@ -1181,7 +1187,11 @@ VoiceHub/
 │   │   │   ├── card-codes.delete.ts # 删除点歌券
 │   │   │   ├── card-codes.get.ts    # 获取点歌券列表
 │   │   │   ├── card-codes.patch.ts  # 更新点歌券
-│   │   │   ├── card-codes.post.ts   # 创建点歌券
+│   │   │   ├── song-quotas/         # 点歌额度开放API
+│   │   │   │   ├── _shared.ts       # 严格校验、用户归属与限流
+│   │   │   │   ├── adjust.post.ts   # 幂等调整永久额度
+│   │   │   │   ├── index.get.ts     # 查询用户额度
+│   │   │   │   └── transactions.get.ts # 查询用户额度流水
 │   │   │   ├── songs/               # 歌曲相关开放API
 │   │   │   │   ├── mark-played.post.ts # 标记歌曲已播放（供外部调用）
 │   │   │   │   └── request.post.ts  # 使用个人集成令牌投稿歌曲
@@ -1202,6 +1212,10 @@ VoiceHub/
 │   │   │   ├── current.get.ts       # 获取当前学期
 │   │   │   └── options.get.ts       # 获取学期选项
 │   │   ├── site-config.get.ts       # 站点配置API
+│   │   ├── song-quota/     # 当前用户点歌额度API
+│   │   │   ├── index.get.ts         # 获取额度概览
+│   │   │   ├── redeem-card.post.ts  # 兑换旧点歌券
+│   │   │   └── transactions.get.ts  # 分页获取额度流水
 │   │   ├── songs/          # 歌曲相关API
 │   │   │   ├── [id]/                # 歌曲详情操作
 │   │   │   │   ├── update.put.ts    # 更新歌曲信息
@@ -1275,6 +1289,7 @@ VoiceHub/
 │   │   ├── oauthConfigService.ts # OAuth提供商配置与状态服务
 │   │   ├── passwordSecurityService.ts # 密码操作审计与限流服务
 │   │   ├── securityService.ts # 安全服务
+│   │   ├── songQuotaService.ts # 用户点歌额度统一服务
 │   │   ├── songRequestService.ts # 点歌投稿服务
 │   │   ├── smtpService.ts  # SMTP邮件服务
 │   │   └── userService.ts # 用户服务
@@ -1288,12 +1303,14 @@ VoiceHub/
 │   │   ├── captcha.ts      # 图形验证码生成工具
 │   │   ├── captchaStore.ts # 分布式短期状态与验证码哈希存储
 │   │   ├── card-code-delete-handler.ts # 点歌券删除开放API处理器
+│   │   ├── card-code-validation-rate-limit.ts # 点歌券验证与兑换共享限流
 │   │   ├── database-health.ts # 数据库健康检查
 │   │   ├── database-manager.ts # 数据库管理工具
 │   │   ├── geo.ts          # 地理位置工具
 │   │   ├── initial-password-policy.ts # 初始密码设置状态策略
 │   │   ├── important-notification-policy.ts # 重要通知发送与展示策略
 │   │   ├── notification-history-policy.ts # 通知批次引用、筛选与分页策略
+│   │   ├── song-quota-policy.ts # 点歌额度周期、扣减、返还与迁移策略
 │   │   ├── instance-id.ts  # 实例ID管理工具
 │   │   ├── ip-utils.ts     # IP地址工具
 │   │   ├── jwt-enhanced.ts # JWT工具
@@ -1329,11 +1346,15 @@ VoiceHub/
 ├── tests/                 # 自动化测试
 │   └── server/             # 服务端策略与安全测试
 │       ├── auth-route-policy.test.ts # 强制改密路由策略测试
+│       ├── backup-quota-restore.test.ts # 点歌额度备份恢复测试
 │       ├── important-notification-policy.test.ts # 重要通知策略测试
 │       ├── initial-password-policy.test.ts # 初始密码状态策略测试
 │       ├── notification-history-policy.test.ts # 通知批次引用、筛选与分页策略测试
 │       ├── oauth-state-cookie.test.ts # OAuth state Cookie 安全测试
 │       ├── password-policy.test.ts # 密码策略测试
+│       ├── song-quota-policy.test.ts # 点歌额度策略测试
+│       ├── song-quota-postgres.test.ts # 点歌额度 PostgreSQL 并发测试
+│       ├── song-quota-service.test.ts # 点歌额度统一服务测试
 │       └── token-version-policy.test.ts # 令牌版本策略测试
 ├── types/                 # TypeScript类型定义
 │   ├── global.d.ts         # 全局类型定义
@@ -1401,6 +1422,7 @@ VoiceHub/
 - **`server/plugins/`**: 服务端插件（错误处理等）
 - **`server/services/`**: 业务逻辑服务层
 - **`server/utils/`**: 服务端工具函数
+- **`tests/server/`**: 服务端策略与服务测试
 
 #### 静态资源
 

@@ -454,6 +454,7 @@ const statusFilterOptions = computed(() => [
   { label: locale.value?.available || 'Available', value: 'AVAILABLE' },
   { label: locale.value?.lockedStatus || 'Locked', value: 'LOCKED' },
   { label: locale.value?.redeemedStatus || 'Redeemed', value: 'REDEEMED' },
+  { label: locale.value?.convertedStatus || 'Converted', value: 'CONVERTED' },
   { label: locale.value?.invalidStatus || 'Invalid', value: 'INVALID' }
 ])
 
@@ -469,6 +470,7 @@ const statusMeta = (status) => {
     AVAILABLE: { label: locale.value?.available || 'Available', class: 'bg-success-10 text-success border border-success-20' },
     LOCKED: { label: locale.value?.locked || 'Locked', class: 'bg-warning-10 text-warning border border-warning-20' },
     REDEEMED: { label: locale.value?.redeemed || 'Redeemed', class: 'bg-primary-10 text-primary border border-primary-20' },
+    CONVERTED: { label: locale.value?.converted || 'Converted', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' },
     INVALID: { label: locale.value?.invalid || 'Invalid', class: 'bg-error-10 text-error border border-error-20' }
   }
   return statusMap[status] || { label: status || locale.value?.unknown || 'Unknown', class: 'bg-bg-quaternary-10 text-text-secondary border border-border-tertiary-20' }

@@ -1,7 +1,8 @@
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { maskSystemSettingsSecrets } from './secretMask'
-import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaults'
+import { ensureSongQuotaSettingsMigrated } from '~~/server/utils/system-settings-helper'
 
 export default defineEventHandler(async (event) => {
   // 检查用户认证和权限
@@ -30,32 +31,21 @@ export default defineEventHandler(async (event) => {
       const newSettingsResult = await db
         .insert(systemSettings)
         .values({
-          telemetryEnabled: true,
-          enablePlayTimeSelection: false,
-          siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || 'VoiceHub',
-          siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || '/favicon.ico',
-          schoolLogoHomeUrl: null,
-          schoolLogoPrintUrl: null,
+          ...SYSTEM_SETTINGS_DEFAULTS,
+          siteTitle: process.env.NUXT_PUBLIC_SITE_TITLE || SYSTEM_SETTINGS_DEFAULTS.siteTitle,
+          siteLogoUrl: process.env.NUXT_PUBLIC_SITE_LOGO || SYSTEM_SETTINGS_DEFAULTS.siteLogoUrl,
           siteDescription:
-            process.env.NUXT_PUBLIC_SITE_DESCRIPTION || '校园广播站点歌系统 - 让你的声音被听见',
-          submissionGuidelines: '请遵守校园规定，提交健康向上的歌曲。',
-          icpNumber: null,
-          gonganNumber: null,
-          showBeianIcon: false,
-          enableSubmissionLimit: false,
-          dailySubmissionLimit: null,
-          weeklySubmissionLimit: null,
-          monthlySubmissionLimit: null,
-          showBlacklistKeywords: false,
-          enableCollaborativeSubmission: true,
-          enableSubmissionRemarks: false,
-          enabledPlatforms: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
-          platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS])
+            process.env.NUXT_PUBLIC_SITE_DESCRIPTION || SYSTEM_SETTINGS_DEFAULTS.siteDescription
         })
         .returning()
       settings = newSettingsResult[0]
+    } else {
+      settings = await ensureSongQuotaSettingsMigrated(settings)
     }
 
+    if (!settings) {
+      throw new Error('系统设置初始化失败')
+    }
     return maskSystemSettingsSecrets(settings)
   } catch (error) {
     console.error('获取系统设置失败:', error)

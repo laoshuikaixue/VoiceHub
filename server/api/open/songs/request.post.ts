@@ -1,6 +1,7 @@
 import { db, users } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
 import { requestSongForUser } from '~~/server/services/songRequestService'
+import { createApiError } from '~~/server/utils/apiError'
 
 const ALLOWED_FIELDS = [
   'title',
@@ -14,7 +15,6 @@ const ALLOWED_FIELDS = [
   'submissionNote',
   'submissionNotePublic',
   'preferredPlayTimeId',
-  'cardCode',
   'collaborators'
 ]
 
@@ -46,6 +46,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const idempotencyKey = getHeader(event, 'idempotency-key')?.trim()
+  if (!idempotencyKey) {
+    throw createApiError(400, 'COMMON_INVALID_PARAMS', '缺少 Idempotency-Key 请求头')
+  }
+
   const body = await readBody(event)
   const payload = ALLOWED_FIELDS.reduce((result: Record<string, any>, field) => {
     if (Object.prototype.hasOwnProperty.call(body || {}, field)) {
@@ -54,5 +59,5 @@ export default defineEventHandler(async (event) => {
     return result
   }, {})
 
-  return await requestSongForUser(event, user, payload)
+  return await requestSongForUser(event, user, payload, { requestId: idempotencyKey })
 })

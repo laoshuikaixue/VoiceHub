@@ -21,6 +21,24 @@ const truncateResponseBody = (responseBody: any, maxLength = 10000) => {
   }
 }
 
+const OPEN_API_SENSITIVE_FIELDS = new Set([
+  'cardCode',
+  'internalNote',
+  'idempotencyKey',
+  'externalReference'
+])
+
+const sanitizeOpenApiRequestBody = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sanitizeOpenApiRequestBody)
+  if (!value || typeof value !== 'object') return value
+  return Object.fromEntries(
+    Object.entries(value).map(([key, entry]) => [
+      key,
+      OPEN_API_SENSITIVE_FIELDS.has(key) ? '[REDACTED]' : sanitizeOpenApiRequestBody(entry)
+    ])
+  )
+}
+
 /**
  * 记录API访问日志
  */
@@ -300,7 +318,7 @@ export default defineEventHandler(async (event) => {
         Date.now() - startTime,
         ipAddress,
         userAgent,
-        requestBody ? JSON.stringify(requestBody) : undefined,
+        requestBody ? JSON.stringify(sanitizeOpenApiRequestBody(requestBody)) : undefined,
         responseBody,
         errorMessage
       )
@@ -333,18 +351,27 @@ export default defineEventHandler(async (event) => {
 function getRequiredPermission(pathname: string, method: string): string | null {
   const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
 
+  if (normalizedPathname === '/api/open/song-quotas' && method === 'GET') {
+    return 'song-quotas:read'
+  }
+
+  if (normalizedPathname === '/api/open/song-quotas/adjust' && method === 'POST') {
+    return 'song-quotas:adjust'
+  }
+
+  if (normalizedPathname === '/api/open/song-quotas/transactions' && method === 'GET') {
+    return 'song-quota-transactions:read'
+  }
+
+  if (normalizedPathname === '/api/open/card-codes' && method === 'GET') {
+    return 'card-codes:read'
+  }
+
   if (
     normalizedPathname === '/api/open/card-codes' ||
     normalizedPathname.startsWith('/api/open/card-codes/')
   ) {
-    if (
-      normalizedPathname === '/api/open/card-codes/delete' ||
-      normalizedPathname.startsWith('/api/open/card-codes/delete/')
-    )
-      return 'card-codes:delete'
-    if (method === 'GET') return 'card-codes:read'
-    if (method === 'DELETE') return 'card-codes:delete'
-    return 'card-codes:write'
+    return 'card-codes:write-disabled'
   }
 
   if (normalizedPathname.startsWith('/api/open/schedules')) {

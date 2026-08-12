@@ -1,8 +1,9 @@
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
-import { inArray } from 'drizzle-orm'
+import { and, inArray, ne } from 'drizzle-orm'
 import { z } from 'zod'
-import { CARD_CODE_STATUSES } from '../../card-codes/statuses'
+import { CARD_CODE_MUTABLE_STATUSES } from '../../card-codes/statuses'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 const MAX_ID_LENGTH = 32
 const MAX_NOTE_LENGTH = 500
@@ -10,7 +11,7 @@ const MAX_NOTE_LENGTH = 500
 const updateCardCodesSchema = z.object({
   id: z.union([z.number().int().positive(), z.string().max(MAX_ID_LENGTH)]).optional(),
   ids: z.array(z.union([z.number().int().positive(), z.string().max(MAX_ID_LENGTH)])).max(500, '单次最多更新 500 个点歌券').optional(),
-  status: z.enum(CARD_CODE_STATUSES).optional(),
+  status: z.enum(CARD_CODE_MUTABLE_STATUSES).optional(),
   note: z.union([z.string().max(MAX_NOTE_LENGTH), z.null()]).optional()
 })
 
@@ -26,6 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const now = getServerDate()
     const body = await readBody(event) ?? {}
     const validatedData = updateCardCodesSchema.parse(body)
     const rawIds = [
@@ -40,19 +42,19 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: '缺少有效点歌券ID' })
     }
 
-    const updateObj: any = { updatedAt: new Date() }
+    const updateObj: any = { updatedAt: now }
     const status = validatedData.status
     if (status) {
       updateObj.status = status
       if (status === 'REDEEMED') {
         updateObj.redeemedBy = operatorId
-        updateObj.redeemedAt = new Date()
+        updateObj.redeemedAt = now
         updateObj.lockedBy = null
         updateObj.lockedAt = null
       }
       if (status === 'LOCKED') {
         updateObj.lockedBy = operatorId
-        updateObj.lockedAt = new Date()
+        updateObj.lockedAt = now
         updateObj.redeemedBy = null
         updateObj.redeemedAt = null
       }
@@ -81,7 +83,7 @@ export default defineEventHandler(async (event) => {
         .where(inArray(cardCodes.id, ids))
       const beforeMap = new Map(beforeRows.map((row) => [row.id, row]))
 
-      const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, ids)).returning()
+      const updatedRows = await tx.update(cardCodes).set(updateObj).where(and(inArray(cardCodes.id, ids), ne(cardCodes.status, 'CONVERTED'))).returning()
 
       if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows
@@ -93,7 +95,7 @@ export default defineEventHandler(async (event) => {
             cardCodeId: row.id,
             codeSnapshot: row.code,
             redeemedBy: operatorId,
-            redeemedAt: row.redeemedAt || new Date(),
+            redeemedAt: row.redeemedAt || now,
             source: 'OPEN_API_MANUAL',
             songId: null
           }))

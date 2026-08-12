@@ -1,8 +1,9 @@
 import { createError, defineEventHandler, getRouterParam, readBody } from 'h3'
 import { db } from '~/drizzle/db'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
-import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
+import { CARD_CODE_MUTABLE_STATUSES } from '../../../card-codes/statuses'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -33,11 +34,11 @@ export default defineEventHandler(async (event) => {
       const current = rows[0]
       if (!current) throw createError({ statusCode: 404, message: '点歌券未找到' })
 
-      const newValues: any = { updatedAt: new Date() }
-      const now = new Date()
+      const now = getServerDate()
+      const newValues: any = { updatedAt: now }
 
       if (status) {
-        if (!CARD_CODE_STATUSES.includes(status as any)) {
+        if (!CARD_CODE_MUTABLE_STATUSES.includes(status as any)) {
           throw createError({ statusCode: 400, message: '不支持的状态值' })
         }
         if (status === 'REDEEMED') {
@@ -71,8 +72,9 @@ export default defineEventHandler(async (event) => {
 
       if (note !== undefined) newValues.note = note
 
-      const res = await tx.update(cardCodes).set(newValues).where(eq(cardCodes.id, id)).returning()
+      const res = await tx.update(cardCodes).set(newValues).where(and(eq(cardCodes.id, id), ne(cardCodes.status, 'CONVERTED'))).returning()
       const newRow = res[0]
+      if (!newRow) throw createError({ statusCode: 409, message: '已转换点歌券不可修改' })
 
       if (status === 'REDEEMED' && current.status !== status) {
         await tx.insert(cardCodeRedeemLogs).values({

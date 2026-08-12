@@ -4,7 +4,6 @@ import {
   playTimes,
   requestTimes,
   semesters,
-  cardCodes,
   songCollaborators,
   songs,
   users
@@ -12,19 +11,34 @@ import {
 import { and, eq, gt, inArray, lt, lte, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
-import { createCollaborationInvitationNotification } from '~~/server/services/notificationService'
 import {
-  isCardCodeLimitBypassActive,
-  isLimitReached
-} from '~~/server/utils/submissionLimit'
+  createCollaborationInvitationNotification,
+  sendCollaborationInvitationExternalNotification
+} from '~~/server/services/notificationService'
+import { createSongQuotaDrizzleAdapter } from '~~/server/services/songQuotaDrizzleAdapter'
+import { executeSongQuotaSubmission } from '~~/server/services/songQuotaService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getBeijingTimeISOString } from '~/utils/timeUtils'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { getServerDate } from '~~/server/utils/serverTime'
+import {
+  executeIdempotentSongRequest,
+  fingerprintSongRequestPayload,
+  isSongAdministrator
+} from '~~/server/utils/song-request-policy'
 import { z } from 'zod'
 
 type SongRequestUser = {
   id: number
   role: string
+}
+
+const SONG_QUOTA_PERIOD_TYPES = ['DAILY', 'WEEKLY', 'MONTHLY'] as const
+
+function resolveSongQuotaPeriodType(value: unknown) {
+  return SONG_QUOTA_PERIOD_TYPES.includes(value as (typeof SONG_QUOTA_PERIOD_TYPES)[number])
+    ? value as (typeof SONG_QUOTA_PERIOD_TYPES)[number]
+    : 'DAILY'
 }
 
 const songRequestBodySchema = z.object({
@@ -42,19 +56,19 @@ const songRequestBodySchema = z.object({
     (value) => value === null || value === undefined || value === '' ? null : Number(value),
     z.number().int().positive('播出时段 ID 无效').nullable()
   ).optional(),
-  cardCode: z.string().trim().max(100, 'CARD_CODE_TOO_LONG').optional().nullable(),
-  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional()
-})
+  collaborators: z.array(z.union([z.string(), z.number()])).max(20, '联合投稿人不能超过20个').optional(),
+  cardCode: z.unknown().optional()
+}).strict()
 
-export async function requestSongForUser(event: any, user: SongRequestUser, body: any) {
+export async function requestSongForUser(
+  event: any,
+  user: SongRequestUser,
+  body: any,
+  options: { requestId?: string } = {}
+) {
   const parsedBody = songRequestBodySchema.safeParse(body || {})
   if (!parsedBody.success) {
     const issues = parsedBody.error.issues || []
-    const cardCodeIssue = issues.find((issue) => String(issue.message).startsWith('CARD_CODE_'))
-    if (cardCodeIssue) {
-      throw createApiError(400, cardCodeIssue.message, 'Invalid request card')
-    }
-
     throw createError({
       statusCode: 400,
       message: issues.length
@@ -64,89 +78,52 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
   }
 
   const requestBody = parsedBody.data
+  const requestId = String(options.requestId || event.context.requestId || '').trim()
+  const isBilibili =
+    requestBody.musicPlatform === 'bilibili' ||
+    String(requestBody.musicId || '').startsWith('BV') ||
+    String(requestBody.musicId || '').startsWith('av')
+  let finalMusicId = requestBody.musicId ? String(requestBody.musicId) : null
+  if (isBilibili) {
+    const bvId = finalMusicId?.split(':')[0]
+    if (bvId) {
+      const musicIdParts = [bvId]
+      if (requestBody.bilibiliCid) {
+        musicIdParts.push(requestBody.bilibiliCid)
+        if (requestBody.bilibiliPage && Number(requestBody.bilibiliPage) > 1) {
+          musicIdParts.push(String(requestBody.bilibiliPage))
+        }
+      }
+      finalMusicId = musicIdParts.join(':')
+    }
+  }
+  const collaboratorIds = (requestBody.collaborators || []).map((id: any) => Number(id)) as number[]
+  const uniqueCollaboratorIds = [...new Set<number>(collaboratorIds)]
+    .filter((id) => !isNaN(id) && id !== user.id)
+    .sort((a, b) => a - b)
+  const requestFingerprint = fingerprintSongRequestPayload({
+    userId: user.id,
+    title: requestBody.title,
+    artist: requestBody.artist,
+    cover: requestBody.cover,
+    musicPlatform: isBilibili ? 'bilibili' : requestBody.musicPlatform,
+    musicId: finalMusicId,
+    playUrl: requestBody.playUrl,
+    submissionNote: requestBody.submissionNote,
+    submissionNotePublic: requestBody.submissionNotePublic,
+    preferredPlayTimeId: requestBody.preferredPlayTimeId,
+    collaboratorIds: uniqueCollaboratorIds
+  })
 
   try {
-    // 标准化后再比较，避免同一首歌因标点或空格差异绕过重复检查。
-    const normalizeForMatch = (str: string): string => {
-      return str
-        .toLowerCase()
-        .replace(/[\s\-_\(\)\[\]【】（）「」『』《》〈〉""''""''、，。！？：；～·]/g, '')
-        .replace(/[&＆]/g, 'and')
-        .replace(/[feat\.?|ft\.?]/gi, '')
-        .trim()
-    }
-
-    const normalizedTitle = normalizeForMatch(requestBody.title)
-    const normalizedArtist = normalizeForMatch(requestBody.artist)
+    const existingSong = await findExistingSongRequest(requestId, requestFingerprint)
+    if (existingSong) return existingSong
 
     const currentSemester = await getCurrentSemesterName()
 
     const systemSettingsData = await getSystemSettingsCached()
-    const isAdmin = user.role === 'SUPER_ADMIN' || user.role === 'ADMIN'
+    const isAdmin = isSongAdministrator(user.role)
 
-    const isBilibili =
-      requestBody.musicPlatform === 'bilibili' ||
-      String(requestBody.musicId || '').startsWith('BV') ||
-      String(requestBody.musicId || '').startsWith('av')
-
-    if (isBilibili && requestBody.musicId) {
-      let fullMusicId = String(requestBody.musicId)
-      const bvId = fullMusicId.split(':')[0]
-
-      if (requestBody.bilibiliCid) {
-        const musicIdParts = [bvId, requestBody.bilibiliCid]
-        if (requestBody.bilibiliPage && Number(requestBody.bilibiliPage) > 1) {
-          musicIdParts.push(String(requestBody.bilibiliPage))
-        }
-        fullMusicId = musicIdParts.join(':')
-      }
-
-      const existingSongs = await db
-        .select({
-          id: songs.id,
-          musicId: songs.musicId,
-          played: songs.played
-        })
-        .from(songs)
-        .where(
-          and(
-            eq(songs.semester, currentSemester),
-            eq(songs.musicPlatform, 'bilibili'),
-            eq(songs.musicId, fullMusicId)
-          )
-        )
-
-      if (existingSongs.length > 0) {
-        throw createError({
-          statusCode: 400,
-          message: `《${requestBody.title}》已经在列表中，不能重复投稿`
-        })
-      }
-    } else {
-      const allSongs = await db
-        .select({
-          id: songs.id,
-          title: songs.title,
-          artist: songs.artist,
-          semester: songs.semester,
-          played: songs.played
-        })
-        .from(songs)
-        .where(eq(songs.semester, currentSemester))
-
-      const matchingSongs = allSongs.filter((song) => {
-        const songTitle = normalizeForMatch(song.title)
-        const songArtist = normalizeForMatch(song.artist)
-        return songTitle === normalizedTitle && songArtist === normalizedArtist
-      })
-
-      if (matchingSongs.length > 0) {
-        throw createError({
-          statusCode: 400,
-          message: `《${requestBody.title}》已经在列表中，不能重复投稿`
-        })
-      }
-    }
     if (systemSettingsData?.forceBlockAllRequests && !isAdmin) {
       throw createError({
         statusCode: 403,
@@ -187,52 +164,6 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       }
     }
 
-    let effectiveLimit: number | null = null
-    let limitType: 'daily' | 'weekly' | 'monthly' | null = null
-
-    if (systemSettingsData?.enableSubmissionLimit && !isAdmin) {
-      const dailyLimit = systemSettingsData.dailySubmissionLimit
-      const weeklyLimit = systemSettingsData.weeklySubmissionLimit
-      const monthlyLimit = systemSettingsData.monthlySubmissionLimit
-
-      if (dailyLimit !== null && dailyLimit !== undefined) {
-        effectiveLimit = dailyLimit
-        limitType = 'daily'
-      } else if (weeklyLimit !== null && weeklyLimit !== undefined) {
-        effectiveLimit = weeklyLimit
-        limitType = 'weekly'
-      } else if (monthlyLimit !== null && monthlyLimit !== undefined) {
-        effectiveLimit = monthlyLimit
-        limitType = 'monthly'
-      }
-
-      if (effectiveLimit === 0) {
-        throw createError({
-          statusCode: 403,
-          message: '投稿功能已关闭'
-        })
-      }
-    }
-
-    if (systemSettingsData?.requireCardCodeForRequests && !isAdmin) {
-      const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
-      if (!providedCardCode) {
-        throw createApiError(
-          403,
-          'CARD_CODE_REQUIRED_FOR_SITE',
-          'This site requires a valid request card to submit songs'
-        )
-      }
-    }
-
-    const isCardCodeEnabled = !!(
-      systemSettingsData?.enableCardCodeRequests || systemSettingsData?.requireCardCodeForRequests
-    )
-    const excludeCardCodeRequestsFromLimit = isCardCodeLimitBypassActive(systemSettingsData)
-    if (requestBody.cardCode && requestBody.cardCode.trim() && !isCardCodeEnabled && !isAdmin) {
-      throw createApiError(400, 'CARD_CODE_DISABLED', 'Request card submissions are not enabled')
-    }
-
     let preferredPlayTime = null
     if (requestBody.preferredPlayTimeId) {
       if (!systemSettingsData?.enablePlayTimeSelection) {
@@ -263,209 +194,155 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
     const submissionNotePublic =
       submissionNote !== null ? requestBody.submissionNotePublic !== false : false
 
-    const notificationsToSend: { userId: number; songId: number; songTitle: string }[] = []
+    const notificationsToSend: {
+      userId: number
+      songTitle: string
+      inviterName: string
+      message: string
+    }[] = []
+    let inserted = false
 
     const song = await db.transaction(async (tx) => {
-      let providedCardCodeId: number | null = null
-      const providedCardCode = requestBody.cardCode ? requestBody.cardCode.trim().toUpperCase() : ''
-
-      if (providedCardCode) {
-        const codeRows = await tx
-          .select()
-          .from(cardCodes)
-          .where(eq(cardCodes.code, providedCardCode))
-          .limit(1)
-
-        const found = codeRows[0]
-        if (!found || found.status !== 'AVAILABLE') {
-          throw createApiError(
-            400,
-            'CARD_CODE_INVALID_OR_USED',
-            'Request card is invalid or already used'
-          )
+      const newSong = await executeIdempotentSongRequest({
+        async lockRequestIdentity(lockedRequestId) {
+          const key = `song-request-id:${lockedRequestId}`
+          await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`)
+        },
+        async findSongByRequestId(lockedRequestId) {
+          const rows = await tx.select().from(songs).where(eq(songs.requestId, lockedRequestId)).limit(1)
+          return rows[0] ?? null
         }
+      }, {
+        requestId,
+        fingerprint: requestFingerprint,
+        insertSong: async () => {
+          inserted = true
+          if (hitRequestTime) {
+            const transactionCurrentTime = getBeijingTimeISOString()
+            const latestRequestTimeResult = await tx
+              .select()
+              .from(requestTimes)
+              .where(eq(requestTimes.id, hitRequestTime.id))
+              .for('update')
+              .limit(1)
+            const latestRequestTime = latestRequestTimeResult[0]
 
-        const lockResult = await tx
-          .update(cardCodes)
-          .set({ status: 'LOCKED', lockedBy: user.id, lockedAt: new Date() })
-          .where(and(eq(cardCodes.id, found.id), eq(cardCodes.status, 'AVAILABLE')))
-          .returning()
+            if (
+              !latestRequestTime ||
+              !latestRequestTime.enabled ||
+              latestRequestTime.startTime > transactionCurrentTime ||
+              latestRequestTime.endTime <= transactionCurrentTime
+            ) {
+              throw createError({ statusCode: 403, message: '投稿时段已失效' })
+            }
+            if (
+              latestRequestTime.expected > 0 &&
+              latestRequestTime.accepted >= latestRequestTime.expected
+            ) {
+              throw createError({ statusCode: 403, message: '当前时段投稿名额已满' })
+            }
 
-        if (lockResult.length === 0) {
-          throw createApiError(
-            400,
-            'CARD_CODE_LOCKED_OR_UNAVAILABLE',
-            'Request card is locked or unavailable'
-          )
-        }
+            const updateResult = await tx
+              .update(requestTimes)
+              .set({ accepted: sql`${requestTimes.accepted} + 1` })
+              .where(
+                and(
+                  eq(requestTimes.id, latestRequestTime.id),
+                  lte(requestTimes.startTime, transactionCurrentTime),
+                  gt(requestTimes.endTime, transactionCurrentTime),
+                  eq(requestTimes.enabled, true),
+                  latestRequestTime.expected > 0
+                    ? lt(requestTimes.accepted, latestRequestTime.expected)
+                    : undefined
+                )
+              )
+              .returning()
 
-        providedCardCodeId = found.id
-      }
-
-      if (
-        systemSettingsData?.enableSubmissionLimit &&
-        !isAdmin &&
-        !(excludeCardCodeRequestsFromLimit && providedCardCodeId) &&
-        effectiveLimit &&
-        effectiveLimit > 0 &&
-        limitType
-      ) {
-        // 同一用户的限额检查必须串行，否则并发请求可能读取到相同计数并同时越过上限。
-        await tx
-          .select({ id: users.id })
-          .from(users)
-          .where(eq(users.id, user.id))
-          .for('update')
-
-        if (
-          await isLimitReached(tx as any, user.id, limitType, effectiveLimit, {
-            excludeCardCodeRequests: excludeCardCodeRequestsFromLimit
-          })
-        ) {
-          const labelMap: Record<string, string> = { daily: '每日', weekly: '每周', monthly: '每月' }
-          const timeMap: Record<string, string> = { daily: '今日', weekly: '本周', monthly: '本月' }
-
-          throw createError({
-            statusCode: 400,
-            message: `${labelMap[limitType]}投稿限额为${effectiveLimit}首，您${timeMap[limitType]}已达到限额`
-          })
-        }
-      }
-
-      if (hitRequestTime) {
-        const latestRequestTimeResult = await tx
-          .select()
-          .from(requestTimes)
-          .where(eq(requestTimes.id, hitRequestTime.id))
-          .limit(1)
-        const latestRequestTime = latestRequestTimeResult[0]
-
-        if (!latestRequestTime || !latestRequestTime.enabled) {
-          throw createError({ statusCode: 403, message: '投稿时段已失效' })
-        }
-
-        const updateResult = await tx
-          .update(requestTimes)
-          .set({
-            accepted: sql`${requestTimes.accepted} + 1`
-          })
-          .where(
-            and(
-              eq(requestTimes.id, hitRequestTime.id),
-              latestRequestTime.expected > 0
-                ? lt(requestTimes.accepted, latestRequestTime.expected)
-                : undefined
-            )
-          )
-          .returning()
-
-        if (updateResult.length === 0) {
-          throw createError({ statusCode: 403, message: '当前时段投稿名额已满' })
-        }
-      }
-
-      let finalMusicId = requestBody.musicId ? String(requestBody.musicId) : null
-
-      if (isBilibili) {
-        const bvId = finalMusicId?.split(':')[0]
-        if (bvId) {
-          const musicIdParts = [bvId]
-          if (requestBody.bilibiliCid) {
-            musicIdParts.push(requestBody.bilibiliCid)
-            if (requestBody.bilibiliPage && Number(requestBody.bilibiliPage) > 1) {
-              musicIdParts.push(String(requestBody.bilibiliPage))
+            if (updateResult.length === 0) {
+              throw createError({ statusCode: 403, message: '当前时段投稿名额已满' })
             }
           }
-          finalMusicId = musicIdParts.join(':')
-        }
-      }
 
-      const songResult = await tx
-        .insert(songs)
-        .values({
-          title: requestBody.title,
-          artist: requestBody.artist,
-          requesterId: user.id,
-          preferredPlayTimeId: preferredPlayTime?.id || null,
-          semester: currentSemester,
-          cover: requestBody.cover || null,
-          musicPlatform: isBilibili ? 'bilibili' : requestBody.musicPlatform || null,
-          musicId: finalMusicId,
-          cardCodeId: providedCardCodeId || null,
-          playUrl: requestBody.playUrl || null,
-          submissionNote,
-          submissionNotePublic,
-          hitRequestId: hitRequestTime?.id || null
-        })
-        .returning()
-      const newSong = songResult[0]
-      if (!newSong) {
-        throw createError({ statusCode: 500, message: '点歌失败，请稍后重试' })
-      }
-
-      if (
-        requestBody.collaborators &&
-        Array.isArray(requestBody.collaborators) &&
-        requestBody.collaborators.length > 0
-      ) {
-        const collaboratorIds = requestBody.collaborators.map((id: any) => Number(id)) as number[]
-        const uniqueCollaboratorIds = [...new Set<number>(collaboratorIds)].filter(
-          (id) => !isNaN(id) && id !== user.id
-        )
-
-        if (uniqueCollaboratorIds.length > 0) {
-          const validUsers = await tx
-            .select({ id: users.id })
-            .from(users)
-            .where(inArray(users.id, uniqueCollaboratorIds))
-
-          const validUserIds = new Set(validUsers.map((item) => item.id))
-
-          for (const collaboratorId of uniqueCollaboratorIds) {
-            if (!validUserIds.has(collaboratorId)) continue
-
-            try {
-              const existingCollab = await tx
-                .select()
-                .from(songCollaborators)
-                .where(
-                  and(
-                    eq(songCollaborators.songId, newSong.id),
-                    eq(songCollaborators.userId, collaboratorId)
-                  )
-                )
-                .limit(1)
-
-              if (existingCollab.length > 0) continue
-
-              const collabResult = await tx
-                .insert(songCollaborators)
+          const quotaSettings = {
+            songQuotaEnabled: systemSettingsData?.songQuotaEnabled === true,
+            songQuotaPeriodType: resolveSongQuotaPeriodType(systemSettingsData?.songQuotaPeriodType),
+            songQuotaPeriodAmount: systemSettingsData?.songQuotaPeriodAmount || 1,
+            adminSongQuotaExempt: systemSettingsData?.adminSongQuotaExempt !== false,
+            blockOnSongQuotaInsufficient: systemSettingsData?.blockOnSongQuotaInsufficient !== false
+          }
+          return executeSongQuotaSubmission(createSongQuotaDrizzleAdapter(tx), {
+            userId: user.id,
+            requestId,
+            settings: quotaSettings,
+            now: getServerDate(),
+            isAdministrator: isAdmin,
+            insertSong: async (quotaSnapshot) => {
+              const songResult = await tx
+                .insert(songs)
                 .values({
-                  songId: newSong.id,
-                  userId: collaboratorId,
-                  status: 'PENDING'
+                  title: requestBody.title,
+                  artist: requestBody.artist,
+                  requesterId: user.id,
+                  requestId,
+                  fingerprint: requestFingerprint,
+                  preferredPlayTimeId: preferredPlayTime?.id || null,
+                  semester: currentSemester,
+                  cover: requestBody.cover || null,
+                  musicPlatform: isBilibili ? 'bilibili' : requestBody.musicPlatform || null,
+                  musicId: finalMusicId,
+                  playUrl: requestBody.playUrl || null,
+                  submissionNote,
+                  submissionNotePublic,
+                  hitRequestId: hitRequestTime?.id || null,
+                  ...quotaSnapshot
                 })
                 .returning()
-
-              const collab = collabResult[0]
-              if (!collab) continue
-
-              await tx.insert(collaborationLogs).values({
-                collaboratorId: collab.id,
-                action: 'INVITE',
-                operatorId: user.id,
-                ipAddress: getClientIP(event)
-              })
-
-              notificationsToSend.push({
-                userId: collaboratorId,
-                songId: newSong.id,
-                songTitle: newSong.title
-              })
-            } catch (err) {
-              console.error(`邀请用户 ${collaboratorId} 失败:`, err)
+              const insertedSong = songResult[0]
+              if (!insertedSong) {
+                throw createError({ statusCode: 500, message: '点歌失败，请稍后重试' })
+              }
+              return insertedSong
             }
+          })
+        }
+      })
+
+      if (inserted && uniqueCollaboratorIds.length > 0) {
+        const validUsers = await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(inArray(users.id, uniqueCollaboratorIds))
+        const validUserIds = new Set(validUsers.map((item) => item.id))
+
+        for (const collaboratorId of uniqueCollaboratorIds) {
+          if (!validUserIds.has(collaboratorId)) continue
+          const collabResult = await tx
+            .insert(songCollaborators)
+            .values({ songId: newSong.id, userId: collaboratorId, status: 'PENDING' })
+            .returning()
+          const collab = collabResult[0]
+          if (!collab) {
+            throw createError({ statusCode: 500, message: '联合投稿邀请创建失败' })
           }
+          await tx.insert(collaborationLogs).values({
+            collaboratorId: collab.id,
+            action: 'INVITE',
+            operatorId: user.id,
+            ipAddress: getClientIP(event)
+          })
+          const notification = await createCollaborationInvitationNotification(
+            tx,
+            user.id,
+            collaboratorId,
+            newSong.id,
+            newSong.title || requestBody.title
+          )
+          notificationsToSend.push({
+            userId: collaboratorId,
+            songTitle: newSong.title || requestBody.title,
+            inviterName: notification.inviterName,
+            message: notification.message
+          })
         }
       }
 
@@ -474,11 +351,11 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
 
     for (const notification of notificationsToSend) {
       try {
-        await createCollaborationInvitationNotification(
-          user.id,
+        await sendCollaborationInvitationExternalNotification(
           notification.userId,
-          notification.songId,
-          notification.songTitle
+          notification.songTitle,
+          notification.inviterName,
+          notification.message
         )
       } catch (error) {
         console.error(`发送邀请通知给用户 ${notification.userId} 失败:`, error)
@@ -503,6 +380,19 @@ export async function requestSongForUser(event: any, user: SongRequestUser, body
       })
     }
   }
+}
+
+async function findExistingSongRequest(requestId: string, fingerprint: string) {
+  if (!requestId || !fingerprint) {
+    throw new Error('点歌请求必须提供 requestId 和完整指纹')
+  }
+  const rows = await db.select().from(songs).where(eq(songs.requestId, requestId)).limit(1)
+  const existing = rows[0]
+  if (!existing) return null
+  if (existing.fingerprint !== fingerprint) {
+    throw createApiError(409, 'SONG_REQUEST_IDEMPOTENCY_CONFLICT', '请求 ID 已用于不同的点歌请求')
+  }
+  return existing
 }
 
 async function getCurrentSemesterName() {

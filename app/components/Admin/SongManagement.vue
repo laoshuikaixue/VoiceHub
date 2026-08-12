@@ -1950,8 +1950,6 @@ const saveAddSong = async () => {
     await addSong({
       title: addForm.value.title,
       artist: addForm.value.artist,
-      requester: addForm.value.requester,
-      semester: addForm.value.semester,
       preferredPlayTimeId:
         addForm.value.preferredPlayTimeId === 'none'
           ? null

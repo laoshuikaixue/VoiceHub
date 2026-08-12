@@ -328,6 +328,7 @@ const filterType = ref('unplayed') // '未收录', '已收录', '全部'
 const selectedSongIds = ref(new Set())
 const importing = ref(false)
 const importResult = ref(null)
+const importBatchId = ref(null)
 
 const getFilterLabel = (type) => {
   const map = {
@@ -425,13 +426,16 @@ const handleImport = async () => {
   if (selectedSongIds.value.size === 0) return
 
   importing.value = true
+  importBatchId.value ||= crypto.randomUUID()
   try {
     const res = await $fetch('/api/songs/import', {
       method: 'POST',
       body: {
-        songIds: Array.from(selectedSongIds.value)
+        songIds: Array.from(selectedSongIds.value),
+        importBatchId: importBatchId.value
       }
     })
+    importBatchId.value = null
 
     if (res.success) {
       if (res.results) {

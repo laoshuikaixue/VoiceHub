@@ -124,12 +124,12 @@
           </div>
           <!-- 投稿状态显示 - 横向布局，只在设置了限额时显示 -->
           <div
-            v-if="user && submissionStatus && (submissionStatus.limitEnabled || submissionStatus.timeLimitationEnabled || submissionStatus.submissionClosed)"
+            v-if="user && submissionStatus && (submissionStatus.quota?.enabled || submissionStatus.timeLimitationEnabled || submissionStatus.submissionClosed)"
             class="submission-status-horizontal"
           >
             <!-- 超级管理员提示 -->
             <div
-              v-if="user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN')"
+              v-if="user && auth.isAdmin.value"
               class="admin-notice-horizontal"
             >
               <Crown class="admin-icon" :size="14" aria-hidden="true" />
@@ -166,46 +166,17 @@
                 </span>
               </div>
 
-              <div v-if="submissionStatus.dailyLimit" class="status-item-horizontal">
-                <span class="status-label">{{ locale.todayRequests }}</span>
-                <span class="status-value"
-                  >{{ submissionStatus.dailyUsed }} / {{ submissionStatus.dailyLimit }}</span
-                >
-                <span class="status-remaining"
-                  >{{ locale.remaining }}
-                  {{ Math.max(0, submissionStatus.dailyLimit - submissionStatus.dailyUsed) }}</span
-                >
-              </div>
-
-              <div v-if="submissionStatus.weeklyLimit" class="status-item-horizontal">
-                <span class="status-label">{{ locale.weeklyRequests }}</span>
-                <span class="status-value"
-                  >{{ submissionStatus.weeklyUsed }} / {{ submissionStatus.weeklyLimit }}</span
-                >
-                <span class="status-remaining"
-                  >{{ locale.remaining }}
-                  {{
-                    Math.max(0, submissionStatus.weeklyLimit - submissionStatus.weeklyUsed)
-                  }}</span
-                >
-              </div>
-
-              <div v-if="submissionStatus.monthlyLimit" class="status-item-horizontal">
-                <span class="status-label">{{ locale.monthlyRequests }}</span>
-                <span class="status-value"
-                  >{{ submissionStatus.monthlyUsed }} / {{ submissionStatus.monthlyLimit }}</span
-                >
-                <span class="status-remaining"
-                  >{{ locale.remaining }}
-                  {{
-                    Math.max(0, submissionStatus.monthlyLimit - submissionStatus.monthlyUsed)
-                  }}</span
-                >
-              </div>
-              <div v-if="cardCodeLimitBypassActive" class="status-item-horizontal">
-                <span class="status-label">{{ locale.cardCodeLabel }}</span>
-                <span class="status-value">{{ locale.cardCodeBypassesLimit }}</span>
-              </div>
+              <template v-if="submissionStatus.quota?.enabled">
+                <div class="status-item-horizontal quota-display-wrapper">
+                  <SongQuotaDisplay
+                    :quota="submissionStatus.quota"
+                    :period-amount="submissionStatus.quota.periodAmount"
+                    :is-admin="auth.isAdmin.value"
+                    :card-code-active="!!trimmedCardCode"
+                    compact
+                  />
+                </div>
+              </template>
             </div>
           </div>
 
@@ -1333,6 +1304,7 @@ import BilibiliEpisodesModal from './BilibiliEpisodesModal.vue'
 import AlbumDetailsModal from './AlbumDetailsModal.vue'
 import RecentSongsModal from './RecentSongsModal.vue'
 import PlaylistSelectionModal from './PlaylistSelectionModal.vue'
+import SongQuotaDisplay from './SongQuotaDisplay.vue'
 import UserSearchModal from '../Common/UserSearchModal.vue'
 import NeteaseUploadDialog from './NeteaseUploadDialog.vue'
 
@@ -1357,9 +1329,7 @@ const {
   enableCollaborativeSubmission,
   enableSubmissionRemarks,
   enableSubmissionLimit,
-  enableCardCodeRequests,
-  requireCardCodeForRequests,
-  enableCardCodeLimitBypass
+  legacyCardConversionEnabled
 } = useSiteConfig()
 
 // 将投稿须知 Markdown 渲染为安全 HTML
@@ -1438,22 +1408,11 @@ const playTimes = ref([])
 const playTimeSelectionEnabled = ref(false)
 const loadingPlayTimes = ref(false)
 
-const cardCodeEnabled = computed(
-  () => enableCardCodeRequests.value || requireCardCodeForRequests.value
-)
-const cardCodeLimitBypassActive = computed(
-  () => enableSubmissionLimit.value && cardCodeEnabled.value && enableCardCodeLimitBypass.value
-)
+const cardCodeEnabled = computed(() => legacyCardConversionEnabled.value)
 
 const cardCodeFieldMeta = computed(() => ({
-  required: requireCardCodeForRequests.value,
-  helper: requireCardCodeForRequests.value
-    ? cardCodeLimitBypassActive.value
-      ? locale.value.cardCodeRequiredBypassHelper
-      : locale.value.cardCodeRequiredHelper
-    : cardCodeLimitBypassActive.value
-      ? locale.value.cardCodeOptionalBypassHelper
-      : locale.value.cardCodeOptionalHelper,
+  required: false,
+  helper: locale.value.cardCodeOptionalHelper,
   placeholder: locale.value.cardCodePlaceholder
 }))
 
@@ -1461,12 +1420,9 @@ const trimmedCardCode = computed(() => cardCode.value.trim())
 const cardCodeStatusText = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
   if (trimmedCardCode.value) {
-    if (cardCodeValidation.value.valid && cardCodeLimitBypassActive.value) {
-      return locale.value.cardCodeAvailableBypass
-    }
     return cardCodeValidation.value.message || locale.value.cardCodeWillValidate
   }
-  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredStatus : locale.value.cardCodeOptionalStatus
+  return locale.value.cardCodeOptionalStatus
 })
 const mobileCardCodeLabel = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingShort
@@ -1475,7 +1431,7 @@ const mobileCardCodeLabel = computed(() => {
     if (cardCodeValidation.value.valid) return locale.value.cardCodeAvailable
     return locale.value.cardCodeFilled
   }
-  return cardCodeFieldMeta.value.required ? locale.value.cardCodeRequiredShort : locale.value.cardCodeOptionalShort
+  return locale.value.cardCodeOptionalShort
 })
 const cardCodeModalHint = computed(() => {
   if (cardCodeValidation.value.checking) return locale.value.validatingCardCode
@@ -1507,11 +1463,11 @@ const closeCardCodeModal = () => {
   }
 }
 
-const validateCardCode = async (code) => {
-  const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : ''
-  if (!normalizedCode) {
-    resetCardCodeValidation()
-    return !requireCardCodeForRequests.value
+const saveCardCode = async () => {
+  const draft = cardCodeDraft.value.trim().toUpperCase()
+  if (!draft) {
+    clearCardCode()
+    return
   }
 
   cardCodeValidation.value = {
@@ -1521,18 +1477,26 @@ const validateCardCode = async (code) => {
   }
 
   try {
-    const response = await $fetch('/api/card-codes/validate', {
+    const authConfig = auth.getAuthConfig()
+    const prevPermanentBalance = submissionStatus.value?.quota?.permanentBalance ?? 0
+    const result = await $fetch('/api/song-quota/redeem-card', {
       method: 'POST',
-      body: { cardCode: normalizedCode },
-      ...auth.getAuthConfig()
+      body: { cardCode: draft },
+      ...authConfig
     })
-
-    cardCodeValidation.value = {
-      checking: false,
-      valid: true,
-      message: locale.value.cardCodeAvailable
+    const addedAmount = result.permanentBalance - prevPermanentBalance
+    const quota = await $fetch('/api/song-quota', {
+      method: 'GET',
+      ...authConfig
+    })
+    submissionStatus.value = {
+      ...(submissionStatus.value || {}),
+      quota
     }
-    return true
+    clearCardCode()
+    if (window.$showNotification) {
+      window.$showNotification(callLocale('notifications.cardCodeRedeemed', '', addedAmount), 'success')
+    }
   } catch (err) {
     const message = localizeServerError(err, locale.value.cardCodeValidateFailed)
     cardCodeValidation.value = {
@@ -1543,30 +1507,7 @@ const validateCardCode = async (code) => {
     if (window.$showNotification) {
       window.$showNotification(message, 'error')
     }
-    return false
   }
-}
-
-const saveCardCode = async () => {
-  const draft = cardCodeDraft.value.trim().toUpperCase()
-  if (requireCardCodeForRequests.value && !draft) {
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
-    }
-    return
-  }
-
-  if (!draft) {
-    clearCardCode()
-    return
-  }
-
-  if (!(await validateCardCode(draft))) {
-    return
-  }
-
-  cardCode.value = draft
-  showCardCodeModal.value = false
 }
 
 const clearCardCode = () => {
@@ -1574,31 +1515,6 @@ const clearCardCode = () => {
   cardCodeDraft.value = ''
   showCardCodeModal.value = false
   resetCardCodeValidation()
-}
-
-const ensureCardCodeForSubmit = async () => {
-  if (!cardCodeEnabled.value) {
-    return true
-  }
-
-  if (!trimmedCardCode.value) {
-    if (!requireCardCodeForRequests.value) {
-      return true
-    }
-
-    await openCardCodeModal()
-    if (window.$showNotification) {
-      window.$showNotification(locale.value.cardCodeRequiredWarning, 'warning')
-    }
-    return false
-  }
-
-  // 已验证过且未变动则跳过重复验证
-  if (cardCodeValidation.value.valid === true) {
-    return true
-  }
-
-  return await validateCardCode(trimmedCardCode.value)
 }
 
 // 投稿状态
@@ -2348,8 +2264,8 @@ watch(enableSubmissionRemarks, (enabled) => {
   }
 })
 
-watch([enableCardCodeRequests, requireCardCodeForRequests], ([enabled, required]) => {
-  if (!enabled && !required) {
+watch(legacyCardConversionEnabled, (enabled) => {
+  if (!enabled) {
     clearCardCode()
   }
 })
@@ -3166,11 +3082,6 @@ const submitSong = async (result, options = {}) => {
     }
   }
 
-  if (!(await ensureCardCodeForSubmit())) {
-    submitting.value = false
-    return false
-  }
-
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -3243,10 +3154,6 @@ const submitSong = async (result, options = {}) => {
       bilibiliCid: bilibiliCid || null,
       bilibiliPage: bilibiliPage
     }
-    // 如果用户填写了点歌券，传递给后端
-    if (cardCode.value && cardCode.value.trim()) {
-      songData.cardCode = cardCode.value.trim()
-    }
 
     // 只emit事件，让父组件处理实际的API调用
     emit('request', songData)
@@ -3268,10 +3175,6 @@ const submitSong = async (result, options = {}) => {
 // 直接提交表单
 const handleSubmit = async () => {
   if (submitting.value) return
-
-  if (!(await ensureCardCodeForSubmit())) {
-    return
-  }
 
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
@@ -3298,9 +3201,6 @@ const handleSubmit = async () => {
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value,
       collaborators: collaborators.value.map((u) => u.id)
-    }
-    if (cardCode.value && cardCode.value.trim()) {
-      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -3630,10 +3530,6 @@ const handleManualSubmit = async () => {
     return
   }
 
-  if (!(await ensureCardCodeForSubmit())) {
-    return
-  }
-
   // 检查投稿限额
   const limitCheck = checkSubmissionLimit()
   if (!limitCheck.canSubmit) {
@@ -3689,10 +3585,6 @@ const handleManualSubmit = async () => {
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
       submissionNotePublic: submissionNotePublic.value
-    }
-
-    if (cardCode.value && cardCode.value.trim()) {
-      songData.cardCode = cardCode.value.trim()
     }
 
     // 只emit事件，让父组件处理实际的API调用
@@ -3761,7 +3653,7 @@ const fetchSubmissionStatus = async () => {
 // 检查投稿限额
 const checkSubmissionLimit = () => {
   // 超级管理员不受投稿限制
-  if (user.value && (user.value.role === 'SUPER_ADMIN' || user.value.role === 'ADMIN')) {
+  if (user.value && auth.isAdmin.value) {
     return { canSubmit: true, message: '' }
   }
 
@@ -3793,38 +3685,11 @@ const checkSubmissionLimit = () => {
   }
 
 
-  if (!submissionStatus.value.limitEnabled) {
-    return { canSubmit: true, message: '' }
-  }
-
-  if (cardCodeLimitBypassActive.value && trimmedCardCode.value && cardCodeValidation.value.valid === true) {
-    return { canSubmit: true, message: '' }
-  }
-
-  const { dailyLimit, weeklyLimit, monthlyLimit, dailyUsed, weeklyUsed, monthlyUsed } =
-    submissionStatus.value
-
-  // 检查日限额
-  if (dailyLimit && dailyUsed >= dailyLimit) {
+  const quota = submissionStatus.value.quota
+  if (quota?.enabled && quota.insufficientBlocked && quota.totalBalance <= 0) {
     return {
       canSubmit: false,
-      message: callLocale('notifications.dailyLimitReached', '', dailyUsed, dailyLimit)
-    }
-  }
-
-  // 检查周限额
-  if (weeklyLimit && weeklyUsed >= weeklyLimit) {
-    return {
-      canSubmit: false,
-      message: callLocale('notifications.weeklyLimitReached', '', weeklyUsed, weeklyLimit)
-    }
-  }
-
-  // 检查月限额
-  if (monthlyLimit && monthlyUsed >= monthlyLimit) {
-    return {
-      canSubmit: false,
-      message: callLocale('notifications.monthlyLimitReached', '', monthlyUsed, monthlyLimit)
+      message: callLocale('notifications.quotaInsufficient', '')
     }
   }
 

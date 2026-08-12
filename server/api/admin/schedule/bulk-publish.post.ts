@@ -1,7 +1,10 @@
 import { db } from '~/drizzle/db'
 import { schedules, songs } from '~/drizzle/schema'
-import { inArray, and, eq, gte, lte } from 'drizzle-orm'
-import { createSongSelectedNotification, createReplaySongSelectedNotification } from '~~/server/services/notificationService'
+import { inArray, and, asc, eq, gte, lte } from 'drizzle-orm'
+import {
+  createSongSelectedNotification,
+  createReplaySongSelectedNotification
+} from '~~/server/services/notificationService'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import {
   redeemCardCodeForSchedule,
@@ -58,7 +61,8 @@ export default defineEventHandler(async (event) => {
       return {
         songId,
         sequence,
-        replayRequestId: Number.isInteger(replayRequestId) && replayRequestId > 0 ? replayRequestId : null
+        replayRequestId:
+          Number.isInteger(replayRequestId) && replayRequestId > 0 ? replayRequestId : null
       }
     })
 
@@ -108,6 +112,18 @@ export default defineEventHandler(async (event) => {
 
     // 开始事务
     await db.transaction(async (tx) => {
+      if (songIds.length > 0) {
+        const lockedSongs = await tx
+          .select({ id: songs.id })
+          .from(songs)
+          .where(inArray(songs.id, songIds))
+          .orderBy(asc(songs.id))
+          .for('update')
+        if (lockedSongs.length !== new Set(songIds).size) {
+          throw createError({ statusCode: 404, message: '部分歌曲不存在' })
+        }
+      }
+
       // 1. 构建查询条件：指定日期 + (可选)指定时段
       const whereConditions = [
         gte(schedules.playDate, startOfDay),

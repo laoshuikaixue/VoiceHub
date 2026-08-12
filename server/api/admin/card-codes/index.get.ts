@@ -46,13 +46,14 @@ export default defineEventHandler(async (event) => {
       db.select({ status: cardCodes.status, count: count() }).from(cardCodes).groupBy(cardCodes.status)
     ])
 
-    const stats = { total: 0, available: 0, locked: 0, redeemed: 0 }
+    const stats = { total: 0, available: 0, locked: 0, redeemed: 0, converted: 0 }
     for (const row of statsRows) {
       const value = Number(row.count || 0)
       stats.total += value
       if (row.status === 'AVAILABLE') stats.available = value
       if (row.status === 'LOCKED') stats.locked = value
       if (row.status === 'REDEEMED') stats.redeemed = value
+      if (row.status === 'CONVERTED') stats.converted = value
     }
 
     const total = Number(totalResult[0]?.count || 0)

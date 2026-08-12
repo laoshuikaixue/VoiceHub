@@ -60,13 +60,14 @@ export default defineEventHandler(async (event) => {
 
     let stats
     if (includeStats) {
-      stats = { total: 0, available: 0, locked: 0, redeemed: 0, invalid: 0 }
+      stats = { total: 0, available: 0, locked: 0, redeemed: 0, converted: 0, invalid: 0 }
       for (const row of statsRows) {
         const value = Number(row.count || 0)
         stats.total += value
         if (row.status === 'AVAILABLE') stats.available = value
         if (row.status === 'LOCKED') stats.locked = value
         if (row.status === 'REDEEMED') stats.redeemed = value
+        if (row.status === 'CONVERTED') stats.converted = value
         if (row.status === 'INVALID') stats.invalid = value
       }
     }

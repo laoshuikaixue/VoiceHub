@@ -46,6 +46,7 @@ export default defineEventHandler(async (event) => {
       AVAILABLE: '可用',
       LOCKED: '已锁定',
       REDEEMED: '已核销',
+      CONVERTED: '已转换',
       INVALID: '已作废'
     }
     const header = ['ID', '点歌券', '状态', '备注', '创建时间', '更新时间', '锁定用户ID', '锁定时间', '核销用户ID', '核销时间']

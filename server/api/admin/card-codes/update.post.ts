@@ -1,7 +1,8 @@
 import { db } from '~/drizzle/db'
 import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
-import { inArray, eq } from 'drizzle-orm'
-import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
+import { and, inArray, ne } from 'drizzle-orm'
+import { CARD_CODE_MUTABLE_STATUSES } from '../../../card-codes/statuses'
+import { getServerDate } from '~~/server/utils/serverTime'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -20,6 +21,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const now = getServerDate()
     const normalizedIds = ids.map((id: any) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
     if (!normalizedIds.length) {
       throw createError({ statusCode: 400, message: '点歌券ID无效' })
@@ -38,20 +40,20 @@ export default defineEventHandler(async (event) => {
 
     const updateObj: any = {}
     if (status) {
-      if (!CARD_CODE_STATUSES.includes(status as any)) {
+      if (!CARD_CODE_MUTABLE_STATUSES.includes(status as any)) {
         throw createError({ statusCode: 400, message: '不支持的状态值' })
       }
       updateObj.status = status
     }
     if (status === 'REDEEMED') {
       updateObj.redeemedBy = user.id
-      updateObj.redeemedAt = new Date()
+      updateObj.redeemedAt = now
       updateObj.lockedBy = null
       updateObj.lockedAt = null
     }
     if (status === 'LOCKED') {
       updateObj.lockedBy = user.id
-      updateObj.lockedAt = new Date()
+      updateObj.lockedAt = now
       updateObj.redeemedBy = null
       updateObj.redeemedAt = null
     }
@@ -73,10 +75,10 @@ export default defineEventHandler(async (event) => {
     if (Object.keys(updateObj).length === 0) {
       throw createError({ statusCode: 400, message: '没有需要更新的字段' })
     }
-    updateObj.updatedAt = new Date()
+    updateObj.updatedAt = now
 
     const res = await db.transaction(async (tx) => {
-      const updatedRows = await tx.update(cardCodes).set(updateObj).where(inArray(cardCodes.id, normalizedIds)).returning()
+      const updatedRows = await tx.update(cardCodes).set(updateObj).where(and(inArray(cardCodes.id, normalizedIds), ne(cardCodes.status, 'CONVERTED'))).returning()
 
       if (status === 'REDEEMED' && updatedRows.length > 0) {
         const logsToInsert = updatedRows
@@ -88,7 +90,7 @@ export default defineEventHandler(async (event) => {
             cardCodeId: row.id,
             codeSnapshot: row.code,
             redeemedBy: user.id,
-            redeemedAt: row.redeemedAt || new Date(),
+            redeemedAt: row.redeemedAt || now,
             source: 'ADMIN_MANUAL',
             songId: null
           }))
