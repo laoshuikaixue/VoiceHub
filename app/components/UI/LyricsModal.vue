@@ -1217,7 +1217,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   background: var(--bg-primary);
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1246,7 +1246,7 @@ onUnmounted(() => {
   background:
     radial-gradient(circle at 30% 30%, var(--lyrics-modal-bg-accent-blue), transparent 34%),
     radial-gradient(circle at 70% 40%, var(--lyrics-modal-bg-accent-pink), transparent 32%),
-    linear-gradient(135deg, var(--panel-bg-subtle) 0%, var(--panel-bg-deepest) 100%);
+    linear-gradient(135deg, var(--lyrics-modal-bg-base-start) 0%, var(--lyrics-modal-bg-base-end) 100%);
   background-size: 180% 180%;
   transition: opacity 0.5s ease;
 }
@@ -1306,7 +1306,7 @@ onUnmounted(() => {
   top: 2rem;
   right: 2rem;
   z-index: 50;
-  background: var(--overlay-10);
+  background: var(--lyrics-modal-surface);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -1314,7 +1314,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--overlay-80);
+  color: var(--lyrics-modal-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(12px);
@@ -1343,9 +1343,9 @@ onUnmounted(() => {
 }
 
 .close-button:hover {
-  background: var(--overlay-25);
+  background: var(--lyrics-modal-surface-strong);
   transform: scale(1.05);
-  color: white;
+  color: var(--lyrics-modal-text);
 }
 
 /* 主内容布局 */
@@ -1432,7 +1432,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--overlay-50);
+  color: var(--lyrics-modal-text-secondary);
 }
 
 .song-info-container {
@@ -1444,7 +1444,8 @@ onUnmounted(() => {
   font-size: 2.2rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text);
+  text-shadow: 0 1px 8px var(--mask-30);
   line-height: 1.2;
   letter-spacing: -0.02em;
   white-space: normal;
@@ -1455,7 +1456,8 @@ onUnmounted(() => {
 
 .song-artist {
   font-size: 1.4rem;
-  color: var(--overlay-80);
+  color: var(--lyrics-modal-text-secondary);
+  text-shadow: 0 1px 6px var(--mask-30);
   font-weight: 500;
   margin: 0;
   letter-spacing: -0.01em;
@@ -1511,9 +1513,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding: 4px;
-  border: 1px solid var(--overlay-12);
+  border: 1px solid var(--lyrics-modal-surface-border);
   border-radius: 8px;
-  background: var(--overlay-8);
+  background: var(--lyrics-modal-surface);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -1527,7 +1529,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: var(--overlay-62);
+  color: var(--lyrics-modal-text-muted);
   background: transparent;
   cursor: pointer;
   font-size: 0.82rem;
@@ -1536,12 +1538,12 @@ onUnmounted(() => {
 }
 
 .switcher-button:hover {
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text);
 }
 
 .switcher-button.active {
-  color: var(--text-primary);
-  background: var(--overlay-18);
+  color: var(--lyrics-modal-text);
+  background: var(--lyrics-modal-surface-strong);
 }
 
 .comments-display-area {
@@ -1558,7 +1560,7 @@ onUnmounted(() => {
   transform: translateX(-50%);
   padding: 0.55rem 1rem;
   border-radius: 8px;
-  color: var(--overlay-92);
+  color: var(--lyrics-modal-text);
   background: var(--mask-18);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -1615,7 +1617,7 @@ onUnmounted(() => {
 .time-display {
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
-  color: var(--overlay-50);
+  color: var(--lyrics-modal-text-secondary);
   min-width: 45px;
   text-align: center;
   font-weight: 500;
@@ -1626,7 +1628,7 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   height: 5px;
-  background: var(--overlay-15);
+  background: var(--lyrics-modal-track);
   border-radius: 3px;
   position: relative;
   cursor: pointer;
@@ -1639,7 +1641,7 @@ onUnmounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: var(--text-primary);
+  background: var(--lyrics-modal-text);
   border-radius: 3px;
   pointer-events: none;
 }
@@ -1649,7 +1651,7 @@ onUnmounted(() => {
   top: 50%;
   width: 14px;
   height: 14px;
-  background: var(--text-primary);
+  background: var(--lyrics-modal-text);
   border-radius: 50%;
   transform: translate(-50%, -50%) scale(0);
   transition: transform 0.1s ease;
@@ -1691,7 +1693,7 @@ onUnmounted(() => {
 .control-btn {
   background: transparent;
   border: none;
-  color: var(--overlay-70);
+  color: var(--lyrics-modal-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -1701,7 +1703,7 @@ onUnmounted(() => {
 }
 
 .control-btn:hover {
-  color: white;
+  color: var(--lyrics-modal-text);
   transform: scale(1.1);
 }
 
@@ -1712,13 +1714,13 @@ onUnmounted(() => {
 }
 
 .secondary-btn {
-  opacity: 0.4;
+  opacity: 0.6;
   transition: all 0.2s;
 }
 
 .secondary-btn.active {
   opacity: 1;
-  color: var(--text-primary);
+  color: var(--lyrics-modal-text);
   text-shadow: 0 0 8px var(--overlay-40);
 }
 
@@ -1754,7 +1756,8 @@ onUnmounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--overlay-10);
+  background: var(--lyrics-modal-surface);
+  color: var(--lyrics-modal-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1764,7 +1767,8 @@ onUnmounted(() => {
 }
 
 .toolbar-btn:hover {
-  background: var(--overlay-20);
+  background: var(--lyrics-modal-surface-strong);
+  color: var(--lyrics-modal-text);
 }
 
 .lyric-settings-content {
@@ -1779,7 +1783,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--overlay-90);
+  color: var(--lyrics-modal-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -1787,7 +1791,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--overlay-10);
+  background: var(--lyrics-modal-surface);
   border-radius: 6px;
   padding: 2px;
 }
@@ -1805,7 +1809,7 @@ onUnmounted(() => {
 }
 
 .setting-item button:hover {
-  background: var(--overlay-10);
+  background: var(--lyrics-modal-surface);
   border-radius: 4px;
 }
 
@@ -1869,7 +1873,7 @@ onUnmounted(() => {
   width: 100%;
   text-align: center;
   background: transparent;
-  color: var(--text-primary); /* 深色文字 */
+  color: var(--lyrics-modal-badge-menu-text); /* 浅色菜单底上的深色文字 */
   padding: 8px 12px; /* 减小内边距 */
   border-radius: 8px;
   font-size: 0.85rem; /* 稍微减小字体 */
@@ -1887,7 +1891,7 @@ onUnmounted(() => {
 
 .badge-quality-option.active {
   color: var(--color-accent); /* 蓝色字 */
-  background: var(--text-primary);
+  background: var(--lyrics-modal-badge-menu-active-bg);
   font-weight: 600;
   box-shadow: 0 2px 8px var(--mask-8);
 }
@@ -1909,7 +1913,7 @@ onUnmounted(() => {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--overlay-30);
+  background: var(--lyrics-modal-track);
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto;
@@ -1919,7 +1923,7 @@ onUnmounted(() => {
   width: 20px;
   height: 5px;
   border-radius: 3px;
-  background: var(--text-primary);
+  background: var(--lyrics-modal-text);
   box-shadow: 0 0 10px var(--overlay-30);
 }
 
@@ -1930,15 +1934,15 @@ onUnmounted(() => {
   justify-content: center;
   padding: 4px 10px;
   margin-top: 12px;
-  background: var(--overlay-15);
+  background: var(--lyrics-modal-surface);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 6px;
-  color: var(--overlay-90);
+  color: var(--lyrics-modal-text);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--overlay-10);
+  border: 1px solid var(--lyrics-modal-surface-border);
   transition: all 0.2s ease;
   user-select: none; /* 禁止选择 */
   -webkit-user-select: none;
@@ -1946,7 +1950,7 @@ onUnmounted(() => {
 }
 
 .mobile-quality-badge:active {
-  background: var(--overlay-25);
+  background: var(--lyrics-modal-surface-strong);
   transform: scale(0.96);
 }
 
@@ -2166,11 +2170,11 @@ onUnmounted(() => {
 
   .progress-bar {
     height: 4px;
-    background: var(--overlay-10);
+    background: var(--lyrics-modal-track);
   }
 
   .progress-fill {
-    background: var(--text-primary);
+    background: var(--lyrics-modal-text);
   }
 
   .progress-thumb {
@@ -2181,7 +2185,7 @@ onUnmounted(() => {
 
   .time-display {
     font-size: 0.75rem;
-    color: var(--overlay-40);
+    color: var(--lyrics-modal-text-secondary);
   }
 
   .control-buttons {
@@ -2196,7 +2200,7 @@ onUnmounted(() => {
   }
 
   .control-btn {
-    color: var(--overlay-60);
+    color: var(--lyrics-modal-text-secondary);
     /* 增加点击区域 */
     min-width: 44px;
     min-height: 44px;
@@ -2206,7 +2210,7 @@ onUnmounted(() => {
   }
 
   .play-pause-btn {
-    background: var(--overlay-10);
+    background: var(--lyrics-modal-surface);
     width: 64px;
     height: 64px;
     border-radius: 50%;
@@ -2220,7 +2224,7 @@ onUnmounted(() => {
 
   .play-pause-btn:active {
     transform: scale(0.92);
-    background: var(--overlay-20);
+    background: var(--lyrics-modal-surface-strong);
   }
 
   .badge-quality-menu {
@@ -2243,7 +2247,7 @@ onUnmounted(() => {
   .toolbar-btn {
     width: 36px;
     height: 36px;
-    background: var(--overlay-10);
+    background: var(--lyrics-modal-surface);
   }
 
   .comment-current-lyric {
@@ -2308,7 +2312,7 @@ onUnmounted(() => {
 
   .mini-artist {
     font-size: 0.85rem;
-    color: var(--overlay-60);
+    color: var(--lyrics-modal-text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2379,5 +2383,15 @@ onUnmounted(() => {
   /* 优化图片渲染 */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
+}
+
+/* 音量按钮：共享组件在深色播放页上强制亮色图标 */
+.right-control :deep(.volume-btn) {
+  color: var(--lyrics-modal-text-secondary);
+}
+
+.right-control :deep(.volume-btn:hover),
+.right-control :deep(.volume-btn.active) {
+  color: var(--lyrics-modal-text);
 }
 </style>
