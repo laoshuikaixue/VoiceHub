@@ -138,6 +138,7 @@ export default defineEventHandler(async (event) => {
 
   const requestId = String(query.requestId || '').trim()
   const includeSentry = String(query.includeSentry || '') !== '0'
+  const timelineHours = [1, 6, 24].includes(Number(query.timelineHours)) ? Number(query.timelineHours) : 24
   void triggerMusicSourceProbe()
 
   const [pool, database, diagnostics, businessQueue, apiKeyUsage, persistedRequests, recentLogs, timeline, dependencyTimeline, redis, backup, sentry, requestDiagnostics, securityEvents, ipBehavior, requestBehaviorTimeline, businessTimeline, sentryTrace] = await Promise.allSettled([
@@ -148,16 +149,16 @@ export default defineEventHandler(async (event) => {
     databaseManager.getApiKeyUsageStats(),
     databaseManager.getPersistedRequestSamples(),
     databaseManager.getRecentApiLogs(),
-    databaseManager.getOperationsMetricTimeline(),
-    databaseManager.getDependencyMetricTimeline(),
+    databaseManager.getOperationsMetricTimeline(timelineHours),
+    databaseManager.getDependencyMetricTimeline(timelineHours),
     getRedisMetrics(),
     getBackupMonitorStatus(),
     includeSentry ? getSentryIssues() : Promise.resolve({ configured: false, issues: [] }),
     requestId ? databaseManager.getRequestDiagnostics(requestId) : Promise.resolve([]),
     databaseManager.getSecurityAuditEvents(),
     databaseManager.getIpBehaviorTimeline(),
-    databaseManager.getRequestBehaviorTimeline(),
-    databaseManager.getBusinessOperationTimeline(),
+    databaseManager.getRequestBehaviorTimeline(timelineHours),
+    databaseManager.getBusinessOperationTimeline(timelineHours),
     requestId ? getSentryTrace(requestId) : Promise.resolve({ configured: false, available: false, spans: [] })
   ])
 

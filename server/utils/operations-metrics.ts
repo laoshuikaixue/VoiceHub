@@ -316,23 +316,23 @@ export const getOperationsMetrics = () => {
       lastError: item.lastError
     }
   ])) as Record<string, { calls: number; successRate: number | null; p95DurationMs: number | null; lastError: string | null }>
-  const alerts: Array<{ code: string; severity: 'warning' | 'critical'; message: string; value: number; threshold: number }> = []
+  const alerts: Array<{ code: string; severity: 'warning' | 'critical'; priority: 'P0' | 'P1' | 'P2' | 'P3'; target: 'performance' | 'dependencies' | 'logs'; message: string; value: number; threshold: number }> = []
   const serverErrorRate = recentRequests ? recent5xx / recentRequests * 100 : null
   const healthScore = serverErrorRate == null ? null : Number(Math.max(0, 100 - serverErrorRate).toFixed(1))
   if (serverErrorRate != null && serverErrorRate >= 1) {
-    alerts.push({ code: 'http_5xx_rate', severity: serverErrorRate >= 5 ? 'critical' : 'warning', message: 'HTTP 5xx 错误率超过阈值', value: Number(serverErrorRate.toFixed(2)), threshold: 1 })
+    alerts.push({ code: 'http_5xx_rate', severity: serverErrorRate >= 5 ? 'critical' : 'warning', priority: serverErrorRate >= 5 ? 'P0' : 'P1', target: 'performance', message: 'HTTP 5xx 错误率超过阈值', value: Number(serverErrorRate.toFixed(2)), threshold: 1 })
   }
   const p95Ms = percentile(durations, 0.95)
   if (p95Ms != null && p95Ms >= 1500) {
-    alerts.push({ code: 'http_p95_latency', severity: 'warning', message: 'HTTP P95 响应延迟超过阈值', value: Number(p95Ms.toFixed(2)), threshold: 1500 })
+    alerts.push({ code: 'http_p95_latency', severity: 'warning', priority: 'P2', target: 'performance', message: 'HTTP P95 响应延迟超过阈值', value: Number(p95Ms.toFixed(2)), threshold: 1500 })
   }
   if (eventLoop.p99Ms != null && eventLoop.p99Ms >= 50) {
-    alerts.push({ code: 'event_loop_p99', severity: eventLoop.p99Ms >= 200 ? 'critical' : 'warning', message: '事件循环 P99 延迟超过阈值', value: eventLoop.p99Ms, threshold: 50 })
+    alerts.push({ code: 'event_loop_p99', severity: eventLoop.p99Ms >= 200 ? 'critical' : 'warning', priority: eventLoop.p99Ms >= 200 ? 'P1' : 'P3', target: 'performance', message: '事件循环 P99 延迟超过阈值', value: eventLoop.p99Ms, threshold: 50 })
   }
   for (const [source, dependency] of Object.entries(dependencies)) {
     if (!dependency.calls || dependency.successRate == null) continue
     if (dependency.successRate < 95) {
-      alerts.push({ code: `dependency_${source}_success_rate`, severity: dependency.successRate === 0 ? 'critical' : 'warning', message: `${source} 音乐源成功率低于阈值`, value: dependency.successRate, threshold: 95 })
+      alerts.push({ code: `dependency_${source}_success_rate`, severity: dependency.successRate === 0 ? 'critical' : 'warning', priority: dependency.successRate === 0 ? 'P0' : 'P2', target: 'dependencies', message: `${source} 音乐源成功率低于阈值`, value: dependency.successRate, threshold: 95 })
     }
   }
   const result = {

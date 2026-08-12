@@ -308,7 +308,7 @@ export class DatabaseManager {
     `)
   }
 
-  async getRequestBehaviorTimeline() {
+  async getRequestBehaviorTimeline(hours = 24) {
     return await db.execute(sql`
       SELECT date_trunc('hour', created_at) AS at,
         count(*)::int AS requests,
@@ -317,41 +317,41 @@ export class DatabaseManager {
         count(DISTINCT ip_address)::int AS unique_clients,
         count(*) FILTER (WHERE endpoint NOT LIKE '/api/admin/%')::int AS user_requests
       FROM api_logs
-      WHERE created_at >= now() - interval '24 hours'
+      WHERE created_at >= now() - (${hours} * interval '1 hour')
       GROUP BY date_trunc('hour', created_at)
       ORDER BY at ASC
     `)
   }
 
-  async getBusinessOperationTimeline() {
+  async getBusinessOperationTimeline(hours = 24) {
     return await db.execute(sql`
       WITH events AS (
         SELECT date_trunc('hour', "createdAt") AS at, count(*)::int AS song_requests,
           0::int AS schedules_created, 0::int AS schedules_published,
           0::int AS schedules_played, 0::int AS votes
         FROM "Song"
-        WHERE "createdAt" >= now() - interval '24 hours'
+        WHERE "createdAt" >= now() - (${hours} * interval '1 hour')
         GROUP BY date_trunc('hour', "createdAt")
         UNION ALL
         SELECT date_trunc('hour', "createdAt") AS at, 0, count(*)::int,
           0, 0, 0
         FROM "Schedule"
-        WHERE "createdAt" >= now() - interval '24 hours'
+        WHERE "createdAt" >= now() - (${hours} * interval '1 hour')
         GROUP BY date_trunc('hour', "createdAt")
         UNION ALL
         SELECT date_trunc('hour', "publishedAt") AS at, 0, 0, count(*)::int, 0, 0
         FROM "Schedule"
-        WHERE "publishedAt" >= now() - interval '24 hours'
+        WHERE "publishedAt" >= now() - (${hours} * interval '1 hour')
         GROUP BY date_trunc('hour', "publishedAt")
         UNION ALL
         SELECT date_trunc('hour', "playedAt") AS at, 0, 0, 0, count(*)::int, 0
         FROM "Song"
-        WHERE played = true AND "playedAt" >= now() - interval '24 hours'
+        WHERE played = true AND "playedAt" >= now() - (${hours} * interval '1 hour')
         GROUP BY date_trunc('hour', "playedAt")
         UNION ALL
         SELECT date_trunc('hour', "createdAt") AS at, 0, 0, 0, 0, count(*)::int
         FROM "Vote"
-        WHERE "createdAt" >= now() - interval '24 hours'
+        WHERE "createdAt" >= now() - (${hours} * interval '1 hour')
         GROUP BY date_trunc('hour', "createdAt")
       )
       SELECT at, sum(song_requests)::int AS song_requests,
@@ -365,7 +365,7 @@ export class DatabaseManager {
     `)
   }
 
-  async getOperationsMetricTimeline() {
+  async getOperationsMetricTimeline(hours = 24) {
     return await db.execute(sql`
       WITH buckets AS (
         SELECT bucket_start,
@@ -385,7 +385,7 @@ export class DatabaseManager {
           max(database_total_connections)::int AS database_total_connections,
           max(database_slow_query_count)::int AS database_slow_query_count
         FROM operations_metric_buckets
-        WHERE bucket_start >= now() - interval '24 hours'
+        WHERE bucket_start >= now() - (${hours} * interval '1 hour')
         GROUP BY bucket_start
       ), deltas AS (
         SELECT *,
@@ -411,7 +411,7 @@ export class DatabaseManager {
     `)
   }
 
-  async getDependencyMetricTimeline() {
+  async getDependencyMetricTimeline(hours = 24) {
     return await db.execute(sql`
       SELECT bucket_start AS at, source,
         sum(call_count)::int AS calls,
@@ -424,7 +424,7 @@ export class DatabaseManager {
         round(sum(total_duration_ms)::numeric / nullif(sum(call_count), 0), 2) AS average_duration_ms,
         max(max_duration_ms)::int AS max_duration_ms
       FROM operations_dependency_buckets
-      WHERE bucket_start >= now() - interval '24 hours'
+      WHERE bucket_start >= now() - (${hours} * interval '1 hour')
       GROUP BY bucket_start, source
       ORDER BY bucket_start ASC
     `)
