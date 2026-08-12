@@ -78,6 +78,8 @@ export default defineEventHandler(async (event) => {
         userId: users.id,
         username: users.username,
         name: users.name,
+        grade: users.grade,
+        class: users.class,
         role: users.role,
         ipAddress: userSessions.ipAddress,
         userAgent: userSessions.userAgent,

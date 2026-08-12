@@ -5395,11 +5395,11 @@ const dependencyProtectionPanelStatus = (panel) => {
 .ops-time-chart__plot { position: relative; height: 12rem; border-bottom: 1px solid rgba(148, 163, 184, .2); background: rgba(148, 163, 184, .018); }
 .ops-time-chart__grid { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
 .ops-time-chart__grid i { display: block; border-top: 1px dashed rgba(148, 163, 184, .13); }
-.ops-time-chart__bars { position: absolute; inset: 0; display: grid; grid-auto-columns: minmax(3px, 1fr); grid-auto-flow: column; align-items: end; gap: clamp(.18rem, .6vw, .42rem); padding: 0 .35rem; }
-.ops-time-chart__bars i { position: relative; display: block; min-height: 0; overflow: hidden; border: 1px solid rgba(56, 189, 248, .34); border-bottom: 0; border-radius: 4px 4px 0 0; background: rgba(56, 189, 248, .78); cursor: crosshair; transform-origin: bottom center; transition: opacity .14s ease, background-color .14s ease, border-color .14s ease, transform .14s ease; }
-.ops-time-chart__bars i::after { position: absolute; inset: 0 0 auto; height: 2px; background: rgba(248, 250, 252, .48); content: ''; }
+.ops-time-chart__bars { position: absolute; inset: 0; display: grid; grid-auto-columns: minmax(2px, 1fr); grid-auto-flow: column; align-items: end; gap: clamp(.18rem, .6vw, .42rem); padding: 0 .35rem; }
+.ops-time-chart__bars i { position: relative; display: block; width: 2px; min-height: 1px; justify-self: center; overflow: visible; border: 0; border-left: 2px solid rgba(56, 189, 248, .58); border-radius: 0; background: transparent; cursor: crosshair; transform-origin: bottom center; transition: opacity .14s ease, border-color .14s ease, transform .14s ease; }
+.ops-time-chart__bars i::after { position: absolute; top: -3px; left: 50%; width: 7px; height: 7px; border: 1px solid #38bdf8; border-radius: 50%; background: #11151b; content: ''; transform: translateX(-50%); }
 .ops-time-chart__bars:has(i:hover) i:not(:hover) { opacity: .38; }
-.ops-time-chart__bars i:hover { z-index: 1; border-color: rgba(34, 211, 238, .8); background: #22d3ee; transform: translateY(-2px) scaleX(1.04); }
+.ops-time-chart__bars i:hover { z-index: 1; border-color: rgba(34, 211, 238, .95); transform: translateY(-2px) scaleX(1.04); }
 .ops-time-chart__guide { position: absolute; top: 0; bottom: 0; z-index: 2; border-left: 1px dashed rgba(34, 211, 238, .72); pointer-events: none; }
 .ops-chart-tooltip { position: absolute; top: .45rem; z-index: 3; min-width: 10rem; transform: translateX(-50%); border: 1px solid rgba(34, 211, 238, .28); border-radius: 6px; padding: .55rem .65rem; background: #11151b; color: #e5e7eb; box-shadow: 0 8px 20px rgba(0, 0, 0, .22); pointer-events: none; }
 .ops-chart-tooltip time { display: block; margin-bottom: .35rem; color: #94a3b8; font-size: .6875rem; }
@@ -5761,6 +5761,6 @@ const dependencyProtectionPanelStatus = (panel) => {
 .log-result-row, .operation-log-row { cursor: pointer; }
 
 /* 图表柱子渐变填充 */
-.ops-time-chart__bars i { background: linear-gradient(180deg, rgba(56, 189, 248, .95), rgba(56, 189, 248, .5)); }
-.ops-time-chart__bars i:hover { background: linear-gradient(180deg, #22d3ee, color-mix(in srgb, #22d3ee 65%, transparent)); }
+.ops-time-chart__bars i { background: transparent; }
+.ops-time-chart__bars i:hover { background: transparent; }
 </style>

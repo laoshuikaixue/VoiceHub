@@ -93,8 +93,8 @@
                     <dl class="activity-session-detail">
                       <div><dt>用户名</dt><dd>{{ session.username || '--' }}</dd></div>
                       <div><dt>姓名</dt><dd>{{ session.name || '--' }}</dd></div>
-                      <div><dt>所属部门</dt><dd>--</dd></div>
-                      <div><dt>岗位</dt><dd>--</dd></div>
+                      <div><dt>年级</dt><dd>{{ session.grade || '--' }}</dd></div>
+                      <div><dt>班级</dt><dd>{{ session.class || '--' }}</dd></div>
                       <div><dt>角色</dt><dd>{{ roleLabel(session.role) }}</dd></div>
                       <div><dt>会话状态</dt><dd><span class="activity-session-status" :class="`activity-session-status--${session.status}`">{{ session.status === 'active' ? '活跃' : '闲置' }}</span></dd></div>
                       <div><dt>是否当前会话</dt><dd>{{ session.isCurrentSession ? '是' : '否' }}</dd></div>
